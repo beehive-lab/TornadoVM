@@ -23,7 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.metal.graal.compiler.plugins;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.common.code.CodeUtil.getJavaKindFromValueLayoutClass;
 import static uk.ac.manchester.tornado.drivers.common.code.CodeUtil.getValueLayoutClass;
 import static uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalFPBinaryIntrinsicNode.Operation.ATAN2;
@@ -250,7 +249,8 @@ public class MetalGraphBuilderPlugins {
         registerAtomicAddPlugin(r, "atomicAdd", IntArray.class, MetalKind.UINT, 6);
         registerAtomicAddPlugin(r, "atomicAdd", int[].class, MetalKind.UINT, 6);
         registerAtomicAddPlugin(r, "atomicAdd", LongArray.class, MetalKind.ULONG, 3);
-        registerUnsupportedAtomicAddPlugin(r);
+        registerAtomicAddPlugin(r, "atomicAdd", FloatArray.class, MetalKind.FLOAT, 6);
+        registerAtomicAddPlugin(r, "atomicAdd", DoubleArray.class, MetalKind.DOUBLE, 3);
     }
 
     private static void registerAtomicAddPlugin(Registration r, String methodName, Class<?> arrayType, MetalKind kind, int panamaOffset) {
@@ -266,22 +266,6 @@ public class MetalGraphBuilderPlugins {
         });
     }
 
-    private static void registerUnsupportedAtomicAddPlugin(Registration r) {
-        r.register(new InvocationPlugin("atomicAdd", InvocationPlugin.Receiver.class, FloatArray.class, Integer.TYPE, Float.TYPE) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
-                unimplemented("In Metal, the atom_add function does not support floating point operations.");
-                return false;
-            }
-        });
-        r.register(new InvocationPlugin("atomicAdd", InvocationPlugin.Receiver.class, DoubleArray.class, Integer.TYPE, Double.TYPE) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
-                unimplemented("In Metal, the atom_add function does not support floating point operations.");
-                return false;
-            }
-        });
-    }
 
     private static AddressNode computeAddress(GraphBuilderContext b, ValueNode segment, ValueNode index, int panamaOffset, JavaKind kind) {
         ConstantNode constantNode = b.append(new ConstantNode(new RawConstant(panamaOffset), StampFactory.forKind(JavaKind.Int)));

@@ -60,6 +60,10 @@ public class MetalBinary {
             opcode.emit(crb, x, y);
         }
 
+        public MetalBinaryOp getOpcode() {
+            return opcode;
+        }
+
         public Value getX() {
             return x;
         }

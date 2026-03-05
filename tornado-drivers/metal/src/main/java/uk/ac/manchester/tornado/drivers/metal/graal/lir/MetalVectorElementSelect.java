@@ -29,6 +29,7 @@ import org.graalvm.compiler.lir.Opcode;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssembler;
 import uk.ac.manchester.tornado.drivers.metal.graal.compiler.MetalCompilationResultBuilder;
+import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalKind;
 
 @Opcode("VSEL")
 public class MetalVectorElementSelect extends MetalLIROp {
@@ -42,29 +43,49 @@ public class MetalVectorElementSelect extends MetalLIROp {
         this.selection = selection;
     }
 
+    private static final String[] XYZW = { ".x", ".y", ".z", ".w" };
+
     /**
-     * Converts a numeric index to comply with the specified rules for a 16-component vector.
+     * Returns the Metal-compatible vector component accessor string for the given
+     * element index and vector type.
      * <p>
-     * The specification allows numeric indices in the range:
-     * 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, a, A, b, B, c, C, d, D, e, E, f, F
-     * <p>
-     * For values between 10 and 15 (inclusive), this method returns the corresponding uppercase letter (A to F).
-     * Otherwise, it throws an {@code IllegalArgumentException} for invalid values.
+     * Metal uses {@code .x/.y/.z/.w} for native vector types (length ≤ 4).
+     * For TornadoVM's custom struct-based extended vectors:
+     * <ul>
+     *   <li>length 8  → {@code struct { T4 lo, hi; }} → {@code .lo.x} … {@code .hi.w}</li>
+     *   <li>length 16 → {@code struct { T8 lo, hi; }} where T8 = {@code struct { T4 lo, hi; }}
+     *       → {@code .lo.lo.x} … {@code .hi.hi.w}</li>
+     * </ul>
      *
-     * @param value
-     *     The numeric index to be converted.
-     * @return The converted character complying with the specified rules.
-     * @throws IllegalArgumentException
-     *     If the value is outside the allowed range.
-     *
-     *
+     * @param vector the vector value whose kind determines the vector length
+     * @param idx    zero-based element index
+     * @return the Metal component accessor string (e.g. {@code ".x"}, {@code ".lo.y"})
      */
-    public static char convertForWithOf16(int value) {
-        if (value >= 10 && value <= 15) {
-            // Convert values 10 to 15 to letters A to F
-            return (char) ('A' + value - 10);
+    private static String metalVectorComponent(Value vector, int idx) {
+        int vectorLen = 1;
+        if (vector.getPlatformKind() instanceof MetalKind metalKind) {
+            vectorLen = metalKind.getVectorLength();
+        }
+        if (vectorLen <= 4) {
+            // Native Metal vector type: int2, float3, float4, etc.
+            return XYZW[idx & 3];
+        } else if (vectorLen == 8) {
+            // Custom struct: { T4 lo, hi }
+            // indices 0-3 → .lo.x/.lo.y/.lo.z/.lo.w
+            // indices 4-7 → .hi.x/.hi.y/.hi.z/.hi.w
+            String half = (idx < 4) ? ".lo" : ".hi";
+            return half + XYZW[idx & 3];
+        } else if (vectorLen == 16) {
+            // Custom struct: { T8 lo, hi } where T8 = { T4 lo, hi }
+            // indices  0- 3 → .lo.lo.x/.lo.lo.y/.lo.lo.z/.lo.lo.w
+            // indices  4- 7 → .lo.hi.x/.lo.hi.y/.lo.hi.z/.lo.hi.w
+            // indices  8-11 → .hi.lo.x/.hi.lo.y/.hi.lo.z/.hi.lo.w
+            // indices 12-15 → .hi.hi.x/.hi.hi.y/.hi.hi.z/.hi.hi.w
+            String outer = (idx < 8) ? ".lo" : ".hi";
+            String inner = ((idx & 7) < 4) ? ".lo" : ".hi";
+            return outer + inner + XYZW[idx & 3];
         } else {
-            throw new IllegalArgumentException("Invalid value: " + value);
+            return "." + idx;
         }
     }
 
@@ -72,8 +93,7 @@ public class MetalVectorElementSelect extends MetalLIROp {
     public void emit(MetalCompilationResultBuilder crb, MetalAssembler asm) {
         asm.emitValueOrOp(crb, vector);
         int idx = Integer.parseInt(MetalAssembler.getAbsoluteIndexFromValue(selection));
-        String vectorIndex = idx > 9 ? String.valueOf(convertForWithOf16(idx)) : MetalAssembler.getAbsoluteIndexFromValue(selection);
-        asm.emitSymbol(".s" + vectorIndex);
+        asm.emitSymbol(metalVectorComponent(vector, idx));
     }
 
     @Override

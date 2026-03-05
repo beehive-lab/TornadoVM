@@ -118,14 +118,29 @@ public class MetalUnary {
 
         @Override
         public void emit(MetalCompilationResultBuilder crb, MetalAssembler asm) {
-            // Use Metal MSL atomic_add for integer atomics
-            asm.emit("atomic_add(");
-            address.emit(crb, asm);
-            asm.emit(", ");
-            asm.emitValue(crb, inc);
-            asm.emit(")");
-            // For float atomics, Metal MSL does not natively support atomic float add.
-            // Custom logic may be required (e.g., bitwise conversion or loop with atomic_compare_exchange).
+            MetalKind kind = getMetalPlatformKind();
+            if (kind == MetalKind.DOUBLE) {
+                // Metal does not support atomic_double; use volatile add for non-contended access
+                asm.emit("(*(volatile device double *)(");
+                address.emit(crb, asm);
+                asm.emit(") += ");
+                asm.emitValue(crb, inc);
+                asm.emit(")");
+            } else if (kind == MetalKind.FLOAT) {
+                // Metal 2.4+ supports atomic_float
+                asm.emit("atomic_fetch_add_explicit((device atomic_float *)(");
+                address.emit(crb, asm);
+                asm.emit("), ");
+                asm.emitValue(crb, inc);
+                asm.emit(", memory_order_relaxed)");
+            } else {
+                // Int/Uint atomic add
+                asm.emit("atomic_fetch_add_explicit((device atomic_int *)(");
+                address.emit(crb, asm);
+                asm.emit("), ");
+                asm.emitValue(crb, inc);
+                asm.emit(", memory_order_relaxed)");
+            }
         }
     }
 
@@ -154,16 +169,16 @@ public class MetalUnary {
         public String toString() {
             switch (atomicOperator) {
                 case INCREMENT_AND_GET -> {
-                    return String.format("%s(&%s[%s]) + %d", opcode.toString(), arrayName, index, 1);
+                    return String.format("atomic_fetch_add_explicit((device atomic_int *)&%s[%s], 1, memory_order_relaxed) + 1", arrayName, index);
                 }
                 case DECREMENT_AND_GET -> {
-                    return String.format("%s(&%s[%s]) - %d", opcode.toString(), arrayName, index, 1);
+                    return String.format("atomic_fetch_sub_explicit((device atomic_int *)&%s[%s], 1, memory_order_relaxed) - 1", arrayName, index);
                 }
                 case GET_AND_INCREMENT -> {
-                    return String.format("%s(&%s[%s])", opcode.toString(), arrayName, index);
+                    return String.format("atomic_fetch_add_explicit((device atomic_int *)&%s[%s], 1, memory_order_relaxed)", arrayName, index);
                 }
                 case GET_AND_DECREMENT -> {
-                    return String.format("%s(&%s[%s])", opcode.toString(), arrayName, index);
+                    return String.format("atomic_fetch_sub_explicit((device atomic_int *)&%s[%s], 1, memory_order_relaxed)", arrayName, index);
                 }
             }
             return "";
@@ -187,7 +202,7 @@ public class MetalUnary {
 
         @Override
         public String toString() {
-            return String.format("%s[%s]", arrayName, index);
+            return String.format("atomic_load_explicit((device atomic_int *)&%s[%s], memory_order_relaxed)", arrayName, index);
         }
     }
 

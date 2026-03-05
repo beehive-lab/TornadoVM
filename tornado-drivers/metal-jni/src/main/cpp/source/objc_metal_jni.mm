@@ -428,7 +428,7 @@ done:
 
 // int[]
 JNIEXPORT jlong JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_writeArrayToDevice__J_3IZJJJ_3J
+Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_writeArrayToDevice__J_3IJZJJJ_3J
   (JNIEnv *env, jclass clazz, jlong queueId, jintArray array, jlong hostOffset, jboolean blocking, jlong offset, jlong bytes, jlong ptr, jlongArray events)
 {
     jint *src = nullptr;
@@ -455,7 +455,7 @@ done:
 
 // long[]
 JNIEXPORT jlong JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_writeArrayToDevice__J_3JZJJJ_3J
+Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_writeArrayToDevice__J_3JJZJJJ_3J
   (JNIEnv *env, jclass clazz, jlong queueId, jlongArray array, jlong hostOffset, jboolean blocking, jlong offset, jlong bytes, jlong ptr, jlongArray events)
 {
     jlong *src = nullptr;
