@@ -178,6 +178,7 @@ public class ChunkPipelineExample {
                     .task("t" + c, ChunkPipelineExample::computeKernel,
                             chunkX[c], chunkY[c], chunkResult[c], alpha)
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, chunkResult[c]);
+                    //.withCUDAStreams();
         }
 
         ImmutableTaskGraph itg = tg.snapshot();
