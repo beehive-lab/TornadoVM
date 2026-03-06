@@ -119,6 +119,10 @@ class TornadoExecutor {
         immutableTaskGraphList.forEach(ImmutableTaskGraph::freeDeviceMemory);
     }
 
+    public void destroyAllExecutionGraphs() {
+        immutableTaskGraphList.forEach(ImmutableTaskGraph::destroyExecutionGraphs);
+    }
+
     void transferToHost(Object... objects) {
         immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.transferToHost(objects));
     }

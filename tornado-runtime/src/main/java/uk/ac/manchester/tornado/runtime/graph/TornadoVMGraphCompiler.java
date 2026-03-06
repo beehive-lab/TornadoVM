@@ -25,6 +25,7 @@ package uk.ac.manchester.tornado.runtime.graph;
 import java.nio.BufferOverflowException;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -46,6 +47,7 @@ import uk.ac.manchester.tornado.runtime.graph.nodes.StreamInNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.TaskNode;
 
 public class TornadoVMGraphCompiler {
+    private static final AtomicInteger nextGraphId = new AtomicInteger(0);
     /**
      * It generates the TornadoVM byte-codes from a Tornado Task Graph.
      *
@@ -74,6 +76,7 @@ public class TornadoVMGraphCompiler {
 
         new TornadoLogger().debug("Compiling bytecodes...");
 
+        int graphId = nextGraphId.getAndIncrement();
         for (int i = 0; i < tornadoVMBytecodeResults.length; i++) {
 
             TornadoVMBytecodeBuilder tornadoVMBytecodeBuilder = new TornadoVMBytecodeBuilder(isSingleContextCompilation);
@@ -86,11 +89,17 @@ public class TornadoVMGraphCompiler {
                 // ── Execution Graph path ──
                 // Phase 1: Emit allocation nodes OUTSIDE the capture region.
                 // cuMemAlloc is not a stream operation and cannot be captured.
+//                scheduleAndEmitFilteredBytecodes(tornadoVMBytecodeBuilder, graph,
+//                        intermediateTornadoGraph, 0, 0, 0, i, executionContext,
+//                        node -> node instanceof AllocateMultipleBuffersNode
+//                                || node instanceof OnDeviceObjectNode
+//                                || node instanceof PersistedObjectNode);
                 scheduleAndEmitFilteredBytecodes(tornadoVMBytecodeBuilder, graph,
                         intermediateTornadoGraph, 0, 0, 0, i, executionContext,
                         node -> node instanceof AllocateMultipleBuffersNode
                                 || node instanceof OnDeviceObjectNode
-                                || node instanceof PersistedObjectNode);
+                                //|| node instanceof PersistedObjectNode
+                                || node instanceof CopyInNode);
 
                 // Phase 2: Graph launch/capture boundary + capturable operations.
                 // EXECUTION_GRAPH_LAUNCH is emitted first — the interpreter checks
@@ -98,20 +107,26 @@ public class TornadoVMGraphCompiler {
                 //   - Yes → replay it, skip to after END_CAPTURE
                 //   - No  → fall through into BEGIN_CAPTURE (first execution)
                // tornadoVMBytecodeBuilder.executionGraphLaunch(0);
-                tornadoVMBytecodeBuilder.executionGraphBeginCapture(0);
+                tornadoVMBytecodeBuilder.executionGraphBeginCapture(graphId);
 
+//                scheduleAndEmitFilteredBytecodes(tornadoVMBytecodeBuilder, graph,
+//                        intermediateTornadoGraph, 0, 0, 0, i, executionContext,
+//                        node -> node instanceof CopyInNode
+//                                || node instanceof StreamInNode
+//                                || node instanceof TaskNode
+//                                || node instanceof CopyOutNode);
                 scheduleAndEmitFilteredBytecodes(tornadoVMBytecodeBuilder, graph,
                         intermediateTornadoGraph, 0, 0, 0, i, executionContext,
-                        node -> node instanceof CopyInNode
-                                || node instanceof StreamInNode
+                        node -> node instanceof StreamInNode
                                 || node instanceof TaskNode
+                                || node instanceof PersistedObjectNode
                                 || node instanceof CopyOutNode);
 
-                tornadoVMBytecodeBuilder.executionGraphEndCapture(0);
-                tornadoVMBytecodeBuilder.executionGraphLaunch(0);
+                tornadoVMBytecodeBuilder.executionGraphEndCapture(graphId);
+                tornadoVMBytecodeBuilder.executionGraphLaunch(graphId);
                 tornadoVMBytecodeBuilder.barrier(intermediateTornadoGraph.getNumberOfDependencies());
 
-                // Phase 3: Emit deallocation nodes AFTER the graph has completed.
+                // Phase 3: Emit deallocation nodes after the graph has completed.
                 final int[] nodeIds = intermediateTornadoGraph.getNodeIds();
                 for (int j = 0; j < nodeIds.length; j++) {
                     AbstractNode node = graph.getNode(nodeIds[j]);

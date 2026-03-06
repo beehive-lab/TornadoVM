@@ -88,6 +88,8 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     void freeDeviceMemory();
 
+    void destroyExecutionGraphs();
+
     void syncRuntimeTransferToHost(Object... objects);
 
     void syncRuntimeTransferToHost(Object objects, long offset, long partialCopySize);
