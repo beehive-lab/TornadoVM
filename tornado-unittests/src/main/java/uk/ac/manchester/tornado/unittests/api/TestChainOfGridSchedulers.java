@@ -113,10 +113,10 @@ public class TestChainOfGridSchedulers extends TornadoTestBase {
             // A Grid-scheduler must be shared across all graphs within an execution plan.
 
             // Execute TaskGraph 0
-            executionPlan.withGridScheduler(grid).withGraph(0).withCUDAGraph().execute();
+            executionPlan.withGridScheduler(grid).withGraph(0).execute();
 
             // Execute TaskGraph 1
-            executionPlan.withGridScheduler(grid).withGraph(1).withCUDAGraph().execute();
+            executionPlan.withGridScheduler(grid).withGraph(1).execute();
         }
 
         // Verify results 

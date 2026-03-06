@@ -45,10 +45,6 @@ class TornadoExecutor {
         Collections.addAll(immutableTaskGraphList, immutableTaskGraphs);
     }
 
-    // ==================
-    /**
-     * Enable CUDA Graph execution mode.
-     */
     public void withCUDAGraph() {
         immutableTaskGraphList.forEach(ImmutableTaskGraph::withCUDAGraph);
     }
@@ -117,10 +113,6 @@ class TornadoExecutor {
 
     void freeDeviceMemory() {
         immutableTaskGraphList.forEach(ImmutableTaskGraph::freeDeviceMemory);
-    }
-
-    public void destroyAllExecutionGraphs() {
-        immutableTaskGraphList.forEach(ImmutableTaskGraph::destroyExecutionGraphs);
     }
 
     void transferToHost(Object... objects) {

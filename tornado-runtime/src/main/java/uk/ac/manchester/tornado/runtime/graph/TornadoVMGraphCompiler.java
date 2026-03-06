@@ -86,35 +86,20 @@ public class TornadoVMGraphCompiler {
             boolean useCUDAGraphs = executionContext.isExecutionGraphEnabled();
             boolean noBatches = executionContext.getBatchSize() == TornadoExecutionContext.INIT_VALUE;
             if (noBatches && useCUDAGraphs) {
-                // ── Execution Graph path ──
-                // Phase 1: Emit allocation nodes OUTSIDE the capture region.
-                // cuMemAlloc is not a stream operation and cannot be captured.
-//                scheduleAndEmitFilteredBytecodes(tornadoVMBytecodeBuilder, graph,
-//                        intermediateTornadoGraph, 0, 0, 0, i, executionContext,
-//                        node -> node instanceof AllocateMultipleBuffersNode
-//                                || node instanceof OnDeviceObjectNode
-//                                || node instanceof PersistedObjectNode);
+                // Phase 1: Emit allocation nodes outside the capture region.
                 scheduleAndEmitFilteredBytecodes(tornadoVMBytecodeBuilder, graph,
                         intermediateTornadoGraph, 0, 0, 0, i, executionContext,
                         node -> node instanceof AllocateMultipleBuffersNode
                                 || node instanceof OnDeviceObjectNode
-                                //|| node instanceof PersistedObjectNode
                                 || node instanceof CopyInNode);
 
                 // Phase 2: Graph launch/capture boundary + capturable operations.
-                // EXECUTION_GRAPH_LAUNCH is emitted first — the interpreter checks
+                // EXECUTION_GRAPH_LAUNCH is emitted first, the interpreter checks
                 // whether a captured graph exists:
                 //   - Yes → replay it, skip to after END_CAPTURE
                 //   - No  → fall through into BEGIN_CAPTURE (first execution)
-               // tornadoVMBytecodeBuilder.executionGraphLaunch(0);
                 tornadoVMBytecodeBuilder.executionGraphBeginCapture(graphId);
 
-//                scheduleAndEmitFilteredBytecodes(tornadoVMBytecodeBuilder, graph,
-//                        intermediateTornadoGraph, 0, 0, 0, i, executionContext,
-//                        node -> node instanceof CopyInNode
-//                                || node instanceof StreamInNode
-//                                || node instanceof TaskNode
-//                                || node instanceof CopyOutNode);
                 scheduleAndEmitFilteredBytecodes(tornadoVMBytecodeBuilder, graph,
                         intermediateTornadoGraph, 0, 0, 0, i, executionContext,
                         node -> node instanceof StreamInNode
@@ -139,11 +124,12 @@ public class TornadoVMGraphCompiler {
                 }
 
             } else if (noBatches) {
-                // ── Standard path (no batches, no execution graphs) ──
+                // Generate bytecodes with no batches
                 scheduleAndEmitTornadoVMBytecodes(tornadoVMBytecodeBuilder, graph,
                         intermediateTornadoGraph, 0, 0, 0, i, executionContext);
             } else {
-                // ── Batch path ──
+                // Generate bytecodes for batch processing.
+                // It splits the iteration space and the input arrays into batches
                 scheduleBatchDependentBytecodes(executionContext, tornadoVMBytecodeBuilder,
                         graph, intermediateTornadoGraph);
             }
