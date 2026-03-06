@@ -1473,7 +1473,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_metalEnqueueNDRang
         tg.height = (gy + threadsPerThreadgroup.height - 1) / threadsPerThreadgroup.height;
         tg.depth = (gz + threadsPerThreadgroup.depth - 1) / threadsPerThreadgroup.depth;
 
-        [encoder dispatchThreadgroups:tg threadsPerThreadgroup:threadsPerThreadgroup];
+        [encoder dispatchThreads:threadsPerGrid threadsPerThreadgroup:threadsPerThreadgroup];
         [encoder endEncoding];
         // If we created a sizes buffer, release it after the command buffer completes
         if (sizesBuf) {
@@ -1485,6 +1485,9 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_metalEnqueueNDRang
         }
         [cb commit];
         [cb waitUntilCompleted]; // synchronous for now - ensure GPU is done before returning
+        if (cb.error) {
+            NSLog(@"[METAL-ERROR] Command buffer failed: %@", cb.error);
+        }
         // release array elements
         if (gws) env->ReleaseLongArrayElements(global_work_size, gws, 0);
         if (lws) env->ReleaseLongArrayElements(local_work_size, lws, 0);

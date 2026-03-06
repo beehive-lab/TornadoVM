@@ -90,7 +90,7 @@ public class MetalHotSpotBackendFactory {
         };
 
         MetalArchitecture arch = new MetalArchitecture(wordKind, device.getByteOrder());
-        MetalTargetDescription target = new MetalTargetDescription(arch, device.isDeviceDoubleFPSupported(), device.getDeviceExtensions());
+        MetalTargetDescription target = new MetalTargetDescription(arch, device.isDeviceDoubleFPSupported(), device.isDeviceFP16Supported(), device.isDeviceInt64AtomicsSupported());
         MetalCodeProvider codeCache = new MetalCodeProvider(target);
         MetalDeviceContextInterface metalDeviceContextImpl = (MetalDeviceContextInterface) tornadoContext.createDeviceContext(device.getIndex());
 

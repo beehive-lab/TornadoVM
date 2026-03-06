@@ -103,6 +103,7 @@ import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalIntUnaryIntrinsic
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.PrintfNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.TornadoAtomicIntegerNode;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoMemorySegment;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class MetalGraphBuilderPlugins {
@@ -246,11 +247,15 @@ public class MetalGraphBuilderPlugins {
     }
 
     private static void registerAtomicAddOperation(Registration r) {
-        registerAtomicAddPlugin(r, "atomicAdd", IntArray.class, MetalKind.UINT, 6);
-        registerAtomicAddPlugin(r, "atomicAdd", int[].class, MetalKind.UINT, 6);
-        registerAtomicAddPlugin(r, "atomicAdd", LongArray.class, MetalKind.ULONG, 3);
-        registerAtomicAddPlugin(r, "atomicAdd", FloatArray.class, MetalKind.FLOAT, 6);
-        registerAtomicAddPlugin(r, "atomicAdd", DoubleArray.class, MetalKind.DOUBLE, 3);
+        int intOffset = (int) (TornadoNativeArray.ARRAY_HEADER / Integer.BYTES);
+        int longOffset = (int) (TornadoNativeArray.ARRAY_HEADER / Long.BYTES);
+        int floatOffset = (int) (TornadoNativeArray.ARRAY_HEADER / Float.BYTES);
+        int doubleOffset = (int) (TornadoNativeArray.ARRAY_HEADER / Double.BYTES);
+        registerAtomicAddPlugin(r, "atomicAdd", IntArray.class, MetalKind.UINT, intOffset);
+        registerAtomicAddPlugin(r, "atomicAdd", int[].class, MetalKind.UINT, intOffset);
+        registerAtomicAddPlugin(r, "atomicAdd", LongArray.class, MetalKind.ULONG, longOffset);
+        registerAtomicAddPlugin(r, "atomicAdd", FloatArray.class, MetalKind.FLOAT, floatOffset);
+        registerAtomicAddPlugin(r, "atomicAdd", DoubleArray.class, MetalKind.DOUBLE, doubleOffset);
     }
 
     private static void registerAtomicAddPlugin(Registration r, String methodName, Class<?> arrayType, MetalKind kind, int panamaOffset) {

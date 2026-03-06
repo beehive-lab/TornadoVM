@@ -51,21 +51,20 @@ public class MetalTargetDescription extends TargetDescription {
         {MetalKind.DOUBLE2, MetalKind.DOUBLE3, MetalKind.DOUBLE4, MetalKind.DOUBLE8, MetalKind.DOUBLE16}
     };
     private final boolean supportsFP64;
-    private final String extensions;
     private final boolean supportsInt64Atomics;
 
     private final boolean supportsF16;
 
-    public MetalTargetDescription(Architecture arch, boolean supportsFP64, String extensions) {
-        this(arch, false, STACK_ALIGNMENT, IMPLICIT_NULL_CHECK_LIMIT, INLINE_OBJECTS, supportsFP64, extensions);
+    public MetalTargetDescription(Architecture arch, boolean supportsFP64, boolean supportsFP16, boolean supportsInt64Atomics) {
+        this(arch, false, STACK_ALIGNMENT, IMPLICIT_NULL_CHECK_LIMIT, INLINE_OBJECTS, supportsFP64, supportsFP16, supportsInt64Atomics);
     }
 
-    protected MetalTargetDescription(Architecture arch, boolean isMP, int stackAlignment, int implicitNullCheckLimit, boolean inlineObjects, boolean supportsFP64, String extensions) {
+    protected MetalTargetDescription(Architecture arch, boolean isMP, int stackAlignment, int implicitNullCheckLimit, boolean inlineObjects, boolean supportsFP64, boolean supportsFP16,
+            boolean supportsInt64Atomics) {
         super(arch, isMP, stackAlignment, implicitNullCheckLimit, inlineObjects);
         this.supportsFP64 = supportsFP64;
-        this.extensions = extensions;
-        supportsInt64Atomics = extensions.contains("cl_khr_int64_base_atomics");
-        supportsF16 = extensions.contains("cl_khr_fp16");
+        this.supportsF16 = supportsFP16;
+        this.supportsInt64Atomics = supportsInt64Atomics;
     }
     //@formatter:on
 
@@ -101,10 +100,6 @@ public class MetalTargetDescription extends TargetDescription {
 
     public boolean supportsInt64Atomics() {
         return supportsInt64Atomics;
-    }
-
-    public String getExtensions() {
-        return extensions;
     }
 
     public MetalKind getMetalKind(JavaKind javaKind, int vectorLength) {

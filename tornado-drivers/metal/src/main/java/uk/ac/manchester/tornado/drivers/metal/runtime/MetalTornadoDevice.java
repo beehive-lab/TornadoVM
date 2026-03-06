@@ -46,6 +46,7 @@ import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.memory.DeviceBufferState;
@@ -79,7 +80,6 @@ import uk.ac.manchester.tornado.drivers.metal.graal.nodes.TornadoAtomicIntegerNo
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalAtomicsBuffer;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalByteArrayWrapper;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalCharArrayWrapper;
-import uk.ac.manchester.tornado.drivers.metal.mm.MetalDoubleArrayWrapper;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalFieldBuffer;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalFloatArrayWrapper;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalIntArrayWrapper;
@@ -448,6 +448,10 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
         return !isMetalPreLoadBinary(executionplanId, deviceContext, deviceFullName) && !deviceContext.isPlatformFPGA();
     }
 
+    private static TornadoDeviceFP64NotSupported unsupportedMetalFP64() {
+        return new TornadoDeviceFP64NotSupported("Metal backend does not support FP64 (double/double arrays)");
+    }
+
     private TornadoInstalledCode compileJavaForFPGAs(long executionPlanId, SchedulableTask task) {
         TornadoInstalledCode tornadoInstalledCode = compileJavaToAccelerator(executionPlanId, task);
         if (tornadoInstalledCode != null) {
@@ -473,7 +477,7 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
         } else if (type == int[].class) {
             result = new MetalIntArrayWrapper(device, batchSize, access);
         } else if (type == double[].class) {
-            result = new MetalDoubleArrayWrapper(device, batchSize, access);
+            throw unsupportedMetalFP64();
         } else if (type == short[].class) {
             result = new MetalShortArrayWrapper(device, batchSize, access);
         } else if (type == byte[].class) {
@@ -502,7 +506,7 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
         } else if (componentType == float[].class) {
             result = new MetalMultiDimArrayWrapper<>(device, (MetalDeviceContext context) -> new MetalFloatArrayWrapper(context, batchSize, access), batchSize, access);
         } else if (componentType == double[].class) {
-            result = new MetalMultiDimArrayWrapper<>(device, (MetalDeviceContext context) -> new MetalDoubleArrayWrapper(context, batchSize, access), batchSize, access);
+            throw unsupportedMetalFP64();
         } else if (componentType == long[].class) {
             result = new MetalMultiDimArrayWrapper<>(device, (MetalDeviceContext context) -> new MetalLongArrayWrapper(context, batchSize, access), batchSize, access);
         } else {
@@ -536,7 +540,7 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
             } else if (object instanceof FloatArray) {
                 result = new MetalMemorySegmentWrapper(deviceContext, batchSize, access, MetalKind.FLOAT.getSizeInBytes());
             } else if (object instanceof DoubleArray) {
-                result = new MetalMemorySegmentWrapper(deviceContext, batchSize, access, MetalKind.DOUBLE.getSizeInBytes());
+                throw unsupportedMetalFP64();
             } else if (object instanceof LongArray) {
                 result = new MetalMemorySegmentWrapper(deviceContext, batchSize, access, MetalKind.LONG.getSizeInBytes());
             } else if (object instanceof ShortArray) {
@@ -677,7 +681,7 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
         if (state.isAtomicRegionPresent()) {
             // Read for Atomics
             int eventID = state.getXPUBuffer().enqueueRead(executionPlanId, null, 0, null, false);
-            if (object instanceof AtomicInteger) {
+            if (object instanceof AtomicInteger ai) {
                 int[] arr = getAtomic().getIntBuffer();
                 int indexFromGlobalRegion = mappingAtomics.get(object);
                 ((AtomicInteger) object).set(arr[indexFromGlobalRegion]);

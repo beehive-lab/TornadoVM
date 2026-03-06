@@ -25,6 +25,7 @@ import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.SqrtNode;
 import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.nodes.memory.WriteNode;
@@ -62,8 +63,7 @@ public class MetalFP64SupportPhase extends Phase {
     /**
      * This method checks if a stamp requires double floating point precision or
      * not. Additionally, the deviceContext is used to check if double precision is
-     * supported by the target device. In Metal, a device supports double precision
-     * if the cl_khr_fp64 attribute is enabled.
+     * supported by the target device.
      * 
      * If the input stamp requires double precision and the target device does not
      * support this feature, a {@link TornadoDeviceFP64NotSupported} exception is
@@ -81,6 +81,10 @@ public class MetalFP64SupportPhase extends Phase {
 
     @Override
     protected void run(StructuredGraph graph) {
+        // Metal backend does not support FP64. Reject any graph that contains f64 values.
+        if (!deviceContext.isFP64Supported()) {
+            graph.getNodes().filter(ValueNode.class).forEach(node -> checkStampForFP64Support(node.stamp(NodeView.DEFAULT)));
+        }
 
         graph.getNodes().filter(WriteNode.class).forEach(writeNode -> checkStampForFP64Support(writeNode.getAccessStamp(NodeView.DEFAULT)));
 

@@ -30,8 +30,7 @@ import org.graalvm.compiler.phases.Phase;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP16NotSupported;
-import uk.ac.manchester.tornado.drivers.metal.MetalDevice;
-import uk.ac.manchester.tornado.drivers.metal.virtual.VirtualMetalDevice;
+import uk.ac.manchester.tornado.drivers.metal.MetalTargetDevice;
 
 /**
  * This compiler phase examines if the execution device supports half precision types
@@ -51,18 +50,7 @@ public class MetalFP16SupportPhase extends Phase {
     }
 
     protected void run(StructuredGraph graph) {
-        boolean fp16Support = false;
-        String extensions = null;
-        if (deviceContext.getDevice() instanceof MetalDevice) {
-            MetalDevice metalDevice = (MetalDevice) deviceContext.getDevice();
-            extensions = metalDevice.getDeviceExtensions();
-        } else if (deviceContext.getDevice() instanceof VirtualMetalDevice) {
-            VirtualMetalDevice metalDevice = (VirtualMetalDevice) deviceContext.getDevice();
-            extensions = metalDevice.getDeviceExtensions();
-        }
-        if (extensions != null && extensions.contains("cl_khr_fp16")) {
-            fp16Support = true;
-        }
+        boolean fp16Support = deviceContext.getDevice() instanceof MetalTargetDevice metalDevice && metalDevice.isDeviceFP16Supported();
 
         for (ReadNode readNode : graph.getNodes().filter(ReadNode.class)) {
             if (readNode.getLocationIdentity().toString().contains("VectorHalf") && !fp16Support) {

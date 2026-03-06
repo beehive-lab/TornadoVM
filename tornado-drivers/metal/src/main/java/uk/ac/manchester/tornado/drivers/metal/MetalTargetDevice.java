@@ -42,6 +42,14 @@ public interface MetalTargetDevice extends TornadoTargetDevice {
 
     boolean isDeviceDoubleFPSupported();
 
+    default boolean isDeviceFP16Supported() {
+        return false;
+    }
+
+    default boolean isDeviceInt64AtomicsSupported() {
+        return false;
+    }
+
     String getDeviceExtensions();
 
     MetalDeviceType getDeviceType();
