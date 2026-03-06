@@ -106,6 +106,7 @@ public class TestVirtualDeviceKernel extends TornadoTestBase {
     public void testVirtualDeviceKernel() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
         boolean coops = TornadoNativeArray.ARRAY_HEADER == 16;
         String kernelFile = coops ? "virtualDeviceKernelGPU.cl" : "virtualDeviceKernelGPU_uncompressed.cl";
         testVirtualDeviceKernel(kernelFile);

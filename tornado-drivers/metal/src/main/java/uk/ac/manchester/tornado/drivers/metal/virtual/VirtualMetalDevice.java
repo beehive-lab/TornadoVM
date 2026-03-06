@@ -163,7 +163,14 @@ public class VirtualMetalDevice implements MetalTargetDevice {
 
     @Override
     public int getMaxThreadsPerBlock() {
-        return (int) maxWorkGroupSize[0];
+        if (maxWorkGroupSize != null && maxWorkGroupSize.length > 0) {
+            return (int) maxWorkGroupSize[0];
+        }
+        // Fall back to maxWorkItemSizes[0] if available (from virtual device JSON)
+        if (maxWorkItemSizes != null && maxWorkItemSizes.length > 0) {
+            return (int) maxWorkItemSizes[0];
+        }
+        return 1024;
     }
 
     @Override
