@@ -109,7 +109,7 @@ public class TornadoVMInterpreter {
     private HashMap<Object, Integer> totalEvenBatchesPerObject = new HashMap<>();
     private final HashMap<Integer, Long> executionGraphHandles = new HashMap<>();
     private boolean insideCaptureRegion = false;
-    private boolean executionGraphEnabled =true;
+    private boolean executionGraphEnabled = true;
 
     private TornadoLogger logger = new TornadoLogger(this.getClass());
 
@@ -407,10 +407,10 @@ public class TornadoVMInterpreter {
                     continue;
                 }
                 if (executionGraphHandles.containsKey(graphId)) {
-                    // Graph already captured → skip entire capture region
+                    // Graph already captured: skip entire capture region
                     skipToAfterEndCapture(graphId);
                 } else {
-                    // First execution → force all lazy allocations, then capture
+                    // First execution: force all lazy allocations, then capture
                     preCompileLaunchesInCaptureRegion();
                     executeGraphBeginCapture(logBuilder, graphId);
                     insideCaptureRegion = true;
@@ -588,8 +588,7 @@ public class TornadoVMInterpreter {
         if (!interpreterDevice.supportsExecutionGraphs()) {
             throw new TornadoBailoutRuntimeException(
                     "EXECUTION_GRAPH_BEGIN_CAPTURE bytecode reached a device that does not support " +
-                            "execution graphs: " + interpreterDevice.getDeviceName() +
-                            ". This is a compiler bug — graph bytecodes should not have been emitted.");
+                            "execution graphs: " + interpreterDevice.getDeviceName());
         }
         if (TornadoOptions.LOG_BYTECODES()) {
             logBuilder.append("bc: ").append(InterpreterUtilities.debugHighLightBC(

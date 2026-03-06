@@ -96,8 +96,8 @@ public class TornadoVMGraphCompiler {
                 // Phase 2: Graph launch/capture boundary + capturable operations.
                 // EXECUTION_GRAPH_LAUNCH is emitted first, the interpreter checks
                 // whether a captured graph exists:
-                //   - Yes → replay it, skip to after END_CAPTURE
-                //   - No  → fall through into BEGIN_CAPTURE (first execution)
+                //   - Yes: replay it, skip to after END_CAPTURE
+                //   - No: fall through into BEGIN_CAPTURE (first execution)
                 tornadoVMBytecodeBuilder.executionGraphBeginCapture(graphId);
 
                 scheduleAndEmitFilteredBytecodes(tornadoVMBytecodeBuilder, graph,
