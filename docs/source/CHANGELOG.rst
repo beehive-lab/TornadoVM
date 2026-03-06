@@ -7,6 +7,39 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 
 CHANGELOG
 
+TornadoVM 3.0.0
+---------------
+24/02/26
+
+Improvements
+~~~~~~~~~~~~
+
+- `#790 <https://github.com/beehive-lab/TornadoVM/pull/790>`_: [feat] Move --intellijinit from CLI to developer-only Makefile target with dynamic backend selection
+
+Compatibility
+~~~~~~~~~~~~
+
+- `#804 <https://github.com/beehive-lab/TornadoVM/pull/804>`_: Refactor GH actions to split JDK21 and JDK25 testing, packaging and deployment 
+- `#777 <https://github.com/beehive-lab/TornadoVM/pull/777>`_: Bump org.apache.logging.log4j:log4j-core from 2.17.1 to 2.25.3
+- `#775 <https://github.com/beehive-lab/TornadoVM/pull/775>`_: [docs] Revise TornadoVM installation instructions
+- `#776 <https://github.com/beehive-lab/TornadoVM/pull/776>`_: [feat] Add new action to push default tornadovm version
+
+Bug Fixes
+~~~~~~~~~~~~
+
+- `#785 <https://github.com/beehive-lab/TornadoVM/pull/785>`_: [fix] Added scripts in dist directory to resolve issue with intellijinit
+
+Other Changes
+~~~~~~~~~~~~
+
+- `#803 <https://github.com/beehive-lab/TornadoVM/pull/803>`_: Whitelist \`TestInheritedFields\` for non-OpenCL backends
+- `#802 <https://github.com/beehive-lab/TornadoVM/pull/802>`_: [fix] Handle Windows CRLF line endings in virtual device tests and native tests & Update Makefile.mak
+- `#801 <https://github.com/beehive-lab/TornadoVM/pull/801>`_: Add GitHub workflows for JDK 25 build, deployment, and release prepar…
+- `#799 <https://github.com/beehive-lab/TornadoVM/pull/799>`_: Add JDK 25.0.2 release automation workflows
+- `#787 <https://github.com/beehive-lab/TornadoVM/pull/787>`_: [refactor] Prepare compiler and API infrastructure for Jdk25 migration 
+- `#781 <https://github.com/beehive-lab/TornadoVM/pull/781>`_: Fix OCLFieldBuffer to include inherited instance fields
+
+
 TornadoVM 2.2.0
 ---------------
 17/12/25

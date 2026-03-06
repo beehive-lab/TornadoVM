@@ -1,4 +1,4 @@
-name: Build on [push]
+name: Build & Test [JDK 21]
 
 on:
   push:

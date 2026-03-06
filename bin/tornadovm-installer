@@ -61,7 +61,7 @@ import textwrap
 
 # Configuration
 __DIRECTORY_DEPENDENCIES__ = (Path("etc") / "dependencies").resolve()
-__VERSION__ = "v2.2.0"
+__VERSION__ = "v3.0.0"
 __SUPPORTED_JDKS__ = [
     config.__JDK21__,
     config.__GRAALVM21__,

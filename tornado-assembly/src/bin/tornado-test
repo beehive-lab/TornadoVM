@@ -327,6 +327,7 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 
     ## Atomics
     "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic12",
+    "uk.ac.manchester.tornado.unittests.fields.TestInheritedFields",
 
     ## Multi-backend
     "uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends#testTwoBackendsSerial",
@@ -395,7 +396,7 @@ else:
 
 ENABLE_ASSERTIONS = "-ea "
 
-__VERSION__ = "2.2.1-dev"
+__VERSION__ = "3.0.1-dev"
 
 try:
     javaHome = os.environ["JAVA_HOME"]
