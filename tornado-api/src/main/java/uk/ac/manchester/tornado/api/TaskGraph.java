@@ -976,4 +976,9 @@ public class TaskGraph implements TaskGraphInterface {
         return this;
     }
 
+    public TaskGraph withoutCUDAStreams() {
+        taskGraphImpl.withoutCUDAStreams();
+        return this;
+    }
+
 }

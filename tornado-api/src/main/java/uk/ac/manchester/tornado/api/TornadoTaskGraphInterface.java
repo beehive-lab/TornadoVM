@@ -147,4 +147,6 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
     boolean isGridRegistered();
 
     void withCUDAStreams();
+
+    void withoutCUDAStreams();
 }

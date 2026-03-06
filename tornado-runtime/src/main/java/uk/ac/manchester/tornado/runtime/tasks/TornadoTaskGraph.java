@@ -371,6 +371,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
+    public void withoutCUDAStreams() {
+        TornadoOptions.VM_USE_DEPS = false;
+        TornadoOptions.ENABLE_PTX_MULTI_STREAM = false;
+    }
+
+    @Override
     public void withThreadInfo() {
         meta().enableThreadInfo();
     }
