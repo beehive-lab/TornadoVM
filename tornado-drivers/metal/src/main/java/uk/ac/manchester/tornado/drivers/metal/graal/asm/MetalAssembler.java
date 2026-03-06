@@ -1104,7 +1104,7 @@ public final class MetalAssembler extends Assembler {
     public static class MetalBinaryTemplate extends MetalBinaryOp {
         // @formatter:off
 
-        public static final MetalBinaryTemplate DECLARE_BYTE_ARRAY = new MetalBinaryTemplate("DECLARE_ARRAY", "byte %s[%s]");
+        public static final MetalBinaryTemplate DECLARE_BYTE_ARRAY = new MetalBinaryTemplate("DECLARE_ARRAY", "char %s[%s]");
         public static final MetalBinaryTemplate DECLARE_CHAR_ARRAY = new MetalBinaryTemplate("DECLARE_ARRAY", "char %s[%s]");
         public static final MetalBinaryTemplate DECLARE_SHORT_ARRAY = new MetalBinaryTemplate("DECLARE_ARRAY", "short %s[%s]");
         public static final MetalBinaryTemplate DECLARE_INT_ARRAY = new MetalBinaryTemplate("DECLARE_ARRAY", "int %s[%s]");
@@ -1119,7 +1119,7 @@ public final class MetalAssembler extends Assembler {
     public static final MetalBinaryTemplate NEW_PRIVATE_DOUBLE_ARRAY = new MetalBinaryTemplate("new private array double", MetalAssemblerConstants.PRIVATE_MEM_MODIFIER + " double %s[%s]");
     public static final MetalBinaryTemplate NEW_PRIVATE_LONG_ARRAY = new MetalBinaryTemplate("new private array long", MetalAssemblerConstants.PRIVATE_MEM_MODIFIER + " long %s[%s]");
     public static final MetalBinaryTemplate NEW_PRIVATE_SHORT_ARRAY = new MetalBinaryTemplate("new private array short", MetalAssemblerConstants.PRIVATE_MEM_MODIFIER + " short %s[%s]");
-    public static final MetalBinaryTemplate NEW_PRIVATE_BYTE_ARRAY = new MetalBinaryTemplate("new private array byte", MetalAssemblerConstants.PRIVATE_MEM_MODIFIER + " byte %s[%s]");
+    public static final MetalBinaryTemplate NEW_PRIVATE_BYTE_ARRAY = new MetalBinaryTemplate("new private array byte", MetalAssemblerConstants.PRIVATE_MEM_MODIFIER + " char %s[%s]");
 
     public static final MetalBinaryTemplate PRIVATE_INT_ARRAY_PTR = new MetalBinaryTemplate("private pointer array int", MetalAssemblerConstants.PRIVATE_MEM_MODIFIER + " int* %s = %s");
     public static final MetalBinaryTemplate PRIVATE_CHAR_ARRAY_PTR = new MetalBinaryTemplate("private pointer array char", MetalAssemblerConstants.PRIVATE_MEM_MODIFIER + " char* %s = %s");
@@ -1127,7 +1127,7 @@ public final class MetalAssembler extends Assembler {
     public static final MetalBinaryTemplate PRIVATE_DOUBLE_ARRAY_PTR = new MetalBinaryTemplate("private pointer array double", MetalAssemblerConstants.PRIVATE_MEM_MODIFIER + " double* %s = %s");
     public static final MetalBinaryTemplate PRIVATE_LONG_ARRAY_PTR = new MetalBinaryTemplate("private pointer array long", MetalAssemblerConstants.PRIVATE_MEM_MODIFIER + " long* %s = %s");
     public static final MetalBinaryTemplate PRIVATE_SHORT_ARRAY_PTR = new MetalBinaryTemplate("private pointer array short", MetalAssemblerConstants.PRIVATE_MEM_MODIFIER + " short* %s = %s");
-    public static final MetalBinaryTemplate PRIVATE_BYTE_ARRAY_PTR = new MetalBinaryTemplate("private pointer array byte", MetalAssemblerConstants.PRIVATE_MEM_MODIFIER + " byte* %s = %s");
+    public static final MetalBinaryTemplate PRIVATE_BYTE_ARRAY_PTR = new MetalBinaryTemplate("private pointer array byte", MetalAssemblerConstants.PRIVATE_MEM_MODIFIER + " char* %s = %s");
 
     public static final MetalBinaryTemplate PRIVATE_INT_ARRAY_PTR_COPY = new MetalBinaryTemplate("private pointer copy array int", MetalAssemblerConstants.PRIVATE_MEM_MODIFIER + " int* %s = ((" + MetalAssemblerConstants.PRIVATE_MEM_MODIFIER + " int *) %s)");
     public static final MetalBinaryTemplate PRIVATE_CHAR_ARRAY_PTR_COPY = new MetalBinaryTemplate("private pointer copy array char", MetalAssemblerConstants.PRIVATE_MEM_MODIFIER + " char* %s = ((" + MetalAssemblerConstants.PRIVATE_MEM_MODIFIER + " char *) %s)");
@@ -1135,7 +1135,7 @@ public final class MetalAssembler extends Assembler {
     public static final MetalBinaryTemplate PRIVATE_DOUBLE_ARRAY_PTR_COPY = new MetalBinaryTemplate("private pointer copy array double", MetalAssemblerConstants.PRIVATE_MEM_MODIFIER + " double* %s = ((" + MetalAssemblerConstants.PRIVATE_MEM_MODIFIER + " double *) %s)");
     public static final MetalBinaryTemplate PRIVATE_LONG_ARRAY_PTR_COPY = new MetalBinaryTemplate("private pointer copy array long", MetalAssemblerConstants.PRIVATE_MEM_MODIFIER + " long* %s = ((" + MetalAssemblerConstants.PRIVATE_MEM_MODIFIER + " long *) %s)");
     public static final MetalBinaryTemplate PRIVATE_SHORT_ARRAY_PTR_COPY = new MetalBinaryTemplate("private pointer copy array short", MetalAssemblerConstants.PRIVATE_MEM_MODIFIER + " short* %s = ((" + MetalAssemblerConstants.PRIVATE_MEM_MODIFIER + " short *) %s)");
-    public static final MetalBinaryTemplate PRIVATE_BYTE_ARRAY_PTR_COPY = new MetalBinaryTemplate("private pointer copy array byte", MetalAssemblerConstants.PRIVATE_MEM_MODIFIER + " byte* %s = ((" + MetalAssemblerConstants.PRIVATE_MEM_MODIFIER + " byte *) %s)");
+    public static final MetalBinaryTemplate PRIVATE_BYTE_ARRAY_PTR_COPY = new MetalBinaryTemplate("private pointer copy array byte", MetalAssemblerConstants.PRIVATE_MEM_MODIFIER + " char* %s = ((" + MetalAssemblerConstants.PRIVATE_MEM_MODIFIER + " char *) %s)");
 
         public static final MetalBinaryTemplate NEW_LOCAL_FLOAT_ARRAY = new MetalBinaryTemplate("local memory array float", MetalAssemblerConstants.LOCAL_MEM_MODIFIER + " float %s[%s]");
         public static final MetalBinaryTemplate NEW_LOCAL_INT_ARRAY = new MetalBinaryTemplate("local memory array int", MetalAssemblerConstants.LOCAL_MEM_MODIFIER + " int %s[%s]");
@@ -1143,7 +1143,8 @@ public final class MetalAssembler extends Assembler {
         public static final MetalBinaryTemplate NEW_LOCAL_LONG_ARRAY = new MetalBinaryTemplate("local memory array long", MetalAssemblerConstants.LOCAL_MEM_MODIFIER + " long %s[%s]");
         public static final MetalBinaryTemplate NEW_LOCAL_SHORT_ARRAY = new MetalBinaryTemplate("local memory array short", MetalAssemblerConstants.LOCAL_MEM_MODIFIER + " short %s[%s]");
         public static final MetalBinaryTemplate NEW_LOCAL_CHAR_ARRAY = new MetalBinaryTemplate("local memory array char", MetalAssemblerConstants.LOCAL_MEM_MODIFIER + " char %s[%s]");
-        public static final MetalBinaryTemplate NEW_LOCAL_BYTE_ARRAY = new MetalBinaryTemplate("local memory array byte", MetalAssemblerConstants.LOCAL_MEM_MODIFIER + " byte %s[%s]");
+        public static final MetalBinaryTemplate NEW_LOCAL_BYTE_ARRAY = new MetalBinaryTemplate("local memory array byte", MetalAssemblerConstants.LOCAL_MEM_MODIFIER + " char %s[%s]");
+        public static final MetalBinaryTemplate NEW_LOCAL_HALF_ARRAY = new MetalBinaryTemplate("local memory array half", MetalAssemblerConstants.LOCAL_MEM_MODIFIER + " half %s[%s]");
         // @formatter:on
         private final String template;
 

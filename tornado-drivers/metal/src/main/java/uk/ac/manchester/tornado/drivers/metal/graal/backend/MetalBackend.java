@@ -254,7 +254,7 @@ public class MetalBackend extends XPUBackend<MetalProviders> implements FrameMap
         if (op == MetalAssembler.MetalBinaryTemplate.PRIVATE_LONG_ARRAY_PTR)   return "long";
         if (op == MetalAssembler.MetalBinaryTemplate.PRIVATE_SHORT_ARRAY_PTR)  return "short";
         if (op == MetalAssembler.MetalBinaryTemplate.PRIVATE_CHAR_ARRAY_PTR)   return "char";
-        if (op == MetalAssembler.MetalBinaryTemplate.PRIVATE_BYTE_ARRAY_PTR)   return "uchar";
+        if (op == MetalAssembler.MetalBinaryTemplate.PRIVATE_BYTE_ARRAY_PTR)   return "char";
         return null;
     }
 

@@ -72,6 +72,14 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
         this.arrayTemplate = MetalKind.resolveTemplateType(elementKind);
     }
 
+    public LocalArrayNode(MetalArchitecture.MetalMemoryBase memoryRegister, MetalKind overrideKind, MetalAssembler.MetalBinaryTemplate template, ValueNode length) {
+        super(TYPE, StampFactory.forKind(JavaKind.Object));
+        this.memoryRegister = memoryRegister;
+        this.length = length;
+        this.kind = overrideKind;
+        this.arrayTemplate = template;
+    }
+
     public MetalArchitecture.MetalMemoryBase getMemoryRegister() {
         return memoryRegister;
     }

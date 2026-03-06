@@ -86,6 +86,7 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.drivers.metal.graal.MetalArchitecture;
+import uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssembler;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalKind;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalUnary;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.AtomAddNodeTemplate;
@@ -324,6 +325,32 @@ public class MetalGraphBuilderPlugins {
         });
     }
 
+    private static void registerByteLocalArray(Registration r, JavaKind returnedJavaKind) {
+        r.register(new InvocationPlugin("allocateByteLocalArray", Receiver.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                receiver.get(true);
+                jdk.vm.ci.meta.MetaAccessProvider metaAccess = b.getMetaAccess();
+                jdk.vm.ci.meta.ResolvedJavaType resolvedElementType = metaAccess.lookupJavaType(byte.class);
+                LocalArrayNode localArrayNode = new LocalArrayNode(MetalArchitecture.localSpace, resolvedElementType, size);
+                b.push(returnedJavaKind, localArrayNode);
+                return true;
+            }
+        });
+    }
+
+    private static void registerHalfFloatLocalArray(Registration r, JavaKind returnedJavaKind) {
+        r.register(new InvocationPlugin("allocateHalfFloatLocalArray", Receiver.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                receiver.get(true);
+                LocalArrayNode localArrayNode = new LocalArrayNode(MetalArchitecture.localSpace, MetalKind.HALF, MetalAssembler.MetalBinaryTemplate.NEW_LOCAL_HALF_ARRAY, size);
+                b.push(returnedJavaKind, localArrayNode);
+                return true;
+            }
+        });
+    }
+
     private static void localArraysPlugins(Registration r) {
         JavaKind returnedJavaKind = JavaKind.Object;
 
@@ -338,6 +365,11 @@ public class MetalGraphBuilderPlugins {
 
         elementType = MetalKind.DOUBLE.asJavaKind();
         registerDoubleLocalArray(r, returnedJavaKind, elementType);
+
+        registerByteLocalArray(r, returnedJavaKind);
+
+        returnedJavaKind = JavaKind.fromJavaClass(short.class);
+        registerHalfFloatLocalArray(r, returnedJavaKind);
     }
 
     private static void registerKernelContextPlugins(InvocationPlugins plugins) {
