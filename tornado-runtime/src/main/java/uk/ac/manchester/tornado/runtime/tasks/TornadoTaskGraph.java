@@ -1199,14 +1199,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         free();
     }
 
-    public void destroyExecutionGraphs() {
-        if (vm != null) {
-            vm.destroyExecutionGraphs();
-        } else {
-            System.out.println("[DEBUG] vm is null for taskGraph: " + this.getTaskGraphName());
-        }
-    }
-
     private void freeIOObjects() {
         for (StreamingObject inputStreamObject : inputModesObjects) {
             if (streamOutObjects.contains(inputStreamObject.object)) {
@@ -1233,7 +1225,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             return;
         }
 
-        //vm.destroyExecutionGraphs();
+        vm.destroyExecutionGraphs();
         freeIOObjects();
         meta().getXPUDevice().getDeviceContext().reset(executionPlanId);
     }

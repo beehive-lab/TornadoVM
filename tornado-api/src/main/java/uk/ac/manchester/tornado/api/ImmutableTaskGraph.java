@@ -70,10 +70,6 @@ public class ImmutableTaskGraph {
         taskGraph.freeDeviceMemory();
     }
 
-    void destroyExecutionGraphs() {
-        taskGraph.destroyExecutionGraphs();
-    }
-
     void transferToHost(Object... objects) {
         taskGraph.syncRuntimeTransferToHost(objects);
     }

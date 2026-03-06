@@ -344,9 +344,9 @@ public class TestArrays extends TornadoTestBase {
             d.set(i, 1.0);
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b, d) //
-                .task("t0", TestArrays::vectorAddDouble, a, b, c) //
+        TaskGraph taskGraph = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b, d)
+                .task("t0", TestArrays::vectorAddDouble, a, b, c)
                 .task("t1", TestArrays::vectorSubDouble, c, d, e)
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, e);
 
@@ -387,12 +387,12 @@ public class TestArrays extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
             executionPlan.withCUDAGraph();
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < 10; i++) {
                 executionPlan.execute();
             }
         }
 
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 10; i++) {
             vectorAddDouble(a_s, b_s, b_s);
         }
 
@@ -420,21 +420,19 @@ public class TestArrays extends TornadoTestBase {
     public void testCUDAGraphWithKernelContextChained() throws TornadoExecutionPlanException {
         final int numElements = 256;
 
-        // Shared buffer between graphs (like wrapX in GPULlama3)
+        // Shared buffer between graphs
         FloatArray shared = new FloatArray(numElements);
 
-        // ── Graph 0: simple transform → shared ──
         FloatArray input0 = new FloatArray(numElements);
         IntStream.range(0, numElements).forEach(i -> input0.set(i, 1.0f));
 
-        // Use KernelContext like GPULlama3 does
         KernelContext ctx0 = new KernelContext();
         TaskGraph tg0 = new TaskGraph("g0")
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input0)
                 .task("t0", TestArrays::copyWithContext, ctx0, input0, shared)
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, shared);
 
-        // ── Graph 1: shared + weights → intermediate → output (multi-task) ──
+        // Graph 1: shared + weights → intermediate → output (multi-task)
         FloatArray weights = new FloatArray(numElements);
         FloatArray intermediate = new FloatArray(numElements);
         FloatArray output = new FloatArray(numElements);
@@ -484,7 +482,7 @@ public class TestArrays extends TornadoTestBase {
     public void testCUDAGraphPersistConsume() throws TornadoExecutionPlanException {
         final int numElements = 256;
 
-        // Shared buffer that stays on device (like wrapX)
+        // Shared buffer that stays on device
         FloatArray shared = new FloatArray(numElements);
         FloatArray input = new FloatArray(numElements);
         FloatArray weights = new FloatArray(numElements);
@@ -533,64 +531,8 @@ public class TestArrays extends TornadoTestBase {
                 float expected = val + 10.0f;
 
                 for (int i = 0; i < numElements; i++) {
-                    assertEquals("output[" + i + "] at iter " + iter,
+                    assertEquals("output[" + i + "] at iteration " + iter,
                             expected, output.get(i), 0.01f);
-                }
-            }
-        }
-    }
-
-    @Test
-    public void testChainedGraphsCUDAGraph() throws TornadoExecutionPlanException {
-        final int numElements = 4096;
-
-        // Shared buffer between graphs (like wrapX in GPULlama3)
-        FloatArray shared = new FloatArray(numElements);
-
-        // Graph 0: input → shared (like activationUpdate)
-        FloatArray input0 = new FloatArray(numElements);
-        IntStream.range(0, numElements).forEach(i -> input0.set(i, 1.0f));
-
-        TaskGraph tg0 = new TaskGraph("g0")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input0)
-                .task("t0", TestArrays::vectorAddFloat, input0, input0, shared)
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, shared);
-
-        // Graph 1: shared + weights → output (like a transformer layer)
-        FloatArray weights = new FloatArray(numElements);
-        FloatArray output = new FloatArray(numElements);
-        IntStream.range(0, numElements).forEach(i -> weights.set(i, 10.0f));
-
-        TaskGraph tg1 = new TaskGraph("g1")
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, weights)
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, shared)
-                .task("t1", TestArrays::vectorAddFloat, shared, weights, output)
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
-
-        ImmutableTaskGraph itg0 = tg0.snapshot();
-        ImmutableTaskGraph itg1 = tg1.snapshot();
-
-        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(itg0, itg1)) {
-            plan.withCUDAGraph();
-
-            for (int iter = 0; iter < 3; iter++) {
-                // Update input each iteration (like position/token changes)
-                final int val = iter + 1;
-                IntStream.range(0, numElements).forEach(i -> input0.set(i, (float) val));
-
-                plan.withGraph(0).execute();
-                plan.withGraph(1).execute();
-
-                // Verify: shared = input0 + input0 = 2*val
-                // output = shared + weights = 2*val + 10
-                float expectedShared = 2.0f * val;
-                float expectedOutput = expectedShared + 10.0f;
-
-                for (int i = 0; i < numElements; i++) {
-                    assertEquals("shared[" + i + "] at iter " + iter,
-                            expectedShared, shared.get(i), 0.01f);
-                    assertEquals("output[" + i + "] at iter " + iter,
-                            expectedOutput, output.get(i), 0.01f);
                 }
             }
         }

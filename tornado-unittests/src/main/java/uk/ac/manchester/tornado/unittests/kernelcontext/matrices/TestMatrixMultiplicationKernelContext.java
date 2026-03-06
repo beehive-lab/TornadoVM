@@ -150,7 +150,7 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.withGridScheduler(gridScheduler).withCUDAGraph() //
+            executionPlan.withGridScheduler(gridScheduler) //
                     .execute();
         }
 

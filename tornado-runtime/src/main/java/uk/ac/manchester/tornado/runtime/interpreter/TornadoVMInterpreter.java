@@ -294,10 +294,7 @@ public class TornadoVMInterpreter {
                 for (int i = 0; i < argSize; i++) {
                     args[i] = bytecodeResult.getInt();
                 }
-                if (isWarmup) {
-                    continue;
-                }
-                if (!executionGraphHandles.isEmpty()) {
+                if (isWarmup || !executionGraphHandles.isEmpty()) {
                     continue;
                 }
                 lastEvent = executeAlloc(logBuilder, args, sizeBatch);
@@ -404,8 +401,6 @@ public class TornadoVMInterpreter {
                 if (executionGraphHandles.containsKey(graphId)) {
                     lastEvent = executeGraphLaunch(logBuilder, graphId);
                 }
-                // Graph not yet captured — fall through to BEGIN_CAPTURE
-
             } else if (op == TornadoVMBytecodes.CUDA_GRAPH_BEGIN_CAPTURE.value()) {
                 final int graphId = bytecodeResult.getInt();
                 if (isWarmup) {
@@ -416,7 +411,7 @@ public class TornadoVMInterpreter {
                     skipToAfterEndCapture(graphId);
                 } else {
                     // First execution → force all lazy allocations, then capture
-                    preCompileLaunchesInCaptureRegion(logBuilder);
+                    preCompileLaunchesInCaptureRegion();
                     executeGraphBeginCapture(logBuilder, graphId);
                     insideCaptureRegion = true;
                 }
@@ -487,8 +482,8 @@ public class TornadoVMInterpreter {
         return barrier;
     }
 
-    private void preCompileLaunchesInCaptureRegion(StringBuilder logBuilder) {
-        int savedPosition = bytecodeResult.position();  // save without corrupting mark
+    private void preCompileLaunchesInCaptureRegion() {
+        int savedPosition = bytecodeResult.position();
 
         while (bytecodeResult.hasRemaining()) {
             final byte op = bytecodeResult.get();
@@ -516,7 +511,7 @@ public class TornadoVMInterpreter {
             }
         }
 
-        bytecodeResult.position(savedPosition);  // restore without touching mark
+        bytecodeResult.position(savedPosition);
     }
 
     private void skipToAfterEndCapture(int graphId) {
@@ -535,7 +530,6 @@ public class TornadoVMInterpreter {
 
     public void destroyExecutionGraphs() {
         for (Map.Entry<Integer, Long> entry : executionGraphHandles.entrySet()) {
-           // System.out.println("[free() Function] Destroying execution graph " + entry.getKey());
             interpreterDevice.destroyExecutionGraph(entry.getValue());
         }
         executionGraphHandles.clear();
@@ -622,8 +616,6 @@ public class TornadoVMInterpreter {
         int event = interpreterDevice.launchExecutionGraph(
                 graphExecutionContext.getExecutionPlanId(),
                 executionGraphHandles.get(graphId));
-
-        //interpreterDevice.sync(graphExecutionContext.getExecutionPlanId());
 
         return event;
     }
@@ -1166,7 +1158,6 @@ public class TornadoVMInterpreter {
         } else {
             lastEvent = interpreterDevice.enqueueMarker(graphExecutionContext.getExecutionPlanId(), waitList);
         }
-        //int lastEvent = interpreterDevice.enqueueMarker(graphExecutionContext.getExecutionPlanId(), waitList);
 
         resetEventIndexes(eventId);
         return lastEvent;

@@ -339,10 +339,6 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         return new WithFreeDeviceMemory(this);
     }
 
-    public void destroyAllExecutionGraphs() {
-        tornadoExecutor.destroyAllExecutionGraphs();
-    }
-
     /**
      * Use a {@link GridScheduler} for thread dispatch. The same GridScheduler will
      * be applied to all tasks within the executor. Note that the grid-scheduler API
@@ -639,7 +635,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     }
 
     public TornadoExecutionPlan withCUDAGraph() {
-        // include a check to verify that the BACKEND is PTX
+        //TODO: include a check to verify that the BACKEND is PTX
         tornadoExecutor.withCUDAGraph();
         return new WithCUDAGraph(this);
     }
