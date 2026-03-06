@@ -143,4 +143,8 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
     void setLastExecutedTaskGraph(TornadoTaskGraphInterface lastExecutedTaskGraph);
 
     boolean isGridRegistered();
+
+    void withCUDAStreams();
+
+    void withoutCUDAStreams();
 }

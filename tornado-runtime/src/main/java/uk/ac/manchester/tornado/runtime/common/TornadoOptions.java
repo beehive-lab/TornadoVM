@@ -438,7 +438,16 @@ public class TornadoOptions {
     /**
      * Enable VM Dependency Path. Disabled by default. This option is only for testing.
      */
-    public static final boolean VM_USE_DEPS = getBooleanValue("tornado.vm.deps", FALSE);
+    public static boolean VM_USE_DEPS = getBooleanValue("tornado.vm.deps", FALSE);
+
+    /**
+     * Enable PTX multi-stream execution. When enabled, H2D, COMPUTE, and D2H
+     * operations are routed to separate CUDA streams with event-based
+     * cross-stream synchronization. Requires tornado.vm.deps=true.
+     * This "two-step" requirement is selected to accommodate isolation between
+     * dep logic and multi-stream for correctness verification.
+     */
+    public static boolean ENABLE_PTX_MULTI_STREAM = getBooleanValue("tornado.ptx.multistream", FALSE);
 
     /**
      * Enable OpenCL Profiling. Enabled by default.
