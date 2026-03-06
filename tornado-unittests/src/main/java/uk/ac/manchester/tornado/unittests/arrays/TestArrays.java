@@ -35,6 +35,7 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
@@ -329,6 +330,9 @@ public class TestArrays extends TornadoTestBase {
 
     @Test
     public void testVectorAdditionDoubleCUDAGraph() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
         final int numElements = 4096;
         DoubleArray a = new DoubleArray(numElements);
         DoubleArray b = new DoubleArray(numElements);
@@ -366,6 +370,9 @@ public class TestArrays extends TornadoTestBase {
 
     @Test
     public void testVectorAdditionDoubleUpdateCUDAGraph() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
         final int numElements = 4096;
         DoubleArray a = new DoubleArray(numElements);
         DoubleArray b = new DoubleArray(numElements);
@@ -418,6 +425,9 @@ public class TestArrays extends TornadoTestBase {
 
     @Test
     public void testCUDAGraphWithKernelContextChained() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
         final int numElements = 256;
 
         // Shared buffer between graphs
@@ -480,6 +490,9 @@ public class TestArrays extends TornadoTestBase {
 
     @Test
     public void testCUDAGraphPersistConsume() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
         final int numElements = 256;
 
         // Shared buffer that stays on device
