@@ -1,6 +1,8 @@
 {
   "deviceName" : "testDevice",
   "doubleFPSupport" : true,
+  "fp16Support" : true,
+  "int64AtomicsSupport" : false,
   "maxWorkItemSizes" : [8192, 8192, 8192],
   "deviceAddressBits" : 64,
   "deviceType" : "CL_DEVICE_TYPE_CPU",

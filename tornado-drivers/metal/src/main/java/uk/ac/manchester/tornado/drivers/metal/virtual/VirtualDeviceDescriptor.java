@@ -35,8 +35,11 @@ public class VirtualDeviceDescriptor {
     private final MetalDeviceType deviceType;
     private final String deviceExtensions;
     private final int availableProcessors;
+    private final boolean fp16Support;
+    private final boolean int64AtomicsSupport;
 
-    public VirtualDeviceDescriptor(String deviceName, boolean doubleFPSupport, long[] maxWorkItemSizes, int deviceAddressBits, MetalDeviceType deviceType, String deviceExtensions, int availableProcessors) {
+    public VirtualDeviceDescriptor(String deviceName, boolean doubleFPSupport, long[] maxWorkItemSizes, int deviceAddressBits, MetalDeviceType deviceType, String deviceExtensions, int availableProcessors,
+            boolean fp16Support, boolean int64AtomicsSupport) {
         this.deviceName = deviceName;
         this.doubleFPSupport = doubleFPSupport;
         this.maxWorkItemSizes = maxWorkItemSizes;
@@ -44,6 +47,8 @@ public class VirtualDeviceDescriptor {
         this.deviceType = deviceType;
         this.deviceExtensions = deviceExtensions;
         this.availableProcessors = availableProcessors;
+        this.fp16Support = fp16Support;
+        this.int64AtomicsSupport = int64AtomicsSupport;
     }
 
     public String getDeviceName() {
@@ -72,5 +77,13 @@ public class VirtualDeviceDescriptor {
 
     public int getAvailableProcessors() {
         return availableProcessors;
+    }
+
+    public boolean getFp16Support() {
+        return fp16Support;
+    }
+
+    public boolean getInt64AtomicsSupport() {
+        return int64AtomicsSupport;
     }
 }

@@ -52,6 +52,8 @@ public class VirtualMetalDevice implements MetalTargetDevice {
     private final int deviceAddressBits;
     private final String deviceExtensions;
     private final int availableProcessors;
+    private final boolean fp16Support;
+    private final boolean int64AtomicsSupport;
 
     private static final int INIT_VALUE = -1;
     private MetalDeviceContextInterface deviceContex;
@@ -75,6 +77,8 @@ public class VirtualMetalDevice implements MetalTargetDevice {
         this.deviceType = info.deviceType();
         this.deviceExtensions = info.getDeviceExtensions();
         this.availableProcessors = info.getAvailableProcessors();
+        this.fp16Support = info.getFp16Support();
+        this.int64AtomicsSupport = info.getInt64AtomicsSupport();
     }
 
     public long getDevicePointer() {
@@ -169,6 +173,16 @@ public class VirtualMetalDevice implements MetalTargetDevice {
 
     public boolean isDeviceDoubleFPSupported() {
         return doubleFPConfig;
+    }
+
+    @Override
+    public boolean isDeviceFP16Supported() {
+        return fp16Support;
+    }
+
+    @Override
+    public boolean isDeviceInt64AtomicsSupported() {
+        return int64AtomicsSupport;
     }
 
     public long getDeviceSingleFPConfig() {

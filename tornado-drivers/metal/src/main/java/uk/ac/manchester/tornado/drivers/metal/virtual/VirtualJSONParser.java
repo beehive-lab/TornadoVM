@@ -45,6 +45,8 @@ public class VirtualJSONParser {
     private enum JsonKey {
         deviceName,
         doubleFPSupport,
+        fp16Support,
+        int64AtomicsSupport,
         maxWorkItemSizes,
         deviceAddressBits,
         deviceType,
@@ -73,8 +75,15 @@ public class VirtualJSONParser {
         MetalDeviceType deviceType = (MetalDeviceType) getEntryForKey(JsonKey.deviceType, jsonEntries);
         String deviceExtensions = (String) getEntryForKey(JsonKey.deviceExtensions, jsonEntries);
         int availableProcessors = (int) getEntryForKey(JsonKey.availableProcessors, jsonEntries);
+        boolean fp16Support = getBooleanEntry(jsonEntries, JsonKey.fp16Support, true);
+        boolean int64AtomicsSupport = getBooleanEntry(jsonEntries, JsonKey.int64AtomicsSupport, false);
 
-        return new VirtualDeviceDescriptor(deviceName, doubleFPSupport, maxWorkItemSizes, deviceAddressBits, deviceType, deviceExtensions, availableProcessors);
+        return new VirtualDeviceDescriptor(deviceName, doubleFPSupport, maxWorkItemSizes, deviceAddressBits, deviceType, deviceExtensions, availableProcessors, fp16Support, int64AtomicsSupport);
+    }
+
+    private static boolean getBooleanEntry(Map<JsonKey, String> jsonEntries, JsonKey jsonKey, boolean defaultValue) {
+        String value = jsonEntries.get(jsonKey);
+        return value == null ? defaultValue : Boolean.parseBoolean(value);
     }
 
     private static Object getEntryForKey(JsonKey jsonKey, Map<JsonKey, String> jsonEntries) {

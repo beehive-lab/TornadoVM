@@ -1,6 +1,8 @@
 {
 	"deviceName" : "testDevice",
 	"doubleFPSupport" : true,
+	"fp16Support" : true,
+	"int64AtomicsSupport" : false,
 	"maxWorkItemSizes" : [1024, 1024, 64],
 	"deviceAddressBits" : 64,
 	"deviceType" : "CL_DEVICE_TYPE_GPU",
