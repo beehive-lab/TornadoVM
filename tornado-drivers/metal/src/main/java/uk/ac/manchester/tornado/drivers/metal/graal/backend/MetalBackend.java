@@ -66,6 +66,7 @@ import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalBinary;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalLIRStmt;
+import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalNullary;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Local;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -262,7 +263,59 @@ public class MetalBackend extends XPUBackend<MetalProviders> implements FrameMap
         final int expectedVariables = lir.numVariables();
         final AtomicInteger variableCount = new AtomicInteger();
 
-        // Pass 0: identify ULONG variables that are targets of device-memory loads.
+        // Pass 0a: identify ULONG device-pointer variables via dataflow.
+        // Seed: AssignStmt where RHS is a MetalNullary.Parameter containing "(tornado_ptr_t)".
+        // Propagate: ADD/SUB of pointer + anything, and simple copies of pointer vars.
+        // All other ULONG variables must be declared as "ulong", not "tornado_ptr_t".
+        Set<Variable> ulongPointerVars = new HashSet<>();
+        for (int b : lir.linearScanOrder()) {
+            for (LIRInstruction instr : lir.getLIRforBlock(lir.getBlockById(b))) {
+                if (instr instanceof MetalLIRStmt.AssignStmt assign
+                        && assign.getResult() instanceof Variable lhsVar
+                        && lhsVar.getPlatformKind() == MetalKind.ULONG) {
+                    Value rhs = assign.getExpr();
+                    if (rhs instanceof MetalNullary.Parameter param
+                            && param.toString().contains("(tornado_ptr_t)")) {
+                        ulongPointerVars.add(lhsVar);
+                    }
+                }
+            }
+        }
+        // Propagate pointer-ness (two rounds to handle any backward ordering)
+        for (int round = 0; round < 2; round++) {
+            for (int b : lir.linearScanOrder()) {
+                for (LIRInstruction instr : lir.getLIRforBlock(lir.getBlockById(b))) {
+                    Variable lhsVar = null;
+                    Value rhsVal = null;
+                    if (instr instanceof MetalLIRStmt.AssignStmt assign
+                            && assign.getResult() instanceof Variable v
+                            && v.getPlatformKind() == MetalKind.ULONG) {
+                        lhsVar = v;
+                        rhsVal = assign.getExpr();
+                    } else if (instr instanceof MetalLIRStmt.MoveStmt move
+                            && move.getResult() instanceof Variable v
+                            && v.getPlatformKind() == MetalKind.ULONG) {
+                        lhsVar = v;
+                        rhsVal = move.getExpr();
+                    }
+                    if (lhsVar == null) continue;
+                    if (rhsVal instanceof Variable rhsVar && ulongPointerVars.contains(rhsVar)) {
+                        ulongPointerVars.add(lhsVar);
+                    } else if (rhsVal instanceof MetalBinary.Expr bin) {
+                        MetalAssembler.MetalBinaryOp op = bin.getOpcode();
+                        if (op == MetalAssembler.MetalBinaryOp.ADD || op == MetalAssembler.MetalBinaryOp.SUB) {
+                            boolean xIsPtr = bin.getX() instanceof Variable xv && ulongPointerVars.contains(xv);
+                            boolean yIsPtr = bin.getY() instanceof Variable yv && ulongPointerVars.contains(yv);
+                            if (xIsPtr || yIsPtr) {
+                                ulongPointerVars.add(lhsVar);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Pass 0b: identify ULONG variables that are targets of device-memory loads.
         // These hold integer byte offsets, NOT device pointers. They must be declared as
         // "ulong" so that tornado_ptr_t + ulong (pointer + integer) arithmetic is valid.
         Set<Variable> ulongIntLoadVars = new HashSet<>();
@@ -329,7 +382,14 @@ public class MetalBackend extends XPUBackend<MetalProviders> implements FrameMap
                     if (value instanceof Variable variable) {
                         if (variable.toString() != null) {
                             if (!ulongIntLoadVars.contains(variable) && !derivedPrivatePtrs.containsKey(variable)) {
-                                addVariableDef(kindToVariable, variable);
+                                // ULONG variables that are not device pointers must be declared
+                                // as "ulong" (integer), not "tornado_ptr_t" (device pointer).
+                                if (variable.getPlatformKind() == MetalKind.ULONG
+                                        && !ulongPointerVars.contains(variable)) {
+                                    ulongIntLoadVars.add(variable);
+                                } else {
+                                    addVariableDef(kindToVariable, variable);
+                                }
                             }
                             variableCount.incrementAndGet();
                         }

@@ -42,6 +42,8 @@ public class MetalDevice implements MetalTargetDevice {
 
     private static final int INIT_VALUE = -1;
     private static final int MAX_BUFFER_SIZE = 8192;
+    private static final boolean DEVICE_SUPPORTS_FP16 = true;
+    private static final boolean DEVICE_SUPPORTS_INT64_ATOMICS = false;
 
     private final long devicePtr;
     private final int index;
@@ -353,6 +355,16 @@ public class MetalDevice implements MetalTargetDevice {
 
     public boolean isDeviceDoubleFPSupported() {
         return false;
+    }
+
+    @Override
+    public boolean isDeviceFP16Supported() {
+        return DEVICE_SUPPORTS_FP16;
+    }
+
+    @Override
+    public boolean isDeviceInt64AtomicsSupported() {
+        return DEVICE_SUPPORTS_INT64_ATOMICS;
     }
 
     private static final long FP_DENORM        = 1 << 0;

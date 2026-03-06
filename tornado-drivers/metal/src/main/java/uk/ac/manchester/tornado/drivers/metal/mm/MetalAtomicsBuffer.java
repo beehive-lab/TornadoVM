@@ -84,7 +84,8 @@ public class MetalAtomicsBuffer implements XPUBuffer {
 
     @Override
     public int enqueueRead(long executionPlanId, Object reference, long hostOffset, int[] events, boolean useDeps) {
-        return deviceContext.readBuffer(executionPlanId, deviceContext.getMemoryManager().toAtomicAddress(), OFFSET, 4 * atomicsList.length, atomicsList, 0, events);
+        long addr = deviceContext.getMemoryManager().toAtomicAddress();
+        return deviceContext.readBuffer(executionPlanId, addr, OFFSET, 4 * atomicsList.length, atomicsList, 0, events);
     }
 
     @Override
@@ -93,7 +94,8 @@ public class MetalAtomicsBuffer implements XPUBuffer {
         if (atomicsList.length == 0) {
             return null;
         }
-        return new ArrayList<>(deviceContext.enqueueWriteBuffer(executionPlanId, deviceContext.getMemoryManager().toAtomicAddress(), OFFSET, 4 * atomicsList.length, atomicsList, 0, events));
+        long addr = deviceContext.getMemoryManager().toAtomicAddress();
+        return new ArrayList<>(deviceContext.enqueueWriteBuffer(executionPlanId, addr, OFFSET, 4 * atomicsList.length, atomicsList, 0, events));
     }
 
     @Override
