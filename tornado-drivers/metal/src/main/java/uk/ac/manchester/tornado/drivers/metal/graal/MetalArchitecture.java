@@ -152,6 +152,27 @@ public class MetalArchitecture extends Architecture {
         return sb.toString();
     }
 
+    public String getABIPretty() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < abiRegisters.length; i++) {
+            sb.append("\n    ");
+            if (abiRegisters[i] instanceof MetalMemoryBase reg) {
+                sb.append(reg.getDeclaration());
+                if (reg.getMemorySpace() == MetalMemorySpace.LOCAL) {
+                    sb.append(String.format(" [[threadgroup(%d)]]", i));
+                } else {
+                    sb.append(String.format(" [[buffer(%d)]]", i));
+                }
+            } else {
+                sb.append(abiRegisters[i].getDeclaration());
+            }
+            if (i < abiRegisters.length - 1) {
+                sb.append(",");
+            }
+        }
+        return sb.toString();
+    }
+
     public String getCallingConvention() {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < abiRegisters.length; i++) {

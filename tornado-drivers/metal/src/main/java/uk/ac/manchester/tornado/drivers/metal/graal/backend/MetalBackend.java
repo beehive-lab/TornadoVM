@@ -609,16 +609,16 @@ public class MetalBackend extends XPUBackend<MetalProviders> implements FrameMap
             asm.emitLine("}");
             asm.emitLine("");
 
-            asm.emit("%s void %s(%s", MetalAssemblerConstants.KERNEL_MODIFIER, methodName, architecture.getABI());
+            asm.emit("%s void %s(%s", MetalAssemblerConstants.KERNEL_MODIFIER, methodName, architecture.getABIPretty());
             int nextBufferIdx = emitMethodParameters(asm, method, incomingArguments, true);
             // Metal system values for thread/threadgroup positions and sizes.
             // These are always declared so reduction kernels can use them.
-            asm.emit(", uint3 _thread_position_in_grid [[thread_position_in_grid]]");
-            asm.emit(", uint3 _thread_position_in_threadgroup [[thread_position_in_threadgroup]]");
-            asm.emit(", uint3 _threadgroup_position_in_grid [[threadgroup_position_in_grid]]");
-            asm.emit(", uint3 _local_size [[threads_per_threadgroup]]");
-            asm.emit(", device uint* _global_sizes [[buffer(%d)]]", nextBufferIdx);
-            asm.emitLine(")");
+            asm.emit(",\n    uint3 _thread_position_in_grid [[thread_position_in_grid]]");
+            asm.emit(",\n    uint3 _thread_position_in_threadgroup [[thread_position_in_threadgroup]]");
+            asm.emit(",\n    uint3 _threadgroup_position_in_grid [[threadgroup_position_in_grid]]");
+            asm.emit(",\n    uint3 _local_size [[threads_per_threadgroup]]");
+            asm.emit(",\n    device uint* _global_sizes [[buffer(%d)]]", nextBufferIdx);
+            asm.emitLine("\n)");
 
             asm.beginScope();
             emitVariableDefs(crb, asm, lir);
@@ -679,11 +679,10 @@ public class MetalBackend extends XPUBackend<MetalProviders> implements FrameMap
                     if (javaKind.isPrimitive() || isHalfFloat(javaType)) {
                     final AllocatableValue param = incomingArguments.getArgument(i);
                     MetalKind kind = (MetalKind) param.getPlatformKind();
-                    asm.emit(", ");
                     // MSL kernel scalar parameters must use constant address space reference
                     // (bound via setBytes: on the encoder side)
                     String paramName = getParameterName(locals[i]);
-                    asm.emit("constant %s& %s [[buffer(%d)]]", kind.toString(), paramName, metalArgIndex);
+                    asm.emit(",\n    constant %s& %s [[buffer(%d)]]", kind.toString(), paramName, metalArgIndex);
                     metalArgIndex++;
                 } else {
                     // Skip the kernel context object
@@ -694,10 +693,9 @@ public class MetalBackend extends XPUBackend<MetalProviders> implements FrameMap
                     if (javaType.toJavaName().equals(AtomicInteger.class.getName())) {
                         continue;
                     }
-                    asm.emit(", ");
                     String parameterName = getParameterName(locals[i]);
                     // Use centralized constant for the global memory qualifier instead of a hard-coded literal
-                    asm.emit("%s %s *%s [[buffer(%d)]]", MetalAssemblerConstants.GLOBAL_MEM_MODIFIER, "uchar", parameterName, metalArgIndex);
+                    asm.emit(",\n    %s %s *%s [[buffer(%d)]]", MetalAssemblerConstants.GLOBAL_MEM_MODIFIER, "uchar", parameterName, metalArgIndex);
                     metalArgIndex++;
                 }
             } else {
