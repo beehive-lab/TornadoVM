@@ -824,6 +824,10 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.freeDeviceMemory();
     }
 
+    void destroyExecutionGraphs() {
+        taskGraphImpl.destroyExecutionGraphs();
+    }
+
     void syncRuntimeTransferToHost(Object... objects) {
         taskGraphImpl.syncRuntimeTransferToHost(objects);
     }

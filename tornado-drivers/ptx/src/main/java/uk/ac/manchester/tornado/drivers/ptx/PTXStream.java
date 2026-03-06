@@ -45,6 +45,7 @@ public class PTXStream {
     private final PTXEventPool ptxEventPool;
     private boolean isDestroy;
     private boolean capturing = false;
+   // private boolean graphModeActive = false;
 
     public PTXStream() {
         streamPool = cuCreateStream();
@@ -202,6 +203,16 @@ public class PTXStream {
     }
 
     public int enqueueBarrier(long executionPlanId, int[] events) {
+//        if (graphModeActive) {
+//            // Events created during capture are invalid for host-side sync.
+//            // Stream sync after cuGraphLaunch is sufficient — the graph
+//            // internally orders all its operations.
+//            System.out.println("[BARRIER] graphModeActive=true, using stream sync");
+//            cuStreamSynchronize(streamPool);
+//            return registerEvent(EventDescriptor.DESC_SYNC_BARRIER);
+//        }
+//        System.out.println("[BARRIER] graphModeActive=false, using event sync on " +
+//                (events != null ? events.length : 0) + " events");
         waitForEvents(events);
         return registerEvent(EventDescriptor.DESC_SYNC_BARRIER);
     }
@@ -389,6 +400,7 @@ public class PTXStream {
             throw new RuntimeException("Failed to begin capture. Error: " + result);
         }
         capturing = true;
+    //    graphModeActive = true;
     }
 
     public long endGraphCaptureAndInstantiate() {
@@ -396,6 +408,7 @@ public class PTXStream {
         byte[] graphWrapper = cuStreamEndCapture(streamPool);
         byte[] graphExecWrapper = cuGraphInstantiate(graphWrapper);
         cuGraphDestroy(graphWrapper);
+        ptxEventPool.reset();
         return nativeHandleToLong(graphExecWrapper);
     }
 

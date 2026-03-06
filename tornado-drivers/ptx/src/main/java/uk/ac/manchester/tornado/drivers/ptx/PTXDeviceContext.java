@@ -28,6 +28,7 @@ import static uk.ac.manchester.tornado.api.utils.TornadoAPIUtils.isBoxedPrimitiv
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -70,6 +71,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     private boolean wasReset;
     private final Set<Long> executionIDs;
     private PTXKernelStackFrame pendingKernelContextWrite;
+    //private final List<PTXKernelStackFrame> pendingKernelContextWrites = new ArrayList<>();
 
     /**
      * Map table to represent the compiled-code per execution plan. Each entry in the execution plan has its own
@@ -309,6 +311,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
             updateProfilerKernelContextWrite(executionPlanId, kernelContextWriteEventId, meta, ptxKernelArgs);
         } else {
             pendingKernelContextWrite = ptxKernelArgs;
+          //  pendingKernelContextWrites.add(ptxKernelArgs);
         }
         long address = ptxKernelArgs.toAbsoluteAddress();
         args.putLong(address);
@@ -627,6 +630,10 @@ public class PTXDeviceContext implements TornadoDeviceContext {
             pendingKernelContextWrite.enqueueWrite(executionPlanId);
             pendingKernelContextWrite = null;
         }
+//        for (PTXKernelStackFrame pending : pendingKernelContextWrites) {
+//            pending.enqueueWrite(executionPlanId);
+//        }
+//        pendingKernelContextWrites.clear();
 
         return handle;
     }

@@ -109,6 +109,7 @@ public class TornadoVMInterpreter {
     private HashMap<Object, Integer> totalEvenBatchesPerObject = new HashMap<>();
     private final HashMap<Integer, Long> executionGraphHandles = new HashMap<>();
     private boolean insideCaptureRegion = false;
+    private boolean executionGraphEnabled =true;
 
     private TornadoLogger logger = new TornadoLogger(this.getClass());
 
@@ -400,7 +401,9 @@ public class TornadoVMInterpreter {
                 if (isWarmup) {
                     continue;
                 }
-                lastEvent = executeGraphLaunch(logBuilder, graphId);
+                if (executionGraphHandles.containsKey(graphId)) {
+                    lastEvent = executeGraphLaunch(logBuilder, graphId);
+                }
                 // Graph not yet captured — fall through to BEGIN_CAPTURE
 
             } else if (op == TornadoVMBytecodes.CUDA_GRAPH_BEGIN_CAPTURE.value()) {
@@ -425,7 +428,6 @@ public class TornadoVMInterpreter {
                 }
                 insideCaptureRegion = false;
                 executeGraphEndCapture(logBuilder, graphId);
-
             } else if (op == TornadoVMBytecodes.CUDA_GRAPH_DESTROY.value()) {
                 final int graphId = bytecodeResult.getInt();
                 if (isWarmup) {
@@ -533,7 +535,7 @@ public class TornadoVMInterpreter {
 
     public void destroyExecutionGraphs() {
         for (Map.Entry<Integer, Long> entry : executionGraphHandles.entrySet()) {
-            System.out.println("[free() Function] Destroying execution graph " + entry.getKey());
+           // System.out.println("[free() Function] Destroying execution graph " + entry.getKey());
             interpreterDevice.destroyExecutionGraph(entry.getValue());
         }
         executionGraphHandles.clear();
@@ -617,9 +619,13 @@ public class TornadoVMInterpreter {
             logBuilder.append("bc: ").append(InterpreterUtilities.debugHighLightBC(
                     "EXECUTION_GRAPH_LAUNCH")).append(" graphId=").append(graphId).append("\n");
         }
-        return interpreterDevice.launchExecutionGraph(
+        int event = interpreterDevice.launchExecutionGraph(
                 graphExecutionContext.getExecutionPlanId(),
                 executionGraphHandles.get(graphId));
+
+        //interpreterDevice.sync(graphExecutionContext.getExecutionPlanId());
+
+        return event;
     }
 
     private void initWaitEventList() {
@@ -1152,7 +1158,15 @@ public class TornadoVMInterpreter {
             DebugInterpreter.logBarrier(eventId, logBuilder);
         }
 
-        int lastEvent = interpreterDevice.enqueueMarker(graphExecutionContext.getExecutionPlanId(), waitList);
+        int lastEvent;
+        if (executionGraphEnabled) {
+            // Events created during graph capture are invalid for host sync.
+            // cuStreamSynchronize after cuGraphLaunch waits for graph completion.
+            lastEvent = interpreterDevice.enqueueMarker(graphExecutionContext.getExecutionPlanId());
+        } else {
+            lastEvent = interpreterDevice.enqueueMarker(graphExecutionContext.getExecutionPlanId(), waitList);
+        }
+        //int lastEvent = interpreterDevice.enqueueMarker(graphExecutionContext.getExecutionPlanId(), waitList);
 
         resetEventIndexes(eventId);
         return lastEvent;
