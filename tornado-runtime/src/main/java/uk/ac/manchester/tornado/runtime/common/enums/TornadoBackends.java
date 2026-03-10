@@ -39,7 +39,7 @@ public enum TornadoBackends {
 
     PTX(PTX_BACKEND_PRIORITY, "implemented"), //
     OpenCL(OPENCL_BACKEND_PRIORITY, "implemented"), //
-    Metal(METAL_BACKEND_PRIORITY, "work in progress"), //
+    Metal(METAL_BACKEND_PRIORITY, "implemented"), //
     SPIRV(SPIRV_BACKEND_PRIORITY, "implemented"); //
 
     private final int priority;
