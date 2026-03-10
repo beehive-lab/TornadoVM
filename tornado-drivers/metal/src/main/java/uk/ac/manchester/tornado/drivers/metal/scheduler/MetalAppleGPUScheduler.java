@@ -121,8 +121,17 @@ public class MetalAppleGPUScheduler extends MetalKernelScheduler {
      * Returns the largest multiple of {@code SIMD_GROUP_SIZE} that is ≤ {@code maxBlockSize} and
      * evenly divides {@code globalWorkSize}. Falls back to the largest plain divisor if no
      * SIMD-aligned candidate exists.
+     *
+     * <p>When {@code maxBlockSize == globalWorkSize} the cap is quartered before selection.
+     * This mirrors the behaviour of every other TornadoVM GPU scheduler and is required for
+     * {@code @Reduce} correctness: TornadoVM pre-sizes the partial-sum array based on
+     * {@code numGroups = globalWork / localWork}; if {@code localWork == globalWork} only one
+     * group would execute and the partial-sum array would be under-populated.
      */
     private int calculateGroupSize(long maxBlockSize, long globalWorkSize) {
+        if (maxBlockSize == globalWorkSize) {
+            maxBlockSize /= 4;
+        }
         long cap = Math.min(maxBlockSize, globalWorkSize);
 
         // Prefer largest multiple of SIMD_GROUP_SIZE that divides globalWorkSize
