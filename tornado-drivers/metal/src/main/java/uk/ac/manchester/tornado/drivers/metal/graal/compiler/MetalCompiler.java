@@ -82,6 +82,7 @@ import uk.ac.manchester.tornado.drivers.metal.MetalDeviceContext;
 import uk.ac.manchester.tornado.drivers.metal.MetalTargetDescription;
 import uk.ac.manchester.tornado.drivers.metal.graal.MetalProviders;
 import uk.ac.manchester.tornado.drivers.metal.graal.MetalSuitesProvider;
+import uk.ac.manchester.tornado.drivers.metal.graal.MetalUtils;
 import uk.ac.manchester.tornado.drivers.metal.graal.backend.MetalBackend;
 import uk.ac.manchester.tornado.drivers.metal.graal.compiler.MetalLIRGenerationPhase.LIRGenerationContext;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
@@ -373,7 +374,7 @@ public class MetalCompiler {
         OptimisticOptimizations optimisticOpts = OptimisticOptimizations.ALL;
         ProfilingInfo profilingInfo = resolvedMethod.getProfilingInfo();
 
-        String kernelName = MetalDeviceContext.checkKernelName(resolvedMethod.getName());
+        String kernelName = MetalDeviceContext.checkKernelName(MetalUtils.makeMethodName(resolvedMethod));
         MetalCompilationResult kernelCompResult = new MetalCompilationResult(task.getId(), kernelName, taskMeta, backend);
         CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
 

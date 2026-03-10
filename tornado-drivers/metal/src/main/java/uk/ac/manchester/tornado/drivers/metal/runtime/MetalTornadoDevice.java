@@ -73,6 +73,7 @@ import uk.ac.manchester.tornado.drivers.metal.MetalTargetDevice;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalDeviceType;
 import uk.ac.manchester.tornado.drivers.metal.graal.MetalInstalledCode;
 import uk.ac.manchester.tornado.drivers.metal.graal.MetalProviders;
+import uk.ac.manchester.tornado.drivers.metal.graal.MetalUtils;
 import uk.ac.manchester.tornado.drivers.metal.graal.backend.MetalBackend;
 import uk.ac.manchester.tornado.drivers.metal.graal.compiler.MetalCompilationResult;
 import uk.ac.manchester.tornado.drivers.metal.graal.compiler.MetalCompiler;
@@ -257,8 +258,9 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
         final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
 
         // Return the code from the cache
-        if (!task.shouldCompile() && deviceContext.isCached(executionPlanId, task.getId(), resolvedMethod.getName())) {
-            return deviceContext.getInstalledCode(executionPlanId, task.getId(), resolvedMethod.getName());
+        String kernelName = MetalUtils.makeMethodName(resolvedMethod);
+        if (!task.shouldCompile() && deviceContext.isCached(executionPlanId, task.getId(), kernelName)) {
+            return deviceContext.getInstalledCode(executionPlanId, task.getId(), kernelName);
         }
 
         // copy meta data into task

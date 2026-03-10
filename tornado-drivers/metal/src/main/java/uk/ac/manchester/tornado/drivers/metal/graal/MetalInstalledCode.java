@@ -272,9 +272,16 @@ public class MetalInstalledCode extends InstalledCode implements TornadoInstalle
                 continue;
             }
 
-            // Metal: use setArgRef for device buffer parameters, setArg for scalar inline data
-            if (argInfo != null && argInfo.type == MetalKernel.KernelArgInfo.ArgType.BUFFER && arg.getValue() instanceof Long) {
-                // Device buffer - arg value is a Long containing the MTLBuffer pointer
+            // Metal: use setArgRef for device buffer parameters, setArg for scalar inline data.
+            // We use the isReferenceType() flag set by the TornadoVM bytecode interpreter
+            // (true = PUSH_REFERENCE_ARGUMENT = device buffer, false = PUSH_CONSTANT_ARGUMENT
+            // = scalar). We must NOT rely on argInfo.type for this decision: Metal reflection
+            // reports both device-array pointers and constant-scalar parameters (e.g.
+            // constant long& val [[buffer(N)]]) as MTLArgumentTypeBuffer, so reflection alone
+            // cannot distinguish them. Calling setArgRef on a scalar value crashes with
+            // objc_retain on a garbage pointer.
+            if (arg.isReferenceType()) {
+                // Device buffer — arg value is a Long containing the native MTLBuffer pointer.
                 kernel.setArgRef(nativeArgIndex, (Long) arg.getValue());
             } else if (isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
                 buffer.clear();
