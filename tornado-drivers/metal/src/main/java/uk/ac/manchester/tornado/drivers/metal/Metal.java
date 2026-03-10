@@ -23,8 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.metal;
 
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
-
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,11 +33,7 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.metal.graal.MetalInstalledCode;
 import uk.ac.manchester.tornado.drivers.metal.runtime.MetalTornadoDevice;
-import uk.ac.manchester.tornado.drivers.metal.virtual.VirtualDeviceDescriptor;
-import uk.ac.manchester.tornado.drivers.metal.virtual.VirtualJSONParser;
-import uk.ac.manchester.tornado.drivers.metal.virtual.VirtualMetalPlatform;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
@@ -60,51 +54,46 @@ public class Metal {
     public static final int METAL_FALSE = 0;
 
     static {
-        if (VIRTUAL_DEVICE_ENABLED) {
-            initializeVirtualPlatform();
-        } else {
-            // Initialize physical platform
-            try {
-                // Loading JNI Metal library. Prefer the SDK-installed native lib under $TORNADO_SDK/lib
-                final String tornadoSdk = System.getenv("TORNADO_SDK");
-                if (tornadoSdk != null) {
-                    final String sdkLib = tornadoSdk + "/lib/libtornado-objc-metal.dylib";
-                    try {
-                        System.load(sdkLib);
-                        nativeAvailable = true;
-                    } catch (UnsatisfiedLinkError ex) {
-                        // Fall back to system library lookup
-                        System.loadLibrary(Metal.METAL_JNI_LIBRARY);
-                        nativeAvailable = true;
-                    }
-                } else {
-                    // Fall back to system library lookup when SDK not set
+        try {
+            // Loading JNI Metal library. Prefer the SDK-installed native lib under $TORNADO_SDK/lib
+            final String tornadoSdk = System.getenv("TORNADO_SDK");
+            if (tornadoSdk != null) {
+                final String sdkLib = tornadoSdk + "/lib/libtornado-objc-metal.dylib";
+                try {
+                    System.load(sdkLib);
+                    nativeAvailable = true;
+                } catch (UnsatisfiedLinkError ex) {
+                    // Fall back to system library lookup
                     System.loadLibrary(Metal.METAL_JNI_LIBRARY);
                     nativeAvailable = true;
                 }
-            } catch (final UnsatisfiedLinkError e) {
-                // Native JNI not available in this environment. Mark as unavailable and continue so the
-                // runtime can decide a fallback (e.g., deopt to sequential execution).
-                nativeAvailable = false;
-            } catch (final Throwable e) {
-                // Any other failure loading native bindings — mark unavailable.
+            } else {
+                // Fall back to system library lookup when SDK not set
+                System.loadLibrary(Metal.METAL_JNI_LIBRARY);
+                nativeAvailable = true;
+            }
+        } catch (final UnsatisfiedLinkError e) {
+            // Native JNI not available in this environment. Mark as unavailable and continue so the
+            // runtime can decide a fallback (e.g., deopt to sequential execution).
+            nativeAvailable = false;
+        } catch (final Throwable e) {
+            // Any other failure loading native bindings — mark unavailable.
+            nativeAvailable = false;
+        }
+
+        if (nativeAvailable) {
+            try {
+                initialise();
+            } catch (final TornadoRuntimeException e) {
+                // If initialisation failed, mark native as unavailable and continue.
                 nativeAvailable = false;
             }
 
-            if (nativeAvailable) {
-                try {
-                    initialise();
-                } catch (final TornadoRuntimeException e) {
-                    // If initialisation failed, mark native as unavailable and continue.
-                    nativeAvailable = false;
-                }
-
-                // add a shutdown hook to free-up all Metal resources on VM exit
-                Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                    Thread.currentThread().setName("Metal-Cleanup-Thread");
-                    Metal.cleanup();
-                }));
-            }
+            // add a shutdown hook to free-up all Metal resources on VM exit
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                Thread.currentThread().setName("Metal-Cleanup-Thread");
+                Metal.cleanup();
+            }));
         }
     }
 
@@ -133,17 +122,6 @@ public class Metal {
 
     public static int getNumPlatforms() {
         return platforms.size();
-    }
-
-    private static void initializeVirtualPlatform() {
-        if (!initialised) {
-            VirtualDeviceDescriptor info = VirtualJSONParser.getDeviceDescriptor();
-
-            VirtualMetalPlatform platform = new VirtualMetalPlatform(info);
-            platforms.add(platform);
-
-            initialised = true;
-        }
     }
 
     public static void initialise() {
