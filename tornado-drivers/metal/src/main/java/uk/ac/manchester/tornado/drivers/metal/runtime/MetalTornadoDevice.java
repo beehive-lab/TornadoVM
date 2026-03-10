@@ -295,14 +295,7 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
 
             profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
             // Compile the code
-            MetalInstalledCode installedCode;
-            if (MetalBackend.isDeviceAnFPGAAccelerator(deviceContext)) {
-                // A) for FPGA
-                installedCode = deviceContext.installCode(executionPlanId, result.getId(), result.getName(), result.getTargetCode(), task.meta().isPrintKernelEnabled());
-            } else {
-                // B) for CPU multi-core or GPU
-                installedCode = deviceContext.installCode(executionPlanId, result);
-            }
+            MetalInstalledCode installedCode = deviceContext.installCode(executionPlanId, result);
             profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
             profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
 
@@ -330,14 +323,7 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
         try {
             final byte[] source = Files.readAllBytes(path);
 
-            MetalInstalledCode installedCode;
-            if (MetalBackend.isDeviceAnFPGAAccelerator(deviceContext)) {
-                // A) for FPGA
-                installedCode = deviceContext.installCode(executionPlanId, task.getId(), executable.getEntryPoint(), source, task.meta().isPrintKernelEnabled());
-            } else {
-                // B) for CPU multi-core or GPU
-                installedCode = deviceContext.installCode(executionPlanId, executable.meta(), task.getId(), executable.getEntryPoint(), source);
-            }
+            MetalInstalledCode installedCode = deviceContext.installCode(executionPlanId, executable.meta(), task.getId(), executable.getEntryPoint(), source);
             return installedCode;
         } catch (IOException e) {
             e.printStackTrace();
@@ -375,9 +361,7 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public boolean isFullJITMode(long executionPlanId, SchedulableTask task) {
-        final MetalDeviceContextInterface deviceContext = getDeviceContext();
-        final String deviceFullName = getFullTaskIdDevice(task);
-        return (!isMetalPreLoadBinary(executionPlanId, deviceContext, deviceFullName) && deviceContext.isPlatformFPGA());
+        return false;
     }
 
     @Override
@@ -439,35 +423,19 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
         return TornadoAtomicIntegerNode.globalAtomicsParameters.containsKey(task.meta().getCompiledResolvedJavaMethod());
     }
 
-    private boolean isJITTaskForFGPA(long executionPlanId, SchedulableTask task) {
+    private boolean isJITTask(long executionPlanId, SchedulableTask task) {
         final MetalDeviceContextInterface deviceContext = getDeviceContext();
         final String deviceFullName = getFullTaskIdDevice(task);
-        return !isMetalPreLoadBinary(executionPlanId, deviceContext, deviceFullName) && deviceContext.isPlatformFPGA();
-    }
-
-    private boolean isJITTaskForGPUsAndCPUs(long executionplanId, SchedulableTask task) {
-        final MetalDeviceContextInterface deviceContext = getDeviceContext();
-        final String deviceFullName = getFullTaskIdDevice(task);
-        return !isMetalPreLoadBinary(executionplanId, deviceContext, deviceFullName) && !deviceContext.isPlatformFPGA();
+        return !isMetalPreLoadBinary(executionPlanId, deviceContext, deviceFullName);
     }
 
     private static TornadoDeviceFP64NotSupported unsupportedMetalFP64() {
         return new TornadoDeviceFP64NotSupported("Metal backend does not support FP64 (double/double arrays)");
     }
 
-    private TornadoInstalledCode compileJavaForFPGAs(long executionPlanId, SchedulableTask task) {
-        TornadoInstalledCode tornadoInstalledCode = compileJavaToAccelerator(executionPlanId, task);
-        if (tornadoInstalledCode != null) {
-            return loadPreCompiledBinaryForTask(executionPlanId, task);
-        }
-        return null;
-    }
-
     @Override
     public TornadoInstalledCode installCode(long executionPlanId, SchedulableTask task) {
-        if (isJITTaskForFGPA(executionPlanId, task)) {
-            return compileJavaForFPGAs(executionPlanId, task);
-        } else if (isJITTaskForGPUsAndCPUs(executionPlanId, task)) {
+        if (isJITTask(executionPlanId, task)) {
             return compileJavaToAccelerator(executionPlanId, task);
         }
         return loadPreCompiledBinaryForTask(executionPlanId, task);

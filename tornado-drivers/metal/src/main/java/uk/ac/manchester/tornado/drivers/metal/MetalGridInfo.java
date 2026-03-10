@@ -23,8 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.metal;
 
-import static uk.ac.manchester.tornado.drivers.metal.scheduler.MetalFPGAScheduler.DEFAULT_LOCAL_WORK_SIZE;
-
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.drivers.common.GridInfo;
@@ -38,24 +36,11 @@ public class MetalGridInfo implements GridInfo {
         this.localWork = localWork;
     }
 
-    private boolean checkFPGADefaultLocalWorkGroup() {
-        if (Arrays.equals(localWork, DEFAULT_LOCAL_WORK_SIZE)) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     @Override
     public boolean checkGridDimensions() {
-        if (deviceContext.isPlatformFPGA()) {
-            return checkFPGADefaultLocalWorkGroup();
-        } else {
-            long[] blockMaxWorkGroupSize = deviceContext.getDevice().getDeviceMaxWorkGroupSize();
-            long maxWorkGroupSize = Arrays.stream(blockMaxWorkGroupSize).sum();
-            long totalThreads = Arrays.stream(localWork).reduce(1, (a, b) -> a * b);
-
-            return totalThreads <= maxWorkGroupSize;
-        }
+        long[] blockMaxWorkGroupSize = deviceContext.getDevice().getDeviceMaxWorkGroupSize();
+        long maxWorkGroupSize = Arrays.stream(blockMaxWorkGroupSize).sum();
+        long totalThreads = Arrays.stream(localWork).reduce(1, (a, b) -> a * b);
+        return totalThreads <= maxWorkGroupSize;
     }
 }

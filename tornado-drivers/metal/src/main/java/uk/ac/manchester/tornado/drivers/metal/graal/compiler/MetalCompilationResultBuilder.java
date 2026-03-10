@@ -240,7 +240,7 @@ public class MetalCompilationResultBuilder extends CompilationResultBuilder {
     }
 
     public boolean shouldRemoveLoop() {
-        return (isParallel() && deviceContext.isPlatformFPGA());
+        return false;
     }
 
     public boolean isKernel() {

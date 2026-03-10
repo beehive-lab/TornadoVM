@@ -23,8 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.metal.scheduler;
 
-import java.util.Arrays;
-
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
@@ -41,10 +39,6 @@ public abstract class MetalKernelScheduler {
 
     protected double min;
     protected double max;
-
-    public final String WARNING_FPGA_THREAD_LOCAL = "[TornadoVM Metal] Warning: TornadoVM changed the user-defined local size to: " + ((getDefaultLocalWorkGroup() != null)
-            ? Arrays.toString(getDefaultLocalWorkGroup())
-            : "null") + ".";
 
     public static final String WARNING_THREAD_LOCAL = "[TornadoVM Metal] Warning: TornadoVM changed the user-defined local size to null. Now, the Metal driver will select the best configuration.";
 
@@ -134,15 +128,9 @@ public abstract class MetalKernelScheduler {
             MetalGridInfo gridInfo = new MetalGridInfo(deviceContext, local);
             boolean checkedDimensions = gridInfo.checkGridDimensions();
             if (!checkedDimensions) {
-                if (deviceContext.isPlatformFPGA()) {
-                    System.out.println(WARNING_FPGA_THREAD_LOCAL);
-                    grid.setLocalWork(64, 1, 1);
-                    grid.setNumberOfWorkgroupsToNull();
-                } else {
-                    System.out.println(WARNING_THREAD_LOCAL);
-                    grid.setLocalWorkToNull();
-                    grid.setNumberOfWorkgroupsToNull();
-                }
+                System.out.println(WARNING_THREAD_LOCAL);
+                grid.setLocalWorkToNull();
+                grid.setNumberOfWorkgroupsToNull();
             }
         }
     }

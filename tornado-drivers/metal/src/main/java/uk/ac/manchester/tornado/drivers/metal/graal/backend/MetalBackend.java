@@ -128,10 +128,6 @@ public class MetalBackend extends XPUBackend<MetalProviders> implements FrameMap
         architecture = (MetalArchitecture) target.arch;
     }
 
-    public static boolean isDeviceAnFPGAAccelerator(MetalDeviceContextInterface deviceContext) {
-        return deviceContext.isPlatformFPGA();
-    }
-
     @Override
     public String decodeDeopt(long value) {
         return BackendDeopt.decodeDeopt(value, getProviders());

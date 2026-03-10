@@ -44,7 +44,7 @@ import uk.ac.manchester.tornado.drivers.metal.MetalProgram;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalByteBuffer;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalKernelStackFrame;
 import uk.ac.manchester.tornado.drivers.metal.runtime.MetalTornadoDevice;
-import uk.ac.manchester.tornado.drivers.metal.scheduler.MetalGenericGPUScheduler;
+import uk.ac.manchester.tornado.drivers.metal.scheduler.MetalAppleGPUScheduler;
 import uk.ac.manchester.tornado.drivers.metal.scheduler.MetalKernelScheduler;
 import uk.ac.manchester.tornado.drivers.metal.scheduler.MetalScheduler;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
@@ -76,7 +76,7 @@ public class MetalInstalledCode extends InstalledCode implements TornadoInstalle
         this.code = code;
         this.deviceContext = deviceContext;
         this.scheduler = MetalScheduler.create(deviceContext);
-        this.DEFAULT_SCHEDULER = new MetalGenericGPUScheduler(deviceContext);
+        this.DEFAULT_SCHEDULER = new MetalAppleGPUScheduler(deviceContext);
         this.kernel = kernel;
         this.program = program;
         valid = kernel != null;
