@@ -63,7 +63,6 @@ public class TestFields extends TornadoTestBase {
 
     @Test
     public void testFields01() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.METAL);
         final int N = 1024;
         Foo foo = new Foo(N);
 
@@ -84,7 +83,7 @@ public class TestFields extends TornadoTestBase {
 
     @Test
     public void testFields02() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.METAL);
+
         final int N = 1024;
         Foo foo = new Foo(N);
         foo.initRandom();
@@ -105,8 +104,6 @@ public class TestFields extends TornadoTestBase {
 
     @Test
     public void testFields03() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.METAL);
-
         final int N = 1024;
         Bar bar = new Bar(N, 15);
 
@@ -126,7 +123,7 @@ public class TestFields extends TornadoTestBase {
 
     @Test
     public void testFieldsPartialCopyout() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.METAL);
+        
         final int N = 1024;
         Foo foo = new Foo(N);
         foo.initRandom();
@@ -148,7 +145,7 @@ public class TestFields extends TornadoTestBase {
 
     @Test
     public void testFieldsLazyCopyout() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.METAL);
+        
         final int N = 1024;
         Foo foo = new Foo(N);
         foo.initRandom();
@@ -196,7 +193,7 @@ public class TestFields extends TornadoTestBase {
         // before flushing the command list. Check SPIRVObjectWrapper::deserialise and
         // SPIRVTornadoDevice::flush.
         assertNotBackend(TornadoVMBackendType.SPIRV);
-        assertNotBackend(TornadoVMBackendType.METAL);
+        
 
         B b = new B();
         final A a = new A(b);
@@ -224,7 +221,7 @@ public class TestFields extends TornadoTestBase {
         // before flushing the command list. Check SPIRVObjectWrapper::deserialise and
         // SPIRVTornadoDevice::flush.
         assertNotBackend(TornadoVMBackendType.SPIRV);
-        assertNotBackend(TornadoVMBackendType.METAL);
+        
 
 
         B b = new B();
@@ -248,7 +245,7 @@ public class TestFields extends TornadoTestBase {
 
     @Test
     public void testSetNestedArray() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.METAL);
+        
 
         B b = new B();
         final A a = new A(b);
