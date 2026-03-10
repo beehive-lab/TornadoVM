@@ -46,7 +46,7 @@ public enum MetalBuildStatus {
             case -1 -> MetalBuildStatus.METAL_BUILD_NONE;
             case -2 -> MetalBuildStatus.METAL_BUILD_ERROR;
             case -3 -> MetalBuildStatus.METAL_BUILD_IN_PROGRESS;
-            default -> null;
+            default -> MetalBuildStatus.METAL_BUILD_UNKNOWN;
         };
     }
 
