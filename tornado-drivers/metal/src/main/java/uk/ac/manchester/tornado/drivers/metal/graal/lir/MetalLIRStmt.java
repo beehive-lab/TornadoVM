@@ -132,7 +132,7 @@ public class MetalLIRStmt {
             asm.space();
             asm.assign();
             asm.space();
-            asm.emit("convert_float((float) ");
+            asm.emit("(float)(");
             asm.emitValue(crb, halfValue);
             asm.emit(")");
             asm.delimiter();
@@ -859,11 +859,12 @@ public class MetalLIRStmt {
 
         private void emitAtomicAddStore(MetalCompilationResultBuilder crb, MetalAssembler asm) {
             asm.indent();
-            asm.emit("atomic_fetch_add_explicit((device atomic_float*) ");
+            // Use CAS-loop helper (portable, no atomic_float needed)
+            asm.emit("tornado_atomic_add_float((device atomic_uint*) ");
             address.emit(crb, asm);
             asm.emit(", ");
             asm.emitValue(crb, rhs);
-            asm.emit(", memory_order_relaxed)");
+            asm.emit(")");
             asm.delimiter();
             asm.eol();
         }
@@ -1256,6 +1257,196 @@ public class MetalLIRStmt {
                 asm.emitValue(crb, prg);
             }
 
+        }
+    }
+
+    @Opcode("CAST_COMPRESSED")
+    public static class CastCompressedStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<CastCompressedStmt> TYPE = LIRInstructionClass.create(CastCompressedStmt.class);
+
+        @Def
+        protected Value compressed;
+        @Use
+        protected Value address;
+
+        public CastCompressedStmt(Value compressed, Value address) {
+            super(TYPE);
+            this.compressed = compressed;
+            this.address = address;
+        }
+
+        @Override
+        public void emitCode(MetalCompilationResultBuilder crb, MetalAssembler asm) {
+            // reads a 4-byte compressed OOP from the field address
+            // uint_var = *((device uint *) ulong_address);
+            asm.indent();
+            asm.emitValue(crb, compressed);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emit("*((device uint *)");
+            asm.space();
+            asm.emitValue(crb, address);
+            asm.emit(")");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
+    @Opcode("DECOMPRESS_POINTER")
+    public static class DecompressPointerStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<DecompressPointerStmt> TYPE = LIRInstructionClass.create(DecompressPointerStmt.class);
+
+        @Def
+        protected Value decompressed;
+        @Use
+        protected Value compressed;
+
+        public DecompressPointerStmt(Value decompressed, Value compressed) {
+            super(TYPE);
+            this.decompressed = decompressed;
+            this.compressed = compressed;
+        }
+
+        @Override
+        public void emitCode(MetalCompilationResultBuilder crb, MetalAssembler asm) {
+            // decompresses a 4-byte compressed OOP into a 64-bit relative offset
+            // The kernel will then compute: base + decompressed to get the absolute address
+            // ulong_var = ((ulong) uint_var) << 3;
+            asm.indent();
+            asm.emitValue(crb, decompressed);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emit("((ulong)");
+            asm.space();
+            asm.emitValue(crb, compressed);
+            asm.emit(")");
+            asm.space();
+            asm.emit("<< 3");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
+    /**
+     * dp4a where b is in threadgroup (local) memory — no ARRAY_HEADER, no device cast for b.
+     * Result = c + a[header+offsetA+i] * b[offsetB+i] for i in 0..3
+     */
+    @Opcode("DP4A_LOCAL")
+    public static class Dp4aLocalMemStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<Dp4aLocalMemStmt> TYPE = LIRInstructionClass.create(Dp4aLocalMemStmt.class);
+
+        private static final int ARRAY_HEADER = 16;
+
+        @Def
+        protected AllocatableValue result;
+        @Use
+        protected Value a;
+        @Use
+        protected Value offsetA;
+        @Use
+        protected Value b;
+        @Use
+        protected Value offsetB;
+        @Use
+        protected Value c;
+
+        public Dp4aLocalMemStmt(AllocatableValue result, Value a, Value offsetA, Value b, Value offsetB, Value c) {
+            super(TYPE);
+            this.result = result;
+            this.a = a;
+            this.offsetA = offsetA;
+            this.b = b;
+            this.offsetB = offsetB;
+            this.c = c;
+        }
+
+        @Override
+        public void emitCode(MetalCompilationResultBuilder crb, MetalAssembler asm) {
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emitValue(crb, c);
+            for (int i = 0; i < 4; i++) {
+                asm.emit(" + (int)((device char*)");
+                asm.emitValue(crb, a);
+                asm.emit(")[" + ARRAY_HEADER + " + ");
+                asm.emitValue(crb, offsetA);
+                asm.emit(" + " + i + "] * (int)");
+                asm.emitValue(crb, b);
+                asm.emit("[");
+                asm.emitValue(crb, offsetB);
+                asm.emit(" + " + i + "]");
+            }
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
+    /**
+     * Emits a 4-element signed-byte dot product (dp4a) for the Metal backend.
+     * Metal has no native dp4a instruction, so this unrolls the 4-way multiply-add.
+     * Result = c + a[header+offsetA+0]*b[header+offsetB+0] + ... (3 more elements)
+     */
+    @Opcode("DP4A")
+    public static class Dp4aStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<Dp4aStmt> TYPE = LIRInstructionClass.create(Dp4aStmt.class);
+
+        /** Array header size in bytes (TornadoNativeArray.ARRAY_HEADER = 16). */
+        private static final int ARRAY_HEADER = 16;
+
+        @Def
+        protected AllocatableValue result;
+        @Use
+        protected Value a;
+        @Use
+        protected Value offsetA;
+        @Use
+        protected Value b;
+        @Use
+        protected Value offsetB;
+        @Use
+        protected Value c;
+
+        public Dp4aStmt(AllocatableValue result, Value a, Value offsetA, Value b, Value offsetB, Value c) {
+            super(TYPE);
+            this.result = result;
+            this.a = a;
+            this.offsetA = offsetA;
+            this.b = b;
+            this.offsetB = offsetB;
+            this.c = c;
+        }
+
+        @Override
+        public void emitCode(MetalCompilationResultBuilder crb, MetalAssembler asm) {
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.space();
+            asm.assign();
+            asm.space();
+            // result = c + sum_{i=0}^{3} ((int)((device char*)a)[header+offsetA+i] * (int)((device char*)b)[header+offsetB+i])
+            asm.emitValue(crb, c);
+            for (int i = 0; i < 4; i++) {
+                asm.emit(" + (int)((device char*)");
+                asm.emitValue(crb, a);
+                asm.emit(")[" + ARRAY_HEADER + " + ");
+                asm.emitValue(crb, offsetA);
+                asm.emit(" + " + i + "] * (int)((device char*)");
+                asm.emitValue(crb, b);
+                asm.emit(")[" + ARRAY_HEADER + " + ");
+                asm.emitValue(crb, offsetB);
+                asm.emit(" + " + i + "]");
+            }
+            asm.delimiter();
+            asm.eol();
         }
     }
 }

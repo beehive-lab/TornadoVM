@@ -38,6 +38,7 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.ValueProxyNode;
+import org.graalvm.compiler.nodes.calc.FloatConvertNode;
 import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.extended.JavaReadNode;
 import org.graalvm.compiler.nodes.extended.JavaWriteNode;
@@ -101,7 +102,7 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
         for (JavaReadNode javaRead : graph.getNodes().filter(JavaReadNode.class)) {
             if (javaRead.successors().first() instanceof NewInstanceNode) {
                 NewInstanceNode newInstanceNode = (NewInstanceNode) javaRead.successors().first();
-                if (newInstanceNode.instanceClass().getAnnotation(HalfType.class) != null) {
+                if (newInstanceNode.instanceClass().getAnnotation(HalfType.class) != null && javaRead.getReadKind() == JavaKind.Short) {
                     if (newInstanceNode.successors().first() instanceof NewHalfFloatInstance) {
                         NewHalfFloatInstance newHalfFloatInstance = (NewHalfFloatInstance) newInstanceNode.successors().first();
                         deleteFixed(newHalfFloatInstance);
@@ -157,6 +158,36 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
                 replaceFixed(javaWrite, writeHalfFloatNode);
                 deleteFixed(javaWrite);
             }
+        }
+
+        // Clean up any remaining HalfFloatPlaceholder nodes not consumed by a JavaWriteNode.
+        for (HalfFloatPlaceholder placeholder : graph.getNodes().filter(HalfFloatPlaceholder.class)) {
+            ValueNode input = placeholder.getInput();
+            // FloatConvertNode on a HalfFloat value causes getOp() == null; replace with MetalConvertHalfToFloat.
+            for (FloatConvertNode floatConvertNode : placeholder.usages().filter(FloatConvertNode.class).snapshot()) {
+                MetalConvertHalfToFloat convertNode = new MetalConvertHalfToFloat(input);
+                graph.addWithoutUnique(convertNode);
+                floatConvertNode.replaceAtUsages(convertNode);
+                floatConvertNode.safeDelete();
+            }
+            placeholder.replaceAtUsages(input);
+            placeholder.safeDelete();
+        }
+
+        // Clean up any remaining NewHalfFloatInstance nodes that were not handled above.
+        // This handles cases where NewHalfFloatInstance is not directly preceded by NewInstanceNode.
+        for (NewHalfFloatInstance newHalfFloatInstance : graph.getNodes().filter(NewHalfFloatInstance.class)) {
+            ValueNode valueInput = getHalfFloatValue(newHalfFloatInstance.getValue(), graph);
+            if (newHalfFloatInstance.predecessor() instanceof NewInstanceNode) {
+                NewInstanceNode newInstanceNode = (NewInstanceNode) newHalfFloatInstance.predecessor();
+                if (newInstanceNode.instanceClass().getAnnotation(HalfType.class) != null) {
+                    newInstanceNode.replaceAtUsages(valueInput);
+                    deleteFixed(newInstanceNode);
+                }
+            } else {
+                newHalfFloatInstance.replaceAtUsages(valueInput);
+            }
+            deleteFixed(newHalfFloatInstance);
         }
 
         // replace the half float operator nodes with the corresponding regular operators

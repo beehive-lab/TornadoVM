@@ -237,6 +237,19 @@ public final class MetalVectorPlugins {
         }
     }
 
+    /**
+     * Returns the JavaKind to use for element-stride computation in LoadIndexedNode/StoreIndexedNode.
+     * HALF element kind maps to JavaKind.Object normally, but the actual storage is short[] (2 bytes),
+     * so we override to JavaKind.Short for correct address computation.
+     */
+    private static JavaKind resolveCollectionElementKind(MetalKind kind) {
+        MetalKind elementKind = kind.getElementKind();
+        if (elementKind == MetalKind.HALF) {
+            return JavaKind.Short;
+        }
+        return elementKind.asJavaKind();
+    }
+
     private static void registerVectorCollectionsPlugins(final InvocationPlugins plugins, final MetalKind vectorKind, final Class<?> storageType, final Class<?> vectorClass) {
 
         final Class<?> declaringClass = vectorKind.getJavaClass();
@@ -246,7 +259,7 @@ public final class MetalVectorPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index) {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(vectorClass);
                 MetalKind kind = MetalKind.fromResolvedJavaType(resolvedType);
-                JavaKind elementKind = kind.getElementKind().asJavaKind();
+                JavaKind elementKind = resolveCollectionElementKind(kind);
                 // node needed to enforce the value of the nodes stamp
                 LoadIndexedVectorNode indexedLoad = new LoadIndexedVectorNode(kind, array, index, elementKind);
                 b.push(JavaKind.Object, b.append(indexedLoad));
@@ -258,7 +271,7 @@ public final class MetalVectorPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value, ValueNode array, ValueNode index) {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(vectorClass);
                 MetalKind kind = MetalKind.fromResolvedJavaType(resolvedType);
-                JavaKind elementKind = kind.getElementKind().asJavaKind();
+                JavaKind elementKind = resolveCollectionElementKind(kind);
                 // No need to set stamp as it is inferred from the stamp of the incoming value
                 StoreIndexedNode indexedStore = new StoreIndexedNode(array, index, null, null, elementKind, value);
                 b.append(b.append(indexedStore));

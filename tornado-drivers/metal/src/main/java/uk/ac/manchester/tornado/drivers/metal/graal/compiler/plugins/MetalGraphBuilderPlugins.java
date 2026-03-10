@@ -83,8 +83,10 @@ import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.api.utils.QuantizationUtils;
 import uk.ac.manchester.tornado.drivers.metal.graal.MetalArchitecture;
 import uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssembler;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalKind;
@@ -101,6 +103,7 @@ import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalFPBinaryIntrinsic
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalFPUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalIntBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalIntUnaryIntrinsicNode;
+import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalDp4aNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.PrintfNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.TornadoAtomicIntegerNode;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoMemorySegment;
@@ -129,6 +132,7 @@ public class MetalGraphBuilderPlugins {
 
         MetalHalfFloatPlugins.registerPlugins(ps, plugins);
         registerMemoryAccessPlugins(ps, plugins);
+        registerQuantizationUtilsPlugins(plugins);
 
     }
 
@@ -468,6 +472,31 @@ public class MetalGraphBuilderPlugins {
                 return true;
             }
         });
+    }
+
+    private static void registerQuantizationUtilsPlugins(InvocationPlugins plugins) {
+        Registration r = new Registration(plugins, QuantizationUtils.class);
+
+        // dp4a(Int8Array a, long offsetA, Int8Array b, long offsetB, int c)
+        r.register(new InvocationPlugin("dp4a", Int8Array.class, long.class, Int8Array.class, long.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver,
+                    ValueNode a, ValueNode offsetA, ValueNode bArr, ValueNode offsetB, ValueNode accumulator) {
+                b.addPush(JavaKind.Int, b.append(new MetalDp4aNode(a, offsetA, bArr, offsetB, accumulator)));
+                return true;
+            }
+        });
+
+        // dp4a(Int8Array a, long offsetA, byte[] b, long offsetB, int c) - local array variant
+        r.register(new InvocationPlugin("dp4a", Int8Array.class, long.class, byte[].class, long.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver,
+                    ValueNode a, ValueNode offsetA, ValueNode bArr, ValueNode offsetB, ValueNode accumulator) {
+                b.addPush(JavaKind.Int, b.append(new MetalDp4aNode(a, offsetA, bArr, offsetB, accumulator)));
+                return true;
+            }
+        });
+
     }
 
     private static void registerFP16ConversionPlugins(InvocationPlugins plugins) {

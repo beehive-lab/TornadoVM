@@ -27,6 +27,7 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shoul
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalKind.ILLEGAL;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
+import uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalConstantValue;
 
 import java.util.Collection;
 import java.util.List;
@@ -349,6 +350,9 @@ public class MetalNodeLIRBuilder extends NodeLIRBuilder {
             final Value x = operand(testNode.getX());
             final Value y = operand(testNode.getY());
             result = getGen().getArithmetic().genTestNegateBinaryExpr(MetalBinaryOp.BITWISE_AND, boolLirKind, x, y);
+        } else if (node instanceof LogicConstantNode logicConstant) {
+            // negated constant: true becomes 0, false becomes 1
+            result = new MetalConstantValue(logicConstant.getValue() ? "0" : "1");
         } else {
             throw new TornadoRuntimeException(String.format("logic node (class=%s)", node.getClass().getName()));
         }
@@ -409,6 +413,8 @@ public class MetalNodeLIRBuilder extends NodeLIRBuilder {
             final Value x = operand(integerTestNode.getX());
             final Value y = operand(integerTestNode.getY());
             result = getGen().getArithmetic().genTestBinaryExpr(MetalBinaryOp.BITWISE_AND, boolLirKind, x, y);
+        } else if (node instanceof LogicConstantNode logicConstant) {
+            result = new MetalConstantValue(logicConstant.getValue() ? "1" : "0");
         } else {
             throw new TornadoRuntimeException(String.format("logic node (class=%s)", node.getClass().getName()));
         }

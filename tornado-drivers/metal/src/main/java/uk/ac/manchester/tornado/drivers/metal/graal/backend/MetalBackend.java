@@ -477,6 +477,14 @@ public class MetalBackend extends XPUBackend<MetalProviders> implements FrameMap
             asm.emitLine("inline int isnotequal(float a, float b) { return (int)(a != b); }");
             asm.emitLine("inline int isgreater(float a, float b)  { return (int)(a >  b); }");
             asm.emitLine("inline int isless(float a, float b)     { return (int)(a <  b); }");
+            // Java Math.signum(NaN) returns NaN, but Metal sign(NaN) returns 0; use wrapper
+            asm.emitLine("inline float signum_f(float x) { return isnan(x) ? x : sign(x); }");
+            // Float atomic add via CAS loop (portable: no atomic_float required pre-Metal 3.0)
+            asm.emitLine("inline float tornado_atomic_add_float(device atomic_uint* p, float delta) {");
+            asm.emitLine("    uint exp = atomic_load_explicit(p, memory_order_relaxed);");
+            asm.emitLine("    while (!atomic_compare_exchange_weak_explicit(p, &exp, as_type<uint>(as_type<float>(exp) + delta), memory_order_relaxed, memory_order_relaxed)) {}");
+            asm.emitLine("    return as_type<float>(exp);");
+            asm.emitLine("}");
             asm.emitLine("");
             // TornadoVM OpenCL-compatibility shims: vloadN / vstoreN for device memory
             // float variants (vload2/3/4)
@@ -500,11 +508,20 @@ public class MetalBackend extends XPUBackend<MetalProviders> implements FrameMap
             asm.emitLine("inline void    vstore2(half2   v, uint n, device half*   p) { ((device half2*  )p)[n] = v; }");
             asm.emitLine("inline void    vstore3(half3   v, uint n, device half*   p) { ((device half3*  )p)[n] = v; }");
             asm.emitLine("inline void    vstore4(half4   v, uint n, device half*   p) { ((device half4*  )p)[n] = v; }");
-            // uchar variants (vload2/3/4) - used for byte data
+            // uchar variants (vload2/3/4) - used for unsigned byte data
             asm.emitLine("inline uchar2  vload2 (uint n, const device uchar*  p) { return ((const device uchar2* )p)[n]; }");
+            asm.emitLine("inline uchar3  vload3 (uint n, const device uchar*  p) { return ((const device uchar3* )p)[n]; }");
             asm.emitLine("inline uchar4  vload4 (uint n, const device uchar*  p) { return ((const device uchar4* )p)[n]; }");
             asm.emitLine("inline void    vstore2(uchar2  v, uint n, device uchar*  p) { ((device uchar2* )p)[n] = v; }");
+            asm.emitLine("inline void    vstore3(uchar3  v, uint n, device uchar*  p) { ((device uchar3* )p)[n] = v; }");
             asm.emitLine("inline void    vstore4(uchar4  v, uint n, device uchar*  p) { ((device uchar4* )p)[n] = v; }");
+            // char (signed byte) variants (vload2/3/4) - used for ImageByte3/4 kernels
+            asm.emitLine("inline char2   vload2 (uint n, const device char*   p) { return ((const device char2*  )p)[n]; }");
+            asm.emitLine("inline char3   vload3 (uint n, const device char*   p) { return ((const device char3*  )p)[n]; }");
+            asm.emitLine("inline char4   vload4 (uint n, const device char*   p) { return ((const device char4*  )p)[n]; }");
+            asm.emitLine("inline void    vstore2(char2   v, uint n, device char*   p) { ((device char2*  )p)[n] = v; }");
+            asm.emitLine("inline void    vstore3(char3   v, uint n, device char*   p) { ((device char3*  )p)[n] = v; }");
+            asm.emitLine("inline void    vstore4(char4   v, uint n, device char*   p) { ((device char4*  )p)[n] = v; }");
             // short variants (vload2/3/4)
             asm.emitLine("inline short2  vload2 (uint n, const device short*  p) { return ((const device short2* )p)[n]; }");
             asm.emitLine("inline short4  vload4 (uint n, const device short*  p) { return ((const device short4* )p)[n]; }");

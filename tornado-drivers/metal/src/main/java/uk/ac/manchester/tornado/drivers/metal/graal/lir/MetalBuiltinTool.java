@@ -54,6 +54,7 @@ import static uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssembler.Me
 import static uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssembler.MetalUnaryIntrinsic.POPCOUNT;
 import static uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssembler.MetalUnaryIntrinsic.RADIANS;
 import static uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssembler.MetalUnaryIntrinsic.SIGN;
+import static uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssembler.MetalUnaryIntrinsic.SIGN_FLOAT;
 import static uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssembler.MetalUnaryIntrinsic.SIN;
 import static uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssembler.MetalUnaryIntrinsic.SINPI;
 import static uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssembler.MetalUnaryIntrinsic.SQRT;
@@ -250,7 +251,11 @@ public class MetalBuiltinTool {
 
     public Value genFloatSign(Value input) {
         Logger.traceBuildLIR(Logger.BACKEND.Metal, "genSign: sign(%s)", input);
-        return new MetalUnary.Intrinsic(SIGN, LIRKind.value(input.getPlatformKind()), input);
+        // Use signum_f wrapper for float kind to preserve NaN (Metal sign(NaN) returns 0, Java returns NaN)
+        MetalKind kind = (MetalKind) input.getPlatformKind();
+        // SIGN and SIGN_FLOAT are both MetalUnaryIntrinsic (imported statically)
+        var signOp = (kind == MetalKind.FLOAT) ? SIGN_FLOAT : SIGN;
+        return new MetalUnary.Intrinsic(signOp, LIRKind.value(kind), input);
     }
 
     public Value genFloatSin(Value input) {

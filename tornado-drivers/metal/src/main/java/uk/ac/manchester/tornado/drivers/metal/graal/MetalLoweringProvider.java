@@ -103,8 +103,10 @@ import uk.ac.manchester.tornado.drivers.metal.graal.nodes.GroupIdNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.LocalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.LocalThreadSizeNode;
+import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalDecompressedReadFieldNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.calc.DivNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.vector.LoadIndexedVectorNode;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.drivers.metal.graal.snippets.ReduceCPUSnippets;
 import uk.ac.manchester.tornado.drivers.metal.graal.snippets.ReduceGPUSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
@@ -406,10 +408,17 @@ public class MetalLoweringProvider extends DefaultJavaLoweringProvider {
         Stamp loadStamp = loadStamp(loadField.stamp(NodeView.DEFAULT), field.getJavaKind());
         AddressNode address = createFieldAddress(graph, object, field);
         assert address != null : "Field that is loaded must not be eliminated: " + field.getDeclaringClass().toJavaName(true) + "." + field.getName();
-        FieldLocationIdentity fieldLocationIdentity = new FieldLocationIdentity(field);
-        ReadNode memoryRead = graph.add(new ReadNode(address, fieldLocationIdentity, loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
-        loadField.replaceAtUsages(memoryRead);
-        graph.replaceFixed(loadField, memoryRead);
+        boolean areCoopsEnabled = TornadoOptions.coopsUsed();
+        if (areCoopsEnabled && !field.getJavaKind().isPrimitive()) {
+            MetalDecompressedReadFieldNode decompressedNode = graph.add(new MetalDecompressedReadFieldNode(object, address, loadStamp));
+            loadField.replaceAtUsages(decompressedNode);
+            graph.replaceFixed(loadField, decompressedNode);
+        } else {
+            FieldLocationIdentity fieldLocationIdentity = new FieldLocationIdentity(field);
+            ReadNode memoryRead = graph.add(new ReadNode(address, fieldLocationIdentity, loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
+            loadField.replaceAtUsages(memoryRead);
+            graph.replaceFixed(loadField, memoryRead);
+        }
     }
 
     @Override

@@ -127,12 +127,12 @@ public class MetalUnary {
                 asm.emitValue(crb, inc);
                 asm.emit(")");
             } else if (kind == MetalKind.FLOAT) {
-                // Metal 2.4+ supports atomic_float
-                asm.emit("atomic_fetch_add_explicit((device atomic_float *)(");
+                // Use portable CAS-loop helper (no atomic_float required)
+                asm.emit("tornado_atomic_add_float((device atomic_uint *)(");
                 address.emit(crb, asm);
                 asm.emit("), ");
                 asm.emitValue(crb, inc);
-                asm.emit(", memory_order_relaxed)");
+                asm.emit(")");
             } else {
                 // Int/Uint atomic add
                 asm.emit("atomic_fetch_add_explicit((device atomic_int *)(");

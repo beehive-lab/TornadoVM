@@ -787,6 +787,7 @@ public final class MetalAssembler extends Assembler {
         public static final MetalUnaryIntrinsic COSPI = new MetalUnaryIntrinsic("cospi");
 
         public static final MetalUnaryIntrinsic SIGN = new MetalUnaryIntrinsic("sign");
+        public static final MetalUnaryIntrinsic SIGN_FLOAT = new MetalUnaryIntrinsic("signum_f");
 
         public static final MetalUnaryIntrinsic LOCAL_MEMORY = new MetalUnaryIntrinsic(MetalAssemblerConstants.LOCAL_MEM_MODIFIER);
 
