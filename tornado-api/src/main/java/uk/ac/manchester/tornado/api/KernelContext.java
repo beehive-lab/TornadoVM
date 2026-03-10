@@ -217,7 +217,7 @@ public class KernelContext implements ExecutionContext {
     }
 
     // -------------------------------------------------------------------------
-    // Metal SIMD-group intrinsics (MSL §6.9.2)
+    // Metal SIMD-group intrinsics (MSL 6.9.2)
     // These methods are intercepted by MetalGraphBuilderPlugins and replaced
     // with simd_* built-in calls in the generated Metal shader. The JVM bodies
     // below are identity/no-op stubs used only when running on the CPU.
