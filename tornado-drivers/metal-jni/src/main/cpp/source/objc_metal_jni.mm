@@ -1693,4 +1693,81 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_metalReleaseComman
     }
 }
 
+// ---------------------------------------------------------------------------
+// NativeCommandQueue: device-to-device buffer aliasing / sub-range copy
+// ---------------------------------------------------------------------------
+
+/**
+ * mapOnDeviceMemoryRegion (offset == 0 fast path):
+ * Simply alias the destination to the source buffer by returning the source
+ * MTLBuffer pointer.  The Java caller (MetalMemorySegmentWrapper) replaces its
+ * bufferId with the returned value so subsequent kernel launches use the
+ * source buffer directly, avoiding any host-device data transfer.
+ */
+JNIEXPORT jlong JNICALL
+Java_uk_ac_manchester_tornado_drivers_metal_natives_NativeCommandQueue_mapOnDeviceMemoryRegion
+    (JNIEnv *env, jclass clazz, jlong destDevicePtr, jlong srcDevicePtr)
+{
+    (void) env; (void) clazz; (void) destDevicePtr;
+    // Return the source buffer pointer so the destination buffer is aliased to source.
+    return srcDevicePtr;
+}
+
+/**
+ * mapOnDeviceMemoryNDRegion (non-zero offset):
+ * Copies a sub-range of the source buffer into the destination buffer using a
+ * Metal blit command encoder (GPU-to-GPU copy, no host involvement).
+ *
+ * Parameters:
+ *   commandQueuePtr - id<MTLCommandQueue> as jlong
+ *   destDevicePtr   - destination id<MTLBuffer> as jlong
+ *   srcDevicePtr    - source id<MTLBuffer> as jlong
+ *   offset          - element offset into source data (past the array header)
+ *   sizeDataType    - bytes per element
+ *   headerSize      - array header size in int units (ARRAY_HEADER / sizeof(int))
+ *   sizeSource      - total source buffer size in bytes (unused, kept for ABI)
+ *   sizeDest        - total destination buffer size in bytes
+ *
+ * The source byte offset is: headerSize*4 + offset*sizeDataType
+ * The destination byte offset is: headerSize*4 (same header layout)
+ * Copy size: sizeDest - headerSize*4
+ */
+JNIEXPORT jlong JNICALL
+Java_uk_ac_manchester_tornado_drivers_metal_natives_NativeCommandQueue_mapOnDeviceMemoryNDRegion
+    (JNIEnv *env, jclass clazz, jlong commandQueuePtr, jlong destDevicePtr, jlong srcDevicePtr,
+     jlong offset, jint sizeDataType, jlong headerSize, jlong sizeSource, jlong sizeDest)
+{
+    (void) env; (void) clazz; (void) sizeSource;
+    if (commandQueuePtr == 0 || srcDevicePtr == 0 || destDevicePtr == 0) return destDevicePtr;
+
+    id<MTLCommandQueue> cmdQueue = (__bridge id<MTLCommandQueue>)(void*)(uintptr_t)commandQueuePtr;
+    id<MTLBuffer> srcBuf  = (__bridge id<MTLBuffer>)(void*)(uintptr_t)srcDevicePtr;
+    id<MTLBuffer> destBuf = (__bridge id<MTLBuffer>)(void*)(uintptr_t)destDevicePtr;
+    if (!cmdQueue || !srcBuf || !destBuf) return destDevicePtr;
+
+    // headerSize is in int units (4 bytes each)
+    NSUInteger headerBytes  = (NSUInteger)(headerSize * 4);
+    NSUInteger srcByteOff   = headerBytes + (NSUInteger)((jlong)offset * (jlong)sizeDataType);
+    NSUInteger dstByteOff   = headerBytes;
+    NSUInteger copySize     = (sizeDest > (jlong)headerBytes) ? (NSUInteger)(sizeDest - (jlong)headerBytes) : 0;
+    if (copySize == 0) return destDevicePtr;
+
+    @autoreleasepool {
+        id<MTLCommandBuffer> cmdBuf = [cmdQueue commandBuffer];
+        if (!cmdBuf) return destDevicePtr;
+        id<MTLBlitCommandEncoder> blit = [cmdBuf blitCommandEncoder];
+        if (!blit) return destDevicePtr;
+        [blit copyFromBuffer:srcBuf
+                sourceOffset:srcByteOff
+                    toBuffer:destBuf
+           destinationOffset:dstByteOff
+                       size:copySize];
+        [blit endEncoding];
+        [cmdBuf commit];
+        [cmdBuf waitUntilCompleted];
+    }
+    // Return destDevicePtr unchanged; the destination buffer now contains the copied sub-range.
+    return destDevicePtr;
+}
+
 } // extern "C"
