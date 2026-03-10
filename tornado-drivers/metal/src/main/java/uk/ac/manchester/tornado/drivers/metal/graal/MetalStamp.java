@@ -164,7 +164,7 @@ public class MetalStamp extends ObjectStamp {
 
     @Override
     public String toString() {
-        return "ocl: " + metalKind.name();
+        return "metal: " + metalKind.name();
     }
 
     @Override
