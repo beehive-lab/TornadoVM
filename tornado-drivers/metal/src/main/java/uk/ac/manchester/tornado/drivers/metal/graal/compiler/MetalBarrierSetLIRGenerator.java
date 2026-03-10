@@ -35,6 +35,6 @@ import jdk.vm.ci.meta.Value;
 public class MetalBarrierSetLIRGenerator extends BarrierSetLIRGenerator {
     @Override
     public Variable emitBarrieredLoad(LIRKind kind, Value address, LIRFrameState state, MemoryOrderMode memoryOrder, BarrierType barrierType) {
-        return null;
+        throw new UnsupportedOperationException("MetalBarrierSetLIRGenerator.emitBarrieredLoad is not implemented for Metal backend");
     }
 }
