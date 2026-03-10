@@ -1,33 +1,34 @@
-name: Deploy to Maven Central
+name: Deploy to Maven Central [JDK 25]
 
 on:
   push:
     tags:
-      - 'v*'
-      - '[0-9]+.[0-9]+.[0-9]+*'
+      - 'v*-jdk25'
   workflow_run:
-    workflows: ["Finalize TornadoVM Release"]
+    workflows: ["2-Finalize TornadoVM Release [JDK25]"]
     types: [completed]
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to deploy (e.g., v2.1.0)'
+        description: 'Tag to deploy (e.g., v2.1.0-jdk25)'
         required: false
         type: string
 
 jobs:
   deploy:
     if: github.repository == 'beehive-lab/TornadoVM'
-    name: Deploy to Maven Central
+    name: Deploy to Maven Central (JDK 25)
     runs-on: [self-hosted, Linux, x64]
     timeout-minutes: 15
     env:
-      JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
+      JAVA_HOME: /opt/jenkins/jdks/jdk-25.0.2
       MAVEN_HOME: /opt/maven
-      GRAAL_JARS: /opt/graalJars
+      GRAAL_JARS: /opt/graal25Jars
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'push' && github.ref || (inputs.tag != '' && inputs.tag || 'jdk25') }}
 
       - name: Setup environment
         run: |

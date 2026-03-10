@@ -808,6 +808,10 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.withPreCompilation(executionPackage);
     }
 
+    void withCUDAGraph() {
+        taskGraphImpl.withCUDAGraph();
+    }
+
     void dumpProfiles() {
         taskGraphImpl.dumpProfiles();
     }

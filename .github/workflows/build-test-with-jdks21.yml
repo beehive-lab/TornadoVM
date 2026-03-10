@@ -1,4 +1,4 @@
-name: Build & Test with JDK Matrix
+name: Build & Test with JDK Matrix [JDK21]
 
 on:
   schedule:

@@ -50,6 +50,7 @@ public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
 
     private static final byte TAB = 0x9;
     private static final byte NEWLINE = 0xA;
+    private static final byte CARRIAGE_RETURN = 0xD;
     private static final byte WHITESPACE = 0x20;
 
     private static final String FEATURE_DUMP_DIR = System.getProperty("tornado.features.dump.dir");
@@ -64,7 +65,7 @@ public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
     public static long getByteSum(byte[] bytes) {
         long sum = 0;
         for (byte entry : bytes) {
-            if (entry == TAB || entry == NEWLINE || entry == WHITESPACE) {
+            if (entry == TAB || entry == NEWLINE || entry == CARRIAGE_RETURN || entry == WHITESPACE) {
                 continue;
             }
             sum += entry;
@@ -81,9 +82,11 @@ public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
     @After
     public void after() {
         // make sure the source file generated is deleted
-        File fileLog = new File(FEATURE_DUMP_DIR);
-        if (fileLog.exists()) {
-            fileLog.delete();
+        if (FEATURE_DUMP_DIR != null) {
+            File fileLog = new File(FEATURE_DUMP_DIR);
+            if (fileLog.exists()) {
+                fileLog.delete();
+            }
         }
     }
 
