@@ -1631,28 +1631,22 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_metalEnqueueMarker
     (JNIEnv *env, jclass clazz, jlong queueId, jlongArray events)
 {
     (void) clazz;
-    fprintf(stderr, "JNI: metalEnqueueMarkerWithWaitList entered\n");
     @autoreleasepool {
         id<MTLCommandQueue> q = (__bridge id<MTLCommandQueue>)(void*)(uintptr_t) queueId;
         // Wait for all provided events (command buffers) to complete
         if (events != NULL) {
             jsize len = env->GetArrayLength(events);
-            fprintf(stderr, "JNI: marker - %d events\n", (int)len);
             jlong *evts = env->GetLongArrayElements(events, NULL);
             for (jsize i = 0; i < len; i++) {
-                fprintf(stderr, "JNI: marker - event[%d] = 0x%llx\n", (int)i, (unsigned long long)evts[i]);
                 if (evts[i] == 0) continue;
                 // Only wait on valid command buffer pointers (from metalEnqueueNDRangeKernel)
                 id<MTLCommandBuffer> cb = (__bridge id<MTLCommandBuffer>)(void*)(uintptr_t) evts[i];
                 if (cb && [cb respondsToSelector:@selector(waitUntilCompleted)]) {
-                    fprintf(stderr, "JNI: marker - waiting on event[%d]\n", (int)i);
                     [cb waitUntilCompleted];
-                    fprintf(stderr, "JNI: marker - event[%d] completed\n", (int)i);
                 }
             }
             env->ReleaseLongArrayElements(events, evts, 0);
         }
-//         fprintf(stderr, "JNI: metalEnqueueMarkerWithWaitList done\n");
         // Return 0 to indicate no event produced (marker is implicit in Metal)
         return (jlong)0;
     }
