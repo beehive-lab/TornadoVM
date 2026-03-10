@@ -27,7 +27,9 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shoul
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalKind.ILLEGAL;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
+import uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssembler;
 import uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalConstantValue;
+import uk.ac.manchester.tornado.runtime.common.MetalTokens;
 
 import java.util.Collection;
 import java.util.List;
@@ -670,7 +672,33 @@ public class MetalNodeLIRBuilder extends NodeLIRBuilder {
         } else {
             for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
                 LIRKind lirKind = getGen().getLIRKind(param.stamp(NodeView.DEFAULT));
-                setResult(param, new MetalNullary.Parameter(locals[param.index()].getName(), lirKind));
+                if (param.stamp(NodeView.DEFAULT) instanceof ObjectStamp) {
+                    // Check whether this object parameter is a GPU vector value type (Float4, Int4, etc.)
+                    // by resolving the Java type from the local variable table (same strategy as
+                    // emitMethodParameters). If it is a vector type the signature uses the vector kind
+                    // directly; we must mirror that in the LIR body.  Otherwise it is a device-memory
+                    // pointer (IntArray, etc.) and we need emitParameterLoad to emit the explicit
+                    // (tornado_ptr_t) cast AssignStmt so Pass 0a in emitVariableDefs fires correctly.
+                    ResolvedJavaType resolvedType = locals[param.index()].getType()
+                            .resolve(graph.method().getDeclaringClass());
+                    MetalKind vectorKind = MetalKind.resolveToVectorKind(resolvedType);
+                    if (vectorKind != MetalKind.ILLEGAL) {
+                        String name = locals[param.index()].getName();
+                        if (MetalTokens.metalTokens.contains(name)) {
+                            name = "_" + name;
+                        }
+                        setResult(param, new MetalNullary.Parameter(name, LIRKind.value(vectorKind)));
+                    } else {
+                        setResult(param, getGen().getMetalGenTool().emitParameterLoad(locals[param.index()], param));
+                    }
+                } else {
+                    String name = locals[param.index()].getName();
+                    // Sanitize Metal/C++ keywords used as parameter names (e.g. "this")
+                    if (MetalTokens.metalTokens.contains(name)) {
+                        name = "_" + name;
+                    }
+                    setResult(param, new MetalNullary.Parameter(name, lirKind));
+                }
             }
         }
     }

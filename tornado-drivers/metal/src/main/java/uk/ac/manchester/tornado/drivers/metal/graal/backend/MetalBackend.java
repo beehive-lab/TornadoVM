@@ -726,7 +726,7 @@ public class MetalBackend extends XPUBackend<MetalProviders> implements FrameMap
                 }
                 guarantee(metalKind != MetalKind.ILLEGAL, "illegal type for %s", param.getPlatformKind());
                 asm.emit(", ");
-                asm.emit("%s %s", metalKind.toString(), locals[i].getName());
+                asm.emit("%s %s", metalKind.toString(), getParameterName(locals[i]));
             }
         }
         return metalArgIndex;

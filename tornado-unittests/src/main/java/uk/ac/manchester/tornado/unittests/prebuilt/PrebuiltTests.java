@@ -85,6 +85,9 @@ public class PrebuiltTests extends TornadoTestBase {
             case SPIRV:
                 extension = ".spv";
                 break;
+            case METAL:
+                extension = ".metal";
+                break;
             default:
                 throw new TornadoRuntimeException("Backend not supported");
         }
