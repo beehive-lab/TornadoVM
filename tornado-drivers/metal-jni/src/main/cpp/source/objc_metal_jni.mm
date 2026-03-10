@@ -1,6 +1,43 @@
 #import <Metal/Metal.h>
 #import <Foundation/Foundation.h>
 #import <jni.h>
+#include <mach/mach_time.h>
+
+// ---------------------------------------------------------------------------
+// MetalHostTimingEvent: lightweight timing record for CPU-side transfers.
+// Returned as event IDs from writeArrayToDevice / readArrayFromDevice so the
+// profiler can report non-zero transfer and dispatch times for Metal's
+// shared-memory (unified-memory) copies.
+//
+// Pointer tagging convention: bit 0 is set to distinguish from ObjC pointers
+// (which are always at least 4-byte aligned, so bit 0 is always 0 for them).
+// ---------------------------------------------------------------------------
+// Helper to get current time as nanoseconds from mach_absolute_time.
+// Using mach_absolute_time avoids precision loss from CFAbsoluteTimeGetCurrent's
+// large epoch offset (~7.56e8 s) which limits sub-microsecond resolution.
+static uint64_t machTimeToNanos(uint64_t machTime) {
+    static mach_timebase_info_data_t tb = {0, 0};
+    if (tb.numer == 0) mach_timebase_info(&tb);
+    return machTime * tb.numer / tb.denom;
+}
+
+struct MetalHostTimingEvent {
+    uint64_t queuedTimeNs; // nanoseconds before JNI array pin (dispatch overhead)
+    uint64_t startTimeNs;  // nanoseconds immediately before memcpy
+    uint64_t endTimeNs;    // nanoseconds immediately after memcpy
+};
+
+static inline jlong makeTimingEventId(MetalHostTimingEvent *evt) {
+    return (jlong)((uintptr_t)evt | 1UL);
+}
+
+static inline bool isTimingEvent(jlong eventId) {
+    return (eventId & 1L) != 0;
+}
+
+static inline MetalHostTimingEvent *getTimingEvent(jlong eventId) {
+    return reinterpret_cast<MetalHostTimingEvent *>((uintptr_t)(eventId & ~1L));
+}
 
 // Small Objective-C++ helper classes to represent programs and kernels
 @interface MetalProgramWrapper : NSObject
@@ -349,6 +386,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_writeArrayToDevice
 {
     jbyte *src = nullptr;
     jlong ret = -1;
+    uint64_t tQueued = machTimeToNanos(mach_absolute_time());
     if (array) {
         src = (jbyte*) env->GetPrimitiveArrayCritical(array, NULL);
     }
@@ -363,8 +401,11 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_writeArrayToDevice
         if (src_ptr) src_ptr = (void *)((char *)src_ptr + (size_t)hostOffset);
         void *dst_ptr = (void *)((char *)dst + (size_t)offset);
 
+        uint64_t tStart = machTimeToNanos(mach_absolute_time());
         memcpy(dst_ptr, src_ptr, (size_t)bytes);
-        ret = (jlong)0; // no event produced
+        uint64_t tEnd = machTimeToNanos(mach_absolute_time());
+        MetalHostTimingEvent *evt = new MetalHostTimingEvent{tQueued, tStart, tEnd};
+        ret = makeTimingEventId(evt);
     }
 
 done:
@@ -379,6 +420,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_writeArrayToDevice
 {
     jchar *src = nullptr;
     jlong ret = -1;
+    uint64_t tQueued = machTimeToNanos(mach_absolute_time());
     if (array) src = (jchar*) env->GetPrimitiveArrayCritical(array, NULL);
 
     @autoreleasepool {
@@ -390,8 +432,11 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_writeArrayToDevice
         void *src_ptr = (void *)src;
         if (src_ptr) src_ptr = (void *)((char *)src_ptr + (size_t)hostOffset);
         void *dst_ptr = (void *)((char *)dst + (size_t)offset);
+        uint64_t tStart = machTimeToNanos(mach_absolute_time());
         memcpy(dst_ptr, src_ptr, (size_t)bytes);
-        ret = (jlong)0;
+        uint64_t tEnd = machTimeToNanos(mach_absolute_time());
+        MetalHostTimingEvent *evt = new MetalHostTimingEvent{tQueued, tStart, tEnd};
+        ret = makeTimingEventId(evt);
     }
 
 done:
@@ -406,6 +451,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_writeArrayToDevice
 {
     jshort *src = nullptr;
     jlong ret = -1;
+    uint64_t tQueued = machTimeToNanos(mach_absolute_time());
     if (array) src = (jshort*) env->GetPrimitiveArrayCritical(array, NULL);
 
     @autoreleasepool {
@@ -417,8 +463,11 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_writeArrayToDevice
         void *src_ptr = (void *)src;
         if (src_ptr) src_ptr = (void *)((char *)src_ptr + (size_t)hostOffset);
         void *dst_ptr = (void *)((char *)dst + (size_t)offset);
+        uint64_t tStart = machTimeToNanos(mach_absolute_time());
         memcpy(dst_ptr, src_ptr, (size_t)bytes);
-        ret = (jlong)0;
+        uint64_t tEnd = machTimeToNanos(mach_absolute_time());
+        MetalHostTimingEvent *evt = new MetalHostTimingEvent{tQueued, tStart, tEnd};
+        ret = makeTimingEventId(evt);
     }
 
 done:
@@ -433,6 +482,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_writeArrayToDevice
 {
     jint *src = nullptr;
     jlong ret = -1;
+    uint64_t tQueued = machTimeToNanos(mach_absolute_time());
     if (array) src = (jint*) env->GetPrimitiveArrayCritical(array, NULL);
 
     @autoreleasepool {
@@ -444,8 +494,11 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_writeArrayToDevice
         void *src_ptr = (void *)src;
         if (src_ptr) src_ptr = (void *)((char *)src_ptr + (size_t)hostOffset);
         void *dst_ptr = (void *)((char *)dst + (size_t)offset);
+        uint64_t tStart = machTimeToNanos(mach_absolute_time());
         memcpy(dst_ptr, src_ptr, (size_t)bytes);
-        ret = (jlong)0;
+        uint64_t tEnd = machTimeToNanos(mach_absolute_time());
+        MetalHostTimingEvent *evt = new MetalHostTimingEvent{tQueued, tStart, tEnd};
+        ret = makeTimingEventId(evt);
     }
 
 done:
@@ -460,6 +513,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_writeArrayToDevice
 {
     jlong *src = nullptr;
     jlong ret = -1;
+    uint64_t tQueued = machTimeToNanos(mach_absolute_time());
     if (array) src = (jlong*) env->GetPrimitiveArrayCritical(array, NULL);
 
     @autoreleasepool {
@@ -471,8 +525,11 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_writeArrayToDevice
         void *src_ptr = (void *)src;
         if (src_ptr) src_ptr = (void *)((char *)src_ptr + (size_t)hostOffset);
         void *dst_ptr = (void *)((char *)dst + (size_t)offset);
+        uint64_t tStart = machTimeToNanos(mach_absolute_time());
         memcpy(dst_ptr, src_ptr, (size_t)bytes);
-        ret = (jlong)0;
+        uint64_t tEnd = machTimeToNanos(mach_absolute_time());
+        MetalHostTimingEvent *evt = new MetalHostTimingEvent{tQueued, tStart, tEnd};
+        ret = makeTimingEventId(evt);
     }
 
 done:
@@ -487,6 +544,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_writeArrayToDevice
 {
     jfloat *src = nullptr;
     jlong ret = -1;
+    uint64_t tQueued = machTimeToNanos(mach_absolute_time());
     if (array) src = (jfloat*) env->GetPrimitiveArrayCritical(array, NULL);
 
     @autoreleasepool {
@@ -498,8 +556,11 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_writeArrayToDevice
         void *src_ptr = (void *)src;
         if (src_ptr) src_ptr = (void *)((char *)src_ptr + (size_t)hostOffset);
         void *dst_ptr = (void *)((char *)dst + (size_t)offset);
+        uint64_t tStart = machTimeToNanos(mach_absolute_time());
         memcpy(dst_ptr, src_ptr, (size_t)bytes);
-        ret = (jlong)0;
+        uint64_t tEnd = machTimeToNanos(mach_absolute_time());
+        MetalHostTimingEvent *evt = new MetalHostTimingEvent{tQueued, tStart, tEnd};
+        ret = makeTimingEventId(evt);
     }
 
 done:
@@ -514,6 +575,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_writeArrayToDevice
 {
     jdouble *src = nullptr;
     jlong ret = -1;
+    uint64_t tQueued = machTimeToNanos(mach_absolute_time());
     if (array) src = (jdouble*) env->GetPrimitiveArrayCritical(array, NULL);
 
     @autoreleasepool {
@@ -525,8 +587,11 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_writeArrayToDevice
         void *src_ptr = (void *)src;
         if (src_ptr) src_ptr = (void *)((char *)src_ptr + (size_t)hostOffset);
         void *dst_ptr = (void *)((char *)dst + (size_t)offset);
+        uint64_t tStart = machTimeToNanos(mach_absolute_time());
         memcpy(dst_ptr, src_ptr, (size_t)bytes);
-        ret = (jlong)0;
+        uint64_t tEnd = machTimeToNanos(mach_absolute_time());
+        MetalHostTimingEvent *evt = new MetalHostTimingEvent{tQueued, tStart, tEnd};
+        ret = makeTimingEventId(evt);
     }
 
 done:
@@ -550,8 +615,12 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_writeArrayToDevice
 
         void *src_ptr = (void *)((char *)src + (size_t)hostOffset);
         void *dst_ptr = (void *)((char *)dst + (size_t)offset);
+        uint64_t tQueued = machTimeToNanos(mach_absolute_time());
+        uint64_t tStart = machTimeToNanos(mach_absolute_time());
         memcpy(dst_ptr, src_ptr, (size_t)bytes);
-        return (jlong)0;
+        uint64_t tEnd = machTimeToNanos(mach_absolute_time());
+        MetalHostTimingEvent *evt = new MetalHostTimingEvent{tQueued, tStart, tEnd};
+        return makeTimingEventId(evt);
     }
 }
 
@@ -571,8 +640,12 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_readArrayFromDevic
 
                 void *src_ptr = (void *)((char *)src + (size_t)offset);
                 void *dst_ptr = (void *)((char *)dst + (size_t)hostOffset);
+                uint64_t tQueued = machTimeToNanos(mach_absolute_time());
+                uint64_t tStart = machTimeToNanos(mach_absolute_time());
                 memcpy(dst_ptr, src_ptr, (size_t)bytes);
-                return (jlong)0;
+                uint64_t tEnd = machTimeToNanos(mach_absolute_time());
+                MetalHostTimingEvent *evt = new MetalHostTimingEvent{tQueued, tStart, tEnd};
+                return makeTimingEventId(evt);
         }
 }
 
@@ -583,6 +656,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_readArrayFromDevic
 {
     jbyte *dst = nullptr;
     jlong ret = -1;
+    uint64_t tQueued = machTimeToNanos(mach_absolute_time());
     if (array) {
         dst = (jbyte*) env->GetPrimitiveArrayCritical(array, NULL);
     }
@@ -597,8 +671,11 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_readArrayFromDevic
         void *dst_ptr = (void *)dst;
         if (dst_ptr) dst_ptr = (void *)((char *)dst_ptr + (size_t)hostOffset);
 
+        uint64_t tStart = machTimeToNanos(mach_absolute_time());
         memcpy(dst_ptr, src_ptr, (size_t)bytes);
-        ret = (jlong)0;
+        uint64_t tEnd = machTimeToNanos(mach_absolute_time());
+        MetalHostTimingEvent *evt = new MetalHostTimingEvent{tQueued, tStart, tEnd};
+        ret = makeTimingEventId(evt);
     }
 
 done:
@@ -613,6 +690,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_readArrayFromDevic
 {
     jchar *dst = nullptr;
     jlong ret = -1;
+    uint64_t tQueued = machTimeToNanos(mach_absolute_time());
     if (array) dst = (jchar*) env->GetPrimitiveArrayCritical(array, NULL);
 
     @autoreleasepool {
@@ -625,8 +703,11 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_readArrayFromDevic
         void *dst_ptr = (void *)dst;
         if (dst_ptr) dst_ptr = (void *)((char *)dst_ptr + (size_t)hostOffset);
 
+        uint64_t tStart = machTimeToNanos(mach_absolute_time());
         memcpy(dst_ptr, src_ptr, (size_t)bytes);
-        ret = (jlong)0;
+        uint64_t tEnd = machTimeToNanos(mach_absolute_time());
+        MetalHostTimingEvent *evt = new MetalHostTimingEvent{tQueued, tStart, tEnd};
+        ret = makeTimingEventId(evt);
     }
 
 done:
@@ -641,6 +722,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_readArrayFromDevic
 {
     jshort *dst = nullptr;
     jlong ret = -1;
+    uint64_t tQueued = machTimeToNanos(mach_absolute_time());
     if (array) dst = (jshort*) env->GetPrimitiveArrayCritical(array, NULL);
 
     @autoreleasepool {
@@ -653,8 +735,11 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_readArrayFromDevic
         void *dst_ptr = (void *)dst;
         if (dst_ptr) dst_ptr = (void *)((char *)dst_ptr + (size_t)hostOffset);
 
+        uint64_t tStart = machTimeToNanos(mach_absolute_time());
         memcpy(dst_ptr, src_ptr, (size_t)bytes);
-        ret = (jlong)0;
+        uint64_t tEnd = machTimeToNanos(mach_absolute_time());
+        MetalHostTimingEvent *evt = new MetalHostTimingEvent{tQueued, tStart, tEnd};
+        ret = makeTimingEventId(evt);
     }
 
 done:
@@ -669,6 +754,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_readArrayFromDevic
 {
     jint *dst = nullptr;
     jlong ret = -1;
+    uint64_t tQueued = machTimeToNanos(mach_absolute_time());
     if (array) dst = (jint*) env->GetPrimitiveArrayCritical(array, NULL);
 
     @autoreleasepool {
@@ -681,8 +767,11 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_readArrayFromDevic
         void *dst_ptr = (void *)dst;
         if (dst_ptr) dst_ptr = (void *)((char *)dst_ptr + (size_t)hostOffset);
 
+        uint64_t tStart = machTimeToNanos(mach_absolute_time());
         memcpy(dst_ptr, src_ptr, (size_t)bytes);
-        ret = (jlong)0;
+        uint64_t tEnd = machTimeToNanos(mach_absolute_time());
+        MetalHostTimingEvent *evt = new MetalHostTimingEvent{tQueued, tStart, tEnd};
+        ret = makeTimingEventId(evt);
     }
 
 done:
@@ -697,6 +786,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_readArrayFromDevic
 {
     jlong *dst = nullptr;
     jlong ret = -1;
+    uint64_t tQueued = machTimeToNanos(mach_absolute_time());
     if (array) dst = (jlong*) env->GetPrimitiveArrayCritical(array, NULL);
 
     @autoreleasepool {
@@ -709,8 +799,11 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_readArrayFromDevic
         void *dst_ptr = (void *)dst;
         if (dst_ptr) dst_ptr = (void *)((char *)dst_ptr + (size_t)hostOffset);
 
+        uint64_t tStart = machTimeToNanos(mach_absolute_time());
         memcpy(dst_ptr, src_ptr, (size_t)bytes);
-        ret = (jlong)0;
+        uint64_t tEnd = machTimeToNanos(mach_absolute_time());
+        MetalHostTimingEvent *evt = new MetalHostTimingEvent{tQueued, tStart, tEnd};
+        ret = makeTimingEventId(evt);
     }
 
 done:
@@ -725,6 +818,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_readArrayFromDevic
 {
     jfloat *dst = nullptr;
     jlong ret = -1;
+    uint64_t tQueued = machTimeToNanos(mach_absolute_time());
     if (array) dst = (jfloat*) env->GetPrimitiveArrayCritical(array, NULL);
 
     @autoreleasepool {
@@ -737,8 +831,11 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_readArrayFromDevic
         void *dst_ptr = (void *)dst;
         if (dst_ptr) dst_ptr = (void *)((char *)dst_ptr + (size_t)hostOffset);
 
+        uint64_t tStart = machTimeToNanos(mach_absolute_time());
         memcpy(dst_ptr, src_ptr, (size_t)bytes);
-        ret = (jlong)0;
+        uint64_t tEnd = machTimeToNanos(mach_absolute_time());
+        MetalHostTimingEvent *evt = new MetalHostTimingEvent{tQueued, tStart, tEnd};
+        ret = makeTimingEventId(evt);
     }
 
 done:
@@ -753,6 +850,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_readArrayFromDevic
 {
     jdouble *dst = nullptr;
     jlong ret = -1;
+    uint64_t tQueued = machTimeToNanos(mach_absolute_time());
     if (array) dst = (jdouble*) env->GetPrimitiveArrayCritical(array, NULL);
 
     @autoreleasepool {
@@ -765,8 +863,11 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_readArrayFromDevic
         void *dst_ptr = (void *)dst;
         if (dst_ptr) dst_ptr = (void *)((char *)dst_ptr + (size_t)hostOffset);
 
+        uint64_t tStart = machTimeToNanos(mach_absolute_time());
         memcpy(dst_ptr, src_ptr, (size_t)bytes);
-        ret = (jlong)0;
+        uint64_t tEnd = machTimeToNanos(mach_absolute_time());
+        MetalHostTimingEvent *evt = new MetalHostTimingEvent{tQueued, tStart, tEnd};
+        ret = makeTimingEventId(evt);
     }
 
 done:
@@ -1512,6 +1613,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_metalEnqueueWaitFo
     for (jsize i = 0; i < count; i++) {
         jlong ev = events[i+1];
         if (ev == 0) continue;
+        if (isTimingEvent(ev)) continue; // CPU copy already done
         id<MTLCommandBuffer> cb = (__bridge id<MTLCommandBuffer>)(void*) ev;
         if (cb) {
             [cb waitUntilCompleted];
@@ -1567,6 +1669,10 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalEvent_metalReleaseEvent
     (void) env; (void) clazz;
 //     fprintf(stderr, "JNI: metalReleaseEvent(0x%llx)\n", (unsigned long long)eventId);
     if (eventId == 0) return;
+    if (isTimingEvent(eventId)) {
+        delete getTimingEvent(eventId);
+        return;
+    }
     @autoreleasepool {
         id<MTLCommandBuffer> cb = (__bridge id<MTLCommandBuffer>)(void*)(uintptr_t) eventId;
         CFRelease((__bridge CFTypeRef) cb);
@@ -1586,6 +1692,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalEvent_metalWaitForEvents
     @autoreleasepool {
         for (jsize i = 0; i < len; i++) {
             if (evts[i] == 0) continue;
+            if (isTimingEvent(evts[i])) continue; // CPU copy already done
             id<MTLCommandBuffer> cb = (__bridge id<MTLCommandBuffer>)(void*)(uintptr_t) evts[i];
             [cb waitUntilCompleted];
         }
@@ -1598,27 +1705,87 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalEvent_metalGetEventInfo
     (JNIEnv *env, jclass clazz, jlong eventId, jint param, jbyteArray buffer)
 {
     (void) clazz;
-    // Stub: Metal command buffers don't expose the same event info as OpenCL.
-    // Write zeros to the buffer.
     if (buffer == NULL) return;
     jsize len = env->GetArrayLength(buffer);
     jbyte *buf = env->GetByteArrayElements(buffer, NULL);
     memset(buf, 0, len);
+    // param 0x11F4 = CL_EVENT_COMMAND_EXECUTION_STATUS; CL_COMPLETE = 0
+    // Write CL_COMPLETE (0) as a little-endian int32 so the Java side sees COMPLETE.
+    if (len >= 4) {
+        buf[0] = 0; buf[1] = 0; buf[2] = 0; buf[3] = 0;
+    }
     env->ReleaseByteArrayElements(buffer, buf, 0);
 }
+
+// Profiling param constants (matching MetalProfilingInfo enum values)
+#define METAL_PROFILING_COMMAND_QUEUED   0x1280
+#define METAL_PROFILING_COMMAND_SUBMIT   0x1281
+#define METAL_PROFILING_COMMAND_START    0x1282
+#define METAL_PROFILING_COMMAND_END      0x1283
+#define METAL_PROFILING_COMMAND_COMPLETE 0x1284
 
 JNIEXPORT void JNICALL
 Java_uk_ac_manchester_tornado_drivers_metal_MetalEvent_metalGetEventProfilingInfo
     (JNIEnv *env, jclass clazz, jlong eventId, jlong param, jbyteArray buffer)
 {
     (void) clazz;
-    // Stub: Metal command buffers have timing info via GPUStartTime/GPUEndTime
-    // but the mapping to OpenCL profiling params is not direct.
-    // Write zeros for now.
     if (buffer == NULL) return;
     jsize len = env->GetArrayLength(buffer);
     jbyte *buf = env->GetByteArrayElements(buffer, NULL);
     memset(buf, 0, len);
+
+    if (eventId != 0 && len >= 8) {
+        if (isTimingEvent(eventId)) {
+            // CPU-side transfer timing event
+            MetalHostTimingEvent *evt = getTimingEvent(eventId);
+            uint64_t t = 0;
+            switch ((long)param) {
+                case METAL_PROFILING_COMMAND_QUEUED:
+                    t = evt->queuedTimeNs;
+                    break;
+                case METAL_PROFILING_COMMAND_SUBMIT:
+                case METAL_PROFILING_COMMAND_START:
+                    t = evt->startTimeNs;
+                    break;
+                case METAL_PROFILING_COMMAND_END:
+                case METAL_PROFILING_COMMAND_COMPLETE:
+                    t = evt->endTimeNs;
+                    break;
+                default:
+                    t = 0;
+                    break;
+            }
+            int64_t ns = (int64_t)t;
+            memcpy(buf, &ns, 8);
+        } else {
+            @autoreleasepool {
+                id<MTLCommandBuffer> cb = (__bridge id<MTLCommandBuffer>)(void*)(uintptr_t) eventId;
+                if (cb) {
+                    // MTLCommandBuffer timing is in CPU absolute time (seconds, CFAbsoluteTime base).
+                    // Convert to nanoseconds for TornadoVM (same unit as OpenCL).
+                    CFTimeInterval t = 0.0;
+                    switch ((long)param) {
+                        case METAL_PROFILING_COMMAND_QUEUED:
+                        case METAL_PROFILING_COMMAND_SUBMIT:
+                            t = cb.kernelStartTime;
+                            break;
+                        case METAL_PROFILING_COMMAND_START:
+                            t = cb.GPUStartTime;
+                            break;
+                        case METAL_PROFILING_COMMAND_END:
+                        case METAL_PROFILING_COMMAND_COMPLETE:
+                            t = cb.GPUEndTime;
+                            break;
+                        default:
+                            t = 0.0;
+                            break;
+                    }
+                    int64_t ns = (int64_t)(t * 1.0e9);
+                    memcpy(buf, &ns, 8);
+                }
+            }
+        }
+    }
     env->ReleaseByteArrayElements(buffer, buf, 0);
 }
 
