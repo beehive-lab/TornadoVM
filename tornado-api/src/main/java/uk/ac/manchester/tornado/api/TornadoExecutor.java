@@ -45,6 +45,10 @@ class TornadoExecutor {
         Collections.addAll(immutableTaskGraphList, immutableTaskGraphs);
     }
 
+    public void withCUDAGraph() {
+        immutableTaskGraphList.forEach(ImmutableTaskGraph::withCUDAGraph);
+    }
+
     void execute(ExecutorFrame executionPackage) {
         immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.execute(executionPackage));
     }

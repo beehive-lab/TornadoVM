@@ -161,6 +161,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private List<StreamingObject> outputModeObjects; // List of objects with its data transfer mode (OUT)
     private StringBuilder bufferLogProfiler = new StringBuilder();
     private Graph compilationGraph;
+
     /**
      * Options for new reductions - experimental.
      */
@@ -1224,6 +1225,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             return;
         }
 
+        vm.destroyExecutionGraphs();
         freeIOObjects();
         meta().getXPUDevice().getDeviceContext().reset(executionPlanId);
     }
@@ -1779,6 +1781,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     public void withBatch(String batchSize) {
         this.batchSizeBytes = parseSizeToBytes(batchSize);
         executionContext.setBatchSize(this.batchSizeBytes);
+    }
+
+    @Override
+    public void withCUDAGraph() {
+        executionContext.setExecutionGraphEnabled(true);
     }
 
     @Override
