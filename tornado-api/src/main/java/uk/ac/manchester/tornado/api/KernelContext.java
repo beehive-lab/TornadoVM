@@ -216,6 +216,40 @@ public class KernelContext implements ExecutionContext {
         return new double[size];
     }
 
+    // -------------------------------------------------------------------------
+    // Metal SIMD-group intrinsics (MSL §6.9.2)
+    // These methods are intercepted by MetalGraphBuilderPlugins and replaced
+    // with simd_* built-in calls in the generated Metal shader. The JVM bodies
+    // below are identity/no-op stubs used only when running on the CPU.
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns the sum of {@code val} across all active SIMD lanes.
+     * <p>
+     * Metal equivalent: {@code simd_sum(val)}
+     */
+    public float simdSum(float val) {
+        return val;
+    }
+
+    /**
+     * Returns the value held by the thread {@code delta} lanes ahead in the SIMD group.
+     * <p>
+     * Metal equivalent: {@code simd_shuffle_down(val, delta)}
+     */
+    public float simdShuffleDown(float val, int delta) {
+        return val;
+    }
+
+    /**
+     * Broadcasts the value from lane 0 to all active SIMD lanes.
+     * <p>
+     * Metal equivalent: {@code simd_broadcast_first(val)}
+     */
+    public float simdBroadcastFirst(float val) {
+        return val;
+    }
+
     /**
      * Method used to read a memory address by using the array and the index,
      * then add the value of val to it, and write the result back to the same address.

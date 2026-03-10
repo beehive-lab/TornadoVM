@@ -99,6 +99,8 @@ import uk.ac.manchester.tornado.drivers.metal.graal.nodes.IncAtomicNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalBarrierNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalConvertHalfToFloat;
+import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalSIMDShuffleDownNode;
+import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalSIMDUnaryNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalFPBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalFPUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalIntBinaryIntrinsicNode;
@@ -376,6 +378,30 @@ public class MetalGraphBuilderPlugins {
         registerHalfFloatLocalArray(r, returnedJavaKind);
     }
 
+    private static void registerSIMDPlugins(Registration r) {
+        r.register(new InvocationPlugin("simdSum", Receiver.class, float.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val) {
+                b.addPush(JavaKind.Float, new MetalSIMDUnaryNode(val, MetalSIMDUnaryNode.Operation.SIMD_SUM));
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin("simdBroadcastFirst", Receiver.class, float.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val) {
+                b.addPush(JavaKind.Float, new MetalSIMDUnaryNode(val, MetalSIMDUnaryNode.Operation.SIMD_BROADCAST_FIRST));
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin("simdShuffleDown", Receiver.class, float.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val, ValueNode delta) {
+                b.addPush(JavaKind.Float, new MetalSIMDShuffleDownNode(val, delta));
+                return true;
+            }
+        });
+    }
+
     private static void registerKernelContextPlugins(InvocationPlugins plugins) {
         Registration r = new Registration(plugins, KernelContext.class);
 
@@ -383,6 +409,7 @@ public class MetalGraphBuilderPlugins {
         registerGlobalBarrier(r);
         localArraysPlugins(r);
         registerAtomicAddOperation(r);
+        registerSIMDPlugins(r);
     }
 
     private static void registerMemoryAccessPlugins(final Plugins ps, InvocationPlugins plugins) {

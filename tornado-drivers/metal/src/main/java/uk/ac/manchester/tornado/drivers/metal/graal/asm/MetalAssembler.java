@@ -811,6 +811,10 @@ public final class MetalAssembler extends Assembler {
         public static final MetalUnaryIntrinsic IS_INF = new MetalUnaryIntrinsic("isinf");
         public static final MetalUnaryIntrinsic IS_NAN = new MetalUnaryIntrinsic("isnan");
         public static final MetalUnaryIntrinsic IS_NORMAL = new MetalUnaryIntrinsic("isnormal");
+
+        // MSL §6.9.2 SIMD-group functions (Metal built-ins, no shims needed)
+        public static final MetalUnaryIntrinsic SIMD_SUM = new MetalUnaryIntrinsic("simd_sum");
+        public static final MetalUnaryIntrinsic SIMD_BROADCAST_FIRST = new MetalUnaryIntrinsic("simd_broadcast_first");
         // @formatter:on
 
         protected MetalUnaryIntrinsic(String opcode) {
@@ -1058,6 +1062,9 @@ public final class MetalAssembler extends Assembler {
 
         public static final MetalBinaryIntrinsic DOT = new MetalBinaryIntrinsic("dot");
         public static final MetalBinaryIntrinsic CROSS = new MetalBinaryIntrinsic("cross");
+
+        // MSL §6.9.2 SIMD-group functions
+        public static final MetalBinaryIntrinsic SIMD_SHUFFLE_DOWN = new MetalBinaryIntrinsic("simd_shuffle_down");
         // @formatter:on
 
         protected MetalBinaryIntrinsic(String opcode) {

@@ -533,10 +533,11 @@ public class MetalBackend extends XPUBackend<MetalProviders> implements FrameMap
                     if (javaKind.isPrimitive() || isHalfFloat(javaType)) {
                     final AllocatableValue param = incomingArguments.getArgument(i);
                     MetalKind kind = (MetalKind) param.getPlatformKind();
-                    // MSL kernel scalar parameters must use constant address space reference
-                    // (bound via setBytes: on the encoder side)
+                    // MSL kernel scalar parameters: constant address space + uniform<T> hint.
+                    // uniform<T> (MSL §2.14) tells the compiler the value is the same across all
+                    // SIMD lanes, enabling scalar code paths and avoiding divergence tracking.
                     String paramName = getParameterName(locals[i]);
-                    asm.emit(",\n    constant %s& %s [[buffer(%d)]]", kind.toString(), paramName, metalArgIndex);
+                    asm.emit(",\n    constant uniform<%s>& %s [[buffer(%d)]]", kind.toString(), paramName, metalArgIndex);
                     metalArgIndex++;
                 } else {
                     // Skip the kernel context object
