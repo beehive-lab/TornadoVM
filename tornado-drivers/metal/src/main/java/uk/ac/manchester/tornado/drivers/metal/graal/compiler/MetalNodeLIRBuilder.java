@@ -27,7 +27,6 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shoul
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalKind.ILLEGAL;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-import uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssembler;
 import uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalConstantValue;
 import uk.ac.manchester.tornado.runtime.common.MetalTokens;
 
@@ -122,9 +121,6 @@ import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalLIRStmt.ExprStmt;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalNullary;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalReturnSlot;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalUnary;
-import uk.ac.manchester.tornado.drivers.metal.graal.nodes.FPGAWorkGroupSizeNode;
-import uk.ac.manchester.tornado.drivers.metal.graal.nodes.IntelUnrollPragmaNode;
-import uk.ac.manchester.tornado.drivers.metal.graal.nodes.XilinxPipeliningPragmaNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.logic.LogicalAndNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.logic.LogicalEqualsNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.logic.LogicalNotNode;
@@ -505,7 +501,6 @@ public class MetalNodeLIRBuilder extends NodeLIRBuilder {
                 append(new MetalLIRStmt.AssignStmt(result, value));
             }
         }
-        emitMetalFPGAPragmas(currentBlockDominator);
         append(new MetalControlFlow.LoopInitOp());
         append(new MetalControlFlow.LoopPostOp());
         label.clearIncomingValues();
@@ -566,8 +561,6 @@ public class MetalNodeLIRBuilder extends NodeLIRBuilder {
             emitShortCircuitOrNode(shortCircuitOrNode);
         } else if (node instanceof ConditionalNode conditionalNode) {
             emitConditionalNode(conditionalNode);
-        } else if (node instanceof IntelUnrollPragmaNode || node instanceof XilinxPipeliningPragmaNode || node instanceof FPGAWorkGroupSizeNode) {
-            // ignore emit-action
         } else {
             super.emitNode(node);
         }
@@ -699,14 +692,6 @@ public class MetalNodeLIRBuilder extends NodeLIRBuilder {
                     }
                     setResult(param, new MetalNullary.Parameter(name, lirKind));
                 }
-            }
-        }
-    }
-
-    private void emitMetalFPGAPragmas(HIRBlock block) {
-        for (ValueNode tempDomBlockNode : block.getNodes()) {
-            if (tempDomBlockNode instanceof IntelUnrollPragmaNode || tempDomBlockNode instanceof XilinxPipeliningPragmaNode) {
-                super.emitNode(tempDomBlockNode);
             }
         }
     }

@@ -45,8 +45,6 @@ import uk.ac.manchester.tornado.drivers.metal.graal.phases.InverseSquareRootPhas
 import uk.ac.manchester.tornado.drivers.metal.graal.phases.MetalFMAPhase;
 import uk.ac.manchester.tornado.drivers.metal.graal.phases.MetalFP16SupportPhase;
 import uk.ac.manchester.tornado.drivers.metal.graal.phases.MetalFP64SupportPhase;
-import uk.ac.manchester.tornado.drivers.metal.graal.phases.MetalFPGAPragmaPhase;
-import uk.ac.manchester.tornado.drivers.metal.graal.phases.MetalFPGAThreadScheduler;
 import uk.ac.manchester.tornado.drivers.metal.graal.phases.TornadoAtomicsParametersPhase;
 import uk.ac.manchester.tornado.drivers.metal.graal.phases.TornadoAtomicsScheduling;
 import uk.ac.manchester.tornado.drivers.metal.graal.phases.TornadoFixedArrayCopyPhase;
@@ -83,11 +81,6 @@ public class MetalLowTier extends TornadoLowTier {
         appendPhase(new AddressLoweringByNodePhase(addressLowering));
 
         appendPhase(new DeadCodeEliminationPhase(DeadCodeEliminationPhase.Optionality.Required));
-
-        if (tornadoDeviceContext.isPlatformFPGA()) {
-            appendPhase(new MetalFPGAPragmaPhase(tornadoDeviceContext));
-            appendPhase(new MetalFPGAThreadScheduler());
-        }
 
         appendPhase(new TornadoHalfFloatVectorOffset());
 
