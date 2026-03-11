@@ -571,8 +571,9 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         args.order(getByteOrder());
 
         // Kernel context pointer
+        int kernelContextWriteEventId = -1;
         if (!isStreamCapturing(executionPlanId)) {
-            int kernelContextWriteEventId = ptxKernelArgs.enqueueWrite(executionPlanId);
+            kernelContextWriteEventId = ptxKernelArgs.enqueueWrite(executionPlanId);
             updateProfilerKernelContextWrite(executionPlanId, kernelContextWriteEventId, meta, ptxKernelArgs);
         } else {
             pendingKernelContextWrite = ptxKernelArgs;
