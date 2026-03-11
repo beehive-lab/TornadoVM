@@ -135,20 +135,6 @@
             </includes>
         </fileSet>
         <fileSet>
-            <directory>../tornado-drivers/metal-jni/target/windows-i386-release/cmake/Release</directory>
-            <outputDirectory>./lib/</outputDirectory>
-            <includes>
-                <include>*.dll</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>../tornado-drivers/metal-jni/target/windows-amd64-release/cmake/Release</directory>
-            <outputDirectory>./lib/</outputDirectory>
-            <includes>
-                <include>*.dll</include>
-            </includes>
-        </fileSet>
-        <fileSet>
             <directory>../tornado-drivers/ptx-jni/target/windows-i386-release/cmake/Release</directory>
             <outputDirectory>./lib/</outputDirectory>
             <includes>
