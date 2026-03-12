@@ -42,10 +42,10 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 /**
  * Graal IR node for {@code KernelContext.simdSum(float)}.
  *
- * <p>Implements a full-warp butterfly reduction using five rounds of
- * {@code shfl.sync.down.b32} + {@code add.f32} with deltas 16, 8, 4, 2, 1.
- * After the five rounds, lane 0 (and all other lanes) hold the sum of all
- * 32 input values.
+ * <p>Implements a full-warp reduction using five rounds of
+ * {@code shfl.sync.down.b32} + {@code add.f32} with deltas 16, 8, 4, 2, 1,
+ * followed by a {@code shfl.sync.idx.b32} broadcast from lane 0 so that
+ * all lanes receive the final sum (matching Metal's {@code simd_sum} semantics).
  *
  * <p>Extends {@link FixedWithNextNode} because warp-shuffle operations are
  * convergent — all lanes must execute them together.
@@ -88,6 +88,13 @@ public class PTXSimdSumNode extends FixedWithNextNode implements LIRLowerable {
             acc = newAcc;
         }
 
-        gen.setResult(this, acc);
+        // Broadcast lane 0's final sum to all lanes so every lane sees the
+        // same result, matching Metal's simd_sum() semantics.
+        Variable broadcast = tool.newVariable(lirKind);
+        ConstantValue zero = new ConstantValue(intKind, JavaConstant.forInt(0));
+        tool.append(new PTXLIRStmt.ShuffleSyncStmt(
+                PTXLIRStmt.ShuffleSyncStmt.Mode.IDX, broadcast, acc, zero));
+
+        gen.setResult(this, broadcast);
     }
 }
