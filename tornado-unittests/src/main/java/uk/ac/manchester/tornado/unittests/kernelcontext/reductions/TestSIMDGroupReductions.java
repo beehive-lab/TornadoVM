@@ -37,11 +37,12 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
- * Unit tests for Metal SIMD-group intrinsics exposed via {@link KernelContext}:
+ * Unit tests for SIMD-group intrinsics exposed via {@link KernelContext}:
  * {@code simdSum}, {@code simdShuffleDown}, and {@code simdBroadcastFirst}.
  *
- * <p>These tests are Metal-only: MSL §6.9.2 SIMD-group functions do not exist in
- * OpenCL, PTX, or SPIR-V. They are skipped on non-Metal backends.
+ * <p>These tests run on Metal (MSL SIMD-group functions) and PTX (CUDA
+ * {@code shfl.sync} warp-shuffle instructions). They are skipped on OpenCL
+ * and SPIR-V backends which do not yet support these intrinsics.
  *
  * <p>How to run:
  * <code>
@@ -270,7 +271,6 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
     @Test
     public void testIrregularSizes_MultiplesOf32() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         // 3, 5, 31, 33, 99 groups — not powers of two
@@ -287,7 +287,6 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
     @Test
     public void testIrregularSizes_NotMultipleOf32() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         for (int n : new int[]{1, 31, 33, 63, 65, 100, 1000, 1023, 1025, 65537}) {
@@ -309,7 +308,6 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
     @Test
     public void testSIMDSum() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 256;
@@ -352,7 +350,6 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
     @Test
     public void testSIMDShuffleDownReduction() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 256;
@@ -394,7 +391,6 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
     @Test
     public void testSIMDBroadcastFirst() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 256;

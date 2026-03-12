@@ -430,6 +430,33 @@ public class PTXGraphBuilderPlugins {
         registerGlobalBarrier(r);
         localArraysPlugins(r);
         registerAtomicAddOperation(r);
+        registerSIMDPlugins(r);
+    }
+
+    private static void registerSIMDPlugins(Registration r) {
+        r.register(new InvocationPlugin("simdShuffleDown", InvocationPlugin.Receiver.class, float.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val, ValueNode delta) {
+                b.addPush(JavaKind.Float, new uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXShuffleDownNode(val, delta));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("simdSum", InvocationPlugin.Receiver.class, float.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val) {
+                b.addPush(JavaKind.Float, new uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXSimdSumNode(val));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("simdBroadcastFirst", InvocationPlugin.Receiver.class, float.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val) {
+                b.addPush(JavaKind.Float, new uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXSimdBroadcastFirstNode(val));
+                return true;
+            }
+        });
     }
 
     private static void registerFPIntrinsics(Registration r, Class<?> type, JavaKind kind) {
