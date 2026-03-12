@@ -217,9 +217,10 @@ public class KernelContext implements ExecutionContext {
     }
 
     // -------------------------------------------------------------------------
-    // SIMD-group / warp-shuffle intrinsics
-    // Metal: intercepted by MetalGraphBuilderPlugins -> simd_* MSL built-ins
-    // PTX:   intercepted by PTXGraphBuilderPlugins   -> shfl.sync PTX instructions
+    // SIMD-group / warp-shuffle / sub-group intrinsics
+    // Metal:  intercepted by MetalGraphBuilderPlugins  -> simd_* MSL built-ins
+    // PTX:    intercepted by PTXGraphBuilderPlugins    -> shfl.sync PTX instructions
+    // OpenCL: intercepted by OCLGraphBuilderPlugins    -> sub_group_* built-ins (cl_khr_subgroups)
     // The JVM bodies below are identity/no-op stubs used only when running
     // on the CPU.
     // -------------------------------------------------------------------------
@@ -228,7 +229,8 @@ public class KernelContext implements ExecutionContext {
      * Returns the sum of {@code val} across all active SIMD lanes.
      * <p>
      * Metal equivalent: {@code simd_sum(val)}<br>
-     * PTX equivalent: butterfly reduction with {@code shfl.sync.down.b32}
+     * PTX equivalent: butterfly reduction with {@code shfl.sync.down.b32}<br>
+     * OpenCL equivalent: {@code sub_group_reduce_add(val)}
      */
     public float simdSum(float val) {
         return val;
@@ -238,7 +240,8 @@ public class KernelContext implements ExecutionContext {
      * Returns the value held by the thread {@code delta} lanes ahead in the SIMD group.
      * <p>
      * Metal equivalent: {@code simd_shuffle_down(val, delta)}<br>
-     * PTX equivalent: {@code shfl.sync.down.b32 dest, val, delta, 31, 0xFFFFFFFF}
+     * PTX equivalent: {@code shfl.sync.down.b32 dest, val, delta, 31, 0xFFFFFFFF}<br>
+     * OpenCL equivalent: {@code sub_group_shuffle_down(val, delta)}
      */
     public float simdShuffleDown(float val, int delta) {
         return val;
@@ -248,7 +251,8 @@ public class KernelContext implements ExecutionContext {
      * Broadcasts the value from lane 0 to all active SIMD lanes.
      * <p>
      * Metal equivalent: {@code simd_broadcast_first(val)}<br>
-     * PTX equivalent: {@code shfl.sync.idx.b32 dest, val, 0, 31, 0xFFFFFFFF}
+     * PTX equivalent: {@code shfl.sync.idx.b32 dest, val, 0, 31, 0xFFFFFFFF}<br>
+     * OpenCL equivalent: {@code sub_group_broadcast(val, 0)}
      */
     public float simdBroadcastFirst(float val) {
         return val;

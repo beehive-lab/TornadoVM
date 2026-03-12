@@ -80,6 +80,10 @@ public final class OCLAssembler extends Assembler {
             emitLine("#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable  ");
         }
 
+        if (((OCLTargetDescription) target).supportsSubgroups()) {
+            emitLine("#pragma OPENCL EXTENSION cl_khr_subgroups : enable  ");
+        }
+
         if (EMIT_INTRINSICS) {
             emitAtomicIntrinsics();
         }
@@ -752,6 +756,8 @@ public final class OCLAssembler extends Assembler {
         public static final OCLUnaryIntrinsic IS_INF = new OCLUnaryIntrinsic("isinf");
         public static final OCLUnaryIntrinsic IS_NAN = new OCLUnaryIntrinsic("isnan");
         public static final OCLUnaryIntrinsic IS_NORMAL = new OCLUnaryIntrinsic("isnormal");
+
+        public static final OCLUnaryIntrinsic SUB_GROUP_REDUCE_ADD = new OCLUnaryIntrinsic("sub_group_reduce_add");
         // @formatter:on
 
         protected OCLUnaryIntrinsic(String opcode) {
@@ -890,6 +896,9 @@ public final class OCLAssembler extends Assembler {
 
         public static final OCLBinaryIntrinsic DOT = new OCLBinaryIntrinsic("dot");
         public static final OCLBinaryIntrinsic CROSS = new OCLBinaryIntrinsic("cross");
+
+        public static final OCLBinaryIntrinsic SUB_GROUP_SHUFFLE_DOWN = new OCLBinaryIntrinsic("sub_group_shuffle_down");
+        public static final OCLBinaryIntrinsic SUB_GROUP_BROADCAST = new OCLBinaryIntrinsic("sub_group_broadcast");
         // @formatter:on
 
         protected OCLBinaryIntrinsic(String opcode) {

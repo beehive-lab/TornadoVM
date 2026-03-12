@@ -110,7 +110,8 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryInt
 
 public class OCLGraphBuilderPlugins {
 
-    public static void registerInvocationPlugins(final Plugins ps, final InvocationPlugins plugins, final HotSpotMetaAccessProvider metaAccessProvider) {
+    public static void registerInvocationPlugins(final Plugins ps, final InvocationPlugins plugins, final HotSpotMetaAccessProvider metaAccessProvider,
+            final uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription target) {
         if (TornadoOptions.INLINE_DURING_BYTECODE_PARSING) {
             ps.appendInlineInvokePlugin(new InlineDuringParsingPlugin());
         }
@@ -119,7 +120,7 @@ public class OCLGraphBuilderPlugins {
         registerTornadoVMIntrinsicsPlugins(plugins);
 
         // Register Atomics
-        registerKernelContextPlugins(plugins);
+        registerKernelContextPlugins(plugins, target);
 
         OCLMathPlugins.registerTornadoMathPlugins(plugins);
         registerOpenCLBuiltinPlugins(plugins);
@@ -414,13 +415,40 @@ public class OCLGraphBuilderPlugins {
         registerHalfFloatLocalArray(r, returnedJavaKind);
     }
 
-    private static void registerKernelContextPlugins(InvocationPlugins plugins) {
+    private static void registerKernelContextPlugins(InvocationPlugins plugins, uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription target) {
         Registration r = new Registration(plugins, KernelContext.class);
 
         registerLocalBarrier(r);
         registerGlobalBarrier(r);
         localArraysPlugins(r);
         registerAtomicAddOperation(r);
+        if (target.supportsSubgroups()) {
+            registerSIMDPlugins(r);
+        }
+    }
+
+    private static void registerSIMDPlugins(Registration r) {
+        r.register(new InvocationPlugin("simdShuffleDown", Receiver.class, float.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val, ValueNode delta) {
+                b.addPush(JavaKind.Float, new uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLSubGroupShuffleDownNode(val, delta));
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin("simdSum", Receiver.class, float.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val) {
+                b.addPush(JavaKind.Float, new uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLSubGroupReduceAddNode(val));
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin("simdBroadcastFirst", Receiver.class, float.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val) {
+                b.addPush(JavaKind.Float, new uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLSubGroupBroadcastNode(val));
+                return true;
+            }
+        });
     }
 
     private static void registerMemoryAccessPlugins(InvocationPlugins plugins, HotSpotMetaAccessProvider metaAccessProvider) {

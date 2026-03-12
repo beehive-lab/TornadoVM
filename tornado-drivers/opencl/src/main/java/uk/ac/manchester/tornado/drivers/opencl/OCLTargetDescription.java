@@ -55,6 +55,7 @@ public class OCLTargetDescription extends TargetDescription {
     private final boolean supportsInt64Atomics;
 
     private final boolean supportsF16;
+    private final boolean supportsSubgroups;
 
     public OCLTargetDescription(Architecture arch, boolean supportsFP64, String extensions) {
         this(arch, false, STACK_ALIGNMENT, IMPLICIT_NULL_CHECK_LIMIT, INLINE_OBJECTS, supportsFP64, extensions);
@@ -66,6 +67,7 @@ public class OCLTargetDescription extends TargetDescription {
         this.extensions = extensions;
         supportsInt64Atomics = extensions.contains("cl_khr_int64_base_atomics");
         supportsF16 = extensions.contains("cl_khr_fp16");
+        supportsSubgroups = extensions.contains("cl_khr_subgroups");
     }
     //@formatter:on
 
@@ -101,6 +103,10 @@ public class OCLTargetDescription extends TargetDescription {
 
     public boolean supportsInt64Atomics() {
         return supportsInt64Atomics;
+    }
+
+    public boolean supportsSubgroups() {
+        return supportsSubgroups;
     }
 
     public String getExtensions() {

@@ -111,7 +111,7 @@ public class OCLHotSpotBackendFactory {
             ClassfileBytecodeProvider bytecodeProvider = new ClassfileBytecodeProvider(metaAccess, snippetReflection);
             GraalDebugHandlersFactory graalDebugHandlersFactory = new GraalDebugHandlersFactory(snippetReflection);
             TornadoReplacements replacements = new TornadoReplacements(graalDebugHandlersFactory, p, snippetReflection, bytecodeProvider, target);
-            plugins = createGraphBuilderPlugins(metaAccess, replacements, snippetReflection, lowerer);
+            plugins = createGraphBuilderPlugins(metaAccess, replacements, snippetReflection, lowerer, target);
 
             replacements.setGraphBuilderPlugins(plugins);
 
@@ -128,7 +128,7 @@ public class OCLHotSpotBackendFactory {
     }
 
     protected static Plugins createGraphBuilderPlugins(HotSpotMetaAccessProvider metaAccess, Replacements replacements, SnippetReflectionProvider snippetReflectionProvider,
-            LoweringProvider loweringProvider) {
+            LoweringProvider loweringProvider, OCLTargetDescription target) {
         InvocationPlugins invocationPlugins = new InvocationPlugins();
         Plugins plugins = new Plugins(invocationPlugins);
 
@@ -142,7 +142,7 @@ public class OCLHotSpotBackendFactory {
                 false, //
                 false, //
                 loweringProvider);
-        OCLGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins, metaAccess);
+        OCLGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins, metaAccess, target);
         return plugins;
     }
 

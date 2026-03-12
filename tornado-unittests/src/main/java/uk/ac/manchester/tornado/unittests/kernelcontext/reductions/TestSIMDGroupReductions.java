@@ -41,8 +41,11 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * {@code simdSum}, {@code simdShuffleDown}, and {@code simdBroadcastFirst}.
  *
  * <p>These tests run on Metal (MSL SIMD-group functions) and PTX (CUDA
- * {@code shfl.sync} warp-shuffle instructions). They are skipped on OpenCL
- * and SPIR-V backends which do not yet support these intrinsics.
+ * {@code shfl.sync} warp-shuffle instructions). OpenCL support is
+ * implemented using {@code cl_khr_subgroups} sub-group built-ins but is
+ * currently skipped because the extension is not available on all devices
+ * (e.g. NVIDIA). Tests are skipped on SPIR-V which does not yet support
+ * these intrinsics.
  *
  * <p>How to run:
  * <code>
@@ -270,6 +273,7 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
      */
     @Test
     public void testIrregularSizes_MultiplesOf32() throws TornadoExecutionPlanException {
+        // OpenCL support requires cl_khr_subgroups (available on Intel/AMD/ARM, not NVIDIA)
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
@@ -286,6 +290,7 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
      */
     @Test
     public void testIrregularSizes_NotMultipleOf32() throws TornadoExecutionPlanException {
+        // OpenCL support requires cl_khr_subgroups (available on Intel/AMD/ARM, not NVIDIA)
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
@@ -307,6 +312,7 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
      */
     @Test
     public void testSIMDSum() throws TornadoExecutionPlanException {
+        // OpenCL support requires cl_khr_subgroups (available on Intel/AMD/ARM, not NVIDIA)
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
@@ -349,6 +355,7 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
      */
     @Test
     public void testSIMDShuffleDownReduction() throws TornadoExecutionPlanException {
+        // OpenCL support requires cl_khr_subgroups (available on Intel/AMD/ARM, not NVIDIA)
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
@@ -390,6 +397,7 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
      */
     @Test
     public void testSIMDBroadcastFirst() throws TornadoExecutionPlanException {
+        // OpenCL support requires cl_khr_subgroups (available on Intel/AMD/ARM, not NVIDIA)
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
