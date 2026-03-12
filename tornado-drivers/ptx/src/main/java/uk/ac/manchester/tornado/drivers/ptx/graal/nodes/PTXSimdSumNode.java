@@ -1,0 +1,93 @@
+/*
+ * This file is part of Tornado: A heterogeneous programming framework:
+ * https://github.com/beehive-lab/tornadovm
+ *
+ * Copyright (c) 2026, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ */
+package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
+
+import org.graalvm.compiler.core.common.type.StampFactory;
+import org.graalvm.compiler.graph.NodeClass;
+import org.graalvm.compiler.lir.ConstantValue;
+import org.graalvm.compiler.lir.Variable;
+import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
+import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.spi.LIRLowerable;
+import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
+
+/**
+ * Graal IR node for {@code KernelContext.simdSum(float)}.
+ *
+ * <p>Implements a full-warp butterfly reduction using five rounds of
+ * {@code shfl.sync.down.b32} + {@code add.f32} with deltas 16, 8, 4, 2, 1.
+ * After the five rounds, lane 0 (and all other lanes) hold the sum of all
+ * 32 input values.
+ *
+ * <p>Extends {@link FixedWithNextNode} because warp-shuffle operations are
+ * convergent — all lanes must execute them together.
+ */
+@NodeInfo(shortName = "PTXSimdSum")
+public class PTXSimdSumNode extends FixedWithNextNode implements LIRLowerable {
+
+    public static final NodeClass<PTXSimdSumNode> TYPE = NodeClass.create(PTXSimdSumNode.class);
+
+    private static final int[] BUTTERFLY_DELTAS = { 16, 8, 4, 2, 1 };
+
+    @Input private ValueNode value;
+
+    public PTXSimdSumNode(ValueNode value) {
+        super(TYPE, StampFactory.forKind(JavaKind.Float));
+        this.value = value;
+    }
+
+    @Override
+    public void generate(NodeLIRBuilderTool gen) {
+        LIRGeneratorTool tool = gen.getLIRGeneratorTool();
+        var lirKind = tool.getLIRKind(stamp);
+        var intKind = tool.getLIRKind(StampFactory.forKind(JavaKind.Int));
+
+        Value acc = gen.operand(value);
+
+        for (int delta : BUTTERFLY_DELTAS) {
+            // tmp = shfl.sync.down.b32 acc, delta
+            Variable tmp = tool.newVariable(lirKind);
+            ConstantValue deltaConst = new ConstantValue(intKind, JavaConstant.forInt(delta));
+            tool.append(new PTXLIRStmt.ShuffleSyncStmt(
+                    PTXLIRStmt.ShuffleSyncStmt.Mode.DOWN, tmp, acc, deltaConst));
+
+            // newAcc = add.f32 acc, tmp
+            Variable newAcc = tool.newVariable(lirKind);
+            tool.append(new PTXLIRStmt.AssignStmt(newAcc,
+                    new uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXBinary.Expr(
+                            uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryOp.ADD,
+                            lirKind, acc, tmp)));
+            acc = newAcc;
+        }
+
+        gen.setResult(this, acc);
+    }
+}
