@@ -11,7 +11,7 @@
 
 TornadoVM is a plug-in to OpenJDK and GraalVM that allows programmers to automatically run Java programs on
 heterogeneous hardware.
-TornadoVM targets OpenCL, PTX and SPIR-V compatible devices which include multi-core CPUs, dedicated
+TornadoVM targets **OpenCL, PTX, Metal and SPIR-V** compatible devices which include multi-core CPUs, dedicated
 GPUs (Intel, NVIDIA, AMD), integrated GPUs (Intel HD Graphics and ARM Mali), and FPGAs (Intel and Xilinx).
 
 TornadoVM has three backends that generate OpenCL C, NVIDIA CUDA PTX assembly, and SPIR-V binary.
@@ -53,6 +53,7 @@ Backend   | SDKMAN! Latest Version
 OpenCL   | `2.2.0-opencl` **(default)**
 PTX      | `2.2.0-ptx`
 SPIR-V   | `2.2.0-spirv`
+Metal| `Next-release`
 All Backends     | `2.2.0-full`
 
 
