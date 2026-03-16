@@ -125,6 +125,7 @@
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/opencl-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/ptx-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/spirv-exports</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/metal-exports</arg>
                             </compilerArgs>
                         </configuration>
                     </plugin>
@@ -310,6 +311,10 @@
         </profile>
         <profile>
             <id>portable</id>
+            <!--
+                  Sonatype requires a main jar, even for platform-specific artifacts, so we supply it with an
+                  empty file.
+                  -->
             <build>
                 <plugins>
                     <plugin>
@@ -390,6 +395,7 @@
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/opencl-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/ptx-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/spirv-exports</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/metal-exports</arg>
                             </compilerArgs>
                         </configuration>
                     </plugin>

@@ -427,6 +427,7 @@ public class TestArrays extends TornadoTestBase {
     public void testCUDAGraphWithKernelContextChained() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
 
         final int numElements = 256;
 
@@ -492,6 +493,7 @@ public class TestArrays extends TornadoTestBase {
     public void testCUDAGraphPersistConsume() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
 
         final int numElements = 256;
 

@@ -247,6 +247,27 @@ public class TaskDataContext extends AbstractRTContext {
     }
 
     @Override
+    public int getMetalThreadsPerThreadgroupX() {
+        return isMetalThreadgroupSizeDefined()
+                ? super.getMetalThreadsPerThreadgroupX()
+                : scheduleMetaData.getMetalThreadsPerThreadgroupX();
+    }
+
+    @Override
+    public int getMetalThreadsPerThreadgroupY() {
+        return isMetalThreadgroupSizeDefined()
+                ? super.getMetalThreadsPerThreadgroupY()
+                : scheduleMetaData.getMetalThreadsPerThreadgroupY();
+    }
+
+    @Override
+    public int getMetalThreadsPerThreadgroupZ() {
+        return isMetalThreadgroupSizeDefined()
+                ? super.getMetalThreadsPerThreadgroupZ()
+                : scheduleMetaData.getMetalThreadsPerThreadgroupZ();
+    }
+
+    @Override
     public List<TornadoEvents> getProfiles(long executionPlanId) {
         final List<TornadoEvents> result = new ArrayList<>(profiles.keySet().size());
         for (TornadoXPUDevice device : profiles.keySet()) {
@@ -314,6 +335,10 @@ public class TaskDataContext extends AbstractRTContext {
     @Override
     public boolean shouldUseOpenCLDriverScheduling() {
         return super.shouldUseOpenCLDriverScheduling() || scheduleMetaData.shouldUseOpenCLDriverScheduling();
+    }
+
+    public boolean shouldUseMetalDriverScheduling() {
+        return super.shouldUseMetalDriverScheduling() || scheduleMetaData.shouldUseMetalDriverScheduling();
     }
 
     @Override

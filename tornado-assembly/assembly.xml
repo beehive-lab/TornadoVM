@@ -183,6 +183,7 @@
                 <include>io.github.beehive-lab:tornado-drivers-ptx</include>
                 <include>io.github.beehive-lab:tornado-drivers-opencl</include>
                 <include>io.github.beehive-lab:tornado-drivers-spirv</include>
+                <include>io.github.beehive-lab:tornado-drivers-metal</include>
                 <include>io.github.beehive-lab:tornado-examples</include>
                 <include>io.github.beehive-lab:tornado-benchmarks</include>
                 <include>io.github.beehive-lab:tornado-unittests</include>
@@ -207,6 +208,7 @@
                 </includes>
             </unpackOptions>
             <includes>
+                <include>io.github.beehive-lab:tornado-drivers-metal-jni:jar:libs</include>
                 <include>io.github.beehive-lab:tornado-drivers-ptx-jni:jar:libs</include>
                 <include>io.github.beehive-lab:tornado-drivers-opencl-jni:jar:libs</include>
             </includes>
