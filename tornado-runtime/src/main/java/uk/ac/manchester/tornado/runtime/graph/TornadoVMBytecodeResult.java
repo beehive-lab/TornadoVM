@@ -134,4 +134,12 @@ public class TornadoVMBytecodeResult {
         buffer.reset();
     }
 
+    public int position() {
+        return buffer.position();
+    }
+
+    public void position(int newPosition) {
+        buffer.position(newPosition);
+    }
+
 }
