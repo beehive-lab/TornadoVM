@@ -53,6 +53,19 @@ public class PTXAddressNode extends AddressNode implements LIRLowerable {
     @OptionalInput
     private ValueNode index;
 
+    /**
+     * Optional: the original <em>integer</em> (32-bit) element index before
+     * sign-extension and byte-scaling.  Set by {@link
+     * uk.ac.manchester.tornado.drivers.ptx.graal.phases.PTXIndexedAccessPhase}
+     * when the offset matches {@code shl(signExtend(intIndex), N)}.
+     *
+     * <p>Used by the CUDA C code generator to emit {@code ((TYPE*)base)[intIndex]}
+     * instead of the 4-step pointer-arithmetic chain, matching the cleaner form
+     * that the OpenCL backend produces natively.
+     */
+    @OptionalInput
+    private ValueNode intIndex;
+
     private PTXMemoryBase memoryRegister;
 
     public PTXAddressNode(ValueNode base, ValueNode index, PTXMemoryBase memoryRegister) {
@@ -105,6 +118,21 @@ public class PTXAddressNode extends AddressNode implements LIRLowerable {
     @Override
     public ValueNode getIndex() {
         return index;
+    }
+
+    /** Returns the integer element index set by {@link
+     *  uk.ac.manchester.tornado.drivers.ptx.graal.phases.PTXIndexedAccessPhase},
+     *  or {@code null} if the pattern was not detected. */
+    public ValueNode getIntIndex() {
+        return intIndex;
+    }
+
+    /** Called by {@link
+     *  uk.ac.manchester.tornado.drivers.ptx.graal.phases.PTXIndexedAccessPhase}
+     *  to record the original 32-bit element index. */
+    public void setIntIndex(ValueNode intIdx) {
+        updateUsages(this.intIndex, intIdx);
+        this.intIndex = intIdx;
     }
 
     @Override
