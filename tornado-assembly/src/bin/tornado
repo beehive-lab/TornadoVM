@@ -377,7 +377,7 @@ check_backend_dependencies() {
                     has_warnings=true
                 fi
                 ;;
-            *ptx*)
+            *ptx*|*cuda*)
                 if ! check_ptx_backend; then
                     has_warnings=true
                 fi

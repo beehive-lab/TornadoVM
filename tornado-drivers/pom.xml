@@ -66,6 +66,20 @@
                 <module>ptx-jni</module>
             </modules>
         </profile>
+
+        <profile>
+            <!-- Builds the same PTX + PTX-JNI modules as ptx-backend, but with CUDA C codegen
+                 enabled. The tornado.ptx.codegen=cudac property is set globally by the root
+                 pom.xml cuda-backend profile and written into tornado.properties at assembly time. -->
+            <id>cuda-backend</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <modules>
+                <module>ptx</module>
+                <module>ptx-jni</module>
+            </modules>
+        </profile>
     </profiles>
 
     <dependencies>

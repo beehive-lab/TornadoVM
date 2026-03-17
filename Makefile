@@ -28,6 +28,9 @@ mvn-single-threaded-polyglot:
 ptx:
 	bin/compile --jdk jdk21 --backend ptx,opencl
 
+cuda:
+	bin/compile --jdk jdk21 --backend cuda
+
 spirv:
 	bin/compile --jdk jdk21 --backend spirv,ptx,opencl
 

@@ -53,6 +53,8 @@
         <jmh.version>1.29</jmh.version>
         <tornadojmhjar.name>jmhbenchmarks</tornadojmhjar.name>
         <checkstyle.config.location>tornado-assembly/src/etc/checkstyle.xml</checkstyle.config.location>
+        <!-- Default PTX codegen mode; overridden to "cudac" by the cuda-backend profile -->
+        <tornado.ptx.codegen.default>ptx</tornado.ptx.codegen.default>
     </properties>
 
     <profiles>
@@ -495,6 +497,19 @@
                     <type>pom</type>
                 </dependency>
             </dependencies>
+        </profile>
+
+        <profile>
+            <!-- Activated by make BACKEND=cuda. Sets tornado.ptx.codegen.default=cudac so that
+                 tornado-assembly/src/etc/tornado.properties is filtered with cudac as the default
+                 codegen mode, eliminating the need for a runtime -D flag. -->
+            <id>cuda-backend</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <tornado.ptx.codegen.default>cudac</tornado.ptx.codegen.default>
+            </properties>
         </profile>
     </profiles>
     <build>

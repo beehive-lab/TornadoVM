@@ -406,7 +406,7 @@ def validate_windows_dependencies(sdk_path):
                 if 'opencl-backend' in content:
                     validate_opencl_backend(sdk_path)
 
-                if 'ptx-backend' in content:
+                if 'ptx-backend' in content or 'cuda-backend' in content:
                     validate_ptx_backend(sdk_path)
 
                 if 'spirv-backend' in content:
@@ -1286,7 +1286,7 @@ class TornadoVMRunnerTool():
             if ("spirv-backend" in self.listOfBackends):
                 javaFlags = javaFlags + opencl + " " + spirv + " "
                 tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
-            if ("ptx-backend" in self.listOfBackends):
+            if ("ptx-backend" in self.listOfBackends or "cuda-backend" in self.listOfBackends):
                 javaFlags = javaFlags + ptx + " "
                 tornadoAddModules = tornadoAddModules + "," + __PTX_MODULE__
             if ("metal-backend" in self.listOfBackends):
@@ -1300,7 +1300,7 @@ class TornadoVMRunnerTool():
             if ("spirv-backend" in self.listOfBackends):
                 javaFlags = javaFlags + "@" + opencl + " @" + spirv + " "
                 tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
-            if ("ptx-backend" in self.listOfBackends):
+            if ("ptx-backend" in self.listOfBackends or "cuda-backend" in self.listOfBackends):
                 javaFlags = javaFlags + "@" + ptx + " "
                 tornadoAddModules = tornadoAddModules + "," + __PTX_MODULE__
             if ("metal-backend" in self.listOfBackends):
