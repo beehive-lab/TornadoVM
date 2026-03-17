@@ -47,6 +47,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.ptx.graal.backend.PTXBackend;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class PTXCodeUtil {
 
@@ -170,6 +171,30 @@ public class PTXCodeUtil {
     }
 
     public static String buildKernelName(String methodName, SchedulableTask task) {
+        // In CUDA C mode use a short name: taskId_methodName (preserving camelCase).
+        // The parameter-type suffix is not needed for disambiguation because NVRTC
+        // compiles one function per module anyway, and the shorter name is much
+        // more readable in --printKernel output and NVRTC error messages.
+        if ("cudac".equals(TornadoOptions.PTX_CODEGEN)) {
+            StringBuilder sb = new StringBuilder();
+            String taskNameID = task.getId();
+            for (int i = 0; i < taskNameID.length(); i++) {
+                char c = taskNameID.charAt(i);
+                if (i == 0 && Character.isDigit(c)) {
+                    sb.append('_').append(c);
+                } else if (Character.isLetterOrDigit(c)) {
+                    sb.append(c);
+                } else {
+                    sb.append('_');
+                }
+            }
+            sb.append('_').append(methodName);
+            if (task.getBatchNumber() > 0) {
+                sb.append("_").append(task.getBatchNumber());
+            }
+            return sb.toString();
+        }
+
         StringBuilder sb = sanitiseTaskID(methodName, task);
         for (Object arg : task.getArguments()) {
             sb.append('_');

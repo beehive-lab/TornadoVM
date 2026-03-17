@@ -52,6 +52,13 @@ public class TornadoOptions {
     public static final String DEFAULT_PTX_COMPILER_FLAGS = getProperty("tornado.ptx.compiler.flags", "CU_JIT_OPTIMIZATION_LEVEL 4");
 
     /**
+     * PTX code generation mode. "ptx" (default) emits PTX assembly; "cudac" emits CUDA C compiled via NVRTC.
+     * Set automatically to "cudac" when the SDK is built with make BACKEND=cuda.
+     * Can be overridden at runtime with -Dtornado.ptx.codegen=ptx.
+     */
+    public static final String PTX_CODEGEN = getProperty("tornado.ptx.codegen", "ptx");
+
+    /**
      * Default SPIR-V/LevelZero Flags.
      */
     public static final String DEFAULT_SPIRV_LEVEL_ZERO_COMPILER_FLAGS = getProperty("tornado.spirv.levelzero.flags", "-ze-opt-level 2 -ze-opt-large-register-file");

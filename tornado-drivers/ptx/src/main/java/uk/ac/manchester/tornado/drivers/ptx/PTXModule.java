@@ -23,6 +23,8 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx;
 
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+
 public class PTXModule {
     public final byte[] moduleWrapper;
     public final String kernelFunctionName;
@@ -30,8 +32,12 @@ public class PTXModule {
     public final String javaName;
     private final byte[] source;
 
-    public PTXModule(String name, byte[] source, String kernelFunctionName, int[] jitOptions, long[] jitValues) {
-        moduleWrapper = cuModuleLoadDataEx(source, jitOptions, jitValues);
+    public PTXModule(String name, byte[] source, String kernelFunctionName, int[] jitOptions, long[] jitValues, String archOption) {
+        byte[] loadSource = source;
+        if ("cudac".equals(TornadoOptions.PTX_CODEGEN)) {
+            loadSource = nvrtcCompile(source, kernelFunctionName, archOption);
+        }
+        moduleWrapper = cuModuleLoadDataEx(loadSource, jitOptions, jitValues);
         this.source = source;
         this.kernelFunctionName = kernelFunctionName;
         maxBlockSize = -1;
@@ -41,6 +47,8 @@ public class PTXModule {
     private static native byte[] cuModuleLoadData(byte[] source);
 
     private static native byte[] cuModuleLoadDataEx(byte[] source, int[] jitOptions, long[] jitValues);
+
+    private static native byte[] nvrtcCompile(byte[] source, String kernelName, String archOption);
 
     private static native long cuModuleUnload(byte[] module);
 

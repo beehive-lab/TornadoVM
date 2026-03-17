@@ -348,7 +348,9 @@ public class PTXCompiler {
             kernelCompResult.addCompiledMethodCode(compResult.getTargetCode());
         }
 
-        kernelCompResult.addPTXHeader(backend);
+        if (!"cudac".equals(TornadoOptions.PTX_CODEGEN)) {
+            kernelCompResult.addPTXHeader(backend);
+        }
 
         if (TornadoOptions.DUMP_COMPILED_METHODS) {
             final Path outDir = Paths.get("./ptx-compiled-methods");
@@ -460,7 +462,9 @@ public class PTXCompiler {
             kernelCompResult.addCompiledMethodCode(compResult.getTargetCode());
         }
 
-        kernelCompResult.addPTXHeader(backend);
+        if (!"cudac".equals(TornadoOptions.PTX_CODEGEN)) {
+            kernelCompResult.addPTXHeader(backend);
+        }
 
         return kernelCompResult;
     }

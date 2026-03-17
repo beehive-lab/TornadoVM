@@ -432,18 +432,25 @@ public class PTXGraphBuilderPlugins {
     }
 
     private static void registerFPIntrinsics(Registration r, Class<?> type, JavaKind kind) {
+        // java.lang.Math only has double overloads for pow/sin/cos/log/exp/tan/tanh/atan.
+        // Registering float variants causes NoSuchMethodError on strict Graal versions.
+        // Only register when type is Double.TYPE; float inputs are widened to double by javac.
+        if (type == Float.TYPE) {
+            // signum exists for both float and double
+            r.register(new InvocationPlugin("signum", Float.TYPE) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                    b.push(JavaKind.Float, b.append(PTXFPUnaryIntrinsicNode.create(value, SIGN, JavaKind.Float)));
+                    return true;
+                }
+            });
+            return;
+        }
+
         r.register(new InvocationPlugin("pow", type, type) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
                 b.push(kind, b.append(PTXFPBinaryIntrinsicNode.create(x, y, POW, kind)));
-                return true;
-            }
-        });
-
-        r.register(new InvocationPlugin("signum", Float.TYPE) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
-                b.push(JavaKind.Float, b.append(PTXFPUnaryIntrinsicNode.create(value, SIGN, JavaKind.Float)));
                 return true;
             }
         });

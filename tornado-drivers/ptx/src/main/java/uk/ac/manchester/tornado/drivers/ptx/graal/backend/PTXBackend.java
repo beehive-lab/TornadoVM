@@ -77,8 +77,10 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.PTXFrameContext;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXFrameMap;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXFrameMapBuilder;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXProviders;
+import uk.ac.manchester.tornado.drivers.ptx.graal.asm.CUDACAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXDataBuilder;
@@ -215,6 +217,9 @@ public class PTXBackend extends XPUBackend<PTXProviders> implements FrameMap.Ref
     }
 
     private PTXAssembler createAssembler(PTXLIRGenerationResult result) {
+        if ("cudac".equals(TornadoOptions.PTX_CODEGEN)) {
+            return new CUDACAssembler(target, result);
+        }
         return new PTXAssembler(target, result);
     }
 

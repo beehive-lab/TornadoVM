@@ -102,7 +102,9 @@ public class PTXCodeCache {
                 }
             }
 
-            PTXModule module = new PTXModule(resolvedMethodName, targetCode, name, jitOptions, jitValues);
+            CUDAComputeCapability cap = deviceContext.getDevice().getComputeCapability();
+            String archOption = "--gpu-architecture=compute_" + cap.getMajor() + cap.getMinor();
+            PTXModule module = new PTXModule(resolvedMethodName, targetCode, name, jitOptions, jitValues, archOption);
 
             if (module.isPTXJITSuccess()) {
                 PTXInstalledCode code = new PTXInstalledCode(name, module, deviceContext);
