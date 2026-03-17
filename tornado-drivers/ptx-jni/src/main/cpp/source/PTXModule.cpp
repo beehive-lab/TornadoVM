@@ -25,6 +25,7 @@
 
 #include <jni.h>
 #include <cuda.h>
+#include <nvrtc.h>
 
 #include <iostream>
 #include <cuda_runtime_api.h>
@@ -183,4 +184,103 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule_cuOcc
     result = cuOccupancyMaxPotentialBlockSize(&min_grid_size, &block_size, kernel, 0, 0, 0);
     LOG_PTX_AND_VALIDATE("cuOccupancyMaxPotentialBlockSize", result);
     return block_size;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXModule
+ * Method:    nvrtcCompile
+ * Signature: ([BLjava/lang/String;Ljava/lang/String;)[B
+ *
+ * Compiles CUDA C source to PTX using NVRTC. Returns PTX bytes on success,
+ * or throws TornadoBailoutRuntimeException on failure with the compiler log.
+ */
+JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule_nvrtcCompile
+  (JNIEnv *env, jclass clazz, jbyteArray source, jstring kernelName, jstring archOption) {
+
+    // Get CUDA C source as null-terminated string
+    jsize src_len = env->GetArrayLength(source);
+    std::vector<char> src_buf(src_len + 1, 0);
+    env->GetByteArrayRegion(source, 0, src_len, reinterpret_cast<jbyte*>(src_buf.data()));
+
+    const char *kernel_name_str = env->GetStringUTFChars(kernelName, nullptr);
+    const char *arch_option_str = env->GetStringUTFChars(archOption, nullptr);
+
+    // Build options list
+    std::vector<const char*> options;
+    std::string arch_str(arch_option_str);
+    if (!arch_str.empty()) {
+        options.push_back(arch_option_str);
+    }
+    // Note: --use_fast_math is intentionally omitted here because it changes FMA
+    // rounding behaviour and can produce results that diverge from the PTX JIT path.
+    // The safe subset of fast-math flags: flush denormals to zero, disable precise
+    // div/sqrt (matching cuModuleLoadDataEx JIT defaults for PTX).
+    options.push_back("--ftz=true");
+    options.push_back("--prec-div=false");
+    options.push_back("--prec-sqrt=false");
+
+    // Add CUDA include path so headers like <cuda_fp16.h> can be found.
+    // Check CUDA_HOME, then CUDA_PATH, then fall back to the default install location.
+    std::string cuda_include;
+    const char *cuda_home = getenv("CUDA_HOME");
+    if (!cuda_home) cuda_home = getenv("CUDA_PATH");
+    if (cuda_home) {
+        cuda_include = std::string("-I") + cuda_home + "/include";
+    } else {
+        cuda_include = "-I/usr/local/cuda/include";
+    }
+    options.push_back(cuda_include.c_str());
+
+    // Create NVRTC program
+    nvrtcProgram prog;
+    nvrtcResult nvrtc_result = nvrtcCreateProgram(&prog, src_buf.data(), kernel_name_str,
+                                                  0, nullptr, nullptr);
+    env->ReleaseStringUTFChars(kernelName, kernel_name_str);
+
+    if (nvrtc_result != NVRTC_SUCCESS) {
+        env->ReleaseStringUTFChars(archOption, arch_option_str);
+        std::string msg = std::string("nvrtcCreateProgram failed: ") + nvrtcGetErrorString(nvrtc_result);
+        jclass exClass = env->FindClass("uk/ac/manchester/tornado/api/exceptions/TornadoBailoutRuntimeException");
+        env->ThrowNew(exClass, msg.c_str());
+        return nullptr;
+    }
+
+    // Compile
+    nvrtc_result = nvrtcCompileProgram(prog, (int)options.size(), options.data());
+    env->ReleaseStringUTFChars(archOption, arch_option_str);
+
+    // Always retrieve the compilation log
+    size_t log_size = 0;
+    nvrtcGetProgramLogSize(prog, &log_size);
+    std::string compile_log(log_size, '\0');
+    if (log_size > 1) {
+        nvrtcGetProgramLog(prog, &compile_log[0]);
+    }
+
+    if (nvrtc_result != NVRTC_SUCCESS) {
+        nvrtcDestroyProgram(&prog);
+        std::string msg = std::string("NVRTC compilation failed: ")
+                          + nvrtcGetErrorString(nvrtc_result) + "\n" + compile_log;
+        jclass exClass = env->FindClass("uk/ac/manchester/tornado/api/exceptions/TornadoBailoutRuntimeException");
+        env->ThrowNew(exClass, msg.c_str());
+        return nullptr;
+    }
+
+    if (log_size > 1 && !compile_log.empty() && compile_log[0] != '\0') {
+        printf("[NVRTC] %s\n", compile_log.c_str());
+        fflush(stdout);
+    }
+
+    // Retrieve PTX
+    size_t ptx_size = 0;
+    nvrtcGetPTXSize(prog, &ptx_size);
+    std::vector<char> ptx_buf(ptx_size);
+    nvrtcGetPTX(prog, ptx_buf.data());
+    nvrtcDestroyProgram(&prog);
+
+    // Return PTX as byte array (null-terminated string safe for cuModuleLoadDataEx)
+    jbyteArray result_array = env->NewByteArray((jsize)ptx_size);
+    env->SetByteArrayRegion(result_array, 0, (jsize)ptx_size,
+                            reinterpret_cast<const jbyte*>(ptx_buf.data()));
+    return result_array;
 }
