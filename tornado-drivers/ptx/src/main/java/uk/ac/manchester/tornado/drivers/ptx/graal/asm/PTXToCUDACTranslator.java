@@ -382,26 +382,36 @@ public class PTXToCUDACTranslator {
     // -------------------------------------------------------------------------
 
     /**
-     * Converts goto-based loops in generated CUDA C to structured {@code while(true)} loops.
+     * Converts goto-based loops in generated CUDA C to structured {@code while(COND)} loops.
      *
      * <p>TornadoVM PTX compilation produces control flow of the form:
      * <pre>
      *   LOOP_HEADER:
-     *       pred = (i < N);
-     *       if (!pred) goto EXIT;
+     *       rpb = (i &lt; N);
+     *       if (!rpb) goto EXIT;
      *       ... body ...
      *       goto LOOP_HEADER;
      *   EXIT:
      * </pre>
      *
-     * <p>NVRTC (Clang-based) can theoretically optimise goto loops, but emitting
-     * {@code while(true) { ... if (!pred) break; ... }} gives the frontend clearer
-     * loop structure and enables more aggressive unrolling / vectorisation.
+     * <p>This method rewrites such patterns to:
+     * <pre>
+     *   while (i &lt; N) {
+     *       ... body ...
+     *   }
+     *   EXIT:
+     * </pre>
      *
-     * <p>The transformation is conservative: only single-entry, single-exit loops
-     * where the back-edge is an unconditional {@code goto HEADER;} are rewritten.
-     * Loops with multiple exits or gotos into the middle of the loop body are left
-     * unchanged.
+     * <p>by lifting the predicate-assignment expression directly into the {@code while()}
+     * condition, eliminating both the predicate variable and the inner break.  This matches
+     * the structured loop form that OpenCL kernels use natively and gives NVRTC full loop
+     * context for unrolling, vectorisation, and instruction scheduling.
+     *
+     * <p>Falls back to {@code while(true){...if(!p) break;...}} when the loop header has
+     * multi-line condition computation, or the predicate variable is used inside the body.
+     *
+     * <p>The transformation is conservative: only single-entry, single-exit loops where
+     * the back-edge is an unconditional {@code goto HEADER;} are rewritten.
      */
     private static String convertGotoLoops(String cudaC) {
         String[] lines = cudaC.split("\n", -1);
@@ -420,7 +430,7 @@ public class PTXToCUDACTranslator {
 
         // For each label, attempt to detect loop pattern:
         //   headerIdx: HEADER_LABEL:
-        //   (optionally more lines computing condition)
+        //   (optionally one line computing condition)
         //   exitCheckIdx: if (!pred) goto EXIT_LABEL;   [or  if (pred) goto EXIT_LABEL;]
         //   ... body ...
         //   backEdgeIdx: goto HEADER_LABEL;
@@ -430,10 +440,9 @@ public class PTXToCUDACTranslator {
         Pattern exitCheckPat = Pattern.compile("^\\s*if\\s*\\((!?)(\\S+)\\)\\s*goto\\s+(\\w+);\\s*$");
         Pattern backEdgePat  = Pattern.compile("^\\s*goto\\s+(\\w+);\\s*$");
 
-        // Collect rewrites as (startLine, endLine, replacement) to apply bottom-up
-        // so indices stay valid.
+        // Collect rewrites as (startLine, endLine) to apply bottom-up so indices stay valid.
         List<int[]> rewrites = new ArrayList<>(); // [headerIdx, exitLabelIdx]
-        List<String[]> replacements = new ArrayList<>(); // parallel list of replacement strings per rewrite
+        List<String[]> replacements = new ArrayList<>(); // parallel list of replacement strings
 
         for (Map.Entry<String, Integer> entry : labelLine.entrySet()) {
             String headerLabel = entry.getKey();
@@ -443,19 +452,17 @@ public class PTXToCUDACTranslator {
             int exitCheckIdx = -1;
             String exitLabel = null;
             boolean negated = false;
-            String condExpr = null;
+            String condVar = null;
             for (int i = headerIdx + 1; i < n; i++) {
                 String t = lines[i].trim();
                 if (t.isEmpty()) continue;
                 // Stop if we hit another label (we've left the header region)
-                if (labelPat.matcher(t).matches() && i != headerIdx) {
-                    break;
-                }
+                if (labelPat.matcher(t).matches()) break;
                 Matcher m = exitCheckPat.matcher(t);
                 if (m.matches()) {
-                    negated   = "!".equals(m.group(1));
-                    condExpr  = m.group(2);
-                    exitLabel = m.group(3);
+                    negated      = "!".equals(m.group(1));
+                    condVar      = m.group(2);
+                    exitLabel    = m.group(3);
                     exitCheckIdx = i;
                     break;
                 }
@@ -480,11 +487,9 @@ public class PTXToCUDACTranslator {
             }
             if (backEdgeIdx < 0) continue;
 
-            // Check that no line in the body (exitCheckIdx+1 .. backEdgeIdx-1) gotos OUTSIDE the loop,
-            // and no line gotos the header from anywhere other than backEdgeIdx (which would be
-            // a continue — that is OK and handled naturally by the while loop).
+            // Check that no line in the body (exitCheckIdx+1 .. backEdgeIdx-1) gotos OUTSIDE the loop.
+            // Gotos to the header itself are continue-equivalents and are fine.
             boolean bodyClean = true;
-            int extraGotos = 0;
             for (int i = exitCheckIdx + 1; i < backEdgeIdx; i++) {
                 String t = lines[i].trim();
                 Matcher bm = backEdgePat.matcher(t);
@@ -492,31 +497,21 @@ public class PTXToCUDACTranslator {
                     String target = bm.group(1);
                     Integer tLine = labelLine.get(target);
                     if (tLine != null && tLine < headerIdx) {
-                        // Goto escapes the loop upward — unsafe
-                        bodyClean = false;
-                        break;
+                        bodyClean = false; break; // escapes upward
                     }
-                    if (target.equals(headerLabel)) {
-                        extraGotos++; // continue equivalent — fine
-                    } else if (tLine != null && tLine > exitLineNum) {
-                        // Goto jumps past exit — unsafe (e.g. break into outer code)
-                        bodyClean = false;
-                        break;
+                    if (tLine != null && tLine > exitLineNum) {
+                        bodyClean = false; break; // jumps past exit
                     }
                 }
-                // Conditional gotos that target outside the loop are also unsafe
                 Matcher ecm = exitCheckPat.matcher(t);
                 if (ecm.matches()) {
                     String target = ecm.group(3);
                     Integer tLine = labelLine.get(target);
                     if (tLine != null && (tLine < headerIdx || tLine > exitLineNum)) {
-                        bodyClean = false;
-                        break;
+                        bodyClean = false; break;
                     }
                     if (!exitLabel.equals(target)) {
-                        // Multiple distinct exits from loop body — unsafe
-                        bodyClean = false;
-                        break;
+                        bodyClean = false; break; // multiple distinct exits
                     }
                 }
             }
@@ -526,48 +521,107 @@ public class PTXToCUDACTranslator {
             boolean overlaps = false;
             for (int[] rw : rewrites) {
                 if (rw[0] < exitLineNum && rw[1] > headerIdx) {
-                    overlaps = true;
-                    break;
+                    overlaps = true; break;
                 }
             }
             if (overlaps) continue;
 
-            rewrites.add(new int[]{headerIdx, exitLineNum});
-            // Build replacement lines
-            // Determine while condition: if the exit-check is "if (!pred) goto EXIT" then
-            // the loop continues while pred is true → while(true) with break is safest and
-            // equivalent. We use while(true)+break because the condition may span multiple lines.
-            StringBuilder sb = new StringBuilder();
-            // Indentation from header line
-            String indent = "";
-            String hl = lines[headerIdx];
-            for (int ci = 0; ci < hl.length(); ci++) {
-                char ch = hl.charAt(ci);
-                if (ch == ' ' || ch == '\t') indent += ch;
-                else break;
-            }
-            sb.append(indent).append("while (true) { // ").append(headerLabel).append("\n");
-            // Lines between header and exit-check (condition setup): keep as-is
+            // --- Try to extract a direct while condition ---
+            //
+            // Look for a SINGLE assignment to condVar in the header block
+            // (lines headerIdx+1 .. exitCheckIdx-1):
+            //   condVar = (expr);   or   condVar = expr;
+            // If exactly one such line exists and condVar is not read in the loop body,
+            // lift the expression into while(EXPR) and drop the predicate variable entirely.
+            String directCond = null;
+            int condAssignIdx = -1;
+
+            Pattern condAssignPat = Pattern.compile(
+                    "^\\s*" + Pattern.quote(condVar) + "\\s*=\\s*(.*?)\\s*;\\s*$");
+            int nonEmptyHeaderLines = 0;
             for (int i = headerIdx + 1; i < exitCheckIdx; i++) {
-                sb.append(lines[i]).append("\n");
-            }
-            // Replace exit-check with break
-            // Preserve the same exit condition: "if (!pred) goto EXIT" → "if (!pred) break"
-            String breakLine = indent + "\tif (" + (negated ? "!" : "") + condExpr + ") break;";
-            sb.append(breakLine).append("\n");
-            // Body lines (exitCheckIdx+1 .. backEdgeIdx-1): replace "goto HEADER;" with "continue;"
-            for (int i = exitCheckIdx + 1; i < backEdgeIdx; i++) {
-                String t = lines[i];
-                Matcher bm = backEdgePat.matcher(t.trim());
-                if (bm.matches() && headerLabel.equals(bm.group(1))) {
-                    sb.append(indent).append("\tcontinue;\n");
-                } else {
-                    sb.append(t).append("\n");
+                String t = lines[i].trim();
+                if (t.isEmpty()) continue;
+                nonEmptyHeaderLines++;
+                Matcher m = condAssignPat.matcher(lines[i]);
+                if (m.matches()) {
+                    if (condAssignIdx >= 0) {
+                        // Multiple assignments to condVar — can't lift
+                        condAssignIdx = -1;
+                        break;
+                    }
+                    condAssignIdx = i;
+                    String rhs = m.group(1).trim();
+                    // Strip outer parentheses if they are properly matched
+                    if (rhs.startsWith("(") && rhs.endsWith(")") && hasMatchedOuterParens(rhs)) {
+                        rhs = rhs.substring(1, rhs.length() - 1).trim();
+                    }
+                    // If the exit check negates the pred (if (!p) break), the while runs while
+                    // the expression is true. If not negated (if (p) break), we need !(expr).
+                    directCond = negated ? rhs : "!(" + rhs + ")";
                 }
             }
-            // Close while loop (replaces the goto HEADER; back-edge)
+
+            // Only use direct condition when the header block has exactly this one assignment
+            // (no other side-effecting lines that must be preserved).
+            if (condAssignIdx >= 0 && nonEmptyHeaderLines > 1) {
+                directCond = null; // other header lines need to stay — fall back
+            }
+
+            // Verify condVar is not read in the loop body (between exitCheck and backEdge)
+            if (directCond != null) {
+                Pattern usePat = Pattern.compile("\\b" + Pattern.quote(condVar) + "\\b");
+                for (int i = exitCheckIdx + 1; i < backEdgeIdx; i++) {
+                    if (usePat.matcher(lines[i]).find()) {
+                        directCond = null;
+                        break;
+                    }
+                }
+            }
+
+            // --- Build replacement ---
+            rewrites.add(new int[]{headerIdx, exitLineNum});
+            StringBuilder sb = new StringBuilder();
+            // Indentation from header line
+            String indent = leadingWhitespace(lines[headerIdx]);
+
+            if (directCond != null) {
+                // Structured while(COND) — matches OpenCL output style
+                sb.append(indent).append("while (").append(directCond).append(") {\n");
+                // Skip condition setup (condAssignIdx) and exit-check; emit body directly
+                for (int i = exitCheckIdx + 1; i < backEdgeIdx; i++) {
+                    String t = lines[i];
+                    Matcher bm = backEdgePat.matcher(t.trim());
+                    if (bm.matches() && headerLabel.equals(bm.group(1))) {
+                        sb.append(indent).append("\tcontinue;\n");
+                    } else {
+                        sb.append(t).append("\n");
+                    }
+                }
+            } else {
+                // Fall back: while(true) with explicit break
+                sb.append(indent).append("while (true) { // ").append(headerLabel).append("\n");
+                // Keep condition setup lines
+                for (int i = headerIdx + 1; i < exitCheckIdx; i++) {
+                    sb.append(lines[i]).append("\n");
+                }
+                // Replace exit-check with break (preserving the same condition)
+                sb.append(indent).append("\tif (").append(negated ? "!" : "").append(condVar)
+                  .append(") break;\n");
+                // Body lines
+                for (int i = exitCheckIdx + 1; i < backEdgeIdx; i++) {
+                    String t = lines[i];
+                    Matcher bm = backEdgePat.matcher(t.trim());
+                    if (bm.matches() && headerLabel.equals(bm.group(1))) {
+                        sb.append(indent).append("\tcontinue;\n");
+                    } else {
+                        sb.append(t).append("\n");
+                    }
+                }
+            }
+            // Close while loop
             sb.append(indent).append("}\n");
-            // The exit label line is kept (other code may reference it as a break target)
+            // Keep the exit label (other code may reference it)
             sb.append(lines[exitLineNum]).append("\n");
 
             replacements.add(new String[]{sb.toString()});
@@ -603,6 +657,32 @@ public class PTXToCUDACTranslator {
             finalOut.append(l).append("\n");
         }
         return finalOut.toString();
+    }
+
+    /** Returns true iff {@code s} is wrapped in a single matching pair of outer parentheses. */
+    private static boolean hasMatchedOuterParens(String s) {
+        if (s.length() < 2 || s.charAt(0) != '(' || s.charAt(s.length() - 1) != ')') return false;
+        int depth = 0;
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '(') depth++;
+            else if (c == ')') {
+                depth--;
+                if (depth == 0 && i < s.length() - 1) return false; // outer paren closed early
+            }
+        }
+        return depth == 0;
+    }
+
+    /** Returns the leading whitespace prefix of {@code line}. */
+    private static String leadingWhitespace(String line) {
+        StringBuilder ws = new StringBuilder();
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+            if (c == ' ' || c == '\t') ws.append(c);
+            else break;
+        }
+        return ws.toString();
     }
 
     // -------------------------------------------------------------------------
