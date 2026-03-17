@@ -326,9 +326,17 @@ public class PTXToCUDACTranslator {
         SHARED_EFFECTIVE_TYPE.get().clear();
 
         String result = out.toString();
-        // Convert goto-based loops to while(true) loops so NVRTC can apply
-        // loop-level optimisations (unrolling, vectorisation, instruction scheduling).
-        result = convertGotoLoops(result);
+        // Iteratively convert loops and structure remaining forward gotos to produce
+        // structured C code without goto statements (matching OpenCL backend style).
+        // Multiple rounds are needed because structuring inner if/else unblocks new loops.
+        for (int cfPass = 0; cfPass < 10; cfPass++) {
+            String before = result;
+            result = convertGotoLoops(result);
+            result = structureIfElse(result);
+            if (result.equals(before)) break;
+        }
+        // Remove labels that no remaining goto references (eliminates NVRTC unreferenced-label warnings).
+        result = removeUnreferencedLabels(result);
         // Fold 4-step pointer-arithmetic chains into typed array subscripts:
         //   rsd = (long long)(int)idx; rsh = rsd << N; raddr = base + rsh;
         //   val = *((TYPE*)(raddr));
@@ -492,7 +500,10 @@ public class PTXToCUDACTranslator {
                     backEdgeIdx = i;
                     break;
                 }
-                // Any non-empty, non-label line between back-edge and exit label breaks the pattern
+                // Skip dead-code goto statements that may follow a back-edge in PTX output
+                // (unconditional jumps after another goto are unreachable but emitted by PTX)
+                if (backEdgePat.matcher(t).matches()) continue;
+                // Any other non-empty, non-label line breaks the pattern
                 if (!labelPat.matcher(t).matches()) break;
             }
             if (backEdgeIdx < 0) continue;
@@ -693,6 +704,277 @@ public class PTXToCUDACTranslator {
             else break;
         }
         return ws.toString();
+    }
+
+    // -------------------------------------------------------------------------
+    // Forward-goto structuring (if/else conversion)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Converts forward-goto patterns in generated CUDA C to structured {@code if/else} blocks,
+     * matching the structured form that OpenCL kernels produce natively.
+     *
+     * <p>Three patterns are eliminated in a fixed-point loop:
+     *
+     * <p><b>Fall-through goto:</b> {@code goto L;} where {@code L:} is the immediately-next
+     * non-empty line → the goto is removed (the label stays for other potential references).
+     *
+     * <p><b>If-else:</b>
+     * <pre>
+     *   if (COND) goto THEN;
+     *   ELSE_BODY;
+     *   goto MERGE;
+     *   THEN:
+     *   THEN_BODY;
+     *   MERGE:
+     * </pre>
+     * → {@code if (COND) \{ THEN_BODY \} else \{ ELSE_BODY \} MERGE:}
+     *
+     * <p>When the THEN block is only a fall-through {@code goto MERGE;} the construct simplifies
+     * to {@code if (!COND) \{ ELSE_BODY \}} (avoids an empty if branch).
+     *
+     * <p><b>If-then:</b>
+     * <pre>
+     *   if (COND) goto TARGET;
+     *   BODY;
+     *   TARGET:
+     * </pre>
+     * → {@code if (!COND) \{ BODY \} TARGET:}
+     * (only when all gotos in BODY stay within the range).
+     */
+    private static String structureIfElse(String cudaC) {
+        String current = cudaC;
+        for (int pass = 0; pass < 20; pass++) {
+            String next = structureIfElseOnce(current);
+            if (next.equals(current)) break;
+            current = next;
+        }
+        return current;
+    }
+
+    private static String structureIfElseOnce(String cudaC) {
+        List<String> lines = new ArrayList<>(Arrays.asList(cudaC.split("\n", -1)));
+
+        Pattern labelPat    = Pattern.compile("^(\\w+):\\s*$");
+        Pattern condGotoPat = Pattern.compile("^\\s*if\\s*\\((!?)(\\S+)\\)\\s*goto\\s+(\\w+);\\s*$");
+        Pattern uncondGotoPat = Pattern.compile("^\\s*goto\\s+(\\w+);\\s*$");
+
+        // Build label -> line-index map
+        Map<String, Integer> labelLine = new HashMap<>();
+        for (int i = 0; i < lines.size(); i++) {
+            Matcher m = labelPat.matcher(lines.get(i).trim());
+            if (m.matches()) labelLine.put(m.group(1), i);
+        }
+
+        boolean changed = false;
+
+        for (int i = 0; i < lines.size(); i++) {
+            String trimmed = lines.get(i).trim();
+
+            // ── 1. Fall-through goto: goto L; where L: is immediately next ──────
+            Matcher ug = uncondGotoPat.matcher(trimmed);
+            if (ug.matches()) {
+                String target = ug.group(1);
+                int nextNonEmpty = i + 1;
+                while (nextNonEmpty < lines.size() && lines.get(nextNonEmpty).trim().isEmpty()) {
+                    nextNonEmpty++;
+                }
+                if (nextNonEmpty < lines.size()) {
+                    Matcher lm = labelPat.matcher(lines.get(nextNonEmpty).trim());
+                    if (lm.matches() && lm.group(1).equals(target)) {
+                        lines.remove(i);
+                        rebuildLabelMap(lines, labelLine, labelPat);
+                        changed = true;
+                        i--;
+                        continue;
+                    }
+                }
+            }
+
+            // ── 2. Conditional goto patterns ────────────────────────────────────
+            Matcher cg = condGotoPat.matcher(trimmed);
+            if (!cg.matches()) continue;
+
+            String negStr    = cg.group(1);   // "!" or ""
+            String pred      = cg.group(2);
+            String thenLabel = cg.group(3);
+            boolean negated  = "!".equals(negStr);
+
+            Integer thenLineNum = labelLine.get(thenLabel);
+            if (thenLineNum == null || thenLineNum <= i) continue; // backward or missing — skip
+
+            String indent = leadingWhitespace(lines.get(i));
+
+            // ── 2a. If-else: last non-empty line before THEN is goto MERGE ───────
+            int mergeGotoIdx = -1;
+            String mergeLabel = null;
+            for (int j = thenLineNum - 1; j > i; j--) {
+                String t = lines.get(j).trim();
+                if (t.isEmpty()) continue;
+                Matcher um = uncondGotoPat.matcher(t);
+                if (um.matches()) {
+                    mergeGotoIdx = j;
+                    mergeLabel   = um.group(1);
+                }
+                break; // only inspect the last non-empty line before THEN
+            }
+
+            if (mergeGotoIdx > i && mergeLabel != null) {
+                Integer mergeLabelLine = labelLine.get(mergeLabel);
+                if (mergeLabelLine != null && mergeLabelLine > thenLineNum) {
+                    List<String> elseBody = new ArrayList<>(lines.subList(i + 1, mergeGotoIdx));
+                    List<String> thenBody = new ArrayList<>(lines.subList(thenLineNum + 1, mergeLabelLine));
+
+                    // Safety: skip if either body contains gotos that escape [i..mergeLabelLine].
+                    // Trapping escape gotos inside a structured if block creates unreachable code
+                    // and breaks subsequent structuring passes.
+                    boolean ifElseSafe = true;
+                    @SuppressWarnings("unchecked")
+                    List<String>[] bodiesToCheck = new List[]{elseBody, thenBody};
+                    outer:
+                    for (List<String> bodyToCheck : bodiesToCheck) {
+                        for (String bl : bodyToCheck) {
+                            String t = bl.trim();
+                            Matcher um = uncondGotoPat.matcher(t);
+                            if (um.matches()) {
+                                Integer tl = labelLine.get(um.group(1));
+                                if (tl == null || tl < i || tl > mergeLabelLine) { ifElseSafe = false; break outer; }
+                            }
+                            Matcher cm = condGotoPat.matcher(t);
+                            if (cm.matches()) {
+                                Integer tl = labelLine.get(cm.group(3));
+                                if (tl == null || tl < i || tl > mergeLabelLine) { ifElseSafe = false; break outer; }
+                            }
+                        }
+                    }
+
+                    if (ifElseSafe) {
+                        // If THEN body is just fall-through goto(s) to MERGE, simplify to if(!COND)
+                        final String mergeGotoStr = "goto " + mergeLabel + ";";
+                        boolean thenTrivial = thenBody.stream().allMatch(l -> {
+                            String t = l.trim();
+                            return t.isEmpty() || t.equals(mergeGotoStr);
+                        });
+
+                        StringBuilder sb = new StringBuilder();
+                        if (thenTrivial) {
+                            // if (!COND) { elseBody }  where !COND = body runs
+                            String cond = negated ? pred : "!" + pred;
+                            sb.append(indent).append("if (").append(cond).append(") {\n");
+                            for (String eb : elseBody) sb.append(eb).append("\n");
+                            sb.append(indent).append("}\n");
+                        } else {
+                            // if (COND) { thenBody } else { elseBody }
+                            String cond = negated ? "!" + pred : pred;
+                            sb.append(indent).append("if (").append(cond).append(") {\n");
+                            for (String tb : thenBody) sb.append(tb).append("\n");
+                            sb.append(indent).append("} else {\n");
+                            for (String eb : elseBody) sb.append(eb).append("\n");
+                            sb.append(indent).append("}\n");
+                        }
+                        sb.append(lines.get(mergeLabelLine)); // keep merge label
+
+                        for (int j = mergeLabelLine; j >= i; j--) lines.remove(j);
+                        String[] newLines = sb.toString().split("\n", -1);
+                        for (int j = newLines.length - 1; j >= 0; j--) lines.add(i, newLines[j]);
+
+                        rebuildLabelMap(lines, labelLine, labelPat);
+                        changed = true;
+                        i--;
+                        continue;
+                    }
+                    // else: unsafe — fall through to try the if-then pattern
+                }
+            }
+
+            // ── 2b. If-then: verify all gotos in body stay within [i..thenLineNum] ──
+            boolean safe = true;
+            for (int j = i + 1; j < thenLineNum; j++) {
+                String t = lines.get(j).trim();
+                Matcher um = uncondGotoPat.matcher(t);
+                if (um.matches()) {
+                    Integer tl = labelLine.get(um.group(1));
+                    if (tl == null || tl < i || tl > thenLineNum) { safe = false; break; }
+                }
+                Matcher cm = condGotoPat.matcher(t);
+                if (cm.matches()) {
+                    Integer tl = labelLine.get(cm.group(3));
+                    if (tl == null || tl < i || tl > thenLineNum) { safe = false; break; }
+                }
+            }
+            if (!safe) continue;
+
+            List<String> body = new ArrayList<>(lines.subList(i + 1, thenLineNum));
+            // body runs when !COND (fall-through past the conditional goto)
+            String cond = negated ? pred : "!" + pred;
+            StringBuilder sb = new StringBuilder();
+            sb.append(indent).append("if (").append(cond).append(") {\n");
+            for (String bl : body) sb.append(bl).append("\n");
+            sb.append(indent).append("}\n");
+            sb.append(lines.get(thenLineNum)); // keep target label
+
+            for (int j = thenLineNum; j >= i; j--) lines.remove(j);
+            String[] newLines = sb.toString().split("\n", -1);
+            for (int j = newLines.length - 1; j >= 0; j--) lines.add(i, newLines[j]);
+
+            rebuildLabelMap(lines, labelLine, labelPat);
+            changed = true;
+            i--;
+        }
+
+        if (!changed) return cudaC;
+
+        StringBuilder out = new StringBuilder();
+        for (String l : lines) out.append(l).append("\n");
+        String r = out.toString();
+        if (!cudaC.endsWith("\n") && r.endsWith("\n")) {
+            r = r.substring(0, r.length() - 1);
+        }
+        return r;
+    }
+
+    private static void rebuildLabelMap(List<String> lines, Map<String, Integer> labelLine, Pattern labelPat) {
+        labelLine.clear();
+        for (int j = 0; j < lines.size(); j++) {
+            Matcher m = labelPat.matcher(lines.get(j).trim());
+            if (m.matches()) labelLine.put(m.group(1), j);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Unreferenced-label removal (eliminates NVRTC warnings)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Removes labels ({@code LABEL:}) that are not referenced by any remaining
+     * {@code goto LABEL;} statement, eliminating NVRTC "label was declared but
+     * never referenced" warnings.
+     */
+    private static String removeUnreferencedLabels(String cudaC) {
+        String[] lines = cudaC.split("\n", -1);
+        Pattern labelPat = Pattern.compile("^(\\w+):\\s*$");
+        Pattern gotoPat  = Pattern.compile("\\bgoto\\s+(\\w+)\\s*;");
+
+        // Collect all goto targets in the entire text
+        java.util.Set<String> gotoTargets = new java.util.HashSet<>();
+        for (String line : lines) {
+            Matcher m = gotoPat.matcher(line);
+            while (m.find()) gotoTargets.add(m.group(1));
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (String line : lines) {
+            Matcher m = labelPat.matcher(line.trim());
+            if (m.matches() && !gotoTargets.contains(m.group(1))) {
+                continue; // drop unreferenced label
+            }
+            sb.append(line).append("\n");
+        }
+        String result = sb.toString();
+        if (!cudaC.endsWith("\n") && result.endsWith("\n")) {
+            result = result.substring(0, result.length() - 1);
+        }
+        return result;
     }
 
     // -------------------------------------------------------------------------

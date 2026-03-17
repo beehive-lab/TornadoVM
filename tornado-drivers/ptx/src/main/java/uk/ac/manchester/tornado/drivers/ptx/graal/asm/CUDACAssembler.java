@@ -56,6 +56,9 @@ public class CUDACAssembler extends PTXAssembler {
         }
         String ptx = new String(ptxBytes, StandardCharsets.UTF_8);
         String cuda = PTXToCUDACTranslator.translate(ptx);
+        if (Boolean.getBoolean("tornado.cuda.c.dump")) {
+            System.err.println("=== CUDA C ===\n" + cuda + "\n=== END ===");
+        }
         return cuda.getBytes(StandardCharsets.UTF_8);
     }
 }
