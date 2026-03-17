@@ -55,7 +55,8 @@ public class PTXCodeCache {
 
     public PTXInstalledCode installSource(TaskDataContext taskMeta, String name, byte[] targetCode, String resolvedMethodName, boolean debugKernel) {
 
-        if (!cache.containsKey(name)) {
+        PTXInstalledCode existing = cache.get(name);
+        if (existing == null || !existing.isValid()) {
             if (debugKernel) {
                 RuntimeUtilities.dumpKernel(targetCode);
             }
@@ -123,7 +124,8 @@ public class PTXCodeCache {
     }
 
     boolean isCached(String name) {
-        return cache.containsKey(name);
+        PTXInstalledCode code = cache.get(name);
+        return code != null && code.isValid();
     }
 
     void reset() {

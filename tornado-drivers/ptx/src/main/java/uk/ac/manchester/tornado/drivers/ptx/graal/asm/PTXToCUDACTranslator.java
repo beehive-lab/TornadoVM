@@ -89,6 +89,12 @@ public class PTXToCUDACTranslator {
     private static final ThreadLocal<Map<String, String>> SHARED_EFFECTIVE_TYPE =
             ThreadLocal.withInitial(HashMap::new);
 
+    // Local struct-return buffers declared inside function bodies via
+    // ".param .align N .b8 name[M];". These must be dereferenced (not read as a
+    // simple assignment) when a ld.param instruction reads from them.
+    private static final ThreadLocal<java.util.Set<String>> LOCAL_STRUCT_BUFS =
+            ThreadLocal.withInitial(java.util.HashSet::new);
+
     // Patterns
     private static final Pattern PTX_HEADER_PAT = Pattern.compile("^\\s*\\.(version|target|address_size)\\b.*");
     private static final Pattern VISIBLE_ENTRY_PAT = Pattern.compile("^\\.visible\\s+\\.entry\\s+(\\S+)\\s*\\((.*)");
@@ -97,6 +103,15 @@ public class PTXToCUDACTranslator {
     private static final Pattern REG_SINGLE_PAT = Pattern.compile("^\\s*\\.reg\\s+\\.(\\w+)\\s+(\\S+);\\s*$");
     private static final Pattern LOCAL_ARR_PAT = Pattern.compile("^\\s*\\.local\\s+\\.(\\w+)\\s+(\\w+)\\[(\\d+)\\];\\s*$");
     private static final Pattern SHARED_ARR_PAT = Pattern.compile("^\\s*\\.shared\\s+\\.(\\w+)\\s+(\\w+)(?:\\[(\\d+)\\])?;\\s*$");
+    // .global .b8 name[N] = {bytes}  — global constant data (e.g. printf format strings)
+    private static final Pattern GLOBAL_DATA_PAT =
+            Pattern.compile("^\\.(?:visible\\s+)?\\.global\\s+\\.b8\\s+(\\w+)\\[(\\d+)\\]\\s*=\\s*\\{([^}]*)\\};?$");
+    // .global .b8 name[N] = {bytes}  — also matches .visible .global
+    private static final Pattern GLOBAL_DATA_PAT2 =
+            Pattern.compile("^\\.global\\s+\\.b8\\s+(\\w+)\\[(\\d+)\\]\\s*=\\s*\\{([^}]*)\\};?$");
+    // .param .align N .b8 name[M] inside a function body = call return buffer
+    private static final Pattern LOCAL_STRUCT_BUF_PAT =
+            Pattern.compile("^\\.param\\s+\\.align\\s+\\d+\\s+\\.b8\\s+(\\w+)\\[(\\d+)\\];?$");
     private static final Pattern LABEL_PAT = Pattern.compile("^(\\w+):\\s*$");
     private static final Pattern FLOAT_HEX_PAT = Pattern.compile("0[Ff]([0-9A-Fa-f]{8})");
     private static final Pattern DOUBLE_HEX_PAT = Pattern.compile("0[Dd]([0-9A-Fa-f]{16})");
@@ -117,13 +132,28 @@ public class PTXToCUDACTranslator {
         // If all accesses to an array use the same type (possibly different from the declaration),
         // we declare the CUDA C array with the access type so NVRTC sees direct-typed access.
         prescaneSharedTypes(lines);
+        LOCAL_STRUCT_BUFS.get().clear();
+
+        // Buffer for file-scope __device__ global data declarations (e.g. printf format strings).
+        // These appear inside the PTX function body but must be emitted at file scope in CUDA C
+        // because NVRTC rejects storage-class specifiers inside __global__ functions.
+        StringBuilder globalDecls = new StringBuilder();
 
         // State for multi-line param list parsing
         boolean inParamList = false;
         boolean isKernelEntry = false;
         String pendingFuncName = null;
         String pendingReturnType = null; // null = void
+        String pendingReturnVarName = null; // PTX return register name for device functions
+        // Extra parameter to append when the device function returns a struct via output pointer
+        // (e.g. "unsigned long long retVar" added as last parameter).
+        String pendingStructReturnExtra = null;
         List<String> paramLines = new ArrayList<>();
+
+        // State for device-function return variable tracking.
+        // When inside a non-void __device__ function, this holds the PTX return register
+        // name so that "ret;" can be emitted as "return retVar;" and the variable declared.
+        String currentReturnVar = null;
 
         for (int i = 0; i < lines.length; i++) {
             String raw = lines[i];
@@ -144,6 +174,27 @@ public class PTXToCUDACTranslator {
                 continue;
             }
 
+            // --- .extern .func — external device function declaration ---
+            // Translate known external functions (e.g. vprintf) to their CUDA C form.
+            if (line.startsWith(".extern") && line.contains(".func")) {
+                if (line.contains("vprintf")) {
+                    out.append("extern \"C\" __device__ int vprintf(const char* fmt, void* args);\n");
+                }
+                // Other .extern .func declarations are silently skipped.
+                continue;
+            }
+
+            // --- .global .b8 name[N] = {bytes} — global constant data ---
+            // Used for printf format strings. Must be emitted at file scope (not inside a
+            // __global__ function) because NVRTC rejects storage-class specifiers inside functions.
+            Matcher gdm = GLOBAL_DATA_PAT2.matcher(line);
+            if (gdm.matches()) {
+                String arrName = gdm.group(1);
+                String bytes = gdm.group(3);
+                globalDecls.append("__device__ unsigned char ").append(arrName).append("[] = {").append(bytes).append("};\n");
+                continue;
+            }
+
             // --- Multi-line param list accumulation ---
             if (inParamList) {
                 paramLines.add(line);
@@ -154,15 +205,25 @@ public class PTXToCUDACTranslator {
                     boolean openBrace = afterParen.startsWith("{");
 
                     String cudaParams = translateParamList(combined.substring(0, combined.indexOf(')')), isKernelEntry);
+                    if (pendingStructReturnExtra != null) {
+                        cudaParams = cudaParams.isEmpty() ? pendingStructReturnExtra
+                                : cudaParams + ", " + pendingStructReturnExtra;
+                    }
                     emitFunctionSignature(out, isKernelEntry, pendingFuncName, pendingReturnType, cudaParams);
                     if (openBrace) {
                         out.append(" {\n");
+                        if (!isKernelEntry && pendingReturnVarName != null && pendingReturnType != null) {
+                            out.append("\t").append(pendingReturnType).append(" ").append(pendingReturnVarName).append(";\n");
+                            currentReturnVar = pendingReturnVarName;
+                        }
                     } else {
                         out.append("\n");
                     }
                     inParamList = false;
                     pendingFuncName = null;
                     pendingReturnType = null;
+                    pendingReturnVarName = null;
+                    pendingStructReturnExtra = null;
                     paramLines.clear();
                 }
                 continue;
@@ -204,10 +265,20 @@ public class PTXToCUDACTranslator {
                 String paramsPart;
 
                 // Check for return value: (.reg .TYPE retVar) or (.param .align N .bN retVar[N])
+                String returnVarName = null;
+                String structReturnExtra = null; // extra "unsigned long long retVar" param for struct returns
                 if (rest.startsWith("(")) {
                     int closeParenIdx = rest.indexOf(')');
                     String retDecl = rest.substring(1, closeParenIdx).trim();
-                    returnType = extractFuncReturnType(retDecl);
+                    if (isStructReturnDecl(retDecl)) {
+                        // Struct return via output pointer: return type is void, retVar added as last param
+                        returnType = null;
+                        returnVarName = null;
+                        structReturnExtra = "unsigned long long retVar";
+                    } else {
+                        returnType = extractFuncReturnType(retDecl);
+                        returnVarName = extractReturnVarName(retDecl);
+                    }
                     rest = rest.substring(closeParenIdx + 1).trim();
                 }
 
@@ -219,6 +290,8 @@ public class PTXToCUDACTranslator {
                     isKernelEntry = false;
                     pendingFuncName = funcName;
                     pendingReturnType = returnType;
+                    pendingReturnVarName = returnVarName;
+                    pendingStructReturnExtra = structReturnExtra;
                     paramLines.clear();
                     continue;
                 }
@@ -231,10 +304,18 @@ public class PTXToCUDACTranslator {
                     paramsPart = afterParen.substring(0, closeIdx);
                     String after = afterParen.substring(closeIdx + 1).trim();
                     String cudaParams = translateParamList(paramsPart, false);
+                    if (structReturnExtra != null) {
+                        cudaParams = cudaParams.isEmpty() ? structReturnExtra
+                                : cudaParams + ", " + structReturnExtra;
+                    }
                     String ret = (returnType != null) ? returnType : "void";
                     out.append("__device__ ").append(ret).append(" ").append(funcName).append("(").append(cudaParams).append(")");
                     if (after.startsWith("{")) {
                         out.append(" {\n");
+                        if (returnVarName != null && returnType != null) {
+                            out.append("\t").append(returnType).append(" ").append(returnVarName).append(";\n");
+                            currentReturnVar = returnVarName;
+                        }
                     } else {
                         out.append("\n");
                     }
@@ -243,6 +324,8 @@ public class PTXToCUDACTranslator {
                     isKernelEntry = false;
                     pendingFuncName = funcName;
                     pendingReturnType = returnType;
+                    pendingReturnVarName = returnVarName;
+                    pendingStructReturnExtra = structReturnExtra;
                     paramLines.clear();
                     paramLines.add(afterParen);
                 }
@@ -302,8 +385,21 @@ public class PTXToCUDACTranslator {
                 continue;
             }
 
+            // --- Local struct return buffer declaration inside function body ---
+            // ".param .align N .b8 name[M];" appears before a call that returns a struct.
+            // Translate to "unsigned char name[M];" and track name for ld.param dereference.
+            Matcher lsbm = LOCAL_STRUCT_BUF_PAT.matcher(line);
+            if (lsbm.matches()) {
+                String bufName = lsbm.group(1);
+                String size = lsbm.group(2);
+                LOCAL_STRUCT_BUFS.get().add(bufName);
+                out.append("\tunsigned char ").append(bufName).append("[").append(size).append("];\n");
+                continue;
+            }
+
             // --- Closing brace ---
             if (line.equals("}")) {
+                currentReturnVar = null;
                 out.append("}\n");
                 continue;
             }
@@ -318,6 +414,10 @@ public class PTXToCUDACTranslator {
             // --- Instructions (tab-separated opcode and operands) ---
             String translated = translateInstruction(line);
             if (translated != null) {
+                // In a non-void device function, "return;" must become "return retVar;"
+                if ("return;".equals(translated) && currentReturnVar != null) {
+                    translated = "return " + currentReturnVar + ";";
+                }
                 out.append("\t").append(translated).append("\n");
             }
             // else: unrecognized line, skip
@@ -325,7 +425,10 @@ public class PTXToCUDACTranslator {
 
         SHARED_EFFECTIVE_TYPE.get().clear();
 
-        String result = out.toString();
+        // Prepend any file-scope global data declarations collected during translation.
+        String result = globalDecls.length() > 0
+                ? globalDecls.toString() + out.toString()
+                : out.toString();
         // Iteratively convert loops and structure remaining forward gotos to produce
         // structured C code without goto statements (matching OpenCL backend style).
         // Multiple rounds are needed because structuring inner if/else unblocks new loops.
@@ -343,6 +446,10 @@ public class PTXToCUDACTranslator {
         // becomes:
         //   val = ((TYPE*)base)[idx];
         result = foldPointerChains(result);
+        // Fix local array pointer-to-int assignments that foldPointerChains could not fold
+        // (e.g. conditional branches assigning different local arrays to the same variable):
+        //   rui8 = rsiArr0;   →   rui8 = (unsigned int)(unsigned long long)rsiArr0;
+        result = fixLocalArrayPtrCasts(result);
         // Convert grid-stride while loops to early-return guard pattern:
         //   while (idx < N) { ... idx = stride + idx; } -> if (idx >= N) return; ...
         // removeUnusedVars then cleans up the now-dead stride variables automatically.
@@ -350,9 +457,15 @@ public class PTXToCUDACTranslator {
         // Remove variables that are declared but never read (dead assignments left
         // after chain folding or other optimisations).
         result = removeUnusedVars(result);
-        // NVRTC does not provide the `half` type by default — include the FP16 header
-        // if the output declares any half-precision variables.
-        if (result.contains("\thalf ") || result.contains(" half ")) {
+        // NVRTC does not provide the `half` type or FP16 intrinsics by default.
+        // Include the FP16 header if the output declares half-precision variables or
+        // uses any of the half-float intrinsic functions (__hadd, __ushort_as_half, etc.).
+        if (result.contains("\thalf ") || result.contains(" half ")
+                || result.contains("__hadd") || result.contains("__hsub")
+                || result.contains("__hmul") || result.contains("__hdiv")
+                || result.contains("__hfma") || result.contains("__hneg")
+                || result.contains("__habs") || result.contains("__ushort_as_half")
+                || result.contains("__half_as_ushort")) {
             result = "#include <cuda_fp16.h>\n" + result;
         }
         // Re-indent the whole output for readable --printKernel output.
@@ -839,8 +952,18 @@ public class PTXToCUDACTranslator {
                     List<String>[] bodiesToCheck = new List[]{elseBody, thenBody};
                     outer:
                     for (List<String> bodyToCheck : bodiesToCheck) {
+                        int braceDepth = 0;
                         for (String bl : bodyToCheck) {
                             String t = bl.trim();
+                            // Track net brace depth per line to detect when a body
+                            // crosses a brace boundary introduced by a prior structuring
+                            // pass (e.g. thenBody includes "} else {" and "}" from an
+                            // outer if-else block).  Checking per-line totals (not
+                            // per-character) avoids false positives on "} else {".
+                            long opens  = bl.chars().filter(c -> c == '{').count();
+                            long closes = bl.chars().filter(c -> c == '}').count();
+                            braceDepth += (int)(opens - closes);
+                            if (braceDepth < 0) { ifElseSafe = false; break outer; }
                             Matcher um = uncondGotoPat.matcher(t);
                             if (um.matches()) {
                                 Integer tl = labelLine.get(um.group(1));
@@ -1086,9 +1209,11 @@ public class PTXToCUDACTranslator {
             case "clz":   return translateClz(opParts, operands);
             case "brev":  return translateBrev(opParts, operands);
             case "dp4a":  return translateDp4a(opParts, operands);
-            case "testp": return translateTestp(opParts, operands);
+            case "testp":    return translateTestp(opParts, operands);
+            case "copysign": return translateCopysign(opParts, operands);
             case "wmma":  return null; // skip wmma for now
             case "nop":   return "/* nop */";
+            case "cvta":  return translateCvta(opParts, operands);
             default:      return "/* unsupported: " + line + " */";
         }
     }
@@ -1145,6 +1270,20 @@ public class PTXToCUDACTranslator {
         String dest = subst(ops[0]);
         String a = subst(ops[1]);
         String b = subst(ops[2]);
+        // Half-float requires CUDA intrinsics since .b16 variables are unsigned short.
+        String type = opParts.length > 1 ? opParts[opParts.length - 1] : "";
+        if ("f16".equals(type)) {
+            String intr;
+            switch (op) {
+                case "+": intr = "__hadd"; break;
+                case "-": intr = "__hsub"; break;
+                case "/": intr = "__hdiv"; break;
+                default:  intr = null;
+            }
+            if (intr != null) {
+                return storeHalf(dest, intr + "(" + asHalf(a) + ", " + asHalf(b) + ")");
+            }
+        }
         return dest + " = " + a + " " + op + " " + b + ";";
     }
 
@@ -1153,6 +1292,10 @@ public class PTXToCUDACTranslator {
         String dest = subst(ops[0]);
         String a = subst(ops[1]);
         String b = subst(ops[2]);
+        String type = opParts.length > 1 ? opParts[opParts.length - 1] : "";
+        if ("f16".equals(type)) {
+            return storeHalf(dest, "__hmul(" + asHalf(a) + ", " + asHalf(b) + ")");
+        }
         // mul.wide produces a wider result; treat as regular multiply
         return dest + " = " + a + " * " + b + ";";
     }
@@ -1183,9 +1326,11 @@ public class PTXToCUDACTranslator {
         String a = subst(ops[1]);
         String b = subst(ops[2]);
         String c = subst(ops[3]);
-        // Check if float or double
-        boolean isF64 = opParts.length > 1 && opParts[opParts.length - 1].equals("f64");
-        if (isF64) {
+        String type = opParts.length > 1 ? opParts[opParts.length - 1] : "f32";
+        if ("f16".equals(type)) {
+            return storeHalf(dest, "__hfma(" + asHalf(a) + ", " + asHalf(b) + ", " + asHalf(c) + ")");
+        }
+        if ("f64".equals(type)) {
             return dest + " = fma(" + a + ", " + b + ", " + c + ");";
         }
         return dest + " = fmaf(" + a + ", " + b + ", " + c + ");";
@@ -1195,6 +1340,10 @@ public class PTXToCUDACTranslator {
         if (ops.length < 2) return null;
         String dest = subst(ops[0]);
         String src = subst(ops[1]);
+        String type = opParts.length > 1 ? opParts[opParts.length - 1] : "";
+        if ("f16".equals(type) && "-".equals(op)) {
+            return storeHalf(dest, "__hneg(" + asHalf(src) + ")");
+        }
         return dest + " = " + op + src + ";";
     }
 
@@ -1203,6 +1352,9 @@ public class PTXToCUDACTranslator {
         String dest = subst(ops[0]);
         String src = subst(ops[1]);
         String type = opParts.length > 1 ? opParts[opParts.length - 1] : "s32";
+        if ("f16".equals(type)) {
+            return storeHalf(dest, "__habs(" + asHalf(src) + ")");
+        }
         if (type.startsWith("f")) {
             boolean isF64 = type.equals("f64");
             return dest + " = " + (isF64 ? "fabs(" : "fabsf(") + src + ");";
@@ -1268,6 +1420,13 @@ public class PTXToCUDACTranslator {
             cfunc = func.equals("min") ? "fminf" : "fmaxf";
         } else {
             cfunc = func; // min/max work for integers in CUDA C
+        }
+        // For 64-bit integer types, explicitly cast both operands to avoid NVRTC overload
+        // ambiguity: min(int_literal, long_long_var) matches multiple overloads.
+        if ("s64".equals(type) || "u64".equals(type) || "b64".equals(type)) {
+            String ctype = toCType(type);
+            a = "(" + ctype + ")" + a;
+            b = "(" + ctype + ")" + b;
         }
         return dest + " = " + cfunc + "(" + a + ", " + b + ");";
     }
@@ -1339,6 +1498,37 @@ public class PTXToCUDACTranslator {
             }
         }
 
+        // Conversions to/from f16 require CUDA half-float intrinsics since .b16 variables
+        // are declared as unsigned short holding raw bit patterns.
+        if ("f16".equals(dtype)) {
+            // Convert source to __half, then store in dest.
+            String halfExpr;
+            if ("f32".equals(stype)) {
+                halfExpr = "__float2half(" + src + ")";
+            } else if ("f64".equals(stype)) {
+                halfExpr = "__double2half(" + src + ")";
+            } else if ("f16".equals(stype)) {
+                // No-op: both are f16
+                halfExpr = isHalfReg(src) ? src : "__ushort_as_half(" + src + ")";
+            } else {
+                // Integer to half: convert to float first
+                halfExpr = "__float2half((float)(" + sctype + ")" + src + ")";
+            }
+            return storeHalf(dest, halfExpr);
+        }
+        if ("f16".equals(stype)) {
+            // Convert f16 source to target type
+            String halfSrc = isHalfReg(src) ? src : "__ushort_as_half(" + src + ")";
+            if ("f32".equals(dtype)) {
+                return dest + " = __half2float(" + halfSrc + ");";
+            }
+            if ("f64".equals(dtype)) {
+                return dest + " = (double)__half2float(" + halfSrc + ");";
+            }
+            // Integer conversion: half to float to int
+            return dest + " = (" + ctype + ")__half2float(" + halfSrc + ");";
+        }
+
         // Always cast via the source C-type first so that sign-extension semantics are
         // preserved.  For example, cvt.s64.s32 with a variable declared as unsigned int:
         //   (long long)(int)src   – sign-extends correctly
@@ -1357,11 +1547,21 @@ public class PTXToCUDACTranslator {
 
         if (space.equals("param")) {
             // ld.param.TYPE dest, [paramName]
-            String paramName = extractAddr(addrExpr);
+            String addr = extractAddr(addrExpr);
+            // Check if this is reading from a local struct return buffer (declared as
+            // ".param .align N .b8 name[M]" inside a function body).  Those need a
+            // pointer-dereference to read back the float/int value the callee stored.
+            String bufBase = addr.contains("+") ? addr.substring(0, addr.indexOf('+')).trim() : addr;
+            if (LOCAL_STRUCT_BUFS.get().contains(bufBase)) {
+                return dest + " = *((" + ctype + "*)(unsigned long long)(" + addr + "));";
+            }
+            // Apply the same name sanitization as in translateParamList so that C++ reserved
+            // words like "this" become "this_param" in both the function signature and its body.
+            String paramName = sanitizeParamName(addr);
             return dest + " = " + paramName + ";";
         } else if (space.equals("local")) {
             // ld.local.TYPE dest, [addr+offset] or [arr+offset]
-            return dest + " = *(" + ctype + "*)(" + buildAddrExpr(addrExpr) + ");";
+            return dest + " = *((" + ctype + "*)(unsigned long long)(" + buildAddrExpr(addrExpr) + "));";
         } else if (space.equals("shared")) {
             // PTX shared memory uses two addressing forms:
             //   arrName[index]    -> direct array element access (no outer brackets)
@@ -1380,16 +1580,16 @@ public class PTXToCUDACTranslator {
                 }
                 return dest + " = *((" + ctype + "*)&" + subst(addrExpr) + ");";
             }
-            return dest + " = *(" + ctype + "*)(" + buildAddrExpr(addrExpr) + ");";
+            return dest + " = *((" + ctype + "*)(unsigned long long)(" + buildAddrExpr(addrExpr) + "));";
         } else {
             // ld.global.TYPE dest, [addr] or [addr+offset]
             // Use (ctype*)(addr) form so integer arithmetic happens before the pointer cast,
             // preventing C pointer arithmetic scaling (e.g. *((float*)reg+4) would add 16 bytes,
             // not 4).
             if ("b16".equals(ptxType) && isHalfReg(dest)) {
-                return dest + " = __ushort_as_half(*((unsigned short*)(" + buildAddrExpr(addrExpr) + ")));";
+                return dest + " = __ushort_as_half(*((unsigned short*)(unsigned long long)(" + buildAddrExpr(addrExpr) + ")));";
             }
-            return dest + " = *((" + ctype + "*)(" + buildAddrExpr(addrExpr) + "));";
+            return dest + " = *((" + ctype + "*)(unsigned long long)(" + buildAddrExpr(addrExpr) + "));";
         }
     }
 
@@ -1403,7 +1603,7 @@ public class PTXToCUDACTranslator {
         String ctype = toCType(ptxType);
 
         if (space.equals("local")) {
-            return "*((" + ctype + "*)(" + buildAddrExpr(addrExpr) + ")) = " + src + ";";
+            return "*((" + ctype + "*)(unsigned long long)(" + buildAddrExpr(addrExpr) + ")) = " + src + ";";
         } else if (space.equals("shared")) {
             // PTX shared memory uses two addressing forms:
             //   arrName[index]  -> direct array element access (no outer brackets)
@@ -1420,13 +1620,13 @@ public class PTXToCUDACTranslator {
                 }
                 return "*((" + ctype + "*)&" + subst(addrExpr) + ") = " + src + ";";
             }
-            return "*((" + ctype + "*)(" + buildAddrExpr(addrExpr) + ")) = " + src + ";";
+            return "*((" + ctype + "*)(unsigned long long)(" + buildAddrExpr(addrExpr) + ")) = " + src + ";";
         } else {
             // b16 stores from half registers need __half_as_ushort() for correct bit-reinterpretation
             if ("b16".equals(ptxType) && isHalfReg(src)) {
-                return "*((unsigned short*)(" + buildAddrExpr(addrExpr) + ")) = __half_as_ushort(" + src + ");";
+                return "*((unsigned short*)(unsigned long long)(" + buildAddrExpr(addrExpr) + ")) = __half_as_ushort(" + src + ");";
             }
-            return "*((" + ctype + "*)(" + buildAddrExpr(addrExpr) + ")) = " + src + ";";
+            return "*((" + ctype + "*)(unsigned long long)(" + buildAddrExpr(addrExpr) + ")) = " + src + ";";
         }
     }
 
@@ -1437,6 +1637,37 @@ public class PTXToCUDACTranslator {
         // The variable names follow the pattern: prefix + index, where prefix contains "fh"
         // (e.g. rfh0, rfh1) since f16 registers use "fh" as the short name in TornadoVM.
         return varName != null && varName.matches(".*fh\\d+");
+    }
+
+    /**
+     * Wraps a variable reference so it can be used as a {@code __half} value in a
+     * CUDA half-float intrinsic call.
+     * <ul>
+     *   <li>If {@code v} is a {@code .f16} register (declared as {@code half}), it is
+     *       returned unchanged.</li>
+     *   <li>If {@code v} is a {@code .b16} register (declared as {@code unsigned short}
+     *       holding the raw bit pattern), it is wrapped with
+     *       {@code __ushort_as_half(v)}.</li>
+     * </ul>
+     */
+    private static String asHalf(String v) {
+        return isHalfReg(v) ? v : "__ushort_as_half(" + v + ")";
+    }
+
+    /**
+     * Generates an assignment statement that stores a {@code __half}-typed expression
+     * into {@code dest}.
+     * <ul>
+     *   <li>If {@code dest} is a {@code .f16} register (type {@code half}), it is
+     *       assigned directly.</li>
+     *   <li>Otherwise {@code dest} is a {@code .b16} register (type
+     *       {@code unsigned short}) and the result is stored via
+     *       {@code __half_as_ushort}.</li>
+     * </ul>
+     */
+    private static String storeHalf(String dest, String halfExpr) {
+        if (isHalfReg(dest)) return dest + " = " + halfExpr + ";";
+        return dest + " = __half_as_ushort(" + halfExpr + ");";
     }
 
     private static String translateAtom(String[] opParts, String[] ops, String operandsStr) {
@@ -1561,13 +1792,47 @@ public class PTXToCUDACTranslator {
             String funcName = m.group(2);
             String argList = m.group(3);
             String args = (argList != null) ? substAll(argList) : "";
+
+            // vprintf(fmt_ptr, args_ptr): PTX addresses are unsigned long long but NVRTC
+            // requires const char* and void* — add explicit casts at the call site.
+            if ("vprintf".equals(funcName)) {
+                String[] argArr = args.split(",", 2);
+                String fmtArg = argArr.length > 0 ? "(const char*)" + argArr[0].trim() : "";
+                String argsArg = argArr.length > 1 ? "(void*)" + argArr[1].trim() : "0";
+                String callArgs = argArr.length > 1 ? fmtArg + ", " + argsArg : fmtArg;
+                String call = "vprintf(" + callArgs + ");";
+                if (retVar != null && !retVar.isEmpty() && !"_".equals(retVar)) {
+                    return retVar + " = " + call;
+                }
+                return call;
+            }
+
             if (retVar != null && !retVar.isEmpty()) {
+                if (LOCAL_STRUCT_BUFS.get().contains(retVar)) {
+                    // Struct return via output pointer: pass buffer address as last argument.
+                    String extra = "(unsigned long long)" + retVar;
+                    String allArgs = args.isEmpty() ? extra : args + ", " + extra;
+                    return funcName + "(" + allArgs + ");";
+                }
+                // "_" is the PTX discard sink — emit the call without capturing the result.
+                if ("_".equals(retVar)) {
+                    return funcName + "(" + args + ");";
+                }
                 return retVar + " = " + funcName + "(" + args + ");";
             } else {
                 return funcName + "(" + args + ");";
             }
         }
         return "/* call: " + operandsStr + " */";
+    }
+
+    private static String translateCvta(String[] opParts, String[] ops) {
+        // cvta.to.global.u64 or cvta.global.u64 or cvta.local.u64 etc.
+        // Converts between address spaces. In CUDA C this is just a cast to unsigned long long.
+        if (ops.length < 2) return null;
+        String dest = subst(ops[0]);
+        String src  = subst(ops[1]);
+        return dest + " = (unsigned long long)(const void*)" + src + ";";
     }
 
     private static String translateVote(String[] opParts, String[] ops) {
@@ -1672,7 +1937,8 @@ public class PTXToCUDACTranslator {
                 case "normal":    return dest + " = (" + exp + " != 0L && " + exp + " != 0x7FFL) ? 1 : 0;";
                 case "finite":    return dest + " = (" + exp + " != 0x7FFL) ? 1 : 0;";
                 case "infinite":  return dest + " = (" + exp + " == 0x7FFL && (" + bits + " & 0x000FFFFFFFFFFFFFL) == 0L) ? 1 : 0;";
-                case "nan":       return dest + " = (" + exp + " == 0x7FFL && (" + bits + " & 0x000FFFFFFFFFFFFFL) != 0L) ? 1 : 0;";
+                case "nan":
+                case "notanumber":return dest + " = (" + exp + " == 0x7FFL && (" + bits + " & 0x000FFFFFFFFFFFFFL) != 0L) ? 1 : 0;";
                 case "number":    return dest + " = (" + exp + " != 0x7FFL || (" + bits + " & 0x000FFFFFFFFFFFFFL) == 0L) ? 1 : 0;";
                 case "subnormal": return dest + " = (" + exp + " == 0L && (" + bits + " & 0x000FFFFFFFFFFFFFL) != 0L) ? 1 : 0;";
                 default:          return dest + " = (" + exp + " != 0L && " + exp + " != 0x7FFL) ? 1 : 0;";
@@ -1685,12 +1951,28 @@ public class PTXToCUDACTranslator {
                 case "normal":    return dest + " = (" + exp + " != 0 && " + exp + " != 0xFF) ? 1 : 0;";
                 case "finite":    return dest + " = (" + exp + " != 0xFF) ? 1 : 0;";
                 case "infinite":  return dest + " = (" + exp + " == 0xFF && (" + bits + " & 0x7FFFFF) == 0) ? 1 : 0;";
-                case "nan":       return dest + " = (" + exp + " == 0xFF && (" + bits + " & 0x7FFFFF) != 0) ? 1 : 0;";
+                case "nan":
+                case "notanumber":return dest + " = (" + exp + " == 0xFF && (" + bits + " & 0x7FFFFF) != 0) ? 1 : 0;";
                 case "number":    return dest + " = (" + exp + " != 0xFF || (" + bits + " & 0x7FFFFF) == 0) ? 1 : 0;";
                 case "subnormal": return dest + " = (" + exp + " == 0 && (" + bits + " & 0x7FFFFF) != 0) ? 1 : 0;";
                 default:          return dest + " = (" + exp + " != 0 && " + exp + " != 0xFF) ? 1 : 0;";
             }
         }
+    }
+
+    private static String translateCopysign(String[] opParts, String[] ops) {
+        // PTX: copysign.TYPE d, a, b  — copies sign bit from a into b, stores result in d.
+        //   d = |b| with sign of a  →  C: copysignf(b, a)  [f32] / copysign(b, a) [f64]
+        // (Note: PTX argument order is opposite to C's copysignf(magnitude, sign_src).)
+        if (ops.length < 3) return null;
+        String dest      = subst(ops[0]);
+        String signSrc   = subst(ops[1]); // PTX 'a' — provides the sign
+        String magnitude = subst(ops[2]); // PTX 'b' — provides the magnitude
+        String type = opParts.length > 1 ? opParts[opParts.length - 1] : "f32";
+        if ("f64".equals(type)) {
+            return dest + " = copysign(" + magnitude + ", " + signSrc + ");";
+        }
+        return dest + " = copysignf(" + magnitude + ", " + signSrc + ");";
     }
 
     // -------------------------------------------------------------------------
@@ -1782,7 +2064,7 @@ public class PTXToCUDACTranslator {
 
     /** Rename PTX parameter names that are C++ reserved keywords. */
     private static String sanitizeParamName(String name) {
-        // C++ keywords that can appear as Java/PTX parameter names
+        // C++ keywords and CUDA built-in names that can appear as Java/PTX parameter names
         switch (name) {
             case "this":      return "this_param";
             case "class":     return "class_param";
@@ -1793,8 +2075,27 @@ public class PTXToCUDACTranslator {
             case "operator":  return "operator_param";
             case "virtual":   return "virtual_param";
             case "register":  return "register_param";
-            default:          return name;
+            // CUDA built-in struct names — using these as parameter names shadows the built-in
+            case "blockDim":   return "blockDim_param";
+            case "gridDim":    return "gridDim_param";
+            case "threadIdx":  return "threadIdx_param";
+            case "blockIdx":   return "blockIdx_param";
+            case "warpSize":   return "warpSize_param";
+            default:           return name;
         }
+    }
+
+    /**
+     * Returns true when the function return declaration is a struct/vector output pointer,
+     * i.e. ".param .align N .b8 name[M]". These are translated using an extra
+     * "unsigned long long retVar" parameter rather than a C return value.
+     */
+    private static boolean isStructReturnDecl(String retDecl) {
+        String[] tokens = retDecl.trim().split("\\s+");
+        String ptxType = findTypeToken(tokens);
+        if (!"b8".equals(ptxType)) return false;
+        String lastName = tokens[tokens.length - 1];
+        return lastName.contains("[");
     }
 
     private static String extractFuncReturnType(String retDecl) {
@@ -1803,6 +2104,23 @@ public class PTXToCUDACTranslator {
         String ptxType = findTypeToken(tokens);
         if (ptxType == null) return "void";
         return toCType(ptxType);
+    }
+
+    private static String extractReturnVarName(String retDecl) {
+        // Returns the last token that looks like an identifier (doesn't start with '.'
+        // and matches [a-zA-Z_]\w*). For ".reg .s32 retVar" this is "retVar".
+        // Handles "name[N]" by stripping the array suffix.
+        String[] tokens = retDecl.trim().split("\\s+");
+        for (int i = tokens.length - 1; i >= 0; i--) {
+            String t = tokens[i];
+            if (t.startsWith(".")) continue;
+            int bracketIdx = t.indexOf('[');
+            String name = bracketIdx >= 0 ? t.substring(0, bracketIdx) : t;
+            if (name.matches("[a-zA-Z_]\\w*")) {
+                return name;
+            }
+        }
+        return null;
     }
 
     private static void emitFunctionSignature(StringBuilder out, boolean isKernel,
@@ -1967,18 +2285,25 @@ public class PTXToCUDACTranslator {
     // Matches a simple assignment: indent  VAR = RHS ;
     private static final Pattern CHAIN_ASSIGN = Pattern.compile(
             "^(\\s*)(\\w+)\\s*=\\s*(.+?);\\s*$");
-    // Matches a load dereference: indent  DEST = *((TYPE*)(ADDR)) ;
+    // Matches a load dereference: indent  DEST = *((TYPE*)[(unsigned long long)](ADDR)) ;
+    // The (unsigned long long) qualifier is optional — both old and new emit formats are matched.
     private static final Pattern CHAIN_LOAD = Pattern.compile(
-            "^(\\s*)(\\w+)\\s*=\\s*\\*\\(\\((\\w[\\w\\s]*\\*?)\\)\\((\\w+)\\)\\);\\s*$");
-    // Matches a store dereference: indent  *((TYPE*)(ADDR)) = SRC ;
+            "^(\\s*)(\\w+)\\s*=\\s*\\*\\(\\((\\w[\\w\\s]*\\*?)\\)(?:\\(unsigned long long\\))?\\((\\w+)\\)\\);\\s*$");
+    // Matches a store dereference: indent  *((TYPE*)[(unsigned long long)](ADDR)) = SRC ;
     private static final Pattern CHAIN_STORE = Pattern.compile(
-            "^(\\s*)\\*\\(\\((\\w[\\w\\s]*\\*?)\\)\\((\\w+)\\)\\)\\s*=\\s*(.+?);\\s*$");
+            "^(\\s*)\\*\\(\\((\\w[\\w\\s]*\\*?)\\)(?:\\(unsigned long long\\))?\\((\\w+)\\)\\)\\s*=\\s*(.+?);\\s*$");
     // Matches sign/zero-extend: (long long)(int)VAR or (long long)(unsigned int)VAR
     private static final Pattern CHAIN_EXTEND = Pattern.compile(
             "^\\(long long\\)\\((?:unsigned )?int\\)(\\w+)$");
     // Matches a shift: VAR << N
     private static final Pattern CHAIN_SHIFT = Pattern.compile(
             "^(\\w+)\\s*<<\\s*(\\d+)$");
+    // Matches a multiply by constant: VAR * N  (local-array byte-offset pattern)
+    private static final Pattern CHAIN_MUL = Pattern.compile(
+            "^(\\w+)\\s*\\*\\s*(\\d+)$");
+    // Matches a simple name alias: VAR  (e.g. rui4 = rsiArr0)
+    private static final Pattern CHAIN_NAME = Pattern.compile(
+            "^([a-zA-Z_]\\w*)$");
     // Matches an addition: VAR + VAR
     private static final Pattern CHAIN_ADD = Pattern.compile(
             "^(\\w+)\\s*\\+\\s*(\\w+)$");
@@ -2073,46 +2398,72 @@ public class PTXToCUDACTranslator {
             String addA = addM.group(1);
             String addB = addM.group(2);
 
-            // One of addA/addB should be the scaled offset (produced by a shift)
+            // One of addA/addB should be the scaled offset (shift or multiply by constant)
             String scaleVar = null, baseVar = null;
             Integer scaleDefIdx = null;
+            boolean scaleIsMul = false;
             for (int which = 0; which < 2; which++) {
                 String candidate = which == 0 ? addA : addB;
                 Integer cdx = lastDef.get(candidate);
                 if (cdx != null && cdx < i && !eliminated[cdx]) {
-                    Matcher shM = CHAIN_SHIFT.matcher(rhsOf[cdx]);
-                    if (shM.matches()) {
+                    Matcher shM2 = CHAIN_SHIFT.matcher(rhsOf[cdx]);
+                    Matcher mulM2 = CHAIN_MUL.matcher(rhsOf[cdx]);
+                    if (shM2.matches() || mulM2.matches()) {
                         scaleVar = candidate;
                         scaleDefIdx = cdx;
                         baseVar = which == 0 ? addB : addA;
+                        scaleIsMul = mulM2.matches();
                         break;
                     }
                 }
             }
             if (scaleVar == null) continue;
 
-            // --- Step 2: scaleVar = EXTEND << N ---
-            Matcher shM = CHAIN_SHIFT.matcher(rhsOf[scaleDefIdx]);
-            if (!shM.matches()) continue;
-            String extendVar = shM.group(1);
+            // --- Step 2 / 3: derive the element index variable ---
+            // shift path: scaleVar = extendVar << N, extendVar = (long long)(int) idxVar
+            // multiply path: scaleVar = idxVar * N  (no sign-extend step)
+            String idxVar;
+            Integer extDefIdx = null;
+            String extendVar = null;
+            if (scaleIsMul) {
+                Matcher mulM = CHAIN_MUL.matcher(rhsOf[scaleDefIdx]);
+                mulM.matches(); // guaranteed
+                idxVar = mulM.group(1);
+            } else {
+                Matcher shM = CHAIN_SHIFT.matcher(rhsOf[scaleDefIdx]);
+                shM.matches(); // guaranteed
+                extendVar = shM.group(1);
+                extDefIdx = lastDef.get(extendVar);
+                if (extDefIdx == null || extDefIdx >= i || eliminated[extDefIdx]) continue;
+                Matcher seM = CHAIN_EXTEND.matcher(rhsOf[extDefIdx]);
+                if (!seM.matches()) continue;
+                idxVar = seM.group(1);
+            }
 
-            // --- Step 3: extendVar = (long long)(int)IDX ---
-            Integer extDefIdx = lastDef.get(extendVar);
-            if (extDefIdx == null || extDefIdx >= i || eliminated[extDefIdx]) continue;
-            Matcher seM = CHAIN_EXTEND.matcher(rhsOf[extDefIdx]);
-            if (!seM.matches()) continue;
-            String idxVar = seM.group(1);
+            // --- Optional: fold through a simple base alias (e.g. rui4 = rsiArr0) ---
+            // This handles local arrays where PTX emits "rui4 = arrName; rui5 = rui4 + offset"
+            Integer baseAliasDefIdx = null;
+            if (lastDef.containsKey(baseVar)) {
+                Integer bdx = lastDef.get(baseVar);
+                if (bdx != null && bdx < i && !eliminated[bdx] && rhsOf[bdx] != null) {
+                    Matcher nm = CHAIN_NAME.matcher(rhsOf[bdx]);
+                    if (nm.matches() && useCnt.getOrDefault(baseVar, 0) == 1) {
+                        baseAliasDefIdx = bdx;
+                        baseVar = nm.group(1);
+                    }
+                }
+            }
 
             // --- Safety: each intermediate var must be used exactly once ---
-            // (only in the next step of the chain)
             if (useCnt.getOrDefault(addrVar, 0) != 1) continue;
             if (useCnt.getOrDefault(scaleVar, 0) != 1) continue;
-            if (useCnt.getOrDefault(extendVar, 0) != 1) continue;
+            if (extendVar != null && useCnt.getOrDefault(extendVar, 0) != 1) continue;
 
             // --- Fold ---
             eliminated[addrDefIdx] = true;
             eliminated[scaleDefIdx] = true;
-            eliminated[extDefIdx] = true;
+            if (extDefIdx != null) eliminated[extDefIdx] = true;
+            if (baseAliasDefIdx != null) eliminated[baseAliasDefIdx] = true;
 
             if (isLoad) {
                 lines[i] = indent + dest + " = ((" + ctype + ")" + baseVar + ")[" + idxVar + "];";
@@ -2126,6 +2477,147 @@ public class PTXToCUDACTranslator {
             if (!eliminated[i]) sb.append(lines[i]).append("\n");
         }
         // Remove the extra trailing newline added by the split+rejoin
+        String result = sb.toString();
+        if (result.endsWith("\n") && !cudaC.endsWith("\n")) {
+            result = result.substring(0, result.length() - 1);
+        }
+        return result;
+    }
+
+    /**
+     * Fixes assignments of local array names to integer variables that could not be folded
+     * away by {@link #foldPointerChains} (e.g., when the same variable is assigned different
+     * arrays in different control-flow branches).
+     *
+     * <p>Pattern: {@code  rui8 = rsiArr0; } where {@code rsiArr0} is a local array
+     * declared as {@code TYPE rsiArr0[N];}.  NVRTC rejects this because {@code rsiArr0}
+     * has type {@code TYPE*} which is not implicitly convertible to {@code unsigned int}.
+     *
+     * <p>Fix: replace with {@code rui8 = (unsigned int)(unsigned long long)rsiArr0; }.
+     * CUDA local memory uses 32-bit addressing internally, so truncating the pointer is safe.
+     */
+    private static String fixLocalArrayPtrCasts(String cudaC) {
+        String[] lines = cudaC.split("\n", -1);
+
+        // Step 1: Collect local array names from declarations: TYPE name[SIZE];
+        java.util.Set<String> localArrays = new java.util.HashSet<>();
+        Pattern localArrDecl = Pattern.compile("^\\s*\\w[\\w\\s]*\\s+(\\w+)\\s*\\[\\d+\\];\\s*$");
+        for (String line : lines) {
+            Matcher m = localArrDecl.matcher(line);
+            if (m.matches()) localArrays.add(m.group(1));
+        }
+        if (localArrays.isEmpty()) return cudaC;
+
+        // Step 2: Find integer variables that directly receive a local array address.
+        //   e.g.  rui8 = rsiArr0;
+        java.util.Set<String> localPtrVars = new java.util.LinkedHashSet<>();
+        for (String line : lines) {
+            Matcher m = CHAIN_ASSIGN.matcher(line);
+            if (m.matches() && localArrays.contains(m.group(3).trim())) {
+                localPtrVars.add(m.group(2));
+            }
+        }
+        if (localPtrVars.isEmpty()) return cudaC;
+
+        // Step 3: Propagate — if rui9 = rui8 + offset  (or rui9 = rui8) and rui8 is a
+        //         localPtrVar, then rui9 is also a localPtrVar (byte-level pointer arithmetic).
+        boolean changed = true;
+        while (changed) {
+            changed = false;
+            for (String line : lines) {
+                Matcher m = CHAIN_ASSIGN.matcher(line);
+                if (!m.matches()) continue;
+                String lhs = m.group(2);
+                String rhs = m.group(3).trim();
+                if (localPtrVars.contains(lhs)) continue;
+                // Direct alias: rui9 = rui8;
+                if (localPtrVars.contains(rhs)) {
+                    localPtrVars.add(lhs);
+                    changed = true;
+                    continue;
+                }
+                // Additive: rui9 = rui8 + rsi10;  or  rui9 = rsi10 + rui8;
+                Matcher am = CHAIN_ADD.matcher(rhs);
+                if (am.matches() && (localPtrVars.contains(am.group(1))
+                                     || localPtrVars.contains(am.group(2)))) {
+                    localPtrVars.add(lhs);
+                    changed = true;
+                }
+            }
+        }
+
+        // Step 4: Rewrite CUDA C source.
+        StringBuilder sb = new StringBuilder();
+        for (String line : lines) {
+            String trimmed = line.trim();
+
+            // (a) Declaration rewriting: split localPtrVars out of their original type
+            //     e.g. "unsigned int rui8, rui9;" -> "unsigned int ...; char* rui8;\n char* rui9;\n"
+            List<String> declaredVars = extractDeclVars(trimmed);
+            if (!declaredVars.isEmpty()) {
+                List<String> ptrVarsInDecl = new ArrayList<>();
+                for (String v : declaredVars) {
+                    if (localPtrVars.contains(v)) ptrVarsInDecl.add(v);
+                }
+                if (!ptrVarsInDecl.isEmpty()) {
+                    List<String> nonPtrVars = new ArrayList<>(declaredVars);
+                    nonPtrVars.removeAll(ptrVarsInDecl);
+                    String indent = line.substring(0, line.length() - line.stripLeading().length());
+                    if (!nonPtrVars.isEmpty()) {
+                        String rebuilt = rebuildDecl(line, declaredVars, nonPtrVars);
+                        if (rebuilt != null) sb.append(rebuilt).append("\n");
+                    }
+                    for (String v : ptrVarsInDecl) {
+                        sb.append(indent).append("char* ").append(v).append(";\n");
+                    }
+                    continue;
+                }
+            }
+
+            // (b) Fix local array address assignment: rui8 = arrName; -> rui8 = (char*)arrName;
+            Matcher am = CHAIN_ASSIGN.matcher(line);
+            if (am.matches() && localPtrVars.contains(am.group(2))
+                    && localArrays.contains(am.group(3).trim())) {
+                sb.append(am.group(1)).append(am.group(2))
+                  .append(" = (char*)").append(am.group(3).trim()).append(";\n");
+                continue;
+            }
+
+            // (b2) Delete dead cast-chain writes: DEST = (T1)(T2)...PTRVAR;
+            //      PTX cvt instructions may cast a local address variable to a non-pointer type
+            //      (e.g. rfi2 = (float)(unsigned int)rui9;).  Now that rui9 is char* these are
+            //      both type-illegal and semantically dead (overwritten by the ensuing load).
+            //      Pattern: one or more (WORD_SPACE_CAST) groups followed by a plain PTRVAR name.
+            if (am.matches()) {
+                String rhs3 = am.group(3).trim();
+                // Match: (?:(TYPE_CAST))+VARNAME  — no *, no operators, no parens in varname
+                Matcher cc = Pattern.compile("^(?:\\([\\w\\s]+\\))+(\\w+)$").matcher(rhs3);
+                if (cc.matches() && localPtrVars.contains(cc.group(1))) {
+                    continue; // drop the line
+                }
+            }
+
+            // (c) Fix loads using a localPtrVar address:
+            //   rsi10 = *((int*)(unsigned long long)(rui9)); -> rsi10 = *((int*)rui9);
+            Matcher ml = CHAIN_LOAD.matcher(line);
+            if (ml.matches() && localPtrVars.contains(ml.group(4))) {
+                sb.append(ml.group(1)).append(ml.group(2))
+                  .append(" = *((").append(ml.group(3)).append(")").append(ml.group(4)).append(");\n");
+                continue;
+            }
+
+            // (c) Fix stores using a localPtrVar address:
+            //   *((int*)(unsigned long long)(rui9)) = rsi10; -> *((int*)rui9) = rsi10;
+            Matcher ms = CHAIN_STORE.matcher(line);
+            if (ms.matches() && localPtrVars.contains(ms.group(3))) {
+                sb.append(ms.group(1)).append("*((").append(ms.group(2)).append(")")
+                  .append(ms.group(3)).append(") = ").append(ms.group(4)).append(";\n");
+                continue;
+            }
+
+            sb.append(line).append("\n");
+        }
+
         String result = sb.toString();
         if (result.endsWith("\n") && !cudaC.endsWith("\n")) {
             result = result.substring(0, result.length() - 1);
@@ -2248,6 +2740,10 @@ public class PTXToCUDACTranslator {
                 // Pure expressions like "(a < b)" or "a + b" or "(long long)(int)x"
                 // are safe to drop even when they contain parentheses.
                 if (!hasFunctionCall(rhs)) continue;
+                // RHS has a function call with side effects (e.g. atomicAdd).
+                // Drop the dead-variable assignment but keep the call as a void statement.
+                sb.append(am.group(1)).append(rhs).append(";\n");
+                continue;
             }
             sb.append(lines[i]).append("\n");
         }

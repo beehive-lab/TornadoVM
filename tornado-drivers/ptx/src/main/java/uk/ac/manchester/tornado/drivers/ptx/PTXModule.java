@@ -23,6 +23,8 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class PTXModule {
@@ -32,14 +34,31 @@ public class PTXModule {
     public final String javaName;
     private final byte[] source;
 
+    private static final Pattern PTX_ENTRY_PAT = Pattern.compile("\\.entry\\s+(\\w+)\\s*\\(");
+
     public PTXModule(String name, byte[] source, String kernelFunctionName, int[] jitOptions, long[] jitValues, String archOption) {
         byte[] loadSource = source;
+        String resolvedKernelName = kernelFunctionName;
         if ("cudac".equals(TornadoOptions.PTX_CODEGEN)) {
-            loadSource = nvrtcCompile(source, kernelFunctionName, archOption);
+            // Prebuilt kernels are stored as raw PTX (starting with ".version").
+            // These must be loaded directly via cuModuleLoadDataEx, not compiled by NVRTC.
+            String srcStr = new String(source, java.nio.charset.StandardCharsets.UTF_8).stripLeading();
+            if (!srcStr.startsWith(".version")) {
+                loadSource = nvrtcCompile(source, kernelFunctionName, archOption);
+            } else {
+                // For prebuilt PTX the kernel name in the file may differ from the
+                // name built by buildKernelName (which omits type suffixes in CUDA C
+                // mode).  Extract the actual .entry name so cuModuleGetFunction finds
+                // the function correctly.
+                Matcher m = PTX_ENTRY_PAT.matcher(srcStr);
+                if (m.find()) {
+                    resolvedKernelName = m.group(1);
+                }
+            }
         }
         moduleWrapper = cuModuleLoadDataEx(loadSource, jitOptions, jitValues);
         this.source = source;
-        this.kernelFunctionName = kernelFunctionName;
+        this.kernelFunctionName = resolvedKernelName;
         maxBlockSize = -1;
         javaName = name;
     }

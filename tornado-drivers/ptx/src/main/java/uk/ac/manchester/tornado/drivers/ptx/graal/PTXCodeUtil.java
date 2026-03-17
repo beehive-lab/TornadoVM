@@ -188,7 +188,18 @@ public class PTXCodeUtil {
                     sb.append('_');
                 }
             }
-            sb.append('_').append(methodName);
+            sb.append('_');
+            // Sanitize method name: replace non-alphanumeric chars (e.g. '$' in
+            // lambda names like "lambda$test02$1") with '_' so the result is a
+            // valid C identifier accepted by NVRTC.
+            for (int i = 0; i < methodName.length(); i++) {
+                char c = methodName.charAt(i);
+                if (Character.isLetterOrDigit(c)) {
+                    sb.append(c);
+                } else {
+                    sb.append('_');
+                }
+            }
             if (task.getBatchNumber() > 0) {
                 sb.append("_").append(task.getBatchNumber());
             }
