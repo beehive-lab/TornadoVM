@@ -134,20 +134,18 @@ jobs:
           source $VENV_PATH/bin/activate
           pip install --upgrade pip tqdm psutil
 
-      - name: Build TornadoVM (ptx)
+      - name: Build TornadoVM (cuda)
         run: |
           mkdir -p graalJars && cp $GRAAL_JARS/* graalJars/
           source $VENV_PATH/bin/activate
-          make jdk21 BACKEND=ptx
+          make jdk21 BACKEND=cuda
 
       - name: Run ptx-cudac fast unit tests
         run: |
           source $VENV_PATH/bin/activate
           source setvars.sh
           tornado --devices
-          tornado-test --ea --verbose --quickPass -J"-Dtornado.ptx.codegen=cudac -Dtornado.unittests.device=1:0"
-          tornado-test --ea -V -J"-Dtornado.device.memory=1MB -Dtornado.ptx.codegen=cudac -Dtornado.unittests.device=1:0" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
-          test-native.sh
+          make fast-tests
 
   # SPIRV parallel with OpenCL/PTX chain
   build-spirv:
