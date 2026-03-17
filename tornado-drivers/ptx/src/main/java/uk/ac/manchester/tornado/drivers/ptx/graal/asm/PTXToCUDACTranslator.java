@@ -343,6 +343,10 @@ public class PTXToCUDACTranslator {
         // becomes:
         //   val = ((TYPE*)base)[idx];
         result = foldPointerChains(result);
+        // Convert grid-stride while loops to early-return guard pattern:
+        //   while (idx < N) { ... idx = stride + idx; } -> if (idx >= N) return; ...
+        // removeUnusedVars then cleans up the now-dead stride variables automatically.
+        result = convertGridStrideToGuard(result);
         // Remove variables that are declared but never read (dead assignments left
         // after chain folding or other optimisations).
         result = removeUnusedVars(result);
@@ -351,6 +355,8 @@ public class PTXToCUDACTranslator {
         if (result.contains("\thalf ") || result.contains(" half ")) {
             result = "#include <cuda_fp16.h>\n" + result;
         }
+        // Re-indent the whole output for readable --printKernel output.
+        result = indentCode(result);
         return result;
     }
 
@@ -2339,5 +2345,265 @@ public class PTXToCUDACTranslator {
         int count = 0;
         while (m.find()) count++;
         return count;
+    }
+
+    // -------------------------------------------------------------------------
+    // Grid-stride loop → early-return guard
+    // -------------------------------------------------------------------------
+
+    /**
+     * Converts a grid-stride {@code while} loop to an early-return guard, which is
+     * the idiomatic single-work-item CUDA pattern:
+     *
+     * <pre>
+     *   while (loopVar &lt; bound) {
+     *       ... body ...
+     *       tmpVar  = strideVar + loopVar;
+     *       loopVar = tmpVar;
+     *   }
+     * </pre>
+     *
+     * becomes:
+     *
+     * <pre>
+     *   if (loopVar &gt;= bound) return;
+     *   ... body ...
+     * </pre>
+     *
+     * <p>Detection requires: (1) the last two body lines are the stride-update
+     * pair; (2) {@code strideVar} is traceable back to a {@code gridDim × blockDim}
+     * product in the lines preceding the loop; (3) {@code loopVar} does not appear
+     * in the body for any purpose other than as an array subscript index.
+     *
+     * <p>Falls back to the original while loop if any check fails.
+     */
+    private static String convertGridStrideToGuard(String cudaC) {
+        String[] lines = cudaC.split("\n", -1);
+        int n = lines.length;
+
+        // while (LOOPVAR < BOUND) {  [optional trailing // comment]
+        Pattern whilePat = Pattern.compile("^(\\s*)while\\s*\\((\\w+)\\s*<\\s*(\\w+)\\)\\s*\\{(.*)$");
+
+        // Scan bottom-up so indices remain valid when we splice
+        for (int wi = n - 1; wi >= 0; wi--) {
+            Matcher wm = whilePat.matcher(lines[wi]);
+            if (!wm.matches()) continue;
+
+            String indent    = wm.group(1);
+            String loopVar   = wm.group(2);
+            String bound     = wm.group(3);
+            String afterBrace = wm.group(4).trim();
+
+            // Reject if anything non-comment follows the opening brace
+            if (!afterBrace.isEmpty() && !afterBrace.startsWith("//")) continue;
+
+            // Only transform when the bound is a compile-time numeric literal.
+            // A variable bound (e.g. loaded from the kernel context) means the grid
+            // may have been configured with fewer threads than elements by a
+            // GridScheduler, making the loop genuinely multi-trip.
+            if (!bound.matches("\\d+")) continue;
+
+            // Find the matching closing brace
+            int closeIdx = findMatchingClose(lines, wi);
+            if (closeIdx < 0) continue;
+
+            // Need at least 2 non-empty lines in the body (the two stride-update lines)
+            int bodyNonEmpty = 0;
+            for (int bi = wi + 1; bi < closeIdx; bi++) {
+                if (!lines[bi].trim().isEmpty()) bodyNonEmpty++;
+            }
+            if (bodyNonEmpty < 2) continue;
+
+            // Find the last two non-empty lines before closeIdx
+            int lastIdx       = -1;
+            int secondLastIdx = -1;
+            for (int bi = closeIdx - 1; bi > wi; bi--) {
+                if (lines[bi].trim().isEmpty()) continue;
+                if (lastIdx < 0)       { lastIdx       = bi; }
+                else if (secondLastIdx < 0) { secondLastIdx = bi; break; }
+            }
+            if (lastIdx < 0 || secondLastIdx < 0) continue;
+
+            String t1 = lines[lastIdx].trim();
+            String t2 = lines[secondLastIdx].trim();
+
+            // t1 must be: LOOPVAR = TMPVAR;
+            Matcher lum = Pattern.compile(
+                    "^" + Pattern.quote(loopVar) + "\\s*=\\s*(\\w+)\\s*;$").matcher(t1);
+            if (!lum.matches()) continue;
+            String tmpVar = lum.group(1);
+
+            // t2 must be: TMPVAR = STRIDE_VAR + LOOPVAR;  or  TMPVAR = LOOPVAR + STRIDE_VAR;
+            String strideVar = null;
+            Matcher sam1 = Pattern.compile(
+                    "^" + Pattern.quote(tmpVar) + "\\s*=\\s*(\\w+)\\s*\\+\\s*"
+                    + Pattern.quote(loopVar) + "\\s*;$").matcher(t2);
+            Matcher sam2 = Pattern.compile(
+                    "^" + Pattern.quote(tmpVar) + "\\s*=\\s*" + Pattern.quote(loopVar)
+                    + "\\s*\\+\\s*(\\w+)\\s*;$").matcher(t2);
+            if (sam1.matches())      strideVar = sam1.group(1);
+            else if (sam2.matches()) strideVar = sam2.group(1);
+            if (strideVar == null) continue;
+
+            // Verify strideVar is derived from gridDim/blockDim (one or two hops back)
+            if (!isGridDimDerived(lines, wi, strideVar)) continue;
+
+            // Safety: loopVar must not appear on the LHS of any assignment in the body
+            // (other than the two designated stride-update lines), because that would mean
+            // the body is computing its own version of the loop variable — something that
+            // doesn't happen in TornadoVM's @Parallel kernels.
+            Pattern loopVarLhsPat = Pattern.compile(
+                    "^\\s*" + Pattern.quote(loopVar) + "\\s*=");
+            boolean safe = true;
+            for (int bi = wi + 1; bi < secondLastIdx; bi++) {
+                if (loopVarLhsPat.matcher(lines[bi]).find()) {
+                    safe = false;
+                    break;
+                }
+            }
+            if (!safe) continue;
+
+            // --- Transformation ---
+            StringBuilder sb = new StringBuilder();
+            for (int k = 0; k < wi; k++) sb.append(lines[k]).append("\n");
+            // Early-return guard replaces the while header
+            sb.append(indent).append("if (").append(loopVar).append(" >= ")
+              .append(bound).append(") return;\n");
+            // Body without the two stride-update lines (secondLastIdx, lastIdx)
+            for (int bi = wi + 1; bi < secondLastIdx; bi++) {
+                sb.append(lines[bi]).append("\n");
+            }
+            // Lines after the closing brace (skip closeIdx itself)
+            for (int k = closeIdx + 1; k < n; k++) sb.append(lines[k]).append("\n");
+
+            // Recurse: there may be multiple kernels in the same translation unit
+            return convertGridStrideToGuard(sb.toString());
+        }
+
+        return cudaC;
+    }
+
+    /**
+     * Returns {@code true} if {@code varName} is transitively derived from
+     * {@code gridDim} or {@code blockDim} in the lines before {@code beforeIdx}.
+     *
+     * <p>Builds a fixed-point set of "grid-derived" variables: seeds with every
+     * simple assignment whose RHS directly mentions gridDim/blockDim, then
+     * repeatedly expands to variables whose RHS contains any already-known
+     * grid-derived variable. Handles chains of arbitrary depth.
+     */
+    private static boolean isGridDimDerived(String[] lines, int beforeIdx, String varName) {
+        // Collect all simple assignments in the preamble: lhs -> rhs
+        Pattern assignPat = Pattern.compile("^(\\w+)\\s*=(.+);$");
+        Map<String, String> defs = new LinkedHashMap<>();
+        for (int si = 0; si < beforeIdx; si++) {
+            String st = lines[si].trim();
+            Matcher dm = assignPat.matcher(st);
+            if (dm.matches()) defs.put(dm.group(1), dm.group(2));
+        }
+
+        // Seed: variables whose definition directly mentions gridDim/blockDim
+        java.util.Set<String> gridVars = new java.util.HashSet<>();
+        for (Map.Entry<String, String> e : defs.entrySet()) {
+            if (e.getValue().contains("gridDim") || e.getValue().contains("blockDim")) {
+                gridVars.add(e.getKey());
+            }
+        }
+
+        // Fixed-point expansion: propagate grid-derived taint
+        boolean changed = true;
+        while (changed) {
+            changed = false;
+            for (Map.Entry<String, String> e : defs.entrySet()) {
+                if (gridVars.contains(e.getKey())) continue;
+                String rhs = e.getValue();
+                // Check if rhs contains any known grid-derived variable as a word
+                for (String gv : gridVars) {
+                    Pattern gvPat = Pattern.compile("\\b" + Pattern.quote(gv) + "\\b");
+                    if (gvPat.matcher(rhs).find()) {
+                        gridVars.add(e.getKey());
+                        changed = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return gridVars.contains(varName);
+    }
+
+    /**
+     * Finds the index of the {@code }} line that closes the {@code \{} opened on
+     * {@code openIdx}, counting nested braces correctly.
+     *
+     * @return line index of the matching close brace, or {@code -1} if not found.
+     */
+    private static int findMatchingClose(String[] lines, int openIdx) {
+        int depth = 0;
+        for (int i = openIdx; i < lines.length; i++) {
+            for (char c : lines[i].toCharArray()) {
+                if      (c == '{') depth++;
+                else if (c == '}') { if (--depth == 0) return i; }
+            }
+        }
+        return -1;
+    }
+
+    // -------------------------------------------------------------------------
+    // Indentation normaliser (final pass)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Strips all existing leading whitespace from every line and re-applies
+     * brace-tracking indentation so that nested blocks are properly indented.
+     *
+     * <p>This is a pure whitespace transform: it does not change any tokens and
+     * runs last in the pipeline so that all regex-based passes (which use
+     * {@code trim()} / word-boundary matching) are already complete.
+     *
+     * <p>Rules:
+     * <ul>
+     *   <li>Lines starting with {@code }} (including {@code } else {}) decrement
+     *       the indent level <em>before</em> emitting.</li>
+     *   <li>Lines whose non-comment suffix ends with {@code {} increment the
+     *       indent level <em>after</em> emitting.</li>
+     *   <li>Blank lines are preserved as empty lines (no trailing whitespace).</li>
+     * </ul>
+     */
+    private static String indentCode(String src) {
+        String[] lines = src.split("\n", -1);
+        StringBuilder sb = new StringBuilder();
+        int level = 0;
+
+        for (String line : lines) {
+            String trimmed = line.stripLeading();
+
+            if (trimmed.isEmpty()) {
+                sb.append("\n");
+                continue;
+            }
+
+            // Decrement before emitting if line opens with }
+            if (trimmed.charAt(0) == '}') {
+                level = Math.max(0, level - 1);
+            }
+
+            // Emit with current indent
+            for (int i = 0; i < level; i++) sb.append('\t');
+            sb.append(trimmed).append("\n");
+
+            // For the increment check, strip any trailing // comment so that
+            // "while (true) { // LABEL" is treated as ending with {.
+            String forBraceCheck = trimmed;
+            int commentStart = trimmed.indexOf("//");
+            if (commentStart >= 0) {
+                forBraceCheck = trimmed.substring(0, commentStart).trim();
+            }
+            if (forBraceCheck.endsWith("{")) {
+                level++;
+            }
+        }
+
+        return sb.toString();
     }
 }
