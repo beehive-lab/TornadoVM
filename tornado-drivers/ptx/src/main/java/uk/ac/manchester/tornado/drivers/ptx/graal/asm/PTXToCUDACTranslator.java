@@ -2032,6 +2032,9 @@ public class PTXToCUDACTranslator {
             if (defOf[i] != null) {
                 scan = rhsOf[i]; // count only RHS of assignments
             } else {
+                // Skip declaration lines: "long long rsd0, rsd1, rsd2;" mentions variable
+                // names but they are not reads — counting them inflates useCnt and blocks folding.
+                if (!extractDeclVars(lines[i].trim()).isEmpty()) continue;
                 scan = lines[i]; // count all tokens in non-assignment lines
             }
             Matcher wm = WORD_PAT.matcher(scan);
