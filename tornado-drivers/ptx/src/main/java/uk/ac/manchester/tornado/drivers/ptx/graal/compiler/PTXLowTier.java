@@ -44,6 +44,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.phases.InverseSquareRootPhase;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.InfinityReplacementPhase;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.PTXFMAPhase;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.PTXFieldCoopsAccessPhase;
+import uk.ac.manchester.tornado.drivers.ptx.graal.phases.PTXIndexedAccessPhase;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoFixedArrayCopyPhase;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoHalfFloatVectorOffset;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -74,6 +75,8 @@ public class PTXLowTier extends TornadoLowTier {
         appendPhase(new TornadoFixedArrayCopyPhase());
 
         appendPhase(new AddressLoweringByNodePhase(addressLowering));
+
+        appendPhase(new PTXIndexedAccessPhase());
 
         appendPhase(new DeadCodeEliminationPhase(Required));
 
