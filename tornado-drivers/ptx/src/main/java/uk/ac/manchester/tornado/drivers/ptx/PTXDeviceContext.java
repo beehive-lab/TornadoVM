@@ -240,6 +240,10 @@ public class PTXDeviceContext implements TornadoDeviceContext {
             if (globalEventId == -1) continue;
             EventRegistry.PTXEventEntry entry = registry.resolve(globalEventId);
             if (entry == null) continue;
+            // Skip same-stream events — CUDA's in-order execution already guarantees ordering
+            // within a stream. During graph capture, cuStreamWaitEvent(S, capturedEventOnS)
+            // returns CUDA_ERROR_STREAM_CAPTURE_ISOLATION (905) and invalidates the capture.
+            if (entry.streamType() == targetStream.getStreamType()) continue;
             PTXStream sourceStream = getStream(executionPlanId, entry.streamType());
             PTXEvent event = sourceStream.getEventPool().getEvent(entry.localEventId());
             if (event != null) {
@@ -400,8 +404,11 @@ public class PTXDeviceContext implements TornadoDeviceContext {
                     resolveAndWaitCrossStream(executionPlanId, events, targetStream);
                 }
             }
-            // Reset registry after sync - prevents unbounded growth across iterations
-            getEventRegistry(executionPlanId).reset();
+            // Only reset the EventRegistry when NOT inside a graph capture region.
+            // During capture the registry is still needed for resolving cross-stream deps.
+            if (!isStreamCapturing(executionPlanId)) {
+                getEventRegistry(executionPlanId).reset();
+            }
             return -1;
         }
         PTXStream stream = getStream(executionPlanId);
@@ -1183,6 +1190,11 @@ public class PTXDeviceContext implements TornadoDeviceContext {
 
     public void beginExecutionGraphCapture(long executionPlanId) {
         if (isMultiStreamEnabled()) {
+            // Reset registry before capture: clears pre-capture event IDs (from ALLOC
+            // bytecodes etc.) so only events recorded after all streams join the capture
+            // are tracked globally. Without this, cuStreamWaitEvent(capturedStream,
+            // preCapturEvent) → CUDA_ERROR_STREAM_CAPTURE_ISOLATION (905).
+            getEventRegistry(executionPlanId).reset();
             beginMultiStreamGraphCapture(executionPlanId);
         } else {
             getStream(executionPlanId).beginGraphCapture();
