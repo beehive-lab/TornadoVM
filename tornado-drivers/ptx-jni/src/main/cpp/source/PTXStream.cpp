@@ -756,3 +756,42 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuGr
     LOG_PTX_AND_VALIDATE("cuGraphDestroy", result);
     return (jlong) result;
 }
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+ * Method:    cuRecordEventOnStream
+ * Signature: ([B)[B
+ *
+ * Records a single lightweight CUDA event on the given stream and returns its
+ * raw handle. Used during multi-stream graph capture fork/join to create
+ * cross-stream dependency edges without allocating a full PTXEvent pair.
+ */
+JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuRecordEventOnStream
+  (JNIEnv *env, jclass clazz, jbyteArray stream_wrapper) {
+    CUstream stream;
+    stream_from_array(env, &stream, stream_wrapper);
+    CUevent event;
+    CUresult result = sync_event_create(&event);
+    LOG_PTX_AND_VALIDATE("sync_event_create", result);
+    record_event(&event, &stream);
+    return array_from_event(env, &event);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+ * Method:    cuStreamWaitEventOnStream
+ * Signature: ([B[B)V
+ *
+ * Makes the given stream wait (GPU-side, non-blocking) for the event recorded
+ * by cuRecordEventOnStream. Used during multi-stream graph capture fork/join to
+ * make secondary streams join the capture of the primary stream.
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuStreamWaitEventOnStream
+  (JNIEnv *env, jclass clazz, jbyteArray stream_wrapper, jbyteArray event_wrapper) {
+    CUstream stream;
+    stream_from_array(env, &stream, stream_wrapper);
+    CUevent event;
+    event_from_array(env, &event, event_wrapper);
+    CUresult result = cuStreamWaitEvent(stream, event, 0);
+    LOG_PTX_AND_VALIDATE("cuStreamWaitEvent (capture fork/join)", result);
+}

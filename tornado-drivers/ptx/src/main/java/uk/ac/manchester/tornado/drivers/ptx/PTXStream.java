@@ -140,6 +140,12 @@ public class PTXStream {
     private static native long cuGraphExecDestroy(byte[] graphExecWrapper);
     private static native long cuGraphDestroy(byte[] graphWrapper);
 
+    /** Records a single CUDA event on this stream and returns its raw handle. */
+    private static native byte[] cuRecordEventOnStream(byte[] streamWrapper);
+
+    /** Makes this stream wait (GPU-side) for the given raw event handle. */
+    private static native void cuStreamWaitEventOnStream(byte[] streamWrapper, byte[] eventWrapper);
+
     /**
      * This JNI call will create a CUDA Stream through an API call to
      * cuStreamCreateWithPriority. The priority passed to the
@@ -467,6 +473,22 @@ public class PTXStream {
 
     public boolean isCapturing() {
         return capturing;
+    }
+
+    /**
+     * Records a lightweight CUDA event on this stream (no profiling overhead).
+     * Returns the raw event handle for use in multi-stream graph capture fork/join.
+     */
+    byte[] recordCaptureEvent() {
+        return cuRecordEventOnStream(streamPool);
+    }
+
+    /**
+     * Makes this stream wait (GPU-side, non-blocking) for the given raw event handle.
+     * Used to fork/join streams during multi-stream graph capture.
+     */
+    void waitOnCapturedEvent(byte[] rawEventHandle) {
+        cuStreamWaitEventOnStream(streamPool, rawEventHandle);
     }
 
     /**

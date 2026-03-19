@@ -364,6 +364,22 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuGr
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuGraphDestroy
   (JNIEnv *, jclass, jbyteArray);
 
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+ * Method:    cuRecordEventOnStream
+ * Signature: ([B)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuRecordEventOnStream
+  (JNIEnv *, jclass, jbyteArray);
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+ * Method:    cuStreamWaitEventOnStream
+ * Signature: ([B[B)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuStreamWaitEventOnStream
+  (JNIEnv *, jclass, jbyteArray, jbyteArray);
+
 #ifdef __cplusplus
 }
 #endif
