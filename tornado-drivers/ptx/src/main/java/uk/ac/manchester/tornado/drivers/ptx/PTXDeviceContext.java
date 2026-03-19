@@ -1110,14 +1110,95 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         return ptxStream.mapOnDeviceMemoryRegion(destDevicePtr, srcDevicePtr, offset, sizeOfType);
     }
 
+    /**
+     * Begins CUDA graph capture across all three streams using the fork protocol.
+     *
+     * <p>D2H is the primary capture stream because it is the terminal stream in the
+     * H2D→COMPUTE→D2H pipeline. Using D2H as primary means the graph-completion event
+     * (recorded when cuGraphLaunch completes) is on D2H, naturally signalling that all
+     * work — including the final device-to-host copy — is done.
+     *
+     * <p>Fork protocol: while D2H is in capture mode, record an event on it and make
+     * H2D and COMPUTE wait on that event. A stream that waits on an event recorded in a
+     * captured stream automatically joins the capture. All subsequent work on H2D and
+     * COMPUTE becomes part of the same graph.
+     */
+    private void beginMultiStreamGraphCapture(long executionPlanId) {
+        PTXStream d2hStream     = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+        PTXStream h2dStream     = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D);
+        PTXStream computeStream = getStream(executionPlanId, PTXStreamType.COMPUTE);
+
+        // Start capture on the primary (terminal) stream
+        d2hStream.beginGraphCapture();
+
+        // Fork: record an event on D2H and make H2D + COMPUTE wait on it → they join the capture
+        byte[] forkEvent = d2hStream.recordCaptureEvent();
+        h2dStream.waitOnCapturedEvent(forkEvent);
+        computeStream.waitOnCapturedEvent(forkEvent);
+    }
+
+    /**
+     * Joins the multi-stream capture back into the primary D2H stream, ends capture,
+     * instantiates the graph, and flushes the deferred kernel context write.
+     *
+     * <p>Join protocol: record end-events on H2D and COMPUTE streams, then make D2H wait
+     * on them. This ensures every captured node from all three streams is included before
+     * cuStreamEndCapture is called on D2H.
+     *
+     * <p>Deferred context write: written after graph instantiation, then H2D stream is
+     * synchronised so the write completes before the first graph replay.
+     */
+    private long endMultiStreamGraphCaptureAndInstantiate(long executionPlanId) {
+        PTXStream d2hStream     = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+        PTXStream h2dStream     = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D);
+        PTXStream computeStream = getStream(executionPlanId, PTXStreamType.COMPUTE);
+
+        // Join: record end-events on secondary streams and make D2H (primary) wait on them
+        byte[] h2dJoinEvent     = h2dStream.recordCaptureEvent();
+        byte[] computeJoinEvent = computeStream.recordCaptureEvent();
+        d2hStream.waitOnCapturedEvent(h2dJoinEvent);
+        d2hStream.waitOnCapturedEvent(computeJoinEvent);
+
+        // End capture on D2H (primary) — collects all nodes from all joined streams
+        long handle = d2hStream.endGraphCaptureAndInstantiate();
+
+        // Reset event pools for all three streams: captured events are absorbed into
+        // graph nodes and their original CUevent handles become invalid for host-side
+        // synchronization (cuEventSynchronize → CUDA_ERROR_INVALID_VALUE). Resetting
+        // discards them without syncing (PTXEventPool.reset() calls destroy(), not wait).
+        h2dStream.reset();
+        computeStream.reset();
+        d2hStream.reset();
+
+        // Flush deferred kernel context write (host→device, outside graph),
+        // then synchronize H2D stream so data is ready before the first graph replay
+        if (pendingKernelContextWrite != null) {
+            pendingKernelContextWrite.enqueueWrite(executionPlanId);
+            pendingKernelContextWrite = null;
+            h2dStream.sync();
+        }
+
+        return handle;
+    }
+
     public void beginExecutionGraphCapture(long executionPlanId) {
-        PTXStream stream = getStream(executionPlanId);
-        stream.beginGraphCapture();
+        if (isMultiStreamEnabled()) {
+            beginMultiStreamGraphCapture(executionPlanId);
+        } else {
+            getStream(executionPlanId).beginGraphCapture();
+        }
     }
 
     public long endExecutionGraphCaptureAndInstantiate(long executionPlanId) {
+        if (isMultiStreamEnabled()) {
+            return endMultiStreamGraphCaptureAndInstantiate(executionPlanId);
+        }
         PTXStream stream = getStream(executionPlanId);
         long handle = stream.endGraphCaptureAndInstantiate();
+
+        // Reset event pool: captured events are absorbed into graph nodes and become
+        // invalid for host-side sync; discard without waiting.
+        stream.reset();
 
         // Write the kernel context that was deferred during capture
         if (pendingKernelContextWrite != null) {
@@ -1129,11 +1210,26 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     }
 
     public int launchExecutionGraph(long executionPlanId, long executionGraphHandle) {
-        PTXStream stream = getStream(executionPlanId);
-        return stream.launchGraph(executionGraphHandle);
+        // In multi-stream mode, launch on D2H stream — the primary capture stream.
+        // cuGraphLaunch replays all captured nodes on their original streams internally;
+        // the stream argument only controls where the graph-completion event is recorded.
+        // D2H is the terminal stream, so the completion event correctly signals all work done.
+        PTXStream stream = isMultiStreamEnabled()
+                ? getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H)
+                : getStream(executionPlanId);
+        int localEventId = stream.launchGraph(executionGraphHandle);
+        if (isMultiStreamEnabled()) {
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
+        return localEventId;
     }
 
     public boolean isStreamCapturing(long executionPlanId) {
+        if (isMultiStreamEnabled()) {
+            // In multi-stream mode, D2H is the primary capture stream
+            PTXStream d2hStream = getStreamIfExists(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            return d2hStream != null && d2hStream.isCapturing();
+        }
         return getStream(executionPlanId).isCapturing();
     }
 
