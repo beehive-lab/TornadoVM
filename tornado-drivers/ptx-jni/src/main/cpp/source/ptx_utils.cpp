@@ -35,6 +35,15 @@ CUresult record_events_create(CUevent* beforeEvent, CUevent* afterEvent) {
     return result;
 }
 
+/*
+ * Creates a lightweight sync-only CUDA event (CU_EVENT_DISABLE_TIMING).
+ * Use this instead of record_events_create when timing data is not needed,
+ * e.g. for cross-stream dependency edges during CUDA graph capture fork/join.
+ */
+CUresult sync_event_create(CUevent* event) {
+    return cuEventCreate(event, CU_EVENT_DISABLE_TIMING);
+}
+
 CUresult record_event(CUevent* event, CUstream* stream) {
     CUresult result = cuEventRecord(*event, *stream);
     LOG_PTX_AND_VALIDATE("cuEventRecord", result);

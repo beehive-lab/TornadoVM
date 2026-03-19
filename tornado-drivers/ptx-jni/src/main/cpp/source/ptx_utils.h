@@ -32,6 +32,7 @@ extern "C" {
 
 CUresult record_events_create(CUevent* beforeEvent, CUevent* afterEvent);
 CUresult record_event(CUevent* event, CUstream* stream);
+CUresult sync_event_create(CUevent* event);
 
 #ifdef __cplusplus
 }
