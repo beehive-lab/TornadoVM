@@ -32,8 +32,6 @@
 extern "C" {
 #endif
 
-jbyteArray array_from_event(JNIEnv *env, CUevent *event);
-
 jobjectArray wrapper_from_events(JNIEnv *env, CUevent *event1, CUevent *event2);
 
 /*

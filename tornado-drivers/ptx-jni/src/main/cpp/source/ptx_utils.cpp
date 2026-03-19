@@ -27,6 +27,7 @@
 #include "ptx_utils.h"
 #include "ptx_log.h"
 
+/* Creates a before/after timing event pair with CU_EVENT_DEFAULT (timing enabled). */
 CUresult record_events_create(CUevent* beforeEvent, CUevent* afterEvent) {
     CUresult result = cuEventCreate(beforeEvent, CU_EVENT_DEFAULT);
     LOG_PTX_AND_VALIDATE("cuEventCreate (beforeEvent)", result);
@@ -44,8 +45,33 @@ CUresult sync_event_create(CUevent* event) {
     return cuEventCreate(event, CU_EVENT_DISABLE_TIMING);
 }
 
+/* Records an event on the given stream. */
 CUresult record_event(CUevent* event, CUstream* stream) {
     CUresult result = cuEventRecord(*event, *stream);
     LOG_PTX_AND_VALIDATE("cuEventRecord", result);
     return result;
+}
+
+/* Deserializes a CUstream handle from a JNI byte array. */
+void stream_from_array(JNIEnv *env, CUstream *stream_ptr, jbyteArray array) {
+    env->GetByteArrayRegion(array, 0, sizeof(CUstream), reinterpret_cast<jbyte *>(stream_ptr));
+}
+
+/* Deserializes a CUevent handle from a JNI byte array. */
+void event_from_array(JNIEnv *env, CUevent *event_ptr, jbyteArray array) {
+    env->GetByteArrayRegion(array, 0, sizeof(CUevent), reinterpret_cast<jbyte *>(event_ptr));
+}
+
+/* Serializes a CUstream handle into a newly allocated JNI byte array. */
+jbyteArray array_from_stream(JNIEnv *env, CUstream *stream) {
+    jbyteArray array = env->NewByteArray(sizeof(CUstream));
+    env->SetByteArrayRegion(array, 0, sizeof(CUstream), reinterpret_cast<const jbyte *>(stream));
+    return array;
+}
+
+/* Serializes a CUevent handle into a newly allocated JNI byte array. */
+jbyteArray array_from_event(JNIEnv *env, CUevent *event) {
+    jbyteArray array = env->NewByteArray(sizeof(CUevent));
+    env->SetByteArrayRegion(array, 0, sizeof(CUevent), reinterpret_cast<const jbyte *>(event));
+    return array;
 }

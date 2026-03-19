@@ -26,6 +26,8 @@
 #ifndef PTX_UTILS_H
 #define PTX_UTILS_H
 
+#include <jni.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -33,6 +35,10 @@ extern "C" {
 CUresult record_events_create(CUevent* beforeEvent, CUevent* afterEvent);
 CUresult record_event(CUevent* event, CUstream* stream);
 CUresult sync_event_create(CUevent* event);
+void stream_from_array(JNIEnv *env, CUstream *stream_ptr, jbyteArray array);
+void event_from_array(JNIEnv *env, CUevent *event_ptr, jbyteArray array);
+jbyteArray array_from_stream(JNIEnv *env, CUstream *stream);
+jbyteArray array_from_event(JNIEnv *env, CUevent *event);
 
 #ifdef __cplusplus
 }

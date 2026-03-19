@@ -34,15 +34,7 @@
 #include "ptx_utils.h"
 #include "ptx_log.h"
 
-static void stream_from_array(JNIEnv *env, CUstream *stream_ptr, jbyteArray array) {
-    env->GetByteArrayRegion(array, 0, sizeof(CUstream), reinterpret_cast<jbyte *>(stream_ptr));
-}
 
-static jbyteArray array_from_stream(JNIEnv *env, CUstream *stream) {
-    jbyteArray array = env->NewByteArray(sizeof(CUstream));
-    env->SetByteArrayRegion(array, 0, sizeof(CUstream), reinterpret_cast<const jbyte *>(stream));
-    return array;
-}
 
 jobjectArray transferFromDeviceToHost(
         JNIEnv *env,
