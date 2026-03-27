@@ -14,7 +14,7 @@ heterogeneous hardware.
 TornadoVM targets **OpenCL, PTX, Metal and SPIR-V** compatible devices which include multi-core CPUs, dedicated
 GPUs (Intel, NVIDIA, AMD, Apple Silicon), integrated GPUs (Intel HD Graphics and ARM Mali), and FPGAs (Intel and Xilinx).
 
-TornadoVM has three backends that generate OpenCL C, NVIDIA CUDA PTX assembly, and SPIR-V binary.
+TornadoVM has four backends that generate OpenCL C, NVIDIA CUDA PTX assembly, SPIR-V binary, and Metal Shading Language.
 Developers can choose which backends to install and run.
 
 ----------------------
