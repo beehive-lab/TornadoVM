@@ -206,17 +206,16 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
                     }
 
                     for (PiNode piNodeInner : loadFieldSegment.usages().filter(PiNode.class)) {
-                        for (OffsetAddressNode offsetAddressNode : piNodeInner.usages().filter(OffsetAddressNode.class)) {
+                        for (OffsetAddressNode offsetAddressNode : piNodeInner.usages().filter(OffsetAddressNode.class).snapshot()) {
                             offsetAddressNode.replaceFirstInput(piNodeInner, piNode);
-                            piNodeInner.inputs().filter(FixedGuardNode.class).forEach(fixedGuardNode -> {
-                                fixedGuardNode.inputs().filter(IsNullNode.class).forEach(isNullNode -> {
-                                    isNullNode.safeDelete();
-                                });
-                                deleteFixed(fixedGuardNode);
-                            });
-
-                            piNodeInner.safeDelete();
                         }
+                        piNodeInner.inputs().filter(FixedGuardNode.class).forEach(fixedGuardNode -> {
+                            fixedGuardNode.inputs().filter(IsNullNode.class).forEach(isNullNode -> {
+                                isNullNode.safeDelete();
+                            });
+                            deleteFixed(fixedGuardNode);
+                        });
+                        piNodeInner.safeDelete();
                     }
                 }
 
