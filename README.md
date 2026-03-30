@@ -1,11 +1,11 @@
 # TornadoVM
-[![Build on [push]](https://github.com/beehive-lab/TornadoVM/actions/workflows/fast-test.yml/badge.svg)](https://github.com/beehive-lab/TornadoVM/actions/workflows/fast-test.yml)
+[![Build & Test JDK 21](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk21.yml/badge.svg)](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk21.yml)
+[![Build & Test JDK 25](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk25.yml/badge.svg?branch=jdk25)](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk25.yml)
 
 [![API Version](https://img.shields.io/maven-central/v/io.github.beehive-lab/tornado-api?logo=apache-maven&color=blue&label=Tornado%20API)](https://central.sonatype.com/artifact/io.github.beehive-lab/tornado-api)
 [![Runtime Version](https://img.shields.io/maven-central/v/io.github.beehive-lab/tornado-runtime?logo=apache-maven&color=blue&label=Tornado%20Runtime)](https://central.sonatype.com/artifact/io.github.beehive-lab/tornado-runtime)
-[![SDKMAN!](https://img.shields.io/badge/Install%20with-SDKMAN!-2c7a7b?logo=sdkman&logoColor=white)](https://sdkman.io/sdks/tornadovm/)
 
-![TornadoVM version](https://img.shields.io/badge/version-3.0.0-purple)  [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-1.4-4baaaa.svg)](CODE_OF_CONDUCT.md)  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2) ![License: GPL v2](https://img.shields.io/badge/License-GPL%20V2%20Classpath%20Exception-blue.svg)
+[![SDKMAN!](https://img.shields.io/badge/Install%20with-SDKMAN!-2c7a7b?logo=sdkman&logoColor=white)](https://sdkman.io/sdks/tornadovm/)
 
 <img align="left" width="180" height="180" src="etc/tornadoVM_Logo.jpg">
 

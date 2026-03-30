@@ -37,11 +37,12 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
- * Unit tests for Metal SIMD-group intrinsics exposed via {@link KernelContext}:
+ * Unit tests for SIMD-group intrinsics exposed via {@link KernelContext}:
  * {@code simdSum}, {@code simdShuffleDown}, and {@code simdBroadcastFirst}.
  *
- * <p>These tests are Metal-only: MSL §6.9.2 SIMD-group functions do not exist in
- * OpenCL, PTX, or SPIR-V. They are skipped on non-Metal backends.
+ * <p>These tests run on Metal (MSL SIMD-group functions) and PTX (CUDA
+ * {@code shfl.sync} warp-shuffle instructions). They are skipped on OpenCL
+ * and SPIR-V backends which do not yet support these intrinsics.
  *
  * <p>How to run:
  * <code>
@@ -133,6 +134,25 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
     private static void simdBroadcastFirstKernel(KernelContext ctx, FloatArray input, FloatArray output) {
         int globalIdx = ctx.globalIdx;
         output.set(globalIdx, ctx.simdBroadcastFirst(input.get(globalIdx)));
+    }
+
+    /**
+     * Every lane writes its simdSum result (not just lane 0).
+     * Used to verify all lanes receive the full sum.
+     */
+    private static void simdSumAllLanesKernel(KernelContext ctx, FloatArray input, FloatArray output) {
+        int globalIdx = ctx.globalIdx;
+        float groupSum = ctx.simdSum(input.get(globalIdx));
+        output.set(globalIdx, groupSum);
+    }
+
+    /**
+     * Every lane writes its simdShuffleDown(val, 0) result.
+     * A delta of 0 should return the caller's own value.
+     */
+    private static void simdShuffleDownDeltaZeroKernel(KernelContext ctx, FloatArray input, FloatArray output) {
+        int globalIdx = ctx.globalIdx;
+        output.set(globalIdx, ctx.simdShuffleDown(input.get(globalIdx), 0));
     }
 
     // -------------------------------------------------------------------------
@@ -270,7 +290,6 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
     @Test
     public void testIrregularSizes_MultiplesOf32() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         // 3, 5, 31, 33, 99 groups — not powers of two
@@ -287,7 +306,6 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
     @Test
     public void testIrregularSizes_NotMultipleOf32() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         for (int n : new int[]{1, 31, 33, 63, 65, 100, 1000, 1023, 1025, 65537}) {
@@ -309,7 +327,6 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
     @Test
     public void testSIMDSum() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 256;
@@ -352,7 +369,6 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
     @Test
     public void testSIMDShuffleDownReduction() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 256;
@@ -394,7 +410,6 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
     @Test
     public void testSIMDBroadcastFirst() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 256;
@@ -427,6 +442,231 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
                 assertEquals("Group " + g + " lane " + j + " mismatch",
                         expectedVal, output.get(g * localSize + j), DELTA);
             }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Corner-case tests
+    // -------------------------------------------------------------------------
+
+    /**
+     * Verifies that {@code simdSum} returns the correct sum to ALL lanes,
+     * not just lane 0. Every thread writes its result; we check every element.
+     */
+    @Test
+    public void testSIMDSumAllLanesReceiveResult() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        final int size = 256;
+        final int localSize = SIMD_GROUP_SIZE;
+        final int numGroups = size / localSize;
+
+        FloatArray input = new FloatArray(size);
+        FloatArray output = new FloatArray(size);
+        IntStream.range(0, size).forEach(i -> input.set(i, (float) (i + 1)));
+
+        float[] expectedGroupSums = computeGroupSumsSequential(input, localSize);
+
+        WorkerGrid worker = new WorkerGrid1D(size);
+        worker.setLocalWork(localSize, 1, 1);
+        GridScheduler grid = new GridScheduler("s0.t0", worker);
+        KernelContext ctx = new KernelContext();
+
+        TaskGraph taskGraph = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
+                .task("t0", TestSIMDGroupReductions::simdSumAllLanesKernel, ctx, input, output)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph itg = taskGraph.snapshot();
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(itg)) {
+            plan.withGridScheduler(grid).execute();
+        }
+
+        for (int g = 0; g < numGroups; g++) {
+            for (int lane = 0; lane < localSize; lane++) {
+                assertEquals("Group " + g + " lane " + lane + " should have full group sum",
+                        expectedGroupSums[g], output.get(g * localSize + lane), DELTA);
+            }
+        }
+    }
+
+    /**
+     * simdSum with all-zero input. Every group's sum should be exactly 0.
+     */
+    @Test
+    public void testSIMDSumAllZeros() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        final int size = 128;
+        final int localSize = SIMD_GROUP_SIZE;
+        final int numGroups = size / localSize;
+
+        FloatArray input = new FloatArray(size);  // default 0.0f
+        FloatArray partials = new FloatArray(numGroups);
+
+        WorkerGrid worker = new WorkerGrid1D(size);
+        worker.setLocalWork(localSize, 1, 1);
+        GridScheduler grid = new GridScheduler("s0.t0", worker);
+        KernelContext ctx = new KernelContext();
+
+        TaskGraph taskGraph = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
+                .task("t0", TestSIMDGroupReductions::simdSumKernel, ctx, input, partials)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, partials);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.withGridScheduler(grid).execute();
+        }
+
+        for (int g = 0; g < numGroups; g++) {
+            assertEquals("Group " + g + " sum of zeros", 0.0f, partials.get(g), DELTA);
+        }
+    }
+
+    /**
+     * simdSum where every lane holds the same value (1.0f).
+     * Expected group sum = 32.0f for each group.
+     */
+    @Test
+    public void testSIMDSumIdenticalValues() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        final int size = 256;
+        final int localSize = SIMD_GROUP_SIZE;
+        final int numGroups = size / localSize;
+
+        FloatArray input = new FloatArray(size);
+        FloatArray partials = new FloatArray(numGroups);
+        IntStream.range(0, size).forEach(i -> input.set(i, 1.0f));
+
+        WorkerGrid worker = new WorkerGrid1D(size);
+        worker.setLocalWork(localSize, 1, 1);
+        GridScheduler grid = new GridScheduler("s0.t0", worker);
+        KernelContext ctx = new KernelContext();
+
+        TaskGraph taskGraph = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
+                .task("t0", TestSIMDGroupReductions::simdSumKernel, ctx, input, partials)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, partials);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.withGridScheduler(grid).execute();
+        }
+
+        for (int g = 0; g < numGroups; g++) {
+            assertEquals("Group " + g + " sum of 32x1.0", 32.0f, partials.get(g), DELTA);
+        }
+    }
+
+    /**
+     * simdSum with negative values. Input[i] = -(i+1).
+     * Verifies sign handling through the reduction.
+     */
+    @Test
+    public void testSIMDSumNegativeValues() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        final int size = 256;
+        final int localSize = SIMD_GROUP_SIZE;
+        final int numGroups = size / localSize;
+
+        FloatArray input = new FloatArray(size);
+        FloatArray partials = new FloatArray(numGroups);
+        IntStream.range(0, size).forEach(i -> input.set(i, -(float) (i + 1)));
+
+        float[] expected = computeGroupSumsSequential(input, localSize);
+
+        WorkerGrid worker = new WorkerGrid1D(size);
+        worker.setLocalWork(localSize, 1, 1);
+        GridScheduler grid = new GridScheduler("s0.t0", worker);
+        KernelContext ctx = new KernelContext();
+
+        TaskGraph taskGraph = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
+                .task("t0", TestSIMDGroupReductions::simdSumKernel, ctx, input, partials)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, partials);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.withGridScheduler(grid).execute();
+        }
+
+        for (int g = 0; g < numGroups; g++) {
+            assertEquals("Group " + g + " negative sum mismatch", expected[g], partials.get(g), DELTA);
+        }
+    }
+
+    /**
+     * simdShuffleDown with delta=0 should return each lane's own value unchanged.
+     */
+    @Test
+    public void testSIMDShuffleDownDeltaZero() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        final int size = 256;
+        final int localSize = SIMD_GROUP_SIZE;
+
+        FloatArray input = new FloatArray(size);
+        FloatArray output = new FloatArray(size);
+        IntStream.range(0, size).forEach(i -> input.set(i, (float) (i + 1)));
+
+        WorkerGrid worker = new WorkerGrid1D(size);
+        worker.setLocalWork(localSize, 1, 1);
+        GridScheduler grid = new GridScheduler("s0.t0", worker);
+        KernelContext ctx = new KernelContext();
+
+        TaskGraph taskGraph = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
+                .task("t0", TestSIMDGroupReductions::simdShuffleDownDeltaZeroKernel, ctx, input, output)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.withGridScheduler(grid).execute();
+        }
+
+        for (int i = 0; i < size; i++) {
+            assertEquals("Lane " + i + " shuffleDown(val, 0) should return val",
+                    input.get(i), output.get(i), DELTA);
+        }
+    }
+
+    /**
+     * simdBroadcastFirst on a single group (minimal 32-thread case).
+     */
+    @Test
+    public void testSIMDBroadcastFirstSingleGroup() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        final int size = SIMD_GROUP_SIZE; // exactly 1 group
+        final int localSize = SIMD_GROUP_SIZE;
+
+        FloatArray input = new FloatArray(size);
+        FloatArray output = new FloatArray(size);
+        IntStream.range(0, size).forEach(i -> input.set(i, (float) (i * 10 + 7)));
+
+        WorkerGrid worker = new WorkerGrid1D(size);
+        worker.setLocalWork(localSize, 1, 1);
+        GridScheduler grid = new GridScheduler("s0.t0", worker);
+        KernelContext ctx = new KernelContext();
+
+        TaskGraph taskGraph = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
+                .task("t0", TestSIMDGroupReductions::simdBroadcastFirstKernel, ctx, input, output)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.withGridScheduler(grid).execute();
+        }
+
+        float expectedVal = input.get(0); // lane 0's value
+        for (int i = 0; i < size; i++) {
+            assertEquals("Lane " + i + " should hold lane 0's value",
+                    expectedVal, output.get(i), DELTA);
         }
     }
 }
