@@ -63,9 +63,11 @@ __COMMON_EXPORTS__ = "/etc/exportLists/common-exports"
 __OPENCL_EXPORTS__ = "/etc/exportLists/opencl-exports"
 __PTX_EXPORTS__ = "/etc/exportLists/ptx-exports"
 __SPIRV_EXPORTS__ = "/etc/exportLists/spirv-exports"
+__METAL_EXPORTS__ = "/etc/exportLists/metal-exports"
 __TORNADOVM_ADD_MODULES__ = "--add-modules ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.common"
 __PTX_MODULE__ = "tornado.drivers.ptx"
 __OPENCL_MODULE__ = "tornado.drivers.opencl"
+__METAL_MODULE__ = "tornado.drivers.metal"
 
 # ########################################################
 # JAVA FLAGS
@@ -1265,12 +1267,14 @@ class TornadoVMRunnerTool():
         opencl = self.sdk + __OPENCL_EXPORTS__
         ptx = self.sdk + __PTX_EXPORTS__
         spirv = self.sdk + __SPIRV_EXPORTS__
+        metal = self.sdk + __METAL_EXPORTS__
 
         if (self.isTruffleCommand):
             common = self.truffleCompatibleExports(common)
             opencl = self.truffleCompatibleExports(opencl)
             ptx = self.truffleCompatibleExports(ptx)
             spirv = self.truffleCompatibleExports(spirv)
+            metal = self.truffleCompatibleExports(metal)
 
         # For Truffle, exports are already expanded inline (no @ prefix needed)
         # For Java, use @ to read from file
@@ -1285,6 +1289,9 @@ class TornadoVMRunnerTool():
             if ("ptx-backend" in self.listOfBackends):
                 javaFlags = javaFlags + ptx + " "
                 tornadoAddModules = tornadoAddModules + "," + __PTX_MODULE__
+            if ("metal-backend" in self.listOfBackends):
+                javaFlags = javaFlags + metal + " "
+                tornadoAddModules = tornadoAddModules + "," + __METAL_MODULE__
         else:
             javaFlags = javaFlags + " @" + common + " "
             if ("opencl-backend" in self.listOfBackends):
@@ -1296,6 +1303,9 @@ class TornadoVMRunnerTool():
             if ("ptx-backend" in self.listOfBackends):
                 javaFlags = javaFlags + "@" + ptx + " "
                 tornadoAddModules = tornadoAddModules + "," + __PTX_MODULE__
+            if ("metal-backend" in self.listOfBackends):
+                javaFlags = javaFlags + "@" + metal + " "
+                tornadoAddModules = tornadoAddModules + "," + __METAL_MODULE__
 
         javaFlags = javaFlags + tornadoAddModules + " "
 

@@ -215,7 +215,15 @@ public enum TornadoVMBytecodes {
      * PERSIST(obj,dest)
      * </code>
      */
-    PERSIST((byte) 26);
+    PERSIST((byte) 26),
+
+    CUDA_GRAPH_BEGIN_CAPTURE((byte) 27),
+
+    CUDA_GRAPH_END_CAPTURE((byte) 28),
+
+    CUDA_GRAPH_LAUNCH((byte) 29),
+
+    CUDA_GRAPH_DESTROY((byte) 30);
 
     final byte value;
 

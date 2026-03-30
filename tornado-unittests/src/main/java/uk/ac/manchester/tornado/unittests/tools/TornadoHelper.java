@@ -40,6 +40,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoNoOpenCLPlatformException;
 import uk.ac.manchester.tornado.unittests.common.SPIRVOptNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupported;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMMetalNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMOpenCLNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMPTXNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMSPIRVNotSupported;
@@ -202,6 +203,14 @@ public class TornadoHelper {
 
                 if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof TornadoVMSPIRVNotSupported))) {
                     message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [SPIRV CONFIGURATION UNSUPPORTED] " + ColorsTerminal.RESET + "\n");
+                    bufferConsole.append(message);
+                    bufferFile.append(message);
+                    notSupported++;
+                    continue;
+                }
+
+                if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof TornadoVMMetalNotSupported))) {
+                    message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [METAL CONFIGURATION UNSUPPORTED] " + ColorsTerminal.RESET + "\n");
                     bufferConsole.append(message);
                     bufferFile.append(message);
                     notSupported++;

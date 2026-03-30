@@ -85,6 +85,9 @@ public class PrebuiltTests extends TornadoTestBase {
             case SPIRV:
                 extension = ".spv";
                 break;
+            case METAL:
+                extension = ".metal";
+                break;
             default:
                 throw new TornadoRuntimeException("Backend not supported");
         }
@@ -203,6 +206,7 @@ public class PrebuiltTests extends TornadoTestBase {
     public void testPrebuilt02SPIRV() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.METAL);
 
         String kernelFile = getPrebuiltKernelPath("reduce03");
 
@@ -260,6 +264,7 @@ public class PrebuiltTests extends TornadoTestBase {
     public void testPrebuilt03SPIRV() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.METAL);
 
         String kernelFile = getPrebuiltKernelPath("reduce04");
 
@@ -307,6 +312,8 @@ public class PrebuiltTests extends TornadoTestBase {
     @Test
     public void testPrebuilt04SPIRVThroughOpenCLRuntime() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
 
         TornadoDevice device = getSPIRVSupportedDevice();
 

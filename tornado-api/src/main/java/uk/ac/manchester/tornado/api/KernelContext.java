@@ -216,14 +216,6 @@ public class KernelContext implements ExecutionContext {
         return new double[size];
     }
 
-    // -------------------------------------------------------------------------
-    // SIMD-group / warp-shuffle intrinsics
-    // Metal: intercepted by MetalGraphBuilderPlugins -> simd_* MSL built-ins
-    // PTX:   intercepted by PTXGraphBuilderPlugins   -> shfl.sync PTX instructions
-    // The JVM bodies below are identity/no-op stubs used only when running
-    // on the CPU.
-    // -------------------------------------------------------------------------
-
     /**
      * Returns the sum of {@code val} across all active SIMD lanes.
      * <p>

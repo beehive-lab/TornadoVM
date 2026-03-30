@@ -40,7 +40,7 @@ public class ArrayAddInt {
 
     public static void add(IntArray a, IntArray b, IntArray c) {
         for (@Parallel int i = 0; i < c.getSize(); i++) {
-            c.set(i, a.get(i) + b.get(i));
+            c.set(i, a.get(i));
         }
     }
 

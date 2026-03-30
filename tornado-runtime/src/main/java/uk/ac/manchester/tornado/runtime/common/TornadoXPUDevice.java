@@ -26,6 +26,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
@@ -198,6 +199,58 @@ public interface TornadoXPUDevice extends TornadoDevice {
         } else {
             return false;
         }
+    }
+
+    /**
+     * Returns whether this device supports execution graph capture and replay.
+     * When false, the graph compiler will not emit graph bytecodes for this device,
+     * and the interpreter will reject them at runtime as a safety net.
+     */
+    default boolean supportsExecutionGraphs() {
+        return false;
+    }
+
+    /**
+     * Begin capturing device operations into an execution graph.
+     * After this call, all device operations submitted through the normal
+     * transfer and launch paths are recorded rather than executed,
+     * until  is called.
+     *
+     * @param executionPlanId the execution plan that owns the device stream
+     */
+    default void beginExecutionGraphCapture(long executionPlanId) {
+        throw new TornadoRuntimeException("Execution graph capture is not supported on " + getDeviceName());
+    }
+
+    /**
+     * End capture and instantiate the recorded graph into a replayable form.
+     * Returns an opaque handle that can be passed to {@link #launchExecutionGraph}.
+     *
+     * @param executionPlanId the execution plan that owns the device stream
+     * @return an opaque long handle to the instantiated execution graph
+     */
+    default long endExecutionGraphCaptureAndInstantiate(long executionPlanId) {
+        throw new TornadoRuntimeException("Execution graph capture is not supported on " + getDeviceName());
+    }
+
+    /**
+     * Replay a previously captured execution graph.
+     *
+     * @param executionPlanId the execution plan that owns the device stream
+     * @param executionGraphHandle the handle returned by {@link #endExecutionGraphCaptureAndInstantiate}
+     * @return an event ID for the graph launch, or -1
+     */
+    default int launchExecutionGraph(long executionPlanId, long executionGraphHandle) {
+        throw new TornadoRuntimeException("Execution graph launch is not supported on " + getDeviceName());
+    }
+
+    /**
+     * Destroy a previously instantiated execution graph and free its resources.
+     *
+     * @param executionGraphHandle the handle to destroy
+     */
+    default void destroyExecutionGraph(long executionGraphHandle) {
+        // no-op by default
     }
 
 }
