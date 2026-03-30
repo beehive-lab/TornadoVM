@@ -1,4 +1,9 @@
 cmake_minimum_required(VERSION 3.6)
+
+if(APPLE)
+    execute_process(COMMAND xcrun --show-sdk-path OUTPUT_VARIABLE CMAKE_OSX_SYSROOT OUTPUT_STRIP_TRAILING_WHITESPACE)
+endif()
+
 project(TornadoMetal)
 
 find_package(JNI REQUIRED)
