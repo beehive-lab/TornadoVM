@@ -33,7 +33,8 @@ import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
-
+import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXBinary;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
@@ -43,9 +44,8 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
  * Graal IR node for {@code KernelContext.simdSum(float)}.
  *
  * <p>Implements a full-warp reduction using five rounds of
- * {@code shfl.sync.down.b32} + {@code add.f32} with deltas 16, 8, 4, 2, 1,
- * followed by a {@code shfl.sync.idx.b32} broadcast from lane 0 so that
- * all lanes receive the final sum (matching Metal's {@code simd_sum} semantics).
+ * {@code shfl.sync.down.b32} + {@code add.f32} with deltas 16, 8, 4, 2, 1, followed by a {@code shfl.sync.idx.b32} broadcast from lane 0 so that all lanes receive the final sum (matching Metal's
+ * {@code simd_sum} semantics).
  *
  * <p>Extends {@link FixedWithNextNode} because warp-shuffle operations are
  * convergent — all lanes must execute them together.
@@ -57,7 +57,8 @@ public class PTXSimdSumNode extends FixedWithNextNode implements LIRLowerable {
 
     private static final int[] BUTTERFLY_DELTAS = { 16, 8, 4, 2, 1 };
 
-    @Input private ValueNode value;
+    @Input
+    private ValueNode value;
 
     public PTXSimdSumNode(ValueNode value) {
         super(TYPE, StampFactory.forKind(JavaKind.Float));
@@ -76,15 +77,12 @@ public class PTXSimdSumNode extends FixedWithNextNode implements LIRLowerable {
             // tmp = shfl.sync.down.b32 acc, delta
             Variable tmp = tool.newVariable(lirKind);
             ConstantValue deltaConst = new ConstantValue(intKind, JavaConstant.forInt(delta));
-            tool.append(new PTXLIRStmt.ShuffleSyncStmt(
-                    PTXLIRStmt.ShuffleSyncStmt.Mode.DOWN, tmp, acc, deltaConst));
+            tool.append(new PTXLIRStmt.ShuffleSyncStmt(PTXLIRStmt.ShuffleSyncStmt.Mode.DOWN, tmp, acc, deltaConst));
 
             // newAcc = add.f32 acc, tmp
             Variable newAcc = tool.newVariable(lirKind);
             tool.append(new PTXLIRStmt.AssignStmt(newAcc,
-                    new uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXBinary.Expr(
-                            uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryOp.ADD,
-                            lirKind, acc, tmp)));
+                    new PTXBinary.Expr(PTXAssembler.PTXBinaryOp.ADD, lirKind, acc, tmp)));
             acc = newAcc;
         }
 
@@ -92,8 +90,7 @@ public class PTXSimdSumNode extends FixedWithNextNode implements LIRLowerable {
         // same result, matching Metal's simd_sum() semantics.
         Variable broadcast = tool.newVariable(lirKind);
         ConstantValue zero = new ConstantValue(intKind, JavaConstant.forInt(0));
-        tool.append(new PTXLIRStmt.ShuffleSyncStmt(
-                PTXLIRStmt.ShuffleSyncStmt.Mode.IDX, broadcast, acc, zero));
+        tool.append(new PTXLIRStmt.ShuffleSyncStmt(PTXLIRStmt.ShuffleSyncStmt.Mode.IDX, broadcast, acc, zero));
 
         gen.setResult(this, broadcast);
     }
