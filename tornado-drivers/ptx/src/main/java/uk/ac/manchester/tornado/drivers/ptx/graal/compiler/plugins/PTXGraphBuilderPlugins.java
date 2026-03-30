@@ -70,6 +70,9 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.AtomAddNodeTemplate;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.DP4APackedNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.Dp4aNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXSimdSumNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXShuffleDownNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXSimdBroadcastFirstNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXBarrierNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXConvertHalfToFloat;
@@ -437,7 +440,7 @@ public class PTXGraphBuilderPlugins {
         r.register(new InvocationPlugin("simdShuffleDown", InvocationPlugin.Receiver.class, float.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val, ValueNode delta) {
-                b.addPush(JavaKind.Float, new uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXShuffleDownNode(val, delta));
+                b.addPush(JavaKind.Float, new PTXShuffleDownNode(val, delta));
                 return true;
             }
         });
@@ -445,7 +448,7 @@ public class PTXGraphBuilderPlugins {
         r.register(new InvocationPlugin("simdSum", InvocationPlugin.Receiver.class, float.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val) {
-                b.addPush(JavaKind.Float, new uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXSimdSumNode(val));
+                b.addPush(JavaKind.Float, new PTXSimdSumNode(val));
                 return true;
             }
         });
@@ -453,7 +456,7 @@ public class PTXGraphBuilderPlugins {
         r.register(new InvocationPlugin("simdBroadcastFirst", InvocationPlugin.Receiver.class, float.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val) {
-                b.addPush(JavaKind.Float, new uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXSimdBroadcastFirstNode(val));
+                b.addPush(JavaKind.Float, new PTXSimdBroadcastFirstNode(val));
                 return true;
             }
         });
