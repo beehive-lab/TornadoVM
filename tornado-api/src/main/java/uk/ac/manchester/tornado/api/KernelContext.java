@@ -216,17 +216,11 @@ public class KernelContext implements ExecutionContext {
         return new double[size];
     }
 
-    // -------------------------------------------------------------------------
-    // Metal SIMD-group intrinsics (MSL 6.9.2)
-    // These methods are intercepted by MetalGraphBuilderPlugins and replaced
-    // with simd_* built-in calls in the generated Metal shader. The JVM bodies
-    // below are identity/no-op stubs used only when running on the CPU.
-    // -------------------------------------------------------------------------
-
     /**
      * Returns the sum of {@code val} across all active SIMD lanes.
      * <p>
-     * Metal equivalent: {@code simd_sum(val)}
+     * Metal equivalent: {@code simd_sum(val)}<br>
+     * PTX equivalent: butterfly reduction with {@code shfl.sync.down.b32}
      */
     public float simdSum(float val) {
         return val;
@@ -235,7 +229,8 @@ public class KernelContext implements ExecutionContext {
     /**
      * Returns the value held by the thread {@code delta} lanes ahead in the SIMD group.
      * <p>
-     * Metal equivalent: {@code simd_shuffle_down(val, delta)}
+     * Metal equivalent: {@code simd_shuffle_down(val, delta)}<br>
+     * PTX equivalent: {@code shfl.sync.down.b32 dest, val, delta, 31, 0xFFFFFFFF}
      */
     public float simdShuffleDown(float val, int delta) {
         return val;
@@ -244,7 +239,8 @@ public class KernelContext implements ExecutionContext {
     /**
      * Broadcasts the value from lane 0 to all active SIMD lanes.
      * <p>
-     * Metal equivalent: {@code simd_broadcast_first(val)}
+     * Metal equivalent: {@code simd_broadcast_first(val)}<br>
+     * PTX equivalent: {@code shfl.sync.idx.b32 dest, val, 0, 31, 0xFFFFFFFF}
      */
     public float simdBroadcastFirst(float val) {
         return val;
