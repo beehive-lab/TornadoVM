@@ -258,6 +258,8 @@ def generate_argfile(backends, output_dir=None):
         native_access_modules.append("beehive.levelzero.jni")
     if "ptx" in backend_list:
         native_access_modules.append("tornado.drivers.ptx")
+    if "metal" in backend_list:
+        native_access_modules.append("tornado.drivers.metal")
     if native_access_modules:
         output_lines.append("--enable-native-access=" + ",".join(native_access_modules))
     output_lines.append("")

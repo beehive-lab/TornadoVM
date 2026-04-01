@@ -1329,6 +1329,8 @@ class TornadoVMRunnerTool():
             nativeAccessModules.append("beehive.levelzero.jni")
         if ("ptx-backend" in self.listOfBackends):
             nativeAccessModules.append(__PTX_MODULE__)
+        if ("metal-backend" in self.listOfBackends):
+            nativeAccessModules.append(__METAL_MODULE__)
         if nativeAccessModules:
             javaFlags = javaFlags + "--enable-native-access=" + ",".join(nativeAccessModules) + " "
 
