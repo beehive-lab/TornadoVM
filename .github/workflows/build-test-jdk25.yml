@@ -1,8 +1,11 @@
-name: Build & Test JDK 25
+name: Build & Test [JDK 25]
 
 on:
   push:
     branches: [jdk25]
+  pull_request:
+    branches: [jdk25]
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 jobs:

@@ -31,6 +31,9 @@ ptx:
 spirv:
 	bin/compile --jdk jdk25 --backend spirv,ptx,opencl
 
+metal:
+	bin/compile --jdk jdk25 --backend metal,opencl
+
 sdk:
 	bin/compile --jdk jdk25 --sdk --backend $(BACKEND)
 

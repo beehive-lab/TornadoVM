@@ -83,6 +83,7 @@ public class TestFields extends TornadoTestBase {
 
     @Test
     public void testFields02() throws TornadoExecutionPlanException {
+
         final int N = 1024;
         Foo foo = new Foo(N);
         foo.initRandom();
@@ -122,6 +123,7 @@ public class TestFields extends TornadoTestBase {
 
     @Test
     public void testFieldsPartialCopyout() throws TornadoExecutionPlanException {
+        
         final int N = 1024;
         Foo foo = new Foo(N);
         foo.initRandom();
@@ -143,6 +145,7 @@ public class TestFields extends TornadoTestBase {
 
     @Test
     public void testFieldsLazyCopyout() throws TornadoExecutionPlanException {
+        
         final int N = 1024;
         Foo foo = new Foo(N);
         foo.initRandom();
@@ -190,6 +193,7 @@ public class TestFields extends TornadoTestBase {
         // before flushing the command list. Check SPIRVObjectWrapper::deserialise and
         // SPIRVTornadoDevice::flush.
         assertNotBackend(TornadoVMBackendType.SPIRV);
+        
 
         B b = new B();
         final A a = new A(b);
@@ -217,6 +221,8 @@ public class TestFields extends TornadoTestBase {
         // before flushing the command list. Check SPIRVObjectWrapper::deserialise and
         // SPIRVTornadoDevice::flush.
         assertNotBackend(TornadoVMBackendType.SPIRV);
+        
+
 
         B b = new B();
         final A a = new A(b);
@@ -239,6 +245,8 @@ public class TestFields extends TornadoTestBase {
 
     @Test
     public void testSetNestedArray() throws TornadoExecutionPlanException {
+        
+
         B b = new B();
         final A a = new A(b);
         final IntArray indexes = new IntArray(b.someArray.getSize());

@@ -142,7 +142,11 @@ public final class Int2 implements TornadoVectorsInterface<IntBuffer> {
         return TornadoMath.isEqual(a.toArray(), b.toArray());
     }
 
-    private int[] toArray() {
+    public int[] toArray() {
+        return storage;
+    }
+
+    public int[] getArray() {
         return storage;
     }
 
