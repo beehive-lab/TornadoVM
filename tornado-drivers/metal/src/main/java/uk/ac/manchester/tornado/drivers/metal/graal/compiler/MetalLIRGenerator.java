@@ -26,22 +26,22 @@ package uk.ac.manchester.tornado.drivers.metal.graal.compiler;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
-import org.graalvm.compiler.core.common.CompressEncoding;
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.calc.Condition;
-import org.graalvm.compiler.core.common.memory.BarrierType;
-import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
-import org.graalvm.compiler.core.common.spi.CodeGenProviders;
-import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
-import org.graalvm.compiler.core.common.type.Stamp;
-import org.graalvm.compiler.lir.ConstantValue;
-import org.graalvm.compiler.lir.LIRFrameState;
-import org.graalvm.compiler.lir.LIRInstruction;
-import org.graalvm.compiler.lir.LabelRef;
-import org.graalvm.compiler.lir.SwitchStrategy;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.lir.gen.LIRGenerationResult;
-import org.graalvm.compiler.lir.gen.LIRGenerator;
+import jdk.graal.compiler.core.common.CompressEncoding;
+import jdk.graal.compiler.core.common.LIRKind;
+import jdk.graal.compiler.core.common.calc.Condition;
+import jdk.graal.compiler.core.common.memory.BarrierType;
+import jdk.graal.compiler.core.common.memory.MemoryOrderMode;
+import jdk.graal.compiler.nodes.spi.CoreProviders;
+import jdk.graal.compiler.core.common.spi.ForeignCallLinkage;
+import jdk.graal.compiler.core.common.type.Stamp;
+import jdk.graal.compiler.lir.ConstantValue;
+import jdk.graal.compiler.lir.LIRFrameState;
+import jdk.graal.compiler.lir.LIRInstruction;
+import jdk.graal.compiler.lir.LabelRef;
+import jdk.graal.compiler.lir.SwitchStrategy;
+import jdk.graal.compiler.lir.Variable;
+import jdk.graal.compiler.lir.gen.LIRGenerationResult;
+import jdk.graal.compiler.lir.gen.LIRGenerator;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.StackSlot;
@@ -81,7 +81,7 @@ public class MetalLIRGenerator extends LIRGenerator {
     private final MetalBuiltinTool oclBuiltinTool;
     private final MetalGenTool oclGenTool;
 
-    public MetalLIRGenerator(CodeGenProviders providers, LIRGenerationResult res) {
+    public MetalLIRGenerator(CoreProviders providers, LIRGenerationResult res) {
         super(new MetalLIRKindTool((MetalTargetDescription) providers.getCodeCache().getTarget()), new MetalArithmeticTool(), new MetalBarrierSetLIRGenerator() {
 
         }, new MetalMoveFactory(), providers, res);
@@ -209,8 +209,8 @@ public class MetalLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public Register getHeapBaseRegister() {
-        return null;
+    public boolean isReservedRegister(Register r) {
+        return false;
     }
 
     public MetalGenTool getMetalGenTool() {
@@ -265,6 +265,26 @@ public class MetalLIRGenerator extends LIRGenerator {
     }
 
     @Override
+    public void emitOpMaskTestBranch(Value left, boolean negateLeft, Value right, LabelRef trueDestination, LabelRef falseDestination, double trueSuccessorProbability) {
+
+    }
+
+    @Override
+    public void emitOpMaskOrTestBranch(Value left, Value right, boolean allZeros, LabelRef trueDestination, LabelRef falseDestination, double trueSuccessorProbability) {
+
+    }
+
+    @Override
+    public Variable emitOpMaskTestMove(Value leftVal, boolean negateLeft, Value right, Value trueValue, Value falseValue) {
+        return null;
+    }
+
+    @Override
+    public Variable emitOpMaskOrTestMove(Value leftVal, Value right, boolean allZeros, Value trueValue, Value falseValue) {
+        return null;
+    }
+
+    @Override
     public Variable emitIntegerTestMove(Value left, Value right, Value trueValue, Value falseValue) {
         Logger.traceBuildLIR(Logger.BACKEND.Metal, "emitIntegerTestMove: " + left + " " + "&" + right + " ? " + trueValue + " : " + falseValue);
         assert left.getPlatformKind() == right.getPlatformKind() && ((MetalKind) left.getPlatformKind()).isInteger();
@@ -298,8 +318,14 @@ public class MetalLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    protected void emitRangeTableSwitch(int lowKey, LabelRef defaultTarget, LabelRef[] targets, AllocatableValue key) {
-
+    protected void emitRangeTableSwitch(int lowKey, LabelRef defaultTarget, LabelRef[] targets, SwitchStrategy remainingStrategy, LabelRef[] remainingTargets, AllocatableValue key) {
+        Logger.traceBuildLIR(Logger.BACKEND.Metal, "emitRangeTableSwitch: key=%s, lowKey=%d", key, lowKey);
+        // For Metal, generate a regular switch statement from the range
+        JavaConstant[] keyConstants = new JavaConstant[targets.length];
+        for (int i = 0; i < targets.length; i++) {
+            keyConstants[i] = JavaConstant.forInt(lowKey + i);
+        }
+        append(new MetalControlFlow.SwitchOp(key, keyConstants, targets, defaultTarget));
     }
 
     @Override

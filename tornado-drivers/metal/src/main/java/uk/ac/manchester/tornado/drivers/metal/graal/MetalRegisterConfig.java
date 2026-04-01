@@ -25,10 +25,11 @@ package uk.ac.manchester.tornado.drivers.metal.graal;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
+import java.util.List;
+
 import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.CallingConvention.Type;
 import jdk.vm.ci.code.Register;
-import jdk.vm.ci.code.RegisterArray;
 import jdk.vm.ci.code.RegisterAttributes;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.code.ValueKindFactory;
@@ -39,11 +40,10 @@ import jdk.vm.ci.meta.PlatformKind;
 public class MetalRegisterConfig implements RegisterConfig {
 
     private final static Register DUMMY = new Register(0, 0, "dummy", MetalArchitecture.Metal_ABI);
-    private final static RegisterArray EMPTY = new RegisterArray(new Register[0]);
 
     @Override
-    public RegisterArray getCalleeSaveRegisters() {
-        return EMPTY;
+    public List<Register> getCalleeSaveRegisters() {
+        return List.of();
     }
 
     @Override
@@ -64,28 +64,28 @@ public class MetalRegisterConfig implements RegisterConfig {
     }
 
     @Override
-    public RegisterArray getCallingConventionRegisters(Type type, JavaKind kind) {
-        return EMPTY;
+    public List<Register> getCallingConventionRegisters(Type type, JavaKind kind) {
+        return List.of();
     }
 
     @Override
-    public RegisterArray getAllocatableRegisters() {
-        return EMPTY;
+    public List<Register> getAllocatableRegisters() {
+        return List.of();
     }
 
     @Override
-    public RegisterArray filterAllocatableRegisters(PlatformKind kind, RegisterArray registers) {
+    public List<Register> filterAllocatableRegisters(PlatformKind kind, List<Register> registers) {
         unimplemented("Filter allocation registers not implemented yet.");
         return null;
     }
 
     @Override
-    public RegisterArray getCallerSaveRegisters() {
-        return EMPTY;
+    public List<Register> getCallerSaveRegisters() {
+        return List.of();
     }
 
     @Override
-    public RegisterAttributes[] getAttributesMap() {
+    public List<RegisterAttributes> getAttributesMap() {
         unimplemented("Get attributes map not implemented yet");
         return null;
     }

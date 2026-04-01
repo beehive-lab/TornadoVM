@@ -2,7 +2,7 @@
 # This file is part of Tornado: A heterogeneous programming framework:
 # https://github.com/beehive-lab/tornadovm
 #
-# Copyright (c) 2026, APT Group, Department of Computer Science,
+# Copyright (c) 2020, 2026, APT Group, Department of Computer Science,
 # School of Engineering, The University of Manchester. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
@@ -21,71 +21,152 @@
 # Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
---add-opens java.base/java.lang=tornado.drivers.metal
---add-exports jdk.internal.vm.ci/jdk.vm.ci.common=tornado.drivers.metal
---add-exports jdk.internal.vm.ci/jdk.vm.ci.amd64=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.hotspot.meta=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.replacements.classfile=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.core.common.alloc=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.core.common.util=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.core.common.cfg=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.lir=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.lir.framemap=tornado.drivers.metal
---add-exports jdk.internal.vm.ci/jdk.vm.ci.meta=tornado.drivers.metal
---add-exports jdk.internal.vm.ci/jdk.vm.ci.code=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.graph=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.graph.spi=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.lir.gen=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodeinfo=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.calc=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.spi=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.code=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.core=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.core.common=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.debug=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.hotspot=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.java=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.lir.asm=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.lir.phases=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.graphbuilderconf=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.options=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.phases=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.phases.tiers=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.phases.util=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.printer=tornado.drivers.metal
---add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.graph.iterators=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.java=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.bytecode=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.phases.common=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.core.common.spi=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.api.replacements=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.replacements=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.inlining=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.core.phases=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.core.common.type=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.extended=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.loop=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.loop.phases=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.debug=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.memory=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.util=tornado.drivers.metal
---add-opens jdk.internal.vm.ci/jdk.vm.ci.hotspot=tornado.drivers.metal
---add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.asm=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.cfg=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.phases.schedule=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.virtual.phases.ea=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.lir.ssa=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.core.common.calc=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.core.gen=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.core.match=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.memory.address=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.type=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.phases.graph=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.util=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.util=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.phases.graph=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.word=tornado.drivers.metal
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.core.common.memory=tornado.drivers.metal
+--add-reads=tornado.drivers.metal=jdk.graal.compiler
+
+# Graal compiler exports for OpenCL backend
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodes.cfg=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.hotspot.meta=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.core.common.util=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.lir=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.graph=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.graph.spi=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.lir.gen=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodeinfo=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodes=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodes.calc=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodes.spi=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.api.runtime=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.code=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.core=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.core.common=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.core.target=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.debug=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.hotspot=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.java=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.lir.asm=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.lir.phases=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodes.graphbuilderconf=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodes.loop=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.options=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.lir.framemap=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.lir.constopt=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.phases=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.phases.tiers=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.phases.util=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.printer=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.runtime=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.graph.iterators=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodes.java=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.bytecode=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.phases.common=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.core.common.spi=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.api.replacements=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.replacements=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.phases.common.inlining=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.core.phases=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.core.common.type=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodes.extended=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.phases.common.inlining.info=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.phases.common.inlining.policy=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.phases.common.inlining.walker=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.loop.phases=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodes.debug=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodes.memory=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodes.util=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodes.virtual=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodes.gc=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodes.memory.address=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.replacements.nodes=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.word=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.core.common.alloc=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.core.common.memory=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.core.common.cfg=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.asm=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.phases.schedule=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.virtual.phases.ea=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.lir.ssa=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.core.common.calc=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.core.gen=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.core.match=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodes.type=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.phases.graph=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.phases.common.util=tornado.drivers.metal
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.replacements.classfile=tornado.drivers.metal
+
+# JVMCI exports for OpenCL backend
+--add-exports=jdk.internal.vm.ci/jdk.vm.ci.common=tornado.drivers.metal
+--add-exports=jdk.internal.vm.ci/jdk.vm.ci.meta=tornado.drivers.metal
+--add-exports=jdk.internal.vm.ci/jdk.vm.ci.code=tornado.drivers.metal
+--add-exports=jdk.internal.vm.ci/jdk.vm.ci.runtime=tornado.drivers.metal
+--add-exports=jdk.internal.vm.ci/jdk.vm.ci.hotspot=tornado.drivers.metal
+--add-exports=jdk.internal.vm.ci/jdk.vm.ci.amd64=tornado.drivers.metal
+
+# Java base opens for OpenCL
+--add-opens=java.base/java.lang=tornado.drivers.metal
+--add-opens=java.base/jdk.internal.foreign=tornado.drivers.metal
+
+# Graal compiler opens for OpenCL backend
+--add-opens=jdk.internal.vm.ci/jdk.vm.ci.common=tornado.drivers.metal
+--add-opens=jdk.internal.vm.ci/jdk.vm.ci.amd64=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.hotspot.meta=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.replacements.classfile=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.core.common.alloc=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.core.common.util=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.core.common.cfg=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.lir=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.lir.framemap=tornado.drivers.metal
+--add-opens=jdk.internal.vm.ci/jdk.vm.ci.meta=tornado.drivers.metal
+--add-opens=jdk.internal.vm.ci/jdk.vm.ci.code=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.graph=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.graph.spi=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.lir.gen=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.nodeinfo=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.nodes=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.nodes.calc=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.nodes.spi=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.code=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.core=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.core.common=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.debug=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.hotspot=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.java=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.lir.asm=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.lir.phases=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.nodes.graphbuilderconf=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.options=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.phases=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.phases.tiers=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.phases.util=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.printer=tornado.drivers.metal
+--add-opens=jdk.internal.vm.ci/jdk.vm.ci.runtime=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.graph.iterators=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.nodes.java=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.bytecode=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.phases.common=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.core.common.spi=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.api.replacements=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.replacements=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.phases.common.inlining=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.core.phases=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.core.common.type=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.nodes.extended=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.nodes.loop=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.loop.phases=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.nodes.debug=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.nodes.memory=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.nodes.util=tornado.drivers.metal
+--add-opens=jdk.internal.vm.ci/jdk.vm.ci.hotspot=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.asm=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.nodes.cfg=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.phases.schedule=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.virtual.phases.ea=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.lir.ssa=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.core.common.calc=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.core.gen=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.core.match=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.nodes.memory.address=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.nodes.type=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.phases.graph=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.phases.common.util=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.word=tornado.drivers.metal
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.core.common.memory=tornado.drivers.metal

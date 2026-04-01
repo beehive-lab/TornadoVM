@@ -23,10 +23,12 @@
  */
 package uk.ac.manchester.tornado.drivers.metal.graal.lir;
 
-import org.graalvm.compiler.lir.LIRInstruction;
-import org.graalvm.compiler.lir.LIRInstructionClass;
-import org.graalvm.compiler.lir.Opcode;
-import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
+import jdk.graal.compiler.lir.LIRInstruction;
+import jdk.graal.compiler.lir.LIRInstructionClass;
+import jdk.graal.compiler.lir.Opcode;
+import jdk.graal.compiler.lir.asm.CompilationResultBuilder;
+
+import static jdk.graal.compiler.lir.LIRInstruction.OperandFlag.COMPOSITE;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
@@ -476,9 +478,9 @@ public class MetalLIRStmt {
 
         @Def
         protected AllocatableValue lhs;
-        @Use
+        @Use({ COMPOSITE })
         protected MetalAddressCast cast;
-        @Use
+        @Use({ COMPOSITE })
         protected MemoryAccess address;
         @Use
         protected Value index;
@@ -565,9 +567,9 @@ public class MetalLIRStmt {
 
         @Def
         protected AllocatableValue lhs;
-        @Use
+        @Use({ COMPOSITE })
         protected MetalAddressCast cast;
-        @Use
+        @Use({ COMPOSITE })
         protected MemoryAccess address;
 
         @Use
@@ -627,9 +629,9 @@ public class MetalLIRStmt {
 
         @Use
         protected Value rhs;
-        @Use
+        @Use({ COMPOSITE })
         protected MetalAddressCast cast;
-        @Use
+        @Use({ COMPOSITE })
         protected MemoryAccess address;
         @Use
         protected Value index;
@@ -744,11 +746,11 @@ public class MetalLIRStmt {
 
         @Use
         protected Value rhs;
-        @Use
+        @Use({ COMPOSITE })
         protected MetalAddressCast cast;
         @Use
         protected Value left;
-        @Use
+        @Use({ COMPOSITE })
         protected MemoryAccess address;
 
         public StoreAtomicAddStmt(MetalAddressCast cast, MemoryAccess address, Value rhs) {
@@ -839,11 +841,11 @@ public class MetalLIRStmt {
 
         @Use
         protected Value rhs;
-        @Use
+        @Use({ COMPOSITE })
         protected MetalAddressCast cast;
         @Use
         protected Value left;
-        @Use
+        @Use({ COMPOSITE })
         protected MemoryAccess address;
 
         public StoreAtomicAddFloatStmt(MetalAddressCast cast, MemoryAccess address, Value rhs) {
@@ -935,11 +937,11 @@ public class MetalLIRStmt {
 
         @Use
         protected Value rhs;
-        @Use
+        @Use({ COMPOSITE })
         protected MetalAddressCast cast;
         @Use
         protected Value left;
-        @Use
+        @Use({ COMPOSITE })
         protected MemoryAccess address;
 
         public StoreAtomicSubStmt(MetalAddressCast cast, MemoryAccess address, Value rhs) {
@@ -1030,11 +1032,11 @@ public class MetalLIRStmt {
 
         @Use
         protected Value rhs;
-        @Use
+        @Use({ COMPOSITE })
         protected MetalAddressCast cast;
         @Use
         protected Value left;
-        @Use
+        @Use({ COMPOSITE })
         protected MemoryAccess address;
 
         public StoreAtomicMulStmt(MetalAddressCast cast, MemoryAccess address, Value rhs) {
@@ -1123,9 +1125,9 @@ public class MetalLIRStmt {
 
         @Use
         protected Value rhs;
-        @Use
+        @Use({ COMPOSITE })
         protected MetalAddressCast cast;
-        @Use
+        @Use({ COMPOSITE })
         protected MemoryAccess address;
         @Use
         protected Value index;

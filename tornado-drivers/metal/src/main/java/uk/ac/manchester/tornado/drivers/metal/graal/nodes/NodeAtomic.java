@@ -23,10 +23,10 @@
  */
 package uk.ac.manchester.tornado.drivers.metal.graal.nodes;
 
-import org.graalvm.compiler.core.common.type.Stamp;
-import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.ValueNode;
+import jdk.graal.compiler.core.common.type.Stamp;
+import jdk.graal.compiler.graph.NodeClass;
+import jdk.graal.compiler.nodeinfo.NodeInfo;
+import jdk.graal.compiler.nodes.ValueNode;
 
 @NodeInfo(shortName = "ATOMIC")
 public abstract class NodeAtomic extends ValueNode {

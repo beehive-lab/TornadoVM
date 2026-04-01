@@ -45,33 +45,33 @@ import static uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalIntUnaryIn
 
 import java.lang.foreign.MemorySegment;
 
-import org.graalvm.compiler.core.common.memory.BarrierType;
-import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
-import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FixedWithNextNode;
-import org.graalvm.compiler.nodes.PiNode;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.AddNode;
-import org.graalvm.compiler.nodes.calc.MulNode;
-import org.graalvm.compiler.nodes.calc.SignExtendNode;
-import org.graalvm.compiler.nodes.extended.BoxNode;
-import org.graalvm.compiler.nodes.extended.JavaReadNode;
-import org.graalvm.compiler.nodes.extended.JavaWriteNode;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
-import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
-import org.graalvm.compiler.nodes.java.NewArrayNode;
-import org.graalvm.compiler.nodes.java.StoreIndexedNode;
-import org.graalvm.compiler.nodes.memory.address.AddressNode;
-import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
-import org.graalvm.compiler.nodes.util.GraphUtil;
-import org.graalvm.compiler.replacements.InlineDuringParsingPlugin;
+import jdk.graal.compiler.core.common.memory.BarrierType;
+import jdk.graal.compiler.core.common.memory.MemoryOrderMode;
+import jdk.graal.compiler.core.common.type.StampFactory;
+import jdk.graal.compiler.graph.Node;
+import jdk.graal.compiler.nodes.ConstantNode;
+import jdk.graal.compiler.nodes.FixedWithNextNode;
+import jdk.graal.compiler.nodes.PiNode;
+import jdk.graal.compiler.nodes.ValueNode;
+import jdk.graal.compiler.nodes.calc.AddNode;
+import jdk.graal.compiler.nodes.calc.MulNode;
+import jdk.graal.compiler.nodes.calc.SignExtendNode;
+import jdk.graal.compiler.nodes.extended.BoxNode;
+import jdk.graal.compiler.nodes.extended.JavaReadNode;
+import jdk.graal.compiler.nodes.extended.JavaWriteNode;
+import jdk.graal.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import jdk.graal.compiler.nodes.graphbuilderconf.GraphBuilderContext;
+import jdk.graal.compiler.nodes.graphbuilderconf.InvocationPlugin;
+import jdk.graal.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
+import jdk.graal.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import jdk.graal.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
+import jdk.graal.compiler.nodes.graphbuilderconf.NodePlugin;
+import jdk.graal.compiler.nodes.java.NewArrayNode;
+import jdk.graal.compiler.nodes.java.StoreIndexedNode;
+import jdk.graal.compiler.nodes.memory.address.AddressNode;
+import jdk.graal.compiler.nodes.memory.address.OffsetAddressNode;
+import jdk.graal.compiler.nodes.util.GraphUtil;
+import jdk.graal.compiler.replacements.InlineDuringParsingPlugin;
 import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.JavaConstant;
@@ -147,7 +147,7 @@ public class MetalGraphBuilderPlugins {
         r.register(new InvocationPlugin("incrementAndGet", Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
-                b.addPush(returnedJavaKind, b.append(new IncAtomicNode(receiver.get(), MetalUnary.AtomicOperator.INCREMENT_AND_GET)));
+                b.addPush(returnedJavaKind, b.append(new IncAtomicNode(receiver.get(true), MetalUnary.AtomicOperator.INCREMENT_AND_GET)));
                 return true;
             }
         });
@@ -155,7 +155,7 @@ public class MetalGraphBuilderPlugins {
         r.register(new InvocationPlugin("getAndIncrement", Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
-                b.addPush(returnedJavaKind, b.append(new IncAtomicNode(receiver.get(), MetalUnary.AtomicOperator.GET_AND_INCREMENT)));
+                b.addPush(returnedJavaKind, b.append(new IncAtomicNode(receiver.get(true), MetalUnary.AtomicOperator.GET_AND_INCREMENT)));
                 return true;
             }
         });
@@ -163,7 +163,7 @@ public class MetalGraphBuilderPlugins {
         r.register(new InvocationPlugin("decrementAndGet", Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
-                b.addPush(returnedJavaKind, b.append(new DecAtomicNode(receiver.get(), MetalUnary.AtomicOperator.DECREMENT_AND_GET)));
+                b.addPush(returnedJavaKind, b.append(new DecAtomicNode(receiver.get(true), MetalUnary.AtomicOperator.DECREMENT_AND_GET)));
                 return true;
             }
         });
@@ -171,7 +171,7 @@ public class MetalGraphBuilderPlugins {
         r.register(new InvocationPlugin("getAndDecrement", Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
-                b.addPush(returnedJavaKind, b.append(new DecAtomicNode(receiver.get(), MetalUnary.AtomicOperator.GET_AND_DECREMENT)));
+                b.addPush(returnedJavaKind, b.append(new DecAtomicNode(receiver.get(true), MetalUnary.AtomicOperator.GET_AND_DECREMENT)));
                 return true;
             }
         });
@@ -179,7 +179,7 @@ public class MetalGraphBuilderPlugins {
         r.register(new InvocationPlugin("get", Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
-                b.addPush(returnedJavaKind, b.append(new GetAtomicNode(receiver.get())));
+                b.addPush(returnedJavaKind, b.append(new GetAtomicNode(receiver.get(true))));
                 return true;
             }
         });
@@ -235,6 +235,7 @@ public class MetalGraphBuilderPlugins {
         r.register(new InvocationPlugin("localBarrier", Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                receiver.get(true);
                 MetalBarrierNode localBarrierNode = new MetalBarrierNode(MetalBarrierNode.MetalMemFenceFlags.LOCAL);
                 b.add(localBarrierNode);
                 return true;
@@ -246,6 +247,7 @@ public class MetalGraphBuilderPlugins {
         r.register(new InvocationPlugin("globalBarrier", Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                receiver.get(true);
                 MetalBarrierNode localBarrierNode = new MetalBarrierNode(MetalBarrierNode.MetalMemFenceFlags.GLOBAL);
                 b.add(localBarrierNode);
                 return true;
@@ -269,6 +271,7 @@ public class MetalGraphBuilderPlugins {
         r.register(new InvocationPlugin(methodName, InvocationPlugin.Receiver.class, arrayType, Integer.TYPE, kind.asJavaKind().toJavaClass()) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
+                receiver.get(true);
                 JavaKind javaKind = kind.asJavaKind();
                 AddressNode address = computeAddress(b, segment, index, panamaOffset, javaKind);
                 AtomAddNodeTemplate atomicAddNode = new AtomAddNodeTemplate(address, inc, javaKind);
@@ -291,8 +294,10 @@ public class MetalGraphBuilderPlugins {
         r.register(new InvocationPlugin("allocateIntLocalArray", Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                receiver.get(true);
                 LocalArrayNode localArrayNode = new LocalArrayNode(MetalArchitecture.localSpace, elementType, size);
-                b.push(returnedJavaKind, localArrayNode);
+                b.getGraph().addOrUnique(localArrayNode);
+                b.push(returnedJavaKind, b.append(localArrayNode));
                 return true;
             }
         });
@@ -302,8 +307,10 @@ public class MetalGraphBuilderPlugins {
         r.register(new InvocationPlugin("allocateLongLocalArray", Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                receiver.get(true);
                 LocalArrayNode localArrayNode = new LocalArrayNode(MetalArchitecture.localSpace, elementType, size);
-                b.push(returnedJavaKind, localArrayNode);
+                b.getGraph().addOrUnique(localArrayNode);
+                b.push(returnedJavaKind, b.append(localArrayNode));
                 return true;
             }
         });
@@ -313,8 +320,10 @@ public class MetalGraphBuilderPlugins {
         r.register(new InvocationPlugin("allocateFloatLocalArray", Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                receiver.get(true);
                 LocalArrayNode localArrayNode = new LocalArrayNode(MetalArchitecture.localSpace, elementType, size);
-                b.push(returnedJavaKind, localArrayNode);
+                b.getGraph().addOrUnique(localArrayNode);
+                b.push(returnedJavaKind, b.append(localArrayNode));
                 return true;
             }
         });
@@ -324,8 +333,10 @@ public class MetalGraphBuilderPlugins {
         r.register(new InvocationPlugin("allocateDoubleLocalArray", Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                receiver.get(true);
                 LocalArrayNode localArrayNode = new LocalArrayNode(MetalArchitecture.localSpace, elementType, size);
-                b.push(returnedJavaKind, localArrayNode);
+                b.getGraph().addOrUnique(localArrayNode);
+                b.push(returnedJavaKind, b.append(localArrayNode));
                 return true;
             }
         });
@@ -339,7 +350,8 @@ public class MetalGraphBuilderPlugins {
                 jdk.vm.ci.meta.MetaAccessProvider metaAccess = b.getMetaAccess();
                 jdk.vm.ci.meta.ResolvedJavaType resolvedElementType = metaAccess.lookupJavaType(byte.class);
                 LocalArrayNode localArrayNode = new LocalArrayNode(MetalArchitecture.localSpace, resolvedElementType, size);
-                b.push(returnedJavaKind, localArrayNode);
+                b.getGraph().addOrUnique(localArrayNode);
+                b.push(returnedJavaKind, b.append(localArrayNode));
                 return true;
             }
         });
@@ -351,7 +363,8 @@ public class MetalGraphBuilderPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
                 receiver.get(true);
                 LocalArrayNode localArrayNode = new LocalArrayNode(MetalArchitecture.localSpace, MetalKind.HALF, MetalAssembler.MetalBinaryTemplate.NEW_LOCAL_HALF_ARRAY, size);
-                b.push(returnedJavaKind, localArrayNode);
+                b.getGraph().addOrUnique(localArrayNode);
+                b.push(returnedJavaKind, b.append(localArrayNode));
                 return true;
             }
         });
@@ -374,7 +387,6 @@ public class MetalGraphBuilderPlugins {
 
         registerByteLocalArray(r, returnedJavaKind);
 
-        returnedJavaKind = JavaKind.fromJavaClass(short.class);
         registerHalfFloatLocalArray(r, returnedJavaKind);
     }
 
@@ -382,6 +394,7 @@ public class MetalGraphBuilderPlugins {
         r.register(new InvocationPlugin("simdSum", Receiver.class, float.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val) {
+                receiver.get(true);
                 b.addPush(JavaKind.Float, new MetalSIMDUnaryNode(val, MetalSIMDUnaryNode.Operation.SIMD_SUM));
                 return true;
             }
@@ -389,6 +402,7 @@ public class MetalGraphBuilderPlugins {
         r.register(new InvocationPlugin("simdBroadcastFirst", Receiver.class, float.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val) {
+                receiver.get(true);
                 b.addPush(JavaKind.Float, new MetalSIMDUnaryNode(val, MetalSIMDUnaryNode.Operation.SIMD_BROADCAST_FIRST));
                 return true;
             }
@@ -396,6 +410,7 @@ public class MetalGraphBuilderPlugins {
         r.register(new InvocationPlugin("simdShuffleDown", Receiver.class, float.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val, ValueNode delta) {
+                receiver.get(true);
                 b.addPush(JavaKind.Float, new MetalSIMDShuffleDownNode(val, delta));
                 return true;
             }
@@ -613,15 +628,17 @@ public class MetalGraphBuilderPlugins {
         registerFPIntrinsics(r);
 
         Registration longReg = new Registration(plugins, Long.class);
+        longReg.setAllowOverwrite(true);
         longReg.register(new InvocationPlugin("bitCount", Long.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
-                b.push(JavaKind.Int, b.append(MetalIntUnaryIntrinsicNode.create(value, POPCOUNT, JavaKind.Long)));
+                b.push(JavaKind.Int, b.append(MetalIntUnaryIntrinsicNode.create(value, POPCOUNT, JavaKind.Int)));
                 return true;
             }
         });
 
         Registration intReg = new Registration(plugins, Integer.class);
+        intReg.setAllowOverwrite(true);
         intReg.register(new InvocationPlugin("bitCount", Integer.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {

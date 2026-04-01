@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.metal.graal.asm;
 
-import org.graalvm.compiler.core.common.LIRKind;
+import jdk.graal.compiler.core.common.LIRKind;
 
 import uk.ac.manchester.tornado.drivers.metal.graal.compiler.MetalCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalLIROp;

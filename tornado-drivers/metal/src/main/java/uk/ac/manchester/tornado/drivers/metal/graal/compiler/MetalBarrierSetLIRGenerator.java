@@ -23,18 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.metal.graal.compiler;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.memory.BarrierType;
-import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
-import org.graalvm.compiler.lir.LIRFrameState;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.lir.gen.BarrierSetLIRGenerator;
+import jdk.graal.compiler.lir.gen.BarrierSetLIRGeneratorTool;
 
-import jdk.vm.ci.meta.Value;
-
-public class MetalBarrierSetLIRGenerator extends BarrierSetLIRGenerator {
-    @Override
-    public Variable emitBarrieredLoad(LIRKind kind, Value address, LIRFrameState state, MemoryOrderMode memoryOrder, BarrierType barrierType) {
-        throw new UnsupportedOperationException("MetalBarrierSetLIRGenerator.emitBarrieredLoad is not implemented for Metal backend");
-    }
+public class MetalBarrierSetLIRGenerator implements BarrierSetLIRGeneratorTool {
 }

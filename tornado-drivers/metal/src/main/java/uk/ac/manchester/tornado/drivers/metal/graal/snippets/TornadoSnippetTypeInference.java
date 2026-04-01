@@ -23,8 +23,8 @@
  */
 package uk.ac.manchester.tornado.drivers.metal.graal.snippets;
 
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.replacements.SnippetTemplate.SnippetInfo;
+import jdk.graal.compiler.nodes.ValueNode;
+import jdk.graal.compiler.replacements.SnippetTemplate.SnippetInfo;
 
 import jdk.vm.ci.meta.JavaKind;
 

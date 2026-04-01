@@ -34,7 +34,10 @@ import static uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssemblerCon
 import static uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssemblerConstants.PRIVATE_REGION_NAME;
 
 import java.nio.ByteOrder;
+import java.util.List;
 import java.util.Set;
+
+import jdk.vm.ci.code.Register;
 
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.Register.RegisterCategory;
@@ -55,10 +58,11 @@ public class MetalArchitecture extends Architecture {
     public static final MetalMemoryBase privateSpace = new MetalMemoryBase(4, PRIVATE_REGION_NAME, MetalMemorySpace.PRIVATE, MetalKind.UCHAR);
     public static final MetalMemoryBase atomicSpace = new MetalMemoryBase(5, ATOMICS_REGION_NAME, MetalMemorySpace.GLOBAL, MetalKind.INT);
 
+    private static final List<Register> EMPTY_LIST = List.of();
     public static MetalRegister[] abiRegisters;
 
     public MetalArchitecture(final MetalKind wordKind, final ByteOrder byteOrder) {
-        super("Tornado Metal", wordKind, byteOrder, false, null, LOAD_STORE | STORE_STORE, 0, 0);
+        super("Tornado Metal", wordKind, byteOrder, false, EMPTY_LIST, LOAD_STORE | STORE_STORE, 0, 0);
         abiRegisters = new MetalRegister[] { kernelContext, constantSpace, localSpace, atomicSpace };
     }
 

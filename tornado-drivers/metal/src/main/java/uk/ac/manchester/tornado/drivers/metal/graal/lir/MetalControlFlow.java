@@ -23,7 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.metal.graal.lir;
 
-import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.CONST;
 import static uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssemblerConstants.BREAK;
 import static uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssemblerConstants.CASE;
 import static uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssemblerConstants.CLOSE_PARENTHESIS;
@@ -35,9 +34,9 @@ import static uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssemblerCon
 import static uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssemblerConstants.OPEN_PARENTHESIS;
 import static uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssemblerConstants.SWITCH;
 
-import org.graalvm.compiler.lir.LIRInstructionClass;
-import org.graalvm.compiler.lir.LabelRef;
-import org.graalvm.compiler.lir.StandardOp.BlockEndOp;
+import jdk.graal.compiler.lir.LIRInstructionClass;
+import jdk.graal.compiler.lir.LabelRef;
+import jdk.graal.compiler.lir.StandardOp.BlockEndOp;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Constant;
@@ -150,7 +149,7 @@ public class MetalControlFlow {
 
     /**
      * This instruction can generate different code depending on whether or not
-     * there are additional {@link org.graalvm.compiler.lir.LIRInstruction}s between
+     * there are additional {@link jdk.graal.compiler.lir.LIRInstruction}s between
      * the loop condition and the {@link LoopPostOp}, respectively the
      * {@link LoopInitOp}.
      */
@@ -158,7 +157,7 @@ public class MetalControlFlow {
 
         public static final LIRInstructionClass<LoopConditionOp> TYPE = LIRInstructionClass.create(LoopConditionOp.class);
         @Use
-        private final Value condition;
+        private Value condition;
 
         private boolean generateIfBreakStatement = true;
 
@@ -211,7 +210,7 @@ public class MetalControlFlow {
 
         public static final LIRInstructionClass<ConditionalBranchOp> TYPE = LIRInstructionClass.create(ConditionalBranchOp.class);
         @Use
-        private final Value condition;
+        private Value condition;
 
         public ConditionalBranchOp(Value condition) {
             super(TYPE);
@@ -229,7 +228,7 @@ public class MetalControlFlow {
 
         public static final LIRInstructionClass<LinkedConditionalBranchOp> TYPE = LIRInstructionClass.create(LinkedConditionalBranchOp.class);
         @Use
-        private final Value condition;
+        private Value condition;
 
         public LinkedConditionalBranchOp(Value condition) {
             super(TYPE);
@@ -265,13 +264,11 @@ public class MetalControlFlow {
         public static final LIRInstructionClass<SwitchOp> TYPE = LIRInstructionClass.create(SwitchOp.class);
 
         @Use
-        private final AllocatableValue value;
+        private AllocatableValue value;
 
-        @Use({ CONST })
-        private final Constant[] keyConstants;
+        private Constant[] keyConstants;
 
-        @Use
-        private final LabelRef[] keyTargets;
+        private LabelRef[] keyTargets;
         private final LabelRef defaultTarget;
 
         public SwitchOp(AllocatableValue value, Constant[] keyConstants, LabelRef[] keyTargets, LabelRef defaultTarget) {
@@ -312,7 +309,7 @@ public class MetalControlFlow {
         public static final LIRInstructionClass<CaseOp> TYPE = LIRInstructionClass.create(CaseOp.class);
 
         @Use
-        private final Constant value;
+        private Constant value;
 
         public CaseOp(Constant value) {
             super(TYPE);
@@ -389,7 +386,7 @@ public class MetalControlFlow {
 
         public static final LIRInstructionClass<DeoptOp> TYPE = LIRInstructionClass.create(DeoptOp.class);
         @Use
-        private final Value actionAndReason;
+        private Value actionAndReason;
 
         public DeoptOp(Value actionAndReason) {
             super(TYPE);

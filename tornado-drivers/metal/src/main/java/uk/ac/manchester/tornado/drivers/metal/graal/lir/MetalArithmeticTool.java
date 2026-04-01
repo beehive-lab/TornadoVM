@@ -34,14 +34,14 @@ import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ValueKind;
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.calc.FloatConvert;
-import org.graalvm.compiler.core.common.memory.MemoryExtendKind;
-import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
-import org.graalvm.compiler.lir.ConstantValue;
-import org.graalvm.compiler.lir.LIRFrameState;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.lir.gen.ArithmeticLIRGenerator;
+import jdk.graal.compiler.core.common.LIRKind;
+import jdk.graal.compiler.core.common.calc.FloatConvert;
+import jdk.graal.compiler.core.common.memory.MemoryExtendKind;
+import jdk.graal.compiler.core.common.memory.MemoryOrderMode;
+import jdk.graal.compiler.lir.ConstantValue;
+import jdk.graal.compiler.lir.LIRFrameState;
+import jdk.graal.compiler.lir.Variable;
+import jdk.graal.compiler.lir.gen.ArithmeticLIRGenerator;
 
 import uk.ac.manchester.tornado.drivers.common.code.CodeUtil;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
@@ -141,7 +141,6 @@ public class MetalArithmeticTool extends ArithmeticLIRGenerator {
         return emitBinaryAssign(MetalBinaryOp.DIV, LIRKind.combine(x, y), x, y);
     }
 
-    @Override
     public Value emitFloatConvert(FloatConvert floatConvert, Value input) {
         Logger.traceBuildLIR(Logger.BACKEND.Metal, "emitFloatConvert: (%s) %s", floatConvert, input);
         switch (floatConvert) {
@@ -151,7 +150,6 @@ public class MetalArithmeticTool extends ArithmeticLIRGenerator {
                 unimplemented("float convert %s", floatConvert);
         }
         return null;
-
     }
 
     @Override
@@ -266,6 +264,21 @@ public class MetalArithmeticTool extends ArithmeticLIRGenerator {
     public Value emitUShr(Value x, Value y) {
         Logger.traceBuildLIR(Logger.BACKEND.Metal, "emitUShr: %s >>> %s", x, y);
         return emitBinaryAssign(MetalBinaryOp.BITWISE_RIGHT_SHIFT, LIRKind.combine(x, y), x, y);
+    }
+
+    @Override
+    public Value emitFloatConvert(FloatConvert op, Value inputVal, boolean canBeNaN, boolean canOverflow) {
+        return null;
+    }
+
+    @Override
+    public Value emitFusedMultiplyAdd(Value a, Value b, Value c) {
+        return null;
+    }
+
+    @Override
+    public Value emitZeroExtend(Value value, int fromBits, int toBits, boolean requiresExplicitZeroExtend, boolean requiresLIRKindChange) {
+        return emitZeroExtend(value, fromBits, toBits);
     }
 
     @Override

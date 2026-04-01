@@ -26,16 +26,19 @@ package uk.ac.manchester.tornado.drivers.metal.graal.nodes;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
-import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FixedWithNextNode;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.spi.LIRLowerable;
-import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import jdk.graal.compiler.core.common.type.StampFactory;
+import jdk.graal.compiler.graph.NodeClass;
+import jdk.graal.compiler.lir.Variable;
+import jdk.graal.compiler.lir.gen.LIRGeneratorTool;
+import jdk.graal.compiler.graph.Node.OptionalInput;
+import jdk.graal.compiler.nodeinfo.InputType;
+import jdk.graal.compiler.nodeinfo.NodeInfo;
+import jdk.graal.compiler.nodes.ConstantNode;
+import jdk.graal.compiler.nodes.FixedWithNextNode;
+import jdk.graal.compiler.nodes.ValueNode;
+import jdk.graal.compiler.nodes.spi.LIRLowerable;
+import jdk.graal.compiler.nodes.spi.NodeLIRBuilderTool;
+import jdk.vm.ci.meta.JavaConstant;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -63,7 +66,7 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
 
     private static final int DEFAULT_VALUE = -1;
 
-    @Input
+    @OptionalInput(InputType.Value)
     ValueNode initialValue;
 
     private int indexFromGlobalMemory;
@@ -73,15 +76,21 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
     public TornadoAtomicIntegerNode(MetalKind kind) {
         super(TYPE, MetalStampFactory.getStampFor(kind));
         this.kind = kind;
-        this.initialValue = ConstantNode.forInt(0);
+        // initialValue is set after node is added to graph to avoid JDK25 @Input liveness check
     }
 
     public void setInitialValue(ValueNode valueNode) {
+        updateUsages(initialValue, valueNode);
         initialValue = valueNode;
     }
 
     public void setInitialValueAtUsages(ValueNode valueNode) {
-        initialValue.replaceAtUsages(valueNode);
+        if (initialValue != null) {
+            initialValue.replaceAtUsages(valueNode);
+        } else {
+            updateUsages(null, valueNode);
+            initialValue = valueNode;
+        }
     }
 
     public ValueNode getInitialValue() {
@@ -91,7 +100,8 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
     private void generateExpressionForMetal2_0(NodeLIRBuilderTool gen) {
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
         Variable result = tool.newVariable(tool.getLIRKind(StampFactory.intValue()));
-        tool.append(new MetalLIRStmt.RelocatedExpressionStmt(new MetalUnary.IntrinsicAtomicDeclaration(MetalAssembler.MetalUnaryIntrinsic.ATOMIC_VAR_INIT, result, gen.operand(initialValue))));
+        ValueNode initVal = (initialValue != null) ? initialValue : graph().addOrUnique(ConstantNode.forConstant(JavaConstant.INT_0, null));
+        tool.append(new MetalLIRStmt.RelocatedExpressionStmt(new MetalUnary.IntrinsicAtomicDeclaration(MetalAssembler.MetalUnaryIntrinsic.ATOMIC_VAR_INIT, result, gen.operand(initVal))));
         gen.setResult(this, result);
     }
 
@@ -106,7 +116,9 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
     }
 
     private int getIntFromValueNode() {
-        if (initialValue instanceof ConstantNode) {
+        if (initialValue == null) {
+            return 0;
+        } else if (initialValue instanceof ConstantNode) {
             ConstantNode c = (ConstantNode) initialValue;
             return Integer.parseInt(c.getValue().toValueString());
         } else {
@@ -127,7 +139,7 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
      *
      * @param paramIndex
      *            Object parameter index taken from
-     *            {@link org.graalvm.compiler.nodes.ParameterNode}.
+     *            {@link jdk.graal.compiler.nodes.ParameterNode}.
      */
     public synchronized void assignIndexFromParameter(int paramIndex) {
         if (!globalAtomics.containsKey(this.graph().method())) {
