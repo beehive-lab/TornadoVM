@@ -79,7 +79,7 @@ MAVEN = {
 JDK = {
     __JDK25__: {
         __LINUX__: {
-            __X86_64__: "https://download.java.net/java/GA/jdk25.0.2/b1e0dfa218384cb9959bdcb897162d4e/10/GPL/openjdk-25.0.2_linux-x64_bin.tar.gz"",
+            __X86_64__: "https://download.java.net/java/GA/jdk25.0.2/b1e0dfa218384cb9959bdcb897162d4e/10/GPL/openjdk-25.0.2_linux-x64_bin.tar.gz",
             __ARM__: "https://download.java.net/java/GA/jdk25.0.2/b1e0dfa218384cb9959bdcb897162d4e/10/GPL/openjdk-25.0.2_linux-aarch64_bin.tar.gz",
            __RISCV_64__: None,
         },
@@ -161,7 +161,7 @@ JDK = {
             __ARM__: "https://aka.ms/download-jdk/microsoft-jjdk-25.0.2-windows-aarch64.zip",
            __RISCV_64__: None,
         },
-    }
+    },
     __ZULU25__: {
         __LINUX__: {
             __X86_64__: "https://cdn.azul.com/zulu/bin/zulu25.32.21-ca-jdk25.0.2-linux_x64.tar.gz",
@@ -183,34 +183,34 @@ JDK = {
         __LINUX__: {
             __X86_64__: "https://github.com/adoptium/temurin25-binaries/releases/download/jdk-25.0.2%2B10/OpenJDK25U-jdk_x64_linux_hotspot_25.0.2_10.tar.gz",
             __ARM__: "https://github.com/adoptium/temurin25-binaries/releases/download/jdk-25.0.2%2B10/OpenJDK25U-jdk_aarch64_linux_hotspot_25.0.2_10.tar.gz",
-            __RISCV_64__: null,
+            __RISCV_64__: None,
         },
         __APPLE__: {
             __X86_64__: "https://github.com/adoptium/temurin25-binaries/releases/download/jdk-25.0.2%2B10/OpenJDK25U-jdk_x64_mac_hotspot_25.0.2_10.tar.gz",
             __ARM__: "https://github.com/adoptium/temurin25-binaries/releases/download/jdk-25.0.2%2B10/OpenJDK25U-jdk_aarch64_mac_hotspot_25.0.2_10.tar.gz",
-            __RISCV_64__: null,
+            __RISCV_64__: None,
         },
         __WINDOWS__: {
             __X86_64__: "https://github.com/adoptium/temurin25-binaries/releases/download/jdk-25.0.2%2B10/OpenJDK25U-jdk_x64_windows_hotspot_25.0.2_10.zip",
-            __ARM__: null,
-            __RISCV_64__: null,
+            __ARM__: None,
+            __RISCV_64__: None,
         },
     },
     __SAPMACHINE25__: {
         __LINUX__: {
             __X86_64__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-25.0.2/sapmachine-jdk-25.0.2_linux-x64_bin.tar.gz",
             __ARM__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-25.0.2/sapmachine-jdk-25.0.2_linux-aarch64_bin.tar.gz",
-            __RISCV_64__: null,
+            __RISCV_64__: None,
         },
         __APPLE__: {
             __X86_64__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-25.0.2/sapmachine-jdk-25.0.2_macos-x64_bin.tar.gz",
             __ARM__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-25.0.2/sapmachine-jdk-25.0.2_macos-aarch64_bin.tar.gz",
-            __RISCV_64__: null,
+            __RISCV_64__: None,
         },
         __WINDOWS__: {
             __X86_64__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-25.0.2/sapmachine-jdk-25.0.2_windows-x64_bin.zip",
-            __ARM__: null,
-            __RISCV_64__: null,
+            __ARM__: None,
+            __RISCV_64__: None,
         },
     },
 
@@ -223,12 +223,12 @@ JDK = {
        __APPLE__: {
            __X86_64__: "https://download.bell-sw.com/java/25.0.2+12/bellsoft-jdk25.0.2+12-macos-amd64.tar.gz",
            __ARM__:    "https://download.bell-sw.com/java/25.0.2+12/bellsoft-jdk25.0.2+12-macos-aarch64.tar.gz",
-           __RISCV_64__: null,
+           __RISCV_64__: None,
        },
        __WINDOWS__: {
            __X86_64__: "https://download.bell-sw.com/java/25.0.2+12/bellsoft-jdk25.0.2+12-windows-amd64.zip",
            __ARM__:    "https://download.bell-sw.com/java/25.0.2+12/bellsoft-jdk25.0.2+12-windows-aarch64.zip",
-           __RISCV_64__: null,
+           __RISCV_64__: None,
        },
    },
 }
