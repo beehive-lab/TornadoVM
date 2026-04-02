@@ -159,11 +159,15 @@ jobs:
           ./mvnw versions:set -DnewVersion=${NEXT} -DgenerateBackupPoms=false
           
           sed -i "s/__VERSION__ = \"[0-9]\+\.[0-9]\+\.[0-9]\+\"/__VERSION__ = \"${NEXT}\"/" tornado-assembly/src/bin/tornado-test
-          
           git add -A
-          git commit -m "Bump version to ${NEXT} for development"
-          git push origin develop
-
+          if ! git diff --cached --quiet; then
+            git commit -m "Bump version to ${NEXT} for development"
+            git push origin develop
+            echo "✅ Changes committed and pushed"
+          else
+            echo "ℹ️ No changes to commit"
+          fi   
+         
       - name: Summary
         run: |
           echo "## 🎉 Release Finalized" >> $GITHUB_STEP_SUMMARY
