@@ -7,6 +7,33 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 
 CHANGELOG
 
+TornadoVM 4.0.0
+---------------
+02/04/26
+
+Improvements
+~~~~~~~~~~~~
+
+- `#811 <https://github.com/beehive-lab/TornadoVM/pull/811>`_: Add support for CUDA Graphs to replay bytecodes to reduce dispatch overhead
+
+Bug Fixes
+~~~~~~~~~~~~
+
+- `#817 <https://github.com/beehive-lab/TornadoVM/pull/817>`_: [hotfix] Fix double-deletion of PiNode when multiple OffsetAddressNodes share the same PiNode
+
+Other Changes
+~~~~~~~~~~~~
+
+- `#813 <https://github.com/beehive-lab/TornadoVM/pull/813>`_: Add SIMD Shuffle/Reduction Support to PTX Backend    
+- `#814 <https://github.com/beehive-lab/TornadoVM/pull/814>`_: [docs] Update readme to inlcude metal
+- `#819 <https://github.com/beehive-lab/TornadoVM/pull/819>`_: Sync master with develop
+- `#818 <https://github.com/beehive-lab/TornadoVM/pull/818>`_: [fix] Make cmake to always set CMAKE_OSX_SYSROOT explicitly, making i…
+- `#796 <https://github.com/beehive-lab/TornadoVM/pull/796>`_: [JDK21] Add \`Apple Metal\` backend  to run natively on Apple Silicon
+- `#808 <https://github.com/beehive-lab/TornadoVM/pull/808>`_: Add TornadoVM developer skill (build, test, debug, Java 21+ idioms) for Claude
+- `#806 <https://github.com/beehive-lab/TornadoVM/pull/806>`_: Release 3.0.0-jdk25
+- `#807 <https://github.com/beehive-lab/TornadoVM/pull/807>`_: Post release minor fixes for mvn deploy and readme budges 
+
+
 TornadoVM 3.0.0
 ---------------
 24/02/26
