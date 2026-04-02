@@ -7,6 +7,13 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 
 CHANGELOG
 
+TornadoVM 4.0.0-jdk25
+---------------------
+02/04/26
+
+.. TODO: Add changes manually
+
+
 TornadoVM 3.0.0
 ---------------
 24/02/26
