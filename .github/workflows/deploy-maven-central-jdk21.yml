@@ -4,7 +4,6 @@ on:
   push:
     tags:
       - 'v*-jdk21'
-      - '[0-9]+.[0-9]+.[0-9]+*-jdk21'
   workflow_run:
     workflows: ["2-Finalize TornadoVM Release [JDK21]"]
     types: [completed]
@@ -29,7 +28,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'push' && github.ref || (inputs.tag != '' && inputs.tag || 'jdk21') }}
+          ref: ${{ inputs.tag || github.ref }}
+          fetch-depth: 0
 
       - name: Setup environment
         run: |
