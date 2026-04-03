@@ -55,9 +55,9 @@ jobs:
       - name: Create and push tag
         run: |
           VERSION="${{ steps.get_version.outputs.version }}"
-          git tag -a "v${VERSION}" -m "Release ${VERSION}"
-          git push origin "v${VERSION}"
-          echo "✅ Created tag v${VERSION}"
+          git tag -a "v${VERSION}-jdk21" -m "Release ${VERSION} (JDK21)"
+          git push origin "v${VERSION}-jdk21"
+          echo "✅ Created tag v${VERSION}-jdk21"
 
       - name: Extract changelog for release notes
         id: changelog
@@ -98,8 +98,8 @@ jobs:
             const { data: release } = await github.rest.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              tag_name: `v${version}`,
-              name: `TornadoVM ${version}`,
+              tag_name: `v${version}-jdk21`,
+              name: `TornadoVM ${version} (JDK21)`,
               body: releaseNotes,
               draft: false,
               prerelease: false
@@ -161,16 +161,22 @@ jobs:
           sed -i "s/__VERSION__ = \"[0-9]\+\.[0-9]\+\.[0-9]\+\"/__VERSION__ = \"${NEXT}\"/" tornado-assembly/src/bin/tornado-test
           
           git add -A
-          git commit -m "Bump version to ${NEXT} for development"
-          git push origin develop
-
+          
+          if ! git diff --cached --quiet; then
+            git commit -m "Bump version to ${NEXT} for development"
+            git push origin develop
+            echo "✅ Changes committed and pushed"
+          else
+            echo "ℹ️ No changes to commit"
+          fi
+          
       - name: Summary
         run: |
           echo "## 🎉 Release Finalized" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Step | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Tag created | ✅ v${{ needs.create-release-tag.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tag created | ✅ v${{ needs.create-release-tag.outputs.version }}-jdk21 |" >> $GITHUB_STEP_SUMMARY
           echo "| GitHub Release | ✅ Created |" >> $GITHUB_STEP_SUMMARY
           echo "| Develop bumped | ✅ ${{ steps.next_version.outputs.next_version }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
