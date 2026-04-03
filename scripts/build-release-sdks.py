@@ -238,6 +238,30 @@ def remove_worktree(worktree_path):
 
 
 # ---------------------------------------------------------------------------
+# Pre-flight checks
+# ---------------------------------------------------------------------------
+
+def check_pyinstaller():
+    """
+    Verify that pyinstaller is on PATH (Windows only).
+
+    The Windows SDK build calls PyInstaller inside bin/compile to produce
+    tornado.exe, tornado-test.exe, and tornado-benchmarks.exe.  The underlying
+    call uses os.system() which silently ignores failure, so if pyinstaller is
+    missing the build completes without any .exe files and CMD users cannot run
+    the SDK.  Failing early here avoids a silent bad build.
+    """
+    if shutil.which("pyinstaller") is None:
+        error(
+            "pyinstaller not found on PATH.\n"
+            "  The Windows SDK build requires PyInstaller to produce tornado.exe.\n"
+            "  Install it with:  pip install pyinstaller"
+        )
+        sys.exit(1)
+    info("pyinstaller: found")
+
+
+# ---------------------------------------------------------------------------
 # Build execution
 # ---------------------------------------------------------------------------
 
@@ -419,28 +443,37 @@ def validate_sdk(archive_path, jdk_home):
         env["TORNADOVM_HOME"] = tornado_home
         env["PATH"]           = os.path.join(tornado_home, "bin") + os.pathsep + env.get("PATH", "")
 
-        java_cmd       = os.path.join(jdk_home, "bin", "java")
-        tornado_script = os.path.join(tornado_home, "bin", "tornado")
+        java_cmd = os.path.join(jdk_home, "bin", "java")
 
-        # Make the tornado script executable (zip does not preserve permissions)
-        if os.name != "nt":
+        # On Windows the SDK must ship bin\tornado.exe (compiled by PyInstaller).
+        # On Unix it ships bin/tornado (a shell script that needs +x after zip extraction).
+        if os.name == "nt":
+            tornado_exe = os.path.join(tornado_home, "bin", "tornado.exe")
+            if os.path.isfile(tornado_exe):
+                tornado_cmd = [tornado_exe]
+            else:
+                error(
+                    f"  tornado.exe not found in {basename}.\n"
+                    "  The Windows SDK build should have run PyInstaller to produce it.\n"
+                    "  Ensure pyinstaller is installed (pip install pyinstaller) and rebuild."
+                )
+                return False
+        else:
+            tornado_script = os.path.join(tornado_home, "bin", "tornado")
             os.chmod(tornado_script, 0o755)
+            tornado_cmd = [tornado_script]
 
         checks = [
-            (
-                [tornado_script, "--devices"],
-                "tornado --devices",
-            ),
-            (
-                [tornado_script, "--version"],
-                "tornado --version",
-            ),
+            ([*tornado_cmd, "--devices"], "tornado --devices"),
+            ([*tornado_cmd, "--version"],  "tornado --version"),
+        ]
+        checks.append(
             (
                 [java_cmd, f"@{argfile_path}", "-cp", examples_jar,
                  "uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor"],
                 "MatrixVectorRowMajor",
-            ),
-        ]
+            )
+        )
 
         passed = True
         for cmd, name in checks:
@@ -520,6 +553,9 @@ def main():
 
     current_platform = detect_platform()
     arch = platform.machine().lower().replace("x86_64", "amd64")
+
+    if current_platform == "windows":
+        check_pyinstaller()
 
     section(f"TornadoVM Release SDK Builder  {args.version}")
     info(f"Platform : {current_platform}-{arch}")
