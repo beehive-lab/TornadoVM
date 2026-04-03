@@ -26,7 +26,7 @@ worktrees, builds the relevant SDKs in each worktree, collects the archives,
 and cleans up — without touching the current working branch.
 
 SDKs built per platform:
-  - macOS   : opencl, metal+opencl  (JDK 21 and JDK 25, via sdkman Temurin)
+  - macOS   : opencl, metal  (JDK 21 and JDK 25, via sdkman Temurin)
   - Linux   : opencl, ptx, spirv, full  (JDK 21 and JDK 25, via sdkman Temurin)
   - Windows : opencl, ptx, spirv, full  (JDK 21 and JDK 25, --jdkXX-home required)
 
