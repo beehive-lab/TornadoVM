@@ -49,6 +49,11 @@ jobs:
             platform: MAC_ARM64
             variant: opencl-mac-aarch64
 
+          # metal
+          - sdk_suffix: metal
+            platform: MAC_ARM64
+            variant: metal-mac-aarch64
+
           # ptx
           - sdk_suffix: ptx
             platform: LINUX_64
