@@ -279,6 +279,11 @@ def build_sdk(worktree_path, jdk_home, jdk_arg, backends, label):
 
     env = os.environ.copy()
     env["JAVA_HOME"] = jdk_home
+    # Prepend the build JDK's bin/ to PATH so that any script that runs `java`
+    # (e.g. gen-tornado-argfile-template.py's is_graalvm() check) sees the
+    # correct JDK rather than whatever is current in the shell.
+    jdk_bin = os.path.join(jdk_home, "bin")
+    env["PATH"] = jdk_bin + os.pathsep + env.get("PATH", "")
 
     if os.name == "nt":
         cmd = [
