@@ -29,12 +29,8 @@
 #include <iostream>
 #include "PTXEvent.h"
 #include "ptx_log.h"
+#include "ptx_utils.h"
 
-jbyteArray array_from_event(JNIEnv *env, CUevent *event) {
-    jbyteArray array = env->NewByteArray(sizeof(CUevent));
-    env->SetByteArrayRegion(array, 0, sizeof(CUevent), reinterpret_cast<const jbyte *>(event));
-    return array;
-}
 
 jobjectArray wrapper_from_events(JNIEnv *env, CUevent *event1, CUevent *event2) {
     jbyteArray array1 = array_from_event(env, event1);
@@ -44,10 +40,6 @@ jobjectArray wrapper_from_events(JNIEnv *env, CUevent *event1, CUevent *event2) 
     env->SetObjectArrayElement(wrapper_2d_array, (jsize) 0, array1);
     env->SetObjectArrayElement(wrapper_2d_array, (jsize) 1, array2);
     return wrapper_2d_array;
-}
-
-void event_from_array(JNIEnv *env, CUevent *event, jbyteArray array) {
-    env->GetByteArrayRegion(array, 0, sizeof(CUevent), reinterpret_cast<jbyte *>(event));
 }
 
 /*
@@ -125,3 +117,20 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEve
     }
     return (unsigned long) result;
 }
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXEvent
+ * Method:    cuStreamWaitEvent
+ * Signature: ([B[B)V
+ */
+ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuStreamWaitEvent
+   (JNIEnv *env, jclass clazz, jbyteArray stream_wrapper, jbyteArray event_wrapper) {
+     CUstream stream;
+     stream_from_array(env, &stream, stream_wrapper);
+
+     CUevent event;
+     event_from_array(env, &event, event_wrapper);
+
+     CUresult result = cuStreamWaitEvent(stream, event, 0);
+     LOG_PTX_AND_VALIDATE("cuStreamWaitEvent", result);
+  }
