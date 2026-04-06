@@ -54,7 +54,7 @@ OpenCL   | `4.0.0-opencl` **(default)**
 PTX      | `4.0.0-ptx`
 SPIR-V   | `4.0.0-spirv`
 Metal    | `4.0.0-metal`
-All Backends     | `2.2.0-full`
+All Backends     | `4.0.0-full`
 
 
 Install **TornadoVM**:
