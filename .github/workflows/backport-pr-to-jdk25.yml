@@ -1,0 +1,51 @@
+name: Create PR to jdk25 when PR targets develop
+
+on:
+  pull_request_target:
+    types: [opened, reopened, ready_for_review]
+    branches:
+      - develop
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  create-jdk25-pr:
+    if: github.event.pull_request.base.ref == 'develop' && github.event.pull_request.head.ref != 'jdk25'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check if PR to jdk25 already exists
+        id: existing
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_LABEL: ${{ github.event.pull_request.head.label }}
+          REPO: ${{ github.repository }}
+        run: |
+          count=$(gh pr list \
+            --repo "$REPO" \
+            --head "$HEAD_LABEL" \
+            --base "jdk25" \
+            --state open \
+            --json number \
+            --jq 'length')
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+
+      - name: Create PR to jdk25
+        if: steps.existing.outputs.count == '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          HEAD_LABEL: ${{ github.event.pull_request.head.label }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          gh pr create \
+            --repo "$REPO" \
+            --base "jdk25" \
+            --head "$HEAD_LABEL" \
+            --title "$PR_TITLE" \
+            --body "$(printf 'Auto-created because #%s was opened against `develop`.\n\nOriginal PR: %s\n\n---\n%s' "$PR_NUMBER" "$PR_URL" "$PR_BODY")"
