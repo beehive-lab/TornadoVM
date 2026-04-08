@@ -365,6 +365,18 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
+    public void withCUDAStreams() {
+        TornadoOptions.VM_USE_DEPS = true;
+        TornadoOptions.ENABLE_PTX_MULTI_STREAM = true;
+    }
+
+    @Override
+    public void withoutCUDAStreams() {
+        TornadoOptions.VM_USE_DEPS = false;
+        TornadoOptions.ENABLE_PTX_MULTI_STREAM = false;
+    }
+
+    @Override
     public void withThreadInfo() {
         meta().enableThreadInfo();
     }
@@ -1592,10 +1604,23 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
     }
 
+    /**
+     * Guard {@link TornadoTaskGraph#withCUDAStreams()} API call from incompatible backends.
+     * Multiple streams are currently supported only for the PTX Backend with CUDA Streams.
+     */
+    private void checkCUDAStreamsBackendSupport() {
+        if (TornadoOptions.VM_USE_DEPS && TornadoOptions.ENABLE_PTX_MULTI_STREAM) {
+            if (!getDevice().getTornadoVMBackend().equals(TornadoVMBackendType.PTX)) {
+                throw new TornadoRuntimeException("CUDA streams are only supported for PTX backend");
+            }
+        }
+    }
+
     @Override
     public TornadoTaskGraphInterface execute(ExecutorFrame executorFrame) {
         executionPlanId = executorFrame.getExecutionPlanId();
         checkProfilerOn(executorFrame);
+        checkCUDAStreamsBackendSupport();
         return execute();
 
     }

@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
@@ -68,6 +69,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     private final TornadoBufferProvider bufferProvider;
     private final PowerMetric powerMetricHandler;
     private final Map<Long, PTXStreamTable> streamTable;
+    private final Map<Long, EventRegistry> eventRegistries;
     private boolean wasReset;
     private final Set<Long> executionIDs;
     private PTXKernelStackFrame pendingKernelContextWrite;
@@ -81,6 +83,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     public PTXDeviceContext(PTXDevice device) {
         this.device = device;
         streamTable = new ConcurrentHashMap<>();
+        eventRegistries = new ConcurrentHashMap<>();
         this.scheduler = new PTXScheduler(device);
         this.powerMetricHandler = new PTXNvidiaPowerMetricHandler(this);
         codeCache = new ConcurrentHashMap<>();
@@ -122,6 +125,10 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     @Override
     public boolean isFP64Supported() {
         return true;
+    }
+
+    private boolean isMultiStreamEnabled() {
+        return TornadoOptions.ENABLE_PTX_MULTI_STREAM && TornadoOptions.VM_USE_DEPS;
     }
 
     public PTXTornadoDevice toDevice() {
@@ -186,9 +193,63 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         return device.getByteOrder();
     }
 
+    private EventRegistry getEventRegistry(long executionPlanId) {
+        return eventRegistries.computeIfAbsent(executionPlanId, k -> new EventRegistry());
+    }
+
+    private PTXStream getStreamIfExists(long executionPlanId, PTXStreamType type) {
+        PTXStreamTable table = streamTable.get(executionPlanId);
+        if (table == null) return null;
+        return table.getIfExists(device, type);
+    }
+
     public Event resolveEvent(long executionPlanId, int event) {
+        if (isMultiStreamEnabled()) {
+            EventRegistry registry = getEventRegistry(executionPlanId);
+            EventRegistry.PTXEventEntry entry = registry.resolve(event);
+            if (entry != null) {
+                PTXStream stream = getStream(executionPlanId, entry.streamType());
+                return stream.resolveEvent(entry.localEventId());
+            }
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.resolveEvent(event);
+    }
+
+    /**
+     * Fine-grained cross-stream synchronization.
+     *
+     * <p>For each global event ID in {@code waitEvents}, resolves it through the
+     * {@link EventRegistry} to find the source stream and local event, then calls
+     * {@code cuStreamWaitEvent} to make work submitted on {@code targetStream} to
+     * wait upon event's completion before starting execution WITHOUT blocking the
+     * host, in our case the TornadoVM Interpreter thread.
+     *
+     * <p>This provides event-level granularity: COMPUTE waits only on the specific
+     * H2D transfers it depends on, D2H waits only on the specific COMPUTE operations
+     * it depends on. Same-stream events are handled by CUDA's in-order guarantee.
+     *
+     * @param executionPlanId the execution plan context
+     * @param waitEvents array of global event IDs (from the interpreter's dependency tracking)
+     * @param targetStream the stream that should wait for the source events
+     */
+    private void resolveAndWaitCrossStream(long executionPlanId, int[] waitEvents, PTXStream targetStream) {
+        if (waitEvents == null || !isMultiStreamEnabled()) return;
+        EventRegistry registry = getEventRegistry(executionPlanId);
+        for (int globalEventId : waitEvents) {
+            if (globalEventId == -1) continue;
+            EventRegistry.PTXEventEntry entry = registry.resolve(globalEventId);
+            if (entry == null) continue;
+            // Skip same-stream events — CUDA's in-order execution already guarantees ordering
+            // within a stream. During graph capture, cuStreamWaitEvent(S, capturedEventOnS)
+            // returns CUDA_ERROR_STREAM_CAPTURE_ISOLATION (905) and invalidates the capture.
+            if (entry.streamType() == targetStream.getStreamType()) continue;
+            PTXStream sourceStream = getStream(executionPlanId, entry.streamType());
+            PTXEvent event = sourceStream.getEventPool().getEvent(entry.localEventId());
+            if (event != null) {
+                event.waitOnStream(targetStream.getStreamHandle());
+            }
+        }
     }
 
     public void flushEvents(long executionPlanId) {
@@ -204,33 +265,169 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         syncIfNeeded(executionPlanId);
     }
 
+    /**
+     * Enqueues a full barrier that waits for all in-flight GPU work to complete.
+     *
+     * <p>In single-stream mode, issues {@code cuStreamSynchronize} on the default stream
+     * (CPU-blocking). In multi-stream mode, issues {@code cuStreamSynchronize} on every
+     * active stream (H2D, COMPUTE, D2H).
+     *
+     * <p>Not called by the main interpreter path — the {@code BARRIER} bytecode routes
+     * through {@link #enqueueMarker(long, int[])} instead. Reachable from legacy
+     * {@code PTXMultiDimArrayWrapper} and as a null-events fallback from
+     * {@link #enqueueBarrier(long, int[])}.
+     *
+     * @param executionPlanId the execution plan context
+     * @return a local event ID in single-stream mode, or {@code -1} in multi-stream mode
+     */
     public int enqueueBarrier(long executionPlanId) {
+        if (isMultiStreamEnabled()) {
+            // Sync all active streams
+            for (PTXStreamType type : PTXStreamType.values()) {
+                if (type == PTXStreamType.DEFAULT) continue;
+                PTXStream stream = getStreamIfExists(executionPlanId, type);
+                if (stream != null) {
+                    stream.enqueueBarrier(executionPlanId);
+                }
+            }
+            return -1;
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueBarrier(executionPlanId);
     }
 
+    /**
+     * Enqueues a barrier with fine-grained dependency resolution.
+     *
+     * <p>In multi-stream mode, resolves each global event ID in {@code events} through
+     * the {@link EventRegistry} and inserts a {@code cuStreamWaitEvent} on every active
+     * stream for each dependency, so each stream only waits on the specific operations
+     * it depends on rather than all prior work. If {@code events} is null, delegates to
+     * {@link #enqueueBarrier(long)}.
+     *
+     * <p>In single-stream mode, forwards {@code events} (local pool IDs) directly to
+     * {@link PTXStream#enqueueBarrier(long, int[])} for CPU-side synchronisation.
+     *
+     * @param executionPlanId the execution plan context
+     * @param events array of global event IDs to wait on, or {@code null} for a full barrier
+     * @return a local event ID in single-stream mode, or {@code -1} in multi-stream mode
+     */
     public int enqueueBarrier(long executionPlanId, int[] events) {
+        if (isMultiStreamEnabled()) {
+            if (events == null) {
+                return enqueueBarrier(executionPlanId);
+            }
+            // Use fine-grained sync: each stream waits only on cross-stream events
+            for (PTXStreamType type : PTXStreamType.values()) {
+                if (type == PTXStreamType.DEFAULT) continue;
+                PTXStream stream = getStreamIfExists(executionPlanId, type);
+                if (stream != null) {
+                    resolveAndWaitCrossStream(executionPlanId, events, stream);
+                }
+            }
+            return -1;
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueBarrier(executionPlanId, events);
     }
 
+    /**
+     * End-of-iteration full sync: waits for all in-flight GPU work and resets the
+     * {@link EventRegistry}.
+     *
+     * <p>Called by the interpreter after all bytecodes have been dispatched
+     * (when {@code VM_USE_DEPS=true}) to ensure the iteration is fully complete before
+     * returning the execution result. Also used as a null-events fallback from
+     * {@link #enqueueMarker(long, int[])}.
+     *
+     * <p>In single-stream mode, issues {@code cuStreamSynchronize} on the default stream.
+     * In multi-stream mode, issues {@code cuStreamSynchronize} on every active stream
+     * (H2D, COMPUTE, D2H) and then resets the {@link EventRegistry}, allowing global
+     * event IDs to be reused in the next iteration.
+     *
+     * @param executionPlanId the execution plan context
+     * @return a local event ID in single-stream mode, or {@code -1} in multi-stream mode
+     */
     public int enqueueMarker(long executionPlanId) {
         // Since streams are always in-order in CUDA there is no difference
         // between marker and barrier
+        if (isMultiStreamEnabled()) {
+            for (PTXStreamType type : PTXStreamType.values()) {
+                if (type == PTXStreamType.DEFAULT) continue;
+                PTXStream stream = getStreamIfExists(executionPlanId, type);
+                if (stream != null) {
+                    stream.enqueueBarrier(executionPlanId);
+                }
+            }
+            // Reset registry after full sync - all events are complete,
+            // prevents unbounded growth across iterations
+            getEventRegistry(executionPlanId).reset();
+            return -1;
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueBarrier(executionPlanId);
     }
 
+    /**
+     * Enqueues a dependency-aware sync point, then resets the {@link EventRegistry}.
+     *
+     * <p>The primary caller is the interpreter's {@code BARRIER} bytecode handler, which
+     * passes global event IDs from the interpreter dependency lists. In multi-stream mode,
+     * each ID is resolved through the {@link EventRegistry} to its source stream and a
+     * {@code cuStreamWaitEvent} is inserted on every active stream — providing fine-grained,
+     * GPU-side synchronisation without blocking the CPU. The registry is reset afterwards
+     * so global IDs can be reused in the next iteration.
+     *
+     * <p>If {@code events} is null, delegates to {@link #enqueueMarker(long)} for a full
+     * barrier. In single-stream mode, forwards {@code events} (local pool IDs) directly to
+     * {@link PTXStream#enqueueBarrier(long, int[])}.
+     *
+     * <p>Note: {@code CUDAFieldBuffer} also calls this method with local (non-global) event
+     * IDs; in multi-stream mode those IDs will not be found in the registry and are silently
+     * skipped by {@link #resolveAndWaitCrossStream}.
+     *
+     * @param executionPlanId the execution plan context
+     * @param events array of global event IDs to wait on, or {@code null} for a full barrier
+     * @return a local event ID in single-stream mode, or {@code -1} in multi-stream mode
+     */
     public int enqueueMarker(long executionPlanId, int[] events) {
         // Since streams are always in-order in CUDA there is no difference
         // between marker and barrier
+        if (isMultiStreamEnabled()) {
+            if (events == null) {
+                return enqueueMarker(executionPlanId);
+            }
+            for (PTXStreamType targetType : PTXStreamType.values()) {
+                if (targetType == PTXStreamType.DEFAULT) continue;
+                PTXStream targetStream = getStreamIfExists(executionPlanId, targetType);
+                if (targetStream != null) {
+                    resolveAndWaitCrossStream(executionPlanId, events, targetStream);
+                }
+            }
+            // Only reset the EventRegistry when NOT inside a graph capture region.
+            // During capture the registry is still needed for resolving cross-stream deps.
+            if (!isStreamCapturing(executionPlanId)) {
+                getEventRegistry(executionPlanId).reset();
+            }
+            return -1;
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueBarrier(executionPlanId, events);
     }
 
     public void sync(long executionPlanId) {
-        PTXStream stream = getStream(executionPlanId);
-        stream.sync();
+        if (isMultiStreamEnabled()) {
+            for (PTXStreamType type : PTXStreamType.values()) {
+                if (type == PTXStreamType.DEFAULT) continue;
+                PTXStream stream = getStreamIfExists(executionPlanId, type);
+                if (stream != null) {
+                    stream.sync();
+                }
+            }
+        } else {
+            PTXStream stream = getStream(executionPlanId);
+            stream.sync();
+        }
     }
 
     /**
@@ -239,9 +436,19 @@ public class PTXDeviceContext implements TornadoDeviceContext {
      * @param executionPlanId
      */
     public void syncIfNeeded(long executionPlanId) {
-        PTXStream stream = getStreamIfNeeded(executionPlanId);
-        if (stream != null) {
-            stream.sync();
+        if (isMultiStreamEnabled()) {
+            for (PTXStreamType type : PTXStreamType.values()) {
+                if (type == PTXStreamType.DEFAULT) continue;
+                PTXStream stream = getStreamIfExists(executionPlanId, type);
+                if (stream != null) {
+                    stream.sync();
+                }
+            }
+        } else {
+            PTXStream stream = getStreamIfNeeded(executionPlanId);
+            if (stream != null) {
+                stream.sync();
+            }
         }
     }
 
@@ -259,6 +466,11 @@ public class PTXDeviceContext implements TornadoDeviceContext {
                 streamTable.remove(executionPlanId);
             }
             executionIDs.remove(executionPlanId);
+        }
+        // Clean event registry
+        EventRegistry registry = eventRegistries.remove(executionPlanId);
+        if (registry != null) {
+            registry.reset();
         }
         getMemoryManager().releaseKernelStackFrame(executionPlanId);
         PTXCodeCache ptxCodeCache = getPTXCodeCache(executionPlanId);
@@ -293,20 +505,82 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         }
 
         PTXStream stream = getStream(executionPlanId);
-        int kernelLaunchEvent = stream.enqueueKernelLaunch(executionPlanId, module, taskMeta, writePTXKernelContextOnDevice(executionPlanId, (PTXKernelStackFrame) kernelArgs, taskMeta), gridDimension,
+        KernelContextWriteResult ctxResult = writePTXKernelContextOnDevice(executionPlanId, (PTXKernelStackFrame) kernelArgs, taskMeta);
+        int kernelLaunchEvent = stream.enqueueKernelLaunch(executionPlanId, module, taskMeta, ctxResult.params(), gridDimension,
                 blockDimension);
         updateProfiler(executionPlanId, kernelLaunchEvent, taskMeta);
         return kernelLaunchEvent;
     }
 
-    private byte[] writePTXKernelContextOnDevice(long executionPlanId, PTXKernelStackFrame ptxKernelArgs, TaskDataContext meta) {
+    /**
+     * for async execution
+     */
+    public int enqueueKernelLaunchWithDependencies(long executionPlanId, PTXModule module, KernelStackFrame kernelArgs,
+                                                   TaskDataContext taskMeta, long batchThreads, int[] waitEvents) {
+        int[] blockDimension = { 1, 1, 1 };
+        int[] gridDimension = { 1, 1, 1 };
+        if (taskMeta.isWorkerGridAvailable()) {
+            WorkerGrid grid = taskMeta.getWorkerGrid(taskMeta.getId());
+            int[] global = Arrays.stream(grid.getGlobalWork()).mapToInt(l -> (int) l).toArray();
+            if (grid.getLocalWork() != null) {
+                blockDimension = Arrays.stream(grid.getLocalWork()).mapToInt(l -> (int) l).toArray();
+            } else {
+                blockDimension = scheduler.calculateBlockDimension(grid.getGlobalWork(), module.getPotentialBlockSizeMaxOccupancy(), grid.dimension(), module.javaName);
+            }
+            PTXGridInfo gridInfo = new PTXGridInfo(module, Arrays.stream(blockDimension).mapToLong(i -> i).toArray());
+            boolean checkedDimensions = gridInfo.checkGridDimensions();
+            if (!checkedDimensions) {
+                blockDimension = scheduler.calculateBlockDimension(grid.getGlobalWork(), module.getPotentialBlockSizeMaxOccupancy(), grid.dimension(), module.javaName);
+                System.out.println("Warning: TornadoVM changed the user-defined local size to the following: [" + blockDimension[0] + ", " + blockDimension[1] + ", " + blockDimension[2] + "].");
+            }
+            gridDimension = scheduler.calculateGridDimension(module.javaName, grid.dimension(), global, blockDimension);
+        } else if (taskMeta.isParallel()) {
+            scheduler.calculateGlobalWork(taskMeta, batchThreads);
+            blockDimension = scheduler.calculateBlockDimension(module, taskMeta);
+            gridDimension = scheduler.calculateGridDimension(module, taskMeta, blockDimension);
+        }
+
+        PTXStreamType streamType = isMultiStreamEnabled() ? PTXStreamType.COMPUTE : PTXStreamType.DEFAULT;
+        PTXStream stream = getStream(executionPlanId, streamType);
+
+        // Write kernel context first (goes to H2D stream)
+        KernelContextWriteResult ctxResult = writePTXKernelContextOnDevice(executionPlanId, (PTXKernelStackFrame) kernelArgs, taskMeta);
+
+        if (isMultiStreamEnabled()) {
+            // Fine-grained synchronization of dependencies:
+            // make COMPUTE stream wait on specific H2D events this kernel depends on, plus the kernel context write
+            int[] allDeps = includeInDeps(waitEvents, ctxResult.writeEventId());
+            resolveAndWaitCrossStream(executionPlanId, allDeps, stream);
+        }
+
+        int kernelLaunchEvent = stream.enqueueKernelLaunch(executionPlanId, module, taskMeta,
+                ctxResult.params(), gridDimension, blockDimension);
+
+        if (isMultiStreamEnabled()) {
+            int globalEventId = getEventRegistry(executionPlanId).register(streamType, kernelLaunchEvent);
+            updateProfiler(executionPlanId, globalEventId, taskMeta);
+            return globalEventId;
+        }
+        updateProfiler(executionPlanId, kernelLaunchEvent, taskMeta);
+        return kernelLaunchEvent;
+    }
+
+    /**
+     * Represents a KernelContext write operation on the device.
+     * @param params the parameters of the kernel context.
+     * @param writeEventId the event ID of the write operation.
+     */
+    private record KernelContextWriteResult(byte[] params, int writeEventId) {}
+
+    private KernelContextWriteResult writePTXKernelContextOnDevice(long executionPlanId, PTXKernelStackFrame ptxKernelArgs, TaskDataContext meta) {
         int capacity = Long.BYTES + ptxKernelArgs.getCallArguments().size() * Long.BYTES;
         ByteBuffer args = ByteBuffer.allocate(capacity);
         args.order(getByteOrder());
 
         // Kernel context pointer
+        int kernelContextWriteEventId = -1;
         if (!isStreamCapturing(executionPlanId)) {
-            int kernelContextWriteEventId = ptxKernelArgs.enqueueWrite(executionPlanId);
+            kernelContextWriteEventId = ptxKernelArgs.enqueueWrite(executionPlanId);
             updateProfilerKernelContextWrite(executionPlanId, kernelContextWriteEventId, meta, ptxKernelArgs);
         } else {
             pendingKernelContextWrite = ptxKernelArgs;
@@ -336,7 +610,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
             }
         }
 
-        return args.array();
+        return new KernelContextWriteResult(args.array(), kernelContextWriteEventId);
     }
 
     private void updateProfilerKernelContextWrite(long executionPlanId, int kernelContextWriteEventId, TaskDataContext meta, PTXKernelStackFrame callWrapper) {
@@ -389,10 +663,32 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     }
 
     public void destroyStream(long executionPlanId) {
-        PTXStream stream = getStream(executionPlanId);
-        if (stream != null && !stream.isDestroy()) {
-            stream.cuDestroyStream();
+        if (isMultiStreamEnabled()) {
+            for (PTXStreamType type : PTXStreamType.values()) {
+                if (type == PTXStreamType.DEFAULT) continue;
+                PTXStream stream = getStreamIfExists(executionPlanId, type);
+                if (stream != null && !stream.isDestroy()) {
+                    stream.cuDestroyStream();
+                }
+            }
+        } else {
+            PTXStream stream = getStream(executionPlanId);
+            if (stream != null && !stream.isDestroy()) {
+                stream.cuDestroyStream();
+            }
         }
+    }
+
+    /**
+     * Adds the additionalEvent into waitEvents to include it in the dependencies of the kernel launch.
+     */
+    private int[] includeInDeps(int[] waitEvents, int additionalEvent) {
+        if (waitEvents == null) {
+            return new int[] { additionalEvent };
+        }
+        int[] combinedDeps = Arrays.copyOf(waitEvents, waitEvents.length + 1);
+        combinedDeps[waitEvents.length] = additionalEvent;
+        return combinedDeps;
     }
 
     /*
@@ -400,41 +696,89 @@ public class PTXDeviceContext implements TornadoDeviceContext {
      */
 
     public int readBuffer(long executionPlanId, long address, long length, long hostPointer, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, hostPointer, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueRead(executionPlanId, address, length, hostPointer, hostOffset, waitEvents);
     }
 
     public int readBuffer(long executionPlanId, long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public int readBuffer(long executionPlanId, long address, long length, short[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public int readBuffer(long executionPlanId, long address, long length, char[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public int readBuffer(long executionPlanId, long address, long length, int[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public int readBuffer(long executionPlanId, long address, long length, long[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public int readBuffer(long executionPlanId, long address, long length, float[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public int readBuffer(long executionPlanId, long address, long length, double[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
@@ -444,41 +788,89 @@ public class PTXDeviceContext implements TornadoDeviceContext {
      */
 
     public int enqueueReadBuffer(long executionPlanId, long address, long length, long hostPointer, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, hostPointer, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueAsyncRead(executionPlanId, address, length, hostPointer, hostOffset, waitEvents);
     }
 
     public int enqueueReadBuffer(long executionPlanId, long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public int enqueueReadBuffer(long executionPlanId, long address, long length, short[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public int enqueueReadBuffer(long executionPlanId, long address, long length, char[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public int enqueueReadBuffer(long executionPlanId, long address, long length, int[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public int enqueueReadBuffer(long executionPlanId, long address, long length, long[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public int enqueueReadBuffer(long executionPlanId, long address, long length, float[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public int enqueueReadBuffer(long executionPlanId, long address, long length, double[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
@@ -487,43 +879,91 @@ public class PTXDeviceContext implements TornadoDeviceContext {
      * SYNC WRITES
      */
     public void writeBuffer(long executionPlanId, long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
-        PTXStream stream = getStream(executionPlanId);
-        stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, null);
+        } else {
+            PTXStream stream = getStream(executionPlanId);
+            stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
+        }
     }
 
     public void writeBuffer(long executionPlanId, long address, long length, long hostPointer, long hostOffset, int[] waitEvents) {
-        PTXStream stream = getStream(executionPlanId);
-        stream.enqueueWrite(executionPlanId, address, length, hostPointer, hostOffset, waitEvents);
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            stream.enqueueWrite(executionPlanId, address, length, hostPointer, hostOffset, null);
+        } else {
+            PTXStream stream = getStream(executionPlanId);
+            stream.enqueueWrite(executionPlanId, address, length, hostPointer, hostOffset, waitEvents);
+        }
     }
 
     public void writeBuffer(long executionPlanId, long address, long length, short[] array, long hostOffset, int[] waitEvents) {
-        PTXStream stream = getStream(executionPlanId);
-        stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, null);
+        } else {
+            PTXStream stream = getStream(executionPlanId);
+            stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
+        }
     }
 
     public void writeBuffer(long executionPlanId, long address, long length, char[] array, long hostOffset, int[] waitEvents) {
-        PTXStream stream = getStream(executionPlanId);
-        stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, null);
+        } else {
+            PTXStream stream = getStream(executionPlanId);
+            stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
+        }
     }
 
     public void writeBuffer(long executionPlanId, long address, long length, int[] array, long hostOffset, int[] waitEvents) {
-        PTXStream stream = getStream(executionPlanId);
-        stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, null);
+        } else {
+            PTXStream stream = getStream(executionPlanId);
+            stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
+        }
     }
 
     public void writeBuffer(long executionPlanId, long address, long length, long[] array, int hostOffset, int[] waitEvents) {
-        PTXStream stream = getStream(executionPlanId);
-        stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, null);
+        } else {
+            PTXStream stream = getStream(executionPlanId);
+            stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
+        }
     }
 
     public void writeBuffer(long executionPlanId, long address, long length, float[] array, int hostOffset, int[] waitEvents) {
-        PTXStream stream = getStream(executionPlanId);
-        stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, null);
+        } else {
+            PTXStream stream = getStream(executionPlanId);
+            stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
+        }
     }
 
     public void writeBuffer(long executionPlanId, long address, long length, double[] array, int hostOffset, int[] waitEvents) {
-        PTXStream stream = getStream(executionPlanId);
-        stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, null);
+        } else {
+            PTXStream stream = getStream(executionPlanId);
+            stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
+        }
     }
 
     /*
@@ -531,68 +971,131 @@ public class PTXDeviceContext implements TornadoDeviceContext {
      */
 
     public int enqueueWriteBuffer(long executionPlanId, long address, long length, long hostPointer, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncWrite(executionPlanId, address, length, hostPointer, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_H2D, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueAsyncWrite(executionPlanId, address, length, hostPointer, hostOffset, waitEvents);
     }
 
     public int enqueueWriteBuffer(long executionPlanId, long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncWrite(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_H2D, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueAsyncWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public int enqueueWriteBuffer(long executionPlanId, long address, long length, short[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncWrite(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_H2D, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueAsyncWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public int enqueueWriteBuffer(long executionPlanId, long address, long length, char[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncWrite(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_H2D, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueAsyncWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public int enqueueWriteBuffer(long executionPlanId, long address, long length, int[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncWrite(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_H2D, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueAsyncWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public int enqueueWriteBuffer(long executionPlanId, long address, long length, long[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncWrite(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_H2D, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueAsyncWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public int enqueueWriteBuffer(long executionPlanId, long address, long length, float[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncWrite(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_H2D, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueAsyncWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public int enqueueWriteBuffer(long executionPlanId, long address, long length, double[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncWrite(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_H2D, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueAsyncWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public void dumpEvents(long executionPlanId) {
-        PTXStream stream = getStream(executionPlanId);
-        List<PTXEvent> events = stream.getEventPool().getEvents();
-
         final String deviceName = "PTX-" + device.getDeviceName();
-
-        System.out.printf("Found %d events on device %s:\n", events.size(), deviceName);
-        if (events.isEmpty()) {
-            return;
+        if (isMultiStreamEnabled()) {
+            for (PTXStreamType type : PTXStreamType.values()) {
+                if (type == PTXStreamType.DEFAULT) continue;
+                PTXStream stream = getStreamIfExists(executionPlanId, type);
+                if (stream == null) continue;
+                List<PTXEvent> events = stream.getEventPool().getEvents();
+                System.out.printf("Found %d events on device %s [%s]:%n", events.size(), deviceName, type);
+                if (!events.isEmpty()) {
+                    events.forEach((e) -> System.out.printf("event: %s, %s, %s%n", deviceName, e.getName(), e.getStatus()));
+                }
+            }
+        } else {
+            PTXStream stream = getStream(executionPlanId);
+            List<PTXEvent> events = stream.getEventPool().getEvents();
+            System.out.printf("Found %d events on device %s:%n", events.size(), deviceName);
+            if (events.isEmpty()) return;
+            System.out.println("event: device, type, info, status");
+            events.forEach((e) -> System.out.printf("event: %s, %s, %s%n", deviceName, e.getName(), e.getStatus()));
         }
-
-        System.out.println("event: device, type, info, status");
-        events.forEach((e) -> System.out.printf("event: %s, %s, %s\n", deviceName, e.getName(), e.getStatus()));
     }
 
+    /**
+     * For backwards compatibility
+     */
     private PTXStream getStream(long executionPlanId) {
+        return getStream(executionPlanId, PTXStreamType.DEFAULT);
+    }
+
+    private PTXStream getStream(long executionPlanId, PTXStreamType type) {
         executionIDs.add(executionPlanId);
         if (!streamTable.containsKey(executionPlanId)) {
             PTXStreamTable ptxStreamTable = new PTXStreamTable();
-            ptxStreamTable.get(device);
+            ptxStreamTable.get(device, type);
             streamTable.put(executionPlanId, ptxStreamTable);
         }
-        return streamTable.get(executionPlanId).get(device);
+        return streamTable.get(executionPlanId).get(device, type);
     }
 
     private PTXCodeCache getPTXCodeCache(long executionPlanId) {
@@ -614,14 +1117,100 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         return ptxStream.mapOnDeviceMemoryRegion(destDevicePtr, srcDevicePtr, offset, sizeOfType);
     }
 
+    /**
+     * Begins CUDA graph capture across all three streams using the fork protocol.
+     *
+     * <p>D2H is the primary capture stream because it is the terminal stream in the
+     * H2D→COMPUTE→D2H pipeline. Using D2H as primary means the graph-completion event
+     * (recorded when cuGraphLaunch completes) is on D2H, naturally signalling that all
+     * work — including the final device-to-host copy — is done.
+     *
+     * <p>Fork protocol: while D2H is in capture mode, record an event on it and make
+     * H2D and COMPUTE wait on that event. A stream that waits on an event recorded in a
+     * captured stream automatically joins the capture. All subsequent work on H2D and
+     * COMPUTE becomes part of the same graph.
+     */
+    private void beginMultiStreamGraphCapture(long executionPlanId) {
+        PTXStream d2hStream     = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+        PTXStream h2dStream     = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D);
+        PTXStream computeStream = getStream(executionPlanId, PTXStreamType.COMPUTE);
+
+        // Start capture on the primary (terminal) stream
+        d2hStream.beginGraphCapture();
+
+        // Fork: record an event on D2H and make H2D + COMPUTE wait on it → they join the capture
+        byte[] forkEvent = d2hStream.recordCaptureEvent();
+        h2dStream.waitOnCapturedEvent(forkEvent);
+        computeStream.waitOnCapturedEvent(forkEvent);
+    }
+
+    /**
+     * Joins the multi-stream capture back into the primary D2H stream, ends capture,
+     * instantiates the graph, and flushes the deferred kernel context write.
+     *
+     * <p>Join protocol: record end-events on H2D and COMPUTE streams, then make D2H wait
+     * on them. This ensures every captured node from all three streams is included before
+     * cuStreamEndCapture is called on D2H.
+     *
+     * <p>Deferred context write: written after graph instantiation, then H2D stream is
+     * synchronised so the write completes before the first graph replay.
+     */
+    private long endMultiStreamGraphCaptureAndInstantiate(long executionPlanId) {
+        PTXStream d2hStream     = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+        PTXStream h2dStream     = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D);
+        PTXStream computeStream = getStream(executionPlanId, PTXStreamType.COMPUTE);
+
+        // Join: record end-events on secondary streams and make D2H (primary) wait on them
+        byte[] h2dJoinEvent     = h2dStream.recordCaptureEvent();
+        byte[] computeJoinEvent = computeStream.recordCaptureEvent();
+        d2hStream.waitOnCapturedEvent(h2dJoinEvent);
+        d2hStream.waitOnCapturedEvent(computeJoinEvent);
+
+        // End capture on D2H (primary) — collects all nodes from all joined streams
+        long handle = d2hStream.endGraphCaptureAndInstantiate();
+
+        // Reset event pools for all three streams: captured events are absorbed into
+        // graph nodes and their original CUevent handles become invalid for host-side
+        // synchronization (cuEventSynchronize → CUDA_ERROR_INVALID_VALUE). Resetting
+        // discards them without syncing (PTXEventPool.reset() calls destroy(), not wait).
+        h2dStream.reset();
+        computeStream.reset();
+        d2hStream.reset();
+
+        // Flush deferred kernel context write (host→device, outside graph),
+        // then synchronize H2D stream so data is ready before the first graph replay
+        if (pendingKernelContextWrite != null) {
+            pendingKernelContextWrite.enqueueWrite(executionPlanId);
+            pendingKernelContextWrite = null;
+            h2dStream.sync();
+        }
+
+        return handle;
+    }
+
     public void beginExecutionGraphCapture(long executionPlanId) {
-        PTXStream stream = getStream(executionPlanId);
-        stream.beginGraphCapture();
+        if (isMultiStreamEnabled()) {
+            // Reset registry before capture: clears pre-capture event IDs (from ALLOC
+            // bytecodes etc.) so only events recorded after all streams join the capture
+            // are tracked globally. Without this, cuStreamWaitEvent(capturedStream,
+            // preCapturEvent) → CUDA_ERROR_STREAM_CAPTURE_ISOLATION (905).
+            getEventRegistry(executionPlanId).reset();
+            beginMultiStreamGraphCapture(executionPlanId);
+        } else {
+            getStream(executionPlanId).beginGraphCapture();
+        }
     }
 
     public long endExecutionGraphCaptureAndInstantiate(long executionPlanId) {
+        if (isMultiStreamEnabled()) {
+            return endMultiStreamGraphCaptureAndInstantiate(executionPlanId);
+        }
         PTXStream stream = getStream(executionPlanId);
         long handle = stream.endGraphCaptureAndInstantiate();
+
+        // Reset event pool: captured events are absorbed into graph nodes and become
+        // invalid for host-side sync; discard without waiting.
+        stream.reset();
 
         // Write the kernel context that was deferred during capture
         if (pendingKernelContextWrite != null) {
@@ -633,15 +1222,84 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     }
 
     public int launchExecutionGraph(long executionPlanId, long executionGraphHandle) {
-        PTXStream stream = getStream(executionPlanId);
-        return stream.launchGraph(executionGraphHandle);
+        // In multi-stream mode, launch on D2H stream — the primary capture stream.
+        // cuGraphLaunch replays all captured nodes on their original streams internally;
+        // the stream argument only controls where the graph-completion event is recorded.
+        // D2H is the terminal stream, so the completion event correctly signals all work done.
+        PTXStream stream = isMultiStreamEnabled()
+                ? getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H)
+                : getStream(executionPlanId);
+        int localEventId = stream.launchGraph(executionGraphHandle);
+        if (isMultiStreamEnabled()) {
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
+        return localEventId;
     }
 
     public boolean isStreamCapturing(long executionPlanId) {
+        if (isMultiStreamEnabled()) {
+            // In multi-stream mode, D2H is the primary capture stream
+            PTXStream d2hStream = getStreamIfExists(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            return d2hStream != null && d2hStream.isCapturing();
+        }
         return getStream(executionPlanId).isCapturing();
     }
 
     public void destroyExecutionGraph(long executionGraphHandle) {
         PTXStream.destroyGraph(executionGraphHandle);
+    }
+
+    /**
+     * Provides a global scope mapping of {@code PTXEvent}s with {@code PTXStream}s
+     * to facilitate cross-stream synchronization.
+     *
+     * <p>In multi-stream mode, {@code PTXEvent}s are organized in {@code PTXEventPool}s
+     * and are associated with a *local* event id which is returned after every
+     * {@code PTXEventPool} operation. The EventRegistry class registers the local
+     * event id as a {@code PTXEventEntry} -a (streamType, localEventId) pair- and
+     * associates it with a unique *global* event id to enable cross-stream event reference.
+     * The global ID flows through the interpreter's ADD_DEPENDENCY/waitList mechanism.
+     *
+     * <p>The global ID is resolved back through this registry in two situations:
+     * <ul>
+     *   <li><b>Profiler</b>: to find the {@code PTXEvent} and read its timing data</li>
+     *   <li><b>Cross-stream sync</b>: to find the {@code PTXEvent} and call
+     *       {@code cuStreamWaitEvent} with its afterEvent handle, making a target
+     *       stream wait for a specific operation on a source stream</li>
+     * </ul>
+     *
+     * Note: In single-stream mode this class is not used — local event IDs are passed directly
+     */
+    private static class EventRegistry {
+        /**
+         * Unique/global id for a PTXEvent across all PTXEventPool instances.
+         */
+        private final AtomicInteger globalIdCounter = new AtomicInteger(0);
+        /**
+         * The core {@code EventRegistry} data structure.
+         */
+        private final Map<Integer, PTXEventEntry> registry = new ConcurrentHashMap<>();
+
+        /**
+         * Represents a (PTXStreamType, localId) pair.
+         * @param streamType
+         * @param localEventId
+         */
+        record PTXEventEntry(PTXStreamType streamType, int localEventId) {}
+
+        int register(PTXStreamType streamType, int localEventId) {
+            int globalId = globalIdCounter.getAndIncrement();
+            registry.put(globalId, new PTXEventEntry(streamType, localEventId));
+            return globalId;
+        }
+
+        PTXEventEntry resolve(int globalEventId) {
+            return registry.get(globalEventId);
+        }
+
+        void reset() {
+            registry.clear();
+            globalIdCounter.set(0);
+        }
     }
 }
