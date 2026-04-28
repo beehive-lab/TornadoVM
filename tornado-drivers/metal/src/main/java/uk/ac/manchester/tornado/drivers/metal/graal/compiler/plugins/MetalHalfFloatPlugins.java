@@ -53,9 +53,10 @@ public class MetalHalfFloatPlugins {
         ps.appendNodePlugin(new NodePlugin() {
             @Override
             public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
-                if (method.getName().equals("<init>") && (method.toString().contains("HalfFloat.<init>"))) {
-                    NewHalfFloatInstance newHalfFloatInstance = b.append(new NewHalfFloatInstance(args[1]));
+                if (method.getName().equals("<init>") && method.toString().contains("HalfFloat.<init>")) {
+                    NewHalfFloatInstance newHalfFloatInstance = new NewHalfFloatInstance(args[1]);
                     b.add(newHalfFloatInstance);
+                    args[0].replaceAtUsages(newHalfFloatInstance);
                     return true;
                 }
                 return false;
@@ -65,7 +66,8 @@ public class MetalHalfFloatPlugins {
         r.register(new InvocationPlugin("add", HalfFloat.class, HalfFloat.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode halfFloat1, ValueNode halfFloat2) {
-                AddHalfFloatNode addNode = b.append(new AddHalfFloatNode(halfFloat1, halfFloat2));
+                AddHalfFloatNode addNode = new AddHalfFloatNode(halfFloat1, halfFloat2);
+                b.getGraph().addOrUnique(addNode);
                 b.push(JavaKind.Object, addNode);
                 return true;
             }
@@ -74,8 +76,8 @@ public class MetalHalfFloatPlugins {
         r.register(new InvocationPlugin("sub", HalfFloat.class, HalfFloat.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode halfFloat1, ValueNode halfFloat2) {
-                SubHalfFloatNode subNode = b.append(new SubHalfFloatNode(halfFloat1, halfFloat2));
-                b.push(JavaKind.Object, subNode);
+                SubHalfFloatNode subNode = new SubHalfFloatNode(halfFloat1, halfFloat2);
+                b.addPush(JavaKind.Object, subNode);
                 return true;
             }
         });
@@ -83,7 +85,8 @@ public class MetalHalfFloatPlugins {
         r.register(new InvocationPlugin("mult", HalfFloat.class, HalfFloat.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode halfFloat1, ValueNode halfFloat2) {
-                MultHalfFloatNode multNode = b.append(new MultHalfFloatNode(halfFloat1, halfFloat2));
+                MultHalfFloatNode multNode = new MultHalfFloatNode(halfFloat1, halfFloat2);
+                b.getGraph().addOrUnique(multNode);
                 b.push(JavaKind.Object, multNode);
                 return true;
             }
@@ -92,7 +95,8 @@ public class MetalHalfFloatPlugins {
         r.register(new InvocationPlugin("div", HalfFloat.class, HalfFloat.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode halfFloat1, ValueNode halfFloat2) {
-                DivHalfFloatNode divNode = b.append(new DivHalfFloatNode(halfFloat1, halfFloat2));
+                DivHalfFloatNode divNode = new DivHalfFloatNode(halfFloat1, halfFloat2);
+                b.getGraph().addOrUnique(divNode);
                 b.push(JavaKind.Object, divNode);
                 return true;
             }
@@ -101,7 +105,9 @@ public class MetalHalfFloatPlugins {
         r.register(new InvocationPlugin("getHalfFloatValue", InvocationPlugin.Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
-                b.push(JavaKind.Short, b.append(new HalfFloatPlaceholder(receiver.get(true))));
+                HalfFloatPlaceholder placeholder = new HalfFloatPlaceholder(receiver.get(true));
+                b.getGraph().addOrUnique(placeholder);
+                b.push(JavaKind.Short, placeholder);
                 return true;
             }
         });
