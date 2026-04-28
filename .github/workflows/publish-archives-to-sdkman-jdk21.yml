@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "GitHub release tag (e.g. v2.1.0)"
+        description: "GitHub release tag (e.g. v4.0.1-jdk21)"
         required: true
-        default: "v2.1.0"
+        default: "v4.0.1-jdk21"
       publish:
         description: "Actually publish to SDKMAN (true/false)"
         required: true
@@ -16,7 +16,13 @@ on:
 
 jobs:
   publish-to-sdkman:
-    if: github.repository == 'beehive-lab/TornadoVM'
+    # Only run for JDK 21 releases (tags ending with -jdk21)
+    if: |
+      github.repository == 'beehive-lab/TornadoVM' &&
+      (
+        (github.event_name == 'release' && endsWith(github.event.release.tag_name, '-jdk21')) ||
+        (github.event_name == 'workflow_dispatch' && endsWith(inputs.tag, '-jdk21'))
+      )
     name: Publish TornadoVM ${{ matrix.sdk_suffix }} / ${{ matrix.platform }} to SDKMAN
     runs-on: [ self-hosted, Linux, x64 ]
 
@@ -105,7 +111,10 @@ jobs:
 
     if: >
       github.repository == 'beehive-lab/TornadoVM' &&
-      (github.event_name == 'release' || inputs.publish == 'true')
+      (
+        (github.event_name == 'release' && endsWith(github.event.release.tag_name, '-jdk21')) ||
+        (github.event_name == 'workflow_dispatch' && inputs.publish == 'true' && endsWith(inputs.tag, '-jdk21'))
+      )
 
     steps:
       - name: Derive default version
