@@ -51,6 +51,7 @@ import jdk.graal.compiler.core.common.type.StampFactory;
 import jdk.graal.compiler.graph.Node;
 import jdk.graal.compiler.nodes.ConstantNode;
 import jdk.graal.compiler.nodes.FixedWithNextNode;
+import jdk.graal.compiler.nodes.NodeView;
 import jdk.graal.compiler.nodes.PiNode;
 import jdk.graal.compiler.nodes.ValueNode;
 import jdk.graal.compiler.nodes.calc.AddNode;
@@ -433,13 +434,16 @@ public class MetalGraphBuilderPlugins {
         // avoiding LoadField{TornadoMemorySegment#segment} nodes that break TornadoNativeTypeElimination.
         Registration r = new Registration(plugins, TornadoMemorySegment.class);
         for (JavaKind kind : JavaKind.values()) {
-            if (kind != JavaKind.Object && kind != JavaKind.Void && kind != JavaKind.Illegal) {
+            if (kind != JavaKind.Object && kind != JavaKind.Void && kind != JavaKind.Illegal && kind != JavaKind.Boolean) {
                 r.register(new InvocationPlugin("get" + kind.name() + "AtIndex", Receiver.class, int.class, int.class) {
                     @Override
                     public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode baseIndex) {
-                        AddNode absoluteIndexNode = b.append(new AddNode(index, baseIndex));
-                        MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forInt(kind.getByteCount())));
-                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(true), mulNode));
+                        ValueNode receiverNode = receiver.get(true);
+                        ValueNode longIndex = b.append(SignExtendNode.create(index, 64, NodeView.DEFAULT));
+                        ValueNode longBaseIndex = b.append(SignExtendNode.create(baseIndex, 64, NodeView.DEFAULT));
+                        AddNode absoluteIndexNode = b.append(new AddNode(longIndex, longBaseIndex));
+                        MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forLong(kind.getByteCount())));
+                        AddressNode addressNode = b.append(new OffsetAddressNode(receiverNode, mulNode));
                         JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
                         b.addPush(kind, readNode);
                         return true;
@@ -448,9 +452,12 @@ public class MetalGraphBuilderPlugins {
                 r.register(new InvocationPlugin("setAtIndex", Receiver.class, int.class, kind.toJavaClass(), int.class) {
                     @Override
                     public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value, ValueNode baseIndex) {
-                        AddNode absoluteIndexNode = b.append(new AddNode(index, baseIndex));
-                        MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forInt(kind.getByteCount())));
-                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(true), mulNode));
+                        ValueNode receiverNode = receiver.get(true);
+                        ValueNode longIndex = b.append(SignExtendNode.create(index, 64, NodeView.DEFAULT));
+                        ValueNode longBaseIndex = b.append(SignExtendNode.create(baseIndex, 64, NodeView.DEFAULT));
+                        AddNode absoluteIndexNode = b.append(new AddNode(longIndex, longBaseIndex));
+                        MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forLong(kind.getByteCount())));
+                        AddressNode addressNode = b.append(new OffsetAddressNode(receiverNode, mulNode));
                         JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
                         b.add(writeNode);
                         return true;
