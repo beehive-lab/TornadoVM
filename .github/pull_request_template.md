@@ -54,6 +54,7 @@ Mark the backends affected by this PR.
 - [ ] OpenCL
 - [ ] PTX
 - [ ] SPIRV
+- [ ] Metal
 
 #### OS tested
 
