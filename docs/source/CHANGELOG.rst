@@ -7,6 +7,31 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 
 CHANGELOG
 
+TornadoVM 4.0.1-jdk21
+---------------------
+29/04/26
+
+Compatibility
+~~~~~~~~~~~~
+
+- `#832 <https://github.com/beehive-lab/TornadoVM/pull/832>`_: Adopt jdk21 version suffix on develop and update release workflows 
+- `#827 <https://github.com/beehive-lab/TornadoVM/pull/827>`_: Bump org.apache.logging.log4j:log4j-core from 2.25.3 to 2.25.4
+
+Bug Fixes
+~~~~~~~~~~~~
+
+- `#831 <https://github.com/beehive-lab/TornadoVM/pull/831>`_: [fix] F16 miscompilation for Metal, PTX, SPIR-V backends with JDK 25
+- `#830 <https://github.com/beehive-lab/TornadoVM/pull/830>`_: [fix] Fix F16 miscompilation in PTX and Metal backends
+- `#829 <https://github.com/beehive-lab/TornadoVM/pull/829>`_: [fix] Backport jdk25 OCL plugin fixes: 64-bit address arithmetic, node insertion, and atomics
+
+Other Changes
+~~~~~~~~~~~~
+
+- `#823 <https://github.com/beehive-lab/TornadoVM/pull/823>`_: Update SDKMAN! versions for backend options
+- `#825 <https://github.com/beehive-lab/TornadoVM/pull/825>`_: [feat] Add workflow to automatically create mirroring PRs for JDK25
+- `#824 <https://github.com/beehive-lab/TornadoVM/pull/824>`_: Update master
+
+
 TornadoVM 4.0.0
 ---------------
 02/04/26
