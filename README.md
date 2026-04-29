@@ -25,7 +25,7 @@ Developers can choose which backends to install and run.
 
 For a quick introduction please read the following [FAQ](https://tornadovm.readthedocs.io/en/latest/).
 
-**Latest Release:** TornadoVM 4.0.0 - 02/04/2026 :
+**Latest Release:** TornadoVM 4.0.1-jdk21 - 29/04/2026 :
 See [CHANGELOG](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html).
 
 ----------------------
@@ -122,12 +122,12 @@ that includes NBody, DFT, KMeans computation and matrix computations.
   <dependency>
     <groupId>io.github.beehive-lab</groupId>
     <artifactId>tornado-api</artifactId>
-    <version>4.0.0</version>
+    <version>4.0.1-jdk21</version>
   </dependency>
   <dependency>
     <groupId>io.github.beehive-lab</groupId>
     <artifactId>tornado-runtime</artifactId>
-    <version>4.0.0</version>
+    <version>4.0.1-jdk21</version>
   </dependency>
 </dependencies>
 ```
