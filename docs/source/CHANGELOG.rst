@@ -7,6 +7,16 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 
 CHANGELOG
 
+TornadoVM 4.0.1-jdk25
+---------------------
+29/04/26
+
+Bug Fixes
+~~~~~~~~~~~~
+
+- `#831 <https://github.com/beehive-lab/TornadoVM/pull/831>`_: [fix] F16 miscompilation for Metal, PTX, SPIR-V backends with JDK 25
+
+
 TornadoVM 4.0.0-jdk25
 ---------------------
 02/04/26
