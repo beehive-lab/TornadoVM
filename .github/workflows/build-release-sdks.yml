@@ -204,6 +204,7 @@ jobs:
       JDK25_HOME: /opt/jenkins/jdks/jdk-25.0.2
       RELEASE_ARCHIVES_DIR: /opt/release-archives
       PLATFORM_DIR: linux-amd64
+      VENV_PATH: ${{ github.workspace }}/venv-build-sdks
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -221,6 +222,15 @@ jobs:
         run: |
           mkdir -p "$RELEASE_ARCHIVES_DIR"
           rm -rf "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR"
+
+      - name: Setup Python venv
+        run: |
+          python3 -m venv "$VENV_PATH"
+          # shellcheck disable=SC1091
+          source "$VENV_PATH/bin/activate"
+          pip install --upgrade pip tqdm psutil
+          # Make the venv interpreter the default for subsequent steps
+          echo "$VENV_PATH/bin" >> "$GITHUB_PATH"
 
       - name: Build SDKs
         run: |
