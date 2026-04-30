@@ -193,7 +193,7 @@ jobs:
     needs: preflight
     if: needs.preflight.outputs.proceed == 'true'
     name: Linux x64 (jdk21+jdk25 × opencl+ptx+spirv+full)
-    runs-on: [self-hosted, Linux, x64]
+    runs-on: [self-hosted, Linux, x64, sdk-builder]
     timeout-minutes: 240
     permissions:
       contents: write
