@@ -229,6 +229,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.pointers.TestCopyDevicePointers"),
     TestEntry("uk.ac.manchester.tornado.unittests.memory.MemoryConsumptionTest"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestByteArrayTypedAccess"),
+    TestEntry("uk.ac.manchester.tornado.unittests.streams.TestCUDAStreams"),
 
     ## Test for function calls - We force not to inline methods
     TestEntry(testName="uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions",
@@ -353,6 +354,11 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     'uk.ac.manchester.tornado.unittests.api.TestDevices#test04',
     'uk.ac.manchester.tornado.unittests.api.TestDevices#test05',
     'uk.ac.manchester.tornado.unittests.api.TestDevices#test06',
+
+    ## Tests for CUDA Streams only supported by PTX backend
+    'uk.ac.manchester.tornado.unittests.streams.TestCUDAStreams#testTwoIndependentTasksWithCUDAStreams',
+    'uk.ac.manchester.tornado.unittests.streams.TestCUDAStreams#testTwoIndependentTasksMultipleIterations',
+    'uk.ac.manchester.tornado.unittests.streams.TestCUDAStreams#testChunkPipelineWithCUDAStreams',
 
 ]
 
