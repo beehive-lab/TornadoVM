@@ -16,7 +16,11 @@ on:
 
 jobs:
   deploy:
-    if: github.repository == 'beehive-lab/TornadoVM'
+    # When triggered by workflow_run, only proceed if the upstream finalize workflow succeeded.
+    # (Other triggers — push tag, workflow_dispatch — are unaffected.)
+    if: |
+      github.repository == 'beehive-lab/TornadoVM' &&
+      (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
     name: Deploy to Maven Central (JDK 21)
     runs-on: [self-hosted, Linux, x64]
     timeout-minutes: 15
