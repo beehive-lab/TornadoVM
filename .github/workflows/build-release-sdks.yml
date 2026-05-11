@@ -280,9 +280,9 @@ jobs:
       VERSION_TAG: ${{ needs.preflight.outputs.version_tag }}
       # TODO: replace placeholders with the real paths on the Windows runner
       # once it is online.
-      JDK21_HOME: 'C:\jdks\jdk-21'
-      JDK25_HOME: 'C:\jdks\jdk-25'
-      RELEASE_ARCHIVES_DIR: 'D:\release-archives'
+      JDK21_HOME: 'C:\jdks\jdk21'
+      JDK25_HOME: 'C:\jdks\jdk25'
+      RELEASE_ARCHIVES_DIR: 'C:\release-archives'
       PLATFORM_DIR: windows-amd64
     steps:
       - name: Checkout repository
