@@ -24,7 +24,7 @@ on:
         description: 'Run the Windows build job (requires the self-hosted Windows runner to be online).'
         required: false
         type: boolean
-        default: false
+        default: true
       skip_windows_executables:
         description: 'On the Windows build, skip building/running the native .exe wrappers (tornado.exe via PyInstaller / pyinstaller.exe, and the zello_world Level Zero probe). Required on managed Windows runners that block running unsigned executables.'
         required: false
@@ -94,7 +94,7 @@ jobs:
             fi
             BASE_TAG="${LATEST_TAG#v}"             # e.g. 4.0.1-jdk21
             VERSION="${BASE_TAG%-jdk*}"            # e.g. 4.0.1
-            INCLUDE_WIN="false"
+            INCLUDE_WIN="true"
             SKIP_WIN_EXE="true"
             UPLOAD="true"
           fi
@@ -291,8 +291,6 @@ jobs:
     env:
       VERSION: ${{ needs.preflight.outputs.version }}
       VERSION_TAG: ${{ needs.preflight.outputs.version_tag }}
-      # TODO: replace placeholders with the real paths on the Windows runner
-      # once it is online.
       JDK21_HOME: 'C:\jdks\jdk21'
       JDK25_HOME: 'C:\jdks\jdk25'
       RELEASE_ARCHIVES_DIR: 'C:\release-archives'
