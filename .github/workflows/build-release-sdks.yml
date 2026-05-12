@@ -25,6 +25,11 @@ on:
         required: false
         type: boolean
         default: false
+      skip_windows_executables:
+        description: 'On the Windows build, skip building/running the native .exe wrappers (tornado.exe via PyInstaller / pyinstaller.exe, and the zello_world Level Zero probe). Required on managed Windows runners that block running unsigned executables.'
+        required: false
+        type: boolean
+        default: true
       upload_to_release:
         description: 'Upload built archives to the v<version>-jdk21 / v<version>-jdk25 GitHub Releases (must already exist).'
         required: false
@@ -55,6 +60,7 @@ jobs:
       version_tag: ${{ steps.derive.outputs.version_tag }}
       proceed: ${{ steps.gate.outputs.proceed }}
       include_windows: ${{ steps.derive.outputs.include_windows }}
+      skip_windows_executables: ${{ steps.derive.outputs.skip_windows_executables }}
       upload_to_release: ${{ steps.derive.outputs.upload_to_release }}
     steps:
       - name: Checkout repository
@@ -69,6 +75,7 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             VERSION="${{ inputs.version }}"
             INCLUDE_WIN="${{ inputs.include_windows }}"
+            SKIP_WIN_EXE="${{ inputs.skip_windows_executables }}"
             UPLOAD="${{ inputs.upload_to_release }}"
           else
             case "${{ github.event.workflow_run.name }}" in
@@ -88,13 +95,15 @@ jobs:
             BASE_TAG="${LATEST_TAG#v}"             # e.g. 4.0.1-jdk21
             VERSION="${BASE_TAG%-jdk*}"            # e.g. 4.0.1
             INCLUDE_WIN="false"
+            SKIP_WIN_EXE="true"
             UPLOAD="true"
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "version_tag=v$VERSION" >> "$GITHUB_OUTPUT"
           echo "include_windows=$INCLUDE_WIN" >> "$GITHUB_OUTPUT"
+          echo "skip_windows_executables=$SKIP_WIN_EXE" >> "$GITHUB_OUTPUT"
           echo "upload_to_release=$UPLOAD" >> "$GITHUB_OUTPUT"
-          echo "Derived: version=$VERSION include_windows=$INCLUDE_WIN upload=$UPLOAD"
+          echo "Derived: version=$VERSION include_windows=$INCLUDE_WIN skip_windows_executables=$SKIP_WIN_EXE upload=$UPLOAD"
 
       - name: Gate on both Releases existing
         id: gate
@@ -275,6 +284,10 @@ jobs:
     timeout-minutes: 240
     permissions:
       contents: write
+    # Note: on a managed Windows runner that blocks running unsigned executables,
+    # keep skip_windows_executables = true so the build never invokes
+    # pyinstaller.exe / tornado.exe / zello_world (the SDK then ships the .py
+    # launchers instead of the .exe wrappers).
     env:
       VERSION: ${{ needs.preflight.outputs.version }}
       VERSION_TAG: ${{ needs.preflight.outputs.version_tag }}
@@ -309,12 +322,17 @@ jobs:
 
       - name: Build SDKs
         shell: cmd
+        env:
+          SKIP_WIN_EXE: ${{ needs.preflight.outputs.skip_windows_executables }}
         run: |
+          set EXTRA_ARGS=
+          if "%SKIP_WIN_EXE%"=="true" set EXTRA_ARGS=--skip-windows-executables
           python scripts\build-release-sdks.py ^
             --version %VERSION_TAG% ^
             --output-dir "%RELEASE_ARCHIVES_DIR%" ^
             --jdk21-home "%JDK21_HOME%" ^
-            --jdk25-home "%JDK25_HOME%"
+            --jdk25-home "%JDK25_HOME%" ^
+            %EXTRA_ARGS%
 
       - name: List produced archives
         shell: cmd

@@ -39,6 +39,13 @@ Usage:
       --jdk21-home "C:\\Path\\To\\jdk-21" ^
       --jdk25-home "C:\\Path\\To\\jdk-25"
 
+  # Restricted Windows machines that block running unsigned executables
+  # (e.g. corporate-managed runners) — skip building/running the .exe wrappers:
+  python scripts\\build-release-sdks.py --version v4.0.0 ^
+      --jdk21-home "C:\\Path\\To\\jdk-21" ^
+      --jdk25-home "C:\\Path\\To\\jdk-25" ^
+      --skip-windows-executables
+
 Must be run from the TornadoVM repository root.
 """
 
@@ -261,6 +268,56 @@ def check_pyinstaller():
     info("pyinstaller: found")
 
 
+def patch_worktree_skip_executables(worktree_path):
+    """
+    Neutralise the places where the tagged bin/compile launches native
+    executables, for restricted Windows machines that block running unsigned
+    binaries (and abort the build when they are invoked):
+
+      * cutils.runPyInstaller(...)  — produces tornado.exe / tornado-test.exe /
+                                      tornado-benchmarks.exe via pyinstaller.exe
+      * subprocess.run([... "zello_world"])  — Level Zero sanity probe used by
+                                               the SPIR-V backend build
+
+    The worktree is a throw-away detached checkout of a release tag, so editing
+    its bin/compile here does not touch the repository or the tag.  When this is
+    active the produced Windows SDK ships the .py launchers instead of .exe
+    wrappers.
+    """
+    compile_path = os.path.join(worktree_path, "bin", "compile")
+    if not os.path.isfile(compile_path):
+        warn("bin/compile not found in worktree — cannot skip Windows executables.")
+        return
+
+    with open(compile_path, "r", encoding="utf-8") as f:
+        src = f.read()
+    original = src
+
+    # Skip PyInstaller (tornado.exe & friends)
+    src = re.sub(
+        r"cutils\.runPyInstaller\([^\n]*\)",
+        'print("[INFO] Skipping PyInstaller — --skip-windows-executables")',
+        src,
+    )
+    # Skip the zello_world Level Zero probe, keeping the surrounding logic
+    src = re.sub(
+        r"subprocess\.run\(\[os\.path\.join\(level_zero_lib,[^\n]*zello_world[^\n]*\)",
+        'print("[INFO] Skipping zello_world probe — --skip-windows-executables")',
+        src,
+    )
+
+    if src == original:
+        warn(
+            "bin/compile in the worktree did not match the expected patterns — "
+            "the tag layout may have changed; nothing was patched."
+        )
+        return
+
+    with open(compile_path, "w", encoding="utf-8") as f:
+        f.write(src)
+    ok("Patched worktree bin/compile to skip Windows executables (PyInstaller, zello_world).")
+
+
 # ---------------------------------------------------------------------------
 # Build execution
 # ---------------------------------------------------------------------------
@@ -386,7 +443,7 @@ def collect_archives(worktree_path, output_dir, jdk_arg):
 # SDK validation
 # ---------------------------------------------------------------------------
 
-def validate_sdk(archive_path, jdk_home):
+def validate_sdk(archive_path, jdk_home, skip_windows_executables=False):
     """
     Extract a .zip SDK archive to a temporary directory and run three smoke tests:
 
@@ -445,28 +502,38 @@ def validate_sdk(archive_path, jdk_home):
 
         java_cmd = os.path.join(jdk_home, "bin", "java")
 
-        # On Windows the SDK must ship bin\tornado.exe (compiled by PyInstaller).
+        # On Windows the SDK normally ships bin\tornado.exe (compiled by PyInstaller).
         # On Unix it ships bin/tornado (a shell script that needs +x after zip extraction).
+        # With --skip-windows-executables there is no tornado.exe, so the tornado
+        # CLI smoke checks are skipped and only the java @argfile kernel test runs.
+        tornado_cmd = None
         if os.name == "nt":
-            tornado_exe = os.path.join(tornado_home, "bin", "tornado.exe")
-            if os.path.isfile(tornado_exe):
-                tornado_cmd = [tornado_exe]
-            else:
-                error(
-                    f"  tornado.exe not found in {basename}.\n"
-                    "  The Windows SDK build should have run PyInstaller to produce it.\n"
-                    "  Ensure pyinstaller is installed (pip install pyinstaller) and rebuild."
+            if skip_windows_executables:
+                warn(
+                    "  Skipping tornado.exe smoke checks (--skip-windows-executables); "
+                    "running only the java @tornado-argfile kernel test."
                 )
-                return False
+            else:
+                tornado_exe = os.path.join(tornado_home, "bin", "tornado.exe")
+                if os.path.isfile(tornado_exe):
+                    tornado_cmd = [tornado_exe]
+                else:
+                    error(
+                        f"  tornado.exe not found in {basename}.\n"
+                        "  The Windows SDK build should have run PyInstaller to produce it.\n"
+                        "  Ensure pyinstaller is installed (pip install pyinstaller) and rebuild,\n"
+                        "  or pass --skip-windows-executables if this is intentional."
+                    )
+                    return False
         else:
             tornado_script = os.path.join(tornado_home, "bin", "tornado")
             os.chmod(tornado_script, 0o755)
             tornado_cmd = [tornado_script]
 
-        checks = [
-            ([*tornado_cmd, "--devices"], "tornado --devices"),
-            ([*tornado_cmd, "--version"],  "tornado --version"),
-        ]
+        checks = []
+        if tornado_cmd is not None:
+            checks.append(([*tornado_cmd, "--devices"], "tornado --devices"))
+            checks.append(([*tornado_cmd, "--version"],  "tornado --version"))
         checks.append(
             (
                 [java_cmd, f"@{argfile_path}", "-cp", examples_jar,
@@ -533,6 +600,18 @@ def parse_args():
             "Required on Windows; overrides sdkman auto-detection on macOS/Linux."
         ),
     )
+    parser.add_argument(
+        "--skip-windows-executables",
+        action="store_true",
+        help=(
+            "Windows only: do not build or run the native .exe wrappers "
+            "(tornado.exe via PyInstaller / pyinstaller.exe, and the zello_world "
+            "Level Zero probe).  Use on restricted/managed machines that block "
+            "running unsigned executables.  The produced SDK ships the .py "
+            "launchers instead of .exe wrappers, and the SDK validation skips "
+            "the tornado.exe smoke checks."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -554,12 +633,17 @@ def main():
     current_platform = detect_platform()
     arch = platform.machine().lower().replace("x86_64", "amd64")
 
-    if current_platform == "windows":
+    skip_win_exe = args.skip_windows_executables and current_platform == "windows"
+
+    if current_platform == "windows" and not skip_win_exe:
         check_pyinstaller()
 
     section(f"TornadoVM Release SDK Builder  {args.version}")
     info(f"Platform : {current_platform}-{arch}")
     info(f"Version  : {args.version}")
+    if skip_win_exe:
+        info("Windows executables: SKIPPED (--skip-windows-executables) — "
+             "tornado.exe / pyinstaller.exe / zello_world will not be invoked.")
 
     output_dir = os.path.join(
         args.output_dir, args.version, f"{current_platform}-{arch}"
@@ -602,6 +686,9 @@ def main():
         try:
             add_worktree(tag, worktree_path)
 
+            if skip_win_exe:
+                patch_worktree_skip_executables(worktree_path)
+
             for backends in backends_for_platform:
                 # Label mirrors bin/compile naming: opencl,ptx,spirv → full
                 if set(backends.split(",")) == {"opencl", "ptx", "spirv"}:
@@ -638,7 +725,7 @@ def main():
         if not jdk_home:
             warn(f"Cannot determine JDK for {basename} — skipping validation")
             continue
-        success = validate_sdk(archive, jdk_home)
+        success = validate_sdk(archive, jdk_home, skip_windows_executables=skip_win_exe)
         val_results.append((basename, success))
 
     # ------------------------------------------------------------------
