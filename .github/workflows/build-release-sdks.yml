@@ -1,0 +1,402 @@
+name: Build Release SDKs (multi-platform)
+
+# Triggered either:
+#   - manually via workflow_dispatch (full control over inputs)
+#   - automatically when a 2-Finalize TornadoVM Release workflow completes
+#
+# When auto-triggered, the workflow only proceeds once BOTH the v<version>-jdk21
+# and v<version>-jdk25 (draft) Releases exist. The first finalize completion
+# triggers a run that exits in preflight; the second completion's run actually
+# builds and uploads.
+#
+# After all archives are uploaded, the two draft Releases are un-drafted, which
+# emits "release: published" and triggers publish-archives-to-sdkman-jdkXX.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Base release version without v prefix or -jdkXX suffix (e.g. 4.0.1).'
+        required: true
+        type: string
+        default: '4.0.1'
+      include_windows:
+        description: 'Run the Windows build job (requires the self-hosted Windows runner to be online).'
+        required: false
+        type: boolean
+        default: true
+      skip_windows_executables:
+        description: 'On the Windows build, skip building/running the native .exe wrappers (tornado.exe via PyInstaller / pyinstaller.exe, and the zello_world Level Zero probe). Required on managed Windows runners that block running unsigned executables.'
+        required: false
+        type: boolean
+        default: true
+      upload_to_release:
+        description: 'Upload built archives to the v<version>-jdk21 / v<version>-jdk25 GitHub Releases (must already exist).'
+        required: false
+        type: boolean
+        default: true
+  workflow_run:
+    workflows:
+      - "2-Finalize TornadoVM Release [JDK21]"
+      - "2-Finalize TornadoVM Release [JDK25]"
+    types: [completed]
+
+concurrency:
+  group: build-release-sdks
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    if: |
+      github.repository == 'beehive-lab/TornadoVM' &&
+      (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
+    name: Preflight (derive version, gate on Releases)
+    runs-on: [self-hosted, Linux, x64]
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.derive.outputs.version }}
+      version_tag: ${{ steps.derive.outputs.version_tag }}
+      proceed: ${{ steps.gate.outputs.proceed }}
+      include_windows: ${{ steps.derive.outputs.include_windows }}
+      skip_windows_executables: ${{ steps.derive.outputs.skip_windows_executables }}
+      upload_to_release: ${{ steps.derive.outputs.upload_to_release }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Derive version and flags
+        id: derive
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+            INCLUDE_WIN="${{ inputs.include_windows }}"
+            SKIP_WIN_EXE="${{ inputs.skip_windows_executables }}"
+            UPLOAD="${{ inputs.upload_to_release }}"
+          else
+            case "${{ github.event.workflow_run.name }}" in
+              *JDK21*) JDK="jdk21" ;;
+              *JDK25*) JDK="jdk25" ;;
+              *)
+                echo "::error::Unrecognized triggering workflow: ${{ github.event.workflow_run.name }}"
+                exit 1
+                ;;
+            esac
+            git fetch --tags --prune origin
+            LATEST_TAG=$(git tag --list "v*-${JDK}" --sort=-creatordate | head -1)
+            if [ -z "$LATEST_TAG" ]; then
+              echo "::error::No tags matching v*-${JDK} found."
+              exit 1
+            fi
+            BASE_TAG="${LATEST_TAG#v}"             # e.g. 4.0.1-jdk21
+            VERSION="${BASE_TAG%-jdk*}"            # e.g. 4.0.1
+            INCLUDE_WIN="true"
+            SKIP_WIN_EXE="true"
+            UPLOAD="true"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "version_tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "include_windows=$INCLUDE_WIN" >> "$GITHUB_OUTPUT"
+          echo "skip_windows_executables=$SKIP_WIN_EXE" >> "$GITHUB_OUTPUT"
+          echo "upload_to_release=$UPLOAD" >> "$GITHUB_OUTPUT"
+          echo "Derived: version=$VERSION include_windows=$INCLUDE_WIN skip_windows_executables=$SKIP_WIN_EXE upload=$UPLOAD"
+
+      - name: Gate on both Releases existing
+        id: gate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          PROCEED="true"
+          if [ "${{ steps.derive.outputs.upload_to_release }}" = "true" ]; then
+            for jdk in jdk21 jdk25; do
+              tag="${{ steps.derive.outputs.version_tag }}-$jdk"
+              if gh release view "$tag" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+                echo "Release $tag exists."
+              else
+                echo "Release $tag does not exist yet."
+                PROCEED="false"
+              fi
+            done
+          fi
+          echo "proceed=$PROCEED" >> "$GITHUB_OUTPUT"
+          if [ "$PROCEED" = "false" ]; then
+            echo ""
+            echo "Skipping build: both v${{ steps.derive.outputs.version }}-jdk21 and v${{ steps.derive.outputs.version }}-jdk25 Releases must exist."
+            echo "The next finalize completion will trigger another run."
+          fi
+
+  build-macos:
+    needs: preflight
+    if: needs.preflight.outputs.proceed == 'true'
+    name: macOS arm64 (jdk21+jdk25 × opencl+metal)
+    runs-on: [self-hosted, macOS, arm64]
+    timeout-minutes: 120
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.preflight.outputs.version }}
+      VERSION_TAG: ${{ needs.preflight.outputs.version_tag }}
+      JDK21_HOME: /opt/jenkins/jdks/graalvm-community-openjdk-21.0.1+12.1/Contents/Home
+      JDK25_HOME: /opt/jenkins/jdks/jdk-25.0.2
+      RELEASE_ARCHIVES_DIR: /opt/release-archives
+      PLATFORM_DIR: macos-arm64
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify build script is present
+        run: |
+          if [ ! -f scripts/build-release-sdks.py ]; then
+            echo "::error::scripts/build-release-sdks.py is missing on the dispatched branch."
+            exit 1
+          fi
+
+      - name: Prepare output directory
+        run: |
+          mkdir -p "$RELEASE_ARCHIVES_DIR"
+          rm -rf "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR"
+
+      - name: Build SDKs
+        run: |
+          python3 scripts/build-release-sdks.py \
+            --version "$VERSION_TAG" \
+            --output-dir "$RELEASE_ARCHIVES_DIR" \
+            --jdk21-home "$JDK21_HOME" \
+            --jdk25-home "$JDK25_HOME"
+
+      - name: List produced archives
+        run: ls -lh "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR/"
+
+      - name: Upload archives to matching Releases
+        if: needs.preflight.outputs.upload_to_release == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          uploaded=0
+          src_dir="$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR"
+          while IFS= read -r archive; do
+            fname=$(basename "$archive")
+            case "$fname" in
+              *jdk21*) tag="$VERSION_TAG-jdk21" ;;
+              *jdk25*) tag="$VERSION_TAG-jdk25" ;;
+              *)
+                echo "::warning::Skipping $fname — filename does not contain jdk21 or jdk25"
+                continue
+                ;;
+            esac
+            echo "→ $fname  →  release $tag"
+            gh release upload "$tag" "$archive" --clobber --repo "${{ github.repository }}"
+            uploaded=$((uploaded + 1))
+          done < <(find "$src_dir" -type f \( -name '*.zip' -o -name '*.tar.gz' \) | sort)
+          echo "Uploaded $uploaded archive(s) from macOS arm64."
+
+  build-linux:
+    needs: preflight
+    if: needs.preflight.outputs.proceed == 'true'
+    name: Linux x64 (jdk21+jdk25 × opencl+ptx+spirv+full)
+    runs-on: [self-hosted, Linux, x64, sdk-builder]
+    timeout-minutes: 240
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.preflight.outputs.version }}
+      VERSION_TAG: ${{ needs.preflight.outputs.version_tag }}
+      JDK21_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
+      JDK25_HOME: /opt/jenkins/jdks/jdk-25.0.2
+      RELEASE_ARCHIVES_DIR: /opt/release-archives
+      PLATFORM_DIR: linux-amd64
+      VENV_PATH: ${{ github.workspace }}/venv-build-sdks
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify build script is present
+        run: |
+          if [ ! -f scripts/build-release-sdks.py ]; then
+            echo "::error::scripts/build-release-sdks.py is missing on the dispatched branch."
+            exit 1
+          fi
+
+      - name: Prepare output directory
+        run: |
+          mkdir -p "$RELEASE_ARCHIVES_DIR"
+          rm -rf "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR"
+
+      - name: Setup Python venv
+        run: |
+          python3 -m venv "$VENV_PATH"
+          # shellcheck disable=SC1091
+          source "$VENV_PATH/bin/activate"
+          pip install --upgrade pip tqdm psutil
+          # Make the venv interpreter the default for subsequent steps
+          echo "$VENV_PATH/bin" >> "$GITHUB_PATH"
+
+      - name: Build SDKs
+        run: |
+          python3 scripts/build-release-sdks.py \
+            --version "$VERSION_TAG" \
+            --output-dir "$RELEASE_ARCHIVES_DIR" \
+            --jdk21-home "$JDK21_HOME" \
+            --jdk25-home "$JDK25_HOME"
+
+      - name: List produced archives
+        run: ls -lh "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR/"
+
+      - name: Upload archives to matching Releases
+        if: needs.preflight.outputs.upload_to_release == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          uploaded=0
+          src_dir="$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR"
+          while IFS= read -r archive; do
+            fname=$(basename "$archive")
+            case "$fname" in
+              *jdk21*) tag="$VERSION_TAG-jdk21" ;;
+              *jdk25*) tag="$VERSION_TAG-jdk25" ;;
+              *)
+                echo "::warning::Skipping $fname — filename does not contain jdk21 or jdk25"
+                continue
+                ;;
+            esac
+            echo "→ $fname  →  release $tag"
+            gh release upload "$tag" "$archive" --clobber --repo "${{ github.repository }}"
+            uploaded=$((uploaded + 1))
+          done < <(find "$src_dir" -type f \( -name '*.zip' -o -name '*.tar.gz' \) | sort)
+          echo "Uploaded $uploaded archive(s) from Linux x64."
+
+  build-windows:
+    needs: preflight
+    if: needs.preflight.outputs.proceed == 'true' && needs.preflight.outputs.include_windows == 'true'
+    name: Windows x64 (jdk21+jdk25 × opencl+ptx+spirv+full)
+    runs-on: [self-hosted, Windows, x64]
+    timeout-minutes: 240
+    permissions:
+      contents: write
+    # Note: on a managed Windows runner that blocks running unsigned executables,
+    # keep skip_windows_executables = true so the build never invokes
+    # pyinstaller.exe / tornado.exe / zello_world (the SDK then ships the .py
+    # launchers instead of the .exe wrappers).
+    env:
+      VERSION: ${{ needs.preflight.outputs.version }}
+      VERSION_TAG: ${{ needs.preflight.outputs.version_tag }}
+      JDK21_HOME: 'C:\jdks\jdk21'
+      JDK25_HOME: 'C:\jdks\jdk25'
+      RELEASE_ARCHIVES_DIR: 'C:\release-archives'
+      PLATFORM_DIR: windows-amd64
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify build script is present
+        shell: cmd
+        run: |
+          if not exist scripts\build-release-sdks.py (
+            echo ::error::scripts\build-release-sdks.py is missing on the dispatched branch.
+            exit /b 1
+          )
+
+      - name: Prepare output directory
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path $env:RELEASE_ARCHIVES_DIR | Out-Null
+          $platformPath = Join-Path $env:RELEASE_ARCHIVES_DIR (Join-Path $env:VERSION_TAG $env:PLATFORM_DIR)
+          if (Test-Path $platformPath) {
+            Remove-Item -Recurse -Force $platformPath
+          }
+
+      - name: Build SDKs
+        shell: cmd
+        env:
+          SKIP_WIN_EXE: ${{ needs.preflight.outputs.skip_windows_executables }}
+        run: |
+          set EXTRA_ARGS=
+          if "%SKIP_WIN_EXE%"=="true" set EXTRA_ARGS=--skip-windows-executables
+          python scripts\build-release-sdks.py ^
+            --version %VERSION_TAG% ^
+            --output-dir "%RELEASE_ARCHIVES_DIR%" ^
+            --jdk21-home "%JDK21_HOME%" ^
+            --jdk25-home "%JDK25_HOME%" ^
+            %EXTRA_ARGS%
+
+      - name: List produced archives
+        shell: cmd
+        run: dir "%RELEASE_ARCHIVES_DIR%\%VERSION_TAG%\%PLATFORM_DIR%"
+
+      - name: Upload archives to matching Releases
+        if: needs.preflight.outputs.upload_to_release == 'true'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $srcDir = Join-Path $env:RELEASE_ARCHIVES_DIR (Join-Path $env:VERSION_TAG $env:PLATFORM_DIR)
+          $uploaded = 0
+          Get-ChildItem -Path $srcDir -Include *.zip,*.tar.gz -File -Recurse | Sort-Object Name | ForEach-Object {
+            $fname = $_.Name
+            if ($fname -match 'jdk21') {
+              $tag = "$env:VERSION_TAG-jdk21"
+            } elseif ($fname -match 'jdk25') {
+              $tag = "$env:VERSION_TAG-jdk25"
+            } else {
+              Write-Host "::warning::Skipping $fname — filename does not contain jdk21 or jdk25"
+              return
+            }
+            Write-Host "-> $fname  ->  release $tag"
+            gh release upload $tag $_.FullName --clobber --repo "${{ github.repository }}"
+            if ($LASTEXITCODE -ne 0) { throw "gh release upload failed for $fname" }
+            $uploaded++
+          }
+          Write-Host "Uploaded $uploaded archive(s) from Windows x64."
+
+  publish-releases:
+    name: Un-draft Releases (publish, fires SDKMAN)
+    needs: [preflight, build-macos, build-linux, build-windows]
+    if: |
+      always() &&
+      needs.preflight.outputs.proceed == 'true' &&
+      needs.preflight.outputs.upload_to_release == 'true' &&
+      needs.build-macos.result == 'success' &&
+      needs.build-linux.result == 'success' &&
+      (needs.build-windows.result == 'success' || needs.build-windows.result == 'skipped')
+    runs-on: [self-hosted, Linux, x64]
+    permissions:
+      contents: write
+    timeout-minutes: 10
+    steps:
+      - name: Un-draft both Releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          for jdk in jdk21 jdk25; do
+            tag="${{ needs.preflight.outputs.version_tag }}-$jdk"
+            echo "Publishing $tag (un-drafting)..."
+            gh release edit "$tag" --draft=false --repo "${{ github.repository }}"
+          done
+          echo "Both Releases are now public — release:published events will trigger SDKMAN publish."
+
+      - name: Summary
+        run: |
+          {
+            echo "## Release ${{ needs.preflight.outputs.version }} archives published"
+            echo ""
+            echo "| Release | Status |"
+            echo "|---------|--------|"
+            echo "| [v${{ needs.preflight.outputs.version }}-jdk21](https://github.com/${{ github.repository }}/releases/tag/v${{ needs.preflight.outputs.version }}-jdk21) | Published |"
+            echo "| [v${{ needs.preflight.outputs.version }}-jdk25](https://github.com/${{ github.repository }}/releases/tag/v${{ needs.preflight.outputs.version }}-jdk25) | Published |"
+            echo ""
+            echo "Downstream: \`publish-archives-to-sdkman-jdkXX\` (release:published) and \`deploy-maven-central-jdkXX\` (workflow_run on finalize) handle the rest."
+          } >> "$GITHUB_STEP_SUMMARY"

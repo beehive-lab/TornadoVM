@@ -167,7 +167,7 @@ jobs:
               tag_name: `v${version}`,
               name: `TornadoVM ${version}`,
               body: releaseNotes,
-              draft: false,
+              draft: true,
               prerelease: false
             });
 
