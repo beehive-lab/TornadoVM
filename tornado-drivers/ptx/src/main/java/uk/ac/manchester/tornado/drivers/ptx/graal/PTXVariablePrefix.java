@@ -41,7 +41,13 @@ public enum PTXVariablePrefix {
         F16("f16", "rfh"),
         F32("f32", "rfi"),
         F64("f64", "rfd"),
-        PRED("pred", "rpb");
+        PRED("pred", "rpb"),
+        MMA_FRAG_ACC_F32("mma_frag_acc_f32", "rmmaaccf32"),
+        MMA_FRAG_A_F16("mma_frag_a_f16", "rmmaaf16"),
+        MMA_FRAG_B_F16("mma_frag_b_f16", "rmmabf16"),
+        MMA_FRAG_ACC_S32("mma_frag_acc_s32", "rmmaaccs32"),
+        MMA_FRAG_A_S8("mma_frag_a_s8", "rmmaas8"),
+        MMA_FRAG_B_S8("mma_frag_b_s8", "rmmabs8");
     // @formatter:on
 
     private final String type;

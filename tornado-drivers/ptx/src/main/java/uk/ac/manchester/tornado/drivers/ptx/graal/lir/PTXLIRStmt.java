@@ -65,6 +65,24 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstan
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.TAB;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.VECTOR;
 
+import java.nio.charset.StandardCharsets;
+
+import jdk.vm.ci.meta.ValueKind;
+import org.graalvm.compiler.lir.ConstantValue;
+import org.graalvm.compiler.lir.LIRInstruction;
+import org.graalvm.compiler.lir.LIRInstructionClass;
+import org.graalvm.compiler.lir.Opcode;
+import org.graalvm.compiler.lir.Variable;
+import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
+
+import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.api.enums.MMAShape;
+import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
+import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
+import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXNullaryOp;
+import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
+import uk.ac.manchester.tornado.drivers.ptx.graal.meta.PTXMemorySpace;
+
 public class PTXLIRStmt {
 
     /*
@@ -884,6 +902,44 @@ public class PTXLIRStmt {
 
     }
 
+    @Opcode("HALF_BITS_TO_INT")
+    public static class HalfBitsToIntStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<HalfBitsToIntStmt> TYPE =
+                LIRInstructionClass.create(HalfBitsToIntStmt.class);
+
+        @Def  protected Value result;
+        @Use  protected Value src;
+        @Temp protected Value b16Tmp;
+
+        public HalfBitsToIntStmt(Value result, Value src, Value b16Tmp) {
+            super(TYPE);
+            this.result = result;
+            this.src = src;
+            this.b16Tmp = b16Tmp;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            // Bitcast f16 → b16 (reinterpret raw bits, no value conversion)
+            asm.emitSymbol(TAB);
+            asm.emit(MOVE + DOT + "b16 ");
+            asm.emitValue(b16Tmp);
+            asm.emit(COMMA + SPACE);
+            asm.emitValue(src);
+            asm.delimiter();
+            asm.eol();
+            // Zero-extend b16 → u32
+            asm.emitSymbol(TAB);
+            asm.emit(CONVERT + DOT + "u32.u16 ");
+            asm.emitValue(result);
+            asm.emit(COMMA + SPACE);
+            asm.emitValue(b16Tmp);
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
     public static class ConvertFloatToHalfStmt extends AbstractInstruction {
 
         public static final LIRInstructionClass<ConvertFloatToHalfStmt> TYPE = LIRInstructionClass.create(ConvertFloatToHalfStmt.class);
@@ -992,6 +1048,9 @@ public class PTXLIRStmt {
         }
 
         public static boolean shouldEmitMove(PTXKind lhsKind, PTXKind rhsKind) {
+            if (lhsKind.isMMAFragment() || rhsKind.isMMAFragment()) {
+                return true;
+            }
             if (rhsKind.isF16() && lhsKind.isB16() || rhsKind.isB16() && lhsKind.isF16()) {
                 return true;
             }
@@ -1002,6 +1061,58 @@ public class PTXLIRStmt {
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
             if (rhs instanceof PTXLIROp) {
                 ((PTXLIROp) rhs).emit(crb, asm, (Variable) lhs);
+            } else if (lhsKind.isMMAFragment() || rhsKind.isMMAFragment()) {
+                int numRegs;
+                String movType;
+                String regType;
+                if (lhsKind == PTXKind.MMA_FRAG_ACC_F32 || rhsKind == PTXKind.MMA_FRAG_ACC_F32) {
+                    numRegs = 4;
+                    movType = "mov.f32";
+                    regType = ".f32";
+                } else if (lhsKind == PTXKind.MMA_FRAG_ACC_S32 || rhsKind == PTXKind.MMA_FRAG_ACC_S32) {
+                    numRegs = 4;
+                    movType = "mov.s32";
+                    regType = ".s32";
+                } else if (lhsKind == PTXKind.MMA_FRAG_A_F16 || rhsKind == PTXKind.MMA_FRAG_A_F16
+                        || lhsKind == PTXKind.MMA_FRAG_A_S8 || rhsKind == PTXKind.MMA_FRAG_A_S8) {
+                    numRegs = 4;
+                    movType = "mov.b32";
+                    regType = ".b32";
+                } else {
+                    numRegs = 2;
+                    movType = "mov.b32";
+                    regType = ".b32";
+                }
+                // Get the base name for tracking
+                String lhsBase = PTXAssembler.toString(lhs);
+
+                // Only declare once — phi resolution emits this for both
+                // loop entry and back-edge, but PTX forbids redeclaration
+                if (!asm.isFragRegDeclared(lhsBase)) {
+                    asm.markFragRegDeclared(lhsBase);
+                    asm.emitSymbol(TAB);
+                    asm.emit(".reg " + regType + " ");
+                    for (int i = 0; i < numRegs; i++) {
+                        if (i > 0) asm.emitSymbol(COMMA + SPACE);
+                        asm.emit(lhsBase + "_" + i);
+                    }
+                    asm.delimiter();
+                    asm.eol();
+                }
+
+                // Emit per-register moves
+                for (int i = 0; i < numRegs; i++) {
+                    asm.emitSymbol(TAB);
+                    asm.emit(movType);
+                    asm.emitSymbol(TAB);
+                    asm.emit(lhsBase + "_" + i);
+                    asm.emitSymbol(COMMA + SPACE);
+                    asm.emitValue(rhs);
+                    asm.emit("_" + i);
+                    asm.delimiter();
+                    asm.eol();
+                }
+                return;
             } else if (lhsKind.isVector() && rhsKind.isVector()) {
                 Variable rhsVar = (Variable) rhs;
                 Variable lhsVar = (Variable) lhs;
@@ -2486,5 +2597,1089 @@ public class PTXLIRStmt {
             asm.delimiter();
             asm.eol();
         }
+    }
+
+    @Opcode("MMA_FRAGMENT")
+    public static class MMAFragmentStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<MMAFragmentStmt> TYPE =
+                LIRInstructionClass.create(MMAFragmentStmt.class);
+
+        @Def protected Value result;
+        @Use protected Value initValue;
+        private final int fragmentSize;
+        private final String movType;
+        private final String regType;
+
+        public MMAFragmentStmt(Value result, Value initValue, int fragmentSize,
+                               String movType, String regType) {
+            super(TYPE);
+            this.result = result;
+            this.initValue = initValue;
+            this.fragmentSize = fragmentSize;
+            this.movType = movType;
+            this.regType = regType;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            asm.emitSymbol(TAB);
+            asm.emit(".reg " + regType + " ");
+            for (int i = 0; i < fragmentSize; i++) {
+                if (i > 0) asm.emitSymbol(COMMA + SPACE);
+                asm.emitValue(result);
+                asm.emit("_" + i);
+            }
+            asm.delimiter();
+            asm.eol();
+
+            for (int i = 0; i < fragmentSize; i++) {
+                asm.emitSymbol(TAB);
+                asm.emit(movType);
+                asm.emitSymbol(SPACE);
+                asm.emitValue(result);
+                asm.emit("_" + i);
+                asm.emitSymbol(COMMA + SPACE);
+                asm.emitValue(initValue);
+                asm.delimiter();
+                asm.eol();
+            }
+        }
+    }
+
+
+    @Opcode("LDMATRIX")
+    public static class LdmatrixStmt extends AbstractInstruction {
+
+        public enum Variant {
+            X4(4, false),      // A fragment: 4 regs, row-major
+            X2_TRANS(2, true);  // B fragment: 2 regs, transposed (col-major)
+
+            final int numRegs;
+            final boolean trans;
+
+            Variant(int numRegs, boolean trans) {
+                this.numRegs = numRegs;
+                this.trans = trans;
+            }
+        }
+
+        public static final LIRInstructionClass<LdmatrixStmt> TYPE =
+                LIRInstructionClass.create(LdmatrixStmt.class);
+
+        @Def protected Value result;
+        @Use protected Value tile;
+
+        // Scratch registers for address calculation
+        @Temp protected Value lane;
+        @Temp protected Value rowInTile;
+        @Temp protected Value group;
+        @Temp protected Value rowOff;
+        @Temp protected Value colOff;
+        @Temp protected Value row;
+        @Temp protected Value byteOff;
+        @Temp protected Value addr32;
+        @Temp protected Value genAddr64;
+
+        private final Variant variant;
+        private final int rowStride;  // bytes per row in shared memory (e.g. 32 for 16×16 b16)
+
+        public LdmatrixStmt(Variant variant, Value result, Value tile,
+                            Value lane, Value rowInTile, Value group,
+                            Value rowOff, Value colOff, Value row,
+                            Value byteOff, Value addr32, Value genAddr64,
+                            int rowStride) {
+            super(TYPE);
+            this.variant = variant;
+            this.result = result;
+            this.tile = tile;
+            this.lane = lane;
+            this.rowInTile = rowInTile;
+            this.group = group;
+            this.rowOff = rowOff;
+            this.colOff = colOff;
+            this.row = row;
+            this.byteOff = byteOff;
+            this.addr32 = addr32;
+            this.genAddr64 = genAddr64;
+            this.rowStride = rowStride;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            int numRegs = variant.numRegs;
+
+            // Declare fragment output registers
+            asm.emitSymbol(TAB);
+            asm.emit(".reg .b32 ");
+            for (int i = 0; i < numRegs; i++) {
+                if (i > 0) asm.emitSymbol(COMMA + SPACE);
+                asm.emitValue(result);
+                asm.emit("_" + i);
+            }
+            asm.delimiter();
+            asm.eol();
+
+            // Declare temp registers (dedup)
+            if (!asm.isFragRegDeclared("__ldm_temps")) {
+                asm.markFragRegDeclared("__ldm_temps");
+                asm.emitSymbol(TAB);
+                asm.emit(".reg .u32 __ldm_lane, __ldm_rowInTile, __ldm_group");
+                asm.delimiter();
+                asm.eol();
+                asm.emitSymbol(TAB);
+                asm.emit(".reg .u32 __ldm_rowOff, __ldm_colOff, __ldm_row");
+                asm.delimiter();
+                asm.eol();
+                asm.emitSymbol(TAB);
+                asm.emit(".reg .u32 __ldm_rowBytes, __ldm_byteOff, __ldm_addr");
+                asm.delimiter();
+                asm.eol();
+            }
+
+            // Lane ID
+            asm.emitSymbol(TAB);
+            asm.emit("mov.u32 __ldm_lane, %tid.x");
+            asm.delimiter();
+            asm.eol();
+
+            // rowInTile = lane % 8
+            asm.emitSymbol(TAB);
+            asm.emit("and.b32 __ldm_rowInTile, __ldm_lane, 7");
+            asm.delimiter();
+            asm.eol();
+
+            // group = lane / 8
+            asm.emitSymbol(TAB);
+            asm.emit("shr.b32 __ldm_group, __ldm_lane, 3");
+            asm.delimiter();
+            asm.eol();
+
+            if (variant == Variant.X4) {
+                // A fragment: 4 sub-tiles of a 16×N row-major matrix
+                // group 0 → (rows 0-7, k 0-7)     reg 0
+                // group 1 → (rows 8-15, k 0-7)    reg 1
+                // group 2 → (rows 0-7, k 8-15)    reg 2
+                // group 3 → (rows 8-15, k 8-15)   reg 3
+
+                // rowOff = (group & 1) * 8
+                asm.emitSymbol(TAB);
+                asm.emit("and.b32 __ldm_rowOff, __ldm_group, 1");
+                asm.delimiter();
+                asm.eol();
+                asm.emitSymbol(TAB);
+                asm.emit("shl.b32 __ldm_rowOff, __ldm_rowOff, 3");
+                asm.delimiter();
+                asm.eol();
+
+                // colOff = (group >> 1) * 16 bytes (8 b16 × 2 bytes)
+                asm.emitSymbol(TAB);
+                asm.emit("shr.b32 __ldm_colOff, __ldm_group, 1");
+                asm.delimiter();
+                asm.eol();
+                asm.emitSymbol(TAB);
+                asm.emit("shl.b32 __ldm_colOff, __ldm_colOff, 4");
+                asm.delimiter();
+                asm.eol();
+
+                // row = rowOff + rowInTile
+                asm.emitSymbol(TAB);
+                asm.emit("add.u32 __ldm_row, __ldm_rowOff, __ldm_rowInTile");
+                asm.delimiter();
+                asm.eol();
+
+                // byteOff = row * rowStride + colOff
+                int rowStrideShift = Integer.numberOfTrailingZeros(rowStride);
+                asm.emitSymbol(TAB);
+                asm.emit("shl.b32 __ldm_rowBytes, __ldm_row, " + rowStrideShift);
+                asm.delimiter();
+                asm.eol();
+                asm.emitSymbol(TAB);
+                asm.emit("add.u32 __ldm_byteOff, __ldm_rowBytes, __ldm_colOff");
+                asm.delimiter();
+                asm.eol();
+
+            } else {
+                // B fragment (X2_TRANS): 2 sub-tiles of an 8×N col-major matrix
+                // group 0 (T0-T7)   → k rows 0-7
+                // group 1 (T8-T15)  → k rows 8-15
+                // groups 2,3 reuse groups 0,1 addresses (only x2 uses first 16 threads)
+
+                // For .trans: each thread provides address of a column
+                // But with x2, only groups 0 and 1 matter
+                // colOff = (group & 1) * 16 bytes (second 8-row k-block)
+                asm.emitSymbol(TAB);
+                asm.emit("and.b32 __ldm_colOff, __ldm_group, 1");
+                asm.delimiter();
+                asm.eol();
+                asm.emitSymbol(TAB);
+                asm.emit("shl.b32 __ldm_colOff, __ldm_colOff, 4");
+                asm.delimiter();
+                asm.eol();
+
+                // byteOff = rowInTile * rowStride + colOff
+                int rowStrideShift = Integer.numberOfTrailingZeros(rowStride);
+                asm.emitSymbol(TAB);
+                asm.emit("shl.b32 __ldm_rowBytes, __ldm_rowInTile, " + rowStrideShift);
+                asm.delimiter();
+                asm.eol();
+                asm.emitSymbol(TAB);
+                asm.emit("add.u32 __ldm_byteOff, __ldm_rowBytes, __ldm_colOff");
+                asm.delimiter();
+                asm.eol();
+            }
+
+            // Get 32-bit shared memory address (shared vars are u32 in PTX)
+            asm.emitSymbol(TAB);
+            asm.emit("mov.u32 __ldm_addr, ");
+            asm.emitValue(tile);
+            asm.delimiter();
+            asm.eol();
+
+            // Add byte offset
+            asm.emitSymbol(TAB);
+            asm.emit("add.u32 __ldm_addr, __ldm_addr, __ldm_byteOff");
+            asm.delimiter();
+            asm.eol();
+
+            // THE INSTRUCTION
+            asm.emitSymbol(TAB);
+            if (variant == Variant.X4) {
+                asm.emit("ldmatrix.sync.aligned.m8n8.x4.shared.b16 {");
+            } else {
+                asm.emit("ldmatrix.sync.aligned.m8n8.x2.trans.shared.b16 {");
+            }
+            for (int i = 0; i < numRegs; i++) {
+                if (i > 0) asm.emitSymbol(COMMA + SPACE);
+                asm.emitValue(result);
+                asm.emit("_" + i);
+            }
+            asm.emit("}, [__ldm_addr]");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
+    @Opcode("MMA_LOAD")
+    public static class MMALoadStmt extends AbstractInstruction {
+
+        public enum Operand {
+            A(4, 16),   // 4 b32 regs, 16 f32 slots per row
+            B(2, 16);   // 2 b32 regs, 16 f32 slots per row (col-major in shared)
+
+            private final int numRegs;
+            private final int slotsPerRow;
+
+            Operand(int numRegs, int slotsPerRow) {
+                this.numRegs = numRegs;
+                this.slotsPerRow = slotsPerRow;
+            }
+        }
+
+        public static final LIRInstructionClass<MMALoadStmt> TYPE =
+                LIRInstructionClass.create(MMALoadStmt.class);
+
+        @Def protected Value result;
+        @Use protected Value tile;
+        @Use protected Value wmmaK;
+
+        @Def protected Value laneId;
+        @Def protected Value rowId;
+        @Def protected Value kOffset;
+        @Def protected Value rowComponent;
+        @Def protected Value kComponent;
+        @Def protected Value baseSlot;
+        @Def protected Value slotWithStep;
+        @Def protected Value byteOffset;
+        @Def protected Value sharedBase;
+        @Def protected Value address;
+
+        @Def protected Value tmpF32;
+        @Def protected Value tmpF16lo;
+        @Def protected Value tmpF16hi;
+
+        private final Operand operand;
+
+        public MMALoadStmt(Operand operand, Value result, Value tile, Value wmmaK,
+                           Value laneId, Value rowId, Value kOffset,
+                           Value rowComponent, Value kComponent,
+                           Value baseSlot, Value slotWithStep,
+                           Value byteOffset, Value sharedBase, Value address,
+                           Value tmpF32, Value tmpF16lo, Value tmpF16hi) {
+            super(TYPE);
+            this.operand = operand;
+            this.result = result;
+            this.tile = tile;
+            this.wmmaK = wmmaK;
+            this.laneId = laneId;
+            this.rowId = rowId;
+            this.kOffset = kOffset;
+            this.rowComponent = rowComponent;
+            this.kComponent = kComponent;
+            this.baseSlot = baseSlot;
+            this.slotWithStep = slotWithStep;
+            this.byteOffset = byteOffset;
+            this.sharedBase = sharedBase;
+            this.address = address;
+            this.tmpF32 = tmpF32;
+            this.tmpF16lo = tmpF16lo;
+            this.tmpF16hi = tmpF16hi;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            int numRegs = operand.numRegs;
+
+            // Declare fragment sub-registers
+            asm.emitSymbol(TAB);
+            asm.emit(".reg .b32 ");
+            for (int i = 0; i < numRegs; i++) {
+                if (i > 0) asm.emitSymbol(COMMA + SPACE);
+                asm.emitValue(result);
+                asm.emit("_" + i);
+            }
+            asm.delimiter();
+            asm.eol();
+
+            // Lane coordinates
+            //   laneId = %tid.x
+            emitInstruction(asm, "mov.u32", laneId, "%tid.x");
+            //   rowId = lane / 4
+            emitInstruction(asm, "shr.s32", rowId, laneId, "2");
+            //   kOffset = lane % 4
+            emitInstruction(asm, "and.b32", kOffset, laneId, "3");
+
+            // f32 layout: 16 f32 slots per row
+            //   rowComponent = rowId * 16
+            emitInstruction(asm, "shl.b32", rowComponent, rowId, "4");
+            //   kComponent = kOffset * 2
+            emitInstruction(asm, "shl.b32", kComponent, kOffset, "1");
+            //   baseSlot = rowComponent + kComponent
+            emitBinaryReg(asm, "add.s32", baseSlot, rowComponent, kComponent);
+
+            // Get shared-space base address
+            emitBinaryVal(asm, "cvta.shared.u64", sharedBase, tile);
+
+            // For each b32 fragment register:
+            //   load 2 consecutive f32 from shared → convert to f16 → pack into b32
+            for (int i = 0; i < numRegs; i++) {
+                int evenSlotOffset;
+                if (operand == Operand.A) {
+                    int rowOff = (i % 2 != 0) ? 8 * 16 : 0;  // 0, 128, 0, 128
+                    int kOff   = (i >= 2) ? 8 : 0;             // 0, 0, 8, 8
+                    evenSlotOffset = rowOff + kOff;
+//                    int rowOff = (i >= 2) ? 8 * 16 : 0;
+//                    int kOff   = (i % 2 == 0) ? 0 : 8;
+//                    evenSlotOffset = rowOff + kOff;
+                } else {
+                    int kOff = (i == 0) ? 0 : 8;
+                    evenSlotOffset = kOff;
+                }
+
+                // even element: slotWithStep = baseSlot + evenSlotOffset
+                emitBinaryImm(asm, "add.s32", slotWithStep, baseSlot, evenSlotOffset);
+
+                // Load even f32 from shared → convert to f16
+                emitIndexedLoadAndConvert(asm, tmpF16lo, slotWithStep);
+
+                // odd element: slotWithStep + 1
+                emitBinaryImm(asm, "add.s32", slotWithStep, slotWithStep, 1);
+
+                // Load odd f32 from shared → convert to f16
+                emitIndexedLoadAndConvert(asm, tmpF16hi, slotWithStep);
+
+                // Pack two f16 into one b32
+                asm.emitSymbol(TAB);
+                asm.emit("mov.b32");
+                asm.emitSymbol(SPACE);
+                asm.emitValue(result);
+                asm.emit("_" + i);
+                asm.emitSymbol(COMMA + SPACE);
+                asm.emit("{");
+                asm.emitValue(tmpF16lo);
+                asm.emitSymbol(COMMA + SPACE);
+                asm.emitValue(tmpF16hi);
+                asm.emit("}");
+                asm.delimiter();
+                asm.eol();
+            }
+        }
+
+        /**
+         * Emits: mul.wide.s32 byteOff, slot, 4; add.u64 addr, base, byteOff;
+         *        ld.shared.f32 tmpF32, [addr]; cvt.rn.f16.f32 destF16, tmpF32;
+         *
+         * If convertToF16 is true, loads as f32 into tmpF32 then converts to f16 dest.
+         */
+        private void emitAddrCalcAndLoad(PTXAssembler asm, String loadOp,
+                                         Value destF16, Value slot,
+                                         Value byteOff, Value base, Value addr,
+                                         boolean convertToF16) {
+            // byteOffset = slot * 4
+            asm.emitSymbol(TAB);
+            asm.emit("mul.wide.s32");
+            asm.emitSymbol(SPACE);
+            asm.emitValue(byteOff);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(slot);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emit("4");
+            asm.delimiter();
+            asm.eol();
+
+            // address = base + byteOffset
+            asm.emitSymbol(TAB);
+            asm.emit("add.u64");
+            asm.emitSymbol(SPACE);
+            asm.emitValue(addr);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(base);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(byteOff);
+            asm.delimiter();
+            asm.eol();
+
+            // ld.shared.f32 tmpF32, [address]
+            asm.emitSymbol(TAB);
+            asm.emit("ld.f32");
+            asm.emitSymbol(SPACE);
+            asm.emitValue(tmpF32);
+            asm.emitSymbol(COMMA + SPACE + "[");
+            asm.emitValue(addr);
+            asm.emitSymbol("]");
+            asm.delimiter();
+            asm.eol();
+
+            // cvt.rn.f16.f32 destF16, tmpF32
+            asm.emitSymbol(TAB);
+            asm.emit("cvt.rn.f16.f32");
+            asm.emitSymbol(SPACE);
+            asm.emitValue(destF16);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(tmpF32);
+            asm.delimiter();
+            asm.eol();
+        }
+
+        private void emitInstruction(PTXAssembler asm, String op, Value dest, Value src, String imm) {
+            asm.emitSymbol(TAB);
+            asm.emit(op);
+            asm.emitSymbol(SPACE);
+            asm.emitValue(dest);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(src);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emit(imm);
+            asm.delimiter();
+            asm.eol();
+        }
+
+        private void emitBinaryVal(PTXAssembler asm, String op, Value dest, Value src) {
+            asm.emitSymbol(TAB);
+            asm.emit(op);
+            asm.emitSymbol(SPACE);
+            asm.emitValue(dest);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(src);
+            asm.delimiter();
+            asm.eol();
+        }
+
+        private void emitInstruction(PTXAssembler asm, String op, Value dest, String src) {
+            asm.emitSymbol(TAB);
+            asm.emit(op);
+            asm.emitSymbol(SPACE);
+            asm.emitValue(dest);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emit(src);
+            asm.delimiter();
+            asm.eol();
+        }
+
+        private void emitIndexedLoadAndConvert(PTXAssembler asm,
+                                               Value destF16, Value slot) {
+            // ld.shared.f32 tmpF32, tile[slot]
+            asm.emitSymbol(TAB);
+            asm.emit("ld.shared.f32");
+            asm.emitSymbol(SPACE);
+            asm.emitValue(tmpF32);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(tile);
+            asm.emit("[");
+            asm.emitValue(slot);
+            asm.emit("]");
+            asm.delimiter();
+            asm.eol();
+
+            // cvt.rn.f16.f32 destF16, tmpF32
+            asm.emitSymbol(TAB);
+            asm.emit("cvt.rn.f16.f32");
+            asm.emitSymbol(SPACE);
+            asm.emitValue(destF16);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(tmpF32);
+            asm.delimiter();
+            asm.eol();
+        }
+
+        private void emitBinaryReg(PTXAssembler asm, String op, Value dest, Value src1, Value src2) {
+            asm.emitSymbol(TAB);
+            asm.emit(op);
+            asm.emitSymbol(SPACE);
+            asm.emitValue(dest);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(src1);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(src2);
+            asm.delimiter();
+            asm.eol();
+        }
+
+        private void emitBinaryImm(PTXAssembler asm, String op, Value dest, Value src, int imm) {
+            asm.emitSymbol(TAB);
+            asm.emit(op);
+            asm.emitSymbol(SPACE);
+            asm.emitValue(dest);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(src);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emit(Integer.toString(imm));
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
+    @Opcode("MMA_LOAD_INT8")
+    public static class MMALoadInt8Stmt extends AbstractInstruction {
+
+        public enum Operand {
+            A(4, 32),   // 4 b32 regs, 32 elements per row for m16n8k32
+            B(2, 32);   // 2 b32 regs
+
+            private final int numRegs;
+            private final int slotsPerRow;
+
+            Operand(int numRegs, int slotsPerRow) {
+                this.numRegs = numRegs;
+                this.slotsPerRow = slotsPerRow;
+            }
+        }
+
+        public static final LIRInstructionClass<MMALoadInt8Stmt> TYPE =
+                LIRInstructionClass.create(MMALoadInt8Stmt.class);
+
+        @Def protected Value result;
+        @Use protected Value tile;
+        @Use protected Value wmmaK;
+
+        @Def protected Value laneId;
+        @Def protected Value rowId;
+        @Def protected Value kOffset;
+        @Def protected Value rowComponent;
+        @Def protected Value kComponent;
+        @Def protected Value baseSlot;
+        @Def protected Value slotWithStep;
+
+        private final Operand operand;
+
+        public MMALoadInt8Stmt(Operand operand, Value result, Value tile, Value wmmaK,
+                               Value laneId, Value rowId, Value kOffset,
+                               Value rowComponent, Value kComponent,
+                               Value baseSlot, Value slotWithStep) {
+            super(TYPE);
+            this.operand = operand;
+            this.result = result;
+            this.tile = tile;
+            this.wmmaK = wmmaK;
+            this.laneId = laneId;
+            this.rowId = rowId;
+            this.kOffset = kOffset;
+            this.rowComponent = rowComponent;
+            this.kComponent = kComponent;
+            this.baseSlot = baseSlot;
+            this.slotWithStep = slotWithStep;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            int numRegs = operand.numRegs;
+
+            // Declare fragment sub-registers
+            asm.emitSymbol(TAB);
+            asm.emit(".reg .b32 ");
+            for (int i = 0; i < numRegs; i++) {
+                if (i > 0) asm.emitSymbol(COMMA + SPACE);
+                asm.emitValue(result);
+                asm.emit("_" + i);
+            }
+            asm.delimiter();
+            asm.eol();
+
+            // Declare temp registers for byte packing
+//            asm.emitSymbol(TAB);
+//            asm.emit(".reg .s32 __byte0, __byte1, __byte2, __byte3, __packed");
+//            asm.delimiter();
+//            asm.eol();
+            if (!asm.isFragRegDeclared("__byte_temps")) {
+                asm.markFragRegDeclared("__byte_temps");
+                asm.emitSymbol(TAB);
+                asm.emit(".reg .s32 __byte0, __byte1, __byte2, __byte3, __packed");
+                asm.delimiter();
+                asm.eol();
+            }
+
+            // Lane coordinates
+            emitInstruction(asm, "mov.u32", laneId, "%tid.x");
+            emitInstruction(asm, "shr.s32", rowId, laneId, "2");
+            emitInstruction(asm, "and.b32", kOffset, laneId, "3");
+
+            // For m16n8k32 with s32 shared tile (one s8 per s32 slot):
+            // rowComponent = rowId * 32 (32 elements per row for K=32)
+            emitInstruction(asm, "shl.b32", rowComponent, rowId, "5");
+            // kComponent = kOffset * 4 (each lane owns 4 consecutive bytes)
+            emitInstruction(asm, "shl.b32", kComponent, kOffset, "2");
+            // baseSlot = rowComponent + kComponent
+            emitBinaryReg(asm, "add.s32", baseSlot, rowComponent, kComponent);
+
+            // For each b32 register: load 4 bytes, pack into one b32
+            for (int i = 0; i < numRegs; i++) {
+                int slotOffset;
+                if (operand == Operand.A) {
+                    // m16n8k32 A fragment layout (row-major):
+                    // reg 0: (row,    k_base+0..3)    — first 4 bytes of first k-half
+                    // reg 1: (row+8,  k_base+0..3)    — same k, lower row block
+                    // reg 2: (row,    k_base+16..19)  — second k-half
+                    // reg 3: (row+8,  k_base+16..19)
+                    int rowOff = (i % 2 != 0) ? 8 * 32 : 0;
+                    int kOff   = (i >= 2) ? 16 : 0;
+                    slotOffset = rowOff + kOff;
+                } else {
+                    // B fragment: 2 regs, col-major
+                    // reg 0: k_base+0..3
+                    // reg 1: k_base+16..19
+                    slotOffset = (i == 0) ? 0 : 16;
+                }
+
+                // slotWithStep = baseSlot + slotOffset
+                emitBinaryImm(asm, "add.s32", slotWithStep, baseSlot, slotOffset);
+
+                // Load 4 consecutive s32 values (each holds one s8),
+                // mask to 8 bits, shift, and OR into one b32.
+                //
+                // __byte0 = tile[slot] & 0xFF
+                // __byte1 = (tile[slot+1] & 0xFF) << 8
+                // __byte2 = (tile[slot+2] & 0xFF) << 16
+                // __byte3 = (tile[slot+3] & 0xFF) << 24
+                // packed = __byte0 | __byte1 | __byte2 | __byte3
+                for (int b = 0; b < 4; b++) {
+                    String byteReg = "__byte" + b;
+                    if (b > 0) {
+                        emitBinaryImm(asm, "add.s32", slotWithStep, slotWithStep, 1);
+                    }
+                    // Load s32 from shared tile
+                    asm.emitSymbol(TAB);
+                    asm.emit("ld.shared.s32 " + byteReg + ", ");
+                    asm.emitValue(tile);
+                    asm.emit("[");
+                    asm.emitValue(slotWithStep);
+                    asm.emit("]");
+                    asm.delimiter();
+                    asm.eol();
+
+                    // Mask to 8 bits
+                    asm.emitSymbol(TAB);
+                    asm.emit("and.b32 " + byteReg + ", " + byteReg + ", 255");
+                    asm.delimiter();
+                    asm.eol();
+
+                    // Shift into position
+                    if (b > 0) {
+                        asm.emitSymbol(TAB);
+                        asm.emit("shl.b32 " + byteReg + ", " + byteReg + ", " + (b * 8));
+                        asm.delimiter();
+                        asm.eol();
+                    }
+                }
+
+                // OR all four bytes together
+                asm.emitSymbol(TAB);
+                asm.emit("or.b32 __packed, __byte0, __byte1");
+                asm.delimiter();
+                asm.eol();
+                asm.emitSymbol(TAB);
+                asm.emit("or.b32 __packed, __packed, __byte2");
+                asm.delimiter();
+                asm.eol();
+                asm.emitSymbol(TAB);
+                asm.emit("or.b32 __packed, __packed, __byte3");
+                asm.delimiter();
+                asm.eol();
+
+                // Move packed value into fragment register
+                asm.emitSymbol(TAB);
+                asm.emit("mov.b32 ");
+                asm.emitValue(result);
+                asm.emit("_" + i + ", __packed");
+                asm.delimiter();
+                asm.eol();
+            }
+        }
+
+        // Helper methods — same as MMALoadStmt
+        private void emitInstruction(PTXAssembler asm, String op, Value dest, Value src, String imm) {
+            asm.emitSymbol(TAB);
+            asm.emit(op);
+            asm.emitSymbol(SPACE);
+            asm.emitValue(dest);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(src);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emit(imm);
+            asm.delimiter();
+            asm.eol();
+        }
+
+        private void emitInstruction(PTXAssembler asm, String op, Value dest, String src) {
+            asm.emitSymbol(TAB);
+            asm.emit(op);
+            asm.emitSymbol(SPACE);
+            asm.emitValue(dest);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emit(src);
+            asm.delimiter();
+            asm.eol();
+        }
+
+        private void emitBinaryReg(PTXAssembler asm, String op, Value dest, Value src1, Value src2) {
+            asm.emitSymbol(TAB);
+            asm.emit(op);
+            asm.emitSymbol(SPACE);
+            asm.emitValue(dest);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(src1);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(src2);
+            asm.delimiter();
+            asm.eol();
+        }
+
+        private void emitBinaryImm(PTXAssembler asm, String op, Value dest, Value src, int imm) {
+            asm.emitSymbol(TAB);
+            asm.emit(op);
+            asm.emitSymbol(SPACE);
+            asm.emitValue(dest);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(src);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emit(Integer.toString(imm));
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
+    @Opcode("MMA_COMPUTE")
+    public static class MMAComputeStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<MMAComputeStmt> TYPE =
+                LIRInstructionClass.create(MMAComputeStmt.class);
+
+        @Def protected Value result;
+        @Use protected Value fragA;
+        @Use protected Value fragB;
+        @Use protected Value fragC;
+
+        private final MMAShape shape;
+
+        public MMAComputeStmt(Value result, Value fragA, Value fragB, Value fragC, MMAShape shape) {
+            super(TYPE);
+            this.result = result;
+            this.fragA = fragA;
+            this.fragB = fragB;
+            this.fragC = fragC;
+            this.shape = shape;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            String regType;
+            String instrSuffix;
+            if (shape == MMAShape.M16N8K32) {
+                regType = ".s32";
+                instrSuffix = ".row.col.s32.s8.s8.s32";
+            } else {
+                regType = ".f32";
+                instrSuffix = ".row.col.f32.f16.f16.f32";
+            }
+
+            // Declare D fragment registers
+            asm.emitSymbol(TAB);
+            asm.emit(".reg " + regType + " ");
+            for (int i = 0; i < 4; i++) {
+                if (i > 0) asm.emitSymbol(COMMA + SPACE);
+                asm.emitValue(result);
+                asm.emit("_" + i);
+            }
+            asm.delimiter();
+            asm.eol();
+
+            // mma.sync.aligned.<shape>.<suffix>
+            asm.emitSymbol(TAB);
+            asm.emit("mma.sync.aligned.");
+            asm.emit(shape.getPtxName());
+            asm.emit(instrSuffix);
+            asm.emitSymbol(SPACE);
+
+            emitFragmentList(asm, result, 4);
+            asm.emitSymbol(COMMA + SPACE);
+            emitFragmentList(asm, fragA, 4);
+            asm.emitSymbol(COMMA + SPACE);
+            emitFragmentList(asm, fragB, 2);
+            asm.emitSymbol(COMMA + SPACE);
+            emitFragmentList(asm, fragC, 4);
+
+            asm.delimiter();
+            asm.eol();
+        }
+
+        private static void emitFragmentList(PTXAssembler asm, Value fragment, int count) {
+            asm.emit("{");
+            for (int i = 0; i < count; i++) {
+                if (i > 0) {
+                    asm.emitSymbol(COMMA + SPACE);
+                }
+                asm.emitValue(fragment);
+                asm.emit("_" + i);
+            }
+            asm.emit("}");
+        }
+    }
+
+    @Opcode("MMA_STORE")
+    public static class MMAStoreStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<MMAStoreStmt> TYPE =
+                LIRInstructionClass.create(MMAStoreStmt.class);
+
+        @Use protected Value fragD;
+        @Use protected Value target;
+        @Use protected Value tileRow;
+        @Use protected Value tileCol;
+        @Use protected Value dimN;
+
+        @Def protected Value laneId;
+        @Def protected Value rowInTile;
+        @Def protected Value colInTile;
+        @Def protected Value globalRow;
+        @Def protected Value globalCol;
+        @Def protected Value elementOffset;
+        @Def protected Value byteOffset;
+        @Def protected Value address;
+        @Use protected Value headerSize;
+        boolean isInt8;
+
+        public MMAStoreStmt(Value fragD, Value target,
+                            Value tileRow, Value tileCol, Value dimN,
+                            Value laneId, Value rowInTile, Value colInTile,
+                            Value globalRow, Value globalCol,
+                            Value elementOffset, Value byteOffset,
+                            Value address, Value headerSize, boolean isInt8) {
+            super(TYPE);
+            this.fragD = fragD;
+            this.target = target;
+            this.tileRow = tileRow;
+            this.tileCol = tileCol;
+            this.dimN = dimN;
+            this.laneId = laneId;
+            this.rowInTile = rowInTile;
+            this.colInTile = colInTile;
+            this.globalRow = globalRow;
+            this.globalCol = globalCol;
+            this.elementOffset = elementOffset;
+            this.byteOffset = byteOffset;
+            this.address = address;
+            this.headerSize = headerSize;
+            this.isInt8 = isInt8;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            // mov.u32 laneId, %tid.x;
+            asm.emitSymbol(TAB);
+            asm.emit("mov.u32");
+            asm.emitSymbol(SPACE);
+            asm.emitValue(laneId);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emit("%tid.x");
+            asm.delimiter();
+            asm.eol();
+
+            // PTX ISA m16n8k16 C/D layout per lane t:
+            //   r0 = t/4,     r1 = t/4 + 8
+            //   c0 = (t%4)*2, c1 = (t%4)*2 + 1
+            for (int i = 0; i < 4; i++) {
+                int rowSelect = (i < 2) ? 0 : 8;   // 0 for r0, 8 for r1
+                int colSelect = i % 2;             // 0 for c0, 1 for c1
+
+                // rowInTile = lane/4
+                asm.emitSymbol(TAB);
+                asm.emit("shr.s32");
+                asm.emitSymbol(SPACE);
+                asm.emitValue(rowInTile);
+                asm.emitSymbol(COMMA + SPACE);
+                asm.emitValue(laneId);
+                asm.emitSymbol(COMMA + SPACE);
+                asm.emit("2");
+                asm.delimiter();
+                asm.eol();
+
+                if (rowSelect != 0) {
+                    // rowInTile += 8
+                    asm.emitSymbol(TAB);
+                    asm.emit("add.s32");
+                    asm.emitSymbol(SPACE);
+                    asm.emitValue(rowInTile);
+                    asm.emitSymbol(COMMA + SPACE);
+                    asm.emitValue(rowInTile);
+                    asm.emitSymbol(COMMA + SPACE);
+                    asm.emit(Integer.toString(rowSelect));
+                    asm.delimiter();
+                    asm.eol();
+                }
+
+                // colInTile = (lane%4)*2
+                asm.emitSymbol(TAB);
+                asm.emit("and.b32");
+                asm.emitSymbol(SPACE);
+                asm.emitValue(colInTile);
+                asm.emitSymbol(COMMA + SPACE);
+                asm.emitValue(laneId);
+                asm.emitSymbol(COMMA + SPACE);
+                asm.emit("3");
+                asm.delimiter();
+                asm.eol();
+
+                asm.emitSymbol(TAB);
+                asm.emit("shl.b32");
+                asm.emitSymbol(SPACE);
+                asm.emitValue(colInTile);
+                asm.emitSymbol(COMMA + SPACE);
+                asm.emitValue(colInTile);
+                asm.emitSymbol(COMMA + SPACE);
+                asm.emit("1");
+                asm.delimiter();
+                asm.eol();
+
+                if (colSelect != 0) {
+                    // colInTile += 1
+                    asm.emitSymbol(TAB);
+                    asm.emit("add.s32");
+                    asm.emitSymbol(SPACE);
+                    asm.emitValue(colInTile);
+                    asm.emitSymbol(COMMA + SPACE);
+                    asm.emitValue(colInTile);
+                    asm.emitSymbol(COMMA + SPACE);
+                    asm.emit("1");
+                    asm.delimiter();
+                    asm.eol();
+                }
+
+                // globalRow = tileRow + rowInTile
+                asm.emitSymbol(TAB);
+                asm.emit("add.s32");
+                asm.emitSymbol(SPACE);
+                asm.emitValue(globalRow);
+                asm.emitSymbol(COMMA + SPACE);
+                asm.emitValue(tileRow);
+                asm.emitSymbol(COMMA + SPACE);
+                asm.emitValue(rowInTile);
+                asm.delimiter();
+                asm.eol();
+
+                // globalCol = tileCol + colInTile
+                asm.emitSymbol(TAB);
+                asm.emit("add.s32");
+                asm.emitSymbol(SPACE);
+                asm.emitValue(globalCol);
+                asm.emitSymbol(COMMA + SPACE);
+                asm.emitValue(tileCol);
+                asm.emitSymbol(COMMA + SPACE);
+                asm.emitValue(colInTile);
+                asm.delimiter();
+                asm.eol();
+
+                // elementOffset = globalRow * dimN
+                asm.emitSymbol(TAB);
+                asm.emit("mul.lo.s32");
+                asm.emitSymbol(SPACE);
+                asm.emitValue(elementOffset);
+                asm.emitSymbol(COMMA + SPACE);
+                asm.emitValue(globalRow);
+                asm.emitSymbol(COMMA + SPACE);
+                asm.emitValue(dimN);
+                asm.delimiter();
+                asm.eol();
+
+                // elementOffset += globalCol
+                asm.emitSymbol(TAB);
+                asm.emit("add.s32");
+                asm.emitSymbol(SPACE);
+                asm.emitValue(elementOffset);
+                asm.emitSymbol(COMMA + SPACE);
+                asm.emitValue(elementOffset);
+                asm.emitSymbol(COMMA + SPACE);
+                asm.emitValue(globalCol);
+                asm.delimiter();
+                asm.eol();
+
+                // elementOffset += headerElements (FloatArray header skip)
+                asm.emitSymbol(TAB);
+                asm.emit("add.s32");
+                asm.emitSymbol(SPACE);
+                asm.emitValue(elementOffset);
+                asm.emitSymbol(COMMA + SPACE);
+                asm.emitValue(elementOffset);
+                asm.emitSymbol(COMMA + SPACE);
+                asm.emitValue(headerSize);
+                asm.delimiter();
+                asm.eol();
+
+                // byteOffset = elementOffset * 4 (f32 byte size); widen to 64-bit for address arithmetic.
+                asm.emitSymbol(TAB);
+                asm.emit("mul.wide.s32");
+                asm.emitSymbol(SPACE);
+                asm.emitValue(byteOffset);
+                asm.emitSymbol(COMMA + SPACE);
+                asm.emitValue(elementOffset);
+                asm.emitSymbol(COMMA + SPACE);
+                asm.emit("4");
+                asm.delimiter();
+                asm.eol();
+
+                // address = target + byteOffset  (target is already a .global u64)
+                asm.emitSymbol(TAB);
+                asm.emit("add.u64");
+                asm.emitSymbol(SPACE);
+                asm.emitValue(address);
+                asm.emitSymbol(COMMA + SPACE);
+                asm.emitValue(target);
+                asm.emitSymbol(COMMA + SPACE);
+                asm.emitValue(byteOffset);
+                asm.delimiter();
+                asm.eol();
+
+                // st.global.f32 [address], fragD_i
+                asm.emitSymbol(TAB);
+                String storeType = isInt8 ? "st.global.s32" : "st.global.f32";
+                asm.emit(storeType);
+                asm.emitSymbol(SPACE + "[");
+                asm.emitValue(address);
+                asm.emitSymbol("]" + COMMA + SPACE);
+                asm.emitValue(fragD);
+                asm.emit("_" + i);
+                asm.delimiter();
+                asm.eol();
+            }
+        }
+
     }
 }
