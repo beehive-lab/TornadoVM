@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import uk.ac.manchester.tornado.api.enums.MMAShape;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
@@ -303,5 +304,113 @@ public class KernelContext implements ExecutionContext {
      */
     @Override
     public void atomicAdd(DoubleArray array, int index, double val) {
+    }
+
+    /**
+     * Declares a C/D accumulator fragment for MMA operations.
+     * Lowered by the PTX backend to register allocation — never executed on GPU.
+     *
+     * PTX equivalent: mov.f32 rd0..rd3, v  (register-backed accumulator fragment)
+     */
+    public float[] mmaFragment(float v) {
+        // CPU fallback: return a 4-element accumulator fragment initialised to v.
+        // On GPU this is replaced by an MMAFragmentNode by the plugin.
+        return new float[]{ v, v, v, v };
+    }
+
+    /**
+     * Loads the A fragment for mma.sync from a shared-memory tile.
+     * Each lane receives its 8 owned f16 elements as per PTX ISA m16n8k16 layout.
+     *
+     * PTX equivalent: ld.shared.b32 ra0..ra3, [tile + offset]
+     */
+    public HalfFloat[] mmaLoadA(float[] aTile, int wmmaK) {
+        // CPU fallback: return an 8-element fragment.
+        // On GPU this is replaced by an MMALoadANode by the plugin.
+        return new HalfFloat[8];
+    }
+
+    public HalfFloat[] mmaLoadA(int[] aTile, int wmmaK) {
+        // CPU fallback: return an 8-element fragment.
+        // On GPU this is replaced by an MMALoadANode by the plugin.
+        return new HalfFloat[8];
+    }
+
+    /**
+     * Loads the B fragment for mma.sync from a shared-memory tile.
+     * Each lane receives its 4 owned f16 elements as per PTX ISA m16n8k16 layout.
+     *
+     * PTX equivalent: ld.shared.b32 rb0..rb1, [tile + offset]
+     */
+    public HalfFloat[] mmaLoadB(float[] bTile, int wmmaK) {
+        // CPU fallback: return a 4-element fragment.
+        // On GPU this is replaced by an MMALoadBNode by the plugin.
+        return new HalfFloat[4];
+    }
+
+    public HalfFloat[] mmaLoadB(int[] bTile, int wmmaK) {
+        // CPU fallback: return a 4-element fragment.
+        // On GPU this is replaced by an MMALoadBNode by the plugin.
+        return new HalfFloat[4];
+    }
+
+    /**
+     * Warp-collective matrix multiply-accumulate: D = A * B + C.
+     *
+     * PTX equivalent:
+     *   mma.sync.aligned.{shape}.row.col.f32.f16.f16.f32
+     *       {rd0..rd3}, {ra0..ra3}, {rb0..rb1}, {rc0..rc3}
+     */
+    public float[] mma(HalfFloat[] fragA, HalfFloat[] fragB, float[] fragC, MMAShape mmaShape) {
+        // CPU fallback: return the accumulator unchanged.
+        // On GPU this is replaced by an MMAComputeNode by the plugin.
+        return fragC;
+    }
+
+    /**
+     * Stores the D fragment to a global output matrix.
+     *
+     * PTX equivalent: st.global.f32 [addr], rd0..rd3  (×4 per lane)
+     */
+    public void mmaStore(float[] fragD, FloatArray c, int tileRow, int tileCol, int dimN) {
+        // CPU fallback: no-op (matches other GPU-only constructs like localBarrier).
+        // On GPU this is replaced by an MMAStoreNode by the plugin.
+    }
+
+    // --- Int8 MMA ---
+
+    /**
+     * Allocates a 4×s32 accumulator fragment for int8 MMA, initialised to the given value.
+     */
+    public int[] mmaFragmentInt(int initValue) {
+        return new int[4];
+    }
+
+    /**
+     * Loads an A fragment (16×32 int8 tile) for mma.sync.m16n8k32.
+     */
+    public byte[] mmaLoadAInt8(int[] aTile, int tileK) {
+        return new byte[16];
+    }
+
+    /**
+     * Loads a B fragment (32×8 int8 tile, col-major) for mma.sync.m16n8k32.
+     */
+    public byte[] mmaLoadBInt8(int[] bTile, int tileK) {
+        return new byte[8];
+    }
+
+    /**
+     * Warp-collective int8 MMA: D = A*B + C.
+     */
+    public int[] mmaInt8(byte[] fragA, byte[] fragB, int[] fragC, MMAShape shape) {
+        return new int[4];
+    }
+
+    /**
+     * Stores the int32 accumulator fragment to global memory.
+     */
+    public void mmaStoreInt(int[] fragD, IntArray out, int row, int col, int stride) {
+        // no-op placeholder
     }
 }

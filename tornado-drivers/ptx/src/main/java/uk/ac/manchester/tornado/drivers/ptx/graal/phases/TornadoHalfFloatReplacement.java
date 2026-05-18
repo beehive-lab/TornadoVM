@@ -55,6 +55,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.AddHalfNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.HalfFloatConstantNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.MultHalfNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXConvertFloatToHalf;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXConvertHalfBitsToIntNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXConvertHalfToFloat;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXHalfFloatDivisionNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.ReadHalfFloatNode;
@@ -215,6 +216,19 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
                         constantNode.safeDelete();
                     }
                 }
+            }
+        }
+
+        // Replace any remaining HalfFloatPlaceholder nodes in arithmetic contexts
+        // (e.g. getHalfFloatValue() used in bit-packing: lo = a.get(i).getHalfFloatValue() & 0xFFFF).
+        // These were not consumed by the write-context handler above.
+        for (HalfFloatPlaceholder placeholder : graph.getNodes().filter(HalfFloatPlaceholder.class).snapshot()) {
+            if (!placeholder.isDeleted()) {
+                PTXConvertHalfBitsToIntNode bitsNode =
+                        new PTXConvertHalfBitsToIntNode(placeholder.getInput());
+                graph.addWithoutUnique(bitsNode);
+                placeholder.replaceAtUsages(bitsNode);
+                placeholder.safeDelete();
             }
         }
 
