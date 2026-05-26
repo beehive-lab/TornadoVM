@@ -21,6 +21,7 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
 
+import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -46,7 +47,7 @@ public class SwizzledStoreInt8Node extends FixedWithNextNode implements LIRLower
     @Input private ValueNode int8_value;
 
     public SwizzledStoreInt8Node(ValueNode int8_local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode int8_value) {
-        super(TYPE, StampFactory.forVoid());
+        super(TYPE, StampFactory.forKind(JavaKind.Byte));
         this.int8_local_array = int8_local_array;
         this.row = row;
         this.column = column;
