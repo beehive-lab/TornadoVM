@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2025, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2026, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -301,10 +301,6 @@ public class TornadoOptions {
      */
     public static final boolean OPTIMIZE_LOAD_STORE_SPIRV = getBooleanValue("tornado.spirv.loadstore", TRUE);
     /**
-     * Use Level Zero Thread Suggestions for the Thread Dispatcher. True by default.
-     */
-    public static final boolean USE_LEVELZERO_THREAD_DISPATCHER_SUGGESTIONS = getBooleanValue("tornado.spirv.levelzero.thread.dispatcher", TRUE);
-    /**
      * Memory Alignment for the Level Zero buffers (shared memory and or device
      * memory).
      */
@@ -505,7 +501,7 @@ public class TornadoOptions {
      * resource is closed. This is False by default, since this area is global for all kernels. In near future,
      * we will change this to use a unique area per execution plan, and have the option to turn on and off
      * this flag as needed.
-     * 
+     *
      * @return boolean
      */
     public static boolean cleanUpAtomicsSpace() {
