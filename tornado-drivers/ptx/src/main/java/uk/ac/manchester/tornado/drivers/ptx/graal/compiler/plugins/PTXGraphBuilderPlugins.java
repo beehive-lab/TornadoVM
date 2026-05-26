@@ -447,7 +447,7 @@ public class PTXGraphBuilderPlugins {
         r.register(new InvocationPlugin("swizzleLoadFp16Stride32", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride) {
-                b.addPush(JavaKind.Short, new SwizzledLoadFP16Stride32Node(local_array, row, column, stride));
+                b.addPush(JavaKind.Object, new SwizzledLoadFP16Stride32Node(local_array, row, column, stride));
                 return true;
             }
         });
@@ -455,7 +455,7 @@ public class PTXGraphBuilderPlugins {
         r.register(new InvocationPlugin("swizzleStoreFp16Stride32", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class, HalfFloat.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode value) {
-                b.addPush(JavaKind.Short, new SwizzledStoreFP16Stride32Node(local_array, row, column, stride, value));
+                b.addPush(JavaKind.Object, new SwizzledStoreFP16Stride32Node(local_array, row, column, stride, value));
                 return true;
             }
         });
@@ -463,7 +463,7 @@ public class PTXGraphBuilderPlugins {
         r.register(new InvocationPlugin("swizzleLoadFp16Stride16", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride) {
-                b.addPush(JavaKind.Short, new SwizzledLoadFP16Stride16Node(local_array, row, column, stride));
+                b.addPush(JavaKind.Object, new SwizzledLoadFP16Stride16Node(local_array, row, column, stride));
                 return true;
             }
         });
@@ -471,7 +471,7 @@ public class PTXGraphBuilderPlugins {
         r.register(new InvocationPlugin("swizzleStoreFp16Stride16", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class, HalfFloat.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode value) {
-                b.addPush(JavaKind.Short, new SwizzledStoreFP16Stride16Node(local_array, row, column, stride, value));
+                b.addPush(JavaKind.Object, new SwizzledStoreFP16Stride16Node(local_array, row, column, stride, value));
                 return true;
             }
         });

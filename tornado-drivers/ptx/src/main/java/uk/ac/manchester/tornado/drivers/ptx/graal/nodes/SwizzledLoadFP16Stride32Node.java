@@ -21,8 +21,10 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
 
+import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
@@ -31,7 +33,6 @@ import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
-import uk.ac.manchester.tornado.drivers.ptx.graal.HalfFloatStamp;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 
@@ -53,7 +54,7 @@ public class SwizzledLoadFP16Stride32Node extends FixedWithNextNode implements L
     private ValueNode stride;
 
     public SwizzledLoadFP16Stride32Node(ValueNode fp16_local_array, ValueNode row, ValueNode column, ValueNode stride) {
-        super(TYPE, new HalfFloatStamp());
+        super(TYPE, StampFactory.forKind(JavaKind.Object));
         this.fp16_local_array = fp16_local_array;
         this.row = row;
         this.column = column;
