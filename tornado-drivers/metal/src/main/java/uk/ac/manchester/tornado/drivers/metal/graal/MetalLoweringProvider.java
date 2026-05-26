@@ -102,6 +102,7 @@ import uk.ac.manchester.tornado.drivers.metal.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.GlobalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.GroupIdNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.LocalArrayNode;
+import uk.ac.manchester.tornado.drivers.metal.graal.nodes.ReadHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.LocalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.LocalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalDecompressedReadFieldNode;
@@ -378,6 +379,14 @@ public class MetalLoweringProvider extends DefaultJavaLoweringProvider {
             loadStamp = loadStamp(loadIndexed.stamp(NodeView.DEFAULT), elementKind, false);
         }
         address = createArrayAccess(graph, loadIndexed, elementKind);
+        // Local-memory HalfFloat[] reads need a HALF-typed temporary; a generic ReadNode would
+        // assign half_arr[idx] into a ulong slot and silently truncate (1.5h -> 1ul -> 1.0f).
+        if (loadIndexed.array() instanceof LocalArrayNode localArrayNode && localArrayNode.getMetalKind() == MetalKind.HALF) {
+            ReadHalfFloatNode localHalfFloatRead = graph.add(new ReadHalfFloatNode(address, loadIndexed.index()));
+            loadIndexed.replaceAtUsages(localHalfFloatRead);
+            graph.replaceFixed(loadIndexed, localHalfFloatRead);
+            return;
+        }
         ReadNode memoryRead;
         if (loadIndexed instanceof LoadIndexedVectorNode) {
             memoryRead = graph.add(new ReadNode(address, LocationIdentity.any(), loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));

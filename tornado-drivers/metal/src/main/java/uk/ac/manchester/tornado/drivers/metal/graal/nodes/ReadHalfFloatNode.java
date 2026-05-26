@@ -30,6 +30,7 @@ import jdk.graal.compiler.lir.Variable;
 import jdk.graal.compiler.lir.gen.LIRGeneratorTool;
 import jdk.graal.compiler.nodeinfo.NodeInfo;
 import jdk.graal.compiler.nodes.FixedWithNextNode;
+import jdk.graal.compiler.nodes.ValueNode;
 import jdk.graal.compiler.nodes.memory.address.AddressNode;
 import jdk.graal.compiler.nodes.spi.LIRLowerable;
 import jdk.graal.compiler.nodes.spi.NodeLIRBuilderTool;
@@ -49,10 +50,18 @@ public class ReadHalfFloatNode extends FixedWithNextNode implements LIRLowerable
 
     @Input
     private AddressNode addressNode;
+    @Input
+    private ValueNode indexNode;
 
     public ReadHalfFloatNode(AddressNode addressNode) {
         super(TYPE, new HalfFloatStamp());
         this.addressNode = addressNode;
+    }
+
+    public ReadHalfFloatNode(AddressNode addressNode, ValueNode indexNode) {
+        super(TYPE, new HalfFloatStamp());
+        this.addressNode = addressNode;
+        this.indexNode = indexNode;
     }
 
     public void generate(NodeLIRBuilderTool generator) {
@@ -61,7 +70,14 @@ public class ReadHalfFloatNode extends FixedWithNextNode implements LIRLowerable
         Value addressValue = generator.operand(addressNode);
         MetalArchitecture.MetalMemoryBase base = ((MetalUnary.MemoryAccess) addressValue).getBase();
         MetalUnary.MetalAddressCast cast = new MetalUnary.MetalAddressCast(base, LIRKind.value(MetalKind.HALF));
-        tool.append(new MetalLIRStmt.LoadStmt(result, cast, (MetalUnary.MemoryAccess) addressValue));
+        if (indexNode == null) {
+            // global / heap half read
+            tool.append(new MetalLIRStmt.LoadStmt(result, cast, (MetalUnary.MemoryAccess) addressValue));
+        } else {
+            // local- or private-memory indexed half read; LoadStmt emits `result = base[index];`
+            Value index = generator.operand(indexNode);
+            tool.append(new MetalLIRStmt.LoadStmt(result, cast, (MetalUnary.MemoryAccess) addressValue, index));
+        }
         generator.setResult(this, result);
     }
 }
