@@ -34,6 +34,7 @@ import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalKind;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalLIRStmt;
 
@@ -51,6 +52,13 @@ public class MetalConvertHalfToFloat extends ValueNode implements LIRLowerable {
     }
 
     public void generate(NodeLIRBuilderTool generator) {
+        if (halfValueNode == null) {
+            // A preceding high-tier rewrite (typically TornadoHalfFloatReplacement) cleared this
+            // node's input without supplying a replacement. Fail at the phase boundary with a
+            // useful message instead of an opaque NPE in NodeLIRBuilder.getOperand.
+            throw new TornadoInternalError("MetalConvertHalfToFloat: input was cleared by a preceding graph rewrite; "
+                    + "an unrecognised half-source pattern reached LIR. Check TornadoHalfFloatReplacement#identifyFieldReplacement.");
+        }
         LIRGeneratorTool tool = generator.getLIRGeneratorTool();
         Variable floatValue = tool.newVariable(LIRKind.value(MetalKind.FLOAT));
         Value halfValue = generator.operand(halfValueNode);

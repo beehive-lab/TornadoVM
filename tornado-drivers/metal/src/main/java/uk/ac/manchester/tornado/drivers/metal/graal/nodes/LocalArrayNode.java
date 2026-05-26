@@ -88,6 +88,10 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
         return length;
     }
 
+    public MetalKind getMetalKind() {
+        return kind;
+    }
+
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         final Value lengthValue = gen.operand(length);
