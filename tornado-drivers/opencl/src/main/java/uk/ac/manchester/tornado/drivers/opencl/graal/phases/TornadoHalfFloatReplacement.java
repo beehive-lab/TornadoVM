@@ -41,6 +41,7 @@ import jdk.graal.compiler.nodes.extended.JavaReadNode;
 import jdk.graal.compiler.nodes.extended.JavaWriteNode;
 import jdk.graal.compiler.nodes.extended.ValueAnchorNode;
 import jdk.graal.compiler.nodes.java.LoadFieldNode;
+import jdk.graal.compiler.nodes.java.LoadIndexedNode;
 import jdk.graal.compiler.nodes.java.NewInstanceNode;
 import jdk.graal.compiler.nodes.memory.address.AddressNode;
 import jdk.graal.compiler.phases.BasePhase;
@@ -51,6 +52,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AddHalfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.DivHalfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.HalfFloatConstantNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.MultHalfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLConvertFloatToHalf;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLConvertHalfToFloat;
@@ -102,6 +104,15 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
     private static Node identifyFieldReplacement(Node input, ArrayList<Node> nodesToBeDeleted) {
         // the replacement is expected to be either the read node of a half value, or a phi node in case of accumulation
         if (input instanceof ReadHalfFloatNode || input instanceof ValuePhiNode) {
+            return input;
+        }
+        // A LoadIndexed on a local-memory HalfFloat[] (LocalArrayNode with OCLKind.HALF) is
+        // lowered to a ReadHalfFloatNode in OCLLoweringProvider#lowerLoadIndexedNode, so it is
+        // a valid half-source for OCLConvertHalfToFloat. Without this case, reading a HalfFloat
+        // out of a local array and calling getFloat32() on it nulls out the convert node's input.
+        if (input instanceof LoadIndexedNode loadIndexed //
+                && loadIndexed.array() instanceof LocalArrayNode localArray //
+                && localArray.getOCLKind() == OCLKind.HALF) {
             return input;
         }
         if (input instanceof PiNode || input instanceof IsNullNode) {
@@ -356,7 +367,6 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
     }
 
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
-
 
         for (ValueAnchorNode valueAnchorNode : graph.getNodes().filter(ValueAnchorNode.class)) {
             ArrayList<PiNode> deletePi = new ArrayList<PiNode>();
