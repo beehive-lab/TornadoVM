@@ -74,7 +74,13 @@ public abstract class AbstractRTContext implements TaskContextInterface {
     private final int openclGpuBlock2DX;
     private final boolean isOpenclGpuBlock2DYDefined;
     private final int openclGpuBlock2DY;
+
     private long numThreads;
+
+    private final boolean isMetalThreadgroupSizeDefined;
+    private final int metalThreadsPerThreadgroupX;
+    private final int metalThreadsPerThreadgroupY;
+    private final int metalThreadsPerThreadgroupZ;
 
     private GridScheduler gridScheduler;
     private long[] ptxBlockDim;
@@ -87,6 +93,7 @@ public abstract class AbstractRTContext implements TaskContextInterface {
     private final ConcurrentHashMap<TornadoVMBackendType, String> compilerOptionsPerBackend;
 
     private boolean openclUseDriverScheduling;
+    private boolean metalUseDriverScheduling;
 
     AbstractRTContext(String id, AbstractRTContext parent) {
         this.id = id;
@@ -108,6 +115,7 @@ public abstract class AbstractRTContext implements TaskContextInterface {
         printKernel = TornadoOptions.PRINT_KERNEL_SOURCE;
 
         compilerOptionsPerBackend = new ConcurrentHashMap<>();
+        compilerOptionsPerBackend.put(TornadoVMBackendType.METAL, TornadoOptions.DEFAULT_METAL_COMPILER_FLAGS);
         compilerOptionsPerBackend.put(TornadoVMBackendType.OPENCL, TornadoOptions.DEFAULT_OPENCL_COMPILER_FLAGS);
         compilerOptionsPerBackend.put(TornadoVMBackendType.PTX, TornadoOptions.DEFAULT_PTX_COMPILER_FLAGS);
         compilerOptionsPerBackend.put(TornadoVMBackendType.SPIRV, TornadoOptions.DEFAULT_SPIRV_LEVEL_ZERO_COMPILER_FLAGS);
@@ -121,6 +129,17 @@ public abstract class AbstractRTContext implements TaskContextInterface {
 
         openclGpuBlock2DY = parseInt(getDefault("opencl.gpu.block2d.y", id, "4"));
         isOpenclGpuBlock2DYDefined = getProperty(id + ".opencl.gpu.block2d.y") != null;
+
+        // Metal thread configuration
+        // Metal Threadgroup Configurations
+        metalThreadsPerThreadgroupX = parseInt(getDefault("metal.threads.per.threadgroup.x", id, "1"));
+        metalThreadsPerThreadgroupY = parseInt(getDefault("metal.threads.per.threadgroup.y", id, "1"));
+        metalThreadsPerThreadgroupZ = parseInt(getDefault("metal.threads.per.threadgroup.z", id, "1"));
+
+        isMetalThreadgroupSizeDefined =
+                getProperty(id + ".metal.threads.per.threadgroup.x") != null ||
+                        getProperty(id + ".metal.threads.per.threadgroup.y") != null ||
+                        getProperty(id + ".metal.threads.per.threadgroup.z") != null;
     }
 
     private static String getProperty(String key) {
@@ -224,6 +243,10 @@ public abstract class AbstractRTContext implements TaskContextInterface {
         return openclUseDriverScheduling;
     }
 
+    public boolean shouldUseMetalDriverScheduling() {
+        return metalUseDriverScheduling;
+    }
+
     public boolean isDeviceDefined() {
         return isDeviceDefined;
     }
@@ -239,6 +262,25 @@ public abstract class AbstractRTContext implements TaskContextInterface {
     public boolean isOpenclGpuBlock2DYDefined() {
         return isOpenclGpuBlock2DYDefined;
     }
+
+    // Metal equivalents
+
+    public int getMetalThreadsPerThreadgroupX() {
+        return metalThreadsPerThreadgroupX;
+    }
+
+    public int getMetalThreadsPerThreadgroupY() {
+        return metalThreadsPerThreadgroupY;
+    }
+
+    public int getMetalThreadsPerThreadgroupZ() {
+        return metalThreadsPerThreadgroupZ;
+    }
+
+    public boolean isMetalThreadgroupSizeDefined() {
+        return isMetalThreadgroupSizeDefined;
+    }
+
 
     @Override
     public List<TornadoEvents> getProfiles(long executionPlanId) {

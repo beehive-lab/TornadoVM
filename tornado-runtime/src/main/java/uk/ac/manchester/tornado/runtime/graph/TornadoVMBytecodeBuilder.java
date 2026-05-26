@@ -137,6 +137,22 @@ public class TornadoVMBytecodeBuilder {
         bitcodeASM.addDependency(dep);
     }
 
+    public void executionGraphBeginCapture(int graphId) {
+        bitcodeASM.executionGraphBeginCapture(graphId);
+    }
+
+    public void executionGraphEndCapture(int graphId) {
+        bitcodeASM.executionGraphEndCapture(graphId);
+    }
+
+    public void executionGraphLaunch(int graphId) {
+        bitcodeASM.executionGraphLaunch(graphId);
+    }
+
+    public void executionGraphInvalidate(int graphId) {
+        bitcodeASM.executionGraphInvalidate(graphId);
+    }
+
     public void dump() {
         bitcodeASM.dump();
     }
@@ -271,6 +287,26 @@ public class TornadoVMBytecodeBuilder {
         void referenceArg(int index) {
             buffer.put(TornadoVMBytecodes.PUSH_REFERENCE_ARGUMENT.value);
             buffer.putInt(index);
+        }
+
+        void executionGraphBeginCapture(int graphId) {
+            buffer.put(TornadoVMBytecodes.CUDA_GRAPH_BEGIN_CAPTURE.value);
+            buffer.putInt(graphId);
+        }
+
+        void executionGraphEndCapture(int graphId) {
+            buffer.put(TornadoVMBytecodes.CUDA_GRAPH_END_CAPTURE.value);
+            buffer.putInt(graphId);
+        }
+
+        void executionGraphLaunch(int graphId) {
+            buffer.put(TornadoVMBytecodes.CUDA_GRAPH_LAUNCH.value);
+            buffer.putInt(graphId);
+        }
+
+        void executionGraphInvalidate(int graphId) {
+            buffer.put(TornadoVMBytecodes.CUDA_GRAPH_DESTROY.value);
+            buffer.putInt(graphId);
         }
 
         int getLastCopyOutPosition() {

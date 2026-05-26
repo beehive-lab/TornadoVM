@@ -1,20 +1,20 @@
 # TornadoVM
-[![Build on [push]](https://github.com/beehive-lab/TornadoVM/actions/workflows/fast-test.yml/badge.svg)](https://github.com/beehive-lab/TornadoVM/actions/workflows/fast-test.yml)
+[![Build & Test JDK 21](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk21.yml/badge.svg)](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk21.yml)
+[![Build & Test JDK 25](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk25.yml/badge.svg?branch=jdk25)](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk25.yml)
 
 [![API Version](https://img.shields.io/maven-central/v/io.github.beehive-lab/tornado-api?logo=apache-maven&color=blue&label=Tornado%20API)](https://central.sonatype.com/artifact/io.github.beehive-lab/tornado-api)
 [![Runtime Version](https://img.shields.io/maven-central/v/io.github.beehive-lab/tornado-runtime?logo=apache-maven&color=blue&label=Tornado%20Runtime)](https://central.sonatype.com/artifact/io.github.beehive-lab/tornado-runtime)
-[![SDKMAN!](https://img.shields.io/badge/Install%20with-SDKMAN!-2c7a7b?logo=sdkman&logoColor=white)](https://sdkman.io/sdks/tornadovm/)
 
-![TornadoVM version](https://img.shields.io/badge/version-2.2.0-purple)  [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-1.4-4baaaa.svg)](CODE_OF_CONDUCT.md)  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2) ![License: GPL v2](https://img.shields.io/badge/License-GPL%20V2%20Classpath%20Exception-blue.svg)
+[![SDKMAN!](https://img.shields.io/badge/Install%20with-SDKMAN!-2c7a7b?logo=sdkman&logoColor=white)](https://sdkman.io/sdks/tornadovm/)
 
 <img align="left" width="180" height="180" src="etc/tornadoVM_Logo.jpg">
 
 TornadoVM is a plug-in to OpenJDK and GraalVM that allows programmers to automatically run Java programs on
 heterogeneous hardware.
-TornadoVM targets OpenCL, PTX and SPIR-V compatible devices which include multi-core CPUs, dedicated
-GPUs (Intel, NVIDIA, AMD), integrated GPUs (Intel HD Graphics and ARM Mali), and FPGAs (Intel and Xilinx).
+TornadoVM targets **OpenCL, PTX, Metal and SPIR-V** compatible devices which include multi-core CPUs, dedicated
+GPUs (Intel, NVIDIA, AMD), integrated GPUs (Apple Silicon, Intel HD Graphics and ARM Mali), and FPGAs (Intel and Xilinx).
 
-TornadoVM has three backends that generate OpenCL C, NVIDIA CUDA PTX assembly, and SPIR-V binary.
+TornadoVM has four backends that generate OpenCL C, NVIDIA CUDA PTX assembly, SPIR-V binary, and Metal Shading Language.
 Developers can choose which backends to install and run.
 
 ----------------------
@@ -25,7 +25,7 @@ Developers can choose which backends to install and run.
 
 For a quick introduction please read the following [FAQ](https://tornadovm.readthedocs.io/en/latest/).
 
-**Latest Release:** TornadoVM 2.2.0 - 17/12/2025 :
+**Latest Release:** TornadoVM 4.0.1-jdk21 - 29/04/2026 :
 See [CHANGELOG](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html).
 
 ----------------------
@@ -50,10 +50,11 @@ You can choose a backend-specific build:
 
 Backend   | SDKMAN! Latest Version
 --------- | --------------
-OpenCL   | `2.2.0-opencl` **(default)**
-PTX      | `2.2.0-ptx`
-SPIR-V   | `2.2.0-spirv`
-All Backends     | `2.2.0-full`
+OpenCL   | `4.0.0-opencl` **(default)**
+PTX      | `4.0.0-ptx`
+SPIR-V   | `4.0.0-spirv`
+Metal    | `4.0.0-metal`
+All Backends     | `4.0.0-full`
 
 
 Install **TornadoVM**:
@@ -121,12 +122,12 @@ that includes NBody, DFT, KMeans computation and matrix computations.
   <dependency>
     <groupId>io.github.beehive-lab</groupId>
     <artifactId>tornado-api</artifactId>
-    <version>2.2.0</version>
+    <version>4.0.1-jdk21</version>
   </dependency>
   <dependency>
     <groupId>io.github.beehive-lab</groupId>
     <artifactId>tornado-runtime</artifactId>
-    <version>2.2.0</version>
+    <version>4.0.1-jdk21</version>
   </dependency>
 </dependencies>
 ```

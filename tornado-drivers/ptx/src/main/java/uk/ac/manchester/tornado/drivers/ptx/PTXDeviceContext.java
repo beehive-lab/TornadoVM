@@ -28,6 +28,7 @@ import static uk.ac.manchester.tornado.api.utils.TornadoAPIUtils.isBoxedPrimitiv
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -69,6 +70,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     private final Map<Long, PTXStreamTable> streamTable;
     private boolean wasReset;
     private final Set<Long> executionIDs;
+    private PTXKernelStackFrame pendingKernelContextWrite;
 
     /**
      * Map table to represent the compiled-code per execution plan. Each entry in the execution plan has its own
@@ -303,8 +305,12 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         args.order(getByteOrder());
 
         // Kernel context pointer
-        int kernelContextWriteEventId = ptxKernelArgs.enqueueWrite(executionPlanId);
-        updateProfilerKernelContextWrite(executionPlanId, kernelContextWriteEventId, meta, ptxKernelArgs);
+        if (!isStreamCapturing(executionPlanId)) {
+            int kernelContextWriteEventId = ptxKernelArgs.enqueueWrite(executionPlanId);
+            updateProfilerKernelContextWrite(executionPlanId, kernelContextWriteEventId, meta, ptxKernelArgs);
+        } else {
+            pendingKernelContextWrite = ptxKernelArgs;
+        }
         long address = ptxKernelArgs.toAbsoluteAddress();
         args.putLong(address);
 
@@ -606,5 +612,36 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     public long mapOnDeviceMemoryRegion(long executionPlanId, long destDevicePtr, long srcDevicePtr, long offset, int sizeOfType) {
         PTXStream ptxStream = getStream(executionPlanId);
         return ptxStream.mapOnDeviceMemoryRegion(destDevicePtr, srcDevicePtr, offset, sizeOfType);
+    }
+
+    public void beginExecutionGraphCapture(long executionPlanId) {
+        PTXStream stream = getStream(executionPlanId);
+        stream.beginGraphCapture();
+    }
+
+    public long endExecutionGraphCaptureAndInstantiate(long executionPlanId) {
+        PTXStream stream = getStream(executionPlanId);
+        long handle = stream.endGraphCaptureAndInstantiate();
+
+        // Write the kernel context that was deferred during capture
+        if (pendingKernelContextWrite != null) {
+            pendingKernelContextWrite.enqueueWrite(executionPlanId);
+            pendingKernelContextWrite = null;
+        }
+
+        return handle;
+    }
+
+    public int launchExecutionGraph(long executionPlanId, long executionGraphHandle) {
+        PTXStream stream = getStream(executionPlanId);
+        return stream.launchGraph(executionGraphHandle);
+    }
+
+    public boolean isStreamCapturing(long executionPlanId) {
+        return getStream(executionPlanId).isCapturing();
+    }
+
+    public void destroyExecutionGraph(long executionGraphHandle) {
+        PTXStream.destroyGraph(executionGraphHandle);
     }
 }

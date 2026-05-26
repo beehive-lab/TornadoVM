@@ -41,6 +41,11 @@ public class TornadoOptions {
     public static final String DEFAULT_OPENCL_COMPILER_FLAGS = getProperty("tornado.opencl.compiler.flags", "-cl-mad-enable -cl-fast-relaxed-math -w");
 
     /**
+     * Default PTX Compiler Flags.
+     */
+    public static final String DEFAULT_METAL_COMPILER_FLAGS = getProperty("tornado.metal.compiler.flags", "");
+
+    /**
      * Default PTX Compiler Flags. Make sure the flags are passed in the following format: <flag><space><flag value><another flag><space><another flag value> and so on.
      * For example, CU_JIT_OPTIMIZATION_LEVEL 4 CU_JIT_TARGET 120
      */
@@ -83,6 +88,11 @@ public class TornadoOptions {
      */
     public static final boolean PRINT_KERNEL_SOURCE = getBooleanValue("tornado.printKernel", FALSE);
 
+    /**
+     * Priority of the Metal Backend. The higher the number, the more priority over
+     * the rest of the backends.
+     */
+    public static final int METAL_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.metal.priority", "0"));
     /**
      * Priority of the PTX Backend. The higher the number, the more priority over
      * the rest of the backends.
@@ -444,6 +454,11 @@ public class TornadoOptions {
      * Enable OpenCL Profiling. Enabled by default.
      */
     public static final boolean ENABLE_OPENCL_PROFILING = getBooleanValue("tornado.opencl.profiling.enable", TRUE);
+
+    /**
+     * Enable Metal Profiling. Enabled by default.
+     */
+    public static final boolean ENABLE_METAL_PROFILING = getBooleanValue("tornado.metal.profiling.enable", TRUE);
 
     /**
      * Enable to dump the generated methods to a file for debugging purposes. Disabled by default.

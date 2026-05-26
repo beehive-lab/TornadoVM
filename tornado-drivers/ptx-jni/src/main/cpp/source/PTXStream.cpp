@@ -515,9 +515,15 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
     CUresult result = cuMemcpyDtoHAsync((void*) (hostPointer + host_offset), device_ptr, (size_t) length, stream);
     LOG_PTX_AND_VALIDATE("cuMemcpyDtoHMemSeg", result);
     record_event(&afterEvent, &stream);
-    if (cuEventQuery(afterEvent) != CUDA_SUCCESS) {
-        cuEventSynchronize(afterEvent);
+    // Only synchronize when NOT capturing — sync is illegal during stream capture
+    CUstreamCaptureStatus captureStatus;
+    cuStreamIsCapturing(stream, &captureStatus);
+    if (captureStatus != CU_STREAM_CAPTURE_STATUS_ACTIVE) {
+        if (cuEventQuery(afterEvent) != CUDA_SUCCESS) {
+            cuEventSynchronize(afterEvent);
+        }
     }
+
     return wrapper_from_events(env, &beforeEvent, &afterEvent);
 }
 
@@ -555,8 +561,13 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
     CUresult result = cuMemcpyHtoDAsync(device_ptr, (void *) (hostPointer + host_offset), (size_t) length, stream);
     LOG_PTX_AND_VALIDATE("cuMemcpyHtoDMemSeg", result);
     record_event(&afterEvent, &stream);
-    if (cuEventQuery(afterEvent) != CUDA_SUCCESS) {
-        cuEventSynchronize(afterEvent);
+    CUstreamCaptureStatus captureStatus;
+    cuStreamIsCapturing(stream, &captureStatus);
+    // Only synchronize when NOT capturing — sync is illegal during stream capture
+    if (captureStatus != CU_STREAM_CAPTURE_STATUS_ACTIVE) {
+        if (cuEventQuery(afterEvent) != CUDA_SUCCESS) {
+            cuEventSynchronize(afterEvent);
+        }
     }
     return wrapper_from_events(env, &beforeEvent, &afterEvent);
 }
@@ -577,4 +588,106 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
     LOG_PTX_AND_VALIDATE("cuMemcpyHtoDAsyncMemSeg", result);
     record_event(&afterEvent, &stream);
     return wrapper_from_events(env, &beforeEvent, &afterEvent);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+ * Method:    cuStreamBeginCapture
+ * Signature: ([BI)J
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuStreamBeginCapture
+  (JNIEnv *env, jclass clazz, jbyteArray stream_wrapper, jint mode) {
+    CUstream stream;
+    stream_from_array(env, &stream, stream_wrapper);
+    CUresult result = cuStreamBeginCapture(stream, (CUstreamCaptureMode) mode);
+    LOG_PTX_AND_VALIDATE("cuStreamBeginCapture", result);
+    return (jlong) result;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+ * Method:    cuStreamEndCapture
+ * Signature: ([B)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuStreamEndCapture
+  (JNIEnv *env, jclass clazz, jbyteArray stream_wrapper) {
+    CUstream stream;
+    stream_from_array(env, &stream, stream_wrapper);
+    CUgraph graph;
+    CUresult result = cuStreamEndCapture(stream, &graph);
+    LOG_PTX_AND_VALIDATE("cuStreamEndCapture", result);
+    jbyteArray array = env->NewByteArray(sizeof(CUgraph));
+    env->SetByteArrayRegion(array, 0, sizeof(CUgraph),
+                            reinterpret_cast<const jbyte *>(&graph));
+    return array;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+ * Method:    cuGraphInstantiate
+ * Signature: ([B)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuGraphInstantiate
+  (JNIEnv *env, jclass clazz, jbyteArray graph_wrapper) {
+    CUgraph graph;
+    env->GetByteArrayRegion(graph_wrapper, 0, sizeof(CUgraph),
+                            reinterpret_cast<jbyte *>(&graph));
+    CUgraphExec graphExec;
+    #if CUDA_VERSION >= 12000
+        CUresult result = cuGraphInstantiate(&graphExec, graph, 0);
+    #else
+        CUresult result = cuGraphInstantiate(&graphExec, graph, NULL, NULL, 0);
+    #endif
+    LOG_PTX_AND_VALIDATE("cuGraphInstantiate", result);
+    jbyteArray array = env->NewByteArray(sizeof(CUgraphExec));
+    env->SetByteArrayRegion(array, 0, sizeof(CUgraphExec),
+                            reinterpret_cast<const jbyte *>(&graphExec));
+    return array;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+ * Method:    cuGraphLaunch
+ * Signature: ([B[B)J
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuGraphLaunch
+  (JNIEnv *env, jclass clazz, jbyteArray graph_exec_wrapper, jbyteArray stream_wrapper) {
+    CUgraphExec graphExec;
+    env->GetByteArrayRegion(graph_exec_wrapper, 0, sizeof(CUgraphExec),
+                            reinterpret_cast<jbyte *>(&graphExec));
+    CUstream stream;
+    stream_from_array(env, &stream, stream_wrapper);
+    CUresult result = cuGraphLaunch(graphExec, stream);
+    LOG_PTX_AND_VALIDATE("cuGraphLaunch", result);
+    return (jlong) result;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+ * Method:    cuGraphExecDestroy
+ * Signature: ([B)J
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuGraphExecDestroy
+  (JNIEnv *env, jclass clazz, jbyteArray graph_exec_wrapper) {
+    CUgraphExec graphExec;
+    env->GetByteArrayRegion(graph_exec_wrapper, 0, sizeof(CUgraphExec),
+                            reinterpret_cast<jbyte *>(&graphExec));
+    CUresult result = cuGraphExecDestroy(graphExec);
+    LOG_PTX_AND_VALIDATE("cuGraphExecDestroy", result);
+    return (jlong) result;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+ * Method:    cuGraphDestroy
+ * Signature: ([B)J
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuGraphDestroy
+  (JNIEnv *env, jclass clazz, jbyteArray graph_wrapper) {
+    CUgraph graph;
+    env->GetByteArrayRegion(graph_wrapper, 0, sizeof(CUgraph),
+                            reinterpret_cast<jbyte *>(&graph));
+    CUresult result = cuGraphDestroy(graph);
+    LOG_PTX_AND_VALIDATE("cuGraphDestroy", result);
+    return (jlong) result;
 }

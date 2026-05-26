@@ -7,6 +7,91 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 
 CHANGELOG
 
+TornadoVM 4.0.1-jdk21
+---------------------
+29/04/26
+
+Compatibility
+~~~~~~~~~~~~
+
+- `#832 <https://github.com/beehive-lab/TornadoVM/pull/832>`_: Adopt jdk21 version suffix on develop and update release workflows 
+- `#827 <https://github.com/beehive-lab/TornadoVM/pull/827>`_: Bump org.apache.logging.log4j:log4j-core from 2.25.3 to 2.25.4
+
+Bug Fixes
+~~~~~~~~~~~~
+
+- `#831 <https://github.com/beehive-lab/TornadoVM/pull/831>`_: [fix] F16 miscompilation for Metal, PTX, SPIR-V backends with JDK 25
+- `#830 <https://github.com/beehive-lab/TornadoVM/pull/830>`_: [fix] Fix F16 miscompilation in PTX and Metal backends
+- `#829 <https://github.com/beehive-lab/TornadoVM/pull/829>`_: [fix] Backport jdk25 OCL plugin fixes: 64-bit address arithmetic, node insertion, and atomics
+
+Other Changes
+~~~~~~~~~~~~
+
+- `#823 <https://github.com/beehive-lab/TornadoVM/pull/823>`_: Update SDKMAN! versions for backend options
+- `#825 <https://github.com/beehive-lab/TornadoVM/pull/825>`_: [feat] Add workflow to automatically create mirroring PRs for JDK25
+- `#824 <https://github.com/beehive-lab/TornadoVM/pull/824>`_: Update master
+
+
+TornadoVM 4.0.0
+---------------
+02/04/26
+
+Improvements
+~~~~~~~~~~~~
+
+- `#811 <https://github.com/beehive-lab/TornadoVM/pull/811>`_: Add support for CUDA Graphs to replay bytecodes to reduce dispatch overhead
+
+Bug Fixes
+~~~~~~~~~~~~
+
+- `#817 <https://github.com/beehive-lab/TornadoVM/pull/817>`_: [hotfix] Fix double-deletion of PiNode when multiple OffsetAddressNodes share the same PiNode
+
+Other Changes
+~~~~~~~~~~~~
+
+- `#813 <https://github.com/beehive-lab/TornadoVM/pull/813>`_: Add SIMD Shuffle/Reduction Support to PTX Backend    
+- `#814 <https://github.com/beehive-lab/TornadoVM/pull/814>`_: [docs] Update readme to inlcude metal
+- `#819 <https://github.com/beehive-lab/TornadoVM/pull/819>`_: Sync master with develop
+- `#818 <https://github.com/beehive-lab/TornadoVM/pull/818>`_: [fix] Make cmake to always set CMAKE_OSX_SYSROOT explicitly, making i…
+- `#796 <https://github.com/beehive-lab/TornadoVM/pull/796>`_: [JDK21] Add \`Apple Metal\` backend  to run natively on Apple Silicon
+- `#808 <https://github.com/beehive-lab/TornadoVM/pull/808>`_: Add TornadoVM developer skill (build, test, debug, Java 21+ idioms) for Claude
+- `#806 <https://github.com/beehive-lab/TornadoVM/pull/806>`_: Release 3.0.0-jdk25
+- `#807 <https://github.com/beehive-lab/TornadoVM/pull/807>`_: Post release minor fixes for mvn deploy and readme budges 
+
+
+TornadoVM 3.0.0
+---------------
+24/02/26
+
+Improvements
+~~~~~~~~~~~~
+
+- `#790 <https://github.com/beehive-lab/TornadoVM/pull/790>`_: [feat] Move --intellijinit from CLI to developer-only Makefile target with dynamic backend selection
+
+Compatibility
+~~~~~~~~~~~~
+
+- `#804 <https://github.com/beehive-lab/TornadoVM/pull/804>`_: Refactor GH actions to split JDK21 and JDK25 testing, packaging and deployment 
+- `#777 <https://github.com/beehive-lab/TornadoVM/pull/777>`_: Bump org.apache.logging.log4j:log4j-core from 2.17.1 to 2.25.3
+- `#775 <https://github.com/beehive-lab/TornadoVM/pull/775>`_: [docs] Revise TornadoVM installation instructions
+- `#776 <https://github.com/beehive-lab/TornadoVM/pull/776>`_: [feat] Add new action to push default tornadovm version
+
+Bug Fixes
+~~~~~~~~~~~~
+
+- `#785 <https://github.com/beehive-lab/TornadoVM/pull/785>`_: [fix] Added scripts in dist directory to resolve issue with intellijinit
+
+Other Changes
+~~~~~~~~~~~~
+
+- `#803 <https://github.com/beehive-lab/TornadoVM/pull/803>`_: Whitelist \`TestInheritedFields\` for non-OpenCL backends
+- `#802 <https://github.com/beehive-lab/TornadoVM/pull/802>`_: [fix] Handle Windows CRLF line endings in virtual device tests and native tests & Update Makefile.mak
+- `#801 <https://github.com/beehive-lab/TornadoVM/pull/801>`_: Add GitHub workflows for JDK 25 build, deployment, and release prepar…
+- `#799 <https://github.com/beehive-lab/TornadoVM/pull/799>`_: Add JDK 25.0.2 release automation workflows
+- `#787 <https://github.com/beehive-lab/TornadoVM/pull/787>`_: [refactor] Prepare compiler and API infrastructure for Jdk25 migration 
+- `#781 <https://github.com/beehive-lab/TornadoVM/pull/781>`_: Fix OCLFieldBuffer to include inherited instance fields
+
+
 TornadoVM 2.2.0
 ---------------
 17/12/25

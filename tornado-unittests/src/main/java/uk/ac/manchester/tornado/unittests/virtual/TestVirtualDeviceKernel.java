@@ -61,9 +61,11 @@ public class TestVirtualDeviceKernel extends TornadoTestBase {
     @After
     public void after() {
         // make sure the source file generated is deleted
-        File fileLog = new File(SOURCE_DIR);
-        if (fileLog.exists()) {
-            fileLog.delete();
+        if (SOURCE_DIR != null) {
+            File fileLog = new File(SOURCE_DIR);
+            if (fileLog.exists()) {
+                fileLog.delete();
+            }
         }
     }
 
@@ -106,6 +108,8 @@ public class TestVirtualDeviceKernel extends TornadoTestBase {
     public void testVirtualDeviceKernel() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
         boolean coops = TornadoNativeArray.ARRAY_HEADER == 16;
         String kernelFile = coops ? "virtualDeviceKernelGPU.cl" : "virtualDeviceKernelGPU_uncompressed.cl";
         testVirtualDeviceKernel(kernelFile);

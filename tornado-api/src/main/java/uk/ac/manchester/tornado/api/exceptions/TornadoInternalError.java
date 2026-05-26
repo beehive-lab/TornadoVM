@@ -29,6 +29,10 @@ public class TornadoInternalError extends Error {
         throw new TornadoInternalError("unimplemented");
     }
 
+    public static RuntimeException unimplementedMetal() {
+        throw new TornadoInternalError("unimplemented yet in Metal backend.");
+    }
+
     public static RuntimeException unimplemented(String msg) {
         throw new TornadoInternalError("unimplemented: %s", msg);
     }

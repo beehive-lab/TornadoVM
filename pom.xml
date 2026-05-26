@@ -5,7 +5,7 @@
 
     <groupId>io.github.beehive-lab</groupId>
     <artifactId>tornado</artifactId>
-    <version>2.2.1-dev</version>
+    <version>4.0.2-jdk21-dev</version>
     <packaging>pom</packaging>
     <name>tornado</name>
     <url>https://github.com/beehive-lab/tornadovm</url>
@@ -125,6 +125,7 @@
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/opencl-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/ptx-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/spirv-exports</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/metal-exports</arg>
                             </compilerArgs>
                         </configuration>
                     </plugin>
@@ -310,6 +311,10 @@
         </profile>
         <profile>
             <id>portable</id>
+            <!--
+                  Sonatype requires a main jar, even for platform-specific artifacts, so we supply it with an
+                  empty file.
+                  -->
             <build>
                 <plugins>
                     <plugin>
@@ -390,6 +395,7 @@
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/opencl-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/ptx-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/spirv-exports</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/metal-exports</arg>
                             </compilerArgs>
                         </configuration>
                     </plugin>
@@ -630,7 +636,7 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
-            <version>2.25.3</version>
+            <version>2.25.4</version>
         </dependency>
         <dependency>
             <groupId>org.graalvm.polyglot</groupId>

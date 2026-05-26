@@ -139,6 +139,10 @@ public final class Int4 implements TornadoVectorsInterface<IntBuffer> {
         return storage;
     }
 
+    public int[] getArray() {
+        return storage;
+    }
+
     public int get(int index) {
         return storage[index];
     }

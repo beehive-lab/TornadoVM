@@ -1665,4 +1665,71 @@ public class PTXLIRStmt {
         }
 
     }
+
+    /**
+     * Emits a PTX {@code shfl.sync} warp-shuffle instruction.
+     *
+     * <p>Syntax: {@code shfl.sync.<mode>.b32 dest, src, operand, clamp, membermask;}
+     * <ul>
+     *   <li>{@code DOWN} — each lane receives the value from the lane {@code operand} positions ahead</li>
+     *   <li>{@code IDX}  — each lane receives the value from lane {@code operand}</li>
+     * </ul>
+     *
+     * <p>The clamp value is fixed at 31 (maximum lane ID) and the member mask at
+     * {@code 0xFFFFFFFF} (full 32-lane warp participation).
+     */
+    @Opcode("SHFL_SYNC")
+    public static class ShuffleSyncStmt extends AbstractInstruction {
+
+        public enum Mode {
+            DOWN("down"),
+            IDX("idx"),
+            UP("up"),
+            BFLY("bfly");
+
+            private final String ptxName;
+
+            Mode(String ptxName) {
+                this.ptxName = ptxName;
+            }
+
+            public String getPtxName() {
+                return ptxName;
+            }
+        }
+
+        public static final LIRInstructionClass<ShuffleSyncStmt> TYPE = LIRInstructionClass.create(ShuffleSyncStmt.class);
+
+        @Def protected Value result;
+        @Use protected Value src;
+        @Use protected Value operand;
+        private final Mode mode;
+
+        public ShuffleSyncStmt(Mode mode, Value result, Value src, Value operand) {
+            super(TYPE);
+            this.mode = mode;
+            this.result = result;
+            this.src = src;
+            this.operand = operand;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            // shfl.sync.<mode>.b32 dest, src, operand, 31, 0xFFFFFFFF;
+            asm.emitSymbol(TAB);
+            asm.emit("shfl.sync." + mode.getPtxName() + ".b32");
+            asm.emitSymbol(SPACE);
+            asm.emitValue(result);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(src);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(operand);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emit("31");
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emit("0xFFFFFFFF");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
 }

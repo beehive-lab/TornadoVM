@@ -217,6 +217,36 @@ public class KernelContext implements ExecutionContext {
     }
 
     /**
+     * Returns the sum of {@code val} across all active SIMD lanes.
+     * <p>
+     * Metal equivalent: {@code simd_sum(val)}<br>
+     * PTX equivalent: butterfly reduction with {@code shfl.sync.down.b32}
+     */
+    public float simdSum(float val) {
+        return val;
+    }
+
+    /**
+     * Returns the value held by the thread {@code delta} lanes ahead in the SIMD group.
+     * <p>
+     * Metal equivalent: {@code simd_shuffle_down(val, delta)}<br>
+     * PTX equivalent: {@code shfl.sync.down.b32 dest, val, delta, 31, 0xFFFFFFFF}
+     */
+    public float simdShuffleDown(float val, int delta) {
+        return val;
+    }
+
+    /**
+     * Broadcasts the value from lane 0 to all active SIMD lanes.
+     * <p>
+     * Metal equivalent: {@code simd_broadcast_first(val)}<br>
+     * PTX equivalent: {@code shfl.sync.idx.b32 dest, val, 0, 31, 0xFFFFFFFF}
+     */
+    public float simdBroadcastFirst(float val) {
+        return val;
+    }
+
+    /**
      * Method used to read a memory address by using the array and the index,
      * then add the value of val to it, and write the result back to the same address.
      * <p>

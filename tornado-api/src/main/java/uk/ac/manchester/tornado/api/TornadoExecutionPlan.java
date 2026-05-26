@@ -34,6 +34,7 @@ import uk.ac.manchester.tornado.api.plan.types.OffProfiler;
 import uk.ac.manchester.tornado.api.plan.types.OffThreadInfo;
 import uk.ac.manchester.tornado.api.plan.types.WithAllGraphs;
 import uk.ac.manchester.tornado.api.plan.types.WithBatch;
+import uk.ac.manchester.tornado.api.plan.types.WithCUDAGraph;
 import uk.ac.manchester.tornado.api.plan.types.WithClearProfiles;
 import uk.ac.manchester.tornado.api.plan.types.WithCompilerFlags;
 import uk.ac.manchester.tornado.api.plan.types.WithConcurrentDevices;
@@ -631,5 +632,11 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         }
         tornadoExecutor.withWarmUpIterations(iterations, executionFrame);
         return new WithWarmUpIterations(this, iterations);
+    }
+
+    public TornadoExecutionPlan withCUDAGraph() {
+        //TODO: include a check to verify that the BACKEND is PTX
+        tornadoExecutor.withCUDAGraph();
+        return new WithCUDAGraph(this);
     }
 }

@@ -54,6 +54,8 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     void withBatch(String batchSize);
 
+    void withCUDAGraph();
+
     void withMemoryLimit(String memoryLimit);
 
     void withoutMemoryLimit();

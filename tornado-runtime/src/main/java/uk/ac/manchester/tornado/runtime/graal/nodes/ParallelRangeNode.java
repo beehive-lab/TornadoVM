@@ -24,7 +24,6 @@
 package uk.ac.manchester.tornado.runtime.graal.nodes;
 
 import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
@@ -34,9 +33,9 @@ public class ParallelRangeNode extends AbstractParallelNode {
 
     public static final NodeClass<ParallelRangeNode> TYPE = NodeClass.create(ParallelRangeNode.class);
 
-    @Input(InputType.Association)
+    @Input
     private FloatingNode offset;
-    @Input(InputType.Association)
+    @Input
     private FloatingNode stride;
 
     public ParallelRangeNode(int index, ValueNode range, ParallelOffsetNode offset, ParallelStrideNode stride) {

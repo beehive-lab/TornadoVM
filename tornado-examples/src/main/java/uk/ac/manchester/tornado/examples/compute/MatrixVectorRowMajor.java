@@ -212,6 +212,99 @@ public class MatrixVectorRowMajor {
         return localSum[0];
     }
 
+    /**
+     * 4-way unrolled FP32 dot product for a single row. Uses 4 independent accumulators
+     * to expose instruction-level parallelism, matching the pattern used in Q8 kernels.
+     */
+    public static float matrixVectorRowMajorOptimizedUnrolled(KernelContext context, int localSize, FloatArray x, FloatArray w, int n) {
+        int rowId = context.groupIdx;
+        int localId = context.localIdx;
+
+        float[] localSum = context.allocateFloatLocalArray(localSize);
+        int rowOffset = rowId * n;
+
+        float ps0 = 0.0f, ps1 = 0.0f, ps2 = 0.0f, ps3 = 0.0f;
+        for (int j = localId * 4; j < n - 3; j += localSize * 4) {
+            ps0 += w.get(rowOffset + j)     * x.get(j);
+            ps1 += w.get(rowOffset + j + 1) * x.get(j + 1);
+            ps2 += w.get(rowOffset + j + 2) * x.get(j + 2);
+            ps3 += w.get(rowOffset + j + 3) * x.get(j + 3);
+        }
+        float partialSum = ps0 + ps1 + ps2 + ps3;
+        for (int j = ((n / 4) * 4) + localId; j < n; j += localSize) {
+            partialSum += w.get(rowOffset + j) * x.get(j);
+        }
+
+        localSum[localId] = partialSum;
+        context.localBarrier();
+
+        for (int stride = localSize / 2; stride > 0; stride >>= 1) {
+            if (localId < stride) {
+                localSum[localId] += localSum[localId + stride];
+            }
+            context.localBarrier();
+        }
+        return localSum[0];
+    }
+
+    public static void matrixVectorGenericUnrolled(KernelContext context, FloatArray x, FloatArray hb, FloatArray w, int n, int d, int localWorkGroupSize) {
+        int rowId = context.groupIdx;
+        int localId = context.localIdx;
+        if (rowId >= d) {
+            return;
+        }
+        float sum = matrixVectorRowMajorOptimizedUnrolled(context, localWorkGroupSize, x, w, n);
+        if (localId == 0) {
+            hb.set(rowId, sum);
+        }
+    }
+
+    /**
+     * 4-way unrolled FP16 dot product for a single row.
+     */
+    public static float matrixVectorRowMajorOptimizedFP16Unrolled(KernelContext context, int localSize, FloatArray x, HalfFloatArray w, int n) {
+        int rowId = context.groupIdx;
+        int localId = context.localIdx;
+
+        float[] localSum = context.allocateFloatLocalArray(localSize);
+        int rowOffset = rowId * n;
+
+        float ps0 = 0.0f, ps1 = 0.0f, ps2 = 0.0f, ps3 = 0.0f;
+        for (int j = localId * 4; j < n - 3; j += localSize * 4) {
+            ps0 += w.get(rowOffset + j).getFloat32()     * x.get(j);
+            ps1 += w.get(rowOffset + j + 1).getFloat32() * x.get(j + 1);
+            ps2 += w.get(rowOffset + j + 2).getFloat32() * x.get(j + 2);
+            ps3 += w.get(rowOffset + j + 3).getFloat32() * x.get(j + 3);
+        }
+        float partialSum = ps0 + ps1 + ps2 + ps3;
+        for (int j = ((n / 4) * 4) + localId; j < n; j += localSize) {
+            partialSum += w.get(rowOffset + j).getFloat32() * x.get(j);
+        }
+
+        localSum[localId] = partialSum;
+        context.localBarrier();
+
+        for (int stride = localSize / 2; stride > 0; stride >>= 1) {
+            if (localId < stride) {
+                localSum[localId] += localSum[localId + stride];
+            }
+            context.localBarrier();
+        }
+        return localSum[0];
+    }
+
+    public static void matrixVectorGenericFP16Unrolled(KernelContext context, FloatArray x, FloatArray hb, HalfFloatArray w, int n, int d, int localWorkGroupSize) {
+        int rowId = context.groupIdx;
+        int localId = context.localIdx;
+        if (rowId >= d) {
+            return;
+        }
+        float sum = matrixVectorRowMajorOptimizedFP16Unrolled(context, localWorkGroupSize, x, w, n);
+        if (localId == 0) {
+            hb.set(rowId, sum);
+        }
+    }
+
     public static void reductionCalculateMax(KernelContext context, FloatArray max, FloatArray x, FloatArray x_scale, FloatArray inv_scale, int localMemSize, int arraySize) {
         int gid = context.globalIdx;
         int lid = context.localIdx;
@@ -801,6 +894,8 @@ public class MatrixVectorRowMajor {
         FloatArray outputQ8Vec = new FloatArray(outputDim);
         FloatArray outputQ8Byte = new FloatArray(outputDim);
         FloatArray outputFp16 = new FloatArray(outputDim);
+        FloatArray outputUnrolled = new FloatArray(outputDim);
+        FloatArray outputFp16Unrolled = new FloatArray(outputDim);
 
         // DP4A-specific arrays (only if enabled)
         FloatArray outputQ8DP4A = supportsDP4A ? new FloatArray(outputDim) : null;
@@ -820,6 +915,8 @@ public class MatrixVectorRowMajor {
         ArrayList<Long> q8VectorizedTimers = new ArrayList<>();
         ArrayList<Long> q8ByteTimers = new ArrayList<>();
         ArrayList<Long> fp16Timers = new ArrayList<>();
+        ArrayList<Long> unrolledTimers = new ArrayList<>();
+        ArrayList<Long> fp16UnrolledTimers = new ArrayList<>();
 
         ArrayList<Long> q8Dp4aTimers = supportsDP4A ? new ArrayList<>() : null;
         ArrayList<Long> q8Dp4aLocalTimers = supportsDP4A ? new ArrayList<>() : null;
@@ -859,6 +956,30 @@ public class MatrixVectorRowMajor {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, outputFp16);
 
         ImmutableTaskGraph immutableTaskGraphFp16 = taskGraphFp16.snapshot();
+
+        WorkerGrid1D workerUnrolled = new WorkerGrid1D(outputDim * LOCAL_WORK_GROUP_SIZE);
+        GridScheduler schedulerUnrolled = new GridScheduler("s4.t0", workerUnrolled);
+        workerUnrolled.setLocalWork(LOCAL_WORK_GROUP_SIZE, 1, 1);
+
+        TaskGraph taskGraphUnrolled = new TaskGraph("s4")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input, weights)
+                .task("t0", MatrixVectorRowMajor::matrixVectorGenericUnrolled, new KernelContext(), input,
+                        outputUnrolled, weights, inputDim, outputDim, LOCAL_WORK_GROUP_SIZE)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outputUnrolled);
+
+        ImmutableTaskGraph immutableTaskGraphUnrolled = taskGraphUnrolled.snapshot();
+
+        WorkerGrid1D workerFp16Unrolled = new WorkerGrid1D(outputDim * LOCAL_WORK_GROUP_SIZE);
+        GridScheduler schedulerFp16Unrolled = new GridScheduler("s5.t0", workerFp16Unrolled);
+        workerFp16Unrolled.setLocalWork(LOCAL_WORK_GROUP_SIZE, 1, 1);
+
+        TaskGraph taskGraphFp16Unrolled = new TaskGraph("s5")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input, fp16weights)
+                .task("t0", MatrixVectorRowMajor::matrixVectorGenericFP16Unrolled, new KernelContext(), input,
+                        outputFp16Unrolled, fp16weights, inputDim, outputDim, LOCAL_WORK_GROUP_SIZE)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outputFp16Unrolled);
+
+        ImmutableTaskGraph immutableTaskGraphFp16Unrolled = taskGraphFp16Unrolled.snapshot();
 
         // Q8 vectorized - allocation
         Int8Array weightsQuantized = new Int8Array(inputDim * outputDim);
@@ -1034,6 +1155,8 @@ public class MatrixVectorRowMajor {
         TornadoExecutionPlan executionPlan3 = new TornadoExecutionPlan(immutableTaskGraphFp16);
         TornadoExecutionPlan executionPlanQ8Vectorized = new TornadoExecutionPlan(immutableTaskGraphQ8Vectorized);
         TornadoExecutionPlan executionPlanQ8Byte = new TornadoExecutionPlan(immutableTaskGraphQ8Bytes);
+        TornadoExecutionPlan executionPlanUnrolled = new TornadoExecutionPlan(immutableTaskGraphUnrolled);
+        TornadoExecutionPlan executionPlanFp16Unrolled = new TornadoExecutionPlan(immutableTaskGraphFp16Unrolled);
 
         TornadoExecutionPlan executionPlanQ8Dp4a = supportsDP4A ? new TornadoExecutionPlan(immutableTaskGraphDp4a) : null;
         TornadoExecutionPlan executionPlanQ8Dp4aPacked = supportsDP4A ? new TornadoExecutionPlan(immutableTaskGraphDp4aPacked) : null;
@@ -1064,6 +1187,16 @@ public class MatrixVectorRowMajor {
         executionPlanQ8Byte.withGridScheduler(schedulerQ8Bytes);
         for (int i = 0; i < WARM_UP_ITERATIONS; i++) {
             executionPlanQ8Byte.withGridScheduler(schedulerQ8Bytes).execute();
+        }
+
+        executionPlanUnrolled.withGridScheduler(schedulerUnrolled);
+        for (int i = 0; i < WARM_UP_ITERATIONS; i++) {
+            executionPlanUnrolled.withGridScheduler(schedulerUnrolled).execute();
+        }
+
+        executionPlanFp16Unrolled.withGridScheduler(schedulerFp16Unrolled);
+        for (int i = 0; i < WARM_UP_ITERATIONS; i++) {
+            executionPlanFp16Unrolled.withGridScheduler(schedulerFp16Unrolled).execute();
         }
 
         // Warm-up DP4A benchmarks (if enabled)
@@ -1128,6 +1261,20 @@ public class MatrixVectorRowMajor {
             q8ByteTimers.add(end - start);
         }
 
+        for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
+            long start = System.nanoTime();
+            executionPlanUnrolled.withGridScheduler(schedulerUnrolled).execute();
+            long end = System.nanoTime();
+            unrolledTimers.add(end - start);
+        }
+
+        for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
+            long start = System.nanoTime();
+            executionPlanFp16Unrolled.withGridScheduler(schedulerFp16Unrolled).execute();
+            long end = System.nanoTime();
+            fp16UnrolledTimers.add(end - start);
+        }
+
         // Benchmark DP4A implementations (if enabled)
         if (supportsDP4A) {
             System.out.println("Benchmarking DP4A implementations...");
@@ -1173,6 +1320,8 @@ public class MatrixVectorRowMajor {
         float maxError7 = 0.0f;
         float maxError8 = 0.0f;
         float maxError9 = 0.0f;
+        float maxErrorUnrolled = 0.0f;
+        float maxErrorFp16Unrolled = 0.0f;
 
         for (int i = 0; i < outputDim; i++) {
             float error = Math.abs(outputSeq.get(i) - outputParallel.get(i));
@@ -1217,6 +1366,22 @@ public class MatrixVectorRowMajor {
             if (errorQ8Byte > DELTA_Q) {
                 System.out.printf("[Q8 Byte] Error at index %d: Expected %.6f, Actual %.6f, Diff %.6f\n",
                         i, outputSeq.get(i), outputQ8Byte.get(i), errorQ8Byte);
+                isValid = false;
+            }
+
+            float errorUnrolled = Math.abs(outputSeq.get(i) - outputUnrolled.get(i));
+            maxErrorUnrolled = Math.max(maxErrorUnrolled, errorUnrolled);
+            if (errorUnrolled > DELTA) {
+                System.out.printf("[FP32 Unrolled] Error at index %d: Expected %.6f, Actual %.6f, Diff %.6f\n",
+                        i, outputSeq.get(i), outputUnrolled.get(i), errorUnrolled);
+                isValid = false;
+            }
+
+            float errorFp16Unrolled = Math.abs(outputSeq.get(i) - outputFp16Unrolled.get(i));
+            maxErrorFp16Unrolled = Math.max(maxErrorFp16Unrolled, errorFp16Unrolled);
+            if (errorFp16Unrolled > DELTA) {
+                System.out.printf("[FP16 Unrolled] Error at index %d: Expected %.6f, Actual %.6f, Diff %.6f\n",
+                        i, outputSeq.get(i), outputFp16Unrolled.get(i), errorFp16Unrolled);
                 isValid = false;
             }
 
@@ -1282,6 +1447,8 @@ public class MatrixVectorRowMajor {
         LongSummaryStatistics statsFp16 = fp16Timers.stream().mapToLong(Long::longValue).summaryStatistics();
         LongSummaryStatistics statsQ8Vectorized = q8VectorizedTimers.stream().mapToLong(Long::longValue).summaryStatistics();
         LongSummaryStatistics statsQ8Byte = q8ByteTimers.stream().mapToLong(Long::longValue).summaryStatistics();
+        LongSummaryStatistics statsUnrolled = unrolledTimers.stream().mapToLong(Long::longValue).summaryStatistics();
+        LongSummaryStatistics statsFp16Unrolled = fp16UnrolledTimers.stream().mapToLong(Long::longValue).summaryStatistics();
 
         LongSummaryStatistics statsQ8Dp4a = supportsDP4A ? q8Dp4aTimers.stream().mapToLong(Long::longValue).summaryStatistics() : null;
         LongSummaryStatistics statsQ8Dp4aPacked = supportsDP4A ? q8Dp4aPackedTimers.stream().mapToLong(Long::longValue).summaryStatistics() : null;
@@ -1297,6 +1464,8 @@ public class MatrixVectorRowMajor {
         double fp16GFlops = (totalFlops * 1e-9) / (statsFp16.getAverage() * 1e-9);
         double q8VectorizedGFlops = (totalFlops * 1e-9) / (statsQ8Vectorized.getAverage() * 1e-9);
         double q8ByteGFlops = (totalFlops * 1e-9) / (statsQ8Byte.getAverage() * 1e-9);
+        double unrolledGFlops = (totalFlops * 1e-9) / (statsUnrolled.getAverage() * 1e-9);
+        double fp16UnrolledGFlops = (totalFlops * 1e-9) / (statsFp16Unrolled.getAverage() * 1e-9);
 
         Double q8Dp4aGFlops = supportsDP4A ? (totalFlops * 1e-9) / (statsQ8Dp4a.getAverage() * 1e-9) : null;
         Double q8Dp4aPackedGFlops = supportsDP4A ? (totalFlops * 1e-9) / (statsQ8Dp4aPacked.getAverage() * 1e-9) : null;
@@ -1343,6 +1512,18 @@ public class MatrixVectorRowMajor {
         System.out.printf("  Min time: %.3f ms\n", (double) statsQ8Byte.getMin() / 1_000_000);
         System.out.printf("  Max time: %.3f ms\n", (double) statsQ8Byte.getMax() / 1_000_000);
         System.out.printf("  Performance: %.2f GFLOP/s\n", q8ByteGFlops);
+
+        System.out.println("FP32 4-Way Unrolled (TornadoVM):");
+        System.out.printf("  Average time: %.3f ms\n", statsUnrolled.getAverage() / 1_000_000);
+        System.out.printf("  Min time: %.3f ms\n", (double) statsUnrolled.getMin() / 1_000_000);
+        System.out.printf("  Max time: %.3f ms\n", (double) statsUnrolled.getMax() / 1_000_000);
+        System.out.printf("  Performance: %.2f GFLOP/s\n", unrolledGFlops);
+
+        System.out.println("FP16 4-Way Unrolled (TornadoVM):");
+        System.out.printf("  Average time: %.3f ms\n", statsFp16Unrolled.getAverage() / 1_000_000);
+        System.out.printf("  Min time: %.3f ms\n", (double) statsFp16Unrolled.getMin() / 1_000_000);
+        System.out.printf("  Max time: %.3f ms\n", (double) statsFp16Unrolled.getMax() / 1_000_000);
+        System.out.printf("  Performance: %.2f GFLOP/s\n", fp16UnrolledGFlops);
 
         if (supportsDP4A) {
             System.out.println("Q8 DP4A:");
@@ -1394,6 +1575,15 @@ public class MatrixVectorRowMajor {
 
         double speedupQ8ByteVsVectorized = statsQ8Vectorized.getAverage() / statsQ8Byte.getAverage();
         System.out.printf("Speedup: Q8 ByteArray vs Q8 Vectorized %.2fx\n", speedupQ8ByteVsVectorized);
+
+        double speedupUnrolledVsFp32 = statsKernelContext.getAverage() / statsUnrolled.getAverage();
+        System.out.printf("Speedup: FP32 Unrolled vs FP32 Stride %.2fx\n", speedupUnrolledVsFp32);
+
+        double speedupFp16UnrolledVsFp16 = statsFp16.getAverage() / statsFp16Unrolled.getAverage();
+        System.out.printf("Speedup: FP16 Unrolled vs FP16 Stride %.2fx\n", speedupFp16UnrolledVsFp16);
+
+        double speedupQ8ByteVsFp32Unrolled = statsUnrolled.getAverage() / statsQ8Byte.getAverage();
+        System.out.printf("Speedup: Q8 ByteArray vs FP32 Unrolled %.2fx\n", speedupQ8ByteVsFp32Unrolled);
 
         if (supportsDP4A) {
             double speedup6 = statsFp16.getAverage() / statsQ8Dp4a.getAverage();

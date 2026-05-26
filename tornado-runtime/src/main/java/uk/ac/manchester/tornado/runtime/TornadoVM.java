@@ -193,6 +193,10 @@ public class TornadoVM {
         executeActionOnInterpreters(TornadoVMInterpreter::clearProfiles);
     }
 
+    public void destroyExecutionGraphs() {
+        executeActionOnInterpreters(TornadoVMInterpreter::destroyExecutionGraphs);
+    }
+
     public void printTimes() {
         executeActionOnInterpreters(TornadoVMInterpreter::printTimes);
     }

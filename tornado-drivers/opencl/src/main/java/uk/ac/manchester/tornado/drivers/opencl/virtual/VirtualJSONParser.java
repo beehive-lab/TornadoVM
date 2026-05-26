@@ -40,7 +40,7 @@ import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEV
 
 public class VirtualJSONParser {
 
-    private static final Pattern pattern =  Pattern.compile(" |\",|\"|\t|]|\\[");
+    private static final Pattern pattern =  Pattern.compile(" |\",|\"|\t|\\r|]|\\[");
 
     private enum JsonKey {
         deviceName,
@@ -53,7 +53,7 @@ public class VirtualJSONParser {
     }
 
     public static VirtualDeviceDescriptor getDeviceDescriptor() {
-        String json = readVirtualDeviceJson();
+        String json = readVirtualDeviceJson().replace("\r", "");
         HashMap<JsonKey, String> jsonEntries = new HashMap<>();
         for (String line : json.split("\n")) {
             Matcher matcher = pattern.matcher(line);

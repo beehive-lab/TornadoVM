@@ -336,6 +336,11 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
+    public long endExecutionGraphCaptureAndInstantiate(long executionPlanId) {
+        return getDeviceContext().endExecutionGraphCaptureAndInstantiate(executionPlanId);
+    }
+
+    @Override
     public long allocate(Object object, long batchSize, DeviceBufferState state, Access access) {
         final XPUBuffer buffer;
         if (!state.hasObjectBuffer() || !state.isLockedBuffer()) {
@@ -716,6 +721,28 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     @Override
     public void setAtomicRegion(XPUBuffer bufferAtomics) {
 
+    }
+
+    @Override
+    public boolean supportsExecutionGraphs() {
+        return true;
+    }
+
+    @Override
+    public void beginExecutionGraphCapture(long executionPlanId) {
+        getDeviceContext().beginExecutionGraphCapture(executionPlanId);
+    }
+
+
+
+    @Override
+    public int launchExecutionGraph(long executionPlanId, long executionGraphHandle) {
+        return getDeviceContext().launchExecutionGraph(executionPlanId, executionGraphHandle);
+    }
+
+    @Override
+    public void destroyExecutionGraph(long executionGraphHandle) {
+        getDeviceContext().destroyExecutionGraph(executionGraphHandle);
     }
 
     @Override

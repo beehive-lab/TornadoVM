@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2022, 2025, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2022, 2025-2026, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,12 +32,14 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
+import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DInt;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -591,5 +593,68 @@ public class TestConditionals extends TornadoTestBase {
             throw new RuntimeException(e);
         }
         assertFalse(caughtInternalException);
+    }
+
+    /**
+     * Kernel with an if-else where both branches write to the same {@link Matrix2DInt}
+     * parameter using 2D {@link KernelContext} indices. This pattern previously
+     * triggered a {@code GraalGraphError} in {@code TornadoNativeTypeElimination}
+     * because a shared {@code PiNode} was deleted more than once when it had
+     * multiple {@code OffsetAddressNode} usages.
+     */
+    private static void ifElseWriteMatrix2D(KernelContext context, Matrix2DInt mtx, IntArray arr) {
+        int row = context.globalIdx;
+        int col = context.globalIdy;
+        int a = arr.get(0);
+        if (a > col) {
+            mtx.set(row, col, a);
+        } else {
+            mtx.set(row, col, -1);
+        }
+    }
+
+    private static void ifElseWriteMatrix2DSequential(Matrix2DInt mtx, IntArray arr) {
+        int a = arr.get(0);
+        for (int row = 0; row < mtx.getNumRows(); row++) {
+            for (int col = 0; col < mtx.getNumColumns(); col++) {
+                if (a > col) {
+                    mtx.set(row, col, a);
+                } else {
+                    mtx.set(row, col, -1);
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testIfElseBothBranchesWriteMatrix2D() throws TornadoExecutionPlanException {
+        final int rows = 5;
+        final int cols = 8;
+
+        Matrix2DInt mtxTornado = new Matrix2DInt(rows, cols);
+        Matrix2DInt mtxSequential = new Matrix2DInt(rows, cols);
+        IntArray arr = IntArray.fromArray(new int[]{3, 1, 2, 4, 5, 6});
+
+        WorkerGrid workerGrid = new WorkerGrid2D(rows, cols);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
+        KernelContext context = new KernelContext();
+
+        TaskGraph taskGraph = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, arr)
+                .task("t0", TestConditionals::ifElseWriteMatrix2D, context, mtxTornado, arr)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, mtxTornado);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler).execute();
+        }
+
+        ifElseWriteMatrix2DSequential(mtxSequential, arr);
+
+        for (int row = 0; row < rows; row++) {
+            for (int col = 0; col < cols; col++) {
+                assertEquals(mtxSequential.get(row, col), mtxTornado.get(row, col));
+            }
+        }
     }
 }

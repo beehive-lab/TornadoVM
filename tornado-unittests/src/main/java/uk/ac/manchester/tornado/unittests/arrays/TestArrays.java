@@ -35,6 +35,7 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
@@ -68,6 +69,12 @@ public class TestArrays extends TornadoTestBase {
     public static void vectorAddDouble(DoubleArray a, DoubleArray b, DoubleArray c) {
         for (@Parallel int i = 0; i < c.getSize(); i++) {
             c.set(i, a.get(i) + b.get(i));
+        }
+    }
+
+    public static void vectorSubDouble(DoubleArray a, DoubleArray b, DoubleArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
+            c.set(i, a.get(i) - b.get(i));
         }
     }
 
@@ -318,6 +325,231 @@ public class TestArrays extends TornadoTestBase {
 
         for (int i = 0; i < c.getSize(); i++) {
             assertEquals(a.get(i) + b.get(i), c.get(i), 0.01);
+        }
+    }
+
+    @Test
+    public void testVectorAdditionDoubleCUDAGraph() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        final int numElements = 4096;
+        DoubleArray a = new DoubleArray(numElements);
+        DoubleArray b = new DoubleArray(numElements);
+        DoubleArray c = new DoubleArray(numElements); // stores output of add tornado
+        DoubleArray c_s = new DoubleArray(numElements); // stores serial output of add
+        DoubleArray d = new DoubleArray(numElements);
+        DoubleArray e = new DoubleArray(numElements); // stores output of sub tornado
+        DoubleArray e_s = new DoubleArray(numElements); // stores serial output of sub
+
+        IntStream.range(0, numElements).sequential().forEach(i -> {
+            a.set(i, 3.0);
+            b.set(i, 2.0);
+            d.set(i, 1.0);
+        });
+
+        TaskGraph taskGraph = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b, d)
+                .task("t0", TestArrays::vectorAddDouble, a, b, c)
+                .task("t1", TestArrays::vectorSubDouble, c, d, e)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, e);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withCUDAGraph();
+            executionPlan.execute();
+        }
+
+        vectorAddDouble(a, b, c_s);
+        vectorSubDouble(c_s, d, e_s);
+
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals(e.get(i), e_s.get(i), 0.01);
+        }
+    }
+
+    @Test
+    public void testVectorAdditionDoubleUpdateCUDAGraph() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        final int numElements = 4096;
+        DoubleArray a = new DoubleArray(numElements);
+        DoubleArray b = new DoubleArray(numElements);
+        DoubleArray a_s = new DoubleArray(numElements);
+        DoubleArray b_s = new DoubleArray(numElements);
+
+        IntStream.range(0, numElements).sequential().forEach(i -> {
+            a.set(i, 1);
+            a_s.set(i, 1);
+            b.set(i, 2);
+            b_s.set(i, 2);
+        });
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .task("t0", TestArrays::vectorAddDouble, a, b, b) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withCUDAGraph();
+            for (int i = 0; i < 10; i++) {
+                executionPlan.execute();
+            }
+        }
+
+        for (int i = 0; i < 10; i++) {
+            vectorAddDouble(a_s, b_s, b_s);
+        }
+
+        for (int i = 0; i < b.getSize(); i++) {
+            assertEquals(b.get(i), b_s.get(i), 0.01);
+        }
+    }
+
+    public static void copyWithContext(KernelContext ctx, FloatArray in, FloatArray out) {
+        int idx = ctx.globalIdx;
+        out.set(idx, in.get(idx));
+    }
+
+    public static void addWithContext(KernelContext ctx, FloatArray a, FloatArray b, FloatArray out) {
+        int idx = ctx.globalIdx;
+        out.set(idx, a.get(idx) + b.get(idx));
+    }
+
+    public static void doubleWithContext(KernelContext ctx, FloatArray in, FloatArray out) {
+        int idx = ctx.globalIdx;
+        out.set(idx, in.get(idx) * 2.0f);
+    }
+
+    @Test
+    public void testCUDAGraphWithKernelContextChained() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
+        final int numElements = 256;
+
+        // Shared buffer between graphs
+        FloatArray shared = new FloatArray(numElements);
+
+        FloatArray input0 = new FloatArray(numElements);
+        IntStream.range(0, numElements).forEach(i -> input0.set(i, 1.0f));
+
+        KernelContext ctx0 = new KernelContext();
+        TaskGraph tg0 = new TaskGraph("g0")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input0)
+                .task("t0", TestArrays::copyWithContext, ctx0, input0, shared)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, shared);
+
+        // Graph 1: shared + weights → intermediate → output (multi-task)
+        FloatArray weights = new FloatArray(numElements);
+        FloatArray intermediate = new FloatArray(numElements);
+        FloatArray output = new FloatArray(numElements);
+        IntStream.range(0, numElements).forEach(i -> weights.set(i, 10.0f));
+
+        KernelContext ctx1 = new KernelContext();
+        TaskGraph tg1 = new TaskGraph("g1")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, weights)
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, shared)
+                .task("t1", TestArrays::addWithContext, ctx1, shared, weights, intermediate)
+                .task("t2", TestArrays::doubleWithContext, ctx1, intermediate, output)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph itg0 = tg0.snapshot();
+        ImmutableTaskGraph itg1 = tg1.snapshot();
+
+        WorkerGrid wg0 = new WorkerGrid1D(numElements);
+        WorkerGrid wg1 = new WorkerGrid1D(numElements);
+        GridScheduler grid = new GridScheduler("g0.t0", wg0);
+        grid.addWorkerGrid("g1.t1", wg1);
+        grid.addWorkerGrid("g1.t2", wg1);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(itg0, itg1)) {
+            plan.withCUDAGraph();
+
+            for (int iter = 0; iter < 3; iter++) {
+                final float val = iter + 1;
+                IntStream.range(0, numElements).forEach(i -> input0.set(i, val));
+
+                plan.withGraph(0).withGridScheduler(grid).execute();
+                plan.withGraph(1).withGridScheduler(grid).execute();
+
+                // shared = copy of input0 = val
+                // intermediate = shared + weights = val + 10
+                // output = intermediate * 2 = (val + 10) * 2
+                float expected = (val + 10.0f) * 2.0f;
+
+                for (int i = 0; i < numElements; i++) {
+                    assertEquals("output[" + i + "] at iter " + iter,
+                            expected, output.get(i), 0.01f);
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testCUDAGraphPersistConsume() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
+        final int numElements = 256;
+
+        // Shared buffer that stays on device
+        FloatArray shared = new FloatArray(numElements);
+        FloatArray input = new FloatArray(numElements);
+        FloatArray weights = new FloatArray(numElements);
+        FloatArray output = new FloatArray(numElements);
+
+        IntStream.range(0, numElements).forEach(i -> {
+            input.set(i, 1.0f);
+            weights.set(i, 10.0f);
+        });
+
+        KernelContext ctx0 = new KernelContext();
+        KernelContext ctx1 = new KernelContext();
+
+        // Graph 0: input → shared (persisted on device, NO transferToHost)
+        TaskGraph tg0 = new TaskGraph("g0")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
+                .task("t0", TestArrays::copyWithContext, ctx0, input, shared)
+                .persistOnDevice(shared);
+
+        // Graph 1: consumes shared from device (NO transferToDevice for shared)
+        TaskGraph tg1 = new TaskGraph("g1")
+                .consumeFromDevice(shared)
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, weights)
+                .task("t1", TestArrays::addWithContext, ctx1, shared, weights, output)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph itg0 = tg0.snapshot();
+        ImmutableTaskGraph itg1 = tg1.snapshot();
+
+        WorkerGrid wg = new WorkerGrid1D(numElements);
+        GridScheduler grid = new GridScheduler("g0.t0", wg);
+        grid.addWorkerGrid("g1.t1", wg);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(itg0, itg1)) {
+            plan.withCUDAGraph();
+
+            for (int iter = 0; iter < 3; iter++) {
+                final float val = iter + 1;
+                IntStream.range(0, numElements).forEach(i -> input.set(i, val));
+
+                plan.withGraph(0).withGridScheduler(grid).execute();
+                plan.withGraph(1).withGridScheduler(grid).execute();
+
+                // shared = input = val (stays on device)
+                // output = shared + weights = val + 10
+                float expected = val + 10.0f;
+
+                for (int i = 0; i < numElements; i++) {
+                    assertEquals("output[" + i + "] at iteration " + iter,
+                            expected, output.get(i), 0.01f);
+                }
+            }
         }
     }
 

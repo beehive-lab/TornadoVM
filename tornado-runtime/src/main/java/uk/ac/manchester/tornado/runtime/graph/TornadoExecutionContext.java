@@ -95,6 +95,7 @@ public class TornadoExecutionContext {
 
     private long executionPlanId;  // This is set at runtime. Thus, no need to clone this value.
     private long currentDeviceMemoryUsage;
+    private boolean isExecutionGraphEnabled;
 
     public TornadoExecutionContext(String id) {
         name = id;
@@ -118,6 +119,7 @@ public class TornadoExecutionContext {
         currentDeviceMemoryUsage = 0;
         this.profiler = null;
         this.isDataDependencyDetected = isDataDependencyInTaskGraph();
+        this.isExecutionGraphEnabled = false;
     }
 
     public KernelStackFrame[] getKernelStackFrame() {
@@ -697,6 +699,14 @@ public class TornadoExecutionContext {
 
     public Map<String, List<Object>> getPersistedTaskToObjectsMap() {
         return persistedTaskToObjectsMap;
+    }
+
+    public void setExecutionGraphEnabled(boolean enabled) {
+        this.isExecutionGraphEnabled = enabled;
+    }
+
+    public boolean isExecutionGraphEnabled() {
+        return this.isExecutionGraphEnabled;
     }
 
 }

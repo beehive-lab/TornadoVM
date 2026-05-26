@@ -54,6 +54,10 @@ public class ImmutableTaskGraph {
         taskGraph.withPreCompilation(executionPackage);
     }
 
+    void withCUDAGraph() {
+        taskGraph.withCUDAGraph();
+    }
+
     void withDevice(TornadoDevice device) {
         taskGraph.withDevice(device);
     }
