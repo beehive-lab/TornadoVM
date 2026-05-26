@@ -21,17 +21,18 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
 
+import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
-import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.FixedWithNextNode;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.spi.LIRLowerable;
-import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import jdk.graal.compiler.core.common.LIRKind;
+import jdk.graal.compiler.core.common.type.StampFactory;
+import jdk.graal.compiler.graph.NodeClass;
+import jdk.graal.compiler.lir.Variable;
+import jdk.graal.compiler.lir.gen.LIRGeneratorTool;
+import jdk.graal.compiler.nodeinfo.NodeInfo;
+import jdk.graal.compiler.nodes.FixedWithNextNode;
+import jdk.graal.compiler.nodes.ValueNode;
+import jdk.graal.compiler.nodes.spi.LIRLowerable;
+import jdk.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 
@@ -46,7 +47,7 @@ public class SwizzledStoreInt8Node extends FixedWithNextNode implements LIRLower
     @Input private ValueNode int8_value;
 
     public SwizzledStoreInt8Node(ValueNode int8_local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode int8_value) {
-        super(TYPE, StampFactory.forVoid());
+        super(TYPE, StampFactory.forKind(JavaKind.Byte));
         this.int8_local_array = int8_local_array;
         this.row = row;
         this.column = column;
