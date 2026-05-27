@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, 2024, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, 2024, 2026, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -150,25 +150,14 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
     private ThreadBlockDispatcher suggestThreadSchedulingToLevelZeroDriver(DeviceThreadScheduling threadScheduling, LevelZeroKernel levelZeroKernel, ZeKernelHandle kernel, TaskDataContext meta) {
 
         // Prepare kernel for launch
-        // A) Suggest scheduling parameters to level-zero
         int[] groupSizeX = new int[] { (int) threadScheduling.localWork[0] };
         int[] groupSizeY = new int[] { (int) threadScheduling.localWork[1] };
         int[] groupSizeZ = new int[] { (int) threadScheduling.localWork[2] };
-
-        if (!meta.isWorkerGridAvailable()) {
-            int result = levelZeroKernel.zeKernelSuggestGroupSize(kernel.getPtrZeKernelHandle(), (int) threadScheduling.globalWork[0], (int) threadScheduling.globalWork[1],
-                    (int) threadScheduling.globalWork[2], groupSizeX, groupSizeY, groupSizeZ);
-            LevelZeroUtils.errorLog("zeKernelSuggestGroupSize", result);
-        }
 
         int result = levelZeroKernel.zeKernelSetGroupSize(kernel.getPtrZeKernelHandle(), groupSizeX, groupSizeY, groupSizeZ);
         LevelZeroUtils.errorLog("zeKernelSetGroupSize", result);
 
         if (result == ZeResult.ZE_RESULT_ERROR_INVALID_GROUP_SIZE_DIMENSION) {
-            // At this point, we can only get a ZE_RESULT_ERROR_INVALID_GROUP_SIZE_DIMENSION
-            // only when using the GridScheduler API to bypass the thread scheduler
-            // suggestions of Level Zero. In this case, we call the suggestions and set up
-            // the right thread block sizes.
             System.out.println(WARNING_THREAD_LOCAL);
             setThreadSuggestionFromLevelZero(levelZeroKernel, kernel, groupSizeX, groupSizeY, groupSizeZ);
         }
@@ -178,8 +167,8 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
             grid.setLocalWork(groupSizeX[0], groupSizeY[0], groupSizeZ[0]);
         }
 
-        long[] localWorkAfterSuggestion = new long[] { groupSizeX[0], groupSizeY[0], groupSizeZ[0] };
-        meta.setLocalWork(localWorkAfterSuggestion);
+        long[] localWorkUsed = new long[] { groupSizeX[0], groupSizeY[0], groupSizeZ[0] };
+        meta.setLocalWork(localWorkUsed);
 
         return new ThreadBlockDispatcher(groupSizeX, groupSizeY, groupSizeZ);
     }
@@ -226,14 +215,7 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
             // if the worker grid is available, the user can update the number of threads to
             // run at any point during runtime.
             deviceThreadScheduling = calculateGlobalAndLocalBlockOfThreads(meta, batchThreads);
-            if (TornadoOptions.USE_LEVELZERO_THREAD_DISPATCHER_SUGGESTIONS) {
-                threadBlockDispatcher = suggestThreadSchedulingToLevelZeroDriver(deviceThreadScheduling, levelZeroKernel, kernel, meta);
-            } else {
-                int[] groupSizeX = new int[] { (int) deviceThreadScheduling.localWork[0] };
-                int[] groupSizeY = new int[] { (int) deviceThreadScheduling.localWork[1] };
-                int[] groupSizeZ = new int[] { (int) deviceThreadScheduling.localWork[2] };
-                threadBlockDispatcher = new ThreadBlockDispatcher(groupSizeX, groupSizeY, groupSizeZ);
-            }
+            threadBlockDispatcher = suggestThreadSchedulingToLevelZeroDriver(deviceThreadScheduling, levelZeroKernel, kernel, meta);
 
             if (meta.shouldResetThreadsBlock()) {
                 // If the device was updated for the same ExecutionPlan and same TornadoVM instance,
