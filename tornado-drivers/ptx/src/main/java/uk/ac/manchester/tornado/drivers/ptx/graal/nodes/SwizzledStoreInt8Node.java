@@ -47,7 +47,7 @@ public class SwizzledStoreInt8Node extends FixedWithNextNode implements LIRLower
     @Input private ValueNode int8_value;
 
     public SwizzledStoreInt8Node(ValueNode int8_local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode int8_value) {
-        super(TYPE, StampFactory.forKind(JavaKind.Byte));
+        super(TYPE, StampFactory.forVoid());
         this.int8_local_array = int8_local_array;
         this.row = row;
         this.column = column;

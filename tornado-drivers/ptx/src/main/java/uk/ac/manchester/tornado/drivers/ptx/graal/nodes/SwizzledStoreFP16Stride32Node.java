@@ -57,7 +57,7 @@ public class SwizzledStoreFP16Stride32Node extends FixedWithNextNode implements 
     private ValueNode fp16_value;
 
     public SwizzledStoreFP16Stride32Node(ValueNode fp16_local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode fp16_value) {
-        super(TYPE, StampFactory.forKind(JavaKind.Object));
+        super(TYPE, StampFactory.forVoid());
         this.fp16_local_array = fp16_local_array;
         this.row = row;
         this.column = column;
