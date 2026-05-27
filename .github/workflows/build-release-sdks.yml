@@ -87,7 +87,17 @@ jobs:
                 ;;
             esac
             git fetch --tags --prune origin
-            LATEST_TAG=$(git tag --list "v*-${JDK}" --sort=-creatordate | head -1)
+            # Prefer the tag that points at the exact commit the triggering
+            # finalize run ran against. The finalize workflow creates v${VERSION}
+            # at the checked-out master HEAD, which is workflow_run.head_sha for
+            # the run we are reacting to here — so --points-at picks the tag that
+            # run produced, even if a newer release was tagged in the meantime.
+            HEAD_SHA="${{ github.event.workflow_run.head_sha }}"
+            LATEST_TAG=$(git tag --list --points-at "$HEAD_SHA" "v*-${JDK}" | head -1)
+            if [ -z "$LATEST_TAG" ]; then
+              echo "::warning::No v*-${JDK} tag points at workflow_run head_sha $HEAD_SHA; falling back to most recent matching tag."
+              LATEST_TAG=$(git tag --list "v*-${JDK}" --sort=-creatordate | head -1)
+            fi
             if [ -z "$LATEST_TAG" ]; then
               echo "::error::No tags matching v*-${JDK} found."
               exit 1
