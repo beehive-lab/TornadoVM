@@ -218,11 +218,24 @@ def tag_exists(tag):
 
 
 def fetch_tag(tag):
-    """Fetch *tag* from origin if it is not already present locally."""
+    """
+    Fetch *tag* from origin if it is not already present locally.
+
+    Fails soft: if the tag does not exist on origin either, the fetch returns
+    non-zero and we leave it to the caller's tag_exists() check to emit the
+    documented "tag not found — skipping" warning and move on to the next tag.
+    """
     if tag_exists(tag):
         return
     info(f"Tag {tag} not found locally — fetching from origin...")
-    subprocess.run(["git", "fetch", "origin", f"refs/tags/{tag}:refs/tags/{tag}"], check=True)
+    result = subprocess.run(
+        ["git", "fetch", "origin", f"refs/tags/{tag}:refs/tags/{tag}"],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        stderr = result.stderr.strip()
+        warn(f"Could not fetch tag {tag} from origin{': ' + stderr if stderr else ''}")
 
 
 def add_worktree(tag, worktree_path):
