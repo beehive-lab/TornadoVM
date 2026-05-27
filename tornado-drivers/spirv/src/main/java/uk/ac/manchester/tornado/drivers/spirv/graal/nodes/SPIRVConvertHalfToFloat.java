@@ -35,6 +35,7 @@ import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpConvertSToF;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpConvertUToPtr;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpFConvert;
@@ -57,6 +58,13 @@ public class SPIRVConvertHalfToFloat extends ValueNode implements LIRLowerable {
     }
 
     public void generate(NodeLIRBuilderTool generator) {
+        if (halfValueNode == null) {
+            // A preceding high-tier rewrite (typically TornadoHalfFloatReplacement) cleared this
+            // node's input without supplying a replacement. Fail at the phase boundary with a
+            // useful message instead of an opaque NPE in NodeLIRBuilder.getOperand.
+            throw new TornadoInternalError("SPIRVConvertHalfToFloat: input was cleared by a preceding graph rewrite; "
+                    + "an unrecognised half-source pattern reached LIR. Check TornadoHalfFloatReplacement#identifyFieldReplacement.");
+        }
         LIRGeneratorTool tool = generator.getLIRGeneratorTool();
         Variable floatValue = tool.newVariable(LIRKind.value(SPIRVKind.OP_TYPE_FLOAT_32));
         Value halfValue = generator.operand(halfValueNode);
