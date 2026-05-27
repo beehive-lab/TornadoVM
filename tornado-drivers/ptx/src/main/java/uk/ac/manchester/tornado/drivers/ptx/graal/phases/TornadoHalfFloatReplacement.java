@@ -44,6 +44,7 @@ import jdk.graal.compiler.nodes.extended.JavaReadNode;
 import jdk.graal.compiler.nodes.extended.JavaWriteNode;
 import jdk.graal.compiler.nodes.extended.ValueAnchorNode;
 import jdk.graal.compiler.nodes.java.LoadFieldNode;
+import jdk.graal.compiler.nodes.java.LoadIndexedNode;
 import jdk.graal.compiler.nodes.java.NewInstanceNode;
 import jdk.graal.compiler.nodes.memory.address.AddressNode;
 import jdk.graal.compiler.phases.BasePhase;
@@ -53,6 +54,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.HalfFloatStamp;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.AddHalfNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.HalfFloatConstantNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.MultHalfNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXConvertFloatToHalf;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXConvertHalfToFloat;
@@ -243,6 +245,15 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
     private static Node identifyFieldReplacement(Node input, ArrayList<Node> nodesToBeDeleted) {
         // the replacement is expected to be either the read node of a half value, or a phi node in case of accumulation
         if (input instanceof ReadHalfFloatNode || input instanceof ValuePhiNode) {
+            return input;
+        }
+        // A LoadIndexed on a local-memory HalfFloat[] (LocalArrayNode with PTXKind.F16) is
+        // lowered to a ReadHalfFloatNode in PTXLoweringProvider#lowerLoadIndexedNode, so it is
+        // a valid half-source for PTXConvertHalfToFloat. Without this case, reading a HalfFloat
+        // out of a local array and calling getFloat32() on it nulls out the convert node's input.
+        if (input instanceof LoadIndexedNode loadIndexed //
+                && loadIndexed.array() instanceof LocalArrayNode localArray //
+                && localArray.getPTXKind() == PTXKind.F16) {
             return input;
         }
         if (input instanceof PiNode || input instanceof IsNullNode) {
