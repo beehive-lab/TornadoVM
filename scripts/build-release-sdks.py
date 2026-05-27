@@ -306,17 +306,26 @@ def patch_worktree_skip_executables(worktree_path):
         src = f.read()
     original = src
 
+    # Both substitutions are anchored to start/end of line (re.MULTILINE) and
+    # capture leading indentation, so the replacement is always a syntactically
+    # valid single statement — even if the tagged bin/compile changes the
+    # arguments of the call.  If the call ever stops being a standalone line
+    # (e.g. wrapped in an assignment or condition), the regex simply will not
+    # match and the warn() branch below fires.
+
     # Skip PyInstaller (tornado.exe & friends)
     src = re.sub(
-        r"cutils\.runPyInstaller\([^\n]*\)",
-        'print("[INFO] Skipping PyInstaller — --skip-windows-executables")',
+        r"^([ \t]*)cutils\.runPyInstaller\([^\n]*\)[ \t]*$",
+        r'\1print("[INFO] Skipping PyInstaller — --skip-windows-executables")',
         src,
+        flags=re.MULTILINE,
     )
     # Skip the zello_world Level Zero probe, keeping the surrounding logic
     src = re.sub(
-        r"subprocess\.run\(\[os\.path\.join\(level_zero_lib,[^\n]*zello_world[^\n]*\)",
-        'print("[INFO] Skipping zello_world probe — --skip-windows-executables")',
+        r"^([ \t]*)subprocess\.run\(\[os\.path\.join\(level_zero_lib,[^\n]*zello_world[^\n]*$",
+        r'\1print("[INFO] Skipping zello_world probe — --skip-windows-executables")',
         src,
+        flags=re.MULTILINE,
     )
 
     if src == original:
