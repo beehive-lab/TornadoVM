@@ -46,6 +46,7 @@ import org.graalvm.compiler.nodes.extended.JavaReadNode;
 import org.graalvm.compiler.nodes.extended.JavaWriteNode;
 import org.graalvm.compiler.nodes.extended.ValueAnchorNode;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
+import org.graalvm.compiler.nodes.java.LoadIndexedNode;
 import org.graalvm.compiler.nodes.java.NewInstanceNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.phases.BasePhase;
@@ -55,6 +56,7 @@ import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalKind;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.AddHalfNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.DivHalfNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.HalfFloatConstantNode;
+import uk.ac.manchester.tornado.drivers.metal.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MultHalfNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalConvertHalfToFloat;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.ReadHalfFloatNode;
@@ -268,6 +270,14 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
     private static Node identifyFieldReplacement(Node input, ArrayList<Node> nodesToBeDeleted) {
         // the replacement is expected to be either the read node of a half value, or a phi node in case of accumulation
         if (input instanceof ReadHalfFloatNode || input instanceof ValuePhiNode) {
+            return input;
+        }
+        // A LoadIndexed on a local-memory HalfFloat[] (LocalArrayNode with MetalKind.HALF) is a
+        // valid half-source for MetalConvertHalfToFloat. Without this case, reading a HalfFloat
+        // out of a local array and calling getFloat32() on it nulls out the convert node's input.
+        if (input instanceof LoadIndexedNode loadIndexed //
+                && loadIndexed.array() instanceof LocalArrayNode localArray //
+                && localArray.getMetalKind() == MetalKind.HALF) {
             return input;
         }
         if (input instanceof PiNode || input instanceof IsNullNode) {
