@@ -61,6 +61,8 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXConvertHalfToFloat;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXHalfFloatDivisionNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.ReadHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.SubHalfNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.SwizzledLoadFP16Stride16Node;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.SwizzledLoadFP16Stride32Node;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.WriteHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorAddHalfNode;
@@ -244,7 +246,7 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
     }
     private static Node identifyFieldReplacement(Node input, ArrayList<Node> nodesToBeDeleted) {
         // the replacement is expected to be either the read node of a half value, or a phi node in case of accumulation
-        if (input instanceof ReadHalfFloatNode || input instanceof ValuePhiNode) {
+        if (input instanceof ReadHalfFloatNode || input instanceof ValuePhiNode || input instanceof SwizzledLoadFP16Stride32Node || input instanceof SwizzledLoadFP16Stride16Node) {
             return input;
         }
         // A LoadIndexed on a local-memory HalfFloat[] (LocalArrayNode with PTXKind.F16) is
