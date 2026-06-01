@@ -31,7 +31,7 @@ import java.util.Arrays;
 public class ThrowsExample {
     public static void add(int[] a, int[] b, int[] c) {// throws Exception {
         for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = a[i]/ b[i];
+            c[i] = a[i] + b[i];
         }
     }
 
