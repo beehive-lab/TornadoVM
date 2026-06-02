@@ -175,6 +175,8 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestCombinedTaskGraph"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestVectorAdditionKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.KernelContextWorkGroupTests"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestHalfFloatLocalArray"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.local.memory.TestSwizzledLocalArrays"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsIntegersKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsFloatsKernelContext"),
@@ -397,7 +399,7 @@ else:
 
 ENABLE_ASSERTIONS = "-ea "
 
-__VERSION__ = "4.0.1-dev"
+__VERSION__ = "4.0.2-jdk21-dev"
 
 try:
     javaHome = os.environ["JAVA_HOME"]

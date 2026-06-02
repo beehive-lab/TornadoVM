@@ -47,6 +47,7 @@ import org.graalvm.compiler.nodes.extended.JavaReadNode;
 import org.graalvm.compiler.nodes.extended.JavaWriteNode;
 import org.graalvm.compiler.nodes.extended.ValueAnchorNode;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
+import org.graalvm.compiler.nodes.java.LoadIndexedNode;
 import org.graalvm.compiler.nodes.java.NewInstanceNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.phases.BasePhase;
@@ -57,6 +58,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.DivHalfNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.HalfFloatConstantNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.AddHalfNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.MultHalfNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.ReadHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVConvertFloatToHalf;
@@ -246,6 +248,15 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
     private static Node identifyFieldReplacement(Node input, ArrayList<Node> nodesToBeDeleted) {
         // the replacement is expected to be either the read node of a half value, or a phi node in case of accumulation
         if (input instanceof ReadHalfFloatNode || input instanceof ValuePhiNode) {
+            return input;
+        }
+        // A LoadIndexed on a local-memory HalfFloat[] (LocalArrayNode with SPIRVKind.OP_TYPE_FLOAT_16)
+        // is lowered to a ReadHalfFloatNode in SPIRVLoweringProvider#lowerLoadIndexedNode, so it is
+        // a valid half-source for SPIRVConvertHalfToFloat. Without this case, reading a HalfFloat
+        // out of a local array and calling getFloat32() on it nulls out the convert node's input.
+        if (input instanceof LoadIndexedNode loadIndexed //
+                && loadIndexed.array() instanceof LocalArrayNode localArray //
+                && localArray.getSPIRVKind() == SPIRVKind.OP_TYPE_FLOAT_16) {
             return input;
         }
         if (input instanceof PiNode || input instanceof IsNullNode) {

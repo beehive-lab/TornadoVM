@@ -43,9 +43,14 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: |
+          # --no-maintainer-edit avoids "Fork collab can't be granted by
+          # someone without permission" when the source PR is from a fork:
+          # GITHUB_TOKEN cannot grant maintainer-edit on the contributor's
+          # fork, so the cross-fork PR creation fails unless we opt out.
           gh pr create \
             --repo "$REPO" \
             --base "jdk25" \
             --head "$HEAD_LABEL" \
             --title "$PR_TITLE" \
+            --no-maintainer-edit \
             --body "$(printf 'Auto-created because #%s was opened against `develop`.\n\nOriginal PR: %s\n\n---\n%s' "$PR_NUMBER" "$PR_URL" "$PR_BODY")"

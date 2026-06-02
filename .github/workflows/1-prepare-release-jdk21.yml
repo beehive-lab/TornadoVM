@@ -4,11 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version (e.g., 2.0.1)'
+        description: 'Release version (e.g., 4.0.1-jdk21)'
         required: true
         type: string
       previous_version:
-        description: 'Previous version for changelog (e.g., 2.0.0)'
+        description: 'Previous version for changelog (e.g., 4.0.0-jdk21)'
         required: true
         type: string
       dry_run:
@@ -36,8 +36,8 @@ jobs:
     steps:
       - name: Validate version format
         run: |
-          if [[ ! "${{ inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "❌ Invalid version format. Expected: X.Y.Z (e.g., 2.0.1)"
+          if [[ ! "${{ inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+-jdk21$ ]]; then
+            echo "❌ Invalid version format. Expected: X.Y.Z-jdk21 (e.g., 4.0.1-jdk21)"
             exit 1
           fi
           echo "✅ Version format valid: ${{ inputs.version }}"
@@ -81,21 +81,21 @@ jobs:
 
       - name: Update tornado-test version
         run: |
-          sed -i 's/__VERSION__ = "[0-9]\+\.[0-9]\+\.[0-9]\+\(-dev\)\?"/__VERSION__ = "${{ env.VERSION }}"/' tornado-assembly/src/bin/tornado-test
+          sed -i 's/__VERSION__ = "[0-9]\+\.[0-9]\+\.[0-9]\+\(-[a-zA-Z0-9-]*\)\?"/__VERSION__ = "${{ env.VERSION }}"/' tornado-assembly/src/bin/tornado-test
           echo "Updated tornado-assembly/src/bin/tornado-test:"
           grep -n "__VERSION__" tornado-assembly/src/bin/tornado-test
 
       - name: Update README.md
         run: |
           # Update version badge
-          sed -i 's/version-[0-9]\+\.[0-9]\+\.[0-9]\+-purple/version-${{ env.VERSION }}-purple/g' README.md
-          
+          sed -i 's/version-[0-9]\+\.[0-9]\+\.[0-9]\+\(-jdk21\)\?-purple/version-${{ env.VERSION }}-purple/g' README.md
+
           # Update "Latest Release" line with current date (DD/MM/YYYY format)
           RELEASE_DATE=$(date +"%d/%m/%Y")
-          sed -i "s|\*\*Latest Release:\*\* TornadoVM [0-9]\+\.[0-9]\+\.[0-9]\+ - [0-9/]\+|**Latest Release:** TornadoVM ${{ env.VERSION }} - ${RELEASE_DATE}|" README.md
-          
+          sed -i "s|\*\*Latest Release:\*\* TornadoVM [0-9]\+\.[0-9]\+\.[0-9]\+\(-jdk21\)\? - [0-9/]\+|**Latest Release:** TornadoVM ${{ env.VERSION }} - ${RELEASE_DATE}|" README.md
+
           # Update Maven Central dependency versions (io.github.beehive-lab groupId)
-          sed -i 's|<version>[0-9]\+\.[0-9]\+\.[0-9]\+</version>|<version>${{ env.VERSION }}</version>|g' README.md
+          sed -i 's|<version>[0-9]\+\.[0-9]\+\.[0-9]\+\(-jdk21\)\?</version>|<version>${{ env.VERSION }}</version>|g' README.md
           
           echo "✅ Updated README.md"
 
@@ -103,8 +103,8 @@ jobs:
         run: |
           if [ -f docs/source/conf.py ]; then
             # conf.py uses "vX.Y.Z" format with double quotes
-            sed -i 's|release = "v[0-9]\+\.[0-9]\+\.[0-9]\+"|release = "v${{ env.VERSION }}"|' docs/source/conf.py
-            sed -i 's|version = "v[0-9]\+\.[0-9]\+\.[0-9]\+"|version = "v${{ env.VERSION }}"|' docs/source/conf.py
+            sed -i 's|release = "v[0-9]\+\.[0-9]\+\.[0-9]\+\(-jdk21\)\?"|release = "v${{ env.VERSION }}"|' docs/source/conf.py
+            sed -i 's|version = "v[0-9]\+\.[0-9]\+\.[0-9]\+\(-jdk21\)\?"|version = "v${{ env.VERSION }}"|' docs/source/conf.py
             echo "✅ Updated docs/source/conf.py"
             grep -E "(version|release) =" docs/source/conf.py
           fi
@@ -113,7 +113,7 @@ jobs:
         run: |
           if [ -f docs/source/installation.rst ]; then
             # Update Maven dependency versions in the XML examples
-            sed -i 's|<version>[0-9]\+\.[0-9]\+\.[0-9]\+</version>|<version>${{ env.VERSION }}</version>|g' docs/source/installation.rst
+            sed -i 's|<version>[0-9]\+\.[0-9]\+\.[0-9]\+\(-jdk21\)\?</version>|<version>${{ env.VERSION }}</version>|g' docs/source/installation.rst
             
             # Add new version to "Versions available" list (insert before previous version)
             sed -i "/^\* ${{ env.PREV_VERSION }}$/i\\ * ${{ env.VERSION }}" docs/source/installation.rst
@@ -296,7 +296,11 @@ jobs:
           script: |
             const version = process.env.VERSION;
             const prCount = '${{ steps.fetch_prs.outputs.pr_count }}';
-            
+
+            // Compute next dev version: strip -jdk21, bump patch, re-add suffix + -dev
+            const baseVersion = version.replace(/-jdk21$/, '');
+            const nextDev = baseVersion.replace(/(\d+)$/, m => parseInt(m) + 1) + '-jdk21-dev';
+
             const { data: pr } = await github.rest.pulls.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -321,7 +325,7 @@ jobs:
             2. Run **deploy-maven-central** workflow manually
             3. Create GitHub Release with tag \`v${version}\`
             4. Merge master → develop
-            5. Bump develop to \`${version.replace(/(\d+)$/, m => parseInt(m)+1)}-dev\`
+            5. Bump develop to \`${nextDev}\`
             `
             });
             

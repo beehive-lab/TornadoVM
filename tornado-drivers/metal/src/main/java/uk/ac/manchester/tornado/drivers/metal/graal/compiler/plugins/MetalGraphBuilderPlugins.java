@@ -23,6 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.metal.graal.compiler.plugins;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.common.code.CodeUtil.getJavaKindFromValueLayoutClass;
 import static uk.ac.manchester.tornado.drivers.common.code.CodeUtil.getValueLayoutClass;
 import static uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalFPBinaryIntrinsicNode.Operation.ATAN2;
@@ -51,6 +52,7 @@ import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
@@ -81,6 +83,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
@@ -410,6 +413,61 @@ public class MetalGraphBuilderPlugins {
         localArraysPlugins(r);
         registerAtomicAddOperation(r);
         registerSIMDPlugins(r);
+        registerSwizzledLocalAccessesPlugins(r);
+    }
+
+    private static void registerSwizzledLocalAccessesPlugins(Registration r) {
+        r.register(new InvocationPlugin("swizzleLoadFp16Stride32", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride) {
+                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                return false;
+            }
+        });
+
+        r.register(new InvocationPlugin("swizzleStoreFp16Stride32", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class, HalfFloat.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode value) {
+                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                return false;
+            }
+        });
+
+        r.register(new InvocationPlugin("swizzleLoadFp16Stride16", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride) {
+                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                return false;
+            }
+        });
+
+        r.register(new InvocationPlugin("swizzleStoreFp16Stride16", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class, HalfFloat.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode value) {
+                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                return false;
+            }
+        });
+
+        r.register(new InvocationPlugin("swizzleLoadInt8", InvocationPlugin.Receiver.class,
+                byte[].class, int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver,
+                                 ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride) {
+                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                return false;
+            }
+        });
+
+        r.register(new InvocationPlugin("swizzleStoreInt8", InvocationPlugin.Receiver.class,
+                byte[].class, int.class, int.class, int.class, byte.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver,
+                                 ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode value) {
+                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                return false;
+            }
+        });
     }
 
     private static void registerMemoryAccessPlugins(final Plugins ps, InvocationPlugins plugins) {
@@ -418,13 +476,16 @@ public class MetalGraphBuilderPlugins {
         // avoiding LoadField{TornadoMemorySegment#segment} nodes that break TornadoNativeTypeElimination.
         Registration r = new Registration(plugins, TornadoMemorySegment.class);
         for (JavaKind kind : JavaKind.values()) {
-            if (kind != JavaKind.Object && kind != JavaKind.Void && kind != JavaKind.Illegal) {
+            if (kind != JavaKind.Object && kind != JavaKind.Void && kind != JavaKind.Illegal && kind != JavaKind.Boolean) {
                 r.register(new InvocationPlugin("get" + kind.name() + "AtIndex", Receiver.class, int.class, int.class) {
                     @Override
                     public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode baseIndex) {
-                        AddNode absoluteIndexNode = b.append(new AddNode(index, baseIndex));
-                        MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forInt(kind.getByteCount())));
-                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(true), mulNode));
+                        ValueNode receiverNode = receiver.get(true);
+                        ValueNode longIndex = b.append(SignExtendNode.create(index, 64, NodeView.DEFAULT));
+                        ValueNode longBaseIndex = b.append(SignExtendNode.create(baseIndex, 64, NodeView.DEFAULT));
+                        AddNode absoluteIndexNode = b.append(new AddNode(longIndex, longBaseIndex));
+                        MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forLong(kind.getByteCount())));
+                        AddressNode addressNode = b.append(new OffsetAddressNode(receiverNode, mulNode));
                         JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
                         b.addPush(kind, readNode);
                         return true;
@@ -433,9 +494,12 @@ public class MetalGraphBuilderPlugins {
                 r.register(new InvocationPlugin("setAtIndex", Receiver.class, int.class, kind.toJavaClass(), int.class) {
                     @Override
                     public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value, ValueNode baseIndex) {
-                        AddNode absoluteIndexNode = b.append(new AddNode(index, baseIndex));
-                        MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forInt(kind.getByteCount())));
-                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(true), mulNode));
+                        ValueNode receiverNode = receiver.get(true);
+                        ValueNode longIndex = b.append(SignExtendNode.create(index, 64, NodeView.DEFAULT));
+                        ValueNode longBaseIndex = b.append(SignExtendNode.create(baseIndex, 64, NodeView.DEFAULT));
+                        AddNode absoluteIndexNode = b.append(new AddNode(longIndex, longBaseIndex));
+                        MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forLong(kind.getByteCount())));
+                        AddressNode addressNode = b.append(new OffsetAddressNode(receiverNode, mulNode));
                         JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
                         b.add(writeNode);
                         return true;
