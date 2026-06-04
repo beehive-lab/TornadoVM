@@ -50,53 +50,7 @@ public class BenchmarkMMA {
 
     // -----------------------------------------------------------------------
     // 1. f16 MMA Kernel (tensor cores, mma.sync.m16n8k16)
-    // -----------------------------------------------------------------------
-//    public static void gemmMMAf16(KernelContext ctx,
-//                                  HalfFloatArray a, HalfFloatArray b, FloatArray c,
-//                                  int dimM, int dimN, int dimK) {
-//
-//        if (ctx.globalIdx < 0) c.set(0, 0.0f);
-//
-//        int warpId = ctx.groupIdx;
-//        int lane   = ctx.localIdx;
-//
-//        int numTilesN = dimN / WMMA_N_F16;
-//        int tileRow   = (warpId / numTilesN) * WMMA_M_F16;
-//        int tileCol   = (warpId % numTilesN) * WMMA_N_F16;
-//
-//        float[] aTile  = ctx.allocateFloatLocalArray(WMMA_M_F16 * WMMA_K_F16);
-//        float[] bTile0 = ctx.allocateFloatLocalArray(8 * WMMA_K_F16);
-//        float[] bTile1 = ctx.allocateFloatLocalArray(8 * WMMA_K_F16);
-//
-//        float[] fragC0 = ctx.mmaFragment(0.0f);
-//        float[] fragC1 = ctx.mmaFragment(0.0f);
-//
-//        for (int kBase = 0; kBase < dimK; kBase += WMMA_K_F16) {
-//            for (int idx = lane; idx < WMMA_M_F16 * WMMA_K_F16; idx += WARP_SIZE) {
-//                int r  = idx / WMMA_K_F16;
-//                int kk = idx % WMMA_K_F16;
-//                aTile[r * WMMA_K_F16 + kk] = a.get((tileRow + r) * dimK + kBase + kk).getFloat32();
-//            }
-//            for (int idx = lane; idx < 8 * WMMA_K_F16; idx += WARP_SIZE) {
-//                int col = idx / WMMA_K_F16;
-//                int kk  = idx % WMMA_K_F16;
-//                bTile0[col * WMMA_K_F16 + kk] = b.get((kBase + kk) * dimN + tileCol     + col).getFloat32();
-//                bTile1[col * WMMA_K_F16 + kk] = b.get((kBase + kk) * dimN + tileCol + 8 + col).getFloat32();
-//            }
-//            ctx.localBarrier();
-//
-//            HalfFloat[] fragA  = ctx.mmaLoadA(aTile, WMMA_K_F16);
-//            HalfFloat[] fragB0 = ctx.mmaLoadB(bTile0, WMMA_K_F16);
-//            fragC0 = ctx.mma(fragA, fragB0, fragC0, MMAShape.M16N8K16);
-//            HalfFloat[] fragB1 = ctx.mmaLoadB(bTile1, WMMA_K_F16);
-//            fragC1 = ctx.mma(fragA, fragB1, fragC1, MMAShape.M16N8K16);
-//
-//            ctx.localBarrier();
-//        }
-//
-//        ctx.mmaStore(fragC0, c, tileRow, tileCol,     dimN);
-//        ctx.mmaStore(fragC1, c, tileRow, tileCol + 8, dimN);
-//    }
+    // ----------------------------------------------------------------------
 
     static final int WMMA_M  = 16;
     static final int WMMA_N  = 16;  // covered by two m16n8k16 calls
@@ -138,21 +92,33 @@ public class BenchmarkMMA {
             }
 
             // Cooperative load B: col-major, pack 2 adjacent k-values per int
-            for (int idx = lane; idx < (8 * WMMA_K) / 2; idx += WARP_SIZE) {
+            for (int idx = lane; idx < 64; idx += WARP_SIZE) {
                 int elemBase = idx * 2;
-                int col = elemBase / WMMA_K;
-                int kk  = elemBase % WMMA_K;
-                int g0 = (kBase + kk) * dimN + tileCol + col;
-                int g1 = (kBase + kk + 1) * dimN + tileCol + col;
-                int lo0 = b.get(g0).getHalfFloatValue() & 0xFFFF;
-                int hi0 = b.get(g1).getHalfFloatValue() & 0xFFFF;
-                bTile0[col * (WMMA_K / 2) + kk / 2] = lo0 | (hi0 << 16);
+                int r = elemBase / 16;       // 0..7
+                int slot = elemBase % 16;    // 0, 2, 4, ..., 14
 
-                int g2 = (kBase + kk) * dimN + tileCol + 8 + col;
-                int g3 = (kBase + kk + 1) * dimN + tileCol + 8 + col;
-                int lo1 = b.get(g2).getHalfFloatValue() & 0xFFFF;
-                int hi1 = b.get(g3).getHalfFloatValue() & 0xFFFF;
-                bTile1[col * (WMMA_K / 2) + kk / 2] = lo1 | (hi1 << 16);
+                int k, j;
+                if (slot < 8) {
+                    k = r;
+                    j = slot;
+                } else {
+                    k = r + 8;
+                    j = slot - 8;
+                }
+
+                // Left panel: B cols tileCol + j .. tileCol + j + 1
+                int gL0 = (kBase + k) * dimN + tileCol + j;
+                int gL1 = (kBase + k) * dimN + tileCol + j + 1;
+                int loL = b.get(gL0).getHalfFloatValue() & 0xFFFF;
+                int hiL = b.get(gL1).getHalfFloatValue() & 0xFFFF;
+                bTile0[r * 8 + slot / 2] = loL | (hiL << 16);
+
+                // Right panel: B cols tileCol + 8 + j .. tileCol + 8 + j + 1
+                int gR0 = (kBase + k) * dimN + tileCol + 8 + j;
+                int gR1 = (kBase + k) * dimN + tileCol + 8 + j + 1;
+                int loR = b.get(gR0).getHalfFloatValue() & 0xFFFF;
+                int hiR = b.get(gR1).getHalfFloatValue() & 0xFFFF;
+                bTile1[r * 8 + slot / 2] = loR | (hiR << 16);
             }
 
             ctx.localBarrier();
@@ -173,52 +139,6 @@ public class BenchmarkMMA {
     // -----------------------------------------------------------------------
     // 2. int8 MMA Kernel (tensor cores, mma.sync.m16n8k32)
     // -----------------------------------------------------------------------
-//    public static void gemmMMAint8(KernelContext ctx,
-//                                   ByteArray a, ByteArray b, IntArray c,
-//                                   int dimM, int dimN, int dimK) {
-//
-//        if (ctx.globalIdx < 0) c.set(0, 0);
-//
-//        int warpId = ctx.groupIdx;
-//        int lane   = ctx.localIdx;
-//
-//        int numTilesN = dimN / WMMA_N_I8;
-//        int tileRow   = (warpId / numTilesN) * WMMA_M_I8;
-//        int tileCol   = (warpId % numTilesN) * WMMA_N_I8;
-//
-//        int[] aTile  = ctx.allocateIntLocalArray(WMMA_M_I8 * WMMA_K_I8);
-//        int[] bTile0 = ctx.allocateIntLocalArray(8 * WMMA_K_I8);
-//        int[] bTile1 = ctx.allocateIntLocalArray(8 * WMMA_K_I8);
-//
-//        int[] fragC0 = ctx.mmaFragmentInt(0);
-//        int[] fragC1 = ctx.mmaFragmentInt(0);
-//
-//        for (int kBase = 0; kBase < dimK; kBase += WMMA_K_I8) {
-//            for (int idx = lane; idx < WMMA_M_I8 * WMMA_K_I8; idx += WARP_SIZE) {
-//                int r  = idx / WMMA_K_I8;
-//                int kk = idx % WMMA_K_I8;
-//                aTile[r * WMMA_K_I8 + kk] = a.get((tileRow + r) * dimK + kBase + kk);
-//            }
-//            for (int idx = lane; idx < 8 * WMMA_K_I8; idx += WARP_SIZE) {
-//                int col = idx / WMMA_K_I8;
-//                int kk  = idx % WMMA_K_I8;
-//                bTile0[col * WMMA_K_I8 + kk] = b.get((kBase + kk) * dimN + tileCol     + col);
-//                bTile1[col * WMMA_K_I8 + kk] = b.get((kBase + kk) * dimN + tileCol + 8 + col);
-//            }
-//            ctx.localBarrier();
-//
-//            byte[] fragA  = ctx.mmaLoadAInt8(aTile, WMMA_K_I8);
-//            byte[] fragB0 = ctx.mmaLoadBInt8(bTile0, WMMA_K_I8);
-//            fragC0 = ctx.mmaInt8(fragA, fragB0, fragC0, MMAShape.M16N8K32);
-//            byte[] fragB1 = ctx.mmaLoadBInt8(bTile1, WMMA_K_I8);
-//            fragC1 = ctx.mmaInt8(fragA, fragB1, fragC1, MMAShape.M16N8K32);
-//
-//            ctx.localBarrier();
-//        }
-//
-//        ctx.mmaStoreInt(fragC0, c, tileRow, tileCol,     dimN);
-//        ctx.mmaStoreInt(fragC1, c, tileRow, tileCol + 8, dimN);
-//    }
     public static void gemmMMAint8(KernelContext ctx,
                                    ByteArray a, ByteArray b, IntArray c,
                                    int dimM, int dimN, int dimK) {
@@ -226,35 +146,71 @@ public class BenchmarkMMA {
         int warpId = ctx.groupIdx;
         int lane   = ctx.localIdx;
 
-        int numTilesN = dimN / WMMA_N;
-        int tileRow   = (warpId / numTilesN) * WMMA_M;
-        int tileCol   = (warpId % numTilesN) * WMMA_N;
+        int numTilesN = dimN / WMMA_N_I8;
+        int tileRow   = (warpId / numTilesN) * WMMA_M_I8;
+        int tileCol   = (warpId % numTilesN) * WMMA_N_I8;
 
-        // Packed shared tiles: 2 bytes per b16 slot, stored as int pairs
-        // A: 16×32 s8 → 16×16 b16 → 16 rows × 8 ints = 128
-        // B: 8 cols × 32 k → 8 cols × 16 b16 → 8 rows × 8 ints = 64 per panel
-        int[] aTile  = ctx.allocateIntLocalArray(WMMA_M * WMMA_K / 2);
-        int[] bTile0 = ctx.allocateIntLocalArray(8 * WMMA_K / 2);
-        int[] bTile1 = ctx.allocateIntLocalArray(8 * WMMA_K / 2);
+        int[] aTile  = ctx.allocateIntLocalArray(WMMA_M_I8 * WMMA_K_I8 / 2);
+        int[] bTile0 = ctx.allocateIntLocalArray(8 * WMMA_K_I8 / 2);
+        int[] bTile1 = ctx.allocateIntLocalArray(8 * WMMA_K_I8 / 2);
 
         int[] fragC0 = ctx.mmaFragmentInt(0);
         int[] fragC1 = ctx.mmaFragmentInt(0);
 
-        for (int kBase = 0; kBase < dimK; kBase += WMMA_K) {
+        for (int kBase = 0; kBase < dimK; kBase += WMMA_K_I8) {
 
-            // Cooperative load A: pack 2 adjacent bytes as b16 into one int pair
-            for (int idx = lane; idx < (WMMA_M * WMMA_K) / 4; idx += WARP_SIZE) {
+            // Cooperative load A
+            for (int idx = lane; idx < (WMMA_M_I8 * WMMA_K_I8) / 4; idx += WARP_SIZE) {
                 int elemBase = idx * 4;
-                int r  = elemBase / WMMA_K;
-                int kk = elemBase % WMMA_K;
+                int r  = elemBase / WMMA_K_I8;
+                int kk = elemBase % WMMA_K_I8;
                 int base = (tileRow + r) * dimK + kBase + kk;
                 int packed = (a.get(base)     & 0xFF)
                         | ((a.get(base + 1) & 0xFF) << 8)
                         | ((a.get(base + 2) & 0xFF) << 16)
                         | ((a.get(base + 3) & 0xFF) << 24);
-                aTile[r * (WMMA_K / 4) + kk / 4] = packed;
+                aTile[r * (WMMA_K_I8 / 4) + kk / 4] = packed;
             }
+
+            // Cooperative load B - side-by-side row-major (this code is fine as-is)
+            for (int idx = lane; idx < 64; idx += WARP_SIZE) {
+                int r = idx / 8;
+                int n = idx % 8;
+                int klo, jbase;
+                if (n < 4) {
+                    klo   = 2 * r;
+                    jbase = 2 * n;
+                } else {
+                    klo   = 2 * r + 16;
+                    jbase = 2 * (n - 4);
+                }
+
+                int bL0 = b.get((kBase + klo)     * dimN + tileCol + jbase)     & 0xFF;
+                int bL1 = b.get((kBase + klo + 1) * dimN + tileCol + jbase)     & 0xFF;
+                int bL2 = b.get((kBase + klo)     * dimN + tileCol + jbase + 1) & 0xFF;
+                int bL3 = b.get((kBase + klo + 1) * dimN + tileCol + jbase + 1) & 0xFF;
+                bTile0[r * 8 + n] = bL0 | (bL1 << 8) | (bL2 << 16) | (bL3 << 24);
+
+                int bR0 = b.get((kBase + klo)     * dimN + tileCol + 8 + jbase)     & 0xFF;
+                int bR1 = b.get((kBase + klo + 1) * dimN + tileCol + 8 + jbase)     & 0xFF;
+                int bR2 = b.get((kBase + klo)     * dimN + tileCol + 8 + jbase + 1) & 0xFF;
+                int bR3 = b.get((kBase + klo + 1) * dimN + tileCol + 8 + jbase + 1) & 0xFF;
+                bTile1[r * 8 + n] = bR0 | (bR1 << 8) | (bR2 << 16) | (bR3 << 24);
+            }
+
+            ctx.localBarrier();
+
+            byte[] fragA = ctx.mmaLoadAInt8(aTile, WMMA_K_I8);
+            byte[] fragB0 = ctx.mmaLoadBInt8(bTile0, WMMA_K_I8);
+            fragC0 = ctx.mmaInt8(fragA, fragB0, fragC0, MMAShape.M16N8K32);
+            byte[] fragB1 = ctx.mmaLoadBInt8(bTile1, WMMA_K_I8);
+            fragC1 = ctx.mmaInt8(fragA, fragB1, fragC1, MMAShape.M16N8K32);
+
+            ctx.localBarrier();
         }
+
+        ctx.mmaStoreInt(fragC0, c, tileRow, tileCol,     dimN);
+        ctx.mmaStoreInt(fragC1, c, tileRow, tileCol + 8, dimN);
     }
 
     // -----------------------------------------------------------------------
