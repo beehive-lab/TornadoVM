@@ -92,36 +92,38 @@ public class TestMatrixMultiplicationMMAInt8 extends TornadoTestBase {
                 aTile[r * (WMMA_K / 4) + kk / 4] = packed;
             }
 
-            // Cooperative load B panels: col-major, pack 4 adjacent k-values per int32.
-            // bTile0: left 8-col panel (tileCol..tileCol+7)
-            // bTile1: right 8-col panel (tileCol+8..tileCol+15)
-            for (int idx = lane; idx < (8 * WMMA_K) / 4; idx += WARP_SIZE) {
-                int elemBase = idx * 4;
-                int col = elemBase / WMMA_K;
-                int kk  = elemBase % WMMA_K;
-                int p0 = (kBase + kk)     * dimN + tileCol + col;
-                int p1 = (kBase + kk + 1) * dimN + tileCol + col;
-                int p2 = (kBase + kk + 2) * dimN + tileCol + col;
-                int p3 = (kBase + kk + 3) * dimN + tileCol + col;
-                int packed = (b.get(p0) & 0xFF)
-                        | ((b.get(p1) & 0xFF) << 8)
-                        | ((b.get(p2) & 0xFF) << 16)
-                        | ((b.get(p3) & 0xFF) << 24);
-                bTile0[col * (WMMA_K / 4) + kk / 4] = packed;
-            }
-            for (int idx = lane; idx < (8 * WMMA_K) / 4; idx += WARP_SIZE) {
-                int elemBase = idx * 4;
-                int col = elemBase / WMMA_K;
-                int kk  = elemBase % WMMA_K;
-                int p0 = (kBase + kk)     * dimN + tileCol + 8 + col;
-                int p1 = (kBase + kk + 1) * dimN + tileCol + 8 + col;
-                int p2 = (kBase + kk + 2) * dimN + tileCol + 8 + col;
-                int p3 = (kBase + kk + 3) * dimN + tileCol + 8 + col;
-                int packed = (b.get(p0) & 0xFF)
-                        | ((b.get(p1) & 0xFF) << 8)
-                        | ((b.get(p2) & 0xFF) << 16)
-                        | ((b.get(p3) & 0xFF) << 24);
-                bTile1[col * (WMMA_K / 4) + kk / 4] = packed;
+            // bTile0: 8 rows × 8 ints = 64 ints, side-by-side row-major layout
+            // Row r, int n covers a 2-k × 2-j tile of s8 B values
+            // Matrix 0 (n in 0..3): k = 2r..2r+1, j = 2n..2n+1
+            // Matrix 1 (n in 4..7): k = 2r+16..2r+17, j = 2(n-4)..2(n-4)+1
+            // Packing: byte 0 = B[klo][jbase], byte 1 = B[klo+1][jbase],
+            //          byte 2 = B[klo][jbase+1], byte 3 = B[klo+1][jbase+1]
+            for (int idx = lane; idx < 64; idx += WARP_SIZE) {
+                int r = idx / 8;        // 0..7
+                int n = idx % 8;        // 0..7
+
+                int klo, jbase;
+                if (n < 4) {
+                    klo   = 2 * r;
+                    jbase = 2 * n;
+                } else {
+                    klo   = 2 * r + 16;
+                    jbase = 2 * (n - 4);
+                }
+
+                // Left panel (cols tileCol..tileCol+7)
+                int bL0 = b.get((kBase + klo)     * dimN + tileCol + jbase)     & 0xFF;
+                int bL1 = b.get((kBase + klo + 1) * dimN + tileCol + jbase)     & 0xFF;
+                int bL2 = b.get((kBase + klo)     * dimN + tileCol + jbase + 1) & 0xFF;
+                int bL3 = b.get((kBase + klo + 1) * dimN + tileCol + jbase + 1) & 0xFF;
+                bTile0[r * 8 + n] = bL0 | (bL1 << 8) | (bL2 << 16) | (bL3 << 24);
+
+                // Right panel (cols tileCol+8..tileCol+15)
+                int bR0 = b.get((kBase + klo)     * dimN + tileCol + 8 + jbase)     & 0xFF;
+                int bR1 = b.get((kBase + klo + 1) * dimN + tileCol + 8 + jbase)     & 0xFF;
+                int bR2 = b.get((kBase + klo)     * dimN + tileCol + 8 + jbase + 1) & 0xFF;
+                int bR3 = b.get((kBase + klo + 1) * dimN + tileCol + 8 + jbase + 1) & 0xFF;
+                bTile1[r * 8 + n] = bR0 | (bR1 << 8) | (bR2 << 16) | (bR3 << 24);
             }
 
             ctx.localBarrier();
@@ -145,69 +147,6 @@ public class TestMatrixMultiplicationMMAInt8 extends TornadoTestBase {
         ctx.mmaStoreInt(fragC1, c, tileRow, tileCol + 8, dimN);
 
     }
-//    public static void gemmMMAInt8(KernelContext ctx,
-//                                   ByteArray a, ByteArray b, IntArray c,
-//                                   int dimM, int dimN, int dimK) {
-//
-//        // Force TornadoVM sketch analysis to recognize 'c' as written
-//        if (ctx.globalIdx < 0) c.set(0, 0);
-//
-//        int warpId = ctx.groupIdx;
-//        int lane   = ctx.localIdx;
-//
-//        int numTilesN = dimN / WMMA_N;
-//        int tileRow   = (warpId / numTilesN) * WMMA_M;
-//        int tileCol   = (warpId % numTilesN) * WMMA_N;
-//
-//        // aTile  row-major  [WMMA_M x WMMA_K] = [16 x 32] = 512 elements
-//        // bTile0 col-major  [8 x WMMA_K]      = [8 x 32]  = 256 elements (left panel)
-//        // bTile1 col-major  [8 x WMMA_K]      = [8 x 32]  = 256 elements (right panel)
-//        int[] aTile  = ctx.allocateIntLocalArray(WMMA_M * WMMA_K);
-//        int[] bTile0 = ctx.allocateIntLocalArray(8 * WMMA_K);
-//        int[] bTile1 = ctx.allocateIntLocalArray(8 * WMMA_K);
-//
-//        // Accumulators — zero filled, one per 16x8 output panel.
-//        int[] fragC0 = ctx.mmaFragmentInt(0);
-//        int[] fragC1 = ctx.mmaFragmentInt(0);
-//
-//        for (int kBase = 0; kBase < dimK; kBase += WMMA_K) {
-//
-//            // Cooperative load of aTile: 32 lanes × 16 elements = 512 = 16×32
-//            for (int idx = lane; idx < WMMA_M * WMMA_K; idx += WARP_SIZE) {
-//                int r  = idx / WMMA_K;
-//                int kk = idx % WMMA_K;
-//                aTile[r * WMMA_K + kk] = a.get((tileRow + r) * dimK + kBase + kk);
-//            }
-//
-//            // Cooperative load of bTile0 and bTile1: col-major layout.
-//            // bTile[col * WMMA_K + k] = B[kBase+k][tileCol+col]
-//            for (int idx = lane; idx < 8 * WMMA_K; idx += WARP_SIZE) {
-//                int col = idx / WMMA_K;
-//                int kk  = idx % WMMA_K;
-//                bTile0[col * WMMA_K + kk] = b.get((kBase + kk) * dimN + tileCol     + col);
-//                bTile1[col * WMMA_K + kk] = b.get((kBase + kk) * dimN + tileCol + 8 + col);
-//            }
-//
-//            ctx.localBarrier();
-//
-//            // Load A fragment (4 × b32, each packing 4 × s8)
-//            byte[] fragA = ctx.mmaLoadAInt8(aTile, WMMA_K);
-//
-//            // Left panel
-//            byte[] fragB0 = ctx.mmaLoadBInt8(bTile0, WMMA_K);
-//            fragC0 = ctx.mmaInt8(fragA, fragB0, fragC0, MMAShape.M16N8K32);
-//
-//            // Right panel
-//            byte[] fragB1 = ctx.mmaLoadBInt8(bTile1, WMMA_K);
-//            fragC1 = ctx.mmaInt8(fragA, fragB1, fragC1, MMAShape.M16N8K32);
-//
-//            ctx.localBarrier();
-//        }
-//
-//        // Store results
-//        ctx.mmaStoreInt(fragC0, c, tileRow, tileCol,     dimN);
-//        ctx.mmaStoreInt(fragC1, c, tileRow, tileCol + 8, dimN);
-//    }
 
     // -----------------------------------------------------------------------
     // CPU reference
@@ -380,6 +319,34 @@ public class TestMatrixMultiplicationMMAInt8 extends TornadoTestBase {
             }
         }
     }
+
+    @Test
+    public void testGemmInt8DistinctKInB() throws TornadoExecutionPlanException {
+        int M = 16, N = 16, K = 32;
+
+        // A all ones
+        ByteArray a = new ByteArray(M * K);
+        for (int idx = 0; idx < M * K; idx++) {
+            a.set(idx, (byte) 1);
+        }
+
+        // B[k][j] = (k % 8) + 1  → values cycle 1..8, four times across K=32
+        ByteArray b = new ByteArray(K * N);
+        for (int k = 0; k < K; k++) {
+            for (int j = 0; j < N; j++) {
+                b.set(k * N + j, (byte) ((k % 8) + 1));
+            }
+        }
+
+        IntArray c   = new IntArray(M * N);
+        IntArray ref = new IntArray(M * N);
+        gemmReferenceInt8(a, b, ref, M, N, K);
+
+        // Expected: sum_k B[k][j] = 4 * (1+2+...+8) = 4 * 36 = 144 everywhere
+
+        runGemmTestWithData(a, b, c, ref, M, N, K);
+    }
+
 
     /**
      * Creates an IntArray with random values in [-3, 3].

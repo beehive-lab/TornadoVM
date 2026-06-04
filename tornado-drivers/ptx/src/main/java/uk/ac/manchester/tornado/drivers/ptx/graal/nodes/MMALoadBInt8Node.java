@@ -43,7 +43,7 @@ public class MMALoadBInt8Node extends FixedWithNextNode implements LIRLowerable 
         // Wait — B is col-major: K rows × 8 cols. As b16: K/2 rows × 8 cols.
         // For K=16: 8 rows × 8 cols of b16. rowStride = 8 b16 × 2 = 16 bytes
         // For K=32: 16 rows × 8 cols of b16. rowStride = 8 b16 × 2 = 16 bytes
-        int rowStride = 16;
+        int rowStride = 32;
 
         tool.append(new PTXLIRStmt.LdmatrixStmt(
                 PTXLIRStmt.LdmatrixStmt.Variant.X2_TRANS,
