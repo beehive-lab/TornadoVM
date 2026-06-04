@@ -29,52 +29,27 @@ public class MMALoadAInt8Node extends FixedWithNextNode implements LIRLowerable 
         this.wmmaK = wmmaK;
     }
 
-//    @Override
-//    public void generate(NodeLIRBuilderTool gen) {
-//        LIRGeneratorTool tool = gen.getLIRGeneratorTool();
-//        Value tileVal = gen.operand(tile);
-//        Value kVal = gen.operand(wmmaK);
-//
-//        Variable fragA = tool.newVariable(LIRKind.value(PTXKind.MMA_FRAG_A_S8));
-//
-//        LIRKind u32 = LIRKind.value(PTXKind.U32);
-//        Variable laneId       = tool.newVariable(u32);
-//        Variable rowId        = tool.newVariable(u32);
-//        Variable kOffset      = tool.newVariable(u32);
-//        Variable rowComponent = tool.newVariable(u32);
-//        Variable kComponent   = tool.newVariable(u32);
-//        Variable baseSlot     = tool.newVariable(u32);
-//        Variable slotWithStep = tool.newVariable(u32);
-//
-//        tool.append(new PTXLIRStmt.MMALoadInt8Stmt(
-//                PTXLIRStmt.MMALoadInt8Stmt.Operand.A,
-//                fragA, tileVal, kVal,
-//                laneId, rowId, kOffset,
-//                rowComponent, kComponent, baseSlot, slotWithStep));
-//
-//        gen.setResult(this, fragA);
-//    }
-@Override
-public void generate(NodeLIRBuilderTool gen) {
-    LIRGeneratorTool tool = gen.getLIRGeneratorTool();
-    Value tileVal = gen.operand(tile);
+    @Override
+    public void generate(NodeLIRBuilderTool gen) {
+        LIRGeneratorTool tool = gen.getLIRGeneratorTool();
+        Value tileVal = gen.operand(tile);
 
-    Variable fragA = tool.newVariable(LIRKind.value(PTXKind.MMA_FRAG_A_S8));
+        Variable fragA = tool.newVariable(LIRKind.value(PTXKind.MMA_FRAG_A_S8));
 
-    LIRKind u32 = LIRKind.value(PTXKind.U32);
-    LIRKind u64 = LIRKind.value(PTXKind.U64);
+        LIRKind u32 = LIRKind.value(PTXKind.U32);
+        LIRKind u64 = LIRKind.value(PTXKind.U64);
 
-    // 16×32 s8 viewed as 16×16 b16: rowStride = 16 b16 × 2 bytes = 32
-    int rowStride = 32;
+        // 16×32 s8 viewed as 16×16 b16: rowStride = 16 b16 × 2 bytes = 32
+        int rowStride = 32;
 
-    tool.append(new PTXLIRStmt.LdmatrixStmt(
-            PTXLIRStmt.LdmatrixStmt.Variant.X4,
-            fragA, tileVal,
-            tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u32),
-            tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u32),
-            tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u64),
-            rowStride));
+        tool.append(new PTXLIRStmt.LdmatrixStmt(
+                PTXLIRStmt.LdmatrixStmt.Variant.X4,
+                fragA, tileVal,
+                tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u32),
+                tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u32),
+                tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u64),
+                rowStride));
 
-    gen.setResult(this, fragA);
-}
+        gen.setResult(this, fragA);
+    }
 }
