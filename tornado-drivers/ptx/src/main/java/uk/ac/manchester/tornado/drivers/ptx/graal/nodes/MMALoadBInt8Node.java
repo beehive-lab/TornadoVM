@@ -29,32 +29,6 @@ public class MMALoadBInt8Node extends FixedWithNextNode implements LIRLowerable 
         this.wmmaK = wmmaK;
     }
 
-//    @Override
-//    public void generate(NodeLIRBuilderTool gen) {
-//        LIRGeneratorTool tool = gen.getLIRGeneratorTool();
-//        Value tileVal = gen.operand(tile);
-//        Value kVal = gen.operand(wmmaK);
-//
-//        Variable fragB = tool.newVariable(LIRKind.value(PTXKind.MMA_FRAG_B_S8));
-//
-//        LIRKind u32 = LIRKind.value(PTXKind.U32);
-//        Variable laneId       = tool.newVariable(u32);
-//        Variable rowId        = tool.newVariable(u32);
-//        Variable kOffset      = tool.newVariable(u32);
-//        Variable rowComponent = tool.newVariable(u32);
-//        Variable kComponent   = tool.newVariable(u32);
-//        Variable baseSlot     = tool.newVariable(u32);
-//        Variable slotWithStep = tool.newVariable(u32);
-//
-//        tool.append(new PTXLIRStmt.MMALoadInt8Stmt(
-//                PTXLIRStmt.MMALoadInt8Stmt.Operand.B,
-//                fragB, tileVal, kVal,
-//                laneId, rowId, kOffset,
-//                rowComponent, kComponent, baseSlot, slotWithStep));
-//
-//        gen.setResult(this, fragB);
-//    }
-
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();

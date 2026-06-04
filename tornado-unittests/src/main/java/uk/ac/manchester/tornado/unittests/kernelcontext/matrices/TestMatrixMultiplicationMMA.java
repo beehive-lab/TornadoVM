@@ -93,22 +93,83 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
                 aTile[r * (WMMA_K / 2) + kk / 2] = lo | (hi << 16);
             }
 
-            // Cooperative load B: col-major, pack 2 adjacent k-values per int
-            for (int idx = lane; idx < (8 * WMMA_K) / 2; idx += WARP_SIZE) {
-                int elemBase = idx * 2;
-                int col = elemBase / WMMA_K;
-                int kk  = elemBase % WMMA_K;
-                int g0 = (kBase + kk) * dimN + tileCol + col;
-                int g1 = (kBase + kk + 1) * dimN + tileCol + col;
-                int lo0 = b.get(g0).getHalfFloatValue() & 0xFFFF;
-                int hi0 = b.get(g1).getHalfFloatValue() & 0xFFFF;
-                bTile0[col * (WMMA_K / 2) + kk / 2] = lo0 | (hi0 << 16);
+//            // Cooperative load B: col-major, pack 2 adjacent k-values per int
+//            for (int idx = lane; idx < (8 * WMMA_K) / 2; idx += WARP_SIZE) {
+//                int elemBase = idx * 2;
+//                int col = elemBase / WMMA_K;
+//                int kk  = elemBase % WMMA_K;
+//                int g0 = (kBase + kk) * dimN + tileCol + col;
+//                int g1 = (kBase + kk + 1) * dimN + tileCol + col;
+//                int lo0 = b.get(g0).getHalfFloatValue() & 0xFFFF;
+//                int hi0 = b.get(g1).getHalfFloatValue() & 0xFFFF;
+//                bTile0[col * (WMMA_K / 2) + kk / 2] = lo0 | (hi0 << 16);
+//
+//                int g2 = (kBase + kk) * dimN + tileCol + 8 + col;
+//                int g3 = (kBase + kk + 1) * dimN + tileCol + 8 + col;
+//                int lo1 = b.get(g2).getHalfFloatValue() & 0xFFFF;
+//                int hi1 = b.get(g3).getHalfFloatValue() & 0xFFFF;
+//                bTile1[col * (WMMA_K / 2) + kk / 2] = lo1 | (hi1 << 16);
+//            }
 
-                int g2 = (kBase + kk) * dimN + tileCol + 8 + col;
-                int g3 = (kBase + kk + 1) * dimN + tileCol + 8 + col;
-                int lo1 = b.get(g2).getHalfFloatValue() & 0xFFFF;
-                int hi1 = b.get(g3).getHalfFloatValue() & 0xFFFF;
-                bTile1[col * (WMMA_K / 2) + kk / 2] = lo1 | (hi1 << 16);
+//            // bTile0 holds 16 k-rows × 8 cols of b16. Row stride = 4 ints (16 bytes).
+//// Lane idx ranges over (16 * 8) / 2 = 64 packed pairs.
+//            for (int idx = lane; idx < 64; idx += WARP_SIZE) {
+//                int elemBase = idx * 2;
+//                int kk = elemBase / 8;           // 0..15
+//                int j  = elemBase % 8;           // 0, 2, 4, 6 within row
+//                int g0 = (kBase + kk) * dimN + tileCol + j;
+//                int g1 = (kBase + kk) * dimN + tileCol + j + 1;
+//                int lo = b.get(g0).getHalfFloatValue() & 0xFFFF;
+//                int hi = b.get(g1).getHalfFloatValue() & 0xFFFF;
+//                bTile0[kk * 4 + j / 2] = lo | (hi << 16);
+//            }
+
+//            for (int idx = lane; idx < 64; idx += WARP_SIZE) {
+//                int elemBase = idx * 2;
+//                int kk = elemBase / 8;           // 0..15
+//                int j  = elemBase % 8;           // 0, 2, 4, 6 within row
+//
+//                // Left panel: cols tileCol + j, tileCol + j + 1
+//                int g0_left = (kBase + kk) * dimN + tileCol + j;
+//                int g1_left = (kBase + kk) * dimN + tileCol + j + 1;
+//                int lo_left = b.get(g0_left).getHalfFloatValue() & 0xFFFF;
+//                int hi_left = b.get(g1_left).getHalfFloatValue() & 0xFFFF;
+//                bTile0[kk * 4 + j / 2] = lo_left | (hi_left << 16);
+//
+//                // Right panel: cols tileCol + 8 + j, tileCol + 8 + j + 1
+//                int g0_right = (kBase + kk) * dimN + tileCol + 8 + j;
+//                int g1_right = (kBase + kk) * dimN + tileCol + 8 + j + 1;
+//                int lo_right = b.get(g0_right).getHalfFloatValue() & 0xFFFF;
+//                int hi_right = b.get(g1_right).getHalfFloatValue() & 0xFFFF;
+//                bTile1[kk * 4 + j / 2] = lo_right | (hi_right << 16);
+//            }
+            for (int idx = lane; idx < 64; idx += WARP_SIZE) {
+                int elemBase = idx * 2;
+                int r = elemBase / 16;       // 0..7
+                int slot = elemBase % 16;    // 0, 2, 4, ..., 14
+
+                int k, j;
+                if (slot < 8) {
+                    k = r;
+                    j = slot;
+                } else {
+                    k = r + 8;
+                    j = slot - 8;
+                }
+
+                // Left panel: B cols tileCol + j .. tileCol + j + 1
+                int gL0 = (kBase + k) * dimN + tileCol + j;
+                int gL1 = (kBase + k) * dimN + tileCol + j + 1;
+                int loL = b.get(gL0).getHalfFloatValue() & 0xFFFF;
+                int hiL = b.get(gL1).getHalfFloatValue() & 0xFFFF;
+                bTile0[r * 8 + slot / 2] = loL | (hiL << 16);
+
+                // Right panel: B cols tileCol + 8 + j .. tileCol + 8 + j + 1
+                int gR0 = (kBase + k) * dimN + tileCol + 8 + j;
+                int gR1 = (kBase + k) * dimN + tileCol + 8 + j + 1;
+                int loR = b.get(gR0).getHalfFloatValue() & 0xFFFF;
+                int hiR = b.get(gR1).getHalfFloatValue() & 0xFFFF;
+                bTile1[r * 8 + slot / 2] = loR | (hiR << 16);
             }
 
             ctx.localBarrier();
@@ -288,11 +349,316 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
         }
     }
 
+    @Test
+    public void testGemmDistinctK() throws TornadoExecutionPlanException {
+        int M = 16, N = 16, K = 16;
+
+        // A[i][k] = k + 1   (i.e., row is irrelevant, A is the same in every row;
+        //                    column k has value k+1, so values 1..16)
+        HalfFloatArray a = new HalfFloatArray(M * K);
+        for (int i = 0; i < M; i++) {
+            for (int k = 0; k < K; k++) {
+                a.set(i * K + k, new HalfFloat((float)(k + 1)));
+            }
+        }
+
+        // B[k][j] = 1.0 everywhere
+        HalfFloatArray b = new HalfFloatArray(K * N);
+        for (int idx = 0; idx < K * N; idx++) {
+            b.set(idx, new HalfFloat(1.0f));
+        }
+
+        FloatArray c = new FloatArray(M * N);
+
+        // Expected: C[i][j] = sum_k A[i][k] * B[k][j] = sum_k (k+1) * 1 = 1+2+...+16 = 136
+        // for EVERY i, j.
+
+        int numWarps = (M / WMMA_M) * (N / WMMA_N);
+        int globalSize = numWarps * WARP_SIZE;
+        WorkerGrid1D workerGrid = new WorkerGrid1D(globalSize);
+        workerGrid.setLocalWork(WARP_SIZE, 1, 1);
+        GridScheduler gridScheduler = new GridScheduler("mma_test.gemm", workerGrid);
+        KernelContext ctx = new KernelContext();
+
+        TaskGraph tg = new TaskGraph("mma_test")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
+                .task("gemm", TestMatrixMultiplicationMMA::gemmMMA, ctx, a, b, c, M, N, K)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
+            plan.withGridScheduler(gridScheduler).execute();
+        }
+
+        System.out.println("=== Distinct-K test: every C[i][j] should be 136 ===");
+        for (int i = 0; i < M; i++) {
+            StringBuilder line = new StringBuilder(String.format("row[%2d]: ", i));
+            for (int j = 0; j < N; j++) {
+                line.append(String.format("%6.0f", c.get(i * N + j)));
+            }
+            System.out.println(line);
+        }
+    }
+
+    @Test
+    public void testGemmKMappingProbe() throws TornadoExecutionPlanException {
+        int M = 16, N = 16, K = 16;
+
+        // A[i][k] = 2^k   (k = 0..15, so A[i][k] ∈ {1, 2, 4, 8, ..., 32768})
+        // But 2^15 = 32768 won't fit in fp16 (max ~65504), and 2^14 = 16384 is fine.
+        // Use 2^k for k in 0..10 to stay safe.
+        // Better: A[i][k] = k itself, B[k][j] = 16^(some_distinguishable_index)
+        // But 16^16 overflows everything. Let me use smaller.
+
+        // Instead: A[i][k] = (k+1)  (1..16, no row dependence)
+        //          B[k][j] = (k+1)*100 + j  (k+1 in high digits, j in low)
+        // Each product = (k+1) * ((k+1)*100 + j) = 100*(k+1)² + (k+1)*j
+        // Sum over k: 100 * sum_k (k+1)² + j * sum_k (k+1)
+        //           = 100 * 1496 + j * 136
+        //           = 149600 + 136j
+        // This overflows fp16 (max 65504). Not usable.
+
+        // Smaller version: A[i][k] = k+1, B[k][j] = (k+1)*10
+        // Product = 10*(k+1)²
+        // Sum = 10*1496 = 14960. Just inside fp32 (output is FloatArray).
+        // But fp16 inputs cap at 65504, so b[k][j] = (k+1)*10 ranges to 160, fine.
+        // Expected: 14960 everywhere.
+
+        HalfFloatArray a = new HalfFloatArray(M * K);
+        for (int i = 0; i < M; i++)
+            for (int k = 0; k < K; k++)
+                a.set(i * K + k, new HalfFloat((float)(k + 1)));
+
+        HalfFloatArray b = new HalfFloatArray(K * N);
+        for (int k = 0; k < K; k++)
+            for (int j = 0; j < N; j++)
+                b.set(k * N + j, new HalfFloat((float)((k + 1) * 10)));
+
+        FloatArray c = new FloatArray(M * N);
+
+        // Expected: 14960 everywhere
+
+        int numWarps = (M / WMMA_M) * (N / WMMA_N);
+        int globalSize = numWarps * WARP_SIZE;
+        WorkerGrid1D workerGrid = new WorkerGrid1D(globalSize);
+        workerGrid.setLocalWork(WARP_SIZE, 1, 1);
+        GridScheduler gridScheduler = new GridScheduler("mma_test.gemm", workerGrid);
+        KernelContext ctx = new KernelContext();
+
+        TaskGraph tg = new TaskGraph("mma_test")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
+                .task("gemm", TestMatrixMultiplicationMMA::gemmMMA, ctx, a, b, c, M, N, K)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
+            plan.withGridScheduler(gridScheduler).execute();
+        }
+
+        System.out.println("=== K-mapping probe: every cell should be 14960 ===");
+        System.out.println("Row 0:");
+        StringBuilder line = new StringBuilder();
+        for (int j = 0; j < N; j++) {
+            line.append(String.format("%8.0f", c.get(j)));
+        }
+        System.out.println(line);
+    }
+
+    @Test
+    public void testGemmDistinctKInB() throws TornadoExecutionPlanException {
+        int M = 16, N = 16, K = 16;
+
+        // A all ones
+        HalfFloatArray a = new HalfFloatArray(M * K);
+        for (int idx = 0; idx < M * K; idx++) {
+            a.set(idx, new HalfFloat(1.0f));
+        }
+
+        // B[k][j] = k + 1 (every column has values 1..16 going down)
+        HalfFloatArray b = new HalfFloatArray(K * N);
+        for (int k = 0; k < K; k++) {
+            for (int j = 0; j < N; j++) {
+                b.set(k * N + j, new HalfFloat((float)(k + 1)));
+            }
+        }
+
+        FloatArray c = new FloatArray(M * N);
+
+        // Expected: C[i][j] = sum_k 1 * (k+1) = 136 everywhere
+
+        int numWarps = (M / WMMA_M) * (N / WMMA_N);
+        int globalSize = numWarps * WARP_SIZE;
+        WorkerGrid1D workerGrid = new WorkerGrid1D(globalSize);
+        workerGrid.setLocalWork(WARP_SIZE, 1, 1);
+        GridScheduler gridScheduler = new GridScheduler("mma_test.gemm", workerGrid);
+        KernelContext ctx = new KernelContext();
+
+        TaskGraph tg = new TaskGraph("mma_test")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
+                .task("gemm", TestMatrixMultiplicationMMA::gemmMMA, ctx, a, b, c, M, N, K)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
+            plan.withGridScheduler(gridScheduler).execute();
+        }
+
+        System.out.println("=== Distinct-K-in-B test: every C[i][j] should be 136 ===");
+        for (int i = 0; i < M; i++) {
+            StringBuilder line = new StringBuilder(String.format("row[%2d]: ", i));
+            for (int j = 0; j < N; j++) {
+                line.append(String.format("%6.0f", c.get(i * N + j)));
+            }
+            System.out.println(line);
+        }
+    }
+
+    @Test
+    public void testGemmIdentityB() throws TornadoExecutionPlanException {
+        int M = 16, N = 16, K = 16;
+
+        // A[i][k] = i * 16 + k  → each element is its flat row-major index, 0..255
+        HalfFloatArray a = new HalfFloatArray(M * K);
+        for (int i = 0; i < M; i++) {
+            for (int k = 0; k < K; k++) {
+                a.set(i * K + k, new HalfFloat((float)(i * 16 + k)));
+            }
+        }
+
+        // B = identity matrix
+        HalfFloatArray b = new HalfFloatArray(K * N);
+        for (int k = 0; k < K; k++) {
+            for (int j = 0; j < N; j++) {
+                b.set(k * N + j, new HalfFloat(k == j ? 1.0f : 0.0f));
+            }
+        }
+
+        FloatArray c = new FloatArray(M * N);
+
+        // C should equal A: C[i][j] = sum_k A[i][k] * B[k][j] = A[i][j]
+        int numWarps = (M / WMMA_M) * (N / WMMA_N);
+        int globalSize = numWarps * WARP_SIZE;
+        WorkerGrid1D workerGrid = new WorkerGrid1D(globalSize);
+        workerGrid.setLocalWork(WARP_SIZE, 1, 1);
+        GridScheduler gridScheduler = new GridScheduler("mma_test.gemm", workerGrid);
+        KernelContext ctx = new KernelContext();
+
+        TaskGraph tg = new TaskGraph("mma_test")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
+                .task("gemm", TestMatrixMultiplicationMMA::gemmMMA, ctx, a, b, c, M, N, K)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
+            plan.withGridScheduler(gridScheduler).execute();
+        }
+
+        // Print the full 16×16 result so we can read the permutation off
+        System.out.println("=== Identity-B test: C should equal A (A[i][j] = i*16 + j) ===");
+        for (int i = 0; i < M; i++) {
+            StringBuilder line = new StringBuilder(String.format("row[%2d]: ", i));
+            for (int j = 0; j < N; j++) {
+                line.append(String.format("%6.0f", c.get(i * N + j)));
+            }
+            System.out.println(line);
+        }
+    }
+
+    @Test
+    public void testGemmDistinctAB() throws TornadoExecutionPlanException {
+        int M = 16, N = 16, K = 16;
+
+        // A[i][k] = k + 1   (same as distinct-K test: A is constant across rows,
+        //                    varies across k from 1..16)
+        HalfFloatArray a = new HalfFloatArray(M * K);
+        for (int i = 0; i < M; i++) {
+            for (int k = 0; k < K; k++) {
+                a.set(i * K + k, new HalfFloat((float)(k + 1)));
+            }
+        }
+
+        // B[k][j] = k + 1   (B is constant across columns, varies across k from 1..16)
+        HalfFloatArray b = new HalfFloatArray(K * N);
+        for (int k = 0; k < K; k++) {
+            for (int j = 0; j < N; j++) {
+                b.set(k * N + j, new HalfFloat((float)(k + 1)));
+            }
+        }
+
+        FloatArray c = new FloatArray(M * N);
+
+        // Expected: C[i][j] = sum_k (k+1)(k+1) = 1+4+9+16+...+256 = 1496 everywhere
+
+        int numWarps = (M / WMMA_M) * (N / WMMA_N);
+        int globalSize = numWarps * WARP_SIZE;
+        WorkerGrid1D workerGrid = new WorkerGrid1D(globalSize);
+        workerGrid.setLocalWork(WARP_SIZE, 1, 1);
+        GridScheduler gridScheduler = new GridScheduler("mma_test.gemm", workerGrid);
+        KernelContext ctx = new KernelContext();
+
+        TaskGraph tg = new TaskGraph("mma_test")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
+                .task("gemm", TestMatrixMultiplicationMMA::gemmMMA, ctx, a, b, c, M, N, K)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
+            plan.withGridScheduler(gridScheduler).execute();
+        }
+
+        System.out.println("=== Distinct-AB test: every C[i][j] should be 1496 ===");
+        for (int i = 0; i < M; i++) {
+            StringBuilder line = new StringBuilder(String.format("row[%2d]: ", i));
+            for (int j = 0; j < N; j++) {
+                line.append(String.format("%6.0f", c.get(i * N + j)));
+            }
+            System.out.println(line);
+        }
+    }
+
+    @Test
+    public void testGemmBLayoutProbe() throws TornadoExecutionPlanException {
+        int M = 16, N = 16, K = 16;
+
+        // A = all ones (so the kernel just sums B[k][j] over k)
+        HalfFloatArray a = new HalfFloatArray(M * K);
+        for (int idx = 0; idx < M * K; idx++) a.set(idx, new HalfFloat(1.0f));
+
+        // B[k][j] = k * 10 + j
+        // Each k is in the tens digit, each j is in the units digit.
+        // sum_k B[k][j] = 10*(0+1+...+15) + 16*j = 1200 + 16*j
+        HalfFloatArray b = new HalfFloatArray(K * N);
+        for (int k = 0; k < K; k++)
+            for (int j = 0; j < N; j++)
+                b.set(k * N + j, new HalfFloat((float)(k * 10 + j)));
+
+        FloatArray c = new FloatArray(M * N);
+
+        int numWarps = (M / WMMA_M) * (N / WMMA_N);
+        int globalSize = numWarps * WARP_SIZE;
+        WorkerGrid1D workerGrid = new WorkerGrid1D(globalSize);
+        workerGrid.setLocalWork(WARP_SIZE, 1, 1);
+        GridScheduler gridScheduler = new GridScheduler("mma_test.gemm", workerGrid);
+        KernelContext ctx = new KernelContext();
+
+        TaskGraph tg = new TaskGraph("mma_test")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
+                .task("gemm", TestMatrixMultiplicationMMA::gemmMMA, ctx, a, b, c, M, N, K)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
+            plan.withGridScheduler(gridScheduler).execute();
+        }
+
+        System.out.println("=== B layout probe: each cell should be 1200 + 16*j ===");
+        System.out.println("Expected row: 1200, 1216, 1232, ..., 1440");
+        StringBuilder line = new StringBuilder("Row 0: ");
+        for (int j = 0; j < N; j++) {
+            line.append(String.format("%6.0f", c.get(j)));
+        }
+        System.out.println(line);
+    }
+
     private static HalfFloatArray randomFP16(int size) {
         HalfFloatArray arr = new HalfFloatArray(size);
         for (int i = 0; i < size; i++) {
-            arr.set(i, new HalfFloat(1.0f));
-          //  arr.set(i, new HalfFloat((float)(Math.random() * 2.0 - 1.0)));
+           // arr.set(i, new HalfFloat(1.0f));
+           arr.set(i, new HalfFloat((float)(Math.random() * 2.0 - 1.0)));
         }
         return arr;
     }
