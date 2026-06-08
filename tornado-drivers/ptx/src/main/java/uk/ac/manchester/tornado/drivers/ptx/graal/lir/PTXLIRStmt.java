@@ -2694,7 +2694,8 @@ public class PTXLIRStmt {
 
         public enum Variant {
             X4(4, false),      // A fragment: 4 regs, row-major
-            X2_TRANS(2, true);  // B fragment: 2 regs, transposed (col-major)
+            X2_TRANS(2, true),  // B fragment: 2 regs, transposed (col-major)
+            X2_TRANS_SWIZZLE_FP16_STRIDE32(2, true);     // B fragment, swizzled (XOR pattern: S=7, M=0b111, T=4)
 
             final int numRegs;
             final boolean trans;
@@ -2773,7 +2774,7 @@ public class PTXLIRStmt {
                 asm.delimiter();
                 asm.eol();
                 asm.emitSymbol(TAB);
-                asm.emit(".reg .u32 __ldm_rowBytes, __ldm_byteOff, __ldm_addr");
+                asm.emit(".reg .u32 __ldm_rowBytes, __ldm_byteOff, __ldm_addr, __ldm_xorTmp");
                 asm.delimiter();
                 asm.eol();
             }
@@ -2866,6 +2867,31 @@ public class PTXLIRStmt {
                 asm.eol();
                 asm.emitSymbol(TAB);
                 asm.emit("add.u32 __ldm_byteOff, __ldm_rowBytes, __ldm_colOff");
+                asm.delimiter();
+                asm.eol();
+            }
+
+            // Swizzled variant: XOR-permute byteOff to undo the swizzle applied at store time.
+            // Constants match swizzleStoreFp16Stride32: shift S=7, mask M=0b111, shift T=4.
+            //   swizzled = byteOff ^ (((byteOff >> 7) & 0b111) << 4)
+            if (variant == Variant.X2_TRANS_SWIZZLE_FP16_STRIDE32) {
+                asm.emitSymbol(TAB);
+                asm.emit("shr.b32 __ldm_xorTmp, __ldm_byteOff, 7");
+                asm.delimiter();
+                asm.eol();
+
+                asm.emitSymbol(TAB);
+                asm.emit("and.b32 __ldm_xorTmp, __ldm_xorTmp, 7");
+                asm.delimiter();
+                asm.eol();
+
+                asm.emitSymbol(TAB);
+                asm.emit("shl.b32 __ldm_xorTmp, __ldm_xorTmp, 4");
+                asm.delimiter();
+                asm.eol();
+
+                asm.emitSymbol(TAB);
+                asm.emit("xor.b32 __ldm_byteOff, __ldm_byteOff, __ldm_xorTmp");
                 asm.delimiter();
                 asm.eol();
             }
