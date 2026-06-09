@@ -71,8 +71,8 @@ public class TestMatrixMultiplicationMMAInt8 extends TornadoTestBase {
         // A: 16×32 s8 → 16×16 b16 → 16 rows × 8 ints = 128
         // B: 8 cols × 32 k → 8 cols × 16 b16 → 8 rows × 8 ints = 64 per panel
         int[] aTile  = ctx.allocateIntLocalArray(WMMA_M * WMMA_K / 2);
-        int[] bTile0 = ctx.allocateIntLocalArray(8 * WMMA_K / 2);
-        int[] bTile1 = ctx.allocateIntLocalArray(8 * WMMA_K / 2);
+        int[] bTile0 = ctx.allocateIntLocalArray(WMMA_K * 8 / 4);  // 32 * 8 / 4 = 64 ints
+        int[] bTile1 = ctx.allocateIntLocalArray(WMMA_K * 8 / 4);
 
         int[] fragC0 = ctx.mmaFragmentInt(0);
         int[] fragC1 = ctx.mmaFragmentInt(0);
@@ -92,38 +92,25 @@ public class TestMatrixMultiplicationMMAInt8 extends TornadoTestBase {
                 aTile[r * (WMMA_K / 4) + kk / 4] = packed;
             }
 
-            // bTile0: 8 rows × 8 ints = 64 ints, side-by-side row-major layout
-            // Row r, int n covers a 2-k × 2-j tile of s8 B values
-            // Matrix 0 (n in 0..3): k = 2r..2r+1, j = 2n..2n+1
-            // Matrix 1 (n in 4..7): k = 2r+16..2r+17, j = 2(n-4)..2(n-4)+1
-            // Packing: byte 0 = B[klo][jbase], byte 1 = B[klo+1][jbase],
-            //          byte 2 = B[klo][jbase+1], byte 3 = B[klo+1][jbase+1]
             for (int idx = lane; idx < 64; idx += WARP_SIZE) {
-                int r = idx / 8;        // 0..7
-                int n = idx % 8;        // 0..7
+                int k_row  = idx / 4;        // 0..15
+                int j_pair = idx % 4;        // 0..3
+                int j_base = j_pair * 2;     // 0, 2, 4, 6
+                int k_base = 2 * k_row;      // 0, 2, 4, ..., 30 — first of the pair of K-values
 
-                int klo, jbase;
-                if (n < 4) {
-                    klo   = 2 * r;
-                    jbase = 2 * n;
-                } else {
-                    klo   = 2 * r + 16;
-                    jbase = 2 * (n - 4);
-                }
-
-                // Left panel (cols tileCol..tileCol+7)
-                int bL0 = b.get((kBase + klo)     * dimN + tileCol + jbase)     & 0xFF;
-                int bL1 = b.get((kBase + klo + 1) * dimN + tileCol + jbase)     & 0xFF;
-                int bL2 = b.get((kBase + klo)     * dimN + tileCol + jbase + 1) & 0xFF;
-                int bL3 = b.get((kBase + klo + 1) * dimN + tileCol + jbase + 1) & 0xFF;
-                bTile0[r * 8 + n] = bL0 | (bL1 << 8) | (bL2 << 16) | (bL3 << 24);
+                // Left panel (cols tileCol..tileCol+7), columns j_base, j_base+1
+                int bL0 = b.get((kBase + k_base)     * dimN + tileCol + j_base)     & 0xFF;
+                int bL1 = b.get((kBase + k_base + 1) * dimN + tileCol + j_base)     & 0xFF;
+                int bL2 = b.get((kBase + k_base)     * dimN + tileCol + j_base + 1) & 0xFF;
+                int bL3 = b.get((kBase + k_base + 1) * dimN + tileCol + j_base + 1) & 0xFF;
+                bTile0[k_row * 4 + j_pair] = bL0 | (bL1 << 8) | (bL2 << 16) | (bL3 << 24);
 
                 // Right panel (cols tileCol+8..tileCol+15)
-                int bR0 = b.get((kBase + klo)     * dimN + tileCol + 8 + jbase)     & 0xFF;
-                int bR1 = b.get((kBase + klo + 1) * dimN + tileCol + 8 + jbase)     & 0xFF;
-                int bR2 = b.get((kBase + klo)     * dimN + tileCol + 8 + jbase + 1) & 0xFF;
-                int bR3 = b.get((kBase + klo + 1) * dimN + tileCol + 8 + jbase + 1) & 0xFF;
-                bTile1[r * 8 + n] = bR0 | (bR1 << 8) | (bR2 << 16) | (bR3 << 24);
+                int bR0 = b.get((kBase + k_base)     * dimN + tileCol + 8 + j_base)     & 0xFF;
+                int bR1 = b.get((kBase + k_base + 1) * dimN + tileCol + 8 + j_base)     & 0xFF;
+                int bR2 = b.get((kBase + k_base)     * dimN + tileCol + 8 + j_base + 1) & 0xFF;
+                int bR3 = b.get((kBase + k_base + 1) * dimN + tileCol + 8 + j_base + 1) & 0xFF;
+                bTile1[k_row * 4 + j_pair] = bR0 | (bR1 << 8) | (bR2 << 16) | (bR3 << 24);
             }
 
             ctx.localBarrier();
