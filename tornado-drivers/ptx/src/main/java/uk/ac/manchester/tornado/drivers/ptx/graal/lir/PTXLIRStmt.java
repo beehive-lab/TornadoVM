@@ -1950,6 +1950,17 @@ public class PTXLIRStmt {
             asm.delimiter();
             asm.eol();
 
+            // convert byte offset back to fp16 element index
+            asm.emitSymbol(TAB);
+            asm.emit("shr.b32 ");
+            asm.emitValue(swzByte);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(swzByte);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emit("1");
+            asm.delimiter();
+            asm.eol();
+
             // result = ld.shared.b16 sharedMem[swzByte]   (16-bit load = one fp16)
             asm.emitSymbol(TAB);
             asm.emit("ld.shared.b16 ");
@@ -2337,6 +2348,18 @@ public class PTXLIRStmt {
             asm.emitValue(byteOff);
             asm.emitSymbol(COMMA + SPACE);
             asm.emitValue(xorTerm);
+            asm.delimiter();
+            asm.eol();
+
+            // convert byte offset back to fp16 element index for st.shared.b16 [arr[idx]]
+            // swzByte is a byte offset. Shift right by 1 to get the element index.
+            asm.emitSymbol(TAB);
+            asm.emit("shr.b32 ");
+            asm.emitValue(swzByte);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(swzByte);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emit("1");
             asm.delimiter();
             asm.eol();
 
@@ -2801,20 +2824,17 @@ public class PTXLIRStmt {
                 asm.eol();
 
             } else {
-                // B fragment (X2_TRANS): 2 sub-tiles of an 8×N col-major matrix
-                // group 0 (T0-T7)   → k rows 0-7
-                // group 1 (T8-T15)  → k rows 8-15
-                // groups 2,3 reuse groups 0,1 addresses (only x2 uses first 16 threads)
-
-                // For .trans: each thread provides address of a column
-                // But with x2, only groups 0 and 1 matter
-                // colOff = (group & 1) * 16 bytes (second 8-row k-block)
+                // For .trans: each thread provides address of a row in the source tile.
+                // Canonical stacked layout: matrix-0 = first 8 rows (bytes 0..127),
+                // matrix-1 = next 8 rows (bytes 128..255). Lanes 0..7 read matrix-0,
+                // lanes 8..15 read matrix-1 with colOff = 128 to skip past matrix-0.
+                // colOff = (group & 1) * 128 bytes
                 asm.emitSymbol(TAB);
                 asm.emit("and.b32 __ldm_colOff, __ldm_group, 1");
                 asm.delimiter();
                 asm.eol();
                 asm.emitSymbol(TAB);
-                asm.emit("shl.b32 __ldm_colOff, __ldm_colOff, 4");
+                asm.emit("shl.b32 __ldm_colOff, __ldm_colOff, 7");
                 asm.delimiter();
                 asm.eol();
 

@@ -565,6 +565,23 @@ public class KernelContext implements ExecutionContext {
     }
 
     /**
+     * Loads the B fragment for mma.sync from a swizzled shared-memory tile
+     * populated using {@link #swizzleStoreFp16Stride32(HalfFloat[], int, int, int, HalfFloat)}.
+     *
+     * Each lane receives its 4 owned f16 elements as per PTX ISA m16n8k16 layout.
+     * The address computation includes the matching swizzle XOR so no bank
+     * conflicts occur during the ldmatrix read.
+     *
+     * PTX equivalent: ldmatrix.sync.aligned.m8n8.x2.trans.shared.b16 with
+     * per-lane addresses XOR-permuted by the FP16 stride-32 swizzle.
+     */
+    public HalfFloat[] mmaLoadBSwizzled(HalfFloat[] bTile, int wmmaK) {
+        // CPU fallback: return a 4-element fragment.
+        // On GPU this is replaced by an MMALoadBSwizzledNode by the plugin.
+        return new HalfFloat[4];
+    }
+
+    /**
      * Warp-collective matrix multiply-accumulate: D = A * B + C.
      *
      * PTX equivalent:
