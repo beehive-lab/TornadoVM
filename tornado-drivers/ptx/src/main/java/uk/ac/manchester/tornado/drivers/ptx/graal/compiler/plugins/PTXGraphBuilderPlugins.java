@@ -80,6 +80,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.MMALoadAInt8Node;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.MMALoadANode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.MMALoadBInt8Node;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.MMALoadBNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.MMALoadBSwizzledNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.MMAStoreNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXSimdSumNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXShuffleDownNode;
@@ -567,6 +568,18 @@ public class PTXGraphBuilderPlugins {
                                  Receiver receiver, ValueNode tile, ValueNode wmmaK) {
                 receiver.get(true);
                 b.addPush(JavaKind.Object, new MMALoadBNode(tile, wmmaK));
+                return true;
+            }
+        });
+
+        // --- mmaLoadBSwizzled(HalfFloat[] bTile, int wmmaK) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadBSwizzled",
+                InvocationPlugin.Receiver.class, HalfFloat[].class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode wmmaK) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new MMALoadBSwizzledNode(tile, wmmaK));
                 return true;
             }
         });
