@@ -54,8 +54,8 @@ public class TestFlashAttentionKernelContext extends TornadoTestBase {
 
     public static void processHeadsFlashAttentionOptV2(KernelContext context, FloatArray q, FloatArray key_cache, FloatArray value_cache, FloatArray xb, int nHeads, int headSize, int kvDim, int kvMul, IntArray positionHolder, int layer, int contextLength) {
 
-        final int MAX_HEAD_SIZE = 128;
-        final int MAX_LOCAL_SIZE = 128;
+        final int MAX_HEAD_SIZE = 64;
+        final int MAX_LOCAL_SIZE = 64;
         final int MAX_BLOCK_SIZE_C = 32;
         final int MAX_TILE_ELEMENTS = MAX_BLOCK_SIZE_C * MAX_HEAD_SIZE;
 
