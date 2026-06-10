@@ -66,6 +66,12 @@ public class MetalBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRB
     Set<Node> switchClosed;
     HashMap<HIRBlock, Integer> pending;
     Set<HIRBlock> rmvEndBracket;
+    /**
+     * Loop-end scopes whose close has been deferred to a merge block: when a loop-end block that begins with a
+     * {@link LoopExitNode} depends on a merge (see {@link #closeScope}), the loop bracket must be emitted when the merge block
+     * exits, in case no other rule emits it. Maps the merge block to {loop-end block, loop-header block}.
+     */
+    Map<HIRBlock, HIRBlock[]> pendingLoopEndClose;
     private int loopCount;
     private int loopEnds;
 
@@ -80,6 +86,7 @@ public class MetalBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRB
         closedBlocks = new HashMap<>();
         pending = new HashMap<>();
         rmvEndBracket = new HashSet<>();
+        pendingLoopEndClose = new HashMap<>();
     }
 
     private static boolean isMergeBlock(HIRBlock block) {
@@ -343,6 +350,12 @@ public class MetalBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRB
                         incrementClosedLoops(loopBeginBlock);
                     }
                 }
+                if (!wasBlockAlreadyClosed(block)) {
+                    // The close was deferred to the merge block the loop exit depends on. Register the
+                    // deferral so that the exit of the merge block emits the loop bracket in case no
+                    // other rule does (see exit()).
+                    pendingLoopEndClose.put(block.getDominator().getDominator(), new HIRBlock[] { block, loopBeginBlock });
+                }
             }
         } else {
             closeBlock(block);
@@ -382,8 +395,39 @@ public class MetalBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRB
         return false;
     }
 
+    /**
+     * Returns true if every block of the loop headed by {@code loopHeaderBlock} has already been emitted (entered by this
+     * visitor). Used to decide whether a deferred loop-end close can be emitted at a merge block: it can only be emitted once
+     * no loop-body content remains to be generated.
+     */
+    private boolean allLoopBlocksEmitted(HIRBlock loopHeaderBlock) {
+        Loop<HIRBlock> loop = loopHeaderBlock.getLoop();
+        if (loop == null) {
+            return false;
+        }
+        for (HIRBlock loopBlock : loop.getBlocks()) {
+            if (!openBlocks.getOrDefault(loopBlock, false)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     @Override
     public void exit(HIRBlock block, HIRBlock value) {
+        if (pendingLoopEndClose.containsKey(block)) {
+            // A loop-end close was deferred to this merge block (see closeScope()). Emit the loop
+            // bracket here, but only when the whole loop body has already been emitted: if body
+            // blocks are still pending (e.g. an if-branch with a break that is traversed after
+            // this merge), closing here would leave them outside the loop scope. In that case the
+            // deferral is dropped and the pre-existing closing rules apply.
+            HIRBlock[] deferred = pendingLoopEndClose.remove(block);
+            if (!wasBlockAlreadyClosed(deferred[0]) && allLoopBlocksEmitted(deferred[1])) {
+                closeBlock(deferred[0]);
+                incrementClosedLoops(deferred[1]);
+            }
+        }
+
         if (block.isLoopEnd()) {
             LoopEndNode loopEndNode = (LoopEndNode) block.getEndNode();
             LoopBeginNode loopBeginNode = loopEndNode.loopBegin();
@@ -453,7 +497,14 @@ public class MetalBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRB
             boolean isTrueBranch = ifNode.trueSuccessor() == block.getBeginNode();
             if (!(isTrueBranch && isLoopEnd)) {
                 closeBlock(block);
-                if (block.getLoop() != null) {
+                // The bracket emitted above closes the if-branch scope. It only counts towards
+                // closing the enclosing loop when this branch terminates the loop body: either
+                // it contains the loop back-edge (ends with a LoopEndNode) or it leaves the
+                // loop (begins with a LoopExitNode). For a plain if/else branch that flows
+                // into a merge, the loop remains open; counting it would make
+                // wasLoopBlockAlreadyClosed() suppress the closing brackets of subsequent
+                // if-branches within the same loop body.
+                if (block.getLoop() != null && (isLoopEnd || block.getBeginNode() instanceof LoopExitNode)) {
                     incrementClosedLoops(block.getLoop().getHeader());
                 }
             }
