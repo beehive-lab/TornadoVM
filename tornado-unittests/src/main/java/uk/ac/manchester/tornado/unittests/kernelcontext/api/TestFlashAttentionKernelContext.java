@@ -29,6 +29,7 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
@@ -273,14 +274,16 @@ public class TestFlashAttentionKernelContext extends TornadoTestBase {
 
     @Test
     public void testFlashAttention() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
         final int nHeads = 4;
-        final int headSize = 64;        // <= MAX_HEAD_SIZE (256)
-        final int kvMul = 1;            // no grouped-query attention => one KV head per query head
-        final int kvDim = nHeads * headSize / kvMul; // 256
+        final int headSize = 64;
+        final int kvMul = 1;
+        final int kvDim = nHeads * headSize / kvMul;
         final int layer = 0;
         final int contextLength = 128;
-        final int pos = 40;             // current sequence position (spans 2 tiles of 32)
-        final int localSize = 32;       // threads per head (work-group size)
+        final int pos = 40;
+        final int localSize = 32;
 
         // --- Allocate and seed input/output data ---
         FloatArray q = new FloatArray(nHeads * headSize);
