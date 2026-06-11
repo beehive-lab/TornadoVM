@@ -355,9 +355,36 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
                 }
             }
         } else {
+            if (isNestedInOpenIfBranchScope(block, loopBeginBlock)) {
+                // The loop-end block sits inside an if-branch whose scope is still open (e.g.
+                // for { if (c) { ... back-edge } else { break } }). Emitting the loop bracket here
+                // would lexically close the if-branch instead of the loop, leaving the else
+                // dangling. The bracket is emitted instead when the remaining loop-exit block of
+                // the if is closed by the regular rules in exit().
+                return;
+            }
             closeBlock(block);
             incrementClosedLoops(loopBeginBlock);
         }
+    }
+
+    /**
+     * Returns true if {@code block} is dominated by an if-branch block (a block that opened an if/else scope on enter) whose
+     * scope has not been closed yet, before reaching {@code loopBeginBlock} in the dominator chain. In that case a bracket
+     * emitted at {@code block} would close the if-branch scope rather than the intended loop scope.
+     */
+    private boolean isNestedInOpenIfBranchScope(HIRBlock block, HIRBlock loopBeginBlock) {
+        HIRBlock current = block.getDominator();
+        while (current != null && current != loopBeginBlock) {
+            HIRBlock dom = current.getDominator();
+            // Mirrors the condition under which enter() opens an if/else scope for a block.
+            boolean opensIfBranchScope = dom != null && !dom.isLoopHeader() && isIfBlock(dom) && !(current.getBeginNode() instanceof MergeNode);
+            if (opensIfBranchScope && openBlocks.getOrDefault(current, false) && !wasBlockAlreadyClosed(current)) {
+                return true;
+            }
+            current = dom;
+        }
+        return false;
     }
 
     private boolean isComplexLoopCondition(HIRBlock block) {
