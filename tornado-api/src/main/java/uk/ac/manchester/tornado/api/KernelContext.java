@@ -640,4 +640,82 @@ public class KernelContext implements ExecutionContext {
     public void mmaStoreInt(int[] fragD, IntArray out, int row, int col, int stride) {
         // no-op placeholder
     }
+
+    /**
+     * MMA A-operand load from a shared-memory tile with a byte-offset base.
+     *
+     * <p>Variant of {@link #mmaLoadA(int[], int)} that advances the base address
+     * by {@code byteOffset} bytes before computing per-lane addresses. Use this
+     * when multiple warps share a single A-tile in shared memory and each warp
+     * needs to read from a different M-row sub-region.
+     *
+     * <p>The offset is in bytes (not rows). For the canonical layout with 16 fp16
+     * (= 32 bytes) per row, warp m reading from row band (m * 16) passes
+     * {@code byteOffset = m * 16 * 32}.
+     *
+     * @param aTile      shared-memory A-tile (int-packed)
+     * @param wmmaK      K dimension of the MMA instruction (16 for fp16 m16n8k16)
+     * @param byteOffset base byte offset into aTile
+     * @return per-lane A fragment
+     */
+    public HalfFloat[] mmaLoadA(int[] aTile, int wmmaK, int byteOffset) {
+        return new HalfFloat[4]; // CPU fallback
+    }
+
+    /**
+     * MMA B-operand load from a shared-memory tile with a byte-offset base.
+     * See {@link #mmaLoadA(int[], int, int)} for offset semantics.
+     */
+    public HalfFloat[] mmaLoadB(int[] bTile, int wmmaK, int byteOffset) {
+        return new HalfFloat[4]; // CPU fallback
+    }
+
+    /**
+     * MMA B-operand load from a swizzled shared-memory tile with a byte-offset base.
+     * See {@link #mmaLoadA(int[], int, int)} for offset semantics.
+     *
+     * <p>The byteOffset is added to the swizzled tile base; the per-lane XOR
+     * permutation is still applied as in {@link #mmaLoadBSwizzled(HalfFloat[], int)}.
+     */
+    public HalfFloat[] mmaLoadBSwizzled(HalfFloat[] bTile, int wmmaK, int byteOffset) {
+        return new HalfFloat[4]; // CPU fallback
+    }
+
+    /**
+     * Int8 MMA A-operand load with a byte-offset base.
+     * See {@link #mmaLoadA(int[], int, int)} for offset semantics.
+     */
+    public byte[] mmaLoadAInt8(int[] aTile, int wmmaK, int byteOffset) {
+        return new byte[16]; // CPU fallback
+    }
+
+    /**
+     * Int8 MMA B-operand load with a byte-offset base.
+     * See {@link #mmaLoadA(int[], int, int)} for offset semantics.
+     */
+    public byte[] mmaLoadBInt8(int[] bTile, int wmmaK, int byteOffset) {
+        return new byte[8]; // CPU fallback
+    }
+
+    /**
+     * Swizzled fp16 store (stride-32) into a sub-tile at byte offset {@code byteOffset}.
+     * The swizzle permutation is computed on the LOCAL (row, col); the byteOffset
+     * places the result into the target sub-tile region. Symmetric with
+     * {@link #mmaLoadBSwizzled(HalfFloat[], int, int)}.
+     */
+    public void swizzleStoreFp16Stride32(HalfFloat[] arr, int row, int col, int stride,
+                                         HalfFloat value, int byteOffset) {
+        // CPU fallback: no-op (swizzle layout only matters on GPU).
+    }
+
+    public void swizzleStoreFp16Stride16(HalfFloat[] arr, int row, int col, int stride,
+                                         HalfFloat value, int byteOffset) {
+        // CPU fallback: no-op.
+    }
+
+    public void swizzleStoreInt8(byte[] arr, int row, int col, int stride,
+                                 byte value, int byteOffset) {
+        // CPU fallback: no-op.
+    }
+
 }

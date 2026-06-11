@@ -56,13 +56,23 @@ public class SwizzledStoreFP16Stride16Node extends FixedWithNextNode implements 
     @Input
     private ValueNode fp16_value;
 
-    public SwizzledStoreFP16Stride16Node(ValueNode fp16_local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode fp16_value) {
+    @OptionalInput private ValueNode byteOffset;
+
+    public SwizzledStoreFP16Stride16Node(ValueNode fp16_local_array, ValueNode row, ValueNode column,
+                                         ValueNode stride, ValueNode fp16_value) {
+        this(fp16_local_array, row, column, stride, fp16_value, null);
+    }
+
+    // New constructor: with offset
+    public SwizzledStoreFP16Stride16Node(ValueNode fp16_local_array, ValueNode row, ValueNode column,
+                                         ValueNode stride, ValueNode fp16_value, ValueNode byteOffset) {
         super(TYPE, StampFactory.forVoid());
         this.fp16_local_array = fp16_local_array;
         this.row = row;
         this.column = column;
         this.stride = stride;
         this.fp16_value = fp16_value;
+        this.byteOffset = byteOffset;
     }
 
     public void generate(NodeLIRBuilderTool generator) {
@@ -81,8 +91,15 @@ public class SwizzledStoreFP16Stride16Node extends FixedWithNextNode implements 
         Variable xorTerm = tool.newVariable(LIRKind.value(PTXKind.S32));
         Variable swzByte = tool.newVariable(LIRKind.value(PTXKind.S32));
 
-        tool.append(new PTXLIRStmt.SwizzledStoreFP16Stride16Stmt(
-                localArray, rowVal, colVal, strideVal, valueVal,
-                linIdx, byteOff, shifted, masked, xorTerm, swzByte));
+        if (byteOffset == null) {
+            tool.append(new PTXLIRStmt.SwizzledStoreFP16Stride16Stmt(
+                    localArray, rowVal, colVal, strideVal, valueVal,
+                    linIdx, byteOff, shifted, masked, xorTerm, swzByte));
+        } else {
+            Value offVal = generator.operand(byteOffset);
+            tool.append(new PTXLIRStmt.SwizzledStoreFP16Stride16Stmt(
+                    localArray, rowVal, colVal, strideVal, valueVal,
+                    linIdx, byteOff, shifted, masked, xorTerm, swzByte, offVal));
+        }
     }
 }

@@ -56,32 +56,7 @@ import jdk.graal.compiler.nodes.memory.address.AddressNode;
 import jdk.graal.compiler.nodes.memory.address.OffsetAddressNode;
 import jdk.graal.compiler.nodes.util.GraphUtil;
 import jdk.graal.compiler.replacements.InlineDuringParsingPlugin;
-import org.graalvm.compiler.core.common.memory.BarrierType;
-import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
-import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FixedWithNextNode;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.AddNode;
-import org.graalvm.compiler.nodes.calc.MulNode;
-import org.graalvm.compiler.nodes.calc.SignExtendNode;
-import org.graalvm.compiler.nodes.extended.BoxNode;
-import org.graalvm.compiler.nodes.extended.JavaReadNode;
-import org.graalvm.compiler.nodes.extended.JavaWriteNode;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
-import org.graalvm.compiler.nodes.java.NewArrayNode;
-import org.graalvm.compiler.nodes.java.StoreIndexedNode;
-import org.graalvm.compiler.nodes.memory.address.AddressNode;
-import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
-import org.graalvm.compiler.nodes.util.GraphUtil;
-import org.graalvm.compiler.replacements.InlineDuringParsingPlugin;
 import org.graalvm.word.LocationIdentity;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.enums.MMAShape;
@@ -538,7 +513,42 @@ public class PTXGraphBuilderPlugins {
                 return true;
             }
         });
-        registerMMAPlugins(r);
+
+        r.register(new InvocationPlugin("swizzleStoreFp16Stride32",
+                InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class,
+                int.class, HalfFloat.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode arr, ValueNode row, ValueNode col,
+                                 ValueNode stride, ValueNode value, ValueNode byteOffset) {
+                receiver.get(true);
+                b.add(new SwizzledStoreFP16Stride32Node(arr, row, col, stride, value, byteOffset));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("swizzleStoreFp16Stride16",
+                InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class,
+                int.class, HalfFloat.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode arr, ValueNode row, ValueNode col,
+                                 ValueNode stride, ValueNode value, ValueNode byteOffset) {
+                receiver.get(true);
+                b.add(new SwizzledStoreFP16Stride16Node(arr, row, col, stride, value, byteOffset));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("swizzleStoreInt8", InvocationPlugin.Receiver.class,
+                byte[].class, int.class, int.class, int.class, byte.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver,
+                                 ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode value, ValueNode byteOffset) {
+                b.add(new SwizzledStoreInt8Node(local_array, row, column, stride, value, byteOffset));
+                return true;
+            }
+        });
     }
 
     private static void registerSIMDPlugins(Registration r) {
@@ -713,6 +723,66 @@ public class PTXGraphBuilderPlugins {
                 int headerElements = TornadoCoreRuntime.getVMConfig()
                         .getArrayBaseOffset(JavaKind.Int) / JavaKind.Int.getByteCount();
                 b.add(new MMAStoreNode(fragD, target, tileRow, tileCol, dimN, headerElements, true));
+                return true;
+            }
+        });
+
+        // --- mmaLoadA(int[], int, int) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadA",
+                InvocationPlugin.Receiver.class, int[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode wmmaK, ValueNode byteOffset) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new MMALoadANode(tile, wmmaK, byteOffset));
+                return true;
+            }
+        });
+
+// --- mmaLoadB(int[], int, int) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadB",
+                InvocationPlugin.Receiver.class, int[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode wmmaK, ValueNode byteOffset) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new MMALoadBNode(tile, wmmaK, byteOffset));
+                return true;
+            }
+        });
+
+// --- mmaLoadBSwizzled(HalfFloat[], int, int) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadBSwizzled",
+                InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode wmmaK, ValueNode byteOffset) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new MMALoadBSwizzledNode(tile, wmmaK, byteOffset));
+                return true;
+            }
+        });
+
+// --- mmaLoadAInt8(int[], int, int) -> byte[] ---
+        r.register(new InvocationPlugin("mmaLoadAInt8",
+                InvocationPlugin.Receiver.class, int[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode wmmaK, ValueNode byteOffset) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new MMALoadAInt8Node(tile, wmmaK, byteOffset));
+                return true;
+            }
+        });
+
+// --- mmaLoadBInt8(int[], int, int) -> byte[] ---
+        r.register(new InvocationPlugin("mmaLoadBInt8",
+                InvocationPlugin.Receiver.class, int[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode wmmaK, ValueNode byteOffset) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new MMALoadBInt8Node(tile, wmmaK, byteOffset));
                 return true;
             }
         });

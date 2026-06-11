@@ -32,13 +32,17 @@ public class MMALoadANode extends FixedWithNextNode implements LIRLowerable {
 
     @Input private ValueNode tile;
     @Input private ValueNode wmmaK;
+    @OptionalInput private ValueNode byteOffset;
 
     public MMALoadANode(ValueNode tile, ValueNode wmmaK) {
-        super(TYPE, StampFactory.forKind(JavaKind.Object));
-        this.tile = tile;
-        this.wmmaK = wmmaK;
-    }
-
+          this(tile, wmmaK, null);
+      }
+      public MMALoadANode(ValueNode tile, ValueNode wmmaK, ValueNode byteOffset) {
+          super(TYPE, StampFactory.forKind(JavaKind.Object));
+          this.tile = tile;
+          this.wmmaK = wmmaK;
+          this.byteOffset = byteOffset;
+      }
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
@@ -52,13 +56,24 @@ public class MMALoadANode extends FixedWithNextNode implements LIRLowerable {
         // rowStride = 16 b16 × 2 bytes = 32 bytes for 16-wide f16 row
         int rowStride = 32;
 
-        tool.append(new PTXLIRStmt.LdmatrixStmt(
-                PTXLIRStmt.LdmatrixStmt.Variant.X4,
-                fragA, tileVal,
-                tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u32),
-                tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u32),
-                tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u64),
-                rowStride));
+        if (byteOffset == null) {
+            tool.append(new PTXLIRStmt.LdmatrixStmt(
+                    PTXLIRStmt.LdmatrixStmt.Variant.X4,
+                    fragA, tileVal,
+                    tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u32),
+                    tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u32),
+                    tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u64),
+                    rowStride));
+        } else {
+            Value byteOffsetVal = gen.operand(byteOffset);
+            tool.append(new PTXLIRStmt.LdmatrixStmt(
+                    PTXLIRStmt.LdmatrixStmt.Variant.X4,
+                    fragA, tileVal,
+                    tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u32),
+                    tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u32),
+                    tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u64),
+                    rowStride, byteOffsetVal));
+        }
 
         gen.setResult(this, fragA);
     }
