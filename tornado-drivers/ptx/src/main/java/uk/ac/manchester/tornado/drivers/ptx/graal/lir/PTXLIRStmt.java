@@ -2267,10 +2267,19 @@ public class PTXLIRStmt {
         @Def protected Value masked;
         @Def protected Value xorTerm;
         @Def protected Value swzByte;
+        @Use({OperandFlag.REG, OperandFlag.ILLEGAL}) protected Value byteOffset;
 
         public SwizzledStoreFP16Stride32Stmt(Value localArray, Value row, Value column, Value stride, Value value,
                                              Value linIdx, Value byteOff, Value shifted, Value masked,
                                              Value xorTerm, Value swzByte) {
+            this(localArray, row, column, stride, value, linIdx, byteOff, shifted, masked,
+                    xorTerm, swzByte, Value.ILLEGAL);
+        }
+
+        // New 12-arg constructor stores byteOffset:
+        public SwizzledStoreFP16Stride32Stmt(Value localArray, Value row, Value column, Value stride, Value value,
+                                             Value linIdx, Value byteOff, Value shifted, Value masked,
+                                             Value xorTerm, Value swzByte, Value byteOffset) {
             super(TYPE);
             this.localArray = localArray;
             this.row = row;
@@ -2283,6 +2292,7 @@ public class PTXLIRStmt {
             this.masked = masked;
             this.xorTerm = xorTerm;
             this.swzByte = swzByte;
+            this.byteOffset = byteOffset;
         }
 
         @Override
@@ -2365,6 +2375,18 @@ public class PTXLIRStmt {
             asm.delimiter();
             asm.eol();
 
+            if (byteOffset != null && !byteOffset.equals(Value.ILLEGAL)) {
+                asm.emitSymbol(TAB);
+                asm.emit("add.s32 ");
+                asm.emitValue(swzByte);
+                asm.emitSymbol(COMMA + SPACE);
+                asm.emitValue(swzByte);
+                asm.emitSymbol(COMMA + SPACE);
+                asm.emitValue(byteOffset);
+                asm.delimiter();
+                asm.eol();
+            }
+
             // convert byte offset back to fp16 element index for st.shared.b16 [arr[idx]]
             // swzByte is a byte offset. Shift right by 1 to get the element index.
             asm.emitSymbol(TAB);
@@ -2408,10 +2430,18 @@ public class PTXLIRStmt {
         @Def protected Value masked;
         @Def protected Value xorTerm;
         @Def protected Value swzByte;
+        @Use({OperandFlag.REG, OperandFlag.ILLEGAL}) protected Value byteOffset;
+
+        public SwizzledStoreFP16Stride16Stmt(Value localArray, Value row, Value column, Value stride, Value value,
+                                                    Value linIdx, Value byteOff, Value shifted, Value masked,
+                                                    Value xorTerm, Value swzByte) {
+            this(localArray, row, column, stride, value, linIdx, byteOff, shifted, masked,
+                    xorTerm, swzByte, Value.ILLEGAL);
+        }
 
         public SwizzledStoreFP16Stride16Stmt(Value localArray, Value row, Value column, Value stride, Value value,
                                              Value linIdx, Value byteOff, Value shifted, Value masked,
-                                             Value xorTerm, Value swzByte) {
+                                             Value xorTerm, Value swzByte, Value byteOffset) {
             super(TYPE);
             this.localArray = localArray;
             this.row = row;
@@ -2424,6 +2454,7 @@ public class PTXLIRStmt {
             this.masked = masked;
             this.xorTerm = xorTerm;
             this.swzByte = swzByte;
+            this.byteOffset = byteOffset;
         }
 
         @Override
@@ -2505,6 +2536,18 @@ public class PTXLIRStmt {
             asm.delimiter();
             asm.eol();
 
+            if (byteOffset != null && !byteOffset.equals(Value.ILLEGAL)) {
+                asm.emitSymbol(TAB);
+                asm.emit("add.s32 ");
+                asm.emitValue(swzByte);
+                asm.emitSymbol(COMMA + SPACE);
+                asm.emitValue(swzByte);
+                asm.emitSymbol(COMMA + SPACE);
+                asm.emitValue(byteOffset);
+                asm.delimiter();
+                asm.eol();
+            }
+
             // sharedMem[swzByte] = value   (st.shared.b16 = store one fp16)
             asm.emitSymbol(TAB);
             asm.emit("st.shared.b16 ");
@@ -2535,9 +2578,15 @@ public class PTXLIRStmt {
         @Def protected Value masked;
         @Def protected Value xorTerm;
         @Def protected Value swzByte;
+        @Use({OperandFlag.REG, OperandFlag.ILLEGAL}) protected Value byteOffset;
 
         public SwizzledStoreInt8Stmt(Value localArray, Value row, Value column, Value stride, Value value,
                                      Value linIdx, Value shifted, Value masked, Value xorTerm, Value swzByte) {
+            this(localArray, row, column, stride, value, linIdx, shifted, masked, xorTerm, swzByte, Value.ILLEGAL);
+        }
+
+        public SwizzledStoreInt8Stmt(Value localArray, Value row, Value column, Value stride, Value value,
+                                     Value linIdx, Value shifted, Value masked, Value xorTerm, Value swzByte, Value byteOffset) {
             super(TYPE);
             this.localArray = localArray;
             this.row = row;
@@ -2549,6 +2598,7 @@ public class PTXLIRStmt {
             this.masked = masked;
             this.xorTerm = xorTerm;
             this.swzByte = swzByte;
+            this.byteOffset = byteOffset;
         }
 
         @Override
@@ -2621,6 +2671,18 @@ public class PTXLIRStmt {
             asm.emitValue(xorTerm);
             asm.delimiter();
             asm.eol();
+
+            if (byteOffset != null && !byteOffset.equals(Value.ILLEGAL)) {
+                asm.emitSymbol(TAB);
+                asm.emit("add.s32 ");
+                asm.emitValue(swzByte);
+                asm.emitSymbol(COMMA + SPACE);
+                asm.emitValue(swzByte);
+                asm.emitSymbol(COMMA + SPACE);
+                asm.emitValue(byteOffset);
+                asm.delimiter();
+                asm.eol();
+            }
 
             // sharedMem[swzByte] = value   (st.shared.s8 = store one int8)
             asm.emitSymbol(TAB);
@@ -2734,6 +2796,7 @@ public class PTXLIRStmt {
 
         @Def protected Value result;
         @Use protected Value tile;
+        @Use({OperandFlag.REG, OperandFlag.ILLEGAL}) protected Value byteOffset;
 
         // Scratch registers for address calculation
         @Temp protected Value lane;
@@ -2749,11 +2812,32 @@ public class PTXLIRStmt {
         private final Variant variant;
         private final int rowStride;  // bytes per row in shared memory (e.g. 32 for 16×16 b16)
 
+        /**
+         * Single-warp constructor: no base byte offset into the tile.
+         * Lane addresses are computed relative to the start of {@code tile}.
+         */
         public LdmatrixStmt(Variant variant, Value result, Value tile,
                             Value lane, Value rowInTile, Value group,
                             Value rowOff, Value colOff, Value row,
                             Value byteOff, Value addr32, Value genAddr64,
                             int rowStride) {
+            this(variant, result, tile, lane, rowInTile, group, rowOff, colOff, row,
+                    byteOff, addr32, genAddr64, rowStride, Value.ILLEGAL);
+        }
+
+        /**
+         * Offset-aware constructor: advances the tile base address by {@code byteOffset}
+         * bytes before computing per-lane addresses. Supports multi-warp kernels where
+         * each warp reads a different sub-tile from a shared block tile.
+         *
+         * <p>Pass {@link Value#ILLEGAL} for {@code byteOffset} to suppress the offset
+         * (equivalent to the single-warp constructor).
+         */
+        public LdmatrixStmt(Variant variant, Value result, Value tile,
+                            Value lane, Value rowInTile, Value group,
+                            Value rowOff, Value colOff, Value row,
+                            Value byteOff, Value addr32, Value genAddr64,
+                            int rowStride, Value byteOffset) {
             super(TYPE);
             this.variant = variant;
             this.result = result;
@@ -2768,6 +2852,7 @@ public class PTXLIRStmt {
             this.addr32 = addr32;
             this.genAddr64 = genAddr64;
             this.rowStride = rowStride;
+            this.byteOffset = byteOffset;
         }
 
         @Override
@@ -2802,9 +2887,18 @@ public class PTXLIRStmt {
                 asm.eol();
             }
 
-            // Lane ID
+            // Lane ID — intra-warp lane = %tid.x & 31.
+// %tid.x is the thread index within the BLOCK (0..blockDim-1); ldmatrix lane
+// addressing requires the lane within the WARP (0..31). Without the mask, warps
+// other than warp 0 compute group = lane/8 in 4..31 instead of 0..3, producing
+// wrong addresses. (Single-warp kernels were unaffected because warp 0's tid is
+// already 0..31.)
             asm.emitSymbol(TAB);
             asm.emit("mov.u32 __ldm_lane, %tid.x");
+            asm.delimiter();
+            asm.eol();
+            asm.emitSymbol(TAB);
+            asm.emit("and.b32 __ldm_lane, __ldm_lane, 31");
             asm.delimiter();
             asm.eol();
 
@@ -2923,7 +3017,17 @@ public class PTXLIRStmt {
             asm.delimiter();
             asm.eol();
 
-            // Add byte offset
+            // Optional base byte offset into the tile (multi-warp kernels).
+            // Advances the tile base address before applying the per-lane offset.
+            if (byteOffset != null && !byteOffset.equals(Value.ILLEGAL)) {
+                asm.emitSymbol(TAB);
+                asm.emit("add.u32 __ldm_addr, __ldm_addr, ");
+                asm.emitValue(byteOffset);
+                asm.delimiter();
+                asm.eol();
+            }
+
+            // Add per-lane byte offset
             asm.emitSymbol(TAB);
             asm.emit("add.u32 __ldm_addr, __ldm_addr, __ldm_byteOff");
             asm.delimiter();
@@ -3114,6 +3218,22 @@ public class PTXLIRStmt {
             asm.emitValue(laneId);
             asm.emitSymbol(COMMA + SPACE);
             asm.emit("%tid.x");
+            asm.delimiter();
+            asm.eol();
+
+            // laneId &= 31  — intra-warp lane. %tid.x is the block-wide thread index
+            // (0..blockDim-1); the m16n8 C/D fragment distribution is defined per warp-lane
+            // (0..31). Without this mask, warps other than warp 0 compute rowInTile = lane/4
+            // in 8..63 and store to wrong global addresses. (Single-warp kernels were
+            // unaffected because warp 0's %tid.x is already 0..31.)
+            asm.emitSymbol(TAB);
+            asm.emit("and.b32");
+            asm.emitSymbol(SPACE);
+            asm.emitValue(laneId);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(laneId);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emit("31");
             asm.delimiter();
             asm.eol();
 

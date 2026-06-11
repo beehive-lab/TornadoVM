@@ -36,12 +36,17 @@ public class MMALoadBSwizzledNode extends FixedWithNextNode implements LIRLowera
 
     @Input private ValueNode tile;
     @Input private ValueNode wmmaK;
+    @OptionalInput private ValueNode byteOffset;
 
     public MMALoadBSwizzledNode(ValueNode tile, ValueNode wmmaK) {
-        super(TYPE, StampFactory.forKind(JavaKind.Object));
-        this.tile = tile;
-        this.wmmaK = wmmaK;
-    }
+          this(tile, wmmaK, null);
+      }
+      public MMALoadBSwizzledNode(ValueNode tile, ValueNode wmmaK, ValueNode byteOffset) {
+          super(TYPE, StampFactory.forKind(JavaKind.Object));
+          this.tile = tile;
+          this.wmmaK = wmmaK;
+          this.byteOffset = byteOffset;
+      }
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
@@ -59,13 +64,24 @@ public class MMALoadBSwizzledNode extends FixedWithNextNode implements LIRLowera
         // The constructor's runtime check enforces rowStride == 16.
         int rowStride = 16;
 
-        tool.append(new PTXLIRStmt.LdmatrixStmt(
-                PTXLIRStmt.LdmatrixStmt.Variant.X2_TRANS_SWIZZLE_FP16_STRIDE32,
-                fragB, tileVal,
-                tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u32),
-                tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u32),
-                tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u64),
-                rowStride));
+        if (byteOffset == null) {
+            tool.append(new PTXLIRStmt.LdmatrixStmt(
+                    PTXLIRStmt.LdmatrixStmt.Variant.X2_TRANS_SWIZZLE_FP16_STRIDE32,
+                    fragB, tileVal,
+                    tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u32),
+                    tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u32),
+                    tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u64),
+                    rowStride));
+        } else {
+            Value byteOffsetVal = gen.operand(byteOffset);
+            tool.append(new PTXLIRStmt.LdmatrixStmt(
+                    PTXLIRStmt.LdmatrixStmt.Variant.X2_TRANS_SWIZZLE_FP16_STRIDE32,
+                    fragB, tileVal,
+                    tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u32),
+                    tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u32),
+                    tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u64),
+                    rowStride, byteOffsetVal));
+        }
 
         gen.setResult(this, fragB);
     }

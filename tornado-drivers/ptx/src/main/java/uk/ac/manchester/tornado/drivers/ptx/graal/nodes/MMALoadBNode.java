@@ -35,34 +35,53 @@ public class MMALoadBNode extends FixedWithNextNode implements LIRLowerable {
 
     @Input private ValueNode tile;
     @Input private ValueNode wmmaK;
+    @OptionalInput private ValueNode byteOffset;
 
     public MMALoadBNode(ValueNode tile, ValueNode wmmaK) {
+        this(tile, wmmaK, null);
+    }
+
+    /** Multi-warp constructor: byte offset into the shared-memory tile. */
+    public MMALoadBNode(ValueNode tile, ValueNode wmmaK, ValueNode byteOffset) {
         super(TYPE, StampFactory.forKind(JavaKind.Object));
         this.tile = tile;
         this.wmmaK = wmmaK;
+        this.byteOffset = byteOffset;
     }
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
-        Value tileVal = gen.operand(tile);
 
+        Value tileVal = gen.operand(tile);
         Variable fragB = tool.newVariable(LIRKind.value(PTXKind.MMA_FRAG_B_F16));
 
         LIRKind u32 = LIRKind.value(PTXKind.U32);
         LIRKind u64 = LIRKind.value(PTXKind.U64);
 
-        // B tile is 16 rows × 8 cols of fp16 (canonical stacked layout), row-major.
-        // rowStride = 8 fp16 = 16 bytes.
+        // Canonical stacked layout: 16 rows × 8 cols of fp16, row-major. rowStride = 16 bytes.
         int rowStride = 16;
 
-        tool.append(new PTXLIRStmt.LdmatrixStmt(
-                PTXLIRStmt.LdmatrixStmt.Variant.X2_TRANS,
-                fragB, tileVal,
-                tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u32),
-                tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u32),
-                tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u64),
-                rowStride));
+        if (byteOffset == null) {
+            // Single-warp path: no offset, use the existing LdmatrixStmt constructor.
+            tool.append(new PTXLIRStmt.LdmatrixStmt(
+                    PTXLIRStmt.LdmatrixStmt.Variant.X2_TRANS,
+                    fragB, tileVal,
+                    tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u32),
+                    tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u32),
+                    tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u64),
+                    rowStride));
+        } else {
+            // Multi-warp path: pass the byte offset.
+            Value byteOffsetVal = gen.operand(byteOffset);
+            tool.append(new PTXLIRStmt.LdmatrixStmt(
+                    PTXLIRStmt.LdmatrixStmt.Variant.X2_TRANS,
+                    fragB, tileVal,
+                    tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u32),
+                    tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u32),
+                    tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u64),
+                    rowStride, byteOffsetVal));
+        }
 
         gen.setResult(this, fragB);
     }

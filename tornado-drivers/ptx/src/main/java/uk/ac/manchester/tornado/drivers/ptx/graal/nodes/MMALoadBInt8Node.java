@@ -22,11 +22,18 @@ public class MMALoadBInt8Node extends FixedWithNextNode implements LIRLowerable 
 
     @Input private ValueNode tile;
     @Input private ValueNode wmmaK;
+    @OptionalInput private ValueNode byteOffset;
 
     public MMALoadBInt8Node(ValueNode tile, ValueNode wmmaK) {
+        this(tile, wmmaK, null);
+    }
+
+
+    public MMALoadBInt8Node(ValueNode tile, ValueNode wmmaK, ValueNode byteOffset) {
         super(TYPE, StampFactory.forKind(JavaKind.Object));
         this.tile = tile;
         this.wmmaK = wmmaK;
+        this.byteOffset = byteOffset;
     }
 
     @Override
@@ -43,13 +50,24 @@ public class MMALoadBInt8Node extends FixedWithNextNode implements LIRLowerable 
         // Each b16 packs 2 s8 along K. rowStride = 8 b16 = 16 bytes.
         int rowStride = 16;
 
-        tool.append(new PTXLIRStmt.LdmatrixStmt(
-                PTXLIRStmt.LdmatrixStmt.Variant.X2_TRANS,
-                fragB, tileVal,
-                tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u32),
-                tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u32),
-                tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u64),
-                rowStride));
+        if (byteOffset == null) {
+            tool.append(new PTXLIRStmt.LdmatrixStmt(
+                    PTXLIRStmt.LdmatrixStmt.Variant.X2_TRANS,
+                    fragB, tileVal,
+                    tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u32),
+                    tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u32),
+                    tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u64),
+                    rowStride));
+        } else {
+            Value byteOffsetVal = gen.operand(byteOffset);
+            tool.append(new PTXLIRStmt.LdmatrixStmt(
+                    PTXLIRStmt.LdmatrixStmt.Variant.X2_TRANS,
+                    fragB, tileVal,
+                    tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u32),
+                    tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u32),
+                    tool.newVariable(u32), tool.newVariable(u32), tool.newVariable(u64),
+                    rowStride, byteOffsetVal));
+        }
 
         gen.setResult(this, fragB);
     }
