@@ -109,7 +109,6 @@ public final class MetalStructuredControlFlow {
 
     private final MetalCompilationResultBuilder builder;
     private final MetalAssembler asm;
-    private final Set<HIRBlock> visited = new HashSet<>();
     private HIRBlock[] allBlocks;
 
     public MetalStructuredControlFlow(MetalCompilationResultBuilder builder) {
@@ -122,7 +121,7 @@ public final class MetalStructuredControlFlow {
             dump(cfg);
         }
         this.allBlocks = cfg.getBlocks();
-        Region root = structure(cfg.getStartBlock(), null, new HashSet<>());
+        Region root = structure(cfg.getStartBlock(), null, new HashSet<>(), new HashSet<>());
         emit(root);
     }
 
@@ -149,8 +148,16 @@ public final class MetalStructuredControlFlow {
      * a {@code break}/exit landing pad: it is emitted (its LIR contains the
      * {@code break;}) and terminates the chain, so post-loop code is never
      * pulled inside the branch.
+     *
+     * <p>
+     * {@code visited} is path-local (copied when descending into a branch). This
+     * guarantees termination (a block is never re-entered on a single path) while
+     * still allowing a block that two sibling branches reach to be emitted in
+     * each of them. That is <em>tail duplication</em>, required when a partial
+     * merge sits between a split and its true join — e.g. the shared
+     * {@code else}-target of a short-circuit {@code &&}/{@code ||} condition.
      */
-    private Region structure(HIRBlock entry, Loop<HIRBlock> loop, Set<HIRBlock> stops) {
+    private Region structure(HIRBlock entry, Loop<HIRBlock> loop, Set<HIRBlock> stops, Set<HIRBlock> visited) {
         List<Region> items = new ArrayList<>();
         HIRBlock b = entry;
         while (b != null && !stops.contains(b) && !visited.contains(b)) {
@@ -163,15 +170,15 @@ public final class MetalStructuredControlFlow {
             visited.add(b);
             if (b.isLoopHeader()) {
                 HIRBlock cont = loopContinuation(b);
-                items.add(buildLoop(b, stops));
+                items.add(buildLoop(b, stops, visited));
                 b = cont;
             } else if (isUserIf(b)) {
-                HIRBlock follow = computeFollow(b);
-                items.add(buildIf(b, follow, loop, stops));
+                HIRBlock follow = computeFollow(b, loop);
+                items.add(buildIf(b, follow, loop, stops, visited));
                 b = follow;
             } else if (isSwitch(b)) {
-                HIRBlock follow = computeFollow(b);
-                items.add(buildSwitch(b, follow, loop, stops));
+                HIRBlock follow = computeFollow(b, loop);
+                items.add(buildSwitch(b, follow, loop, stops, visited));
                 b = follow;
             } else {
                 items.add(new Block(b));
@@ -181,16 +188,16 @@ public final class MetalStructuredControlFlow {
         return new Seq(items);
     }
 
-    private Region buildLoop(HIRBlock header, Set<HIRBlock> stops) {
+    private Region buildLoop(HIRBlock header, Set<HIRBlock> stops, Set<HIRBlock> visited) {
         Loop<HIRBlock> loop = header.getLoop();
         Set<HIRBlock> bodyStops = new HashSet<>(stops);
         bodyStops.add(header);
         HIRBlock bodyEntry = loopBodyEntry(header, loop);
-        Region body = bodyEntry == null ? new Seq(List.of()) : structure(bodyEntry, loop, bodyStops);
+        Region body = bodyEntry == null ? new Seq(List.of()) : structure(bodyEntry, loop, bodyStops, new HashSet<>(visited));
         return new LoopRegion(header, body);
     }
 
-    private Region buildIf(HIRBlock head, HIRBlock follow, Loop<HIRBlock> loop, Set<HIRBlock> stops) {
+    private Region buildIf(HIRBlock head, HIRBlock follow, Loop<HIRBlock> loop, Set<HIRBlock> stops, Set<HIRBlock> visited) {
         Set<HIRBlock> branchStops = new HashSet<>(stops);
         if (follow != null) {
             branchStops.add(follow);
@@ -199,12 +206,14 @@ public final class MetalStructuredControlFlow {
         HIRBlock trueBlock = successorOf(head, ifNode.trueSuccessor());
         HIRBlock falseBlock = successorOf(head, ifNode.falseSuccessor());
 
-        Region thenRegion = (trueBlock == null || trueBlock == follow) ? new Seq(List.of()) : structure(trueBlock, loop, branchStops);
-        Region elseRegion = (falseBlock == null || falseBlock == follow) ? null : structure(falseBlock, loop, branchStops);
+        // Each branch gets its own copy of the visited set so that a partial merge
+        // reached from both branches is tail-duplicated into each of them.
+        Region thenRegion = (trueBlock == null || trueBlock == follow) ? new Seq(List.of()) : structure(trueBlock, loop, branchStops, new HashSet<>(visited));
+        Region elseRegion = (falseBlock == null || falseBlock == follow) ? null : structure(falseBlock, loop, branchStops, new HashSet<>(visited));
         return new IfElse(head, thenRegion, elseRegion);
     }
 
-    private Region buildSwitch(HIRBlock head, HIRBlock follow, Loop<HIRBlock> loop, Set<HIRBlock> stops) {
+    private Region buildSwitch(HIRBlock head, HIRBlock follow, Loop<HIRBlock> loop, Set<HIRBlock> stops, Set<HIRBlock> visited) {
         Set<HIRBlock> caseStops = new HashSet<>(stops);
         if (follow != null) {
             caseStops.add(follow);
@@ -217,7 +226,7 @@ public final class MetalStructuredControlFlow {
             if (caseEntry == follow || !seenEntries.add(caseEntry)) {
                 continue;
             }
-            Region body = structure(caseEntry, loop, caseStops);
+            Region body = structure(caseEntry, loop, caseStops, new HashSet<>(visited));
             cases.add(new SwitchCase(caseEntry, body));
         }
         return new SwitchRegion(head, cases);
@@ -225,26 +234,41 @@ public final class MetalStructuredControlFlow {
 
     /**
      * Computes the join/follow block of a 2-way (if) or n-way (switch) split
-     * {@code head}: the block whose immediate dominator is {@code head} and that
-     * has more than one predecessor (i.e. where the branches re-merge). Returns
-     * {@code null} when the branches do not re-merge (both break/return), in
-     * which case there is no code after the split at this level.
+     * {@code head}: the block at which the branches re-merge and ordinary
+     * sequential code resumes. Returns {@code null} when the branches do not
+     * re-merge inside the current scope (both break/return), in which case there
+     * is no code after the split at this level.
      *
      * <p>
-     * Computed from the dominator tree rather than {@link HIRBlock#getPostdominator()}
-     * because Graal frequently leaves post-dominators unset for blocks inside
-     * loops or near merges.
+     * The true join is the immediate post-dominator. When Graal provides it
+     * ({@link HIRBlock#getPostdominator()} is non-null) we use it directly — this
+     * is what distinguishes the real join from a <em>partial</em> merge that only
+     * some branch paths reach (e.g. the shared {@code else}-target of a
+     * short-circuit {@code &&}). Graal, however, frequently leaves post-dominators
+     * unset for blocks inside loops or near merges; in that case we fall back to
+     * the nearest dominator-tree merge (a block immediately dominated by
+     * {@code head} with more than one predecessor).
+     *
+     * <p>
+     * A follow outside the current loop is clamped to {@code null}: the branches
+     * leave the loop, which is handled by the break/exit rule in
+     * {@link #structure}.
      */
-    private HIRBlock computeFollow(HIRBlock head) {
-        HIRBlock best = null;
-        for (HIRBlock candidate : allBlocks) {
-            if (candidate.getDominator() == head && candidate.getPredecessorCount() > 1) {
-                if (best == null || candidate.getDominatorDepth() < best.getDominatorDepth()) {
-                    best = candidate;
+    private HIRBlock computeFollow(HIRBlock head, Loop<HIRBlock> loop) {
+        HIRBlock follow = head.getPostdominator();
+        if (follow == null) {
+            for (HIRBlock candidate : allBlocks) {
+                if (candidate.getDominator() == head && candidate.getPredecessorCount() > 1) {
+                    if (follow == null || candidate.getDominatorDepth() < follow.getDominatorDepth()) {
+                        follow = candidate;
+                    }
                 }
             }
         }
-        return best;
+        if (follow != null && loop != null && !loop.getBlocks().contains(follow)) {
+            return null;
+        }
+        return follow;
     }
 
     // ---------------------------------------------------------------------
