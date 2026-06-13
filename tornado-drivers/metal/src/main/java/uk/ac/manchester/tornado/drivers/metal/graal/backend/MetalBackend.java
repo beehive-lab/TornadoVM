@@ -209,6 +209,12 @@ public class MetalBackend extends XPUBackend<MetalProviders> implements FrameMap
         crb.emit(lir);
         emitEpilogue(asm);
 
+        if (crb.isKernel()) {
+            // Preamble is emitted last so it can be scanned against the finished
+            // kernel source and trimmed to only the shims actually referenced.
+            asm.prependMinimalPreamble();
+        }
+
         profiler.stop(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId());
         profiler.sum(ProfilerType.TOTAL_CODE_GENERATION_TIME, profiler.getTaskTimer(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId()));
 
@@ -459,9 +465,10 @@ public class MetalBackend extends XPUBackend<MetalProviders> implements FrameMap
              * starting at address 0x0. (I assume that this is an interesting case that
              * leads to a few issues.) Iris Pro is the only culprit at the moment.
              */
-            // Metal Shading Language preamble: OpenCL-compatibility shims, extended vector
-            // types, and atomic helpers. See MetalPreamble for rationale on each section.
-            asm.emitLine(MetalPreamble.PREAMBLE);
+            // The Metal Shading Language preamble (OpenCL-compatibility shims, extended
+            // vector types, atomic helpers) is emitted at the end of emitCode via
+            // MetalAssembler.prependMinimalPreamble(), so it can be trimmed to only the
+            // sections this kernel references. See MetalPreamble for the rationale.
 
             asm.emit("%s void %s(%s", MetalAssemblerConstants.KERNEL_MODIFIER, methodName, architecture.getABIPretty());
             int nextBufferIdx = emitMethodParameters(asm, method, incomingArguments, true);
