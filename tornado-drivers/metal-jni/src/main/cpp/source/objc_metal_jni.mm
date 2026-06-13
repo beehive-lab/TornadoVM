@@ -1011,9 +1011,12 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalContext_metalReleaseContext
  * Program creation is platform-specific. For now provide stubs consistent with
  * the OpenCL JNI layer: return -1 for unsupported operations or 0 for failure.
  */
+// Compile-flag bits mirrored from MetalContext.METAL_COMPILE_FAST_MATH.
+#define METAL_COMPILE_FAST_MATH 0x1
+
 JNIEXPORT jlong JNICALL
 Java_uk_ac_manchester_tornado_drivers_metal_MetalContext_metalCreateProgramWithSource
-    (JNIEnv *env, jclass clazz, jlong context_id, jbyteArray array1, jlongArray array2)
+    (JNIEnv *env, jclass clazz, jlong context_id, jbyteArray array1, jlongArray array2, jint compile_flags)
 {
     if (array1 == NULL) return (jlong)0;
     jsize len = env->GetArrayLength(array1);
@@ -1037,8 +1040,21 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalContext_metalCreateProgramWithS
         env->ReleasePrimitiveArrayCritical(array1, bytes, 0);
         if (!src) return (jlong)0;
 
+        // Build compile options. Fast math (the Metal analogue of OpenCL's
+        // -cl-fast-relaxed-math) is opt-in via the compile_flags bitmask. We use the
+        // deprecated-but-portable fastMathEnabled so the same binary works across SDK
+        // versions; on macOS 15+ this maps to MTLMathModeFast.
+        MTLCompileOptions *opts = nil;
+        if (compile_flags & METAL_COMPILE_FAST_MATH) {
+            opts = [[MTLCompileOptions alloc] init];
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+            opts.fastMathEnabled = YES;
+#pragma clang diagnostic pop
+        }
+
         NSError *error = nil;
-        id<MTLLibrary> lib = [device newLibraryWithSource:src options:nil error:&error];
+        id<MTLLibrary> lib = [device newLibraryWithSource:src options:opts error:&error];
 
         MetalProgramWrapper *pw = [[MetalProgramWrapper alloc] init];
         if (!lib) {
