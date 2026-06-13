@@ -296,6 +296,12 @@ public class TornadoOptions {
      */
     public static final boolean FAST_MATH_OPTIMIZATIONS = getBooleanValue("tornado.enable.fastMathOptimizations", TRUE);
     /**
+     * Opt-in: compile Metal kernels with fast/relaxed math ({@code MTLMathModeFast}),
+     * the Metal analogue of OpenCL's {@code -cl-fast-relaxed-math}. Trades a small
+     * amount of FP precision for speed. Default OFF to preserve strict precision.
+     */
+    public static final boolean METAL_FAST_MATH = getBooleanValue("tornado.metal.fastmath", FALSE);
+    /**
      * It optimizes loads and stores for the SPIRV backend. It uses less virtual
      * registers. Experimental Feature.
      */
