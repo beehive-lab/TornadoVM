@@ -1451,4 +1451,131 @@ public class MetalLIRStmt {
             asm.eol();
         }
     }
+
+    /**
+     * Emits a cooperative 8x8 single-precision matrix multiply (C = A x B, contracting
+     * over {@code k}) using Apple's {@code simdgroup_float8x8} hardware matrix units.
+     * The accumulator fragment stays in registers across the whole k loop; only the
+     * final result is written back with {@code simdgroup_store}.
+     *
+     * <p>Pure side-effect statement (writes to C) — like {@link StoreStmt} it declares
+     * only {@code @Use} operands and no {@code @Def}.
+     */
+    @Opcode("SIMDGROUP_MATMUL")
+    public static class SimdgroupMatmulStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<SimdgroupMatmulStmt> TYPE = LIRInstructionClass.create(SimdgroupMatmulStmt.class);
+
+        /** FloatArray header in float elements (TornadoNativeArray.ARRAY_HEADER = 16 bytes). */
+        private static final int FLOAT_HEADER = 4;
+
+        @Use
+        protected Value a;
+        @Use
+        protected Value aBase;
+        @Use
+        protected Value lda;
+        @Use
+        protected Value b;
+        @Use
+        protected Value bBase;
+        @Use
+        protected Value ldb;
+        @Use
+        protected Value c;
+        @Use
+        protected Value cBase;
+        @Use
+        protected Value ldc;
+        @Use
+        protected Value k;
+
+        public SimdgroupMatmulStmt(Value a, Value aBase, Value lda, Value b, Value bBase, Value ldb, Value c, Value cBase, Value ldc, Value k) {
+            super(TYPE);
+            this.a = a;
+            this.aBase = aBase;
+            this.lda = lda;
+            this.b = b;
+            this.bBase = bBase;
+            this.ldb = ldb;
+            this.c = c;
+            this.cBase = cBase;
+            this.ldc = ldc;
+            this.k = k;
+        }
+
+        private void emitBasePointer(MetalCompilationResultBuilder crb, MetalAssembler asm, String decl, Value array, Value base) {
+            asm.indent();
+            asm.emit(decl);
+            asm.emit(" = (const device float*)((device float*)");
+            asm.emitValue(crb, array);
+            asm.emit(" + " + FLOAT_HEADER + " + ");
+            asm.emitValue(crb, base);
+            asm.emit(");");
+            asm.eol();
+        }
+
+        @Override
+        public void emitCode(MetalCompilationResultBuilder crb, MetalAssembler asm) {
+            asm.indent();
+            asm.emit("{");
+            asm.eol();
+            emitBasePointer(crb, asm, "  const device float* _mmaA", a, aBase);
+            emitBasePointer(crb, asm, "  const device float* _mmaB", b, bBase);
+            // C is written, so it is a (non-const) device pointer.
+            asm.indent();
+            asm.emit("  device float* _mmaC = (device float*)((device float*)");
+            asm.emitValue(crb, c);
+            asm.emit(" + " + FLOAT_HEADER + " + ");
+            asm.emitValue(crb, cBase);
+            asm.emit(");");
+            asm.eol();
+
+            asm.indent();
+            asm.emit("  simdgroup_float8x8 _mmaCf = make_filled_simdgroup_matrix<float, 8, 8>(0.0f);");
+            asm.eol();
+
+            asm.indent();
+            asm.emit("  for (int _mmaK = 0; _mmaK < ");
+            asm.emitValue(crb, k);
+            asm.emit("; _mmaK += 8) {");
+            asm.eol();
+
+            asm.indent();
+            asm.emit("    simdgroup_float8x8 _mmaAf, _mmaBf;");
+            asm.eol();
+
+            asm.indent();
+            asm.emit("    simdgroup_load(_mmaAf, _mmaA + _mmaK, (ulong)");
+            asm.emitValue(crb, lda);
+            asm.emit(");");
+            asm.eol();
+
+            asm.indent();
+            asm.emit("    simdgroup_load(_mmaBf, _mmaB + (ulong)_mmaK * (ulong)");
+            asm.emitValue(crb, ldb);
+            asm.emit(", (ulong)");
+            asm.emitValue(crb, ldb);
+            asm.emit(");");
+            asm.eol();
+
+            asm.indent();
+            asm.emit("    simdgroup_multiply_accumulate(_mmaCf, _mmaAf, _mmaBf, _mmaCf);");
+            asm.eol();
+
+            asm.indent();
+            asm.emit("  }");
+            asm.eol();
+
+            asm.indent();
+            asm.emit("  simdgroup_store(_mmaCf, _mmaC, (ulong)");
+            asm.emitValue(crb, ldc);
+            asm.emit(");");
+            asm.eol();
+
+            asm.indent();
+            asm.emit("}");
+            asm.eol();
+        }
+    }
 }
