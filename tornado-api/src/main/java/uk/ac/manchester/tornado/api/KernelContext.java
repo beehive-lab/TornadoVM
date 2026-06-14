@@ -255,6 +255,36 @@ public class KernelContext implements ExecutionContext {
     }
 
     /**
+     * Cooperative 8x8 single-precision matrix multiply for one SIMD group, using
+     * Apple's {@code simdgroup_float8x8} hardware matrix units (MMA).
+     * <p>
+     * Computes the 8x8 output tile {@code C = A x B}, contracting over {@code k}
+     * (a multiple of 8). All three matrices are row-major; {@code aBase}/{@code bBase}/
+     * {@code cBase} are element offsets (not bytes) to each tile origin and
+     * {@code lda}/{@code ldb}/{@code ldc} are the row strides in elements.
+     * <p>
+     * Must be called convergently by all 32 lanes of the SIMD group (i.e. local
+     * work size 8x... mapping one SIMD group per output tile). The accumulator is
+     * kept in registers across the whole {@code k} loop.
+     * <p>
+     * Metal equivalent: {@code simdgroup_load} / {@code simdgroup_multiply_accumulate}
+     * / {@code simdgroup_store} on {@code simdgroup_float8x8} fragments.
+     */
+    public void matrixMultiply8x8(FloatArray a, int aBase, int lda, FloatArray b, int bBase, int ldb, FloatArray c, int cBase, int ldc, int k) {
+        // Sequential reference semantics (used when running on the JVM); the Metal
+        // backend replaces this call with hardware simdgroup_matrix instructions.
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                float acc = 0.0f;
+                for (int p = 0; p < k; p++) {
+                    acc += a.get(aBase + i * lda + p) * b.get(bBase + p * ldb + j);
+                }
+                c.set(cBase + i * ldc + j, acc);
+            }
+        }
+    }
+
+    /**
      * Method used to read a memory address by using the array and the index,
      * then add the value of val to it, and write the result back to the same address.
      * <p>

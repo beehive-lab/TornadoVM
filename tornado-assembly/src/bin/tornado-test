@@ -179,6 +179,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestHalfFloatLocalArray"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.local.memory.TestSwizzledLocalArrays"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestSimdgroupMatrix"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsIntegersKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsFloatsKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsDoublesKernelContext"),
