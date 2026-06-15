@@ -105,6 +105,7 @@ import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalConvertHalfToFloa
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalSIMDShuffleDownNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalSIMDUnaryNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalSimdgroupMatmulNode;
+import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalSimdgroupTiledMatmulNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalFPBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalFPUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalIntBinaryIntrinsicNode;
@@ -409,6 +410,13 @@ public class MetalGraphBuilderPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode aBase, ValueNode lda, ValueNode bMat, ValueNode bBase, ValueNode ldb,
                     ValueNode c, ValueNode cBase, ValueNode ldc, ValueNode k) {
                 b.add(new MetalSimdgroupMatmulNode(a, aBase, lda, bMat, bBase, ldb, c, cBase, ldc, k));
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin("matrixMultiplyTiled", Receiver.class, FloatArray.class, FloatArray.class, FloatArray.class, int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode bMat, ValueNode c, ValueNode m, ValueNode n, ValueNode k) {
+                b.add(new MetalSimdgroupTiledMatmulNode(a, bMat, c, m, n, k));
                 return true;
             }
         });
