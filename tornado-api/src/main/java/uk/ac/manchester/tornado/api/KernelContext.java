@@ -366,52 +366,6 @@ public class KernelContext implements ExecutionContext {
     }
 
     /**
-     * Full single-precision matrix multiply {@code C = A x B} using Apple's
-     * {@code simdgroup_float8x8} hardware matrix units, with threadgroup-memory
-     * tiling so each block of A and B is loaded from device memory once and reused
-     * by every SIMD group in the threadgroup (register + shared-memory blocking).
-     * <p>
-     * Unlike {@link #matrixMultiply8x8} (one SIMD group, one 8x8 output tile,
-     * streaming A/B straight from device memory), this is a self-contained tiled
-     * GEMM: a single call <em>is</em> the whole kernel. Each threadgroup computes a
-     * 32x32 output tile, staging 32x8 and 8x32 sub-tiles of A and B in threadgroup
-     * memory and accumulating a 4x4 grid of 8x8 register fragments across {@code k}.
-     * <p>
-     * All three matrices are row-major: {@code A} is {@code [m][k]}, {@code B} is
-     * {@code [k][n]} and {@code C} is {@code [m][n]}. {@code m} and {@code n} must be
-     * multiples of 32 and {@code k} a multiple of 8.
-     * <p>
-     * Must be dispatched with a 1-D worker grid of {@code (m/32)*(n/32)*128} threads
-     * and a local work size of {@code 128} (one threadgroup of four SIMD groups per
-     * output tile). The kernel body must contain only this call.
-     * <p>
-     * Metal equivalent: cooperative {@code threadgroup} staging + {@code simdgroup_load}
-     * / {@code simdgroup_multiply_accumulate} / {@code simdgroup_store}.
-     */
-    public void matrixMultiplyTiled(FloatArray a, FloatArray b, FloatArray c, int m, int n, int k) {
-        // Sequential reference semantics (used when running on the JVM); the Metal
-        // backend replaces this call with a hardware simdgroup_matrix tiled GEMM.
-        //
-        // NOTE: this stays a single orchestration node rather than being written over the
-        // simdgroupMatrix* primitives (like matrixMultiply8x8 now is) because the tiled
-        // algorithm reads ctx.groupIdx / ctx.localIdx, and reading those boxed Integer
-        // thread-id fields *inside an inlined KernelContext method* trips a pre-existing bug
-        // in TornadoKernelContextReplacement: it deletes the receiver Pi that the field's
-        // Integer-unbox still references, corrupting the graph at sketch time. Written
-        // directly in a user kernel (where ctx is a parameter, not an inlined receiver) the
-        // primitive version works — see TestSimdgroupMatrixPrimitives#testTiledGemmViaPrimitives.
-        for (int i = 0; i < m; i++) {
-            for (int j = 0; j < n; j++) {
-                float acc = 0.0f;
-                for (int p = 0; p < k; p++) {
-                    acc += a.get(i * k + p) * b.get(p * n + j);
-                }
-                c.set(i * n + j, acc);
-            }
-        }
-    }
-
-    /**
      * Method used to read a memory address by using the array and the index,
      * then add the value of val to it, and write the result back to the same address.
      * <p>

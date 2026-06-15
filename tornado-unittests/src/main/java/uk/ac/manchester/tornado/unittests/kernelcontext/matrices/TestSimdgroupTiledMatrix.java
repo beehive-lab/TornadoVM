@@ -33,11 +33,12 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Float;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
- * Unit tests for {@link KernelContext#matrixMultiplyTiled}, the threadgroup-tiled GEMM
- * built on Apple's {@code simdgroup_float8x8} hardware matrix units.
+ * Unit tests for a threadgroup-tiled GEMM built from the {@code KernelContext.simdgroupMatrix*}
+ * primitives on Apple's {@code simdgroup_float8x8} hardware matrix units.
  *
  * <p>Each threadgroup (four SIMD groups, 128 threads) computes a 32x32 output tile,
  * staging 32x8 / 8x32 blocks of A and B in {@code threadgroup} memory and reusing them
@@ -56,9 +57,47 @@ public class TestSimdgroupTiledMatrix extends TornadoTestBase {
     private static final int BLOCK = 32;     // 32x32 output tile per threadgroup
     private static final int THREADS = 128;  // four SIMD groups
 
-    /** The whole kernel: one tiled GEMM call. */
+    /** Threadgroup-tiled GEMM built from the simdgroupMatrix* primitives: four SIMD groups
+     *  per 32x32 tile staging 32x8/8x32 blocks of A/B in threadgroup memory. */
     private static void gemm(KernelContext ctx, FloatArray a, FloatArray b, FloatArray c, int m, int n, int k) {
-        ctx.matrixMultiplyTiled(a, b, c, m, n, k);
+        float[] as = ctx.allocateFloatLocalArray(256);
+        float[] bs = ctx.allocateFloatLocalArray(256);
+        int tilesPerRow = n / BLOCK;
+        int rowBase = (ctx.groupIdx / tilesPerRow) * BLOCK;
+        int colBase = (ctx.groupIdx % tilesPerRow) * BLOCK;
+        int tid = ctx.localIdx;
+        int sgRow = (tid / 32) / 2;
+        int sgCol = (tid / 32) % 2;
+        Matrix8x8Float acc00 = ctx.simdgroupMatrixZero();
+        Matrix8x8Float acc01 = ctx.simdgroupMatrixZero();
+        Matrix8x8Float acc10 = ctx.simdgroupMatrixZero();
+        Matrix8x8Float acc11 = ctx.simdgroupMatrixZero();
+        for (int kb = 0; kb < k; kb += 8) {
+            for (int e = tid; e < 256; e += THREADS) {
+                as[e] = a.get((rowBase + e / 8) * k + (kb + e % 8));
+            }
+            for (int e = tid; e < 256; e += THREADS) {
+                bs[e] = b.get((kb + e / BLOCK) * n + (colBase + e % BLOCK));
+            }
+            ctx.localBarrier();
+            Matrix8x8Float a0 = ctx.simdgroupMatrixLoad(as, (sgRow * 2) * 64, 8);
+            Matrix8x8Float a1 = ctx.simdgroupMatrixLoad(as, (sgRow * 2 + 1) * 64, 8);
+            Matrix8x8Float b0 = ctx.simdgroupMatrixLoad(bs, (sgCol * 2) * 8, BLOCK);
+            Matrix8x8Float b1 = ctx.simdgroupMatrixLoad(bs, (sgCol * 2 + 1) * 8, BLOCK);
+            acc00 = ctx.simdgroupMatrixMultiplyAccumulate(a0, b0, acc00);
+            acc01 = ctx.simdgroupMatrixMultiplyAccumulate(a0, b1, acc01);
+            acc10 = ctx.simdgroupMatrixMultiplyAccumulate(a1, b0, acc10);
+            acc11 = ctx.simdgroupMatrixMultiplyAccumulate(a1, b1, acc11);
+            ctx.localBarrier();
+        }
+        int cr0 = rowBase + (sgRow * 2) * 8;
+        int cr1 = rowBase + (sgRow * 2 + 1) * 8;
+        int cc0 = colBase + (sgCol * 2) * 8;
+        int cc1 = colBase + (sgCol * 2 + 1) * 8;
+        ctx.simdgroupMatrixStore(acc00, c, cr0 * n + cc0, n);
+        ctx.simdgroupMatrixStore(acc01, c, cr0 * n + cc1, n);
+        ctx.simdgroupMatrixStore(acc10, c, cr1 * n + cc0, n);
+        ctx.simdgroupMatrixStore(acc11, c, cr1 * n + cc1, n);
     }
 
     private static void cpuReference(FloatArray a, FloatArray b, FloatArray c, int m, int n, int k) {

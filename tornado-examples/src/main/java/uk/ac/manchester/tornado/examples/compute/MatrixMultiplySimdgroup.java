@@ -34,6 +34,7 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Float;
 
 /**
  * Single-precision matrix multiply C = A x B using Apple's {@code simdgroup_float8x8}
@@ -74,9 +75,47 @@ public class MatrixMultiplySimdgroup {
     }
 
     /** Tiled MMA kernel: one threadgroup (128 threads / 4 SIMD groups) per 32x32 tile,
-     *  staging A/B blocks in threadgroup memory for reuse. The whole kernel is one call. */
+     *  staging 32x8/8x32 blocks of A/B in threadgroup memory and reusing them across a
+     *  4x4 grid of register fragments. Built from the simdgroupMatrix* primitives. */
     private static void gemmTiled(KernelContext ctx, FloatArray a, FloatArray b, FloatArray c, int m, int n, int k) {
-        ctx.matrixMultiplyTiled(a, b, c, m, n, k);
+        float[] as = ctx.allocateFloatLocalArray(256);
+        float[] bs = ctx.allocateFloatLocalArray(256);
+        int tilesPerRow = n / BLOCK;
+        int rowBase = (ctx.groupIdx / tilesPerRow) * BLOCK;
+        int colBase = (ctx.groupIdx % tilesPerRow) * BLOCK;
+        int tid = ctx.localIdx;
+        int sgRow = (tid / SIMD_GROUP) / 2;
+        int sgCol = (tid / SIMD_GROUP) % 2;
+        Matrix8x8Float acc00 = ctx.simdgroupMatrixZero();
+        Matrix8x8Float acc01 = ctx.simdgroupMatrixZero();
+        Matrix8x8Float acc10 = ctx.simdgroupMatrixZero();
+        Matrix8x8Float acc11 = ctx.simdgroupMatrixZero();
+        for (int kb = 0; kb < k; kb += TILE) {
+            for (int e = tid; e < 256; e += BLOCK_THREADS) {
+                as[e] = a.get((rowBase + e / TILE) * k + (kb + e % TILE));
+            }
+            for (int e = tid; e < 256; e += BLOCK_THREADS) {
+                bs[e] = b.get((kb + e / BLOCK) * n + (colBase + e % BLOCK));
+            }
+            ctx.localBarrier();
+            Matrix8x8Float a0 = ctx.simdgroupMatrixLoad(as, (sgRow * 2) * 64, TILE);
+            Matrix8x8Float a1 = ctx.simdgroupMatrixLoad(as, (sgRow * 2 + 1) * 64, TILE);
+            Matrix8x8Float b0 = ctx.simdgroupMatrixLoad(bs, (sgCol * 2) * TILE, BLOCK);
+            Matrix8x8Float b1 = ctx.simdgroupMatrixLoad(bs, (sgCol * 2 + 1) * TILE, BLOCK);
+            acc00 = ctx.simdgroupMatrixMultiplyAccumulate(a0, b0, acc00);
+            acc01 = ctx.simdgroupMatrixMultiplyAccumulate(a0, b1, acc01);
+            acc10 = ctx.simdgroupMatrixMultiplyAccumulate(a1, b0, acc10);
+            acc11 = ctx.simdgroupMatrixMultiplyAccumulate(a1, b1, acc11);
+            ctx.localBarrier();
+        }
+        int cr0 = rowBase + (sgRow * 2) * TILE;
+        int cr1 = rowBase + (sgRow * 2 + 1) * TILE;
+        int cc0 = colBase + (sgCol * 2) * TILE;
+        int cc1 = colBase + (sgCol * 2 + 1) * TILE;
+        ctx.simdgroupMatrixStore(acc00, c, cr0 * n + cc0, n);
+        ctx.simdgroupMatrixStore(acc01, c, cr0 * n + cc1, n);
+        ctx.simdgroupMatrixStore(acc10, c, cr1 * n + cc0, n);
+        ctx.simdgroupMatrixStore(acc11, c, cr1 * n + cc1, n);
     }
 
     /** Naive kernel: one thread per output element. */
