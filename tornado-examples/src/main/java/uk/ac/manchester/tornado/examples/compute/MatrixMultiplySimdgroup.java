@@ -54,6 +54,8 @@ public class MatrixMultiplySimdgroup {
 
     private static final int TILE = 8;
     private static final int SIMD_GROUP = 32; // Apple Silicon SIMD width
+    private static final int BLOCK = 32;      // tiled GEMM: 32x32 output tile per threadgroup
+    private static final int BLOCK_THREADS = 128; // four SIMD groups per threadgroup
     private static final int WARMUP = 50;
     private static final int ITERATIONS = 100;
 
@@ -69,6 +71,12 @@ public class MatrixMultiplySimdgroup {
         int cBase = tileRow * TILE * n + tileCol * TILE;
 
         ctx.matrixMultiply8x8(a, aBase, k, b, bBase, n, c, cBase, n, k);
+    }
+
+    /** Tiled MMA kernel: one threadgroup (128 threads / 4 SIMD groups) per 32x32 tile,
+     *  staging A/B blocks in threadgroup memory for reuse. The whole kernel is one call. */
+    private static void gemmTiled(KernelContext ctx, FloatArray a, FloatArray b, FloatArray c, int m, int n, int k) {
+        ctx.matrixMultiplyTiled(a, b, c, m, n, k);
     }
 
     /** Naive kernel: one thread per output element. */
@@ -140,6 +148,7 @@ public class MatrixMultiplySimdgroup {
         FloatArray a = new FloatArray(m * k);
         FloatArray b = new FloatArray(k * n);
         FloatArray cMma = new FloatArray(m * n);
+        FloatArray cTiled = new FloatArray(m * n);
         FloatArray cNaive = new FloatArray(m * n);
         FloatArray cRef = new FloatArray(m * n);
 
@@ -163,6 +172,16 @@ public class MatrixMultiplySimdgroup {
                 .task("t0", MatrixMultiplySimdgroup::gemmSimdgroup, ctx, a, b, cMma, m, n, k) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, cMma).snapshot();
 
+        // Tiled MMA: one threadgroup (128 threads) per 32x32 output tile.
+        int numBlocks = (m / BLOCK) * (n / BLOCK);
+        WorkerGrid1D gridTiled = new WorkerGrid1D(numBlocks * BLOCK_THREADS);
+        gridTiled.setLocalWork(BLOCK_THREADS, 1, 1);
+        GridScheduler schedTiled = new GridScheduler("tiled.t0", gridTiled);
+        ImmutableTaskGraph tiled = new TaskGraph("tiled") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", MatrixMultiplySimdgroup::gemmTiled, ctx, a, b, cTiled, m, n, k) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, cTiled).snapshot();
+
         // Naive: one thread per output element.
         WorkerGrid1D gridNaive = new WorkerGrid1D(m * n);
         gridNaive.setLocalWork(64, 1, 1);
@@ -173,11 +192,14 @@ public class MatrixMultiplySimdgroup {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, cNaive).snapshot();
 
         long[] tMma;
+        long[] tTiled;
         long[] tNaive;
         try (TornadoExecutionPlan planMma = new TornadoExecutionPlan(mma); //
+                TornadoExecutionPlan planTiled = new TornadoExecutionPlan(tiled); //
                 TornadoExecutionPlan planNaive = new TornadoExecutionPlan(naive)) {
             System.out.println("Running benchmarks...");
             tMma = benchmark(planMma, schedMma);
+            tTiled = benchmark(planTiled, schedTiled);
             tNaive = benchmark(planNaive, schedNaive);
         }
 
@@ -185,17 +207,22 @@ public class MatrixMultiplySimdgroup {
 
         System.out.println("\nCorrectness");
         System.out.println("-----------");
-        System.out.println("  simdgroup matches CPU reference: " + (validate(cMma, cRef, k) ? "✓" : "✗ MISMATCH"));
-        System.out.println("  naive     matches CPU reference: " + (validate(cNaive, cRef, k) ? "✓" : "✗ MISMATCH"));
+        System.out.println("  simdgroup       matches CPU reference: " + (validate(cMma, cRef, k) ? "✓" : "✗ MISMATCH"));
+        System.out.println("  simdgroup tiled matches CPU reference: " + (validate(cTiled, cRef, k) ? "✓" : "✗ MISMATCH"));
+        System.out.println("  naive           matches CPU reference: " + (validate(cNaive, cRef, k) ? "✓" : "✗ MISMATCH"));
 
         double flop = 2.0 * m * n * k; // multiply-add per output element
         System.out.println("\nPerformance");
         System.out.println("-----------");
         printStats("naive", tNaive, flop);
         printStats("simdgroup_float8x8", tMma, flop);
+        printStats("simdgroup tiled", tTiled, flop);
 
         double avgNaive = Arrays.stream(tNaive).average().orElse(1);
         double avgMma = Arrays.stream(tMma).average().orElse(1);
-        System.out.printf("%nSpeedup simdgroup vs naive: %.2fx%n", avgNaive / avgMma);
+        double avgTiled = Arrays.stream(tTiled).average().orElse(1);
+        System.out.printf("%nSpeedup simdgroup       vs naive: %.2fx%n", avgNaive / avgMma);
+        System.out.printf("Speedup simdgroup tiled vs naive: %.2fx%n", avgNaive / avgTiled);
+        System.out.printf("Speedup simdgroup tiled vs simdgroup: %.2fx%n", avgMma / avgTiled);
     }
 }
