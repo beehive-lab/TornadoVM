@@ -32,18 +32,23 @@ Write the kernel in Java with the same thread-indexing model you'd use in CUDA �
 
 ```java
 void mxv(KernelContext ctx,
-         Matrix2DFloat m,
-         VectorFloat v,
-         VectorFloat out,
+         FloatArray m,
+         FloatArray v,
+         FloatArray out,
          int rows, int cols) {
   int i = ctx.globalIdx;
   if (i < rows) {
     float sum = 0f;
     for (int j=0; j<cols; j++)
-      sum += m.get(i,j)*v.get(j);
+      sum += m.get(i*cols+j)*v.get(j);
     out.set(i, sum);
   }
 }
+
+// TornadoVM auto-manages device
+// memory + kernel dispatch via a
+// TaskGraph — no host plumbing,
+// runs unchanged on all 4 backends.
 ```
 
 </td>
@@ -64,11 +69,47 @@ __global__ void mxv(
     out[i] = sum;
   }
 }
+
+// ...and on the host you STILL write:
+//   cudaMalloc/cudaMemcpy per buffer
+//   grid/block dims, launch, sync
+//   cudaMemcpy back, then cudaFree
+//   nvcc build + per-GPU binaries
+//   + a rewrite for non-NVIDIA GPUs
 ```
 
 </td>
 </tr>
 </table>
+
+
+
+<details>
+<summary><h3>…and the host side — wrap data, map a thread grid, execute (click to expand)</h3></summary>
+
+```java
+// TornadoVM off-heap arrays (flat, row-major)
+FloatArray m   = new FloatArray(rows * cols);
+FloatArray v   = new FloatArray(cols);
+FloatArray out = new FloatArray(rows);
+// ...fill m and v...
+
+KernelContext ctx  = new KernelContext();
+WorkerGrid worker  = new WorkerGrid1D(rows);
+GridScheduler grid = new GridScheduler("compute.mxv", worker);
+
+TaskGraph tg = new TaskGraph("compute")
+    .transferToDevice(DataTransferMode.FIRST_EXECUTION, m, v)
+    .task("mxv", Kernels::mxv, ctx, m, v, out, rows, cols)
+    .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+
+try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
+    plan.withGridScheduler(grid).execute();   // JIT-compiled to your GPU
+}
+```
+
+</details>
+
 
 `KernelContext` gives you the full GPU programming model — global/local thread IDs, local memory, and barriers, the same semantics as CUDA/OpenCL/SYCL — while TornadoVM handles memory management and runs the *identical* code across all four backends. Don't need that control? Drop `KernelContext` and just annotate the loop with `@Parallel` — TornadoVM infers the thread mapping for you. Both styles combine in the same `TaskGraph`. [Programming guide →](https://tornadovm.readthedocs.io/en/latest/programming.html)
 
