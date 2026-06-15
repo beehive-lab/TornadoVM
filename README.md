@@ -4,7 +4,7 @@
 
 ### Write Java. Run on Any GPUs.
 
-TornadoVM is a GPU programming framework for Java that just works with any modern JDK. It JIT-compiles Java bytecode into **OpenCL C, CUDA PTX, SPIR-V, and Apple Metal (MSL)** at runtime, so your existing Java code runs on NVIDIA, AMD, Intel, and Apple Silicon GPUs, integrated GPUs, FPGAs, and multi-core CPUs. No CUDA C. No JNI bindings to maintain. No native toolchain in your application.
+TornadoVM is a GPU programming framework for Java that works with JDK 21+ (currently JDK 21 and JDK 25). It JIT-compiles Java bytecode into **OpenCL C, CUDA PTX, SPIR-V, and Apple Metal (MSL)** at runtime, so your existing Java code runs on NVIDIA, AMD, Intel, and Apple Silicon GPUs, integrated GPUs, FPGAs, and multi-core CPUs. No CUDA C. No JNI bindings to maintain. No native toolchain in your application.
 
 [![Build & Test JDK 21](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk21.yml/badge.svg)](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk21.yml)
 [![Build & Test JDK 25](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk25.yml/badge.svg?branch=jdk25)](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk25.yml)
