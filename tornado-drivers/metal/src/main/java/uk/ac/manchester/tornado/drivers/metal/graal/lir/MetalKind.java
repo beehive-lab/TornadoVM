@@ -85,6 +85,7 @@ import uk.ac.manchester.tornado.api.types.vectors.Int8;
 import uk.ac.manchester.tornado.api.types.vectors.Short2;
 import uk.ac.manchester.tornado.api.types.vectors.Short3;
 import uk.ac.manchester.tornado.api.types.volumes.VolumeShort2;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Float;
 import uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssembler;
 
 public enum MetalKind implements PlatformKind {
@@ -107,6 +108,9 @@ public enum MetalKind implements PlatformKind {
     HALF(2, java.lang.Short.TYPE),
     FLOAT(4, java.lang.Float.TYPE),
     DOUBLE(8, java.lang.Double.TYPE),
+    // Opaque hardware matrix-unit fragment (Apple simdgroup_float8x8). Lives in
+    // registers as a single value, like a vector type, but is not a vector.
+    SIMDGROUP_FLOAT8X8(256, Matrix8x8Float.TYPE),
     CHAR2(2, null, CHAR),
     UCHAR2(2, null, UCHAR),
     SHORT2(2, Short2.TYPE, SHORT),
@@ -493,6 +497,8 @@ public enum MetalKind implements PlatformKind {
         } else if (this == MetalKind.ULONG) {
             // MSL has no pointer-to-integer cast; use a typed device pointer typedef instead.
             return "tornado_ptr_t";
+        } else if (this == MetalKind.SIMDGROUP_FLOAT8X8) {
+            return "simdgroup_float8x8";
         } else {
             return name().toLowerCase();
         }
@@ -551,7 +557,7 @@ public enum MetalKind implements PlatformKind {
     }
 
     public boolean isPrimitive() {
-        return (vectorLength == 1 && kind != MetalKind.ILLEGAL);
+        return (vectorLength == 1 && kind != MetalKind.ILLEGAL && kind != MetalKind.SIMDGROUP_FLOAT8X8);
     }
 
     public JavaConstant getDefaultValue() {
@@ -575,6 +581,9 @@ public enum MetalKind implements PlatformKind {
     }
 
     public JavaKind asJavaKind() {
+        if (kind == SIMDGROUP_FLOAT8X8) {
+            return JavaKind.Object;
+        }
         if (kind != ILLEGAL && !kind.isVector()) {
             switch (kind) {
                 case BOOL:

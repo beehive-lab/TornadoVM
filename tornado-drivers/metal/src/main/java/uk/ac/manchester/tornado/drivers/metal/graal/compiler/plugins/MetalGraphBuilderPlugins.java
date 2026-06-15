@@ -86,6 +86,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Float;
 import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
@@ -104,8 +105,11 @@ import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalBarrierNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalConvertHalfToFloat;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalSIMDShuffleDownNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalSIMDUnaryNode;
-import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalSimdgroupMatmulNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalSimdgroupTiledMatmulNode;
+import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalSimdgroupMatrixZeroNode;
+import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalSimdgroupMatrixLoadNode;
+import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalSimdgroupMatrixMmaNode;
+import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalSimdgroupMatrixStoreNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalFPBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalFPUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalIntBinaryIntrinsicNode;
@@ -420,18 +424,55 @@ public class MetalGraphBuilderPlugins {
                 return true;
             }
         });
-        r.register(new InvocationPlugin("matrixMultiply8x8", Receiver.class, FloatArray.class, int.class, int.class, FloatArray.class, int.class, int.class, FloatArray.class, int.class, int.class, int.class) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode aBase, ValueNode lda, ValueNode bMat, ValueNode bBase, ValueNode ldb,
-                    ValueNode c, ValueNode cBase, ValueNode ldc, ValueNode k) {
-                b.add(new MetalSimdgroupMatmulNode(a, aBase, lda, bMat, bBase, ldb, c, cBase, ldc, k));
-                return true;
-            }
-        });
         r.register(new InvocationPlugin("matrixMultiplyTiled", Receiver.class, FloatArray.class, FloatArray.class, FloatArray.class, int.class, int.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode bMat, ValueNode c, ValueNode m, ValueNode n, ValueNode k) {
                 b.add(new MetalSimdgroupTiledMatmulNode(a, bMat, c, m, n, k));
+                return true;
+            }
+        });
+        registerSimdgroupMatrixPrimitives(r);
+    }
+
+    /**
+     * Low-level matrix-unit (simdgroup_float8x8) primitives: zero / load / multiply-accumulate
+     * / store. The surrounding GEMM loop is ordinary Java compiled by the normal pipeline; only
+     * these calls become hardware instructions. The fragment flows as an opaque
+     * {@code SIMDGROUP_FLOAT8X8} value (pushed as a {@code Matrix8x8Float} object reference).
+     */
+    private static void registerSimdgroupMatrixPrimitives(Registration r) {
+        r.register(new InvocationPlugin("simdgroupMatrixZero", Receiver.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                b.addPush(JavaKind.Object, new MetalSimdgroupMatrixZeroNode());
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin("simdgroupMatrixLoad", Receiver.class, FloatArray.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode base, ValueNode stride) {
+                b.addPush(JavaKind.Object, new MetalSimdgroupMatrixLoadNode(array, base, stride));
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin("simdgroupMatrixLoad", Receiver.class, float[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode base, ValueNode stride) {
+                b.addPush(JavaKind.Object, new MetalSimdgroupMatrixLoadNode(array, base, stride));
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin("simdgroupMatrixMultiplyAccumulate", Receiver.class, Matrix8x8Float.class, Matrix8x8Float.class, Matrix8x8Float.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode bMat, ValueNode c) {
+                b.addPush(JavaKind.Object, new MetalSimdgroupMatrixMmaNode(a, bMat, c));
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin("simdgroupMatrixStore", Receiver.class, Matrix8x8Float.class, FloatArray.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode matrix, ValueNode array, ValueNode base, ValueNode stride) {
+                b.add(new MetalSimdgroupMatrixStoreNode(matrix, array, base, stride));
                 return true;
             }
         });

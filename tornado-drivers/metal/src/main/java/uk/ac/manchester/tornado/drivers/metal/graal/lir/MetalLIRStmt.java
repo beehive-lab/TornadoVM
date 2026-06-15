@@ -1455,139 +1455,12 @@ public class MetalLIRStmt {
     }
 
     /**
-     * Emits a cooperative 8x8 single-precision matrix multiply (C = A x B, contracting
-     * over {@code k}) using Apple's {@code simdgroup_float8x8} hardware matrix units.
-     * The accumulator fragment stays in registers across the whole k loop; only the
-     * final result is written back with {@code simdgroup_store}.
-     *
-     * <p>Pure side-effect statement (writes to C) — like {@link StoreStmt} it declares
-     * only {@code @Use} operands and no {@code @Def}.
-     */
-    @Opcode("SIMDGROUP_MATMUL")
-    public static class SimdgroupMatmulStmt extends AbstractInstruction {
-
-        public static final LIRInstructionClass<SimdgroupMatmulStmt> TYPE = LIRInstructionClass.create(SimdgroupMatmulStmt.class);
-
-        /** FloatArray header in float elements (TornadoNativeArray.ARRAY_HEADER = 16 bytes). */
-        private static final int FLOAT_HEADER = 4;
-
-        @Use
-        protected Value a;
-        @Use
-        protected Value aBase;
-        @Use
-        protected Value lda;
-        @Use
-        protected Value b;
-        @Use
-        protected Value bBase;
-        @Use
-        protected Value ldb;
-        @Use
-        protected Value c;
-        @Use
-        protected Value cBase;
-        @Use
-        protected Value ldc;
-        @Use
-        protected Value k;
-
-        public SimdgroupMatmulStmt(Value a, Value aBase, Value lda, Value b, Value bBase, Value ldb, Value c, Value cBase, Value ldc, Value k) {
-            super(TYPE);
-            this.a = a;
-            this.aBase = aBase;
-            this.lda = lda;
-            this.b = b;
-            this.bBase = bBase;
-            this.ldb = ldb;
-            this.c = c;
-            this.cBase = cBase;
-            this.ldc = ldc;
-            this.k = k;
-        }
-
-        private void emitBasePointer(MetalCompilationResultBuilder crb, MetalAssembler asm, String decl, Value array, Value base) {
-            asm.indent();
-            asm.emit(decl);
-            asm.emit(" = (const device float*)((device float*)");
-            asm.emitValue(crb, array);
-            asm.emit(" + " + FLOAT_HEADER + " + ");
-            asm.emitValue(crb, base);
-            asm.emit(");");
-            asm.eol();
-        }
-
-        @Override
-        public void emitCode(MetalCompilationResultBuilder crb, MetalAssembler asm) {
-            asm.indent();
-            asm.emit("{");
-            asm.eol();
-            emitBasePointer(crb, asm, "  const device float* _mmaA", a, aBase);
-            emitBasePointer(crb, asm, "  const device float* _mmaB", b, bBase);
-            // C is written, so it is a (non-const) device pointer.
-            asm.indent();
-            asm.emit("  device float* _mmaC = (device float*)((device float*)");
-            asm.emitValue(crb, c);
-            asm.emit(" + " + FLOAT_HEADER + " + ");
-            asm.emitValue(crb, cBase);
-            asm.emit(");");
-            asm.eol();
-
-            asm.indent();
-            asm.emit("  simdgroup_float8x8 _mmaCf = make_filled_simdgroup_matrix<float, 8, 8>(0.0f);");
-            asm.eol();
-
-            asm.indent();
-            asm.emit("  for (int _mmaK = 0; _mmaK < ");
-            asm.emitValue(crb, k);
-            asm.emit("; _mmaK += 8) {");
-            asm.eol();
-
-            asm.indent();
-            asm.emit("    simdgroup_float8x8 _mmaAf, _mmaBf;");
-            asm.eol();
-
-            asm.indent();
-            asm.emit("    simdgroup_load(_mmaAf, _mmaA + _mmaK, (ulong)");
-            asm.emitValue(crb, lda);
-            asm.emit(");");
-            asm.eol();
-
-            asm.indent();
-            asm.emit("    simdgroup_load(_mmaBf, _mmaB + (ulong)_mmaK * (ulong)");
-            asm.emitValue(crb, ldb);
-            asm.emit(", (ulong)");
-            asm.emitValue(crb, ldb);
-            asm.emit(");");
-            asm.eol();
-
-            asm.indent();
-            asm.emit("    simdgroup_multiply_accumulate(_mmaCf, _mmaAf, _mmaBf, _mmaCf);");
-            asm.eol();
-
-            asm.indent();
-            asm.emit("  }");
-            asm.eol();
-
-            asm.indent();
-            asm.emit("  simdgroup_store(_mmaCf, _mmaC, (ulong)");
-            asm.emitValue(crb, ldc);
-            asm.emit(");");
-            asm.eol();
-
-            asm.indent();
-            asm.emit("}");
-            asm.eol();
-        }
-    }
-
-    /**
      * Emits a full threadgroup-tiled single-precision GEMM ({@code C = A x B}) built on
      * Apple's {@code simdgroup_float8x8} hardware matrix units. Each threadgroup computes
      * a 32x32 output tile; its four SIMD groups cooperatively stage a 32x8 block of A and
      * an 8x32 block of B in {@code threadgroup} memory once per K-step and reuse them to
      * accumulate a 4x4 grid of 8x8 register fragments. This amortises the device-memory
-     * traffic that {@link SimdgroupMatmulStmt} pays per 8x8 tile.
+     * traffic that a single-tile simdgroup matmul pays per 8x8 tile.
      *
      * <p>The whole kernel body is this single statement, so the {@code threadgroup} arrays
      * and barriers sit at the kernel's top scope and every thread participates. Dispatch is
@@ -1720,6 +1593,162 @@ public class MetalLIRStmt {
             line(asm, "simdgroup_store(_tmAcc01, _tmC + _tmCr0 * _tmN + _tmCc1, _tmN);");
             line(asm, "simdgroup_store(_tmAcc10, _tmC + _tmCr1 * _tmN + _tmCc0, _tmN);");
             line(asm, "simdgroup_store(_tmAcc11, _tmC + _tmCr1 * _tmN + _tmCc1, _tmN);");
+        }
+    }
+
+    /** FloatArray header in float elements (TornadoNativeArray.ARRAY_HEADER = 16 bytes). */
+    private static final int SIMDGROUP_FLOAT_HEADER = 4;
+
+    /** {@code <result> = make_filled_simdgroup_matrix<float,8,8>(0.0f);} */
+    @Opcode("SIMDGROUP_MATRIX_ZERO")
+    public static class SimdgroupMatrixZeroStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<SimdgroupMatrixZeroStmt> TYPE = LIRInstructionClass.create(SimdgroupMatrixZeroStmt.class);
+
+        @Def
+        protected AllocatableValue result;
+
+        public SimdgroupMatrixZeroStmt(AllocatableValue result) {
+            super(TYPE);
+            this.result = result;
+        }
+
+        @Override
+        public void emitCode(MetalCompilationResultBuilder crb, MetalAssembler asm) {
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.emit(" = make_filled_simdgroup_matrix<float, 8, 8>(0.0f);");
+            asm.eol();
+        }
+    }
+
+    /** {@code simdgroup_load(<result>, (const device float*)((device float*)<array> + 4 + <base>), (ulong)<stride>);} */
+    @Opcode("SIMDGROUP_MATRIX_LOAD")
+    public static class SimdgroupMatrixLoadStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<SimdgroupMatrixLoadStmt> TYPE = LIRInstructionClass.create(SimdgroupMatrixLoadStmt.class);
+
+        @Def
+        protected AllocatableValue result;
+        @Use
+        protected Value array;
+        @Use
+        protected Value base;
+        @Use
+        protected Value stride;
+        private final boolean local;
+
+        public SimdgroupMatrixLoadStmt(AllocatableValue result, Value array, Value base, Value stride, boolean local) {
+            super(TYPE);
+            this.result = result;
+            this.array = array;
+            this.base = base;
+            this.stride = stride;
+            this.local = local;
+        }
+
+        @Override
+        public void emitCode(MetalCompilationResultBuilder crb, MetalAssembler asm) {
+            asm.indent();
+            asm.emit("simdgroup_load(");
+            asm.emitValue(crb, result);
+            asm.emit(", ");
+            if (local) {
+                // Threadgroup array: no header, no device cast; the array decays to a pointer.
+                asm.emit("(const threadgroup float*)(");
+                asm.emitValue(crb, array);
+                asm.emit(" + ");
+                asm.emitValue(crb, base);
+                asm.emit(")");
+            } else {
+                asm.emit("(const device float*)((device float*)");
+                asm.emitValue(crb, array);
+                asm.emit(" + " + SIMDGROUP_FLOAT_HEADER + " + ");
+                asm.emitValue(crb, base);
+                asm.emit(")");
+            }
+            asm.emit(", (ulong)");
+            asm.emitValue(crb, stride);
+            asm.emit(");");
+            asm.eol();
+        }
+    }
+
+    /** {@code simdgroup_multiply_accumulate(<result>, <a>, <b>, <c>);} */
+    @Opcode("SIMDGROUP_MATRIX_MMA")
+    public static class SimdgroupMatrixMmaStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<SimdgroupMatrixMmaStmt> TYPE = LIRInstructionClass.create(SimdgroupMatrixMmaStmt.class);
+
+        @Def
+        protected AllocatableValue result;
+        @Use
+        protected Value a;
+        @Use
+        protected Value b;
+        @Use
+        protected Value c;
+
+        public SimdgroupMatrixMmaStmt(AllocatableValue result, Value a, Value b, Value c) {
+            super(TYPE);
+            this.result = result;
+            this.a = a;
+            this.b = b;
+            this.c = c;
+        }
+
+        @Override
+        public void emitCode(MetalCompilationResultBuilder crb, MetalAssembler asm) {
+            asm.indent();
+            asm.emit("simdgroup_multiply_accumulate(");
+            asm.emitValue(crb, result);
+            asm.emit(", ");
+            asm.emitValue(crb, a);
+            asm.emit(", ");
+            asm.emitValue(crb, b);
+            asm.emit(", ");
+            asm.emitValue(crb, c);
+            asm.emit(");");
+            asm.eol();
+        }
+    }
+
+    /** {@code simdgroup_store(<m>, (device float*)((device float*)<array> + 4 + <base>), (ulong)<stride>);} */
+    @Opcode("SIMDGROUP_MATRIX_STORE")
+    public static class SimdgroupMatrixStoreStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<SimdgroupMatrixStoreStmt> TYPE = LIRInstructionClass.create(SimdgroupMatrixStoreStmt.class);
+
+        @Use
+        protected Value m;
+        @Use
+        protected Value array;
+        @Use
+        protected Value base;
+        @Use
+        protected Value stride;
+
+        public SimdgroupMatrixStoreStmt(Value m, Value array, Value base, Value stride) {
+            super(TYPE);
+            this.m = m;
+            this.array = array;
+            this.base = base;
+            this.stride = stride;
+        }
+
+        @Override
+        public void emitCode(MetalCompilationResultBuilder crb, MetalAssembler asm) {
+            asm.indent();
+            asm.emit("simdgroup_store(");
+            asm.emitValue(crb, m);
+            asm.emit(", (device float*)((device float*)");
+            asm.emitValue(crb, array);
+            asm.emit(" + " + SIMDGROUP_FLOAT_HEADER + " + ");
+            asm.emitValue(crb, base);
+            asm.emit("), (ulong)");
+            asm.emitValue(crb, stride);
+            asm.emit(");");
+            asm.eol();
         }
     }
 }
