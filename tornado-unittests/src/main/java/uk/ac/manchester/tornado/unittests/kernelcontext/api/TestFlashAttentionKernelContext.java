@@ -88,8 +88,7 @@ public class TestFlashAttentionKernelContext extends TornadoTestBase {
         int myEndDim = Math.min(myStartDim + dimsPerThread, headSize);
         int myDimCount = myEndDim - myStartDim;
 
-        // FIX from previous iteration: ensuring output array is statically sized
-        final int MAX_OUTPUT_DIMS = MAX_HEAD_SIZE / 8; // e.g., 32 if MAX_HEAD_SIZE=256
+        final int MAX_OUTPUT_DIMS = MAX_HEAD_SIZE / 8;
         float[] output = new float[MAX_OUTPUT_DIMS];
 
         // Initialize thread-local output
