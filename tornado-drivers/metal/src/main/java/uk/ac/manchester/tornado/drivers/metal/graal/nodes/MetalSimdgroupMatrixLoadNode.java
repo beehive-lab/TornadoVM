@@ -28,6 +28,7 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
@@ -47,9 +48,13 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkArrayParamete
  * (when {@code array} is a {@link LocalArrayNode}). Implements
  * {@link MarkArrayParameterAccess} so the dataflow analysis sees the array as read
  * (an opaque intrinsic consuming a kernel parameter is otherwise invisible to it).
+ *
+ * <p>Fixed (not floating): a threadgroup load must stay ordered after the cooperative
+ * stores and {@code threadgroup_barrier} that populate the staging buffer, so the
+ * scheduler must not be free to sink or hoist it.
  */
 @NodeInfo
-public class MetalSimdgroupMatrixLoadNode extends ValueNode implements LIRLowerable, MarkArrayParameterAccess {
+public class MetalSimdgroupMatrixLoadNode extends FixedWithNextNode implements LIRLowerable, MarkArrayParameterAccess {
 
     public static final NodeClass<MetalSimdgroupMatrixLoadNode> TYPE = NodeClass.create(MetalSimdgroupMatrixLoadNode.class);
 

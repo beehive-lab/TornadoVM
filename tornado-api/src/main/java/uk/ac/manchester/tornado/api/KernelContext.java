@@ -392,11 +392,14 @@ public class KernelContext implements ExecutionContext {
         // Sequential reference semantics (used when running on the JVM); the Metal
         // backend replaces this call with a hardware simdgroup_matrix tiled GEMM.
         //
-        // NOTE: unlike matrixMultiply8x8 (now written over the simdgroupMatrix* primitives),
-        // this still lowers to a single orchestration node because expressing the
-        // threadgroup-staged tiling over the primitives currently trips a Graal sketch-phase
-        // graph-integrity issue (a non-unrollable cooperative-load loop over local memory
-        // carrying the opaque fragment values). See registerSimdgroupMatrixPrimitives.
+        // NOTE: this stays a single orchestration node rather than being written over the
+        // simdgroupMatrix* primitives (like matrixMultiply8x8 now is) because the tiled
+        // algorithm reads ctx.groupIdx / ctx.localIdx, and reading those boxed Integer
+        // thread-id fields *inside an inlined KernelContext method* trips a pre-existing bug
+        // in TornadoKernelContextReplacement: it deletes the receiver Pi that the field's
+        // Integer-unbox still references, corrupting the graph at sketch time. Written
+        // directly in a user kernel (where ctx is a parameter, not an inlined receiver) the
+        // primitive version works — see TestSimdgroupMatrixPrimitives#testTiledGemmViaPrimitives.
         for (int i = 0; i < m; i++) {
             for (int j = 0; j < n; j++) {
                 float acc = 0.0f;

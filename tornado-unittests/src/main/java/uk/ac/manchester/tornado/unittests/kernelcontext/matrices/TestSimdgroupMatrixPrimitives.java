@@ -138,6 +138,85 @@ public class TestSimdgroupMatrixPrimitives extends TornadoTestBase {
         }
     }
 
+    /** Full threadgroup-staged tiled GEMM written over the primitives in user-kernel code:
+     *  four SIMD groups per 32x32 tile, staging 32x8/8x32 blocks of A/B in threadgroup memory
+     *  and reusing them across a 4x4 grid of register fragments. */
+    private static void gemmTiledPrimitives(KernelContext ctx, FloatArray a, FloatArray b, FloatArray c, int m, int n, int k) {
+        float[] as = ctx.allocateFloatLocalArray(256);
+        float[] bs = ctx.allocateFloatLocalArray(256);
+        int tilesPerRow = n / 32;
+        int rowBase = (ctx.groupIdx / tilesPerRow) * 32;
+        int colBase = (ctx.groupIdx % tilesPerRow) * 32;
+        int tid = ctx.localIdx;
+        int sgRow = (tid / 32) / 2;
+        int sgCol = (tid / 32) % 2;
+        Matrix8x8Float acc00 = ctx.simdgroupMatrixZero();
+        Matrix8x8Float acc01 = ctx.simdgroupMatrixZero();
+        Matrix8x8Float acc10 = ctx.simdgroupMatrixZero();
+        Matrix8x8Float acc11 = ctx.simdgroupMatrixZero();
+        for (int kb = 0; kb < k; kb += 8) {
+            for (int e = tid; e < 256; e += 128) {
+                as[e] = a.get((rowBase + e / 8) * k + (kb + e % 8));
+            }
+            for (int e = tid; e < 256; e += 128) {
+                bs[e] = b.get((kb + e / 32) * n + (colBase + e % 32));
+            }
+            ctx.localBarrier();
+            Matrix8x8Float a0 = ctx.simdgroupMatrixLoad(as, (sgRow * 2) * 64, 8);
+            Matrix8x8Float a1 = ctx.simdgroupMatrixLoad(as, (sgRow * 2 + 1) * 64, 8);
+            Matrix8x8Float b0 = ctx.simdgroupMatrixLoad(bs, (sgCol * 2) * 8, 32);
+            Matrix8x8Float b1 = ctx.simdgroupMatrixLoad(bs, (sgCol * 2 + 1) * 8, 32);
+            acc00 = ctx.simdgroupMatrixMultiplyAccumulate(a0, b0, acc00);
+            acc01 = ctx.simdgroupMatrixMultiplyAccumulate(a0, b1, acc01);
+            acc10 = ctx.simdgroupMatrixMultiplyAccumulate(a1, b0, acc10);
+            acc11 = ctx.simdgroupMatrixMultiplyAccumulate(a1, b1, acc11);
+            ctx.localBarrier();
+        }
+        int cr0 = rowBase + (sgRow * 2) * 8;
+        int cr1 = rowBase + (sgRow * 2 + 1) * 8;
+        int cc0 = colBase + (sgCol * 2) * 8;
+        int cc1 = colBase + (sgCol * 2 + 1) * 8;
+        ctx.simdgroupMatrixStore(acc00, c, cr0 * n + cc0, n);
+        ctx.simdgroupMatrixStore(acc01, c, cr0 * n + cc1, n);
+        ctx.simdgroupMatrixStore(acc10, c, cr1 * n + cc0, n);
+        ctx.simdgroupMatrixStore(acc11, c, cr1 * n + cc1, n);
+    }
+
+    @Test
+    public void testTiledGemmViaPrimitives() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.PTX);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+        int m = 64, n = 64, k = 64;
+        FloatArray a = new FloatArray(m * k);
+        FloatArray b = new FloatArray(k * n);
+        FloatArray c = new FloatArray(m * n);
+        FloatArray ref = new FloatArray(m * n);
+        Random rnd = new Random(7);
+        for (int i = 0; i < a.getSize(); i++) {
+            a.set(i, rnd.nextFloat() - 0.5f);
+        }
+        for (int i = 0; i < b.getSize(); i++) {
+            b.set(i, rnd.nextFloat() - 0.5f);
+        }
+        cpuReference(a, b, ref, m, n, k);
+        KernelContext ctx = new KernelContext();
+        int numTiles = (m / 32) * (n / 32);
+        WorkerGrid1D grid = new WorkerGrid1D(numTiles * 128);
+        grid.setLocalWork(128, 1, 1);
+        GridScheduler scheduler = new GridScheduler("s0.t0", grid);
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestSimdgroupMatrixPrimitives::gemmTiledPrimitives, ctx, a, b, c, m, n, k) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            executionPlan.withGridScheduler(scheduler).execute();
+        }
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals(ref.get(i), c.get(i), 1e-3f * k);
+        }
+    }
+
     private static void cpuReference(FloatArray a, FloatArray b, FloatArray c, int m, int n, int k) {
         for (int i = 0; i < m; i++) {
             for (int j = 0; j < n; j++) {

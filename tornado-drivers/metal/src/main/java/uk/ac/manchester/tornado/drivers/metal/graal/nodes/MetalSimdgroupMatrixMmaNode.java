@@ -28,6 +28,7 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
@@ -40,9 +41,12 @@ import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalLIRStmt;
  * Computes {@code a * b + c} for three 8x8 fragments
  * ({@code simdgroup_multiply_accumulate}), producing a new fragment, for
  * {@link uk.ac.manchester.tornado.api.KernelContext#simdgroupMatrixMultiplyAccumulate}.
+ *
+ * <p>Fixed (not floating): it must stay ordered between the fragment loads it consumes
+ * and the {@code threadgroup_barrier} that follows, so the scheduler cannot move it.
  */
 @NodeInfo
-public class MetalSimdgroupMatrixMmaNode extends ValueNode implements LIRLowerable {
+public class MetalSimdgroupMatrixMmaNode extends FixedWithNextNode implements LIRLowerable {
 
     public static final NodeClass<MetalSimdgroupMatrixMmaNode> TYPE = NodeClass.create(MetalSimdgroupMatrixMmaNode.class);
 
