@@ -31,33 +31,18 @@ Write the kernel in Java with the same thread-indexing model you'd use in CUDA â
 <td>
 
 ```java
-public static void mxv(KernelContext ctx,
-                       Matrix2DFloat m,
-                       VectorFloat v,
-                       VectorFloat out,
-                       int rows, int cols) {
-    int i = ctx.globalIdx;
-    if (i < rows) {
-        float sum = 0.0f;
-        for (int j = 0; j < cols; j++) {
-            sum += m.get(i, j) * v.get(j);
-        }
-        out.set(i, sum);
-    }
-}
-
-KernelContext ctx = new KernelContext();
-WorkerGrid worker = new WorkerGrid1D(rows);
-GridScheduler grid = new GridScheduler("compute.mxv", worker);
-
-TaskGraph tg = new TaskGraph("compute")
-    .transferToDevice(DataTransferMode.FIRST_EXECUTION, m, v)
-    .task("mxv", Kernels::mxv, ctx, m, v, out, rows, cols)
-    .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
-
-try (TornadoExecutionPlan plan =
-         new TornadoExecutionPlan(tg.snapshot())) {
-    plan.withGridScheduler(grid).execute();  // runs on your GPU
+void mxv(KernelContext ctx,
+         Matrix2DFloat m,
+         VectorFloat v,
+         VectorFloat out,
+         int rows, int cols) {
+  int i = ctx.globalIdx;
+  if (i < rows) {
+    float sum = 0f;
+    for (int j=0; j<cols; j++)
+      sum += m.get(i,j)*v.get(j);
+    out.set(i, sum);
+  }
 }
 ```
 
@@ -65,25 +50,20 @@ try (TornadoExecutionPlan plan =
 <td>
 
 ```c
-__global__ void mxv(const float *m, const float *v,
-                    float *out, int rows, int cols) {
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < rows) {
-        float sum = 0.0f;
-        for (int j = 0; j < cols; j++) {
-            sum += m[i * cols + j] * v[j];
-        }
-        out[i] = sum;
-    }
+__global__ void mxv(
+    const float *m,
+    const float *v,
+    float *out,
+    int rows, int cols) {
+  int i = blockIdx.x*blockDim.x
+        + threadIdx.x;
+  if (i < rows) {
+    float sum = 0.f;
+    for (int j=0; j<cols; j++)
+      sum += m[i*cols+j]*v[j];
+    out[i] = sum;
+  }
 }
-
-// Same indexing model â€” but in CUDA you also hand-write:
-// cudaMalloc / cudaMemcpy for every buffer,
-// grid/block dimension math,
-// kernel launch + error checking,
-// cudaMemcpy results back, cudaFree,
-// compile with nvcc, ship per-platform binaries,
-// and rewrite it all for non-NVIDIA hardware.
 ```
 
 </td>
