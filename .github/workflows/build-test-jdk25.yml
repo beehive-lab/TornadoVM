@@ -74,6 +74,7 @@ jobs:
           rm -rf TornadoVM-Ray-Tracer
           git clone --depth 1 --branch master https://github.com/beehive-lab/TornadoVM-Ray-Tracer.git
           cd TornadoVM-Ray-Tracer
+          export TORNADO_RAY_TRACER_ROOT="$PWD"
           mvn clean install
           ./bin/tornadovm-ray-tracer regression
 
@@ -205,5 +206,6 @@ jobs:
           rm -rf TornadoVM-Ray-Tracer
           git clone --depth 1 --branch master https://github.com/beehive-lab/TornadoVM-Ray-Tracer.git
           cd TornadoVM-Ray-Tracer
+          export TORNADO_RAY_TRACER_ROOT="$PWD"
           mvn clean install
           ./bin/tornadovm-ray-tracer regression
