@@ -103,6 +103,8 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
             case SQRT -> Math.sqrt(value);
             case FLOOR -> Math.floor(value);
             case LOG -> Math.log(value);
+            case ATAN -> Math.atan(value);
+            case ASIN -> Math.asin(value);
             default -> throw new TornadoInternalError("unable to compute op %s", op);
         };
     }
@@ -114,6 +116,8 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
             case SQRT -> (float) Math.sqrt(value);
             case FLOOR -> (float) Math.floor(value);
             case LOG -> (float) Math.log(value);
+            case ATAN -> (float) Math.atan(value);
+            case ASIN -> (float) Math.asin(value);
             default -> throw new TornadoInternalError("unable to compute op %s", op);
         };
     }
@@ -155,8 +159,11 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
 
         switch (operation()) {
             case ATAN:
-                result = gen.genFloatATan(auxValue);
-                break;
+                builder.setResult(this, gen.genAtan(builder, lirGenPTX, auxValue));
+                return;
+            case ASIN:
+                builder.setResult(this, gen.genAsin(builder, lirGenPTX, auxValue));
+                return;
             case CEIL:
                 result = gen.genFloatCeil(auxValue);
                 break;
@@ -375,6 +382,7 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
     // @formatter:off
     public enum Operation {
         ATAN,
+        ASIN,
         CEIL,
         COS,
         EXP,

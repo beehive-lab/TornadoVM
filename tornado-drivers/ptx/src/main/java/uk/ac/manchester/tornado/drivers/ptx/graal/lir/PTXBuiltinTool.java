@@ -39,9 +39,12 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXUna
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXUnaryIntrinsic.TANH;
 
 import jdk.graal.compiler.core.common.LIRKind;
+import jdk.graal.compiler.lir.ConstantValue;
 import jdk.graal.compiler.lir.Variable;
 import jdk.graal.compiler.lir.gen.LIRGeneratorTool;
+import jdk.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 
+import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
@@ -465,6 +468,139 @@ public class PTXBuiltinTool {
     public Value genGeometricCross(Value x, Value y) {
         unimplemented();
         return null;
+    }
+
+    /**
+     * Coefficients of a 5-term Hastings minimax polynomial approximating atan(z) for z in [0, 1] (max absolute error
+     * ~3e-5 radians): atan(z) ~= z * (c0 + s*(c1 + s*(c2 + s*(c3 + s*c4)))), where s = z*z.
+     */
+    private static final double[] ATAN_POLYNOMIAL = { 0.9998660, -0.3302995, 0.1801410, -0.0851330, 0.0208351 };
+
+    /**
+     * Creates a floating-point constant matching the precision (F32 or F64) of the surrounding computation.
+     */
+    public ConstantValue genFloatConstant(PTXKind kind, double value) {
+        if (kind.isF32()) {
+            return new ConstantValue(LIRKind.value(PTXKind.F32), JavaConstant.forFloat((float) value));
+        }
+        return new ConstantValue(LIRKind.value(PTXKind.F64), JavaConstant.forDouble(value));
+    }
+
+    /**
+     * Materializes an expression into a fresh variable so it can be used as an operand in subsequent instructions.
+     */
+    public Value genMaterialize(NodeLIRBuilderTool builder, Value expression, LIRKind kind) {
+        Variable variable = builder.getLIRGeneratorTool().newVariable(kind);
+        return builder.getLIRGeneratorTool().append(new PTXLIRStmt.AssignStmt(variable, expression)).getResult();
+    }
+
+    /**
+     * Emits a floating-point comparison ({@code setp.<cmp>}) producing a predicate register.
+     */
+    public Variable genFloatCompare(NodeLIRBuilderTool builder, PTXAssembler.PTXBinaryOp comparison, Value a, Value b) {
+        LIRKind compareKind = LIRKind.value(a.getPlatformKind());
+        Variable predicate = builder.getLIRGeneratorTool().newVariable(LIRKind.value(PTXKind.PRED));
+        builder.getLIRGeneratorTool().append(new PTXLIRStmt.AssignStmt(predicate, new PTXBinary.Expr(comparison, compareKind, a, b)));
+        return predicate;
+    }
+
+    /**
+     * Emits a branchless select ({@code selp}): {@code predicate ? valueIfTrue : valueIfFalse}.
+     */
+    public Value genFloatSelect(NodeLIRBuilderTool builder, Value predicate, Value valueIfTrue, Value valueIfFalse) {
+        LIRKind kind = LIRKind.value(valueIfTrue.getPlatformKind());
+        Variable result = builder.getLIRGeneratorTool().newVariable(kind);
+        builder.getLIRGeneratorTool().append(new PTXLIRStmt.AssignStmt(result, new PTXTernary.Expr(PTXAssembler.PTXTernaryOp.SELP, kind, valueIfTrue, valueIfFalse, predicate)));
+        return result;
+    }
+
+    /**
+     * Approximates atan(z) for a reduced, non-negative argument z in [0, 1] using Horner evaluation of
+     * {@link #ATAN_POLYNOMIAL}.
+     */
+    public Value genAtanReduced(PTXArithmeticTool lirGen, Value z) {
+        PTXKind kind = (PTXKind) z.getPlatformKind();
+        Value s = lirGen.emitMul(z, z, false);
+        Value polynomial = genFloatConstant(kind, ATAN_POLYNOMIAL[ATAN_POLYNOMIAL.length - 1]);
+        for (int i = ATAN_POLYNOMIAL.length - 2; i >= 0; i--) {
+            polynomial = lirGen.emitAdd(lirGen.emitMul(s, polynomial, false), genFloatConstant(kind, ATAN_POLYNOMIAL[i]), false);
+        }
+        return lirGen.emitMul(z, polynomial, false);
+    }
+
+    /**
+     * Computes atan(x) over the full domain, returning a materialized value.
+     *
+     * The argument is range-reduced to [0, 1] via the identity atan(t) = pi/2 - atan(1/t) for t &gt; 1, the reduced
+     * argument is approximated with {@link #genAtanReduced}, and the sign of the input is restored (atan is odd).
+     */
+    public Value genAtan(NodeLIRBuilderTool builder, PTXArithmeticTool lirGen, Value x) {
+        PTXKind kind = (PTXKind) x.getPlatformKind();
+        LIRKind lirKind = LIRKind.value(kind);
+        Value one = genFloatConstant(kind, 1.0);
+        Value halfPi = genFloatConstant(kind, Math.PI / 2.0);
+
+        Value absX = genMaterialize(builder, genFloatAbs(x), lirKind);
+        Value isLarge = genFloatCompare(builder, PTXAssembler.PTXBinaryOp.SETP_GT, absX, one);
+        Value reciprocal = lirGen.emitDiv(one, absX, null);
+        Value z = genFloatSelect(builder, isLarge, reciprocal, absX);
+
+        Value atanZ = genMaterialize(builder, genAtanReduced(lirGen, z), lirKind);
+        Value complement = lirGen.emitSub(halfPi, atanZ, false);
+        Value magnitude = genFloatSelect(builder, isLarge, complement, atanZ);
+
+        return genMaterialize(builder, lirGen.emitMathCopySign(magnitude, x), lirKind);
+    }
+
+    /**
+     * Computes atan2(numerator, denominator) over the full domain, returning a materialized value.
+     *
+     * The angle is derived branchlessly from the reduced ratio min(|x|,|y|)/max(|x|,|y|) in [0, 1] and corrected for
+     * the quadrant given by the signs of the inputs (|x| = |denominator|, |y| = |numerator|):
+     *
+     * <code>
+     * r = atan(min(|x|,|y|) / max(|x|,|y|));
+     * if (|y| > |x|) r = pi/2 - r;
+     * if (denominator < 0) r = pi - r;
+     * r = copysign(r, numerator);
+     * </code>
+     */
+    public Value genAtan2(NodeLIRBuilderTool builder, PTXArithmeticTool lirGen, Value numerator, Value denominator) {
+        PTXKind kind = (PTXKind) LIRKind.combine(numerator, denominator).getPlatformKind();
+        LIRKind lirKind = LIRKind.value(kind);
+        Value zero = genFloatConstant(kind, 0.0);
+        Value halfPi = genFloatConstant(kind, Math.PI / 2.0);
+        Value pi = genFloatConstant(kind, Math.PI);
+
+        Value absX = genMaterialize(builder, genFloatAbs(denominator), lirKind);
+        Value absY = genMaterialize(builder, genFloatAbs(numerator), lirKind);
+
+        Value swap = genFloatCompare(builder, PTXAssembler.PTXBinaryOp.SETP_GT, absY, absX);
+        Value minAbs = genFloatSelect(builder, swap, absX, absY);
+        Value maxAbs = genFloatSelect(builder, swap, absY, absX);
+        Value ratio = lirGen.emitDiv(minAbs, maxAbs, null);
+        Value maxIsZero = genFloatCompare(builder, PTXAssembler.PTXBinaryOp.SETP_EQ, maxAbs, zero);
+        ratio = genFloatSelect(builder, maxIsZero, zero, ratio);
+
+        Value angle = genMaterialize(builder, genAtanReduced(lirGen, ratio), lirKind);
+        angle = genFloatSelect(builder, swap, lirGen.emitSub(halfPi, angle, false), angle);
+        Value denominatorNegative = genFloatCompare(builder, PTXAssembler.PTXBinaryOp.SETP_LT, denominator, zero);
+        angle = genFloatSelect(builder, denominatorNegative, lirGen.emitSub(pi, angle, false), angle);
+
+        return genMaterialize(builder, lirGen.emitMathCopySign(angle, numerator), lirKind);
+    }
+
+    /**
+     * Computes asin(x) for x in [-1, 1] using the identity asin(x) = atan2(x, sqrt(1 - x*x)), returning a materialized
+     * value. The denominator is non-negative, so atan2 yields a result in [-pi/2, pi/2] as required.
+     */
+    public Value genAsin(NodeLIRBuilderTool builder, PTXArithmeticTool lirGen, Value x) {
+        PTXKind kind = (PTXKind) x.getPlatformKind();
+        LIRKind lirKind = LIRKind.value(kind);
+        Value one = genFloatConstant(kind, 1.0);
+        Value oneMinusXSquared = lirGen.emitSub(one, lirGen.emitMul(x, x, false), false);
+        Value denominator = genMaterialize(builder, genFloatSqrt(oneMinusXSquared), lirKind);
+        return genAtan2(builder, lirGen, x, denominator);
     }
 
 }
