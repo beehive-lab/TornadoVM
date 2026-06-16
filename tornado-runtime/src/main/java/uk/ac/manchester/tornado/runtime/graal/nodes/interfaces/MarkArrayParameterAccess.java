@@ -32,7 +32,7 @@ import uk.ac.manchester.tornado.api.common.Access;
  * therefore must declare the read/write access of each such operand themselves.
  *
  * <p>{@code TornadoDataflowAnalysis} classifies a parameter's access by inspecting
- * the node types that use it (loads → read, stores → write). Intrinsic nodes that
+ * the node types that use it (loads -> read, stores -> write). Intrinsic nodes that
  * lower to backend-specific memory operations (e.g. Metal {@code simdgroup_matrix}
  * load/store) are opaque to that analysis, so they implement this interface to
  * report, per operand, whether they read it, write it, or both.

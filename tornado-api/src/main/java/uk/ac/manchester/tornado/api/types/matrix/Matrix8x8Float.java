@@ -25,7 +25,7 @@ package uk.ac.manchester.tornado.api.types.matrix;
 
 /**
  * Opaque handle for an 8x8 single-precision matrix fragment held in a SIMD group's
- * registers — the software view of a hardware matrix-unit fragment (Apple Metal's
+ * registers - the software view of a hardware matrix-unit fragment (Apple Metal's
  * {@code simdgroup_float8x8}).
  *
  * <p>On a GPU backend that supports matrix units, values of this type never exist as
