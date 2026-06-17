@@ -62,5 +62,6 @@ Content:
    faq
    unsupported
    resources
+   tornadovm-vs-babylon
    publications
    CHANGELOG
