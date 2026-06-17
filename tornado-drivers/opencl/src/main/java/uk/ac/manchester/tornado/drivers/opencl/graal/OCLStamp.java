@@ -22,7 +22,6 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 import jdk.graal.compiler.core.common.LIRKind;
 import jdk.graal.compiler.core.common.spi.LIRKindTool;
@@ -127,7 +126,14 @@ public class OCLStamp extends ObjectStamp {
             return true;
         }
 
-        unimplemented("stamp iscompat: %s + %s", this, stamp);
+        // In Graal 25, FixReadsPhase checks compatibility between OCLStamp
+        // and ObjectStamp for vector types (e.g., FLOAT4 vs Float4 object).
+        // OCLStamp extends ObjectStamp, so these are compatible when the
+        // OCLStamp represents the vector version of the Java object type.
+        if (stamp instanceof ObjectStamp && oclKind.isVector()) {
+            return true;
+        }
+
         return false;
     }
 
