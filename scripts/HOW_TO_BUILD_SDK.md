@@ -65,7 +65,7 @@ The build matrix depends on the detected platform:
 | Platform | JDK tag | Backends built | Archive label |
 |----------|---------|----------------|---------------|
 | macOS    | jdk21, jdk25 | `opencl` | `opencl` |
-| macOS    | jdk21, jdk25 | `metal,opencl` | `metal-opencl` |
+| macOS    | jdk21, jdk25 | `metal` | `metal` |
 | Linux    | jdk21, jdk25 | `opencl` | `opencl` |
 | Linux    | jdk21, jdk25 | `ptx` | `ptx` |
 | Linux    | jdk21, jdk25 | `spirv` | `spirv` |
@@ -90,8 +90,8 @@ release-sdks/                          # configurable via --output-dir
     └── <platform>-<arch>/
         ├── tornadovm-<version>-jdk21-opencl-<platform>-<arch>.tar.gz
         ├── tornadovm-<version>-jdk21-opencl-<platform>-<arch>.zip
-        ├── tornadovm-<version>-jdk21-metal-opencl-<platform>-<arch>.tar.gz  # macOS
-        ├── tornadovm-<version>-jdk21-metal-opencl-<platform>-<arch>.zip     # macOS
+        ├── tornadovm-<version>-jdk21-metal-<platform>-<arch>.tar.gz         # macOS
+        ├── tornadovm-<version>-jdk21-metal-<platform>-<arch>.zip            # macOS
         ├── tornadovm-<version>-jdk25-opencl-<platform>-<arch>.tar.gz
         ├── ...
         └── tornadovm-<version>-jdk25-full-<platform>-<arch>.zip             # Linux/Windows
@@ -133,6 +133,46 @@ python scripts\build-release-sdks.py --version v4.0.0 ^
     --jdk25-home "C:\Program Files\Eclipse Adoptium\jdk-25.0.x.y-hotspot"
 ```
 
+On restricted/managed Windows machines that block running unsigned executables,
+add `--skip-windows-executables`.  The build then never invokes PyInstaller
+(`pyinstaller.exe`), the `tornado.exe` wrappers, or the `zello_world` Level Zero
+probe; the produced SDK ships the `.py` launchers instead of the `.exe`
+wrappers, and the SDK validation skips the `tornado.exe` smoke checks.
+
+```bat
+python scripts\build-release-sdks.py --version v4.0.0 ^
+    --jdk21-home "C:\jdks\jdk21" ^
+    --jdk25-home "C:\jdks\jdk25" ^
+    --skip-windows-executables
+```
+
+---
+
+## Running via GitHub Actions
+
+The `.github/workflows/build-release-sdks.yml` workflow runs this script on the
+self-hosted macOS, Linux, and Windows runners.  It is triggered either:
+
+- manually via **workflow_dispatch** (full control over the inputs below), or
+- automatically when both `2-Finalize TornadoVM Release [JDK21]` and `[JDK25]`
+  complete — it waits until both `v<version>-jdk21` and `v<version>-jdk25` draft
+  Releases exist, builds and uploads all archives, then un-drafts the two
+  Releases (which fires the SDKMAN publish workflows).
+
+| Input | Default | Description |
+|-------|---------|-------------|
+| `version` | `4.0.1` | Base release version, no `v` prefix or `-jdkXX` suffix |
+| `include_windows` | `true` | Run the Windows build job (requires the self-hosted Windows runner online) |
+| `skip_windows_executables` | `true` | On the Windows build, skip building/running the native `.exe` wrappers (see `--skip-windows-executables` above) |
+| `upload_to_release` | `true` | Upload built archives to the `v<version>-jdk21` / `-jdk25` GitHub Releases |
+
+The Windows build is included by default — both for manual dispatches and for
+auto-triggered runs after a finalize.  The runner's JDK paths are configured in
+the workflow (`JDK21_HOME` / `JDK25_HOME`); update them there if the Windows
+runner layout changes.  Because the final `publish-releases` job requires the
+Windows build to succeed (or be `skipped`), the self-hosted Windows runner must
+be online for an auto-triggered release to complete.
+
 ---
 
 ## Command-line reference
@@ -143,6 +183,7 @@ python scripts\build-release-sdks.py --version v4.0.0 ^
 | `--output-dir DIR` | No | `release-sdks/` | Root directory for collected SDK archives |
 | `--jdk21-home PATH` | Windows only | auto (sdkman) | Path to a JDK 21 installation |
 | `--jdk25-home PATH` | Windows only | auto (sdkman) | Path to a JDK 25 installation |
+| `--skip-windows-executables` | No | off | Windows only: don't build/run the native `.exe` wrappers (PyInstaller / `tornado.exe` / `zello_world`); ship the `.py` launchers instead |
 
 ---
 
