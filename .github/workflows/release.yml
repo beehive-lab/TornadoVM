@@ -1,0 +1,77 @@
+name: 0-Release Orchestrator (fan out prepare-jdk21 + prepare-jdk25)
+
+# Single entry point that dispatches both 1-prepare-release-jdkXX workflows in
+# parallel. Once the two release PRs they create are reviewed and merged, the
+# rest of the chain (finalize → build SDKs → publish) runs automatically.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Base release version without -jdkXX suffix (e.g. 4.0.1).'
+        required: true
+        type: string
+      previous_version:
+        description: 'Previous base version for the changelog (e.g. 4.0.0).'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run both prepare workflows (no PRs created).'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  fan-out:
+    if: github.repository == 'beehive-lab/TornadoVM'
+    runs-on: [self-hosted, Linux, x64]
+    permissions:
+      actions: write
+    timeout-minutes: 5
+    steps:
+      - name: Validate version format
+        run: |
+          if [[ ! "${{ inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::version must be X.Y.Z without any suffix (got '${{ inputs.version }}')."
+            exit 1
+          fi
+          if [[ ! "${{ inputs.previous_version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::previous_version must be X.Y.Z without any suffix (got '${{ inputs.previous_version }}')."
+            exit 1
+          fi
+
+      - name: Dispatch 1-prepare-release-jdk21
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run 1-prepare-release-jdk21.yml \
+            --repo "${{ github.repository }}" \
+            -f version="${{ inputs.version }}-jdk21" \
+            -f previous_version="${{ inputs.previous_version }}-jdk21" \
+            -f dry_run="${{ inputs.dry_run }}"
+          echo "Dispatched 1-prepare-release-jdk21.yml (version=${{ inputs.version }}-jdk21)."
+
+      - name: Dispatch 1-prepare-release-jdk25
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run 1-prepare-release-jdk25.yml \
+            --repo "${{ github.repository }}" \
+            -f version="${{ inputs.version }}-jdk25" \
+            -f previous_version="${{ inputs.previous_version }}-jdk25" \
+            -f dry_run="${{ inputs.dry_run }}"
+          echo "Dispatched 1-prepare-release-jdk25.yml (version=${{ inputs.version }}-jdk25)."
+
+      - name: Summary
+        run: |
+          {
+            echo "## Release ${{ inputs.version }} dispatched"
+            echo ""
+            echo "| Workflow | Version |"
+            echo "|----------|---------|"
+            echo "| [1-prepare-release-jdk21](https://github.com/${{ github.repository }}/actions/workflows/1-prepare-release-jdk21.yml) | ${{ inputs.version }}-jdk21 |"
+            echo "| [1-prepare-release-jdk25](https://github.com/${{ github.repository }}/actions/workflows/1-prepare-release-jdk25.yml) | ${{ inputs.version }}-jdk25 |"
+            echo ""
+            echo "Both prepare workflows now running in parallel. Each will open a PR for review."
+            echo "Merging both PRs continues the chain automatically (finalize → build → publish)."
+          } >> "$GITHUB_STEP_SUMMARY"
