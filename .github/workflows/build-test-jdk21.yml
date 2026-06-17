@@ -30,7 +30,7 @@ jobs:
     if: github.repository == 'beehive-lab/TornadoVM'
     runs-on: [self-hosted, Linux, x64]
     needs: code-quality
-    timeout-minutes: 20
+    timeout-minutes: 30
     env:
       JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
       CMAKE_ROOT: /opt/jenkins/cmake-3.25.2-linux-x86_64
@@ -39,6 +39,7 @@ jobs:
       TORNADO_ROOT: ${{ github.workspace }}
       TORNADOVM_HOME: ${{ github.workspace }}/bin/sdk
       VENV_PATH: ${{ github.workspace }}/venv-opencl
+      JAVAFX_SDK: /opt/jenkins/javafx-sdk-21.0.11
     steps:
       - uses: actions/checkout@v4
       - name: Setup environment
@@ -66,6 +67,18 @@ jobs:
           tornado --devices
           make fast-tests
 
+      - name: Build & run TornadoVM-Ray-Tracer (regression)
+        timeout-minutes: 10
+        run: |
+          source $VENV_PATH/bin/activate
+          source setvars.sh
+          rm -rf TornadoVM-Ray-Tracer
+          git clone --depth 1 --branch master https://github.com/beehive-lab/TornadoVM-Ray-Tracer.git
+          cd TornadoVM-Ray-Tracer
+          export TORNADO_RAY_TRACER_ROOT="$PWD"
+          mvn clean install
+          ./bin/tornadovm-ray-tracer regression
+
   # PTX after OpenCL
   build-ptx:
     if: github.repository == 'beehive-lab/TornadoVM'
@@ -80,6 +93,7 @@ jobs:
       TORNADO_ROOT: ${{ github.workspace }}
       TORNADOVM_HOME: ${{ github.workspace }}/bin/sdk
       VENV_PATH: ${{ github.workspace }}/venv-ptx
+      JAVAFX_SDK: /opt/jenkins/javafx-sdk-21.0.11
     steps:
       - uses: actions/checkout@v4
       - name: Setup environment
@@ -105,6 +119,18 @@ jobs:
           source $VENV_PATH/bin/activate
           source setvars.sh
           make fast-tests
+
+      - name: Build & run TornadoVM-Ray-Tracer (regression)
+        timeout-minutes: 10
+        run: |
+          source $VENV_PATH/bin/activate
+          source setvars.sh
+          rm -rf TornadoVM-Ray-Tracer
+          git clone --depth 1 --branch master https://github.com/beehive-lab/TornadoVM-Ray-Tracer.git
+          cd TornadoVM-Ray-Tracer
+          export TORNADO_RAY_TRACER_ROOT="$PWD"
+          mvn clean install
+          ./bin/tornadovm-ray-tracer regression
 
   # SPIRV parallel with OpenCL/PTX chain
   build-spirv:
@@ -158,6 +184,7 @@ jobs:
       CMAKE_ROOT: /opt/homebrew/bin/cmake
       MAVEN_HOME: /opt/homebrew/bin/mvn
       GRAAL_JARS: /opt/graalJars
+      JAVAFX_SDK: /opt/jenkins/javafx-sdk-21.0.11
     steps:
       - uses: actions/checkout@v4
 
@@ -185,6 +212,18 @@ jobs:
           source setvars.sh
           tornado --devices
           make fast-tests
+
+      - name: Build & run TornadoVM-Ray-Tracer (regression)
+        timeout-minutes: 10
+        run: |
+          source $VENV_PATH/bin/activate
+          source setvars.sh
+          rm -rf TornadoVM-Ray-Tracer
+          git clone --depth 1 --branch master https://github.com/beehive-lab/TornadoVM-Ray-Tracer.git
+          cd TornadoVM-Ray-Tracer
+          export TORNADO_RAY_TRACER_ROOT="$PWD"
+          mvn clean install
+          ./bin/tornadovm-ray-tracer regression
   build-macOs-metal:
     if: github.repository == 'beehive-lab/TornadoVM'
     runs-on: [self-hosted, macOS, arm64]
@@ -198,6 +237,7 @@ jobs:
       CMAKE_ROOT: /opt/homebrew/bin/cmake
       MAVEN_HOME: /opt/homebrew/bin/mvn
       GRAAL_JARS: /opt/graalJars
+      JAVAFX_SDK: /opt/jenkins/javafx-sdk-21.0.11
     steps:
       - uses: actions/checkout@v4
 
@@ -225,3 +265,15 @@ jobs:
           source setvars.sh
           tornado --devices
           make fast-tests
+
+      - name: Build & run TornadoVM-Ray-Tracer (regression)
+        timeout-minutes: 10
+        run: |
+          source $VENV_PATH/bin/activate
+          source setvars.sh
+          rm -rf TornadoVM-Ray-Tracer
+          git clone --depth 1 --branch master https://github.com/beehive-lab/TornadoVM-Ray-Tracer.git
+          cd TornadoVM-Ray-Tracer
+          export TORNADO_RAY_TRACER_ROOT="$PWD"
+          mvn clean install
+          ./bin/tornadovm-ray-tracer regression
