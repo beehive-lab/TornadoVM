@@ -17,6 +17,37 @@ GPUs (Intel, NVIDIA, AMD), integrated GPUs (Apple Silicon, Intel HD Graphics and
 TornadoVM has four backends that generate OpenCL C, NVIDIA CUDA PTX assembly, SPIR-V binary, and Metal Shading Language.
 Developers can choose which backends to install and run.
 
+### What it looks like
+
+No new language, no kernels to hand-write. Annotate the loops you want parallelised, describe the data movement in a `TaskGraph`, and TornadoVM JIT-compiles your Java to a GPU/FPGA/CPU kernel at run time:
+
+```java
+// Plain Java method — @Parallel marks loops that are safe to run in parallel
+public static void matrixMultiply(Matrix2DFloat A, Matrix2DFloat B, Matrix2DFloat C, int size) {
+    for (@Parallel int i = 0; i < size; i++) {
+        for (@Parallel int j = 0; j < size; j++) {
+            float sum = 0.0f;
+            for (int k = 0; k < size; k++) {
+                sum += A.get(i, k) * B.get(k, j);
+            }
+            C.set(i, j, sum);
+        }
+    }
+}
+
+// Describe host <-> device data transfers and the task, then run it
+TaskGraph graph = new TaskGraph("s0")
+    .transferToDevice(DataTransferMode.FIRST_EXECUTION, A, B)
+    .task("t0", Compute::matrixMultiply, A, B, C, size)
+    .transferToHost(DataTransferMode.EVERY_EXECUTION, C);
+
+try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+    plan.execute(); // JIT-compiled to OpenCL C / PTX / SPIR-V / Metal for your device
+}
+```
+
+The same Java runs on Intel/NVIDIA/AMD/Apple GPUs, multi-core CPUs and FPGAs — TornadoVM picks the backend and generates the kernel. See the [programming model](#4-programming-model) below.
+
 ----------------------
 
 **Website**: [tornadovm.org](https://www.tornadovm.org)
@@ -134,15 +165,30 @@ that includes NBody, DFT, KMeans computation and matrix computations.
 
 ## 4. Programming Model
 
-TornadoVM offers two complementary ways to express parallelism:
+TornadoVM offers two complementary ways to express parallelism. Both plug into the same `TaskGraph` and `TornadoExecutionPlan` shown above.
 
 ### Loop Parallel API
-Use Java annotations such as `@Parallel` and `@Reduce` to parallelize loops.
+Annotate loops with `@Parallel` (and `@Reduce` for reductions) and let TornadoVM map them onto device threads — see the matrix-multiply snippet at the top of this README.
 
 ### Kernel API
-Use `KernelContext` for explicit GPU-style programming (thread IDs, local memory, barriers), similar to CUDA/OpenCL/SYCL.
+Use `KernelContext` for explicit GPU-style programming (thread IDs, local/shared memory, barriers), similar to CUDA/OpenCL/SYCL:
 
-Both models can be combined inside a `TaskGraph`.
+```java
+public static void matrixMultiply(KernelContext context,
+                                  Matrix2DFloat A, Matrix2DFloat B, Matrix2DFloat C, int size) {
+    int row = context.threadIdx; // get_global_id(0)
+    int col = context.threadIdy; // get_global_id(1)
+    float sum = 0.0f;
+    for (int k = 0; k < size; k++) {
+        sum += A.get(row, k) * B.get(k, col);
+    }
+    C.set(row, col, sum);
+}
+```
+
+You control the launch geometry with a `WorkerGrid`/`GridScheduler`, then execute the plan `.withGridScheduler(scheduler)`.
+
+Both models can be combined inside a single `TaskGraph`.
 
 Read more in our [documentation](https://tornadovm.readthedocs.io/en/latest/programming.html).
 
