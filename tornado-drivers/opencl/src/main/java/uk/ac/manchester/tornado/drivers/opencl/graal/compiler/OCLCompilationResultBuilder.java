@@ -27,13 +27,9 @@ import static uk.ac.manchester.tornado.runtime.graal.TornadoLIRGenerator.trace;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.Stack;
-import java.util.stream.IntStream;
 
 import jdk.graal.compiler.nodes.spi.CoreProviders;
 import org.graalvm.collections.EconomicMap;
@@ -51,17 +47,9 @@ import jdk.graal.compiler.lir.asm.CompilationResultBuilder;
 import jdk.graal.compiler.lir.asm.DataBuilder;
 import jdk.graal.compiler.lir.asm.FrameContext;
 import jdk.graal.compiler.lir.framemap.FrameMap;
-import jdk.graal.compiler.nodes.AbstractBeginNode;
-import jdk.graal.compiler.nodes.AbstractEndNode;
 import jdk.graal.compiler.nodes.AbstractMergeNode;
-import jdk.graal.compiler.nodes.ControlSplitNode;
-import jdk.graal.compiler.nodes.EndNode;
-import jdk.graal.compiler.nodes.FixedNode;
 import jdk.graal.compiler.nodes.IfNode;
 import jdk.graal.compiler.nodes.LoopBeginNode;
-import jdk.graal.compiler.nodes.LoopEndNode;
-import jdk.graal.compiler.nodes.LoopExitNode;
-import jdk.graal.compiler.nodes.MergeNode;
 import jdk.graal.compiler.nodes.cfg.ControlFlowGraph;
 import jdk.graal.compiler.nodes.cfg.HIRBlock;
 import jdk.graal.compiler.options.OptionValues;
@@ -84,7 +72,6 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
     private final Set<ResolvedJavaMethod> nonInlinedMethods;
     protected LIR lir;
-    HashSet<HIRBlock> rescheduledBasicBlocks;
     private int currentBlockIndex;
     private boolean isKernel;
     private int loops = 0;
@@ -199,34 +186,6 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         }
     }
 
-    private static boolean isLoopBlock(HIRBlock block, HIRBlock loopHeader) {
-
-        Set<HIRBlock> visited = new HashSet<>();
-        Stack<HIRBlock> stack = new Stack<>();
-        stack.push(block);
-
-        while (!stack.isEmpty()) {
-
-            HIRBlock b = stack.pop();
-            visited.add(b);
-
-            if (b.getId() < loopHeader.getId()) {
-                return false;
-            } else if (b == loopHeader) {
-                return true;
-            } else {
-                HIRBlock[] successors = IntStream.range(0, b.getSuccessorCount()).mapToObj(b::getSuccessorAt).toArray(HIRBlock[]::new);
-                for (HIRBlock successor : successors) {
-                    if (!visited.contains(successor)) {
-                        stack.push(successor);
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
     public boolean isParallel() {
         return isParallel;
     }
@@ -277,7 +236,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
         trace("Traversing CFG: ", cfg.graph.name);
         cfg.computePostdominators();
-        traverseControlFlowGraph(cfg, new OCLBlockVisitor(this));
+        new OCLStructuredControlFlow(this).emit(cfg);
 
         trace("Finished traversing CFG");
         this.lir = null;
@@ -395,171 +354,6 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         if (Options.PrintLIRWithAssembly.getValue(getOptions())) {
             blockComment(String.format("block B%d %s", block.getId(), block.getLoop()));
         }
-    }
-
-    private void traverseControlFlowGraph(ControlFlowGraph cfg, OCLBlockVisitor visitor) {
-        traverseControlFlowGraph(cfg.getStartBlock(), visitor, new HashSet<>(), new HashMap<>());
-        if (rescheduledBasicBlocks != null) {
-            rescheduledBasicBlocks.clear();
-        }
-    }
-
-    private void rescheduleBasicBlock(HIRBlock basicHIRBlock, OCLBlockVisitor visitor, HashSet<HIRBlock> visited, HashMap<HIRBlock, HIRBlock> pending) {
-        HIRBlock block = pending.get(basicHIRBlock);
-        visitor.enter(block);
-        visitor.exit(block, null);
-        visited.add(block);
-        pending.remove(block);
-        if (rescheduledBasicBlocks == null) {
-            rescheduledBasicBlocks = new HashSet<>();
-        }
-        rescheduledBasicBlocks.add(block);
-    }
-
-    private boolean isFalseSuccessorWithLoopEnd(IfNode ifNode, HIRBlock basicHIRBlock) {
-        return isCurrentHIRBlockAFalseBranch(ifNode, basicHIRBlock) && basicHIRBlock.getEndNode() instanceof LoopEndNode;
-    }
-
-    private boolean isCurrentHIRBlockAFalseBranch(IfNode ifNode, HIRBlock basicHIRBlock) {
-        return ifNode.falseSuccessor() == basicHIRBlock.getBeginNode();
-    }
-
-    private boolean isTrueBranchALoopExitNode(IfNode ifNode) {
-        return ifNode.trueSuccessor() instanceof AbstractBeginNode;
-    }
-
-    private boolean isTrueBranchWithEndNodeOrNotControlSplit(HIRBlock blockTrueBranch) {
-        return ((blockTrueBranch.getEndNode() instanceof AbstractEndNode) || !(blockTrueBranch.getEndNode() instanceof ControlSplitNode));
-    }
-
-    /**
-     * From Graal 22.1.0 the graph traversal was changed. This method reschedules
-     * the current basic block to generate always the true condition before the
-     * false condition only if we have a LoopEndNode node in the false branch, or we
-     * have a LoopExit in the true branch contains a {@link LoopExitNode} or it is
-     * not a control Split (due to nested control-flow).
-     *
-     * @param basicBlock
-     *     {@link HIRBlock}
-     * @param visitor
-     *     {@link OCLBlockVisitor}
-     * @param visited
-     *     {@link HashSet}
-     * @param pending
-     *     {@link HashMap}
-     */
-    private void rescheduleTrueBranchConditionsIfNeeded(HIRBlock basicBlock, OCLBlockVisitor visitor, HashSet<HIRBlock> visited, HashMap<HIRBlock, HIRBlock> pending) {
-        if (!basicBlock.isLoopHeader() && basicBlock.getDominator() != null && basicBlock.getDominator().getEndNode() instanceof IfNode) {
-            IfNode ifNode = (IfNode) basicBlock.getDominator().getEndNode();
-            HIRBlock blockTrueBranch = getBlockTrueBranch(basicBlock);
-            // implement rescheduling for condition if nodes
-            if (isNotLoopBeginIf(ifNode)) {
-                boolean shouldReschedule =  isFalseSuccessorWithLoopEnd(ifNode, basicBlock) //
-                        || (isCurrentHIRBlockAFalseBranch(ifNode, basicBlock) //
-                        && isTrueBranchALoopExitNode(ifNode) //
-                        && isTrueBranchWithEndNodeOrNotControlSplit(blockTrueBranch));
-
-                if (shouldReschedule) {
-                    for (int i = 0; i < basicBlock.getDominator().getSuccessorCount(); i++) {
-                        HIRBlock successor = basicBlock.getDominator().getSuccessorAt(i);
-                        if (successor.getBeginNode() == ifNode.trueSuccessor() && !visited.contains(successor)) {
-                            pending.put(basicBlock, successor);
-                            rescheduleBasicBlock(basicBlock, visitor, visited, pending);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * This function examines if a given {@code IfNode} is generated for a condition or if it is part of the loop logic (LoopBegin -> If).
-     *
-     * @param ifNode The {@code IfNode} to be examined.
-     * @return true if the {@code IfNode} is not associated with the loop iteration, false otherwise.
-     */
-    private boolean isNotLoopBeginIf(IfNode ifNode) {
-        return !(ifNode.predecessor() instanceof LoopBeginNode);
-    }
-
-    private void traverseControlFlowGraph(HIRBlock basicBlock, OCLBlockVisitor visitor, HashSet<HIRBlock> visited, HashMap<HIRBlock, HIRBlock> pending) {
-
-        if (pending.containsKey(basicBlock) && !visited.contains(pending.get(basicBlock))) {
-            rescheduleBasicBlock(basicBlock, visitor, visited, pending);
-        }
-
-        // New call due to the integration with Graal-IR 22.1.0
-        rescheduleTrueBranchConditionsIfNeeded(basicBlock, visitor, visited, pending);
-
-        visitor.enter(basicBlock);
-        visited.add(basicBlock);
-
-        HIRBlock firstDominated = basicBlock.getFirstDominated();
-        LinkedList<HIRBlock> queue = new LinkedList<>();
-        queue.add(firstDominated);
-
-        if (basicBlock.isLoopHeader()) {
-            HIRBlock[] successors = IntStream.range(0, basicBlock.getSuccessorCount()).mapToObj(basicBlock::getSuccessorAt).toArray(HIRBlock[]::new);
-            LinkedList<HIRBlock> last = new LinkedList<>();
-            LinkedList<HIRBlock> pendingList = new LinkedList<>();
-
-            FixedNode endNode = basicBlock.getEndNode();
-            IfNode ifNode = null;
-            if (endNode instanceof IfNode) {
-                ifNode = (IfNode) endNode;
-            }
-            for (HIRBlock block : successors) {
-                boolean isInnerLoop = isLoopBlock(block, basicBlock);
-                if (!isInnerLoop) {
-                    assert ifNode != null;
-                    if (ifNode.trueSuccessor() == block.getBeginNode() && block.getBeginNode() instanceof LoopExitNode && block.getEndNode() instanceof EndNode) {
-                        pendingList.addFirst(block);
-                        if (block.getPostdominator().getBeginNode() instanceof MergeNode) {
-                            // We may need to reschedule this block if it is not closed before visiting the
-                            // postDominator.
-                            pending.put(block.getPostdominator(), block);
-                        }
-                    } else {
-                        last.addLast(block);
-                    }
-                } else {
-                    queue.addLast(block);
-                }
-            }
-
-            for (HIRBlock l : pendingList) {
-                last.addLast(l);
-            }
-
-            for (HIRBlock l : last) {
-                queue.addLast(l);
-            }
-            queue.removeFirst();
-        }
-
-        for (HIRBlock block : queue) {
-            firstDominated = block;
-            while (firstDominated != null) {
-                if (!visited.contains(firstDominated)) {
-                    traverseControlFlowGraph(firstDominated, visitor, visited, pending);
-                }
-                firstDominated = firstDominated.getDominatedSibling();
-            }
-        }
-
-        if (rescheduledBasicBlocks == null || (!rescheduledBasicBlocks.contains(basicBlock))) {
-            visitor.exit(basicBlock, null);
-        }
-    }
-
-    private HIRBlock getBlockTrueBranch(HIRBlock basicHIRBlock) {
-        IfNode ifNode = (IfNode) basicHIRBlock.getDominator().getEndNode();
-        for (int i = 0; i < basicHIRBlock.getDominator().getSuccessorCount(); i++) {
-            if (ifNode.trueSuccessor() == basicHIRBlock.getDominator().getSuccessorAt(i).getBeginNode()) {
-                return basicHIRBlock.getDominator().getSuccessorAt(i);
-            }
-        }
-        return null;
     }
 
     public TaskDataContext getTaskMetaData() {

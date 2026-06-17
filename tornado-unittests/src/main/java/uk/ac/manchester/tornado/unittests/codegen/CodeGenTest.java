@@ -431,4 +431,125 @@ public class CodeGenTest extends TornadoTestBase {
 
     }
 
+    /**
+     * Kernel modelled on the soft-shadow path of the TornadoVM-Ray-Tracer (Shader#getShadow calling BodyOps#intersects): a
+     * sequential sample loop containing an inner loop with a compound exit condition {@code i < numBodies && !intersects}.
+     * The {@code !intersects} part is compiled into an if/else inside the inner loop whose else-branch is a break (loop
+     * exit), with the loop back-edge nested inside the if-branch. The OpenCL block visitor used to emit the inner loop's
+     * closing bracket right after the back-edge block, lexically closing the if-branch instead of the loop and leaving the
+     * else dangling (clBuildProgram error -11, "expected expression").
+     *
+     * <p>
+     * The loop bounds are read from {@code params} at runtime so that the inner loop is not unrolled at compile time, which
+     * would remove the back-edge and hide the control-flow shape under test.
+     * </p>
+     */
+    public static void shadowFeelerKernel(FloatArray bodyPositions, FloatArray rayOrigins, FloatArray output, IntArray params) {
+        for (@Parallel int p = 0; p < output.getSize(); p++) {
+            int numBodies = params.get(0);
+            int numSamples = params.get(1);
+
+            float ox = rayOrigins.get(p * 4);
+            float oy = rayOrigins.get(p * 4 + 1);
+            float oz = rayOrigins.get(p * 4 + 2);
+            float lightDistance = rayOrigins.get(p * 4 + 3);
+
+            float shadow = 0.0f;
+            for (int s = 0; s < numSamples; s++) {
+                float jx = ox + s * 0.05f;
+                float jy = oy - s * 0.03f;
+
+                boolean intersects = false;
+                for (int i = 0; i < numBodies && !intersects; i++) {
+                    float dx = bodyPositions.get(i * 4) - jx;
+                    float dy = bodyPositions.get(i * 4 + 1) - jy;
+                    float dz = bodyPositions.get(i * 4 + 2) - oz;
+                    float distance = TornadoMath.sqrt(dx * dx + dy * dy + dz * dz);
+                    float w = bodyPositions.get(i * 4 + 3);
+                    if (w == 0.0f && distance < lightDistance) {
+                        intersects = true;
+                    }
+                }
+
+                if (intersects) {
+                    shadow += 1.0f;
+                }
+            }
+
+            output.set(p, shadow / numSamples);
+        }
+    }
+
+    @Test
+    public void testLoopConditionWithBreakInsideIf() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+        final int numBodies = 8;
+        final int numSamples = 4;
+        final int numRays = 256;
+
+        FloatArray bodyPositions = new FloatArray(numBodies * 4);
+        FloatArray rayOrigins = new FloatArray(numRays * 4);
+        FloatArray output = new FloatArray(numRays);
+        IntArray params = new IntArray(2);
+        params.set(0, numBodies);
+        params.set(1, numSamples);
+
+        for (int i = 0; i < numBodies; i++) {
+            bodyPositions.set(i * 4, (float) Math.sin(i * 0.7f) * 10.0f);
+            bodyPositions.set(i * 4 + 1, (float) Math.cos(i * 0.9f) * 10.0f);
+            bodyPositions.set(i * 4 + 2, (float) Math.sin(i * 1.3f) * 10.0f);
+            bodyPositions.set(i * 4 + 3, (i % 3 == 0) ? 0.0f : 1.0f);
+        }
+        for (int p = 0; p < numRays; p++) {
+            rayOrigins.set(p * 4, (float) Math.cos(p * 0.05f) * 8.0f);
+            rayOrigins.set(p * 4 + 1, (float) Math.sin(p * 0.03f) * 8.0f);
+            rayOrigins.set(p * 4 + 2, (float) Math.cos(p * 0.11f) * 8.0f);
+            rayOrigins.set(p * 4 + 3, 6.0f + (p % 16));
+        }
+        output.init(-1.0f);
+
+        // Sequential reference
+        float[] expected = new float[numRays];
+        for (int p = 0; p < numRays; p++) {
+            float ox = rayOrigins.get(p * 4);
+            float oy = rayOrigins.get(p * 4 + 1);
+            float oz = rayOrigins.get(p * 4 + 2);
+            float lightDistance = rayOrigins.get(p * 4 + 3);
+            float shadow = 0.0f;
+            for (int s = 0; s < numSamples; s++) {
+                float jx = ox + s * 0.05f;
+                float jy = oy - s * 0.03f;
+                boolean intersects = false;
+                for (int i = 0; i < numBodies && !intersects; i++) {
+                    float dx = bodyPositions.get(i * 4) - jx;
+                    float dy = bodyPositions.get(i * 4 + 1) - jy;
+                    float dz = bodyPositions.get(i * 4 + 2) - oz;
+                    float distance = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+                    float w = bodyPositions.get(i * 4 + 3);
+                    if (w == 0.0f && distance < lightDistance) {
+                        intersects = true;
+                    }
+                }
+                if (intersects) {
+                    shadow += 1.0f;
+                }
+            }
+            expected[p] = shadow / numSamples;
+        }
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, bodyPositions, rayOrigins, params) //
+                .task("t0", CodeGenTest::shadowFeelerKernel, bodyPositions, rayOrigins, output, params) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        for (int p = 0; p < numRays; p++) {
+            assertEquals(expected[p], output.get(p), 1e-6f);
+        }
+    }
+
 }
