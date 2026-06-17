@@ -2,7 +2,7 @@
 .unittestingStatus
 .build/*.xml
 beehive-spirv-toolkit/
-bin/__pycache__/
+**/__pycache__/
 bin/bin
 bin/sdk
 dist/
