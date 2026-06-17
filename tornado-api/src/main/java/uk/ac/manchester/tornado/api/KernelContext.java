@@ -257,7 +257,7 @@ public class KernelContext implements ExecutionContext {
      * {@code lda}/{@code ldb}/{@code ldc} are the row strides in elements.
      * <p>
      * Must be called convergently by all 32 lanes of the SIMD group (i.e. local
-     * work size 8x... mapping one SIMD group per output tile). The accumulator is
+     * work size 32, mapping one SIMD group per output tile). The accumulator is
      * kept in registers across the whole {@code k} loop.
      * <p>
      * Metal equivalent: {@code simdgroup_load} / {@code simdgroup_multiply_accumulate}
