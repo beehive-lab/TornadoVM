@@ -61,7 +61,6 @@ import jdk.vm.ci.code.Register;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
-import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLBlockVisitor;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
@@ -212,7 +211,7 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
      * @param basicBlock
      *     {@link HIRBlock}
      * @param visitor
-     *     {@link OCLBlockVisitor}
+     *     {@link SPIRVBlockVisitor}
      * @param visited
      *     {@link HashSet}
      * @param pending

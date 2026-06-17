@@ -61,6 +61,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 import org.graalvm.word.LocationIdentity;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
+import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
@@ -433,6 +434,61 @@ public class OCLGraphBuilderPlugins {
         registerGlobalBarrier(r);
         localArraysPlugins(r);
         registerAtomicAddOperation(r);
+        registerSwizzledLocalAccessesPlugins(r);
+    }
+
+    private static void registerSwizzledLocalAccessesPlugins(Registration r) {
+        r.register(new InvocationPlugin("swizzleLoadFp16Stride32", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride) {
+                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                return false;
+            }
+        });
+
+        r.register(new InvocationPlugin("swizzleStoreFp16Stride32", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class, HalfFloat.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode value) {
+                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                return false;
+            }
+        });
+
+        r.register(new InvocationPlugin("swizzleLoadFp16Stride16", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride) {
+                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                return false;
+            }
+        });
+
+        r.register(new InvocationPlugin("swizzleStoreFp16Stride16", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class, HalfFloat.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode value) {
+                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                return false;
+            }
+        });
+
+        r.register(new InvocationPlugin("swizzleLoadInt8", InvocationPlugin.Receiver.class,
+                byte[].class, int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver,
+                                 ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride) {
+                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                return false;
+            }
+        });
+
+        r.register(new InvocationPlugin("swizzleStoreInt8", InvocationPlugin.Receiver.class,
+                byte[].class, int.class, int.class, int.class, byte.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver,
+                                 ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode value) {
+                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                return false;
+            }
+        });
     }
 
     private static void registerFP16ConversionPlugins(InvocationPlugins plugins) {

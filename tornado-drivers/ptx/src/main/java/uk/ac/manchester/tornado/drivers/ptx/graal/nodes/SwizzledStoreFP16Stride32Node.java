@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, APT Group, Department of Computer Science,
+ * Copyright (c) 2026, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -29,39 +29,62 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
-import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 
 @NodeInfo
-public class PTXConvertHalfToFloat extends ValueNode implements LIRLowerable {
+public class SwizzledStoreFP16Stride32Node extends FixedWithNextNode implements LIRLowerable {
 
-    public static final NodeClass<PTXConvertHalfToFloat> TYPE = NodeClass.create(PTXConvertHalfToFloat.class);
+    public static final NodeClass<SwizzledStoreFP16Stride32Node> TYPE = NodeClass.create(SwizzledStoreFP16Stride32Node.class);
 
     @Input
-    private ValueNode halfValueNode;
+    private ValueNode fp16_local_array;
 
-    public PTXConvertHalfToFloat(ValueNode halfValueNode) {
-        super(TYPE, StampFactory.forKind(JavaKind.Float));
-        this.halfValueNode = halfValueNode;
+    @Input
+    private ValueNode row;
+
+    @Input
+    private ValueNode column;
+
+    @Input
+    private ValueNode stride;
+
+    @Input
+    private ValueNode fp16_value;
+
+    public SwizzledStoreFP16Stride32Node(ValueNode fp16_local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode fp16_value) {
+        super(TYPE, StampFactory.forVoid());
+        this.fp16_local_array = fp16_local_array;
+        this.row = row;
+        this.column = column;
+        this.stride = stride;
+        this.fp16_value = fp16_value;
     }
 
+
     public void generate(NodeLIRBuilderTool generator) {
-        if (halfValueNode == null) {
-            // A preceding high-tier rewrite (typically TornadoHalfFloatReplacement) cleared this
-            // node's input without supplying a replacement. Fail at the phase boundary with a
-            // useful message instead of an opaque NPE in NodeLIRBuilder.getOperand.
-            throw new TornadoInternalError("PTXConvertHalfToFloat: input was cleared by a preceding graph rewrite; "
-                    + "an unrecognised half-source pattern reached LIR. Check TornadoHalfFloatReplacement#identifyFieldReplacement.");
-        }
         LIRGeneratorTool tool = generator.getLIRGeneratorTool();
-        Variable floatValue = tool.newVariable(LIRKind.value(PTXKind.F32));
-        Value halfValue = generator.operand(halfValueNode);
-        tool.append(new PTXLIRStmt.ConvertHalfToFloatStmt(floatValue, halfValue));
-        generator.setResult(this, floatValue);
+
+        Value localArray = generator.operand(fp16_local_array);
+        Value rowVal    = generator.operand(row);
+        Value colVal    = generator.operand(column);
+        Value strideVal = generator.operand(stride);
+        Value valueVal  = generator.operand(fp16_value);
+
+        Variable linIdx  = tool.newVariable(LIRKind.value(PTXKind.S32));
+        Variable byteOff = tool.newVariable(LIRKind.value(PTXKind.S32));
+        Variable shifted = tool.newVariable(LIRKind.value(PTXKind.S32));
+        Variable masked  = tool.newVariable(LIRKind.value(PTXKind.S32));
+        Variable xorTerm = tool.newVariable(LIRKind.value(PTXKind.S32));
+        Variable swzByte = tool.newVariable(LIRKind.value(PTXKind.S32));
+
+        tool.append(new PTXLIRStmt.SwizzledStoreFP16Stride32Stmt(
+                localArray, rowVal, colVal, strideVal, valueVal,
+                linIdx, byteOff, shifted, masked, xorTerm, swzByte));
     }
 
 }
