@@ -45,6 +45,7 @@ Content:
    installation
    simple-start
    programming
+   under-the-hood
    offheap-types
    truffle-languages
    profiler
