@@ -324,11 +324,11 @@ public class CUDALIRStmt {
             asm.space();
             asm.assign();
             asm.space();
-            asm.emitValue(crb, x);
+            asm.emitHalfOperand(crb, x);
             asm.space();
             asm.emitSymbol("+");
             asm.space();
-            asm.emitValue(crb, y);
+            asm.emitHalfOperand(crb, y);
             asm.delimiter();
             asm.eol();
         }
@@ -361,11 +361,11 @@ public class CUDALIRStmt {
             asm.space();
             asm.assign();
             asm.space();
-            asm.emitValue(crb, x);
+            asm.emitHalfOperand(crb, x);
             asm.space();
             asm.emitSymbol("-");
             asm.space();
-            asm.emitValue(crb, y);
+            asm.emitHalfOperand(crb, y);
             asm.delimiter();
             asm.eol();
         }
@@ -445,11 +445,11 @@ public class CUDALIRStmt {
             asm.space();
             asm.assign();
             asm.space();
-            asm.emitValue(crb, x);
+            asm.emitHalfOperand(crb, x);
             asm.space();
             asm.emitSymbol("*");
             asm.space();
-            asm.emitValue(crb, y);
+            asm.emitHalfOperand(crb, y);
             asm.delimiter();
             asm.eol();
         }
@@ -529,11 +529,11 @@ public class CUDALIRStmt {
             asm.space();
             asm.assign();
             asm.space();
-            asm.emitValue(crb, x);
+            asm.emitHalfOperand(crb, x);
             asm.space();
             asm.emitSymbol("/");
             asm.space();
-            asm.emitValue(crb, y);
+            asm.emitHalfOperand(crb, y);
             asm.delimiter();
             asm.eol();
         }

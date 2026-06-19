@@ -488,6 +488,9 @@ public enum CUDAKind implements PlatformKind {
             return "unsigned int";
         } else if (this == CUDAKind.ULONG) {
             return "unsigned long";
+        } else if (this == CUDAKind.HALF) {
+            // cuda_fp16.h half-precision scalar type.
+            return "__half";
         } else {
             return name().toLowerCase();
         }

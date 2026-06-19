@@ -366,6 +366,15 @@ public final class CUDAAssembler extends Assembler {
         JavaConstant javaConstant = cv.getJavaConstant();
         Constant constant = cv.getConstant();
         CUDAKind oclKind = (CUDAKind) cv.getPlatformKind();
+        if (oclKind == CUDAKind.HALF && !(constant instanceof HotSpotObjectConstant)) {
+            // A __half (cuda_fp16.h) constant cannot be written as a bare numeric
+            // literal: such a literal is a float/double and would either make the
+            // overloaded __half operators ambiguous or silently pick the wrong type.
+            // Materialise it through __float2half(<value>F) so the value is a
+            // genuine __half in the emitted expression.
+            String literal = javaConstant.isNull() ? "0" : constant.toValueString();
+            return "__float2half(" + literal + "F)";
+        }
         if (javaConstant.isNull()) {
             result = addLiteralSuffix(oclKind, "0");
             if (oclKind.isVector()) {
@@ -481,6 +490,28 @@ public final class CUDAAssembler extends Assembler {
             ((CUDALIROp) value).emit(crb, this);
         } else {
             emitValue(crb, value);
+        }
+    }
+
+    /**
+     * Emits an operand that participates in {@code __half} (cuda_fp16.h)
+     * arithmetic.
+     *
+     * <p>The C++ operators that cuda_fp16.h defines for {@code __half} accept
+     * only {@code __half} operands. A bare floating constant such as
+     * {@code 0.0} is a {@code double} and {@code double + __half} is ambiguous
+     * (both {@code double->__half} and {@code __half->float->double} conversions
+     * exist), which makes NVRTC reject the kernel. To keep the expression
+     * unambiguous, any constant operand whose platform kind is not already
+     * {@code __half} is materialised through {@code __float2half(...)}.
+     */
+    public void emitHalfOperand(CUDACompilationResultBuilder crb, Value value) {
+        if (value instanceof ConstantValue && value.getPlatformKind() != CUDAKind.HALF) {
+            emit("__float2half(");
+            emitValue(crb, value);
+            emit(")");
+        } else {
+            emitValueOrOp(crb, value);
         }
     }
 
@@ -843,6 +874,20 @@ public final class CUDAAssembler extends Assembler {
 
         public void emit(CUDACompilationResultBuilder crb, Value x, Value y) {
             final CUDAAssembler asm = crb.getAssembler();
+            // When one side of a binary expression is a __half (cuda_fp16.h) and the
+            // other is a non-__half constant (e.g. a reduction neutral element such
+            // as 0.0), the C++ operator overload for __half becomes ambiguous under
+            // NVRTC. Materialise such constants through __float2half(...) so the
+            // expression stays unambiguous. This is the general scalar-binary path.
+            boolean halfContext = x.getPlatformKind() == CUDAKind.HALF || y.getPlatformKind() == CUDAKind.HALF;
+            if (halfContext) {
+                asm.emitHalfOperand(crb, x);
+                asm.space();
+                emitOpcode(asm);
+                asm.space();
+                asm.emitHalfOperand(crb, y);
+                return;
+            }
             asm.emitValueOrOp(crb, x);
             asm.space();
             emitOpcode(asm);
