@@ -99,7 +99,7 @@ public class HalfFloatStamp extends Stamp {
 
     @Override
     public String toString() {
-        return "half";
+        return "__half";
     }
 
     @Override

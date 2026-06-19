@@ -47,6 +47,7 @@ public final class CUDAPreamble {
 
     // @formatter:off
     public static final String PREAMBLE =
+        "#include <cuda_fp16.h>\n" +
         "typedef unsigned char uchar;\n" +
         "typedef unsigned short ushort;\n" +
         "typedef unsigned int uint;\n" +
