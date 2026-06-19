@@ -69,6 +69,15 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     private final Set<Long> executionIDs;
 
     /**
+     * Kernel stack-frame writes deferred during CUDA graph capture. The stack
+     * frame holds device buffer addresses and grid metadata that are constant
+     * across graph replays, so it is written once outside the captured graph
+     * rather than recorded as a graph node (which would pin a transient Java
+     * heap array). Flushed when capture ends, before the first graph launch.
+     */
+    private final java.util.List<uk.ac.manchester.tornado.drivers.cuda.mm.CUDAKernelStackFrame> pendingKernelContextWrites = new java.util.ArrayList<>();
+
+    /**
      * Map table to represent the compiled-code per execution plan. Each entry in the execution plan has its own
      * code cache. The code cache manages the compilation and the cache for each task within an execution plan.
      */
@@ -673,5 +682,77 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     public long mapOnDeviceMemoryRegion(long executionPlanId, long destDevicePtr, long srcDevicePtr, long offset, int sizeOfType, long sizeSource, long sizeDest) {
         CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
         return commandQueue.mapOnDeviceMemoryRegion(commandQueue.getCommandQueuePtr(), destDevicePtr, srcDevicePtr, offset, sizeOfType, sizeSource, sizeDest);
+    }
+
+    /* ---- CUDA Graph (stream capture) support ---- */
+
+    /**
+     * Begins capturing the device operations submitted to the execution-plan
+     * stream into a CUDA graph. Subsequent host-to-device copies, kernel
+     * launches and device-to-host copies are recorded as graph nodes.
+     */
+    public void beginExecutionGraphCapture(long executionPlanId) {
+        getCommandQueue(executionPlanId).beginGraphCapture();
+    }
+
+    /**
+     * Ends capture and instantiates the recorded graph into a replayable
+     * CUgraphExec, returning its opaque handle. Any kernel stack-frame writes
+     * deferred during capture are flushed here (synchronously, outside the
+     * graph) so the device-side argument buffers are valid before the first
+     * graph launch.
+     */
+    public long endExecutionGraphCaptureAndInstantiate(long executionPlanId) {
+        long handle = getCommandQueue(executionPlanId).endGraphCaptureAndInstantiate();
+        flushPendingKernelContextWrites(executionPlanId);
+        return handle;
+    }
+
+    /**
+     * Records a kernel stack-frame write to be performed once capture ends, or
+     * returns false if the stream is not capturing (so the caller writes it
+     * inline as usual).
+     */
+    public boolean deferKernelContextWriteIfCapturing(long executionPlanId, uk.ac.manchester.tornado.drivers.cuda.mm.CUDAKernelStackFrame kernelArgs) {
+        if (!isStreamCapturing(executionPlanId)) {
+            return false;
+        }
+        pendingKernelContextWrites.add(kernelArgs);
+        return true;
+    }
+
+    private void flushPendingKernelContextWrites(long executionPlanId) {
+        for (uk.ac.manchester.tornado.drivers.cuda.mm.CUDAKernelStackFrame kernelArgs : pendingKernelContextWrites) {
+            kernelArgs.write(executionPlanId);
+        }
+        pendingKernelContextWrites.clear();
+    }
+
+    /**
+     * Replays a previously instantiated CUDA graph on the execution-plan
+     * stream. Host-to-device copy nodes re-read their (stable, off-heap) host
+     * source pointers, so updated host data is picked up on every launch.
+     */
+    public int launchExecutionGraph(long executionPlanId, long executionGraphHandle) {
+        getCommandQueue(executionPlanId).launchGraph(executionGraphHandle);
+        return -1;
+    }
+
+    /**
+     * @return whether the execution-plan stream is currently capturing.
+     */
+    public boolean isStreamCapturing(long executionPlanId) {
+        return getCommandQueue(executionPlanId).isCapturing();
+    }
+
+    /**
+     * Destroys an instantiated CUDA graph. Uses any live execution-plan queue
+     * for the destroy call (cuGraphExecDestroy is independent of the stream).
+     */
+    public void destroyExecutionGraph(long executionGraphHandle) {
+        Long anyPlanId = executionIDs.stream().findFirst().orElse(null);
+        if (anyPlanId != null) {
+            getCommandQueue(anyPlanId).destroyGraph(executionGraphHandle);
+        }
     }
 }

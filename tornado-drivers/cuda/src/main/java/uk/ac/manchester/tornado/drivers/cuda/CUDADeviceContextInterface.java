@@ -86,4 +86,22 @@ public interface CUDADeviceContextInterface extends TornadoDeviceContext {
 
     CUDAProgram createProgramWithIL(byte[] binary, long[] lengths);
 
+    /* ---- CUDA Graph (stream capture) support ---- */
+
+    default void beginExecutionGraphCapture(long executionPlanId) {
+        throw new UnsupportedOperationException("CUDA graph capture is not supported on this device context");
+    }
+
+    default long endExecutionGraphCaptureAndInstantiate(long executionPlanId) {
+        throw new UnsupportedOperationException("CUDA graph capture is not supported on this device context");
+    }
+
+    default int launchExecutionGraph(long executionPlanId, long executionGraphHandle) {
+        throw new UnsupportedOperationException("CUDA graph launch is not supported on this device context");
+    }
+
+    default void destroyExecutionGraph(long executionGraphHandle) {
+        // no-op by default
+    }
+
 }

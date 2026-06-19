@@ -760,6 +760,33 @@ public class CUDATornadoDevice implements TornadoXPUDevice {
         return String.format("opencl-%d-%d", platformIndex, deviceIndex);
     }
 
+    /* ---- CUDA Graph (stream capture) support ---- */
+
+    @Override
+    public boolean supportsExecutionGraphs() {
+        return true;
+    }
+
+    @Override
+    public void beginExecutionGraphCapture(long executionPlanId) {
+        getDeviceContext().beginExecutionGraphCapture(executionPlanId);
+    }
+
+    @Override
+    public long endExecutionGraphCaptureAndInstantiate(long executionPlanId) {
+        return getDeviceContext().endExecutionGraphCaptureAndInstantiate(executionPlanId);
+    }
+
+    @Override
+    public int launchExecutionGraph(long executionPlanId, long executionGraphHandle) {
+        return getDeviceContext().launchExecutionGraph(executionPlanId, executionGraphHandle);
+    }
+
+    @Override
+    public void destroyExecutionGraph(long executionGraphHandle) {
+        getDeviceContext().destroyExecutionGraph(executionGraphHandle);
+    }
+
     @Override
     public TornadoDeviceType getDeviceType() {
         CUDADeviceType deviceType = device.getDeviceType();

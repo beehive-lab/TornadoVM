@@ -138,6 +138,83 @@ public class CUDACommandQueue extends CommandQueue {
 
     static native void clFinish(long queueId) throws CUDAException;
 
+    /* ---- CUDA Graph (stream capture) native bindings ---- */
+
+    private static native long cuStreamBeginCapture(long queueId, int mode);
+
+    private static native long cuStreamEndCapture(long queueId);
+
+    private static native boolean cuStreamIsCapturing(long queueId);
+
+    private static native long cuGraphInstantiate(long graphHandle);
+
+    private static native long cuGraphExecUpdate(long graphExecHandle, long graphHandle);
+
+    private static native long cuGraphLaunch(long graphExecHandle, long queueId);
+
+    private static native long cuGraphExecDestroy(long graphExecHandle);
+
+    private static native long cuGraphDestroy(long graphHandle);
+
+    /** CU_STREAM_CAPTURE_MODE_GLOBAL. */
+    private static final int CU_STREAM_CAPTURE_MODE_GLOBAL = 0;
+
+    /** True while this queue's stream is recording operations into a CUDA graph. */
+    private boolean capturing = false;
+
+    /**
+     * Begins recording all subsequent operations submitted to this queue's
+     * stream into a CUDA graph.
+     */
+    public void beginGraphCapture() {
+        long result = cuStreamBeginCapture(commandQueuePtr, CU_STREAM_CAPTURE_MODE_GLOBAL);
+        if (result != 0) {
+            throw new TornadoBailoutRuntimeException("cuStreamBeginCapture failed. CUresult=" + result);
+        }
+        capturing = true;
+    }
+
+    /**
+     * Ends capture and instantiates the recorded graph. The source CUgraph is
+     * destroyed after instantiation; the returned handle is the CUgraphExec.
+     *
+     * @return opaque CUgraphExec handle
+     */
+    public long endGraphCaptureAndInstantiate() {
+        capturing = false;
+        long graphHandle = cuStreamEndCapture(commandQueuePtr);
+        if (graphHandle == 0) {
+            throw new TornadoBailoutRuntimeException("cuStreamEndCapture returned a null graph");
+        }
+        long graphExecHandle = cuGraphInstantiate(graphHandle);
+        cuGraphDestroy(graphHandle);
+        if (graphExecHandle == 0) {
+            throw new TornadoBailoutRuntimeException("cuGraphInstantiate failed");
+        }
+        return graphExecHandle;
+    }
+
+    public boolean isCapturing() {
+        return capturing;
+    }
+
+    /**
+     * Launches a previously instantiated graph on this queue's stream and
+     * blocks until completion so that captured device-to-host copies are
+     * visible to the host once this call returns.
+     */
+    public void launchGraph(long graphExecHandle) {
+        long result = cuGraphLaunch(graphExecHandle, commandQueuePtr);
+        if (result != 0) {
+            throw new TornadoBailoutRuntimeException("cuGraphLaunch failed. CUresult=" + result);
+        }
+        finish();
+    }
+
+    public void destroyGraph(long graphExecHandle) {
+        cuGraphExecDestroy(graphExecHandle);
+    }
+
     public void flushEvents() {
         try {
             clFlush(commandQueuePtr);

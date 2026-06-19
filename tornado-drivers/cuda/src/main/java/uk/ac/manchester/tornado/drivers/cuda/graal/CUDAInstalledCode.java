@@ -221,9 +221,15 @@ public class CUDAInstalledCode extends InstalledCode implements TornadoInstalled
          */
         final int[] waitEvents;
         setKernelArgs(kernelArgs, atomicSpace, meta);
-        internalEvents[0] = kernelArgs.enqueueWrite(executionPlanId, events);
-        waitEvents = internalEvents;
-        updateProfilerKernelContextWrite(executionPlanId, internalEvents[0], meta, kernelArgs);
+        // During CUDA graph capture, defer the stack-frame write to outside the
+        // captured graph (it is constant across replays). Otherwise write inline.
+        if (deviceContext.deferKernelContextWriteIfCapturing(executionPlanId, kernelArgs)) {
+            waitEvents = events;
+        } else {
+            internalEvents[0] = kernelArgs.enqueueWrite(executionPlanId, events);
+            waitEvents = internalEvents;
+            updateProfilerKernelContextWrite(executionPlanId, internalEvents[0], meta, kernelArgs);
+        }
 
         int task;
         if (meta == null) {
@@ -304,8 +310,10 @@ public class CUDAInstalledCode extends InstalledCode implements TornadoInstalled
         }
 
         setKernelArgs(oclKernelStackFrame, atomicSpace, meta);
-        int kernelContextWriteEventId = oclKernelStackFrame.enqueueWrite(executionPlanId);
-        updateProfilerKernelContextWrite(executionPlanId, kernelContextWriteEventId, meta, oclKernelStackFrame);
+        if (!deviceContext.deferKernelContextWriteIfCapturing(executionPlanId, oclKernelStackFrame)) {
+            int kernelContextWriteEventId = oclKernelStackFrame.enqueueWrite(executionPlanId);
+            updateProfilerKernelContextWrite(executionPlanId, kernelContextWriteEventId, meta, oclKernelStackFrame);
+        }
 
         if (meta == null) {
             executeSingleThread(executionPlanId);

@@ -30,6 +30,20 @@ extern "C" {
 #define CL_QUEUE_DEVICE  0x1091
 
 /*
+ * Returns true when the queue's stream is currently capturing into a CUDA
+ * graph. During capture the stream must not be synchronised (that invalidates
+ * the capture), so the transfer helpers below defer their cuStreamSynchronize.
+ */
+static bool stream_is_capturing(cuda_queue_t *queue) {
+    if (queue == nullptr) {
+        return false;
+    }
+    CUstreamCaptureStatus status = CU_STREAM_CAPTURE_STATUS_NONE;
+    CUresult result = cuStreamIsCapturing(queue->stream, &status);
+    return (result == CUDA_SUCCESS) && (status == CU_STREAM_CAPTURE_STATUS_ACTIVE);
+}
+
+/*
  * Creates and records a CUevent on the queue's stream, returning its boxed
  * handle. Used as the "event" result the OpenCL clone expects from enqueue ops.
  */
@@ -204,7 +218,13 @@ static jlong transfer_to_device(JNIEnv *env, cuda_queue_t *queue, void *host_bas
             queue->stream);
     LOG_CUDA_AND_VALIDATE("cuMemcpyHtoDAsync", result);
     // Synchronise to avoid a Java GC / driver race on pinned host array memory.
-    cuStreamSynchronize(queue->stream);
+    // While capturing into a CUDA graph the stream must NOT be synchronised
+    // (it would invalidate the capture); the copy becomes a graph node whose
+    // host source pointer (a stable off-heap MemorySegment) is re-read on each
+    // graph launch.
+    if (!stream_is_capturing(queue)) {
+        cuStreamSynchronize(queue->stream);
+    }
     return record_event(queue);
 }
 
@@ -220,7 +240,10 @@ static jlong transfer_to_host(JNIEnv *env, cuda_queue_t *queue, void *host_base,
             (size_t) num_bytes,
             queue->stream);
     LOG_CUDA_AND_VALIDATE("cuMemcpyDtoHAsync", result);
-    cuStreamSynchronize(queue->stream);
+    // See transfer_to_device: skip the synchronise during graph capture.
+    if (!stream_is_capturing(queue)) {
+        cuStreamSynchronize(queue->stream);
+    }
     return record_event(queue);
 }
 
