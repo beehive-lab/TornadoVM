@@ -163,6 +163,32 @@ JNIEXPORT jobject JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAContext
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAContext
+ * Method:    memSetZero
+ * Signature: (JJJ)I
+ *
+ * Zero-initialises a device buffer. cuMemAlloc returns uninitialised device
+ * memory, and TornadoVM reuses pooled device buffers across executions, so a
+ * write-only output that the kernel never writes (e.g. an early-returning
+ * kernel) would otherwise read back stale/garbage data. cuMemsetD8 sets N
+ * 8-bit values (i.e. N bytes) to the given byte; here we set the whole buffer
+ * to 0. This is the synchronous variant so the zeroing is complete before the
+ * buffer is used by a subsequent host->device copy or kernel launch.
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAContext_memSetZero
+        (JNIEnv *env, jobject obj, jlong context_id, jlong device_ptr, jlong bytes) {
+    cuda_context_t *ctx = (cuda_context_t *) context_id;
+    if (ctx == nullptr || device_ptr == 0 || bytes <= 0) {
+        return (jint) CUDA_ERROR_INVALID_VALUE;
+    }
+    CUresult result = cuCtxSetCurrent(ctx->context);
+    LOG_CUDA_AND_VALIDATE("cuCtxSetCurrent", result);
+    result = cuMemsetD8((CUdeviceptr) device_ptr, (unsigned char) 0, (size_t) bytes);
+    LOG_CUDA_AND_VALIDATE("cuMemsetD8", result);
+    return (jint) result;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAContext
  * Method:    createSubBuffer
  * Signature: (JJI[B)J
  *

@@ -42,6 +42,44 @@ public class CUDABufferProvider extends TornadoBufferProvider {
         return ((CUDADeviceContext) deviceContext).getMemoryManager().createBuffer(size, oclMemFlags).getBuffer();
     }
 
+    /**
+     * Device buffers obtained from {@code cuMemAlloc} are not zero-initialised,
+     * and TornadoVM reuses pooled device buffers across executions. A
+     * {@code WRITE_ONLY} output that the kernel does not fully write (for example,
+     * an early-returning kernel) would otherwise read back stale data from a
+     * previous allocation, instead of the expected zero.
+     *
+     * <p>
+     * To match the behaviour expected by the runtime (unwritten output buffers
+     * read back as zero), we zero the device buffer here, on (re)allocation, when
+     * the buffer is handed out from the pool. This happens once per allocation
+     * request rather than on every kernel launch, so the performance impact is
+     * limited to the allocation path.
+     *
+     * <p>
+     * The zeroing is restricted to {@code WRITE_ONLY} buffers on purpose:
+     * <ul>
+     * <li>{@code READ_ONLY} / {@code READ_WRITE} buffers receive their initial
+     * contents from a host-to-device copy before the kernel runs, so zeroing them
+     * is both unnecessary and potentially harmful. For instance, a reduction whose
+     * accumulator is an output that is initialised on the host (e.g.
+     * {@code result.init(Float.MAX_VALUE)}) and then read-modified-written by the
+     * kernel is marked {@code READ_WRITE}; zeroing it would clobber the neutral
+     * element.</li>
+     * <li>{@code WRITE_ONLY} buffers are pure outputs that the runtime does not
+     * copy in from the host. If the kernel skips writing some (or all) of the
+     * buffer, the host must observe zeros, not stale pool data.</li>
+     * </ul>
+     */
+    @Override
+    public synchronized long getOrAllocateBufferWithSize(long sizeInBytes, Access access) {
+        long buffer = super.getOrAllocateBufferWithSize(sizeInBytes, access);
+        if (access == Access.WRITE_ONLY) {
+            ((CUDADeviceContext) deviceContext).getPlatformContext().zeroBuffer(buffer, sizeInBytes);
+        }
+        return buffer;
+    }
+
     @Override
     protected void releaseBuffer(long buffer) {
         ((CUDADeviceContext) deviceContext).getMemoryManager().releaseBuffer(buffer);
