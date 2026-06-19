@@ -45,6 +45,12 @@ public abstract class CUDALIROp extends Value {
     }
 
     public CUDAKind getCUDAPlatformKind() {
+        // Some scalar LIR ops carry no value kind (valueKind == null); treat those as
+        // ILLEGAL (non-vector) so callers fall back to the scalar emission path rather
+        // than NPE in getPlatformKind().
+        if (getValueKind() == null) {
+            return CUDAKind.ILLEGAL;
+        }
         PlatformKind platformKind = getPlatformKind();
         return (platformKind instanceof CUDAKind) ? (CUDAKind) platformKind : CUDAKind.ILLEGAL;
     }

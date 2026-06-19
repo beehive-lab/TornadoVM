@@ -100,8 +100,8 @@ public class CUDABinary {
                         "CUDA backend does not support arithmetic on vector width " + length + ".");
             }
 
-            boolean xIsVector = (x.getPlatformKind() instanceof CUDAKind) && ((CUDAKind) x.getPlatformKind()).isVector();
-            boolean yIsVector = (y.getPlatformKind() instanceof CUDAKind) && ((CUDAKind) y.getPlatformKind()).isVector();
+            boolean xIsVector = x.getValueKind() != null && (x.getPlatformKind() instanceof CUDAKind) && ((CUDAKind) x.getPlatformKind()).isVector();
+            boolean yIsVector = y.getValueKind() != null && (y.getPlatformKind() instanceof CUDAKind) && ((CUDAKind) y.getPlatformKind()).isVector();
 
             asm.beginStackPush();
             asm.emitValueOrOp(crb, x);
