@@ -135,7 +135,7 @@ public class CUDALIRStmt {
             asm.space();
             asm.assign();
             asm.space();
-            asm.emit("*((__global uint *)");
+            asm.emit("*((uint *)");
             asm.space();
             asm.emitValue(crb, address);
             asm.emit(")");

@@ -708,10 +708,10 @@ public final class CUDAAssembler extends Assembler {
         public static final CUDAUnaryIntrinsic LOG = new CUDAUnaryIntrinsic("log");
         public static final CUDAUnaryIntrinsic RADIANS = new CUDAUnaryIntrinsic("radians");
         public static final CUDAUnaryIntrinsic RSQRT = new CUDAUnaryIntrinsic("rsqrt");
-        public static final CUDAUnaryIntrinsic NATIVE_COS = new CUDAUnaryIntrinsic("native_cos");
-        public static final CUDAUnaryIntrinsic NATIVE_SIN = new CUDAUnaryIntrinsic("native_sin");
-        public static final CUDAUnaryIntrinsic NATIVE_SQRT = new CUDAUnaryIntrinsic("native_sqrt");
-        public static final CUDAUnaryIntrinsic NATIVE_TAN = new CUDAUnaryIntrinsic("native_tan");
+        public static final CUDAUnaryIntrinsic NATIVE_COS = new CUDAUnaryIntrinsic("cos");
+        public static final CUDAUnaryIntrinsic NATIVE_SIN = new CUDAUnaryIntrinsic("sin");
+        public static final CUDAUnaryIntrinsic NATIVE_SQRT = new CUDAUnaryIntrinsic("sqrt");
+        public static final CUDAUnaryIntrinsic NATIVE_TAN = new CUDAUnaryIntrinsic("tan");
         public static final CUDAUnaryIntrinsic SIN = new CUDAUnaryIntrinsic("sin");
         public static final CUDAUnaryIntrinsic COS = new CUDAUnaryIntrinsic("cos");
         public static final CUDAUnaryIntrinsic TAN = new CUDAUnaryIntrinsic("tan");
@@ -726,7 +726,7 @@ public final class CUDAAssembler extends Assembler {
 
         public static final CUDAUnaryIntrinsic SIGN = new CUDAUnaryIntrinsic("sign");
 
-        public static final CUDAUnaryIntrinsic LOCAL_MEMORY = new CUDAUnaryIntrinsic("__local");
+        public static final CUDAUnaryIntrinsic LOCAL_MEMORY = new CUDAUnaryIntrinsic("__shared__");
 
         public static final CUDAUnaryIntrinsic POPCOUNT = new CUDAUnaryIntrinsic("popcount");
 
@@ -982,37 +982,37 @@ public final class CUDAAssembler extends Assembler {
         public static final CUDABinaryTemplate DECLARE_DOUBLE_ARRAY = new CUDABinaryTemplate("DECLARE_ARRAY", "double %s[%s]");
         public static final CUDABinaryTemplate ARRAY_INDEX = new CUDABinaryTemplate("index", "%s[%s]");
 
-        public static final CUDABinaryTemplate NEW_PRIVATE_CHAR_ARRAY = new CUDABinaryTemplate("new private array char", "__private char %s[%s]");
-        public static final CUDABinaryTemplate NEW_PRIVATE_FLOAT_ARRAY = new CUDABinaryTemplate("new private array float", "__private float %s[%s]");
-        public static final CUDABinaryTemplate NEW_PRIVATE_INT_ARRAY = new CUDABinaryTemplate("new private array int", "__private int %s[%s]");
-        public static final CUDABinaryTemplate NEW_PRIVATE_DOUBLE_ARRAY = new CUDABinaryTemplate("new private array double", "__private double %s[%s]");
-        public static final CUDABinaryTemplate NEW_PRIVATE_LONG_ARRAY = new CUDABinaryTemplate("new private array long", "__private long %s[%s]");
-        public static final CUDABinaryTemplate NEW_PRIVATE_SHORT_ARRAY = new CUDABinaryTemplate("new private array short", "__private short %s[%s]");
-        public static final CUDABinaryTemplate NEW_PRIVATE_BYTE_ARRAY = new CUDABinaryTemplate("new private array byte", "__private byte %s[%s]");
+        public static final CUDABinaryTemplate NEW_PRIVATE_CHAR_ARRAY = new CUDABinaryTemplate("new private array char", "char %s[%s]");
+        public static final CUDABinaryTemplate NEW_PRIVATE_FLOAT_ARRAY = new CUDABinaryTemplate("new private array float", "float %s[%s]");
+        public static final CUDABinaryTemplate NEW_PRIVATE_INT_ARRAY = new CUDABinaryTemplate("new private array int", "int %s[%s]");
+        public static final CUDABinaryTemplate NEW_PRIVATE_DOUBLE_ARRAY = new CUDABinaryTemplate("new private array double", "double %s[%s]");
+        public static final CUDABinaryTemplate NEW_PRIVATE_LONG_ARRAY = new CUDABinaryTemplate("new private array long", "long %s[%s]");
+        public static final CUDABinaryTemplate NEW_PRIVATE_SHORT_ARRAY = new CUDABinaryTemplate("new private array short", "short %s[%s]");
+        public static final CUDABinaryTemplate NEW_PRIVATE_BYTE_ARRAY = new CUDABinaryTemplate("new private array byte", "byte %s[%s]");
 
-        public static final CUDABinaryTemplate PRIVATE_INT_ARRAY_PTR = new CUDABinaryTemplate("private pointer array int", "__private int* %s = %s");
-        public static final CUDABinaryTemplate PRIVATE_CHAR_ARRAY_PTR = new CUDABinaryTemplate("private pointer array char", "__private char* %s = %s");
-        public static final CUDABinaryTemplate PRIVATE_FLOAT_ARRAY_PTR = new CUDABinaryTemplate("private pointer array float", "__private float* %s = %s");
-        public static final CUDABinaryTemplate PRIVATE_DOUBLE_ARRAY_PTR = new CUDABinaryTemplate("private pointer array double", "__private double* %s = %s");
-        public static final CUDABinaryTemplate PRIVATE_LONG_ARRAY_PTR = new CUDABinaryTemplate("private pointer array long", "__private long* %s = %s");
-        public static final CUDABinaryTemplate PRIVATE_SHORT_ARRAY_PTR = new CUDABinaryTemplate("private pointer array short", "__private short* %s = %s");
-        public static final CUDABinaryTemplate PRIVATE_BYTE_ARRAY_PTR = new CUDABinaryTemplate("private pointer array byte", "__private byte* %s = %s");
+        public static final CUDABinaryTemplate PRIVATE_INT_ARRAY_PTR = new CUDABinaryTemplate("private pointer array int", "int* %s = %s");
+        public static final CUDABinaryTemplate PRIVATE_CHAR_ARRAY_PTR = new CUDABinaryTemplate("private pointer array char", "char* %s = %s");
+        public static final CUDABinaryTemplate PRIVATE_FLOAT_ARRAY_PTR = new CUDABinaryTemplate("private pointer array float", "float* %s = %s");
+        public static final CUDABinaryTemplate PRIVATE_DOUBLE_ARRAY_PTR = new CUDABinaryTemplate("private pointer array double", "double* %s = %s");
+        public static final CUDABinaryTemplate PRIVATE_LONG_ARRAY_PTR = new CUDABinaryTemplate("private pointer array long", "long* %s = %s");
+        public static final CUDABinaryTemplate PRIVATE_SHORT_ARRAY_PTR = new CUDABinaryTemplate("private pointer array short", "short* %s = %s");
+        public static final CUDABinaryTemplate PRIVATE_BYTE_ARRAY_PTR = new CUDABinaryTemplate("private pointer array byte", "byte* %s = %s");
 
-        public static final CUDABinaryTemplate PRIVATE_INT_ARRAY_PTR_COPY = new CUDABinaryTemplate("private pointer copy array int", "__private int* %s = ((__private int *) %s)");
-        public static final CUDABinaryTemplate PRIVATE_CHAR_ARRAY_PTR_COPY = new CUDABinaryTemplate("private pointer copy array char", "__private char* %s = ((__private char *) %s)");
-        public static final CUDABinaryTemplate PRIVATE_FLOAT_ARRAY_PTR_COPY = new CUDABinaryTemplate("private pointer copy array float", "__private float* %s = ((__private float *) %s)");
-        public static final CUDABinaryTemplate PRIVATE_DOUBLE_ARRAY_PTR_COPY = new CUDABinaryTemplate("private pointer copy array double", "__private double* %s = ((__private double *) %s)");
-        public static final CUDABinaryTemplate PRIVATE_LONG_ARRAY_PTR_COPY = new CUDABinaryTemplate("private pointer copy array long", "__private long* %s = ((__private long *) %s)");
-        public static final CUDABinaryTemplate PRIVATE_SHORT_ARRAY_PTR_COPY = new CUDABinaryTemplate("private pointer copy array short", "__private short* %s = ((__private short *) %s)");
-        public static final CUDABinaryTemplate PRIVATE_BYTE_ARRAY_PTR_COPY = new CUDABinaryTemplate("private pointer copy array byte", "__private byte* %s = ((__private byte *) %s)");
+        public static final CUDABinaryTemplate PRIVATE_INT_ARRAY_PTR_COPY = new CUDABinaryTemplate("private pointer copy array int", "int* %s = ((int *) %s)");
+        public static final CUDABinaryTemplate PRIVATE_CHAR_ARRAY_PTR_COPY = new CUDABinaryTemplate("private pointer copy array char", "char* %s = ((char *) %s)");
+        public static final CUDABinaryTemplate PRIVATE_FLOAT_ARRAY_PTR_COPY = new CUDABinaryTemplate("private pointer copy array float", "float* %s = ((float *) %s)");
+        public static final CUDABinaryTemplate PRIVATE_DOUBLE_ARRAY_PTR_COPY = new CUDABinaryTemplate("private pointer copy array double", "double* %s = ((double *) %s)");
+        public static final CUDABinaryTemplate PRIVATE_LONG_ARRAY_PTR_COPY = new CUDABinaryTemplate("private pointer copy array long", "long* %s = ((long *) %s)");
+        public static final CUDABinaryTemplate PRIVATE_SHORT_ARRAY_PTR_COPY = new CUDABinaryTemplate("private pointer copy array short", "short* %s = ((short *) %s)");
+        public static final CUDABinaryTemplate PRIVATE_BYTE_ARRAY_PTR_COPY = new CUDABinaryTemplate("private pointer copy array byte", "byte* %s = ((byte *) %s)");
 
-        public static final CUDABinaryTemplate NEW_LOCAL_FLOAT_ARRAY = new CUDABinaryTemplate("local memory array float", "__local float %s[%s]");
-        public static final CUDABinaryTemplate NEW_LOCAL_INT_ARRAY = new CUDABinaryTemplate("local memory array int", "__local int %s[%s]");
-        public static final CUDABinaryTemplate NEW_LOCAL_DOUBLE_ARRAY = new CUDABinaryTemplate("local memory array double", "__local double %s[%s]");
-        public static final CUDABinaryTemplate NEW_LOCAL_LONG_ARRAY = new CUDABinaryTemplate("local memory array long", "__local long %s[%s]");
-        public static final CUDABinaryTemplate NEW_LOCAL_SHORT_ARRAY = new CUDABinaryTemplate("local memory array short", "__local short %s[%s]");
-        public static final CUDABinaryTemplate NEW_LOCAL_CHAR_ARRAY = new CUDABinaryTemplate("local memory array char", "__local char %s[%s]");
-        public static final CUDABinaryTemplate NEW_LOCAL_HALF_FLOAT_ARRAY = new CUDABinaryTemplate("local memory array half", "__local half %s[%s]");
+        public static final CUDABinaryTemplate NEW_LOCAL_FLOAT_ARRAY = new CUDABinaryTemplate("local memory array float", "__shared__ float %s[%s]");
+        public static final CUDABinaryTemplate NEW_LOCAL_INT_ARRAY = new CUDABinaryTemplate("local memory array int", "__shared__ int %s[%s]");
+        public static final CUDABinaryTemplate NEW_LOCAL_DOUBLE_ARRAY = new CUDABinaryTemplate("local memory array double", "__shared__ double %s[%s]");
+        public static final CUDABinaryTemplate NEW_LOCAL_LONG_ARRAY = new CUDABinaryTemplate("local memory array long", "__shared__ long %s[%s]");
+        public static final CUDABinaryTemplate NEW_LOCAL_SHORT_ARRAY = new CUDABinaryTemplate("local memory array short", "__shared__ short %s[%s]");
+        public static final CUDABinaryTemplate NEW_LOCAL_CHAR_ARRAY = new CUDABinaryTemplate("local memory array char", "__shared__ char %s[%s]");
+        public static final CUDABinaryTemplate NEW_LOCAL_HALF_FLOAT_ARRAY = new CUDABinaryTemplate("local memory array half", "__shared__ half %s[%s]");
         // @formatter:on
         private final String template;
 

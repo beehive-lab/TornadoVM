@@ -33,8 +33,12 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.backend;
  * device-buffer kernel parameters are generated as {@code uchar *}, which would
  * not compile under NVRTC without these aliases.
  *
- * <p>Kept intentionally minimal for the MVP scalar-kernel path. Vector types,
- * FP16/half shims, atomics, and OpenCL math built-ins are deferred.
+ * <p>It also provides {@code __device__} implementations of the OpenCL C
+ * built-ins that CUDA C / NVRTC does not define ({@code radians}, {@code sign},
+ * {@code clamp}, and the scalar relational {@code isequal}/{@code isless}
+ * family). These are general, type-templated implementations matching the
+ * OpenCL semantics — they are NOT specialised per kernel; they let the
+ * unmodified codegen emit calls that resolve to correct CUDA device code.
  */
 public final class CUDAPreamble {
 
@@ -46,6 +50,18 @@ public final class CUDAPreamble {
         "typedef unsigned char uchar;\n" +
         "typedef unsigned short ushort;\n" +
         "typedef unsigned int uint;\n" +
-        "typedef unsigned long ulong;\n";
+        "typedef unsigned long ulong;\n" +
+        // OpenCL C built-ins with no CUDA equivalent. Templated so they apply to
+        // float/double (and clamp also to integer kinds) exactly as OpenCL does.
+        "template<typename T> __device__ inline T radians(T d) { return d * (T) 0.017453292519943295; }\n" +
+        "template<typename T> __device__ inline T sign(T x) { return isnan((double) x) ? (T) 0 : (x > (T) 0 ? (T) 1 : (x < (T) 0 ? (T) -1 : (T) 0)); }\n" +
+        "template<typename T> __device__ inline T clamp(T x, T lo, T hi) { return x < lo ? lo : (x > hi ? hi : x); }\n" +
+        "template<typename T> __device__ inline int isequal(T a, T b) { return (int) (a == b); }\n" +
+        "template<typename T> __device__ inline int isnotequal(T a, T b) { return (int) (a != b); }\n" +
+        "template<typename T> __device__ inline int isgreater(T a, T b) { return (int) (a > b); }\n" +
+        "template<typename T> __device__ inline int isgreaterequal(T a, T b) { return (int) (a >= b); }\n" +
+        "template<typename T> __device__ inline int isless(T a, T b) { return (int) (a < b); }\n" +
+        "template<typename T> __device__ inline int islessequal(T a, T b) { return (int) (a <= b); }\n" +
+        "template<typename T> __device__ inline int islessgreater(T a, T b) { return (int) ((a < b) || (a > b)); }\n";
     // @formatter:on
 }
