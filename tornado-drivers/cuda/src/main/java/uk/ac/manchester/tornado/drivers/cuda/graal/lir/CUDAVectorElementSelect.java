@@ -68,12 +68,18 @@ public class CUDAVectorElementSelect extends CUDALIROp {
         }
     }
 
+    // CUDA built-in vector types expose components as .x/.y/.z/.w (width <= 4).
+    private static final String[] CUDA_COMPONENTS = { "x", "y", "z", "w" };
+
     @Override
     public void emit(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
         asm.emitValueOrOp(crb, vector);
         int idx = Integer.parseInt(CUDAAssembler.getAbsoluteIndexFromValue(selection));
-        String vectorIndex = idx > 9 ? String.valueOf(convertForWithOf16(idx)) : CUDAAssembler.getAbsoluteIndexFromValue(selection);
-        asm.emitSymbol(".s" + vectorIndex);
+        if (idx < 0 || idx > 3) {
+            throw new uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException(
+                    "CUDA backend supports vector component access only for widths 2-4 (index " + idx + ").");
+        }
+        asm.emitSymbol("." + CUDA_COMPONENTS[idx]);
     }
 
     @Override

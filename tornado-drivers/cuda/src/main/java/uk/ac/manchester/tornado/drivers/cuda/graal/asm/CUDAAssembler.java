@@ -54,7 +54,6 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAReturnSlot;
 
 public final class CUDAAssembler extends Assembler {
 
-    private static final boolean EMIT_INTRINSICS = false;
     private int indent;
     private int lastIndent;
     private String delimiter;
@@ -73,10 +72,9 @@ public final class CUDAAssembler extends Assembler {
         // CUDA C / NVRTC supports double, half and 64-bit atomics natively for the
         // target compute capability; no OpenCL '#pragma OPENCL EXTENSION ...' is needed
         // (and NVRTC rejects/warns on unrecognised pragmas), so none are emitted here.
-
-        if (EMIT_INTRINSICS) {
-            emitAtomicIntrinsics();
-        }
+        // Atomic operations are emitted inline as native CUDA intrinsics
+        // (atomicAdd/atomicSub/atomicCAS/...) at their codegen sites; no global
+        // helper functions are generated.
     }
 
     /**
@@ -120,60 +118,6 @@ public final class CUDAAssembler extends Assembler {
         int endIndex = value.toString().indexOf('|');
 
         return value.toString().substring(startIndex, endIndex).trim().replace("v", "");
-    }
-
-    private void emitAtomicIntrinsics() {
-        //@formatter:off
-        emitLine("inline void atomicAdd_Tornado_Floats(volatile __global float *source, const float operand) {\n" +
-                "   union {\n" +
-                "       unsigned int intVal;\n" +
-                "       float floatVal;\n" +
-                "   } newVal;\n" +
-                "   union {\n" +
-                "       unsigned int intVal;\n" +
-                "       float floatVal;\n" +
-                "   } prevVal;\n" +
-                "   barrier(CLK_GLOBAL_MEM_FENCE);\n" +
-                "   do {\n" +
-                "       prevVal.floatVal = *source;\n" +
-                "       newVal.floatVal = prevVal.floatVal + operand;\n" +
-                "   } while (atomic_cmpxchg((volatile __global unsigned int *)source, prevVal.intVal,\n" +
-                "   newVal.intVal) != prevVal.intVal);" +
-                "}");
-
-        emitLine("inline void atomicAdd_Tornado_Floats2(volatile __global float *addr, float val)\n" +
-                "{\n" +
-                "    union {\n" +
-                "        unsigned int u32;\n" +
-                "        float f32;\n" +
-                "    } next, expected, current;\n" +
-                "    current.f32 = *addr;\n" +
-                "barrier(CLK_GLOBAL_MEM_FENCE);\n" +
-                "    do {\n" +
-                "       expected.f32 = current.f32;\n" +
-                "       next.f32 = expected.f32 + val;\n" +
-                "       current.u32 = atomic_cmpxchg( (volatile __global unsigned int *)addr,\n" +
-                "       expected.u32, next.u32);\n" +
-                "    } while( current.u32 != expected.u32 );\n" +
-                "}");
-
-        emitLine("inline void atomicMul_Tornado_Int(volatile __global int *source, const float operand) {\n" +
-                "   union {\n" +
-                "       unsigned int intVal;\n" +
-                "       int value;\n" +
-                "   } newVal;\n" +
-                "   union {\n" +
-                "       unsigned int intVal;\n" +
-                "       int value;\n" +
-                "   } prevVal;\n" +
-                "   barrier(CLK_GLOBAL_MEM_FENCE);\n" +
-                "   do {\n" +
-                "       prevVal.value = *source;\n" +
-                "       newVal.value = prevVal.value * operand;\n" +
-                "   } while (atomic_cmpxchg((volatile __global unsigned int *)source, prevVal.intVal,\n" +
-                "   newVal.intVal) != prevVal.intVal);" +
-                "}");
-        //@formatter:on
     }
 
     @Override
@@ -631,7 +575,7 @@ public final class CUDAAssembler extends Assembler {
         public static final CUDAUnaryOp CAST_TO_INT = new CUDAUnaryOp("(int) ", true);
         public static final CUDAUnaryOp CAST_TO_SHORT = new CUDAUnaryOp("(short) ", true);
         public static final CUDAUnaryOp CAST_TO_LONG = new CUDAUnaryOp("(long) ", true);
-        public static final CUDAUnaryOp CAST_TO_ULONG = new CUDAUnaryOp("(ulong) ", true);
+        public static final CUDAUnaryOp CAST_TO_ULONG = new CUDAUnaryOp("(unsigned long) ", true);
         public static final CUDAUnaryOp CAST_TO_FLOAT = new CUDAUnaryOp("(float) ", true);
         public static final CUDAUnaryOp CAST_TO_BYTE = new CUDAUnaryOp("(char) ", true);
         public static final CUDAUnaryOp CAST_TO_DOUBLE = new CUDAUnaryOp("(double) ", true);
@@ -639,7 +583,7 @@ public final class CUDAAssembler extends Assembler {
         public static final CUDAUnaryOp CAST_TO_INT_PTR = new CUDAUnaryOp("(int *) ", true);
         public static final CUDAUnaryOp CAST_TO_SHORT_PTR = new CUDAUnaryOp("(short *) ", true);
         public static final CUDAUnaryOp CAST_TO_LONG_PTR = new CUDAUnaryOp("(long *) ", true);
-        public static final CUDAUnaryOp CAST_TO_ULONG_PTR = new CUDAUnaryOp("(ulong *) ", true);
+        public static final CUDAUnaryOp CAST_TO_ULONG_PTR = new CUDAUnaryOp("(unsigned long *) ", true);
         public static final CUDAUnaryOp CAST_TO_FLOAT_PTR = new CUDAUnaryOp("(float *) ", true);
         public static final CUDAUnaryOp CAST_TO_BYTE_PTR = new CUDAUnaryOp("(char *) ", true);
         // @formatter:on
@@ -684,13 +628,13 @@ public final class CUDAAssembler extends Assembler {
         public static final CUDAUnaryIntrinsic GROUP_ID = new CUDAUnaryIntrinsic("get_group_id");
         public static final CUDAUnaryIntrinsic GROUP_SIZE = new CUDAUnaryIntrinsic("get_group_size");
 
-        public static final CUDAUnaryIntrinsic ATOMIC_INC = new CUDAUnaryIntrinsic("atomic_inc");
-        public static final CUDAUnaryIntrinsic ATOMIC_FETCH_ADD_EXPLICIT = new CUDAUnaryIntrinsic("atomic_fetch_add_explicit");
-        public static final CUDAUnaryIntrinsic ATOMIC_FETCH_SUB_EXPLICIT = new CUDAUnaryIntrinsic("atomic_fetch_sub_explicit");
-        public static final CUDAUnaryIntrinsic ATOM_ADD = new CUDAUnaryIntrinsic("atom_add");
-        public static final CUDAUnaryIntrinsic ATOMIC_ADD = new CUDAUnaryIntrinsic("atomic_add");
-        public static final CUDAUnaryIntrinsic ATOMIC_VAR_INIT = new CUDAUnaryIntrinsic("ATOMIC_VAR_INIT");
-        public static final CUDAUnaryIntrinsic ATOMIC_DEC = new CUDAUnaryIntrinsic("atomic_dec");
+        public static final CUDAUnaryIntrinsic ATOMIC_INC = new CUDAUnaryIntrinsic("atomicInc");
+        public static final CUDAUnaryIntrinsic ATOMIC_FETCH_ADD_EXPLICIT = new CUDAUnaryIntrinsic("atomicAdd");
+        public static final CUDAUnaryIntrinsic ATOMIC_FETCH_SUB_EXPLICIT = new CUDAUnaryIntrinsic("atomicSub");
+        public static final CUDAUnaryIntrinsic ATOM_ADD = new CUDAUnaryIntrinsic("atomicAdd");
+        public static final CUDAUnaryIntrinsic ATOMIC_ADD = new CUDAUnaryIntrinsic("atomicAdd");
+        public static final CUDAUnaryIntrinsic ATOMIC_VAR_INIT = new CUDAUnaryIntrinsic("");
+        public static final CUDAUnaryIntrinsic ATOMIC_DEC = new CUDAUnaryIntrinsic("atomicDec");
         public static final CUDAUnaryIntrinsic ATOMIC_GET = new CUDAUnaryIntrinsic("atomic[0]");
 
         public static final CUDAUnaryIntrinsic MEMORY_ORDER_RELAXED = new CUDAUnaryIntrinsic("memory_order_relaxed");
@@ -793,6 +737,21 @@ public final class CUDAAssembler extends Assembler {
                 return;
             } else if (this == BARRIER) {
                 asm.emit("__syncthreads()");
+                return;
+            } else if (this == RADIANS && x != null) {
+                // OpenCL radians(x) has no CUDA equivalent: emit inline degrees->radians.
+                asm.emit("((");
+                asm.emitValueOrOp(crb, x);
+                asm.emit(") * 0.017453292519943295)");
+                return;
+            } else if (this == SIGN && x != null) {
+                // Java Math.signum semantics, NaN-preserving (x != x is true for NaN),
+                // and preserving signed zero by returning the operand for the 0 case.
+                asm.beginStackPush();
+                asm.emitValueOrOp(crb, x);
+                final String v = asm.getLastOp();
+                asm.endStackPush();
+                asm.emit(String.format("((%s) != (%s) ? (%s) : ((%s) > 0 ? 1 : ((%s) < 0 ? -1 : (%s))))", v, v, v, v, v, v));
                 return;
             }
             emitOpcode(asm);
@@ -907,14 +866,14 @@ public final class CUDAAssembler extends Assembler {
         public static final CUDABinaryIntrinsic FLOAT_MAX = new CUDABinaryIntrinsic("fmax");
         public static final CUDABinaryIntrinsic FLOAT_POW = new CUDABinaryIntrinsic("pow");
 
-        public static final CUDABinaryIntrinsic ATOMIC_ADD = new CUDABinaryIntrinsic("atomic_add");
-        public static final CUDABinaryIntrinsic ATOMIC_SUB = new CUDABinaryIntrinsic("atomic_sub");
-        public static final CUDABinaryIntrinsic ATOMIC_XCHG = new CUDABinaryIntrinsic("atomic_xchg");
-        public static final CUDABinaryIntrinsic ATOMIC_MIN = new CUDABinaryIntrinsic("atomic_min");
-        public static final CUDABinaryIntrinsic ATOMIC_MAX = new CUDABinaryIntrinsic("atomic_max");
-        public static final CUDABinaryIntrinsic ATOMIC_AND = new CUDABinaryIntrinsic("atomic_and");
-        public static final CUDABinaryIntrinsic ATOMIC_OR = new CUDABinaryIntrinsic("atomic_or");
-        public static final CUDABinaryIntrinsic ATOMIC_XOR = new CUDABinaryIntrinsic("atomic_xor");
+        public static final CUDABinaryIntrinsic ATOMIC_ADD = new CUDABinaryIntrinsic("atomicAdd");
+        public static final CUDABinaryIntrinsic ATOMIC_SUB = new CUDABinaryIntrinsic("atomicSub");
+        public static final CUDABinaryIntrinsic ATOMIC_XCHG = new CUDABinaryIntrinsic("atomicExch");
+        public static final CUDABinaryIntrinsic ATOMIC_MIN = new CUDABinaryIntrinsic("atomicMin");
+        public static final CUDABinaryIntrinsic ATOMIC_MAX = new CUDABinaryIntrinsic("atomicMax");
+        public static final CUDABinaryIntrinsic ATOMIC_AND = new CUDABinaryIntrinsic("atomicAnd");
+        public static final CUDABinaryIntrinsic ATOMIC_OR = new CUDABinaryIntrinsic("atomicOr");
+        public static final CUDABinaryIntrinsic ATOMIC_XOR = new CUDABinaryIntrinsic("atomicXor");
 
         public static final CUDABinaryIntrinsic VLOAD2 = new CUDABinaryIntrinsic("vload2");
         public static final CUDABinaryIntrinsic VLOAD3 = new CUDABinaryIntrinsic("vload3");
@@ -945,13 +904,17 @@ public final class CUDAAssembler extends Assembler {
     public static class CUDABinaryIntrinsicCmp extends CUDABinaryOp {
 
         // @formatter:off
-        public static final CUDABinaryIntrinsicCmp FLOAT_IS_EQUAL = new CUDABinaryIntrinsicCmp("isequal");
-        public static final CUDABinaryIntrinsicCmp FLOAT_IS_NOT_EQUAL = new CUDABinaryIntrinsicCmp("isnotequal");
-        public static final CUDABinaryIntrinsicCmp FLOAT_IS_GREATER = new CUDABinaryIntrinsicCmp("isgreater");
-        public static final CUDABinaryIntrinsicCmp FLOAT_IS_GREATEREQUAL = new CUDABinaryIntrinsicCmp("isgreaterequal");
-        public static final CUDABinaryIntrinsicCmp FLOAT_IS_LESS = new CUDABinaryIntrinsicCmp("isless");
-        public static final CUDABinaryIntrinsicCmp FLOAT_IS_LESSEQUAL = new CUDABinaryIntrinsicCmp("islessequal");
-        public static final CUDABinaryIntrinsicCmp FLOAT_IS_LESSGREATER = new CUDABinaryIntrinsicCmp("islessgreater");
+        // The 'opcode' here is the C relational operator to emit inline. CUDA C / NVRTC
+        // has no OpenCL isequal/isless/... built-ins for scalars, so we emit the
+        // corresponding C operator which already yields an int (0/1).
+        public static final CUDABinaryIntrinsicCmp FLOAT_IS_EQUAL = new CUDABinaryIntrinsicCmp("==");
+        public static final CUDABinaryIntrinsicCmp FLOAT_IS_NOT_EQUAL = new CUDABinaryIntrinsicCmp("!=");
+        public static final CUDABinaryIntrinsicCmp FLOAT_IS_GREATER = new CUDABinaryIntrinsicCmp(">");
+        public static final CUDABinaryIntrinsicCmp FLOAT_IS_GREATEREQUAL = new CUDABinaryIntrinsicCmp(">=");
+        public static final CUDABinaryIntrinsicCmp FLOAT_IS_LESS = new CUDABinaryIntrinsicCmp("<");
+        public static final CUDABinaryIntrinsicCmp FLOAT_IS_LESSEQUAL = new CUDABinaryIntrinsicCmp("<=");
+        // islessgreater(a,b) == (a<b)||(a>b); handled specially below.
+        public static final CUDABinaryIntrinsicCmp FLOAT_IS_LESSGREATER = new CUDABinaryIntrinsicCmp("<>");
         // @formatter:on
 
         protected CUDABinaryIntrinsicCmp(String opcode) {
@@ -961,12 +924,23 @@ public final class CUDAAssembler extends Assembler {
         @Override
         public void emit(CUDACompilationResultBuilder crb, Value x, Value y) {
             final CUDAAssembler asm = crb.getAssembler();
-            emitOpcode(asm);
-            asm.emit("(");
+            if (this == FLOAT_IS_LESSGREATER) {
+                asm.beginStackPush();
+                asm.emitValueOrOp(crb, x);
+                final String a = asm.getLastOp();
+                asm.emitValueOrOp(crb, y);
+                final String b = asm.getLastOp();
+                asm.endStackPush();
+                asm.emit(String.format("(((%s) < (%s)) || ((%s) > (%s)))", a, b, a, b));
+                return;
+            }
+            asm.emit("((");
             asm.emitValueOrOp(crb, x);
-            asm.emit(", ");
+            asm.emit(") ");
+            emitOpcode(asm);
+            asm.emit(" (");
             asm.emitValueOrOp(crb, y);
-            asm.emit(")");
+            asm.emit("))");
         }
     }
 
@@ -1075,6 +1049,29 @@ public final class CUDAAssembler extends Assembler {
         @Override
         public void emit(CUDACompilationResultBuilder crb, Value x, Value y, Value z) {
             final CUDAAssembler asm = crb.getAssembler();
+            if (this == CLAMP) {
+                // OpenCL clamp(x, lo, hi) has no CUDA equivalent. Emit it inline.
+                // Floating point: use the precision-correct CUDA fmin/fmax
+                // (fminf/fmaxf for float, fmin/fmax for double). Integer kinds:
+                // a branchless ternary to avoid floating-point math.
+                final CUDAKind kind = (CUDAKind) x.getPlatformKind();
+                asm.beginStackPush();
+                asm.emitValueOrOp(crb, x);
+                final String xs = asm.getLastOp();
+                asm.emitValueOrOp(crb, y);
+                final String lo = asm.getLastOp();
+                asm.emitValueOrOp(crb, z);
+                final String hi = asm.getLastOp();
+                asm.endStackPush();
+                if (kind == CUDAKind.FLOAT) {
+                    asm.emit(String.format("fminf(fmaxf(%s, %s), %s)", xs, lo, hi));
+                } else if (kind == CUDAKind.DOUBLE) {
+                    asm.emit(String.format("fmin(fmax(%s, %s), %s)", xs, lo, hi));
+                } else {
+                    asm.emit(String.format("(((%s) < (%s)) ? (%s) : (((%s) > (%s)) ? (%s) : (%s)))", xs, lo, lo, xs, hi, hi, xs));
+                }
+                return;
+            }
             emitOpcode(asm);
             asm.emit("(");
             asm.emitValueOrOp(crb, x);
@@ -1119,13 +1116,13 @@ public final class CUDAAssembler extends Assembler {
     public static class CUDAOp2 extends CUDAOp {
 
         // @formatter:off
-        public static final CUDAOp2 VMOV_SHORT2 = new CUDAOp2("(short2)");
-        public static final CUDAOp2 VMOV_INT2 = new CUDAOp2("(int2)");
-        public static final CUDAOp2 VMOV_FLOAT2 = new CUDAOp2("(float2)");
-        public static final CUDAOp2 VMOV_BYTE2 = new CUDAOp2("(char2)");
-        public static final CUDAOp2 VMOV_DOUBLE2 = new CUDAOp2("(double2)");
+        public static final CUDAOp2 VMOV_SHORT2 = new CUDAOp2("make_short2");
+        public static final CUDAOp2 VMOV_INT2 = new CUDAOp2("make_int2");
+        public static final CUDAOp2 VMOV_FLOAT2 = new CUDAOp2("make_float2");
+        public static final CUDAOp2 VMOV_BYTE2 = new CUDAOp2("make_char2");
+        public static final CUDAOp2 VMOV_DOUBLE2 = new CUDAOp2("make_double2");
 
-        public static final CUDAOp2 VMOV_HALF2 = new CUDAOp2("(half2)");
+        public static final CUDAOp2 VMOV_HALF2 = new CUDAOp2("make_half2");
         // @formatter:on
 
         protected CUDAOp2(String opcode) {
@@ -1147,13 +1144,13 @@ public final class CUDAAssembler extends Assembler {
     public static class CUDAOp3 extends CUDAOp2 {
         // @formatter:off
 
-        public static final CUDAOp3 VMOV_SHORT3 = new CUDAOp3("(short3)");
-        public static final CUDAOp3 VMOV_INT3 = new CUDAOp3("(int3)");
-        public static final CUDAOp3 VMOV_FLOAT3 = new CUDAOp3("(float3)");
-        public static final CUDAOp3 VMOV_BYTE3 = new CUDAOp3("(char3)");
-        public static final CUDAOp3 VMOV_DOUBLE3 = new CUDAOp3("(double3)");
+        public static final CUDAOp3 VMOV_SHORT3 = new CUDAOp3("make_short3");
+        public static final CUDAOp3 VMOV_INT3 = new CUDAOp3("make_int3");
+        public static final CUDAOp3 VMOV_FLOAT3 = new CUDAOp3("make_float3");
+        public static final CUDAOp3 VMOV_BYTE3 = new CUDAOp3("make_char3");
+        public static final CUDAOp3 VMOV_DOUBLE3 = new CUDAOp3("make_double3");
 
-        public static final CUDAOp3 VMOV_HALF3 = new CUDAOp3("(half3)");
+        public static final CUDAOp3 VMOV_HALF3 = new CUDAOp3("make_half3");
 
         // @formatter:on
         public CUDAOp3(String opcode) {
@@ -1176,13 +1173,13 @@ public final class CUDAAssembler extends Assembler {
     public static class CUDAOp4 extends CUDAOp3 {
         // @formatter:off
 
-        public static final CUDAOp4 VMOV_SHORT4 = new CUDAOp4("(short4)");
-        public static final CUDAOp4 VMOV_INT4 = new CUDAOp4("(int4)");
-        public static final CUDAOp4 VMOV_FLOAT4 = new CUDAOp4("(float4)");
-        public static final CUDAOp4 VMOV_BYTE4 = new CUDAOp4("(char4)");
-        public static final CUDAOp4 VMOV_DOUBLE4 = new CUDAOp4("(double4)");
+        public static final CUDAOp4 VMOV_SHORT4 = new CUDAOp4("make_short4");
+        public static final CUDAOp4 VMOV_INT4 = new CUDAOp4("make_int4");
+        public static final CUDAOp4 VMOV_FLOAT4 = new CUDAOp4("make_float4");
+        public static final CUDAOp4 VMOV_BYTE4 = new CUDAOp4("make_char4");
+        public static final CUDAOp4 VMOV_DOUBLE4 = new CUDAOp4("make_double4");
 
-        public static final CUDAOp4 VMOV_HALF4 = new CUDAOp4("(half4)");
+        public static final CUDAOp4 VMOV_HALF4 = new CUDAOp4("make_half4");
         // @formatter:on
 
         protected CUDAOp4(String opcode) {
@@ -1222,25 +1219,7 @@ public final class CUDAAssembler extends Assembler {
         }
 
         public void emit(CUDACompilationResultBuilder crb, Value s0, Value s1, Value s2, Value s3, Value s4, Value s5, Value s6, Value s7) {
-            final CUDAAssembler asm = crb.getAssembler();
-            emitOpcode(asm);
-            asm.emit("(");
-            asm.emitValue(crb, s0);
-            asm.emit(", ");
-            asm.emitValue(crb, s1);
-            asm.emit(", ");
-            asm.emitValue(crb, s2);
-            asm.emit(", ");
-            asm.emitValue(crb, s3);
-            asm.emit(", ");
-            asm.emitValue(crb, s4);
-            asm.emit(", ");
-            asm.emitValue(crb, s5);
-            asm.emit(", ");
-            asm.emitValue(crb, s6);
-            asm.emit(", ");
-            asm.emitValue(crb, s7);
-            asm.emit(")");
+            throw new uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException("CUDA backend does not support width-8 vector types.");
         }
     }
 
@@ -1259,41 +1238,7 @@ public final class CUDAAssembler extends Assembler {
 
         public void emit(CUDACompilationResultBuilder crb, Value s0, Value s1, Value s2, Value s3, Value s4, Value s5, Value s6, Value s7, Value s8, Value s9, Value s10, Value s11, Value s12,
                 Value s13, Value s14, Value s15) {
-            final CUDAAssembler asm = crb.getAssembler();
-            emitOpcode(asm);
-            asm.emit("(");
-            asm.emitValue(crb, s0);
-            asm.emit(", ");
-            asm.emitValue(crb, s1);
-            asm.emit(", ");
-            asm.emitValue(crb, s2);
-            asm.emit(", ");
-            asm.emitValue(crb, s3);
-            asm.emit(", ");
-            asm.emitValue(crb, s4);
-            asm.emit(", ");
-            asm.emitValue(crb, s5);
-            asm.emit(", ");
-            asm.emitValue(crb, s6);
-            asm.emit(", ");
-            asm.emitValue(crb, s7);
-            asm.emit(", ");
-            asm.emitValue(crb, s8);
-            asm.emit(", ");
-            asm.emitValue(crb, s9);
-            asm.emit(", ");
-            asm.emitValue(crb, s10);
-            asm.emit(", ");
-            asm.emitValue(crb, s11);
-            asm.emit(", ");
-            asm.emitValue(crb, s12);
-            asm.emit(", ");
-            asm.emitValue(crb, s13);
-            asm.emit(", ");
-            asm.emitValue(crb, s14);
-            asm.emit(", ");
-            asm.emitValue(crb, s15);
-            asm.emit(")");
+            throw new uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException("CUDA backend does not support width-16 vector types.");
         }
     }
 }

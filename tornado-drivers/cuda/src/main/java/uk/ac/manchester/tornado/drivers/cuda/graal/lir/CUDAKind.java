@@ -480,9 +480,44 @@ public enum CUDAKind implements PlatformKind {
             return "long";
         } else if (this == CUDAKind.ATOMIC_ADD_FLOAT) {
             return "float";
+        } else if (this == CUDAKind.UCHAR) {
+            return "unsigned char";
+        } else if (this == CUDAKind.USHORT) {
+            return "unsigned short";
+        } else if (this == CUDAKind.UINT) {
+            return "unsigned int";
+        } else if (this == CUDAKind.ULONG) {
+            return "unsigned long";
         } else {
             return name().toLowerCase();
         }
+    }
+
+    /**
+     * Returns the native CUDA C type name for this kind.
+     *
+     * <p>Scalars map to the native unsigned/signed types. Vectors of width 2/3/4
+     * map to the CUDA built-in vector types ({@code float4}, {@code int2}, ...).
+     * Vector widths 8 and 16 have no CUDA built-in equivalent and are rejected
+     * with a bailout, so unsupported kernels fail honestly rather than emitting
+     * invalid code.
+     */
+    public String getCUDATypeName() {
+        if (!isVector()) {
+            return toString();
+        }
+        int len = getVectorLength();
+        if (len != 2 && len != 3 && len != 4) {
+            throw new uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException(
+                    "CUDA backend does not support vector width " + len + " (kind " + name() + "); only widths 2, 3 and 4 are supported.");
+        }
+        CUDAKind element = getElementKind();
+        if (element == HALF) {
+            // CUDA cuda_fp16.h only provides __half2 (no half3/half4 built-ins).
+            throw new uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException(
+                    "CUDA backend does not support half-precision vector type " + name() + ".");
+        }
+        return element.toString() + len;
     }
 
     public String getTypePrefix() {

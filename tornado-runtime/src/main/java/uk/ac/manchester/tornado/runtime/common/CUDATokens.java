@@ -69,5 +69,36 @@ public class CUDATokens {
         cudaTokens.add("atomicCAS");
         cudaTokens.add("atomicInc");
         cudaTokens.add("atomicDec");
+
+        // C++ reserved keywords. NVRTC compiles the kernel source as C++ (the
+        // 'extern "C"' only affects linkage, not the language), so a Java
+        // parameter/variable whose name collides with a C++ keyword (most
+        // commonly the receiver 'this') must be renamed to compile.
+        cudaTokens.add("this");
+        cudaTokens.add("new");
+        cudaTokens.add("delete");
+        cudaTokens.add("class");
+        cudaTokens.add("struct");
+        cudaTokens.add("union");
+        cudaTokens.add("template");
+        cudaTokens.add("typename");
+        cudaTokens.add("namespace");
+        cudaTokens.add("operator");
+        cudaTokens.add("private");
+        cudaTokens.add("public");
+        cudaTokens.add("protected");
+        cudaTokens.add("virtual");
+        cudaTokens.add("friend");
+        cudaTokens.add("explicit");
+        cudaTokens.add("inline");
+        cudaTokens.add("typeid");
+        cudaTokens.add("using");
+        cudaTokens.add("try");
+        cudaTokens.add("catch");
+        cudaTokens.add("throw");
+        cudaTokens.add("bool");
+        cudaTokens.add("true");
+        cudaTokens.add("false");
+        cudaTokens.add("nullptr");
     }
 }
