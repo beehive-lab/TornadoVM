@@ -53,7 +53,15 @@ The SPIR-V backend can be dispatched through two different runtimes:
 Installation
 ************
 
-TornadoVM can be built with three compiler backends and is able to generate OpenCL, PTX and SPIR-V code.
+TornadoVM can be built with multiple compiler backends and is able to generate OpenCL C, NVIDIA PTX, CUDA C
+(compiled to PTX via NVRTC), SPIR-V and Metal code.
+
+.. note::
+
+   For NVIDIA GPUs, TornadoVM provides two backends: the **PTX** backend (emits PTX assembly directly)
+   and the **CUDA** backend (generates CUDA C and compiles it to PTX with NVRTC). To build the CUDA
+   backend on its own, run ``make BACKEND=cuda``. See :ref:`cuda-backend` for details and the
+   supported / in-progress feature status.
 
 Installation Script
 ===================
