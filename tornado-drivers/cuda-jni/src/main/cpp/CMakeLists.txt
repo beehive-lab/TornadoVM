@@ -29,24 +29,64 @@ include_directories(
 	$ENV{C_INCLUDE_PATH}
 )
 
-# Phase 0 skeleton: builds an (almost) empty shared library so the module
-# packages correctly. Phase 1 adds the real Driver-API + NVRTC sources here.
+# Real CUDA-C JNI backend: Driver API + NVRTC sources are globbed from source/.
 file(GLOB_RECURSE SOURCE_FILES "source/*.cpp")
 add_library(tornado-cuda SHARED ${SOURCE_FILES})
 
-# CUDA Driver API + NVRTC (runtime compilation of generated CUDA C -> PTX)
-find_package(CUDAToolkit REQUIRED)
-if(CUDAToolkit_FOUND)
-    include_directories(${CUDAToolkit_INCLUDE_DIRS})
-    link_directories(tornado-cuda ${CUDAToolkit_LIBRARY_ROOT})
-    if(CMAKE_HOST_WIN32)
-        set_target_properties(tornado-cuda PROPERTIES PREFIX "")
-        find_library(CUDA_LIB cuda PATHS ${CUDAToolkit_LIBRARY_DIR})
-        find_library(NVRTC_LIB nvrtc PATHS ${CUDAToolkit_LIBRARY_DIR})
-        target_link_libraries(tornado-cuda ${JNI_LIB_DIRS} ${CUDA_LIB} ${NVRTC_LIB})
-    else()
-        target_link_libraries(tornado-cuda ${JNI_LIB_DIRS} "-L/usr/local/cuda/lib64/stubs -lcuda -lnvrtc")
-    endif()
-else(CUDAToolkit_FOUND)
-    message("CUDA is not installed on this system.")
+# CUDA Driver API + NVRTC (runtime compilation of generated CUDA C -> PTX).
+# Prefer the CMake-discovered CUDA toolkit, but fall back to common system
+# locations so the lib builds even when CUDA is not under /usr/local/cuda.
+find_package(CUDAToolkit QUIET)
+
+find_path(CUDA_INCLUDE_DIR cuda.h
+    HINTS
+        ${CUDAToolkit_INCLUDE_DIRS}
+        $ENV{CUDA_PATH}/include
+        /usr/local/cuda/include
+        /usr/include
+        /usr/lib/cuda/include
+)
+find_path(NVRTC_INCLUDE_DIR nvrtc.h
+    HINTS
+        ${CUDAToolkit_INCLUDE_DIRS}
+        $ENV{CUDA_PATH}/include
+        /usr/local/cuda/include
+        /usr/include
+        /usr/lib/cuda/include
+)
+
+# Link the CUDA Driver API stub and NVRTC. The real libcuda is provided by the
+# NVIDIA driver at runtime; the stub satisfies the linker at build time.
+find_library(CUDA_DRIVER_LIB cuda
+    HINTS
+        ${CUDAToolkit_LIBRARY_DIR}
+        $ENV{CUDA_PATH}/lib64/stubs
+        /usr/local/cuda/lib64/stubs
+        /usr/lib/x86_64-linux-gnu/stubs
+        /usr/lib/x86_64-linux-gnu
+)
+find_library(NVRTC_LIB nvrtc
+    HINTS
+        ${CUDAToolkit_LIBRARY_DIR}
+        $ENV{CUDA_PATH}/lib64
+        /usr/local/cuda/lib64
+        /usr/lib/x86_64-linux-gnu
+)
+
+if(CUDA_INCLUDE_DIR)
+    include_directories(${CUDA_INCLUDE_DIR})
+endif()
+if(NVRTC_INCLUDE_DIR)
+    include_directories(${NVRTC_INCLUDE_DIR})
+endif()
+
+if(CMAKE_HOST_WIN32)
+    set_target_properties(tornado-cuda PROPERTIES PREFIX "")
+endif()
+
+if(CUDA_DRIVER_LIB AND NVRTC_LIB)
+    target_link_libraries(tornado-cuda ${JNI_LIB_DIRS} ${CUDA_DRIVER_LIB} ${NVRTC_LIB})
+else()
+    message(WARNING "Could not locate libcuda / libnvrtc via find_library; falling back to -lcuda -lnvrtc")
+    target_link_libraries(tornado-cuda ${JNI_LIB_DIRS} "-lcuda -lnvrtc")
 endif()
