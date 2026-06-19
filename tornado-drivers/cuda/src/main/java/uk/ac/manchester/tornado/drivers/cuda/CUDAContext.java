@@ -70,6 +70,9 @@ public class CUDAContext implements CUDAContextInterface {
     // creates an empty buffer on the device
     native CUDABufferResult createBuffer(long contextId, long flags, long size, long hostPointer) throws CUDAException;
 
+    // zero-initialises a device buffer (cuMemsetD8 to 0)
+    native int memSetZero(long contextId, long devicePointer, long bytes);
+
     native long createSubBuffer(long buffer, long flags, int createType, byte[] createInfo) throws CUDAException;
 
     native void clReleaseMemObject(long memId) throws CUDAException;
@@ -225,6 +228,18 @@ public class CUDAContext implements CUDAContextInterface {
         } catch (CUDAException e) {
             logger.error(e.getMessage());
         }
+    }
+
+    /**
+     * Zero-initialise a device buffer. Used to guarantee that (re)allocated
+     * device buffers do not expose stale/garbage data when a kernel does not
+     * write all (or any) of an output buffer.
+     */
+    public void zeroBuffer(long bufferId, long bytes) {
+        if (bufferId == 0 || bytes <= 0) {
+            return;
+        }
+        memSetZero(contextID, bufferId, bytes);
     }
 
     public int getPlatformIndex() {

@@ -168,6 +168,11 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.opencl.graal.nodes.DecAtomicNode") || //
                 currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomAddNodeTemplate") || //
                 currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.ptx.graal.nodes.AtomAddNodeTemplate") || //
+                currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.cuda.graal.nodes.IncAtomicNode") || //
+                currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.cuda.graal.nodes.DecAtomicNode") || //
+                currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GetAtomicNode") || //
+                currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.cuda.graal.nodes.AtomAddNodeTemplate") || //
+                currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.cuda.graal.nodes.AtomicAddNodeTemplate") || //
                 currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.metal.graal.nodes.IncAtomicNode") || //
                 currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.metal.graal.nodes.DecAtomicNode") || //
                 currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.metal.graal.nodes.GetAtomicNode") || //
