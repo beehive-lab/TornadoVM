@@ -35,7 +35,7 @@ metal:
 	bin/compile --jdk jdk21 --backend metal,opencl
 
 cuda:
-	bin/compile --jdk jdk21 --backend cuda,opencl
+	bin/compile --jdk jdk21 --backend cuda
 
 sdk:
 	bin/compile --jdk jdk21 --sdk --backend $(BACKEND)
