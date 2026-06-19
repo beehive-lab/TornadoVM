@@ -55,7 +55,8 @@ public final class CUDAPreamble {
         // OpenCL C built-ins with no CUDA equivalent. Templated so they apply to
         // float/double (and clamp also to integer kinds) exactly as OpenCL does.
         "template<typename T> __device__ inline T radians(T d) { return d * (T) 0.017453292519943295; }\n" +
-        "template<typename T> __device__ inline T sign(T x) { return isnan((double) x) ? (T) 0 : (x > (T) 0 ? (T) 1 : (x < (T) 0 ? (T) -1 : (T) 0)); }\n" +
+        // Java Math.signum semantics: signum(NaN) == NaN (OpenCL sign() returns 0).
+        "template<typename T> __device__ inline T sign(T x) { return isnan((double) x) ? x : (x > (T) 0 ? (T) 1 : (x < (T) 0 ? (T) -1 : (T) 0)); }\n" +
         "template<typename T> __device__ inline T clamp(T x, T lo, T hi) { return x < lo ? lo : (x > hi ? hi : x); }\n" +
         "template<typename T> __device__ inline int isequal(T a, T b) { return (int) (a == b); }\n" +
         "template<typename T> __device__ inline int isnotequal(T a, T b) { return (int) (a != b); }\n" +
