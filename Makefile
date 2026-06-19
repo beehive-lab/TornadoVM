@@ -34,6 +34,9 @@ spirv:
 metal:
 	bin/compile --jdk jdk21 --backend metal,opencl
 
+cuda:
+	bin/compile --jdk jdk21 --backend cuda,opencl
+
 sdk:
 	bin/compile --jdk jdk21 --sdk --backend $(BACKEND)
 

@@ -52,6 +52,11 @@ public class TornadoOptions {
     public static final String DEFAULT_PTX_COMPILER_FLAGS = getProperty("tornado.ptx.compiler.flags", "CU_JIT_OPTIMIZATION_LEVEL 4");
 
     /**
+     * Default CUDA (NVRTC) Compiler Flags. Passed to NVRTC when compiling the generated CUDA C source.
+     */
+    public static final String DEFAULT_CUDA_COMPILER_FLAGS = getProperty("tornado.cuda.compiler.flags", "");
+
+    /**
      * Default SPIR-V/LevelZero Flags.
      */
     public static final String DEFAULT_SPIRV_LEVEL_ZERO_COMPILER_FLAGS = getProperty("tornado.spirv.levelzero.flags", "-ze-opt-level 2 -ze-opt-large-register-file");
@@ -98,6 +103,11 @@ public class TornadoOptions {
      * the rest of the backends.
      */
     public static final int PTX_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.ptx.priority", "0"));
+    /**
+     * Priority of the CUDA Backend. The higher the number, the more priority over
+     * the rest of the backends.
+     */
+    public static final int CUDA_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.cuda.priority", "0"));
     /**
      * Priority of the OpenCL Backend. The higher the number, the more priority over
      * the rest of the backends.
