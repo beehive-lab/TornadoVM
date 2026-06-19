@@ -21,6 +21,7 @@
  */
 
 #include <jni.h>
+#include <cstdint>
 #include "cuda_jni.h"
 
 extern "C" {
@@ -76,21 +77,53 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAEvent_clGe
  * Method:    clWaitForEvents
  * Signature: ([J)V
  *
- * Events array layout is [count, e0, e1, ...].
+ * IMPORTANT: this method is reached with TWO different array layouts, so it
+ * must not assume a leading count word:
+ *
+ *   1. CUDAEvent.waitForEvents()  -> new long[] { handle }          (plain list)
+ *   2. CUDAEvent.waitOnPassive()  -> long[] { 1, handle }           (count-prefixed)
+ *
+ * The original code blindly read raw[0] as the element count. For layout (1)
+ * raw[0] is the boxed cuda_event_t* pointer value (a large number), so the loop
+ * ran for billions of iterations and dereferenced raw[i + 1], walking far past
+ * the 1-element array. That read garbage as cuda_event_t* and crashed in
+ * cuEventSynchronize(ev->event) with a SIGSEGV.
+ *
+ * Each boxed handle is a heap pointer returned by `new cuda_event_t()`
+ * (see CUDACommandQueue.cpp::record_event), so it is non-null, pointer-aligned
+ * and well above the low address page. A spurious count word such as 1 fails
+ * those checks. We therefore iterate over EVERY element and only synchronise on
+ * entries that look like a genuine boxed-event pointer. This handles both
+ * layouts safely without dereferencing wild memory, and never reads out of
+ * bounds because the loop is bounded by the real array length.
  */
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAEvent_clWaitForEvents
         (JNIEnv *env, jclass clazz, jlongArray array) {
     if (array == NULL) {
         return;
     }
+    jsize len = env->GetArrayLength(array);
+    if (len <= 0) {
+        return;
+    }
     jlong *raw = static_cast<jlong *>(env->GetPrimitiveArrayCritical(array, NULL));
-    jsize count = (jsize) raw[0];
-    for (jsize i = 0; i < count; i++) {
-        cuda_event_t *ev = (cuda_event_t *) raw[i + 1];
-        if (ev != nullptr) {
-            CUresult result = cuEventSynchronize(ev->event);
-            LOG_CUDA_AND_VALIDATE("cuEventSynchronize", result);
+    if (raw == NULL) {
+        return;
+    }
+    /* Minimum plausible heap address: reject null and small integers (e.g. a
+     * stale count word) that can never be a valid cuda_event_t* pointer. */
+    const uintptr_t MIN_VALID_PTR = 0x10000;
+    for (jsize i = 0; i < len; i++) {
+        uintptr_t value = (uintptr_t) raw[i];
+        if (value < MIN_VALID_PTR) {
+            continue; // null, a count word, or otherwise not a real handle
         }
+        if ((value % alignof(cuda_event_t *)) != 0) {
+            continue; // misaligned: cannot be a heap-allocated handle pointer
+        }
+        cuda_event_t *ev = (cuda_event_t *) value;
+        CUresult result = cuEventSynchronize(ev->event);
+        LOG_CUDA_AND_VALIDATE("cuEventSynchronize", result);
     }
     env->ReleasePrimitiveArrayCritical(array, raw, JNI_ABORT);
 }
