@@ -73,6 +73,9 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAArchitecture;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAUnary;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.AtomAddNodeTemplate;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAShuffleDownNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASimdBroadcastFirstNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASimdSumNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.DecAtomicNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GetAtomicNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GlobalThreadIdNode;
@@ -430,7 +433,38 @@ public class CUDAGraphBuilderPlugins {
         registerGlobalBarrier(r);
         localArraysPlugins(r);
         registerAtomicAddOperation(r);
+        registerSIMDPlugins(r);
         registerSwizzledLocalAccessesPlugins(r);
+    }
+
+    private static void registerSIMDPlugins(Registration r) {
+        // SIMD-group reductions over a warp, lowered to CUDA warp-shuffle
+        // intrinsics (__shfl_*_sync). Without these plugins the KernelContext
+        // default implementations are no-ops (return the input unchanged), which
+        // would silently produce wrong results.
+        r.register(new InvocationPlugin("simdShuffleDown", InvocationPlugin.Receiver.class, float.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val, ValueNode delta) {
+                b.addPush(JavaKind.Float, new CUDAShuffleDownNode(val, delta));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("simdSum", InvocationPlugin.Receiver.class, float.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val) {
+                b.addPush(JavaKind.Float, new CUDASimdSumNode(val));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("simdBroadcastFirst", InvocationPlugin.Receiver.class, float.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val) {
+                b.addPush(JavaKind.Float, new CUDASimdBroadcastFirstNode(val));
+                return true;
+            }
+        });
     }
 
     private static void registerSwizzledLocalAccessesPlugins(Registration r) {

@@ -540,6 +540,74 @@ public class CUDALIRStmt {
 
     }
 
+    @Opcode("SHUFFLE_SYNC")
+    public static class ShuffleSyncStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<ShuffleSyncStmt> TYPE = LIRInstructionClass.create(ShuffleSyncStmt.class);
+
+        /**
+         * Warp-shuffle mode mapping to a CUDA {@code __shfl_*_sync} intrinsic.
+         *
+         * <ul>
+         *   <li>{@code DOWN} -> {@code __shfl_down_sync(mask, var, delta)}: each lane
+         *       receives {@code var} from the lane {@code delta} positions ahead.</li>
+         *   <li>{@code IDX}  -> {@code __shfl_sync(mask, var, srcLane)}: each lane
+         *       receives {@code var} from {@code srcLane} (broadcast when srcLane=0).</li>
+         *   <li>{@code XOR}  -> {@code __shfl_xor_sync(mask, var, laneMask)}: butterfly
+         *       exchange, used to build an all-lanes reduction.</li>
+         * </ul>
+         */
+        public enum Mode {
+            DOWN("__shfl_down_sync"),
+            IDX("__shfl_sync"),
+            XOR("__shfl_xor_sync");
+
+            private final String intrinsic;
+
+            Mode(String intrinsic) {
+                this.intrinsic = intrinsic;
+            }
+        }
+
+        // All active lanes participate (CUDA 9+ requires an explicit member mask).
+        private static final String FULL_MASK = "0xffffffff";
+
+        private final Mode mode;
+        @Def
+        protected Value result;
+        @Use
+        protected Value source;
+        @Use
+        protected Value operand;
+
+        public ShuffleSyncStmt(Mode mode, Value result, Value source, Value operand) {
+            super(TYPE);
+            this.mode = mode;
+            this.result = result;
+            this.source = source;
+            this.operand = operand;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emit(mode.intrinsic);
+            asm.emit("(");
+            asm.emit(FULL_MASK);
+            asm.emit(", ");
+            asm.emitValue(crb, source);
+            asm.emit(", ");
+            asm.emitValue(crb, operand);
+            asm.emit(")");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
     @Opcode("MOVE")
     public static class MoveStmt extends AbstractInstruction {
 

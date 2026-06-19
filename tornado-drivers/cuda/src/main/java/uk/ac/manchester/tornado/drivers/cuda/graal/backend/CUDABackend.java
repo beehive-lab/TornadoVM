@@ -374,7 +374,11 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
                     CUDAKind kind = (CUDAKind) param.getPlatformKind();
                     asm.emit(", ");
                     // CUDA C primitive kernel params take no address-space qualifier.
-                    asm.emit("%s %s", kind.toString(), locals[i].getName());
+                    // Rename through getParameterName so a Java parameter whose name
+                    // collides with a CUDA built-in (e.g. 'blockDim', which is a dim3)
+                    // does not shadow the built-in inside the kernel body. This must
+                    // match the name produced at use sites in CUDAGenTool.
+                    asm.emit("%s %s", kind.toString(), getParameterName(locals[i]));
                 } else {
                     // Skip the kernel context object
                     if (javaType.toJavaName().equals(KernelContext.class.getName())) {
@@ -400,7 +404,7 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
                 }
                 guarantee(oclKind != CUDAKind.ILLEGAL, "illegal type for %s", param.getPlatformKind());
                 asm.emit(", ");
-                asm.emit("%s %s", oclKind.toString(), locals[i].getName());
+                asm.emit("%s %s", oclKind.toString(), getParameterName(locals[i]));
             }
         }
     }
