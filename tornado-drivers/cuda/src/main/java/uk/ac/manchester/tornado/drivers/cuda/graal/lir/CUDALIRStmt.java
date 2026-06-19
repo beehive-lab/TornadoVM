@@ -39,6 +39,9 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.meta.CUDAMemorySpace;
 
 public class CUDALIRStmt {
 
+    /** Provides unique local-variable suffixes for the inline atomicCAS multiply loop. */
+    private static final java.util.concurrent.atomic.AtomicInteger ATOMIC_MUL_COUNTER = new java.util.concurrent.atomic.AtomicInteger();
+
     protected abstract static class AbstractInstruction extends LIRInstruction {
 
         protected AbstractInstruction(LIRInstructionClass<? extends AbstractInstruction> c) {
@@ -135,7 +138,7 @@ public class CUDALIRStmt {
             asm.space();
             asm.assign();
             asm.space();
-            asm.emit("*((uint *)");
+            asm.emit("*((unsigned int *)");
             asm.space();
             asm.emitValue(crb, address);
             asm.emit(")");
@@ -175,7 +178,7 @@ public class CUDALIRStmt {
             asm.space();
             asm.emit("+");
             asm.space();
-            asm.emit("((ulong) ");
+            asm.emit("((unsigned long) ");
             asm.emitValue(crb, compressed);
             asm.space();
             asm.emit("<< 3)"); // this 3 is standard for the decompression - this code is generated only for coops
@@ -691,19 +694,38 @@ public class CUDALIRStmt {
 
         @Override
         public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            // OpenCL vloadN(i, p) reads N consecutive (unaligned) elements at p[i*N].
+            // CUDA built-in vector types (e.g. float4) are __align__(16), so a
+            // reinterpret cast ((float4*)p)[i] requires 16-byte alignment and faults
+            // on TornadoVM's element-aligned buffers ("misaligned address"). Emit an
+            // alignment-safe componentwise load through the ELEMENT pointer instead:
+            //   make_floatN(((float*)p)[i*N+0], ((float*)p)[i*N+1], ...)
+            CUDAKind vectorKind = (CUDAKind) lhs.getPlatformKind();
+            int n = vectorKind.getVectorLength();
+            String elem = vectorKind.getElementKind().toString();
+
+            asm.beginStackPush();
+            address.emit(crb, asm);
+            final String addr = asm.getLastOp();
+            asm.emitValue(crb, index);
+            final String idx = asm.getLastOp();
+            asm.endStackPush();
+
             asm.indent();
             asm.emitValue(crb, lhs);
             asm.space();
             asm.assign();
             asm.space();
-            asm.emit(op.toString());
-            asm.emit("(");
-            asm.emitValue(crb, index);
-            asm.emit(", ");
-            cast.emit(crb, asm);
-            asm.space();
-            address.emit(crb, asm);
-            asm.emit(")");
+            StringBuilder sb = new StringBuilder();
+            sb.append("make_").append(elem).append(n).append("(");
+            for (int i = 0; i < n; i++) {
+                if (i > 0) {
+                    sb.append(", ");
+                }
+                sb.append("((").append(elem).append(" *)(").append(addr).append("))[(").append(idx).append(") * ").append(n).append(" + ").append(i).append("]");
+            }
+            sb.append(")");
+            asm.emit(sb.toString());
             asm.delimiter();
             asm.eol();
         }
@@ -871,14 +893,27 @@ public class CUDALIRStmt {
 
         private void emitAtomicAddStore(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
             asm.indent();
-            asm.emit("atomic_add( & (");
+            // CUDA has no atomicAdd overload for signed long; use the
+            // unsigned long long int overload (cast both pointer and value).
+            boolean isLong = ((CUDAKind) cast.getCUDAPlatformKind()) == CUDAKind.ATOMIC_ADD_LONG;
+            asm.emit("atomicAdd( ");
+            if (isLong) {
+                asm.emit("(unsigned long long *)");
+            }
+            asm.emit("& (");
             asm.emit("*(");
             cast.emit(crb, asm);
             asm.space();
             address.emit(crb, asm);
             asm.emit(")), ");
             asm.space();
-            asm.emitValue(crb, rhs);
+            if (isLong) {
+                asm.emit("(unsigned long long) (");
+                asm.emitValue(crb, rhs);
+                asm.emit(")");
+            } else {
+                asm.emitValue(crb, rhs);
+            }
             asm.emit(")");
             asm.delimiter();
             asm.eol();
@@ -970,8 +1005,9 @@ public class CUDALIRStmt {
 
         private void emitAtomicAddStore(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
             asm.indent();
-            asm.emit("atomicAdd_Tornado_Floats( &("); // Calling to the
-                                                     // intrinsic for Floats
+            // CUDA provides a native atomicAdd(float*, float) on all supported
+            // architectures (and atomicAdd(double*, double) for compute >= 6.0).
+            asm.emit("atomicAdd( &(");
             asm.emit("*(");
             cast.emit(crb, asm);
             asm.space();
@@ -1070,7 +1106,7 @@ public class CUDALIRStmt {
         }
 
         private void emitAtomicSubStore(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
-            asm.emit("atomic_add( & (");
+            asm.emit("atomicSub( & (");
             asm.emit("*(");
             cast.emit(crb, asm);
             asm.space();
@@ -1168,15 +1204,30 @@ public class CUDALIRStmt {
         }
 
         private void emitAtomicMulStore(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
-            asm.emit("atomicMul_Tornado_Int( &(");
-            asm.emit("*(");
+            // CUDA has no native atomicMul. Emit an inline atomicCAS read-modify-write
+            // loop on the int* target (matching OpenCL atomic multiply semantics).
+            int id = ATOMIC_MUL_COUNTER.getAndIncrement();
+            String ptr = "atm_p_" + id;
+            String oldV = "atm_old_" + id;
+            String assumedV = "atm_assumed_" + id;
+            asm.beginStackPush();
             cast.emit(crb, asm);
             asm.space();
             address.emit(crb, asm);
-            asm.emit(")), ");
-            asm.space();
+            final String addr = asm.getLastOp();
             asm.emitValue(crb, rhs);
-            asm.emit(")");
+            final String operand = asm.getLastOp();
+            asm.endStackPush();
+            // addr already includes the "( int *)" pointer cast emitted by cast.emit.
+            asm.emit(String.format("int *%s = &(*(%s))", ptr, addr));
+            asm.delimiter();
+            asm.eol();
+            asm.indent();
+            asm.emit(String.format("int %s = *%s, %s", oldV, ptr, assumedV));
+            asm.delimiter();
+            asm.eol();
+            asm.indent();
+            asm.emit(String.format("do { %s = %s; %s = atomicCAS(%s, %s, %s * (%s)); } while (%s != %s)", assumedV, oldV, oldV, ptr, assumedV, assumedV, operand, assumedV, oldV));
             asm.delimiter();
             asm.eol();
         }
@@ -1261,21 +1312,38 @@ public class CUDALIRStmt {
             this.index = index;
         }
 
+        private static final String[] COMPONENTS = { "x", "y", "z", "w" };
+
         @Override
         public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
-            asm.indent();
-            asm.emit(op.toString());
-            asm.emit("(");
-            asm.emitValueWithFormat(crb, rhs);
-            asm.emit(", ");
-            asm.emit(CUDAAssembler.getAbsoluteIndexFromValue(index));
-            asm.emit(", ");
-            cast.emit(crb, asm);
-            asm.space();
+            // OpenCL vstoreN(v, i, p) stores N (unaligned) elements at p[i*N]. As with
+            // the vload, an aligned reinterpret store would fault on float4 buffers, so
+            // store componentwise through the ELEMENT pointer:
+            //   ((float*)p)[i*N+0] = v.x; ((float*)p)[i*N+1] = v.y; ...
+            CUDAKind vectorKind = (CUDAKind) rhs.getPlatformKind();
+            int n = vectorKind.getVectorLength();
+            String elem = vectorKind.getElementKind().toString();
+            String idx = CUDAAssembler.getAbsoluteIndexFromValue(index);
+
+            asm.beginStackPush();
             address.emit(crb);
-            asm.emit(")");
-            asm.delimiter();
-            asm.eol();
+            final String addr = asm.getLastOp();
+            asm.emitValueWithFormat(crb, rhs);
+            final String v = asm.getLastOp();
+            asm.endStackPush();
+
+            for (int i = 0; i < n; i++) {
+                if (i > 0) {
+                    asm.indent();
+                }
+                asm.emit(String.format("((%s *)(%s))[(%s) * %d + %d]", elem, addr, idx, n, i));
+                asm.space();
+                asm.assign();
+                asm.space();
+                asm.emit(String.format("(%s).%s", v, COMPONENTS[i]));
+                asm.delimiter();
+                asm.eol();
+            }
         }
 
         public Value getRhs() {

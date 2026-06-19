@@ -124,14 +124,17 @@ public class CUDAUnary {
 
         @Override
         public void emit(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            // Native CUDA atomic: atomicAdd((<type> *) addr, inc). No volatile and no
+            // address-space qualifier on the pointer cast.
+            // CUDA has no atomicAdd overload for signed/unsigned 64-bit integers other
+            // than the 'unsigned long long int' one, so cast pointer and value to it.
+            CUDAKind kind = (CUDAKind) destLirKind.getPlatformKind();
+            boolean is64BitInt = (kind == CUDAKind.LONG || kind == CUDAKind.ULONG);
+            String pointerType = is64BitInt ? "unsigned long long" : kind.toString();
             atomicOp.emit(crb);
             asm.emitSymbol(CUDAAssemblerConstants.OPEN_PARENTHESIS);
             asm.emitSymbol(CUDAAssemblerConstants.OPEN_PARENTHESIS);
-            asm.emitSymbol(CUDAAssemblerConstants.VOLATILE);
-            asm.space();
-            asm.emitSymbol(address.getBase().getMemorySpace().name());
-            asm.space();
-            asm.emit(destLirKind.getPlatformKind().toString().toLowerCase());
+            asm.emit(pointerType);
             asm.space();
             asm.emitSymbol(CUDAAssemblerConstants.MULT);
             asm.emitSymbol(CUDAAssemblerConstants.CLOSE_PARENTHESIS);
@@ -139,7 +142,13 @@ public class CUDAUnary {
             address.emit(crb, asm);
             asm.emitSymbol(CUDAAssemblerConstants.EXPR_DELIMITER);
             asm.space();
-            asm.emitValue(crb, inc);
+            if (is64BitInt) {
+                asm.emit("(unsigned long long) (");
+                asm.emitValue(crb, inc);
+                asm.emit(")");
+            } else {
+                asm.emitValue(crb, inc);
+            }
             asm.emitSymbol(CUDAAssemblerConstants.CLOSE_PARENTHESIS);
         }
     }
@@ -157,7 +166,9 @@ public class CUDAUnary {
 
         @Override
         public String toString() {
-            return String.format("%s(&%s, 1, memory_order_relaxed)", opcode.toString(), value.toString());
+            // OpenCL atomic_fetch_add_explicit(&v, 1, order) -> CUDA atomicAdd(&v, 1),
+            // which atomically adds and returns the previous value.
+            return String.format("atomicAdd(&%s, 1)", value.toString());
         }
     }
 
@@ -184,18 +195,22 @@ public class CUDAUnary {
 
         @Override
         public String toString() {
+            // CUDA atomicAdd/atomicSub atomically apply the operation and return the
+            // PREVIOUS value. atomic_inc(p) == atomicAdd(p, 1); atomic_dec(p) ==
+            // atomicSub(p, 1). For the *_AND_GET variants we adjust by +/-1 to obtain
+            // the new value from the returned old value.
             switch (atomicOperator) {
                 case INCREMENT_AND_GET -> {
-                    return String.format("%s(&%s[%s]) + %d", opcode.toString(), arrayName, index, 1);
+                    return String.format("atomicAdd(&%s[%s], 1) + 1", arrayName, index);
                 }
                 case DECREMENT_AND_GET -> {
-                    return String.format("%s(&%s[%s]) - %d", opcode.toString(), arrayName, index, 1);
+                    return String.format("atomicSub(&%s[%s], 1) - 1", arrayName, index);
                 }
                 case GET_AND_INCREMENT -> {
-                    return String.format("%s(&%s[%s])", opcode.toString(), arrayName, index);
+                    return String.format("atomicAdd(&%s[%s], 1)", arrayName, index);
                 }
                 case GET_AND_DECREMENT -> {
-                    return String.format("%s(&%s[%s])", opcode.toString(), arrayName, index);
+                    return String.format("atomicSub(&%s[%s], 1)", arrayName, index);
                 }
             }
             return "";
@@ -238,7 +253,7 @@ public class CUDAUnary {
         @Override
         public void emit(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
             StringBuffer lineGlobalScope = new StringBuffer();
-            lineGlobalScope.append("__global atomic_int ");
+            lineGlobalScope.append("int ");
             lineGlobalScope.append(asm.getStringValue(crb, lhs));
             lineGlobalScope.append(CUDAAssemblerConstants.ASSIGN);
             lineGlobalScope.append(opcode.toString());

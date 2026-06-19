@@ -276,10 +276,25 @@ public class CUDAGraphBuilderPlugins {
             int headerSize = vmConfig.getArrayBaseOffset(JavaKind.Long);
             return headerSize / JavaKind.Long.getByteCount(); // 16/8=2 or 24/8=3
         };
+        Supplier<Integer> floatHeaderSupplier = () -> {
+            var vmConfig = TornadoCoreRuntime.getVMConfig();
+            int headerSize = vmConfig.getArrayBaseOffset(JavaKind.Float);
+            return headerSize / JavaKind.Float.getByteCount();
+        };
+
+        Supplier<Integer> doubleHeaderSupplier = () -> {
+            var vmConfig = TornadoCoreRuntime.getVMConfig();
+            int headerSize = vmConfig.getArrayBaseOffset(JavaKind.Double);
+            return headerSize / JavaKind.Double.getByteCount();
+        };
+
         registerAtomicAddPlugin(r, "atomicAdd", IntArray.class, CUDAKind.UINT, intHeaderSupplier);
         registerAtomicAddPlugin(r, "atomicAdd", int[].class, CUDAKind.UINT, intHeaderSupplier);
         registerAtomicAddPlugin(r, "atomicAdd", LongArray.class, CUDAKind.ULONG, longHeaderSupplier);
-        registerUnsupportedAtomicAddPlugin(r);
+        // CUDA atomicAdd has native float (all archs) and double (compute >= 6.0)
+        // overloads, so these are supported (unlike the OpenCL backend).
+        registerAtomicAddPlugin(r, "atomicAdd", FloatArray.class, CUDAKind.FLOAT, floatHeaderSupplier);
+        registerAtomicAddPlugin(r, "atomicAdd", DoubleArray.class, CUDAKind.DOUBLE, doubleHeaderSupplier);
     }
 
     private static void registerAtomicAddPlugin(Registration r, String methodName, Class<?> arrayType, CUDAKind kind, Supplier<Integer> headerSupplier) {
@@ -293,25 +308,6 @@ public class CUDAGraphBuilderPlugins {
                 AtomAddNodeTemplate atomicAddNode = new AtomAddNodeTemplate(address, inc, javaKind);
                 b.add(atomicAddNode);
                 return true;
-            }
-        });
-    }
-
-    private static void registerUnsupportedAtomicAddPlugin(Registration r) {
-        r.register(new InvocationPlugin("atomicAdd", InvocationPlugin.Receiver.class, FloatArray.class, Integer.TYPE, Float.TYPE) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
-                receiver.get(true);
-                unimplemented("In CUDADriver, the atom_add function does not support floating point operations.");
-                return false;
-            }
-        });
-        r.register(new InvocationPlugin("atomicAdd", InvocationPlugin.Receiver.class, DoubleArray.class, Integer.TYPE, Double.TYPE) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
-                receiver.get(true);
-                unimplemented("In CUDADriver, the atom_add function does not support floating point operations.");
-                return false;
             }
         });
     }

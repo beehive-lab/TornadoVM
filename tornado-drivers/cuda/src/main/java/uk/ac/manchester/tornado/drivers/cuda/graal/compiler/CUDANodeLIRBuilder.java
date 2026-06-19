@@ -664,7 +664,12 @@ public class CUDANodeLIRBuilder extends NodeLIRBuilder {
         } else {
             for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
                 LIRKind lirKind = getGen().getLIRKind(param.stamp(NodeView.DEFAULT));
-                setResult(param, new CUDANullary.Parameter(locals[param.index()].getName(), lirKind));
+                String paramName = locals[param.index()].getName();
+                // Avoid emitting C++ reserved identifiers (e.g. 'this') as parameter names.
+                if (uk.ac.manchester.tornado.runtime.common.CUDATokens.cudaTokens.contains(paramName)) {
+                    paramName = "_" + paramName;
+                }
+                setResult(param, new CUDANullary.Parameter(paramName, lirKind));
             }
         }
     }

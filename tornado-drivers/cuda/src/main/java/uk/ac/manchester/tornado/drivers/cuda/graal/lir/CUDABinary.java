@@ -77,8 +77,53 @@ public class CUDABinary {
 
     public static class Expr extends BinaryConsumer {
 
+        // CUDA built-in vector types (float2/3/4, int2/3/4, ...) have NO overloaded
+        // arithmetic operators, so vector add/sub/mul/div must be emitted
+        // componentwise via the make_<type>N(...) constructor.
+        private static final String[] COMPONENTS = { "x", "y", "z", "w" };
+
         public Expr(CUDABinaryOp opcode, LIRKind lirKind, Value x, Value y) {
             super(opcode, lirKind, x, y);
+        }
+
+        @Override
+        public void emit(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            CUDAKind resultKind = getCUDAPlatformKind();
+            if (resultKind == null || !resultKind.isVector()) {
+                super.emit(crb, asm);
+                return;
+            }
+
+            int length = resultKind.getVectorLength();
+            if (length < 2 || length > 4) {
+                throw new uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException(
+                        "CUDA backend does not support arithmetic on vector width " + length + ".");
+            }
+
+            boolean xIsVector = (x.getPlatformKind() instanceof CUDAKind) && ((CUDAKind) x.getPlatformKind()).isVector();
+            boolean yIsVector = (y.getPlatformKind() instanceof CUDAKind) && ((CUDAKind) y.getPlatformKind()).isVector();
+
+            asm.beginStackPush();
+            asm.emitValueOrOp(crb, x);
+            final String xs = asm.getLastOp();
+            asm.emitValueOrOp(crb, y);
+            final String ys = asm.getLastOp();
+            asm.endStackPush();
+
+            String op = opcode.toString();
+            StringBuilder sb = new StringBuilder();
+            sb.append("make_").append(resultKind.getElementKind().toString()).append(length).append("(");
+            for (int i = 0; i < length; i++) {
+                if (i > 0) {
+                    sb.append(", ");
+                }
+                String c = COMPONENTS[i];
+                String xc = xIsVector ? ("(" + xs + ")." + c) : ("(" + xs + ")");
+                String yc = yIsVector ? ("(" + ys + ")." + c) : ("(" + ys + ")");
+                sb.append(xc).append(" ").append(op).append(" ").append(yc);
+            }
+            sb.append(")");
+            asm.emit(sb.toString());
         }
     }
 

@@ -394,7 +394,7 @@ public class CUDAControlFlow {
         @Override
         public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
             asm.indent();
-            asm.emit("slots[0] = (ulong) ");
+            asm.emit("slots[0] = (unsigned long) ");
             asm.emitValue(crb, actionAndReason);
             asm.delimiter();
 

@@ -264,7 +264,7 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
 
         for (CUDAKind type : kindToVariable.keySet()) {
             asm.indent();
-            asm.emit("%s ", type);
+            asm.emit("%s ", type.getCUDATypeName());
             for (Variable var : kindToVariable.get(type)) {
                 asm.emitValue(crb, var);
                 asm.emit(", ");
@@ -295,8 +295,8 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
         final CallingConvention incomingArguments = CodeUtil.getCallingConvention(codeCache, HotSpotCallingConventionType.JavaCallee, method);
 
         if (crb.isKernel()) {
-            // Emit the CUDA C preamble (uchar/uint/... typedefs) once at the top of the
-            // kernel, before the kernel signature, so the generated 'uchar *' params compile.
+            // Emit the CUDA C preamble (cuda_fp16.h include) once at the top of the
+            // kernel, before the kernel signature.
             asm.emit(CUDAPreamble.PREAMBLE);
 
             /*
@@ -387,7 +387,7 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
                     asm.emit(", ");
                     String parameterName = getParameterName(locals[i]);
                     // CUDA C pointer params take no address-space qualifier (no __global).
-                    asm.emit("%s *%s", "uchar", parameterName);
+                    asm.emit("%s *%s", "unsigned char", parameterName);
                 }
             } else {
                 final AllocatableValue param = incomingArguments.getArgument(i);
