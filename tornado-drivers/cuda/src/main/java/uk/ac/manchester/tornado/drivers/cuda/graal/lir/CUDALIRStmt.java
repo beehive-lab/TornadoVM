@@ -207,7 +207,7 @@ public class CUDALIRStmt {
             asm.space();
             asm.assign();
             asm.space();
-            asm.emit("convert_float((float) ");
+            asm.emit("__half2float(");
             asm.emitValue(crb, halfValue);
             asm.emit(")");
             asm.delimiter();
@@ -239,8 +239,9 @@ public class CUDALIRStmt {
             asm.space();
             asm.assign();
             asm.space();
-            asm.emit("(half) ");
+            asm.emit("__float2half(");
             asm.emitValue(crb, floatValue);
+            asm.emit(")");
             asm.delimiter();
             asm.eol();
         }

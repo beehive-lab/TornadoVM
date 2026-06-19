@@ -21,6 +21,9 @@
  */
 
 #include <jni.h>
+#include <string>
+#include <vector>
+#include <cstdlib>
 #include "cuda_jni.h"
 
 extern "C" {
@@ -53,8 +56,29 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
         nvrtcResult nv = nvrtcCreateProgram(&prog, program->source.c_str(), "tornado_kernel.cu", 0, nullptr, nullptr);
         LOG_NVRTC_AND_VALIDATE("nvrtcCreateProgram", nv);
 
-        const char *options[] = { arch.c_str() };
-        nv = nvrtcCompileProgram(prog, 1, options);
+        // Give NVRTC a search path so kernels can #include CUDA headers
+        // (e.g. cuda_fp16.h for half support). NVRTC starts with an empty
+        // include list, so without this even a bundled header is unreachable.
+        // Common locations are added; a non-existent path is simply ignored.
+        std::vector<std::string> incDirs = {
+            "/usr/local/cuda/include",
+            "/usr/include",
+            "/usr/lib/cuda/include"
+        };
+        const char *cudaPathEnv = getenv("CUDA_PATH");
+        if (cudaPathEnv != nullptr) {
+            incDirs.push_back(std::string(cudaPathEnv) + "/include");
+        }
+        std::vector<std::string> optStrings;
+        optStrings.push_back(arch);
+        for (const std::string &d : incDirs) {
+            optStrings.push_back("--include-path=" + d);
+        }
+        std::vector<const char *> options;
+        for (const std::string &o : optStrings) {
+            options.push_back(o.c_str());
+        }
+        nv = nvrtcCompileProgram(prog, (int) options.size(), options.data());
         LOG_NVRTC_AND_VALIDATE("nvrtcCompileProgram", nv);
 
         // Always capture the build log (errors and warnings).
