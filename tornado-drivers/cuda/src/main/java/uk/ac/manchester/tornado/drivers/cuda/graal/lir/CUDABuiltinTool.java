@@ -52,6 +52,7 @@ import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler.CUDA
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler.CUDAUnaryIntrinsic.NATIVE_SQRT;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler.CUDAUnaryIntrinsic.NATIVE_TAN;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler.CUDAUnaryIntrinsic.POPCOUNT;
+import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler.CUDAUnaryIntrinsic.POPCOUNT_LONG;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler.CUDAUnaryIntrinsic.RADIANS;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler.CUDAUnaryIntrinsic.SIGN;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler.CUDAUnaryIntrinsic.SIN;
@@ -459,7 +460,11 @@ public class CUDABuiltinTool {
 
     public Value genIntPopcount(Value value) {
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genBitCount: bitcount(%s)", value);
-        return new CUDAUnary.Intrinsic(POPCOUNT, LIRKind.value(value.getPlatformKind()), value);
+        // CUDA exposes population count as the device builtins __popc (32-bit) and
+        // __popcll (64-bit), unlike OpenCL's single overloaded popcount.
+        CUDAKind kind = (CUDAKind) value.getPlatformKind();
+        boolean is64BitInt = (kind == CUDAKind.LONG || kind == CUDAKind.ULONG);
+        return new CUDAUnary.Intrinsic(is64BitInt ? POPCOUNT_LONG : POPCOUNT, LIRKind.value(value.getPlatformKind()), value);
     }
 
     public Value genIntClamp(Value x, Value y, Value z) {

@@ -703,7 +703,8 @@ public final class CUDAAssembler extends Assembler {
 
         public static final CUDAUnaryIntrinsic LOCAL_MEMORY = new CUDAUnaryIntrinsic("__shared__");
 
-        public static final CUDAUnaryIntrinsic POPCOUNT = new CUDAUnaryIntrinsic("popcount");
+        public static final CUDAUnaryIntrinsic POPCOUNT = new CUDAUnaryIntrinsic("__popc");
+        public static final CUDAUnaryIntrinsic POPCOUNT_LONG = new CUDAUnaryIntrinsic("__popcll");
 
         public static final CUDAUnaryIntrinsic FLOAT_ABS = new CUDAUnaryIntrinsic("fabs");
         public static final CUDAUnaryIntrinsic FLOAT_TRUNC = new CUDAUnaryIntrinsic("trunc");
