@@ -80,6 +80,8 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.DecAtomicNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GetAtomicNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.IncAtomicNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.DP4APackedNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.Dp4aNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDABarrierNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAConvertHalfToFloat;
@@ -541,8 +543,9 @@ public class CUDAGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext graphBuilderContext, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode offset_a, ValueNode b, ValueNode offset_b,
                     ValueNode accumulator) {
-                unimplemented("DP4A is a PTX instruction. It is not supported in CUDADriver.");
-                return false;
+                Dp4aNode dp4aOp = new Dp4aNode(a, offset_a, b, offset_b, accumulator);
+                graphBuilderContext.addPush(JavaKind.Int, dp4aOp);
+                return true;
             }
         });
 
@@ -550,16 +553,18 @@ public class CUDAGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext graphBuilderContext, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode offset_a, ValueNode b, ValueNode offset_b,
                     ValueNode accumulator) {
-                unimplemented("DP4A is a PTX instruction. It is not supported in CUDADriver.");
-                return false;
+                Dp4aNode dp4aOp = new Dp4aNode(a, offset_a, b, offset_b, accumulator);
+                graphBuilderContext.addPush(JavaKind.Int, dp4aOp);
+                return true;
             }
         });
 
         r.register(new InvocationPlugin("dp4a_packed", int.class, int.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext graphBuilderContext, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode b, ValueNode accumulator) {
-                unimplemented("DP4A is a PTX instruction. It is not supported in CUDADriver.");
-                return false;
+                DP4APackedNode dp4aPackedOp = new DP4APackedNode(a, b, accumulator);
+                graphBuilderContext.addPush(JavaKind.Int, dp4aPackedOp);
+                return true;
             }
         });
 

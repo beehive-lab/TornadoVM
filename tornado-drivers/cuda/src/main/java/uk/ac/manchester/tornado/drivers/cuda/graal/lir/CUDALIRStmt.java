@@ -187,6 +187,122 @@ public class CUDALIRStmt {
         }
     }
 
+    /**
+     * Emits a CUDA {@code __dp4a} dot-product-accumulate over two packed-int8 operands
+     * loaded from memory. Equivalent to the PTX backend's {@code dp4a.s32.s32}: it loads
+     * four signed bytes from each operand (reinterpreting them as a 32-bit word) and
+     * accumulates the dot product into {@code c}.
+     *
+     * <pre>{@code result = __dp4a(*((int *)(baseA + offsetA + HEADER)),
+     *                            *((int *)(baseB + offsetB [+ HEADER])), c);}</pre>
+     *
+     * When operand B comes from a local (shared-memory) array it has no array header, so
+     * {@code bHasHeader} is false and only the element offset is applied.
+     */
+    @Opcode("DP4A")
+    public static class Dp4aStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<Dp4aStmt> TYPE = LIRInstructionClass.create(Dp4aStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value baseA;
+        @Use
+        protected Value offsetA;
+        @Use
+        protected Value baseB;
+        @Use
+        protected Value offsetB;
+        @Use
+        protected Value accumulator;
+
+        private final boolean bHasHeader;
+        private final long headerSize;
+
+        public Dp4aStmt(Value result, Value baseA, Value offsetA, Value baseB, Value offsetB, Value accumulator, boolean bHasHeader, long headerSize) {
+            super(TYPE);
+            this.result = result;
+            this.baseA = baseA;
+            this.offsetA = offsetA;
+            this.baseB = baseB;
+            this.offsetB = offsetB;
+            this.accumulator = accumulator;
+            this.bHasHeader = bHasHeader;
+            this.headerSize = headerSize;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emit("__tornado_dp4a(*(( int *) (");
+            asm.emitValue(crb, baseA);
+            asm.emit(" + ");
+            asm.emitValue(crb, offsetA);
+            asm.emit(" + " + headerSize + "L)), *(( int *) (");
+            asm.emitValue(crb, baseB);
+            asm.emit(" + ");
+            asm.emitValue(crb, offsetB);
+            if (bHasHeader) {
+                asm.emit(" + " + headerSize + "L");
+            }
+            asm.emit(")), ");
+            asm.emitValue(crb, accumulator);
+            asm.emit(")");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
+    /**
+     * Emits a CUDA {@code __dp4a} over two already-packed 32-bit operands:
+     * {@code result = __dp4a(a, b, c);}.
+     */
+    @Opcode("DP4A_PACKED")
+    public static class Dp4aPackedStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<Dp4aPackedStmt> TYPE = LIRInstructionClass.create(Dp4aPackedStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value a;
+        @Use
+        protected Value b;
+        @Use
+        protected Value accumulator;
+
+        public Dp4aPackedStmt(Value result, Value a, Value b, Value accumulator) {
+            super(TYPE);
+            this.result = result;
+            this.a = a;
+            this.b = b;
+            this.accumulator = accumulator;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emit("__tornado_dp4a(");
+            asm.emitValue(crb, a);
+            asm.emit(", ");
+            asm.emitValue(crb, b);
+            asm.emit(", ");
+            asm.emitValue(crb, accumulator);
+            asm.emit(")");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
     @Opcode("CONVERT_HALF")
     public static class ConvertHalfToFloatStmt extends AbstractInstruction {
 
