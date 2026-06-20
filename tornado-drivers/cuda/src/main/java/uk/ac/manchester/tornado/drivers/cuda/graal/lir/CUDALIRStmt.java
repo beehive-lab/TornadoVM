@@ -188,13 +188,15 @@ public class CUDALIRStmt {
     }
 
     /**
-     * Emits a CUDA {@code __dp4a} dot-product-accumulate over two packed-int8 operands
-     * loaded from memory. Equivalent to the PTX backend's {@code dp4a.s32.s32}: it loads
-     * four signed bytes from each operand (reinterpreting them as a 32-bit word) and
-     * accumulates the dot product into {@code c}.
+     * Emits an inline {@code dp4a.s32.s32} PTX dot-product-accumulate over two
+     * packed-int8 operands loaded from memory. Loads four signed bytes from each
+     * operand (reinterpreting them as a 32-bit word) and accumulates into {@code c}:
      *
-     * <pre>{@code result = __dp4a(*((int *)(baseA + offsetA + HEADER)),
-     *                            *((int *)(baseB + offsetB [+ HEADER])), c);}</pre>
+     * <pre>{@code asm("dp4a.s32.s32 %0, %1, %2, %3;"
+     *       : "=r"(result)
+     *       : "r"(*((int *)(baseA + offsetA + HEADER))),
+     *         "r"(*((int *)(baseB + offsetB [+ HEADER]))),
+     *         "r"(c));}</pre>
      *
      * When operand B comes from a local (shared-memory) array it has no array header, so
      * {@code bHasHeader} is false and only the element offset is applied.
@@ -234,33 +236,35 @@ public class CUDALIRStmt {
 
         @Override
         public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            // Emit the dp4a.s32.s32 PTX instruction inline. The asm operand
+            // constraints accept arbitrary C expressions, so the two int8 words and
+            // the accumulator are passed directly with no helper function (and hence
+            // no kernel preamble).
             asm.indent();
+            asm.emit("asm(\"dp4a.s32.s32 %0, %1, %2, %3;\" : \"=r\"(");
             asm.emitValue(crb, result);
-            asm.space();
-            asm.assign();
-            asm.space();
-            asm.emit("__tornado_dp4a(*(( int *) (");
+            asm.emit(") : \"r\"(*(( int *) (");
             asm.emitValue(crb, baseA);
             asm.emit(" + ");
             asm.emitValue(crb, offsetA);
-            asm.emit(" + " + headerSize + "L)), *(( int *) (");
+            asm.emit(" + " + headerSize + "L))), \"r\"(*(( int *) (");
             asm.emitValue(crb, baseB);
             asm.emit(" + ");
             asm.emitValue(crb, offsetB);
             if (bHasHeader) {
                 asm.emit(" + " + headerSize + "L");
             }
-            asm.emit(")), ");
+            asm.emit("))), \"r\"(");
             asm.emitValue(crb, accumulator);
-            asm.emit(")");
+            asm.emit("))");
             asm.delimiter();
             asm.eol();
         }
     }
 
     /**
-     * Emits a CUDA {@code __dp4a} over two already-packed 32-bit operands:
-     * {@code result = __dp4a(a, b, c);}.
+     * Emits an inline {@code dp4a.s32.s32} PTX instruction over two already-packed
+     * 32-bit operands, accumulating into {@code c}.
      */
     @Opcode("DP4A_PACKED")
     public static class Dp4aPackedStmt extends AbstractInstruction {
@@ -286,18 +290,17 @@ public class CUDALIRStmt {
 
         @Override
         public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            // Inline dp4a.s32.s32 over two already-packed operands; no helper/preamble.
             asm.indent();
+            asm.emit("asm(\"dp4a.s32.s32 %0, %1, %2, %3;\" : \"=r\"(");
             asm.emitValue(crb, result);
-            asm.space();
-            asm.assign();
-            asm.space();
-            asm.emit("__tornado_dp4a(");
+            asm.emit(") : \"r\"(");
             asm.emitValue(crb, a);
-            asm.emit(", ");
+            asm.emit("), \"r\"(");
             asm.emitValue(crb, b);
-            asm.emit(", ");
+            asm.emit("), \"r\"(");
             asm.emitValue(crb, accumulator);
-            asm.emit(")");
+            asm.emit("))");
             asm.delimiter();
             asm.eol();
         }

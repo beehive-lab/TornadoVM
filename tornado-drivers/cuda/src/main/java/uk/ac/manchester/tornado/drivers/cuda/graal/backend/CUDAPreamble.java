@@ -30,18 +30,11 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.backend;
  * directly (native unsigned types, inline relational operators, {@code fmin}/
  * {@code fmax}-based clamp, inline radians/sign, real {@code atomic*}
  * intrinsics, and componentwise vector expressions). The only thing that must
- * be injected ahead of every kernel is the half-precision header plus a small
- * {@code __dp4a} helper.
+ * be injected ahead of every kernel is the half-precision header, so the
+ * preamble is reduced to a single {@code #include <cuda_fp16.h>}.
  *
- * <p>The {@code __dp4a} (4-way signed int8 dot-product-accumulate) helper is
- * emitted as inline PTX rather than relying on the {@code <sm_61_intrinsics.h>}
- * builtin: NVRTC knows the intrinsic prototype but does not pull in its inline
- * definition, so a direct {@code __dp4a(...)} call leaves an unresolved extern
- * function that ptxas rejects with CUDA_ERROR_INVALID_PTX. The inline-PTX
- * helper is self-contained and only assembles on the targeted device (which, by
- * definition, must support DP4A for the kernel to be requested). An unused
- * {@code static __forceinline__} helper produces no PTX, so this is free for
- * kernels that do not use it.
+ * <p>Note: DP4A is emitted as inline PTX ({@code dp4a.s32.s32}) directly at the
+ * call site (see {@code CUDALIRStmt.Dp4aStmt}), so it needs no preamble helper.
  */
 public final class CUDAPreamble {
 
@@ -50,11 +43,6 @@ public final class CUDAPreamble {
 
     // @formatter:off
     public static final String PREAMBLE =
-        "#include <cuda_fp16.h>\n" +
-        "static __device__ __forceinline__ int __tornado_dp4a(int a, int b, int c) {\n" +
-        "  int d;\n" +
-        "  asm(\"dp4a.s32.s32 %0, %1, %2, %3;\" : \"=r\"(d) : \"r\"(a), \"r\"(b), \"r\"(c));\n" +
-        "  return d;\n" +
-        "}\n";
+        "#include <cuda_fp16.h>\n";
     // @formatter:on
 }
