@@ -351,6 +351,11 @@ public class CUDANodeLIRBuilder extends NodeLIRBuilder {
             final Value x = operand(testNode.getX());
             final Value y = operand(testNode.getY());
             result = getGen().getArithmetic().genTestNegateBinaryExpr(CUDABinaryOp.BITWISE_AND, boolLirKind, x, y);
+        } else if (node instanceof LogicConstantNode logicConstant) {
+            // Negated constant-folded branch condition: emit the inverted trivial relation.
+            final Value zero = gen.emitConstant(intLirKind, JavaConstant.forInt(0));
+            final CUDABinaryOp op = logicConstant.getValue() ? CUDABinaryOp.RELATIONAL_NE : CUDABinaryOp.RELATIONAL_EQ;
+            result = getGen().getArithmetic().genBinaryExpr(op, boolLirKind, zero, zero);
         } else {
             throw new TornadoRuntimeException(String.format("logic node (class=%s)", node.getClass().getName()));
         }
@@ -411,6 +416,12 @@ public class CUDANodeLIRBuilder extends NodeLIRBuilder {
             final Value x = operand(integerTestNode.getX());
             final Value y = operand(integerTestNode.getY());
             result = getGen().getArithmetic().genTestBinaryExpr(CUDABinaryOp.BITWISE_AND, boolLirKind, x, y);
+        } else if (node instanceof LogicConstantNode logicConstant) {
+            // A constant-folded branch condition: emit a trivially true/false relation
+            // ((0 == 0) / (0 != 0)) so it can still be materialised as a branch operand.
+            final Value zero = gen.emitConstant(intLirKind, JavaConstant.forInt(0));
+            final CUDABinaryOp op = logicConstant.getValue() ? CUDABinaryOp.RELATIONAL_EQ : CUDABinaryOp.RELATIONAL_NE;
+            result = getGen().getArithmetic().genBinaryExpr(op, boolLirKind, zero, zero);
         } else {
             throw new TornadoRuntimeException(String.format("logic node (class=%s)", node.getClass().getName()));
         }
