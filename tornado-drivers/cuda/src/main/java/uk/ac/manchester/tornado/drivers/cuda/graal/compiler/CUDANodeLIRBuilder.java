@@ -120,6 +120,8 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDANullary;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAReturnSlot;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAUnary;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.FPGAWorkGroupSizeNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.FixedArrayNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.IntelUnrollPragmaNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.XilinxPipeliningPragmaNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.logic.LogicalAndNode;
@@ -494,7 +496,7 @@ public class CUDANodeLIRBuilder extends NodeLIRBuilder {
                 setResult(phi, value);
             } else {
                 final AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
-                append(new CUDALIRStmt.AssignStmt(result, value));
+                append(new CUDALIRStmt.AssignStmt(result, castPrivateArrayPointer(phi.firstValue(), value)));
             }
         }
         emitCUDAFPGAPragmas(currentBlockDominator);
@@ -515,7 +517,7 @@ public class CUDANodeLIRBuilder extends NodeLIRBuilder {
             Value src = operand(phi.valueAt(loopEnd));
 
             if (!dest.equals(src)) {
-                append(new CUDALIRStmt.AssignStmt(dest, src));
+                append(new CUDALIRStmt.AssignStmt(dest, castPrivateArrayPointer(phi.valueAt(loopEnd), src)));
             }
         }
     }
@@ -536,7 +538,7 @@ public class CUDANodeLIRBuilder extends NodeLIRBuilder {
                 Value src = operand(value);
 
                 if (!dest.equals(src)) {
-                    append(new CUDALIRStmt.AssignStmt(dest, src));
+                    append(new CUDALIRStmt.AssignStmt(dest, castPrivateArrayPointer(value, src)));
                 }
             } else if (loopExitMerge) {
                 AllocatableValue dest = gen.asAllocatable(operandForPhi(phi));
@@ -773,6 +775,21 @@ public class CUDANodeLIRBuilder extends NodeLIRBuilder {
      * Emits assign statements for non-loop phis at {@code merge} using the value incoming along {@code end}.
      * Skips loop header phis and collapsible phis.
      */
+    /**
+     * Private/local array declarations expose two operands: the storage array and a
+     * pointer to it (e.g. {@code int* p = arr;}). The pointer variable carries a word
+     * (unsigned long) LIR kind but a pointer C type. When such a pointer flows into a
+     * phi, the phi destination is declared {@code unsigned long}, so a plain
+     * {@code phi = p;} assignment is an implicit pointer->integer conversion that NVRTC
+     * (C++) rejects. Emit an explicit {@code (unsigned long)} cast in that case.
+     */
+    private Value castPrivateArrayPointer(ValueNode valueNode, Value src) {
+        if (valueNode instanceof FixedArrayNode || valueNode instanceof LocalArrayNode) {
+            return new CUDAUnary.Expr(CUDAUnaryOp.CAST_TO_ULONG, LIRKind.value(CUDAKind.ULONG), src);
+        }
+        return src;
+    }
+
     private void emitNonLoopPhiMoves(final AbstractMergeNode merge, final AbstractEndNode end) {
         for (ValuePhiNode phi : merge.valuePhis()) {
             final ValueNode value = phi.valueAt(end);
@@ -781,7 +798,7 @@ public class CUDANodeLIRBuilder extends NodeLIRBuilder {
                 if (((!phi.isLoopPhi()) && (phi.singleValueOrThis() == phi)) || (value instanceof PhiNode && !((PhiNode) value).isLoopPhi())) {
 
                     final AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
-                    append(new CUDALIRStmt.AssignStmt(result, operand(value)));
+                    append(new CUDALIRStmt.AssignStmt(result, castPrivateArrayPointer(value, operand(value))));
                 }
             }
         }
