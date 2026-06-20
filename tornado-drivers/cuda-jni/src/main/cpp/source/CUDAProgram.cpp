@@ -109,15 +109,22 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
     if (program->context != nullptr) {
         cuCtxSetCurrent(program->context);
     }
-    CUresult result = cuModuleLoadDataEx(&program->module, program->ptx.c_str(), 0, nullptr, nullptr);
+    // Capture the driver's PTX-JIT error log so that invalid-PTX failures report a
+    // diagnostic instead of an opaque CUDA_ERROR_INVALID_PTX.
+    char jitErrorLog[8192] = {0};
+    CUjit_option jitOptions[] = {CU_JIT_ERROR_LOG_BUFFER, CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES};
+    void *jitOptionValues[] = {(void *) jitErrorLog, (void *) (uintptr_t) sizeof(jitErrorLog)};
+    CUresult result = cuModuleLoadDataEx(&program->module, program->ptx.c_str(), 2, jitOptions, jitOptionValues);
     LOG_CUDA_AND_VALIDATE("cuModuleLoadDataEx", result);
     if (result != CUDA_SUCCESS) {
         program->build_status = CL_BUILD_ERROR;
-        if (program->log.empty()) {
-            const char *err = nullptr;
-            cuGetErrorString(result, &err);
-            program->log = std::string("cuModuleLoadDataEx failed: ") + (err ? err : "unknown");
+        const char *err = nullptr;
+        cuGetErrorString(result, &err);
+        program->log = std::string("cuModuleLoadDataEx failed: ") + (err ? err : "unknown");
+        if (jitErrorLog[0] != '\0') {
+            program->log += std::string("\nPTX JIT log:\n") + jitErrorLog;
         }
+        std::cout << "[TornadoVM-CUDA-JNI] " << program->log << std::endl;
         program->module_loaded = false;
     } else {
         program->module_loaded = true;
