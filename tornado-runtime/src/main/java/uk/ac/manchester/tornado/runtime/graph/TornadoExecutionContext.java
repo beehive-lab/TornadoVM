@@ -135,8 +135,22 @@ public class TornadoExecutionContext {
                 constants.add(parameter);
             }
         } else if (objectMap.containsKey(parameter.hashCode())) {
-            // update access of the object if the sketcher has deducted it is READ_WRITE
-            if (access.name().equals("READ_WRITE") && !objectsAccesses.get(parameter).name().equals(access.name())) {
+            Access existingAccess = objectsAccesses.get(parameter);
+            // Reconcile the access already recorded for this object (e.g. READ_ONLY,
+            // set when it was declared via transferToDevice) with the access the
+            // sketcher deduced for the kernel:
+            //  - READ_WRITE always wins (the object is both read and written).
+            //  - If the object was registered READ_ONLY but the kernel only writes
+            //    it (WRITE_ONLY), record WRITE_ONLY. This matches the graph builder,
+            //    which uses the kernel (sketch) access and emits no copy-in for a
+            //    write-only output; recording WRITE_ONLY lets the backend zero the
+            //    (possibly recycled) output buffer so positions the kernel does not
+            //    write read back as zero rather than stale pool data. No host->device
+            //    copy is dropped by this: the graph builder already omits it for a
+            //    WRITE_ONLY-deduced argument.
+            if (access == Access.READ_WRITE && existingAccess != Access.READ_WRITE) {
+                objectsAccesses.replace(parameter, access);
+            } else if (access == Access.WRITE_ONLY && existingAccess == Access.READ_ONLY) {
                 objectsAccesses.replace(parameter, access);
             }
             index = objectMap.get(parameter.hashCode());
