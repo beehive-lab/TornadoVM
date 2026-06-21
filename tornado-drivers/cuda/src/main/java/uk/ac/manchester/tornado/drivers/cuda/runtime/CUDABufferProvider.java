@@ -57,34 +57,24 @@ public class CUDABufferProvider extends TornadoBufferProvider {
      * limited to the allocation path.
      *
      * <p>
-     * This method is only reached for buffers (re)allocated from the pool; locked
-     * / persisted buffers are reused directly and never pass through here, so
-     * zeroing here can never clobber data that the runtime intends to keep
-     * resident on the device.
-     *
-     * <p>
-     * The zeroing is applied to {@code WRITE_ONLY} and {@code READ_ONLY} buffers,
-     * and skipped only for {@code READ_WRITE}:
+     * The zeroing is restricted to {@code WRITE_ONLY} buffers on purpose:
      * <ul>
-     * <li>{@code WRITE_ONLY} buffers are pure outputs the runtime does not copy in
-     * from the host. If the kernel skips writing some (or all) of the buffer, the
-     * host must observe zeros, not stale pool data.</li>
-     * <li>{@code READ_ONLY} buffers normally receive their contents from a
-     * host-to-device copy that runs right after this allocation, in which case the
-     * zeroing is simply overwritten. However, the access deducer can mark a
-     * pure-output array as {@code READ_ONLY} (e.g. an early-returning kernel that
-     * only writes through a conditional), and in that case no host copy populates
-     * the buffer — so it must be zeroed to avoid leaking stale pool data.</li>
-     * <li>{@code READ_WRITE} is left untouched: it always receives a host-to-device
-     * copy before use, and zeroing could clobber a host-initialised accumulator
-     * (e.g. a reduction seeded with {@code result.init(Float.MAX_VALUE)}) on paths
-     * where the copy is elided.</li>
+     * <li>{@code READ_ONLY} / {@code READ_WRITE} buffers receive their initial
+     * contents from a host-to-device copy before the kernel runs, so zeroing them
+     * is both unnecessary and potentially harmful. For instance, a reduction whose
+     * accumulator is an output that is initialised on the host (e.g.
+     * {@code result.init(Float.MAX_VALUE)}) and then read-modified-written by the
+     * kernel is marked {@code READ_WRITE}; zeroing it would clobber the neutral
+     * element.</li>
+     * <li>{@code WRITE_ONLY} buffers are pure outputs that the runtime does not
+     * copy in from the host. If the kernel skips writing some (or all) of the
+     * buffer, the host must observe zeros, not stale pool data.</li>
      * </ul>
      */
     @Override
     public synchronized long getOrAllocateBufferWithSize(long sizeInBytes, Access access) {
         long buffer = super.getOrAllocateBufferWithSize(sizeInBytes, access);
-        if (access == Access.WRITE_ONLY || access == Access.READ_ONLY) {
+        if (access == Access.WRITE_ONLY) {
             ((CUDADeviceContext) deviceContext).getPlatformContext().zeroBuffer(buffer, sizeInBytes);
         }
         return buffer;
