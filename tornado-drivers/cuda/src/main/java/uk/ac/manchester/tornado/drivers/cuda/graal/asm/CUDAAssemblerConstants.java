@@ -26,6 +26,7 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.asm;
 public class CUDAAssemblerConstants {
 
     public static final String KERNEL_MODIFIER = "extern \"C\" __global__";
+    public static final String DEVICE_MODIFIER = "__device__";
     public static final String EOL = "\n";
     public static final String GLOBAL_MEM_MODIFIER = "";
     public static final String SHARED_MEM_MODIFIER = "__shared__";

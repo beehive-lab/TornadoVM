@@ -343,7 +343,9 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
                 CUDAKind returnOclKind = (returnType.getAnnotation(Vector.class) == null) ? ((CUDATargetDescription) getTarget()).getCUDAKind(returnKind) : CUDAKind.fromResolvedJavaType(returnType);
                 returnStr = returnOclKind.toString();
             }
-            asm.emit("%s %s(%s", returnStr, methodName, architecture.getABI());
+            // Non-kernel callees must be __device__ functions; otherwise NVRTC treats
+            // them as host functions, which is illegal in JIT mode.
+            asm.emit("%s %s %s(%s", CUDAAssemblerConstants.DEVICE_MODIFIER, returnStr, methodName, architecture.getABI());
 
             emitMethodParameters(asm, method, incomingArguments, false);
             asm.emit(")");
