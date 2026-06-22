@@ -101,7 +101,8 @@ typedef struct cuda_queue_s {
 typedef struct cuda_program_s {
     CUcontext context;
     std::string source;
-    std::string ptx;        // produced by NVRTC
+    std::string binary;     // loadable module image for cuModuleLoadDataEx: a cubin
+                            // produced by NVRTC, or raw PTX via createProgramWithBinary
     std::string log;        // NVRTC build log
     int build_status;       // CL_BUILD_* code (0 = success, -2 = error, -1 = none)
     CUmodule module;

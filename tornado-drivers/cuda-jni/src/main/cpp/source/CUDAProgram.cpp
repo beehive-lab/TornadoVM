@@ -39,18 +39,24 @@ extern "C" {
 #define CL_BUILD_ERROR (-2)
 
 /*
- * Compiles the stored CUDA C source to PTX using NVRTC, targeting the compute
- * capability of the program's device, then loads it as a CUmodule.
+ * Compiles the stored CUDA C source to a cubin using NVRTC, targeting the
+ * compute capability of the program's device, then loads it as a CUmodule.
  */
 static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
-    if (!program->ptx.empty()) {
-        // Already have PTX (createProgramWithBinary path) - just load it below.
+    if (!program->binary.empty()) {
+        // Already have a module image (createProgramWithBinary path) - just load it below.
         program->build_status = CL_BUILD_SUCCESS;
     } else {
         int major = 0, minor = 0;
         cuDeviceGetAttribute(&major, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR, device);
         cuDeviceGetAttribute(&minor, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR, device);
-        std::string arch = "--gpu-architecture=compute_" + std::to_string(major) + std::to_string(minor);
+        // Target the device's *real* architecture (sm_XX) rather than a virtual one
+        // (compute_XX). This lets NVRTC emit a finished cubin (SASS) below, so the
+        // module is loaded directly by the driver without a PTX-JIT step. That avoids
+        // the driver rejecting PTX whose ISA version is newer than its JIT supports
+        // (e.g. a 13.1 toolkit emits PTX ISA 9.1 that a 13.0 driver cannot JIT);
+        // cubins instead rely on CUDA minor-version compatibility within a major release.
+        std::string arch = "--gpu-architecture=sm_" + std::to_string(major) + std::to_string(minor);
 
         nvrtcProgram prog;
         nvrtcResult nv = nvrtcCreateProgram(&prog, program->source.c_str(), "tornado_kernel.cu", 0, nullptr, nullptr);
@@ -97,24 +103,27 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
             return;
         }
 
-        size_t ptx_size = 0;
-        nvrtcGetPTXSize(prog, &ptx_size);
-        program->ptx.resize(ptx_size);
-        nvrtcGetPTX(prog, &program->ptx[0]);
+        // Retrieve the compiled cubin (SASS) for sm_XX. cuModuleLoadDataEx detects the
+        // image format from its header, so the load path below handles a cubin exactly
+        // as it would raw PTX.
+        size_t cubin_size = 0;
+        nvrtcGetCUBINSize(prog, &cubin_size);
+        program->binary.resize(cubin_size);
+        nvrtcGetCUBIN(prog, &program->binary[0]);
         nvrtcDestroyProgram(&prog);
         program->build_status = CL_BUILD_SUCCESS;
     }
 
-    // Load the PTX into a module via the Driver API.
+    // Load the module image into a module via the Driver API.
     if (program->context != nullptr) {
         cuCtxSetCurrent(program->context);
     }
-    // Capture the driver's PTX-JIT error log so that invalid-PTX failures report a
-    // diagnostic instead of an opaque CUDA_ERROR_INVALID_PTX.
+    // Capture the driver's JIT error log so that an invalid image reports a
+    // diagnostic instead of an opaque CUDA_ERROR_INVALID_PTX / unsupported-version error.
     char jitErrorLog[8192] = {0};
     CUjit_option jitOptions[] = {CU_JIT_ERROR_LOG_BUFFER, CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES};
     void *jitOptionValues[] = {(void *) jitErrorLog, (void *) (uintptr_t) sizeof(jitErrorLog)};
-    CUresult result = cuModuleLoadDataEx(&program->module, program->ptx.c_str(), 2, jitOptions, jitOptionValues);
+    CUresult result = cuModuleLoadDataEx(&program->module, program->binary.c_str(), 2, jitOptions, jitOptionValues);
     LOG_CUDA_AND_VALIDATE("cuModuleLoadDataEx", result);
     if (result != CUDA_SUCCESS) {
         program->build_status = CL_BUILD_ERROR;
@@ -122,7 +131,7 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
         cuGetErrorString(result, &err);
         program->log = std::string("cuModuleLoadDataEx failed: ") + (err ? err : "unknown");
         if (jitErrorLog[0] != '\0') {
-            program->log += std::string("\nPTX JIT log:\n") + jitErrorLog;
+            program->log += std::string("\nJIT log:\n") + jitErrorLog;
         }
         std::cout << "[TornadoVM-CUDA-JNI] " << program->log << std::endl;
         program->module_loaded = false;
@@ -194,7 +203,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAProgram_cl
             std::memcpy(buf, &one, sizeof(int));
         }
     } else if (param_name == CL_PROGRAM_BINARY_SIZES) {
-        long long size = (program != nullptr) ? (long long) program->ptx.size() : 0;
+        long long size = (program != nullptr) ? (long long) program->binary.size() : 0;
         if (len >= (jsize) sizeof(long long)) {
             std::memcpy(buf, &size, sizeof(long long));
         }
@@ -272,7 +281,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAProgram_c
  * Method:    getBinaries
  * Signature: (JJLjava/nio/ByteBuffer;)V
  *
- * Copies the compiled PTX into the provided direct ByteBuffer.
+ * Copies the compiled module image (cubin or PTX) into the provided direct ByteBuffer.
  */
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAProgram_getBinaries
         (JNIEnv *env, jclass clazz, jlong program_id, jlong num_devices, jobject buffer) {
@@ -282,12 +291,12 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAProgram_ge
     }
     jbyte *dst = (jbyte *) env->GetDirectBufferAddress(buffer);
     jlong capacity = env->GetDirectBufferCapacity(buffer);
-    jsize n = (jsize) program->ptx.size();
+    jsize n = (jsize) program->binary.size();
     if (n > capacity) {
         n = (jsize) capacity;
     }
     if (dst != nullptr && n > 0) {
-        std::memcpy(dst, program->ptx.c_str(), n);
+        std::memcpy(dst, program->binary.c_str(), n);
     }
 }
 

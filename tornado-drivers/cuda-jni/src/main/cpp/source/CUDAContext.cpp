@@ -253,7 +253,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAContext_c
 
     jsize bin_len = env->GetArrayLength(data);
     jbyte *bin = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(data, NULL));
-    program->ptx.assign((const char *) bin, (size_t) bin_len);
+    program->binary.assign((const char *) bin, (size_t) bin_len);
     env->ReleasePrimitiveArrayCritical(data, bin, JNI_ABORT);
     program->build_status = 0; // ready to load; clBuildProgram will load the module
 
