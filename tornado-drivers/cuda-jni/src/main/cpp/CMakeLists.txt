@@ -73,6 +73,48 @@ find_library(NVRTC_LIB nvrtc
         /usr/lib/x86_64-linux-gnu
 )
 
+# ── CUDA toolkit / driver compatibility guard ───────────────────────────────
+# This backend compiles kernels at runtime with NVRTC to a cubin (SASS) and loads
+# it through the driver. A cubin built by toolkit X.y loads on any driver of the
+# same CUDA major X (CUDA minor-version compatibility), so a newer *minor* toolkit
+# than the driver is fine; a newer *major* toolkit produces an image the driver
+# cannot load and fails at runtime (e.g. CUDA_ERROR_UNSUPPORTED_PTX_VERSION).
+# Surface that mismatch here, at build time, instead of letting it fail cryptically
+# later. Best-effort: skips quietly when versions cannot be determined.
+get_filename_component(_nvrtc_realpath "${NVRTC_LIB}" REALPATH)
+set(_driver_cuda "")
+find_program(NVIDIA_SMI nvidia-smi)
+if(NVIDIA_SMI)
+    execute_process(COMMAND ${NVIDIA_SMI} OUTPUT_VARIABLE _smi_out ERROR_QUIET RESULT_VARIABLE _smi_rc)
+    if(_smi_rc EQUAL 0)
+        string(REGEX MATCH "CUDA Version: ([0-9]+)\\.([0-9]+)" _ "${_smi_out}")
+        if(CMAKE_MATCH_1)
+            set(_driver_major "${CMAKE_MATCH_1}")
+            set(_driver_minor "${CMAKE_MATCH_2}")
+            set(_driver_cuda "${CMAKE_MATCH_1}.${CMAKE_MATCH_2}")
+        endif()
+    endif()
+endif()
+
+message(STATUS "TornadoVM CUDA: toolkit=${CUDAToolkit_VERSION} (nvrtc: ${_nvrtc_realpath}); driver max CUDA=${_driver_cuda}")
+
+if(_driver_cuda AND CUDAToolkit_VERSION_MAJOR)
+    if(CUDAToolkit_VERSION_MAJOR GREATER _driver_major)
+        message(FATAL_ERROR
+            "CUDA toolkit ${CUDAToolkit_VERSION} has a newer major than the installed driver supports "
+            "(driver max CUDA ${_driver_cuda}). A cubin produced by this toolkit cannot be loaded by this "
+            "driver. Fix one of:\n"
+            "  * build against a CUDA toolkit whose major <= ${_driver_major} "
+            "(point CUDA_PATH/PATH/LD_LIBRARY_PATH at e.g. /usr/local/cuda-${_driver_cuda}), or\n"
+            "  * upgrade the NVIDIA driver to one supporting CUDA ${CUDAToolkit_VERSION_MAJOR}.x.")
+    elseif(CUDAToolkit_VERSION_MINOR GREATER _driver_minor)
+        message(STATUS
+            "TornadoVM CUDA: toolkit minor (${CUDAToolkit_VERSION}) is newer than the driver (CUDA "
+            "${_driver_cuda}); supported because kernels load as cubin via CUDA minor-version compatibility "
+            "(a raw-PTX path would fail here with CUDA_ERROR_UNSUPPORTED_PTX_VERSION).")
+    endif()
+endif()
+
 if(CUDA_INCLUDE_DIR)
     include_directories(${CUDA_INCLUDE_DIR})
 endif()
