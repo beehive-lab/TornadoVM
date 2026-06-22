@@ -25,7 +25,6 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 import jdk.graal.compiler.core.common.LIRKind;
 import jdk.graal.compiler.core.common.spi.LIRKindTool;
@@ -68,7 +67,7 @@ public class SPIRVStamp extends ObjectStamp {
     /**
      * Gets a platform dependent {@link LIRKind} that can be used to store a value
      * of this stamp.
-     * 
+     *
      * @param lirKindTool
      *            Platform VM specific kinds.
      * @return {@link LIRKind}
@@ -135,7 +134,15 @@ public class SPIRVStamp extends ObjectStamp {
         if (stamp instanceof SPIRVStamp && ((SPIRVStamp) stamp).spirvKind == spirvKind) {
             return true;
         }
-        unimplemented("stamp is compat: %s + %s", this, stamp);
+
+        // In Graal 25, FixReadsPhase checks compatibility between SPIRVStamp
+        // and ObjectStamp for vector types (e.g., FLOAT4 vs Float4 object).
+        // SPIRVStamp extends ObjectStamp, so these are compatible when the
+        // SPIRVStamp represents the vector version of the Java object type.
+        if (stamp instanceof ObjectStamp && spirvKind.isVector()) {
+            return true;
+        }
+
         return false;
     }
 
