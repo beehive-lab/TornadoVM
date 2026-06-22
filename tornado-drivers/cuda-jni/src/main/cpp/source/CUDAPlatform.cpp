@@ -138,7 +138,13 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAPlatform_
     ctx->device = dev->device;
     ctx->ordinal = dev->ordinal;
 
+#if CUDA_VERSION >= 13000
+    // CUDA 13 changed cuCtxCreate to cuCtxCreate_v4, inserting a
+    // CUctxCreateParams* argument (NULL = default, no execution affinity / CIG).
+    CUresult result = cuCtxCreate(&ctx->context, NULL, CU_CTX_SCHED_YIELD, dev->device);
+#else
     CUresult result = cuCtxCreate(&ctx->context, CU_CTX_SCHED_YIELD, dev->device);
+#endif
     LOG_CUDA_AND_VALIDATE("cuCtxCreate", result);
     if (result != CUDA_SUCCESS) {
         delete ctx;
