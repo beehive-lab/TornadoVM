@@ -971,4 +971,14 @@ public class TaskGraph implements TaskGraphInterface {
         return taskGraphImpl.isGridRegistered();
     }
 
+    public TaskGraph withCUDAStreams() {
+        taskGraphImpl.withCUDAStreams();
+        return this;
+    }
+
+    public TaskGraph withoutCUDAStreams() {
+        taskGraphImpl.withoutCUDAStreams();
+        return this;
+    }
+
 }

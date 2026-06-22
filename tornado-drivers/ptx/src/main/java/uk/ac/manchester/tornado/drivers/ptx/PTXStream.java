@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.common.Event;
+import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.ptx.nstream.NativePTXStream;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
@@ -43,12 +44,23 @@ public class PTXStream {
 
     private final byte[] streamPool;
     private final PTXEventPool ptxEventPool;
+    private final PTXStreamType streamType;
     private boolean isDestroy;
     private boolean capturing = false;
 
+    /** Pinned host staging buffer for async Java-array H2D transfers. 0 = unallocated. */
+    private long stagingBufferPtr = 0L;
+    /** Current capacity of the staging buffer in bytes. */
+    private long stagingBufferSize = 0L;
+
     public PTXStream() {
+        this(PTXStreamType.DEFAULT);
+    }
+
+    public PTXStream(PTXStreamType type) {
         streamPool = cuCreateStream();
         this.ptxEventPool = new PTXEventPool(EVENT_WINDOW);
+        this.streamType = type;
     }
 
     //@formatter:off
@@ -97,20 +109,25 @@ public class PTXStream {
 
     private static native byte[][] writeArrayHtoD(long address, long length, double[] array, long hostOffset, byte[] streamWrapper);
 
-    private static native byte[][] writeArrayHtoDAsync(long address, long length, byte[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayHtoDAsync(long address, long length, byte[] array, long hostOffset, long stagingPtr, byte[] streamWrapper);
     private static native byte[][] writeArrayHtoDAsync(long address, long length, long hostPointer, long hostOffset, byte[] streamWrapper);
 
-    private static native byte[][] writeArrayHtoDAsync(long address, long length, short[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayHtoDAsync(long address, long length, short[] array, long hostOffset, long stagingPtr, byte[] streamWrapper);
 
-    private static native byte[][] writeArrayHtoDAsync(long address, long length, char[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayHtoDAsync(long address, long length, char[] array, long hostOffset, long stagingPtr, byte[] streamWrapper);
 
-    private static native byte[][] writeArrayHtoDAsync(long address, long length, int[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayHtoDAsync(long address, long length, int[] array, long hostOffset, long stagingPtr, byte[] streamWrapper);
 
-    private static native byte[][] writeArrayHtoDAsync(long address, long length, long[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayHtoDAsync(long address, long length, long[] array, long hostOffset, long stagingPtr, byte[] streamWrapper);
 
-    private static native byte[][] writeArrayHtoDAsync(long address, long length, float[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayHtoDAsync(long address, long length, float[] array, long hostOffset, long stagingPtr, byte[] streamWrapper);
 
-    private static native byte[][] writeArrayHtoDAsync(long address, long length, double[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayHtoDAsync(long address, long length, double[] array, long hostOffset, long stagingPtr, byte[] streamWrapper);
+
+    private static native long cuMemAllocHost(long numBytes);
+
+    private static native void cuMemFreeHost(long hostPtr);
+
     //@formatter:on
 
     private static native byte[][] cuLaunchKernel(byte[] module, String name, int gridDimX, int gridDimY, int gridDimZ, int blockDimX, int blockDimY, int blockDimZ, long sharedMemBytes, byte[] stream,
@@ -122,6 +139,12 @@ public class PTXStream {
     private static native long cuGraphLaunch(byte[] graphExecWrapper, byte[] streamWrapper);
     private static native long cuGraphExecDestroy(byte[] graphExecWrapper);
     private static native long cuGraphDestroy(byte[] graphWrapper);
+
+    /** Records a single CUDA event on this stream and returns its raw handle. */
+    private static native byte[] cuRecordEventOnStream(byte[] streamWrapper);
+
+    /** Makes this stream wait (GPU-side) for the given raw event handle. */
+    private static native void cuStreamWaitEventOnStream(byte[] streamWrapper, byte[] eventWrapper);
 
     /**
      * This JNI call will create a CUDA Stream through an API call to
@@ -135,14 +158,39 @@ public class PTXStream {
 
     private static native long cuStreamSynchronize(byte[] streamWrapper);
 
-    private static native byte[][] cuEventCreateAndRecord(boolean isProfilingEnabled, byte[] streamWrapper);
+    protected static native byte[][] cuEventCreateAndRecord(boolean isProfilingEnabled, byte[] streamWrapper);
 
     private int registerEvent(EventDescriptor descriptorId) {
-        return ptxEventPool.registerEvent(cuEventCreateAndRecord(TornadoOptions.isProfilerEnabled(), streamPool), descriptorId);
+        return ptxEventPool.registerEvent(
+                cuEventCreateAndRecord(TornadoOptions.isProfilerEnabled(), streamPool),
+                descriptorId,
+                streamType);
     }
 
     private int registerEvent(byte[][] eventWrapper, EventDescriptor descriptorId) {
-        return ptxEventPool.registerEvent(eventWrapper, descriptorId);
+        return ptxEventPool.registerEvent(eventWrapper, descriptorId, streamType);
+    }
+
+    /**
+     * Ensures the per-stream pinned staging buffer can hold at least {@code required} bytes.
+     * Grows lazily, doubling capacity on each expansion to amortise re-allocation cost.
+     *
+     * @param required minimum bytes needed for the next staged H2D transfer
+     */
+    private void ensureStagingCapacity(long required) {
+        if (stagingBufferPtr == 0L || stagingBufferSize < required) {
+            if (stagingBufferPtr != 0L) {
+                cuMemFreeHost(stagingBufferPtr);
+            }
+            long newSize = Math.max(required, stagingBufferSize * 2);
+            stagingBufferPtr = cuMemAllocHost(newSize);
+            if (stagingBufferPtr == 0L) {
+                stagingBufferSize = 0L;
+                throw new TornadoOutOfMemoryException(
+                        "[PTX] cuMemAllocHost failed: could not allocate " + newSize + " bytes of pinned host memory");
+            }
+            stagingBufferSize = newSize;
+        }
     }
 
     public void reset() {
@@ -154,6 +202,10 @@ public class PTXStream {
     }
 
     public void cuDestroyStream() {
+        if (stagingBufferPtr != 0L) {
+            cuMemFreeHost(stagingBufferPtr);
+            stagingBufferPtr = 0L;
+        }
         cuDestroyStream(streamPool);
         isDestroy = true;
     }
@@ -167,17 +219,22 @@ public class PTXStream {
 
     private void waitForEvents(int[] localEventIds) {
         if (localEventIds == null) {
+            // we don't use dependencies (VM_USE_DEPS=false) -> DEFAULT stream -> no need for wait
             return;
         }
 
         ArrayList<PTXEvent> events = new ArrayList<>();
         for (int localEventId : localEventIds) {
+            if (localEventId == -1) {
+                // we use dependencies (VM_USE_DEPS=true) so we need to filter out independent events (with id=-1)
+                continue;
+            }
             PTXEvent cuEvent = this.ptxEventPool.getEvent(localEventId);
             if (cuEvent != null) {
                 events.add(cuEvent);
             }
         }
-        PTXEvent.waitForEventArray((PTXEvent[]) events.toArray());
+        PTXEvent.waitForEventArray(events.toArray(new PTXEvent[0]));
     }
 
     public int enqueueKernelLaunch(long executionPlanId, PTXModule module, TaskDataContext taskMeta, byte[] kernelParams, int[] gridDim, int[] blockDim) {
@@ -333,38 +390,44 @@ public class PTXStream {
 
     public int enqueueAsyncWrite(long executionPlanId, long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, streamPool), EventDescriptor.DESC_WRITE_BYTE);
+        ensureStagingCapacity(length);
+        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, stagingBufferPtr, streamPool), EventDescriptor.DESC_WRITE_BYTE);
     }
 
     public int enqueueAsyncWrite(long executionPlanId, long address, long length, char[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, streamPool), EventDescriptor.DESC_WRITE_BYTE);
+        ensureStagingCapacity(length);
+        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, stagingBufferPtr, streamPool), EventDescriptor.DESC_WRITE_BYTE);
     }
 
     public int enqueueAsyncWrite(long executionPlanId, long address, long length, short[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, streamPool), EventDescriptor.DESC_WRITE_SHORT);
+        ensureStagingCapacity(length);
+        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, stagingBufferPtr, streamPool), EventDescriptor.DESC_WRITE_SHORT);
     }
 
     public int enqueueAsyncWrite(long executionPlanId, long address, long length, int[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, streamPool), EventDescriptor.DESC_WRITE_INT);
-
+        ensureStagingCapacity(length);
+        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, stagingBufferPtr, streamPool), EventDescriptor.DESC_WRITE_INT);
     }
 
     public int enqueueAsyncWrite(long executionPlanId, long address, long length, long[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, streamPool), EventDescriptor.DESC_WRITE_LONG);
+        ensureStagingCapacity(length);
+        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, stagingBufferPtr, streamPool), EventDescriptor.DESC_WRITE_LONG);
     }
 
     public int enqueueAsyncWrite(long executionPlanId, long address, long length, float[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, streamPool), EventDescriptor.DESC_WRITE_FLOAT);
+        ensureStagingCapacity(length);
+        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, stagingBufferPtr, streamPool), EventDescriptor.DESC_WRITE_FLOAT);
     }
 
     public int enqueueAsyncWrite(long executionPlanId, long address, long length, double[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, streamPool), EventDescriptor.DESC_WRITE_DOUBLE);
+        ensureStagingCapacity(length);
+        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, stagingBufferPtr, streamPool), EventDescriptor.DESC_WRITE_DOUBLE);
     }
 
     public PTXEventPool getEventPool() {
@@ -373,6 +436,14 @@ public class PTXStream {
 
     public boolean isDestroy() {
         return isDestroy;
+    }
+
+    public byte[] getStreamHandle() {
+        return streamPool;
+    }
+
+    public PTXStreamType getStreamType() {
+        return streamType;
     }
 
     public long mapOnDeviceMemoryRegion(long destDevicePtr, long srcDevicePtr, long offset, int sizeofType) {
@@ -402,6 +473,22 @@ public class PTXStream {
 
     public boolean isCapturing() {
         return capturing;
+    }
+
+    /**
+     * Records a lightweight CUDA event on this stream (no profiling overhead).
+     * Returns the raw event handle for use in multi-stream graph capture fork/join.
+     */
+    byte[] recordCaptureEvent() {
+        return cuRecordEventOnStream(streamPool);
+    }
+
+    /**
+     * Makes this stream wait (GPU-side, non-blocking) for the given raw event handle.
+     * Used to fork/join streams during multi-stream graph capture.
+     */
+    void waitOnCapturedEvent(byte[] rawEventHandle) {
+        cuStreamWaitEventOnStream(streamPool, rawEventHandle);
     }
 
     /**

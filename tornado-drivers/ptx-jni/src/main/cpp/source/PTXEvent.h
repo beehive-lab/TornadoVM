@@ -32,8 +32,6 @@
 extern "C" {
 #endif
 
-jbyteArray array_from_event(JNIEnv *env, CUevent *event);
-
 jobjectArray wrapper_from_events(JNIEnv *env, CUevent *event1, CUevent *event2);
 
 /*
@@ -67,6 +65,14 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEve
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEventQuery
         (JNIEnv *, jclass, jbyteArray);
+
+/*
+* Class:     uk_ac_manchester_tornado_drivers_ptx_PTXEvent
+* Method:    cuStreamWaitEvent
+* Signature: ([B[B)V
+*/
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuStreamWaitEvent
+        (JNIEnv *, jclass, jbyteArray, jbyteArray);
 
 #ifdef __cplusplus
 }

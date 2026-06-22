@@ -53,6 +53,10 @@ public class PTXContext {
 
     private native static long cuCtxSetCurrent(long cuContext);
 
+    private native static int cuMemHostRegister(long cuContext, long hostPointer, long numBytes);
+
+    private native static int cuMemHostUnregister(long cuContext, long hostPointer);
+
     public void enablePTXContext() {
         cuCtxSetCurrent(ptxContext);
     }
@@ -81,5 +85,29 @@ public class PTXContext {
 
     public void freeMemory(long address) {
         cuMemFree(ptxContext, address);
+    }
+
+    /**
+     * Registers an off-heap native buffer with the CUDA driver as page-locked memory.
+     * After registration, H2D and D2H async transfers bypass CUDA's internal staging copy,
+     * enabling true host-device overlap. Call once per buffer lifetime.
+     *
+     * @param hostPointer native address (e.g. {@code MemorySegment.address()})
+     * @param numBytes size of the region to register, in bytes
+     * @return {@code true} if this call pinned the memory; {@code false} if it was already
+     *         registered by another caller (memory is still pinned, DMA still works)
+     */
+    public boolean registerHostMemory(long hostPointer, long numBytes) {
+        return cuMemHostRegister(ptxContext, hostPointer, numBytes) == 0;
+    }
+
+    /**
+     * Unregisters host memory that was previously pinned by {@link #registerHostMemory(long, long)}.
+     * Must be called before buffer's deallocation/free to avoid CUDA driver resource leaks.
+     *
+     * @param hostPointer native address of the previously registered region.
+     */
+    public void unregisterHostMemory(long hostPointer) {
+        cuMemHostUnregister(ptxContext, hostPointer);
     }
 }

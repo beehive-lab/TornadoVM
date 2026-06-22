@@ -72,6 +72,22 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuM
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuCtxSetCurrent
         (JNIEnv *env, jclass clazz, jlong cuContext);
 
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXContext
+ * Method:    cuMemHostRegister
+ * Signature: (JJJ)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuMemHostRegister
+          (JNIEnv *env, jclass clazz, jlong cuContext, jlong hostPointer, jlong numBytes);
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXContext
+ * Method:    cuMemHostUnregister
+ * Signature: (JJ)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuMemHostUnregister
+          (JNIEnv *env, jclass clazz, jlong cuContext, jlong hostPointer);
+
 #ifdef __cplusplus
 }
 #endif
