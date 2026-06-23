@@ -23,6 +23,7 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.nodes.interfaces;
 
+import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.ValueNode;
 
 import uk.ac.manchester.tornado.api.common.Access;
@@ -46,4 +47,12 @@ public interface MarkArrayParameterAccess {
      *     {@link Access#NONE} if {@code parameter} is not one of its array operands.
      */
     Access getArrayParameterAccess(ValueNode parameter);
+
+    /** Strips any {@link PiNode} wrappers to reach the underlying value node. */
+    static ValueNode unwrapPi(ValueNode v) {
+        while (v instanceof PiNode pi) {
+            v = pi.object();
+        }
+        return v;
+    }
 }

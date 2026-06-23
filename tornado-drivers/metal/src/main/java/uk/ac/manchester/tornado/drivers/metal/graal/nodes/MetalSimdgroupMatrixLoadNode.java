@@ -83,6 +83,6 @@ public class MetalSimdgroupMatrixLoadNode extends FixedWithNextNode implements L
 
     @Override
     public Access getArrayParameterAccess(ValueNode parameter) {
-        return (parameter == array) ? Access.READ_ONLY : Access.NONE;
+        return (parameter == MarkArrayParameterAccess.unwrapPi(array)) ? Access.READ_ONLY : Access.NONE;
     }
 }
