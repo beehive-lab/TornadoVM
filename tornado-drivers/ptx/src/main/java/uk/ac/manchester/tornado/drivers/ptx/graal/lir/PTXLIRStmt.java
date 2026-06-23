@@ -65,23 +65,7 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstan
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.TAB;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.VECTOR;
 
-import java.nio.charset.StandardCharsets;
-
-import jdk.vm.ci.meta.ValueKind;
-import org.graalvm.compiler.lir.ConstantValue;
-import org.graalvm.compiler.lir.LIRInstruction;
-import org.graalvm.compiler.lir.LIRInstructionClass;
-import org.graalvm.compiler.lir.Opcode;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
-
-import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.enums.MMAShape;
-import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
-import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
-import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXNullaryOp;
-import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
-import uk.ac.manchester.tornado.drivers.ptx.graal.meta.PTXMemorySpace;
 
 public class PTXLIRStmt {
 
