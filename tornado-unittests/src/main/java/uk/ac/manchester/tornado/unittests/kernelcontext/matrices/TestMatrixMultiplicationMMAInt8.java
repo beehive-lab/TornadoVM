@@ -1,13 +1,19 @@
 /*
- * Unit tests for int8 Tensor Core MMA via KernelContext.
+ * Copyright (c) 2026 APT Group, Department of Computer Science,
+ * The University of Manchester.
  *
- * Tests mma.sync.aligned.m16n8k32.row.col.s32.s8.s8.s32 on the PTX backend.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * Each 16×16 output tile requires two mma.sync calls (left + right 16×8 panels),
- * same as the f16 path but with K=32 per MMA instruction.
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Usage:
- *   tornado-test -V uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationMMAInt8
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.matrices;
 
@@ -31,6 +37,14 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 import java.util.Random;
 
+/**
+ * <p>
+ * How to run?
+ * <code>
+ * tornado-test -V uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationMMAInt8
+ * </code>
+ * </p>
+ */
 public class TestMatrixMultiplicationMMAInt8 extends TornadoTestBase {
 
     static final int WMMA_M    = 16;
@@ -280,21 +294,6 @@ public class TestMatrixMultiplicationMMAInt8 extends TornadoTestBase {
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(itg)) {
             plan.withGridScheduler(gridScheduler)
                     .execute();
-        }
-
-        // Print first 4 rows for diagnostic
-        System.out.println("=== First 4 rows: expected | actual ===");
-        for (int i = 0; i < Math.min(4, dimM); i++) {
-            StringBuilder exp = new StringBuilder("ref[" + i + "]: ");
-            StringBuilder act = new StringBuilder("act[" + i + "]: ");
-            for (int j = 0; j < dimN; j++) {
-                int idx = i * dimN + j;
-                exp.append(String.format("%7d", ref.get(idx)));
-                act.append(String.format("%7d", c.get(idx)));
-            }
-            System.out.println(exp);
-            System.out.println(act);
-            System.out.println();
         }
 
         // Assert correctness — int8 MMA is exact (no floating-point rounding)

@@ -2722,33 +2722,6 @@ public class PTXLIRStmt {
 
         @Override
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
-            // Declare the N physical f32 registers that make up the accumulator fragment.
-            //   .reg .f32 <base>_0, <base>_1, <base>_2, <base>_3;
-//            asm.emitSymbol(TAB);
-//            asm.emit(".reg .f32 ");
-//            for (int i = 0; i < fragmentSize; i++) {
-//                if (i > 0) {
-//                    asm.emitSymbol(COMMA + SPACE);
-//                }
-//                asm.emitValue(result);
-//                asm.emit("_" + i);
-//            }
-//            asm.delimiter();
-//            asm.eol();
-//
-//            // Initialise each register.
-//            //   mov.f32 <base>_i, <initValue>;
-//            for (int i = 0; i < fragmentSize; i++) {
-//                asm.emitSymbol(TAB);
-//                asm.emit("mov.f32");
-//                asm.emitSymbol(SPACE);
-//                asm.emitValue(result);
-//                asm.emit("_" + i);
-//                asm.emitSymbol(COMMA + SPACE);
-//                asm.emitValue(initValue);
-//                asm.delimiter();
-//                asm.eol();
-//            }
             asm.emitSymbol(TAB);
             asm.emit(".reg " + regType + " ");
             for (int i = 0; i < fragmentSize; i++) {
@@ -2888,11 +2861,11 @@ public class PTXLIRStmt {
             }
 
             // Lane ID — intra-warp lane = %tid.x & 31.
-// %tid.x is the thread index within the BLOCK (0..blockDim-1); ldmatrix lane
-// addressing requires the lane within the WARP (0..31). Without the mask, warps
-// other than warp 0 compute group = lane/8 in 4..31 instead of 0..3, producing
-// wrong addresses. (Single-warp kernels were unaffected because warp 0's tid is
-// already 0..31.)
+            // %tid.x is the thread index within the BLOCK (0..blockDim-1); ldmatrix lane
+            // addressing requires the lane within the WARP (0..31). Without the mask, warps
+            // other than warp 0 compute group = lane/8 in 4..31 instead of 0..3, producing
+            // wrong addresses. (Single-warp kernels were unaffected because warp 0's tid is
+            // already 0..31.)
             asm.emitSymbol(TAB);
             asm.emit("mov.u32 __ldm_lane, %tid.x");
             asm.delimiter();
@@ -3033,7 +3006,6 @@ public class PTXLIRStmt {
             asm.delimiter();
             asm.eol();
 
-            // THE INSTRUCTION
             asm.emitSymbol(TAB);
             if (variant == Variant.X4) {
                 asm.emit("ldmatrix.sync.aligned.m8n8.x4.shared.b16 {");
@@ -3075,40 +3047,6 @@ public class PTXLIRStmt {
 
         @Override
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
-            // Declare the D fragment registers. These are the *output* registers of this
-            // mma.sync — they are distinct from the C (input) fragment, even though
-            // for D = A*B + C with accumulate-in-place semantics, a typical caller
-            // feeds the D output of one mma back as the C input of the next.
-//            asm.emitSymbol(TAB);
-//            asm.emit(".reg .f32 ");
-//            for (int i = 0; i < 4; i++) {
-//                if (i > 0) {
-//                    asm.emitSymbol(COMMA + SPACE);
-//                }
-//                asm.emitValue(result);
-//                asm.emit("_" + i);
-//            }
-//            asm.delimiter();
-//            asm.eol();
-//
-//            // mma.sync.aligned.<shape>.row.col.f32.f16.f16.f32
-//            //     {D0..D3}, {A0..A3}, {B0..B1}, {C0..C3};
-//            asm.emitSymbol(TAB);
-//            asm.emit("mma.sync.aligned.");
-//            asm.emit(shape.getPtxName());
-//            asm.emit(".row.col.f32.f16.f16.f32");
-//            asm.emitSymbol(SPACE);
-//
-//            emitFragmentList(asm, result, 4);
-//            asm.emitSymbol(COMMA + SPACE);
-//            emitFragmentList(asm, fragA, 4);
-//            asm.emitSymbol(COMMA + SPACE);
-//            emitFragmentList(asm, fragB, 2);
-//            asm.emitSymbol(COMMA + SPACE);
-//            emitFragmentList(asm, fragC, 4);
-//
-//            asm.delimiter();
-//            asm.eol();
             String regType;
             String instrSuffix;
             if (shape == MMAShape.M16N8K32) {

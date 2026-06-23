@@ -666,7 +666,7 @@ public class PTXGraphBuilderPlugins {
             }
         });
 
-// --- mmaLoadAInt8(int[], int) -> byte[] ---
+        // --- mmaLoadAInt8(int[], int) -> byte[] ---
         r.register(new InvocationPlugin("mmaLoadAInt8",
                 InvocationPlugin.Receiver.class, int[].class, int.class) {
             @Override
@@ -678,7 +678,7 @@ public class PTXGraphBuilderPlugins {
             }
         });
 
-// --- mmaLoadBInt8(int[], int) -> byte[] ---
+        // --- mmaLoadBInt8(int[], int) -> byte[] ---
         r.register(new InvocationPlugin("mmaLoadBInt8",
                 InvocationPlugin.Receiver.class, int[].class, int.class) {
             @Override
@@ -690,7 +690,7 @@ public class PTXGraphBuilderPlugins {
             }
         });
 
-// --- mmaInt8(byte[], byte[], int[], MMAShape) -> int[] ---
+        // --- mmaInt8(byte[], byte[], int[], MMAShape) -> int[] ---
         r.register(new InvocationPlugin("mmaInt8",
                 InvocationPlugin.Receiver.class,
                 byte[].class, byte[].class, int[].class, MMAShape.class) {
@@ -706,7 +706,7 @@ public class PTXGraphBuilderPlugins {
             }
         });
 
-// --- mmaStoreInt(int[], IntArray, int, int, int) -> void ---
+        // --- mmaStoreInt(int[], IntArray, int, int, int) -> void ---
         r.register(new InvocationPlugin("mmaStoreInt",
                 InvocationPlugin.Receiver.class,
                 int[].class, IntArray.class, int.class, int.class, int.class) {
@@ -735,7 +735,7 @@ public class PTXGraphBuilderPlugins {
             }
         });
 
-// --- mmaLoadB(int[], int, int) -> HalfFloat[] ---
+        // --- mmaLoadB(int[], int, int) -> HalfFloat[] ---
         r.register(new InvocationPlugin("mmaLoadB",
                 InvocationPlugin.Receiver.class, int[].class, int.class, int.class) {
             @Override
@@ -747,7 +747,7 @@ public class PTXGraphBuilderPlugins {
             }
         });
 
-// --- mmaLoadBSwizzled(HalfFloat[], int, int) -> HalfFloat[] ---
+        // --- mmaLoadBSwizzled(HalfFloat[], int, int) -> HalfFloat[] ---
         r.register(new InvocationPlugin("mmaLoadBSwizzled",
                 InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class) {
             @Override
@@ -755,30 +755,6 @@ public class PTXGraphBuilderPlugins {
                                  Receiver receiver, ValueNode tile, ValueNode wmmaK, ValueNode byteOffset) {
                 receiver.get(true);
                 b.addPush(JavaKind.Object, new MMALoadBSwizzledNode(tile, wmmaK, byteOffset));
-                return true;
-            }
-        });
-
-// --- mmaLoadAInt8(int[], int, int) -> byte[] ---
-        r.register(new InvocationPlugin("mmaLoadAInt8",
-                InvocationPlugin.Receiver.class, int[].class, int.class, int.class) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-                                 Receiver receiver, ValueNode tile, ValueNode wmmaK, ValueNode byteOffset) {
-                receiver.get(true);
-                b.addPush(JavaKind.Object, new MMALoadAInt8Node(tile, wmmaK, byteOffset));
-                return true;
-            }
-        });
-
-// --- mmaLoadBInt8(int[], int, int) -> byte[] ---
-        r.register(new InvocationPlugin("mmaLoadBInt8",
-                InvocationPlugin.Receiver.class, int[].class, int.class, int.class) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-                                 Receiver receiver, ValueNode tile, ValueNode wmmaK, ValueNode byteOffset) {
-                receiver.get(true);
-                b.addPush(JavaKind.Object, new MMALoadBInt8Node(tile, wmmaK, byteOffset));
                 return true;
             }
         });

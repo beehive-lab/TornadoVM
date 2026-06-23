@@ -523,20 +523,7 @@ public enum PTXKind implements PlatformKind {
         return size == 8 && !isVector();
     }
 
-    public boolean isMMAFragmentA() {
-        return kind == MMA_FRAG_A_F16;
-    }
-
-    public boolean isMMAFragmentB() {
-        return kind == MMA_FRAG_B_F16;
-    }
-
-    public boolean isMMAFragmentAccumulator() {
-        return kind == MMA_FRAG_ACC_F32;
-    }
-
     public boolean isMMAFragment() {
-        //return isMMAFragmentA() || isMMAFragmentB() || isMMAFragmentAccumulator();
         return this == MMA_FRAG_ACC_F32 || this == MMA_FRAG_A_F16 || this == MMA_FRAG_B_F16
                 || this == MMA_FRAG_ACC_S32 || this == MMA_FRAG_A_S8  || this == MMA_FRAG_B_S8;
     }

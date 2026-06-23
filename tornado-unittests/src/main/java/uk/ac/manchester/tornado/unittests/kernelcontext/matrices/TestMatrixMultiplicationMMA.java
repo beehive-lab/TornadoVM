@@ -36,6 +36,14 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 import static org.junit.Assert.assertEquals;
 
+/**
+ * <p>
+ * How to run?
+ * <code>
+ * tornado-test -V uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationMMA
+ * </code>
+ * </p>
+ */
 public class TestMatrixMultiplicationMMA extends TornadoTestBase {
     static final int WMMA_M  = 16;
     static final int WMMA_N  = 16;  // covered by two m16n8k16 calls
@@ -360,7 +368,6 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
         for (int i = 0; i < dimM; i++) {
             for (int j = 0; j < dimN; j++) {
                 int idx = i * dimN + j;
-               // System.out.println("C[" + i + "][" + j + "] = (expected): " + ref.get(idx) + " - (actual): " + c.get(idx));
                 assertEquals(String.format("C[%d][%d]", i, j),
                         ref.get(idx), c.get(idx), tol);
             }
@@ -1095,15 +1102,6 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
             plan.withGridScheduler(gridScheduler).execute();
         }
 
-        System.out.println("=== mmaLoadB byte-offset test: C[i][j] should equal bWide[i][j+8] = i*16 + j + 8 ===");
-        for (int i = 0; i < M; i++) {
-            StringBuilder line = new StringBuilder(String.format("row[%2d]: ", i));
-            for (int j = 0; j < N; j++) {
-                line.append(String.format("%5.0f", c.get(i * N + j)));
-            }
-            System.out.println(line);
-        }
-
         // Assertion: with identity A and offset reading bWide[k][j+8],
         // C[i][j] = sum_k A[i][k] * bWide[k][j+8] = bWide[i][j+8] = i*16 + j + 8.
         final float tol = 0.01f;
@@ -1208,14 +1206,6 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
         // With B = identity (8 cols) and A read from sub-tile 1 (rows 16..31):
         //   C[i][j] = sum_k A_sub1[i][k] * B[k][j] = A_sub1[i][j] = aTall[16+i][j]
         //           = (16 + i) * 16 + j = 256 + 16i + j.
-        System.out.println("=== mmaLoadA byte-offset test: C[i][j] should equal 256 + 16i + j ===");
-        for (int i = 0; i < M; i++) {
-            StringBuilder line = new StringBuilder(String.format("row[%2d]: ", i));
-            for (int j = 0; j < N; j++) {
-                line.append(String.format("%6.0f", c.get(i * N + j)));
-            }
-            System.out.println(line);
-        }
 
         final float tol = 0.01f;
         for (int i = 0; i < M; i++) {
@@ -1356,15 +1346,6 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
         }
 
         // Expected: C[i][j] = A[i][ j % 16 ] = i * 16 + (j % 16)
-        System.out.println("=== Single-warp 16-fragment test: C[i][j] should equal i*16 + (j%16) ===");
-        for (int i = 0; i < Math.min(4, M); i++) {
-            StringBuilder line = new StringBuilder(String.format("row[%2d]: ", i));
-            for (int j = 0; j < N; j++) {
-                line.append(String.format("%5.0f", C.get(i * N + j)));
-            }
-            System.out.println(line);
-        }
-        System.out.println("(showing first 4 rows)");
 
         final float tol = 0.01f;
         for (int i = 0; i < M; i++) {
@@ -1423,24 +1404,6 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
         for (int i = 0; i < slots; i++) {
             if (outLocal.get(i) != -1) written++;
             maxLocal = Math.max(maxLocal, outLocal.get(i));
-        }
-        System.out.println("=== Thread index dump (256-thread workgroup) ===");
-        System.out.println("Slots written (non -1): " + written + " / " + slots);
-        System.out.println("Max localIdx seen: " + maxLocal);
-        System.out.println("First 8 slots (localIdx | groupIdx | groupIdy):");
-        for (int i = 0; i < 8; i++) {
-            System.out.printf("  slot %3d: %4d | %4d | %4d%n",
-                    i, outLocal.get(i), outGroupX.get(i), outGroupY.get(i));
-        }
-        System.out.println("Slots 28..36 (around the warp-0/warp-1 boundary):");
-        for (int i = 28; i < 37; i++) {
-            System.out.printf("  slot %3d: %4d | %4d | %4d%n",
-                    i, outLocal.get(i), outGroupX.get(i), outGroupY.get(i));
-        }
-        System.out.println("Slots 248..255 (end of block):");
-        for (int i = 248; i < 256; i++) {
-            System.out.printf("  slot %3d: %4d | %4d | %4d%n",
-                    i, outLocal.get(i), outGroupX.get(i), outGroupY.get(i));
         }
 
         // Assertions: 256-thread block must index 0..255 with one group.
