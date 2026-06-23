@@ -296,9 +296,15 @@ public final class MetalPreamble {
     private static boolean isNeeded(String kernelSource, String[] triggers) {
         for (String trigger : triggers) {
             // Match whole identifiers to avoid false positives (e.g. "float8" inside "simdgroup_float8x8").
-            java.util.regex.Pattern p = java.util.regex.Pattern.compile("\\b" + java.util.regex.Pattern.quote(trigger) + "\\b");
-            if (p.matcher(kernelSource).find()) {
-                return true;
+            int idx = kernelSource.indexOf(trigger);
+            while (idx >= 0) {
+                int end = idx + trigger.length();
+                boolean leftOk  = idx == 0 || (!Character.isLetterOrDigit(kernelSource.charAt(idx - 1)) && kernelSource.charAt(idx - 1) != '_');
+                boolean rightOk = end == kernelSource.length() || (!Character.isLetterOrDigit(kernelSource.charAt(end)) && kernelSource.charAt(end) != '_');
+                if (leftOk && rightOk) {
+                    return true;
+                }
+                idx = kernelSource.indexOf(trigger, end);
             }
         }
         return false;
