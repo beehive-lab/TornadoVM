@@ -341,7 +341,7 @@ public class MatrixMultiplicationMMA {
                 int j         = inSub % 8;
                 int col_in_block = subTileId * 8 + j;
                 HalfFloat val = B.get((kBase + k_row) * N + (blockCol + col_in_block));
-                ctx.swizzleStoreFp16Stride32(bTile, k_row, j, 8, val, subTileId * B_SUBTILE_BYTES);
+                ctx.mmaStoreBSwizzled(bTile, k_row, j, 8, val, subTileId * B_SUBTILE_BYTES);
             }
             ctx.localBarrier();
 

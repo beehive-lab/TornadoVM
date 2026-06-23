@@ -661,7 +661,7 @@ public class KernelContext implements ExecutionContext {
      * places the result into the target sub-tile region. Symmetric with
      * {@link #mmaLoadBSwizzled(HalfFloat[], int, int)}.
      */
-    public void swizzleStoreFp16Stride32(HalfFloat[] arr, int row, int col, int stride,
+    public void mmaStoreBSwizzled(HalfFloat[] arr, int row, int col, int stride,
                                          HalfFloat value, int byteOffset) {
         // CPU fallback: no-op (swizzle layout only matters on GPU).
     }

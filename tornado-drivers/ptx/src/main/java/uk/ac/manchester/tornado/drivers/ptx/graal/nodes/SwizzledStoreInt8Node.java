@@ -45,20 +45,14 @@ public class SwizzledStoreInt8Node extends FixedWithNextNode implements LIRLower
     @Input private ValueNode column;
     @Input private ValueNode stride;
     @Input private ValueNode int8_value;
-    @OptionalInput private ValueNode byteOffset;
 
     public SwizzledStoreInt8Node(ValueNode int8_local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode int8_value) {
-        this(int8_local_array, row, column, stride, int8_value, null);
-    }
-
-    public SwizzledStoreInt8Node(ValueNode int8_local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode int8_value, ValueNode byteOffset) {
         super(TYPE, StampFactory.forVoid());
         this.int8_local_array = int8_local_array;
         this.row = row;
         this.column = column;
         this.stride = stride;
         this.int8_value = int8_value;
-        this.byteOffset = byteOffset;
     }
 
     public void generate(NodeLIRBuilderTool generator) {
@@ -76,15 +70,8 @@ public class SwizzledStoreInt8Node extends FixedWithNextNode implements LIRLower
         Variable xorTerm = tool.newVariable(LIRKind.value(PTXKind.S32));
         Variable swzByte = tool.newVariable(LIRKind.value(PTXKind.S32));
 
-        if (byteOffset == null) {
-            tool.append(new PTXLIRStmt.SwizzledStoreInt8Stmt(
-                    localArray, rowVal, colVal, strideVal, valueVal,
-                    linIdx, shifted, masked, xorTerm, swzByte));
-        } else {
-            Value offVal = generator.operand(byteOffset);
-            tool.append(new PTXLIRStmt.SwizzledStoreInt8Stmt(
-                    localArray, rowVal, colVal, strideVal, valueVal,
-                    linIdx, shifted, masked, xorTerm, swzByte, offVal));
-        }
+        tool.append(new PTXLIRStmt.SwizzledStoreInt8Stmt(
+                localArray, rowVal, colVal, strideVal, valueVal,
+                linIdx, shifted, masked, xorTerm, swzByte));
     }
 }
