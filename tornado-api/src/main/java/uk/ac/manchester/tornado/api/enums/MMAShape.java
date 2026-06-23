@@ -25,7 +25,6 @@ package uk.ac.manchester.tornado.api.enums;
  *   mma.sync.aligned.{shape}.row.col.f32.f16.f16.f32
  */
 public enum MMAShape {
-    M16N8K8("m16n8k8"),
     M16N8K16("m16n8k16"),
     M16N8K32("m16n8k32");
 
