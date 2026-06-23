@@ -528,34 +528,10 @@ public class KernelContext implements ExecutionContext {
         return new float[]{ v, v, v, v };
     }
 
-    /**
-     * Loads the A fragment for mma.sync from a shared-memory tile.
-     * Each lane receives its 8 owned f16 elements as per PTX ISA m16n8k16 layout.
-     *
-     * PTX equivalent: ld.shared.b32 ra0..ra3, [tile + offset]
-     */
-    public HalfFloat[] mmaLoadA(float[] aTile, int wmmaK) {
-        // CPU fallback: return an 8-element fragment.
-        // On GPU this is replaced by an MMALoadANode by the plugin.
-        return new HalfFloat[8];
-    }
-
     public HalfFloat[] mmaLoadA(int[] aTile, int wmmaK) {
         // CPU fallback: return an 8-element fragment.
         // On GPU this is replaced by an MMALoadANode by the plugin.
         return new HalfFloat[8];
-    }
-
-    /**
-     * Loads the B fragment for mma.sync from a shared-memory tile.
-     * Each lane receives its 4 owned f16 elements as per PTX ISA m16n8k16 layout.
-     *
-     * PTX equivalent: ld.shared.b32 rb0..rb1, [tile + offset]
-     */
-    public HalfFloat[] mmaLoadB(float[] bTile, int wmmaK) {
-        // CPU fallback: return a 4-element fragment.
-        // On GPU this is replaced by an MMALoadBNode by the plugin.
-        return new HalfFloat[4];
     }
 
     public HalfFloat[] mmaLoadB(int[] bTile, int wmmaK) {
@@ -603,8 +579,6 @@ public class KernelContext implements ExecutionContext {
         // CPU fallback: no-op (matches other GPU-only constructs like localBarrier).
         // On GPU this is replaced by an MMAStoreNode by the plugin.
     }
-
-    // --- Int8 MMA ---
 
     /**
      * Allocates a 4×s32 accumulator fragment for int8 MMA, initialised to the given value.
@@ -682,22 +656,6 @@ public class KernelContext implements ExecutionContext {
     }
 
     /**
-     * Int8 MMA A-operand load with a byte-offset base.
-     * See {@link #mmaLoadA(int[], int, int)} for offset semantics.
-     */
-    public byte[] mmaLoadAInt8(int[] aTile, int wmmaK, int byteOffset) {
-        return new byte[16]; // CPU fallback
-    }
-
-    /**
-     * Int8 MMA B-operand load with a byte-offset base.
-     * See {@link #mmaLoadA(int[], int, int)} for offset semantics.
-     */
-    public byte[] mmaLoadBInt8(int[] bTile, int wmmaK, int byteOffset) {
-        return new byte[8]; // CPU fallback
-    }
-
-    /**
      * Swizzled fp16 store (stride-32) into a sub-tile at byte offset {@code byteOffset}.
      * The swizzle permutation is computed on the LOCAL (row, col); the byteOffset
      * places the result into the target sub-tile region. Symmetric with
@@ -706,16 +664,6 @@ public class KernelContext implements ExecutionContext {
     public void swizzleStoreFp16Stride32(HalfFloat[] arr, int row, int col, int stride,
                                          HalfFloat value, int byteOffset) {
         // CPU fallback: no-op (swizzle layout only matters on GPU).
-    }
-
-    public void swizzleStoreFp16Stride16(HalfFloat[] arr, int row, int col, int stride,
-                                         HalfFloat value, int byteOffset) {
-        // CPU fallback: no-op.
-    }
-
-    public void swizzleStoreInt8(byte[] arr, int row, int col, int stride,
-                                 byte value, int byteOffset) {
-        // CPU fallback: no-op.
     }
 
 }

@@ -2847,11 +2847,11 @@ public class PTXLIRStmt {
             }
 
             // Lane ID — intra-warp lane = %tid.x & 31.
-// %tid.x is the thread index within the BLOCK (0..blockDim-1); ldmatrix lane
-// addressing requires the lane within the WARP (0..31). Without the mask, warps
-// other than warp 0 compute group = lane/8 in 4..31 instead of 0..3, producing
-// wrong addresses. (Single-warp kernels were unaffected because warp 0's tid is
-// already 0..31.)
+            // %tid.x is the thread index within the BLOCK (0..blockDim-1); ldmatrix lane
+            // addressing requires the lane within the WARP (0..31). Without the mask, warps
+            // other than warp 0 compute group = lane/8 in 4..31 instead of 0..3, producing
+            // wrong addresses. (Single-warp kernels were unaffected because warp 0's tid is
+            // already 0..31.)
             asm.emitSymbol(TAB);
             asm.emit("mov.u32 __ldm_lane, %tid.x");
             asm.delimiter();
@@ -2992,7 +2992,6 @@ public class PTXLIRStmt {
             asm.delimiter();
             asm.eol();
 
-            // THE INSTRUCTION
             asm.emitSymbol(TAB);
             if (variant == Variant.X4) {
                 asm.emit("ldmatrix.sync.aligned.m8n8.x4.shared.b16 {");
