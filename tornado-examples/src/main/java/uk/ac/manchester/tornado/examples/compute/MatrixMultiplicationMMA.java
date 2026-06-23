@@ -29,6 +29,8 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.MMAShape;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
@@ -485,7 +487,18 @@ public class MatrixMultiplicationMMA {
         return new int[] { 2048, 2048, 2048 };
     }
 
+    private static boolean isPTXBackend() {
+        int driverIndex = TornadoRuntimeProvider.getTornadoRuntime().getDefaultDevice().getBackendIndex();
+        TornadoVMBackendType backend = TornadoRuntimeProvider.getTornadoRuntime().getBackendType(driverIndex);
+        return backend == TornadoVMBackendType.PTX;
+    }
+
     public static void main(String[] args) {
+        if (!isPTXBackend()) {
+            System.out.println("MMA instructions are only supported for the PTX backend.");
+            return;
+        }
+
         int[] dims = parseDims(args);
         final int M = dims[0], N = dims[1], K = dims[2];
 

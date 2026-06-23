@@ -25,6 +25,7 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.MMAShape;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
@@ -221,6 +222,10 @@ public class TestMatrixMultiplicationMMAInt8 extends TornadoTestBase {
      */
     @Test
     public void testGemmInt8Identity() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
         int M = 16, N = 16, K = 32;
 
         ByteArray a = new ByteArray(M * K);
@@ -243,6 +248,10 @@ public class TestMatrixMultiplicationMMAInt8 extends TornadoTestBase {
      */
     @Test
     public void testGemmInt8AllOnes() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
         int M = 16, N = 16, K = 32;
 
         ByteArray a = new ByteArray(M * K);
@@ -262,6 +271,10 @@ public class TestMatrixMultiplicationMMAInt8 extends TornadoTestBase {
     // -----------------------------------------------------------------------
 
     private void runGemmTest(int dimM, int dimN, int dimK) throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
         ByteArray a = randomInt8Array(dimM * dimK);
         ByteArray b = randomInt8Array(dimK * dimN);
         IntArray c = new IntArray(dimM * dimN);
@@ -311,6 +324,10 @@ public class TestMatrixMultiplicationMMAInt8 extends TornadoTestBase {
 
     @Test
     public void testGemmInt8DistinctKInB() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
         int M = 16, N = 16, K = 32;
 
         // A all ones
@@ -338,6 +355,10 @@ public class TestMatrixMultiplicationMMAInt8 extends TornadoTestBase {
 
     @Test
     public void testGemmInt8DistinctAB() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
         int M = 16, N = 16, K = 32;
 
         // A[i][k] = (k % 8) + 1   (A is constant across rows, varies across k:

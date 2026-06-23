@@ -24,14 +24,13 @@ import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
-import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.MMAShape;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 import static org.junit.Assert.assertEquals;
@@ -333,6 +332,10 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
     // Runner
     // -----------------------------------------------------------------------
     private void runGemmTest(int dimM, int dimN, int dimK) throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
         HalfFloatArray a = randomFP16(dimK * dimN); //allOnesFP16(dimM * dimK);
         HalfFloatArray b = randomFP16(dimK * dimN);
         FloatArray c     = new FloatArray(dimM * dimN);
@@ -376,6 +379,10 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
 
     @Test
     public void testGemmDistinctK() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
         int M = 16, N = 16, K = 16;
 
         // A[i][k] = k + 1   (i.e., row is irrelevant, A is the same in every row;
@@ -426,6 +433,10 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
 
     @Test
     public void testGemmDistinctKInB() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
         int M = 16, N = 16, K = 16;
 
         // A all ones
@@ -474,6 +485,10 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
 
     @Test
     public void testGemmIdentityB() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
         int M = 16, N = 16, K = 16;
 
         // A[i][k] = i * 16 + k  → each element is its flat row-major index, 0..255
@@ -523,6 +538,10 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
 
     @Test
     public void testGemmDistinctAB() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
         int M = 16, N = 16, K = 16;
 
         // A[i][k] = k + 1   (same as distinct-K test: A is constant across rows,
@@ -574,6 +593,10 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
 
     @Test
     public void testGemmSwizzledIdentityB() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
         int M = 16, N = 16, K = 16;
 
         // A = identity
@@ -649,6 +672,10 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
 
     @Test
     public void testSwizzleRoundTrip() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
         // Pre-populate on the host with 128 fp16 values
         HalfFloatArray in = new HalfFloatArray(128);
         for (int idx = 0; idx < 128; idx++) {
@@ -685,6 +712,10 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
      */
     @Test
     public void testMmaLoadBWithByteOffset() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
         int M = 16, N = 8, K = 16;
 
         // A = identity (16 x 16)
@@ -799,6 +830,10 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
 
     @Test
     public void testMmaLoadAWithByteOffset() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
         int M = 16, N = 8, K = 16;  // output is one m16n8 tile
 
         // A_tall: 32 x 16, A_tall[m][k] = m * 16 + k.
@@ -947,6 +982,10 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
 
     @Test
     public void testSingleWarpManyFragments() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
         int M = 32, N = 64, K = 16;
 
         // A[m][k] = m * 16 + k
