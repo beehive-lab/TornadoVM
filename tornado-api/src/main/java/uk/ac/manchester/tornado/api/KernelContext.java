@@ -509,7 +509,7 @@ public class KernelContext implements ExecutionContext {
 
     /**
      * Declares a C/D accumulator fragment for MMA operations.
-     * Lowered by the PTX backend to register allocation — never executed on GPU.
+     * Lowered by the PTX backend to register allocation.
      *
      * PTX equivalent: mov.f32 rd0..rd3, v  (register-backed accumulator fragment)
      */
@@ -564,7 +564,7 @@ public class KernelContext implements ExecutionContext {
     /**
      * Stores the D fragment to a global output matrix.
      *
-     * PTX equivalent: st.global.f32 [addr], rd0..rd3  (×4 per lane)
+     * PTX equivalent: st.global.f32 [addr], rd0..rd3  (x4 per lane)
      */
     public void mmaStore(float[] fragD, FloatArray c, int tileRow, int tileCol, int dimN) {
         // CPU fallback: no-op (matches other GPU-only constructs like localBarrier).
@@ -572,21 +572,21 @@ public class KernelContext implements ExecutionContext {
     }
 
     /**
-     * Allocates a 4×s32 accumulator fragment for int8 MMA, initialised to the given value.
+     * Allocates a 4xs32 accumulator fragment for int8 MMA, initialised to the given value.
      */
     public int[] mmaFragmentInt(int initValue) {
         return new int[4];
     }
 
     /**
-     * Loads an A fragment (16×32 int8 tile) for mma.sync.m16n8k32.
+     * Loads an A fragment (16x32 int8 tile) for mma.sync.m16n8k32.
      */
     public byte[] mmaLoadAInt8(int[] aTile, int tileK) {
         return new byte[16];
     }
 
     /**
-     * Loads a B fragment (32×8 int8 tile, col-major) for mma.sync.m16n8k32.
+     * Loads a B fragment (32x8 int8 tile, col-major) for mma.sync.m16n8k32.
      */
     public byte[] mmaLoadBInt8(int[] bTile, int tileK) {
         return new byte[8];
