@@ -1033,20 +1033,7 @@ public class PTXLIRStmt {
                 int numRegs;
                 String movType;
                 String regType;
-                //TODO: uncomment for FP16
-//                if (lhsKind == PTXKind.MMA_FRAG_ACC_F32 || rhsKind == PTXKind.MMA_FRAG_ACC_F32) {
-//                    numRegs = 4;
-//                    movType = "mov.f32";
-//                    regType = ".f32";
-//                } else if (lhsKind == PTXKind.MMA_FRAG_A_F16 || rhsKind == PTXKind.MMA_FRAG_A_F16) {
-//                    numRegs = 4;
-//                    movType = "mov.b32";
-//                    regType = ".b32";
-//                } else {
-//                    numRegs = 2;
-//                    movType = "mov.b32";
-//                    regType = ".b32";
-//                }
+
                 if (lhsKind == PTXKind.MMA_FRAG_ACC_F32 || rhsKind == PTXKind.MMA_FRAG_ACC_F32) {
                     numRegs = 4;
                     movType = "mov.f32";
@@ -2430,18 +2417,10 @@ public class PTXLIRStmt {
         @Def protected Value masked;
         @Def protected Value xorTerm;
         @Def protected Value swzByte;
-        @Use({OperandFlag.REG, OperandFlag.ILLEGAL}) protected Value byteOffset;
-
-        public SwizzledStoreFP16Stride16Stmt(Value localArray, Value row, Value column, Value stride, Value value,
-                                                    Value linIdx, Value byteOff, Value shifted, Value masked,
-                                                    Value xorTerm, Value swzByte) {
-            this(localArray, row, column, stride, value, linIdx, byteOff, shifted, masked,
-                    xorTerm, swzByte, Value.ILLEGAL);
-        }
 
         public SwizzledStoreFP16Stride16Stmt(Value localArray, Value row, Value column, Value stride, Value value,
                                              Value linIdx, Value byteOff, Value shifted, Value masked,
-                                             Value xorTerm, Value swzByte, Value byteOffset) {
+                                             Value xorTerm, Value swzByte) {
             super(TYPE);
             this.localArray = localArray;
             this.row = row;
@@ -2454,7 +2433,6 @@ public class PTXLIRStmt {
             this.masked = masked;
             this.xorTerm = xorTerm;
             this.swzByte = swzByte;
-            this.byteOffset = byteOffset;
         }
 
         @Override
@@ -2536,18 +2514,6 @@ public class PTXLIRStmt {
             asm.delimiter();
             asm.eol();
 
-            if (byteOffset != null && !byteOffset.equals(Value.ILLEGAL)) {
-                asm.emitSymbol(TAB);
-                asm.emit("add.s32 ");
-                asm.emitValue(swzByte);
-                asm.emitSymbol(COMMA + SPACE);
-                asm.emitValue(swzByte);
-                asm.emitSymbol(COMMA + SPACE);
-                asm.emitValue(byteOffset);
-                asm.delimiter();
-                asm.eol();
-            }
-
             // sharedMem[swzByte] = value   (st.shared.b16 = store one fp16)
             asm.emitSymbol(TAB);
             asm.emit("st.shared.b16 ");
@@ -2578,15 +2544,9 @@ public class PTXLIRStmt {
         @Def protected Value masked;
         @Def protected Value xorTerm;
         @Def protected Value swzByte;
-        @Use({OperandFlag.REG, OperandFlag.ILLEGAL}) protected Value byteOffset;
 
         public SwizzledStoreInt8Stmt(Value localArray, Value row, Value column, Value stride, Value value,
                                      Value linIdx, Value shifted, Value masked, Value xorTerm, Value swzByte) {
-            this(localArray, row, column, stride, value, linIdx, shifted, masked, xorTerm, swzByte, Value.ILLEGAL);
-        }
-
-        public SwizzledStoreInt8Stmt(Value localArray, Value row, Value column, Value stride, Value value,
-                                     Value linIdx, Value shifted, Value masked, Value xorTerm, Value swzByte, Value byteOffset) {
             super(TYPE);
             this.localArray = localArray;
             this.row = row;
@@ -2598,7 +2558,6 @@ public class PTXLIRStmt {
             this.masked = masked;
             this.xorTerm = xorTerm;
             this.swzByte = swzByte;
-            this.byteOffset = byteOffset;
         }
 
         @Override
@@ -2671,18 +2630,6 @@ public class PTXLIRStmt {
             asm.emitValue(xorTerm);
             asm.delimiter();
             asm.eol();
-
-            if (byteOffset != null && !byteOffset.equals(Value.ILLEGAL)) {
-                asm.emitSymbol(TAB);
-                asm.emit("add.s32 ");
-                asm.emitValue(swzByte);
-                asm.emitSymbol(COMMA + SPACE);
-                asm.emitValue(swzByte);
-                asm.emitSymbol(COMMA + SPACE);
-                asm.emitValue(byteOffset);
-                asm.delimiter();
-                asm.eol();
-            }
 
             // sharedMem[swzByte] = value   (st.shared.s8 = store one int8)
             asm.emitSymbol(TAB);

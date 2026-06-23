@@ -38,6 +38,9 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import java.util.Random;
 
 /**
+ * Mirrors TestMatrixMultiplicationMMA for the int8 m16n8k32 path.
+ * Swizzle and byte-offset variants are FP16-only in this PR and will be added when the int8 backend gains 3-arg load variants.
+ *
  * <p>
  * How to run?
  * <code>
@@ -329,6 +332,37 @@ public class TestMatrixMultiplicationMMAInt8 extends TornadoTestBase {
         gemmReferenceInt8(a, b, ref, M, N, K);
 
         // Expected: sum_k B[k][j] = 4 * (1+2+...+8) = 4 * 36 = 144 everywhere
+
+        runGemmTestWithData(a, b, c, ref, M, N, K);
+    }
+
+    @Test
+    public void testGemmInt8DistinctAB() throws TornadoExecutionPlanException {
+        int M = 16, N = 16, K = 32;
+
+        // A[i][k] = (k % 8) + 1   (A is constant across rows, varies across k:
+        //                          values cycle 1..8, four times across K=32)
+        ByteArray a = new ByteArray(M * K);
+        for (int i = 0; i < M; i++) {
+            for (int k = 0; k < K; k++) {
+                a.set(i * K + k, (byte) ((k % 8) + 1));
+            }
+        }
+
+        // B[k][j] = (k % 8) + 1   (B is constant across columns, same K-pattern as A)
+        ByteArray b = new ByteArray(K * N);
+        for (int k = 0; k < K; k++) {
+            for (int j = 0; j < N; j++) {
+                b.set(k * N + j, (byte) ((k % 8) + 1));
+            }
+        }
+
+        IntArray c   = new IntArray(M * N);
+        IntArray ref = new IntArray(M * N);
+        gemmReferenceInt8(a, b, ref, M, N, K);
+
+        // Expected: C[i][j] = sum_k (k%8 + 1)^2
+        //                   = 4 * (1 + 4 + 9 + ... + 64) = 4 * 204 = 816 everywhere
 
         runGemmTestWithData(a, b, c, ref, M, N, K);
     }
