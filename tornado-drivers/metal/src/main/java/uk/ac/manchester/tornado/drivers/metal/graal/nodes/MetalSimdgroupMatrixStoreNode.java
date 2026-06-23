@@ -75,6 +75,6 @@ public class MetalSimdgroupMatrixStoreNode extends FixedWithNextNode implements 
 
     @Override
     public Access getArrayParameterAccess(ValueNode parameter) {
-        return (parameter == array) ? Access.WRITE_ONLY : Access.NONE;
+        return (parameter == MarkArrayParameterAccess.unwrapPi(array)) ? Access.WRITE_ONLY : Access.NONE;
     }
 }
