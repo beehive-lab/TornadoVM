@@ -24,7 +24,18 @@
 #include <string>
 #include <vector>
 #include <cstdlib>
+#include <unordered_map>
+#include <mutex>
 #include "cuda_jni.h"
+
+// In-process NVRTC cubin cache. GPULlama (and TornadoVM task graphs in general)
+// emit the *same* kernel source once per transformer layer, so the identical CUDA
+// C is otherwise NVRTC-compiled dozens of times during warmup. Caching the
+// compiled image keyed by (architecture + source) collapses those redundant
+// compiles to one each. The key embeds the arch string, and the full source is
+// the map key (not just a hash) so there is no collision risk.
+static std::mutex g_cubin_cache_mtx;
+static std::unordered_map<std::string, std::string> g_cubin_cache;
 
 extern "C" {
 
@@ -57,6 +68,20 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
         // (e.g. a 13.1 toolkit emits PTX ISA 9.1 that a 13.0 driver cannot JIT);
         // cubins instead rely on CUDA minor-version compatibility within a major release.
         std::string arch = "--gpu-architecture=sm_" + std::to_string(major) + std::to_string(minor);
+
+        // Cache lookup: identical kernel source for the same architecture yields an
+        // identical cubin, so reuse a previously compiled image instead of invoking
+        // NVRTC again (the same kernel is emitted once per model layer).
+        const std::string cacheKey = arch + "\n" + program->source;
+        {
+            std::lock_guard<std::mutex> lock(g_cubin_cache_mtx);
+            auto it = g_cubin_cache.find(cacheKey);
+            if (it != g_cubin_cache.end()) {
+                program->binary = it->second;
+                program->build_status = CL_BUILD_SUCCESS;
+            }
+        }
+        if (program->binary.empty()) {
 
         nvrtcProgram prog;
         nvrtcResult nv = nvrtcCreateProgram(&prog, program->source.c_str(), "tornado_kernel.cu", 0, nullptr, nullptr);
@@ -112,6 +137,13 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
         nvrtcGetCUBIN(prog, &program->binary[0]);
         nvrtcDestroyProgram(&prog);
         program->build_status = CL_BUILD_SUCCESS;
+
+        // Store the freshly compiled image for reuse by identical sources.
+        {
+            std::lock_guard<std::mutex> lock(g_cubin_cache_mtx);
+            g_cubin_cache.emplace(cacheKey, program->binary);
+        }
+        } // end cache-miss compile
     }
 
     // Load the module image into a module via the Driver API.
