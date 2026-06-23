@@ -551,7 +551,7 @@ public class PTXGraphBuilderPlugins {
             }
         });
 
-        // --- mmaLoadA(float[] aTile, int wmmaK) -> HalfFloat[] ---
+        // --- mmaLoadA(int[] aTile, int wmmaK) -> HalfFloat[] ---
         r.register(new InvocationPlugin("mmaLoadA",
                 InvocationPlugin.Receiver.class, int[].class, int.class) {
             @Override
@@ -563,7 +563,7 @@ public class PTXGraphBuilderPlugins {
             }
         });
 
-        // --- mmaLoadB(float[] bTile, int wmmaK) -> HalfFloat[] ---
+        // --- mmaLoadB(int[] bTile, int wmmaK) -> HalfFloat[] ---
         r.register(new InvocationPlugin("mmaLoadB",
                 InvocationPlugin.Receiver.class, int[].class, int.class) {
             @Override
