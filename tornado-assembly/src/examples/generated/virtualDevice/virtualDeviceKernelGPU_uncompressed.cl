@@ -3,11 +3,11 @@
 #pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
 __kernel void maxReduction(__global long *_kernel_context, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics, __global uchar *input, __global uchar *result)
 {
-  float f_12, f_19, f_22, f_21, f_26;
+  long l_29, l_10, l_31, l_30, l_9, l_8;
+  float f_12, f_26, f_21, f_22, f_19;
+  int i_4, i_3, i_6, i_5, i_33, i_28, i_27, i_24, i_23, i_20, i_16, i_15, i_17, i_14, i_13, i_7;
   ulong ul_11, ul_0, ul_32, ul_1;
   bool b_18, b_25;
-  long l_31, l_29, l_30, l_9, l_10, l_8;
-  int i_27, i_28, i_23, i_24, i_20, i_14, i_15, i_16, i_17, i_13, i_6, i_7, i_3, i_4, i_5, i_33;
 
   // BLOCK 0
   ul_0  =  (ulong) input;
@@ -47,15 +47,15 @@ __kernel void maxReduction(__global long *_kernel_context, __constant uchar *_co
         f_21  =  adf_2[i_20];
         f_22  =  fmax(f_19, f_21);
         adf_2[i_6]  =  f_22;
-      }  // B5
+      }  // B4
       else
       {
         // BLOCK 6
-      }  // B6
+      }  // B4
       // BLOCK 7 MERGES [6 5 ]
       i_23  =  i_17;
       i_16  =  i_23;
-    }  // B7
+    }  // B3
     // BLOCK 8
     barrier(CLK_GLOBAL_MEM_FENCE);
     i_24  =  i_3 + i_5;
@@ -71,15 +71,15 @@ __kernel void maxReduction(__global long *_kernel_context, __constant uchar *_co
       l_31  =  l_30 + 24L;
       ul_32  =  ul_1 + l_31;
       *((__global float *) ul_32)  =  f_26;
-    }  // B9
+    }  // B8
     else
     {
       // BLOCK 10
-    }  // B10
+    }  // B8
     // BLOCK 11 MERGES [10 9 ]
     i_33  =  i_24;
     i_5  =  i_33;
-  }  // B11
+  }  // B1
   // BLOCK 12
   return;
 }  //  kernel
@@ -89,8 +89,8 @@ __kernel void maxReduction(__global long *_kernel_context, __constant uchar *_co
 #pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
 __kernel void rMax(__global long *_kernel_context, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics, __global uchar *array, __private int size)
 {
-  float f_2, f_4, f_6, f_8, f_10, f_12, f_14, f_16, f_18, f_20, f_19, f_22, f_21, f_24, f_23, f_26, f_25;
-  ulong ul_7, ul_9, ul_11, ul_13, ul_15, ul_0, ul_1, ul_17, ul_3, ul_5;
+  float f_2, f_25, f_26, f_23, f_24, f_21, f_22, f_19, f_20, f_18, f_16, f_14, f_12, f_10, f_8, f_6, f_4;
+  ulong ul_13, ul_11, ul_0, ul_1, ul_17, ul_15, ul_5, ul_3, ul_9, ul_7;
 
   // BLOCK 0
   ul_0  =  (ulong) array;
