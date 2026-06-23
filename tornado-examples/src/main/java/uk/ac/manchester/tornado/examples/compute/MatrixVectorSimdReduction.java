@@ -74,7 +74,7 @@ public class MatrixVectorSimdReduction {
             partial += w.get(rowOffset + j) * x.get(j);
         }
 
-        float[] local = ctx.allocateFloatLocalArray(LOCAL_SIZE);
+        float[] local = ctx.allocateFloatLocalArray(localSize);
         local[localId] = partial;
         for (int stride = localSize / 2; stride > 0; stride >>= 1) {
             ctx.localBarrier();
