@@ -296,6 +296,20 @@ public class TornadoOptions {
      */
     public static final boolean FAST_MATH_OPTIMIZATIONS = getBooleanValue("tornado.enable.fastMathOptimizations", TRUE);
     /**
+     * Opt-in: compile Metal kernels with fast/relaxed math ({@code MTLMathModeFast}),
+     * the Metal analogue of OpenCL's {@code -cl-fast-relaxed-math}. Trades a small
+     * amount of FP precision for speed. Default OFF to preserve strict precision.
+     */
+    public static final boolean METAL_FAST_MATH = getBooleanValue("tornado.metal.fastmath", FALSE);
+    /**
+     * Opt-in: emit a {@code [[max_total_threads_per_threadgroup(N)]]} attribute on
+     * Metal kernels when the local work-group size is statically known (a worker
+     * grid is attached at compile time). Lets the Metal compiler tune register
+     * allocation/occupancy. Default OFF because the bound is baked into the cached
+     * kernel - re-dispatching the same kernel with a larger threadgroup would fail.
+     */
+    public static final boolean METAL_THREADGROUP_HINT = getBooleanValue("tornado.metal.threadgroupHint", FALSE);
+    /**
      * It optimizes loads and stores for the SPIRV backend. It uses less virtual
      * registers. Experimental Feature.
      */
