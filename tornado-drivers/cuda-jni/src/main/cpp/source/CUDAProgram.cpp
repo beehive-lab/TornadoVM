@@ -61,13 +61,52 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
         int major = 0, minor = 0;
         cuDeviceGetAttribute(&major, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR, device);
         cuDeviceGetAttribute(&minor, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR, device);
-        // Target the device's *real* architecture (sm_XX) rather than a virtual one
-        // (compute_XX). This lets NVRTC emit a finished cubin (SASS) below, so the
-        // module is loaded directly by the driver without a PTX-JIT step. That avoids
-        // the driver rejecting PTX whose ISA version is newer than its JIT supports
-        // (e.g. a 13.1 toolkit emits PTX ISA 9.1 that a 13.0 driver cannot JIT);
-        // cubins instead rely on CUDA minor-version compatibility within a major release.
-        std::string arch = "--gpu-architecture=sm_" + std::to_string(major) + std::to_string(minor);
+        // Choose the NVRTC target based on what *this* toolkit actually supports
+        // (nvrtcGetSupportedArchs), which decides between two compilation modes:
+        //
+        //   * cubin (sm_XX): emit finished SASS for the device's real arch, loaded
+        //     directly with no driver PTX-JIT. Requires the toolkit to know the GPU
+        //     arch. Avoids the driver rejecting PTX whose ISA is newer than its JIT
+        //     supports (e.g. a 13.1 toolkit's PTX 9.1 on a 13.0 driver).
+        //
+        //   * PTX (compute_XX): when the toolkit is OLDER than the GPU (e.g. a CUDA
+        //     12.0 NVRTC on a Blackwell sm_120 device), it cannot emit sm_120 at all.
+        //     Fall back to PTX for the newest virtual arch the toolkit knows and let
+        //     the (newer) driver JIT it onto the real GPU — PTX forward compatibility.
+        //
+        // This makes the backend robust across the full (toolkit, driver, GPU) matrix
+        // instead of assuming toolkit >= GPU.
+        const int gpuArchNum = major * 10 + minor;   // e.g. cc 12.0 -> 120, 9.0 -> 90
+        bool gpuArchSupported = false;
+        int fallbackArch = 0;                         // highest supported arch <= GPU
+        int numArchs = 0;
+        if (nvrtcGetNumSupportedArchs(&numArchs) == NVRTC_SUCCESS && numArchs > 0) {
+            std::vector<int> supported(numArchs);
+            if (nvrtcGetSupportedArchs(supported.data()) == NVRTC_SUCCESS) {
+                for (int a : supported) {
+                    if (a == gpuArchNum) {
+                        gpuArchSupported = true;
+                    }
+                    if (a <= gpuArchNum && a > fallbackArch) {
+                        fallbackArch = a;
+                    }
+                }
+            }
+        }
+
+        bool useCubin;
+        std::string arch;
+        if (gpuArchSupported) {
+            arch = "--gpu-architecture=sm_" + std::to_string(gpuArchNum);
+            useCubin = true;
+        } else {
+            // Toolkit does not know the GPU's real arch: emit forward-compatible PTX
+            // for the best virtual arch it does know (or the GPU arch as a last resort
+            // if the query failed), and let the driver JIT it.
+            int target = fallbackArch > 0 ? fallbackArch : gpuArchNum;
+            arch = "--gpu-architecture=compute_" + std::to_string(target);
+            useCubin = false;
+        }
 
         // Cache lookup: identical kernel source for the same architecture yields an
         // identical cubin, so reuse a previously compiled image instead of invoking
@@ -128,13 +167,19 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
             return;
         }
 
-        // Retrieve the compiled cubin (SASS) for sm_XX. cuModuleLoadDataEx detects the
-        // image format from its header, so the load path below handles a cubin exactly
-        // as it would raw PTX.
-        size_t cubin_size = 0;
-        nvrtcGetCUBINSize(prog, &cubin_size);
-        program->binary.resize(cubin_size);
-        nvrtcGetCUBIN(prog, &program->binary[0]);
+        // Retrieve the compiled image. cuModuleLoadDataEx detects the format from its
+        // header, so the load path below handles a cubin and raw PTX identically.
+        // cubin (sm_XX) loads directly; PTX (compute_XX) is JIT'd by the driver.
+        size_t image_size = 0;
+        if (useCubin) {
+            nvrtcGetCUBINSize(prog, &image_size);
+            program->binary.resize(image_size);
+            nvrtcGetCUBIN(prog, &program->binary[0]);
+        } else {
+            nvrtcGetPTXSize(prog, &image_size);
+            program->binary.resize(image_size);
+            nvrtcGetPTX(prog, &program->binary[0]);
+        }
         nvrtcDestroyProgram(&prog);
         program->build_status = CL_BUILD_SUCCESS;
 
