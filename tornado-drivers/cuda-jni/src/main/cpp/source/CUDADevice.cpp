@@ -242,4 +242,25 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDADevice_clG
     env->ReleasePrimitiveArrayCritical(array, buf, 0);
 }
 
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDADevice
+ * Method:    hasManagedMemorySupport
+ * Signature: (J)Z
+ *
+ * Returns JNI_TRUE when CU_DEVICE_ATTRIBUTE_MANAGED_MEMORY is non-zero, i.e. the
+ * device can allocate CUDA Managed (Unified) Memory via cuMemAllocManaged. Returns
+ * JNI_FALSE for a null device or on CUDA error.
+ */
+JNIEXPORT jboolean JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDADevice_hasManagedMemorySupport
+        (JNIEnv *env, jclass clazz, jlong device_id) {
+    cuda_device_t *dev = (cuda_device_t *) device_id;
+    if (dev == nullptr) {
+        return JNI_FALSE;
+    }
+    int attr = 0;
+    CUresult result = cuDeviceGetAttribute(&attr, CU_DEVICE_ATTRIBUTE_MANAGED_MEMORY, dev->device);
+    LOG_CUDA_AND_VALIDATE("cuDeviceGetAttribute(MANAGED_MEMORY)", result);
+    return (result == CUDA_SUCCESS && attr != 0) ? JNI_TRUE : JNI_FALSE;
+}
+
 } // extern "C"

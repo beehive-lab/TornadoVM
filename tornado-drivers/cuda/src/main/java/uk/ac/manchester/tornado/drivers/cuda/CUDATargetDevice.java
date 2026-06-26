@@ -63,4 +63,11 @@ public interface CUDATargetDevice extends TornadoTargetDevice {
     int deviceVersion();
 
     boolean isSPIRVSupported();
+
+    /**
+     * Returns {@code true} when the device supports CUDA Managed (Unified) Memory,
+     * i.e. buffers allocated via {@code cuMemAllocManaged}. Stub devices return
+     * {@code false}.
+     */
+    boolean hasUnifiedMemory();
 }

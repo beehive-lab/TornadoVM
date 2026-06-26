@@ -163,6 +163,41 @@ JNIEXPORT jobject JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAContext
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAContext
+ * Method:    createManagedBuffer
+ * Signature: (JJ)Luk/ac/manchester/tornado/drivers/cuda/CUDAContext/CUDABufferResult;
+ *
+ * Allocates a CUDA Managed (Unified) Memory buffer with cuMemAllocManaged. The
+ * returned CUdeviceptr is addressable from both host and device; the CUDA runtime
+ * pages it on demand and can over-subscribe physical VRAM. CU_MEM_ATTACH_GLOBAL
+ * makes the region visible to all streams and the CPU immediately, matching the
+ * access model TornadoVM expects. The allocation is zero-initialised by the
+ * runtime, so no explicit cuMemsetD8 is required for write-only buffers.
+ *
+ * Deallocation uses the same cuMemFree path as cuMemAlloc (see clReleaseMemObject).
+ */
+JNIEXPORT jobject JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAContext_createManagedBuffer
+        (JNIEnv *env, jobject obj, jlong context_id, jlong size) {
+    jclass resultClass = env->FindClass("uk/ac/manchester/tornado/drivers/cuda/CUDAContext$CUDABufferResult");
+    jmethodID constructorId = env->GetMethodID(resultClass, "<init>", "(JJI)V");
+
+    cuda_context_t *ctx = (cuda_context_t *) context_id;
+    int status = 0;
+    CUdeviceptr dev_ptr = 0;
+    if (ctx != nullptr) {
+        CUresult result = cuCtxSetCurrent(ctx->context);
+        LOG_CUDA_AND_VALIDATE("cuCtxSetCurrent", result);
+        result = cuMemAllocManaged(&dev_ptr, (size_t) size, CU_MEM_ATTACH_GLOBAL);
+        LOG_CUDA_AND_VALIDATE("cuMemAllocManaged", result);
+        status = (int) result;
+    } else {
+        status = (int) CUDA_ERROR_INVALID_CONTEXT;
+    }
+    // host_ptr = 0: no host-side pointer is associated in Phase 1 (copies retained).
+    return env->NewObject(resultClass, constructorId, (jlong) dev_ptr, (jlong) 0, status);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAContext
  * Method:    memSetZero
  * Signature: (JJJ)I
  *

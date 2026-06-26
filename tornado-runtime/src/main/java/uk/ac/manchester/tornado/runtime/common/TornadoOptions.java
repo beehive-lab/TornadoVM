@@ -271,6 +271,19 @@ public class TornadoOptions {
      */
     public static final boolean LEVEL_ZERO_SHARED_MEMORY = getBooleanValue("tornado.spirv.levelzero.memoryAlloc.shared", FALSE);
     /**
+     * Use CUDA Managed (Unified) Memory for device buffer allocations in the CUDA
+     * backend. When enabled (and the device reports support), buffers are allocated
+     * via {@code cuMemAllocManaged(CU_MEM_ATTACH_GLOBAL)} instead of {@code cuMemAlloc},
+     * making them addressable from both host and device and pageable beyond physical
+     * VRAM (over-subscription). Managed allocations are zero-initialised by the CUDA
+     * runtime, so the explicit zeroing of {@code WRITE_ONLY} buffers is skipped.
+     *
+     * <p>
+     * Enable with: {@code -Dtornado.cuda.memory.unified=true}. CUDA backend only; the
+     * PTX backend is unaffected.
+     */
+    public static final boolean CUDA_UNIFIED_MEMORY = getBooleanValue("tornado.cuda.memory.unified", FALSE);
+    /**
      * Use return as a common label and insert the instruction before function
      * ending.
      */

@@ -184,6 +184,11 @@ public class VirtualCUDADevice implements CUDATargetDevice {
     }
 
     @Override
+    public boolean hasUnifiedMemory() {
+        return false;
+    }
+
+    @Override
     public boolean isLittleEndian() {
         return deviceEndianLittle;
     }

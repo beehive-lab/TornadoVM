@@ -25,6 +25,7 @@ package uk.ac.manchester.tornado.drivers.cuda.runtime;
 
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
+import uk.ac.manchester.tornado.drivers.cuda.CUDAContext;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDAMemFlags;
 
@@ -38,8 +39,15 @@ public class CUDABufferProvider extends TornadoBufferProvider {
 
     @Override
     public long allocateBuffer(long size, Access access) {
+        CUDADeviceContext cudaDeviceContext = (CUDADeviceContext) deviceContext;
+        if (cudaDeviceContext.getPlatformContext().isUnifiedMemoryEnabled()) {
+            // CUDA Managed (Unified) Memory: cuMemAllocManaged ignores the OpenCL-style
+            // access flags (CU_MEM_ATTACH_GLOBAL is applied inside the JNI call) and the
+            // allocation is reachable from any processor.
+            return cudaDeviceContext.getPlatformContext().createManagedBuffer(size).getBuffer();
+        }
         long oclMemFlags = getCUDAMemFlagForAccess(access);
-        return ((CUDADeviceContext) deviceContext).getMemoryManager().createBuffer(size, oclMemFlags).getBuffer();
+        return cudaDeviceContext.getMemoryManager().createBuffer(size, oclMemFlags).getBuffer();
     }
 
     /**
@@ -74,8 +82,11 @@ public class CUDABufferProvider extends TornadoBufferProvider {
     @Override
     public synchronized long getOrAllocateBufferWithSize(long sizeInBytes, Access access) {
         long buffer = super.getOrAllocateBufferWithSize(sizeInBytes, access);
-        if (access == Access.WRITE_ONLY) {
-            ((CUDADeviceContext) deviceContext).getPlatformContext().zeroBuffer(buffer, sizeInBytes);
+        CUDAContext context = ((CUDADeviceContext) deviceContext).getPlatformContext();
+        // cuMemAllocManaged already zero-initialises the allocation, so the explicit
+        // cuMemsetD8 (a synchronous op) is redundant when Unified Memory is enabled.
+        if (access == Access.WRITE_ONLY && !context.isUnifiedMemoryEnabled()) {
+            context.zeroBuffer(buffer, sizeInBytes);
         }
         return buffer;
     }

@@ -147,6 +147,13 @@ public class CUDADevice implements CUDATargetDevice {
 
     static native void clGetDeviceInfo(long id, int info, byte[] buffer);
 
+    /**
+     * Queries {@code CU_DEVICE_ATTRIBUTE_MANAGED_MEMORY} via the CUDA driver API.
+     * Returns {@code true} when the device can allocate CUDA Managed (Unified)
+     * Memory through {@code cuMemAllocManaged}.
+     */
+    static native boolean hasManagedMemorySupport(long devicePtr);
+
     public long getDevicePointer() {
         return devicePtr;
     }
@@ -406,6 +413,17 @@ public class CUDADevice implements CUDATargetDevice {
     public boolean hasDeviceUnifiedMemory() {
         queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_HOST_UNIFIED_MEMORY.getValue());
         return buffer.getInt() == CUDADriver.CL_TRUE;
+    }
+
+    /**
+     * Returns {@code true} when the device supports CUDA Managed (Unified) Memory.
+     * Unlike {@link #hasDeviceUnifiedMemory()} (which reports the OpenCL
+     * {@code CL_DEVICE_HOST_UNIFIED_MEMORY} integrated-GPU flag), this queries the
+     * CUDA driver attribute {@code CU_DEVICE_ATTRIBUTE_MANAGED_MEMORY}.
+     */
+    @Override
+    public boolean hasUnifiedMemory() {
+        return hasManagedMemorySupport(devicePtr);
     }
 
     public CUDALocalMemType getDeviceLocalMemoryType() {

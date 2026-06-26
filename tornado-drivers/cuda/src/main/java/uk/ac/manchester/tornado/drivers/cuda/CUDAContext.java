@@ -70,6 +70,9 @@ public class CUDAContext implements CUDAContextInterface {
     // creates an empty buffer on the device
     native CUDABufferResult createBuffer(long contextId, long flags, long size, long hostPointer) throws CUDAException;
 
+    // allocates a CUDA Managed (Unified) Memory buffer via cuMemAllocManaged
+    native CUDABufferResult createManagedBuffer(long contextId, long size) throws CUDAException;
+
     // zero-initialises a device buffer (cuMemsetD8 to 0)
     native int memSetZero(long contextId, long devicePointer, long bytes);
 
@@ -219,6 +222,31 @@ public class CUDAContext implements CUDAContextInterface {
             logger.error(e.getMessage());
         }
         return null;
+    }
+
+    /**
+     * Allocates a CUDA Managed (Unified) Memory buffer via {@code cuMemAllocManaged}.
+     * The returned pointer is addressable from both host and device, and the
+     * allocation is zero-initialised by the CUDA runtime.
+     */
+    public CUDABufferResult createManagedBuffer(long bytes) {
+        try {
+            final CUDABufferResult result = createManagedBuffer(contextID, bytes);
+            logger.info("UM buffer allocated %s @ 0x%x", RuntimeUtilities.humanReadableByteCount(bytes, false), result.getBuffer());
+            return result;
+        } catch (CUDAException e) {
+            logger.error(e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Returns {@code true} when CUDA Unified Memory is requested via
+     * {@link TornadoOptions#CUDA_UNIFIED_MEMORY} and the first device in this
+     * context reports support for managed memory.
+     */
+    public boolean isUnifiedMemoryEnabled() {
+        return TornadoOptions.CUDA_UNIFIED_MEMORY && !devices.isEmpty() && devices.get(0).hasUnifiedMemory();
     }
 
     public void releaseBuffer(long bufferId) {
