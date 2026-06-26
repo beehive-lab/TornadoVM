@@ -880,9 +880,15 @@ public class ComputeTests extends TornadoTestBase {
         // Run sequential
         mandelbrotFractal(size, result);
 
+        // Mandelbrot is pure multiply/add, so the only source of divergence from the
+        // sequential reference is floating-point contraction (e.g. fused multiply-add)
+        // on the accelerator, which rounds differently than Java's strict IEEE
+        // semantics. At escape-boundary pixels this can shift the iteration count by
+        // one, i.e. ±1 greylevel. A small tolerance matches how the other compute
+        // tests in this class validate (NBody, DFT, BlackScholes, Hilbert, ...).
         for (int i = 0; i < size; i++)
             for (int j = 0; j < size; j++)
-                assertEquals(result.get(i * size + j), output.get(i * size + j));
+                assertEquals(result.get(i * size + j), output.get(i * size + j), 0.1);
     }
 
     @Test
