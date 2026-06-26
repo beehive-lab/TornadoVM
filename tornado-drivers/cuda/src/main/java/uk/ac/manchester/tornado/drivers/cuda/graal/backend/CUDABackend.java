@@ -1,0 +1,506 @@
+/*
+ * Copyright (c) 2020-2024, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
+ * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
+ * The University of Manchester. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ */
+package uk.ac.manchester.tornado.drivers.cuda.graal.backend;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.drivers.common.code.CodeUtil.isHalfFloat;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.ENABLE_EXCEPTIONS;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.graalvm.compiler.code.CompilationResult;
+import org.graalvm.compiler.core.common.CompilationIdentifier;
+import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
+import org.graalvm.compiler.lir.LIR;
+import org.graalvm.compiler.lir.LIRInstruction;
+import org.graalvm.compiler.lir.Variable;
+import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
+import org.graalvm.compiler.lir.asm.DataBuilder;
+import org.graalvm.compiler.lir.framemap.FrameMap;
+import org.graalvm.compiler.lir.framemap.FrameMapBuilder;
+import org.graalvm.compiler.lir.framemap.ReferenceMapBuilder;
+import org.graalvm.compiler.lir.gen.LIRGenerationResult;
+import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
+import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.phases.tiers.SuitesProvider;
+import org.graalvm.compiler.phases.util.Providers;
+
+import jdk.vm.ci.code.CallingConvention;
+import jdk.vm.ci.code.CompilationRequest;
+import jdk.vm.ci.code.CompiledCode;
+import jdk.vm.ci.code.RegisterConfig;
+import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.Local;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
+import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.internal.annotations.Vector;
+import uk.ac.manchester.tornado.api.profiler.ProfilerType;
+import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
+import uk.ac.manchester.tornado.drivers.common.code.CodeUtil;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
+import uk.ac.manchester.tornado.drivers.common.utils.BackendDeopt;
+import uk.ac.manchester.tornado.drivers.cuda.CUDABackendImpl;
+import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContextInterface;
+import uk.ac.manchester.tornado.drivers.cuda.CUDATargetDescription;
+import uk.ac.manchester.tornado.drivers.cuda.CUDATargetDevice;
+import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAArchitecture;
+import uk.ac.manchester.tornado.drivers.cuda.graal.CUDACodeProvider;
+import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAFrameContext;
+import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAFrameMap;
+import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAFrameMapBuilder;
+import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAProviders;
+import uk.ac.manchester.tornado.drivers.cuda.graal.CUDASuitesProvider;
+import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAUtils;
+import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler;
+import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssemblerConstants;
+import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDACompilationResult;
+import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDACompilationResultBuilder;
+import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDADataBuilder;
+import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDALIRGenerationResult;
+import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDALIRGenerator;
+import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDANodeLIRBuilder;
+import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDANodeMatchRules;
+import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDAReferenceMapBuilder;
+import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.FPGAWorkGroupSizeNode;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
+import uk.ac.manchester.tornado.runtime.common.CUDATokens;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
+import uk.ac.manchester.tornado.runtime.graal.backend.XPUBackend;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
+
+public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.ReferenceMapBuilderFactory {
+
+    final OptionValues options;
+
+    final CUDATargetDescription target;
+    final CUDAArchitecture architecture;
+    final CUDADeviceContextInterface deviceContext;
+    final CUDACodeProvider codeCache;
+    private boolean backEndInitialized;
+
+    public CUDABackend(OptionValues options, Providers providers, CUDATargetDescription target, CUDACodeProvider codeCache, CUDADeviceContextInterface deviceContext) {
+        super(providers);
+        this.options = options;
+        this.target = target;
+        this.codeCache = codeCache;
+        this.deviceContext = deviceContext;
+        architecture = (CUDAArchitecture) target.arch;
+    }
+
+    public static boolean isDeviceAnFPGAAccelerator(CUDADeviceContextInterface deviceContext) {
+        return deviceContext.isPlatformFPGA();
+    }
+
+    @Override
+    public String decodeDeopt(long value) {
+        return BackendDeopt.decodeDeopt(value, getProviders());
+    }
+
+    @Override
+    public boolean isInitialised() {
+        return backEndInitialized;
+    }
+
+    @Override
+    public ReferenceMapBuilder newReferenceMapBuilder(int totalFrameSize) {
+        return new CUDAReferenceMapBuilder();
+    }
+
+    /**
+     * It allocated the extra internal buffers that are used by this backend (constant and atomic).
+     */
+    @Override
+    public void allocateTornadoVMBuffersOnDevice() {
+        deviceContext.getMemoryManager().allocateDeviceMemoryRegions();
+    }
+
+    /**
+     * We explore all devices in driver 0;
+     *
+     * @return int[]
+     */
+    public int[] getDriverAndDevice() {
+        int numDev = TornadoCoreRuntime.getTornadoRuntime().getBackend(CUDABackendImpl.class).getNumDevices();
+        int deviceIndex = 0;
+        for (int i = 0; i < numDev; i++) {
+            TornadoXPUDevice device = TornadoCoreRuntime.getTornadoRuntime().getBackend(CUDABackendImpl.class).getDevice(i);
+            CUDATargetDevice dev = (CUDATargetDevice) device.getPhysicalDevice();
+            if (dev == deviceContext.getDevice()) {
+                deviceIndex = i;
+            }
+        }
+        int driverIndex = TornadoCoreRuntime.getTornadoRuntime().getBackendIndex(CUDABackendImpl.class);
+        return new int[] { driverIndex, deviceIndex };
+    }
+
+    @Override
+    public void init() {
+        if (VIRTUAL_DEVICE_ENABLED) {
+            backEndInitialized = true;
+            return;
+        }
+
+        allocateTornadoVMBuffersOnDevice();
+        backEndInitialized = true;
+    }
+
+    @Override
+    public int getMethodIndex() {
+        return 0;
+    }
+
+    @Override
+    public CUDADeviceContextInterface getDeviceContext() {
+        return deviceContext;
+    }
+
+    protected CUDAAssembler createAssembler() {
+        return new CUDAAssembler(target);
+    }
+
+    @Override
+    public void emitCode(CompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method, TornadoProfiler profiler) {
+        emitCode((CUDACompilationResultBuilder) crb, lir, method, profiler);
+    }
+
+    public void emitCode(CUDACompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method, TornadoProfiler profiler) {
+        TaskDataContext taskMetaData = crb.getTaskMetaData();
+        profiler.start(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId());
+
+        final CUDAAssembler asm = (CUDAAssembler) crb.asm;
+        emitPrologue(crb, asm, method, lir);
+        crb.emit(lir);
+        emitEpilogue(asm);
+
+        profiler.stop(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId());
+        profiler.sum(ProfilerType.TOTAL_CODE_GENERATION_TIME, profiler.getTaskTimer(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId()));
+
+    }
+
+    private void emitEpilogue(CUDAAssembler asm) {
+        asm.endScope(" kernel");
+    }
+
+    private void addVariableDef(Map<CUDAKind, Set<Variable>> kindToVariable, Variable value) {
+        if (value != null) {
+
+            if (!(value.getPlatformKind() instanceof CUDAKind)) {
+                shouldNotReachHere();
+            }
+
+            CUDAKind oclKind = (CUDAKind) value.getPlatformKind();
+            if (oclKind == CUDAKind.ILLEGAL) {
+                shouldNotReachHere();
+            }
+
+            if (!kindToVariable.containsKey(oclKind)) {
+                kindToVariable.put(oclKind, new HashSet<>());
+            }
+
+            final Set<Variable> varList = kindToVariable.get(oclKind);
+            varList.add(value);
+        }
+    }
+
+    private void emitVariableDefs(CUDACompilationResultBuilder crb, CUDAAssembler asm, LIR lir) {
+        Map<CUDAKind, Set<Variable>> kindToVariable = new HashMap<>();
+        final int expectedVariables = lir.numVariables();
+        final AtomicInteger variableCount = new AtomicInteger();
+
+        for (int b : lir.linearScanOrder()) {
+            for (LIRInstruction lirInstruction : lir.getLIRforBlock(lir.getBlockById(b))) {
+
+                lirInstruction.forEachOutput((instruction, value, mode, flags) -> {
+                    if (value instanceof Variable) {
+                        Variable variable = (Variable) value;
+                        if (variable.toString() != null) {
+                            addVariableDef(kindToVariable, variable);
+                            variableCount.incrementAndGet();
+                        }
+                    }
+                    return value;
+                });
+            }
+        }
+
+        Logger.traceCodeGen(Logger.BACKEND.OpenCL, "found %d variable, expected (%d)", variableCount.get(), expectedVariables);
+
+        for (CUDAKind type : kindToVariable.keySet()) {
+            asm.indent();
+            asm.emit("%s ", type.getCUDATypeName());
+            for (Variable var : kindToVariable.get(type)) {
+                asm.emitValue(crb, var);
+                asm.emit(", ");
+            }
+            asm.emitByte(';', asm.position() - 2);
+            asm.eol();
+        }
+
+    }
+
+    private void emitDebugKernelArgs(CUDAAssembler asm, ResolvedJavaMethod method) {
+        asm.emitLine("if(get_global_id(0) == 0 && get_global_id(1) ==0){");
+        asm.pushIndent();
+        asm.emitStmt("int numArgs = slots[5] >> 32");
+        asm.emitStmt("printf(\"got %%d args...\\n\",numArgs)");
+        asm.emitLine("for(int i=0;i<numArgs;i++) {");
+        asm.pushIndent();
+        asm.emitStmt("printf(\"%20s - arg[%%d]: 0x%%lx\\n\", i, slots[6 + i])", method.getName());
+        asm.popIndent();
+        asm.emitLine("}");
+        asm.popIndent();
+        asm.emitLine("}");
+    }
+
+    private boolean kernelUsesHalfTypes(LIR lir) {
+        for (int b : lir.linearScanOrder()) {
+            for (LIRInstruction instr : lir.getLIRforBlock(lir.getBlockById(b))) {
+                boolean[] found = { false };
+                instr.forEachOutput((instruction, value, mode, flags) -> {
+                    if (!found[0] && value instanceof Variable variable) {
+                        CUDAKind kind = (CUDAKind) variable.getPlatformKind();
+                        if (kind == CUDAKind.HALF || kind.getElementKind() == CUDAKind.HALF) {
+                            found[0] = true;
+                        }
+                    }
+                    return value;
+                });
+                if (found[0]) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private void emitPrologue(CUDACompilationResultBuilder crb, CUDAAssembler asm, ResolvedJavaMethod method, LIR lir) {
+
+        String methodName = crb.compilationResult.getName();
+        final CallingConvention incomingArguments = CodeUtil.getCallingConvention(codeCache, HotSpotCallingConventionType.JavaCallee, method);
+
+        if (crb.isKernel()) {
+            // Only include cuda_fp16.h when the kernel actually uses __half types.
+            // Including it unconditionally triggers NVRTC failures on CUDA 11.x
+            // toolkits where cuda_fp16.hpp uses NV_IF_ELSE_TARGET from <nv/target>,
+            // which is excluded under __CUDACC_RTC__.
+            if (kernelUsesHalfTypes(lir)) {
+                asm.emit(CUDAPreamble.PREAMBLE);
+            }
+
+            /*
+             * BUG There is a bug on some CUDADriver devices which requires us to insert an
+             * extra CUDADriver buffer into the kernel arguments. This has the effect of
+             * shifting the devices address mappings, which allows us to avoid the heap
+             * starting at address 0x0. (I assume that this is an interesting case that
+             * leads to a few issues.) Iris Pro is the only culprit at the moment.
+             */
+            final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
+            if (cfg.getStartBlock().getEndNode().predecessor() instanceof FPGAWorkGroupSizeNode) {
+                FPGAWorkGroupSizeNode fpgaNode = (FPGAWorkGroupSizeNode) (cfg.getStartBlock().getEndNode().predecessor());
+                String attribute = fpgaNode.createThreadAttribute();
+
+                asm.emitSymbol(attribute);
+                asm.emitLine("");
+            }
+
+            asm.emit("%s void %s(%s", CUDAAssemblerConstants.KERNEL_MODIFIER, methodName, architecture.getABI());
+            emitMethodParameters(asm, method, incomingArguments, true);
+            asm.emitLine(")");
+
+            asm.beginScope();
+            emitVariableDefs(crb, asm, lir);
+
+            if (TornadoOptions.DEBUG_KERNEL_ARGS && !method.getDeclaringClass().getUnqualifiedName().equalsIgnoreCase(this.getClass().getSimpleName())) {
+                emitDebugKernelArgs(asm, method);
+            }
+
+            if (ENABLE_EXCEPTIONS) {
+                asm.emitStmt("if(slots[0] != 0) return");
+            }
+            asm.eol();
+        } else {
+
+            methodName = CUDAUtils.makeMethodName(method);
+
+            final JavaKind returnKind = method.getSignature().getReturnKind();
+            String returnStr;
+            if (returnKind == JavaKind.Void) {
+                returnStr = "void";
+            } else {
+                final ResolvedJavaType returnType = method.getSignature().getReturnType(null).resolve(method.getDeclaringClass());
+                CUDAKind returnOclKind = (returnType.getAnnotation(Vector.class) == null) ? ((CUDATargetDescription) getTarget()).getCUDAKind(returnKind) : CUDAKind.fromResolvedJavaType(returnType);
+                returnStr = returnOclKind.toString();
+            }
+            // Non-kernel callees must be __device__ functions; otherwise NVRTC treats
+            // them as host functions, which is illegal in JIT mode.
+            asm.emit("%s %s %s(%s", CUDAAssemblerConstants.DEVICE_MODIFIER, returnStr, methodName, architecture.getABI());
+
+            emitMethodParameters(asm, method, incomingArguments, false);
+            asm.emit(")");
+            asm.eol();
+            asm.beginScope();
+            emitVariableDefs(crb, asm, lir);
+            asm.eol();
+        }
+    }
+
+    private String getParameterName(Local local) {
+        String parameterName = local.getName();
+        if (CUDATokens.cudaTokens.contains(parameterName)) {
+            parameterName = "_" + parameterName;
+        }
+        return parameterName;
+    }
+
+    private void emitMethodParameters(CUDAAssembler asm, ResolvedJavaMethod method, CallingConvention incomingArguments, boolean isKernel) {
+        final Local[] locals = method.getLocalVariableTable().getLocalsAt(0);
+
+        for (int i = 0; i < incomingArguments.getArgumentCount(); i++) {
+            var javaType = locals[i].getType();
+            var javaKind = CodeUtil.convertJavaKind(javaType);
+            if (isKernel) {
+                if (javaKind.isPrimitive() || isHalfFloat(javaType)) {
+                    final AllocatableValue param = incomingArguments.getArgument(i);
+                    CUDAKind kind = (CUDAKind) param.getPlatformKind();
+                    asm.emit(", ");
+                    // CUDA C primitive kernel params take no address-space qualifier.
+                    // Rename through getParameterName so a Java parameter whose name
+                    // collides with a CUDA built-in (e.g. 'blockDim', which is a dim3)
+                    // does not shadow the built-in inside the kernel body. This must
+                    // match the name produced at use sites in CUDAGenTool.
+                    asm.emit("%s %s", kind.toString(), getParameterName(locals[i]));
+                } else {
+                    // Skip the kernel context object
+                    if (javaType.toJavaName().equals(KernelContext.class.getName())) {
+                        continue;
+                    }
+                    // Skip atomic integers
+                    if (javaType.toJavaName().equals(AtomicInteger.class.getName())) {
+                        continue;
+                    }
+                    asm.emit(", ");
+                    String parameterName = getParameterName(locals[i]);
+                    // CUDA C pointer params take no address-space qualifier (no __global).
+                    asm.emit("%s *%s", "unsigned char", parameterName);
+                }
+            } else {
+                final AllocatableValue param = incomingArguments.getArgument(i);
+                CUDAKind oclKind = (CUDAKind) param.getPlatformKind();
+                if (javaKind.isObject()) {
+                    CUDAKind tmpKind = CUDAKind.resolveToVectorKind(javaType.resolve(method.getDeclaringClass()));
+                    if (tmpKind != CUDAKind.ILLEGAL) {
+                        oclKind = tmpKind;
+                    }
+                }
+                guarantee(oclKind != CUDAKind.ILLEGAL, "illegal type for %s", param.getPlatformKind());
+                asm.emit(", ");
+                asm.emit("%s %s", oclKind.toString(), getParameterName(locals[i]));
+            }
+        }
+    }
+
+    @Override
+    public CUDASuitesProvider getTornadoSuites() {
+        return ((CUDAProviders) getProviders()).getSuitesProvider();
+    }
+
+    public CUDACompilationResultBuilder newCompilationResultBuilder(FrameMap frameMap, CUDACompilationResult compilationResult, boolean isKernel, boolean isParallel, LIR lir) {
+        CUDAAssembler asm = createAssembler();
+        CUDAFrameContext frameContext = new CUDAFrameContext();
+        DataBuilder dataBuilder = new CUDADataBuilder();
+        CUDACompilationResultBuilder crb = new CUDACompilationResultBuilder(getProviders(), frameMap, asm, dataBuilder, frameContext, options, getDebugContext(), compilationResult, lir);
+        crb.setKernel(isKernel);
+        crb.setParallel(isParallel);
+        crb.setDeviceContext(deviceContext);
+        return crb;
+    }
+
+    private FrameMap newFrameMap(RegisterConfig registerConfig) {
+        return new CUDAFrameMap(getCodeCache(), registerConfig, this);
+    }
+
+    @Override
+    public FrameMapBuilder newFrameMapBuilder(RegisterConfig registerConfig) {
+        RegisterConfig registerConfigNonNull = registerConfig == null ? getCodeCache().getRegisterConfig() : registerConfig;
+        return new CUDAFrameMapBuilder(newFrameMap(registerConfigNonNull), getCodeCache(), registerConfig);
+    }
+
+    @Override
+    public LIRGenerationResult newLIRGenerationResult(CompilationIdentifier identifier, LIR lir, FrameMapBuilder frameMapBuilder, RegisterAllocationConfig registerAllocationConfig) {
+        return new CUDALIRGenerationResult(identifier, lir, frameMapBuilder, registerAllocationConfig, new CallingConvention(0, null, (AllocatableValue[]) null));
+    }
+
+    @Override
+    public LIRGeneratorTool newLIRGenerator(LIRGenerationResult lirGenResult) {
+        return new CUDALIRGenerator(getProviders(), lirGenResult);
+    }
+
+    @Override
+    public NodeLIRBuilderTool newNodeLIRBuilder(StructuredGraph graph, LIRGeneratorTool lirGen) {
+        return new CUDANodeLIRBuilder(graph, lirGen, new CUDANodeMatchRules(lirGen));
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Backend: arch=%s, device=%s", architecture.getName(), deviceContext.getDevice().getDeviceName());
+    }
+
+    @Override
+    public CUDACodeProvider getCodeCache() {
+        return codeCache;
+    }
+
+    @Override
+    public SuitesProvider getSuites() {
+        unimplemented("Get suites method in CUDABackend not implemented yet.");
+        return null;
+    }
+
+    public void reset(long executionPlanId) {
+        getDeviceContext().reset(executionPlanId);
+    }
+
+    @Override
+    protected CompiledCode createCompiledCode(ResolvedJavaMethod rjm, CompilationRequest cr, CompilationResult cr1, boolean isDefault, OptionValues options) {
+        unimplemented("Create compiled code method in CUDABackend not implemented yet.");
+        return null;
+    }
+
+}
