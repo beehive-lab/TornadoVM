@@ -62,6 +62,18 @@ public class CUDABufferProvider extends TornadoBufferProvider {
     }
 
     /**
+     * Under Unified Memory, {@code cuMemAllocManaged} buffers can exceed physical
+     * VRAM (the CUDA runtime pages them on demand), so the per-allocation VRAM
+     * ceiling is lifted. The {@code tornado.device.memory} accounting limit still
+     * applies; raise it (e.g. {@code -Dtornado.device.memory=32GB}) to allocate
+     * beyond it.
+     */
+    @Override
+    protected boolean isOversubscriptionAllowed() {
+        return useUnifiedMemory((CUDADeviceContext) deviceContext);
+    }
+
+    /**
      * Device buffers obtained from {@code cuMemAlloc} are not zero-initialised,
      * and TornadoVM reuses pooled device buffers across executions. A
      * {@code WRITE_ONLY} output that the kernel does not fully write (for example,

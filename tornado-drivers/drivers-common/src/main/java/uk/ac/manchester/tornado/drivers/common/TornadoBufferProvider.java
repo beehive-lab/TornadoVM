@@ -105,6 +105,17 @@ public abstract class TornadoBufferProvider {
 
     protected abstract void releaseBuffer(long buffer);
 
+    /**
+     * Whether allocations may exceed the device's maximum single-allocation size
+     * (physical VRAM). Default {@code false}. A backend that backs buffers with
+     * memory the driver can page beyond VRAM (e.g. CUDA Unified Memory) overrides
+     * this to allow over-subscription, in which case the per-allocation VRAM ceiling
+     * is not enforced (the {@code tornado.device.memory} accounting limit still is).
+     */
+    protected boolean isOversubscriptionAllowed() {
+        return false;
+    }
+
     private synchronized long allocate(long size, Access access) {
         long buffer = allocateBuffer(size, access);
         currentMemoryAvailable -= size;
@@ -199,10 +210,13 @@ public abstract class TornadoBufferProvider {
      */
     public synchronized long getOrAllocateBufferWithSize(long sizeInBytes, Access access) {
         TornadoTargetDevice device = deviceContext.getDevice();
-        if (sizeInBytes <= currentMemoryAvailable && sizeInBytes < device.getDeviceMaxAllocationSize()) {
+        // Over-subscribing backends (CUDA Unified Memory) may allocate beyond the
+        // physical VRAM ceiling; the driver pages such buffers on demand.
+        boolean withinDeviceAllocation = sizeInBytes < device.getDeviceMaxAllocationSize() || isOversubscriptionAllowed();
+        if (sizeInBytes <= currentMemoryAvailable && withinDeviceAllocation) {
             // Allocate if there is enough device memory.
             return allocate(sizeInBytes, access);
-        } else if (sizeInBytes < device.getDeviceMaxAllocationSize()) {
+        } else if (withinDeviceAllocation) {
             int minBufferIndex = bufferIndexOfAFreeSpace(sizeInBytes, access);
             // If a buffer was found, mark it as used and return it.
             if (minBufferIndex != -1) {
