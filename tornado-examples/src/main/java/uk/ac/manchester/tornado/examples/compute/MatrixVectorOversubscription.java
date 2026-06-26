@@ -19,8 +19,11 @@ package uk.ac.manchester.tornado.examples.compute;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.TornadoExecutionResult;
+import uk.ac.manchester.tornado.api.TornadoProfilerResult;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
@@ -76,18 +79,30 @@ public class MatrixVectorOversubscription {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
         long start = System.nanoTime();
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.withProfiler(ProfilerMode.SILENT);
             if (unifiedMemory) {
                 plan.withCudaUM();
             }
-            plan.execute();
-            double s = (System.nanoTime() - start) / 1e9;
+            TornadoExecutionResult result = plan.execute();
+            double wallS = (System.nanoTime() - start) / 1e9;
             float expected = a.get(0) + b.get(0) + c.get(0);
             boolean ok = Math.abs(expected - out.get(0)) < 1e-3f;
             // A GPU out-of-memory does not throw: TornadoVM bails to a sequential
             // fallback and the device result is invalid. Treat a wrong result as a
             // failure of this path, not a success.
-            System.out.printf("  %-32s %s in %.1f s  (out[0]=%.3f, expected=%.3f)%n", label, ok ? "SUCCESS" : "FAILED (invalid result)", s, out.get(0), expected);
-            return ok;
+            if (!ok) {
+                System.out.printf("  %-32s FAILED (invalid result) in %.1f s  (out[0]=%.3f, expected=%.3f)%n", label, wallS, out.get(0), expected);
+                return false;
+            }
+            TornadoProfilerResult p = result.getProfilerResult();
+            double kernelMs = p.getDeviceKernelTime() / 1e6;
+            double copyInMs = p.getDeviceWriteTime() / 1e6;
+            double copyOutMs = p.getDeviceReadTime() / 1e6;
+            // Working set touched by the kernel: 3 reads + 1 write.
+            double workingSetGB = 4.0 * out.getSize() * Float.BYTES / (1024.0 * 1024.0 * 1024.0);
+            double kernelGBs = kernelMs > 0 ? workingSetGB / (kernelMs / 1e3) : 0;
+            System.out.printf("  %-32s SUCCESS  wall=%.1f s  kernel=%.1f ms (%.1f GB/s)  copyIn=%.1f ms  copyOut=%.1f ms%n", label, wallS, kernelMs, kernelGBs, copyInMs, copyOutMs);
+            return true;
         } catch (Throwable e) {
             double s = (System.nanoTime() - start) / 1e9;
             System.out.printf("  %-32s FAILED after %.1f s: %s%n", label, s, e.getClass().getSimpleName() + " - " + firstLine(e.getMessage()));
