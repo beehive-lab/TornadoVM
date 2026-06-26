@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoNoOpenCLPlatformException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDACommandQueueProperties;
 import uk.ac.manchester.tornado.drivers.cuda.exceptions.CUDAException;
@@ -216,6 +217,16 @@ public class CUDAContext implements CUDAContextInterface {
     private CUDABufferResult createBuffer(long flags, long bytes, long hostPointer) {
         try {
             final CUDABufferResult result = createBuffer(contextID, flags, bytes, hostPointer);
+            // cuMemAlloc reports failures (notably CUDA_ERROR_OUT_OF_MEMORY) via the
+            // result status and a null device pointer rather than throwing. Surface it
+            // as a clean exception here: otherwise the zero buffer is used by a later
+            // copy/kernel launch and triggers an unrecoverable CUDA_ERROR_ILLEGAL_ADDRESS
+            // that poisons the whole context.
+            if (result == null || result.getResult() != CUDADriver.CUDA_SUCCESS || result.getBuffer() == 0L) {
+                int status = (result == null) ? -1 : result.getResult();
+                throw new TornadoOutOfMemoryException("[ERROR] Unable to allocate " + RuntimeUtilities.humanReadableByteCount(bytes, false) + " on the CUDA device (cuMemAlloc status=" + status
+                        + ").\n\tThe allocation exceeds available device memory. Reduce the working set, or enable CUDA Unified Memory to over-subscribe VRAM.");
+            }
             logger.info("buffer allocated %s @ 0x%x", RuntimeUtilities.humanReadableByteCount(bytes, false), result.getBuffer());
             return result;
         } catch (CUDAException e) {
