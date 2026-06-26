@@ -74,6 +74,12 @@ public class CUDAContext implements CUDAContextInterface {
     // allocates a CUDA Managed (Unified) Memory buffer via cuMemAllocManaged
     native CUDABufferResult createManagedBuffer(long contextId, long size) throws CUDAException;
 
+    // zero-copy: pins+maps a host region (cuMemHostRegister); returns the device pointer or 0
+    native long registerHostMemory(long contextId, long hostPointer, long size);
+
+    // releases a host region pinned by registerHostMemory
+    native void unregisterHostMemory(long contextId, long hostPointer);
+
     // zero-initialises a device buffer (cuMemsetD8 to 0)
     native int memSetZero(long contextId, long devicePointer, long bytes);
 
@@ -258,6 +264,23 @@ public class CUDAContext implements CUDAContextInterface {
      */
     public boolean deviceSupportsManagedMemory() {
         return !devices.isEmpty() && devices.get(0).hasUnifiedMemory();
+    }
+
+    /**
+     * Zero-copy: pins and maps the host region {@code [hostPointer, hostPointer+bytes)}
+     * into the device address space and returns the device-accessible pointer (equal
+     * to {@code hostPointer} under UVA), or {@code 0} if registration failed (the
+     * caller should fall back to an explicit device allocation + copy).
+     */
+    public long registerHostMemory(long hostPointer, long bytes) {
+        return registerHostMemory(contextID, hostPointer, bytes);
+    }
+
+    /**
+     * Releases a host region previously pinned by {@link #registerHostMemory(long, long)}.
+     */
+    public void unregisterHostMemory(long hostPointer) {
+        unregisterHostMemory(contextID, hostPointer);
     }
 
     /**

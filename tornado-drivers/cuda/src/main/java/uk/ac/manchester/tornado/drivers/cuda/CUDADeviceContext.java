@@ -162,6 +162,17 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
         return this.unifiedMemoryEnabled;
     }
 
+    /**
+     * Single source of truth for whether CUDA Unified Memory is in effect: requested
+     * globally ({@code -Dtornado.cuda.memory.unified=true}) or per-plan
+     * ({@code withCudaUM()}), AND supported by the device. Used by the buffer provider
+     * and by the zero-copy data-array path.
+     */
+    public boolean isUnifiedMemoryActive() {
+        boolean requested = TornadoOptions.CUDA_UNIFIED_MEMORY || unifiedMemoryEnabled;
+        return requested && context.deviceSupportsManagedMemory();
+    }
+
     @Override
     public void sync(long executionPlanId) {
         CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);

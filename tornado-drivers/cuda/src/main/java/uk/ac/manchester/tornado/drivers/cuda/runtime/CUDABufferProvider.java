@@ -27,7 +27,6 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDAMemFlags;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
@@ -54,11 +53,10 @@ public class CUDABufferProvider extends TornadoBufferProvider {
      * Unified Memory is used when either the global flag
      * ({@code -Dtornado.cuda.memory.unified=true}) or the current execution plan's
      * per-plan request ({@code withCudaUM()}) is set, AND the device actually
-     * supports managed memory.
+     * supports managed memory. See {@link CUDADeviceContext#isUnifiedMemoryActive()}.
      */
     private static boolean useUnifiedMemory(CUDADeviceContext cudaDeviceContext) {
-        boolean requested = TornadoOptions.CUDA_UNIFIED_MEMORY || cudaDeviceContext.isUnifiedMemoryEnabled();
-        return requested && cudaDeviceContext.getPlatformContext().deviceSupportsManagedMemory();
+        return cudaDeviceContext.isUnifiedMemoryActive();
     }
 
     /**

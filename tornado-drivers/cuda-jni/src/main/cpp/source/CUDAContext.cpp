@@ -198,6 +198,62 @@ JNIEXPORT jobject JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAContext
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAContext
+ * Method:    registerHostMemory
+ * Signature: (JJJ)J
+ *
+ * Zero-copy path: pins an existing host region (the array's off-heap
+ * MemorySegment) and maps it into the device address space via
+ * cuMemHostRegister(..., CU_MEMHOSTREGISTER_DEVICEMAP). The kernel then accesses
+ * the host memory directly -- no cuMemcpy H2D/D2H -- over the CPU<->GPU
+ * interconnect (NVLink-C2C on Grace-Hopper, PCIe on discrete GPUs). Returns the
+ * device-accessible pointer (equal to the host pointer under UVA), or 0 on
+ * failure so the caller can fall back to the copy path.
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAContext_registerHostMemory
+        (JNIEnv *env, jobject obj, jlong context_id, jlong host_ptr, jlong size) {
+    cuda_context_t *ctx = (cuda_context_t *) context_id;
+    if (ctx == nullptr || host_ptr == 0 || size <= 0) {
+        return 0;
+    }
+    CUresult result = cuCtxSetCurrent(ctx->context);
+    LOG_CUDA_AND_VALIDATE("cuCtxSetCurrent", result);
+    result = cuMemHostRegister((void *) host_ptr, (size_t) size, CU_MEMHOSTREGISTER_DEVICEMAP);
+    if (result != CUDA_SUCCESS) {
+        LOG_CUDA_AND_VALIDATE("cuMemHostRegister", result);
+        return 0;
+    }
+    CUdeviceptr dev_ptr = 0;
+    result = cuMemHostGetDevicePointer(&dev_ptr, (void *) host_ptr, 0);
+    if (result != CUDA_SUCCESS) {
+        LOG_CUDA_AND_VALIDATE("cuMemHostGetDevicePointer", result);
+        cuMemHostUnregister((void *) host_ptr);
+        return 0;
+    }
+    return (jlong) dev_ptr;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAContext
+ * Method:    unregisterHostMemory
+ * Signature: (JJ)V
+ *
+ * Releases a host region pinned by registerHostMemory.
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAContext_unregisterHostMemory
+        (JNIEnv *env, jobject obj, jlong context_id, jlong host_ptr) {
+    if (host_ptr == 0) {
+        return;
+    }
+    cuda_context_t *ctx = (cuda_context_t *) context_id;
+    if (ctx != nullptr) {
+        cuCtxSetCurrent(ctx->context);
+    }
+    CUresult result = cuMemHostUnregister((void *) host_ptr);
+    LOG_CUDA_AND_VALIDATE("cuMemHostUnregister", result);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAContext
  * Method:    memSetZero
  * Signature: (JJJ)I
  *

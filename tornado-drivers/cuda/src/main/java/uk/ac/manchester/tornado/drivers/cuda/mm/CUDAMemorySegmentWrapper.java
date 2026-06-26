@@ -55,6 +55,11 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
     private Access access;
     private final int sizeOfType;
 
+    // Zero-copy (Unified Memory): when active, the array's host segment is pinned and
+    // mapped as the device buffer, so H2D/D2H copies are skipped entirely.
+    private boolean zeroCopy = false;
+    private long zeroCopyHostPtr = 0L;
+
     public CUDAMemorySegmentWrapper(long bufferSize, CUDADeviceContext deviceContext, long batchSize, Access access, int sizeOfType) {
         this.deviceContext = deviceContext;
         this.batchSize = batchSize;
@@ -108,6 +113,11 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
 
     @Override
     public int read(long executionPlanId, final Object reference, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
+        if (zeroCopy) {
+            // Host and device share the memory: no copy, only wait for the kernel.
+            deviceContext.sync(executionPlanId);
+            return -1;
+        }
         MemorySegment segment;
         segment = getSegmentWithHeader(reference);
         final int returnEvent;
@@ -132,6 +142,10 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
     @Override
 
     public void write(long executionPlanId, Object reference) {
+        if (zeroCopy) {
+            // Host memory is already device-visible; nothing to copy.
+            return;
+        }
         MemorySegment segment;
         segment = getSegmentWithHeader(reference);
         if (batchSize <= 0) {
@@ -143,6 +157,11 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
 
     @Override
     public int enqueueRead(long executionPlanId, Object reference, long hostOffset, int[] events, boolean useDeps) {
+        if (zeroCopy) {
+            // Host and device share the memory: no copy, only wait for the kernel.
+            deviceContext.sync(executionPlanId);
+            return -1;
+        }
         MemorySegment segment;
         segment = getSegmentWithHeader(reference);
 
@@ -158,6 +177,10 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
     @Override
     public List<Integer> enqueueWrite(long executionPlanId, Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps) {
         List<Integer> returnEvents = new ArrayList<>();
+        if (zeroCopy) {
+            // Host memory is already device-visible; nothing to copy.
+            return returnEvents;
+        }
         MemorySegment segment;
         segment = getSegmentWithHeader(reference);
 
@@ -181,7 +204,24 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
 
         if (batchSize <= 0) {
             bufferSize = segment.byteSize();
-            bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize, access);
+            // Zero-copy: when Unified Memory is active, pin+map the array's host segment
+            // and use it directly as the device buffer (no allocation, no copy). The
+            // [header|data] layout is identical to a device buffer, so the kernel's
+            // pointer arithmetic is unchanged. Falls back to a device allocation if the
+            // host region cannot be registered.
+            if (deviceContext.isUnifiedMemoryActive()) {
+                long hostPtr = segment.address();
+                long mappedDevicePtr = deviceContext.getPlatformContext().registerHostMemory(hostPtr, bufferSize);
+                if (mappedDevicePtr != 0L) {
+                    bufferId = mappedDevicePtr;
+                    zeroCopy = true;
+                    zeroCopyHostPtr = hostPtr;
+                } else {
+                    bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize, access);
+                }
+            } else {
+                bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize, access);
+            }
         } else {
             bufferSize = batchSize;
             bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize + TornadoNativeArray.ARRAY_HEADER, access);
@@ -199,7 +239,14 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
     @Override
     public void markAsFreeBuffer() throws TornadoMemoryException {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
-        deviceContext.getBufferProvider().markBufferReleased(bufferId, access);
+        if (zeroCopy) {
+            // The "buffer" is the pinned host segment, not a pooled device allocation.
+            deviceContext.getPlatformContext().unregisterHostMemory(zeroCopyHostPtr);
+            zeroCopy = false;
+            zeroCopyHostPtr = 0L;
+        } else {
+            deviceContext.getBufferProvider().markBufferReleased(bufferId, access);
+        }
         bufferId = INIT_VALUE;
         bufferSize = INIT_VALUE;
 
