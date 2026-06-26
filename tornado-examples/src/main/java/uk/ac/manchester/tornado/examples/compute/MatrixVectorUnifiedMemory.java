@@ -86,6 +86,9 @@ public class MatrixVectorUnifiedMemory {
     private static final class Metrics {
         double wallMs;          // host-measured end-to-end
         double taskGraphMs;     // profiler TOTAL_TASK_GRAPH_TIME
+        double kernelMs;        // profiler TOTAL_KERNEL_TIME
+        double copyInMs;        // profiler COPY_IN_TIME (device write)
+        double copyOutMs;       // profiler COPY_OUT_TIME (device read)
         long bytesCopyIn;       // profiler TOTAL_COPY_IN_SIZE_BYTES (per iteration)
         long bytesCopyOut;      // profiler TOTAL_COPY_OUT_SIZE_BYTES (per iteration)
         long deviceMemory;      // profiler total device memory usage
@@ -113,6 +116,9 @@ public class MatrixVectorUnifiedMemory {
 
                 TornadoProfilerResult p = result.getProfilerResult();
                 m.taskGraphMs += p.getTotalTime() / 1e6;
+                m.kernelMs += p.getDeviceKernelTime() / 1e6;
+                m.copyInMs += p.getDeviceWriteTime() / 1e6;
+                m.copyOutMs += p.getDeviceReadTime() / 1e6;
                 m.bytesCopyIn = p.getTotalBytesCopyIn();
                 m.bytesCopyOut = p.getTotalBytesCopyOut();
                 m.deviceMemory = p.getTotalDeviceMemoryUsage();
@@ -120,6 +126,9 @@ public class MatrixVectorUnifiedMemory {
         }
         m.wallMs /= iterations;
         m.taskGraphMs /= iterations;
+        m.kernelMs /= iterations;
+        m.copyInMs /= iterations;
+        m.copyOutMs /= iterations;
         return m;
     }
 
@@ -128,14 +137,13 @@ public class MatrixVectorUnifiedMemory {
         System.out.println("-----------------------------------------------------------------------");
         line("Wall time (ms)", def.wallMs, um.wallMs);
         line("Task-graph time (ms)", def.taskGraphMs, um.taskGraphMs);
+        line("Kernel time (ms)", def.kernelMs, um.kernelMs);
+        line("Copy-in time (ms)", def.copyInMs, um.copyInMs);
+        line("Copy-out time (ms)", def.copyOutMs, um.copyOutMs);
         System.out.println("-----------------------------------------------------------------------");
         System.out.printf("%-26s %14d %14d%n", "Bytes copy-in / iter", def.bytesCopyIn, um.bytesCopyIn);
         System.out.printf("%-26s %14d %14d%n", "Bytes copy-out / iter", def.bytesCopyOut, um.bytesCopyOut);
         System.out.printf("%-26s %11.1f MB %11.1f MB%n", "Device memory", def.deviceMemory / (1024.0 * 1024.0), um.deviceMemory / (1024.0 * 1024.0));
-        System.out.println();
-        System.out.println("Note: the CUDA backend currently reports device-event timers");
-        System.out.println("(TOTAL_KERNEL_TIME / COPY_IN_TIME / COPY_OUT_TIME) as 0, so only");
-        System.out.println("end-to-end task-graph time and byte/memory counters are compared here.");
     }
 
     private static void line(String label, double def, double um) {
