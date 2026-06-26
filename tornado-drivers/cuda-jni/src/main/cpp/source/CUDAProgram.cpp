@@ -126,28 +126,15 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
         nvrtcResult nv = nvrtcCreateProgram(&prog, program->source.c_str(), "tornado_kernel.cu", 0, nullptr, nullptr);
         LOG_NVRTC_AND_VALIDATE("nvrtcCreateProgram", nv);
 
-        // Give NVRTC a search path so kernels can #include CUDA headers
-        // (e.g. cuda_fp16.h for half support). NVRTC starts with an empty
-        // include list, so without this even a bundled header is unreachable.
-        // Common locations are added; a non-existent path is simply ignored.
-        std::vector<std::string> incDirs = {
-            "/usr/local/cuda/include",
-            "/usr/include",
-            "/usr/lib/cuda/include"
-        };
-        const char *cudaPathEnv = getenv("CUDA_PATH");
-        if (cudaPathEnv != nullptr) {
-            incDirs.push_back(std::string(cudaPathEnv) + "/include");
-        }
-        std::vector<std::string> optStrings;
-        optStrings.push_back(arch);
-        for (const std::string &d : incDirs) {
-            optStrings.push_back("--include-path=" + d);
-        }
+        // Do NOT add system CUDA include paths (e.g. /usr/local/cuda/include).
+        // NVRTC provides device-side built-in versions of all standard CUDA headers
+        // (cuda_fp16.h, cuda_runtime.h, etc.) that are designed for RTC mode.
+        // The system headers guard <nv/target> with !defined(__CUDACC_RTC__), so
+        // NV_IF_ELSE_TARGET / NV_IS_DEVICE are undefined when the system
+        // cuda_fp16.hpp is compiled under NVRTC, causing 100+ errors.
+        // Using NVRTC's own built-ins avoids this mismatch.
         std::vector<const char *> options;
-        for (const std::string &o : optStrings) {
-            options.push_back(o.c_str());
-        }
+        options.push_back(arch.c_str());
         nv = nvrtcCompileProgram(prog, (int) options.size(), options.data());
         LOG_NVRTC_AND_VALIDATE("nvrtcCompileProgram", nv);
 

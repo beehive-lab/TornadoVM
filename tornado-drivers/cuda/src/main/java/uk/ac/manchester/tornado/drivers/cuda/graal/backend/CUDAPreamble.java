@@ -29,9 +29,12 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.backend;
  * <p>The code generator emits native CUDA C / NVRTC types and intrinsics
  * directly (native unsigned types, inline relational operators, {@code fmin}/
  * {@code fmax}-based clamp, inline radians/sign, real {@code atomic*}
- * intrinsics, and componentwise vector expressions). The only thing that must
- * be injected ahead of every kernel is the half-precision header, so the
- * preamble is reduced to a single {@code #include <cuda_fp16.h>}.
+ * intrinsics, and componentwise vector expressions). The half-precision header
+ * is only injected when the kernel actually uses {@code CUDAKind.HALF*} types
+ * (see {@code CUDABackend#kernelUsesHalfTypes}). This avoids an NVRTC
+ * compilation failure on CUDA 11.x toolkits where {@code cuda_fp16.hpp}
+ * references {@code NV_IF_ELSE_TARGET} from {@code <nv/target>}, which is
+ * excluded when {@code __CUDACC_RTC__} is defined.
  *
  * <p>Note: DP4A is emitted as inline PTX ({@code dp4a.s32.s32}) directly at the
  * call site (see {@code CUDALIRStmt.Dp4aStmt}), so it needs no preamble helper.
