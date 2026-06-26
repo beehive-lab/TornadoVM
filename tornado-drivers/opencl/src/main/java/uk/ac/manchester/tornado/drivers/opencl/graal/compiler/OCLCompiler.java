@@ -458,7 +458,7 @@ public class OCLCompiler {
         return kernelCompResult;
     }
 
-    // FIXME <REFACTOR> Remove the inheritance (See SPIRV and PTX)
+    // FIXME <REFACTOR> Remove the inheritance (See SPIRV)
     public static class Request<T extends OCLCompilationResult> {
 
         public final StructuredGraph graph;

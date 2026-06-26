@@ -57,7 +57,7 @@ you can find examples of how to use TornadoVM with GraalVM Polyglot.
 5. Is TornadoVM a Domain Specific Language (DSL)?
 --------------------------------------------------------------
 
-No, TornadoVM is not a DSL. It compiles a subset of Java code to OpenCL C, NVIDIA PTX, and SPIR-V binary.
+No, TornadoVM is not a DSL. It compiles a subset of Java code to OpenCL C, CUDA C, and SPIR-V binary.
 
 The TornadoVM API only provides two Java annotations (``@Parallel`` and ``@Reduce``) plus an APIs to:
 a) Create and define task-graphs (groups of Java methods to be accelerated by TornadoVM), and the data needed to execute those task-graphs.
@@ -89,7 +89,7 @@ particular device. Further details and instructions on how to enable this featur
 9. Does TornadoVM support only OpenCL devices?
 ----------------------------------------------
 
-No. Currently, TornadoVM supports multiple compiler backends and therefore, it is able to generate OpenCL C, NVIDIA PTX, CUDA C
+No. Currently, TornadoVM supports multiple compiler backends and therefore, it is able to generate OpenCL C, CUDA C
 (compiled to PTX via NVRTC), SPIR-V, and Metal code depending on the hardware configuration.
 
 10. Why is it called a VM?
@@ -105,8 +105,8 @@ You can find more information here: `https://dl.acm.org/doi/10.1145/3313808.3313
 11. How does it interact with OpenJDK?
 --------------------------------------
 
-TornadoVM makes use of the Java Virtual Machine Common Interface (JVMCI) that is included from Java 9 to compile Java bytecode to OpenCL C/PTX/SPIR-V at runtime.
-As a JVMCI implementation, TornadoVM uses Graal (it extends the Graal IR and includes new backends for OpenCL C, PTX and SPIR-V code generation).
+TornadoVM makes use of the Java Virtual Machine Common Interface (JVMCI) that is included from Java 9 to compile Java bytecode to OpenCL C/CUDA/SPIR-V at runtime.
+As a JVMCI implementation, TornadoVM uses Graal (it extends the Graal IR and includes new backends for OpenCL C, CUDA and SPIR-V code generation).
 
 12.  How do I know which parts of my application are suitable for acceleration?
 -------------------------------------------------------------------------------

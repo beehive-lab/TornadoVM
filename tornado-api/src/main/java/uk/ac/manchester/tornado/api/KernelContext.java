@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * frameworks (e.g. OpenCL, CUDA) to the developers, such as thread-id, access
  * to local/shared memory and barriers.</li>
  * <li>{@link KernelContext} provides a Java API that is transparently
- * translated to both OpenCL and PTX by the TornadoVM JIT compiler. The main
+ * translated to both OpenCL and CUDA by the TornadoVM JIT compiler. The main
  * difference with the {@link TaskGraph} API is that the tasks within a
  * {@link TaskGraph} that use {@link KernelContext} must be
  * {@link GridScheduler}.</li>
@@ -57,7 +57,7 @@ public class KernelContext implements ExecutionContext {
      * <p>
      * OpenCL equivalent: get_global_id(0);
      * <p>
-     * PTX equivalent: blockIdx.x * blockDim.x + threadIdx.x
+     * CUDA equivalent: blockIdx.x * blockDim.x + threadIdx.x
      */
     public final Integer globalIdx = 0;
 
@@ -66,7 +66,7 @@ public class KernelContext implements ExecutionContext {
      * <p>
      * OpenCL equivalent: get_global_id(1);
      * <p>
-     * PTX equivalent: blockIdx.y * blockDim.y + threadIdx.y
+     * CUDA equivalent: blockIdx.y * blockDim.y + threadIdx.y
      */
     public final Integer globalIdy = 0;
 
@@ -75,7 +75,7 @@ public class KernelContext implements ExecutionContext {
      * <p>
      * OpenCL equivalent: get_global_id(2);
      * <p>
-     * PTX equivalent: blockIdx.z * blockDim.z + threadIdx.z
+     * CUDA equivalent: blockIdx.z * blockDim.z + threadIdx.z
      */
     public final Integer globalIdz = 0;
     public final Integer groupIdx = 0;
@@ -91,7 +91,7 @@ public class KernelContext implements ExecutionContext {
      * <p>
      * OpenCL equivalent: get_global_size();
      * <p>
-     * PTX equivalent: gridDim * blockDim
+     * CUDA equivalent: gridDim * blockDim
      */
     public final Integer globalGroupSizeX = 0;
     public final Integer globalGroupSizeY = 0;
@@ -102,7 +102,7 @@ public class KernelContext implements ExecutionContext {
      * <p>
      * OpenCL equivalent: get_local_size();
      * <p>
-     * PTX equivalent: blockDim
+     * CUDA equivalent: blockDim
      */
     public final Integer localGroupSizeX = 0;
     public final Integer localGroupSizeY = 0;
@@ -117,11 +117,11 @@ public class KernelContext implements ExecutionContext {
 
     /**
      * Method used as a barrier to synchronize the order of memory operations to the
-     * local memory (known as shared memory in PTX).
+     * local memory (known as shared memory in CUDA).
      * <p>
      * OpenCL equivalent: barrier(CLK_LOCAL_MEM_FENCE);
      * <p>
-     * PTX equivalent: barrier.sync;
+     * CUDA equivalent: barrier.sync;
      */
     @Override
     public void localBarrier() {
@@ -133,7 +133,7 @@ public class KernelContext implements ExecutionContext {
      * <p>
      * OpenCL equivalent: barrier(CLK_GLOBAL_MEM_FENCE);
      * <p>
-     * PTX equivalent: barrier.sync;
+     * CUDA equivalent: barrier.sync;
      */
     @Override
     public void globalBarrier() {
@@ -141,7 +141,7 @@ public class KernelContext implements ExecutionContext {
 
     /**
      * It allocates a single dimensional array in local memory (known as shared
-     * memory in PTX).
+     * memory in CUDA).
      *
      * @param size
      *     the size of the array
@@ -154,7 +154,7 @@ public class KernelContext implements ExecutionContext {
 
     /**
      * It allocates a single dimensional array in local memory (known as shared
-     * memory in PTX).
+     * memory in CUDA).
      *
      * @param size
      *     the size of the array
@@ -167,7 +167,7 @@ public class KernelContext implements ExecutionContext {
 
     /**
      * It allocates a single dimensional array in local memory (known as shared
-     * memory in PTX).
+     * memory in CUDA).
      *
      * @param size
      *     the size of the array
@@ -180,7 +180,7 @@ public class KernelContext implements ExecutionContext {
 
     /**
      * It allocates a single dimensional array in local memory (known as shared
-     * memory in PTX).
+     * memory in CUDA).
      *
      * @param size
      *     the size of the array
@@ -193,7 +193,7 @@ public class KernelContext implements ExecutionContext {
 
     /**
      * It allocates a single dimensional array in local memory (known as shared
-     * memory in PTX).
+     * memory in CUDA).
      *
      * @param size
      *     the size of the array
@@ -206,7 +206,7 @@ public class KernelContext implements ExecutionContext {
 
     /**
      * It allocates a single dimensional array in local memory (known as shared
-     * memory in PTX).
+     * memory in CUDA).
      *
      * @param size
      *     the size of the array
@@ -221,7 +221,7 @@ public class KernelContext implements ExecutionContext {
      * Returns the sum of {@code val} across all active SIMD lanes.
      * <p>
      * Metal equivalent: {@code simd_sum(val)}<br>
-     * PTX equivalent: butterfly reduction with {@code shfl.sync.down.b32}
+     * CUDA equivalent: butterfly reduction with {@code shfl.sync.down.b32}
      */
     public float simdSum(float val) {
         return val;
@@ -231,7 +231,7 @@ public class KernelContext implements ExecutionContext {
      * Returns the value held by the thread {@code delta} lanes ahead in the SIMD group.
      * <p>
      * Metal equivalent: {@code simd_shuffle_down(val, delta)}<br>
-     * PTX equivalent: {@code shfl.sync.down.b32 dest, val, delta, 31, 0xFFFFFFFF}
+     * CUDA equivalent: {@code shfl.sync.down.b32 dest, val, delta, 31, 0xFFFFFFFF}
      */
     public float simdShuffleDown(float val, int delta) {
         return val;
@@ -241,7 +241,7 @@ public class KernelContext implements ExecutionContext {
      * Broadcasts the value from lane 0 to all active SIMD lanes.
      * <p>
      * Metal equivalent: {@code simd_broadcast_first(val)}<br>
-     * PTX equivalent: {@code shfl.sync.idx.b32 dest, val, 0, 31, 0xFFFFFFFF}
+     * CUDA equivalent: {@code shfl.sync.idx.b32 dest, val, 0, 31, 0xFFFFFFFF}
      */
     public float simdBroadcastFirst(float val) {
         return val;
@@ -361,7 +361,7 @@ public class KernelContext implements ExecutionContext {
      * Method used to read a memory address by using the array and the index,
      * then add the value of val to it, and write the result back to the same address.
      * <p>
-     * PTX equivalent: atomicAdd(int* address, int val);
+     * CUDA equivalent: atomicAdd(int* address, int val);
      */
     @Override
     public void atomicAdd(IntArray array, int index, int val) {
@@ -374,7 +374,7 @@ public class KernelContext implements ExecutionContext {
      * Method used to read a memory address by using the array and the index,
      * then add the value of val to it, and write the result back to the same address.
      * <p>
-     * PTX equivalent: atomicAdd(int* address, int val);
+     * CUDA equivalent: atomicAdd(int* address, int val);
      */
     @Override
     public void atomicAdd(int[] array, int index, int val) {
@@ -387,7 +387,7 @@ public class KernelContext implements ExecutionContext {
      * Method used to read a memory address by using the array and the index,
      * then add the value of val to it, and write the result back to the same address.
      * <p>
-     * PTX equivalent: atomicAdd(long* address, long val);
+     * CUDA equivalent: atomicAdd(long* address, long val);
      */
     @Override
     public void atomicAdd(LongArray array, int index, long val) {
@@ -400,7 +400,7 @@ public class KernelContext implements ExecutionContext {
      * Method used to read a memory address by using the array and the index,
      * then add the value of val to it, and write the result back to the same address.
      * <p>
-     * PTX equivalent: atomicAdd(float* address, float val);
+     * CUDA equivalent: atomicAdd(float* address, float val);
      */
     @Override
     public void atomicAdd(FloatArray array, int index, float val) {
@@ -410,7 +410,7 @@ public class KernelContext implements ExecutionContext {
      * Method used to read a memory address by using the array and the index,
      * then add the value of val to it, and write the result back to the same address.
      * <p>
-     * PTX equivalent: atomicAdd(double* address, double val);
+     * CUDA equivalent: atomicAdd(double* address, double val);
      */
     @Override
     public void atomicAdd(DoubleArray array, int index, double val) {
@@ -450,7 +450,7 @@ public class KernelContext implements ExecutionContext {
      * intended for staging matrix tiles for future MMA support. It is, however, a general
      * bank-conflict-free layout usable by any kernel with the same access shape.
      *
-     * <p><b>Note:</b> Currently lowered on the PTX backend only.
+     * <p><b>Note:</b> Currently lowered on the CUDA backend only.
      *
      * @param arr    the shared-memory tile, addressed in logical element coordinates
      * @param row    the row index within the tile
@@ -473,7 +473,7 @@ public class KernelContext implements ExecutionContext {
      * {@link #swizzleLoadFp16Stride32} for the full derivation of the constants
      * (7 = source bits, 0b111 = mask, 4 = 16-byte target boundary).
      *
-     * <p><b>Note:</b> Currently lowered on the PTX backend only.
+     * <p><b>Note:</b> Currently lowered on the CUDA backend only.
      *
      * @param arr    the shared-memory tile, addressed in logical element coordinates
      * @param row    the row index within the tile
@@ -516,7 +516,7 @@ public class KernelContext implements ExecutionContext {
      * for the halved row stride, but have not yet been validated against a live consumer,
      * treat as provisional.
      *
-     * <p><b>Note:</b> Currently lowered on the PTX backend only.
+     * <p><b>Note:</b> Currently lowered on the CUDA backend only.
      *
      * @param arr    the shared-memory tile, addressed in logical element coordinates
      * @param row    the row index within the tile
@@ -538,7 +538,7 @@ public class KernelContext implements ExecutionContext {
      * {@link #swizzleLoadFp16Stride16} for the constant derivation (6 = source bits,
      * 0b111 = mask, 3 = 8-byte target boundary) and the validation caveat.
      *
-     * <p><b>Note:</b> Currently lowered on the PTX backend only.
+     * <p><b>Note:</b> Currently lowered on the CUDA backend only.
      *
      * @param arr    the shared-memory tile, addressed in logical element coordinates
      * @param row    the row index within the tile
@@ -581,7 +581,7 @@ public class KernelContext implements ExecutionContext {
      * tiles for future MMA support, but is a general bank-conflict-free layout usable by
      * any kernel with the same access shape.
      *
-     * <p><b>Note:</b> Currently lowered on the PTX backend only.
+     * <p><b>Note:</b> Currently lowered on the CUDA backend only.
      *
      * @param arr    the shared-memory tile, addressed in logical element coordinates
      * @param row    the row index within the tile
@@ -603,7 +603,7 @@ public class KernelContext implements ExecutionContext {
      * index is the byte offset directly. See {@link #swizzleLoadInt8} for the constant
      * derivation and the dual-stride (32 / 16) usage.
      *
-     * <p><b>Note:</b> Currently lowered on the PTX backend only.
+     * <p><b>Note:</b> Currently lowered on the CUDA backend only.
      *
      * @param arr    the shared-memory tile, addressed in logical element coordinates
      * @param row    the row index within the tile

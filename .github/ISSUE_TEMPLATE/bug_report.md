@@ -25,7 +25,7 @@ A clear and concise description of what you expected to happen.
 ### Computing system setup (please complete the following information):
  - OS: [e.g. Ubuntu 20]
  - OpenCL and Driver versions
- - If applicable, PTX and CUDA Driver versions
+ - If applicable, CUDA Driver versions
  - If applicable, Level Zero & SPIR-V Versions 
  - TornadoVM commit id
 

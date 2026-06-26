@@ -40,7 +40,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * Unit tests for SIMD-group intrinsics exposed via {@link KernelContext}:
  * {@code simdSum}, {@code simdShuffleDown}, and {@code simdBroadcastFirst}.
  *
- * <p>These tests run on Metal (MSL SIMD-group functions) and PTX (CUDA
+ * <p>These tests run on Metal (MSL SIMD-group functions) and CUDA (CUDA
  * {@code shfl.sync} warp-shuffle instructions). They are skipped on OpenCL
  * and SPIR-V backends which do not yet support these intrinsics.
  *

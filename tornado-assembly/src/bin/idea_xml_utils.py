@@ -45,21 +45,21 @@ def compute_tornado_backend_variant(backend_profiles):
     Compute the tornado.backend property value from backend profiles.
 
     This follows the same logic as bin/compile:
-    - Single backend: "opencl", "ptx", or "spirv"
-    - Multiple backends: sorted and joined with "-" (e.g., "opencl-ptx")
+    - Single backend: "opencl", "cuda", or "spirv"
+    - Multiple backends: sorted and joined with "-" (e.g., "opencl-cuda")
     - All three backends: "full"
 
     Args:
-        backend_profiles: List of backend profile names (e.g., ["opencl-backend", "ptx-backend"])
+        backend_profiles: List of backend profile names (e.g., ["opencl-backend", "cuda-backend"])
 
     Returns:
-        str: The tornado.backend value (e.g., "opencl", "ptx", "opencl-ptx", "full")
+        str: The tornado.backend value (e.g., "opencl", "cuda", "opencl-cuda", "full")
     """
     # Extract backend names from profiles (e.g., "opencl-backend" -> "opencl")
     backend_list = [b.replace("-backend", "") for b in backend_profiles]
 
     # Check if all backends are present -> use "full"
-    all_backends = {"opencl", "ptx", "spirv"}
+    all_backends = {"opencl", "cuda", "spirv"}
     if set(backend_list) == all_backends:
         return "full"
 
@@ -101,8 +101,8 @@ def define_and_get_tornadovm_build_content(xml_templates_directory, project_dire
     python_sdk_home = str(python_home)
     python_sdk_name = f"Python {python_version_name}"
 
-    # Compute BACKEND value (e.g., "opencl" or "opencl,ptx")
-    # backend_profiles is comma-separated (e.g., "opencl-backend,ptx-backend")
+    # Compute BACKEND value (e.g., "opencl" or "opencl,cuda")
+    # backend_profiles is comma-separated (e.g., "opencl-backend,cuda-backend")
     backend_value = backend_profiles.replace("-backend", "")
 
     xml_TornadoVM_build_content = xml_TornadoVM_build_content.replace("[@@JAVA_HOME@@]", java_home)

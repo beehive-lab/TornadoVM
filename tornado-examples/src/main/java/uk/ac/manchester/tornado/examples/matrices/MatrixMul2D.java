@@ -147,7 +147,7 @@ public class MatrixMul2D {
             }
         }
         if (oclDevice == null) {
-            System.err.println("There is no device with both OpenCL and CUDA-PTX support");
+            System.err.println("There is no device with both OpenCL and CUDA support");
             System.exit(1);
         }
         executorOCL.withDevice(oclDevice);
@@ -222,9 +222,9 @@ public class MatrixMul2D {
         String formatOpenCLFGlops = String.format("%.2f", OpenCLGigaFlops);
 
         System.out.println("\tOpenCL Execution: " + formatOpenCLFGlops + " GFlops, Total time = " + msecOCLElapsedTime + " ms");
-        System.out.println("\tPTX Execution: " + formatCUDAFGlops + " GFlops, Total Time = " + msecCUDAElapsedTime + " ms");
+        System.out.println("\tCUDA Execution: " + formatCUDAFGlops + " GFlops, Total Time = " + msecCUDAElapsedTime + " ms");
         System.out.println("\tOpenCL Speedup: " + OpenCLspeedup + "x");
-        System.out.println("\tPTX Speedup: " + CUDAspeedup + "x");
+        System.out.println("\tCUDA Speedup: " + CUDAspeedup + "x");
         System.out.println();
     }
 }

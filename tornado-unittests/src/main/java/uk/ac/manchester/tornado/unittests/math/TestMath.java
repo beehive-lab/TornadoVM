@@ -315,7 +315,6 @@ public class TestMath extends TornadoTestBase {
 
     @Test
     public void testMathAtan() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         final int size = 128;
         DoubleArray data = new DoubleArray(size);
@@ -804,7 +803,6 @@ public class TestMath extends TornadoTestBase {
 
     @Test
     public void testMathATan2() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         final int size = 128;
         DoubleArray a = new DoubleArray(size);
@@ -837,7 +835,6 @@ public class TestMath extends TornadoTestBase {
 
     @Test
     public void testMathAcos() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         final int size = 128;
         DoubleArray a = new DoubleArray(size);
@@ -867,7 +864,6 @@ public class TestMath extends TornadoTestBase {
 
     @Test
     public void testMathASin() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         final int size = 128;
         DoubleArray a = new DoubleArray(size);

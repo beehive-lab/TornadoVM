@@ -23,7 +23,7 @@ Supported Platforms
 The following table includes the platforms that TornadoVM can be executed.
 
 +---------------------------+-----------------------------------------------------------+-----------------+----------------------+
-| OS                        | OpenCL Backend                                            | PTX Backend     | SPIR-V Backend       |
+| OS                        | OpenCL Backend                                            | CUDA Backend    | SPIR-V Backend       |
 +===========================+===========================================================+=================+======================+
 | CentOS >= 7.3             | OpenCL for GPUs and CPUs >= 2.1, OpenCL for FPGAs >= 1.0  | CUDA 10.0+      | Level-Zero >= 1.2    |
 +---------------------------+-----------------------------------------------------------+-----------------+----------------------+
@@ -53,15 +53,14 @@ The SPIR-V backend can be dispatched through two different runtimes:
 Installation
 ************
 
-TornadoVM can be built with multiple compiler backends and is able to generate OpenCL C, NVIDIA PTX, CUDA C
+TornadoVM can be built with multiple compiler backends and is able to generate OpenCL C, CUDA C
 (compiled to PTX via NVRTC), SPIR-V and Metal code.
 
 .. note::
 
-   For NVIDIA GPUs, TornadoVM provides two backends: the **PTX** backend (emits PTX assembly directly)
-   and the **CUDA** backend (generates CUDA C and compiles it to PTX with NVRTC). To build the CUDA
-   backend on its own, run ``make BACKEND=cuda``. See :ref:`cuda-backend` for details and the
-   supported / in-progress feature status.
+   For NVIDIA GPUs, TornadoVM provides the **CUDA** backend, which generates CUDA C and compiles it
+   to PTX with NVRTC. To build the CUDA backend on its own, run ``make BACKEND=cuda``. See
+   :ref:`cuda-backend` for details and the supported / in-progress feature status.
 
 Installation Script
 ===================
@@ -80,7 +79,7 @@ Additionally, this installation type will automatically trigger all dependencies
       options:
         -h, --help            show this help message and exit
         --jdk JDK             Specify a JDK to install by its keyword (e.g., 'jdk21', 'graal-jdk-21'). Run with --listJDKs to view all available JDK keywords.
-        --backend BACKEND     Select the backend to install: { opencl, ptx, spirv }
+        --backend BACKEND     Select the backend to install: { opencl, cuda, spirv, metal }
         --version             Print version
         --listJDKs            List supported JDKs
         --polyglot            Enable Truffle Interoperability with GraalVM
@@ -159,7 +158,7 @@ For example, using JDK 21 for all backends:
    Select the backend(s) to install:
      1. opencl
      2. spirv
-     3. ptx
+     3. cuda
    You can select more than one by typing the numbers separated by commas (e.g., 1, 2, 3).
    Your selection: 1, 2, 3
    source setvars.sh
@@ -213,7 +212,7 @@ Download and install TornadoVM. Note that, in OSx Apple M1/M2/M3 chip, the only 
    Select the backend(s) to install:
      1. opencl
      2. spirv
-     3. ptx
+     3. cuda
    You can select more than one by typing the numbers separated by commas (e.g., 1, 2, 3).
    Your selection: 1
    source setvars.sh
@@ -280,12 +279,12 @@ Most Windows systems come with the NVIDIA drivers pre-installed. You can check y
 
 Alternatively, all NVIDIA drivers can be found here: `NVIDIA Driver Downloads <https://www.nvidia.com/Download/index.aspx>`__.
 
-B) OpenCL and NVIDIA PTX
+B) OpenCL and NVIDIA CUDA
 
 If you plan to only use the OpenCL backend from TornadoVM, then you only
 need the NVIDIA driver from the previous step.
 
-If you want to also use the PTX backend, then you need to install the
+If you want to also use the CUDA backend, then you need to install the
 NVIDIA CUDA Toolkit.
 
 -  Complete CUDA Toolkit from `CUDA Toolkit
@@ -351,7 +350,7 @@ And TornadoVM is ready to be used. If you want to recompile with a different bac
    python -m venv .venv
    .venv\Scripts\activate.bat
    .\bin\windowsMicrosoftStudioTools2022.cmd
-   nmake /f Makefile.mak jdk21 BACKEND=opencl,ptx
+   nmake /f Makefile.mak jdk21 BACKEND=opencl,cuda
    setvars.cmd
 
 

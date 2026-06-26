@@ -122,7 +122,7 @@ class TestEntry:
 ## List of classes to be tested. Include new unittest classes here
 __TEST_THE_WORLD__ = [
 
-    ## SPIR-V, OpenCL and PTX foundation tests
+    ## SPIR-V, OpenCL and CUDA foundation tests
     TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestIntegers"),
     TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestFloats"),
     TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestHalfFloats"),
@@ -278,7 +278,7 @@ __TEST_THE_WORLD__ = [
 #  Format: class#testMethod
 __TORNADO_TESTS_WHITE_LIST__ = [
 
-    ## PTX Backend does not support mathTahn
+    ## The CUDA backend does not support mathTanh
     "uk.ac.manchester.tornado.unittests.math.TestMath#testMathTanh",
     "uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection#testTornadoMathTanh",
     "uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection#testTornadoMathTanhDouble",

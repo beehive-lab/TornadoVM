@@ -73,7 +73,7 @@ __SUPPORTED_JDKS__ = [
     config.__SAPMACHINE21__,
     config.__LIBERICA21__,
 ]
-__SUPPORTED_BACKENDS__ = ["opencl", "spirv", "ptx", "metal", "cuda"]
+__SUPPORTED_BACKENDS__ = ["opencl", "spirv", "metal", "cuda"]
 
 # Custom Exceptions
 class TornadoInstallerError(Exception):
@@ -622,7 +622,7 @@ def parseArguments():
                             "Specify a JDK to install by its keyword (e.g., 'jdk21', 'graal-jdk-21'). "
                             "Run with --listJDKs to view all available JDK keywords."
                         ))
-    parser.add_argument("--backend", action="store", dest="backend", default=None, help="Select the backend to install: { opencl, ptx, spirv }")
+    parser.add_argument("--backend", action="store", dest="backend", default=None, help="Select the backend to install: { opencl, cuda, spirv, metal }")
     parser.add_argument("--version", action="store_true", dest="version", default=False, help="Print version")
     parser.add_argument("--listJDKs", action="store_true", dest="listJDKs", default=False, help="List supported JDKs")
     parser.add_argument("--polyglot", action="store_true", dest="polyglot", default=None,
