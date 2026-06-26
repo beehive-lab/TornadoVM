@@ -387,6 +387,11 @@ check_backend_dependencies() {
                     has_warnings=true
                 fi
                 ;;
+            *cuda*)
+                if ! check_ptx_backend; then
+                    has_warnings=true
+                fi
+                ;;
         esac
     done
 
