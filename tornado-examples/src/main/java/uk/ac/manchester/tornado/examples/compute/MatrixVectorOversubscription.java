@@ -50,8 +50,9 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
  * must be raised above the total working set:
  *
  * <p>
- * A failed {@code cuMemAlloc} leaves the CUDA context in an unrecoverable state, so
- * the two paths must be run in <b>separate processes</b> (one mode per run):
+ * Each mode is run in its own process (one mode per run). The default path now
+ * fails fast with a clean {@code TornadoOutOfMemoryException}; running the two
+ * modes separately keeps the device state of each measurement independent.
  *
  * <p>
  * <code>
