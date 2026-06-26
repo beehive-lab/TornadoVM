@@ -35,6 +35,7 @@ import uk.ac.manchester.tornado.api.plan.types.OffThreadInfo;
 import uk.ac.manchester.tornado.api.plan.types.WithAllGraphs;
 import uk.ac.manchester.tornado.api.plan.types.WithBatch;
 import uk.ac.manchester.tornado.api.plan.types.WithCUDAGraph;
+import uk.ac.manchester.tornado.api.plan.types.WithCudaUM;
 import uk.ac.manchester.tornado.api.plan.types.WithClearProfiles;
 import uk.ac.manchester.tornado.api.plan.types.WithCompilerFlags;
 import uk.ac.manchester.tornado.api.plan.types.WithConcurrentDevices;
@@ -638,5 +639,20 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         //TODO: include a check to verify that the BACKEND is PTX
         tornadoExecutor.withCUDAGraph();
         return new WithCUDAGraph(this);
+    }
+
+    /**
+     * Enable CUDA Managed (Unified) Memory for this execution plan. When the CUDA
+     * backend services this plan and the device supports managed memory, device
+     * buffers are allocated via {@code cuMemAllocManaged} instead of
+     * {@code cuMemAlloc}. This is the per-plan equivalent of the global
+     * {@code -Dtornado.cuda.memory.unified=true} flag and has no effect on other
+     * backends.
+     *
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan withCudaUM() {
+        tornadoExecutor.withCudaUM();
+        return new WithCudaUM(this);
     }
 }

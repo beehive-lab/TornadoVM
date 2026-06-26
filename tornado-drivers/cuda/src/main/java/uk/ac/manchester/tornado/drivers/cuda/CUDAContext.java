@@ -241,12 +241,22 @@ public class CUDAContext implements CUDAContextInterface {
     }
 
     /**
-     * Returns {@code true} when CUDA Unified Memory is requested via
-     * {@link TornadoOptions#CUDA_UNIFIED_MEMORY} and the first device in this
-     * context reports support for managed memory.
+     * Returns {@code true} when the first device in this context reports hardware
+     * support for CUDA Managed (Unified) Memory
+     * ({@code CU_DEVICE_ATTRIBUTE_MANAGED_MEMORY}).
+     */
+    public boolean deviceSupportsManagedMemory() {
+        return !devices.isEmpty() && devices.get(0).hasUnifiedMemory();
+    }
+
+    /**
+     * Returns {@code true} when CUDA Unified Memory is requested globally via
+     * {@link TornadoOptions#CUDA_UNIFIED_MEMORY} and the device supports it. Per-plan
+     * requests (via {@code withCudaUM()}) are combined with this in
+     * {@link uk.ac.manchester.tornado.drivers.cuda.runtime.CUDABufferProvider}.
      */
     public boolean isUnifiedMemoryEnabled() {
-        return TornadoOptions.CUDA_UNIFIED_MEMORY && !devices.isEmpty() && devices.get(0).hasUnifiedMemory();
+        return TornadoOptions.CUDA_UNIFIED_MEMORY && deviceSupportsManagedMemory();
     }
 
     public void releaseBuffer(long bufferId) {

@@ -66,6 +66,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     private final Map<Long, CUDAEventPool> oclEventPool;
     private final TornadoBufferProvider bufferProvider;
     private boolean wasReset;
+    private volatile boolean unifiedMemoryEnabled;
     private final Set<Long> executionIDs;
 
     /**
@@ -149,6 +150,16 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     @Override
     public TornadoBufferProvider getBufferProvider() {
         return bufferProvider;
+    }
+
+    @Override
+    public void setUnifiedMemoryEnabled(boolean enabled) {
+        this.unifiedMemoryEnabled = enabled;
+    }
+
+    @Override
+    public boolean isUnifiedMemoryEnabled() {
+        return this.unifiedMemoryEnabled;
     }
 
     @Override

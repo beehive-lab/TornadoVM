@@ -812,6 +812,10 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.withCUDAGraph();
     }
 
+    void withCudaUM() {
+        taskGraphImpl.withCudaUM();
+    }
+
     void dumpProfiles() {
         taskGraphImpl.dumpProfiles();
     }

@@ -145,6 +145,11 @@ public class TornadoVMInterpreter {
         events = new int[this.bytecodeResult.getInt()][MAX_EVENTS];
         eventsIndexes = new int[events.length];
 
+        // Propagate the per-plan CUDA Unified Memory request to the device context so
+        // the CUDA buffer provider can allocate managed memory for this plan's buffers.
+        // Backends other than CUDA ignore this (default no-op on TornadoDeviceContext).
+        interpreterDevice.getDeviceContext().setUnifiedMemoryEnabled(graphExecutionContext.isUnifiedMemoryEnabled());
+
         localTaskList = graphExecutionContext.getTasksForDevice(interpreterDevice.getDeviceContext());
 
         installedCodes = new TornadoInstalledCode[localTaskList.size()];

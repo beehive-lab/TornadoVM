@@ -49,6 +49,10 @@ class TornadoExecutor {
         immutableTaskGraphList.forEach(ImmutableTaskGraph::withCUDAGraph);
     }
 
+    public void withCudaUM() {
+        immutableTaskGraphList.forEach(ImmutableTaskGraph::withCudaUM);
+    }
+
     void execute(ExecutorFrame executionPackage) {
         immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.execute(executionPackage));
     }

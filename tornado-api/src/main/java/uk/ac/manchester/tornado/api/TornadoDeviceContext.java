@@ -51,4 +51,24 @@ public interface TornadoDeviceContext {
     int getDriverIndex();
 
     Set<Long> getRegisteredPlanIds();
+
+    /**
+     * Request CUDA Managed (Unified) Memory allocation for the execution plan
+     * currently being serviced by this device context. Backends other than CUDA
+     * ignore this request.
+     *
+     * @param enabled
+     *     {@code true} to allocate device buffers as managed memory.
+     */
+    default void setUnifiedMemoryEnabled(boolean enabled) {
+        // Default: no-op. Only the CUDA backend honours Unified Memory.
+    }
+
+    /**
+     * @return {@code true} when the current execution plan requested CUDA Unified
+     *     Memory through this device context.
+     */
+    default boolean isUnifiedMemoryEnabled() {
+        return false;
+    }
 }

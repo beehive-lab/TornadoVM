@@ -56,6 +56,8 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     void withCUDAGraph();
 
+    void withCudaUM();
+
     void withMemoryLimit(String memoryLimit);
 
     void withoutMemoryLimit();

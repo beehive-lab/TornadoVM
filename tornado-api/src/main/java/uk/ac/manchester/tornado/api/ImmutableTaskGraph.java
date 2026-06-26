@@ -58,6 +58,10 @@ public class ImmutableTaskGraph {
         taskGraph.withCUDAGraph();
     }
 
+    void withCudaUM() {
+        taskGraph.withCudaUM();
+    }
+
     void withDevice(TornadoDevice device) {
         taskGraph.withDevice(device);
     }

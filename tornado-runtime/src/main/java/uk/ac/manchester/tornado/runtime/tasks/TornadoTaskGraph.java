@@ -1789,6 +1789,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
+    public void withCudaUM() {
+        executionContext.setUnifiedMemoryEnabled(true);
+    }
+
+    @Override
     public void withMemoryLimit(String memoryLimit) {
         this.memoryLimitSizeBytes = parseSizeToBytes(memoryLimit);
         executionContext.setExecutionPlanMemoryLimit(this.memoryLimitSizeBytes);

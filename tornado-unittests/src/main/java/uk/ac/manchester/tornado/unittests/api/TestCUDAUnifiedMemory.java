@@ -37,25 +37,17 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * Tests for CUDA Managed (Unified) Memory allocation in the CUDA backend.
  *
  * <p>
- * These tests only run on the CUDA backend with Unified Memory explicitly enabled.
- * They are skipped otherwise (see {@link #requireUnifiedMemoryEnabled()}).
+ * Most tests use the per-plan {@link TornadoExecutionPlan#withCudaUM()} API, so they
+ * run on the CUDA backend without any extra flag. The global-flag path
+ * ({@code -Dtornado.cuda.memory.unified=true}) is covered by a separate test that is
+ * skipped unless the flag is set.
  *
  * <p>
  * How to test?
  *
  * <p>
  * <code>
- * tornado-test -V -Dtornado.cuda.memory.unified=true \
- *     uk.ac.manchester.tornado.unittests.api.TestCUDAUnifiedMemory
- * </code>
- *
- * <p>
- * To exercise over-subscription beyond the default device-memory accounting cap:
- *
- * <p>
- * <code>
- * tornado-test -V -Dtornado.cuda.memory.unified=true -Dtornado.device.memory=16GB \
- *     uk.ac.manchester.tornado.unittests.api.TestCUDAUnifiedMemory#testLargeUnifiedMemoryBuffer
+ * tornado-test -V uk.ac.manchester.tornado.unittests.api.TestCUDAUnifiedMemory
  * </code>
  */
 public class TestCUDAUnifiedMemory extends TornadoTestBase {
@@ -63,12 +55,10 @@ public class TestCUDAUnifiedMemory extends TornadoTestBase {
     private static final float DELTA = 0.001f;
 
     /**
-     * Skip unless {@code -Dtornado.cuda.memory.unified=true} is set, and restrict to
-     * the CUDA backend (Unified Memory is a CUDA-backend-only feature).
+     * Unified Memory is a CUDA-backend-only feature; skip on every other backend.
      */
     @Before
-    public void requireUnifiedMemoryEnabled() {
-        Assume.assumeTrue("Skipping: -Dtornado.cuda.memory.unified=true is required", Boolean.getBoolean("tornado.cuda.memory.unified"));
+    public void onlyCuda() {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
@@ -88,8 +78,7 @@ public class TestCUDAUnifiedMemory extends TornadoTestBase {
     }
 
     /**
-     * Verifies that vector addition produces correct results when buffers are
-     * allocated through {@code cuMemAllocManaged}.
+     * Vector addition with Unified Memory selected per-plan via {@code withCudaUM()}.
      */
     @Test
     public void testVectorAddWithUnifiedMemory() throws TornadoExecutionPlanException {
@@ -106,7 +95,7 @@ public class TestCUDAUnifiedMemory extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
-            plan.execute();
+            plan.withCudaUM().execute();
         }
 
         for (int i = 0; i < size; i++) {
@@ -115,10 +104,9 @@ public class TestCUDAUnifiedMemory extends TornadoTestBase {
     }
 
     /**
-     * A {@code WRITE_ONLY}-style output buffer is zero-initialised by
-     * {@code cuMemAllocManaged}; this exercises the code path that skips the explicit
-     * {@code cuMemsetD8} when Unified Memory is enabled, while still reading back the
-     * correct kernel output.
+     * A WRITE_ONLY-style output buffer is zero-initialised by {@code cuMemAllocManaged};
+     * this exercises the path that skips the explicit {@code cuMemsetD8} when Unified
+     * Memory is enabled, while still reading back the correct kernel output.
      */
     @Test
     public void testWriteOnlyBufferZeroInitialisedByUM() throws TornadoExecutionPlanException {
@@ -132,7 +120,7 @@ public class TestCUDAUnifiedMemory extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
-            plan.execute();
+            plan.withCudaUM().execute();
         }
 
         for (int i = 0; i < size; i++) {
@@ -141,12 +129,45 @@ public class TestCUDAUnifiedMemory extends TornadoTestBase {
     }
 
     /**
+     * Managed and default allocation must produce identical results for the same plan.
+     */
+    @Test
+    public void testUnifiedMemoryMatchesDefault() throws TornadoExecutionPlanException {
+        final int size = 2048;
+        FloatArray a = new FloatArray(size);
+        FloatArray b = new FloatArray(size);
+        FloatArray cDefault = new FloatArray(size);
+        FloatArray cUM = new FloatArray(size);
+        a.init(3.0f);
+        b.init(4.0f);
+
+        TaskGraph defaultGraph = new TaskGraph("def") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("vectorAdd", TestCUDAUnifiedMemory::vectorAdd, a, b, cDefault) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, cDefault);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(defaultGraph.snapshot())) {
+            plan.execute();
+        }
+
+        TaskGraph umGraph = new TaskGraph("um") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("vectorAdd", TestCUDAUnifiedMemory::vectorAdd, a, b, cUM) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, cUM);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(umGraph.snapshot())) {
+            plan.withCudaUM().execute();
+        }
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(cDefault.get(i), cUM.get(i), DELTA);
+        }
+    }
+
+    /**
      * Allocates buffers larger than a typical GPU L2 cache (~32 MB) to drive the CUDA
-     * paging / over-subscription path. The result must still be numerically correct.
+     * paging path. The result must still be numerically correct.
      */
     @Test
     public void testLargeUnifiedMemoryBuffer() throws TornadoExecutionPlanException {
-        // 32 MB worth of floats per array.
         final int size = 32 * 1024 * 1024 / Float.BYTES;
         FloatArray a = new FloatArray(size);
         FloatArray b = new FloatArray(size);
@@ -160,11 +181,39 @@ public class TestCUDAUnifiedMemory extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
-            plan.execute();
+            plan.withCudaUM().execute();
         }
 
         assertEquals(2.0f, c.get(0), DELTA);
         assertEquals(2.0f, c.get(size / 2), DELTA);
         assertEquals(2.0f, c.get(size - 1), DELTA);
+    }
+
+    /**
+     * Covers the global-flag path ({@code -Dtornado.cuda.memory.unified=true}); skipped
+     * unless that flag is set.
+     */
+    @Test
+    public void testGlobalFlagUnifiedMemory() throws TornadoExecutionPlanException {
+        Assume.assumeTrue("Skipping: -Dtornado.cuda.memory.unified=true is required", Boolean.getBoolean("tornado.cuda.memory.unified"));
+        final int size = 1024;
+        FloatArray a = new FloatArray(size);
+        FloatArray b = new FloatArray(size);
+        FloatArray c = new FloatArray(size);
+        a.init(2.0f);
+        b.init(5.0f);
+
+        TaskGraph taskGraph = new TaskGraph("um_global") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("vectorAdd", TestCUDAUnifiedMemory::vectorAdd, a, b, c) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.execute();
+        }
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(7.0f, c.get(i), DELTA);
+        }
     }
 }

@@ -96,6 +96,7 @@ public class TornadoExecutionContext {
     private long executionPlanId;  // This is set at runtime. Thus, no need to clone this value.
     private long currentDeviceMemoryUsage;
     private boolean isExecutionGraphEnabled;
+    private boolean isUnifiedMemoryEnabled;
 
     public TornadoExecutionContext(String id) {
         name = id;
@@ -120,6 +121,7 @@ public class TornadoExecutionContext {
         this.profiler = null;
         this.isDataDependencyDetected = isDataDependencyInTaskGraph();
         this.isExecutionGraphEnabled = false;
+        this.isUnifiedMemoryEnabled = false;
     }
 
     public KernelStackFrame[] getKernelStackFrame() {
@@ -721,6 +723,14 @@ public class TornadoExecutionContext {
 
     public boolean isExecutionGraphEnabled() {
         return this.isExecutionGraphEnabled;
+    }
+
+    public void setUnifiedMemoryEnabled(boolean enabled) {
+        this.isUnifiedMemoryEnabled = enabled;
+    }
+
+    public boolean isUnifiedMemoryEnabled() {
+        return this.isUnifiedMemoryEnabled;
     }
 
 }
