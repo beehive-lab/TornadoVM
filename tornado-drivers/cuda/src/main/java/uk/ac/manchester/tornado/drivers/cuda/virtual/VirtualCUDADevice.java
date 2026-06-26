@@ -189,6 +189,11 @@ public class VirtualCUDADevice implements CUDATargetDevice {
     }
 
     @Override
+    public boolean hasCoherentHostMemory() {
+        return false;
+    }
+
+    @Override
     public boolean isLittleEndian() {
         return deviceEndianLittle;
     }

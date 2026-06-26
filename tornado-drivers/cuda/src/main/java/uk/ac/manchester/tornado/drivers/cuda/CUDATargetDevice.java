@@ -70,4 +70,11 @@ public interface CUDATargetDevice extends TornadoTargetDevice {
      * {@code false}.
      */
     boolean hasUnifiedMemory();
+
+    /**
+     * Returns {@code true} when the GPU accesses host memory without a discrete PCIe
+     * hop (integrated iGPU/Jetson, or Grace-Hopper NVLink-C2C) — where zero-copy /
+     * direct host access is fast rather than a foe. Stub devices return {@code false}.
+     */
+    boolean hasCoherentHostMemory();
 }

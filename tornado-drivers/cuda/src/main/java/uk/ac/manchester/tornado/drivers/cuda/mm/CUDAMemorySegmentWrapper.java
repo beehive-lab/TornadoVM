@@ -204,12 +204,15 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
 
         if (batchSize <= 0) {
             bufferSize = segment.byteSize();
-            // Zero-copy: when Unified Memory is active, pin+map the array's host segment
-            // and use it directly as the device buffer (no allocation, no copy). The
-            // [header|data] layout is identical to a device buffer, so the kernel's
+            // Zero-copy: on hardware where the GPU reaches host memory coherently
+            // (integrated/Jetson or Grace-Hopper NVLink-C2C), pin+map the array's host
+            // segment and use it directly as the device buffer (no allocation, no copy).
+            // The [header|data] layout is identical to a device buffer, so the kernel's
             // pointer arithmetic is unchanged. Falls back to a device allocation if the
-            // host region cannot be registered.
-            if (deviceContext.isUnifiedMemoryActive()) {
+            // host region cannot be registered. On discrete PCIe GPUs isZeroCopyActive()
+            // is false (zero-copy would be slower than a bulk copy), so the managed/copy
+            // path below is used instead.
+            if (deviceContext.isZeroCopyActive()) {
                 long hostPtr = segment.address();
                 long mappedDevicePtr = deviceContext.getPlatformContext().registerHostMemory(hostPtr, bufferSize);
                 if (mappedDevicePtr != 0L) {

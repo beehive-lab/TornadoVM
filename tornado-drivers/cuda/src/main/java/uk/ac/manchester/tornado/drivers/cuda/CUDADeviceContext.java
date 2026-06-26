@@ -173,6 +173,32 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
         return requested && context.deviceSupportsManagedMemory();
     }
 
+    private boolean warnedNoZeroCopy = false;
+
+    /**
+     * Whether the zero-copy path (pin the array's host segment, skip H2D/D2H copies)
+     * should be used. Requires Unified Memory to be active AND hardware where the GPU
+     * reaches host memory without a discrete PCIe hop (integrated/Jetson or
+     * Grace-Hopper). On a discrete PCIe GPU zero-copy is a net loss (the kernel does
+     * fine-grained host reads over PCIe instead of a bulk copy + VRAM-resident kernel),
+     * so it is disabled and the managed-memory copy path is used instead — unless
+     * forced via {@code tornado.cuda.memory.zerocopy.force}.
+     */
+    public boolean isZeroCopyActive() {
+        if (!isUnifiedMemoryActive()) {
+            return false;
+        }
+        if (device.hasCoherentHostMemory() || TornadoOptions.CUDA_FORCE_ZERO_COPY) {
+            return true;
+        }
+        if (!warnedNoZeroCopy) {
+            warnedNoZeroCopy = true;
+            System.out.println("[CUDA-UM] Zero-copy disabled on this discrete GPU (host access crosses PCIe); " //
+                    + "using managed memory with copies. Force with -Dtornado.cuda.memory.zerocopy.force=true.");
+        }
+        return false;
+    }
+
     @Override
     public void sync(long executionPlanId) {
         CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);

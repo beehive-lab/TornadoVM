@@ -154,6 +154,14 @@ public class CUDADevice implements CUDATargetDevice {
      */
     static native boolean hasManagedMemorySupport(long devicePtr);
 
+    /**
+     * Queries {@code CU_DEVICE_ATTRIBUTE_INTEGRATED} / {@code PAGEABLE_MEMORY_ACCESS}.
+     * Returns {@code true} when the GPU accesses host memory without a discrete PCIe
+     * hop (integrated iGPU/Jetson, or Grace-Hopper NVLink-C2C) — where zero-copy /
+     * direct host access is fast.
+     */
+    static native boolean hasCoherentHostMemorySupport(long devicePtr);
+
     public long getDevicePointer() {
         return devicePtr;
     }
@@ -424,6 +432,11 @@ public class CUDADevice implements CUDATargetDevice {
     @Override
     public boolean hasUnifiedMemory() {
         return hasManagedMemorySupport(devicePtr);
+    }
+
+    @Override
+    public boolean hasCoherentHostMemory() {
+        return hasCoherentHostMemorySupport(devicePtr);
     }
 
     public CUDALocalMemType getDeviceLocalMemoryType() {

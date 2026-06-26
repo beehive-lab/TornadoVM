@@ -263,4 +263,35 @@ JNIEXPORT jboolean JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDADevice
     return (result == CUDA_SUCCESS && attr != 0) ? JNI_TRUE : JNI_FALSE;
 }
 
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDADevice
+ * Method:    hasCoherentHostMemorySupport
+ * Signature: (J)Z
+ *
+ * Returns JNI_TRUE only when GPU access to host memory is genuinely fast (no
+ * discrete PCIe hop): the device is integrated (CU_DEVICE_ATTRIBUTE_INTEGRATED,
+ * e.g. Jetson) or the GPU walks the host's page tables directly
+ * (CU_DEVICE_ATTRIBUTE_PAGEABLE_MEMORY_ACCESS_USES_HOST_PAGE_TABLES, true ATS as on
+ * Grace-Hopper via NVLink-C2C).
+ *
+ * Note: CU_DEVICE_ATTRIBUTE_PAGEABLE_MEMORY_ACCESS is deliberately NOT used -- on a
+ * modern Linux discrete GPU with HMM it reports 1, yet host access still crosses
+ * PCIe and is slow. USES_HOST_PAGE_TABLES is the stronger, coherent-access signal.
+ */
+JNIEXPORT jboolean JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDADevice_hasCoherentHostMemorySupport
+        (JNIEnv *env, jclass clazz, jlong device_id) {
+    cuda_device_t *dev = (cuda_device_t *) device_id;
+    if (dev == nullptr) {
+        return JNI_FALSE;
+    }
+    int integrated = 0;
+    int hostPageTables = 0;
+    CUresult r1 = cuDeviceGetAttribute(&integrated, CU_DEVICE_ATTRIBUTE_INTEGRATED, dev->device);
+    LOG_CUDA_AND_VALIDATE("cuDeviceGetAttribute(INTEGRATED)", r1);
+    CUresult r2 = cuDeviceGetAttribute(&hostPageTables, CU_DEVICE_ATTRIBUTE_PAGEABLE_MEMORY_ACCESS_USES_HOST_PAGE_TABLES, dev->device);
+    LOG_CUDA_AND_VALIDATE("cuDeviceGetAttribute(PAGEABLE_MEMORY_ACCESS_USES_HOST_PAGE_TABLES)", r2);
+    bool fast = (r1 == CUDA_SUCCESS && integrated != 0) || (r2 == CUDA_SUCCESS && hostPageTables != 0);
+    return fast ? JNI_TRUE : JNI_FALSE;
+}
+
 } // extern "C"

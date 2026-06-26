@@ -284,6 +284,14 @@ public class TornadoOptions {
      */
     public static final boolean CUDA_UNIFIED_MEMORY = getBooleanValue("tornado.cuda.memory.unified", FALSE);
     /**
+     * Force the CUDA Unified Memory zero-copy path (pin the array's host segment and
+     * skip H2D/D2H copies) even on a discrete PCIe GPU, where it is otherwise disabled
+     * because GPU access to host memory over PCIe is far slower than a bulk copy. For
+     * testing/benchmarking only. Zero-copy is auto-enabled on integrated/Grace-Hopper
+     * hardware regardless of this flag.
+     */
+    public static final boolean CUDA_FORCE_ZERO_COPY = getBooleanValue("tornado.cuda.memory.zerocopy.force", FALSE);
+    /**
      * Use return as a common label and insert the instruction before function
      * ending.
      */
