@@ -17,15 +17,16 @@
  */
 package uk.ac.manchester.tornado.examples.compute;
 
-import java.util.ArrayList;
-import java.util.LongSummaryStatistics;
 import java.util.Random;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.TornadoExecutionResult;
+import uk.ac.manchester.tornado.api.TornadoProfilerResult;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
@@ -79,13 +80,26 @@ public class MatrixVectorUnifiedMemory {
     }
 
     /**
-     * Runs {@code iterations} executions of the plan and returns the per-iteration
-     * timings in nanoseconds. When {@code unifiedMemory} is true the plan opts into
-     * CUDA Unified Memory via {@link TornadoExecutionPlan#withCudaUM()}.
+     * Aggregated metrics averaged over the measured iterations. Times are taken from
+     * the TornadoVM profiler ({@link ProfilerMode#SILENT}) plus a wall-clock measure.
      */
-    private static ArrayList<Long> run(ImmutableTaskGraph graph, boolean unifiedMemory, int iterations, int warmup) throws TornadoExecutionPlanException {
-        ArrayList<Long> timings = new ArrayList<>();
+    private static final class Metrics {
+        double wallMs;          // host-measured end-to-end
+        double taskGraphMs;     // profiler TOTAL_TASK_GRAPH_TIME
+        long bytesCopyIn;       // profiler TOTAL_COPY_IN_SIZE_BYTES (per iteration)
+        long bytesCopyOut;      // profiler TOTAL_COPY_OUT_SIZE_BYTES (per iteration)
+        long deviceMemory;      // profiler total device memory usage
+    }
+
+    /**
+     * Runs {@code iterations} profiled executions of the plan and returns the averaged
+     * metrics. When {@code unifiedMemory} is true the plan opts into CUDA Unified
+     * Memory via {@link TornadoExecutionPlan#withCudaUM()}.
+     */
+    private static Metrics run(ImmutableTaskGraph graph, boolean unifiedMemory, int iterations, int warmup) throws TornadoExecutionPlanException {
+        Metrics m = new Metrics();
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph)) {
+            plan.withProfiler(ProfilerMode.SILENT);
             if (unifiedMemory) {
                 plan.withCudaUM();
             }
@@ -94,16 +108,39 @@ public class MatrixVectorUnifiedMemory {
             }
             for (int i = 0; i < iterations; i++) {
                 long start = System.nanoTime();
-                plan.execute();
-                timings.add(System.nanoTime() - start);
+                TornadoExecutionResult result = plan.execute();
+                m.wallMs += (System.nanoTime() - start) / 1e6;
+
+                TornadoProfilerResult p = result.getProfilerResult();
+                m.taskGraphMs += p.getTotalTime() / 1e6;
+                m.bytesCopyIn = p.getTotalBytesCopyIn();
+                m.bytesCopyOut = p.getTotalBytesCopyOut();
+                m.deviceMemory = p.getTotalDeviceMemoryUsage();
             }
         }
-        return timings;
+        m.wallMs /= iterations;
+        m.taskGraphMs /= iterations;
+        return m;
     }
 
-    private static void report(String label, ArrayList<Long> timings) {
-        LongSummaryStatistics stats = timings.stream().mapToLong(Long::longValue).summaryStatistics();
-        System.out.printf("%-28s avg=%8.3f ms   min=%8.3f ms   max=%8.3f ms%n", label, stats.getAverage() / 1e6, stats.getMin() / 1e6, stats.getMax() / 1e6);
+    private static void report(Metrics def, Metrics um) {
+        System.out.printf("%-26s %14s %14s %12s%n", "Metric", "Default", "UnifiedMem", "Delta");
+        System.out.println("-----------------------------------------------------------------------");
+        line("Wall time (ms)", def.wallMs, um.wallMs);
+        line("Task-graph time (ms)", def.taskGraphMs, um.taskGraphMs);
+        System.out.println("-----------------------------------------------------------------------");
+        System.out.printf("%-26s %14d %14d%n", "Bytes copy-in / iter", def.bytesCopyIn, um.bytesCopyIn);
+        System.out.printf("%-26s %14d %14d%n", "Bytes copy-out / iter", def.bytesCopyOut, um.bytesCopyOut);
+        System.out.printf("%-26s %11.1f MB %11.1f MB%n", "Device memory", def.deviceMemory / (1024.0 * 1024.0), um.deviceMemory / (1024.0 * 1024.0));
+        System.out.println();
+        System.out.println("Note: the CUDA backend currently reports device-event timers");
+        System.out.println("(TOTAL_KERNEL_TIME / COPY_IN_TIME / COPY_OUT_TIME) as 0, so only");
+        System.out.println("end-to-end task-graph time and byte/memory counters are compared here.");
+    }
+
+    private static void line(String label, double def, double um) {
+        double delta = def == 0.0 ? 0.0 : (um - def) / def * 100.0;
+        System.out.printf("%-26s %14.3f %14.3f %+11.1f%%%n", label, def, um, delta);
     }
 
     public static void main(String[] args) throws TornadoExecutionPlanException {
@@ -137,21 +174,23 @@ public class MatrixVectorUnifiedMemory {
         fill(x, -1.0f, 1.0f);
         fill(w, -0.1f, 0.1f);
 
+        // EVERY_EXECUTION on the weights so the full matrix is transferred to the device
+        // every iteration: this is the copy-bound regime where the host<->device traffic
+        // (and, in a future phase, its elimination under Unified Memory) is visible.
         TaskGraph defaultGraph = new TaskGraph("default") //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, x, w) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, w) //
                 .task("t0", MatrixVectorUnifiedMemory::matrixVector, x, outDefault, w, n, d) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, outDefault);
 
         TaskGraph umGraph = new TaskGraph("um") //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, x, w) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, w) //
                 .task("t0", MatrixVectorUnifiedMemory::matrixVector, x, outUM, w, n, d) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, outUM);
 
-        ArrayList<Long> defaultTimings = run(defaultGraph.snapshot(), false, iterations, warmup);
-        ArrayList<Long> umTimings = run(umGraph.snapshot(), true, iterations, warmup);
+        Metrics defaultMetrics = run(defaultGraph.snapshot(), false, iterations, warmup);
+        Metrics umMetrics = run(umGraph.snapshot(), true, iterations, warmup);
 
-        report("Default (cuMemAlloc)", defaultTimings);
-        report("Unified Memory (.withCudaUM)", umTimings);
+        report(defaultMetrics, umMetrics);
 
         // Correctness: both paths must agree.
         int mismatches = 0;
