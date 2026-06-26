@@ -566,8 +566,22 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         List<Object> objectsToSync = executionContext.getPersistedTaskToObjectsMap().get(graphSrc.taskGraphName);
 
         if (objectsToSync == null) {
-            objectsToSync = executionContext.getPersistedObjects();
-            executionContext.addPersistedObject(this.taskGraphName, objectsToSync);
+            // Empty consumeFromDevice (no explicit source task-graph name): the objects to
+            // synchronise from the previously executed task-graph are exactly the ones marked
+            // as consumed/on-device. The graph's own persisted *outputs* must NOT be included:
+            // they are produced by this graph, so flagging them as persisted (see
+            // TornadoVMInterpreter#isPersistentObject) would make the interpreter skip their
+            // allocation and dereference a null device buffer. Each consumed object is also
+            // registered individually (not as a nested list) so that a reused task-graph does
+            // not end up with an ArrayList among its device objects.
+            objectsToSync = new ArrayList<>();
+            for (LocalObjectState localState : executionContext.getObjectStates()) {
+                if (localState.isOnDevice()) {
+                    Object consumedObject = localState.getObject();
+                    objectsToSync.add(consumedObject);
+                    executionContext.addPersistedObject(this.taskGraphName, consumedObject);
+                }
+            }
         }
 
         for (Object objectToSync : objectsToSync) {
