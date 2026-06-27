@@ -155,7 +155,7 @@ Examples can be found in the ``Grid``
 KernelContext Features
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The following table presents the available features that TornadoVM exposes in Java along with the respective OpenCL and CUDA PTX terminology.
+The following table presents the available features that TornadoVM exposes in Java along with the respective OpenCL and CUDA terminology.
 
 .. code:: java
 
@@ -163,7 +163,7 @@ The following table presents the available features that TornadoVM exposes in Ja
    kc = new KernelContext();
 
 +----------------------------------------------------+-------------------------------+------------------------------------+
-| TornadoVM KernelContext                            | OpenCL                        | PTX                                |
+| TornadoVM KernelContext                            | OpenCL                        | CUDA                               |
 +====================================================+===============================+====================================+
 | kc.globalIdx                                       | get_global_id(0)              | blockIdx \* blockDim.x + threadIdx |
 +----------------------------------------------------+-------------------------------+------------------------------------+
@@ -500,7 +500,7 @@ Example:
 The code is very similar to a Java sequential reduction but with ``@Reduce`` and ``@Parallel`` annotations.
 The ``@Reduce`` annotation is associated with a variable, in this case, with the ``result`` float
 array.
-Then, we annotate the loop with ``@Parallel``. The OpenCL/PTX JIT compilers generate OpenCL/PTX parallel version for this code that can
+Then, we annotate the loop with ``@Parallel``. The OpenCL/CUDA JIT compilers generate OpenCL/CUDA parallel version for this code that can
 run on GPU and CPU.
 
 Creating reduction tasks
@@ -513,7 +513,7 @@ If the target is a CPU, TornadoVM performs full reductions within the
 same thread-id. Besides, TornadoVM automatically resizes the output
 variables according to the number of work-groups and threads selected.
 
-For PTX code generation, TornadoVM will always perform full and parallel
+For CUDA code generation, TornadoVM will always perform full and parallel
 reductions using the threads within the same CUDA block.
 
 .. code:: java

@@ -106,7 +106,6 @@ public class TestVirtualDeviceKernel extends TornadoTestBase {
 
     @Test
     public void testVirtualDeviceKernel() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
         assertNotBackend(TornadoVMBackendType.CUDA);

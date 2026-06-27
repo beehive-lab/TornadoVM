@@ -112,7 +112,6 @@ public class TestHello extends TornadoTestBase {
     @Test
     public void testPrintIntArray() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.SPIRV);
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         int numElements = 16;
         IntArray a = new IntArray(numElements);
@@ -133,7 +132,6 @@ public class TestHello extends TornadoTestBase {
     @Test
     public void testPrintIntArray2() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.SPIRV);
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         int numElements = 16;
         IntArray a = new IntArray(numElements);

@@ -135,20 +135,6 @@
             </includes>
         </fileSet>
         <fileSet>
-            <directory>../tornado-drivers/ptx-jni/target/windows-i386-release/cmake/Release</directory>
-            <outputDirectory>./lib/</outputDirectory>
-            <includes>
-                <include>*.dll</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>../tornado-drivers/ptx-jni/target/windows-amd64-release/cmake/Release</directory>
-            <outputDirectory>./lib/</outputDirectory>
-            <includes>
-                <include>*.dll</include>
-            </includes>
-        </fileSet>
-        <fileSet>
             <directory>src/examples</directory>
             <!-- Tornado full examples copied into examples directory -->
             <outputDirectory>examples</outputDirectory>
@@ -180,7 +166,6 @@
                 <include>io.github.beehive-lab:tornado-annotation</include>
                 <include>io.github.beehive-lab:tornado-matrices</include>
                 <include>io.github.beehive-lab:tornado-drivers-common</include>
-                <include>io.github.beehive-lab:tornado-drivers-ptx</include>
                 <include>io.github.beehive-lab:tornado-drivers-opencl</include>
                 <include>io.github.beehive-lab:tornado-drivers-spirv</include>
                 <include>io.github.beehive-lab:tornado-drivers-metal</include>
@@ -209,7 +194,6 @@
             </unpackOptions>
             <includes>
                 <include>io.github.beehive-lab:tornado-drivers-metal-jni:jar:libs</include>
-                <include>io.github.beehive-lab:tornado-drivers-ptx-jni:jar:libs</include>
                 <include>io.github.beehive-lab:tornado-drivers-opencl-jni:jar:libs</include>
                 <include>io.github.beehive-lab:tornado-drivers-cuda-jni:jar:libs</include>
             </includes>

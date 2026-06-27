@@ -81,12 +81,12 @@ It is also possible to enable the profiler without live reporting in STDOUT and 
 -------------------------------------------------------------------------------------
 
 The profiler can query low-level system management API implementations to obtain the power usage of an executed TornadoVM task.
-More specifically, TornadoVM is integrated with the `NVIDIA NVML API <https://docs.nvidia.com/deploy/nvml-api/index.html>`__ to support power usage for NVIDIA GPUs that operate with the ``OpenCL`` or ``PTX`` backend (:ref:`NVIDIA NVML Configuration <nvidia_nvml_configuration>`).
+More specifically, TornadoVM is integrated with the `NVIDIA NVML API <https://docs.nvidia.com/deploy/nvml-api/index.html>`__ to support power usage for NVIDIA GPUs that operate with the ``OpenCL`` or ``CUDA`` backend (:ref:`NVIDIA NVML Configuration <nvidia_nvml_configuration>`).
 Additionally, it is integrated with the `oneAPI Level Zero SYSMAN API <https://spec.oneapi.io/level-zero/latest/sysman/api.html>`__) to support power usage for Intel GPUs that operate with the ``SPIRV`` backend (:ref:`oneAPI Level Zero SYSMAN Configuration <oneapi_sysman_configuration>`).
 
 .. _nvidia_nvml_configuration:
 
-A) NVIDIA NVML Configuration for the OpenCL and PTX backends
+A) NVIDIA NVML Configuration for the OpenCL and CUDA backends
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 TornadoVM can leverage the NVIDIA NVML (NVIDIA Management Library) to monitor and manage power metrics for supported NVIDIA GPUs. The NVML library allows TornadoVM to access the power consumption metric, which enhances its profiling capabilities.
@@ -122,16 +122,16 @@ Note that when, dispatching occurs through the OpenCL runtime, power metrics are
 -  *TOTAL_KERNEL_TIME*: It is the sum of all OpenCL kernel timers. For example, if a task-graph contains 2 tasks, this timer reports the sum of execution of the two kernels.
 -  *TOTAL_BYTE_CODE_GENERATION*: time spent in the Tornado bytecode generation.
 -  *TOTAL_TASK_GRAPH_TIME*: Total execution time. It contains all timers.
--  *TOTAL_GRAAL_COMPILE_TIME*: Total compilation with Graal (from Java. to OpenCL C / PTX)
--  *TOTAL_DRIVER_COMPILE_TIME*: Total compilation with the driver (once the OpenCL C / PTX code is generated, the time that the driver takes to generate the final binary).
+-  *TOTAL_GRAAL_COMPILE_TIME*: Total compilation with Graal (from Java. to OpenCL C / CUDA)
+-  *TOTAL_DRIVER_COMPILE_TIME*: Total compilation with the driver (once the OpenCL C / CUDA code is generated, the time that the driver takes to generate the final binary).
 -  *TOTAL_CODE_GENERATION_TIME*: Total code generation time. This value
    represents the elapsed time from the last Graal compilation phase in
-   the LIR to the target backend code (e.g., OpenCL, PTX or SPIR-V).
+   the LIR to the target backend code (e.g., OpenCL, CUDA or SPIR-V).
 
 Then, for each task within a task-graph, there are usually three timers, one device identifier and two data transfer metrics:
 
 -  *BACKEND*: TornadoVM backend selected for the method execution on the
-   target device. It could be either ``SPIRV``, ``PTX`` or ``OpenCL``.
+   target device. It could be either ``SPIRV``, ``CUDA`` or ``OpenCL``.
 -  *DEVICE_ID*: platform and device ID index.
 -  *DEVICE*: device name as provided by the OpenCL driver.
 -  *TASK_COPY_IN_SIZE_BYTES*: size in bytes of total bytes copied-in for
@@ -204,7 +204,7 @@ obtaining statistics:
        DISPATCH_TIME,31008.0
 
 
-5. Code feature extraction for the OpenCL/PTX generated code
+5. Code feature extraction for the OpenCL/CUDA generated code
 ------------------------------------------------------------
 
 To enable TornadoVM’s code feature extraction, use the following flag:
@@ -217,7 +217,7 @@ Example:
    $ tornado --jvm="-Dtornado.feature.extraction=True" -m tornado.examples/uk.ac.manchester.tornado.examples.compute.NBody --params "1024 1"
    {
        "nBody": {
-           "BACKEND" : "PTX",
+           "BACKEND" : "CUDA",
            "DEVICE_ID": "0:2",
            "DEVICE": "GeForce GTX 1650",
            "Global Memory Loads":  "15",

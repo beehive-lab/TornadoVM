@@ -80,7 +80,7 @@ public class TestLocalMemoryReductionsHalfFloats extends TornadoTestBase {
         int groupID = context.groupIdx;
 
         // Allocate an array in local memory (using the OpenCL terminology), or shared
-        // memory with NVIDIA PTX.
+        // memory with NVIDIA CUDA.
         HalfFloat[] localA = context.allocateHalfFloatLocalArray(256);
 
         // Copy data from global memory to local memory.
@@ -125,7 +125,7 @@ public class TestLocalMemoryReductionsHalfFloats extends TornadoTestBase {
         int groupID = context.groupIdx;
 
         // Allocate an array in local memory (using the OpenCL terminology), or shared
-        // memory with NVIDIA PTX.
+        // memory with NVIDIA CUDA.
         HalfFloat[] localA = context.allocateHalfFloatLocalArray(blockDim);
 
         // Copy data from global memory to local memory.

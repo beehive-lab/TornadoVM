@@ -95,7 +95,6 @@ public abstract class TornadoTestBase {
         }
         if (deviceBackend == backend) {
             switch (backend) {
-                case PTX -> throw new TornadoVMPTXNotSupported(customBackendAssertionMessage != null ? customBackendAssertionMessage : "Test not supported for the PTX backend");
                 case OPENCL -> throw new TornadoVMOpenCLNotSupported(customBackendAssertionMessage != null ? customBackendAssertionMessage : "Test not supported for the OpenCL backend");
                 case SPIRV -> throw new TornadoVMSPIRVNotSupported(customBackendAssertionMessage != null ? customBackendAssertionMessage : "Test not supported for the SPIR-V backend");
                 case METAL -> throw new TornadoVMMetalNotSupported(customBackendAssertionMessage != null ? customBackendAssertionMessage : "Test not supported for the Metal backend");
@@ -145,13 +144,11 @@ public abstract class TornadoTestBase {
         int numDrivers = getTornadoRuntime().getNumBackends();
         for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
             TornadoBackend driver = getTornadoRuntime().getBackend(driverIndex);
-            if (driver.getBackendType() != TornadoVMBackendType.PTX) {
-                int maxDevices = driver.getNumDevices();
-                for (int i = 0; i < maxDevices; i++) {
-                    TornadoDevice device = driver.getDevice(i);
-                    if (device.isSPIRVSupported()) {
-                        return device;
-                    }
+            int maxDevices = driver.getNumDevices();
+            for (int i = 0; i < maxDevices; i++) {
+                TornadoDevice device = driver.getDevice(i);
+                if (device.isSPIRVSupported()) {
+                    return device;
                 }
             }
         }

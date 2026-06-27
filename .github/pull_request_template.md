@@ -22,9 +22,9 @@ TornadoVM currently supports three backends. When possible, please check that th
 $ make BACKEND=opencl
 $ make tests
 
-## If the changes are also applicable to the PTX backend: 
-## Pass unittests using the PTX backend
-$ make BACKEND=ptx
+## If the changes are also applicable to the CUDA backend: 
+## Pass unittests using the CUDA backend
+$ make BACKEND=cuda
 $ make tests 
 
 ## If the changes are also applicable to the SPIR-V backend: 
@@ -52,7 +52,7 @@ If the patch provides a fix for a bug, please describe what was the issue and ho
 Mark the backends affected by this PR.
 
 - [ ] OpenCL
-- [ ] PTX
+- [ ] CUDA
 - [ ] SPIRV
 - [ ] Metal
 

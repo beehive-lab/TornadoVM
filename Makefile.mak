@@ -1,6 +1,6 @@
 all: build
 
-# Variable passed for the build process. List of backend/s to use { opencl, ptx, spirv }. The default one is `opencl`.
+# Variable passed for the build process. List of backend/s to use { opencl, cuda, spirv, metal }. The default one is `opencl`.
 # nmake BACKENDS="<comma_separated_backend_list>"
 BACKEND = opencl
 
@@ -25,11 +25,8 @@ mvn-single-threaded-graal-jdk-21:
 mvn-single-threaded-polyglot:
 	python bin/compile --jdk graal-jdk-21 --backend $(BACKEND) --mvn_single_threaded --polyglot
 
-ptx:
-	python bin\compile --jdk graal-jdk-21 --backend ptx,opencl
-
 spirv:
-	python bin\compile --jdk graal-jdk-21 --backend spirv,ptx,opencl
+	python bin\compile --jdk graal-jdk-21 --backend spirv,opencl
 
 sdk:
 	python bin\compile --jdk jdk21 --sdk --backend $(BACKEND)
@@ -46,7 +43,7 @@ checkstyle:
 	.\mvnw checkstyle:check
 
 clean:
-	.\mvnw -Popencl-backend,ptx-backend,spirv-backend clean
+	.\mvnw -Popencl-backend,cuda-backend,spirv-backend clean
 
 example:
 	%TORNADOVM_HOME%\bin\tornado.exe --printKernel --debug -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt --params="8192"

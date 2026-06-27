@@ -23,7 +23,6 @@ tornado-drivers/drivers-common/target/
 tornado-drivers/opencl-jni/src/main/cpp/headers/
 tornado-drivers/opencl-jni/target/
 tornado-drivers/opencl/target/
-tornado-drivers/ptx-jni/target/
 tornado-drivers/target/
 tornado-examples/target/
 tornado-runtime/target/

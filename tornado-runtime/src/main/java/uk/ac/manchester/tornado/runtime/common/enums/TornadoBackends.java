@@ -25,7 +25,6 @@
 package uk.ac.manchester.tornado.runtime.common.enums;
 
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.OPENCL_BACKEND_PRIORITY;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PTX_BACKEND_PRIORITY;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.SPIRV_BACKEND_PRIORITY;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.METAL_BACKEND_PRIORITY;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.CUDA_BACKEND_PRIORITY;
@@ -38,7 +37,6 @@ import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.CUDA_BACKEN
 
 public enum TornadoBackends {
 
-    PTX(PTX_BACKEND_PRIORITY, "implemented"), //
     OpenCL(OPENCL_BACKEND_PRIORITY, "implemented"), //
     Metal(METAL_BACKEND_PRIORITY, "implemented"), //
     CUDA(CUDA_BACKEND_PRIORITY, "experimental"), //

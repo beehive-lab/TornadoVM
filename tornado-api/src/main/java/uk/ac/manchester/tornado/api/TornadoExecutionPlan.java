@@ -635,7 +635,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     }
 
     public TornadoExecutionPlan withCUDAGraph() {
-        //TODO: include a check to verify that the BACKEND is PTX
+        //TODO: include a check to verify that the BACKEND is CUDA
         tornadoExecutor.withCUDAGraph();
         return new WithCUDAGraph(this);
     }

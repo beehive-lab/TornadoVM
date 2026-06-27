@@ -68,7 +68,7 @@ public class ArrayAddIntPrebuilt {
 
         TornadoDevice device = TornadoRuntimeProvider.getTornadoRuntime().getDefaultDevice();
         String filePath = tornadoSDK + "/examples/generated/";
-        filePath += device.getPlatformName().contains("PTX") ? "add.ptx" : "add.cl";
+        filePath += device.getPlatformName().contains("CUDA") ? "add.cu" : "add.cl";
 
         AccessorParameters accessorParameters = new AccessorParameters(3);
         accessorParameters.set(0, a, Access.READ_ONLY);

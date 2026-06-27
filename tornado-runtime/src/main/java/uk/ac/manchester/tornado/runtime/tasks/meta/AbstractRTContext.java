@@ -83,8 +83,6 @@ public abstract class AbstractRTContext implements TaskContextInterface {
     private final int metalThreadsPerThreadgroupZ;
 
     private GridScheduler gridScheduler;
-    private long[] ptxBlockDim;
-    private long[] ptxGridDim;
 
     private TornadoProfiler profiler;
 
@@ -117,7 +115,6 @@ public abstract class AbstractRTContext implements TaskContextInterface {
         compilerOptionsPerBackend = new ConcurrentHashMap<>();
         compilerOptionsPerBackend.put(TornadoVMBackendType.METAL, TornadoOptions.DEFAULT_METAL_COMPILER_FLAGS);
         compilerOptionsPerBackend.put(TornadoVMBackendType.OPENCL, TornadoOptions.DEFAULT_OPENCL_COMPILER_FLAGS);
-        compilerOptionsPerBackend.put(TornadoVMBackendType.PTX, TornadoOptions.DEFAULT_PTX_COMPILER_FLAGS);
         compilerOptionsPerBackend.put(TornadoVMBackendType.CUDA, TornadoOptions.DEFAULT_CUDA_COMPILER_FLAGS);
         compilerOptionsPerBackend.put(TornadoVMBackendType.SPIRV, TornadoOptions.DEFAULT_SPIRV_LEVEL_ZERO_COMPILER_FLAGS);
 
@@ -344,22 +341,6 @@ public abstract class AbstractRTContext implements TaskContextInterface {
 
     public WorkerGrid getWorkerGrid(String taskName) {
         return gridScheduler.get(taskName);
-    }
-
-    public long[] getPTXBlockDim() {
-        return ptxBlockDim;
-    }
-
-    public long[] getPTXGridDim() {
-        return ptxGridDim;
-    }
-
-    public void setPtxBlockDim(long[] blockDim) {
-        this.ptxBlockDim = blockDim;
-    }
-
-    public void setPtxGridDim(long[] gridDim) {
-        this.ptxGridDim = gridDim;
     }
 
     @Override

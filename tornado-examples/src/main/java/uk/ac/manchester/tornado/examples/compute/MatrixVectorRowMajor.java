@@ -837,15 +837,15 @@ public class MatrixVectorRowMajor {
         return localSum[0] * combinedScale;
     }
 
-    private static boolean isPTXBackend() {
+    private static boolean isCUDABackend() {
         int driverIndex = TornadoRuntimeProvider.getTornadoRuntime().getDefaultDevice().getBackendIndex();
         TornadoVMBackendType backend = TornadoRuntimeProvider.getTornadoRuntime().getBackendType(driverIndex);
-        return backend == TornadoVMBackendType.PTX;
+        return backend == TornadoVMBackendType.CUDA;
     }
 
     private static void assertBackend() {
-        if (!isPTXBackend()) {
-            throw new TornadoAPIException("DP4A is a PTX instruction. It is not supported for other backends.", new Exception());
+        if (!isCUDABackend()) {
+            throw new TornadoAPIException("DP4A is a CUDA (NVIDIA) instruction. It is not supported for other backends.", new Exception());
         }
     }
 
@@ -871,7 +871,7 @@ public class MatrixVectorRowMajor {
             }
         }
 
-        boolean supportsDP4A = isPTXBackend();
+        boolean supportsDP4A = isCUDABackend();
 
         System.out.println("Configuration:");
         System.out.println("- Input dimension (columns): " + inputDim);
@@ -1022,7 +1022,7 @@ public class MatrixVectorRowMajor {
 
         ImmutableTaskGraph immutableTaskGraphQ8Bytes = taskGraphQ8Bytes.snapshot();
 
-        // DP4A benchmarks (only setup if PTX)
+        // DP4A benchmarks (only setup if CUDA)
         ImmutableTaskGraph immutableTaskGraphDp4a = null;
         ImmutableTaskGraph immutableTaskGraphDp4aPacked = null;
         ImmutableTaskGraph immutableTaskGraphDp4aLocal = null;
@@ -1598,7 +1598,7 @@ public class MatrixVectorRowMajor {
             double speedup9 = statsFp16.getAverage() / statsQ8Dp4a4Way.getAverage();
             System.out.printf("Speedup: Q8 DP4A 4-Way vs KernelContext FP16 %.2fx\n", speedup9);
         } else {
-            System.out.println("\n[DP4A benchmarks skipped - not running on PTX backend]");
+            System.out.println("\n[DP4A benchmarks skipped - not running on CUDA backend]");
         }
     }
 }

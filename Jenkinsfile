@@ -135,13 +135,13 @@ void buildAndTest(String JDK, String tornadoProfile) {
     echo "Tornado profile " + tornadoProfile
     echo "-------------------------"
     stage('Build with ' + JDK) {
-        sh "make ${tornadoProfile} BACKEND=ptx,opencl,spirv"
+        sh "make ${tornadoProfile} BACKEND=cuda,opencl,spirv"
     }
-    stage('PTX: Unit Tests') {
+    stage('CUDA: Unit Tests') {
         timeout(time: 45, unit: 'MINUTES') {
             sh 'tornado --devices'
-            sh 'tornado-test --verbose -J"-Dtornado.unittests.device=0:0 -Dtornado.ptx.priority=100"'
-            sh 'tornado-test -V  -J"-Dtornado.unittests.device=0:0 -Dtornado.device.memory=1MB -Dtornado.ptx.priority=100" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
+            sh 'tornado-test --verbose -J"-Dtornado.unittests.device=0:0 -Dtornado.cuda.priority=100"'
+            sh 'tornado-test -V  -J"-Dtornado.unittests.device=0:0 -Dtornado.device.memory=1MB -Dtornado.cuda.priority=100" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
             sh 'test-native.sh'
         }
     }
@@ -150,16 +150,16 @@ void buildAndTest(String JDK, String tornadoProfile) {
             "OpenCL and GPU: Nvidia Quadro GP100" : {
                 timeout(time: 45, unit: 'MINUTES') {
                     sh 'tornado --devices'
-                    sh 'tornado-test --verbose -J"-Dtornado.ptx.priority=100 -Dtornado.unittests.device=2:0"'
-                    sh 'tornado-test -V  -J" -Dtornado.ptx.priority=100 -Dtornado.unittests.device=2:0 -Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
+                    sh 'tornado-test --verbose -J"-Dtornado.cuda.priority=100 -Dtornado.unittests.device=2:0"'
+                    sh 'tornado-test -V  -J" -Dtornado.cuda.priority=100 -Dtornado.unittests.device=2:0 -Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
                     sh 'test-native.sh'
                 }
             },
             "OpenCL and Integrated GPU: Intel(R) UHD Graphics 630" : {
                 timeout(time: 45, unit: 'MINUTES') {
                     sh 'tornado --devices'
-                    sh 'tornado-test --verbose -J"-Dtornado.ptx.priority=100 -Dtornado.unittests.device=2:1"'
-                    sh 'tornado-test -V  -J" -Dtornado.ptx.priority=100 -Dtornado.unittests.device=2:1 -Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
+                    sh 'tornado-test --verbose -J"-Dtornado.cuda.priority=100 -Dtornado.unittests.device=2:1"'
+                    sh 'tornado-test -V  -J" -Dtornado.cuda.priority=100 -Dtornado.unittests.device=2:1 -Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
                     sh 'test-native.sh'
                 }
             }
@@ -168,16 +168,16 @@ void buildAndTest(String JDK, String tornadoProfile) {
     stage("SPIR-V (OpenCL Runtime): Unit Tests") {
         timeout(time: 45, unit: 'MINUTES') {
             sh 'tornado --devices'
-            sh 'tornado-test --verbose -J"-Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:0 -Dtornado.spirv.dispatcher=opencl"'
-            sh 'tornado-test -V  -J" -Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:0 -Dtornado.spirv.dispatcher=opencl -Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
+            sh 'tornado-test --verbose -J"-Dtornado.cuda.priority=100 -Dtornado.unittests.device=1:0 -Dtornado.spirv.dispatcher=opencl"'
+            sh 'tornado-test -V  -J" -Dtornado.cuda.priority=100 -Dtornado.unittests.device=1:0 -Dtornado.spirv.dispatcher=opencl -Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
             sh 'test-native.sh'
         }
     }
     stage("SPIR-V (LevelZero Runtime): Unit Tests") {
             timeout(time: 45, unit: 'MINUTES') {
                 sh 'tornado --devices'
-                sh 'tornado-test --verbose -J"-Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:1 -Dtornado.spirv.dispatcher=levelzero"'
-                sh 'tornado-test -V  -J" -Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:1 -Dtornado.spirv.dispatcher=levelzero -Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
+                sh 'tornado-test --verbose -J"-Dtornado.cuda.priority=100 -Dtornado.unittests.device=1:1 -Dtornado.spirv.dispatcher=levelzero"'
+                sh 'tornado-test -V  -J" -Dtornado.cuda.priority=100 -Dtornado.unittests.device=1:1 -Dtornado.spirv.dispatcher=levelzero -Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
                 sh 'test-native.sh'
             }
         }
@@ -195,16 +195,16 @@ void buildAndTest(String JDK, String tornadoProfile) {
     stage('OpenCL: Run KFusion') {
         sleep 5
         timeout(time: 5, unit: 'MINUTES') {
-            sh "cd ${KFUSION_ROOT} && sed -i 's/kfusion.tornado.backend=PTX/kfusion.tornado.backend=OpenCL/' conf/kfusion.settings"
+            sh "cd ${KFUSION_ROOT} && sed -i 's/kfusion.tornado.backend=CUDA/kfusion.tornado.backend=OpenCL/' conf/kfusion.settings"
             sh 'cd ${KFUSION_ROOT} && ./scripts/runOnlyOpenCL.sh'
 
         }
     }
-    stage('PTX: Run KFusion') {
+    stage('CUDA: Run KFusion') {
         sleep 5
         timeout(time: 5, unit: 'MINUTES') {
-            sh "cd ${KFUSION_ROOT} && sed -i 's/kfusion.tornado.backend=OpenCL/kfusion.tornado.backend=PTX/' conf/kfusion.settings"
-            sh 'cd ${KFUSION_ROOT} && ./scripts/runOnlyPTX.sh'
+            sh "cd ${KFUSION_ROOT} && sed -i 's/kfusion.tornado.backend=OpenCL/kfusion.tornado.backend=CUDA/' conf/kfusion.settings"
+            sh 'cd ${KFUSION_ROOT} && ./scripts/runOnlyCUDA.sh'
         }
     }
 }

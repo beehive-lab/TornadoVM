@@ -68,7 +68,7 @@ def get_installed_backends(tornadovm_home):
         tornadovm_home: Path to TORNADOVM_HOME
 
     Returns:
-        list: List of backend names (e.g., ['opencl-backend', 'ptx-backend'])
+        list: List of backend names (e.g., ['opencl-backend', 'cuda-backend'])
     """
     backend_file = os.path.join(tornadovm_home, "etc", "tornado.backend")
 

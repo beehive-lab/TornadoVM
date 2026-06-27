@@ -1,24 +1,20 @@
 .. _cuda-backend:
 
-NVIDIA CUDA Devices (PTX and CUDA C backends)
+NVIDIA CUDA Devices (CUDA backend)
 ==============================================
 
-TornadoVM provides two backends that target NVIDIA GPUs through the NVIDIA
-Driver API:
+TornadoVM targets NVIDIA GPUs through the **CUDA backend**, which generates
+**CUDA C** source at runtime, compiles it with **NVRTC** to PTX, and executes
+it through the CUDA Driver API.
 
-- The **PTX backend**, which generates NVIDIA PTX assembly directly.
-- The **CUDA backend**, which generates **CUDA C** source at runtime,
-  compiles it with **NVRTC** to PTX, and executes it through the same
-  CUDA Driver API.
-
-Both backends share the same prerequisites (NVIDIA driver + CUDA Toolkit),
-described below. The CUDA C backend is documented in its own section further
+The prerequisites (NVIDIA driver + CUDA Toolkit) are described below. The
+internal design of the CUDA backend is documented in its own section further
 down this page.
 
 Prerequisites
 ----------------------------------------------
 
-In order to use the PTX or the CUDA backend of TornadoVM, you will need a CUDA compatible device (NVIDIA GPUs with CUDA support).
+In order to use the CUDA backend of TornadoVM, you will need a CUDA compatible device (NVIDIA GPUs with CUDA support).
 
 Driver Installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -80,16 +76,16 @@ TornadoVM Installation
 
 | **Step 3:**
 | Install TornadoVM as described here: :ref:`installation`.
-| Build TornadoVM with the ``PTX`` backend selected and run ``tornado --devices``.
+| Build TornadoVM with the ``CUDA`` backend selected and run ``tornado --devices``.
 
-The output of the TornadoVM build containing both backends (PTX and OpenCL) should look like this:
+The output of the TornadoVM build containing both backends (CUDA and OpenCL) should look like this:
 
 .. code:: bash
 
       Number of Tornado drivers: 2
       Total number of devices  : 1
       Tornado device=0:0
-       CUDA-PTX -- GeForce GTX 1650
+       NVIDIA CUDA -- GeForce GTX 1650
            Global Memory Size: 3.8 GB
            Local Memory Size: 48.0 KB
            Workgroup Dimensions: 3
@@ -113,7 +109,7 @@ The output of the TornadoVM build containing both backends (PTX and OpenCL) shou
            Max WorkGroup Configuration: [256, 256, 256]
            Device OpenCL C version: OpenCL C 2.0
 
-Note that the first Tornado driver will always correspond to the CUDA device detected by the PTX backend.
+Note that the first Tornado driver will always correspond to the CUDA device detected by the CUDA backend.
 
 Addressing Possible issues
 ----------------------------------------------
@@ -136,10 +132,10 @@ On Ubuntu, the driver can also fail to load if it is not selected in ``prime-sel
 After these changes, a reboot might be required for the driver module to
 be loaded.
 
-Testing the PTX Backend of TornadoVM
+Testing the CUDA Backend of TornadoVM
 ----------------------------------------------
 
-We have tested the PTX backend of TornadoVM on the following configurations:
+We have tested the CUDA backend of TornadoVM on the following configurations:
 
 +----------+----------+----------+---------+----------+----------+----------+
 || GPU     || Arch    || PTX ISA || Target || Driver  || CUDA    || Status  |
@@ -165,7 +161,7 @@ We have tested the PTX backend of TornadoVM on the following configurations:
 
 **DISCLAIMER:**
 
-The PTX backend might fail with the ``Quadro GP100``, driver ``384.111``, with segmentation faults for some of the unit test due to driver issues.
+The CUDA backend might fail with the ``Quadro GP100``, driver ``384.111``, with segmentation faults for some of the unit test due to driver issues.
 
 
 .. _cuda_c_backend:
@@ -180,9 +176,7 @@ The **CUDA backend** is a new backend that generates **CUDA C** source at
 runtime, compiles it with **NVRTC** to PTX, and executes it through the
 **CUDA Driver API** (``cuModuleLoadDataEx`` / ``cuLaunchKernel``).
 
-It complements the existing PTX backend (which emits PTX assembly directly):
-both share the same NVIDIA Driver-API execution path, but the CUDA backend
-uses an OpenCL-C-style source-generation front end that emits textual CUDA C
+It uses an OpenCL-C-style source-generation front end that emits textual CUDA C
 (``extern "C" __global__ void ...``, ``blockIdx.x * blockDim.x + threadIdx.x``
 for the global thread id, ``__shared__`` for local memory, and
 ``__syncthreads()`` for barriers).
@@ -302,9 +296,7 @@ In progress / pending
 - **Two-stage local reductions**.
 - **CUDA Graph API** support (``withCUDAGraph``).
 
-Not applicable (PTX/other-backend specific)
+Not applicable (other-backend specific)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- Swizzled local arrays (PTX-only).
-- DP4A quantization (PTX-only).
 - Prebuilt SPIR-V / OpenCL binary tests.

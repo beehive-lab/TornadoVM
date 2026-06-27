@@ -21,7 +21,6 @@ public enum TornadoVMBackendType {
 
     OPENCL("OpenCL"), //
     METAL("Metal"), //
-    PTX("PTX"), //
     CUDA("CUDA"), //
     SPIRV("SPIRV"), //
     JAVA("Java"), //

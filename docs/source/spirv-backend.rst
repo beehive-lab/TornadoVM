@@ -27,7 +27,7 @@ To build the SPIR-V Backend, enable the backend as follows:
    $ Select the backend(s) to install:
    $   1. opencl
    $   2. spirv
-   $   3. ptx
+   $   3. cuda
    $ You can select more than one by typing the numbers separated by commas (e.g., 1, 2, 3).
    $ Your selection: 2
    $ . setvars.sh

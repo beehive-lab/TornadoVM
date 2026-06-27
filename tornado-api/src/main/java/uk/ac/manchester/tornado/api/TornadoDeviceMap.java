@@ -98,7 +98,7 @@ public class TornadoDeviceMap {
      * The device objects could be from different backends. For example, if we have multiple backends installed, and we
      * request a device name with "NVIDIA" in it. In this case, this function can return a stream with multiple devices
      * from different backends pointing to the same device (e.g., an NVIDIA GPU using the OpenCL backend, and an NVIDIA
-     * GPU using the PTX backend).
+     * GPU using the CUDA backend).
      *
      * @param deviceName
      *     Name of the device.
@@ -143,7 +143,7 @@ public class TornadoDeviceMap {
     /**
      * Obtain a device object from a specific type (GPU, Accelerator, CPU). This function returns a Stream of all devices that meet the criteria.
      * The device objects could be from different backends. For example, if we have multiple backends installed, and we request any GPU device,
-     * this function will return all GPU devices (GPU-OpenCL, GPU-SPIR-V, GPU-PTX), even if they point to the exact same device.
+     * this function will return all GPU devices (GPU-OpenCL, GPU-SPIR-V, GPU-CUDA), even if they point to the exact same device.
      * 
      * @param deviceType
      *     {@link TornadoDeviceType}
