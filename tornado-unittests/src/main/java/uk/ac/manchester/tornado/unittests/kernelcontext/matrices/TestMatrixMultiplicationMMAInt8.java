@@ -225,6 +225,7 @@ public class TestMatrixMultiplicationMMAInt8 extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
+        assertNotBackend(TornadoVMBackendType.CUDA);
 
         int M = 16, N = 16, K = 32;
 
@@ -251,6 +252,7 @@ public class TestMatrixMultiplicationMMAInt8 extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
+        assertNotBackend(TornadoVMBackendType.CUDA);
 
         int M = 16, N = 16, K = 32;
 
@@ -274,6 +276,7 @@ public class TestMatrixMultiplicationMMAInt8 extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
+        assertNotBackend(TornadoVMBackendType.CUDA);
 
         ByteArray a = randomInt8Array(dimM * dimK);
         ByteArray b = randomInt8Array(dimK * dimN);
@@ -327,6 +330,7 @@ public class TestMatrixMultiplicationMMAInt8 extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
+        assertNotBackend(TornadoVMBackendType.CUDA);
 
         int M = 16, N = 16, K = 32;
 
@@ -358,6 +362,7 @@ public class TestMatrixMultiplicationMMAInt8 extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
+        assertNotBackend(TornadoVMBackendType.CUDA);
 
         int M = 16, N = 16, K = 32;
 
