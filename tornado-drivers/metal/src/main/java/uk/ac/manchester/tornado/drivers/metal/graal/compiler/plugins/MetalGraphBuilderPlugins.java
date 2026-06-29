@@ -436,6 +436,7 @@ public class MetalGraphBuilderPlugins {
         r.register(new InvocationPlugin("simdgroupMatrixZero", Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                receiver.get(true);
                 b.addPush(JavaKind.Object, new MetalSimdgroupMatrixZeroNode());
                 return true;
             }
@@ -443,6 +444,7 @@ public class MetalGraphBuilderPlugins {
         r.register(new InvocationPlugin("simdgroupMatrixLoad", Receiver.class, FloatArray.class, int.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode base, ValueNode stride) {
+                receiver.get(true);
                 b.addPush(JavaKind.Object, new MetalSimdgroupMatrixLoadNode(array, base, stride));
                 return true;
             }
@@ -450,6 +452,7 @@ public class MetalGraphBuilderPlugins {
         r.register(new InvocationPlugin("simdgroupMatrixLoad", Receiver.class, float[].class, int.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode base, ValueNode stride) {
+                receiver.get(true);
                 b.addPush(JavaKind.Object, new MetalSimdgroupMatrixLoadNode(array, base, stride));
                 return true;
             }
@@ -457,6 +460,7 @@ public class MetalGraphBuilderPlugins {
         r.register(new InvocationPlugin("simdgroupMatrixMultiplyAccumulate", Receiver.class, Matrix8x8Float.class, Matrix8x8Float.class, Matrix8x8Float.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode bMat, ValueNode c) {
+                receiver.get(true);
                 b.addPush(JavaKind.Object, new MetalSimdgroupMatrixMmaNode(a, bMat, c));
                 return true;
             }
@@ -464,6 +468,7 @@ public class MetalGraphBuilderPlugins {
         r.register(new InvocationPlugin("simdgroupMatrixStore", Receiver.class, Matrix8x8Float.class, FloatArray.class, int.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode matrix, ValueNode array, ValueNode base, ValueNode stride) {
+                receiver.get(true);
                 b.add(new MetalSimdgroupMatrixStoreNode(matrix, array, base, stride));
                 return true;
             }
