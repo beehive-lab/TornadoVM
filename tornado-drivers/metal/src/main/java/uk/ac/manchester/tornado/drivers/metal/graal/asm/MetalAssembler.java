@@ -48,6 +48,7 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.metal.MetalTargetDescription;
+import uk.ac.manchester.tornado.drivers.metal.graal.backend.MetalPreamble;
 import uk.ac.manchester.tornado.drivers.metal.graal.compiler.MetalCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalKind;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalLIROp;
@@ -411,6 +412,25 @@ public final class MetalAssembler extends Assembler {
         String s = new String(codeCopy);
         str += s;
         emitString(str, 0);
+    }
+
+    /**
+     * Scans the already-generated kernel source and prepends only the MSL
+     * preamble sections it actually references. Must be called after the kernel
+     * body has been fully emitted (so the scan sees every helper reference).
+     */
+    public void prependMinimalPreamble() {
+        int size = position();
+        byte[] body = copy(0, size);
+        String preamble = MetalPreamble.buildFor(new String(body));
+        // Rebuild the buffer from scratch: emitString(s, pos) writes in place without
+        // advancing position(), so it cannot grow the buffer. Reset and re-append the
+        // preamble followed by the original body through the position-advancing path.
+        reset();
+        emitSubString(preamble);
+        for (byte b : body) {
+            emitByte(b);
+        }
     }
 
     public void emit(String fmt, Object... args) {

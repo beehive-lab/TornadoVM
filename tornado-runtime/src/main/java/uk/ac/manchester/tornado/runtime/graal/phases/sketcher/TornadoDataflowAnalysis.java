@@ -62,6 +62,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelStrideNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkArrayParameterAccess;
 import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkVectorStore;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
 
@@ -168,6 +169,11 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.opencl.graal.nodes.DecAtomicNode") || //
                 currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomAddNodeTemplate") || //
                 currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.ptx.graal.nodes.AtomAddNodeTemplate") || //
+                currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.cuda.graal.nodes.IncAtomicNode") || //
+                currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.cuda.graal.nodes.DecAtomicNode") || //
+                currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GetAtomicNode") || //
+                currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.cuda.graal.nodes.AtomAddNodeTemplate") || //
+                currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.cuda.graal.nodes.AtomicAddNodeTemplate") || //
                 currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.metal.graal.nodes.IncAtomicNode") || //
                 currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.metal.graal.nodes.DecAtomicNode") || //
                 currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.metal.graal.nodes.GetAtomicNode") || //
@@ -230,6 +236,16 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 isReadField = true;
             } else if (currentNode instanceof MarkVectorStore) {
                 isWritten = true;
+            } else if (currentNode instanceof MarkArrayParameterAccess arrayAccessNode) {
+                // Intrinsic nodes (e.g. Metal simdgroup_matrix) consume array params directly
+                // and declare per-operand access themselves.
+                Access declared = arrayAccessNode.getArrayParameterAccess((ValueNode) parameter);
+                if (declared == Access.READ_ONLY || declared == Access.READ_WRITE) {
+                    isRead = true;
+                }
+                if (declared == Access.WRITE_ONLY || declared == Access.READ_WRITE) {
+                    isWritten = true;
+                }
             } else if (isNodeFromKnownObject(currentNode)) {
                 // All known objects are passed by reference -> R/W (e.g., Atomics)
                 isRead = true;

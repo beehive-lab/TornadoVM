@@ -31,3 +31,4 @@ tornado.iml
 tornado_unittests.log
 OpenCL-Headers/
 tornado-assembly/src/etc/tornado.backend
+hs_err_pid*.log

@@ -83,12 +83,23 @@ public abstract class TornadoTestBase {
     }
 
     public void assertNotBackend(TornadoVMBackendType backend, String customBackendAssertionMessage) {
-        if (getTornadoRuntime().getDefaultDevice().getTornadoVMBackend() == backend) {
+        TornadoDevice defaultDevice = getTornadoRuntime().getDefaultDevice();
+        TornadoVMBackendType deviceBackend = defaultDevice.getTornadoVMBackend();
+        // In virtual-device mode the device reports VIRTUAL regardless of the
+        // backend that actually generates the code. Resolve it to the underlying
+        // backend so guards such as assertNotBackend(CUDA) still take effect (the
+        // pre-compiled reference kernels used by the virtual-device tests are
+        // OpenCL-only).
+        if (deviceBackend == TornadoVMBackendType.VIRTUAL) {
+            deviceBackend = getTornadoRuntime().getBackend(defaultDevice.getBackendIndex()).getBackendType();
+        }
+        if (deviceBackend == backend) {
             switch (backend) {
                 case PTX -> throw new TornadoVMPTXNotSupported(customBackendAssertionMessage != null ? customBackendAssertionMessage : "Test not supported for the PTX backend");
                 case OPENCL -> throw new TornadoVMOpenCLNotSupported(customBackendAssertionMessage != null ? customBackendAssertionMessage : "Test not supported for the OpenCL backend");
                 case SPIRV -> throw new TornadoVMSPIRVNotSupported(customBackendAssertionMessage != null ? customBackendAssertionMessage : "Test not supported for the SPIR-V backend");
                 case METAL -> throw new TornadoVMMetalNotSupported(customBackendAssertionMessage != null ? customBackendAssertionMessage : "Test not supported for the Metal backend");
+                case CUDA -> throw new TornadoVMCUDANotSupported(customBackendAssertionMessage != null ? customBackendAssertionMessage : "Test not supported for the CUDA backend");
                 default -> throw new IllegalStateException("Unexpected value for backend: " + backend);
             }
         }
