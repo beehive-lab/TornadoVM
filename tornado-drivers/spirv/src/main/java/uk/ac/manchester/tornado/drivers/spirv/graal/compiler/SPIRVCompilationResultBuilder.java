@@ -35,7 +35,7 @@ import org.graalvm.collections.EconomicMap;
 import org.graalvm.collections.Equivalence;
 import jdk.graal.compiler.asm.Assembler;
 import jdk.graal.compiler.code.CompilationResult;
-import jdk.graal.compiler.core.common.spi.CoreProviders;
+import jdk.graal.compiler.nodes.spi.CoreProviders;
 import jdk.graal.compiler.debug.DebugContext;
 import jdk.graal.compiler.lir.LIR;
 import jdk.graal.compiler.lir.LIRInstruction;
