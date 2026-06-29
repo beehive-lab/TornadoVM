@@ -31,8 +31,8 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.stream.IntStream;
 
-import jdk.graal.collections.EconomicMap;
-import jdk.graal.collections.Equivalence;
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.collections.Equivalence;
 import jdk.graal.compiler.asm.Assembler;
 import jdk.graal.compiler.code.CompilationResult;
 import jdk.graal.compiler.core.common.spi.CodeGenProviders;
