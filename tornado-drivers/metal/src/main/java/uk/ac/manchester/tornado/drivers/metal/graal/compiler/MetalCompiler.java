@@ -354,6 +354,7 @@ public class MetalCompiler {
             kernelCompResult.addCompiledMethodCode(compResult.getTargetCode());
         }
 
+        kernelCompResult.finalizePreamble();
         return kernelCompResult;
     }
 
@@ -431,6 +432,8 @@ public class MetalCompiler {
 
             kernelCompResult.addCompiledMethodCode(compResult.getTargetCode());
         }
+
+        kernelCompResult.finalizePreamble();
 
         if (DUMP_COMPILED_METHODS) {
             final Path outDir = Paths.get("./metal-compiled-methods");

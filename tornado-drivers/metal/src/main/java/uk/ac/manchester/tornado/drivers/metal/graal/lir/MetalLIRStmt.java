@@ -1451,4 +1451,160 @@ public class MetalLIRStmt {
             asm.eol();
         }
     }
+
+    /** FloatArray header in float elements (TornadoNativeArray.ARRAY_HEADER = 16 bytes). */
+    private static final int SIMDGROUP_FLOAT_HEADER = 4;
+
+    /** {@code <result> = make_filled_simdgroup_matrix<float,8,8>(0.0f);} */
+    @Opcode("SIMDGROUP_MATRIX_ZERO")
+    public static class SimdgroupMatrixZeroStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<SimdgroupMatrixZeroStmt> TYPE = LIRInstructionClass.create(SimdgroupMatrixZeroStmt.class);
+
+        @Def
+        protected AllocatableValue result;
+
+        public SimdgroupMatrixZeroStmt(AllocatableValue result) {
+            super(TYPE);
+            this.result = result;
+        }
+
+        @Override
+        public void emitCode(MetalCompilationResultBuilder crb, MetalAssembler asm) {
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.emit(" = make_filled_simdgroup_matrix<float, 8, 8>(0.0f);");
+            asm.eol();
+        }
+    }
+
+    /** {@code simdgroup_load(<result>, (const device float*)((device float*)<array> + 4 + <base>), (ulong)<stride>);} */
+    @Opcode("SIMDGROUP_MATRIX_LOAD")
+    public static class SimdgroupMatrixLoadStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<SimdgroupMatrixLoadStmt> TYPE = LIRInstructionClass.create(SimdgroupMatrixLoadStmt.class);
+
+        @Def
+        protected AllocatableValue result;
+        @Use
+        protected Value array;
+        @Use
+        protected Value base;
+        @Use
+        protected Value stride;
+        private final boolean local;
+
+        public SimdgroupMatrixLoadStmt(AllocatableValue result, Value array, Value base, Value stride, boolean local) {
+            super(TYPE);
+            this.result = result;
+            this.array = array;
+            this.base = base;
+            this.stride = stride;
+            this.local = local;
+        }
+
+        @Override
+        public void emitCode(MetalCompilationResultBuilder crb, MetalAssembler asm) {
+            asm.indent();
+            asm.emit("simdgroup_load(");
+            asm.emitValue(crb, result);
+            asm.emit(", ");
+            if (local) {
+                // Threadgroup array: no header, no device cast; the array decays to a pointer.
+                asm.emit("(const threadgroup float*)(");
+                asm.emitValue(crb, array);
+                asm.emit(" + ");
+                asm.emitValue(crb, base);
+                asm.emit(")");
+            } else {
+                asm.emit("(const device float*)((device float*)");
+                asm.emitValue(crb, array);
+                asm.emit(" + " + SIMDGROUP_FLOAT_HEADER + " + ");
+                asm.emitValue(crb, base);
+                asm.emit(")");
+            }
+            asm.emit(", (ulong)");
+            asm.emitValue(crb, stride);
+            asm.emit(");");
+            asm.eol();
+        }
+    }
+
+    /** {@code simdgroup_multiply_accumulate(<result>, <a>, <b>, <c>);} */
+    @Opcode("SIMDGROUP_MATRIX_MMA")
+    public static class SimdgroupMatrixMmaStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<SimdgroupMatrixMmaStmt> TYPE = LIRInstructionClass.create(SimdgroupMatrixMmaStmt.class);
+
+        @Def
+        protected AllocatableValue result;
+        @Use
+        protected Value a;
+        @Use
+        protected Value b;
+        @Use
+        protected Value c;
+
+        public SimdgroupMatrixMmaStmt(AllocatableValue result, Value a, Value b, Value c) {
+            super(TYPE);
+            this.result = result;
+            this.a = a;
+            this.b = b;
+            this.c = c;
+        }
+
+        @Override
+        public void emitCode(MetalCompilationResultBuilder crb, MetalAssembler asm) {
+            asm.indent();
+            asm.emit("simdgroup_multiply_accumulate(");
+            asm.emitValue(crb, result);
+            asm.emit(", ");
+            asm.emitValue(crb, a);
+            asm.emit(", ");
+            asm.emitValue(crb, b);
+            asm.emit(", ");
+            asm.emitValue(crb, c);
+            asm.emit(");");
+            asm.eol();
+        }
+    }
+
+    /** {@code simdgroup_store(<m>, (device float*)((device float*)<array> + 4 + <base>), (ulong)<stride>);} */
+    @Opcode("SIMDGROUP_MATRIX_STORE")
+    public static class SimdgroupMatrixStoreStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<SimdgroupMatrixStoreStmt> TYPE = LIRInstructionClass.create(SimdgroupMatrixStoreStmt.class);
+
+        @Use
+        protected Value m;
+        @Use
+        protected Value array;
+        @Use
+        protected Value base;
+        @Use
+        protected Value stride;
+
+        public SimdgroupMatrixStoreStmt(Value m, Value array, Value base, Value stride) {
+            super(TYPE);
+            this.m = m;
+            this.array = array;
+            this.base = base;
+            this.stride = stride;
+        }
+
+        @Override
+        public void emitCode(MetalCompilationResultBuilder crb, MetalAssembler asm) {
+            asm.indent();
+            asm.emit("simdgroup_store(");
+            asm.emitValue(crb, m);
+            asm.emit(", (device float*)((device float*)");
+            asm.emitValue(crb, array);
+            asm.emit(" + " + SIMDGROUP_FLOAT_HEADER + " + ");
+            asm.emitValue(crb, base);
+            asm.emit("), (ulong)");
+            asm.emitValue(crb, stride);
+            asm.emit(");");
+            asm.eol();
+        }
+    }
 }

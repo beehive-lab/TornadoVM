@@ -73,7 +73,12 @@ public class MetalContext implements MetalContextInterface {
 
     native void metalReleaseMemObject(long memId) throws MetalException;
 
-    native long metalCreateProgramWithSource(long contextId, byte[] data, long[] lengths) throws MetalException;
+    /**
+     * @param compileFlags
+     *     bitmask of MSL compile options forwarded to {@code MTLCompileOptions}.
+     *     Bit 0 ({@link #METAL_COMPILE_FAST_MATH}) enables fast/relaxed math.
+     */
+    native long metalCreateProgramWithSource(long contextId, byte[] data, long[] lengths, int compileFlags) throws MetalException;
 
     native long metalCreateProgramWithBinary(long contextId, long deviceId, byte[] data, long[] lengths) throws MetalException;
 
@@ -128,11 +133,15 @@ public class MetalContext implements MetalContextInterface {
         createCommandQueue(index, properties);
     }
 
+    /** Bit 0: compile MSL with fast/relaxed math (MTLMathModeFast). Mirrored in objc_metal_jni.mm. */
+    private static final int METAL_COMPILE_FAST_MATH = 1;
+
     public MetalProgram createProgramWithSource(byte[] source, long[] lengths, MetalDeviceContext deviceContext) {
         MetalProgram program = null;
 
+        int compileFlags = TornadoOptions.METAL_FAST_MATH ? METAL_COMPILE_FAST_MATH : 0;
         try {
-            program = new MetalProgram(metalCreateProgramWithSource(contextID, source, lengths), deviceContext);
+            program = new MetalProgram(metalCreateProgramWithSource(contextID, source, lengths, compileFlags), deviceContext);
         } catch (MetalException e) {
             logger.error(e.getMessage());
         }
