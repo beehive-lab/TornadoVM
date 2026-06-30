@@ -580,7 +580,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 if (localState.isOnDevice()) {
                     Object consumedObject = localState.getObject();
                     objectsToSync.add(consumedObject);
-                    executionContext.addPersistedObject(this.taskGraphName, consumedObject);
+                    executionContext.addPersistedObject(graphSrc.taskGraphName, consumedObject);
                 }
             }
         }
