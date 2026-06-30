@@ -26,9 +26,11 @@ worktrees, builds the relevant SDKs in each worktree, collects the archives,
 and cleans up — without touching the current working branch.
 
 SDKs built per platform:
-  - macOS   : opencl, metal  (JDK 21 and JDK 25, via sdkman Temurin)
-  - Linux   : opencl, ptx, spirv, full  (JDK 21 and JDK 25, via sdkman Temurin)
-  - Windows : opencl, ptx, spirv, full  (JDK 21 and JDK 25, --jdkXX-home required)
+  - macOS   : opencl, metal                    (JDK 21 and JDK 25, via sdkman Temurin)
+  - Linux   : opencl, ptx, spirv, cuda, full   (JDK 21 and JDK 25, via sdkman Temurin)
+  - Windows : opencl, ptx, spirv, cuda, full   (JDK 21 and JDK 25, --jdkXX-home required)
+
+"full" means opencl+ptx+spirv+cuda combined into a single archive.
 
 Usage:
   python3 scripts/build-release-sdks.py --version v4.0.0
@@ -180,7 +182,7 @@ def resolve_jdk_home(major_version, override):
 # Backends to build per platform.  Each entry becomes BACKEND=<value> in make.
 # On macOS/Linux the Makefile target is:  make sdk BACKEND=<value>
 # On Windows it is:  nmake /f Makefile.mak sdk BACKEND=<value>
-# opencl+ptx+spirv is labelled "full" automatically by bin/compile.
+# opencl+ptx+spirv+cuda is labelled "full" automatically by bin/compile.
 BUILDS = {
     "macos": [
         "opencl",
@@ -190,13 +192,15 @@ BUILDS = {
         "opencl",
         "ptx",
         "spirv",
-        "opencl,ptx,spirv",
+        "cuda",
+        "opencl,ptx,spirv,cuda",
     ],
     "windows": [
         "opencl",
         "ptx",
         "spirv",
-        "opencl,ptx,spirv",
+        "cuda",
+        "opencl,ptx,spirv,cuda",
     ],
 }
 
@@ -712,8 +716,8 @@ def main():
                 patch_worktree_skip_executables(worktree_path)
 
             for backends in backends_for_platform:
-                # Label mirrors bin/compile naming: opencl,ptx,spirv → full
-                if set(backends.split(",")) == {"opencl", "ptx", "spirv"}:
+                # Label mirrors bin/compile naming: opencl,ptx,spirv,cuda → full
+                if set(backends.split(",")) == {"opencl", "ptx", "spirv", "cuda"}:
                     backend_label = "full"
                 else:
                     backend_label = backends
