@@ -22,6 +22,7 @@ import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Float;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -252,6 +253,116 @@ public class KernelContext implements ExecutionContext {
      */
     public float simdBroadcastFirst(float val) {
         return val;
+    }
+
+    /**
+     * Cooperative 8x8 single-precision matrix multiply for one SIMD group, using
+     * Apple's {@code simdgroup_float8x8} hardware matrix units (MMA).
+     * <p>
+     * Computes the 8x8 output tile {@code C = A x B}, contracting over {@code k}
+     * (a multiple of 8). All three matrices are row-major; {@code aBase}/{@code bBase}/
+     * {@code cBase} are element offsets (not bytes) to each tile origin and
+     * {@code lda}/{@code ldb}/{@code ldc} are the row strides in elements.
+     * <p>
+     * Must be called convergently by all 32 lanes of the SIMD group (i.e. local
+     * work size 32, mapping one SIMD group per output tile). The accumulator is
+     * kept in registers across the whole {@code k} loop.
+     * <p>
+     * Metal equivalent: {@code simdgroup_load} / {@code simdgroup_multiply_accumulate}
+     * / {@code simdgroup_store} on {@code simdgroup_float8x8} fragments.
+     */
+    public void matrixMultiply8x8(FloatArray a, int aBase, int lda, FloatArray b, int bBase, int ldb, FloatArray c, int cBase, int ldc, int k) {
+        // Written over the simdgroup-matrix primitives: on the JVM each call runs its
+        // sequential fallback; on a matrix-unit backend each is replaced by a hardware
+        // instruction and the loop/index math is compiled normally.
+        Matrix8x8Float acc = simdgroupMatrixZero();
+        for (int p = 0; p < k; p += 8) {
+            Matrix8x8Float af = simdgroupMatrixLoad(a, aBase + p, lda);
+            Matrix8x8Float bf = simdgroupMatrixLoad(b, bBase + p * ldb, ldb);
+            acc = simdgroupMatrixMultiplyAccumulate(af, bf, acc);
+        }
+        simdgroupMatrixStore(acc, c, cBase, ldc);
+    }
+
+    // ------------------------------------------------------------------------
+    // SIMD-group matrix (MMA) primitives.
+    //
+    // These are the irreducible building blocks of a matrix-unit GEMM: zero a
+    // fragment, load an 8x8 fragment from memory, multiply-accumulate two
+    // fragments, and store a fragment back. The surrounding tiling/loop/staging
+    // is ordinary Java that the backend compiles normally; only these calls are
+    // replaced by hardware instructions (Apple Metal simdgroup_float8x8). The
+    // bodies below are the sequential semantics used when a kernel runs on the JVM.
+    // ------------------------------------------------------------------------
+
+    /**
+     * Returns a zeroed 8x8 single-precision matrix fragment.
+     * <p>Metal equivalent: {@code make_filled_simdgroup_matrix<float,8,8>(0.0f)}.
+     */
+    public Matrix8x8Float simdgroupMatrixZero() {
+        return new Matrix8x8Float();
+    }
+
+    /**
+     * Loads an 8x8 row-major fragment from device memory starting at element
+     * {@code base}, with {@code stride} elements between rows.
+     * <p>Metal equivalent: {@code simdgroup_load}.
+     */
+    public Matrix8x8Float simdgroupMatrixLoad(FloatArray a, int base, int stride) {
+        Matrix8x8Float m = new Matrix8x8Float();
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                m.values[i * 8 + j] = a.get(base + i * stride + j);
+            }
+        }
+        return m;
+    }
+
+    /**
+     * Loads an 8x8 row-major fragment from a local (threadgroup) array starting at
+     * element {@code base}, with {@code stride} elements between rows.
+     * <p>Metal equivalent: {@code simdgroup_load} from {@code threadgroup} memory.
+     */
+    public Matrix8x8Float simdgroupMatrixLoad(float[] a, int base, int stride) {
+        Matrix8x8Float m = new Matrix8x8Float();
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                m.values[i * 8 + j] = a[base + i * stride + j];
+            }
+        }
+        return m;
+    }
+
+    /**
+     * Returns {@code a * b + c} for 8x8 fragments (one hardware matrix multiply,
+     * the accumulator stays in registers).
+     * <p>Metal equivalent: {@code simdgroup_multiply_accumulate}.
+     */
+    public Matrix8x8Float simdgroupMatrixMultiplyAccumulate(Matrix8x8Float a, Matrix8x8Float b, Matrix8x8Float c) {
+        Matrix8x8Float d = new Matrix8x8Float();
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                float acc = c.values[i * 8 + j];
+                for (int p = 0; p < 8; p++) {
+                    acc += a.values[i * 8 + p] * b.values[p * 8 + j];
+                }
+                d.values[i * 8 + j] = acc;
+            }
+        }
+        return d;
+    }
+
+    /**
+     * Stores an 8x8 row-major fragment to device memory starting at element
+     * {@code base}, with {@code stride} elements between rows.
+     * <p>Metal equivalent: {@code simdgroup_store}.
+     */
+    public void simdgroupMatrixStore(Matrix8x8Float m, FloatArray c, int base, int stride) {
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                c.set(base + i * stride + j, m.values[i * 8 + j]);
+            }
+        }
     }
 
     /**

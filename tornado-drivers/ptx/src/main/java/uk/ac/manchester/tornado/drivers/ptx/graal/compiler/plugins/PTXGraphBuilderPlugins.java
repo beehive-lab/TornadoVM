@@ -61,6 +61,7 @@ import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Float;
 import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
@@ -94,6 +95,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import java.util.function.Supplier;
 
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.ATAN2;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.FMAX;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.FMIN;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.POW;
@@ -444,6 +446,57 @@ public class PTXGraphBuilderPlugins {
         registerAtomicAddOperation(r);
         registerSIMDPlugins(r);
         registerSwizzledLocalAccessesPlugins(r);
+        registerUnsupportedSimdgroupMatrixPlugins(r);
+    }
+
+    /**
+     * The {@code simdgroup_float8x8} matrix-unit intrinsics ({@link uk.ac.manchester.tornado.api.KernelContext}
+     * {@code simdgroupMatrix*}) are Metal-only. They cannot be intrinsified on this backend, so reject them at
+     * graph-build time with a clear message instead of failing later when the JVM-fallback object allocations
+     * are lowered.
+     */
+    private static void registerUnsupportedSimdgroupMatrixPlugins(Registration r) {
+        final String message = "simdgroup_float8x8 matrix operations (KernelContext.simdgroupMatrix*) are only supported on the Metal backend.";
+        r.register(new InvocationPlugin("simdgroupMatrixZero", Receiver.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        r.register(new InvocationPlugin("simdgroupMatrixLoad", Receiver.class, FloatArray.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode base, ValueNode stride) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        r.register(new InvocationPlugin("simdgroupMatrixLoad", Receiver.class, float[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode base, ValueNode stride) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        r.register(new InvocationPlugin("simdgroupMatrixMultiplyAccumulate", Receiver.class, Matrix8x8Float.class, Matrix8x8Float.class, Matrix8x8Float.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode bMat, ValueNode c) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        r.register(new InvocationPlugin("simdgroupMatrixStore", Receiver.class, Matrix8x8Float.class, FloatArray.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode matrix, ValueNode array, ValueNode base, ValueNode stride) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
     }
 
     private static void registerSwizzledLocalAccessesPlugins(Registration r) {
@@ -483,19 +536,22 @@ public class PTXGraphBuilderPlugins {
             }
         });
 
-        r.register(new InvocationPlugin("swizzleLoadInt8", InvocationPlugin.Receiver.class, byte[].class, int.class, int.class, int.class) {
+        r.register(new InvocationPlugin("swizzleLoadInt8", InvocationPlugin.Receiver.class,
+                byte[].class, int.class, int.class, int.class) {
             @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver,
+                                 ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride) {
                 receiver.get(true);
                 b.addPush(JavaKind.Byte, new SwizzledLoadInt8Node(local_array, row, column, stride));
                 return true;
             }
         });
 
-        // STORE int8 — returns void → add
-        r.register(new InvocationPlugin("swizzleStoreInt8", InvocationPlugin.Receiver.class, byte[].class, int.class, int.class, int.class, byte.class) {
+        r.register(new InvocationPlugin("swizzleStoreInt8", InvocationPlugin.Receiver.class,
+                byte[].class, int.class, int.class, int.class, byte.class) {
             @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode value) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver,
+                                 ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode value) {
                 receiver.get(true);
                 b.add(new SwizzledStoreInt8Node(local_array, row, column, stride, value));
                 return true;

@@ -98,7 +98,7 @@ public class MetalStamp extends ObjectStamp {
                 default:
                     return JavaKind.Illegal;
             }
-        } else if (metalKind.isVector()) {
+        } else if (metalKind.isVector() || metalKind == MetalKind.SIMDGROUP_FLOAT8X8) {
             return JavaKind.Object;
         }
         return JavaKind.Illegal;
