@@ -1,1 +1,2 @@
 uk.ac.manchester.tornado.cublas.provider.CuBlasLibraryProvider
+uk.ac.manchester.tornado.cublas.provider.CuBlasLtLibraryProvider

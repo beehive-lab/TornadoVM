@@ -26,8 +26,12 @@ gates it. Status: `[x]` done / `[~]` in progress / `[ ]` planned / `[-]` not pla
 - [x] C1/C2 GemmEx FP16 in / FP16 or FP32 out, FP32 Tensor Core accumulate
       (`TestCuBlasGemmExFP16`): 160.6 TFLOP/s at 4096, 27.4x vs tiled KernelContext
 - [x] D1 `cublasSgemmStridedBatched` (LibraryTask16-18 arities added to tornado-api)
-- [x] G5 JUnit suite in tornado-unittests (`cublas.TestCuBlas`, 10 tests, auto-skip
-      without CUDA backend/libs), registered in `tornado-test`
+- [x] G5 JUnit suite in tornado-unittests (`cublas.TestCuBlas` 11 tests incl. the
+      TestSharedBuffers persist/consume pattern + `cublas.TestCuBlasLt` 5 tests;
+      auto-skip without CUDA backend/libs), registered in `tornado-test`
+- [x] F1-F3 cuBLASLt second provider ("nvidia/cublaslt", plan-based JNI, per-context
+      plan cache + workspace): fused BIAS / GELU_BIAS epilogues, 1.68x fusion speedup
+      at 1024 vs unfused GemmEx+JIT epilogue (`BenchmarkLtFusedMlp`)
 
 ---
 
@@ -156,9 +160,10 @@ transitively loads `libcublasLt`). Exercises everything the SPI reserved:
 
 | # | Feature | Test | Status |
 |---|---|---|---|
-| F1 | `ltMatmul` FP32/FP16 plain (parity with GemmEx, heuristic algo) | `TestCuBlasLtMatmul`: vs sgemm results | [ ] |
-| F2 | Epilogue `BIAS` (fused C = A*B + bias) | `TestCuBlasLtMatmulBias`: vs sgemm + Java bias add | [ ] |
-| F3 | Epilogue `GELU_BIAS` / `RELU_BIAS` | `TestCuBlasLtMatmulGelu`: vs unfused reference (tolerance for tanh-approx GELU); benchmark vs sgemm + separate JIT activation task — the headline fusion number | [ ] |
+| F1 | `ltMatmul` FP32/FP16 plain (heuristic algo, plan cache per shape in context, 32 MiB workspace) | `TestCuBlasLt#testLtMatmulFP32/FP16` + `#testLtPlanCacheReuse` | [x] |
+| F2 | Epilogue `BIAS` (fused C = A*B + bias) | `TestCuBlasLt#testLtMatmulBiasFP16` | [x] |
+| F3 | Epilogue `GELU_BIAS` (tanh approx) | `TestCuBlasLt#testLtMatmulGeluBiasFP16`; `BenchmarkLtFusedMlp`: 1.68x/1.33x/1.11x fusion speedup at 1024/2048/4096 vs GemmEx+JIT epilogue | [x] |
+| F3b | Epilogue `RELU_BIAS` (enum ready, factory pending) | extend `TestCuBlasLt` | [ ] |
 | F4 | FP8 matmul (needs C5 types) | `TestCuBlasLtFP8` | [ ] |
 
 ## Track G — Robustness / long tail

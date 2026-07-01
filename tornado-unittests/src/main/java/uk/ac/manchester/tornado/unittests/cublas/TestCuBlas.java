@@ -375,6 +375,52 @@ public class TestCuBlas extends TornadoTestBase {
         }
     }
 
+    /**
+     * Shared-buffers pattern (see
+     * {@link uk.ac.manchester.tornado.unittests.api.TestSharedBuffers}): the
+     * first task graph produces the matrix on the device and persists it; the
+     * second graph consumes the persisted device buffer with a cuBLAS library
+     * task — the matrix never returns to the host between the two graphs.
+     */
+    @Test
+    public void testSharedBufferAcrossTaskGraphs() throws TornadoExecutionPlanException {
+        FloatArray matrix = randomArray(SIZE * SIZE);
+        FloatArray vector = randomArray(SIZE);
+        FloatArray output = new FloatArray(SIZE);
+        FloatArray matrixOriginal = new FloatArray(SIZE * SIZE);
+        for (int i = 0; i < SIZE * SIZE; i++) {
+            matrixOriginal.set(i, matrix.get(i));
+        }
+
+        TaskGraph tg1 = new TaskGraph("producer") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrix) //
+                .task("mutate", TestCuBlas::addOne, matrix) //
+                .persistOnDevice(matrix);
+
+        TaskGraph tg2 = new TaskGraph("consumer") //
+                .consumeFromDevice(tg1.getTaskGraphName(), matrix) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, vector) //
+                .libraryTask("sgemv", CuBlas::cublasSgemv, //
+                        CuBlasOperation.CUBLAS_OP_T.operation(), SIZE, SIZE, 1.0f, matrix, SIZE, vector, 1, 0.0f, output, 1) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg1.snapshot(), tg2.snapshot())) {
+            plan.withGraph(0).execute();
+            plan.withGraph(1).execute();
+        }
+
+        // Reference: (matrix + 1) * vector, matrix mutated only on the device
+        FloatArray mutated = new FloatArray(SIZE * SIZE);
+        for (int i = 0; i < SIZE * SIZE; i++) {
+            mutated.set(i, matrixOriginal.get(i) + 1.0f);
+        }
+        FloatArray expected = new FloatArray(SIZE);
+        matrixVectorJava(mutated, vector, expected, SIZE, SIZE);
+        for (int i = 0; i < SIZE; i++) {
+            assertEquals(expected.get(i), output.get(i), 0.01f * Math.max(1.0f, Math.abs(expected.get(i))));
+        }
+    }
+
     @Test
     public void testMixedTasksWithCudaGraph() throws TornadoExecutionPlanException {
         FloatArray matrix = randomArray(SIZE * SIZE);
