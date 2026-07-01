@@ -1,6 +1,7 @@
 open module tornado.unittests {
     requires transitive junit;
     requires transitive tornado.api;
+    requires tornado.cublas;
     requires lucene.core;
     requires java.desktop;
     requires jdk.incubator.vector;
@@ -13,6 +14,7 @@ open module tornado.unittests {
     exports uk.ac.manchester.tornado.unittests.bitsets;
     exports uk.ac.manchester.tornado.unittests.branching;
     exports uk.ac.manchester.tornado.unittests.common;
+    exports uk.ac.manchester.tornado.unittests.cublas;
     exports uk.ac.manchester.tornado.unittests.fields;
     exports uk.ac.manchester.tornado.unittests.flatmap;
     exports uk.ac.manchester.tornado.unittests.functional;

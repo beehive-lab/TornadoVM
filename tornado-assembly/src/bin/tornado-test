@@ -143,6 +143,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestInts"),
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestVectorAllocation"),
     TestEntry("uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTests"),
+    TestEntry("uk.ac.manchester.tornado.unittests.cublas.TestCuBlas"),
     TestEntry("uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestSingleTaskSingleDevice"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksSingleDevice"),

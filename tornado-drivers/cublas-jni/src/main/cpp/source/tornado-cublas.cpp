@@ -158,6 +158,25 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_cublas_provider_CuBlasNativ
 
 /*
  * Class:     uk_ac_manchester_tornado_cublas_provider_CuBlasNativeLib
+ * Method:    cublasSgemmStridedBatched
+ * Signature: (JIIIIIFJIJJIJFJIJI)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_cublas_provider_CuBlasNativeLib_cublasSgemmStridedBatched
+        (JNIEnv *env, jclass clazz, jlong handle, jint transa, jint transb, jint m, jint n, jint k, jfloat alpha,
+         jlong d_a, jint lda, jlong stride_a, jlong d_b, jint ldb, jlong stride_b, jfloat beta, jlong d_c, jint ldc,
+         jlong stride_c, jint batch_count) {
+    float host_alpha = alpha;
+    float host_beta = beta;
+    return (jint) cublasSgemmStridedBatched((cublasHandle_t) handle, (cublasOperation_t) transa, (cublasOperation_t) transb,
+                                            m, n, k,
+                                            &host_alpha, (const float *) d_a, lda, (long long) stride_a,
+                                            (const float *) d_b, ldb, (long long) stride_b,
+                                            &host_beta, (float *) d_c, ldc, (long long) stride_c,
+                                            batch_count);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_cublas_provider_CuBlasNativeLib
  * Method:    cublasGemmEx
  * Signature: (JIIIIIFJIIJIIFJIIII)I
  *

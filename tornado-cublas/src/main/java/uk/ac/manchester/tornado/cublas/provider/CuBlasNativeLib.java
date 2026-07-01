@@ -62,6 +62,9 @@ final class CuBlasNativeLib {
 
     static native int cublasSgemm(long handle, int transa, int transb, int m, int n, int k, float alpha, long dA, int lda, long dB, int ldb, float beta, long dC, int ldc);
 
+    static native int cublasSgemmStridedBatched(long handle, int transa, int transb, int m, int n, int k, float alpha, long dA, int lda, long strideA, long dB, int ldb, long strideB, float beta,
+            long dC, int ldc, long strideC, int batchCount);
+
     /**
      * Generic mixed-precision GEMM ({@code cublasGemmEx}). Scalars are passed as
      * host floats, which is valid for the FP32-family compute types
