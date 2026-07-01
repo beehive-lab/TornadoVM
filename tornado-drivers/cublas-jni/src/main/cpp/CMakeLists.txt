@@ -35,20 +35,23 @@ add_library(tornado-cublas SHARED ${SOURCE_FILES})
 # back to common system locations (same strategy as cuda-jni).
 find_package(CUDAToolkit QUIET)
 
+# Prefer $CUDA_PATH and /usr/local/cuda over the CMake-discovered toolkit so
+# headers and library come from the same toolkit the CUDA backend JIT uses
+# (see the matching note in cuda-jni/src/main/cpp/CMakeLists.txt).
 find_path(CUDA_INCLUDE_DIR cublas_v2.h
     HINTS
-        ${CUDAToolkit_INCLUDE_DIRS}
         $ENV{CUDA_PATH}/include
         /usr/local/cuda/include
+        ${CUDAToolkit_INCLUDE_DIRS}
         /usr/include
         /usr/lib/cuda/include
 )
 
 find_library(CUBLAS_LIB cublas
     HINTS
-        ${CUDAToolkit_LIBRARY_DIR}
         $ENV{CUDA_PATH}/lib64
         /usr/local/cuda/lib64
+        ${CUDAToolkit_LIBRARY_DIR}
         /usr/lib/x86_64-linux-gnu
 )
 
