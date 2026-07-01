@@ -958,9 +958,16 @@ public class TornadoVMInterpreter {
         final int[] waitList = (useDependencies && eventId != -1) ? events[eventId] : null;
         final SchedulableTask task = taskExecutionContexts.get(taskIndex);
 
-        if (task instanceof LibraryTask) {
+        if (task instanceof LibraryTask libraryTask) {
             // Library tasks are dispatched to a native library at launch time;
             // there is nothing to compile and no kernel stack frame is needed.
+            // The native context (e.g., cuBLAS handle + workspace) is created
+            // eagerly here: this method also runs in the pre-compile pass before
+            // CUDA graph capture starts, and native handle creation allocates
+            // device memory, which is illegal inside a capture region.
+            final LibraryTaskDescriptor descriptor = libraryTask.getDescriptor();
+            final TornadoLibraryProvider provider = LibraryRegistry.findProvider(descriptor.getLibraryName(), interpreterDevice);
+            LibraryRegistry.getOrCreateContext(provider, interpreterDevice, graphExecutionContext.getExecutionPlanId());
             if (timeProfiler instanceof TimeProfiler) {
                 timeProfiler.registerBackend(task.getId(), task.getDevice().getTornadoVMBackend().name());
                 timeProfiler.registerDeviceID(task.getId(), task.meta().getBackendIndex() + ":" + task.meta().getDeviceIndex());
@@ -1184,9 +1191,11 @@ public class TornadoVMInterpreter {
             }
         }
 
-        if (useDependencies && waitList != null) {
+        if (useDependencies && waitList != null && !insideCaptureRegion) {
             // Ensure producer events have completed before the library call is
-            // enqueued. Work on the same in-order stream is already ordered.
+            // enqueued. Work on the same in-order stream is already ordered, so
+            // during CUDA graph capture (single in-order stream) this is skipped
+            // - waiting on pre-capture events would invalidate the capture.
             interpreterDevice.enqueueMarker(graphExecutionContext.getExecutionPlanId(), waitList);
         }
 
@@ -1201,9 +1210,11 @@ public class TornadoVMInterpreter {
 
         // The CUDA-C backend does not expose device-event timestamps yet, so the
         // library call is timed on the host, bounded by stream markers so the
-        // measurement covers exactly this call's device work.
+        // measurement covers exactly this call's device work. Disabled while
+        // capturing into a CUDA graph: synchronising invalidates the capture.
+        final boolean profileCall = TornadoOptions.isProfilerEnabled() && !insideCaptureRegion;
         long profilerStartTime = 0;
-        if (TornadoOptions.isProfilerEnabled()) {
+        if (profileCall) {
             int preEvent = interpreterDevice.enqueueMarker(graphExecutionContext.getExecutionPlanId());
             interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), preEvent).waitForEvents(graphExecutionContext.getExecutionPlanId());
             profilerStartTime = System.nanoTime();
@@ -1211,9 +1222,9 @@ public class TornadoVMInterpreter {
 
         provider.dispatch(descriptor.getFunctionName(), new LibraryInvocation(callArgs, devicePointers, isReference, interpreterDevice, graphExecutionContext.getExecutionPlanId(), libraryContext));
 
-        int lastEvent = (useDependencies || TornadoOptions.isProfilerEnabled()) ? interpreterDevice.enqueueMarker(graphExecutionContext.getExecutionPlanId()) : -1;
+        int lastEvent = ((useDependencies && !insideCaptureRegion) || profileCall) ? interpreterDevice.enqueueMarker(graphExecutionContext.getExecutionPlanId()) : -1;
 
-        if (TornadoOptions.isProfilerEnabled()) {
+        if (profileCall) {
             interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), lastEvent).waitForEvents(graphExecutionContext.getExecutionPlanId());
             long elapsed = System.nanoTime() - profilerStartTime;
             timeProfiler.setTaskTimer(ProfilerType.TASK_KERNEL_TIME, task.getId(), elapsed);

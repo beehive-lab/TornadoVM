@@ -62,6 +62,15 @@ and transfers (the provider binds its handle with :code:`cublasSetStream`), so
 ordering with surrounding tasks is automatic and no host synchronization is
 introduced.
 
+Because library calls share the backend stream, they are also **CUDA Graph
+compatible**: with :code:`executionPlan.withCUDAGraph()` the library call is
+recorded into the captured graph together with the surrounding kernels and
+transfers, and replayed with a single :code:`cuGraphLaunch` on subsequent
+executions (see ``TestCuBlasSgemvWithTasksCudaGraph``). Native contexts are
+created in the pre-compilation pass, before capture starts, since handle
+creation allocates device memory; per-call profiler timing is disabled while
+capturing.
+
 Provider SPI
 ------------
 
