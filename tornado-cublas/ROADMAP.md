@@ -18,8 +18,11 @@ gates it. Status: `[x]` done / `[~]` in progress / `[ ]` planned / `[-]` not pla
 - [x] CUDA Graph capture/replay of library tasks (context creation hoisted pre-capture,
       capture-safe dispatch) — `TestCuBlasSgemvWithTasksCudaGraph`
 - [x] Profiler `TASK_KERNEL_TIME` for library calls (host-timed; disabled during capture)
-- [x] Benchmarks: `BenchmarkSgemm` (naive/tiled/cuBLAS: 53 TFLOP/s, 9x vs tiled at 4096),
-      `MatrixVectorRowMajorWithCuBlas` (SGEMV: 578 GB/s, 1.4x vs best hand-written kernel)
+- [x] Benchmarks: `BenchmarkSgemm` (naive/tiled/cuBLAS FP32/TF32: 51 / 82.6 TFLOP/s at 4096,
+      8.8x / 14.2x vs tiled), `MatrixVectorRowMajorWithCuBlas` (SGEMV: 578 GB/s, 1.4x vs
+      best hand-written kernel, 74x vs sequential Java)
+- [x] I1 dispatch registry, I2 `CuBlasOptions` via `withTuning`, I3 workspace
+      (`TestCuBlasWorkspace`), A1 TF32 math mode (`TestCuBlasSgemmTF32`)
 
 ---
 
@@ -40,20 +43,20 @@ core runtime:
 
 Planned infra refactor to keep step 2 from growing into a mega-switch:
 
-- [ ] **I1 — Dispatch registry**: replace the `switch` in `CuBlasLibraryProvider` with a
+- [x] **I1 — Dispatch registry**: replace the `switch` in `CuBlasLibraryProvider` with a
       `Map<String, CuBlasCall>` (`@FunctionalInterface CuBlasCall { int invoke(long handle, LibraryInvocation inv); }`).
       One map entry per function; unknown names keep the clear error message.
       *Test:* existing tests unchanged (pure refactor gate).
-- [ ] **I2 — Per-call options**: add an opaque `withTuning(Object)` field to
+- [x] **I2 — Per-call options**: add an opaque `withTuning(Object)` field to
       `LibraryTaskDescriptor` (tornado-api stays library-agnostic); `tornado-cublas`
       defines a typed `CuBlasOptions` (math mode, compute type, algo, workspace size)
       that factories accept and `dispatch` consumes.
       *Test:* `TestCuBlasSgemmTF32` (below) is the first consumer.
-- [ ] **I3 — Workspace hook**: implement `LibraryInvocation.allocateWorkspace(bytes)`
-      backed by the device `BufferProvider` (reserved in the SPI design); call
-      `cublasSetWorkspace` at context creation when options request it. Required for
-      device-launched graphs, reproducibility, and cuBLASLt.
-      *Test:* `TestCuBlasWorkspace` — sgemm with a 32 MiB user workspace, result identical.
+- [x] **I3 — Workspace hook**: implemented as a context-level, grow-only workspace
+      (`CuBlasOptions.withWorkspace` -> cudaMalloc in cublas-jni -> `cublasSetWorkspace`,
+      freed with the context). The SPI-level `LibraryInvocation.allocateWorkspace` via
+      `BufferProvider` is deferred to D2 (first consumer needing TornadoVM-managed scratch).
+      *Test:* `TestCuBlasWorkspace` — sgemm with a 32 MiB user workspace over 5 executions.
 
 ---
 
@@ -61,8 +64,8 @@ Planned infra refactor to keep step 2 from growing into a mega-switch:
 
 | # | Feature | cuBLAS API | Design | Test | Status |
 |---|---|---|---|---|---|
-| A1 | Math modes (TF32, pedantic) | `cublasSetMathMode`, `CUBLAS_TF32_TENSOR_OP_MATH`, `CUBLAS_PEDANTIC_MATH` | `CuBlasMathMode` enum in `CuBlasOptions` (I2); applied per call: set → call → restore (handle config affects all threads; keep default `DEFAULT_MATH`) | `TestCuBlasSgemmTF32`: FP32 sgemm with TF32 vs default; validate with relaxed tolerance (~1e-2 rel), assert non-trivial speed delta on Ampere+ | [ ] |
-| A2 | Workspace control | `cublasSetWorkspace` (256-byte aligned) | I3; per-context workspace from TornadoVM buffer provider | `TestCuBlasWorkspace` | [ ] |
+| A1 | Math modes (TF32, pedantic) | `cublasSetMathMode`, `CUBLAS_TF32_TENSOR_OP_MATH`, `CUBLAS_PEDANTIC_MATH` | `CuBlasMathMode` enum in `CuBlasOptions` (I2); applied per call: set → call → restore; `CuBlas.cublasSgemmTF32` convenience factory | `TestCuBlasSgemmTF32`: 82.6 TFLOP/s at 4096 on RTX 4090 (14.2x vs tiled KernelContext), max rel error ~1e-4; TF32 row in `BenchmarkSgemm` | [x] |
+| A2 | Workspace control | `cublasSetWorkspace` (256-byte aligned) | I3; per-context grow-only workspace (cudaMalloc, 256B-aligned) | `TestCuBlasWorkspace` | [x] |
 | A3 | Pointer mode DEVICE | `cublasSetPointerMode(CUBLAS_POINTER_MODE_DEVICE)` | Scalars as 1-element TornadoVM arrays (device pointers). Two uses: (a) alpha/beta produced by a preceding JIT task; (b) CUDA Graphs with per-replay-varying scalars (HOST mode bakes values into the capture) | `TestCuBlasSgemvDeviceScalars`: pre-task writes alpha into a `FloatArray(1)` → sgemv consumes it; under `withCUDAGraph`, change alpha between replays and assert the new value is used | [ ] |
 | A4 | Version/property query | `cublasGetVersion` | Log at context creation (debug flag); guard features by version | covered by any test with debug on | [ ] |
 | A5 | Atomics mode | `cublasSetAtomicsMode` | Only affects symv/hemv; expose in `CuBlasOptions` when symv lands (E track) | with E3 | [ ] |

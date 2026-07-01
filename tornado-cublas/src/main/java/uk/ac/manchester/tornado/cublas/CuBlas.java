@@ -22,6 +22,7 @@ import java.util.Arrays;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.cublas.enums.CuBlasMathMode;
 
 /**
  * Factory methods for NVIDIA cuBLAS library tasks. Each method builds a
@@ -163,5 +164,28 @@ public final class CuBlas {
                 .withFunction("cublasSgemm") //
                 .withParameters(new Object[] { transa, transb, m, n, k, alpha, matrixA, lda, matrixB, ldb, beta, matrixC, ldc }) //
                 .withAccess(readOnlyExcept(13, 11, beta));
+    }
+
+    /**
+     * Same as {@link #cublasSgemm} but executed with TF32 Tensor Cores
+     * ({@code CUBLAS_TF32_TENSOR_OP_MATH}): FP32 inputs/outputs, ~10-bit
+     * mantissa in the multiply, FP32 accumulation. Large speedup on Ampere and
+     * newer at a small, usually acceptable precision cost.
+     */
+    public static LibraryTaskDescriptor cublasSgemmTF32(int transa, //
+            int transb, //
+            int m, //
+            int n, //
+            int k, //
+            float alpha, //
+            FloatArray matrixA, //
+            int lda, //
+            FloatArray matrixB, //
+            int ldb, //
+            float beta, //
+            FloatArray matrixC, //
+            int ldc) {
+        return cublasSgemm(transa, transb, m, n, k, alpha, matrixA, lda, matrixB, ldb, beta, matrixC, ldc) //
+                .withTuning(new CuBlasOptions().withMathMode(CuBlasMathMode.CUBLAS_TF32_TENSOR_OP_MATH));
     }
 }

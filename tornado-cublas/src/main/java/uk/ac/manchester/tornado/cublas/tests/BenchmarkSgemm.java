@@ -110,11 +110,11 @@ public class BenchmarkSgemm {
         return (end - start) / (double) iterations;
     }
 
-    private static boolean validate(String name, FloatArray expected, FloatArray actual, int size) {
+    private static boolean validate(String name, FloatArray expected, FloatArray actual, int size, float relativeTolerance) {
         for (int i = 0; i < size * size; i++) {
             float e = expected.get(i);
             float a = actual.get(i);
-            if (Math.abs(e - a) > 0.01f * Math.max(1.0f, Math.abs(e))) {
+            if (Math.abs(e - a) > relativeTolerance * Math.max(1.0f, Math.abs(e))) {
                 System.out.println("[" + name + "] Mismatch at " + i + ": expected=" + e + ", actual=" + a);
                 return false;
             }
@@ -139,6 +139,7 @@ public class BenchmarkSgemm {
         FloatArray outputJit = new FloatArray(size * size);
         FloatArray outputTiled = new FloatArray(size * size);
         FloatArray outputCuBlas = new FloatArray(size * size);
+        FloatArray outputCuBlasTF32 = new FloatArray(size * size);
 
         Random random = new Random(42);
         for (int i = 0; i < size * size; i++) {
@@ -172,9 +173,20 @@ public class BenchmarkSgemm {
                         0.0f, outputCuBlas, size) //
                 .transferToHost(DataTransferMode.UNDER_DEMAND, outputCuBlas);
 
+        TaskGraph cublasTF32Graph = new TaskGraph("cublasTF32") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
+                .libraryTask("sgemmTF32", CuBlas::cublasSgemmTF32, //
+                        CuBlasOperation.CUBLAS_OP_N.operation(), //
+                        CuBlasOperation.CUBLAS_OP_N.operation(), //
+                        size, size, size, //
+                        1.0f, matrixB, size, matrixA, size, //
+                        0.0f, outputCuBlasTF32, size) //
+                .transferToHost(DataTransferMode.UNDER_DEMAND, outputCuBlasTF32);
+
         double jitTime;
         double tiledTime;
         double cublasTime;
+        double cublasTF32Time;
 
         try (TornadoExecutionPlan jitPlan = new TornadoExecutionPlan(jitGraph.snapshot())) {
             jitTime = benchmark(jitPlan, null, iterations);
@@ -191,14 +203,24 @@ public class BenchmarkSgemm {
             cublasPlan.execute().transferToHost(outputCuBlas);
         }
 
+        try (TornadoExecutionPlan cublasTF32Plan = new TornadoExecutionPlan(cublasTF32Graph.snapshot())) {
+            cublasTF32Time = benchmark(cublasTF32Plan, null, iterations);
+            cublasTF32Plan.execute().transferToHost(outputCuBlasTF32);
+        }
+
         // Cross-validate the GPU results against the naive JIT kernel
-        boolean isResultCorrect = validate("tiled", outputJit, outputTiled, size) & validate("cublas", outputJit, outputCuBlas, size);
+        // (TF32 uses a relaxed 5% relative tolerance: 10-bit mantissa multiply)
+        boolean isResultCorrect = validate("tiled", outputJit, outputTiled, size, 0.01f) //
+                & validate("cublas", outputJit, outputCuBlas, size, 0.01f) //
+                & validate("cublasTF32", outputJit, outputCuBlasTF32, size, 0.05f);
 
         System.out.printf("TornadoVM JIT kernel (naive @Parallel)  : %10.3f ms | %9.2f GFLOP/s%n", jitTime * 1e-6, gflop / (jitTime * 1e-9));
         System.out.printf("TornadoVM KernelContext (tiled, TS=%d)  : %10.3f ms | %9.2f GFLOP/s%n", TS, tiledTime * 1e-6, gflop / (tiledTime * 1e-9));
-        System.out.printf("cuBLAS library task                     : %10.3f ms | %9.2f GFLOP/s%n", cublasTime * 1e-6, gflop / (cublasTime * 1e-9));
+        System.out.printf("cuBLAS library task (FP32)              : %10.3f ms | %9.2f GFLOP/s%n", cublasTime * 1e-6, gflop / (cublasTime * 1e-9));
+        System.out.printf("cuBLAS library task (TF32 Tensor Cores) : %10.3f ms | %9.2f GFLOP/s%n", cublasTF32Time * 1e-6, gflop / (cublasTF32Time * 1e-9));
         System.out.printf("Speedup (cuBLAS vs naive @Parallel)     : %10.2fx%n", jitTime / cublasTime);
         System.out.printf("Speedup (cuBLAS vs tiled KernelContext) : %10.2fx%n", tiledTime / cublasTime);
+        System.out.printf("Speedup (TF32 vs tiled KernelContext)   : %10.2fx%n", tiledTime / cublasTF32Time);
         System.out.println(isResultCorrect ? "Results match" : "Results DO NOT match");
     }
 }

@@ -55,6 +55,15 @@ find_library(CUBLAS_LIB cublas
         /usr/lib/x86_64-linux-gnu
 )
 
+# CUDA runtime for workspace allocation (cudaMalloc/cudaFree)
+find_library(CUDART_LIB cudart
+    HINTS
+        $ENV{CUDA_PATH}/lib64
+        /usr/local/cuda/lib64
+        ${CUDAToolkit_LIBRARY_DIR}
+        /usr/lib/x86_64-linux-gnu
+)
+
 if(CUDA_INCLUDE_DIR)
     include_directories(${CUDA_INCLUDE_DIR})
 endif()
@@ -63,11 +72,11 @@ if(CMAKE_HOST_WIN32)
     set_target_properties(tornado-cublas PROPERTIES PREFIX "")
 endif()
 
-if(CUBLAS_LIB)
-    target_link_libraries(tornado-cublas ${JNI_LIB_DIRS} ${CUBLAS_LIB})
+if(CUBLAS_LIB AND CUDART_LIB)
+    target_link_libraries(tornado-cublas ${JNI_LIB_DIRS} ${CUBLAS_LIB} ${CUDART_LIB})
 else()
-    message(WARNING "Could not locate libcublas via find_library; falling back to -lcublas")
-    target_link_libraries(tornado-cublas ${JNI_LIB_DIRS} "-lcublas")
+    message(WARNING "Could not locate libcublas/libcudart via find_library; falling back to -lcublas -lcudart")
+    target_link_libraries(tornado-cublas ${JNI_LIB_DIRS} "-lcublas -lcudart")
 endif()
 
-message(STATUS "TornadoVM cuBLAS: include=${CUDA_INCLUDE_DIR}; lib=${CUBLAS_LIB}")
+message(STATUS "TornadoVM cuBLAS: include=${CUDA_INCLUDE_DIR}; cublas=${CUBLAS_LIB}; cudart=${CUDART_LIB}")

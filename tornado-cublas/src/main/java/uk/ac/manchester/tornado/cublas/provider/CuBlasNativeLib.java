@@ -49,6 +49,15 @@ final class CuBlasNativeLib {
 
     static native void cublasDestroy(long handle);
 
+    static native int cublasSetMathMode(long handle, int mathMode);
+
+    static native int cublasSetWorkspace(long handle, long workspacePtr, long workspaceBytes);
+
+    /** Returns the device pointer, or 0 on allocation failure. */
+    static native long allocateDeviceMemory(long bytes);
+
+    static native void freeDeviceMemory(long ptr);
+
     static native int cublasSgemv(long handle, int trans, int m, int n, float alpha, long dA, int lda, long dX, int incx, float beta, long dY, int incy);
 
     static native int cublasSgemm(long handle, int transa, int transb, int m, int n, int k, float alpha, long dA, int lda, long dB, int ldb, float beta, long dC, int ldc);
