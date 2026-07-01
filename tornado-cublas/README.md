@@ -91,16 +91,18 @@ cross-validates all results:
 tornado -m tornado.cublas/uk.ac.manchester.tornado.cublas.tests.BenchmarkSgemm 2048 50
 ```
 
-| Size | Naive `@Parallel` | KernelContext (tiled) | cuBLAS FP32 | cuBLAS TF32 | TF32 vs tiled |
-|---|---|---|---|---|---|
-| 1024 | 4.0 TFLOP/s | 3.9 TFLOP/s | 26.1 TFLOP/s | 28.2 TFLOP/s | 7.2x |
-| 2048 | 5.1 TFLOP/s | 6.0 TFLOP/s | 48.3 TFLOP/s | 62.8 TFLOP/s | 10.4x |
-| 4096 | 5.3 TFLOP/s | 5.8 TFLOP/s | 51.2 TFLOP/s | 82.6 TFLOP/s | 14.2x |
+| Size | Naive `@Parallel` | KernelContext (tiled) | cuBLAS FP32 | cuBLAS TF32 | cuBLAS FP16 | FP16 vs tiled |
+|---|---|---|---|---|---|---|
+| 1024 | 4.0 TFLOP/s | 3.9 TFLOP/s | 26.1 TFLOP/s | 28.2 TFLOP/s | 44.1 TFLOP/s | 11.3x |
+| 2048 | 5.1 TFLOP/s | 6.0 TFLOP/s | 48.3 TFLOP/s | 62.8 TFLOP/s | 120.6 TFLOP/s | 20.4x |
+| 4096 | 5.3 TFLOP/s | 5.8 TFLOP/s | 57.0 TFLOP/s | 81.1 TFLOP/s | **160.6 TFLOP/s** | **27.4x** |
 
-The TF32 rows use `CuBlas.cublasSgemmTF32` (Tensor Cores via
-`CUBLAS_TF32_TENSOR_OP_MATH`, FP32 in/out, max relative error ~1e-4 vs FP32); 82.6
-TFLOP/s is the RTX 4090's peak TF32 throughput. Per-call tuning (math mode, workspace)
-is passed with `CuBlasOptions` via `LibraryTaskDescriptor.withTuning(...)`.
+- TF32: `CuBlas.cublasSgemmTF32` (Tensor Cores via `CUBLAS_TF32_TENSOR_OP_MATH`, FP32
+  in/out, max rel error ~1e-4). Per-call tuning (math mode, workspace) is passed with
+  `CuBlasOptions` via `LibraryTaskDescriptor.withTuning(...)`.
+- FP16: `CuBlas.cublasGemmExFP16` / `cublasGemmExFP16FP32` (`cublasGemmEx`,
+  `HalfFloatArray` inputs, FP32 Tensor Core accumulation). 160.6 TFLOP/s is the RTX
+  4090's peak FP16 tensor throughput.
 
 ### SGEMV: cuBLAS vs TornadoVM kernels (memory-bound)
 

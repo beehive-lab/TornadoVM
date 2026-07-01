@@ -27,7 +27,9 @@ import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.cublas.CuBlas;
 import uk.ac.manchester.tornado.cublas.enums.CuBlasOperation;
 
@@ -140,11 +142,16 @@ public class BenchmarkSgemm {
         FloatArray outputTiled = new FloatArray(size * size);
         FloatArray outputCuBlas = new FloatArray(size * size);
         FloatArray outputCuBlasTF32 = new FloatArray(size * size);
+        HalfFloatArray matrixAFP16 = new HalfFloatArray(size * size);
+        HalfFloatArray matrixBFP16 = new HalfFloatArray(size * size);
+        HalfFloatArray outputCuBlasFP16 = new HalfFloatArray(size * size);
 
         Random random = new Random(42);
         for (int i = 0; i < size * size; i++) {
             matrixA.set(i, random.nextFloat());
             matrixB.set(i, random.nextFloat());
+            matrixAFP16.set(i, new HalfFloat(matrixA.get(i)));
+            matrixBFP16.set(i, new HalfFloat(matrixB.get(i)));
         }
 
         TaskGraph jitGraph = new TaskGraph("jit") //
@@ -183,10 +190,21 @@ public class BenchmarkSgemm {
                         0.0f, outputCuBlasTF32, size) //
                 .transferToHost(DataTransferMode.UNDER_DEMAND, outputCuBlasTF32);
 
+        TaskGraph cublasFP16Graph = new TaskGraph("cublasFP16") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixAFP16, matrixBFP16) //
+                .libraryTask("gemmExFP16", CuBlas::cublasGemmExFP16, //
+                        CuBlasOperation.CUBLAS_OP_N.operation(), //
+                        CuBlasOperation.CUBLAS_OP_N.operation(), //
+                        size, size, size, //
+                        1.0f, matrixBFP16, size, matrixAFP16, size, //
+                        0.0f, outputCuBlasFP16, size) //
+                .transferToHost(DataTransferMode.UNDER_DEMAND, outputCuBlasFP16);
+
         double jitTime;
         double tiledTime;
         double cublasTime;
         double cublasTF32Time;
+        double cublasFP16Time;
 
         try (TornadoExecutionPlan jitPlan = new TornadoExecutionPlan(jitGraph.snapshot())) {
             jitTime = benchmark(jitPlan, null, iterations);
@@ -208,19 +226,32 @@ public class BenchmarkSgemm {
             cublasTF32Plan.execute().transferToHost(outputCuBlasTF32);
         }
 
-        // Cross-validate the GPU results against the naive JIT kernel
-        // (TF32 uses a relaxed 5% relative tolerance: 10-bit mantissa multiply)
+        try (TornadoExecutionPlan cublasFP16Plan = new TornadoExecutionPlan(cublasFP16Graph.snapshot())) {
+            cublasFP16Time = benchmark(cublasFP16Plan, null, iterations);
+            cublasFP16Plan.execute().transferToHost(outputCuBlasFP16);
+        }
+        FloatArray outputCuBlasFP16AsFP32 = new FloatArray(size * size);
+        for (int i = 0; i < size * size; i++) {
+            outputCuBlasFP16AsFP32.set(i, outputCuBlasFP16.get(i).getFloat32());
+        }
+
+        // Cross-validate the GPU results against the naive JIT kernel.
+        // TF32: 10-bit mantissa multiply (5% rel); FP16: rounded inputs and
+        // output (10% rel vs the FP32-input reference).
         boolean isResultCorrect = validate("tiled", outputJit, outputTiled, size, 0.01f) //
                 & validate("cublas", outputJit, outputCuBlas, size, 0.01f) //
-                & validate("cublasTF32", outputJit, outputCuBlasTF32, size, 0.05f);
+                & validate("cublasTF32", outputJit, outputCuBlasTF32, size, 0.05f) //
+                & validate("cublasFP16", outputJit, outputCuBlasFP16AsFP32, size, 0.10f);
 
         System.out.printf("TornadoVM JIT kernel (naive @Parallel)  : %10.3f ms | %9.2f GFLOP/s%n", jitTime * 1e-6, gflop / (jitTime * 1e-9));
         System.out.printf("TornadoVM KernelContext (tiled, TS=%d)  : %10.3f ms | %9.2f GFLOP/s%n", TS, tiledTime * 1e-6, gflop / (tiledTime * 1e-9));
         System.out.printf("cuBLAS library task (FP32)              : %10.3f ms | %9.2f GFLOP/s%n", cublasTime * 1e-6, gflop / (cublasTime * 1e-9));
         System.out.printf("cuBLAS library task (TF32 Tensor Cores) : %10.3f ms | %9.2f GFLOP/s%n", cublasTF32Time * 1e-6, gflop / (cublasTF32Time * 1e-9));
+        System.out.printf("cuBLAS library task (FP16 GemmEx)       : %10.3f ms | %9.2f GFLOP/s%n", cublasFP16Time * 1e-6, gflop / (cublasFP16Time * 1e-9));
         System.out.printf("Speedup (cuBLAS vs naive @Parallel)     : %10.2fx%n", jitTime / cublasTime);
         System.out.printf("Speedup (cuBLAS vs tiled KernelContext) : %10.2fx%n", tiledTime / cublasTime);
         System.out.printf("Speedup (TF32 vs tiled KernelContext)   : %10.2fx%n", tiledTime / cublasTF32Time);
+        System.out.printf("Speedup (FP16 vs tiled KernelContext)   : %10.2fx%n", tiledTime / cublasFP16Time);
         System.out.println(isResultCorrect ? "Results match" : "Results DO NOT match");
     }
 }

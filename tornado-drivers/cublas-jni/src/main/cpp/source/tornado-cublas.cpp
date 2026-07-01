@@ -156,4 +156,26 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_cublas_provider_CuBlasNativ
                               &host_beta, (float *) d_c, ldc);
 }
 
+/*
+ * Class:     uk_ac_manchester_tornado_cublas_provider_CuBlasNativeLib
+ * Method:    cublasGemmEx
+ * Signature: (JIIIIIFJIIJIIFJIIII)I
+ *
+ * Scalars are host floats: valid for CUBLAS_COMPUTE_32F* compute types only
+ * (the scale type of the FP32 compute family is CUDA_R_32F).
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_cublas_provider_CuBlasNativeLib_cublasGemmEx
+        (JNIEnv *env, jclass clazz, jlong handle, jint transa, jint transb, jint m, jint n, jint k, jfloat alpha,
+         jlong d_a, jint a_type, jint lda, jlong d_b, jint b_type, jint ldb, jfloat beta, jlong d_c, jint c_type,
+         jint ldc, jint compute_type, jint algo) {
+    float host_alpha = alpha;
+    float host_beta = beta;
+    return (jint) cublasGemmEx((cublasHandle_t) handle, (cublasOperation_t) transa, (cublasOperation_t) transb,
+                               m, n, k,
+                               &host_alpha, (const void *) d_a, (cudaDataType) a_type, lda,
+                               (const void *) d_b, (cudaDataType) b_type, ldb,
+                               &host_beta, (void *) d_c, (cudaDataType) c_type, ldc,
+                               (cublasComputeType_t) compute_type, (cublasGemmAlgo_t) algo);
+}
+
 } // extern "C"
