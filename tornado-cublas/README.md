@@ -134,6 +134,13 @@ also an input; the binding marks it `READ_WRITE` automatically so its device con
 stay valid (include it in `transferToDevice` if the initial values come from the host).
 Batch processing (`withBatch`) is not supported for library tasks.
 
+## Roadmap
+
+[ROADMAP.md](ROADMAP.md) tracks cuBLAS API coverage (math modes, GemmEx mixed precision,
+strided-batched, cuBLASLt epilogue fusion, Level-1/2 with device-pointer scalars, ...),
+with the design, extension points, and gating test for each feature, plus the current
+progress checklist.
+
 ## Adding a new library
 
 Library bindings are discovered via `java.util.ServiceLoader` — no core runtime changes
