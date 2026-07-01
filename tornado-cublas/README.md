@@ -65,16 +65,19 @@ reference. To inspect how the library task is scheduled (a regular `LAUNCH` betw
 `ALLOC`/`TRANSFER` bytecodes), add `--printBytecodes`. With `--enableProfiler console`,
 library tasks report `TASK_KERNEL_TIME` alongside regular tasks.
 
-## Benchmark
+## Benchmarks
+
+All reference numbers below are on an NVIDIA GeForce RTX 4090 (FP32, CUDA 12.6).
+
+### SGEMM: cuBLAS vs TornadoVM JIT kernel (compute-bound)
 
 `BenchmarkSgemm` compares the TornadoVM JIT-generated matrix-multiply kernel against a
 cuBLAS SGEMM library task on the same device buffers, and cross-validates the results:
 
 ```bash
+# args: [size] [iterations]
 tornado -m tornado.cublas/uk.ac.manchester.tornado.cublas.tests.BenchmarkSgemm 2048 50
 ```
-
-Reference numbers on an NVIDIA GeForce RTX 4090 (FP32, CUDA 12.6):
 
 | Size | TornadoVM JIT kernel | cuBLAS library task | Speedup |
 |---|---|---|---|
@@ -82,11 +85,29 @@ Reference numbers on an NVIDIA GeForce RTX 4090 (FP32, CUDA 12.6):
 | 2048 | 4.7 TFLOP/s | 46.4 TFLOP/s | 9.8x |
 | 4096 | 5.3 TFLOP/s | 51.5 TFLOP/s | 9.7x |
 
-`MatrixVectorRowMajorWithCuBlas` runs the same comparison for SGEMV (memory-bound),
-mirroring the `MatrixVectorRowMajor` example from `tornado-examples`. At 8192x2048 on
-the same GPU, the cuBLAS library task (578 GB/s) is 1.4x faster than the optimized
-KernelContext workgroup-per-row kernel (410 GB/s) and 28x faster than the naive
-`@Parallel` kernel.
+### SGEMV: cuBLAS vs TornadoVM kernels (memory-bound)
+
+`MatrixVectorRowMajorWithCuBlas` mirrors the `MatrixVectorRowMajor` example from
+`tornado-examples`: it benchmarks `y = W * x` with the naive `@Parallel` kernel, the
+optimized KernelContext workgroup-per-row kernel, and the equivalent cuBLAS SGEMV
+library task, all validated against sequential Java:
+
+```bash
+# args: [inputDim] [outputDim] [localWorkGroupSize]
+tornado -m tornado.cublas/uk.ac.manchester.tornado.cublas.tests.MatrixVectorRowMajorWithCuBlas 8192 2048 32
+```
+
+Results at 8192x2048 (120 iterations, end-to-end execute):
+
+| Variant | Time | Bandwidth | Speedup vs sequential |
+|---|---|---|---|
+| Sequential Java | 8.551 ms | 7.9 GB/s | 1.0x |
+| `@Parallel` kernel (naive) | 3.309 ms | 20.3 GB/s | 2.6x |
+| KernelContext kernel (workgroup-per-row) | 0.164 ms | 410 GB/s | 52x |
+| cuBLAS SGEMV library task | 0.116 ms | 578 GB/s | 74x |
+
+For this memory-bound kernel, cuBLAS is 1.4x faster than the best hand-optimized
+TornadoVM kernel — a much smaller gap than the compute-bound SGEMM above.
 
 ## Supported functions
 
