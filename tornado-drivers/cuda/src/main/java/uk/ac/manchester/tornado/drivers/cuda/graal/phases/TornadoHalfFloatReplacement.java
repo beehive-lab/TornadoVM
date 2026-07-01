@@ -49,6 +49,7 @@ import uk.ac.manchester.tornado.api.internal.annotations.HalfType;
 import uk.ac.manchester.tornado.drivers.cuda.graal.HalfFloatStamp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.AddHalfNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAConvertHalfBitsToIntNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.DivHalfNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.HalfFloatConstantNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalArrayNode;
@@ -496,6 +497,19 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
                         constantNode.safeDelete();
                     }
                 }
+            }
+        }
+
+        // Replace any remaining HalfFloatPlaceholder nodes in arithmetic contexts
+        // (e.g. getHalfFloatValue() used in bit-packing: lo = a.get(i).getHalfFloatValue() & 0xFFFF).
+        // These were not consumed by the write-context handler above.
+        for (HalfFloatPlaceholder placeholder : graph.getNodes().filter(HalfFloatPlaceholder.class).snapshot()) {
+            if (!placeholder.isDeleted()) {
+                CUDAConvertHalfBitsToIntNode bitsNode =
+                        new CUDAConvertHalfBitsToIntNode(placeholder.getInput());
+                graph.addWithoutUnique(bitsNode);
+                placeholder.replaceAtUsages(bitsNode);
+                placeholder.safeDelete();
             }
         }
 

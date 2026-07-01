@@ -192,6 +192,13 @@ public enum CUDAKind implements PlatformKind {
     DOUBLE16(16, Double16.TYPE, DOUBLE),
     FLOAT16(16, Float16.TYPE, FLOAT),
     HALF16(16, Half16.TYPE, HALF),
+    // --- MMA fragment kinds (per-lane register tuples for mma.sync) ---
+    MMA_FRAG_A_F16(4, null, UINT),     // A:   4 × b32 = 8 × f16  (row-major 16×16 slice)
+    MMA_FRAG_B_F16(2, null, UINT),     // B:   2 × b32 = 4 × f16  (col-major 16×8 slice)
+    MMA_FRAG_ACC_F32(4, null, FLOAT),  // C/D: 4 × f32            (row-major 16×8 slice)
+    MMA_FRAG_ACC_S32(4, null, INT),    // C/D: 4 × s32
+    MMA_FRAG_A_S8(4, null, UINT),      // A:   4 × b32 = 16 × s8  (row-major 16×32 slice)
+    MMA_FRAG_B_S8(2, null, UINT),      // B:   2 × b32 = 8 × s8   (col-major 32×8 slice)
 
     ILLEGAL(0, null),
     INTEGER_ATOMIC_JAVA(4, java.util.concurrent.atomic.AtomicInteger.class);
@@ -577,6 +584,12 @@ public enum CUDAKind implements PlatformKind {
 
     public boolean isPrimitive() {
         return (vectorLength == 1 && kind != CUDAKind.ILLEGAL);
+    }
+
+    public boolean isMMAFragment() {
+        return this == MMA_FRAG_A_F16  || this == MMA_FRAG_B_F16
+                || this == MMA_FRAG_ACC_F32 || this == MMA_FRAG_ACC_S32
+                || this == MMA_FRAG_A_S8    || this == MMA_FRAG_B_S8;
     }
 
     public JavaConstant getDefaultValue() {
