@@ -33,6 +33,7 @@ public class LibraryTaskDescriptor {
     private String functionName;
     private Object[] parameters;
     private Access[] access;
+    private Object tuning;
 
     public LibraryTaskDescriptor withLibrary(String libraryName) {
         this.libraryName = libraryName;
@@ -68,5 +69,19 @@ public class LibraryTaskDescriptor {
 
     public Access[] getAccess() {
         return access;
+    }
+
+    /**
+     * Attaches library-specific tuning options (e.g., math mode, workspace size,
+     * algorithm selection). The object is opaque to the TornadoVM runtime and is
+     * interpreted by the matching library provider at dispatch time.
+     */
+    public LibraryTaskDescriptor withTuning(Object tuning) {
+        this.tuning = tuning;
+        return this;
+    }
+
+    public Object getTuning() {
+        return tuning;
     }
 }

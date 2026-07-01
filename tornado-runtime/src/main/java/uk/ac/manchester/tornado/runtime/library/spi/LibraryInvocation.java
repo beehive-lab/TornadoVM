@@ -39,14 +39,16 @@ public final class LibraryInvocation {
     private final TornadoXPUDevice device;
     private final long executionPlanId;
     private final LibraryContext context;
+    private final Object tuning;
 
-    public LibraryInvocation(Object[] javaArgs, long[] devicePointers, boolean[] isReference, TornadoXPUDevice device, long executionPlanId, LibraryContext context) {
+    public LibraryInvocation(Object[] javaArgs, long[] devicePointers, boolean[] isReference, TornadoXPUDevice device, long executionPlanId, LibraryContext context, Object tuning) {
         this.javaArgs = javaArgs;
         this.devicePointers = devicePointers;
         this.isReference = isReference;
         this.device = device;
         this.executionPlanId = executionPlanId;
         this.context = context;
+        this.tuning = tuning;
     }
 
     public int getNumArgs() {
@@ -83,5 +85,14 @@ public final class LibraryInvocation {
 
     public LibraryContext getContext() {
         return context;
+    }
+
+    /**
+     * Library-specific tuning options attached via
+     * {@link uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor#withTuning(Object)},
+     * or null. Opaque to the runtime; interpreted by the provider.
+     */
+    public Object getTuning() {
+        return tuning;
     }
 }

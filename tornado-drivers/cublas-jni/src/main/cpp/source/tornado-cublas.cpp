@@ -32,6 +32,7 @@
 
 #include <jni.h>
 #include <cublas_v2.h>
+#include <cuda_runtime_api.h>
 
 extern "C" {
 
@@ -69,6 +70,56 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_cublas_provider_CuBlasNativ
         (JNIEnv *env, jclass clazz, jlong handle) {
     if (handle != 0) {
         cublasDestroy((cublasHandle_t) handle);
+    }
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_cublas_provider_CuBlasNativeLib
+ * Method:    cublasSetMathMode
+ * Signature: (JI)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_cublas_provider_CuBlasNativeLib_cublasSetMathMode
+        (JNIEnv *env, jclass clazz, jlong handle, jint math_mode) {
+    return (jint) cublasSetMathMode((cublasHandle_t) handle, (cublasMath_t) math_mode);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_cublas_provider_CuBlasNativeLib
+ * Method:    cublasSetWorkspace
+ * Signature: (JJJ)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_cublas_provider_CuBlasNativeLib_cublasSetWorkspace
+        (JNIEnv *env, jclass clazz, jlong handle, jlong workspace_ptr, jlong workspace_bytes) {
+    return (jint) cublasSetWorkspace((cublasHandle_t) handle, (void *) workspace_ptr, (size_t) workspace_bytes);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_cublas_provider_CuBlasNativeLib
+ * Method:    allocateDeviceMemory
+ * Signature: (J)J
+ *
+ * cudaMalloc guarantees 256-byte alignment, which satisfies the
+ * cublasSetWorkspace alignment requirement.
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_cublas_provider_CuBlasNativeLib_allocateDeviceMemory
+        (JNIEnv *env, jclass clazz, jlong bytes) {
+    void *ptr = nullptr;
+    cudaError_t status = cudaMalloc(&ptr, (size_t) bytes);
+    if (status != cudaSuccess) {
+        return 0;
+    }
+    return (jlong) ptr;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_cublas_provider_CuBlasNativeLib
+ * Method:    freeDeviceMemory
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_cublas_provider_CuBlasNativeLib_freeDeviceMemory
+        (JNIEnv *env, jclass clazz, jlong ptr) {
+    if (ptr != 0) {
+        cudaFree((void *) ptr);
     }
 }
 

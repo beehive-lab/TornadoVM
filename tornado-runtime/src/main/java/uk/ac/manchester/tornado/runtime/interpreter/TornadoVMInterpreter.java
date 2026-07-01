@@ -1220,7 +1220,8 @@ public class TornadoVMInterpreter {
             profilerStartTime = System.nanoTime();
         }
 
-        provider.dispatch(descriptor.getFunctionName(), new LibraryInvocation(callArgs, devicePointers, isReference, interpreterDevice, graphExecutionContext.getExecutionPlanId(), libraryContext));
+        provider.dispatch(descriptor.getFunctionName(), new LibraryInvocation(callArgs, devicePointers, isReference, interpreterDevice, graphExecutionContext.getExecutionPlanId(), libraryContext,
+                descriptor.getTuning()));
 
         int lastEvent = ((useDependencies && !insideCaptureRegion) || profileCall) ? interpreterDevice.enqueueMarker(graphExecutionContext.getExecutionPlanId()) : -1;
 
