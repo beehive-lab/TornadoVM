@@ -265,6 +265,20 @@ public class CUDADevice implements CUDATargetDevice {
         return deviceExtensions;
     }
 
+    public int getComputeCapabilityMajor() { return getComputeCapability()[0]; }
+    public int getComputeCapabilityMinor() { return getComputeCapability()[1]; }
+
+    public int[] getComputeCapability() {
+        String v = getDeviceVersion();
+        if (v == null || !v.startsWith("CUDA ")) return new int[]{0, 0};
+        try {
+            String[] parts = v.substring(5).trim().split("\\.");
+            return new int[]{ Integer.parseInt(parts[0]), Integer.parseInt(parts[1]) };
+        } catch (Exception e) {
+            return new int[]{0, 0};
+        }
+    }
+
     @Override
     public int getDeviceMaxComputeUnits() {
         if (maxComputeUnits != -1) {
