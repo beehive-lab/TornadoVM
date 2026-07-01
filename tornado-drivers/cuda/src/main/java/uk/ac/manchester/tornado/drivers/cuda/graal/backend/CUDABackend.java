@@ -263,6 +263,9 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
         Logger.traceCodeGen(Logger.BACKEND.OpenCL, "found %d variable, expected (%d)", variableCount.get(), expectedVariables);
 
         for (CUDAKind type : kindToVariable.keySet()) {
+            if (type.isMMAFragment()) {
+                continue;                       // declared inline by the MMA statements
+            }
             asm.indent();
             asm.emit("%s ", type.getCUDATypeName());
             for (Variable var : kindToVariable.get(type)) {

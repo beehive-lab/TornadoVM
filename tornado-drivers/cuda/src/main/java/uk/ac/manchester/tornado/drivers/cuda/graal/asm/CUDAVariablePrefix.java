@@ -76,7 +76,13 @@ public enum CUDAVariablePrefix {
     HALF3("half3", "v3hf_"),
     HALF4("half4", "v4hf_"),
     HALF8("half8", "v8hf_"),
-    HALF16("half16", "v16hf_");
+    HALF16("half16", "v16hf_"),
+    MMA_FRAG_A_F16("mma_frag_a_f16", "mma_a_h_"),
+    MMA_FRAG_B_F16("mma_frag_b_f16", "mma_b_h_"),
+    MMA_FRAG_ACC_F32("mma_frag_acc_f32", "mma_acc_f_"),
+    MMA_FRAG_ACC_S32("mma_frag_acc_s32", "mma_acc_s_"),
+    MMA_FRAG_A_S8("mma_frag_a_s8", "mma_a_s8_"),
+    MMA_FRAG_B_S8("mma_frag_b_s8", "mma_b_s8_");
 
     // @formatter:on
 

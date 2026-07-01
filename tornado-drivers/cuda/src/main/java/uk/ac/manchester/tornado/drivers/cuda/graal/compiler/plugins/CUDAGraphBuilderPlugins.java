@@ -23,6 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.graal.compiler.plugins;
 
+import jdk.vm.ci.meta.ResolvedJavaField;
 import org.graalvm.compiler.core.common.memory.BarrierType;
 import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -45,6 +46,7 @@ import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
 import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
+import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
@@ -74,6 +76,15 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAArchitecture;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAUnary;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.AtomAddNodeTemplate;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAComputeNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAFragmentNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadAInt8Node;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadANode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadBInt8Node;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadBNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadBSwizzledNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAStoreBSwizzledNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAStoreNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAShuffleDownNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASimdBroadcastFirstNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASimdSumNode;
@@ -448,8 +459,9 @@ public class CUDAGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                                  Receiver receiver, ValueNode initValue) {
-                unimplemented("MMA instructions only supported for the PTX backend.");
-                return false;
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDAMMAFragmentNode(initValue));
+                return true;
             }
         });
 
@@ -459,8 +471,9 @@ public class CUDAGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                                  Receiver receiver, ValueNode tile, ValueNode wmmaK) {
-                unimplemented("MMA instructions only supported for the PTX backend.");
-                return false;
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDAMMALoadANode(tile, wmmaK));
+                return true;
             }
         });
 
@@ -470,8 +483,9 @@ public class CUDAGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                                  Receiver receiver, ValueNode tile, ValueNode wmmaK) {
-                unimplemented("MMA instructions only supported for the PTX backend.");
-                return false;
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDAMMALoadBNode(tile, wmmaK));
+                return true;
             }
         });
 
@@ -481,8 +495,9 @@ public class CUDAGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                                  Receiver receiver, ValueNode tile, ValueNode wmmaK) {
-                unimplemented("MMA instructions only supported for the PTX backend.");
-                return false;
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDAMMALoadBSwizzledNode(tile, wmmaK));
+                return true;
             }
         });
 
@@ -494,8 +509,9 @@ public class CUDAGraphBuilderPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                                  Receiver receiver, ValueNode arr, ValueNode row, ValueNode col,
                                  ValueNode stride, ValueNode value, ValueNode byteOffset) {
-                unimplemented("MMA instructions only supported for the PTX backend.");
-                return false;
+                receiver.get(true);
+                b.add(new CUDAMMAStoreBSwizzledNode(arr, row, col, stride, value, byteOffset));
+                return true;
             }
         });
 
@@ -508,8 +524,10 @@ public class CUDAGraphBuilderPlugins {
                                  Receiver receiver,
                                  ValueNode fragA, ValueNode fragB, ValueNode fragC,
                                  ValueNode shapeNode) {
-                unimplemented("MMA instructions only supported for the PTX backend.");
-                return false;
+                receiver.get(true);
+                MMAShape shape = resolveShape(b, shapeNode);
+                b.addPush(JavaKind.Object, new CUDAMMAComputeNode(fragA, fragB, fragC, shape));
+                return true;
             }
         });
 
@@ -522,8 +540,11 @@ public class CUDAGraphBuilderPlugins {
                                  Receiver receiver,
                                  ValueNode fragD, ValueNode target,
                                  ValueNode tileRow, ValueNode tileCol, ValueNode dimN) {
-                unimplemented("MMA instructions only supported for the PTX backend.");
-                return false;
+                receiver.get(true);
+                int headerElements = TornadoCoreRuntime.getVMConfig()
+                        .getArrayBaseOffset(JavaKind.Float) / JavaKind.Float.getByteCount();
+                b.add(new CUDAMMAStoreNode(fragD, target, tileRow, tileCol, dimN, headerElements));
+                return true;
             }
         });
 
@@ -532,8 +553,9 @@ public class CUDAGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                                  Receiver receiver, ValueNode initValue) {
-                unimplemented("MMA instructions only supported for the PTX backend.");
-                return false;
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDAMMAFragmentNode(initValue, true));
+                return true;
             }
         });
 
@@ -543,8 +565,9 @@ public class CUDAGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                                  Receiver receiver, ValueNode tile, ValueNode tileK) {
-                unimplemented("MMA instructions only supported for the PTX backend.");
-                return false;
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDAMMALoadAInt8Node(tile, tileK));
+                return true;
             }
         });
 
@@ -554,8 +577,9 @@ public class CUDAGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                                  Receiver receiver, ValueNode tile, ValueNode tileK) {
-                unimplemented("MMA instructions only supported for the PTX backend.");
-                return false;
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDAMMALoadBInt8Node(tile, tileK));
+                return true;
             }
         });
 
@@ -568,8 +592,10 @@ public class CUDAGraphBuilderPlugins {
                                  Receiver receiver,
                                  ValueNode fragA, ValueNode fragB, ValueNode fragC,
                                  ValueNode shapeNode) {
-                unimplemented("MMA instructions only supported for the PTX backend.");
-                return false;
+                receiver.get(true);
+                MMAShape shape = resolveShape(b, shapeNode);
+                b.addPush(JavaKind.Object, new CUDAMMAComputeNode(fragA, fragB, fragC, shape));
+                return true;
             }
         });
 
@@ -582,8 +608,11 @@ public class CUDAGraphBuilderPlugins {
                                  Receiver receiver,
                                  ValueNode fragD, ValueNode target,
                                  ValueNode tileRow, ValueNode tileCol, ValueNode dimN) {
-                unimplemented("MMA instructions only supported for the PTX backend.");
-                return false;
+                receiver.get(true);
+                int headerElements = TornadoCoreRuntime.getVMConfig()
+                        .getArrayBaseOffset(JavaKind.Int) / JavaKind.Int.getByteCount();
+                b.add(new CUDAMMAStoreNode(fragD, target, tileRow, tileCol, dimN, headerElements, true));
+                return true;
             }
         });
 
@@ -593,8 +622,9 @@ public class CUDAGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                                  Receiver receiver, ValueNode tile, ValueNode wmmaK, ValueNode byteOffset) {
-                unimplemented("MMA instructions only supported for the PTX backend.");
-                return false;
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDAMMALoadANode(tile, wmmaK, byteOffset));
+                return true;
             }
         });
 
@@ -604,8 +634,9 @@ public class CUDAGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                                  Receiver receiver, ValueNode tile, ValueNode wmmaK, ValueNode byteOffset) {
-                unimplemented("MMA instructions only supported for the PTX backend.");
-                return false;
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDAMMALoadBNode(tile, wmmaK, byteOffset));
+                return true;
             }
         });
 
@@ -615,11 +646,62 @@ public class CUDAGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                                  Receiver receiver, ValueNode tile, ValueNode wmmaK, ValueNode byteOffset) {
-                unimplemented("MMA instructions only supported for the PTX backend.");
-                return false;
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDAMMALoadBSwizzledNode(tile, wmmaK, byteOffset));
+                return true;
             }
         });
 
+    }
+
+    /**
+     * Resolves an MMAShape enum ValueNode to its compile-time constant.
+     *
+     * Enum references in bytecode appear as getstatic loads (LoadFieldNode) that
+     * are only constant-folded in a later phase. We read the static field directly
+     * via ConstantReflectionProvider.
+     *
+     * We can't use SnippetReflection.asObject() because TornadoVM's implementation
+     * throws unimplemented(). Instead, we read the enum's ordinal field and index
+     * into MMAShape.values().
+     */
+    private static MMAShape resolveShape(GraphBuilderContext b, ValueNode shapeNode) {
+        JavaConstant constant = shapeNode.asJavaConstant();
+
+        // Enum constants usually reach the plugin as a LoadFieldNode — resolve
+        // the static-final field directly if it hasn't been folded yet.
+        if (constant == null && shapeNode instanceof LoadFieldNode) {
+            LoadFieldNode load = (LoadFieldNode) shapeNode;
+            if (load.field().isStatic()) {
+                constant = b.getConstantReflection().readFieldValue(load.field(), null);
+            }
+        }
+
+        if (constant == null || constant.isNull()) {
+            throw new IllegalStateException(
+                    "MMAShape argument to ctx.mma() must be a compile-time constant");
+        }
+
+        // Read the `ordinal` field inherited from java.lang.Enum to identify
+        // which MMAShape constant this is, then look it up in values().
+        ResolvedJavaType enumType = b.getMetaAccess().lookupJavaType(MMAShape.class);
+        ResolvedJavaField ordinalField = null;
+        for (ResolvedJavaField f : enumType.getInstanceFields(true)) {
+            if (f.getName().equals("ordinal")) {
+                ordinalField = f;
+                break;
+            }
+        }
+        if (ordinalField == null) {
+            throw new IllegalStateException("Cannot locate Enum.ordinal field on MMAShape");
+        }
+
+        JavaConstant ordinalConst = b.getConstantReflection().readFieldValue(ordinalField, constant);
+        if (ordinalConst == null) {
+            throw new IllegalStateException("Failed to read ordinal of MMAShape constant");
+        }
+
+        return MMAShape.values()[ordinalConst.asInt()];
     }
 
     private static void registerSIMDPlugins(Registration r) {
