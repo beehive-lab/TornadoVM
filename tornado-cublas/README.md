@@ -58,7 +58,17 @@ tornado -m tornado.cublas/uk.ac.manchester.tornado.cublas.tests.TestCuBlasSgemvW
 # Matrix-vector: TornadoVM kernels (naive @Parallel + optimized KernelContext)
 # vs the equivalent cuBLAS SGEMV library task
 tornado -m tornado.cublas/uk.ac.manchester.tornado.cublas.tests.MatrixVectorRowMajorWithCuBlas 8192 2048 32
+
+# Same mixed pre/post graph captured into a CUDA graph on the first execution
+# and replayed on subsequent iterations (executionPlan.withCUDAGraph())
+tornado -m tornado.cublas/uk.ac.manchester.tornado.cublas.tests.TestCuBlasSgemvWithTasksCudaGraph
 ```
+
+Library tasks are CUDA Graph compatible: with `executionPlan.withCUDAGraph()` the cuBLAS
+call is recorded into the captured graph together with the surrounding kernels and
+transfers, and replayed with a single `cuGraphLaunch`. The cuBLAS handle is created
+before capture starts (native handle creation allocates device memory, which is illegal
+inside a capture region), and per-call profiling is disabled while capturing.
 
 Each test prints `Result is correct` when the GPU result matches the sequential Java
 reference. To inspect how the library task is scheduled (a regular `LAUNCH` between
