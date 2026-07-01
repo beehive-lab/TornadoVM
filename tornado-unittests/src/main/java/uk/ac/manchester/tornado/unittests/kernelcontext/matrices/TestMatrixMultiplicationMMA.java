@@ -335,7 +335,6 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
-     //   assertNotBackend(TornadoVMBackendType.CUDA);
 
         HalfFloatArray a = randomFP16(dimK * dimN); //allOnesFP16(dimM * dimK);
         HalfFloatArray b = randomFP16(dimK * dimN);
@@ -383,7 +382,6 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
-     //   assertNotBackend(TornadoVMBackendType.CUDA);
 
         int M = 16, N = 16, K = 16;
 
@@ -438,7 +436,6 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
-      //  assertNotBackend(TornadoVMBackendType.CUDA);
 
         int M = 16, N = 16, K = 16;
 
@@ -491,7 +488,6 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
-      //  assertNotBackend(TornadoVMBackendType.CUDA);
 
         int M = 16, N = 16, K = 16;
 
@@ -545,7 +541,6 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
-      //  assertNotBackend(TornadoVMBackendType.CUDA);
 
         int M = 16, N = 16, K = 16;
 
@@ -601,7 +596,6 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
-     //   assertNotBackend(TornadoVMBackendType.CUDA);
 
         int M = 16, N = 16, K = 16;
 
@@ -681,7 +675,6 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
-      //  assertNotBackend(TornadoVMBackendType.CUDA);
 
         // Pre-populate on the host with 128 fp16 values
         HalfFloatArray in = new HalfFloatArray(128);
@@ -722,7 +715,6 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
-      //  assertNotBackend(TornadoVMBackendType.CUDA);
 
         int M = 16, N = 8, K = 16;
 
@@ -841,7 +833,6 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
-       // assertNotBackend(TornadoVMBackendType.CUDA);
 
         int M = 16, N = 8, K = 16;  // output is one m16n8 tile
 
@@ -994,7 +985,6 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
-      //  assertNotBackend(TornadoVMBackendType.CUDA);
 
         int M = 32, N = 64, K = 16;
 
