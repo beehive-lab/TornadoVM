@@ -101,6 +101,8 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAFPBinaryIntrinsicNo
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAFPUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAIntBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAIntUnaryIntrinsicNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASwizzledLoadFP16Stride32Node;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASwizzledStoreFP16Stride32Node;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.PrintfNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.TornadoAtomicIntegerNode;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
@@ -738,16 +740,19 @@ public class CUDAGraphBuilderPlugins {
         r.register(new InvocationPlugin("swizzleLoadFp16Stride32", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride) {
-                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
-                return false;
+                receiver.get(true);
+                b.addPush(JavaKind.Object,
+                        new CUDASwizzledLoadFP16Stride32Node(local_array, row, column, stride));
+                return true;
             }
         });
 
         r.register(new InvocationPlugin("swizzleStoreFp16Stride32", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class, HalfFloat.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode value) {
-                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
-                return false;
+                receiver.get(true);
+                b.add(new CUDASwizzledStoreFP16Stride32Node(local_array, row, column, stride, value));
+                return true;
             }
         });
 
