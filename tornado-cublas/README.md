@@ -53,6 +53,10 @@ used as the second argument of `taskGraph.libraryTask(id, factory, args...)`.
 | `cublasSgemmStridedBatched` | `cublasSgemmStridedBatched` | `FloatArray` | C[i] = α·op(A[i])·op(B[i]) + β·C[i] for a whole batch in one call; operand i lives at `base + i*stride` in one flat array |
 | `cublasGemmExFP16` | `cublasGemmEx` | `HalfFloatArray` in/out | FP16 GEMM with FP32 Tensor Core accumulation |
 | `cublasGemmExFP16FP32` | `cublasGemmEx` | `HalfFloatArray` in, `FloatArray` out | FP16 inputs, FP32 output (standard inference config) |
+| `CuBlasLt.ltMatmulFP32` | `cublasLtMatmul` | `FloatArray` | FP32 matmul (heuristic algorithm, plan cached per shape) |
+| `CuBlasLt.ltMatmulFP16` | `cublasLtMatmul` | `HalfFloatArray` | FP16 matmul, FP32 Tensor Core accumulation |
+| `CuBlasLt.ltMatmulBiasFP16` | `cublasLtMatmul` + `BIAS` | `HalfFloatArray` | C = op(A)·op(B) + bias, fused |
+| `CuBlasLt.ltMatmulGeluBiasFP16` | `cublasLtMatmul` + `GELU_BIAS` | `HalfFloatArray` | C = GELU(op(A)·op(B) + bias), fully fused transformer MLP block |
 
 See [ROADMAP.md](ROADMAP.md) for what is planned next (Level-1/2, batched pointer
 arrays, cuBLASLt epilogue fusion, INT8/FP8, ...) and the design/test that gates each.
@@ -154,6 +158,39 @@ CuBlasOptions options = new CuBlasOptions()
   plan), grows monotonically, and is freed when the execution plan closes. Useful for
   run-to-run reproducibility and required for device-launched graphs.
 
+### Fused epilogues (cuBLASLt)
+
+`CuBlasLt` factories fuse the bias-add and activation of a transformer MLP block into
+the GEMM itself — one library task replaces a GEMM plus a JIT activation kernel:
+
+```java
+// C = GELU(A * B + bias), one fused cuBLASLt call (row-major operand-swap trick):
+.libraryTask("mlp", CuBlasLt::ltMatmulGeluBiasFP16,
+        OP_N, OP_N, n, m, k, 1.0f, B, n, A, k, 0.0f, C, n, bias)
+```
+
+The bias vector is applied per column of the row-major result (per output feature).
+GELU uses the tanh approximation. Matmul plans (descriptors + heuristic-selected
+algorithm) are created once per problem shape and cached in the per-(device, execution
+plan) context, together with a 32 MiB device workspace; everything is freed when the
+execution plan closes.
+
+`BenchmarkLtFusedMlp` measures fusion vs the unfused hybrid (GemmEx FP16 + JIT
+bias/GELU kernel) on the RTX 4090:
+
+```bash
+tornado -m tornado.cublas/uk.ac.manchester.tornado.cublas.tests.BenchmarkLtFusedMlp 2048 50
+```
+
+| Size | Unfused (GemmEx + JIT epilogue) | Fused (cuBLASLt GELU_BIAS) | Fusion speedup |
+|---|---|---|---|
+| 1024 | 17.5 TFLOP/s | 29.4 TFLOP/s | 1.68x |
+| 2048 | 73.8 TFLOP/s | 98.3 TFLOP/s | 1.33x |
+| 4096 | 132.1 TFLOP/s | 147.3 TFLOP/s | 1.11x |
+
+Fusion pays most at small/medium sizes — the launch-and-memory-bound regime of LLM
+decoding.
+
 ### Batched GEMM
 
 One call launches a whole batch of equally-shaped GEMMs stored in flat arrays:
@@ -194,7 +231,13 @@ operation plus the mixed pre/post and CUDA Graph paths. The tests **skip automat
 
 ```bash
 tornado-test -V uk.ac.manchester.tornado.unittests.cublas.TestCuBlas
+tornado-test -V uk.ac.manchester.tornado.unittests.cublas.TestCuBlasLt
 ```
+
+`TestCuBlas#testSharedBufferAcrossTaskGraphs` additionally exercises the shared-buffer
+pattern (`persistOnDevice` / `consumeFromDevice`): a JIT task graph produces the matrix
+on the device and a second task graph consumes it with a cuBLAS call, without the data
+ever returning to the host.
 
 ### Runnable examples
 
