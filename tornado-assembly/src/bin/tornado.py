@@ -1407,6 +1407,13 @@ class TornadoVMRunnerTool():
             command = javaFlags + " " + str(args.application) + " " + params
         ## Execute the command
         status = os.system(command)
+        ## os.system() returns a wait-status, not a plain exit code: on POSIX the exit code
+        ## sits in the high byte, so a JVM exit of 1 becomes 256 and sys.exit() truncates it
+        ## to 0, masking failures from CI. Decode it back to the real exit code / signal.
+        if os.name == 'posix':
+            if os.WIFSIGNALED(status):
+                sys.exit(128 + os.WTERMSIG(status))
+            status = os.WEXITSTATUS(status)
         sys.exit(status)
 
 

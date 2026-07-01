@@ -15,7 +15,7 @@ They are listed in a white-list in the `tornado-test` script.
 $ make tests
 ```
 
-TornadoVM currently supports three backends. When possible, please check that the new changes do not break any backend.
+TornadoVM supports multiple backends. When possible, please check that the new changes do not break any backend.
 
 ```bash
 ## Pass Unittests using the OpenCL backend
@@ -26,6 +26,11 @@ $ make tests
 ## Pass unittests using the PTX backend
 $ make BACKEND=ptx
 $ make tests 
+
+## If the changes are also applicable to the CUDA backend:
+## Pass unittests using the CUDA backend
+$ make BACKEND=cuda
+$ make tests
 
 ## If the changes are also applicable to the SPIR-V backend: 
 ## Pass unittests using the SPIRV backend
@@ -53,6 +58,7 @@ Mark the backends affected by this PR.
 
 - [ ] OpenCL
 - [ ] PTX
+- [ ] CUDA
 - [ ] SPIRV
 - [ ] Metal
 
