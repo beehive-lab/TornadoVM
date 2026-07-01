@@ -69,21 +69,23 @@ library tasks report `TASK_KERNEL_TIME` alongside regular tasks.
 
 All reference numbers below are on an NVIDIA GeForce RTX 4090 (FP32, CUDA 12.6).
 
-### SGEMM: cuBLAS vs TornadoVM JIT kernel (compute-bound)
+### SGEMM: cuBLAS vs TornadoVM kernels (compute-bound)
 
-`BenchmarkSgemm` compares the TornadoVM JIT-generated matrix-multiply kernel against a
-cuBLAS SGEMM library task on the same device buffers, and cross-validates the results:
+`BenchmarkSgemm` compares two TornadoVM kernels — the naive `@Parallel` version and a
+tiled local-memory KernelContext version (TS=32, myGEMM-style) as the optimized
+baseline — against a cuBLAS SGEMM library task on the same device buffers, and
+cross-validates all results:
 
 ```bash
 # args: [size] [iterations]
 tornado -m tornado.cublas/uk.ac.manchester.tornado.cublas.tests.BenchmarkSgemm 2048 50
 ```
 
-| Size | TornadoVM JIT kernel | cuBLAS library task | Speedup |
-|---|---|---|---|
-| 1024 | 4.1 TFLOP/s | 24.0 TFLOP/s | 5.9x |
-| 2048 | 4.7 TFLOP/s | 46.4 TFLOP/s | 9.8x |
-| 4096 | 5.3 TFLOP/s | 51.5 TFLOP/s | 9.7x |
+| Size | Naive `@Parallel` | KernelContext (tiled) | cuBLAS library task | cuBLAS vs tiled |
+|---|---|---|---|---|
+| 1024 | 4.1 TFLOP/s | 3.9 TFLOP/s | 25.6 TFLOP/s | 6.5x |
+| 2048 | 4.8 TFLOP/s | 6.0 TFLOP/s | 48.5 TFLOP/s | 8.1x |
+| 4096 | 5.3 TFLOP/s | 5.8 TFLOP/s | 53.1 TFLOP/s | 9.1x |
 
 ### SGEMV: cuBLAS vs TornadoVM kernels (memory-bound)
 

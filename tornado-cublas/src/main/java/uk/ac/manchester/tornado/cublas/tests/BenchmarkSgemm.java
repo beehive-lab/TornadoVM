@@ -19,8 +19,11 @@ package uk.ac.manchester.tornado.cublas.tests;
 
 import java.util.Random;
 
+import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
@@ -30,7 +33,8 @@ import uk.ac.manchester.tornado.cublas.enums.CuBlasOperation;
 
 /**
  * Benchmark: FP32 matrix multiplication (C = A * B) with the TornadoVM
- * JIT-generated kernel vs a cuBLAS SGEMM library task on the same device
+ * JIT-generated kernel (naive {@code @Parallel} and tiled local-memory
+ * KernelContext versions) vs a cuBLAS SGEMM library task on the same device
  * buffers. Inputs are transferred once (FIRST_EXECUTION) and the output is
  * fetched UNDER_DEMAND after the timed loop, so the measured time is dominated
  * by the GEMM itself.
@@ -46,6 +50,9 @@ public class BenchmarkSgemm {
 
     private static final int WARMUP_ITERATIONS = 20;
 
+    /** Tile size for the local-memory KernelContext kernel (size must be a multiple). */
+    private static final int TS = 32;
+
     public static void matrixMultiplication(FloatArray a, FloatArray b, FloatArray c, int size) {
         for (@Parallel int i = 0; i < size; i++) {
             for (@Parallel int j = 0; j < size; j++) {
@@ -58,7 +65,40 @@ public class BenchmarkSgemm {
         }
     }
 
-    private static double benchmark(TornadoExecutionPlan executionPlan, int iterations) {
+    /**
+     * Tiled matrix multiplication with local memory (row-major adaptation of
+     * the myGEMM kernel used in the kernelcontext examples). Consecutive
+     * localIdx threads access consecutive columns for coalesced loads/stores.
+     */
+    public static void matrixMultiplicationTiled(KernelContext context, FloatArray a, FloatArray b, FloatArray c, int size) {
+        int localCol = context.localIdx;
+        int localRow = context.localIdy;
+        int globalCol = TS * context.groupIdx + localCol;
+        int globalRow = TS * context.groupIdy + localRow;
+
+        float[] aSub = context.allocateFloatLocalArray(TS * TS);
+        float[] bSub = context.allocateFloatLocalArray(TS * TS);
+
+        float sum = 0.0f;
+        int numTiles = size / TS;
+        for (int t = 0; t < numTiles; t++) {
+            int tiledCol = TS * t + localCol;
+            int tiledRow = TS * t + localRow;
+            aSub[localRow * TS + localCol] = a.get(globalRow * size + tiledCol);
+            bSub[localRow * TS + localCol] = b.get(tiledRow * size + globalCol);
+            context.localBarrier();
+            for (int k = 0; k < TS; k++) {
+                sum += aSub[localRow * TS + k] * bSub[k * TS + localCol];
+            }
+            context.localBarrier();
+        }
+        c.set(globalRow * size + globalCol, sum);
+    }
+
+    private static double benchmark(TornadoExecutionPlan executionPlan, GridScheduler gridScheduler, int iterations) {
+        if (gridScheduler != null) {
+            executionPlan.withGridScheduler(gridScheduler);
+        }
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {
             executionPlan.execute();
         }
@@ -70,6 +110,18 @@ public class BenchmarkSgemm {
         return (end - start) / (double) iterations;
     }
 
+    private static boolean validate(String name, FloatArray expected, FloatArray actual, int size) {
+        for (int i = 0; i < size * size; i++) {
+            float e = expected.get(i);
+            float a = actual.get(i);
+            if (Math.abs(e - a) > 0.01f * Math.max(1.0f, Math.abs(e))) {
+                System.out.println("[" + name + "] Mismatch at " + i + ": expected=" + e + ", actual=" + a);
+                return false;
+            }
+        }
+        return true;
+    }
+
     public static void main(String[] args) throws TornadoExecutionPlanException {
 
         final int size = (args.length > 0) ? Integer.parseInt(args[0]) : 1024;
@@ -78,9 +130,14 @@ public class BenchmarkSgemm {
 
         System.out.println("SGEMM benchmark: " + size + "x" + size + ", " + iterations + " iterations (+" + WARMUP_ITERATIONS + " warm-up)");
 
+        if (size % TS != 0) {
+            throw new IllegalArgumentException("Size must be a multiple of the tile size (" + TS + ")");
+        }
+
         FloatArray matrixA = new FloatArray(size * size);
         FloatArray matrixB = new FloatArray(size * size);
         FloatArray outputJit = new FloatArray(size * size);
+        FloatArray outputTiled = new FloatArray(size * size);
         FloatArray outputCuBlas = new FloatArray(size * size);
 
         Random random = new Random(42);
@@ -94,6 +151,16 @@ public class BenchmarkSgemm {
                 .task("mxm", BenchmarkSgemm::matrixMultiplication, matrixA, matrixB, outputJit, size) //
                 .transferToHost(DataTransferMode.UNDER_DEMAND, outputJit);
 
+        // Tiled local-memory KernelContext kernel: TS x TS workgroups over the output
+        WorkerGrid2D workerGrid = new WorkerGrid2D(size, size);
+        workerGrid.setLocalWork(TS, TS, 1);
+        GridScheduler gridScheduler = new GridScheduler("tiled.mxm", workerGrid);
+
+        TaskGraph tiledGraph = new TaskGraph("tiled") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
+                .task("mxm", BenchmarkSgemm::matrixMultiplicationTiled, new KernelContext(), matrixA, matrixB, outputTiled, size) //
+                .transferToHost(DataTransferMode.UNDER_DEMAND, outputTiled);
+
         // Row-major C = A * B computed as column-major C_cm = B_cm * A_cm
         TaskGraph cublasGraph = new TaskGraph("cublas") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
@@ -106,33 +173,32 @@ public class BenchmarkSgemm {
                 .transferToHost(DataTransferMode.UNDER_DEMAND, outputCuBlas);
 
         double jitTime;
+        double tiledTime;
         double cublasTime;
 
         try (TornadoExecutionPlan jitPlan = new TornadoExecutionPlan(jitGraph.snapshot())) {
-            jitTime = benchmark(jitPlan, iterations);
+            jitTime = benchmark(jitPlan, null, iterations);
             jitPlan.execute().transferToHost(outputJit);
         }
 
+        try (TornadoExecutionPlan tiledPlan = new TornadoExecutionPlan(tiledGraph.snapshot())) {
+            tiledTime = benchmark(tiledPlan, gridScheduler, iterations);
+            tiledPlan.execute().transferToHost(outputTiled);
+        }
+
         try (TornadoExecutionPlan cublasPlan = new TornadoExecutionPlan(cublasGraph.snapshot())) {
-            cublasTime = benchmark(cublasPlan, iterations);
+            cublasTime = benchmark(cublasPlan, null, iterations);
             cublasPlan.execute().transferToHost(outputCuBlas);
         }
 
-        // Cross-validate the two GPU results
-        boolean isResultCorrect = true;
-        for (int i = 0; i < size * size; i++) {
-            float expected = outputJit.get(i);
-            float actual = outputCuBlas.get(i);
-            if (Math.abs(expected - actual) > 0.01f * Math.max(1.0f, Math.abs(expected))) {
-                System.out.println("Mismatch at " + i + ": jit=" + expected + ", cublas=" + actual);
-                isResultCorrect = false;
-                break;
-            }
-        }
+        // Cross-validate the GPU results against the naive JIT kernel
+        boolean isResultCorrect = validate("tiled", outputJit, outputTiled, size) & validate("cublas", outputJit, outputCuBlas, size);
 
-        System.out.printf("TornadoVM JIT kernel : %10.3f ms | %8.2f GFLOP/s%n", jitTime * 1e-6, gflop / (jitTime * 1e-9));
-        System.out.printf("cuBLAS library task  : %10.3f ms | %8.2f GFLOP/s%n", cublasTime * 1e-6, gflop / (cublasTime * 1e-9));
-        System.out.printf("Speedup (cuBLAS/JIT) : %10.2fx%n", jitTime / cublasTime);
+        System.out.printf("TornadoVM JIT kernel (naive @Parallel)  : %10.3f ms | %9.2f GFLOP/s%n", jitTime * 1e-6, gflop / (jitTime * 1e-9));
+        System.out.printf("TornadoVM KernelContext (tiled, TS=%d)  : %10.3f ms | %9.2f GFLOP/s%n", TS, tiledTime * 1e-6, gflop / (tiledTime * 1e-9));
+        System.out.printf("cuBLAS library task                     : %10.3f ms | %9.2f GFLOP/s%n", cublasTime * 1e-6, gflop / (cublasTime * 1e-9));
+        System.out.printf("Speedup (cuBLAS vs naive @Parallel)     : %10.2fx%n", jitTime / cublasTime);
+        System.out.printf("Speedup (cuBLAS vs tiled KernelContext) : %10.2fx%n", tiledTime / cublasTime);
         System.out.println(isResultCorrect ? "Results match" : "Results DO NOT match");
     }
 }
