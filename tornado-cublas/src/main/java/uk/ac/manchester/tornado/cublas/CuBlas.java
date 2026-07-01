@@ -47,10 +47,15 @@ public final class CuBlas {
     private CuBlas() {
     }
 
-    private static Access[] readOnlyExcept(int numArgs, int writeIndex) {
+    /**
+     * All arguments are READ_ONLY except the output. When {@code beta != 0} the
+     * output operand is also read by cuBLAS (y = ... + beta * y), so it must be
+     * READ_WRITE for TornadoVM to keep its device contents valid.
+     */
+    private static Access[] readOnlyExcept(int numArgs, int outputIndex, float beta) {
         Access[] accesses = new Access[numArgs];
         Arrays.fill(accesses, Access.READ_ONLY);
-        accesses[writeIndex] = Access.WRITE_ONLY;
+        accesses[outputIndex] = (beta != 0.0f) ? Access.READ_WRITE : Access.WRITE_ONLY;
         return accesses;
     }
 
@@ -101,7 +106,7 @@ public final class CuBlas {
                 .withLibrary(LIBRARY_NAME) //
                 .withFunction("cublasSgemv") //
                 .withParameters(new Object[] { operation, m, n, alpha, matrix, lda, vector, incx, beta, output, incy }) //
-                .withAccess(readOnlyExcept(11, 9));
+                .withAccess(readOnlyExcept(11, 9, beta));
     }
 
     /**
@@ -157,6 +162,6 @@ public final class CuBlas {
                 .withLibrary(LIBRARY_NAME) //
                 .withFunction("cublasSgemm") //
                 .withParameters(new Object[] { transa, transb, m, n, k, alpha, matrixA, lda, matrixB, ldb, beta, matrixC, ldc }) //
-                .withAccess(readOnlyExcept(13, 11));
+                .withAccess(readOnlyExcept(13, 11, beta));
     }
 }
