@@ -141,8 +141,18 @@ public abstract class CUDAKernelScheduler {
                 calculateGlobalWork(meta, batchThreads);
             }
             if (!meta.isLocalWorkDefined()) {
-                calculateLocalWork(meta);
-                checkAndAdaptLocalWork(meta);
+                // For multi-dimensional kernels, size the block from the CUDA occupancy API,
+                // which accounts for the kernel's register/shared-memory usage. This mirrors the
+                // PTX backend and prevents register-heavy 2D/3D kernels from requesting an
+                // unlaunchable block (CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES). 1D kernels keep the
+                // existing heuristic so reduction thread/partial layout is unaffected.
+                int maxBlockThreads = (meta.getDims() > 1) ? kernel.getMaxPotentialBlockSize() : 0;
+                if (maxBlockThreads > 0) {
+                    calculateLocalWorkFromMaxBlock(meta, maxBlockThreads);
+                } else {
+                    calculateLocalWork(meta);
+                    checkAndAdaptLocalWork(meta);
+                }
             }
         } else {
             checkLocalWorkGroupFitsOnDevice(meta);
@@ -154,6 +164,35 @@ public abstract class CUDAKernelScheduler {
         final int taskEvent = launch(executionPlanId, kernel, meta, waitEvents, batchThreads);
         updateProfiler(executionPlanId, taskEvent, meta);
         return taskEvent;
+    }
+
+    /**
+     * Distributes an occupancy-suggested maximum block size ({@code maxBlockThreads} total
+     * threads) across the kernel's dimensions, choosing per-dimension sizes that divide the
+     * global work evenly. Mirrors the PTX backend's occupancy-based block sizing.
+     */
+    protected void calculateLocalWorkFromMaxBlock(final TaskDataContext meta, int maxBlockThreads) {
+        final long[] localWork = meta.initLocalWork();
+        final long[] globalWork = meta.getGlobalWork();
+        final int dims = meta.getDims();
+        final long perDimensionMax = (long) Math.pow(maxBlockThreads, 1.0 / dims);
+        for (int i = 0; i < dims; i++) {
+            localWork[i] = blockSizeForDimension(perDimensionMax, globalWork[i]);
+        }
+    }
+
+    private static long blockSizeForDimension(long maxBlockSize, long globalWorkSize) {
+        if (maxBlockSize == globalWorkSize) {
+            maxBlockSize /= 4;
+        }
+        long value = Math.min(maxBlockSize, globalWorkSize);
+        if (value <= 0) {
+            return 1;
+        }
+        while (globalWorkSize % value != 0) {
+            value--;
+        }
+        return value;
     }
 
 }
