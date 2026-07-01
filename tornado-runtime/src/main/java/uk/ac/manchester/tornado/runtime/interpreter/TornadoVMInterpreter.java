@@ -961,6 +961,11 @@ public class TornadoVMInterpreter {
         if (task instanceof LibraryTask) {
             // Library tasks are dispatched to a native library at launch time;
             // there is nothing to compile and no kernel stack frame is needed.
+            if (timeProfiler instanceof TimeProfiler) {
+                timeProfiler.registerBackend(task.getId(), task.getDevice().getTornadoVMBackend().name());
+                timeProfiler.registerDeviceID(task.getId(), task.meta().getBackendIndex() + ":" + task.meta().getDeviceIndex());
+                timeProfiler.registerDeviceName(task.getId(), task.getDevice().getPhysicalDevice().getDeviceName());
+            }
             return new XPUExecutionFrame(null, waitList);
         }
 
@@ -1194,9 +1199,27 @@ public class TornadoVMInterpreter {
             DebugInterpreter.logLaunchTask(task, interpreterDevice, batchThreads, 0, eventId, logBuilder);
         }
 
+        // The CUDA-C backend does not expose device-event timestamps yet, so the
+        // library call is timed on the host, bounded by stream markers so the
+        // measurement covers exactly this call's device work.
+        long profilerStartTime = 0;
+        if (TornadoOptions.isProfilerEnabled()) {
+            int preEvent = interpreterDevice.enqueueMarker(graphExecutionContext.getExecutionPlanId());
+            interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), preEvent).waitForEvents(graphExecutionContext.getExecutionPlanId());
+            profilerStartTime = System.nanoTime();
+        }
+
         provider.dispatch(descriptor.getFunctionName(), new LibraryInvocation(callArgs, devicePointers, isReference, interpreterDevice, graphExecutionContext.getExecutionPlanId(), libraryContext));
 
-        int lastEvent = useDependencies ? interpreterDevice.enqueueMarker(graphExecutionContext.getExecutionPlanId()) : -1;
+        int lastEvent = (useDependencies || TornadoOptions.isProfilerEnabled()) ? interpreterDevice.enqueueMarker(graphExecutionContext.getExecutionPlanId()) : -1;
+
+        if (TornadoOptions.isProfilerEnabled()) {
+            interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), lastEvent).waitForEvents(graphExecutionContext.getExecutionPlanId());
+            long elapsed = System.nanoTime() - profilerStartTime;
+            timeProfiler.setTaskTimer(ProfilerType.TASK_KERNEL_TIME, task.getId(), elapsed);
+            timeProfiler.setTimer(ProfilerType.TOTAL_KERNEL_TIME, timeProfiler.getTimer(ProfilerType.TOTAL_KERNEL_TIME) + elapsed);
+        }
+
         resetEventIndexes(eventId);
         return lastEvent;
     }
