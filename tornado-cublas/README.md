@@ -46,6 +46,9 @@ into the SDK (`tornado.cublas` is added to the launcher's `--add-modules` automa
 # Standalone SGEMV (y = A * x), validated against sequential Java
 tornado -m tornado.cublas/uk.ac.manchester.tornado.cublas.tests.TestCuBlasSgemv 512
 
+# SGEMV with beta != 0 (y = A * x + beta * y, output is READ_WRITE)
+tornado -m tornado.cublas/uk.ac.manchester.tornado.cublas.tests.TestCuBlasSgemvBeta 512
+
 # Standalone SGEMM (C = A * B)
 tornado -m tornado.cublas/uk.ac.manchester.tornado.cublas.tests.TestCuBlasSgemm 256
 
@@ -55,7 +58,25 @@ tornado -m tornado.cublas/uk.ac.manchester.tornado.cublas.tests.TestCuBlasSgemvW
 
 Each test prints `Result is correct` when the GPU result matches the sequential Java
 reference. To inspect how the library task is scheduled (a regular `LAUNCH` between
-`ALLOC`/`TRANSFER` bytecodes), add `--printBytecodes`.
+`ALLOC`/`TRANSFER` bytecodes), add `--printBytecodes`. With `--enableProfiler console`,
+library tasks report `TASK_KERNEL_TIME` alongside regular tasks.
+
+## Benchmark
+
+`BenchmarkSgemm` compares the TornadoVM JIT-generated matrix-multiply kernel against a
+cuBLAS SGEMM library task on the same device buffers, and cross-validates the results:
+
+```bash
+tornado -m tornado.cublas/uk.ac.manchester.tornado.cublas.tests.BenchmarkSgemm 2048 50
+```
+
+Reference numbers on an NVIDIA GeForce RTX 4090 (FP32, CUDA 12.6):
+
+| Size | TornadoVM JIT kernel | cuBLAS library task | Speedup |
+|---|---|---|---|
+| 1024 | 4.1 TFLOP/s | 24.0 TFLOP/s | 5.9x |
+| 2048 | 4.7 TFLOP/s | 46.4 TFLOP/s | 9.8x |
+| 4096 | 5.3 TFLOP/s | 51.5 TFLOP/s | 9.7x |
 
 ## Supported functions
 
@@ -65,8 +86,10 @@ reference. To inspect how the library task is scheduled (a regular `LAUNCH` betw
 | `cublasSgemm` | FP32 (`FloatArray`) | C = alpha * op(A) * op(B) + beta * C |
 
 cuBLAS is column-major: for row-major TornadoVM arrays pass `CUBLAS_OP_T` (SGEMV) or
-swap the operands (SGEMM), as done in the tests. Batch processing (`withBatch`) is not
-supported for library tasks.
+swap the operands (SGEMM), as done in the tests. When `beta != 0` the output operand is
+also an input; the binding marks it `READ_WRITE` automatically so its device contents
+stay valid (include it in `transferToDevice` if the initial values come from the host).
+Batch processing (`withBatch`) is not supported for library tasks.
 
 ## Adding a new library
 

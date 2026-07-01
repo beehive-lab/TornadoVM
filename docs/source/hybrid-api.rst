@@ -24,8 +24,27 @@ Run with the CUDA backend (:code:`make BACKEND=cuda`). Examples live in the
 .. code:: bash
 
    tornado -m tornado.cublas/uk.ac.manchester.tornado.cublas.tests.TestCuBlasSgemv
+   tornado -m tornado.cublas/uk.ac.manchester.tornado.cublas.tests.TestCuBlasSgemvBeta
    tornado -m tornado.cublas/uk.ac.manchester.tornado.cublas.tests.TestCuBlasSgemm
    tornado -m tornado.cublas/uk.ac.manchester.tornado.cublas.tests.TestCuBlasSgemvWithTornadoVMTasksPOST
+
+Performance
+-----------
+
+``BenchmarkSgemm`` compares the TornadoVM JIT-generated matrix-multiply kernel
+against a cuBLAS SGEMM library task on the same device buffers:
+
+.. code:: bash
+
+   tornado -m tornado.cublas/uk.ac.manchester.tornado.cublas.tests.BenchmarkSgemm 2048 50
+
+Reference numbers on an NVIDIA GeForce RTX 4090 (FP32, CUDA 12.6): the cuBLAS
+library task reaches 24 / 46 / 51 TFLOP/s at sizes 1024 / 2048 / 4096, a 6-10x
+speedup over the JIT-generated kernel (~4-5 TFLOP/s) with identical results.
+
+With :code:`--enableProfiler console`, library tasks report ``TASK_KERNEL_TIME``
+(host-timed, bounded by stream markers) together with ``BACKEND``, ``DEVICE``
+and ``METHOD``, alongside regular tasks.
 
 How it works
 ------------
@@ -72,8 +91,10 @@ Scope and roadmap
 -----------------
 
 Currently supported: FP32 :code:`cublasSgemv` and :code:`cublasSgemm` on the
-CUDA backend. Batch processing (:code:`withBatch`) is not supported for
-library tasks.
+CUDA backend. When :code:`beta != 0` the output operand is also read by cuBLAS;
+the binding marks it ``READ_WRITE`` automatically (include it in
+:code:`transferToDevice` if its initial values come from the host). Batch
+processing (:code:`withBatch`) is not supported for library tasks.
 
 The same SPI accommodates other host-API libraries (cuBLASLt, cuDNN, cuFFT,
 cuSPARSE, cuSOLVER, cuTENSOR, NCCL): each is a module pair implementing the
