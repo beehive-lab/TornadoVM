@@ -568,7 +568,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         if (objectsToSync == null) {
             objectsToSync = executionContext.getPersistedObjects();
-            executionContext.addPersistedObject(this.taskGraphName, objectsToSync);
+            for (Object obj: objectsToSync) {
+	            executionContext.addPersistedObject(this.taskGraphName, obj);
+	    }
         }
 
         for (Object objectToSync : objectsToSync) {
