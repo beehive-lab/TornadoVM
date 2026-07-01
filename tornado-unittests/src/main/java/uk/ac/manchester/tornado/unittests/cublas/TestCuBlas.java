@@ -21,7 +21,6 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -38,6 +37,7 @@ import uk.ac.manchester.tornado.cublas.CuBlas;
 import uk.ac.manchester.tornado.cublas.CuBlasOptions;
 import uk.ac.manchester.tornado.cublas.enums.CuBlasOperation;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
 
 /**
  * Unit tests for cuBLAS library tasks (hybrid API). Skipped (JUnit assumption)
@@ -56,14 +56,26 @@ public class TestCuBlas extends TornadoTestBase {
     private static final int SIZE = 128;
     private static final Random random = new Random(42);
 
+    /**
+     * cuBLAS library tasks require the CUDA backend and libtornado-cublas.
+     * Following the test-infra convention, unavailable configurations throw the
+     * typed *NotSupported exceptions that the TornadoTestRunner counts as
+     * [UNSUPPORTED] (a JUnit Assume would be silently reported as PASS).
+     */
     @Before
-    public void assumeCuBlasIsAvailable() {
+    public void cuBlasMustBeAvailable() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
-        Assume.assumeTrue("cuBLAS library tasks require the CUDA backend (default device is " + backendType + ")", backendType == TornadoVMBackendType.CUDA);
+        if (backendType != TornadoVMBackendType.CUDA) {
+            String message = "cuBLAS library tasks require the CUDA backend (default device is " + backendType + ")";
+            switch (backendType) {
+                case OPENCL, PTX, SPIRV, METAL -> assertNotBackend(backendType, message);
+                default -> throw new TornadoVMCUDANotSupported(message);
+            }
+        }
         try {
             System.loadLibrary("tornado-cublas");
         } catch (UnsatisfiedLinkError e) {
-            Assume.assumeTrue("libtornado-cublas is not available: " + e.getMessage(), false);
+            throw new TornadoVMCUDANotSupported("libtornado-cublas is not available: " + e.getMessage());
         }
     }
 
