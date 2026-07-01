@@ -67,6 +67,7 @@ public final class CuBlasLibraryProvider implements TornadoLibraryProvider {
     private static final Map<String, CuBlasCall> FUNCTIONS = Map.of( //
             "cublasSgemv", CuBlasLibraryProvider::sgemv, //
             "cublasSgemm", CuBlasLibraryProvider::sgemm, //
+            "cublasSgemmStridedBatched", CuBlasLibraryProvider::sgemmStridedBatched, //
             "cublasGemmExFP16", (handle, inv) -> gemmEx(handle, inv, CudaDataType.CUDA_R_16F, CudaDataType.CUDA_R_16F), //
             "cublasGemmExFP16FP32", (handle, inv) -> gemmEx(handle, inv, CudaDataType.CUDA_R_16F, CudaDataType.CUDA_R_32F));
 
@@ -177,6 +178,28 @@ public final class CuBlasLibraryProvider implements TornadoLibraryProvider {
                 (float) invocation.getArg(8), //
                 invocation.getDevicePointer(9), //
                 (int) invocation.getArg(10));
+    }
+
+    /** (transa, transb, m, n, k, alpha, A, lda, strideA, B, ldb, strideB, beta, C, ldc, strideC, batchCount) */
+    private static int sgemmStridedBatched(long handle, LibraryInvocation invocation) {
+        return CuBlasNativeLib.cublasSgemmStridedBatched(handle, //
+                (int) invocation.getArg(0), //
+                (int) invocation.getArg(1), //
+                (int) invocation.getArg(2), //
+                (int) invocation.getArg(3), //
+                (int) invocation.getArg(4), //
+                (float) invocation.getArg(5), //
+                invocation.getDevicePointer(6), //
+                (int) invocation.getArg(7), //
+                (long) invocation.getArg(8), //
+                invocation.getDevicePointer(9), //
+                (int) invocation.getArg(10), //
+                (long) invocation.getArg(11), //
+                (float) invocation.getArg(12), //
+                invocation.getDevicePointer(13), //
+                (int) invocation.getArg(14), //
+                (long) invocation.getArg(15), //
+                (int) invocation.getArg(16));
     }
 
     /**

@@ -191,6 +191,42 @@ public final class CuBlas {
     }
 
     /**
+     * Strided-batched matrix-matrix multiplication:
+     * {@code C[i] = alpha * op(A[i]) * op(B[i]) + beta * C[i]} for
+     * {@code i in [0, batchCount)}, where each operand {@code X[i]} lives at
+     * {@code X + i * strideX} inside one flat array. One call launches the
+     * whole batch — the standard shape for transformer attention.
+     *
+     * <p>
+     * Full description:
+     * {@url https://docs.nvidia.com/cuda/cublas/index.html#cublas-t-gemmstridedbatched}
+     * </p>
+     */
+    public static LibraryTaskDescriptor cublasSgemmStridedBatched(int transa, //
+            int transb, //
+            int m, //
+            int n, //
+            int k, //
+            float alpha, //
+            FloatArray matrixA, //
+            int lda, //
+            long strideA, //
+            FloatArray matrixB, //
+            int ldb, //
+            long strideB, //
+            float beta, //
+            FloatArray matrixC, //
+            int ldc, //
+            long strideC, //
+            int batchCount) {
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cublasSgemmStridedBatched") //
+                .withParameters(new Object[] { transa, transb, m, n, k, alpha, matrixA, lda, strideA, matrixB, ldb, strideB, beta, matrixC, ldc, strideC, batchCount }) //
+                .withAccess(readOnlyExcept(17, 13, beta));
+    }
+
+    /**
      * Mixed-precision matrix-matrix multiplication via {@code cublasGemmEx}:
      * FP16 inputs and output, FP32 accumulation
      * ({@code CUBLAS_COMPUTE_32F}) on Tensor Cores. The standard inference

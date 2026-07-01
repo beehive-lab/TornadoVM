@@ -25,6 +25,9 @@ gates it. Status: `[x]` done / `[~]` in progress / `[ ]` planned / `[-]` not pla
       (`TestCuBlasWorkspace`), A1 TF32 math mode (`TestCuBlasSgemmTF32`)
 - [x] C1/C2 GemmEx FP16 in / FP16 or FP32 out, FP32 Tensor Core accumulate
       (`TestCuBlasGemmExFP16`): 160.6 TFLOP/s at 4096, 27.4x vs tiled KernelContext
+- [x] D1 `cublasSgemmStridedBatched` (LibraryTask16-18 arities added to tornado-api)
+- [x] G5 JUnit suite in tornado-unittests (`cublas.TestCuBlas`, 10 tests, auto-skip
+      without CUDA backend/libs), registered in `tornado-test`
 
 ---
 
@@ -80,7 +83,7 @@ Java reference implementations are the test oracle.
 | # | Function | Types | Notes | Test | Status |
 |---|---|---|---|---|---|
 | B1 | `cublasDgemm` | `DoubleArray` | Trivial clone of Sgemm; needs FP64-capable device (all NVIDIA) | `TestCuBlasDgemm` (tolerance 1e-9) | [ ] |
-| B2 | `cublasSgemmStridedBatched` | `FloatArray` | See Track D (higher priority than the rest of B) | `TestCuBlasSgemmStridedBatched` | [ ] |
+| B2 | `cublasSgemmStridedBatched` | `FloatArray` | See Track D | `TestCuBlas#testSgemmStridedBatched` | [x] |
 | B3 | `cublasStrsm` | `FloatArray` | Triangular solve; side/uplo/diag enums (`CuBlasSideMode`, `CuBlasFillMode`, `CuBlasDiagType` — port fill mode from prototype) | `TestCuBlasStrsm`: solve vs Java forward/back-substitution | [ ] |
 | B4 | `cublasSsyrk` | `FloatArray` | Rank-k update; output is triangular part only — validate only referenced triangle | `TestCuBlasSsyrk` | [ ] |
 | B5 | `cublasSgeam` | `FloatArray` | Element-wise C = αop(A) + βop(B); doubles as an on-device transpose (α=1, β=0, OP_T) — useful utility for the row/column-major seam | `TestCuBlasSgeam` + transpose sub-case | [ ] |
@@ -109,7 +112,7 @@ Infra: port `CudaDataType`/`CublasComputeType`/`CublasGemmAlgo` enums from the p
 
 | # | Feature | Design | Test | Status |
 |---|---|---|---|---|
-| D1 | `cublasSgemmStridedBatched` (+`Ex` variant) | Fits the current model perfectly: one flat `FloatArray` per operand + long strides + batchCount as scalars; zero infra needed | `TestCuBlasSgemmStridedBatched`: batch of 32 128x128 GEMMs in one flat buffer vs Java loop; compare perf vs 32 separate library tasks (launch-overhead story) | [ ] |
+| D1 | `cublasSgemmStridedBatched` (+`Ex` variant) | One flat `FloatArray` per operand + long strides + batchCount; needed LibraryTask16-18 arities in tornado-api | `TestCuBlas#testSgemmStridedBatched` (JUnit): batch of 8 128x128 GEMMs vs Java loop | [x] |
 | D2 | `cublasSgemmBatched` (pointer arrays) | Needs a device array of pointers: provider computes `base + i*stride` (or per-array offsets) into a small device buffer via the workspace hook (I3) + JNI `cuMemcpyHtoD`. Introduces the "provider-owned scratch" pattern that B7 and cuBLASLt reuse | `TestCuBlasSgemmBatched` | [ ] |
 | D3 | `gemvStridedBatched` | Same shape as D1 | `TestCuBlasSgemvStridedBatched` | [ ] |
 
@@ -166,7 +169,7 @@ transitively loads `libcublasLt`). Exercises everything the SPI reserved:
 | G2 | Graph-capture guard surfaced to providers | `LibraryInvocation.isCapturing()` so providers can reject capture-unsafe options (C6 AUTOTUNE, E-b host pointer mode) with a clear error instead of a corrupted capture | [ ] |
 | G3 | Multi-device | One context per device already; needs TornadoVM-level multi-device task graphs. `cublasXt` is **not** the path (host-pointer API conflicts with device-buffer model) | [-] |
 | G4 | Legacy cuBLAS API / emulation modes (`CUBLAS_EMULATE_*`) | Env-var driven, work without binding changes; document only | [-] |
-| G5 | tornado-test harness integration | Wire cuBLAS tests into `tornado-test` (skip when CUDA backend absent) instead of main()-runners only | [ ] |
+| G5 | tornado-test harness integration | `uk.ac.manchester.tornado.unittests.cublas.TestCuBlas` (10 JUnit tests, registered in `tornado-test`); skips via JUnit assumption when the default device is not CUDA or libtornado-cublas is missing. main()-runners kept as documented examples | [x] |
 
 ---
 
