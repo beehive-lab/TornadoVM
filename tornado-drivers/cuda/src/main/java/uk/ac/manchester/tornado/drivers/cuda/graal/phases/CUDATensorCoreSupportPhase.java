@@ -19,7 +19,7 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package src.main.java.uk.ac.manchester.tornado.drivers.cuda.graal.phases;
+package uk.ac.manchester.tornado.drivers.cuda.graal.phases;
 
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.GraphState;
@@ -36,9 +36,9 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadANode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadBInt8Node;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadBNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadBSwizzledNode;
-//import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAStoreBSwizzledNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAStoreBSwizzledNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAStoreNode;
-//import uk.ac.manchester.tornado.drivers.ptx.CUDAComputeCapability;
+
 
 import java.util.Optional;
 
@@ -47,7 +47,9 @@ import java.util.Optional;
  * and throws a {@link TornadoDeviceMMANotSupported} exception if it does not.
  */
 public class CUDATensorCoreSupportPhase extends Phase {
-   // private static final CUDAComputeCapability MMA_MIN = new CUDAComputeCapability(8, 0);
+
+    private static final int MMA_MAJOR_MIN = 8;
+    private static final int MMA_MINOR_MIN = 0;
 
     private final TornadoDeviceContext deviceContext;
 
@@ -62,14 +64,12 @@ public class CUDATensorCoreSupportPhase extends Phase {
 
     @Override
     protected void run(StructuredGraph graph) {
-      //  CUDAComputeCapability deviceCC = null;
-
         boolean hasMMA = false;
         for (Node n : graph.getNodes()) {
             if (n instanceof CUDAMMALoadANode || n instanceof CUDAMMALoadBNode
                     || n instanceof CUDAMMALoadBSwizzledNode
                     || n instanceof CUDAMMAStoreNode
-               //     || n instanceof CUDAMMAStoreBSwizzledNode
+                    || n instanceof CUDAMMAStoreBSwizzledNode
                     || n instanceof CUDAMMALoadAInt8Node
                     || n instanceof CUDAMMALoadBInt8Node
                     || n instanceof CUDAMMAComputeNode
@@ -78,20 +78,22 @@ public class CUDATensorCoreSupportPhase extends Phase {
                 break;
             }
         }
-
-        if (hasMMA) {
-//            if (deviceContext.getDevice() instanceof CUDADevice cudaDevice) {
-//                deviceCC = cudaDevice.getComputeCapability();
-//            } else {
-//                throw new TornadoRuntimeException("Tensor Core instructions require a PTX device, got: " + deviceContext.getDevice().getClass().getName());
-//            }
-
-
-//            if (deviceCC.compareTo(MMA_MIN) < 0) {
-//                throw new TornadoDeviceMMANotSupported("The current PTX device (" + deviceContext.getDeviceName()
-//                        + ", compute capability " + deviceCC + ") does not support Tensor Core instructions"
-//                        + " (requires compute capability >= " + MMA_MIN + ")");
-//            }
+        if (!hasMMA) {
+            return;
+        }
+        if (!(deviceContext.getDevice() instanceof CUDADevice cudaDevice)) {
+            throw new TornadoDeviceMMANotSupported(
+                    "MMA instructions require an NVIDIA CUDA device, got: "
+                            + deviceContext.getDevice().getClass().getName());
+        }
+        int major = cudaDevice.getComputeCapabilityMajor();
+        int minor = cudaDevice.getComputeCapabilityMinor();
+        if (major < MMA_MAJOR_MIN || (major == MMA_MAJOR_MIN && minor < MMA_MINOR_MIN)) {
+            throw new TornadoDeviceMMANotSupported(
+                    "MMA instructions require compute capability "
+                            + MMA_MAJOR_MIN + "." + MMA_MINOR_MIN
+                            + " or higher (Ampere+); device reports "
+                            + major + "." + minor);
         }
     }
 }
