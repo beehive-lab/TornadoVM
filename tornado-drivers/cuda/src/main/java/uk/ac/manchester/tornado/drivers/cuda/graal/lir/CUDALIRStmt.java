@@ -2039,4 +2039,72 @@ public class CUDALIRStmt {
         }
     }
 
+    @Opcode("SWIZZLED_LOAD_FP16_STRIDE_32")
+    public static class SwizzledLoadFP16Stride32Stmt extends AbstractInstruction {
+        public static final LIRInstructionClass<SwizzledLoadFP16Stride32Stmt> TYPE =
+                LIRInstructionClass.create(SwizzledLoadFP16Stride32Stmt.class);
+
+        @Def protected Value result;
+        @Use protected Value localArray;
+        @Use protected Value row;
+        @Use protected Value column;
+        @Use protected Value stride;
+
+        public SwizzledLoadFP16Stride32Stmt(Value result, Value localArray, Value row,
+                                            Value column, Value stride) {
+            super(TYPE);
+            this.result = result;
+            this.localArray = localArray;
+            this.row = row;
+            this.column = column;
+            this.stride = stride;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            //   lin     = row * stride + column
+            //   byteOff = lin << 1
+            //   byteOff ^= (((byteOff >> 7) & 0b111) << 4)
+            //   result = ((half *) tile)[byteOff >> 1]
+            String arr = asm.getStringValue(crb, localArray);
+
+            asm.indent();
+            asm.emit("{");
+            asm.eol();
+            asm.pushIndent();
+
+            asm.indent();
+            asm.emit("unsigned __lin = ");
+            asm.emitValue(crb, row);
+            asm.emit(" * ");
+            asm.emitValue(crb, stride);
+            asm.emit(" + ");
+            asm.emitValue(crb, column);
+            asm.delimiter();
+            asm.eol();
+
+            asm.indent();
+            asm.emit("unsigned __bo = __lin << 1");
+            asm.delimiter();
+            asm.eol();
+
+            asm.indent();
+            asm.emit("__bo ^= (((__bo >> 7) & 7u) << 4)");
+            asm.delimiter();
+            asm.eol();
+
+            // result = ((half *) tile)[byteOff >> 1]
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.emit(" = ((half *) " + arr + ")[__bo >> 1]");
+            asm.delimiter();
+            asm.eol();
+
+            asm.popIndent();
+            asm.indent();
+            asm.emit("}");
+            asm.eol();
+        }
+    }
+
 }
