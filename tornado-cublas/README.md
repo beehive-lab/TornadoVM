@@ -54,6 +54,10 @@ tornado -m tornado.cublas/uk.ac.manchester.tornado.cublas.tests.TestCuBlasSgemm 
 
 # Mixed graph: JIT task -> cublasSgemv -> JIT task, 10 iterations
 tornado -m tornado.cublas/uk.ac.manchester.tornado.cublas.tests.TestCuBlasSgemvWithTornadoVMTasksPOST
+
+# Matrix-vector: TornadoVM kernels (naive @Parallel + optimized KernelContext)
+# vs the equivalent cuBLAS SGEMV library task
+tornado -m tornado.cublas/uk.ac.manchester.tornado.cublas.tests.MatrixVectorRowMajorWithCuBlas 8192 2048 32
 ```
 
 Each test prints `Result is correct` when the GPU result matches the sequential Java
@@ -77,6 +81,12 @@ Reference numbers on an NVIDIA GeForce RTX 4090 (FP32, CUDA 12.6):
 | 1024 | 4.1 TFLOP/s | 24.0 TFLOP/s | 5.9x |
 | 2048 | 4.7 TFLOP/s | 46.4 TFLOP/s | 9.8x |
 | 4096 | 5.3 TFLOP/s | 51.5 TFLOP/s | 9.7x |
+
+`MatrixVectorRowMajorWithCuBlas` runs the same comparison for SGEMV (memory-bound),
+mirroring the `MatrixVectorRowMajor` example from `tornado-examples`. At 8192x2048 on
+the same GPU, the cuBLAS library task (578 GB/s) is 1.4x faster than the optimized
+KernelContext workgroup-per-row kernel (410 GB/s) and 28x faster than the naive
+`@Parallel` kernel.
 
 ## Supported functions
 
