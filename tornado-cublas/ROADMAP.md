@@ -23,6 +23,8 @@ gates it. Status: `[x]` done / `[~]` in progress / `[ ]` planned / `[-]` not pla
       best hand-written kernel, 74x vs sequential Java)
 - [x] I1 dispatch registry, I2 `CuBlasOptions` via `withTuning`, I3 workspace
       (`TestCuBlasWorkspace`), A1 TF32 math mode (`TestCuBlasSgemmTF32`)
+- [x] C1/C2 GemmEx FP16 in / FP16 or FP32 out, FP32 Tensor Core accumulate
+      (`TestCuBlasGemmExFP16`): 160.6 TFLOP/s at 4096, 27.4x vs tiled KernelContext
 
 ---
 
@@ -96,8 +98,8 @@ Infra: port `CudaDataType`/`CublasComputeType`/`CublasGemmAlgo` enums from the p
 
 | # | Feature | TornadoVM types | Constraints (from docs) | Test | Status |
 |---|---|---|---|---|---|
-| C1 | GemmEx FP16 in / FP16 out, compute 32F | `HalfFloatArray` | Tensor Cores; alignment ≥16B satisfied by TornadoVM buffers (+24B header — **verify**: header offset makes data 8-byte aligned only; if 16B alignment is violated, performance path degrades — measure, and consider padding) | `TestCuBlasGemmExFP16`: vs FP32 reference, tolerance ~1e-1 for 2Kx2K accumulations; benchmark row in `BenchmarkSgemm` | [ ] |
-| C2 | GemmEx FP16 in / FP32 out | `HalfFloatArray` A,B + `FloatArray` C | Common inference config | part of `TestCuBlasGemmExFP16` | [ ] |
+| C1 | GemmEx FP16 in / FP16 out, compute 32F | `HalfFloatArray` | Tensor Cores; alignment concern did NOT materialize: 160.6 TFLOP/s at 4096 (RTX 4090 FP16 peak) despite the +24B header offset | `TestCuBlasGemmExFP16` (vs Java reference from same FP16-rounded inputs); FP16 row in `BenchmarkSgemm`: 27.4x vs tiled KernelContext | [x] |
+| C2 | GemmEx FP16 in / FP32 out | `HalfFloatArray` A,B + `FloatArray` C | Common inference config (`CuBlas.cublasGemmExFP16FP32`) | part of `TestCuBlasGemmExFP16` | [x] |
 | C3 | GemmEx INT8 (8I in, 32I/32F out, compute 32I) | `Int8Array` / `ByteArray` A,B + `IntArray`/`FloatArray` C | Dims multiple-of-4 constraints for INT8; validate vs Java int accumulation | `TestCuBlasGemmExInt8` | [ ] |
 | C4 | GemmEx BF16 | — | **Blocked: no BF16 array type in tornado-api.** Add `BFloat16`/`BFloat16Array` first (separate tornado-api work item) | `TestCuBlasGemmExBF16` | [ ] |
 | C5 | GemmEx FP8 (E4M3/E5M2) | — | **Blocked: no FP8 type** (prototype had one; port needs the tensor-type track). Mandatory 16-byte alignment for all pointers/lds | `TestCuBlasGemmExFP8` | [ ] |

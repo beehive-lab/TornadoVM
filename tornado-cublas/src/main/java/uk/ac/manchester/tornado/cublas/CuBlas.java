@@ -22,6 +22,7 @@ import java.util.Arrays;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.cublas.enums.CuBlasMathMode;
 
 /**
@@ -187,5 +188,56 @@ public final class CuBlas {
             int ldc) {
         return cublasSgemm(transa, transb, m, n, k, alpha, matrixA, lda, matrixB, ldb, beta, matrixC, ldc) //
                 .withTuning(new CuBlasOptions().withMathMode(CuBlasMathMode.CUBLAS_TF32_TENSOR_OP_MATH));
+    }
+
+    /**
+     * Mixed-precision matrix-matrix multiplication via {@code cublasGemmEx}:
+     * FP16 inputs and output, FP32 accumulation
+     * ({@code CUBLAS_COMPUTE_32F}) on Tensor Cores. The standard inference
+     * configuration: half the memory traffic of SGEMM with FP32-quality
+     * accumulation.
+     */
+    public static LibraryTaskDescriptor cublasGemmExFP16(int transa, //
+            int transb, //
+            int m, //
+            int n, //
+            int k, //
+            float alpha, //
+            HalfFloatArray matrixA, //
+            int lda, //
+            HalfFloatArray matrixB, //
+            int ldb, //
+            float beta, //
+            HalfFloatArray matrixC, //
+            int ldc) {
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cublasGemmExFP16") //
+                .withParameters(new Object[] { transa, transb, m, n, k, alpha, matrixA, lda, matrixB, ldb, beta, matrixC, ldc }) //
+                .withAccess(readOnlyExcept(13, 11, beta));
+    }
+
+    /**
+     * Mixed-precision matrix-matrix multiplication via {@code cublasGemmEx}:
+     * FP16 inputs, FP32 output, FP32 accumulation on Tensor Cores.
+     */
+    public static LibraryTaskDescriptor cublasGemmExFP16FP32(int transa, //
+            int transb, //
+            int m, //
+            int n, //
+            int k, //
+            float alpha, //
+            HalfFloatArray matrixA, //
+            int lda, //
+            HalfFloatArray matrixB, //
+            int ldb, //
+            float beta, //
+            FloatArray matrixC, //
+            int ldc) {
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cublasGemmExFP16FP32") //
+                .withParameters(new Object[] { transa, transb, m, n, k, alpha, matrixA, lda, matrixB, ldb, beta, matrixC, ldc }) //
+                .withAccess(readOnlyExcept(13, 11, beta));
     }
 }

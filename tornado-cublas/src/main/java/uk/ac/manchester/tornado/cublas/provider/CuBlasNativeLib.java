@@ -63,6 +63,15 @@ final class CuBlasNativeLib {
     static native int cublasSgemm(long handle, int transa, int transb, int m, int n, int k, float alpha, long dA, int lda, long dB, int ldb, float beta, long dC, int ldc);
 
     /**
+     * Generic mixed-precision GEMM ({@code cublasGemmEx}). Scalars are passed as
+     * host floats, which is valid for the FP32-family compute types
+     * (CUBLAS_COMPUTE_32F*); other compute types use different scalar types and
+     * must not be dispatched through this entry point.
+     */
+    static native int cublasGemmEx(long handle, int transa, int transb, int m, int n, int k, float alpha, long dA, int aType, int lda, long dB, int bType, int ldb, float beta, long dC, int cType,
+            int ldc, int computeType, int algo);
+
+    /**
      * Decodes a {@code cublasStatus_t} value.
      */
     static String decodeStatus(int status) {

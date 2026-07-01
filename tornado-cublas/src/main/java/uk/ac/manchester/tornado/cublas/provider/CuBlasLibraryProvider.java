@@ -23,6 +23,8 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.cublas.CuBlas;
 import uk.ac.manchester.tornado.cublas.CuBlasOptions;
 import uk.ac.manchester.tornado.cublas.enums.CuBlasMathMode;
+import uk.ac.manchester.tornado.cublas.enums.CublasComputeType;
+import uk.ac.manchester.tornado.cublas.enums.CudaDataType;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.library.spi.LibraryContext;
 import uk.ac.manchester.tornado.runtime.library.spi.LibraryInvocation;
@@ -64,7 +66,12 @@ public final class CuBlasLibraryProvider implements TornadoLibraryProvider {
      */
     private static final Map<String, CuBlasCall> FUNCTIONS = Map.of( //
             "cublasSgemv", CuBlasLibraryProvider::sgemv, //
-            "cublasSgemm", CuBlasLibraryProvider::sgemm);
+            "cublasSgemm", CuBlasLibraryProvider::sgemm, //
+            "cublasGemmExFP16", (handle, inv) -> gemmEx(handle, inv, CudaDataType.CUDA_R_16F, CudaDataType.CUDA_R_16F), //
+            "cublasGemmExFP16FP32", (handle, inv) -> gemmEx(handle, inv, CudaDataType.CUDA_R_16F, CudaDataType.CUDA_R_32F));
+
+    /** cublasGemmAlgo_t CUBLAS_GEMM_DEFAULT: heuristic algorithm selection. */
+    private static final int CUBLAS_GEMM_DEFAULT = -1;
 
     @Override
     public String libraryName() {
@@ -170,6 +177,28 @@ public final class CuBlasLibraryProvider implements TornadoLibraryProvider {
                 (float) invocation.getArg(8), //
                 invocation.getDevicePointer(9), //
                 (int) invocation.getArg(10));
+    }
+
+    /**
+     * (transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc) with FP16
+     * inputs, the given output type, and FP32 Tensor Core accumulation.
+     */
+    private static int gemmEx(long handle, LibraryInvocation invocation, CudaDataType inputType, CudaDataType outputType) {
+        return CuBlasNativeLib.cublasGemmEx(handle, //
+                (int) invocation.getArg(0), //
+                (int) invocation.getArg(1), //
+                (int) invocation.getArg(2), //
+                (int) invocation.getArg(3), //
+                (int) invocation.getArg(4), //
+                (float) invocation.getArg(5), //
+                invocation.getDevicePointer(6), inputType.value(), //
+                (int) invocation.getArg(7), //
+                invocation.getDevicePointer(8), inputType.value(), //
+                (int) invocation.getArg(9), //
+                (float) invocation.getArg(10), //
+                invocation.getDevicePointer(11), outputType.value(), //
+                (int) invocation.getArg(12), //
+                CublasComputeType.CUBLAS_COMPUTE_32F.value(), CUBLAS_GEMM_DEFAULT);
     }
 
     /** (transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc) */
