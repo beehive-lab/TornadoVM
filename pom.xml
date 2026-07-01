@@ -671,5 +671,6 @@
         <module>tornado-assembly</module>
         <module>tornado-api</module>
         <module>tornado-annotation</module>
+        <module>tornado-cublas</module>
     </modules>
 </project>
