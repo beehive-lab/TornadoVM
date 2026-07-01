@@ -347,8 +347,8 @@ def build_tornadovm(args, backend_profiles):
         backend_list = args.backend.split(",")
         backend_list_sorted = sorted(backend_list)
 
-        # If all three backends, use "full"
-        if set(backend_list_sorted) == {"opencl", "ptx", "spirv"}:
+        # If all four backends, use "full"
+        if set(backend_list_sorted) == {"opencl", "ptx", "spirv", "cuda"}:
             backend_variant = "full"
         else:
             # Single backend or partial combination - use exact name(s)

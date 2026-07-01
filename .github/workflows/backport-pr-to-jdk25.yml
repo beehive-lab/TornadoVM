@@ -2,30 +2,95 @@ name: Create PR to jdk25 when PR targets develop
 
 on:
   pull_request_target:
-    types: [opened, reopened, ready_for_review]
+    types: [opened, reopened, ready_for_review, synchronize]
     branches:
       - develop
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
+
+concurrency:
+  group: backport-jdk25-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   create-jdk25-pr:
     if: github.event.pull_request.base.ref == 'develop' && github.event.pull_request.head.ref != 'jdk25'
     runs-on: ubuntu-latest
 
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      PR_URL: ${{ github.event.pull_request.html_url }}
+      PR_TITLE: ${{ github.event.pull_request.title }}
+      PR_BODY: ${{ github.event.pull_request.body }}
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      # Branch (in the base repo) that holds the cherry-picked commits.
+      BACKPORT_BRANCH: auto/jdk25-backport/pr-${{ github.event.pull_request.number }}
+
     steps:
+      - name: Checkout base repo
+        uses: actions/checkout@v4
+        with:
+          ref: jdk25
+          fetch-depth: 0
+          # Use the default GITHUB_TOKEN so we can push the backport branch.
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cherry-pick PR commits onto jdk25
+        id: cherry
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # The PR head lives in the contributor's fork; fetch the exact SHAs
+          # (allowed because they are reachable from a ref) plus jdk25.
+          git fetch --no-tags origin \
+            "jdk25:refs/remotes/origin/jdk25" \
+            "$BASE_SHA" "$HEAD_SHA"
+
+          # Commits introduced by this PR = everything in head that is not in
+          # the develop commit the PR is based on. Skip merge commits so the
+          # cherry-pick stays linear.
+          commits=$(git rev-list --reverse --no-merges "$BASE_SHA".."$HEAD_SHA")
+
+          if [ -z "$commits" ]; then
+            echo "No non-merge commits to backport."
+            echo "status=empty" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git switch -c "$BACKPORT_BRANCH" refs/remotes/origin/jdk25
+
+          for c in $commits; do
+            echo "Cherry-picking $c"
+            if ! git cherry-pick -x "$c"; then
+              git cherry-pick --abort || true
+              echo "Conflict while cherry-picking $c"
+              echo "status=conflict" >> "$GITHUB_OUTPUT"
+              echo "conflict_sha=$c" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
+
+          # Plain --force (not --force-with-lease): each run is a fresh
+          # checkout with no remote-tracking ref for the backport branch, and
+          # the branch is owned solely by this automation.
+          git push --force origin "$BACKPORT_BRANCH"
+          echo "status=pushed" >> "$GITHUB_OUTPUT"
+
       - name: Check if PR to jdk25 already exists
         id: existing
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          HEAD_LABEL: ${{ github.event.pull_request.head.label }}
-          REPO: ${{ github.repository }}
+        if: steps.cherry.outputs.status == 'pushed'
         run: |
           count=$(gh pr list \
             --repo "$REPO" \
-            --head "$HEAD_LABEL" \
+            --head "$BACKPORT_BRANCH" \
             --base "jdk25" \
             --state open \
             --json number \
@@ -33,24 +98,18 @@ jobs:
           echo "count=$count" >> "$GITHUB_OUTPUT"
 
       - name: Create PR to jdk25
-        if: steps.existing.outputs.count == '0'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-          HEAD_LABEL: ${{ github.event.pull_request.head.label }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
-          PR_BODY: ${{ github.event.pull_request.body }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
+        if: steps.cherry.outputs.status == 'pushed' && steps.existing.outputs.count == '0'
         run: |
-          # --no-maintainer-edit avoids "Fork collab can't be granted by
-          # someone without permission" when the source PR is from a fork:
-          # GITHUB_TOKEN cannot grant maintainer-edit on the contributor's
-          # fork, so the cross-fork PR creation fails unless we opt out.
           gh pr create \
             --repo "$REPO" \
             --base "jdk25" \
-            --head "$HEAD_LABEL" \
+            --head "$BACKPORT_BRANCH" \
             --title "$PR_TITLE" \
-            --no-maintainer-edit \
-            --body "$(printf 'Auto-created because #%s was opened against `develop`.\n\nOriginal PR: %s\n\n---\n%s' "$PR_NUMBER" "$PR_URL" "$PR_BODY")"
+            --body "$(printf 'Auto-created because #%s was opened against `develop`.\n\nCherry-picked the commits introduced by that PR onto `jdk25`.\n\nOriginal PR: %s\n\n---\n%s' "$PR_NUMBER" "$PR_URL" "$PR_BODY")"
+
+      - name: Comment on conflict
+        if: steps.cherry.outputs.status == 'conflict'
+        run: |
+          gh pr comment "$PR_NUMBER" \
+            --repo "$REPO" \
+            --body "$(printf ':warning: Could not automatically backport this PR to `jdk25`.\n\nCherry-picking commit `%s` onto `jdk25` produced conflicts, so no `jdk25` PR was created. Please backport these changes manually.' "${{ steps.cherry.outputs.conflict_sha }}")"
