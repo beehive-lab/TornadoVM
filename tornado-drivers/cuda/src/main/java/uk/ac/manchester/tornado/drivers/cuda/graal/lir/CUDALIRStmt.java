@@ -22,6 +22,7 @@
 package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 
 import jdk.vm.ci.meta.JavaKind;
+import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.Opcode;
@@ -34,6 +35,8 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler.CUDABinaryIntrinsic;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler.CUDATernaryIntrinsic;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDACompilationResultBuilder;
+import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
+import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIROp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAUnary.MemoryAccess;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAUnary.CUDAAddressCast;
 import uk.ac.manchester.tornado.drivers.cuda.graal.meta.CUDAMemorySpace;
@@ -91,6 +94,36 @@ public class CUDALIRStmt {
 
         @Override
         public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            // Fragment-carrying phi copy: when RHS is an MMA fragment kind, LHS is
+            // either a fragment (naturally) or a Variable that was retyped to a
+            // C array by CUDABackend.emitVariableDefs (loop-carried phi case).
+            // Either way, the C-level type of both sides is `T[N]`, so a whole-array
+            // assignment is illegal in C, expand into N per-lane element copies.
+            CUDAKind rhsKind = fragmentKindOf(rhs);
+            if (rhsKind != null) {
+                int lanes = rhsKind.getVectorLength();
+                for (int i = 0; i < lanes; i++) {
+                    asm.indent();
+                    asm.emitValue(crb, lhs);
+                    asm.emit("[%d]", i);
+                    asm.space();
+                    asm.assign();
+                    asm.space();
+                    if (rhs instanceof CUDALIROp) {
+                        // Extremely unlikely to occur for MMA fragment RHS in practice,
+                        // but preserved for symmetry with the scalar path below.
+                        ((CUDALIROp) rhs).emit(crb, asm);
+                    } else {
+                        asm.emitValue(crb, rhs);
+                        asm.emit("[%d]", i);
+                    }
+                    asm.delimiter();
+                    asm.eol();
+                }
+                return;
+            }
+
+            // Scalar path.
             asm.indent();
             asm.emitValue(crb, lhs);
             asm.space();
@@ -103,6 +136,22 @@ public class CUDALIRStmt {
             }
             asm.delimiter();
             asm.eol();
+        }
+
+        /**
+         * Returns the fragment CUDAKind carried by {@code v}, or null if {@code v}
+         * isn't a Variable/AllocatableValue with an MMA fragment PlatformKind.
+         */
+        private static CUDAKind fragmentKindOf(Value v) {
+            if (v == null || !(v.getValueKind() instanceof LIRKind)) {
+                return null;
+            }
+            Object pk = ((LIRKind) v.getValueKind()).getPlatformKind();
+            if (!(pk instanceof CUDAKind)) {
+                return null;
+            }
+            CUDAKind k = (CUDAKind) pk;
+            return k.isMMAFragment() ? k : null;
         }
 
         public AllocatableValue getResult() {
