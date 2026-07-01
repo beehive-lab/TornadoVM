@@ -27,6 +27,21 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task1;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task10;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.LibraryTask1;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.LibraryTask10;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.LibraryTask11;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.LibraryTask12;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.LibraryTask13;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.LibraryTask14;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.LibraryTask15;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.LibraryTask2;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.LibraryTask3;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.LibraryTask4;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.LibraryTask5;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.LibraryTask6;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.LibraryTask7;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.LibraryTask8;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.LibraryTask9;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task11;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task12;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task13;
@@ -644,6 +659,129 @@ public class TaskGraph implements TaskGraphInterface {
         PrebuiltTaskPackage prebuiltTask = TaskPackage.createPrebuiltTask(id, entryPoint, filename, accessorParameters);
         prebuiltTask.withAtomics(atomics);
         taskGraphImpl.addPrebuiltTask(prebuiltTask);
+        return this;
+    }
+
+    /**
+     * Adds a library task with one parameter. Library tasks invoke functions from
+     * external native libraries (e.g., NVIDIA cuBLAS) within a task graph.
+     *
+     * @param id
+     *     Task-id
+     * @param code
+     *     Reference to a library binding factory method (e.g., {@code CuBlas::cublasSgemv})
+     * @return {@link TaskGraph}
+     */
+    @Override
+    public <T1> TaskGraph libraryTask(String id, LibraryTask1<T1> code, T1 arg1) {
+        checkTaskName(id);
+        taskGraphImpl.addLibraryTask(id, code.apply(arg1));
+        return this;
+    }
+
+    @Override
+    public <T1, T2> TaskGraph libraryTask(String id, LibraryTask2<T1, T2> code, T1 arg1, T2 arg2) {
+        checkTaskName(id);
+        taskGraphImpl.addLibraryTask(id, code.apply(arg1, arg2));
+        return this;
+    }
+
+    @Override
+    public <T1, T2, T3> TaskGraph libraryTask(String id, LibraryTask3<T1, T2, T3> code, T1 arg1, T2 arg2, T3 arg3) {
+        checkTaskName(id);
+        taskGraphImpl.addLibraryTask(id, code.apply(arg1, arg2, arg3));
+        return this;
+    }
+
+    @Override
+    public <T1, T2, T3, T4> TaskGraph libraryTask(String id, LibraryTask4<T1, T2, T3, T4> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4) {
+        checkTaskName(id);
+        taskGraphImpl.addLibraryTask(id, code.apply(arg1, arg2, arg3, arg4));
+        return this;
+    }
+
+    @Override
+    public <T1, T2, T3, T4, T5> TaskGraph libraryTask(String id, LibraryTask5<T1, T2, T3, T4, T5> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) {
+        checkTaskName(id);
+        taskGraphImpl.addLibraryTask(id, code.apply(arg1, arg2, arg3, arg4, arg5));
+        return this;
+    }
+
+    @Override
+    public <T1, T2, T3, T4, T5, T6> TaskGraph libraryTask(String id, LibraryTask6<T1, T2, T3, T4, T5, T6> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6) {
+        checkTaskName(id);
+        taskGraphImpl.addLibraryTask(id, code.apply(arg1, arg2, arg3, arg4, arg5, arg6));
+        return this;
+    }
+
+    @Override
+    public <T1, T2, T3, T4, T5, T6, T7> TaskGraph libraryTask(String id, LibraryTask7<T1, T2, T3, T4, T5, T6, T7> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7) {
+        checkTaskName(id);
+        taskGraphImpl.addLibraryTask(id, code.apply(arg1, arg2, arg3, arg4, arg5, arg6, arg7));
+        return this;
+    }
+
+    @Override
+    public <T1, T2, T3, T4, T5, T6, T7, T8> TaskGraph libraryTask(String id, LibraryTask8<T1, T2, T3, T4, T5, T6, T7, T8> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7,
+            T8 arg8) {
+        checkTaskName(id);
+        taskGraphImpl.addLibraryTask(id, code.apply(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8));
+        return this;
+    }
+
+    @Override
+    public <T1, T2, T3, T4, T5, T6, T7, T8, T9> TaskGraph libraryTask(String id, LibraryTask9<T1, T2, T3, T4, T5, T6, T7, T8, T9> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7,
+            T8 arg8, T9 arg9) {
+        checkTaskName(id);
+        taskGraphImpl.addLibraryTask(id, code.apply(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9));
+        return this;
+    }
+
+    @Override
+    public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> TaskGraph libraryTask(String id, LibraryTask10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5,
+            T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10) {
+        checkTaskName(id);
+        taskGraphImpl.addLibraryTask(id, code.apply(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10));
+        return this;
+    }
+
+    @Override
+    public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> TaskGraph libraryTask(String id, LibraryTask11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4,
+            T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11) {
+        checkTaskName(id);
+        taskGraphImpl.addLibraryTask(id, code.apply(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11));
+        return this;
+    }
+
+    @Override
+    public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> TaskGraph libraryTask(String id, LibraryTask12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> code, T1 arg1, T2 arg2, T3 arg3,
+            T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12) {
+        checkTaskName(id);
+        taskGraphImpl.addLibraryTask(id, code.apply(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12));
+        return this;
+    }
+
+    @Override
+    public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> TaskGraph libraryTask(String id, LibraryTask13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> code, T1 arg1, T2 arg2,
+            T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13) {
+        checkTaskName(id);
+        taskGraphImpl.addLibraryTask(id, code.apply(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13));
+        return this;
+    }
+
+    @Override
+    public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> TaskGraph libraryTask(String id, LibraryTask14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> code, T1 arg1,
+            T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14) {
+        checkTaskName(id);
+        taskGraphImpl.addLibraryTask(id, code.apply(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14));
+        return this;
+    }
+
+    @Override
+    public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> TaskGraph libraryTask(String id, LibraryTask15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> code,
+            T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15) {
+        checkTaskName(id);
+        taskGraphImpl.addLibraryTask(id, code.apply(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15));
         return this;
     }
 
