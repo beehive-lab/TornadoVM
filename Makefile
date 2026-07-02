@@ -34,6 +34,9 @@ spirv:
 metal:
 	bin/compile --jdk jdk25 --backend metal,opencl
 
+cuda:
+	bin/compile --jdk jdk25 --backend cuda
+
 sdk:
 	bin/compile --jdk jdk25 --sdk --backend $(BACKEND)
 
@@ -49,7 +52,7 @@ checkstyle:
 	./mvnw checkstyle:check
 
 clean:
-	./mvnw -Popencl-backend,ptx-backend,spirv-backend,metal-backend clean
+	./mvnw -Popencl-backend,ptx-backend,spirv-backend,metal-backend,cuda-backend clean
 
 example:
 	tornado --printKernel --debug -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt --params="8192"

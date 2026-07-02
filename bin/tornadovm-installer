@@ -73,7 +73,7 @@ __SUPPORTED_JDKS__ = [
     config.__SAPMACHINE25__,
     config.__LIBERICA25__,
 ]
-__SUPPORTED_BACKENDS__ = ["opencl", "spirv", "ptx", "metal"]
+__SUPPORTED_BACKENDS__ = ["opencl", "spirv", "ptx", "metal", "cuda"]
 
 # Custom Exceptions
 class TornadoInstallerError(Exception):

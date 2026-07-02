@@ -125,6 +125,7 @@
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/ptx-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/spirv-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/metal-exports</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/cuda-exports</arg>
                             </compilerArgs>
                         </configuration>
                     </plugin>
@@ -395,6 +396,7 @@
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/ptx-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/spirv-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/metal-exports</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/cuda-exports</arg>
                             </compilerArgs>
                         </configuration>
                     </plugin>

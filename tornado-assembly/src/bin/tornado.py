@@ -64,10 +64,12 @@ __OPENCL_EXPORTS__ = "/etc/exportLists/opencl-exports"
 __PTX_EXPORTS__ = "/etc/exportLists/ptx-exports"
 __SPIRV_EXPORTS__ = "/etc/exportLists/spirv-exports"
 __METAL_EXPORTS__ = "/etc/exportLists/metal-exports"
+__CUDA_EXPORTS__ = "/etc/exportLists/cuda-exports"
 __TORNADOVM_ADD_MODULES__ = "--add-modules ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.common"
 __PTX_MODULE__ = "tornado.drivers.ptx"
 __OPENCL_MODULE__ = "tornado.drivers.opencl"
 __METAL_MODULE__ = "tornado.drivers.metal"
+__CUDA_MODULE__ = "tornado.drivers.cuda"
 
 # ########################################################
 # JAVA FLAGS
@@ -1281,6 +1283,7 @@ class TornadoVMRunnerTool():
         ptx = self.sdk + __PTX_EXPORTS__
         spirv = self.sdk + __SPIRV_EXPORTS__
         metal = self.sdk + __METAL_EXPORTS__
+        cuda = self.sdk + __CUDA_EXPORTS__
 
         if (self.isTruffleCommand):
             common = self.truffleCompatibleExports(common)
@@ -1288,6 +1291,7 @@ class TornadoVMRunnerTool():
             ptx = self.truffleCompatibleExports(ptx)
             spirv = self.truffleCompatibleExports(spirv)
             metal = self.truffleCompatibleExports(metal)
+            cuda = self.truffleCompatibleExports(cuda)
 
         # For Truffle, exports are already expanded inline (no @ prefix needed)
         # For Java, use @ to read from file
@@ -1305,6 +1309,9 @@ class TornadoVMRunnerTool():
             if ("metal-backend" in self.listOfBackends):
                 javaFlags = javaFlags + metal + " "
                 tornadoAddModules = tornadoAddModules + "," + __METAL_MODULE__
+            if ("cuda-backend" in self.listOfBackends):
+                javaFlags = javaFlags + cuda + " "
+                tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__
         else:
             javaFlags = javaFlags + " @" + common + " "
             if ("opencl-backend" in self.listOfBackends):
@@ -1319,6 +1326,9 @@ class TornadoVMRunnerTool():
             if ("metal-backend" in self.listOfBackends):
                 javaFlags = javaFlags + "@" + metal + " "
                 tornadoAddModules = tornadoAddModules + "," + __METAL_MODULE__
+            if ("cuda-backend" in self.listOfBackends):
+                javaFlags = javaFlags + "@" + cuda + " "
+                tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__
 
         # Enable native access for backend modules to avoid restricted method warnings
         nativeAccessModules = []
@@ -1331,6 +1341,8 @@ class TornadoVMRunnerTool():
             nativeAccessModules.append(__PTX_MODULE__)
         if ("metal-backend" in self.listOfBackends):
             nativeAccessModules.append(__METAL_MODULE__)
+        if ("cuda-backend" in self.listOfBackends):
+            nativeAccessModules.append(__CUDA_MODULE__)
         if nativeAccessModules:
             javaFlags = javaFlags + "--enable-native-access=" + ",".join(nativeAccessModules) + " "
 
