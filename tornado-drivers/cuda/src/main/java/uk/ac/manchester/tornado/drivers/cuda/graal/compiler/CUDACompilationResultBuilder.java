@@ -31,28 +31,28 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import jdk.graal.compiler.nodes.spi.CoreProviders;
 import org.graalvm.collections.EconomicMap;
 import org.graalvm.collections.Equivalence;
-import org.graalvm.compiler.asm.Assembler;
-import org.graalvm.compiler.code.CompilationResult;
-import org.graalvm.compiler.core.common.spi.CodeGenProviders;
-import org.graalvm.compiler.debug.DebugContext;
-import org.graalvm.compiler.lir.InstructionValueProcedure;
-import org.graalvm.compiler.lir.LIR;
-import org.graalvm.compiler.lir.LIRInstruction;
-import org.graalvm.compiler.lir.LIRInstruction.OperandFlag;
-import org.graalvm.compiler.lir.LIRInstruction.OperandMode;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
-import org.graalvm.compiler.lir.asm.DataBuilder;
-import org.graalvm.compiler.lir.asm.FrameContext;
-import org.graalvm.compiler.lir.framemap.FrameMap;
-import org.graalvm.compiler.nodes.AbstractMergeNode;
-import org.graalvm.compiler.nodes.IfNode;
-import org.graalvm.compiler.nodes.LoopBeginNode;
-import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
-import org.graalvm.compiler.nodes.cfg.HIRBlock;
-import org.graalvm.compiler.options.OptionValues;
+import jdk.graal.compiler.asm.Assembler;
+import jdk.graal.compiler.code.CompilationResult;
+import jdk.graal.compiler.debug.DebugContext;
+import jdk.graal.compiler.lir.InstructionValueProcedure;
+import jdk.graal.compiler.lir.LIR;
+import jdk.graal.compiler.lir.LIRInstruction;
+import jdk.graal.compiler.lir.LIRInstruction.OperandFlag;
+import jdk.graal.compiler.lir.LIRInstruction.OperandMode;
+import jdk.graal.compiler.lir.Variable;
+import jdk.graal.compiler.lir.asm.CompilationResultBuilder;
+import jdk.graal.compiler.lir.asm.DataBuilder;
+import jdk.graal.compiler.lir.asm.FrameContext;
+import jdk.graal.compiler.lir.framemap.FrameMap;
+import jdk.graal.compiler.nodes.AbstractMergeNode;
+import jdk.graal.compiler.nodes.IfNode;
+import jdk.graal.compiler.nodes.LoopBeginNode;
+import jdk.graal.compiler.nodes.cfg.ControlFlowGraph;
+import jdk.graal.compiler.nodes.cfg.HIRBlock;
+import jdk.graal.compiler.options.OptionValues;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -80,9 +80,9 @@ public class CUDACompilationResultBuilder extends CompilationResultBuilder {
     private long[] localGrid;
     private CUDADeviceContextInterface deviceContext;
 
-    public CUDACompilationResultBuilder(CodeGenProviders providers, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext, OptionValues options, DebugContext debug,
+    public CUDACompilationResultBuilder(CoreProviders providers, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext, OptionValues options, DebugContext debug,
             CompilationResult compilationResult, LIR lir) {
-        super(providers, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult, Register.None, EconomicMap.create(Equivalence.DEFAULT), NO_VERIFIERS, lir);
+        super(providers, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult, Register.None, NO_VERIFIERS, lir);
         nonInlinedMethods = new HashSet<ResolvedJavaMethod>();
     }
 

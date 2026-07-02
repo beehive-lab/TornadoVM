@@ -23,34 +23,34 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.graal.compiler.plugins;
 
-import org.graalvm.compiler.core.common.memory.BarrierType;
-import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
-import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FixedWithNextNode;
-import org.graalvm.compiler.nodes.NodeView;
-import org.graalvm.compiler.nodes.PiNode;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.AddNode;
-import org.graalvm.compiler.nodes.calc.MulNode;
-import org.graalvm.compiler.nodes.calc.SignExtendNode;
-import org.graalvm.compiler.nodes.extended.BoxNode;
-import org.graalvm.compiler.nodes.extended.JavaReadNode;
-import org.graalvm.compiler.nodes.extended.JavaWriteNode;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
-import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
-import org.graalvm.compiler.nodes.java.NewArrayNode;
-import org.graalvm.compiler.nodes.java.StoreIndexedNode;
-import org.graalvm.compiler.nodes.memory.address.AddressNode;
-import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
-import org.graalvm.compiler.nodes.util.GraphUtil;
-import org.graalvm.compiler.replacements.InlineDuringParsingPlugin;
+import jdk.graal.compiler.core.common.memory.BarrierType;
+import jdk.graal.compiler.core.common.memory.MemoryOrderMode;
+import jdk.graal.compiler.core.common.type.StampFactory;
+import jdk.graal.compiler.graph.Node;
+import jdk.graal.compiler.nodes.ConstantNode;
+import jdk.graal.compiler.nodes.FixedWithNextNode;
+import jdk.graal.compiler.nodes.NodeView;
+import jdk.graal.compiler.nodes.PiNode;
+import jdk.graal.compiler.nodes.ValueNode;
+import jdk.graal.compiler.nodes.calc.AddNode;
+import jdk.graal.compiler.nodes.calc.MulNode;
+import jdk.graal.compiler.nodes.calc.SignExtendNode;
+import jdk.graal.compiler.nodes.extended.BoxNode;
+import jdk.graal.compiler.nodes.extended.JavaReadNode;
+import jdk.graal.compiler.nodes.extended.JavaWriteNode;
+import jdk.graal.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import jdk.graal.compiler.nodes.graphbuilderconf.GraphBuilderContext;
+import jdk.graal.compiler.nodes.graphbuilderconf.InvocationPlugin;
+import jdk.graal.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
+import jdk.graal.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import jdk.graal.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
+import jdk.graal.compiler.nodes.graphbuilderconf.NodePlugin;
+import jdk.graal.compiler.nodes.java.NewArrayNode;
+import jdk.graal.compiler.nodes.java.StoreIndexedNode;
+import jdk.graal.compiler.nodes.memory.address.AddressNode;
+import jdk.graal.compiler.nodes.memory.address.OffsetAddressNode;
+import jdk.graal.compiler.nodes.util.GraphUtil;
+import jdk.graal.compiler.replacements.InlineDuringParsingPlugin;
 import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
@@ -64,6 +64,7 @@ import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Float;
 import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
@@ -96,7 +97,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 import java.util.function.Supplier;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static jdk.graal.compiler.debug.GraalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAFPBinaryIntrinsicNode.Operation.ATAN2;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAFPBinaryIntrinsicNode.Operation.FMAX;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAFPBinaryIntrinsicNode.Operation.FMIN;
@@ -437,6 +438,57 @@ public class CUDAGraphBuilderPlugins {
         registerAtomicAddOperation(r);
         registerSIMDPlugins(r);
         registerSwizzledLocalAccessesPlugins(r);
+        registerUnsupportedSimdgroupMatrixPlugins(r);
+    }
+
+    /**
+     * The {@code simdgroup_float8x8} matrix-unit intrinsics ({@link uk.ac.manchester.tornado.api.KernelContext}
+     * {@code simdgroupMatrix*}) are Metal-only. They cannot be intrinsified on this backend, so reject them at
+     * graph-build time with a clear message instead of failing later when the JVM-fallback object allocations
+     * are lowered.
+     */
+    private static void registerUnsupportedSimdgroupMatrixPlugins(Registration r) {
+        final String message = "simdgroup_float8x8 matrix operations (KernelContext.simdgroupMatrix*) are only supported on the Metal backend.";
+        r.register(new InvocationPlugin("simdgroupMatrixZero", Receiver.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        r.register(new InvocationPlugin("simdgroupMatrixLoad", Receiver.class, FloatArray.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode base, ValueNode stride) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        r.register(new InvocationPlugin("simdgroupMatrixLoad", Receiver.class, float[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode base, ValueNode stride) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        r.register(new InvocationPlugin("simdgroupMatrixMultiplyAccumulate", Receiver.class, Matrix8x8Float.class, Matrix8x8Float.class, Matrix8x8Float.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode bMat, ValueNode c) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        r.register(new InvocationPlugin("simdgroupMatrixStore", Receiver.class, Matrix8x8Float.class, FloatArray.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode matrix, ValueNode array, ValueNode base, ValueNode stride) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
     }
 
     private static void registerSIMDPlugins(Registration r) {

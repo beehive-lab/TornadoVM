@@ -21,12 +21,10 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 
-import jdk.vm.ci.meta.JavaKind;
-import org.graalvm.compiler.lir.LIRInstruction;
-import org.graalvm.compiler.lir.LIRInstructionClass;
-import org.graalvm.compiler.lir.Opcode;
-import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
-
+import jdk.graal.compiler.lir.LIRInstruction;
+import jdk.graal.compiler.lir.LIRInstructionClass;
+import jdk.graal.compiler.lir.Opcode;
+import jdk.graal.compiler.lir.asm.CompilationResultBuilder;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler;
@@ -36,6 +34,8 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDACompilationResul
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAUnary.MemoryAccess;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAUnary.CUDAAddressCast;
 import uk.ac.manchester.tornado.drivers.cuda.graal.meta.CUDAMemorySpace;
+
+import static jdk.graal.compiler.lir.LIRInstruction.OperandFlag.COMPOSITE;
 
 public class CUDALIRStmt {
 
@@ -771,9 +771,9 @@ public class CUDALIRStmt {
 
         @Def
         protected AllocatableValue lhs;
-        @Use
+        @Use( { COMPOSITE })
         protected CUDAAddressCast cast;
-        @Use
+        @Use( { COMPOSITE })
         protected MemoryAccess address;
         @Use
         protected Value index;
@@ -831,8 +831,7 @@ public class CUDALIRStmt {
         }
 
         /**
-         * This method is used to check if emiting a load to a local or private memory
-         * space.
+         * This method is used to check if emiting a load to a local or private memory space.
          *
          * @return boolean This returns if the memory base is private or local.
          */
@@ -860,9 +859,9 @@ public class CUDALIRStmt {
 
         @Def
         protected AllocatableValue lhs;
-        @Use
+        @Use( { COMPOSITE })
         protected CUDAAddressCast cast;
-        @Use
+        @Use( { COMPOSITE })
         protected MemoryAccess address;
 
         @Use
@@ -941,9 +940,9 @@ public class CUDALIRStmt {
 
         @Use
         protected Value rhs;
-        @Use
+        @Use( { COMPOSITE })
         protected CUDAAddressCast cast;
-        @Use
+        @Use( { COMPOSITE })
         protected MemoryAccess address;
         @Use
         protected Value index;
@@ -1027,8 +1026,7 @@ public class CUDALIRStmt {
         }
 
         /**
-         * This method is used to check if emitting a store to a local or private memory
-         * space.
+         * This method is used to check if emitting a store to a local or private memory space.
          *
          * @return It returns true if the memory base is private or local.
          */
@@ -1058,11 +1056,11 @@ public class CUDALIRStmt {
 
         @Use
         protected Value rhs;
-        @Use
+        @Use( { COMPOSITE })
         protected CUDAAddressCast cast;
         @Use
         protected Value left;
-        @Use
+        @Use( { COMPOSITE })
         protected MemoryAccess address;
 
         public StoreAtomicAddStmt(CUDAAddressCast cast, MemoryAccess address, Value rhs) {
@@ -1170,11 +1168,11 @@ public class CUDALIRStmt {
 
         @Use
         protected Value rhs;
-        @Use
+        @Use( { COMPOSITE })
         protected CUDAAddressCast cast;
         @Use
         protected Value left;
-        @Use
+        @Use( { COMPOSITE })
         protected MemoryAccess address;
 
         public StoreAtomicAddFloatStmt(CUDAAddressCast cast, MemoryAccess address, Value rhs) {
@@ -1272,11 +1270,11 @@ public class CUDALIRStmt {
 
         @Use
         protected Value rhs;
-        @Use
+        @Use( { COMPOSITE })
         protected CUDAAddressCast cast;
         @Use
         protected Value left;
-        @Use
+        @Use( { COMPOSITE })
         protected MemoryAccess address;
 
         public StoreAtomicSubStmt(CUDAAddressCast cast, MemoryAccess address, Value rhs) {
@@ -1370,11 +1368,11 @@ public class CUDALIRStmt {
 
         @Use
         protected Value rhs;
-        @Use
+        @Use( { COMPOSITE })
         protected CUDAAddressCast cast;
         @Use
         protected Value left;
-        @Use
+        @Use( { COMPOSITE })
         protected MemoryAccess address;
 
         public StoreAtomicMulStmt(CUDAAddressCast cast, MemoryAccess address, Value rhs) {
@@ -1481,9 +1479,9 @@ public class CUDALIRStmt {
 
         @Use
         protected Value rhs;
-        @Use
+        @Use( { COMPOSITE })
         protected CUDAAddressCast cast;
-        @Use
+        @Use( { COMPOSITE })
         protected MemoryAccess address;
         @Use
         protected Value index;

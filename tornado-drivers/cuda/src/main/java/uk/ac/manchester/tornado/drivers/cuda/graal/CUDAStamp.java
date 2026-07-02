@@ -22,12 +22,11 @@
 package uk.ac.manchester.tornado.drivers.cuda.graal;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.spi.LIRKindTool;
-import org.graalvm.compiler.core.common.type.ObjectStamp;
-import org.graalvm.compiler.core.common.type.Stamp;
+import jdk.graal.compiler.core.common.LIRKind;
+import jdk.graal.compiler.core.common.spi.LIRKindTool;
+import jdk.graal.compiler.core.common.type.ObjectStamp;
+import jdk.graal.compiler.core.common.type.Stamp;
 
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaKind;
@@ -127,7 +126,14 @@ public class CUDAStamp extends ObjectStamp {
             return true;
         }
 
-        unimplemented("stamp iscompat: %s + %s", this, stamp);
+        // In Graal 25, FixReadsPhase checks compatibility between CUDAStamp
+        // and ObjectStamp for vector types (e.g., FLOAT4 vs Float4 object).
+        // CUDAStamp extends ObjectStamp, so these are compatible when the
+        // CUDAStamp represents the vector version of the Java object type.
+        if (stamp instanceof ObjectStamp && oclKind.isVector()) {
+            return true;
+        }
+
         return false;
     }
 

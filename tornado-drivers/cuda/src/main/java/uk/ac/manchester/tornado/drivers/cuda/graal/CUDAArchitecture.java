@@ -32,8 +32,9 @@ import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssemblerConst
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssemblerConstants.PRIVATE_REGION_NAME;
 
 import java.nio.ByteOrder;
+import java.util.List;
 import java.util.Set;
-
+import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.Register.RegisterCategory;
 import jdk.vm.ci.meta.JavaKind;
@@ -52,54 +53,33 @@ public class CUDAArchitecture extends Architecture {
     public static final CUDAMemoryBase localSpace = new CUDAMemoryBase(3, LOCAL_REGION_NAME, CUDAMemorySpace.LOCAL, CUDAKind.UCHAR);
     public static final CUDAMemoryBase privateSpace = new CUDAMemoryBase(4, PRIVATE_REGION_NAME, CUDAMemorySpace.PRIVATE, CUDAKind.UCHAR);
     public static final CUDAMemoryBase atomicSpace = new CUDAMemoryBase(5, ATOMICS_REGION_NAME, CUDAMemorySpace.GLOBAL, CUDAKind.INT);
+    private final static Register[] EMPTY = new Register[0];
+    private final static List<Register> EMPTY_LIST = List.of();
 
     public static CUDARegister[] abiRegisters;
 
     public CUDAArchitecture(final CUDAKind wordKind, final ByteOrder byteOrder) {
-        super("Tornado CUDADriver", wordKind, byteOrder, false, null, LOAD_STORE | STORE_STORE, 0, 0);
+        super("Tornado CUDA", wordKind, byteOrder, false, EMPTY_LIST, LOAD_STORE | STORE_STORE, 0, 0);
         abiRegisters = new CUDARegister[] { kernelContext, constantSpace, localSpace, atomicSpace };
     }
 
-    @Override
     public PlatformKind getPlatformKind(JavaKind javaKind) {
-        CUDAKind oclKind = CUDAKind.ILLEGAL;
-        switch (javaKind) {
-            case Boolean:
-                oclKind = CUDAKind.BOOL;
-                break;
-            case Byte:
-                oclKind = CUDAKind.CHAR;
-                break;
-            case Short:
-                oclKind = (javaKind.isUnsigned()) ? CUDAKind.USHORT : CUDAKind.SHORT;
-                break;
-            case Char:
-                oclKind = CUDAKind.USHORT;
-                break;
-            case Int:
-                oclKind = (javaKind.isUnsigned()) ? CUDAKind.UINT : CUDAKind.INT;
-                break;
-            case Long:
-                oclKind = (javaKind.isUnsigned()) ? CUDAKind.ULONG : CUDAKind.LONG;
-                break;
-            case Float:
-                oclKind = CUDAKind.FLOAT;
-                break;
-            case Double:
-                oclKind = CUDAKind.DOUBLE;
-                break;
-            case Object:
-                oclKind = (CUDAKind) getWordKind();
-                break;
-            case Void:
-            case Illegal:
-                break;
-            default:
-                shouldNotReachHere("illegal java type for %s", javaKind.name());
-        }
-
-        return oclKind;
+        return switch (javaKind) {
+            case Boolean -> CUDAKind.BOOL;
+            case Byte    -> CUDAKind.CHAR;
+            case Short   -> javaKind.isUnsigned() ? CUDAKind.USHORT : CUDAKind.SHORT;
+            case Char    -> CUDAKind.USHORT;
+            case Int     -> javaKind.isUnsigned() ? CUDAKind.UINT : CUDAKind.INT;
+            case Long    -> javaKind.isUnsigned() ? CUDAKind.ULONG : CUDAKind.LONG;
+            case Float   -> CUDAKind.FLOAT;
+            case Double  -> CUDAKind.DOUBLE;
+            case Object  -> (CUDAKind) getWordKind();
+            case Void, Illegal -> CUDAKind.ILLEGAL;
+            default -> throw new AssertionError(
+                    String.format("illegal java type for %s", javaKind.name()));
+        };
     }
+
 
     /*
      * We use jdk.vm.ci.amd64.AMD64.CPUFeature as a type parameter because the

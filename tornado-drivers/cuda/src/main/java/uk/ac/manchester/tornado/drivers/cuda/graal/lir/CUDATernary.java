@@ -28,9 +28,9 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssemblerConstants.CLOSE_PARENTHESIS;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssemblerConstants.OPEN_PARENTHESIS;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.LIRInstruction.Use;
-import org.graalvm.compiler.lir.Opcode;
+import jdk.graal.compiler.core.common.LIRKind;
+import jdk.graal.compiler.lir.LIRInstruction.Use;
+import jdk.graal.compiler.lir.Opcode;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler;

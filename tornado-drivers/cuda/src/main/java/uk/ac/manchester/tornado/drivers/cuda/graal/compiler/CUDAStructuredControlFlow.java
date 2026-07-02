@@ -25,13 +25,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.graalvm.compiler.core.common.cfg.Loop;
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.graph.iterators.NodeIterable;
-import org.graalvm.compiler.nodes.IfNode;
-import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
-import org.graalvm.compiler.nodes.cfg.HIRBlock;
-import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
+import jdk.graal.compiler.core.common.cfg.CFGLoop;
+import jdk.graal.compiler.graph.Node;
+import jdk.graal.compiler.graph.iterators.NodeIterable;
+import jdk.graal.compiler.nodes.IfNode;
+import jdk.graal.compiler.nodes.cfg.ControlFlowGraph;
+import jdk.graal.compiler.nodes.cfg.HIRBlock;
+import jdk.graal.compiler.nodes.extended.IntegerSwitchNode;
 
 import jdk.vm.ci.meta.JavaConstant;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler;
@@ -157,7 +157,7 @@ public final class CUDAStructuredControlFlow {
      * merge sits between a split and its true join — e.g. the shared
      * {@code else}-target of a short-circuit {@code &&}/{@code ||} condition.
      */
-    private Region structure(HIRBlock entry, Loop<HIRBlock> loop, Set<HIRBlock> stops, Set<HIRBlock> visited) {
+    private Region structure(HIRBlock entry, CFGLoop<HIRBlock> loop, Set<HIRBlock> stops, Set<HIRBlock> visited) {
         List<Region> items = new ArrayList<>();
         HIRBlock b = entry;
         while (b != null && !stops.contains(b) && !visited.contains(b)) {
@@ -189,7 +189,7 @@ public final class CUDAStructuredControlFlow {
     }
 
     private Region buildLoop(HIRBlock header, Set<HIRBlock> stops, Set<HIRBlock> visited) {
-        Loop<HIRBlock> loop = header.getLoop();
+        CFGLoop<HIRBlock> loop = header.getLoop();
         Set<HIRBlock> bodyStops = new HashSet<>(stops);
         bodyStops.add(header);
         HIRBlock bodyEntry = loopBodyEntry(header, loop);
@@ -197,7 +197,7 @@ public final class CUDAStructuredControlFlow {
         return new LoopRegion(header, body);
     }
 
-    private Region buildIf(HIRBlock head, HIRBlock follow, Loop<HIRBlock> loop, Set<HIRBlock> stops, Set<HIRBlock> visited) {
+    private Region buildIf(HIRBlock head, HIRBlock follow, CFGLoop<HIRBlock> loop, Set<HIRBlock> stops, Set<HIRBlock> visited) {
         Set<HIRBlock> branchStops = new HashSet<>(stops);
         if (follow != null) {
             branchStops.add(follow);
@@ -213,7 +213,7 @@ public final class CUDAStructuredControlFlow {
         return new IfElse(head, thenRegion, elseRegion);
     }
 
-    private Region buildSwitch(HIRBlock head, HIRBlock follow, Loop<HIRBlock> loop, Set<HIRBlock> stops, Set<HIRBlock> visited) {
+    private Region buildSwitch(HIRBlock head, HIRBlock follow, CFGLoop<HIRBlock> loop, Set<HIRBlock> stops, Set<HIRBlock> visited) {
         Set<HIRBlock> caseStops = new HashSet<>(stops);
         if (follow != null) {
             caseStops.add(follow);
@@ -254,7 +254,7 @@ public final class CUDAStructuredControlFlow {
      * leave the loop, which is handled by the break/exit rule in
      * {@link #structure}.
      */
-    private HIRBlock computeFollow(HIRBlock head, Loop<HIRBlock> loop) {
+    private HIRBlock computeFollow(HIRBlock head, CFGLoop<HIRBlock> loop) {
         HIRBlock follow = head.getPostdominator();
         if (follow == null) {
             for (HIRBlock candidate : allBlocks) {
@@ -301,7 +301,7 @@ public final class CUDAStructuredControlFlow {
      * The body entry of a loop is the header's successor that stays inside the
      * loop.
      */
-    private static HIRBlock loopBodyEntry(HIRBlock header, Loop<HIRBlock> loop) {
+    private static HIRBlock loopBodyEntry(HIRBlock header, CFGLoop<HIRBlock> loop) {
         for (int i = 0; i < header.getSuccessorCount(); i++) {
             HIRBlock s = header.getSuccessorAt(i);
             if (loop.getBlocks().contains(s)) {
@@ -316,7 +316,7 @@ public final class CUDAStructuredControlFlow {
      * that leaves the loop (the natural {@link LoopExitNode} landing pad).
      */
     private static HIRBlock loopContinuation(HIRBlock header) {
-        Loop<HIRBlock> loop = header.getLoop();
+        CFGLoop<HIRBlock> loop = header.getLoop();
         for (int i = 0; i < header.getSuccessorCount(); i++) {
             HIRBlock s = header.getSuccessorAt(i);
             if (!loop.getBlocks().contains(s)) {
