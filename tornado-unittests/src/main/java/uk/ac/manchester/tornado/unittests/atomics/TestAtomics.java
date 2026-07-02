@@ -326,6 +326,7 @@ public class TestAtomics extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
+        assertNotBackend(TornadoVMBackendType.CUDA);
 
         final int size = 32;
         IntArray a = new IntArray(size);
