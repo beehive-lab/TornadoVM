@@ -598,7 +598,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             DataObjectState dataObjectStateDest = localStateDest.getDataObjectState();
             XPUDeviceBufferState deviceStateDest = dataObjectStateDest.getDeviceBufferState(device);
 
-            deviceStateDest.setXPUBuffer(deviceStateSrc.getXPUBuffer());
+            // Only propagate a real device buffer. If the source graph never allocated one for this object
+            // (e.g. an empty consume, or an object not produced by the source graph), leave the destination
+            // unbuffered so it is allocated normally at execution time instead of inheriting a null buffer.
+            if (deviceStateSrc.getXPUBuffer() != null) {
+                deviceStateDest.setXPUBuffer(deviceStateSrc.getXPUBuffer());
+            }
         }
     }
 

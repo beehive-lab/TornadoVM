@@ -649,16 +649,18 @@ public class TornadoVMInterpreter {
      * @return Information about objects to allocate including counts of persistent and non-persistent objects
      */
     private ObjectAllocationInfo countAndClassifyObjects(int[] args) {
-        // Count only persistent objects that are actually in the current args array
+        // Count persistent objects that are actually resident (have a device buffer). A persistent object
+        // whose buffer was never propagated (e.g. an empty cross-graph consume) must still be allocated
+        // here, so it is NOT counted as pre-allocated — matching the executeAlloc loop below.
         int persistentObjectsInArgs = 0;
         for (int arg : args) {
             Object dataObject = this.objects.get(arg);
-            if (isPersistentObject(dataObject)) {
+            if (isPersistentObject(dataObject) && resolveObjectState(arg).getXPUBuffer() != null) {
                 persistentObjectsInArgs++;
             }
         }
 
-        // Calculate allocation based on non-persistent objects in args
+        // Calculate allocation based on the objects that still need a device buffer
         int objectsToAlloc = args.length - persistentObjectsInArgs;
 
         return new ObjectAllocationInfo(persistentObjectsInArgs, objectsToAlloc);
@@ -677,14 +679,17 @@ public class TornadoVMInterpreter {
 
         for (int arg : args) {
             Object dataObject = this.objects.get(arg);
-            if (!isPersistentObject(dataObject)) {
-                objects[allocCounter] = this.objects.get(arg);
-                objectStates[allocCounter] = resolveObjectState(arg);
-                accesses[allocCounter] = this.objectAccesses.get(objects[allocCounter]);
-                allocCounter++;
-            } else {
-                XPUDeviceBufferState state = resolveObjectState(arg);
+            XPUDeviceBufferState state = resolveObjectState(arg);
+            // Skip allocation only for a persistent object that is actually resident (already has a device
+            // buffer). A persistent object whose buffer was never propagated (e.g. an empty cross-graph
+            // consume) is allocated here like a normal object, instead of dereferencing a null buffer.
+            if (isPersistentObject(dataObject) && state.getXPUBuffer() != null) {
                 preAllocatedSizes += state.getXPUBuffer().size();
+            } else {
+                objects[allocCounter] = dataObject;
+                objectStates[allocCounter] = state;
+                accesses[allocCounter] = this.objectAccesses.get(dataObject);
+                allocCounter++;
             }
         }
 
