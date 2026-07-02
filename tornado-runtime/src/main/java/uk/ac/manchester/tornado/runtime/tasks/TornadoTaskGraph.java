@@ -568,7 +568,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         if (objectsToSync == null) {
             objectsToSync = executionContext.getPersistedObjects();
-            executionContext.addPersistedObject(this.taskGraphName, objectsToSync);
+            // Cache the flat list of persisted objects under this task-graph name.
+            // use put(), not addPersistedObject(name, list): the latter appends the whole list as a single element,
+            // producing a nested list-of-lists. On the next execution that inner List would be iterated
+            // as if it were a data object (getLocalStateObject -> insertVariable), polluting the plan's
+            // object list and crashing batched re-execution with an NPE in the batch bookkeeping.
+            executionContext.getPersistedTaskToObjectsMap().put(this.taskGraphName, objectsToSync);
         }
 
         for (Object objectToSync : objectsToSync) {
