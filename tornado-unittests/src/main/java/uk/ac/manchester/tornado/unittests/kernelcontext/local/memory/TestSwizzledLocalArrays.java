@@ -175,6 +175,7 @@ public class TestSwizzledLocalArrays extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
+        assertNotBackend(TornadoVMBackendType.CUDA);
         // Tile geometry: 16 rows × 16 fp16 cols = 256 elements per work-group.
         // Stride 32 bytes = 16 fp16 cols, which matches FP16_STRIDE_32 policy.
         final int rowsPerTile = 16;
@@ -215,6 +216,7 @@ public class TestSwizzledLocalArrays extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
+        assertNotBackend(TornadoVMBackendType.CUDA);
         // Tile geometry: 16 rows × 8 fp16 cols = 128 elements per work-group.
         // Stride 16 bytes = 8 fp16 cols, which matches FP16_STRIDE_16 policy.
         final int rowsPerTile = 16;
@@ -255,6 +257,7 @@ public class TestSwizzledLocalArrays extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
+        assertNotBackend(TornadoVMBackendType.CUDA);
         final int rowsPerTile = 16;
         final int colsPerTile = 32;          // A-operand layout: 32 int8 = 32 bytes/row
         final int tileElements = rowsPerTile * colsPerTile; // 512
@@ -296,6 +299,7 @@ public class TestSwizzledLocalArrays extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
+        assertNotBackend(TornadoVMBackendType.CUDA);
 
         final int rowsPerTile = 16;
         final int colsPerTile = 16;
@@ -336,6 +340,7 @@ public class TestSwizzledLocalArrays extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
+        assertNotBackend(TornadoVMBackendType.CUDA);
 
         final int rowsPerTile = 16;
         final int colsPerTile = 8;                           // narrow tile: 8 fp16 cols
@@ -376,6 +381,7 @@ public class TestSwizzledLocalArrays extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
+        assertNotBackend(TornadoVMBackendType.CUDA);
 
         final int rowsPerTile = 16;
         final int colsPerTile = 16;                          // narrow int8 tile

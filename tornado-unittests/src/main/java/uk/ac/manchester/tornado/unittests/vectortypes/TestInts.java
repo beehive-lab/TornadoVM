@@ -29,6 +29,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt;
@@ -315,6 +316,7 @@ public class TestInts extends TornadoTestBase {
 
     @Test
     public void testAddInt8() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.CUDA);
         int size = 1;
         Int8 a = new Int8(1, 2, 3, 4, 1, 2, 3, 4);
         Int8 b = new Int8(4, 3, 2, 1, 1, 2, 3, 4);
@@ -704,6 +706,7 @@ public class TestInts extends TornadoTestBase {
 
     @Test
     public void testVectorAddInt8() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.CUDA);
         int size = 256;
 
         VectorInt8 a = new VectorInt8(size);
@@ -740,6 +743,7 @@ public class TestInts extends TornadoTestBase {
 
     @Test
     public void testVectorAddInt16() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.CUDA);
         int size = 256;
 
         VectorInt16 a = new VectorInt16(size);
@@ -786,6 +790,7 @@ public class TestInts extends TornadoTestBase {
 
     @Test
     public void testVectorSubInt8() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.CUDA);
         int size = 256;
 
         VectorInt8 a = new VectorInt8(size);
@@ -822,6 +827,7 @@ public class TestInts extends TornadoTestBase {
 
     @Test
     public void testVectorDivInt8() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.CUDA);
         int size = 256;
 
         VectorInt8 a = new VectorInt8(size);
@@ -906,6 +912,7 @@ public class TestInts extends TornadoTestBase {
 
     @Test
     public void privateVectorInt8() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.CUDA);
         int size = 16;
         VectorInt8 sequentialOutput = new VectorInt8(16);
         VectorInt8 tornadoOutput = new VectorInt8(16);
@@ -1039,6 +1046,7 @@ public class TestInts extends TornadoTestBase {
 
     @Test
     public void testInternalSetMethod04() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.CUDA);
         final int size = 16;
         VectorInt8 tornadoInput = new VectorInt8(size);
         VectorInt8 sequentialInput = new VectorInt8(size);
