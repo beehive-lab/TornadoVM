@@ -23,6 +23,11 @@ NVIDIA apt repository).
 
 ## Supported operations (FP32, NCHW)
 
+> Note: these v1 bindings use the cuDNN *legacy* compute functions, which are
+> deprecated since cuDNN 9.0 (still fully functional — validated on 9.23). The
+> [ROADMAP](ROADMAP.md) migrates them to graph-API patterns behind the same factories
+> once the cudnn-frontend integration (C0) lands; the Java API is unaffected.
+
 | Factory | cuDNN call | Semantics |
 |---|---|---|
 | `cudnnSoftmax(in, out, rows, cols)` | `cudnnSoftmaxForward` (ACCURATE, INSTANCE) | Numerically stable per-row softmax — the attention-score shape |
