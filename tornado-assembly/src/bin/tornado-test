@@ -145,6 +145,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTests"),
     TestEntry("uk.ac.manchester.tornado.unittests.cublas.TestCuBlas"),
     TestEntry("uk.ac.manchester.tornado.unittests.cublas.TestCuBlasLt"),
+    TestEntry("uk.ac.manchester.tornado.unittests.cufft.TestCuFft"),
     TestEntry("uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestSingleTaskSingleDevice"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksSingleDevice"),
