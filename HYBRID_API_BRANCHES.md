@@ -16,10 +16,47 @@ Global tracker of which branch contains which part of the TornadoVM hybrid API
 \* The `prepare()` SPI hook currently exists on `hybrid-cufft` and `hybrid-cudnn`
 (applied identically on both); it belongs on `hybrid` at the next merge.
 
-## Merge order (suggested)
+## Merge plan
 
-`hybrid-cufft` → `hybrid` (brings R2C/2D/prepare), then `hybrid-cudnn` → `hybrid`
-(prepare applies cleanly — identical change), then cut `hybrid-cub` from the new tip.
+Ordered so each merge is small, the shared SPI change lands once, and every step has
+a validation gate. Run after each merge: `make BACKEND=cuda`, then
+`tornado-test -V` for `cublas.TestCuBlas`, `cublas.TestCuBlasLt`, `cufft.TestCuFft`,
+`cudnn.TestCuDnn` (whichever exist at that point), and finally `make fast-tests`.
+
+1. **`hybrid-cufft` → `hybrid`.** Brings the cuFFT extensions (R2C/C2R, Z2Z, 2D),
+   the `prepare()` SPI hook (`TornadoLibraryProvider` + `TornadoVMInterpreter`), and
+   the CUDA-graph FFT test. Expected conflicts: none — the tracker commit on `hybrid`
+   and the cuFFT extension commit touch disjoint files.
+   *Gate:* `TestCuFft` 8/8, cuBLAS suites unchanged.
+
+2. **`hybrid-cudnn` → `hybrid`.** Brings the cuDNN module pair, SDPA, and the
+   `isArgumentIgnorable` core fix. Expected conflicts: exactly one — the `prepare()`
+   javadoc in `TornadoLibraryProvider.java` (both branches added the hook; wording
+   differs). **Resolution: keep the `hybrid-cudnn` version** (it mentions both cuFFT
+   work areas and cuDNN workspaces). The `TornadoVMInterpreter` hunk is byte-identical
+   on both branches and merges clean; assembly/launcher/unittests wiring lines are
+   additive after the cuFFT lines and merge clean.
+   *Gate:* all four suites green (11/5/8/9) + `BenchmarkSdpa` sanity run.
+
+3. **Tag the merged tip** (e.g. `hybrid-libs-v1`) — the last point where the hybrid
+   API is pure "library tasks" before codegen-track work starts.
+
+4. **Cut `hybrid-cub` from the merged tip.** Codegen track (CUDA-C backend compiler),
+   so keeping it after the library-task merges avoids rebasing backend changes under
+   the SPI work.
+
+5. **`hybrid-cub` → `hybrid`** once the reduction suites (currently partially failing
+   on the CUDA-C backend: `testComputePi`, `testReductionOneBlockWithLayer`, ...) are
+   green with CUB delegation. Then **cut `hybrid-cutlass`** from that tip — it builds
+   on the same NVRTC include/template machinery.
+
+6. **Upstreaming (later):** the generic pieces split into separate PRs to
+   beehive-lab: (a) runtime SPI + interpreter hooks + `LibraryTask`, (b) CUDA
+   stream-exposure natives, (c) the CMake toolkit-preference fix (standalone bug fix,
+   can go first), (d) one PR per library module.
+
+Do not delete merged feature branches until the corresponding tracker row is updated —
+this file is the source of truth for what lives where.
 
 ## Per-branch documentation
 
