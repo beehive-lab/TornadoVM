@@ -54,6 +54,7 @@ Content:
    cloud
    spirv-backend
    cuda-backend
+   hybrid-api
    multi-device
    flags
    ide-integration

@@ -156,6 +156,28 @@ public class CUDACommandQueue extends CommandQueue {
 
     private static native long cuGraphDestroy(long graphHandle);
 
+    /* ---- Native interop (external libraries, e.g. cuBLAS) ---- */
+
+    private static native long getStreamPointer(long queueId);
+
+    private static native long getContextPointer(long queueId);
+
+    /**
+     * Raw CUstream handle of this queue, for handing to external native
+     * libraries (e.g., {@code cublasSetStream}) so their work is ordered with
+     * TornadoVM kernels and transfers on the same stream.
+     */
+    public long getNativeStream() {
+        return getStreamPointer(commandQueuePtr);
+    }
+
+    /**
+     * Raw CUcontext handle of this queue.
+     */
+    public long getNativeContext() {
+        return getContextPointer(commandQueuePtr);
+    }
+
     /** CU_STREAM_CAPTURE_MODE_GLOBAL. */
     private static final int CU_STREAM_CAPTURE_MODE_GLOBAL = 0;
 
