@@ -499,6 +499,7 @@ public class CUDAGraphBuilderPlugins {
         r.register(new InvocationPlugin("simdShuffleDown", InvocationPlugin.Receiver.class, float.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val, ValueNode delta) {
+                receiver.get(true);
                 b.addPush(JavaKind.Float, new CUDAShuffleDownNode(val, delta));
                 return true;
             }
@@ -507,6 +508,7 @@ public class CUDAGraphBuilderPlugins {
         r.register(new InvocationPlugin("simdSum", InvocationPlugin.Receiver.class, float.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val) {
+                receiver.get(true);
                 b.addPush(JavaKind.Float, new CUDASimdSumNode(val));
                 return true;
             }
@@ -515,6 +517,7 @@ public class CUDAGraphBuilderPlugins {
         r.register(new InvocationPlugin("simdBroadcastFirst", InvocationPlugin.Receiver.class, float.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val) {
+                receiver.get(true);
                 b.addPush(JavaKind.Float, new CUDASimdBroadcastFirstNode(val));
                 return true;
             }
