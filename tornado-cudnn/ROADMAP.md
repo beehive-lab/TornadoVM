@@ -50,7 +50,22 @@ device pointers. This mirrors the proven `lt_plan_t` / `cudnn_conv_plan_t` patte
 
 ---
 
+## Deprecation status (verified against the cudnn_ops / cudnn_cnn / cudnn_adv API pages)
+
+The legacy compute functions used by v1 — `cudnnSoftmaxForward`,
+`cudnnActivationForward`, `cudnnPoolingForward`, `cudnnConvolutionForward` — and most
+Track-A candidates (`cudnnAddTensor`, `cudnnOpTensor`, `cudnnReduceTensor`,
+`cudnnBatchNormalizationForwardInference`, LRN) are **deprecated since cuDNN 9.0**:
+fully functional (validated on 9.23) but slated for eventual removal in favor of the
+graph API. Descriptor/workspace/algorithm-query helpers are not deprecated. Practical
+consequence: C0 (cudnn-frontend) is not only the gate for fusions — once it lands, the
+v1 ops should be re-implemented as graph-API patterns behind the same Java factories
+(tracked as F6 below). The Java API surface is unaffected either way.
+
 ## Track A — Legacy API completion (FP32 first)
+
+Note: all compute functions in this track are deprecated-since-9.0 (see above);
+prefer graph-API equivalents once C0 exists.
 
 | # | Feature | cuDNN API | Design / Test | Status |
 |---|---|---|---|---|
@@ -62,7 +77,7 @@ device pointers. This mirrors the proven `lt_plan_t` / `cudnn_conv_plan_t` patte
 | A6 | Tensor ops / reductions | `cudnnOpTensor` (ADD/MUL/MIN/MAX), `cudnnReduceTensor` | generic elementwise/reduction tasks; note overlap with future CUB track | [ ] |
 | A7 | Dropout (inference no-op, training w/ states) | `cudnnDropoutForward` | needs RNG state buffer in context; low priority (inference focus) | [ ] |
 | A8 | LRN | `cudnnLRNCrossChannelForward` | legacy vision nets only | [-] |
-| A9 | RNN API | `cudnnRNNForward` | deprecated by NVIDIA in favor of graph API; skip | [-] |
+| A9 | RNN API | `cudnnRNNForward` (v8) | NOT deprecated (v8 API actively maintained) — skipped for scope: transformer/LLM focus | [-] |
 
 ## Track B — Convolution depth
 
@@ -117,6 +132,7 @@ head dim multiple of 8, ≤256 on Hopper/Ada; softmax stats FP32; last stride mu
 | F3 | Plan serialization | graph-API execution-plan serialization to cut first-run JIT cost; pairs with heuristics Mode A/B choice | [ ] |
 | F4 | CUDA graph capture for graph-API plans | Same `prepare()` mechanism; verify runtime-fusion engines are capture-safe (docs: supported; runtime compilation happens at finalize, not execute) | [ ] |
 | F5 | Multi-GPU batch norm | specialized engines exist; needs TornadoVM multi-device orchestration first | [-] |
+| F6 | Migrate v1 ops (softmax/activation/pooling/conv) to graph-API patterns | Behind the same `CuDnn` factories, once C0 lands — removes the dependency on deprecated-since-9.0 legacy functions. *Test:* existing `TestCuDnn` unchanged (pure backend swap gate) | [ ] |
 
 ---
 
