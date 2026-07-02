@@ -30,7 +30,9 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.cudnn.CuDnn;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
@@ -313,6 +315,96 @@ public class TestCuDnn extends TornadoTestBase {
                 }
             }
         }
+    }
+
+    /**
+     * Reference attention on FP16-rounded inputs, FP32 math:
+     * O = softmax(Q K^T * scale [+ causal mask]) V, BHSD packed.
+     */
+    private static void attentionJava(HalfFloatArray q, HalfFloatArray k, HalfFloatArray v, FloatArray out, int b, int h, int s, int d, float scale, boolean causal) {
+        for (int ib = 0; ib < b; ib++) {
+            for (int ih = 0; ih < h; ih++) {
+                int base = (ib * h + ih) * s * d;
+                float[][] scores = new float[s][s];
+                for (int i = 0; i < s; i++) {
+                    for (int j = 0; j < s; j++) {
+                        if (causal && j > i) {
+                            scores[i][j] = Float.NEGATIVE_INFINITY;
+                            continue;
+                        }
+                        float sum = 0.0f;
+                        for (int dd = 0; dd < d; dd++) {
+                            sum += q.get(base + i * d + dd).getFloat32() * k.get(base + j * d + dd).getFloat32();
+                        }
+                        scores[i][j] = sum * scale;
+                    }
+                }
+                for (int i = 0; i < s; i++) {
+                    float max = Float.NEGATIVE_INFINITY;
+                    for (int j = 0; j < s; j++) {
+                        max = Math.max(max, scores[i][j]);
+                    }
+                    float sum = 0.0f;
+                    for (int j = 0; j < s; j++) {
+                        scores[i][j] = (float) Math.exp(scores[i][j] - max);
+                        sum += scores[i][j];
+                    }
+                    for (int dd = 0; dd < d; dd++) {
+                        float acc = 0.0f;
+                        for (int j = 0; j < s; j++) {
+                            acc += (scores[i][j] / sum) * v.get(base + j * d + dd).getFloat32();
+                        }
+                        out.set(base + i * d + dd, acc);
+                    }
+                }
+            }
+        }
+    }
+
+    private static HalfFloatArray randomHalfArray(int size) {
+        HalfFloatArray array = new HalfFloatArray(size);
+        for (int i = 0; i < size; i++) {
+            array.set(i, new HalfFloat(random.nextFloat() - 0.5f));
+        }
+        return array;
+    }
+
+    private void runSdpa(boolean causal) throws TornadoExecutionPlanException {
+        final int b = 2;
+        final int h = 4;
+        final int s = 64;
+        final int d = 64;
+        final float scale = (float) (1.0 / Math.sqrt(d));
+
+        HalfFloatArray q = randomHalfArray(b * h * s * d);
+        HalfFloatArray k = randomHalfArray(b * h * s * d);
+        HalfFloatArray v = randomHalfArray(b * h * s * d);
+        HalfFloatArray o = new HalfFloatArray(b * h * s * d);
+        FloatArray expected = new FloatArray(b * h * s * d);
+
+        TaskGraph taskGraph = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, q, k, v) //
+                .libraryTask("sdpa", CuDnn::sdpaForward, q, k, v, o, b, h, s, s, d, scale, causal) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, o);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.execute();
+        }
+
+        attentionJava(q, k, v, expected, b, h, s, d, scale, causal);
+        for (int i = 0; i < expected.getSize(); i++) {
+            assertEquals(expected.get(i), o.get(i).getFloat32(), 2e-2f * Math.max(0.1f, Math.abs(expected.get(i))));
+        }
+    }
+
+    @Test
+    public void testSdpaForward() throws TornadoExecutionPlanException {
+        runSdpa(false);
+    }
+
+    @Test
+    public void testSdpaForwardCausal() throws TornadoExecutionPlanException {
+        runSdpa(true);
     }
 
     /**

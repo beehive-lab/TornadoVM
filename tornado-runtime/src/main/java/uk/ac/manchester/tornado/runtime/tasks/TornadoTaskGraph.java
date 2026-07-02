@@ -92,8 +92,10 @@ import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
@@ -1476,10 +1478,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     private boolean isArgumentIgnorable(Object parameter) {
-        return parameter instanceof Number || parameter instanceof KernelContext || //
+        return parameter instanceof Number || parameter instanceof Boolean || parameter instanceof KernelContext || //
                 parameter instanceof IntArray || parameter instanceof FloatArray || //
                 parameter instanceof DoubleArray || parameter instanceof LongArray || //
-                parameter instanceof ShortArray;
+                parameter instanceof ShortArray || parameter instanceof HalfFloatArray || //
+                parameter instanceof ByteArray;
     }
 
     private void checkAllArgumentsPerTask() {
