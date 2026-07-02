@@ -61,6 +61,17 @@ public interface TornadoLibraryProvider {
     LibraryContext createContext(TornadoXPUDevice device, long executionPlanId);
 
     /**
+     * Optional hook invoked before every launch region, after the context
+     * exists — in particular BEFORE CUDA graph capture starts on the first
+     * execution. Providers whose per-shape plans allocate device memory (e.g.,
+     * cuFFT work areas, cuDNN convolution workspaces) create them here so the
+     * later {@link #dispatch} is capture-safe. Called repeatedly:
+     * implementations must be idempotent (typically a plan-cache lookup).
+     */
+    default void prepare(uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor descriptor, LibraryContext context) {
+    }
+
+    /**
      * Executes the given library function. Arguments are provided resolved to
      * device pointers via the {@link LibraryInvocation}.
      */
