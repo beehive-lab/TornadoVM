@@ -17,11 +17,13 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import uk.ac.manchester.tornado.api.enums.MMAShape;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Float;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -247,6 +249,116 @@ public class KernelContext implements ExecutionContext {
     }
 
     /**
+     * Cooperative 8x8 single-precision matrix multiply for one SIMD group, using
+     * Apple's {@code simdgroup_float8x8} hardware matrix units (MMA).
+     * <p>
+     * Computes the 8x8 output tile {@code C = A x B}, contracting over {@code k}
+     * (a multiple of 8). All three matrices are row-major; {@code aBase}/{@code bBase}/
+     * {@code cBase} are element offsets (not bytes) to each tile origin and
+     * {@code lda}/{@code ldb}/{@code ldc} are the row strides in elements.
+     * <p>
+     * Must be called convergently by all 32 lanes of the SIMD group (i.e. local
+     * work size 32, mapping one SIMD group per output tile). The accumulator is
+     * kept in registers across the whole {@code k} loop.
+     * <p>
+     * Metal equivalent: {@code simdgroup_load} / {@code simdgroup_multiply_accumulate}
+     * / {@code simdgroup_store} on {@code simdgroup_float8x8} fragments.
+     */
+    public void matrixMultiply8x8(FloatArray a, int aBase, int lda, FloatArray b, int bBase, int ldb, FloatArray c, int cBase, int ldc, int k) {
+        // Written over the simdgroup-matrix primitives: on the JVM each call runs its
+        // sequential fallback; on a matrix-unit backend each is replaced by a hardware
+        // instruction and the loop/index math is compiled normally.
+        Matrix8x8Float acc = simdgroupMatrixZero();
+        for (int p = 0; p < k; p += 8) {
+            Matrix8x8Float af = simdgroupMatrixLoad(a, aBase + p, lda);
+            Matrix8x8Float bf = simdgroupMatrixLoad(b, bBase + p * ldb, ldb);
+            acc = simdgroupMatrixMultiplyAccumulate(af, bf, acc);
+        }
+        simdgroupMatrixStore(acc, c, cBase, ldc);
+    }
+
+    // ------------------------------------------------------------------------
+    // SIMD-group matrix (MMA) primitives.
+    //
+    // These are the irreducible building blocks of a matrix-unit GEMM: zero a
+    // fragment, load an 8x8 fragment from memory, multiply-accumulate two
+    // fragments, and store a fragment back. The surrounding tiling/loop/staging
+    // is ordinary Java that the backend compiles normally; only these calls are
+    // replaced by hardware instructions (Apple Metal simdgroup_float8x8). The
+    // bodies below are the sequential semantics used when a kernel runs on the JVM.
+    // ------------------------------------------------------------------------
+
+    /**
+     * Returns a zeroed 8x8 single-precision matrix fragment.
+     * <p>Metal equivalent: {@code make_filled_simdgroup_matrix<float,8,8>(0.0f)}.
+     */
+    public Matrix8x8Float simdgroupMatrixZero() {
+        return new Matrix8x8Float();
+    }
+
+    /**
+     * Loads an 8x8 row-major fragment from device memory starting at element
+     * {@code base}, with {@code stride} elements between rows.
+     * <p>Metal equivalent: {@code simdgroup_load}.
+     */
+    public Matrix8x8Float simdgroupMatrixLoad(FloatArray a, int base, int stride) {
+        Matrix8x8Float m = new Matrix8x8Float();
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                m.values[i * 8 + j] = a.get(base + i * stride + j);
+            }
+        }
+        return m;
+    }
+
+    /**
+     * Loads an 8x8 row-major fragment from a local (threadgroup) array starting at
+     * element {@code base}, with {@code stride} elements between rows.
+     * <p>Metal equivalent: {@code simdgroup_load} from {@code threadgroup} memory.
+     */
+    public Matrix8x8Float simdgroupMatrixLoad(float[] a, int base, int stride) {
+        Matrix8x8Float m = new Matrix8x8Float();
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                m.values[i * 8 + j] = a[base + i * stride + j];
+            }
+        }
+        return m;
+    }
+
+    /**
+     * Returns {@code a * b + c} for 8x8 fragments (one hardware matrix multiply,
+     * the accumulator stays in registers).
+     * <p>Metal equivalent: {@code simdgroup_multiply_accumulate}.
+     */
+    public Matrix8x8Float simdgroupMatrixMultiplyAccumulate(Matrix8x8Float a, Matrix8x8Float b, Matrix8x8Float c) {
+        Matrix8x8Float d = new Matrix8x8Float();
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                float acc = c.values[i * 8 + j];
+                for (int p = 0; p < 8; p++) {
+                    acc += a.values[i * 8 + p] * b.values[p * 8 + j];
+                }
+                d.values[i * 8 + j] = acc;
+            }
+        }
+        return d;
+    }
+
+    /**
+     * Stores an 8x8 row-major fragment to device memory starting at element
+     * {@code base}, with {@code stride} elements between rows.
+     * <p>Metal equivalent: {@code simdgroup_store}.
+     */
+    public void simdgroupMatrixStore(Matrix8x8Float m, FloatArray c, int base, int stride) {
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                c.set(base + i * stride + j, m.values[i * 8 + j]);
+            }
+        }
+    }
+
+    /**
      * Method used to read a memory address by using the array and the index,
      * then add the value of val to it, and write the result back to the same address.
      * <p>
@@ -304,4 +416,356 @@ public class KernelContext implements ExecutionContext {
     @Override
     public void atomicAdd(DoubleArray array, int index, double val) {
     }
+
+    /**
+     * Loads a half-float from a swizzled shared-memory tile (stride-32 layout).
+     *
+     * <p>Applies an XOR permutation to the logical {@code (row, col)} coordinate so that
+     * the resulting shared-memory access pattern avoids bank conflicts. On NVIDIA GPUs, shared memory has
+     * 32 banks of 4 bytes each; a naive row-major tile layout causes many threads in a warp
+     * to hit the same bank, serializing the access. The XOR rotates each row's bank
+     * assignment so consecutive rows spread across distinct banks.
+     *
+     * <p>The swizzle is computed on the <em>byte</em> offset:
+     * <pre>{@code
+     *   byteOffset = (row * stride + col) * 2          // fp16 = 2 bytes per element
+     *   swizzled   = byteOffset ^ (((byteOffset >> 7) & 0b111) << 4)
+     * }</pre>
+     *
+     * <p>The three constants:
+     * <ul>
+     *   <li><b>7</b> (shift-right / source position): isolates the row-group bits to
+     *       permute. The 32-bank * 4-byte layout means the bank pattern repeats every
+     *       128 bytes (2<sup>7</sup>); shifting right by 7 yields the row group.</li>
+     *   <li><b>0b111</b> (mask): three bits participate, giving 8 distinct row rotations.</li>
+     *   <li><b>4</b> (shift-left / target position): the permutation lands at the 16-byte
+     *       boundary (2<sup>4</sup>). Bits below 4 pass through untouched, so each 16-byte
+     *       chunk stays contiguous.</li>
+     * </ul>
+     *
+     * <p>The XOR is involutive, so {@link #swizzleStoreFp16Stride32} with the same
+     * coordinate writes to exactly the position this method reads from.
+     *
+     * <p>The specific constants (a 16-byte permutation granularity over groups of 8 rows)
+     * match the access pattern of NVIDIA Tensor Core matrix loads, so this layout is
+     * intended for staging matrix tiles for future MMA support. It is, however, a general
+     * bank-conflict-free layout usable by any kernel with the same access shape.
+     *
+     * <p><b>Note:</b> Currently lowered on the PTX backend only.
+     *
+     * @param arr    the shared-memory tile, addressed in logical element coordinates
+     * @param row    the row index within the tile
+     * @param col    the column index within the row
+     * @param stride the number of fp16 elements per row (16 for a 32-byte row)
+     * @return the half-float stored at the swizzled position
+     */
+    public HalfFloat swizzleLoadFp16Stride32(HalfFloat[] arr, int row, int col, int stride) {
+        int byteOffset = (row * stride + col) * 2;
+        int swizzledByte = byteOffset ^ (((byteOffset >> 7) & 0b111) << 4);
+        return arr[swizzledByte / 2];
+    }
+
+    /**
+     * Stores a half-float into a swizzled shared-memory tile (stride-32 layout).
+     *
+     * <p>The inverse of {@link #swizzleLoadFp16Stride32}: applies the identical XOR
+     * permutation {@code byteOffset ^ (((byteOffset >> 7) & 0b111) << 4)} so a value written
+     * at a given {@code (row, col)} is later read back from the same coordinate. See
+     * {@link #swizzleLoadFp16Stride32} for the full derivation of the constants
+     * (7 = source bits, 0b111 = mask, 4 = 16-byte target boundary).
+     *
+     * <p><b>Note:</b> Currently lowered on the PTX backend only.
+     *
+     * @param arr    the shared-memory tile, addressed in logical element coordinates
+     * @param row    the row index within the tile
+     * @param col    the column index within the row
+     * @param stride the number of fp16 elements per row (16 for a 32-byte row)
+     * @param v      the half-float to store at the swizzled position
+     */
+    public void swizzleStoreFp16Stride32(HalfFloat[] arr, int row, int col, int stride, HalfFloat v) {
+        int byteOffset = (row * stride + col) * 2;
+        int swizzledByte = byteOffset ^ (((byteOffset >> 7) & 0b111) << 4);
+        arr[swizzledByte / 2] = v;
+    }
+
+    /**
+     * Loads a half-float from a swizzled shared-memory tile (stride-16 layout).
+     *
+     * <p>Variant of {@link #swizzleLoadFp16Stride32} for a narrower tile (8 fp16 cols =
+     * 16 bytes per row). Applies the same kind of bank-conflict-avoiding XOR permutation,
+     * but with constants shifted down one bit because the row stride is halved:
+     * <pre>{@code
+     *   byteOffset = (row * stride + col) * 2          // fp16 = 2 bytes per element
+     *   swizzled   = byteOffset ^ (((byteOffset >> 6) & 0b111) << 3)
+     * }</pre>
+     *
+     * <p>The three constants:
+     * <ul>
+     *   <li><b>6</b> (shift-right / source position): row-group bits for a 16-byte row
+     *       stride. The bank pattern spans half as many rows as the 32-byte case, so the
+     *       group bits sit one position lower, at 2<sup>6</sup> = 64 bytes.</li>
+     *   <li><b>0b111</b> (mask): three bits participate, giving 8 distinct row rotations.</li>
+     *   <li><b>3</b> (shift-left / target position): the permutation lands at the 8-byte
+     *       boundary (2<sup>3</sup>). Bits below 3 pass through untouched.</li>
+     * </ul>
+     *
+     * <p>The XOR is involutive, so {@link #swizzleStoreFp16Stride16} with the same
+     * coordinate writes to exactly the position this method reads from.
+     *
+     * <p>This narrower layout is intended for transposed matrix tiles in future MMA work.
+     * The constants follow the same derivation as the stride-32 case, shifted down one bit
+     * for the halved row stride, but have not yet been validated against a live consumer,
+     * treat as provisional.
+     *
+     * <p><b>Note:</b> Currently lowered on the PTX backend only.
+     *
+     * @param arr    the shared-memory tile, addressed in logical element coordinates
+     * @param row    the row index within the tile
+     * @param col    the column index within the row
+     * @param stride the number of fp16 elements per row (8 for a 16-byte row)
+     * @return the half-float stored at the swizzled position
+     */
+    public HalfFloat swizzleLoadFp16Stride16(HalfFloat[] arr, int row, int col, int stride) {
+        int byteOffset = (row * stride + col) * 2;
+        int swizzledByte = byteOffset ^ (((byteOffset >> 6) & 0b111) << 3);
+        return arr[swizzledByte / 2];
+    }
+
+    /**
+     * Stores a half-float into a swizzled shared-memory tile (stride-16 layout).
+     *
+     * <p>The inverse of {@link #swizzleLoadFp16Stride16}: applies the identical XOR
+     * permutation {@code byteOffset ^ (((byteOffset >> 6) & 0b111) << 3)}. See
+     * {@link #swizzleLoadFp16Stride16} for the constant derivation (6 = source bits,
+     * 0b111 = mask, 3 = 8-byte target boundary) and the validation caveat.
+     *
+     * <p><b>Note:</b> Currently lowered on the PTX backend only.
+     *
+     * @param arr    the shared-memory tile, addressed in logical element coordinates
+     * @param row    the row index within the tile
+     * @param col    the column index within the row
+     * @param stride the number of fp16 elements per row (8 for a 16-byte row)
+     * @param v      the half-float to store at the swizzled position
+     */
+    public void swizzleStoreFp16Stride16(HalfFloat[] arr, int row, int col, int stride, HalfFloat v) {
+        int byteOffset = (row * stride + col) * 2;
+        int swizzledByte = byteOffset ^ (((byteOffset >> 6) & 0b111) << 3);
+        arr[swizzledByte / 2] = v;
+    }
+
+    /**
+     * Loads an int8 value from a swizzled shared-memory tile.
+     *
+     * <p>Applies the same bank-conflict-avoiding XOR permutation as
+     * {@link #swizzleLoadFp16Stride32}, with identical constants. The permutation operates
+     * on a 16-byte granularity, which is independent of the element type, so the int8 and
+     * fp16 stride-32 swizzles share the same math.
+     *
+     * <p>Because int8 elements are one byte, the logical element index <em>is</em> the byte
+     * offset; there is no {@code * 2} conversion:
+     * <pre>{@code
+     *   byteOffset = row * stride + col
+     *   swizzled   = byteOffset ^ (((byteOffset >> 7) & 0b111) << 4)
+     * }</pre>
+     *
+     * <p>Constants (see {@link #swizzleLoadFp16Stride32} for the full derivation):
+     * <ul>
+     *   <li><b>7</b> (source): row-group bits; the 32-bank * 4-byte layout repeats every
+     *       128 bytes (2<sup>7</sup>).</li>
+     *   <li><b>0b111</b> (mask): 8 distinct row rotations.</li>
+     *   <li><b>4</b> (target): permutation at the 16-byte boundary (2<sup>4</sup>).</li>
+     * </ul>
+     *
+     * <p>This single method serves both tile layouts; the caller selects via the
+     * {@code stride} argument: 32 (bytes) for a wide tile, 16 (bytes) for a narrow one.
+     * The swizzle math is identical for both. The layout is intended for staging matrix
+     * tiles for future MMA support, but is a general bank-conflict-free layout usable by
+     * any kernel with the same access shape.
+     *
+     * <p><b>Note:</b> Currently lowered on the PTX backend only.
+     *
+     * @param arr    the shared-memory tile, addressed in logical element coordinates
+     * @param row    the row index within the tile
+     * @param col    the column index within the row
+     * @param stride the number of int8 elements (= bytes) per row
+     * @return the int8 value stored at the swizzled position
+     */
+    public byte swizzleLoadInt8(byte[] arr, int row, int col, int stride) {
+        int byteOffset = row * stride + col;   // int8: element index == byte offset
+        int swizzledByte = byteOffset ^ (((byteOffset >> 7) & 0b111) << 4);
+        return arr[swizzledByte];
+    }
+
+    /**
+     * Stores an int8 value into a swizzled shared-memory tile.
+     *
+     * <p>The inverse of {@link #swizzleLoadInt8}: applies the identical XOR permutation
+     * {@code byteOffset ^ (((byteOffset >> 7) & 0b111) << 4)}, where for int8 the element
+     * index is the byte offset directly. See {@link #swizzleLoadInt8} for the constant
+     * derivation and the dual-stride (32 / 16) usage.
+     *
+     * <p><b>Note:</b> Currently lowered on the PTX backend only.
+     *
+     * @param arr    the shared-memory tile, addressed in logical element coordinates
+     * @param row    the row index within the tile
+     * @param col    the column index within the row
+     * @param stride the number of int8 elements (= bytes) per row
+     * @param v      the int8 value to store at the swizzled position
+     */
+    public void swizzleStoreInt8(byte[] arr, int row, int col, int stride, byte v) {
+        int byteOffset = row * stride + col;
+        int swizzledByte = byteOffset ^ (((byteOffset >> 7) & 0b111) << 4);
+        arr[swizzledByte] = v;
+    }
+
+    /**
+     * Declares a C/D accumulator fragment for MMA operations.
+     * Lowered by the PTX backend to register allocation.
+     *
+     * PTX equivalent: mov.f32 rd0..rd3, v  (register-backed accumulator fragment)
+     */
+    public float[] mmaFragment(float v) {
+        // CPU fallback: return a 4-element accumulator fragment initialised to v.
+        // On GPU this is replaced by an MMAFragmentNode by the plugin.
+        return new float[]{ v, v, v, v };
+    }
+
+    public HalfFloat[] mmaLoadA(int[] aTile, int wmmaK) {
+        // CPU fallback: return an 8-element fragment.
+        // On GPU this is replaced by an MMALoadANode by the plugin.
+        return new HalfFloat[8];
+    }
+
+    public HalfFloat[] mmaLoadB(int[] bTile, int wmmaK) {
+        // CPU fallback: return a 4-element fragment.
+        // On GPU this is replaced by an MMALoadBNode by the plugin.
+        return new HalfFloat[4];
+    }
+
+    /**
+     * Loads the B fragment for mma.sync from a swizzled shared-memory tile
+     * populated using {@link #swizzleStoreFp16Stride32(HalfFloat[], int, int, int, HalfFloat)}.
+     *
+     * Each lane receives its 4 owned f16 elements as per PTX ISA m16n8k16 layout.
+     * The address computation includes the matching swizzle XOR so no bank
+     * conflicts occur during the ldmatrix read.
+     *
+     * PTX equivalent: ldmatrix.sync.aligned.m8n8.x2.trans.shared.b16 with
+     * per-lane addresses XOR-permuted by the FP16 stride-32 swizzle.
+     */
+    public HalfFloat[] mmaLoadBSwizzled(HalfFloat[] bTile, int wmmaK) {
+        // CPU fallback: return a 4-element fragment.
+        // On GPU this is replaced by an MMALoadBSwizzledNode by the plugin.
+        return new HalfFloat[4];
+    }
+
+    /**
+     * Warp-collective matrix multiply-accumulate: D = A * B + C.
+     *
+     * PTX equivalent:
+     *   mma.sync.aligned.{shape}.row.col.f32.f16.f16.f32
+     *       {rd0..rd3}, {ra0..ra3}, {rb0..rb1}, {rc0..rc3}
+     */
+    public float[] mma(HalfFloat[] fragA, HalfFloat[] fragB, float[] fragC, MMAShape mmaShape) {
+        // CPU fallback: return the accumulator unchanged.
+        // On GPU this is replaced by an MMAComputeNode by the plugin.
+        return fragC;
+    }
+
+    /**
+     * Stores the D fragment to a global output matrix.
+     *
+     * PTX equivalent: st.global.f32 [addr], rd0..rd3  (x4 per lane)
+     */
+    public void mmaStore(float[] fragD, FloatArray c, int tileRow, int tileCol, int dimN) {
+        // CPU fallback: no-op (matches other GPU-only constructs like localBarrier).
+        // On GPU this is replaced by an MMAStoreNode by the plugin.
+    }
+
+    /**
+     * Allocates a 4xs32 accumulator fragment for int8 MMA, initialised to the given value.
+     */
+    public int[] mmaFragmentInt(int initValue) {
+        return new int[4];
+    }
+
+    /**
+     * Loads an A fragment (16x32 int8 tile) for mma.sync.m16n8k32.
+     */
+    public byte[] mmaLoadAInt8(int[] aTile, int tileK) {
+        return new byte[16];
+    }
+
+    /**
+     * Loads a B fragment (32x8 int8 tile, col-major) for mma.sync.m16n8k32.
+     */
+    public byte[] mmaLoadBInt8(int[] bTile, int tileK) {
+        return new byte[8];
+    }
+
+    /**
+     * Warp-collective int8 MMA: D = A*B + C.
+     */
+    public int[] mmaInt8(byte[] fragA, byte[] fragB, int[] fragC, MMAShape shape) {
+        return new int[4];
+    }
+
+    /**
+     * Stores the int32 accumulator fragment to global memory.
+     */
+    public void mmaStoreInt(int[] fragD, IntArray out, int row, int col, int stride) {
+        // no-op placeholder
+    }
+
+    /**
+     * MMA A-operand load from a shared-memory tile with a byte-offset base.
+     *
+     * <p>Variant of {@link #mmaLoadA(int[], int)} that advances the base address
+     * by {@code byteOffset} bytes before computing per-lane addresses. Use this
+     * when multiple warps share a single A-tile in shared memory and each warp
+     * needs to read from a different M-row sub-region.
+     *
+     * <p>The offset is in bytes (not rows). For the canonical layout with 16 fp16
+     * (= 32 bytes) per row, warp m reading from row band (m * 16) passes
+     * {@code byteOffset = m * 16 * 32}.
+     *
+     * @param aTile      shared-memory A-tile (int-packed)
+     * @param wmmaK      K dimension of the MMA instruction (16 for fp16 m16n8k16)
+     * @param byteOffset base byte offset into aTile
+     * @return per-lane A fragment
+     */
+    public HalfFloat[] mmaLoadA(int[] aTile, int wmmaK, int byteOffset) {
+        return new HalfFloat[4]; // CPU fallback
+    }
+
+    /**
+     * MMA B-operand load from a shared-memory tile with a byte-offset base.
+     * See {@link #mmaLoadA(int[], int, int)} for offset semantics.
+     */
+    public HalfFloat[] mmaLoadB(int[] bTile, int wmmaK, int byteOffset) {
+        return new HalfFloat[4]; // CPU fallback
+    }
+
+    /**
+     * MMA B-operand load from a swizzled shared-memory tile with a byte-offset base.
+     * See {@link #mmaLoadA(int[], int, int)} for offset semantics.
+     *
+     * <p>The byteOffset is added to the swizzled tile base; the per-lane XOR
+     * permutation is still applied as in {@link #mmaLoadBSwizzled(HalfFloat[], int)}.
+     */
+    public HalfFloat[] mmaLoadBSwizzled(HalfFloat[] bTile, int wmmaK, int byteOffset) {
+        return new HalfFloat[4]; // CPU fallback
+    }
+
+    /**
+     * Swizzled fp16 store (stride-32) into a sub-tile at byte offset {@code byteOffset}.
+     * The swizzle permutation is computed on the LOCAL (row, col); the byteOffset
+     * places the result into the target sub-tile region. Symmetric with
+     * {@link #mmaLoadBSwizzled(HalfFloat[], int, int)}.
+     */
+    public void mmaStoreBSwizzled(HalfFloat[] arr, int row, int col, int stride,
+                                         HalfFloat value, int byteOffset) {
+        // CPU fallback: no-op (swizzle layout only matters on GPU).
+    }
+
 }

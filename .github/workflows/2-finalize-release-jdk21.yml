@@ -26,10 +26,10 @@ jobs:
     permissions:
       contents: write
     timeout-minutes: 10
-    
+
     outputs:
       version: ${{ steps.get_version.outputs.version }}
-    
+
     steps:
       - name: Get version
         id: get_version
@@ -150,7 +150,7 @@ jobs:
           script: |
             const fs = require('fs');
             const version = '${{ steps.get_version.outputs.version }}';
-            
+
             let releaseNotes;
             try {
               releaseNotes = fs.readFileSync('/tmp/release_notes_jdk21.md', 'utf8').trim();
@@ -160,17 +160,17 @@ jobs:
             } catch (e) {
               releaseNotes = `Release ${version}\n\nSee CHANGELOG.rst for details.`;
             }
-            
+
             const { data: release } = await github.rest.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
               tag_name: `v${version}`,
               name: `TornadoVM ${version}`,
               body: releaseNotes,
-              draft: false,
+              draft: true,
               prerelease: false
             });
-            
+
             console.log(`✅ Created release: ${release.html_url}`);
 
   update-develop:
@@ -183,7 +183,7 @@ jobs:
     env:
       JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
       MAVEN_HOME: /opt/maven
-    
+
     steps:
       - name: Checkout develop
         uses: actions/checkout@v4
@@ -223,13 +223,13 @@ jobs:
       - name: Bump to next dev version
         run: |
           NEXT="${{ steps.next_version.outputs.next_version }}"
-          
+
           ./mvnw versions:set -DnewVersion=${NEXT} -DgenerateBackupPoms=false
-          
+
           sed -i "s/__VERSION__ = \"[0-9]\+\.[0-9]\+\.[0-9]\+\(-[a-zA-Z0-9-]*\)\?\"/__VERSION__ = \"${NEXT}\"/" tornado-assembly/src/bin/tornado-test
-          
+
           git add -A
-          
+
           if ! git diff --cached --quiet; then
             git commit -m "Bump version to ${NEXT} for development"
             git push origin develop
@@ -237,7 +237,7 @@ jobs:
           else
             echo "ℹ️ No changes to commit"
           fi
-          
+
       - name: Summary
         run: |
           echo "## 🎉 Release Finalized" >> $GITHUB_STEP_SUMMARY

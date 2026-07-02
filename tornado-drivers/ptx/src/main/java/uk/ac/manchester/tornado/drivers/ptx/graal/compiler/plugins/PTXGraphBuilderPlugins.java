@@ -28,6 +28,7 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.RawConstant;
+import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import org.graalvm.compiler.core.common.memory.BarrierType;
@@ -49,6 +50,7 @@ import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
+import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
@@ -57,9 +59,12 @@ import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.replacements.InlineDuringParsingPlugin;
 import org.graalvm.word.LocationIdentity;
 import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.enums.MMAShape;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
+import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Float;
 import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
@@ -70,6 +75,15 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.AtomAddNodeTemplate;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.DP4APackedNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.Dp4aNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.MMAComputeNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.MMAFragmentNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.MMALoadAInt8Node;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.MMALoadANode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.MMALoadBInt8Node;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.MMALoadBNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.MMALoadBSwizzledNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.MMAStoreBSwizzledNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.MMAStoreNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXSimdSumNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXShuffleDownNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXSimdBroadcastFirstNode;
@@ -81,14 +95,23 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PrintfNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.SwizzledLoadFP16Stride16Node;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.SwizzledLoadFP16Stride32Node;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.SwizzledLoadInt8Node;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.SwizzledStoreFP16Stride16Node;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.SwizzledStoreFP16Stride32Node;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.SwizzledStoreInt8Node;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 import java.util.function.Supplier;
 
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.ATAN2;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.FMAX;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.FMIN;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.POW;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.ASIN;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.ATAN;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.COS;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.EXP;
@@ -433,6 +456,113 @@ public class PTXGraphBuilderPlugins {
         localArraysPlugins(r);
         registerAtomicAddOperation(r);
         registerSIMDPlugins(r);
+        registerMMAPlugins(r);
+        registerSwizzledLocalAccessesPlugins(r);
+        registerUnsupportedSimdgroupMatrixPlugins(r);
+    }
+
+    /**
+     * The {@code simdgroup_float8x8} matrix-unit intrinsics ({@link uk.ac.manchester.tornado.api.KernelContext}
+     * {@code simdgroupMatrix*}) are Metal-only. They cannot be intrinsified on this backend, so reject them at
+     * graph-build time with a clear message instead of failing later when the JVM-fallback object allocations
+     * are lowered.
+     */
+    private static void registerUnsupportedSimdgroupMatrixPlugins(Registration r) {
+        final String message = "simdgroup_float8x8 matrix operations (KernelContext.simdgroupMatrix*) are only supported on the Metal backend.";
+        r.register(new InvocationPlugin("simdgroupMatrixZero", Receiver.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        r.register(new InvocationPlugin("simdgroupMatrixLoad", Receiver.class, FloatArray.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode base, ValueNode stride) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        r.register(new InvocationPlugin("simdgroupMatrixLoad", Receiver.class, float[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode base, ValueNode stride) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        r.register(new InvocationPlugin("simdgroupMatrixMultiplyAccumulate", Receiver.class, Matrix8x8Float.class, Matrix8x8Float.class, Matrix8x8Float.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode bMat, ValueNode c) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        r.register(new InvocationPlugin("simdgroupMatrixStore", Receiver.class, Matrix8x8Float.class, FloatArray.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode matrix, ValueNode array, ValueNode base, ValueNode stride) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+    }
+
+    private static void registerSwizzledLocalAccessesPlugins(Registration r) {
+        r.register(new InvocationPlugin("swizzleLoadFp16Stride32", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride) {
+                b.addPush(JavaKind.Object, new SwizzledLoadFP16Stride32Node(local_array, row, column, stride));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("swizzleStoreFp16Stride32", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class, HalfFloat.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode value) {
+                b.add(new SwizzledStoreFP16Stride32Node(local_array, row, column, stride, value));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("swizzleLoadFp16Stride16", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride) {
+                b.addPush(JavaKind.Object, new SwizzledLoadFP16Stride16Node(local_array, row, column, stride));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("swizzleStoreFp16Stride16", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class, HalfFloat.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode value) {
+                b.add(new SwizzledStoreFP16Stride16Node(local_array, row, column, stride, value));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("swizzleLoadInt8", InvocationPlugin.Receiver.class,
+                byte[].class, int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver,
+                                 ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride) {
+                b.addPush(JavaKind.Byte, new SwizzledLoadInt8Node(local_array, row, column, stride));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("swizzleStoreInt8", InvocationPlugin.Receiver.class,
+                byte[].class, int.class, int.class, int.class, byte.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver,
+                                 ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode value) {
+                b.add(new SwizzledStoreInt8Node(local_array, row, column, stride, value));
+                return true;
+            }
+        });
     }
 
     private static void registerSIMDPlugins(Registration r) {
@@ -459,6 +589,258 @@ public class PTXGraphBuilderPlugins {
                 return true;
             }
         });
+    }
+
+    private static void registerMMAPlugins(Registration r) {
+        // --- mmaFragment(float v) -> float[] ---
+        r.register(new InvocationPlugin("mmaFragment",
+                InvocationPlugin.Receiver.class, float.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode initValue) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new MMAFragmentNode(initValue));
+                return true;
+            }
+        });
+
+        // --- mmaLoadA(int[] aTile, int wmmaK) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadA",
+                InvocationPlugin.Receiver.class, int[].class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode wmmaK) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new MMALoadANode(tile, wmmaK));
+                return true;
+            }
+        });
+
+        // --- mmaLoadB(int[] bTile, int wmmaK) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadB",
+                InvocationPlugin.Receiver.class, int[].class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode wmmaK) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new MMALoadBNode(tile, wmmaK));
+                return true;
+            }
+        });
+
+        // --- mmaLoadBSwizzled(HalfFloat[] bTile, int wmmaK) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadBSwizzled",
+                InvocationPlugin.Receiver.class, HalfFloat[].class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode wmmaK) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new MMALoadBSwizzledNode(tile, wmmaK));
+                return true;
+            }
+        });
+
+        // --- mmaStoreBSwizzled(HalfFloat[] arr, int row, int col, int stride, HalfFloat value, int byteOffset) -> void ---
+        r.register(new InvocationPlugin("mmaStoreBSwizzled",
+                InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class,
+                int.class, HalfFloat.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode arr, ValueNode row, ValueNode col,
+                                 ValueNode stride, ValueNode value, ValueNode byteOffset) {
+                receiver.get(true);
+                b.add(new MMAStoreBSwizzledNode(arr, row, col, stride, value, byteOffset));
+                return true;
+            }
+        });
+
+        // --- mma(HalfFloat[] fragA, HalfFloat[] fragB, float[] fragC, MMAShape shape) -> float[] ---
+        r.register(new InvocationPlugin("mma",
+                InvocationPlugin.Receiver.class,
+                HalfFloat[].class, HalfFloat[].class, float[].class, MMAShape.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver,
+                                 ValueNode fragA, ValueNode fragB, ValueNode fragC,
+                                 ValueNode shapeNode) {
+                receiver.get(true);
+                MMAShape shape = resolveShape(b, shapeNode);
+                b.addPush(JavaKind.Object, new MMAComputeNode(fragA, fragB, fragC, shape));
+                return true;
+            }
+        });
+
+        // --- mmaStore(float[] fragD, FloatArray c, int tileRow, int tileCol, int dimN) -> void ---
+        r.register(new InvocationPlugin("mmaStore",
+                InvocationPlugin.Receiver.class,
+                float[].class, FloatArray.class, int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver,
+                                 ValueNode fragD, ValueNode target,
+                                 ValueNode tileRow, ValueNode tileCol, ValueNode dimN) {
+                receiver.get(true);
+                int headerElements = TornadoCoreRuntime.getVMConfig()
+                        .getArrayBaseOffset(JavaKind.Float) / JavaKind.Float.getByteCount();
+                b.add(new MMAStoreNode(fragD, target, tileRow, tileCol, dimN, headerElements));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("mmaFragmentInt",
+                InvocationPlugin.Receiver.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode initValue) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new MMAFragmentNode(initValue, true));
+                return true;
+            }
+        });
+
+        // --- mmaLoadAInt8(int[], int) -> byte[] ---
+        r.register(new InvocationPlugin("mmaLoadAInt8",
+                InvocationPlugin.Receiver.class, int[].class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode tileK) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new MMALoadAInt8Node(tile, tileK));
+                return true;
+            }
+        });
+
+        // --- mmaLoadBInt8(int[], int) -> byte[] ---
+        r.register(new InvocationPlugin("mmaLoadBInt8",
+                InvocationPlugin.Receiver.class, int[].class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode tileK) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new MMALoadBInt8Node(tile, tileK));
+                return true;
+            }
+        });
+
+        // --- mmaInt8(byte[], byte[], int[], MMAShape) -> int[] ---
+        r.register(new InvocationPlugin("mmaInt8",
+                InvocationPlugin.Receiver.class,
+                byte[].class, byte[].class, int[].class, MMAShape.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver,
+                                 ValueNode fragA, ValueNode fragB, ValueNode fragC,
+                                 ValueNode shapeNode) {
+                receiver.get(true);
+                MMAShape shape = resolveShape(b, shapeNode);
+                b.addPush(JavaKind.Object, new MMAComputeNode(fragA, fragB, fragC, shape));
+                return true;
+            }
+        });
+
+        // --- mmaStoreInt(int[], IntArray, int, int, int) -> void ---
+        r.register(new InvocationPlugin("mmaStoreInt",
+                InvocationPlugin.Receiver.class,
+                int[].class, IntArray.class, int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver,
+                                 ValueNode fragD, ValueNode target,
+                                 ValueNode tileRow, ValueNode tileCol, ValueNode dimN) {
+                receiver.get(true);
+                int headerElements = TornadoCoreRuntime.getVMConfig()
+                        .getArrayBaseOffset(JavaKind.Int) / JavaKind.Int.getByteCount();
+                b.add(new MMAStoreNode(fragD, target, tileRow, tileCol, dimN, headerElements, true));
+                return true;
+            }
+        });
+
+        // --- mmaLoadA(int[], int, int) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadA",
+                InvocationPlugin.Receiver.class, int[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode wmmaK, ValueNode byteOffset) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new MMALoadANode(tile, wmmaK, byteOffset));
+                return true;
+            }
+        });
+
+        // --- mmaLoadB(int[], int, int) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadB",
+                InvocationPlugin.Receiver.class, int[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode wmmaK, ValueNode byteOffset) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new MMALoadBNode(tile, wmmaK, byteOffset));
+                return true;
+            }
+        });
+
+        // --- mmaLoadBSwizzled(HalfFloat[], int, int) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadBSwizzled",
+                InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode wmmaK, ValueNode byteOffset) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new MMALoadBSwizzledNode(tile, wmmaK, byteOffset));
+                return true;
+            }
+        });
+
+    }
+
+    /**
+     * Resolves an MMAShape enum ValueNode to its compile-time constant.
+     *
+     * Enum references in bytecode appear as getstatic loads (LoadFieldNode) that
+     * are only constant-folded in a later phase. We read the static field directly
+     * via ConstantReflectionProvider.
+     *
+     * We can't use SnippetReflection.asObject() because TornadoVM's implementation
+     * throws unimplemented(). Instead, we read the enum's ordinal field and index
+     * into MMAShape.values().
+     */
+    private static MMAShape resolveShape(GraphBuilderContext b, ValueNode shapeNode) {
+        JavaConstant constant = shapeNode.asJavaConstant();
+
+        // Enum constants usually reach the plugin as a LoadFieldNode — resolve
+        // the static-final field directly if it hasn't been folded yet.
+        if (constant == null && shapeNode instanceof LoadFieldNode) {
+            LoadFieldNode load = (LoadFieldNode) shapeNode;
+            if (load.field().isStatic()) {
+                constant = b.getConstantReflection().readFieldValue(load.field(), null);
+            }
+        }
+
+        if (constant == null || constant.isNull()) {
+            throw new IllegalStateException(
+                    "MMAShape argument to ctx.mma() must be a compile-time constant");
+        }
+
+        // Read the `ordinal` field inherited from java.lang.Enum to identify
+        // which MMAShape constant this is, then look it up in values().
+        ResolvedJavaType enumType = b.getMetaAccess().lookupJavaType(MMAShape.class);
+        ResolvedJavaField ordinalField = null;
+        for (ResolvedJavaField f : enumType.getInstanceFields(true)) {
+            if (f.getName().equals("ordinal")) {
+                ordinalField = f;
+                break;
+            }
+        }
+        if (ordinalField == null) {
+            throw new IllegalStateException("Cannot locate Enum.ordinal field on MMAShape");
+        }
+
+        JavaConstant ordinalConst = b.getConstantReflection().readFieldValue(ordinalField, constant);
+        if (ordinalConst == null) {
+            throw new IllegalStateException("Failed to read ordinal of MMAShape constant");
+        }
+
+        return MMAShape.values()[ordinalConst.asInt()];
     }
 
     private static void registerFPIntrinsics(Registration r, Class<?> type, JavaKind kind) {
@@ -522,6 +904,22 @@ public class PTXGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(JavaKind.Double, b.append(PTXFPUnaryIntrinsicNode.create(value, ATAN, JavaKind.Double)));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("atan2", Double.TYPE, Double.TYPE) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
+                b.push(JavaKind.Double, b.append(PTXFPBinaryIntrinsicNode.create(x, y, ATAN2, JavaKind.Double)));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("asin", Double.TYPE) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(JavaKind.Double, b.append(PTXFPUnaryIntrinsicNode.create(value, ASIN, JavaKind.Double)));
                 return true;
             }
         });

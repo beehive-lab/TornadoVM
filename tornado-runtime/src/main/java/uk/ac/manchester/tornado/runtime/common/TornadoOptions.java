@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2025, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2026, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -52,6 +52,11 @@ public class TornadoOptions {
     public static final String DEFAULT_PTX_COMPILER_FLAGS = getProperty("tornado.ptx.compiler.flags", "CU_JIT_OPTIMIZATION_LEVEL 4");
 
     /**
+     * Default CUDA (NVRTC) Compiler Flags. Passed to NVRTC when compiling the generated CUDA C source.
+     */
+    public static final String DEFAULT_CUDA_COMPILER_FLAGS = getProperty("tornado.cuda.compiler.flags", "");
+
+    /**
      * Default SPIR-V/LevelZero Flags.
      */
     public static final String DEFAULT_SPIRV_LEVEL_ZERO_COMPILER_FLAGS = getProperty("tornado.spirv.levelzero.flags", "-ze-opt-level 2 -ze-opt-large-register-file");
@@ -98,6 +103,11 @@ public class TornadoOptions {
      * the rest of the backends.
      */
     public static final int PTX_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.ptx.priority", "0"));
+    /**
+     * Priority of the CUDA Backend. The higher the number, the more priority over
+     * the rest of the backends.
+     */
+    public static final int CUDA_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.cuda.priority", "0"));
     /**
      * Priority of the OpenCL Backend. The higher the number, the more priority over
      * the rest of the backends.
@@ -296,14 +306,24 @@ public class TornadoOptions {
      */
     public static final boolean FAST_MATH_OPTIMIZATIONS = getBooleanValue("tornado.enable.fastMathOptimizations", TRUE);
     /**
+     * Opt-in: compile Metal kernels with fast/relaxed math ({@code MTLMathModeFast}),
+     * the Metal analogue of OpenCL's {@code -cl-fast-relaxed-math}. Trades a small
+     * amount of FP precision for speed. Default OFF to preserve strict precision.
+     */
+    public static final boolean METAL_FAST_MATH = getBooleanValue("tornado.metal.fastmath", FALSE);
+    /**
+     * Opt-in: emit a {@code [[max_total_threads_per_threadgroup(N)]]} attribute on
+     * Metal kernels when the local work-group size is statically known (a worker
+     * grid is attached at compile time). Lets the Metal compiler tune register
+     * allocation/occupancy. Default OFF because the bound is baked into the cached
+     * kernel - re-dispatching the same kernel with a larger threadgroup would fail.
+     */
+    public static final boolean METAL_THREADGROUP_HINT = getBooleanValue("tornado.metal.threadgroupHint", FALSE);
+    /**
      * It optimizes loads and stores for the SPIRV backend. It uses less virtual
      * registers. Experimental Feature.
      */
     public static final boolean OPTIMIZE_LOAD_STORE_SPIRV = getBooleanValue("tornado.spirv.loadstore", TRUE);
-    /**
-     * Use Level Zero Thread Suggestions for the Thread Dispatcher. True by default.
-     */
-    public static final boolean USE_LEVELZERO_THREAD_DISPATCHER_SUGGESTIONS = getBooleanValue("tornado.spirv.levelzero.thread.dispatcher", TRUE);
     /**
      * Memory Alignment for the Level Zero buffers (shared memory and or device
      * memory).
@@ -505,7 +525,7 @@ public class TornadoOptions {
      * resource is closed. This is False by default, since this area is global for all kernels. In near future,
      * we will change this to use a unique area per execution plan, and have the option to turn on and off
      * this flag as needed.
-     * 
+     *
      * @return boolean
      */
     public static boolean cleanUpAtomicsSpace() {

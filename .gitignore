@@ -2,7 +2,7 @@
 .unittestingStatus
 .build/*.xml
 beehive-spirv-toolkit/
-bin/__pycache__/
+**/__pycache__/
 bin/bin
 bin/sdk
 dist/
@@ -31,3 +31,4 @@ tornado.iml
 tornado_unittests.log
 OpenCL-Headers/
 tornado-assembly/src/etc/tornado.backend
+hs_err_pid*.log

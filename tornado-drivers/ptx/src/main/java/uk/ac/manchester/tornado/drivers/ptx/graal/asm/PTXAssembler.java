@@ -44,6 +44,7 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstan
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -820,6 +821,16 @@ public class PTXAssembler extends Assembler {
             asm.emitValue(z);
             asm.emit(")");
         }
+    }
+
+    private Set<String> declaredFragRegs = new HashSet<>();
+
+    public boolean isFragRegDeclared(String baseName) {
+        return declaredFragRegs.contains(baseName);
+    }
+
+    public void markFragRegDeclared(String baseName) {
+        declaredFragRegs.add(baseName);
     }
 
 }
