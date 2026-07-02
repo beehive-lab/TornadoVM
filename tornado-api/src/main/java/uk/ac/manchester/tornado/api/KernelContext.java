@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import uk.ac.manchester.tornado.api.enums.MMAShape;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
@@ -623,6 +624,157 @@ public class KernelContext implements ExecutionContext {
         int byteOffset = row * stride + col;
         int swizzledByte = byteOffset ^ (((byteOffset >> 7) & 0b111) << 4);
         arr[swizzledByte] = v;
+    }
+
+
+    /**
+     * Declares a C/D accumulator fragment for MMA operations.
+     * Lowered by the PTX backend to register allocation.
+     *
+     * PTX equivalent: mov.f32 rd0..rd3, v  (register-backed accumulator fragment)
+     */
+    public float[] mmaFragment(float v) {
+        // CPU fallback: return a 4-element accumulator fragment initialised to v.
+        // On GPU this is replaced by an MMAFragmentNode by the plugin.
+        return new float[]{ v, v, v, v };
+    }
+
+    public HalfFloat[] mmaLoadA(int[] aTile, int wmmaK) {
+        // CPU fallback: return an 8-element fragment.
+        // On GPU this is replaced by an MMALoadANode by the plugin.
+        return new HalfFloat[8];
+    }
+
+    public HalfFloat[] mmaLoadB(int[] bTile, int wmmaK) {
+        // CPU fallback: return a 4-element fragment.
+        // On GPU this is replaced by an MMALoadBNode by the plugin.
+        return new HalfFloat[4];
+    }
+
+    /**
+     * Loads the B fragment for mma.sync from a swizzled shared-memory tile
+     * populated using {@link #swizzleStoreFp16Stride32(HalfFloat[], int, int, int, HalfFloat)}.
+     *
+     * Each lane receives its 4 owned f16 elements as per PTX ISA m16n8k16 layout.
+     * The address computation includes the matching swizzle XOR so no bank
+     * conflicts occur during the ldmatrix read.
+     *
+     * PTX equivalent: ldmatrix.sync.aligned.m8n8.x2.trans.shared.b16 with
+     * per-lane addresses XOR-permuted by the FP16 stride-32 swizzle.
+     */
+    public HalfFloat[] mmaLoadBSwizzled(HalfFloat[] bTile, int wmmaK) {
+        // CPU fallback: return a 4-element fragment.
+        // On GPU this is replaced by an MMALoadBSwizzledNode by the plugin.
+        return new HalfFloat[4];
+    }
+
+    /**
+     * Warp-collective matrix multiply-accumulate: D = A * B + C.
+     *
+     * PTX equivalent:
+     *   mma.sync.aligned.{shape}.row.col.f32.f16.f16.f32
+     *       {rd0..rd3}, {ra0..ra3}, {rb0..rb1}, {rc0..rc3}
+     */
+    public float[] mma(HalfFloat[] fragA, HalfFloat[] fragB, float[] fragC, MMAShape mmaShape) {
+        // CPU fallback: return the accumulator unchanged.
+        // On GPU this is replaced by an MMAComputeNode by the plugin.
+        return fragC;
+    }
+
+    /**
+     * Stores the D fragment to a global output matrix.
+     *
+     * PTX equivalent: st.global.f32 [addr], rd0..rd3  (x4 per lane)
+     */
+    public void mmaStore(float[] fragD, FloatArray c, int tileRow, int tileCol, int dimN) {
+        // CPU fallback: no-op (matches other GPU-only constructs like localBarrier).
+        // On GPU this is replaced by an MMAStoreNode by the plugin.
+    }
+
+    /**
+     * Allocates a 4xs32 accumulator fragment for int8 MMA, initialised to the given value.
+     */
+    public int[] mmaFragmentInt(int initValue) {
+        return new int[4];
+    }
+
+    /**
+     * Loads an A fragment (16x32 int8 tile) for mma.sync.m16n8k32.
+     */
+    public byte[] mmaLoadAInt8(int[] aTile, int tileK) {
+        return new byte[16];
+    }
+
+    /**
+     * Loads a B fragment (32x8 int8 tile, col-major) for mma.sync.m16n8k32.
+     */
+    public byte[] mmaLoadBInt8(int[] bTile, int tileK) {
+        return new byte[8];
+    }
+
+    /**
+     * Warp-collective int8 MMA: D = A*B + C.
+     */
+    public int[] mmaInt8(byte[] fragA, byte[] fragB, int[] fragC, MMAShape shape) {
+        return new int[4];
+    }
+
+    /**
+     * Stores the int32 accumulator fragment to global memory.
+     */
+    public void mmaStoreInt(int[] fragD, IntArray out, int row, int col, int stride) {
+        // no-op placeholder
+    }
+
+    /**
+     * MMA A-operand load from a shared-memory tile with a byte-offset base.
+     *
+     * <p>Variant of {@link #mmaLoadA(int[], int)} that advances the base address
+     * by {@code byteOffset} bytes before computing per-lane addresses. Use this
+     * when multiple warps share a single A-tile in shared memory and each warp
+     * needs to read from a different M-row sub-region.
+     *
+     * <p>The offset is in bytes (not rows). For the canonical layout with 16 fp16
+     * (= 32 bytes) per row, warp m reading from row band (m * 16) passes
+     * {@code byteOffset = m * 16 * 32}.
+     *
+     * @param aTile      shared-memory A-tile (int-packed)
+     * @param wmmaK      K dimension of the MMA instruction (16 for fp16 m16n8k16)
+     * @param byteOffset base byte offset into aTile
+     * @return per-lane A fragment
+     */
+    public HalfFloat[] mmaLoadA(int[] aTile, int wmmaK, int byteOffset) {
+        return new HalfFloat[4]; // CPU fallback
+    }
+
+    /**
+     * MMA B-operand load from a shared-memory tile with a byte-offset base.
+     * See {@link #mmaLoadA(int[], int, int)} for offset semantics.
+     */
+    public HalfFloat[] mmaLoadB(int[] bTile, int wmmaK, int byteOffset) {
+        return new HalfFloat[4]; // CPU fallback
+    }
+
+    /**
+     * MMA B-operand load from a swizzled shared-memory tile with a byte-offset base.
+     * See {@link #mmaLoadA(int[], int, int)} for offset semantics.
+     *
+     * <p>The byteOffset is added to the swizzled tile base; the per-lane XOR
+     * permutation is still applied as in {@link #mmaLoadBSwizzled(HalfFloat[], int)}.
+     */
+    public HalfFloat[] mmaLoadBSwizzled(HalfFloat[] bTile, int wmmaK, int byteOffset) {
+        return new HalfFloat[4]; // CPU fallback
+    }
+
+    /**
+     * Swizzled fp16 store (stride-32) into a sub-tile at byte offset {@code byteOffset}.
+     * The swizzle permutation is computed on the LOCAL (row, col); the byteOffset
+     * places the result into the target sub-tile region. Symmetric with
+     * {@link #mmaLoadBSwizzled(HalfFloat[], int, int)}.
+     */
+    public void mmaStoreBSwizzled(HalfFloat[] arr, int row, int col, int stride,
+                                         HalfFloat value, int byteOffset) {
+        // CPU fallback: no-op (swizzle layout only matters on GPU).
     }
 
 }

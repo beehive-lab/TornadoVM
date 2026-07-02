@@ -172,6 +172,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.metal.graal.nodes.IncAtomicNode") || //
                 currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.metal.graal.nodes.DecAtomicNode") || //
                 currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.metal.graal.nodes.GetAtomicNode") || //
+                currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.ptx.graal.nodes.MMAStoreNode") ||
                 currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.metal.graal.nodes.AtomAddNodeTemplate");
     }
 
