@@ -50,6 +50,81 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_cufft_provider_CuFftNative
 
 /*
  * Class:     uk_ac_manchester_tornado_cufft_provider_CuFftNativeLib
+ * Method:    cufftPlan1dOfType
+ * Signature: (III)J
+ *
+ * type is the raw cufftType value (CUFFT_C2C=0x29, CUFFT_R2C=0x2a,
+ * CUFFT_C2R=0x2c, CUFFT_Z2Z=0x69, ...).
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_cufft_provider_CuFftNativeLib_cufftPlan1dOfType
+        (JNIEnv *env, jclass clazz, jint n, jint batch, jint type) {
+    cufftHandle plan;
+    cufftResult result = cufftPlan1d(&plan, n, (cufftType) type, batch);
+    if (result != CUFFT_SUCCESS) {
+        return 0;
+    }
+    return (jlong) plan;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_cufft_provider_CuFftNativeLib
+ * Method:    cufftPlan2dOfType
+ * Signature: (III)J
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_cufft_provider_CuFftNativeLib_cufftPlan2dOfType
+        (JNIEnv *env, jclass clazz, jint nx, jint ny, jint type) {
+    cufftHandle plan;
+    cufftResult result = cufftPlan2d(&plan, nx, ny, (cufftType) type);
+    if (result != CUFFT_SUCCESS) {
+        return 0;
+    }
+    return (jlong) plan;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_cufft_provider_CuFftNativeLib
+ * Method:    cufftExecR2C
+ * Signature: (JJJ)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_cufft_provider_CuFftNativeLib_cufftExecR2C
+        (JNIEnv *env, jclass clazz, jlong plan, jlong d_in, jlong d_out) {
+    return (jint) cufftExecR2C((cufftHandle) plan, (cufftReal *) d_in, (cufftComplex *) d_out);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_cufft_provider_CuFftNativeLib
+ * Method:    cufftExecC2R
+ * Signature: (JJJ)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_cufft_provider_CuFftNativeLib_cufftExecC2R
+        (JNIEnv *env, jclass clazz, jlong plan, jlong d_in, jlong d_out) {
+    return (jint) cufftExecC2R((cufftHandle) plan, (cufftComplex *) d_in, (cufftReal *) d_out);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_cufft_provider_CuFftNativeLib
+ * Method:    cufftExecZ2Z
+ * Signature: (JJJI)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_cufft_provider_CuFftNativeLib_cufftExecZ2Z
+        (JNIEnv *env, jclass clazz, jlong plan, jlong d_in, jlong d_out, jint direction) {
+    return (jint) cufftExecZ2Z((cufftHandle) plan, (cufftDoubleComplex *) d_in, (cufftDoubleComplex *) d_out, direction);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_cufft_provider_CuFftNativeLib
+ * Method:    cufftGetVersion
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_cufft_provider_CuFftNativeLib_cufftGetVersion
+        (JNIEnv *env, jclass clazz) {
+    int version = 0;
+    cufftGetVersion(&version);
+    return (jint) version;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_cufft_provider_CuFftNativeLib
  * Method:    cufftSetStream
  * Signature: (JJ)I
  */
