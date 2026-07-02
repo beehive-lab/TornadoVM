@@ -967,7 +967,10 @@ public class TornadoVMInterpreter {
             // device memory, which is illegal inside a capture region.
             final LibraryTaskDescriptor descriptor = libraryTask.getDescriptor();
             final TornadoLibraryProvider provider = LibraryRegistry.findProvider(descriptor.getLibraryName(), interpreterDevice);
-            LibraryRegistry.getOrCreateContext(provider, interpreterDevice, graphExecutionContext.getExecutionPlanId());
+            LibraryContext preparedContext = LibraryRegistry.getOrCreateContext(provider, interpreterDevice, graphExecutionContext.getExecutionPlanId());
+            // Let the provider create per-shape native plans (which may allocate
+            // device memory) before any CUDA graph capture starts
+            provider.prepare(descriptor, preparedContext);
             if (timeProfiler instanceof TimeProfiler) {
                 timeProfiler.registerBackend(task.getId(), task.getDevice().getTornadoVMBackend().name());
                 timeProfiler.registerDeviceID(task.getId(), task.meta().getBackendIndex() + ":" + task.meta().getDeviceIndex());

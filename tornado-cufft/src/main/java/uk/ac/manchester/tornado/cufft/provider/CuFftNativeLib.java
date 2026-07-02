@@ -41,12 +41,32 @@ final class CuFftNativeLib {
         }
     }
 
+    /** Raw {@code cufftType} values. */
+    static final int CUFFT_C2C = 0x29;
+    static final int CUFFT_R2C = 0x2a;
+    static final int CUFFT_C2R = 0x2c;
+    static final int CUFFT_Z2Z = 0x69;
+
     /** Creates a 1D C2C FP32 plan for {@code batch} transforms of length n; returns 0 on failure. */
     static native long cufftPlan1dC2C(int n, int batch);
+
+    /** Creates a 1D plan of the given raw {@code cufftType}; returns 0 on failure. */
+    static native long cufftPlan1dOfType(int n, int batch, int type);
+
+    /** Creates a 2D plan of the given raw {@code cufftType}; returns 0 on failure. */
+    static native long cufftPlan2dOfType(int nx, int ny, int type);
 
     static native int cufftSetStream(long plan, long streamPtr);
 
     static native int cufftExecC2C(long plan, long dIn, long dOut, int direction);
+
+    static native int cufftExecR2C(long plan, long dIn, long dOut);
+
+    static native int cufftExecC2R(long plan, long dIn, long dOut);
+
+    static native int cufftExecZ2Z(long plan, long dIn, long dOut, int direction);
+
+    static native int cufftGetVersion();
 
     static native void cufftDestroy(long plan);
 
