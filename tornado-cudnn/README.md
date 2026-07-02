@@ -34,6 +34,7 @@ NVIDIA apt repository).
 | `cudnnRelu` / `cudnnSigmoid` / `cudnnTanh` `(in, out, size)` | `cudnnActivationForward` | Element-wise activations |
 | `cudnnMaxPool2d(in, out, n, c, h, w, window, stride)` | `cudnnPoolingForward` (MAX) | Square-window max pooling, no padding |
 | `cudnnConv2d(in, filter, out, n, c, h, w, k, r, s, pad, stride)` | `cudnnConvolutionForward` (IMPLICIT_PRECOMP_GEMM) | 2D cross-correlation, input NCHW, filter KCRS, square pad/stride |
+| `sdpaForward(q, k, v, o, b, h, sQ, sKv, d, scale, causal)` | graph API fused SDPA (flash attention) via cudnn-frontend | **FP16** `HalfFloatArray`, packed BHSD, FP32 accumulate, inference; optional causal mask; d multiple of 8, <= 256, Ampere+ |
 
 Convolution descriptors, the algorithm, and the (grow-only) device workspace are
 created once per shape and cached in the per-(device, execution plan) context —
@@ -61,6 +62,9 @@ tornado-test -V uk.ac.manchester.tornado.unittests.cudnn.TestCuDnn
 
 # Benchmark: TornadoVM JIT direct convolution vs cuDNN (ResNet-style 3x3 layer)
 tornado -m tornado.cudnn/uk.ac.manchester.tornado.cudnn.tests.BenchmarkConv2d 8 64 56 64 50
+
+# Benchmark: JIT attention kernel vs fused flash attention (causal SDPA)
+tornado -m tornado.cudnn/uk.ac.manchester.tornado.cudnn.tests.BenchmarkSdpa 4 16 1024 128 20
 ```
 
 Reference numbers on an NVIDIA GeForce RTX 4090 (FP32, cuDNN 9.23):
@@ -72,3 +76,11 @@ Reference numbers on an NVIDIA GeForce RTX 4090 (FP32, cuDNN 9.23):
 
 (FP32 with the fixed IMPLICIT_PRECOMP_GEMM algorithm; the FP16 Tensor Core path and
 algorithm autotuning in [ROADMAP.md](ROADMAP.md) are the next big steps.)
+
+Fused causal flash attention (`BenchmarkSdpa`, FP16, results cross-validated against
+the FP32 JIT attention kernel on the same FP16-rounded inputs):
+
+| Shape (b, h, s, d) | JIT attention kernel (FP32) | cuDNN fused SDPA (FP16) | Speedup |
+|---|---|---|---|
+| 4, 16, 1024, 128 | 90.7 ms (0.19 TFLOP/s) | 0.268 ms (64.2 TFLOP/s) | **339x** |
+| 1, 32, 2048, 128 | 203.3 ms (0.17 TFLOP/s) | 0.407 ms (84.3 TFLOP/s) | **499x** |

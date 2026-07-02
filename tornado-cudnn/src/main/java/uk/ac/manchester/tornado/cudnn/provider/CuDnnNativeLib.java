@@ -70,6 +70,18 @@ final class CuDnnNativeLib {
 
     static native void destroyConvPlan(long planPtr);
 
+    /* ---- Fused SDPA (flash attention) via the cuDNN graph API ---- */
+
+    /** Builds the fused SDPA execution plan (FP16, BHSD packed); 0 on failure. */
+    static native long createSdpaPlan(long handle, int b, int h, int sQ, int sKv, int d, float scale, boolean causal);
+
+    static native long sdpaPlanWorkspaceBytes(long planPtr);
+
+    /** Returns 0 on success. */
+    static native int executeSdpaPlan(long handle, long planPtr, long dQ, long dK, long dV, long dO, long workspacePtr);
+
+    static native void destroySdpaPlan(long planPtr);
+
     static native long allocateDeviceMemory(long bytes);
 
     static native void freeDeviceMemory(long ptr);

@@ -42,11 +42,28 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
     private static final class CuDnnContext implements LibraryContext {
         private final long handle;
         private final Map<String, Long> convPlanCache = new HashMap<>();
+        private final Map<String, Long> sdpaPlanCache = new HashMap<>();
         private long workspacePtr;
         private long workspaceBytes;
 
         private CuDnnContext(long handle) {
             this.handle = handle;
+        }
+
+        private void growWorkspace(long required) {
+            if (required > workspaceBytes) {
+                if (workspacePtr != 0) {
+                    CuDnnNativeLib.freeDeviceMemory(workspacePtr);
+                    workspacePtr = 0;
+                    workspaceBytes = 0;
+                }
+                long ptr = CuDnnNativeLib.allocateDeviceMemory(required);
+                if (ptr == 0) {
+                    throw new TornadoRuntimeException("[ERROR] Unable to allocate cuDNN workspace of " + required + " bytes");
+                }
+                workspacePtr = ptr;
+                workspaceBytes = required;
+            }
         }
     }
 
@@ -74,9 +91,13 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
 
     @Override
     public void prepare(LibraryTaskDescriptor descriptor, LibraryContext context) {
-        if ("cudnnConv2d".equals(descriptor.getFunctionName())) {
-            Object[] p = descriptor.getParameters();
-            getOrCreateConvPlan((CuDnnContext) context, (int) p[3], (int) p[4], (int) p[5], (int) p[6], (int) p[7], (int) p[8], (int) p[9], (int) p[10], (int) p[11]);
+        Object[] p = descriptor.getParameters();
+        switch (descriptor.getFunctionName()) {
+            case "cudnnConv2d" -> getOrCreateConvPlan((CuDnnContext) context, (int) p[3], (int) p[4], (int) p[5], (int) p[6], (int) p[7], (int) p[8], (int) p[9], (int) p[10], (int) p[11]);
+            case "sdpaForward" -> getOrCreateSdpaPlan((CuDnnContext) context, (int) p[4], (int) p[5], (int) p[6], (int) p[7], (int) p[8], (float) p[9], (boolean) p[10]);
+            default -> {
+                // simple ops have no per-shape native state
+            }
         }
     }
 
@@ -97,6 +118,7 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
                     (int) invocation.getArg(6), (int) invocation.getArg(7), //
                     invocation.getDevicePointer(0), invocation.getDevicePointer(1));
             case "cudnnConv2d" -> conv2d(context, invocation);
+            case "sdpaForward" -> sdpa(context, invocation);
             default -> throw new TornadoRuntimeException("[ERROR] cuDNN function not supported: " + functionName);
         };
         CuDnnNativeLib.checkStatus(status, functionName);
@@ -118,6 +140,30 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
                 context.workspacePtr, context.workspaceBytes);
     }
 
+    /** (q, k, v, o, b, h, sQ, sKv, d, scale, causal) */
+    private static int sdpa(CuDnnContext context, LibraryInvocation invocation) {
+        long plan = getOrCreateSdpaPlan(context, //
+                (int) invocation.getArg(4), (int) invocation.getArg(5), (int) invocation.getArg(6), (int) invocation.getArg(7), (int) invocation.getArg(8), //
+                (float) invocation.getArg(9), (boolean) invocation.getArg(10));
+        return CuDnnNativeLib.executeSdpaPlan(context.handle, plan, //
+                invocation.getDevicePointer(0), invocation.getDevicePointer(1), invocation.getDevicePointer(2), invocation.getDevicePointer(3), //
+                context.workspacePtr);
+    }
+
+    private static long getOrCreateSdpaPlan(CuDnnContext context, int b, int h, int sQ, int sKv, int d, float scale, boolean causal) {
+        String planKey = b + ":" + h + ":" + sQ + ":" + sKv + ":" + d + ":" + scale + ":" + causal;
+        Long plan = context.sdpaPlanCache.get(planKey);
+        if (plan == null) {
+            plan = CuDnnNativeLib.createSdpaPlan(context.handle, b, h, sQ, sKv, d, scale, causal);
+            if (plan == 0) {
+                throw new TornadoRuntimeException("[ERROR] cuDNN SDPA plan creation failed for " + planKey + " (requires Ampere+, head dim multiple of 8, <= 256)");
+            }
+            context.growWorkspace(CuDnnNativeLib.sdpaPlanWorkspaceBytes(plan));
+            context.sdpaPlanCache.put(planKey, plan);
+        }
+        return plan;
+    }
+
     private static long getOrCreateConvPlan(CuDnnContext context, int n, int c, int h, int w, int k, int r, int s, int pad, int stride) {
         String planKey = n + ":" + c + ":" + h + ":" + w + ":" + k + ":" + r + ":" + s + ":" + pad + ":" + stride;
         Long plan = context.convPlanCache.get(planKey);
@@ -126,21 +172,7 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
             if (plan == 0) {
                 throw new TornadoRuntimeException("[ERROR] cuDNN convolution plan creation failed for " + planKey);
             }
-            long required = CuDnnNativeLib.convPlanWorkspaceBytes(plan);
-            if (required > context.workspaceBytes) {
-                if (context.workspacePtr != 0) {
-                    CuDnnNativeLib.freeDeviceMemory(context.workspacePtr);
-                    context.workspacePtr = 0;
-                    context.workspaceBytes = 0;
-                }
-                long ptr = CuDnnNativeLib.allocateDeviceMemory(required);
-                if (ptr == 0) {
-                    CuDnnNativeLib.destroyConvPlan(plan);
-                    throw new TornadoRuntimeException("[ERROR] Unable to allocate cuDNN workspace of " + required + " bytes");
-                }
-                context.workspacePtr = ptr;
-                context.workspaceBytes = required;
-            }
+            context.growWorkspace(CuDnnNativeLib.convPlanWorkspaceBytes(plan));
             context.convPlanCache.put(planKey, plan);
         }
         return plan;
@@ -153,6 +185,10 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
             CuDnnNativeLib.destroyConvPlan(plan);
         }
         cuDnnContext.convPlanCache.clear();
+        for (Long plan : cuDnnContext.sdpaPlanCache.values()) {
+            CuDnnNativeLib.destroySdpaPlan(plan);
+        }
+        cuDnnContext.sdpaPlanCache.clear();
         if (cuDnnContext.workspacePtr != 0) {
             CuDnnNativeLib.freeDeviceMemory(cuDnnContext.workspacePtr);
             cuDnnContext.workspacePtr = 0;

@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.cudnn;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 
 /**
  * Factory methods for NVIDIA cuDNN library tasks (FP32, NCHW layout).
@@ -93,6 +94,26 @@ public final class CuDnn {
                 .withFunction("cudnnMaxPool2d") //
                 .withParameters(new Object[] { input, output, n, c, h, w, window, stride }) //
                 .withAccess(accessInOut(8));
+    }
+
+    /**
+     * Fused scaled-dot-product attention (flash attention) forward, inference:
+     * {@code O = softmax(Q * K^T * scale [+ causal mask]) * V}, executed as a
+     * single fused cuDNN graph-API kernel. Tensors are FP16, packed BHSD
+     * layout: {@code Q/O = [b, h, sQ, d]}, {@code K/V = [b, h, sKv, d]},
+     * flattened into {@link HalfFloatArray}s. Constraints (cuDNN): d multiple
+     * of 8, d <= 256, Ampere or newer.
+     */
+    public static LibraryTaskDescriptor sdpaForward(HalfFloatArray q, HalfFloatArray k, HalfFloatArray v, HalfFloatArray o, //
+            int b, int h, int sQ, int sKv, int d, float scale, boolean causal) {
+        Access[] accesses = new Access[11];
+        java.util.Arrays.fill(accesses, Access.READ_ONLY);
+        accesses[3] = Access.WRITE_ONLY;
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("sdpaForward") //
+                .withParameters(new Object[] { q, k, v, o, b, h, sQ, sKv, d, scale, causal }) //
+                .withAccess(accesses);
     }
 
     /**

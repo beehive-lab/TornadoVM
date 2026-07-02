@@ -3,6 +3,25 @@ project (TornadoCuDnn)
 
 find_package(JNI REQUIRED)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Header-only cudnn-frontend (NVIDIA-recommended interface to the cuDNN graph
+# API), used for fused patterns such as SDPA / flash attention.
+include(FetchContent)
+FetchContent_Declare(
+    cudnn_frontend
+    GIT_REPOSITORY https://github.com/NVIDIA/cudnn-frontend.git
+    GIT_TAG v1.25.0
+    GIT_SHALLOW TRUE
+)
+# Header-only: populate the sources but do NOT add_subdirectory (the frontend's
+# own CMakeLists requires cmake >= 3.23; we only need its include/ directory).
+FetchContent_GetProperties(cudnn_frontend)
+if(NOT cudnn_frontend_POPULATED)
+    FetchContent_Populate(cudnn_frontend)
+endif()
+
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_VERBOSE_MAKEFILE on)
 
@@ -80,6 +99,8 @@ find_library(CUDART_LIB cudart
         ${CUDAToolkit_LIBRARY_DIR}
         /usr/lib/x86_64-linux-gnu
 )
+
+target_include_directories(tornado-cudnn PRIVATE ${cudnn_frontend_SOURCE_DIR}/include)
 
 if(CUDNN_LIB AND CUDART_LIB)
     target_link_libraries(tornado-cudnn ${JNI_LIB_DIRS} ${CUDNN_LIB} ${CUDART_LIB})

@@ -24,6 +24,10 @@ benchmark vs sequential Java and the best TornadoVM KernelContext/JIT kernel.
 - [x] `TestCuDnn` 7 JUnit tests (softmax/relu/tanh/maxpool/conv2d vs Java;
       conv→JIT-bias→relu→pool mixed pipeline; conv under `withCUDAGraph`);
       `BenchmarkConv2d` (JIT direct conv vs cuDNN, ResNet-style 3x3 layer)
+- [x] C0+C1: fused SDPA/flash attention forward (FP16, causal option) via
+      cudnn-frontend v1.25.0 — 339x/499x vs JIT attention kernel (`BenchmarkSdpa`).
+      Core fix along the way: `isArgumentIgnorable` now covers Boolean/HalfFloatArray/
+      ByteArray task args (Boolean args previously crashed `lockInPendingFieldsObjects`)
 - [x] Validated on RTX 4090 / cuDNN 9.23: `TestCuDnn` 7/7 PASS (incl. mixed
       conv→JIT-bias→relu→pool pipeline and conv under CUDA graph capture);
       `BenchmarkConv2d`: 11.6 / 21.1 TFLOP/s = 3.1x / 5.3x vs JIT direct conv
@@ -97,9 +101,9 @@ head dim multiple of 8, ≤256 on Hopper/Ada; softmax stats FP32; last stride mu
 
 | # | Feature | Design / Test | Status |
 |---|---|---|---|
-| C0 | cudnn-frontend integration in `cudnn-jni` | Vendor the header-only frontend (or CMake `FetchContent`); build one `sdpa_plan_t` builder. This is the infrastructure gate for all of Track C/D | [ ] |
-| C1 | SDPA forward, FP16, inference | `CuDnn.sdpaForward(q, k, v, o, b, h, s_q, s_kv, d, scale, causal)` on `HalfFloatArray` (BHSD packed); plan in `prepare()`, workspace grow-only. *Test:* `TestCuDnnSdpa` vs Java attention reference (QK^T·scale → causal mask → softmax → ·V), tol ~2e-2; *Benchmark:* vs unfused hybrid (cuBLAS gemmEx + cudnnSoftmax + gemmEx) and vs a JIT attention kernel — the headline GPULlama3 number | [ ] |
-| C2 | Causal / padding masks, GQA/MQA head layout | SDPA option flags (`use_causal_mask`), kv-heads != q-heads. *Test:* masked vs Java | [ ] |
+| C0 | cudnn-frontend integration in `cudnn-jni` | FetchContent v1.25.0, populate-only (its own CMakeLists needs cmake>=3.23; header-only so only include/ is used); `sdpa_plan_t` builder | [x] |
+| C1 | SDPA forward, FP16, inference | `CuDnn.sdpaForward(...)` on `HalfFloatArray` (BHSD packed); plan in `prepare()`, shared grow-only workspace. *Tests:* `TestCuDnn#testSdpaForward` + `#testSdpaForwardCausal` vs Java attention reference (2e-2 tol) — PASS. *Benchmark:* `BenchmarkSdpa`: 64.2 TFLOP/s = **339x** vs JIT attention at (4,16,1024,128); 84.3 TFLOP/s = **499x** at (1,32,2048,128) | [x] |
+| C2 | Causal / padding masks, GQA/MQA head layout | Causal mask DONE (C1); padding masks + kv-heads != q-heads pending. *Test:* masked vs Java | [~] |
 | C3 | Paged KV-cache attention | `CUDNN_BACKEND_OPERATION_PAGED_ATTENTION_*` — decode-time inference with block tables. *Test:* vs contiguous-cache C1 | [ ] |
 | C4 | SDPA FP8 (Hopper) | Blocked on FP8 tornado-api types AND Hopper hardware (RTX 4090 is Ada: fprop FP8 requires Hopper) | [-] (hw) |
 | C5 | SDPA backward | Training story; Hopper-leaning constraints | [ ] |
