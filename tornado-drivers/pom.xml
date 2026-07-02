@@ -76,6 +76,7 @@
                 <module>cuda</module>
                 <module>cuda-jni</module>
                 <module>cublas-jni</module>
+                <module>cufft-jni</module>
             </modules>
         </profile>
     </profiles>

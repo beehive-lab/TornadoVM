@@ -672,5 +672,6 @@
         <module>tornado-api</module>
         <module>tornado-annotation</module>
         <module>tornado-cublas</module>
+        <module>tornado-cufft</module>
     </modules>
 </project>
