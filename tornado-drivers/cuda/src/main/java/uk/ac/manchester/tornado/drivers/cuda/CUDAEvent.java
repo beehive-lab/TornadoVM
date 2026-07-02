@@ -81,6 +81,9 @@ public class CUDAEvent implements Event {
 
     native static void clReleaseEvent(long eventId) throws CUDAException;
 
+    // Returns the device elapsed time (ns) between the event's start and end CUevents.
+    native static long cuEventElapsedTime(long eventId);
+
     private long readEventTime(CUDAProfilingInfo eventType) {
         if (!ENABLE_OPENCL_PROFILING) {
             return -1;
@@ -186,7 +189,12 @@ public class CUDAEvent implements Event {
 
     @Override
     public long getElapsedTime() {
-        return (getCLEndTime() - getCLStartTime());
+        if (!ENABLE_OPENCL_PROFILING) {
+            return 0;
+        }
+        // CUDA has no absolute event timestamps; use cuEventElapsedTime between the
+        // operation's start and end events (returns nanoseconds).
+        return cuEventElapsedTime(oclEventID);
     }
 
     @Override
