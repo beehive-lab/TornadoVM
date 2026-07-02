@@ -158,6 +158,28 @@
                     <version>${project.version}</version>
                     <classifier>libs</classifier>
                 </dependency>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>tornado-cublas</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>tornado-drivers-cublas-jni</artifactId>
+                    <version>${project.version}</version>
+                    <classifier>libs</classifier>
+                </dependency>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>tornado-cufft</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>tornado-drivers-cufft-jni</artifactId>
+                    <version>${project.version}</version>
+                    <classifier>libs</classifier>
+                </dependency>
             </dependencies>
         </profile>
 
