@@ -6,9 +6,9 @@ __kernel void add(__global long *_kernel_context, __constant uchar *_constant_re
   int i_11, i_9, i_15, i_14, i_13, i_3, i_4;
 
   // BLOCK 0
-  ul_0  =  a;
-  ul_1  =  b;
-  ul_2  =  c;
+  ul_0  =  (ulong) a;
+  ul_1  =  (ulong) b;
+  ul_2  =  (ulong) c;
   i_3  =  get_global_id(0);
   // BLOCK 1 MERGES [0 2 ]
   i_4  =  i_3;
