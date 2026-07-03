@@ -1140,7 +1140,12 @@ public class ReduceGPUSnippets implements Snippets {
             this.providers = providers;
         }
 
-        private static final boolean USE_CUB = Boolean.parseBoolean(System.getProperty("tornado.cuda.reduce.cub", "True"));
+        // Opt-in: cub::WarpReduce is not NVRTC-compilable on all toolkits (CUB
+        // drags in host std headers such as <utility>, which NVRTC cannot resolve
+        // on e.g. CUDA 12.0 system CUB). Default @Reduce to the portable
+        // reduction-tree snippets; enable CUB explicitly with
+        // -Dtornado.cuda.reduce.cub=True where the toolkit supports it.
+        private static final boolean USE_CUB = Boolean.parseBoolean(System.getProperty("tornado.cuda.reduce.cub", "False"));
 
         private static final java.util.Set<String> CUB_CAPABLE = java.util.Set.of( //
                 "partialReduceIntAdd", "partialReduceLongAdd", "partialReduceFloatAdd", "partialReduceDoubleAdd", //
