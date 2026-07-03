@@ -37,6 +37,7 @@
 #include <memory>
 #include <unordered_map>
 
+#include <cuda.h>
 #include <cudnn.h>
 #include <cudnn_frontend.h>
 
