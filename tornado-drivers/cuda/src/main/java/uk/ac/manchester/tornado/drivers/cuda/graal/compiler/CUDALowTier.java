@@ -40,6 +40,7 @@ import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.analysis.TornadoFeatureExtraction;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.loops.TornadoLoopCanonicalization;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.utils.DumpLowTierGraph;
+import uk.ac.manchester.tornado.drivers.cuda.graal.phases.CUDATensorCoreSupportPhase;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.InfinityReplacementPhase;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.InverseSquareRootPhase;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.CUDAFMAPhase;
@@ -62,6 +63,8 @@ public class CUDALowTier extends TornadoLowTier {
     public CUDALowTier(OptionValues options, TornadoDeviceContext tornadoDeviceContext, AddressLowering addressLowering) {
         this.tornadoDeviceContext = tornadoDeviceContext;
         CanonicalizerPhase canonicalizer = getCannonicalizer(options);
+
+        appendPhase(new CUDATensorCoreSupportPhase(tornadoDeviceContext));
 
         appendPhase(new CUDAFP64SupportPhase(tornadoDeviceContext));
 

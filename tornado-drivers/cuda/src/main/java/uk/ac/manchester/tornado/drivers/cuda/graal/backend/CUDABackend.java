@@ -33,12 +33,14 @@ import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEV
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
+import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRInstruction;
@@ -67,6 +69,7 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Local;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
@@ -97,6 +100,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDANodeLIRBuilder;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDANodeMatchRules;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDAReferenceMapBuilder;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
+import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.FPGAWorkGroupSizeNode;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.CUDATokens;
@@ -241,16 +245,34 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
 
     private void emitVariableDefs(CUDACompilationResultBuilder crb, CUDAAssembler asm, LIR lir) {
         Map<CUDAKind, Set<Variable>> kindToVariable = new HashMap<>();
+        Map<Variable, CUDAKind> fragmentPhis = new LinkedHashMap<>();
+
         final int expectedVariables = lir.numVariables();
         final AtomicInteger variableCount = new AtomicInteger();
 
         for (int b : lir.linearScanOrder()) {
             for (LIRInstruction lirInstruction : lir.getLIRforBlock(lir.getBlockById(b))) {
+                if (lirInstruction instanceof CUDALIRStmt.AssignStmt) {
+                    CUDALIRStmt.AssignStmt assign = (CUDALIRStmt.AssignStmt) lirInstruction;
+                    Value rhs = assign.getExpr();
+                    AllocatableValue lhs = assign.getResult();
+                    CUDAKind rhsKind = platformKindOf(rhs);
+                    if (rhsKind != null && rhsKind.isMMAFragment() && lhs instanceof Variable) {
+                        CUDAKind lhsKind = platformKindOf(lhs);
+                        if (lhsKind == null || !lhsKind.isMMAFragment()) {
+                            fragmentPhis.putIfAbsent((Variable) lhs, rhsKind);
+                        }
+                    }
+                }
 
                 lirInstruction.forEachOutput((instruction, value, mode, flags) -> {
                     if (value instanceof Variable) {
                         Variable variable = (Variable) value;
                         if (variable.toString() != null) {
+                            CUDAKind kind = platformKindOf(variable);
+                            if (kind != null && kind.isMMAFragment()) {
+                                return value;
+                            }
                             addVariableDef(kindToVariable, variable);
                             variableCount.incrementAndGet();
                         }
@@ -263,9 +285,14 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
         Logger.traceCodeGen(Logger.BACKEND.OpenCL, "found %d variable, expected (%d)", variableCount.get(), expectedVariables);
 
         for (CUDAKind type : kindToVariable.keySet()) {
+            Set<Variable> vars = kindToVariable.get(type);
+            vars.removeAll(fragmentPhis.keySet());
+            if (vars.isEmpty()) {
+                continue;
+            }
             asm.indent();
             asm.emit("%s ", type.getCUDATypeName());
-            for (Variable var : kindToVariable.get(type)) {
+            for (Variable var : vars) {
                 asm.emitValue(crb, var);
                 asm.emit(", ");
             }
@@ -273,6 +300,52 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
             asm.eol();
         }
 
+        // Emit fragment-phi variables as C arrays of the fragment's element type.
+        // e.g. "float ul_52[4];" for MMA_FRAG_ACC_F32.
+        for (Map.Entry<Variable, CUDAKind> entry : fragmentPhis.entrySet()) {
+            Variable frag = entry.getKey();
+            CUDAKind fragKind = entry.getValue();
+            asm.indent();
+            asm.emit("%s ", fragmentElementCType(fragKind));
+            asm.emitValue(crb, frag);
+            asm.emit("[%d];", fragKind.getVectorLength());
+            asm.eol();
+        }
+    }
+
+    /**
+     * Extracts the CUDAKind from a Value's ValueKind, or null if the Value doesn't
+     * carry a CUDAKind (constants, illegal, etc.).
+     */
+    private static CUDAKind platformKindOf(Value v) {
+        if (v == null) return null;
+        if (!(v.getValueKind() instanceof LIRKind)) return null;
+        Object pk = ((LIRKind) v.getValueKind()).getPlatformKind();
+        return (pk instanceof CUDAKind) ? (CUDAKind) pk : null;
+    }
+
+    /**
+     * Element C type for an MMA fragment kind. Fragment lanes are:
+     *   MMA_FRAG_ACC_F32 → float
+     *   MMA_FRAG_ACC_S32 → int
+     *   MMA_FRAG_A_F16 / B_F16 / A_S8 / B_S8 → unsigned int (packed b32)
+     * Matches the CUDA C types used by the MMA inline-PTX asm constraints
+     * ("=f" for f32, "=r" for b32).
+     */
+    private static String fragmentElementCType(CUDAKind fragKind) {
+        switch (fragKind) {
+            case MMA_FRAG_ACC_F32:
+                return "float";
+            case MMA_FRAG_ACC_S32:
+                return "int";
+            case MMA_FRAG_A_F16:
+            case MMA_FRAG_B_F16:
+            case MMA_FRAG_A_S8:
+            case MMA_FRAG_B_S8:
+                return "unsigned int";
+            default:
+                throw shouldNotReachHere("not an MMA fragment kind: " + fragKind);
+        }
     }
 
     private void emitDebugKernelArgs(CUDAAssembler asm, ResolvedJavaMethod method) {

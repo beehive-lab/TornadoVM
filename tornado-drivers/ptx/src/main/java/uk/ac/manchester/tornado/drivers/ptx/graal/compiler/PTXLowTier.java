@@ -36,6 +36,7 @@ import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
 import org.graalvm.compiler.phases.common.LowTierLoweringPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 
+import src.main.java.uk.ac.manchester.tornado.drivers.ptx.graal.phases.PTXTensorCoreSupportPhase;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.analysis.TornadoFeatureExtraction;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.loops.TornadoLoopCanonicalization;
@@ -66,6 +67,8 @@ public class PTXLowTier extends TornadoLowTier {
         if (ConditionalElimination.getValue(options)) {
             appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, false));
         }
+
+        appendPhase(new PTXTensorCoreSupportPhase(tornadoDeviceContext));
 
         appendPhase(new TornadoHalfFloatVectorOffset());
 

@@ -430,6 +430,37 @@ public class TestSharedBuffers extends TornadoTestBase {
     }
 
     @Test
+    public void testReusePersistingTaskGraph() throws TornadoExecutionPlanException {
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
+
+        a.init(10);
+        b.init(20);
+
+        // A single task graph that persists its own output on the device and is reused
+        // several times. On reuse, the previously-executed task graph is the graph itself,
+        // so updatePersistedObjectState() reads back what it stored on the prior run. If the
+        // persisted objects were stored as a nested list, the reused run would surface an
+        // ArrayList as a device object ("Unsupported type: ArrayList").
+        TaskGraph tg = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestHello::add, a, b, c) //
+                .persistOnDevice(c) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(tg.snapshot())) {
+            executionPlan.withMemoryLimit("1GB");
+            for (int iteration = 0; iteration < 4; iteration++) {
+                executionPlan.execute();
+                for (int i = 0; i < numElements; i++) {
+                    assertEquals(30, c.get(i)); // 10 + 20 = 30
+                }
+            }
+        }
+    }
+
+    @Test
     public void testFourTaskGraphsWithPersistentBuffers() throws TornadoExecutionPlanException {
         int numElements = 10;
 
