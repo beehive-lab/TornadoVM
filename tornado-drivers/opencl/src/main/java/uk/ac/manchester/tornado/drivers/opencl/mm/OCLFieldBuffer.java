@@ -28,17 +28,17 @@ package uk.ac.manchester.tornado.drivers.opencl.mm;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMRuntime;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEBUG;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
+import sun.misc.Unsafe;
+
 import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
@@ -64,10 +64,11 @@ import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
 public class OCLFieldBuffer implements XPUBuffer {
 
+    private static final Unsafe UNSAFE = initUnsafe();
+
     private final long bytesObjectReference;
     private final boolean areCoopsEnabled;
-    private final HotSpotResolvedJavaType resolvedType;
-    private final HotSpotResolvedJavaField[] fields;
+    private final Field[] fields;
     private final FieldBuffer[] wrappedFields;
     private final Class<?> objectType;
     private final int hubOffset;
@@ -91,20 +92,18 @@ public class OCLFieldBuffer implements XPUBuffer {
 
         hubOffset = getVMConfig().hubOffset;
         fieldsOffset = getVMConfig().instanceKlassFieldsOffset();
-        resolvedType = (HotSpotResolvedJavaType) getVMRuntime().getHostJVMCIBackend().getMetaAccess().lookupJavaType(objectType);
 
-        fields = (HotSpotResolvedJavaField[]) resolvedType.getInstanceFields(includeSuperClasses);
+        fields = gatherInstanceFields(objectType, includeSuperClasses);
         sortFieldsByOffset();
 
         wrappedFields = new FieldBuffer[fields.length];
 
         for (int index = 0; index < fields.length; index++) {
-            HotSpotResolvedJavaField field = fields[index];
-            final Field reflectedField = getField(findDeclaringClass(field), field.getName());
+            final Field reflectedField = fields[index];
             final Class<?> type = reflectedField.getType();
 
             if (DEBUG) {
-                logger.trace("field: name=%s, kind=%s, offset=%d", field.getName(), type.getName(), field.getOffset());
+                logger.trace("field: name=%s, kind=%s, offset=%d", reflectedField.getName(), type.getName(), offsetOf(reflectedField));
             }
 
             XPUBuffer wrappedField = null;
@@ -157,7 +156,7 @@ public class OCLFieldBuffer implements XPUBuffer {
                 wrappedField = new OCLMemorySegmentWrapper(size, device, 0, access, OCLKind.SHORT.getSizeInBytes());
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 wrappedField = new OCLVectorWrapper(device, object, 0, access);
-            } else if (field.getJavaKind().isObject()) {
+            } else if (!type.isPrimitive()) {
                 // We capture the field by the scope definition of the input
                 // lambda expression
                 wrappedField = new OCLFieldBuffer(device, TornadoUtils.getObjectFromField(reflectedField, object), access, includeSuperClasses);
@@ -210,19 +209,37 @@ public class OCLFieldBuffer implements XPUBuffer {
         bufferId = -1;
     }
 
-    private Field getField(Class<?> type, String name) {
-        Field result = null;
+    private static Unsafe initUnsafe() {
         try {
-            result = type.getDeclaredField(name);
-            result.setAccessible(true);
-        } catch (NoSuchFieldException | SecurityException e) {
-            if (type.getSuperclass() != null) {
-                result = getField(type.getSuperclass(), name);
-            } else {
-                shouldNotReachHere("unable to get field: class=%s, field=%s", type.getName(), name);
+            Field f = Unsafe.class.getDeclaredField("theUnsafe");
+            f.setAccessible(true);
+            return (Unsafe) f.get(null);
+        } catch (ReflectiveOperationException e) {
+            throw new InternalError("Unable to obtain sun.misc.Unsafe for object marshalling", e);
+        }
+    }
+
+    /**
+     * Object field offset from {@code Unsafe} — the JDK-neutral equivalent of
+     * {@code HotSpotResolvedJavaField.getOffset()} (identical value: the field's
+     * location in the object layout).
+     */
+    private static int offsetOf(Field field) {
+        return (int) UNSAFE.objectFieldOffset(field);
+    }
+
+    /** All non-static instance fields (optionally across the superclass chain), matching JVMCI's getInstanceFields. */
+    private static Field[] gatherInstanceFields(Class<?> clazz, boolean includeSuperClasses) {
+        List<Field> list = new ArrayList<>();
+        for (Class<?> c = clazz; c != null; c = includeSuperClasses ? c.getSuperclass() : null) {
+            for (Field f : c.getDeclaredFields()) {
+                if (!Modifier.isStatic(f.getModifiers())) {
+                    f.setAccessible(true);
+                    list.add(f);
+                }
             }
         }
-        return result;
+        return list.toArray(new Field[0]);
     }
 
     private void writeFieldToBuffer(int index, Field field, Object obj) {
@@ -281,17 +298,7 @@ public class OCLFieldBuffer implements XPUBuffer {
     }
 
     private void sortFieldsByOffset() {
-        // TODO Replace bubble sort with Arrays.sort + comparator
-        for (int i = 0; i < fields.length; i++) {
-            for (int j = 0; j < fields.length; j++) {
-                if (fields[i].getOffset() < fields[j].getOffset()) {
-                    final HotSpotResolvedJavaField tmp = fields[j];
-                    fields[j] = fields[i];
-                    fields[i] = tmp;
-                }
-            }
-        }
-
+        Arrays.sort(fields, (a, b) -> Integer.compare(offsetOf(a), offsetOf(b)));
     }
 
     private void serialise(Object object) {
@@ -300,15 +307,14 @@ public class OCLFieldBuffer implements XPUBuffer {
         buffer.putLong(0);
 
         if (fields.length > 0) {
-            buffer.position(fields[0].getOffset());
+            buffer.position(offsetOf(fields[0]));
             for (int i = 0; i < fields.length; i++) {
-                HotSpotResolvedJavaField field = fields[i];
-                Field f = getField(findDeclaringClass(field), field.getName());
+                Field f = fields[i];
                 if (DEBUG) {
-                    logger.trace("writing field: name=%s, offset=%d", field.getName(), field.getOffset());
+                    logger.trace("writing field: name=%s, offset=%d", f.getName(), offsetOf(f));
                 }
 
-                buffer.position(field.getOffset());
+                buffer.position(offsetOf(f));
                 writeFieldToBuffer(i, f, object);
             }
         }
@@ -318,29 +324,17 @@ public class OCLFieldBuffer implements XPUBuffer {
         buffer.rewind();
 
         if (fields.length > 0) {
-            buffer.position(fields[0].getOffset());
+            buffer.position(offsetOf(fields[0]));
 
             for (int i = 0; i < fields.length; i++) {
-                HotSpotResolvedJavaField field = fields[i];
-                Field f = getField(findDeclaringClass(field), field.getName());
+                Field f = fields[i];
                 f.setAccessible(true);
                 if (DEBUG) {
-                    logger.trace("reading field: name=%s, offset=%d", field.getName(), field.getOffset());
+                    logger.trace("reading field: name=%s, offset=%d", f.getName(), offsetOf(f));
                 }
                 readFieldFromBuffer(i, f, object);
             }
         }
-    }
-
-    private Class<?> findDeclaringClass(HotSpotResolvedJavaField field) {
-        Class<?> objectTypeTemp = objectType;
-        while (objectTypeTemp != null && !objectTypeTemp.getName().equals(field.getDeclaringClass().toJavaName())) {
-            objectTypeTemp = objectTypeTemp.getSuperclass();
-        }
-        if (objectTypeTemp == null) {
-            throw new TornadoRuntimeException(String.format("Cannot find declaring class %s in hierarchy of %s for field %s", field.getDeclaringClass().toJavaName(), objectType.getName(), field.getName()));
-        }
-        return objectTypeTemp;
     }
 
     @Override
@@ -475,14 +469,15 @@ public class OCLFieldBuffer implements XPUBuffer {
 
     @Override
     public String toString() {
-        return String.format("object wrapper: type=%s, fields=%d\n", resolvedType.getName(), wrappedFields.length);
+        return String.format("object wrapper: type=%s, fields=%d\n", objectType.getName(), wrappedFields.length);
     }
 
     private long getObjectSize() {
         long size = fieldsOffset;
         if (fields.length > 0) {
-            HotSpotResolvedJavaField field = fields[fields.length - 1];
-            size = field.getOffset() + ((field.getJavaKind().isObject()) ? bytesObjectReference : field.getJavaKind().getByteCount());
+            Field field = fields[fields.length - 1];
+            JavaKind kind = JavaKind.fromJavaClass(field.getType());
+            size = offsetOf(field) + ((kind == JavaKind.Object) ? bytesObjectReference : kind.getByteCount());
         }
         // when coops are enabled, padding is required to ensure an 8-byte object alignment
         if (areCoopsEnabled && (size % 8 != 0)) {

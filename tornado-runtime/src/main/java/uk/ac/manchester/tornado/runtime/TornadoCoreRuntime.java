@@ -58,6 +58,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoBackendNotFound;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.UpsMeterReader;
+import uk.ac.manchester.tornado.runtime.jvmci.TornadoMetaAccessProvider;
 import uk.ac.manchester.tornado.runtime.common.enums.TornadoBackends;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
 
@@ -87,6 +88,7 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
     private final JVMCIBackend vmBackend;
     private final HotSpotJVMCIRuntime vmRuntime;
     private final TornadoVMConfigAccess vmConfig;
+    private final MetaAccessProvider metaAccess;
     private final TornadoAcceleratorBackend[] tornadoVMBackends;
     private int backendCount;
 
@@ -100,7 +102,8 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
         }
         vmRuntime = (HotSpotJVMCIRuntime) JVMCI.getRuntime();
         vmBackend = vmRuntime.getHostJVMCIBackend();
-        vmConfig = new TornadoVMConfigAccess(vmRuntime.getConfigStore(), vmBackend.getMetaAccess());
+        vmConfig = new TornadoVMConfigAccess();
+        metaAccess = new TornadoMetaAccessProvider(vmBackend.getMetaAccess());
         tornadoVMBackends = loadBackends();
     }
 
@@ -197,7 +200,11 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
     }
 
     public MetaAccessProvider getMetaAccess() {
-        return vmBackend.getMetaAccess();
+        // Under -Dtornado.jvmci.reflection.full the runtime resolves kernel entry
+        // methods through the reflection seam (needs the reflection ConstantPool);
+        // otherwise via the host provider (per-backend compilation still uses the
+        // reflection providers when -Dtornado.jvmci.reflection is set).
+        return TornadoMetaAccessProvider.USE_REFLECTION_FULL ? metaAccess : vmBackend.getMetaAccess();
     }
 
     public ResolvedJavaMethod resolveMethod(final Method method) {
