@@ -576,6 +576,7 @@ public class PTXGraphBuilderPlugins {
         r.register(new InvocationPlugin("simdShuffleDown", InvocationPlugin.Receiver.class, float.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val, ValueNode delta) {
+                receiver.get(true);
                 b.addPush(JavaKind.Float, new PTXShuffleDownNode(val, delta));
                 return true;
             }
@@ -584,6 +585,7 @@ public class PTXGraphBuilderPlugins {
         r.register(new InvocationPlugin("simdSum", InvocationPlugin.Receiver.class, float.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val) {
+                receiver.get(true);
                 b.addPush(JavaKind.Float, new PTXSimdSumNode(val));
                 return true;
             }
@@ -592,6 +594,7 @@ public class PTXGraphBuilderPlugins {
         r.register(new InvocationPlugin("simdBroadcastFirst", InvocationPlugin.Receiver.class, float.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val) {
+                receiver.get(true);
                 b.addPush(JavaKind.Float, new PTXSimdBroadcastFirstNode(val));
                 return true;
             }
