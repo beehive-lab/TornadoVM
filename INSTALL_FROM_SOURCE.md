@@ -91,7 +91,11 @@ options:
 
 * `opencl`: Enables the OpenCL backend (requires OpenCL drivers)
 * `ptx`: Enables the PTX backend (requires NVIDIA CUDA drivers)
+* `cuda`: Enables the CUDA backend, which generates CUDA C and compiles it to PTX via NVRTC (requires the NVIDIA CUDA Toolkit, NVRTC and `libcuda`)
 * `spirv`: Enables the SPIRV backend (requires Intel Level Zero drivers)
+* `metal`: Enables the Metal backend (macOS with Apple Silicon)
+
+> **Tip:** The CUDA backend can also be built directly with `make BACKEND=cuda`. Build it on its own (not together with OpenCL): with both backends installed, the unit tests may silently run on the OpenCL device and report false positives. See the [CUDA backend documentation](https://tornadovm.readthedocs.io/en/latest/cuda-backend.html) for the supported / in-progress feature status.
 
 Example of installation:
 

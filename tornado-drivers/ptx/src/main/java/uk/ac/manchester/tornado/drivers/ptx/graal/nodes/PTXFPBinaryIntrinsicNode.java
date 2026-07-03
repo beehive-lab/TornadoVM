@@ -94,6 +94,7 @@ public class PTXFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLI
             case FMIN -> Math.min(x, y);
             case FMAX -> Math.max(x, y);
             case POW -> Math.pow(x, y);
+            case ATAN2 -> Math.atan2(x, y);
             default -> throw new TornadoInternalError("unknown op %s", op);
         };
     }
@@ -103,6 +104,7 @@ public class PTXFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLI
             case FMIN -> Math.min(x, y);
             case FMAX -> Math.max(x, y);
             case POW -> (float) Math.pow(x, y);
+            case ATAN2 -> (float) Math.atan2(x, y);
             default -> throw new TornadoInternalError("unknown op %s", op);
         };
     }
@@ -150,6 +152,9 @@ public class PTXFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLI
                 break;
             case POW:
                 generatePow(builder, (PTXArithmeticTool) lirGen, gen, x, y);
+                return;
+            case ATAN2:
+                builder.setResult(this, gen.genAtan2(builder, (PTXArithmeticTool) lirGen, x, y));
                 return;
             default:
                 throw shouldNotReachHere();
@@ -247,7 +252,8 @@ public class PTXFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLI
     public enum Operation {
         FMAX, //
         FMIN, //
-        POW //
+        POW, //
+        ATAN2 //
     }
 
 }

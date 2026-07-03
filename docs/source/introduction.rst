@@ -17,8 +17,8 @@ dedicated GPUs (Intel, NVIDIA, AMD), integrated GPUs (Intel HD Graphics, Apple M
   :alt: Sample Text
 
 
-TornadoVM currently has three backends:
-It compiles Java code, at runtime, from Java bytecode to OpenCL C, NVIDIA CUDA PTX, and SPIR-V binary.
+TornadoVM compiles Java code, at runtime, from Java bytecode to OpenCL C, NVIDIA CUDA PTX, CUDA C
+(compiled to PTX via NVRTC), SPIR-V binary, and Metal Shading Language.
 Developers can choose which backend/s to install and run.
 
 .. image:: images/tornadovm-02.png

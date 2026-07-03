@@ -211,6 +211,7 @@
                 <include>io.github.beehive-lab:tornado-drivers-metal-jni:jar:libs</include>
                 <include>io.github.beehive-lab:tornado-drivers-ptx-jni:jar:libs</include>
                 <include>io.github.beehive-lab:tornado-drivers-opencl-jni:jar:libs</include>
+                <include>io.github.beehive-lab:tornado-drivers-cuda-jni:jar:libs</include>
             </includes>
         </dependencySet>
     </dependencySets>
