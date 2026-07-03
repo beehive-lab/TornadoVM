@@ -55,7 +55,13 @@ public class PTXCodeCache {
 
     public PTXInstalledCode installSource(TaskDataContext taskMeta, String name, byte[] targetCode, String resolvedMethodName, boolean debugKernel) {
 
-        if (!cache.containsKey(name)) {
+        // Recompile if the kernel is absent OR its cached module was invalidated (unloaded). The latter
+        // happens when the interpreter forces recompilation across executions (e.g. a batched plan whose
+        // chunk thread-count changes): it calls invalidate() -> module.unload() but leaves the entry here.
+        // Without the validity check we would return the stale, unloaded module and cuModuleGetFunction
+        // would fail with CUDA_ERROR_INVALID_HANDLE (400) on the next launch.
+        PTXInstalledCode cachedCode = cache.get(name);
+        if (cachedCode == null || !cachedCode.isValid()) {
             if (debugKernel) {
                 RuntimeUtilities.dumpKernel(targetCode);
             }
@@ -121,7 +127,13 @@ public class PTXCodeCache {
     }
 
     boolean isCached(String name) {
-        return cache.containsKey(name);
+        // Treat an invalidated entry as not cached: its module was unloaded (e.g. the interpreter forced
+        // recompilation across executions for a batched plan whose chunk thread-count changed). Reporting
+        // it as cached makes compileTask skip code generation and build an empty (null target code)
+        // result, which then crashes in cuModuleLoadDataEx. Requiring validity keeps the cache, the
+        // interpreter's invalidation, and installSource() consistent.
+        PTXInstalledCode code = cache.get(name);
+        return code != null && code.isValid();
     }
 
     void reset() {
