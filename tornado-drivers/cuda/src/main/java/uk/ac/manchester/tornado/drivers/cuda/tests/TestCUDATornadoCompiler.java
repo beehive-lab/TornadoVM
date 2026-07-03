@@ -39,11 +39,15 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class TestCUDATornadoCompiler {
 
+    // NVRTC compiles CUDA C, not OpenCL C, so the kernel must use CUDA spellings
+    // (extern "C" __global__, blockIdx/blockDim/threadIdx) rather than __kernel /
+    // __global / get_global_id, otherwise NVRTC rejects line 1 with
+    // "this declaration has no storage class or type specifier".
     // @formatter:off
-    private static final String OPENCL_KERNEL = "__kernel void saxpy(__global float *a," + 
-            "    __global float *b, __global float *c) { " +
-            "      int idx = get_global_id(0); " + 
-            "      c[idx]  =  a[idx] + b[idx]; " + 
+    private static final String CUDA_KERNEL = "extern \"C\" __global__ void saxpy(float *a," +
+            "    float *b, float *c) { " +
+            "      int idx = blockIdx.x * blockDim.x + threadIdx.x; " +
+            "      c[idx]  =  a[idx] + b[idx]; " +
             "}";
     // @formatter:on
 
@@ -66,7 +70,7 @@ public class TestCUDATornadoCompiler {
         TaskDataContext meta = new TaskDataContext(scheduleMeta, "saxpy");
         new CUDACompilationResult("internal", "saxpy", meta, backend);
 
-        byte[] source = OPENCL_KERNEL.getBytes();
+        byte[] source = CUDA_KERNEL.getBytes();
         CUDAInstalledCode code = codeCache.installSource(meta, "saxpy", "saxpy", source);
 
         String generatedSourceCode = code.getGeneratedSourceCode();
