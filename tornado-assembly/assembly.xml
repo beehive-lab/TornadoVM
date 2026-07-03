@@ -159,10 +159,15 @@
         </fileSet>
         <fileSet>
             <directory>../graalJars</directory>
-            <!-- Graal compiler JARs for JDK 21 -->
+            <!-- Bare-minimum Graal compiler JARs for JDK 21: only the modules the
+                 jdk.internal.vm.compiler module actually requires to resolve+run.
+                 truffle-api/polyglot/graal-sdk/compiler-management are excluded. -->
             <outputDirectory>share/java/graalJars</outputDirectory>
             <includes>
-                <include>*.jar</include>
+                <include>compiler-*.jar</include>
+                <include>truffle-compiler-*.jar</include>
+                <include>collections-*.jar</include>
+                <include>word-*.jar</include>
             </includes>
             <fileMode>0644</fileMode>
         </fileSet>

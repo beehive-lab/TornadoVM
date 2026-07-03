@@ -28,15 +28,18 @@ from urllib3.util.retry import Retry
 TARGET_DIR = "graalJars"
 VERSION = "23.1.0"
 BASE_URL = "https://repo1.maven.org/maven2/org/graalvm"
+# Bare minimum Graal modules TornadoVM needs to compile and run kernels.
+# The `jdk.internal.vm.compiler` module (compiler jar) transitively requires only
+# org.graalvm.word, org.graalvm.collections and org.graalvm.truffle.compiler; its
+# `uses` of Truffle runtime/polyglot services are optional (ServiceLoader) and never
+# exercised by TornadoVM's GPU pipeline. So truffle-api (16MB), polyglot (935KB),
+# graal-sdk (requires the absent org.graalvm.nativeimage) and compiler-management
+# are dead weight and are intentionally NOT downloaded/shipped.
 GRAAL_JARS = [
     f"compiler/compiler/{VERSION}/compiler-{VERSION}.jar",
-    f"compiler/compiler-management/{VERSION}/compiler-management-{VERSION}.jar",
-    f"sdk/graal-sdk/{VERSION}/graal-sdk-{VERSION}.jar",
-    f"truffle/truffle-api/{VERSION}/truffle-api-{VERSION}.jar",
     f"truffle/truffle-compiler/{VERSION}/truffle-compiler-{VERSION}.jar",
     f"sdk/collections/{VERSION}/collections-{VERSION}.jar",
     f"sdk/word/{VERSION}/word-{VERSION}.jar",
-    f"polyglot/polyglot/{VERSION}/polyglot-{VERSION}.jar",
 ]
 
 # Define ANSI escape codes for colors
