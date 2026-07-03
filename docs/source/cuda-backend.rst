@@ -1,12 +1,24 @@
 .. _cuda-backend:
 
-CUDA Devices
-==========================================
+NVIDIA CUDA Devices (PTX and CUDA C backends)
+==============================================
+
+TornadoVM provides two backends that target NVIDIA GPUs through the NVIDIA
+Driver API:
+
+- The **PTX backend**, which generates NVIDIA PTX assembly directly.
+- The **CUDA backend**, which generates **CUDA C** source at runtime,
+  compiles it with **NVRTC** to PTX, and executes it through the same
+  CUDA Driver API.
+
+Both backends share the same prerequisites (NVIDIA driver + CUDA Toolkit),
+described below. The CUDA C backend is documented in its own section further
+down this page.
 
 Prerequisites
 ----------------------------------------------
 
-In order to use the PTX backend of TornadoVM, you will need a CUDA compatible device (NVIDIA GPUs with CUDA support).
+In order to use the PTX or the CUDA backend of TornadoVM, you will need a CUDA compatible device (NVIDIA GPUs with CUDA support).
 
 Driver Installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -124,7 +136,7 @@ On Ubuntu, the driver can also fail to load if it is not selected in ``prime-sel
 After these changes, a reboot might be required for the driver module to
 be loaded.
 
-Testing the CUDA Backend of TornadoVM
+Testing the PTX Backend of TornadoVM
 ----------------------------------------------
 
 We have tested the PTX backend of TornadoVM on the following configurations:
@@ -152,5 +164,147 @@ We have tested the PTX backend of TornadoVM on the following configurations:
 +----------+----------+----------+---------+----------+----------+----------+
 
 **DISCLAIMER:**
-           
-The PTX backend might fail with the ``Quadro GP100``, driver ``384.111``, with segmentation faults for some of the unit test due to driver issues. 
+
+The PTX backend might fail with the ``Quadro GP100``, driver ``384.111``, with segmentation faults for some of the unit test due to driver issues.
+
+
+.. _cuda_c_backend:
+
+The CUDA C Backend
+==============================================
+
+What it is
+----------------------------------------------
+
+The **CUDA backend** is a new backend that generates **CUDA C** source at
+runtime, compiles it with **NVRTC** to PTX, and executes it through the
+**CUDA Driver API** (``cuModuleLoadDataEx`` / ``cuLaunchKernel``).
+
+It complements the existing PTX backend (which emits PTX assembly directly):
+both share the same NVIDIA Driver-API execution path, but the CUDA backend
+uses an OpenCL-C-style source-generation front end that emits textual CUDA C
+(``extern "C" __global__ void ...``, ``blockIdx.x * blockDim.x + threadIdx.x``
+for the global thread id, ``__shared__`` for local memory, and
+``__syncthreads()`` for barriers).
+
+**Status:** Work-in-progress. Core functionality works end-to-end on real
+hardware; several feature buckets are still pending (see
+`Supported and in-progress features`_).
+
+Compilation and execution flow
+----------------------------------------------
+
+1. Graal lowers the Java task to LIR and emits **CUDA C** text.
+2. ``CUDAProgram`` (JNI) runs **NVRTC** (``nvrtcCompileProgram`` with
+   ``--gpu-architecture=compute_<major><minor>`` queried from the device, plus
+   ``--include-path`` for the CUDA headers), producing PTX.
+3. The PTX is loaded via ``cuModuleLoadDataEx``, the kernel is fetched with
+   ``cuModuleGetFunction``, and launched with ``cuLaunchKernel``. Memory and
+   streams use ``cuMemAlloc`` / ``cuMemcpy*Async`` / ``CUstream``.
+
+The backend is implemented in two modules:
+
+- ``tornado-drivers/cuda`` — the backend (Graal compiler integration + runtime),
+  Java package ``uk.ac.manchester.tornado.drivers.cuda``.
+- ``tornado-drivers/cuda-jni`` — the native JNI layer (CUDA Driver API + NVRTC),
+  which builds ``libtornado-cuda.so``.
+
+Prerequisites
+----------------------------------------------
+
+- **JDK 21** (set ``JAVA_HOME`` accordingly).
+- **CUDA Toolkit** including **NVRTC** and ``libcuda`` (see
+  `Driver Installation`_ above).
+- **GCC** and **CMake** to build the native JNI layer.
+
+Verified on an NVIDIA RTX 3070 (compute capability 8.6) with CUDA 11.x.
+
+Building the CUDA backend
+----------------------------------------------
+
+.. important::
+
+   **Build the CUDA backend on its own** (not together with OpenCL). With both
+   the CUDA and OpenCL backends installed, the unit tests can silently run on
+   the OpenCL device and report false positives. A CUDA-only build exposes
+   exactly one backend (Tornado device ``0:0``), so the results are
+   unambiguous.
+
+.. code:: bash
+
+   # JDK 21 is required
+   export JAVA_HOME=/path/to/jdk21
+
+   # Build the CUDA backend (tornado-drivers/cuda + cuda-jni) and the SDK
+   make BACKEND=cuda
+
+The build maps to the Maven ``cuda-backend`` profile, which activates the
+``tornado-drivers/cuda`` and ``tornado-drivers/cuda-jni`` modules.
+
+Selecting the CUDA device
+----------------------------------------------
+
+After a CUDA-only build, ``tornado --devices`` lists a single
+``CUDADriver`` device:
+
+.. code:: bash
+
+   $ tornado --devices
+
+   Number of Tornado drivers: 1
+   Driver: CUDADriver
+      Total number of devices  : 1
+      Tornado device=0:0  (DEFAULT)
+        CUDA C 1.0 -- <your NVIDIA GPU>
+
+Because there is a single backend, the CUDA device is ``0:0``. To pin the unit
+tests to it, pass ``-Dtornado.unittests.device=0:0``:
+
+.. code:: bash
+
+   # Run a kernel and dump the generated CUDA C source
+   tornado-test --printKernel --jvm="-Dtornado.unittests.device=0:0" \
+     uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorAdditionFloat
+
+   # Run a unit-test class on the CUDA device
+   tornado-test --ea -V --jvm="-Dtornado.unittests.device=0:0" <test.class>
+
+.. _Supported and in-progress features:
+
+Supported and in-progress features
+----------------------------------------------
+
+Supported
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Scalar ``@Parallel`` kernels end-to-end (``int`` / ``float`` / ``double`` /
+  ``long``), loops, conditionals / branching, and grids.
+- Global-memory **reductions** and ``KernelContext`` local-memory reductions
+  (``__shared__``, ``__syncthreads``).
+- **Math** built-ins (``sin`` / ``cos`` / ``sqrt`` / …, ``signum`` including
+  NaN semantics, ``clamp``, ``radians``, relational ``isequal`` / …).
+- Local and private **scalar** arrays, and the native CUDA scalar types.
+- **FP16 / ``__half``** scalar add / sub / mul / div (via ``cuda_fp16.h``).
+- NVRTC runtime compilation with a device-matched ``--gpu-architecture`` and
+  include paths.
+
+In progress / pending
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- **Vector types** (``float2/3/4``, ``int*``, ``double*``): width ≤ 4 with
+  native CUDA vector types and component-wise ops. Widths 8 and 16 have no
+  native CUDA equivalent and are marked unsupported.
+- **Object fields / instance kernels** (the ``this`` receiver and object
+  parameter marshalling).
+- **Private array copies**.
+- **FP16 conversions** and half-precision matrix multiply.
+- **Atomics** (a subset of CUDA ``atomicAdd`` / ``atomicSub`` / ``atomicCAS``).
+- **Two-stage local reductions**.
+- **CUDA Graph API** support (``withCUDAGraph``).
+
+Not applicable (PTX/other-backend specific)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Swizzled local arrays (PTX-only).
+- DP4A quantization (PTX-only).
+- Prebuilt SPIR-V / OpenCL binary tests.
