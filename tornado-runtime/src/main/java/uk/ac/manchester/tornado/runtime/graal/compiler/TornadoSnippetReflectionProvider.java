@@ -35,23 +35,32 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import uk.ac.manchester.tornado.runtime.jvmci.TornadoObjectConstant;
+import uk.ac.manchester.tornado.runtime.jvmci.reflection.ReflectionResolvedJavaType;
 
 public class TornadoSnippetReflectionProvider implements SnippetReflectionProvider {
 
     @Override
     public JavaConstant forBoxed(JavaKind kind, Object value) {
-        unimplemented();
-        return null;
+        if (kind == JavaKind.Object) {
+            return forObject(value);
+        }
+        return JavaConstant.forBoxedPrimitive(value);
     }
 
     @Override
     public JavaConstant forObject(Object object) {
-        unimplemented();
-        return null;
+        return object == null ? JavaConstant.NULL_POINTER : new TornadoObjectConstant(object);
     }
 
     @Override
     public <T> T asObject(Class<T> type, JavaConstant constant) {
+        if (constant == null || constant.isNull()) {
+            return null;
+        }
+        if (constant instanceof TornadoObjectConstant objectConstant) {
+            return type.cast(objectConstant.getObject());
+        }
         unimplemented();
         return null;
     }
@@ -64,6 +73,9 @@ public class TornadoSnippetReflectionProvider implements SnippetReflectionProvid
 
     @Override
     public Class<?> originalClass(ResolvedJavaType type) {
+        if (type instanceof ReflectionResolvedJavaType reflectionType) {
+            return reflectionType.getMirror();
+        }
         unimplemented();
         return null;
     }
