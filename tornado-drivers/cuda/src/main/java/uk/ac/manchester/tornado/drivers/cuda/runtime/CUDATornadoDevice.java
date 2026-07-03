@@ -659,7 +659,7 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
     public List<Integer> ensurePresent(long executionPlanId, Object object, DeviceBufferState state, int[] events, long batchSize, long offset) {
         if (!state.hasContent()) {
             state.setContents(true);
-            return state.getXPUBuffer().enqueueWrite(executionPlanId, object, batchSize, offset, events, events == null);
+            return state.getXPUBuffer().enqueueWrite(executionPlanId, object, batchSize, offset, events, events != null);
         }
         // return a NULL list
         return null;
@@ -668,13 +668,13 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
     @Override
     public List<Integer> streamIn(long executionPlanId, Object object, long batchSize, long offset, DeviceBufferState state, int[] events) {
         state.setContents(true);
-        return state.getXPUBuffer().enqueueWrite(executionPlanId, object, batchSize, offset, events, events == null);
+        return state.getXPUBuffer().enqueueWrite(executionPlanId, object, batchSize, offset, events, events != null);
     }
 
     @Override
     public int streamOut(long executionPlanId, Object object, long offset, DeviceBufferState state, int[] events) {
         TornadoInternalError.guarantee(state.hasObjectBuffer(), "invalid variable");
-        int event = state.getXPUBuffer().enqueueRead(executionPlanId, object, offset, events, events == null);
+        int event = state.getXPUBuffer().enqueueRead(executionPlanId, object, offset, events, events != null);
         if (events != null) {
             return event;
         }
@@ -696,7 +696,7 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
         } else {
             // Read for any other buffer that is not an atomic buffer
             TornadoInternalError.guarantee(state.hasObjectBuffer(), "invalid variable");
-            return state.getXPUBuffer().read(executionPlanId, object, hostOffset, partialCopySize, events, events == null);
+            return state.getXPUBuffer().read(executionPlanId, object, hostOffset, partialCopySize, events, events != null);
         }
     }
 
@@ -759,6 +759,16 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
     @Override
     public String getDeviceName() {
         return String.format("opencl-%d-%d", platformIndex, deviceIndex);
+    }
+
+    @Override
+    public void setIntraPlanConcurrency(long executionPlanId, boolean enabled) {
+        getDeviceContext().setIntraPlanConcurrency(executionPlanId, enabled);
+    }
+
+    @Override
+    public boolean isIntraPlanConcurrencySupported() {
+        return true;
     }
 
     /* ---- CUDA Graph (stream capture) support ---- */
