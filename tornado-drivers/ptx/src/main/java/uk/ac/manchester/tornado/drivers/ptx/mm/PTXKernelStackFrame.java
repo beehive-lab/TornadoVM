@@ -38,7 +38,11 @@ public class PTXKernelStackFrame extends PTXByteBuffer implements KernelStackFra
     private boolean isValid;
 
     public PTXKernelStackFrame(long address, int numArgs, PTXDeviceContext deviceContext) {
-        super(address, RESERVED_SLOTS << 3, 0, deviceContext);
+        // Pin the host buffer: this frame is written on every kernel launch and is long-lived
+        // (one per execution plan), so a pinned backing makes the per-launch H2D a non-blocking
+        // direct DMA instead of taking the staged-copy path, whose stage-guard host sync serialised
+        // the multi-stream pipeline.
+        super(address, RESERVED_SLOTS << 3, 0, deviceContext, true);
         this.callArguments = new ArrayList<>(numArgs);
 
         buffer.clear();
@@ -95,6 +99,7 @@ public class PTXKernelStackFrame extends PTXByteBuffer implements KernelStackFra
     @Override
     public void invalidate() {
         isValid = false;
+        unpinHostBuffer();
         deviceContext.getDevice().getPTXContext().freeMemory(getAddress());
     }
 }
