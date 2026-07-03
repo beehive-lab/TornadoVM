@@ -21,10 +21,10 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.graal.phases;
 
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.phases.Phase;
+import jdk.graal.compiler.graph.Node;
+import jdk.graal.compiler.nodes.GraphState;
+import jdk.graal.compiler.nodes.StructuredGraph;
+import jdk.graal.compiler.phases.Phase;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceMMANotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;

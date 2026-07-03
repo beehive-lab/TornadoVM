@@ -21,6 +21,7 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 
+import jdk.graal.compiler.core.common.LIRKind;
 import jdk.graal.compiler.lir.LIRInstruction;
 import jdk.graal.compiler.lir.LIRInstructionClass;
 import jdk.graal.compiler.lir.Opcode;
