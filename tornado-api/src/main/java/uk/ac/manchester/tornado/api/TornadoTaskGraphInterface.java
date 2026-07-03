@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -101,6 +102,8 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
     void addTask(TaskPackage taskPackage);
 
     void addPrebuiltTask(TaskPackage taskPackage);
+
+    void addLibraryTask(String id, LibraryTaskDescriptor libraryTaskDescriptor);
 
     String getTaskGraphName();
 
