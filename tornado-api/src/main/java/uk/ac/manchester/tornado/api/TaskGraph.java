@@ -812,6 +812,14 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.withCUDAGraph();
     }
 
+    void withIntraPlanConcurrency() {
+        taskGraphImpl.withIntraPlanConcurrency();
+    }
+
+    void withoutIntraPlanConcurrency() {
+        taskGraphImpl.withoutIntraPlanConcurrency();
+    }
+
     void dumpProfiles() {
         taskGraphImpl.dumpProfiles();
     }
@@ -969,6 +977,24 @@ public class TaskGraph implements TaskGraphInterface {
 
     public boolean isGridRegistered() {
         return taskGraphImpl.isGridRegistered();
+    }
+
+    /**
+     * @deprecated Use {@link TornadoExecutionPlan#withIntraPlanConcurrency()} instead.
+     */
+    @Deprecated
+    public TaskGraph withCUDAStreams() {
+        taskGraphImpl.withIntraPlanConcurrency();
+        return this;
+    }
+
+    /**
+     * @deprecated Use {@link TornadoExecutionPlan#withoutIntraPlanConcurrency()} instead.
+     */
+    @Deprecated
+    public TaskGraph withoutCUDAStreams() {
+        taskGraphImpl.withoutIntraPlanConcurrency();
+        return this;
     }
 
 }
