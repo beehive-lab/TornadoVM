@@ -203,7 +203,7 @@ public abstract class CUDAArrayWrapper<T> implements XPUBuffer {
         } else {
             headerEvent = buildArrayHeaderBatch(batchSize).enqueueWrite(executionPlanId, (useDeps) ? events : null);
         }
-        // Batch mode: honour the sub-region size like read() does — a reused (locked) buffer can be
+        // Batch mode: honour the sub-region size like read() does - a reused (locked) buffer can be
         // larger than the current chunk (e.g. a full-chunk buffer serving the smaller remainder chunk),
         // and copying its full bufferSize would overrun the host array. Non-batch copies keep using
         // bufferSize (a sub-region may be set on them by the lazy partial sync, which is read-only).

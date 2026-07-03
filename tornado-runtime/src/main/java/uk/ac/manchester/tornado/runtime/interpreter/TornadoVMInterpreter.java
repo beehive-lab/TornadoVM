@@ -179,7 +179,7 @@ public class TornadoVMInterpreter {
             int totalChunks = batchConfiguration.getTotalChunks();
             for (Object object : objects) {
                 // Deliberately counts only the EVEN chunks: the DEALLOC after the last even chunk must
-                // fire so the remainder chunk (if any) gets a fresh buffer sized to the remainder —
+                // fire so the remainder chunk (if any) gets a fresh buffer sized to the remainder -
                 // transfers use the buffer's allocated size, so reusing the even-chunk buffer would
                 // overrun the host segment.
                 totalEvenBatchesPerObject.put(object, totalChunks);
