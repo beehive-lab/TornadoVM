@@ -81,7 +81,7 @@ public class TornadoVMInterpreter {
     private static final Event EMPTY_EVENT = new EmptyEvent();
 
     private static final int MAX_EVENTS = TornadoOptions.MAX_EVENTS;
-    private final boolean useDependencies;
+    private boolean useDependencies;
 
     private final HashMap<Object, Access> objectAccesses;
     private final List<Object> objects;
@@ -133,7 +133,9 @@ public class TornadoVMInterpreter {
         assert device != null;
         this.interpreterDevice = device;
 
-        useDependencies = VM_USE_DEPS;
+        // NOTE: useDependencies is (re)computed at the start of execute() rather than latched here,
+        // because plan-level withIntraPlanConcurrency() is applied after this interpreter is built.
+        useDependencies = VM_USE_DEPS || isIntraPlanConcurrencyActive();
         totalTime = 0;
         invocations = 0;
 
@@ -266,15 +268,41 @@ public class TornadoVMInterpreter {
         return graphExecutionContext.isMemoryLimited();
     }
 
+    /**
+     * Intra-plan concurrency is active only when requested on the plan AND implemented by the
+     * backend; on other backends the request degrades to the default single-queue execution.
+     */
+    private boolean isIntraPlanConcurrencyActive() {
+        return graphExecutionContext.isIntraPlanConcurrencyEnabled() && interpreterDevice.isIntraPlanConcurrencySupported();
+    }
+
     private Event execute(boolean isWarmup) {
         isWarmup = isWarmup || VIRTUAL_DEVICE_ENABLED;
         interpreterDevice.enableThreadSharing();
+
+        // Push the per-plan intra-plan-concurrency setting to the backend before issuing any
+        // bytecode, so transfer/launch routing (single- vs multi-stream) is decided per plan.
+        interpreterDevice.setIntraPlanConcurrency(graphExecutionContext.getExecutionPlanId(), isIntraPlanConcurrencyActive());
+
+        // Recompute here (not just in the constructor): plan-level withIntraPlanConcurrency() is
+        // applied after this interpreter is built, so latching it at construction misses it and the
+        // dependency DAG (waitList -> cross-stream events) would never engage for concurrent plans.
+        useDependencies = VM_USE_DEPS || isIntraPlanConcurrencyActive();
 
         if (isMemoryLimitEnabled() && graphExecutionContext.doesExceedExecutionPlanLimit()) {
             throw new TornadoMemoryException("OutofMemoryException due to executionPlan.withMemoryLimit of " + graphExecutionContext.getExecutionPlanMemoryLimit());
         }
 
         final long t0 = System.nanoTime();
+
+        // lastEvent: event ID produced by the most recently executed bytecode operation
+        // (H2D, D2H, LAUNCH, ALLOC, etc.). The immediately following ADD_DEPENDENCY
+        // bytecode stores it into events[slot], building the wait-list that is passed
+        // as waitList to the next dependent operation.
+        // In single-stream mode: a local PTXEventPool index.
+        // In multi-stream mode: a global EventRegistry ID resolved via
+        // resolveAndWaitCrossStream into cuStreamWaitEvent calls on the target stream.
+        // Initialised to -1; ADD_DEPENDENCY skips it when -1 (no-op or warmup).
         int lastEvent = -1;
         initWaitEventList();
 
@@ -322,7 +350,7 @@ public class TornadoVMInterpreter {
                 if (isWarmup) {
                     continue;
                 }
-                transferHostToDeviceOnce(logBuilder, objectIndex, offset, eventId, sizeBatch, waitList);
+                lastEvent = transferHostToDeviceOnce(logBuilder, objectIndex, offset, eventId, sizeBatch, waitList);
             } else if (op == TornadoVMBytecodes.TRANSFER_HOST_TO_DEVICE_ALWAYS.value()) {
                 final int objectIndex = bytecodeResult.getInt();
                 final int eventId = bytecodeResult.getInt();
@@ -332,7 +360,7 @@ public class TornadoVMInterpreter {
                 if (isWarmup) {
                     continue;
                 }
-                transferHostToDeviceAlways(logBuilder, objectIndex, offset, eventId, sizeBatch, waitList);
+                lastEvent = transferHostToDeviceAlways(logBuilder, objectIndex, offset, eventId, sizeBatch, waitList);
             } else if (op == TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS.value()) {
                 final int objectIndex = bytecodeResult.getInt();
                 final int eventId = bytecodeResult.getInt();
@@ -623,6 +651,7 @@ public class TornadoVMInterpreter {
         for (int[] waitList : events) {
             Arrays.fill(waitList, -1);
         }
+        Arrays.fill(eventsIndexes, 0);
     }
 
     /**
@@ -769,11 +798,11 @@ public class TornadoVMInterpreter {
         return -1;
     }
 
-    private void transferHostToDeviceOnce(StringBuilder logBuilder, final int objectIndex, final long offset, final int eventId, final long sizeBatch, final int[] eventWaitList) {
+    private int transferHostToDeviceOnce(StringBuilder logBuilder, final int objectIndex, final long offset, final int eventId, final long sizeBatch, final int[] eventWaitList) {
         Object object = objects.get(objectIndex);
 
         if (isObjectKernelContext(object)) {
-            return;
+            return -1;
         }
 
         final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
@@ -806,13 +835,19 @@ public class TornadoVMInterpreter {
                 timeProfiler.setTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME, dispatchValue);
             }
         }
+
+        // return the eventId of the transfer event
+        if (allEvents != null && !allEvents.isEmpty()) {
+            return allEvents.getLast();
+        }
+        return -1;
     }
 
-    private void transferHostToDeviceAlways(StringBuilder logBuilder, final int objectIndex, final long offset, final int eventId, final long sizeBatch, final int[] eventWaitList) {
+    private int transferHostToDeviceAlways(StringBuilder logBuilder, final int objectIndex, final long offset, final int eventId, final long sizeBatch, final int[] eventWaitList) {
         Object object = objects.get(objectIndex);
 
         if (isObjectKernelContext(object)) {
-            return;
+            return -1;
         }
 
         final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
@@ -841,6 +876,12 @@ public class TornadoVMInterpreter {
                 timeProfiler.setTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME, dispatchValue);
             }
         }
+
+        // return the eventId of the transfer event
+        if (allEvents != null && !allEvents.isEmpty()) {
+            return allEvents.getLast();
+        }
+        return -1;
     }
 
     private int transferDeviceToHost(StringBuilder logBuilder, final int objectIndex, final long offset, final int eventId, final long sizeBatch, final int[] eventWaitList) {
@@ -1133,6 +1174,20 @@ public class TornadoVMInterpreter {
         }
     }
 
+    /**
+     * Records {@code lastEvent} as a dependency for the operation associated with
+     * {@code eventId}.
+     *
+     * <p>Appends {@code lastEvent} to {@code events[eventId]}, which is the wait-list
+     * later passed as {@code waitList} to the operation that holds dependency slot
+     * {@code eventId}. In multi-stream mode the stored value is a global
+     * {@code EventRegistry} ID; in single-stream mode it is a local
+     * {@code PTXEventPool} index. Skipped when {@code lastEvent == -1} (the preceding
+     * operation produced no event) or when {@code useDependencies} is false.
+     *
+     * @param lastEvent event ID of the most recently executed bytecode operation
+     * @param eventId   dependency slot index into the {@code events} array
+     */
     private void executeDependency(StringBuilder logBuilder, int lastEvent, int eventId) {
         if (useDependencies && lastEvent != -1) {
             if (TornadoOptions.LOG_BYTECODES()) {

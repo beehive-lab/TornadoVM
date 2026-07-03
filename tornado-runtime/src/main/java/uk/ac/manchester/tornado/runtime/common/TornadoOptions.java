@@ -468,7 +468,7 @@ public class TornadoOptions {
     /**
      * Enable VM Dependency Path. Disabled by default. This option is only for testing.
      */
-    public static final boolean VM_USE_DEPS = getBooleanValue("tornado.vm.deps", FALSE);
+    public static boolean VM_USE_DEPS = getBooleanValue("tornado.vm.deps", FALSE);
 
     /**
      * Enable OpenCL Profiling. Enabled by default.
