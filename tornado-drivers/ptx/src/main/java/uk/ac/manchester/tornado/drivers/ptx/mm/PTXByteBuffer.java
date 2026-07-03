@@ -23,6 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.mm;
 
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
@@ -35,14 +36,47 @@ public class PTXByteBuffer {
     private final long offset;
     protected final PTXDeviceContext deviceContext;
 
+    /**
+     * Native address of the host buffer when it is page-locked (pinned), or 0 when the
+     * buffer is a plain heap {@link ByteBuffer}. When pinned, transfers use the direct
+     * (host-pointer) async path and avoid the staged-copy stage-guard host sync that would
+     * otherwise serialise small per-launch writes in multi-stream mode.
+     */
+    private final long pinnedHostAddress;
+
     public PTXByteBuffer(long address, long bytes, long offset, PTXDeviceContext deviceContext) {
+        this(address, bytes, offset, deviceContext, false);
+    }
+
+    /**
+     * @param pinHostBuffer when {@code true}, back the host buffer with off-heap memory that is
+     *     registered as pinned ({@code cuMemHostRegister}) so async DMA is non-blocking. Use only
+     *     for long-lived, frequently-reused buffers (e.g. the kernel stack frame) - registration is
+     *     a one-off cost that must not be paid per transient buffer.
+     */
+    public PTXByteBuffer(long address, long bytes, long offset, PTXDeviceContext deviceContext, boolean pinHostBuffer) {
         this.address = address;
         this.bytes = bytes;
         this.offset = offset;
         this.deviceContext = deviceContext;
 
-        this.buffer = ByteBuffer.allocate((int) bytes);
-        this.buffer.order(deviceContext.getByteOrder());
+        if (pinHostBuffer) {
+            this.buffer = ByteBuffer.allocateDirect((int) bytes);
+            this.buffer.order(deviceContext.getByteOrder());
+            this.pinnedHostAddress = MemorySegment.ofBuffer(this.buffer).address();
+            deviceContext.getDevice().getPTXContext().registerHostMemory(this.pinnedHostAddress, bytes);
+        } else {
+            this.buffer = ByteBuffer.allocate((int) bytes);
+            this.buffer.order(deviceContext.getByteOrder());
+            this.pinnedHostAddress = 0L;
+        }
+    }
+
+    /** Unregisters the pinned host buffer, if any. Call before the buffer is discarded. */
+    protected void unpinHostBuffer() {
+        if (pinnedHostAddress != 0L) {
+            deviceContext.getDevice().getPTXContext().unregisterHostMemory(pinnedHostAddress);
+        }
     }
 
     public long getSize() {
@@ -54,7 +88,11 @@ public class PTXByteBuffer {
     }
 
     private void read(long executionPlanId, int[] events) {
-        deviceContext.readBuffer(executionPlanId, getAddress() + offset, bytes, buffer.array(), 0, events);
+        if (pinnedHostAddress != 0L) {
+            deviceContext.readBuffer(executionPlanId, getAddress() + offset, bytes, pinnedHostAddress, 0, events);
+        } else {
+            deviceContext.readBuffer(executionPlanId, getAddress() + offset, bytes, buffer.array(), 0, events);
+        }
     }
 
     public int getInt(int offset) {
@@ -90,7 +128,11 @@ public class PTXByteBuffer {
     }
 
     public void write(long executionPlanId, int[] events) {
-        deviceContext.writeBuffer(executionPlanId, getAddress() + offset, bytes, buffer.array(), 0, events);
+        if (pinnedHostAddress != 0L) {
+            deviceContext.writeBuffer(executionPlanId, getAddress() + offset, bytes, pinnedHostAddress, 0, events);
+        } else {
+            deviceContext.writeBuffer(executionPlanId, getAddress() + offset, bytes, buffer.array(), 0, events);
+        }
     }
 
     protected long getAddress() {
@@ -102,6 +144,9 @@ public class PTXByteBuffer {
     }
 
     public int enqueueWrite(long executionPlanId, int[] events) {
+        if (pinnedHostAddress != 0L) {
+            return deviceContext.enqueueWriteBuffer(executionPlanId, getAddress() + offset, bytes, pinnedHostAddress, 0, events);
+        }
         return deviceContext.enqueueWriteBuffer(executionPlanId, getAddress() + offset, bytes, buffer.array(), 0, events);
     }
 }
