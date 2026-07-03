@@ -27,13 +27,13 @@ import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 /**
  * Factory methods for NVIDIA cuBLASLt library tasks: matmul with fused
  * epilogues (bias, GELU). Compared to {@link CuBlas}, cuBLASLt fuses the
- * bias-add and activation of a transformer MLP block into the GEMM itself —
+ * bias-add and activation of a transformer MLP block into the GEMM itself -
  * one library task instead of a GEMM plus a JIT activation kernel.
  *
  * <p>
  * The bias vector has one element per row of the column-major result. With the
- * standard row-major trick (row-major C = A·B computed as column-major
- * C_cm = B_cm · A_cm), the bias is applied per column of the row-major C —
+ * standard row-major trick (row-major C = A*B computed as column-major
+ * C_cm = B_cm * A_cm), the bias is applied per column of the row-major C -
  * i.e., per output feature, matching the transformer convention.
  * </p>
  *
