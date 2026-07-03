@@ -362,40 +362,16 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
         asm.emitLine("}");
     }
 
-    private boolean kernelUsesHalfTypes(LIR lir) {
-        for (int b : lir.linearScanOrder()) {
-            for (LIRInstruction instr : lir.getLIRforBlock(lir.getBlockById(b))) {
-                boolean[] found = { false };
-                instr.forEachOutput((instruction, value, mode, flags) -> {
-                    if (!found[0] && value instanceof Variable variable) {
-                        CUDAKind kind = (CUDAKind) variable.getPlatformKind();
-                        if (kind == CUDAKind.HALF || kind.getElementKind() == CUDAKind.HALF) {
-                            found[0] = true;
-                        }
-                    }
-                    return value;
-                });
-                if (found[0]) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
     private void emitPrologue(CUDACompilationResultBuilder crb, CUDAAssembler asm, ResolvedJavaMethod method, LIR lir) {
 
         String methodName = crb.compilationResult.getName();
         final CallingConvention incomingArguments = CodeUtil.getCallingConvention(codeCache, HotSpotCallingConventionType.JavaCallee, method);
 
         if (crb.isKernel()) {
-            // Only include cuda_fp16.h when the kernel actually uses __half types.
-            // Including it unconditionally triggers NVRTC failures on CUDA 11.x
-            // toolkits where cuda_fp16.hpp uses NV_IF_ELSE_TARGET from <nv/target>,
-            // which is excluded under __CUDACC_RTC__.
-            if (kernelUsesHalfTypes(lir)) {
-                asm.emit(CUDAPreamble.PREAMBLE);
-            }
+            // cuda_fp16.h is injected once, after code emission, when the generated
+            // kernel actually references __half / half2 / __float2half constructs
+            // (see CUDACompilationResultBuilder#finish). It is not emitted here because
+            // half usage is not always visible from the LIR operands at this point.
 
             /*
              * BUG There is a bug on some CUDADriver devices which requires us to insert an
