@@ -38,19 +38,26 @@ add_library(tornado-cuda SHARED ${SOURCE_FILES})
 # locations so the lib builds even when CUDA is not under /usr/local/cuda.
 find_package(CUDAToolkit QUIET)
 
+# Hint order matters: prefer $CUDA_PATH and /usr/local/cuda over the
+# CMake-discovered toolkit. On systems with both a full toolkit under
+# /usr/local/cuda and an older apt-installed one (nvcc in /usr/bin),
+# find_package(CUDAToolkit) resolves to the apt toolkit, but the JIT include
+# path in CUDAProgram.cpp prefers /usr/local/cuda/include — linking NVRTC from
+# a different toolkit version than the headers breaks every runtime kernel
+# compilation (e.g. undefined __internal_float2half in cuda_fp16.hpp).
 find_path(CUDA_INCLUDE_DIR cuda.h
     HINTS
-        ${CUDAToolkit_INCLUDE_DIRS}
         $ENV{CUDA_PATH}/include
         /usr/local/cuda/include
+        ${CUDAToolkit_INCLUDE_DIRS}
         /usr/include
         /usr/lib/cuda/include
 )
 find_path(NVRTC_INCLUDE_DIR nvrtc.h
     HINTS
-        ${CUDAToolkit_INCLUDE_DIRS}
         $ENV{CUDA_PATH}/include
         /usr/local/cuda/include
+        ${CUDAToolkit_INCLUDE_DIRS}
         /usr/include
         /usr/lib/cuda/include
 )
@@ -59,17 +66,17 @@ find_path(NVRTC_INCLUDE_DIR nvrtc.h
 # NVIDIA driver at runtime; the stub satisfies the linker at build time.
 find_library(CUDA_DRIVER_LIB cuda
     HINTS
-        ${CUDAToolkit_LIBRARY_DIR}
         $ENV{CUDA_PATH}/lib64/stubs
         /usr/local/cuda/lib64/stubs
+        ${CUDAToolkit_LIBRARY_DIR}
         /usr/lib/x86_64-linux-gnu/stubs
         /usr/lib/x86_64-linux-gnu
 )
 find_library(NVRTC_LIB nvrtc
     HINTS
-        ${CUDAToolkit_LIBRARY_DIR}
         $ENV{CUDA_PATH}/lib64
         /usr/local/cuda/lib64
+        ${CUDAToolkit_LIBRARY_DIR}
         /usr/lib/x86_64-linux-gnu
 )
 
