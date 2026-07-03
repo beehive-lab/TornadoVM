@@ -276,12 +276,12 @@ public class TestBatches extends TornadoTestBase {
     }
 
     /**
-     * Batched execution with buffer reuse enabled ({@code tornado.reuse.device.buffers=true} — the
+     * Batched execution with buffer reuse enabled ({@code tornado.reuse.device.buffers=true} - the
      * runtime DEFAULT; the rest of this suite disables it in {@link #before()}). With reuse on, the
      * buffers are locked, so the dealloc before the differently-sized remainder chunk is a no-op and
      * the remainder chunk runs on the larger full-chunk buffer with only a sub-region in use. The
      * batch H2D used to copy the full buffer size regardless, overrunning the host segment
-     * ({@code cuMemcpyHtoDAsync} returned {@code CUDA_ERROR_INVALID_VALUE}) — so ANY batched plan
+     * ({@code cuMemcpyHtoDAsync} returned {@code CUDA_ERROR_INVALID_VALUE}) - so ANY batched plan
      * with a remainder chunk failed under default settings, even on its first execution. Repeats the
      * execution to also cover the locked buffers being reused across executions (a reused buffer must
      * not keep the previous execution's remainder sub-region, and the per-object chunk counters must
