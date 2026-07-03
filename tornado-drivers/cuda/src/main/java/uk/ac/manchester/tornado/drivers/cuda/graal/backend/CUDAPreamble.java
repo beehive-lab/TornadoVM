@@ -43,6 +43,9 @@ public final class CUDAPreamble {
 
     // @formatter:off
     public static final String PREAMBLE =
-        "#include <cuda_fp16.h>\n";
+        "#include <cuda_fp16.h>\n" +
+        // Targeted CUB include for warp-composed reductions (the <cub/cub.cuh>
+        // umbrella is NOT NVRTC-compilable: it drags in host std headers).
+        "#include <cub/warp/warp_reduce.cuh>\n";
     // @formatter:on
 }

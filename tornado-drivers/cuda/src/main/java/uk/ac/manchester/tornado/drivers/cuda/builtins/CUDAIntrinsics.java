@@ -59,6 +59,35 @@ public class CUDAIntrinsics {
      */
     public static native void globalBarrier();
 
+    /*
+     * CUB warp-composed block reductions (see CUDACubReduceNode): reduce a
+     * per-thread value across the thread block; the result is valid on local
+     * thread 0. Replaced by TornadoCUDAIntrinsicsReplacements.
+     */
+    public static native int cubReduceAddInt(int value);
+
+    public static native long cubReduceAddLong(long value);
+
+    public static native float cubReduceAddFloat(float value);
+
+    public static native double cubReduceAddDouble(double value);
+
+    public static native int cubReduceMaxInt(int value);
+
+    public static native long cubReduceMaxLong(long value);
+
+    public static native float cubReduceMaxFloat(float value);
+
+    public static native double cubReduceMaxDouble(double value);
+
+    public static native int cubReduceMinInt(int value);
+
+    public static native long cubReduceMinLong(long value);
+
+    public static native float cubReduceMinFloat(float value);
+
+    public static native double cubReduceMinDouble(double value);
+
     public static native void printf();
 
     public static native void printEmpty();

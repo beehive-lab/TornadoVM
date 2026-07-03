@@ -55,6 +55,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalThreadIDFixedNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDABarrierNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDACubReduceNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAPrintf;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
@@ -129,12 +130,66 @@ public class TornadoCUDAIntrinsicsReplacements extends BasePhase<TornadoHighTier
                     graph.replaceFixed(invoke, groupIdNode);
                     break;
                 }
+                case "Direct#CUDAIntrinsics.cubReduceAddInt": {
+                    replaceWithCubReduce(graph, invoke, CUDACubReduceNode.Op.ADD, JavaKind.Int);
+                    break;
+                }
+                case "Direct#CUDAIntrinsics.cubReduceAddLong": {
+                    replaceWithCubReduce(graph, invoke, CUDACubReduceNode.Op.ADD, JavaKind.Long);
+                    break;
+                }
+                case "Direct#CUDAIntrinsics.cubReduceAddFloat": {
+                    replaceWithCubReduce(graph, invoke, CUDACubReduceNode.Op.ADD, JavaKind.Float);
+                    break;
+                }
+                case "Direct#CUDAIntrinsics.cubReduceAddDouble": {
+                    replaceWithCubReduce(graph, invoke, CUDACubReduceNode.Op.ADD, JavaKind.Double);
+                    break;
+                }
+                case "Direct#CUDAIntrinsics.cubReduceMaxInt": {
+                    replaceWithCubReduce(graph, invoke, CUDACubReduceNode.Op.MAX, JavaKind.Int);
+                    break;
+                }
+                case "Direct#CUDAIntrinsics.cubReduceMaxLong": {
+                    replaceWithCubReduce(graph, invoke, CUDACubReduceNode.Op.MAX, JavaKind.Long);
+                    break;
+                }
+                case "Direct#CUDAIntrinsics.cubReduceMaxFloat": {
+                    replaceWithCubReduce(graph, invoke, CUDACubReduceNode.Op.MAX, JavaKind.Float);
+                    break;
+                }
+                case "Direct#CUDAIntrinsics.cubReduceMaxDouble": {
+                    replaceWithCubReduce(graph, invoke, CUDACubReduceNode.Op.MAX, JavaKind.Double);
+                    break;
+                }
+                case "Direct#CUDAIntrinsics.cubReduceMinInt": {
+                    replaceWithCubReduce(graph, invoke, CUDACubReduceNode.Op.MIN, JavaKind.Int);
+                    break;
+                }
+                case "Direct#CUDAIntrinsics.cubReduceMinLong": {
+                    replaceWithCubReduce(graph, invoke, CUDACubReduceNode.Op.MIN, JavaKind.Long);
+                    break;
+                }
+                case "Direct#CUDAIntrinsics.cubReduceMinFloat": {
+                    replaceWithCubReduce(graph, invoke, CUDACubReduceNode.Op.MIN, JavaKind.Float);
+                    break;
+                }
+                case "Direct#CUDAIntrinsics.cubReduceMinDouble": {
+                    replaceWithCubReduce(graph, invoke, CUDACubReduceNode.Op.MIN, JavaKind.Double);
+                    break;
+                }
                 case "Direct#CUDAIntrinsics.printEmpty":
                     CUDAPrintf printfNode = graph.addOrUnique(new CUDAPrintf("\"\""));
                     graph.replaceFixed(invoke, printfNode);
                     break;
             }
         }
+    }
+
+    private void replaceWithCubReduce(StructuredGraph graph, InvokeNode invoke, CUDACubReduceNode.Op op, JavaKind kind) {
+        ValueNode inputValue = invoke.callTarget().arguments().get(0);
+        CUDACubReduceNode cubReduceNode = graph.addOrUnique(new CUDACubReduceNode(inputValue, op, kind));
+        graph.replaceFixed(invoke, cubReduceNode);
     }
 
     private void lowerLocalInvokeNodeNewArray(StructuredGraph graph, int length, JavaKind elementKind, InvokeNode newArray) {
