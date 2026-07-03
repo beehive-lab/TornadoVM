@@ -2,9 +2,9 @@
 
 # TornadoVM
 
-### Write Java. Run on Any GPUs.
+### Write Java. Run on NVIDIA GPUs — and every other GPU too.
 
-TornadoVM is a GPU programming framework for Java that works with JDK 21+ (currently JDK 21 and JDK 25). It JIT-compiles Java bytecode into **OpenCL C, CUDA PTX, SPIR-V, and Apple Metal (MSL)** at runtime, so your existing Java code runs on NVIDIA, AMD, Intel, and Apple Silicon GPUs, integrated GPUs, FPGAs, and multi-core CPUs. No CUDA C. No JNI bindings to maintain. No native toolchain in your application.
+TornadoVM is a GPU programming framework for Java that works with JDK 21+ (currently JDK 21 and JDK 25). It JIT-compiles Java bytecode into **NVIDIA CUDA PTX, OpenCL C, SPIR-V, and Apple Metal (MSL)** at runtime, so your existing Java code runs on **NVIDIA GPUs (via CUDA/PTX)**, AMD, Intel, and Apple Silicon GPUs, integrated GPUs, FPGAs, and multi-core CPUs. On NVIDIA hardware it goes further: beyond generating PTX, TornadoVM now calls straight into the **NVIDIA library ecosystem — cuBLAS, cuFFT, cuDNN — and exposes Tensor Core `mma.sync` instructions from pure Java**. No CUDA C. No JNI bindings to maintain. No native toolchain in your application.
 
 [![Build & Test JDK 21](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk21.yml/badge.svg)](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk21.yml)
 [![Build & Test JDK 25](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk25.yml/badge.svg?branch=jdk25)](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk25.yml)
@@ -13,14 +13,14 @@ TornadoVM is a GPU programming framework for Java that works with JDK 21+ (curre
 [![Docs](https://img.shields.io/badge/docs-readthedocs-blue)](https://tornadovm.readthedocs.io/en/latest/)
 [![Slack](https://img.shields.io/badge/chat-Slack-4A154B?logo=slack)](https://join.slack.com/t/tornadovmcommunity/shared_invite/zt-3ai2wyqva-bKz~cQRFlaJ~ZnPrbkwIEw)
 
-**Latest release:** TornadoVM 4.0.1 (JDK 21 / JDK 25) — now with a native **Apple Metal backend** for Apple Silicon. [Changelog](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html) · [Website](https://www.tornadovm.org) · [Documentation](https://tornadovm.readthedocs.io/en/latest/)
+**Latest release:** TornadoVM 4.0.1 (JDK 21 / JDK 25) — native **NVIDIA library integration** (cuBLAS / cuFFT / cuDNN) and Tensor Core intrinsics, plus a native **Apple Metal backend** for Apple Silicon. [Changelog](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html) · [Website](https://www.tornadovm.org) · [Documentation](https://tornadovm.readthedocs.io/en/latest/)
 
 
 ---
 
 ## This is the whole programming model
 
-Write the kernel in Java with the same thread-indexing model you'd use in CUDA — then build a task graph and execute. TornadoVM JIT-compiles the bytecode to a GPU kernel at runtime and manages all host↔device data transfers for you.
+Write the kernel in Java with the same thread-indexing model you'd use in CUDA — then build a task graph and execute. TornadoVM JIT-compiles the bytecode to a GPU kernel at runtime and manages all host↔device data transfers for you. On NVIDIA GPUs that kernel is emitted as **CUDA PTX** and compiled through NVRTC to a native cubin.
 
 <table>
 <tr>
@@ -115,6 +115,40 @@ try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
 
 ---
 
+## 🟩 The NVIDIA ecosystem, native to Java
+
+On NVIDIA hardware, TornadoVM is more than a PTX code generator — it's an open-source on-ramp to the whole CUDA software stack, callable from the same `TaskGraph` you already use. Generated kernels and native library calls **share TornadoVM-managed device buffers on one CUDA stream**, so a JIT-compiled kernel can feed a cuBLAS call and consume its output with no extra copies and no host synchronization.
+
+| Capability | What it gives Java developers |
+|---|---|
+| **CUDA PTX backend** | Java bytecode → Graal IR → **CUDA PTX → NVRTC → cubin**, JIT-compiled and specialized to your data sizes and GPU at runtime. |
+| **cuBLAS / cuBLASLt** library tasks | SGEMV, SGEMM, strided-batched, TF32 and FP16 GemmEx on Tensor Cores, and cuBLASLt with plan caching and fused `BIAS` / `GELU_BIAS` epilogues — one library task replaces a GEMM plus a separate activation kernel. |
+| **cuFFT** library tasks | C2C, R2C / C2R, and Z2Z transforms (1D and 2D) with capture-safe plan caching; FFT-filter pipelines mix with JIT kernels in one graph. |
+| **cuDNN** library tasks | Deep-learning primitives through the cuDNN graph API, including fused scaled-dot-product (flash) attention via cudnn-frontend. |
+| **Tensor Core MMA intrinsics** | `mma.sync` exposed through `KernelContext` (`mmaLoadA/B`, `mma`, `mmaStore`) — FP16 (`m16n8k16` → FP32) and INT8 (`m16n8k32` → INT32), with swizzled shared-memory staging. Not a binding: real PTX/CUDA generated from Java. |
+| **CUDA Graphs** | `executionPlan.withCUDAGraph()` records kernels, library calls, and transfers into a captured graph and replays them with a single `cuGraphLaunch`. |
+
+Mixing your own kernels with NVIDIA's tuned libraries looks like this:
+
+```java
+TaskGraph tg = new TaskGraph("hybrid")
+    .transferToDevice(DataTransferMode.EVERY_EXECUTION, matrix, vector)
+    .task("preprocess", MyKernels::preprocess, matrix)              // JIT-compiled Java kernel
+    .libraryTask("gemv", CuBlas::cublasSgemv,                       // native cuBLAS call
+            CUBLAS_OP_T, m, n, alpha, matrix, lda, vector, incx, beta, output, incy)
+    .task("postprocess", MyKernels::activate, output)              // JIT-compiled Java kernel
+    .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
+    plan.withCUDAGraph().execute();   // captured once, replayed each iteration
+}
+```
+
+Library bindings are discovered via Java `ServiceLoader` — implement `TornadoLibraryProvider`, add a JNI module, and any native library joins the graph with no core runtime changes. TornadoVM is a member of the **NVIDIA Inception Program** and has presented this work at **NVIDIA GTC**. [Hybrid API guide →](https://tornadovm.readthedocs.io/en/latest/)
+
+
+---
+
 ## What people build with it
 
 | Project | What it shows |
@@ -137,6 +171,7 @@ TornadoVM is used to accelerate machine learning and deep learning, computer vis
 
 - **JDK 25** (or GraalVM based on JDK 25) — `JAVA_HOME` must point to it
 - GCC/G++ ≥ 13, plus the driver for your target (OpenCL runtime, CUDA Toolkit, Level Zero, or macOS for Metal)
+- For the NVIDIA library tasks (cuBLAS / cuFFT / cuDNN): the **CUDA Toolkit** with the corresponding libraries; on systems with multiple toolkits, `/usr/local/cuda` (or `$CUDA_PATH`) is preferred
 
 ### Install via SDKMAN!
 
@@ -149,7 +184,7 @@ Pick a backend-specific build if you prefer a smaller install:
 | Backend | SDKMAN! version | Targets |
 |---|---|---|
 | OpenCL *(default)* | `4.0.0-opencl` | NVIDIA / AMD / Intel GPUs, multi-core CPUs, FPGAs |
-| PTX | `4.0.0-ptx` | NVIDIA GPUs (CUDA) |
+| PTX | `4.0.0-ptx` | **NVIDIA GPUs (CUDA) — PTX codegen, Tensor Cores, cuBLAS/cuFFT/cuDNN library tasks** |
 | SPIR-V | `4.0.0-spirv` | Intel GPUs (Level Zero / oneAPI) |
 | Metal 🆕 | `4.0.0-metal` | Apple Silicon GPUs (M1–M4), natively via MSL |
 | All backends | `4.0.0-full` | Everything above |
@@ -208,6 +243,12 @@ More examples — NBody, DFT, KMeans, matrix kernels, reductions: [tornado-examp
 </details>
 
 <details>
+<summary><b>What can TornadoVM do on NVIDIA GPUs specifically?</b></summary>
+
+On NVIDIA hardware TornadoVM JIT-compiles your Java kernels to **CUDA PTX** and compiles them through NVRTC to native cubins. On top of that, it integrates the NVIDIA software ecosystem directly into the `TaskGraph`: **cuBLAS / cuBLASLt** (including TF32 and FP16 GemmEx on Tensor Cores and fused epilogues), **cuFFT**, and **cuDNN** (including fused flash attention) are available as *library tasks* that share device buffers and a CUDA stream with your generated kernels. You can also target **Tensor Cores** directly from Java via `mma.sync` intrinsics (FP16 and INT8), and capture the whole pipeline into a **CUDA Graph** for single-launch replay. See [The NVIDIA ecosystem, native to Java](#-the-nvidia-ecosystem-native-to-java).
+</details>
+
+<details>
 <summary><b>What's the licensing situation for commercial use?</b></summary>
 
 The parts your application links against — **Tornado-API** and all the modules you code with — are **Apache 2.0**. The runtime and drivers are **GPLv2 with Classpath Exception**, the same license as OpenJDK itself: it does not impose copyleft obligations on your application, exactly as running on OpenJDK doesn't. Full per-module breakdown [below](#licenses-per-module).
@@ -222,13 +263,13 @@ No. TornadoVM is a plug-in to your existing OpenJDK or GraalVM installation. It 
 <details>
 <summary><b>Which hardware is supported?</b></summary>
 
-Multi-core CPUs; dedicated GPUs from NVIDIA, AMD, and Intel; integrated GPUs (Apple Silicon M1–M4, Intel HD Graphics, ARM Mali); and FPGAs from Intel and Xilinx. Backends can be installed individually or together, and tasks can migrate between devices at runtime.
+Multi-core CPUs; dedicated GPUs from NVIDIA, AMD, and Intel; integrated GPUs (Apple Silicon M1–M4, Intel HD Graphics, ARM Mali); and FPGAs from Intel and Xilinx. Backends can be installed individually or together, and tasks can migrate between devices at runtime. NVIDIA GPUs can be driven either through the **PTX/CUDA** backend (with the library and Tensor Core features above) or through the OpenCL backend.
 </details>
 
 <details>
 <summary><b>How fast is it?</b></summary>
 
-It depends on the workload — data-parallel kernels with enough arithmetic intensity see order-of-magnitude speedups over sequential Java; see the [benchmarking guide](https://tornadovm.readthedocs.io/en/latest/benchmarking.html) and the [GPULlama3.java performance tables](https://github.com/beehive-lab/GPULlama3.java#-performance) for end-to-end numbers on real applications.
+It depends on the workload — data-parallel kernels with enough arithmetic intensity see order-of-magnitude speedups over sequential Java; see the [benchmarking guide](https://tornadovm.readthedocs.io/en/latest/benchmarking.html) and the [GPULlama3.java performance tables](https://github.com/beehive-lab/GPULlama3.java#-performance) for end-to-end numbers on real applications (e.g. **117 tok/s for Llama-3 inference on an RTX 5090**). For compute-bound linear algebra, the cuBLAS library tasks reach the tuned vendor throughput — including full FP16 Tensor Core rates — from Java.
 </details>
 
 ---
