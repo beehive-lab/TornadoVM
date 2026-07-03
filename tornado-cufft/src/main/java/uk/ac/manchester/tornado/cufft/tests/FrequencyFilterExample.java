@@ -28,7 +28,7 @@ import uk.ac.manchester.tornado.cufft.CuFft;
 
 /**
  * Hybrid FFT pipeline: a noisy real signal is low-pass filtered entirely on
- * the GPU inside one task graph — cuFFT R2C, a JIT-compiled kernel zeroing the
+ * the GPU inside one task graph - cuFFT R2C, a JIT-compiled kernel zeroing the
  * high-frequency bins, cuFFT C2R, and a JIT normalization kernel. Two library
  * tasks and two JIT tasks sharing device buffers with no host round trips.
  *

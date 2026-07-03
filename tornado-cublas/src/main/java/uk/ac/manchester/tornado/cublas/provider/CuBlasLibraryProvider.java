@@ -64,7 +64,7 @@ public final class CuBlasLibraryProvider implements TornadoLibraryProvider {
     /**
      * Dispatch registry: function name -> marshalling call.
      */
-    private static final Map<String, CuBlasCall> FUNCTIONS = Map.of( //
+    private static final Map<String, CuBlasCall> FUNCTIONS = Map.of(//
             "cublasSgemv", CuBlasLibraryProvider::sgemv, //
             "cublasSgemm", CuBlasLibraryProvider::sgemm, //
             "cublasSgemmStridedBatched", CuBlasLibraryProvider::sgemmStridedBatched, //
@@ -164,7 +164,7 @@ public final class CuBlasLibraryProvider implements TornadoLibraryProvider {
     // order matching the corresponding CuBlas factory.
     // ------------------------------------------------------------------
 
-    /** (trans, m, n, alpha, A, lda, x, incx, beta, y, incy) */
+    /** (trans, m, n, alpha, A, lda, x, incx, beta, y, incy). */
     private static int sgemv(long handle, LibraryInvocation invocation) {
         return CuBlasNativeLib.cublasSgemv(handle, //
                 (int) invocation.getArg(0), //
@@ -180,7 +180,7 @@ public final class CuBlasLibraryProvider implements TornadoLibraryProvider {
                 (int) invocation.getArg(10));
     }
 
-    /** (transa, transb, m, n, k, alpha, A, lda, strideA, B, ldb, strideB, beta, C, ldc, strideC, batchCount) */
+    /** (transa, transb, m, n, k, alpha, A, lda, strideA, B, ldb, strideB, beta, C, ldc, strideC, batchCount). */
     private static int sgemmStridedBatched(long handle, LibraryInvocation invocation) {
         return CuBlasNativeLib.cublasSgemmStridedBatched(handle, //
                 (int) invocation.getArg(0), //
@@ -224,7 +224,7 @@ public final class CuBlasLibraryProvider implements TornadoLibraryProvider {
                 CublasComputeType.CUBLAS_COMPUTE_32F.value(), CUBLAS_GEMM_DEFAULT);
     }
 
-    /** (transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc) */
+    /** (transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc). */
     private static int sgemm(long handle, LibraryInvocation invocation) {
         return CuBlasNativeLib.cublasSgemm(handle, //
                 (int) invocation.getArg(0), //

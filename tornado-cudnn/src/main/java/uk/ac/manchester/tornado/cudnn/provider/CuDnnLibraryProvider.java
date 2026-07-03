@@ -34,8 +34,8 @@ import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
  * per-(device, execution plan) context holds the cudnn handle bound to the
  * plan's stream, a cache of convolution plans (descriptors + algorithm +
  * workspace size) per shape, and a grow-only device workspace. Convolution
- * plans and the workspace are created in {@link #prepare} — before CUDA graph
- * capture starts — so {@link #dispatch} is capture-safe.
+ * plans and the workspace are created in {@link #prepare} - before CUDA graph
+ * capture starts - so {@link #dispatch} is capture-safe.
  */
 public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
 
@@ -124,12 +124,12 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
         CuDnnNativeLib.checkStatus(status, functionName);
     }
 
-    /** (input, output, size) */
+    /** (input, output, size). */
     private static int activation(CuDnnContext context, LibraryInvocation invocation, int mode) {
         return CuDnnNativeLib.activationForward(context.handle, mode, (int) invocation.getArg(2), invocation.getDevicePointer(0), invocation.getDevicePointer(1));
     }
 
-    /** (input, filter, output, n, c, h, w, k, r, s, pad, stride) */
+    /** (input, filter, output, n, c, h, w, k, r, s, pad, stride). */
     private static int conv2d(CuDnnContext context, LibraryInvocation invocation) {
         long plan = getOrCreateConvPlan(context, //
                 (int) invocation.getArg(3), (int) invocation.getArg(4), (int) invocation.getArg(5), (int) invocation.getArg(6), //
@@ -140,7 +140,7 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
                 context.workspacePtr, context.workspaceBytes);
     }
 
-    /** (q, k, v, o, b, h, sQ, sKv, d, scale, causal) */
+    /** (q, k, v, o, b, h, sQ, sKv, d, scale, causal). */
     private static int sdpa(CuDnnContext context, LibraryInvocation invocation) {
         long plan = getOrCreateSdpaPlan(context, //
                 (int) invocation.getArg(4), (int) invocation.getArg(5), (int) invocation.getArg(6), (int) invocation.getArg(7), (int) invocation.getArg(8), //

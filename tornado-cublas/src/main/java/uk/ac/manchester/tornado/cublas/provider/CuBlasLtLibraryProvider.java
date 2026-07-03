@@ -35,7 +35,7 @@ import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
  * {@link TornadoLibraryProvider} for NVIDIA cuBLASLt (matmul with fused
  * epilogues). The per-(device, execution plan) context holds the cublasLt
  * handle, the CUDA stream, a device workspace, and a cache of matmul plans
- * (descriptors + heuristic algorithm) keyed by problem shape — descriptors are
+ * (descriptors + heuristic algorithm) keyed by problem shape - descriptors are
  * created once per shape and replayed on every execution.
  */
 public final class CuBlasLtLibraryProvider implements TornadoLibraryProvider {
@@ -63,7 +63,7 @@ public final class CuBlasLtLibraryProvider implements TornadoLibraryProvider {
      * Dispatch registry: function name -> type/epilogue configuration. All
      * configurations share one marshaller ({@code ltMatmul}).
      */
-    private static final Map<String, LtCall> FUNCTIONS = Map.of( //
+    private static final Map<String, LtCall> FUNCTIONS = Map.of(//
             "ltMatmulFP32", new LtCall(CudaDataType.CUDA_R_32F, CudaDataType.CUDA_R_32F, CuBlasLtEpilogue.CUBLASLT_EPILOGUE_DEFAULT, false), //
             "ltMatmulFP16", new LtCall(CudaDataType.CUDA_R_16F, CudaDataType.CUDA_R_16F, CuBlasLtEpilogue.CUBLASLT_EPILOGUE_DEFAULT, false), //
             "ltMatmulBiasFP16", new LtCall(CudaDataType.CUDA_R_16F, CudaDataType.CUDA_R_16F, CuBlasLtEpilogue.CUBLASLT_EPILOGUE_BIAS, true), //
@@ -105,7 +105,7 @@ public final class CuBlasLtLibraryProvider implements TornadoLibraryProvider {
     }
 
     /**
-     * (transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc [, bias])
+     * (transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc [, bias]).
      */
     private static void ltMatmul(CuBlasLtContext context, String functionName, LtCall call, LibraryInvocation invocation) {
         final int transa = (int) invocation.getArg(0);

@@ -82,7 +82,8 @@ public final class LibraryRegistry {
         if (match != null) {
             throw new TornadoRuntimeException("[ERROR] Library `" + libraryName + "` is not supported on device: " + device + ". Select a compatible backend/device for this library task.");
         }
-        throw new TornadoRuntimeException("[ERROR] No provider found for library `" + libraryName + "`. Ensure the corresponding TornadoVM library module (e.g., tornado-cublas) is on the module path.");
+        throw new TornadoRuntimeException(
+                "[ERROR] No provider found for library `" + libraryName + "`. Ensure the corresponding TornadoVM library module (e.g., tornado-cublas) is on the module path.");
     }
 
     public static LibraryContext getOrCreateContext(TornadoLibraryProvider provider, TornadoXPUDevice device, long executionPlanId) {

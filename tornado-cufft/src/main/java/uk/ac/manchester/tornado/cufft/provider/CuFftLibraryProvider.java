@@ -38,8 +38,8 @@ import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
  *
  * <p>
  * cuFFT plan creation allocates a device work area, so plans are created in
- * {@link #prepare} — which the interpreter invokes before any CUDA graph
- * capture starts — making the {@link #dispatch} path capture-safe.
+ * {@link #prepare} - which the interpreter invokes before any CUDA graph
+ * capture starts - making the {@link #dispatch} path capture-safe.
  * </p>
  */
 public final class CuFftLibraryProvider implements TornadoLibraryProvider {
@@ -60,7 +60,7 @@ public final class CuFftLibraryProvider implements TornadoLibraryProvider {
      * share the argument shape (input, output, dim1, dim2): dim1/dim2 are
      * (n, batch) for 1D plans and (nx, ny) for 2D plans.
      */
-    private static final Map<String, FftCall> FUNCTIONS = Map.of( //
+    private static final Map<String, FftCall> FUNCTIONS = Map.of(//
             "cufftForwardC2C", new FftCall(PlanKind.C2C_1D, CUFFT_FORWARD), //
             "cufftInverseC2C", new FftCall(PlanKind.C2C_1D, CUFFT_INVERSE), //
             "cufftForwardR2C", new FftCall(PlanKind.R2C_1D, CUFFT_FORWARD), //
