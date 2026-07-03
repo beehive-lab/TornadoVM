@@ -60,6 +60,7 @@ import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler;
+import uk.ac.manchester.tornado.drivers.cuda.graal.backend.CUDAPreamble;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAControlFlow;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAControlFlow.LoopConditionOp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAControlFlow.LoopInitOp;
@@ -246,8 +247,23 @@ public class CUDACompilationResultBuilder extends CompilationResultBuilder {
 
     @Override
     public void finish() {
-        int position = asm.position();
-        compilationResult.setTargetCode(asm.close(true), position);
+        byte[] code = asm.close(true);
+
+        // Inject the half-precision header when the emitted kernel actually references
+        // CUDA fp16 constructs. Deciding this from the generated source is deliberate:
+        // a half value can appear only as a pointer cast (*(__half *) ...) or a constant
+        // conversion (__float2half(...)) that carries no HALF-typed LIR operand, so
+        // scanning the LIR operands misses those kernels and the missing #include causes
+        // NVRTC to fail with "__half is undefined". Keying off the source text catches
+        // every spelling (__half, half2 vectors, __float2half / __half2float). See
+        // CUDAPreamble for why the header is not emitted unconditionally.
+        String source = new String(code);
+        if ((source.contains("__half") || source.contains("half2") || source.contains("2half")) && !source.contains("cuda_fp16.h")) {
+            source = CUDAPreamble.PREAMBLE + source;
+            code = source.getBytes();
+        }
+
+        compilationResult.setTargetCode(code, code.length);
     }
 
     void emitLoopBlock(HIRBlock block) {
