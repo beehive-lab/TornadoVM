@@ -19,6 +19,7 @@ package uk.ac.manchester.tornado.cufft;
 
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 /**
@@ -69,6 +70,81 @@ public final class CuFft {
                 .withLibrary(LIBRARY_NAME) //
                 .withFunction("cufftInverseC2C") //
                 .withParameters(new Object[] { input, output, n, batch }) //
+                .withAccess(inOut());
+    }
+
+    /**
+     * 1D single-precision real-to-complex forward FFT. The input holds
+     * {@code n * batch} reals; the output holds {@code (n/2 + 1) * batch}
+     * interleaved complex values (the non-redundant half of the Hermitian
+     * spectrum), i.e. {@code 2 * (n/2 + 1) * batch} floats.
+     */
+    public static LibraryTaskDescriptor cufftForwardR2C(FloatArray input, FloatArray output, int n, int batch) {
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cufftForwardR2C") //
+                .withParameters(new Object[] { input, output, n, batch }) //
+                .withAccess(inOut());
+    }
+
+    /**
+     * 1D single-precision complex-to-real inverse FFT (always inverse; input
+     * must be Hermitian, e.g. produced by {@link #cufftForwardR2C}). The input
+     * holds {@code 2 * (n/2 + 1) * batch} floats; the output {@code n * batch}
+     * reals. Unnormalized: c2r(r2c(x)) = n * x.
+     */
+    public static LibraryTaskDescriptor cufftInverseC2R(FloatArray input, FloatArray output, int n, int batch) {
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cufftInverseC2R") //
+                .withParameters(new Object[] { input, output, n, batch }) //
+                .withAccess(inOut());
+    }
+
+    /**
+     * 1D double-precision complex-to-complex forward FFT (interleaved complex
+     * in a {@link DoubleArray} of {@code 2 * n * batch} elements).
+     */
+    public static LibraryTaskDescriptor cufftForwardZ2Z(DoubleArray input, DoubleArray output, int n, int batch) {
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cufftForwardZ2Z") //
+                .withParameters(new Object[] { input, output, n, batch }) //
+                .withAccess(inOut());
+    }
+
+    /**
+     * 1D double-precision complex-to-complex inverse FFT (unnormalized).
+     */
+    public static LibraryTaskDescriptor cufftInverseZ2Z(DoubleArray input, DoubleArray output, int n, int batch) {
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cufftInverseZ2Z") //
+                .withParameters(new Object[] { input, output, n, batch }) //
+                .withAccess(inOut());
+    }
+
+    /**
+     * 2D single-precision complex-to-complex forward FFT of an {@code nx x ny}
+     * grid (row-major, interleaved complex, {@code 2 * nx * ny} floats).
+     */
+    public static LibraryTaskDescriptor cufftForward2dC2C(FloatArray input, FloatArray output, int nx, int ny) {
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cufftForward2dC2C") //
+                .withParameters(new Object[] { input, output, nx, ny }) //
+                .withAccess(inOut());
+    }
+
+    /**
+     * 2D single-precision complex-to-complex inverse FFT (unnormalized:
+     * inverse(forward(x)) = nx * ny * x).
+     */
+    public static LibraryTaskDescriptor cufftInverse2dC2C(FloatArray input, FloatArray output, int nx, int ny) {
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cufftInverse2dC2C") //
+                .withParameters(new Object[] { input, output, nx, ny }) //
                 .withAccess(inOut());
     }
 }

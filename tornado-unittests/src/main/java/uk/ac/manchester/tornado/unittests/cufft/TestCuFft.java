@@ -30,6 +30,7 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.cufft.CuFft;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -170,6 +171,169 @@ public class TestCuFft extends TornadoTestBase {
 
         for (int i = 0; i < 2 * N; i++) {
             assertEquals(input.get(i), restored.get(i), 1e-3f);
+        }
+    }
+
+    @Test
+    public void testForwardR2C() throws TornadoExecutionPlanException {
+        FloatArray input = new FloatArray(N);
+        for (int i = 0; i < N; i++) {
+            input.set(i, random.nextFloat() - 0.5f);
+        }
+        // R2C output: the non-redundant half of the Hermitian spectrum
+        FloatArray output = new FloatArray(2 * (N / 2 + 1));
+
+        TaskGraph taskGraph = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .libraryTask("fft", CuFft::cufftForwardR2C, input, output, N, 1) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.execute();
+        }
+
+        // Reference: complex DFT of the real signal, first N/2+1 bins
+        for (int k = 0; k <= N / 2; k++) {
+            float sumRe = 0.0f;
+            float sumIm = 0.0f;
+            for (int t = 0; t < N; t++) {
+                double angle = (2.0 * Math.PI * t * k) / N;
+                sumRe += (float) (input.get(t) * Math.cos(angle));
+                sumIm += (float) (-input.get(t) * Math.sin(angle));
+            }
+            assertEquals(sumRe, output.get(2 * k), 1e-2f * Math.max(1.0f, Math.abs(sumRe)));
+            assertEquals(sumIm, output.get(2 * k + 1), 1e-2f * Math.max(1.0f, Math.abs(sumIm)));
+        }
+    }
+
+    @Test
+    public void testR2CC2RRoundTrip() throws TornadoExecutionPlanException {
+        FloatArray input = new FloatArray(N);
+        for (int i = 0; i < N; i++) {
+            input.set(i, random.nextFloat() - 0.5f);
+        }
+        FloatArray spectrum = new FloatArray(2 * (N / 2 + 1));
+        FloatArray restored = new FloatArray(N);
+
+        TaskGraph taskGraph = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .libraryTask("forward", CuFft::cufftForwardR2C, input, spectrum, N, 1) //
+                .libraryTask("inverse", CuFft::cufftInverseC2R, spectrum, restored, N, 1) //
+                .task("normalize", TestCuFft::scaleBy, restored, 1.0f / N) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, restored);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.execute();
+        }
+
+        for (int i = 0; i < N; i++) {
+            assertEquals(input.get(i), restored.get(i), 1e-3f);
+        }
+    }
+
+    @Test
+    public void testForwardZ2ZDoublePrecision() throws TornadoExecutionPlanException {
+        DoubleArray input = new DoubleArray(2 * N);
+        for (int i = 0; i < 2 * N; i++) {
+            input.set(i, random.nextDouble() - 0.5);
+        }
+        DoubleArray output = new DoubleArray(2 * N);
+
+        TaskGraph taskGraph = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .libraryTask("fft", CuFft::cufftForwardZ2Z, input, output, N, 1) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.execute();
+        }
+
+        for (int k = 0; k < N; k++) {
+            double sumRe = 0.0;
+            double sumIm = 0.0;
+            for (int t = 0; t < N; t++) {
+                double angle = (2.0 * Math.PI * t * k) / N;
+                double re = input.get(2 * t);
+                double im = input.get(2 * t + 1);
+                sumRe += re * Math.cos(angle) + im * Math.sin(angle);
+                sumIm += -re * Math.sin(angle) + im * Math.cos(angle);
+            }
+            assertEquals(sumRe, output.get(2 * k), 1e-9 * Math.max(1.0, Math.abs(sumRe)));
+            assertEquals(sumIm, output.get(2 * k + 1), 1e-9 * Math.max(1.0, Math.abs(sumIm)));
+        }
+    }
+
+    @Test
+    public void testForward2dC2C() throws TornadoExecutionPlanException {
+        final int nx = 16;
+        final int ny = 16;
+        FloatArray input = randomComplex(nx * ny, 1);
+        FloatArray output = new FloatArray(2 * nx * ny);
+
+        TaskGraph taskGraph = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .libraryTask("fft2d", CuFft::cufftForward2dC2C, input, output, nx, ny) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.execute();
+        }
+
+        // Reference: 2D DFT, X[kx][ky] = sum x[tx][ty] e^(-2 pi i (tx kx / nx + ty ky / ny))
+        for (int kx = 0; kx < nx; kx++) {
+            for (int ky = 0; ky < ny; ky++) {
+                double sumRe = 0.0;
+                double sumIm = 0.0;
+                for (int tx = 0; tx < nx; tx++) {
+                    for (int ty = 0; ty < ny; ty++) {
+                        double angle = 2.0 * Math.PI * ((double) tx * kx / nx + (double) ty * ky / ny);
+                        double re = input.get(2 * (tx * ny + ty));
+                        double im = input.get(2 * (tx * ny + ty) + 1);
+                        sumRe += re * Math.cos(angle) + im * Math.sin(angle);
+                        sumIm += -re * Math.sin(angle) + im * Math.cos(angle);
+                    }
+                }
+                int idx = 2 * (kx * ny + ky);
+                assertEquals((float) sumRe, output.get(idx), 1e-2f * Math.max(1.0f, (float) Math.abs(sumRe)));
+                assertEquals((float) sumIm, output.get(idx + 1), 1e-2f * Math.max(1.0f, (float) Math.abs(sumIm)));
+            }
+        }
+    }
+
+    /**
+     * FFT pipeline under CUDA Graph capture/replay: plans are created in the
+     * provider's prepare() hook (pre-capture, since cufftPlan1d allocates a
+     * device work area), so the whole forward -> inverse -> JIT-normalize
+     * region is captured on iteration 0 and replayed afterwards.
+     */
+    @Test
+    public void testRoundTripWithCudaGraph() throws TornadoExecutionPlanException {
+        FloatArray input = randomComplex(N, 1);
+        FloatArray original = new FloatArray(2 * N);
+        for (int i = 0; i < 2 * N; i++) {
+            original.set(i, input.get(i));
+        }
+        FloatArray spectrum = new FloatArray(2 * N);
+        FloatArray restored = new FloatArray(2 * N);
+
+        TaskGraph taskGraph = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .libraryTask("forward", CuFft::cufftForwardC2C, input, spectrum, N, 1) //
+                .libraryTask("inverse", CuFft::cufftInverseC2C, spectrum, restored, N, 1) //
+                .task("normalize", TestCuFft::scaleBy, restored, 1.0f / N) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, restored);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.withCUDAGraph();
+            for (int it = 0; it < 5; it++) {
+                for (int i = 0; i < 2 * N; i++) {
+                    input.set(i, original.get(i));
+                }
+                plan.execute();
+                for (int i = 0; i < 2 * N; i++) {
+                    assertEquals("iteration " + it, original.get(i), restored.get(i), 1e-3f);
+                }
+            }
         }
     }
 }
