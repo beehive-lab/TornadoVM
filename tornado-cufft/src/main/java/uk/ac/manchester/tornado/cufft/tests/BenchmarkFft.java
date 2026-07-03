@@ -29,7 +29,7 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.cufft.CuFft;
 
 /**
- * Benchmark: 1D complex FP32 Fourier transform three ways — sequential Java
+ * Benchmark: 1D complex FP32 Fourier transform three ways - sequential Java
  * DFT (O(n^2)), TornadoVM JIT-compiled parallel DFT kernel (O(n^2), the
  * pattern of the {@code DFTVector} example), and a cuFFT library task
  * (O(n log n)). Results are cross-validated.

@@ -33,8 +33,8 @@ import uk.ac.manchester.tornado.cublas.enums.CuBlasOperation;
 
 /**
  * Benchmark: transformer MLP block C = GELU(A * B + bias) in FP16, three ways:
- * (1) unfused hybrid — cuBLAS GemmEx FP16 followed by a JIT-compiled bias+GELU
- * kernel; (2) fused — a single cuBLASLt matmul with the GELU_BIAS epilogue;
+ * (1) unfused hybrid - cuBLAS GemmEx FP16 followed by a JIT-compiled bias+GELU
+ * kernel; (2) fused - a single cuBLASLt matmul with the GELU_BIAS epilogue;
  * (3) same-graph JIT epilogue variant executed under identical conditions.
  * Results are cross-validated.
  *
