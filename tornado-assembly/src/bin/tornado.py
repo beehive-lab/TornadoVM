@@ -64,6 +64,7 @@ __OPENCL_EXPORTS__ = "/etc/exportLists/opencl-exports"
 __PTX_EXPORTS__ = "/etc/exportLists/ptx-exports"
 __SPIRV_EXPORTS__ = "/etc/exportLists/spirv-exports"
 __METAL_EXPORTS__ = "/etc/exportLists/metal-exports"
+__CUDA_EXPORTS__ = "/etc/exportLists/cuda-exports"
 __TORNADOVM_ADD_MODULES__ = "--add-modules ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.common"
 __PTX_MODULE__ = "tornado.drivers.ptx"
 __OPENCL_MODULE__ = "tornado.drivers.opencl"
@@ -1330,6 +1331,7 @@ class TornadoVMRunnerTool():
                 tornadoAddModules = tornadoAddModules + "," + __METAL_MODULE__
             if ("cuda-backend" in self.listOfBackends):
                 javaFlags = javaFlags + "@" + cuda + " "
+                tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__ + "," + __CUBLAS_MODULE__ + "," + __CUFFT_MODULE__ + "," + __CUDNN_MODULE__
                 tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__ + "," + __CUBLAS_MODULE__ + "," + __CUFFT_MODULE__ + "," + __CUDNN_MODULE__
 
         # Enable native access for backend modules to avoid restricted method warnings
