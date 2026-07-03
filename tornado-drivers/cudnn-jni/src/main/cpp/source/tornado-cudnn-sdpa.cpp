@@ -30,10 +30,31 @@
  * provider prepare() hook, before CUDA graph capture) and replayed with
  * executeSdpaPlan. Layout: packed BHSD (batch, heads, sequence, head-dim),
  * FP16 I/O, FP32 intermediates/compute, inference only (no stats output).
+ *
+ * Toolkit guard: recent cudnn-frontend releases transitively include
+ * experimental sm90/sm100 prefill engine headers that reference CUDA 12.x
+ * driver types (CUlibrary, CUkernel, CUtensorMap, ...). Those types do not
+ * exist on older toolkits, so on CUDA < 12 we cannot even parse the frontend
+ * headers. To keep the JNI library building (and loading) everywhere, the
+ * fused-SDPA implementation is compiled only when CUDA_VERSION >= 12000;
+ * otherwise the four JNI entry points are provided as stubs that report the
+ * feature as unavailable. createSdpaPlan returning 0 is already handled by the
+ * Java provider (CuDnnLibraryProvider) as "SDPA plan creation failed".
  */
 
 #include <jni.h>
 #include <cstdio>
+
+#include <cuda.h> // CUDA_VERSION
+
+#if defined(CUDA_VERSION) && CUDA_VERSION >= 12000
+#define TORNADO_CUDNN_SDPA_SUPPORTED 1
+#else
+#define TORNADO_CUDNN_SDPA_SUPPORTED 0
+#endif
+
+#if TORNADO_CUDNN_SDPA_SUPPORTED
+
 #include <memory>
 #include <unordered_map>
 
@@ -83,7 +104,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_cudnn_provider_CuDnnNative
 
     auto sdpa_options = fe::graph::SDPA_attributes()
             .set_name("sdpa")
-            .set_is_inference(true)
+            .set_generate_stats(false) // inference-only: don't emit softmax stats (replaces deprecated set_is_inference(true))
             .set_attn_scale(scale);
     if (causal) {
         sdpa_options.set_causal_mask(true);
@@ -157,3 +178,46 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_cudnn_provider_CuDnnNativeL
 }
 
 } // extern "C"
+
+#else // !TORNADO_CUDNN_SDPA_SUPPORTED
+
+/*
+ * Fallback stubs for CUDA toolkits older than 12.0, where cudnn-frontend's
+ * fused-SDPA headers do not compile. The symbols are kept so the JNI library
+ * links and loads; the feature simply reports itself as unavailable.
+ */
+
+extern "C" {
+
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_cudnn_provider_CuDnnNativeLib_createSdpaPlan
+        (JNIEnv *env, jclass clazz, jlong handle, jint b, jint h, jint s_q, jint s_kv, jint d,
+         jfloat scale, jboolean causal) {
+    (void) env; (void) clazz; (void) handle;
+    (void) b; (void) h; (void) s_q; (void) s_kv; (void) d; (void) scale; (void) causal;
+    fprintf(stderr, "[tornado-cudnn] fused SDPA unavailable: built against CUDA %d.%d "
+                    "(requires CUDA >= 12.0 for the cudnn-frontend flash-attention path)\n",
+            CUDA_VERSION / 1000, (CUDA_VERSION % 1000) / 10);
+    return 0;
+}
+
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_cudnn_provider_CuDnnNativeLib_sdpaPlanWorkspaceBytes
+        (JNIEnv *env, jclass clazz, jlong plan_ptr) {
+    (void) env; (void) clazz; (void) plan_ptr;
+    return 0;
+}
+
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_cudnn_provider_CuDnnNativeLib_executeSdpaPlan
+        (JNIEnv *env, jclass clazz, jlong handle, jlong plan_ptr, jlong d_q, jlong d_k, jlong d_v, jlong d_o, jlong workspace_ptr) {
+    (void) env; (void) clazz; (void) handle; (void) plan_ptr;
+    (void) d_q; (void) d_k; (void) d_v; (void) d_o; (void) workspace_ptr;
+    return 1;
+}
+
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_cudnn_provider_CuDnnNativeLib_destroySdpaPlan
+        (JNIEnv *env, jclass clazz, jlong plan_ptr) {
+    (void) env; (void) clazz; (void) plan_ptr;
+}
+
+} // extern "C"
+
+#endif // TORNADO_CUDNN_SDPA_SUPPORTED
