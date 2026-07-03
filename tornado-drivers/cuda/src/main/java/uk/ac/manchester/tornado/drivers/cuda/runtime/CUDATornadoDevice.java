@@ -91,6 +91,7 @@ import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAShortArrayWrapper;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAVectorWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
+import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
@@ -104,7 +105,7 @@ import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
-public class CUDATornadoDevice implements TornadoXPUDevice {
+public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamSupport {
 
     private static CUDABackendImpl driver = null;
     private static final Pattern NAME_PATTERN = Pattern.compile("^CUDADriver (\\d)\\.(\\d).*");
@@ -790,6 +791,16 @@ public class CUDATornadoDevice implements TornadoXPUDevice {
     @Override
     public void destroyExecutionGraph(long executionGraphHandle) {
         getDeviceContext().destroyExecutionGraph(executionGraphHandle);
+    }
+
+    @Override
+    public long getNativeStream(long executionPlanId) {
+        return getDeviceContext().getNativeStream(executionPlanId);
+    }
+
+    @Override
+    public long getNativeContext(long executionPlanId) {
+        return getDeviceContext().getNativeContext(executionPlanId);
     }
 
     @Override

@@ -40,6 +40,7 @@ import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
+import uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
@@ -53,6 +54,7 @@ import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.runtime.TaskContextInterface;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.runtime.common.BatchConfiguration;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
@@ -65,8 +67,13 @@ import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMBytecodeResult;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMBytecodes;
+import uk.ac.manchester.tornado.runtime.library.LibraryRegistry;
+import uk.ac.manchester.tornado.runtime.library.spi.LibraryContext;
+import uk.ac.manchester.tornado.runtime.library.spi.LibraryInvocation;
+import uk.ac.manchester.tornado.runtime.library.spi.TornadoLibraryProvider;
 import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
 import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
+import uk.ac.manchester.tornado.runtime.tasks.LibraryTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
@@ -960,10 +967,32 @@ public class TornadoVMInterpreter {
 
         boolean redeployOnDevice = graphExecutionContext.redeployOnDevice();
 
-        final KernelStackFrame kernelStackFrame = resolveCallWrapper(callWrapperIndex, numArgs, this.kernelStackFrame, interpreterDevice, redeployOnDevice);
-
         final int[] waitList = (useDependencies && eventId != -1) ? events[eventId] : null;
         final SchedulableTask task = taskExecutionContexts.get(taskIndex);
+
+        if (task instanceof LibraryTask libraryTask) {
+            // Library tasks are dispatched to a native library at launch time;
+            // there is nothing to compile and no kernel stack frame is needed.
+            // The native context (e.g., cuBLAS handle + workspace) is created
+            // eagerly here: this method also runs in the pre-compile pass before
+            // CUDA graph capture starts, and native handle creation allocates
+            // device memory, which is illegal inside a capture region.
+            final LibraryTaskDescriptor descriptor = libraryTask.getDescriptor();
+            final TornadoLibraryProvider provider = LibraryRegistry.findProvider(descriptor.getLibraryName(), interpreterDevice);
+            LibraryContext preparedContext = LibraryRegistry.getOrCreateContext(provider, interpreterDevice, graphExecutionContext.getExecutionPlanId());
+            // Let the provider create per-shape native plans (which may allocate
+            // device memory) before any CUDA graph capture starts
+            provider.prepare(descriptor, preparedContext);
+            if (timeProfiler instanceof TimeProfiler) {
+                timeProfiler.registerBackend(task.getId(), task.getDevice().getTornadoVMBackend().name());
+                timeProfiler.registerDeviceID(task.getId(), task.meta().getBackendIndex() + ":" + task.meta().getDeviceIndex());
+                timeProfiler.registerDeviceName(task.getId(), task.getDevice().getPhysicalDevice().getDeviceName());
+            }
+            return new XPUExecutionFrame(null, waitList);
+        }
+
+        final KernelStackFrame kernelStackFrame = resolveCallWrapper(callWrapperIndex, numArgs, this.kernelStackFrame, interpreterDevice, redeployOnDevice);
+
         int currentBatch = task.getBatchNumber();
         TaskContextInterface meta = task.meta();
         updateMeta(meta);
@@ -1033,6 +1062,11 @@ public class TornadoVMInterpreter {
     private int executeLaunch(StringBuilder logBuilder, final int numArgs, final int eventId, final int taskIndex, final long batchThreads, final long offset, XPUExecutionFrame executionFrame) {
 
         final SchedulableTask task = taskExecutionContexts.get(taskIndex);
+
+        if (task instanceof LibraryTask libraryTask) {
+            return executeLibraryLaunch(logBuilder, libraryTask, numArgs, eventId, batchThreads, executionFrame.waitList);
+        }
+
         KernelStackFrame stackFrame = executionFrame.stackFrame;
         int[] waitList = executionFrame.waitList;
 
@@ -1143,6 +1177,78 @@ public class TornadoVMInterpreter {
         } else {
             throw new TornadoRuntimeException("task.meta is not instanceof TaskDataContext");
         }
+    }
+
+    private int executeLibraryLaunch(StringBuilder logBuilder, LibraryTask task, final int numArgs, final int eventId, final long batchThreads, int[] waitList) {
+
+        if (batchThreads != 0) {
+            throw new TornadoRuntimeException("[ERROR] Batch processing is not supported for library tasks (task: " + task.getId() + ")");
+        }
+
+        final Object[] callArgs = new Object[numArgs];
+        final long[] devicePointers = new long[numArgs];
+        final boolean[] isReference = new boolean[numArgs];
+
+        for (int i = 0; i < numArgs; i++) {
+            final byte argType = bytecodeResult.get();
+            final int argIndex = bytecodeResult.getInt();
+            if (argType == TornadoVMBytecodes.PUSH_CONSTANT_ARGUMENT.value()) {
+                callArgs[i] = constants.get(argIndex);
+            } else if (argType == TornadoVMBytecodes.PUSH_REFERENCE_ARGUMENT.value()) {
+                final DataObjectState globalState = resolveGlobalObjectState(argIndex);
+                final XPUDeviceBufferState objectState = globalState.getDeviceBufferState(interpreterDevice);
+                callArgs[i] = objects.get(argIndex);
+                // Pointer to the first data element on the device, past the array header
+                devicePointers[i] = objectState.getXPUBuffer().toBuffer() + TornadoNativeArray.ARRAY_HEADER;
+                isReference[i] = true;
+            } else {
+                TornadoInternalError.shouldNotReachHere();
+            }
+        }
+
+        if (useDependencies && waitList != null && !insideCaptureRegion) {
+            // Ensure producer events have completed before the library call is
+            // enqueued. Work on the same in-order stream is already ordered, so
+            // during CUDA graph capture (single in-order stream) this is skipped
+            // - waiting on pre-capture events would invalidate the capture.
+            interpreterDevice.enqueueMarker(graphExecutionContext.getExecutionPlanId(), waitList);
+        }
+
+        final LibraryTaskDescriptor descriptor = task.getDescriptor();
+        final TornadoLibraryProvider provider = LibraryRegistry.findProvider(descriptor.getLibraryName(), interpreterDevice);
+        final LibraryContext libraryContext = LibraryRegistry.getOrCreateContext(provider, interpreterDevice, graphExecutionContext.getExecutionPlanId());
+
+        if (TornadoOptions.LOG_BYTECODES()) {
+            logBuilder.append(captureIndent());
+            DebugInterpreter.logLaunchTask(task, interpreterDevice, batchThreads, 0, eventId, logBuilder);
+        }
+
+        // The CUDA-C backend does not expose device-event timestamps yet, so the
+        // library call is timed on the host, bounded by stream markers so the
+        // measurement covers exactly this call's device work. Disabled while
+        // capturing into a CUDA graph: synchronising invalidates the capture.
+        final boolean profileCall = TornadoOptions.isProfilerEnabled() && !insideCaptureRegion;
+        long profilerStartTime = 0;
+        if (profileCall) {
+            int preEvent = interpreterDevice.enqueueMarker(graphExecutionContext.getExecutionPlanId());
+            interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), preEvent).waitForEvents(graphExecutionContext.getExecutionPlanId());
+            profilerStartTime = System.nanoTime();
+        }
+
+        provider.dispatch(descriptor.getFunctionName(), new LibraryInvocation(callArgs, devicePointers, isReference, interpreterDevice, graphExecutionContext.getExecutionPlanId(), libraryContext,
+                descriptor.getTuning()));
+
+        int lastEvent = ((useDependencies && !insideCaptureRegion) || profileCall) ? interpreterDevice.enqueueMarker(graphExecutionContext.getExecutionPlanId()) : -1;
+
+        if (profileCall) {
+            interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), lastEvent).waitForEvents(graphExecutionContext.getExecutionPlanId());
+            long elapsed = System.nanoTime() - profilerStartTime;
+            timeProfiler.setTaskTimer(ProfilerType.TASK_KERNEL_TIME, task.getId(), elapsed);
+            timeProfiler.setTimer(ProfilerType.TOTAL_KERNEL_TIME, timeProfiler.getTimer(ProfilerType.TOTAL_KERNEL_TIME) + elapsed);
+        }
+
+        resetEventIndexes(eventId);
+        return lastEvent;
     }
 
     private void executeDependency(StringBuilder logBuilder, int lastEvent, int eventId) {
