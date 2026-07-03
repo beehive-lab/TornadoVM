@@ -22,18 +22,18 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
-import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
-import static org.graalvm.compiler.core.common.GraalOptions.OptFloatingReads;
-import static org.graalvm.compiler.core.common.GraalOptions.ReassociateExpressions;
+import static tornado.graal.compiler.core.common.GraalOptions.ConditionalElimination;
+import static tornado.graal.compiler.core.common.GraalOptions.OptFloatingReads;
+import static tornado.graal.compiler.core.common.GraalOptions.ReassociateExpressions;
 
-import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
-import org.graalvm.compiler.phases.common.FrameStateAssignmentPhase;
-import org.graalvm.compiler.phases.common.GuardLoweringPhase;
-import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
-import org.graalvm.compiler.phases.common.MidTierLoweringPhase;
-import org.graalvm.compiler.phases.common.ReassociationPhase;
-import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
+import tornado.graal.compiler.options.OptionValues;
+import tornado.graal.compiler.phases.common.CanonicalizerPhase;
+import tornado.graal.compiler.phases.common.FrameStateAssignmentPhase;
+import tornado.graal.compiler.phases.common.GuardLoweringPhase;
+import tornado.graal.compiler.phases.common.IterativeConditionalEliminationPhase;
+import tornado.graal.compiler.phases.common.MidTierLoweringPhase;
+import tornado.graal.compiler.phases.common.ReassociationPhase;
+import tornado.graal.compiler.phases.common.RemoveValueProxyPhase;
 
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.guards.BoundCheckEliminationPhase;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.guards.ExceptionCheckingElimination;

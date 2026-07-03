@@ -25,21 +25,21 @@ package uk.ac.manchester.tornado.drivers.ptx.graal;
 
 import static jdk.vm.ci.common.InitTimer.timer;
 
-import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
-import org.graalvm.compiler.core.common.spi.MetaAccessExtensionProvider;
-import org.graalvm.compiler.hotspot.meta.HotSpotStampProvider;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
-import org.graalvm.compiler.nodes.loop.LoopsDataProviderImpl;
-import org.graalvm.compiler.nodes.spi.LoopsDataProvider;
-import org.graalvm.compiler.nodes.spi.LoweringProvider;
-import org.graalvm.compiler.nodes.spi.Replacements;
-import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.util.Providers;
-import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
-import org.graalvm.compiler.replacements.StandardGraphBuilderPlugins;
-import org.graalvm.compiler.replacements.classfile.ClassfileBytecodeProvider;
-import org.graalvm.compiler.word.WordTypes;
+import tornado.graal.compiler.api.replacements.SnippetReflectionProvider;
+import tornado.graal.compiler.core.common.spi.MetaAccessExtensionProvider;
+import tornado.graal.compiler.hotspot.meta.HotSpotStampProvider;
+import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
+import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import tornado.graal.compiler.nodes.loop.LoopsDataProviderImpl;
+import tornado.graal.compiler.nodes.spi.LoopsDataProvider;
+import tornado.graal.compiler.nodes.spi.LoweringProvider;
+import tornado.graal.compiler.nodes.spi.Replacements;
+import tornado.graal.compiler.options.OptionValues;
+import tornado.graal.compiler.phases.util.Providers;
+import tornado.graal.compiler.printer.GraalDebugHandlersFactory;
+import tornado.graal.compiler.replacements.StandardGraphBuilderPlugins;
+import tornado.graal.compiler.replacements.classfile.ClassfileBytecodeProvider;
+import tornado.graal.compiler.word.WordTypes;
 
 import jdk.vm.ci.common.InitTimer;
 import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;

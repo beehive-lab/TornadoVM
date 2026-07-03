@@ -123,6 +123,18 @@ def main():
 
     logger.info("Download complete.")
 
+    # Relocate the Graal compiler off the jdk.* namespace into the vendored module
+    # `tornado.graal` so it can live on the regular --module-path (no upgrade-module-path).
+    # This replaces compiler-<ver>.jar with tornado-graal-<ver>.jar and installs the
+    # latter to the local Maven repo for the reactor to compile against.
+    relocated = os.path.join(TARGET_DIR, f"tornado-graal-{VERSION}.jar")
+    if os.path.exists(relocated):
+        logger.info(f"Graal module {CYAN}tornado.graal{RESET} already relocated; skipping.")
+    else:
+        logger.info(f"Relocating Graal into the {CYAN}tornado.graal{RESET} module...")
+        import build_graal_module
+        build_graal_module.build()
+
 
 if __name__ == "__main__":
     main()

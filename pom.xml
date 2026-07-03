@@ -119,8 +119,6 @@
                                 <arg>--add-modules</arg>
                                 <arg>ALL-SYSTEM</arg>
                                 <arg>--add-modules=jdk.incubator.vector</arg>
-                                <arg>--upgrade-module-path</arg>
-                                <arg>${user.dir}/graalJars</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/common-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/opencl-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/ptx-exports</arg>
@@ -390,8 +388,6 @@
                                 <arg>--add-modules</arg>
                                 <arg>ALL-SYSTEM</arg>
                                 <arg>--add-modules=jdk.incubator.vector</arg>
-                                <arg>--upgrade-module-path</arg>
-                                <arg>${user.dir}/graalJars</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/common-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/opencl-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/ptx-exports</arg>
@@ -655,10 +651,20 @@
             <artifactId>collections</artifactId>
             <version>${graalvm.version}</version>
         </dependency>
+        <dependency>
+            <!-- Required transitively by the vendored tornado.graal module; formerly
+                 supplied via the upgrade-module-path graalJars mechanism. -->
+            <groupId>org.graalvm.truffle</groupId>
+            <artifactId>truffle-compiler</artifactId>
+            <version>${graalvm.version}</version>
+        </dependency>
 
         <dependency>
-            <groupId>org.graalvm.compiler</groupId>
-            <artifactId>compiler</artifactId>
+            <!-- Frozen Graal 23.1.0 relocated (org.graalvm.compiler.* to
+                 tornado.graal.compiler.*) into the vendored module tornado.graal by
+                 bin/build_graal_module.py, so it lives on the regular module-path. -->
+            <groupId>tornado.graal</groupId>
+            <artifactId>tornado-graal</artifactId>
             <version>23.1.0</version>
             <scope>provided</scope>
         </dependency>

@@ -23,25 +23,25 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
-import static org.graalvm.compiler.core.common.GraalOptions.MaximumDesiredSize;
-import static org.graalvm.compiler.nodes.loop.DefaultLoopPolicies.Options.ExactFullUnrollMaxNodes;
-import static org.graalvm.compiler.nodes.loop.DefaultLoopPolicies.Options.FullUnrollMaxNodes;
+import static tornado.graal.compiler.core.common.GraalOptions.MaximumDesiredSize;
+import static tornado.graal.compiler.nodes.loop.DefaultLoopPolicies.Options.ExactFullUnrollMaxNodes;
+import static tornado.graal.compiler.nodes.loop.DefaultLoopPolicies.Options.FullUnrollMaxNodes;
 
 import java.util.List;
 import java.util.Optional;
 
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.EndNode;
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.IfNode;
-import org.graalvm.compiler.nodes.LoopBeginNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.debug.ControlFlowAnchorNode;
-import org.graalvm.compiler.nodes.loop.CountedLoopInfo;
-import org.graalvm.compiler.nodes.loop.LoopEx;
-import org.graalvm.compiler.nodes.loop.LoopsData;
-import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.Phase;
+import tornado.graal.compiler.graph.Node;
+import tornado.graal.compiler.nodes.EndNode;
+import tornado.graal.compiler.nodes.GraphState;
+import tornado.graal.compiler.nodes.IfNode;
+import tornado.graal.compiler.nodes.LoopBeginNode;
+import tornado.graal.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.nodes.debug.ControlFlowAnchorNode;
+import tornado.graal.compiler.nodes.loop.CountedLoopInfo;
+import tornado.graal.compiler.nodes.loop.LoopEx;
+import tornado.graal.compiler.nodes.loop.LoopsData;
+import tornado.graal.compiler.options.OptionValues;
+import tornado.graal.compiler.phases.Phase;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IntelUnrollPragmaNode;

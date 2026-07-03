@@ -25,40 +25,40 @@ package uk.ac.manchester.tornado.drivers.common.compiler.phases.analysis;
 import java.util.LinkedHashMap;
 import java.util.Optional;
 
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.IfNode;
-import org.graalvm.compiler.nodes.LoopBeginNode;
-import org.graalvm.compiler.nodes.ParameterNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.AddNode;
-import org.graalvm.compiler.nodes.calc.AndNode;
-import org.graalvm.compiler.nodes.calc.FloatEqualsNode;
-import org.graalvm.compiler.nodes.calc.FloatLessThanNode;
-import org.graalvm.compiler.nodes.calc.IntegerDivRemNode;
-import org.graalvm.compiler.nodes.calc.IntegerEqualsNode;
-import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
-import org.graalvm.compiler.nodes.calc.LeftShiftNode;
-import org.graalvm.compiler.nodes.calc.MulNode;
-import org.graalvm.compiler.nodes.calc.OrNode;
-import org.graalvm.compiler.nodes.calc.RemNode;
-import org.graalvm.compiler.nodes.calc.RightShiftNode;
-import org.graalvm.compiler.nodes.calc.ShiftNode;
-import org.graalvm.compiler.nodes.calc.SignExtendNode;
-import org.graalvm.compiler.nodes.calc.SignedDivNode;
-import org.graalvm.compiler.nodes.calc.SignedRemNode;
-import org.graalvm.compiler.nodes.calc.SubNode;
-import org.graalvm.compiler.nodes.calc.UnaryArithmeticNode;
-import org.graalvm.compiler.nodes.calc.UnsignedRightShiftNode;
-import org.graalvm.compiler.nodes.calc.XorNode;
-import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
-import org.graalvm.compiler.nodes.memory.FloatingReadNode;
-import org.graalvm.compiler.nodes.memory.ReadNode;
-import org.graalvm.compiler.nodes.memory.WriteNode;
-import org.graalvm.compiler.nodes.memory.address.AddressNode;
-import org.graalvm.compiler.phases.Phase;
+import tornado.graal.compiler.graph.Node;
+import tornado.graal.compiler.nodes.ConstantNode;
+import tornado.graal.compiler.nodes.GraphState;
+import tornado.graal.compiler.nodes.IfNode;
+import tornado.graal.compiler.nodes.LoopBeginNode;
+import tornado.graal.compiler.nodes.ParameterNode;
+import tornado.graal.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.calc.AddNode;
+import tornado.graal.compiler.nodes.calc.AndNode;
+import tornado.graal.compiler.nodes.calc.FloatEqualsNode;
+import tornado.graal.compiler.nodes.calc.FloatLessThanNode;
+import tornado.graal.compiler.nodes.calc.IntegerDivRemNode;
+import tornado.graal.compiler.nodes.calc.IntegerEqualsNode;
+import tornado.graal.compiler.nodes.calc.IntegerLessThanNode;
+import tornado.graal.compiler.nodes.calc.LeftShiftNode;
+import tornado.graal.compiler.nodes.calc.MulNode;
+import tornado.graal.compiler.nodes.calc.OrNode;
+import tornado.graal.compiler.nodes.calc.RemNode;
+import tornado.graal.compiler.nodes.calc.RightShiftNode;
+import tornado.graal.compiler.nodes.calc.ShiftNode;
+import tornado.graal.compiler.nodes.calc.SignExtendNode;
+import tornado.graal.compiler.nodes.calc.SignedDivNode;
+import tornado.graal.compiler.nodes.calc.SignedRemNode;
+import tornado.graal.compiler.nodes.calc.SubNode;
+import tornado.graal.compiler.nodes.calc.UnaryArithmeticNode;
+import tornado.graal.compiler.nodes.calc.UnsignedRightShiftNode;
+import tornado.graal.compiler.nodes.calc.XorNode;
+import tornado.graal.compiler.nodes.extended.IntegerSwitchNode;
+import tornado.graal.compiler.nodes.memory.FloatingReadNode;
+import tornado.graal.compiler.nodes.memory.ReadNode;
+import tornado.graal.compiler.nodes.memory.WriteNode;
+import tornado.graal.compiler.nodes.memory.address.AddressNode;
+import tornado.graal.compiler.phases.Phase;
 
 import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
@@ -97,7 +97,7 @@ public class TornadoFeatureExtraction extends Phase {
         LinkedHashMap<ProfilerCodeFeatures, Integer> irFeatures = initMap;
         for (Node node : graph.getNodes().snapshot()) {
             if (node instanceof MulNode || node instanceof AddNode || node instanceof SubNode //
-                    || node instanceof SignedDivNode || node instanceof org.graalvm.compiler.nodes.calc.AddNode || node instanceof IntegerDivRemNode //
+                    || node instanceof SignedDivNode || node instanceof tornado.graal.compiler.nodes.calc.AddNode || node instanceof IntegerDivRemNode //
                     || node instanceof RemNode || node instanceof SignedRemNode || node instanceof FloatEqualsNode || node instanceof IntegerEqualsNode //
             ) {
                 updateWithType(irFeatures, node);

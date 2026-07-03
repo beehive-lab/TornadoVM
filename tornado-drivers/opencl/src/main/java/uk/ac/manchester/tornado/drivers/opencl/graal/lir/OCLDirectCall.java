@@ -23,11 +23,11 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.LIRFrameState;
-import org.graalvm.compiler.lir.LIRInstruction.Def;
-import org.graalvm.compiler.lir.LIRInstruction.Use;
-import org.graalvm.compiler.nodes.DirectCallTargetNode;
+import tornado.graal.compiler.core.common.LIRKind;
+import tornado.graal.compiler.lir.LIRFrameState;
+import tornado.graal.compiler.lir.LIRInstruction.Def;
+import tornado.graal.compiler.lir.LIRInstruction.Use;
+import tornado.graal.compiler.nodes.DirectCallTargetNode;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;

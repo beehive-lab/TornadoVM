@@ -32,11 +32,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.graalvm.compiler.asm.AbstractAddress;
-import org.graalvm.compiler.asm.Assembler;
-import org.graalvm.compiler.asm.Label;
-import org.graalvm.compiler.lir.ConstantValue;
-import org.graalvm.compiler.lir.Variable;
+import tornado.graal.compiler.asm.AbstractAddress;
+import tornado.graal.compiler.asm.Assembler;
+import tornado.graal.compiler.asm.Label;
+import tornado.graal.compiler.lir.ConstantValue;
+import tornado.graal.compiler.lir.Variable;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.TargetDescription;

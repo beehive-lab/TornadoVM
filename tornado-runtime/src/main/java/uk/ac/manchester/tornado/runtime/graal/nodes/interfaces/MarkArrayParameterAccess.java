@@ -23,8 +23,8 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.nodes.interfaces;
 
-import org.graalvm.compiler.nodes.PiNode;
-import org.graalvm.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.PiNode;
+import tornado.graal.compiler.nodes.ValueNode;
 
 import uk.ac.manchester.tornado.api.common.Access;
 

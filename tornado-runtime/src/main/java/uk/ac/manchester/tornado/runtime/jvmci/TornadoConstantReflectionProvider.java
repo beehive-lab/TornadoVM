@@ -24,7 +24,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.Modifier;
 
-import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
+import tornado.graal.compiler.api.replacements.SnippetReflectionProvider;
 
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ConstantReflectionProvider;

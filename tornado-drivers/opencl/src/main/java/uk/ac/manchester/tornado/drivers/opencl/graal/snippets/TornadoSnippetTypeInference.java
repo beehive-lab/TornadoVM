@@ -21,8 +21,8 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.snippets;
 
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.replacements.SnippetTemplate.SnippetInfo;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.replacements.SnippetTemplate.SnippetInfo;
 
 import jdk.vm.ci.meta.JavaKind;
 

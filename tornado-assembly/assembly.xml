@@ -159,12 +159,14 @@
         </fileSet>
         <fileSet>
             <directory>../graalJars</directory>
-            <!-- Bare-minimum Graal compiler JARs for JDK 21: only the modules the
-                 jdk.internal.vm.compiler module actually requires to resolve+run.
-                 truffle-api/polyglot/graal-sdk/compiler-management are excluded. -->
+            <!-- Bare-minimum Graal JARs for JDK 21. The compiler is shipped relocated as
+                 the vendored tornado.graal module (tornado-graal-*.jar) so it resolves
+                 from the regular module-path; word/collections/truffle-compiler are its
+                 transitive requires. truffle-api/polyglot/graal-sdk/compiler-management
+                 are excluded. -->
             <outputDirectory>share/java/graalJars</outputDirectory>
             <includes>
-                <include>compiler-*.jar</include>
+                <include>tornado-graal-*.jar</include>
                 <include>truffle-compiler-*.jar</include>
                 <include>collections-*.jar</include>
                 <include>word-*.jar</include>

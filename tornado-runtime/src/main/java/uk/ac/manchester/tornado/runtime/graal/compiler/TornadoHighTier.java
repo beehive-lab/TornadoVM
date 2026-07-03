@@ -23,8 +23,8 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.compiler;
 
-import org.graalvm.compiler.phases.PhaseSuite;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
+import tornado.graal.compiler.phases.PhaseSuite;
+import tornado.graal.compiler.phases.common.CanonicalizerPhase;
 
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 

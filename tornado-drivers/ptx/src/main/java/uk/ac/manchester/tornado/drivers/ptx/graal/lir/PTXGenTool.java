@@ -29,11 +29,11 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture.globalS
 import java.util.HashMap;
 
 import jdk.vm.ci.meta.Local;
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.ConstantValue;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.nodes.NodeView;
-import org.graalvm.compiler.nodes.ParameterNode;
+import tornado.graal.compiler.core.common.LIRKind;
+import tornado.graal.compiler.lir.ConstantValue;
+import tornado.graal.compiler.lir.Variable;
+import tornado.graal.compiler.nodes.NodeView;
+import tornado.graal.compiler.nodes.ParameterNode;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaConstant;

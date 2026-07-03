@@ -21,8 +21,8 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal.phases;
 
-import static org.graalvm.compiler.graph.Graph.NodeEvent.NODE_ADDED;
-import static org.graalvm.compiler.graph.Graph.NodeEvent.ZERO_USAGES;
+import static tornado.graal.compiler.graph.Graph.NodeEvent.NODE_ADDED;
+import static tornado.graal.compiler.graph.Graph.NodeEvent.ZERO_USAGES;
 import static org.graalvm.word.LocationIdentity.any;
 import static org.graalvm.word.LocationIdentity.init;
 
@@ -34,50 +34,50 @@ import org.graalvm.collections.EconomicMap;
 import org.graalvm.collections.EconomicSet;
 import org.graalvm.collections.Equivalence;
 import org.graalvm.collections.UnmodifiableMapCursor;
-import org.graalvm.compiler.core.common.cfg.Loop;
-import org.graalvm.compiler.debug.DebugCloseable;
-import org.graalvm.compiler.debug.GraalError;
-import org.graalvm.compiler.graph.Graph;
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.AbstractBeginNode;
-import org.graalvm.compiler.nodes.AbstractMergeNode;
-import org.graalvm.compiler.nodes.FixedNode;
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.LoopBeginNode;
-import org.graalvm.compiler.nodes.LoopEndNode;
-import org.graalvm.compiler.nodes.LoopExitNode;
-import org.graalvm.compiler.nodes.MemoryMapControlSinkNode;
-import org.graalvm.compiler.nodes.PhiNode;
-import org.graalvm.compiler.nodes.ProxyNode;
-import org.graalvm.compiler.nodes.StartNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.ValueNodeInterface;
-import org.graalvm.compiler.nodes.calc.FloatingNode;
-import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
-import org.graalvm.compiler.nodes.cfg.HIRBlock;
-import org.graalvm.compiler.nodes.cfg.HIRLoop;
-import org.graalvm.compiler.nodes.memory.AddressableMemoryAccess;
-import org.graalvm.compiler.nodes.memory.FloatableAccessNode;
-import org.graalvm.compiler.nodes.memory.FloatingAccessNode;
-import org.graalvm.compiler.nodes.memory.FloatingReadNode;
-import org.graalvm.compiler.nodes.memory.MemoryAccess;
-import org.graalvm.compiler.nodes.memory.MemoryAnchorNode;
-import org.graalvm.compiler.nodes.memory.MemoryKill;
-import org.graalvm.compiler.nodes.memory.MemoryMap;
-import org.graalvm.compiler.nodes.memory.MemoryMapNode;
-import org.graalvm.compiler.nodes.memory.MemoryPhiNode;
-import org.graalvm.compiler.nodes.memory.MultiMemoryKill;
-import org.graalvm.compiler.nodes.memory.SingleMemoryKill;
-import org.graalvm.compiler.nodes.memory.address.AddressNode;
-import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
-import org.graalvm.compiler.nodes.spi.CoreProviders;
-import org.graalvm.compiler.nodes.util.GraphUtil;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
-import org.graalvm.compiler.phases.common.FloatingReadPhase;
-import org.graalvm.compiler.phases.common.PostRunCanonicalizationPhase;
-import org.graalvm.compiler.phases.common.util.EconomicSetNodeEventListener;
-import org.graalvm.compiler.phases.graph.ReentrantNodeIterator;
+import tornado.graal.compiler.core.common.cfg.Loop;
+import tornado.graal.compiler.debug.DebugCloseable;
+import tornado.graal.compiler.debug.GraalError;
+import tornado.graal.compiler.graph.Graph;
+import tornado.graal.compiler.graph.Node;
+import tornado.graal.compiler.nodes.AbstractBeginNode;
+import tornado.graal.compiler.nodes.AbstractMergeNode;
+import tornado.graal.compiler.nodes.FixedNode;
+import tornado.graal.compiler.nodes.GraphState;
+import tornado.graal.compiler.nodes.LoopBeginNode;
+import tornado.graal.compiler.nodes.LoopEndNode;
+import tornado.graal.compiler.nodes.LoopExitNode;
+import tornado.graal.compiler.nodes.MemoryMapControlSinkNode;
+import tornado.graal.compiler.nodes.PhiNode;
+import tornado.graal.compiler.nodes.ProxyNode;
+import tornado.graal.compiler.nodes.StartNode;
+import tornado.graal.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.ValueNodeInterface;
+import tornado.graal.compiler.nodes.calc.FloatingNode;
+import tornado.graal.compiler.nodes.cfg.ControlFlowGraph;
+import tornado.graal.compiler.nodes.cfg.HIRBlock;
+import tornado.graal.compiler.nodes.cfg.HIRLoop;
+import tornado.graal.compiler.nodes.memory.AddressableMemoryAccess;
+import tornado.graal.compiler.nodes.memory.FloatableAccessNode;
+import tornado.graal.compiler.nodes.memory.FloatingAccessNode;
+import tornado.graal.compiler.nodes.memory.FloatingReadNode;
+import tornado.graal.compiler.nodes.memory.MemoryAccess;
+import tornado.graal.compiler.nodes.memory.MemoryAnchorNode;
+import tornado.graal.compiler.nodes.memory.MemoryKill;
+import tornado.graal.compiler.nodes.memory.MemoryMap;
+import tornado.graal.compiler.nodes.memory.MemoryMapNode;
+import tornado.graal.compiler.nodes.memory.MemoryPhiNode;
+import tornado.graal.compiler.nodes.memory.MultiMemoryKill;
+import tornado.graal.compiler.nodes.memory.SingleMemoryKill;
+import tornado.graal.compiler.nodes.memory.address.AddressNode;
+import tornado.graal.compiler.nodes.memory.address.OffsetAddressNode;
+import tornado.graal.compiler.nodes.spi.CoreProviders;
+import tornado.graal.compiler.nodes.util.GraphUtil;
+import tornado.graal.compiler.phases.common.CanonicalizerPhase;
+import tornado.graal.compiler.phases.common.FloatingReadPhase;
+import tornado.graal.compiler.phases.common.PostRunCanonicalizationPhase;
+import tornado.graal.compiler.phases.common.util.EconomicSetNodeEventListener;
+import tornado.graal.compiler.phases.graph.ReentrantNodeIterator;
 import org.graalvm.word.LocationIdentity;
 
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.FixedArrayNode;
@@ -94,7 +94,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorLoadElement
  * loop.
  *
  * <p>
- * {@link org.graalvm.compiler.phases.common.FloatingReadPhase}
+ * {@link tornado.graal.compiler.phases.common.FloatingReadPhase}
  * </p>
  */
 public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase<CoreProviders> {

@@ -65,7 +65,7 @@ __PTX_EXPORTS__ = "/etc/exportLists/ptx-exports"
 __SPIRV_EXPORTS__ = "/etc/exportLists/spirv-exports"
 __METAL_EXPORTS__ = "/etc/exportLists/metal-exports"
 __CUDA_EXPORTS__ = "/etc/exportLists/cuda-exports"
-__TORNADOVM_ADD_MODULES__ = "--add-modules ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.common"
+__TORNADOVM_ADD_MODULES__ = "--add-modules ALL-SYSTEM,tornado.graal,tornado.runtime,tornado.annotation,tornado.drivers.common"
 __PTX_MODULE__ = "tornado.drivers.ptx"
 __OPENCL_MODULE__ = "tornado.drivers.opencl"
 __METAL_MODULE__ = "tornado.drivers.metal"
@@ -1085,7 +1085,7 @@ class TornadoVMRunnerTool():
         if (self.java_version == 8):
             tornadoFlags = tornadoFlags + " -Djava.ext.dirs=" + self.sdk + "/share/java/tornado "
         else:
-            tornadoFlags = tornadoFlags + " --module-path ." + os.pathsep + self.sdk + "/share/java/tornado"
+            tornadoFlags = tornadoFlags + " --module-path ." + os.pathsep + self.sdk + "/share/java/tornado" + os.pathsep + self.sdk + "/share/java/graalJars"
 
         if (args.module_path != None):
             tornadoFlags = tornadoFlags + ":" + args.module_path + " "
@@ -1261,10 +1261,10 @@ class TornadoVMRunnerTool():
 
         javaFlags = javaFlags + tornadoFlags + __TORNADOVM_PROVIDERS__ + " "
 
-        upgradeModulePath = "--upgrade-module-path " + self.sdk + "/share/java/graalJars "
-
-        if (self.isGraalVM == False):
-            javaFlags = javaFlags + upgradeModulePath
+        # Graal is vendored as the relocated tornado.graal module in share/java/graalJars,
+        # which is on the regular --module-path (see above). No --upgrade-module-path is
+        # needed, and this applies on any JVM (GraalVM's built-in Graal uses the
+        # org.graalvm.compiler.* names TornadoVM no longer references).
 
         javaFlags = javaFlags + __JAVA_GC__
 

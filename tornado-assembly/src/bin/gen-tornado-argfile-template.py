@@ -215,10 +215,12 @@ def generate_argfile(backends, output_dir=None):
     # Add module paths with ${TORNADOVM_HOME} placeholders
     # Use OS-appropriate separators: ; on Windows, : on Unix for path lists
     # Use \ on Windows, / on Unix for file paths
-    module_path = f"--module-path .{os.pathsep}${{TORNADOVM_HOME}}{os.sep}share{os.sep}java{os.sep}tornado"
-    upgrade_module_path = f"--upgrade-module-path ${{TORNADOVM_HOME}}{os.sep}share{os.sep}java{os.sep}graalJars"
+    # Graal ships as the relocated tornado.graal module in share/java/graalJars, placed on
+    # the regular module-path (no --upgrade-module-path needed since it no longer overrides
+    # the JDK's jdk.internal.vm.compiler module).
+    module_path = (f"--module-path .{os.pathsep}${{TORNADOVM_HOME}}{os.sep}share{os.sep}java{os.sep}tornado"
+                   f"{os.pathsep}${{TORNADOVM_HOME}}{os.sep}share{os.sep}java{os.sep}graalJars")
     output_lines.append(module_path)
-    output_lines.append(upgrade_module_path)
     # Extract and add --add-modules
     i = 0
     while i < len(java_flags):

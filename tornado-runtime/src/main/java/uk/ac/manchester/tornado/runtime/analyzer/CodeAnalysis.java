@@ -30,40 +30,66 @@ import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContex
 import java.lang.reflect.Method;
 
 import org.graalvm.collections.EconomicMap;
-import org.graalvm.compiler.api.runtime.GraalJVMCICompiler;
-import org.graalvm.compiler.code.CompilationResult;
-import org.graalvm.compiler.core.GraalCompiler;
-import org.graalvm.compiler.core.common.CompilationIdentifier;
-import org.graalvm.compiler.core.common.CompilationRequestIdentifier;
-import org.graalvm.compiler.core.target.Backend;
-import org.graalvm.compiler.debug.DebugContext;
-import org.graalvm.compiler.debug.DebugDumpScope;
-import org.graalvm.compiler.hotspot.HotSpotGraalOptionValues;
-import org.graalvm.compiler.java.GraphBuilderPhase;
-import org.graalvm.compiler.lir.asm.CompilationResultBuilderFactory;
-import org.graalvm.compiler.lir.phases.LIRSuites;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
-import org.graalvm.compiler.options.OptionKey;
-import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.OptimisticOptimizations;
-import org.graalvm.compiler.phases.PhaseSuite;
-import org.graalvm.compiler.phases.tiers.HighTierContext;
-import org.graalvm.compiler.phases.tiers.Suites;
-import org.graalvm.compiler.phases.util.Providers;
-import org.graalvm.compiler.runtime.RuntimeProvider;
+import tornado.graal.compiler.api.runtime.GraalJVMCICompiler;
+import tornado.graal.compiler.code.CompilationResult;
+import tornado.graal.compiler.core.GraalCompiler;
+import tornado.graal.compiler.core.common.CompilationIdentifier;
+import tornado.graal.compiler.core.common.CompilationRequestIdentifier;
+import tornado.graal.compiler.core.target.Backend;
+import tornado.graal.compiler.debug.DebugContext;
+import tornado.graal.compiler.debug.DebugDumpScope;
+import tornado.graal.compiler.hotspot.CompilerConfigurationFactory;
+import tornado.graal.compiler.hotspot.HotSpotGraalCompilerFactory;
+import tornado.graal.compiler.hotspot.HotSpotGraalOptionValues;
+import tornado.graal.compiler.java.GraphBuilderPhase;
+import tornado.graal.compiler.lir.asm.CompilationResultBuilderFactory;
+import tornado.graal.compiler.lir.phases.LIRSuites;
+import tornado.graal.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.nodes.StructuredGraph.AllowAssumptions;
+import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
+import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import tornado.graal.compiler.options.OptionKey;
+import tornado.graal.compiler.options.OptionValues;
+import tornado.graal.compiler.phases.OptimisticOptimizations;
+import tornado.graal.compiler.phases.PhaseSuite;
+import tornado.graal.compiler.phases.tiers.HighTierContext;
+import tornado.graal.compiler.phases.tiers.Suites;
+import tornado.graal.compiler.phases.util.Providers;
+import tornado.graal.compiler.runtime.RuntimeProvider;
 
 import jdk.vm.ci.code.InstalledCode;
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ProfilingInfo;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.SpeculationLog;
-import jdk.vm.ci.runtime.JVMCI;
 
 public class CodeAnalysis {
+
+    /**
+     * The relocated Graal is vendored as the {@code tornado.graal} application module and
+     * is therefore no longer registered with JVMCI as the HotSpot compiler
+     * ({@code JVMCI.getRuntime().getCompiler()} returns the dummy factory). We instead
+     * construct our own Graal {@link GraalJVMCICompiler} directly from the HotSpot JVMCI
+     * runtime and cache it; it only provides the host backend/providers used to build and
+     * install analysis graphs, so a single shared instance is sufficient.
+     */
+    private static volatile GraalJVMCICompiler graalCompiler;
+
+    private static GraalJVMCICompiler getGraalCompiler() {
+        if (graalCompiler == null) {
+            synchronized (CodeAnalysis.class) {
+                if (graalCompiler == null) {
+                    HotSpotJVMCIRuntime jvmciRuntime = HotSpotJVMCIRuntime.runtime();
+                    OptionValues options = HotSpotGraalOptionValues.defaultOptions();
+                    CompilerConfigurationFactory factory = CompilerConfigurationFactory.selectFactory(null, options, jvmciRuntime);
+                    graalCompiler = HotSpotGraalCompilerFactory.createCompiler("Tornado", jvmciRuntime, options, factory);
+                }
+            }
+        }
+        return graalCompiler;
+    }
 
     /**
      * Build Graal-IR for an input Java method.
@@ -75,7 +101,7 @@ public class CodeAnalysis {
      */
     public static StructuredGraph buildHighLevelGraalGraph(Object taskInputCode) {
         Method methodToCompile = TaskUtils.resolveMethodHandle(taskInputCode);
-        GraalJVMCICompiler graalCompiler = (GraalJVMCICompiler) JVMCI.getRuntime().getCompiler();
+        GraalJVMCICompiler graalCompiler = getGraalCompiler();
         RuntimeProvider capability = graalCompiler.getGraalRuntime().getCapability(RuntimeProvider.class);
         Backend backend = capability.getHostBackend();
         Providers providers = backend.getProviders();
@@ -114,7 +140,7 @@ public class CodeAnalysis {
      */
     public static InstalledCode compileAndInstallMethod(StructuredGraph graph) {
         ResolvedJavaMethod method = graph.method();
-        GraalJVMCICompiler graalCompiler = (GraalJVMCICompiler) JVMCI.getRuntime().getCompiler();
+        GraalJVMCICompiler graalCompiler = getGraalCompiler();
         RuntimeProvider capability = graalCompiler.getGraalRuntime().getCapability(RuntimeProvider.class);
         Backend backend = capability.getHostBackend();
         Providers providers = backend.getProviders();

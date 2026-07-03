@@ -8,7 +8,7 @@ open module tornado.runtime {
     requires org.graalvm.collections;
 
     requires transitive jdk.internal.vm.ci;
-    requires transitive jdk.internal.vm.compiler;
+    requires transitive tornado.graal;
     requires transitive tornado.api;
     requires commons.math3;
     requires snmp4j;

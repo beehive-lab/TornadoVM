@@ -24,8 +24,8 @@
 package uk.ac.manchester.tornado.drivers.ptx.graal.snippets;
 
 import jdk.vm.ci.meta.JavaKind;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.replacements.SnippetTemplate.SnippetInfo;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.replacements.SnippetTemplate.SnippetInfo;
 
 public interface TornadoSnippetTypeInference {
 

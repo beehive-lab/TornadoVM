@@ -23,12 +23,12 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal;
 
-import org.graalvm.compiler.java.GraphBuilderPhase;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
-import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.PhaseSuite;
-import org.graalvm.compiler.phases.common.AddressLoweringByNodePhase;
-import org.graalvm.compiler.phases.tiers.HighTierContext;
+import tornado.graal.compiler.java.GraphBuilderPhase;
+import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
+import tornado.graal.compiler.options.OptionValues;
+import tornado.graal.compiler.phases.PhaseSuite;
+import tornado.graal.compiler.phases.common.AddressLoweringByNodePhase;
+import tornado.graal.compiler.phases.tiers.HighTierContext;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;

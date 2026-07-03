@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.metal.graal.lir;
 
-import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.CONST;
+import static tornado.graal.compiler.lir.LIRInstruction.OperandFlag.CONST;
 import static uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssemblerConstants.BREAK;
 import static uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssemblerConstants.CASE;
 import static uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssemblerConstants.CLOSE_PARENTHESIS;
@@ -35,9 +35,9 @@ import static uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssemblerCon
 import static uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssemblerConstants.OPEN_PARENTHESIS;
 import static uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssemblerConstants.SWITCH;
 
-import org.graalvm.compiler.lir.LIRInstructionClass;
-import org.graalvm.compiler.lir.LabelRef;
-import org.graalvm.compiler.lir.StandardOp.BlockEndOp;
+import tornado.graal.compiler.lir.LIRInstructionClass;
+import tornado.graal.compiler.lir.LabelRef;
+import tornado.graal.compiler.lir.StandardOp.BlockEndOp;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Constant;
@@ -150,7 +150,7 @@ public class MetalControlFlow {
 
     /**
      * This instruction can generate different code depending on whether or not
-     * there are additional {@link org.graalvm.compiler.lir.LIRInstruction}s between
+     * there are additional {@link tornado.graal.compiler.lir.LIRInstruction}s between
      * the loop condition and the {@link LoopPostOp}, respectively the
      * {@link LoopInitOp}.
      */

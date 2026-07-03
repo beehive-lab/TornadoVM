@@ -24,9 +24,9 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal.phases;
 
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.phases.Phase;
+import tornado.graal.compiler.nodes.GraphState;
+import tornado.graal.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.phases.Phase;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVDecompressedReadFieldNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFieldAddressArithmeticNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.calc.TornadoAddressArithmeticNode;
