@@ -84,7 +84,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_cudnn_provider_CuDnnNative
 
     auto sdpa_options = fe::graph::SDPA_attributes()
             .set_name("sdpa")
-            .set_is_inference(true)
+            .set_generate_stats(false) // inference-only: don't emit softmax stats (replaces deprecated set_is_inference(true))
             .set_attn_scale(scale);
     if (causal) {
         sdpa_options.set_causal_mask(true);
