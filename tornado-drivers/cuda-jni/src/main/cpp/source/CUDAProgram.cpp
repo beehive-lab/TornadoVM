@@ -24,6 +24,7 @@
 #include <string>
 #include <vector>
 #include <cstdlib>
+#include <fstream>
 #include <unordered_map>
 #include <mutex>
 #include "cuda_jni.h"
@@ -48,6 +49,36 @@ extern "C" {
 /* CL_BUILD_* status codes (see cloned CUDABuildStatus enum). */
 #define CL_BUILD_SUCCESS 0
 #define CL_BUILD_ERROR (-2)
+
+// Locates directories that contain the toolkit's cuda_fp16.h, so an explicit
+// NVRTC include path can be supplied on CUDA 11.x toolkits (see comment at the
+// call site). Candidate roots are probed in priority order and only those that
+// actually hold the header are returned. Returns an empty vector if none exist.
+static std::vector<std::string> find_cuda_header_include_dirs() {
+    std::vector<std::string> candidates;
+    for (const char *var : {"CUDA_PATH", "CUDA_HOME", "CUDA_ROOT"}) {
+        const char *root = std::getenv(var);
+        if (root && *root) {
+            candidates.push_back(std::string(root) + "/include");
+        }
+    }
+    candidates.push_back("/usr/local/cuda/include");
+    candidates.push_back("/usr/include"); // distro-packaged toolkit (nvcc in /usr/bin)
+
+    std::vector<std::string> found;
+    for (const std::string &dir : candidates) {
+        if (std::ifstream(dir + "/cuda_fp16.h").good()) {
+            bool dup = false;
+            for (const std::string &f : found) {
+                if (f == dir) { dup = true; break; }
+            }
+            if (!dup) {
+                found.push_back(dir);
+            }
+        }
+    }
+    return found;
+}
 
 /*
  * Compiles the stored CUDA C source to a cubin using NVRTC, targeting the
@@ -126,15 +157,34 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
         nvrtcResult nv = nvrtcCreateProgram(&prog, program->source.c_str(), "tornado_kernel.cu", 0, nullptr, nullptr);
         LOG_NVRTC_AND_VALIDATE("nvrtcCreateProgram", nv);
 
-        // Do NOT add system CUDA include paths (e.g. /usr/local/cuda/include).
-        // NVRTC provides device-side built-in versions of all standard CUDA headers
-        // (cuda_fp16.h, cuda_runtime.h, etc.) that are designed for RTC mode.
-        // The system headers guard <nv/target> with !defined(__CUDACC_RTC__), so
-        // NV_IF_ELSE_TARGET / NV_IS_DEVICE are undefined when the system
-        // cuda_fp16.hpp is compiled under NVRTC, causing 100+ errors.
-        // Using NVRTC's own built-ins avoids this mismatch.
+        // Header resolution for #include <cuda_fp16.h> et al. is version-dependent:
+        //
+        //   * CUDA >= 12.0: NVRTC ships device-side built-in versions of the standard
+        //     CUDA headers (cuda_fp16.h, cuda_runtime.h, ...) designed for RTC mode.
+        //     Do NOT add a system include path here: the on-disk cuda_fp16.hpp guards
+        //     <nv/target> with !defined(__CUDACC_RTC__), so NV_IF_ELSE_TARGET /
+        //     NV_IS_DEVICE are undefined under NVRTC and produce 100+ errors. The
+        //     built-ins avoid that mismatch.
+        //
+        //   * CUDA < 12.0: NVRTC has NO built-in cuda_fp16.h, so a kernel that emits
+        //     #include <cuda_fp16.h> fails with "could not open source file". These
+        //     older toolkit headers are RTC-safe (no <nv/target> guard), so we point
+        //     NVRTC at the toolkit include dir to resolve them.
+        int nvrtcMajor = 0, nvrtcMinor = 0;
+        nvrtcVersion(&nvrtcMajor, &nvrtcMinor);
+
+        std::vector<std::string> includeOpts; // storage must outlive `options`
+        if (nvrtcMajor > 0 && nvrtcMajor < 12) {
+            for (const std::string &dir : find_cuda_header_include_dirs()) {
+                includeOpts.push_back("--include-path=" + dir);
+            }
+        }
+
         std::vector<const char *> options;
         options.push_back(arch.c_str());
+        for (const std::string &opt : includeOpts) {
+            options.push_back(opt.c_str());
+        }
         nv = nvrtcCompileProgram(prog, (int) options.size(), options.data());
         LOG_NVRTC_AND_VALIDATE("nvrtcCompileProgram", nv);
 
