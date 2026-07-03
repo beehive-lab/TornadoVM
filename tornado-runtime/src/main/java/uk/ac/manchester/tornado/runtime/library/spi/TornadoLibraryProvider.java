@@ -62,7 +62,7 @@ public interface TornadoLibraryProvider {
 
     /**
      * Optional hook invoked before every launch region, after the context
-     * exists — in particular BEFORE CUDA graph capture starts on the first
+     * exists - in particular BEFORE CUDA graph capture starts on the first
      * execution. Providers whose per-shape plans allocate device memory (e.g.,
      * cuFFT work areas, cuDNN convolution workspaces) create them here so the
      * later {@link #dispatch} is capture-safe. Called repeatedly:

@@ -51,7 +51,7 @@ public final class CuDnn {
     /**
      * Per-row softmax (numerically stable, {@code CUDNN_SOFTMAX_ACCURATE}):
      * each of the {@code rows} rows of length {@code cols} is normalized
-     * independently — the attention-score shape.
+     * independently - the attention-score shape.
      */
     public static LibraryTaskDescriptor cudnnSoftmax(FloatArray input, FloatArray output, int rows, int cols) {
         return new LibraryTaskDescriptor() //

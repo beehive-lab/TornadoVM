@@ -76,7 +76,7 @@ public final class CuFftLibraryProvider implements TornadoLibraryProvider {
         execC2C((CuFftContext) invocation.getContext(), invocation, direction);
     }
 
-    /** (input, output, n, batch) */
+    /** (input, output, n, batch). */
     private static void execC2C(CuFftContext context, LibraryInvocation invocation, int direction) {
         final int n = (int) invocation.getArg(2);
         final int batch = (int) invocation.getArg(3);

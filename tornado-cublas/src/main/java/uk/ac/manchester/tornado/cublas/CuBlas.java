@@ -195,7 +195,7 @@ public final class CuBlas {
      * {@code C[i] = alpha * op(A[i]) * op(B[i]) + beta * C[i]} for
      * {@code i in [0, batchCount)}, where each operand {@code X[i]} lives at
      * {@code X + i * strideX} inside one flat array. One call launches the
-     * whole batch — the standard shape for transformer attention.
+     * whole batch - the standard shape for transformer attention.
      *
      * <p>
      * Full description:
