@@ -755,4 +755,21 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
             getCommandQueue(anyPlanId).destroyGraph(executionGraphHandle);
         }
     }
+
+    /* ---- Native interop (external libraries, e.g. cuBLAS) ---- */
+
+    /**
+     * Raw CUstream handle of the execution-plan queue, for binding external
+     * libraries (e.g., cublasSetStream) to TornadoVM's stream.
+     */
+    public long getNativeStream(long executionPlanId) {
+        return getCommandQueue(executionPlanId).getNativeStream();
+    }
+
+    /**
+     * Raw CUcontext handle of the execution-plan queue.
+     */
+    public long getNativeContext(long executionPlanId) {
+        return getCommandQueue(executionPlanId).getNativeContext();
+    }
 }
