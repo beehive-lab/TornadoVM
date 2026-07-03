@@ -57,6 +57,27 @@ static jlong record_event(cuda_queue_t *queue) {
 }
 
 /*
+ * Makes the queue's stream wait (GPU-side) on each event of the wait list.
+ * The array is laid out as [count, e0, e1, ...]. Events are CUevents and are
+ * therefore valid across streams, which is what allows cross-queue ordering
+ * when a plan runs with intra-plan concurrency (one queue per role).
+ */
+static void wait_events(JNIEnv *env, cuda_queue_t *queue, jlongArray array) {
+    if (queue == nullptr || array == NULL) {
+        return;
+    }
+    jlong *raw = static_cast<jlong *>(env->GetPrimitiveArrayCritical(array, NULL));
+    jsize count = (jsize) raw[0];
+    for (jsize i = 0; i < count; i++) {
+        cuda_event_t *ev = (cuda_event_t *) raw[i + 1];
+        if (ev != nullptr) {
+            cuStreamWaitEvent(queue->stream, ev->event, 0);
+        }
+    }
+    env->ReleasePrimitiveArrayCritical(array, raw, JNI_ABORT);
+}
+
+/*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDACommandQueue
  * Method:    clReleaseCommandQueue
  * Signature: (J)V
@@ -188,6 +209,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
     }
 
     cuCtxSetCurrent(queue->context);
+    wait_events(env, queue, events);
     CUresult result = cuLaunchKernel(
             kernel->function,
             grid[0], grid[1], grid[2],
@@ -205,43 +227,51 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
  * Host <-> device transfer helper. The OpenCL semantics copy numBytes from the
  * host buffer (at byte hostOffset) to/from the device pointer (at byte offset).
  */
+/*
+ * sync_after: the caller requires the copy to have completed on return. Always
+ * true for Java-array transfers (the pinned critical region is released right
+ * after this call, so an in-flight async copy would race the GC) and for
+ * blocking off-heap transfers; false for async off-heap (MemorySegment)
+ * transfers, whose completion is ordered by events / the end-of-plan sync.
+ * While capturing into a CUDA graph the stream must NOT be synchronised (it
+ * would invalidate the capture); the copy becomes a graph node whose host
+ * pointer (a stable off-heap MemorySegment) is re-read on each graph launch.
+ */
 static jlong transfer_to_device(JNIEnv *env, cuda_queue_t *queue, void *host_base,
-                                jlong host_offset, jlong device_offset, jlong num_bytes, jlong device_ptr) {
+                                jlong host_offset, jlong device_offset, jlong num_bytes, jlong device_ptr,
+                                jlongArray events, bool sync_after) {
     if (queue == nullptr) {
         return 0;
     }
     cuCtxSetCurrent(queue->context);
+    wait_events(env, queue, events);
     CUresult result = cuMemcpyHtoDAsync(
             (CUdeviceptr) (device_ptr + device_offset),
             (const void *) ((char *) host_base + host_offset),
             (size_t) num_bytes,
             queue->stream);
     LOG_CUDA_AND_VALIDATE("cuMemcpyHtoDAsync", result);
-    // Synchronise to avoid a Java GC / driver race on pinned host array memory.
-    // While capturing into a CUDA graph the stream must NOT be synchronised
-    // (it would invalidate the capture); the copy becomes a graph node whose
-    // host source pointer (a stable off-heap MemorySegment) is re-read on each
-    // graph launch.
-    if (!stream_is_capturing(queue)) {
+    if (sync_after && !stream_is_capturing(queue)) {
         cuStreamSynchronize(queue->stream);
     }
     return record_event(queue);
 }
 
 static jlong transfer_to_host(JNIEnv *env, cuda_queue_t *queue, void *host_base,
-                              jlong host_offset, jlong device_offset, jlong num_bytes, jlong device_ptr) {
+                              jlong host_offset, jlong device_offset, jlong num_bytes, jlong device_ptr,
+                              jlongArray events, bool sync_after) {
     if (queue == nullptr) {
         return 0;
     }
     cuCtxSetCurrent(queue->context);
+    wait_events(env, queue, events);
     CUresult result = cuMemcpyDtoHAsync(
             (void *) ((char *) host_base + host_offset),
             (CUdeviceptr) (device_ptr + device_offset),
             (size_t) num_bytes,
             queue->stream);
     LOG_CUDA_AND_VALIDATE("cuMemcpyDtoHAsync", result);
-    // See transfer_to_device: skip the synchronise during graph capture.
-    if (!stream_is_capturing(queue)) {
+    if (sync_after && !stream_is_capturing(queue)) {
         cuStreamSynchronize(queue->stream);
     }
     return record_event(queue);
@@ -255,7 +285,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
          jlong offset, jlong num_bytes, jlong device_ptr, jlongArray events) {                                  \
     cuda_queue_t *queue = (cuda_queue_t *) queue_id;                                                            \
     void *host = env->GetPrimitiveArrayCritical((jarray) host_array, NULL);                                     \
-    jlong ev = transfer_to_device(env, queue, host, host_offset, offset, num_bytes, device_ptr);               \
+    jlong ev = transfer_to_device(env, queue, host, host_offset, offset, num_bytes, device_ptr, events, true); \
     env->ReleasePrimitiveArrayCritical((jarray) host_array, host, JNI_ABORT);                                   \
     return ev;                                                                                                  \
 }
@@ -275,7 +305,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
         (JNIEnv *env, jclass clazz, jlong queue_id, jlong host_pointer, jlong host_offset, jboolean blocking,
          jlong offset, jlong num_bytes, jlong device_ptr, jlongArray events) {
     cuda_queue_t *queue = (cuda_queue_t *) queue_id;
-    return transfer_to_device(env, queue, (void *) host_pointer, host_offset, offset, num_bytes, device_ptr);
+    return transfer_to_device(env, queue, (void *) host_pointer, host_offset, offset, num_bytes, device_ptr, events, blocking);
 }
 
 /* ---- readArrayFromDevice overloads ---- */
@@ -286,7 +316,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
          jlong offset, jlong num_bytes, jlong device_ptr, jlongArray events) {                                   \
     cuda_queue_t *queue = (cuda_queue_t *) queue_id;                                                             \
     void *host = env->GetPrimitiveArrayCritical((jarray) host_array, NULL);                                      \
-    jlong ev = transfer_to_host(env, queue, host, host_offset, offset, num_bytes, device_ptr);                  \
+    jlong ev = transfer_to_host(env, queue, host, host_offset, offset, num_bytes, device_ptr, events, true);    \
     env->ReleasePrimitiveArrayCritical((jarray) host_array, host, 0);                                            \
     return ev;                                                                                                   \
 }
@@ -306,7 +336,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
         (JNIEnv *env, jclass clazz, jlong queue_id, jlong host_pointer, jlong host_offset, jboolean blocking,
          jlong offset, jlong num_bytes, jlong device_ptr, jlongArray events) {
     cuda_queue_t *queue = (cuda_queue_t *) queue_id;
-    return transfer_to_host(env, queue, (void *) host_pointer, host_offset, offset, num_bytes, device_ptr);
+    return transfer_to_host(env, queue, (void *) host_pointer, host_offset, offset, num_bytes, device_ptr, events, blocking);
 }
 
 /*

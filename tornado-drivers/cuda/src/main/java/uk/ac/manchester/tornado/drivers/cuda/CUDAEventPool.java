@@ -116,8 +116,18 @@ public class CUDAEventPool {
     }
 
     public boolean serialiseEvents(int[] dependencies, CUDACommandQueue queue) {
+        return serialiseEvents(dependencies, queue, false);
+    }
+
+    /**
+     * Serialises the dependency wait list into {@link #waitEventsBuffer}. On an in-order queue the
+     * list is normally redundant (queue order implies it) and is skipped; {@code forceSerialisation}
+     * overrides that for plans running with intra-plan concurrency, where dependencies may have been
+     * recorded on a DIFFERENT queue and must be honoured with cross-stream event waits.
+     */
+    public boolean serialiseEvents(int[] dependencies, CUDACommandQueue queue, boolean forceSerialisation) {
         boolean outOfOrderQueue = (queue.getProperties() & CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE) == 1;
-        if (dependencies == null || dependencies.length == 0 || !outOfOrderQueue) {
+        if (dependencies == null || dependencies.length == 0 || (!outOfOrderQueue && !forceSerialisation)) {
             return false;
         }
 

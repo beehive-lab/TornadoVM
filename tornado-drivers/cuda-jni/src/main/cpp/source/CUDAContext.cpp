@@ -209,7 +209,13 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAContext_cl
     if (mem_id == 0) {
         return;
     }
-    CUresult result = cuMemFree((CUdeviceptr) mem_id);
+    // Transfers are asynchronous: drain outstanding work before releasing device
+    // memory, otherwise the free races an in-flight copy/kernel that still uses
+    // this allocation. Frees only happen on eviction/teardown, so the heavy
+    // context synchronise is acceptable here.
+    CUresult result = cuCtxSynchronize();
+    LOG_CUDA_AND_VALIDATE("cuCtxSynchronize", result);
+    result = cuMemFree((CUdeviceptr) mem_id);
     LOG_CUDA_AND_VALIDATE("cuMemFree", result);
 }
 
