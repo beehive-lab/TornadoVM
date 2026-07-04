@@ -23,6 +23,8 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins;
 
+import java.lang.reflect.Field;
+
 import tornado.graal.compiler.core.common.memory.BarrierType;
 import tornado.graal.compiler.core.common.memory.MemoryOrderMode;
 import tornado.graal.compiler.core.common.type.StampFactory;
@@ -45,6 +47,7 @@ import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
 import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
 import tornado.graal.compiler.nodes.graphbuilderconf.NodePlugin;
+import tornado.graal.compiler.nodes.java.LoadFieldNode;
 import tornado.graal.compiler.nodes.java.NewArrayNode;
 import tornado.graal.compiler.nodes.java.StoreIndexedNode;
 import tornado.graal.compiler.nodes.memory.address.AddressNode;
@@ -55,19 +58,24 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.RawConstant;
+import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import org.graalvm.word.LocationIdentity;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.enums.MMAShape;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
+import uk.ac.manchester.tornado.api.types.arrays.CharArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Float;
 import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoMemorySegment;
 import uk.ac.manchester.tornado.api.utils.QuantizationUtils;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
@@ -133,6 +141,7 @@ public class OCLGraphBuilderPlugins {
 
         OCLHalfFloatPlugins.registerPlugins(ps, plugins);
         registerMemoryAccessPlugins(plugins, metaAccessProvider);
+        registerNativeArrayAccessPlugins(plugins);
         registerQuantizationUtilsPlugins(plugins);
     }
 
@@ -868,6 +877,79 @@ public class OCLGraphBuilderPlugins {
                 });
             }
         }
+    }
+
+    /**
+     * Intrinsify the {@code get(int)}/{@code set(int,val)} accessors of the TornadoVM native array
+     * types (e.g. {@link IntArray}) directly, at the accessor call site.
+     *
+     * <p>
+     * This bypasses the delegate chain {@code IntArray.get -> TornadoMemorySegment.getIntAtIndex ->
+     * MemorySegment.getAtIndex}. On JDK 22+ the terminal Panama accessor {@code getAtIndex} became an
+     * ABSTRACT interface method (it was a {@code default} method on JDK 21), so it has no bytecode. The
+     * TornadoVM sketcher analyses methods by parsing bytecode and recursing into callees; on the
+     * JVMCI-absent (reflection) path the {@code getIntAtIndex} intrinsic is only applied during the
+     * real compile (not the sketch), so the sketcher would descend into the bodiless {@code getAtIndex}
+     * and fail. Registering the intrinsic on the array accessor itself — which IS a direct call site —
+     * emits the memory read/write up front, so the abstract Panama method is never reached. The emitted
+     * nodes are identical to inlining {@code get}/{@code set} and intrinsifying the segment access.
+     */
+    private static void registerNativeArrayAccessPlugins(InvocationPlugins plugins) {
+        registerNativeArrayGetSet(plugins, IntArray.class, JavaKind.Int);
+        registerNativeArrayGetSet(plugins, FloatArray.class, JavaKind.Float);
+        registerNativeArrayGetSet(plugins, DoubleArray.class, JavaKind.Double);
+        registerNativeArrayGetSet(plugins, LongArray.class, JavaKind.Long);
+        registerNativeArrayGetSet(plugins, ShortArray.class, JavaKind.Short);
+        registerNativeArrayGetSet(plugins, ByteArray.class, JavaKind.Byte);
+        registerNativeArrayGetSet(plugins, CharArray.class, JavaKind.Char);
+    }
+
+    private static void registerNativeArrayGetSet(InvocationPlugins plugins, Class<?> arrayClass, JavaKind kind) {
+        final Field segmentField;
+        final Field baseIndexField;
+        try {
+            segmentField = arrayClass.getDeclaredField("segment");
+            baseIndexField = arrayClass.getDeclaredField("baseIndex");
+        } catch (NoSuchFieldException e) {
+            throw new TornadoRuntimeException("Native array type " + arrayClass.getName() + " is missing expected fields for intrinsification: " + e);
+        }
+        Registration r = new Registration(plugins, arrayClass);
+        r.register(new InvocationPlugin("get", Receiver.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index) {
+                AddressNode addressNode = arrayElementAddress(b, receiver, index, kind, segmentField, baseIndexField);
+                JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
+                b.addPush(kind, readNode);
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin("set", Receiver.class, int.class, kind.toJavaClass()) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value) {
+                AddressNode addressNode = arrayElementAddress(b, receiver, index, kind, segmentField, baseIndexField);
+                JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
+                b.add(writeNode);
+                return true;
+            }
+        });
+    }
+
+    /**
+     * Build {@code &segment[(baseIndex + index) * elementBytes]} for a native array accessor, loading
+     * the {@code segment} and {@code baseIndex} fields from the array so the emitted graph matches the
+     * inlined {@code TornadoMemorySegment.get/setAtIndex} intrinsic.
+     */
+    private static AddressNode arrayElementAddress(GraphBuilderContext b, Receiver receiver, ValueNode index, JavaKind kind, Field segmentField, Field baseIndexField) {
+        ValueNode arrayNode = receiver.get(true); // adds the null check
+        ResolvedJavaField segment = b.getMetaAccess().lookupJavaField(segmentField);
+        ResolvedJavaField baseIndex = b.getMetaAccess().lookupJavaField(baseIndexField);
+        ValueNode segmentNode = b.append(LoadFieldNode.create(b.getGraph().getAssumptions(), arrayNode, segment));
+        ValueNode baseIndexNode = b.append(LoadFieldNode.create(b.getGraph().getAssumptions(), arrayNode, baseIndex));
+        ValueNode longIndex = b.append(SignExtendNode.create(index, 64, NodeView.DEFAULT));
+        ValueNode longBaseIndex = b.append(SignExtendNode.create(baseIndexNode, 64, NodeView.DEFAULT));
+        AddNode absoluteIndexNode = b.append(new AddNode(longIndex, longBaseIndex));
+        MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forLong(kind.getByteCount())));
+        return b.append(new OffsetAddressNode(segmentNode, mulNode));
     }
 
     private static void registerOpenCLBuiltinPlugins(InvocationPlugins plugins) {

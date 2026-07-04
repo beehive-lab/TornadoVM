@@ -79,6 +79,24 @@ __CUDNN_MODULE__ = "tornado.cudnn"
 # ########################################################
 __JAVA_GC__ = "-XX:+UseParallelGC "
 __JAVA_BASE_OPTIONS__ = "-server -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI --enable-preview "
+# JDK 27+ removed JVMCI: -XX:+EnableJVMCI is an unrecognized (fatal) option and Panama is
+# final so --enable-preview is unnecessary. JVMCI metadata is sourced via the reflection
+# provider path (forced with tornado.jvmci.reflection.full) against the vendored module.
+__JAVA_BASE_OPTIONS_NO_JVMCI__ = ("-server -XX:+UnlockExperimentalVMOptions -Dtornado.jvmci.reflection.full=true "
+                                  # The vendored jdk.vm.ci.services.Services gates on JVMCI_ENABLED,
+                                  # read from VM.getSavedProperties().get("jdk.internal.vm.ci.enabled").
+                                  # HotSpot used to set this when +EnableJVMCI; that flag is gone on
+                                  # JDK 27, so we set the saved property directly (a command-line -D
+                                  # lands in the saved-property map) to satisfy checkJVMCIEnabled().
+                                  "-Djdk.internal.vm.ci.enabled=true "
+                                  # The platform jdk.internal.vm.ci module received these java.base
+                                  # internal packages as qualified exports; our vendored same-named
+                                  # application module must request them explicitly (Services /
+                                  # InitTimer / Unsafe use jdk.internal.misc etc.).
+                                  "--add-exports java.base/jdk.internal.misc=jdk.internal.vm.ci "
+                                  "--add-exports java.base/jdk.internal.vm=jdk.internal.vm.ci "
+                                  "--add-exports java.base/jdk.internal.vm.annotation=jdk.internal.vm.ci "
+                                  "--add-exports java.base/jdk.internal.reflect=jdk.internal.vm.ci ")
 __TRUFFLE_BASE_OPTIONS__ = "--jvm --polyglot --vm.XX:+UnlockExperimentalVMOptions --vm.XX:+EnableJVMCI --enable-preview "
 
 # We do not satisfy the Graal compiler assertions because we only support a subset of the Java specification.
@@ -487,6 +505,11 @@ class TornadoVMRunnerTool():
             self.cmd = self.commands["java"]
 
         self.java_version, self.isGraalVM = self.getJavaVersion()
+        # JVMCI was removed from OpenJDK entirely in JDK 27 (openjdk/jdk#30834): no
+        # jdk.internal.vm.ci module and no -XX:+EnableJVMCI flag. On such JDKs TornadoVM
+        # supplies jdk.internal.vm.ci itself as a vendored application module and runs its
+        # compilation pipeline via the reflection provider path.
+        self.jvmci_absent = self.java_version >= 27
         self.checkCompatibilityWithTornadoVM()
         self.platform = sys.platform
         self.listOfBackends = self.getInstalledBackends(False)
@@ -555,8 +578,10 @@ class TornadoVMRunnerTool():
             sys.exit(0)
 
     def checkCompatibilityWithTornadoVM(self):
-        if (self.java_version != 21):
-            print("TornadoVM supports only JDK version 21")
+        # TornadoVM now runs on arbitrary modern JDKs because Graal (tornado.graal) and,
+        # on JDK 27+, JVMCI (jdk.internal.vm.ci) are vendored as application modules.
+        if (self.java_version < 21):
+            print("TornadoVM requires JDK 21 or newer")
             sys.exit(0)
 
     def checkOpenCLDriversWindows(self):
@@ -1086,6 +1111,11 @@ class TornadoVMRunnerTool():
             tornadoFlags = tornadoFlags + " -Djava.ext.dirs=" + self.sdk + "/share/java/tornado "
         else:
             tornadoFlags = tornadoFlags + " --module-path ." + os.pathsep + self.sdk + "/share/java/tornado" + os.pathsep + self.sdk + "/share/java/graalJars"
+            # On JDK 27+ the platform no longer ships jdk.internal.vm.ci; add the vendored
+            # same-named module. It must NOT be on the module-path on JDK <=26 (the platform
+            # module of the same name would cause a "two versions of module" resolution error).
+            if (self.jvmci_absent):
+                tornadoFlags = tornadoFlags + os.pathsep + self.sdk + "/share/java/jvmci"
 
         if (args.module_path != None):
             tornadoFlags = tornadoFlags + ":" + args.module_path + " "
@@ -1256,6 +1286,8 @@ class TornadoVMRunnerTool():
 
         if (self.isTruffleCommand):
             javaFlags = javaFlags + " " + __TRUFFLE_BASE_OPTIONS__
+        elif (self.jvmci_absent):
+            javaFlags = javaFlags + " " + __JAVA_BASE_OPTIONS_NO_JVMCI__
         else:
             javaFlags = javaFlags + " " + __JAVA_BASE_OPTIONS__
 

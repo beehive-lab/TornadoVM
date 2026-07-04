@@ -28,6 +28,8 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
 
 import uk.ac.manchester.tornado.runtime.jvmci.reflection.ClassfileParser.MethodCode;
 import uk.ac.manchester.tornado.runtime.jvmci.reflection.ClassfileParser.RawHandler;
@@ -35,8 +37,10 @@ import uk.ac.manchester.tornado.runtime.jvmci.reflection.ClassfileParser.RawHand
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.ExceptionHandler;
+import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.LineNumberTable;
+import jdk.vm.ci.meta.Local;
 import jdk.vm.ci.meta.LocalVariableTable;
 import jdk.vm.ci.meta.ProfilingInfo;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -309,7 +313,24 @@ final class ReflectionResolvedJavaMethod implements ResolvedJavaMethod {
 
     @Override
     public LocalVariableTable getLocalVariableTable() {
-        return null;
+        // The reflection classfile path does not parse the optional (debug-only) LocalVariableTable
+        // attribute, but backends need one to name kernel parameters (locals live at BCI 0). Synthesise
+        // a table from the method parameters: stable identifiers (this/arg0/arg1/...) with the correct
+        // types and JVM local slots — semantically sufficient for code generation.
+        int endBci = Math.max(getCodeSize(), 1);
+        List<Local> locals = new ArrayList<>();
+        int slot = 0;
+        if (!Modifier.isStatic(executable.getModifiers())) {
+            locals.add(new Local("this", getDeclaringClass(), 0, endBci, slot));
+            slot += 1;
+        }
+        Class<?>[] parameterTypes = executable.getParameterTypes();
+        for (int i = 0; i < parameterTypes.length; i++) {
+            JavaType type = universe.lookupType(parameterTypes[i]);
+            locals.add(new Local("arg" + i, type, 0, endBci, slot));
+            slot += JavaKind.fromJavaClass(parameterTypes[i]).getSlotCount();
+        }
+        return new LocalVariableTable(locals.toArray(new Local[0]));
     }
 
     @Override

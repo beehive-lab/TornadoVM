@@ -29,9 +29,12 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guara
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
+import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 
 import tornado.graal.compiler.bytecode.Bytecodes;
 
@@ -54,6 +57,7 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
+import uk.ac.manchester.tornado.runtime.jvmci.TornadoMetaAccessProvider;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
@@ -138,6 +142,15 @@ public class TaskUtils {
      *     Input Tornado task that corresponds to the user code.
      */
     public static Method resolveMethodHandle(Object task) {
+        // JVMCI-absent JDK (27+): the kernel entry is a lambda/method-reference whose proxy is
+        // a hidden class with no classfile resource, so the reflection ConstantPool cannot read
+        // its bytecode (and HotSpotJDKReflection is gone). The compute Task interfaces are
+        // Serializable, so resolve the implementation method through the compiler-generated
+        // writeReplace() -> SerializedLambda instead of scanning the proxy bytecode.
+        if (TornadoMetaAccessProvider.USE_REFLECTION_FULL) {
+            return resolveViaSerializedLambda(task);
+        }
+
         final Class<?> type = task.getClass();
 
         /*
@@ -157,7 +170,11 @@ public class TaskUtils {
          * Fortunately we can do a bit of JVMCI magic to resolve the function to a
          * Method.
          */
-        final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getVMBackend().getMetaAccess().lookupJavaMethod(entryPoint);
+        // Route through TornadoCoreRuntime.getMetaAccess() rather than getVMBackend(): on a
+        // JVMCI-absent JDK (27+) there is no host JVMCIBackend, and getMetaAccess() returns the
+        // reflection-backed provider (whose getConstantPool()/getCode() use the classfile
+        // reader). On JDK <=26 it returns the wrapper over the host meta-access (same result).
+        final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().getMetaAccess().lookupJavaMethod(entryPoint);
         final ConstantPool cp = resolvedMethod.getConstantPool();
         final byte[] bc = resolvedMethod.getCode();
 
@@ -195,6 +212,89 @@ public class TaskUtils {
         }
         shouldNotReachHere();
         return null;
+    }
+
+    /**
+     * JDK-neutral kernel-entry resolution for JVMCI-absent JDKs (27+). The compute Task
+     * interfaces are {@link java.io.Serializable}, so the compiler emits a {@code writeReplace()}
+     * on each task lambda that yields a {@link SerializedLambda} describing the implementation
+     * method (its declaring class, name and JVM signature). We resolve that directly to a
+     * {@link Method} via core reflection, avoiding both the hidden lambda-proxy bytecode and the
+     * removed HotSpot JVMCI reflection helpers.
+     */
+    private static Method resolveViaSerializedLambda(Object task) {
+        try {
+            Method writeReplace = task.getClass().getDeclaredMethod("writeReplace");
+            writeReplace.setAccessible(true);
+            Object replacement = writeReplace.invoke(task);
+            if (!(replacement instanceof SerializedLambda serializedLambda)) {
+                throw new TornadoInternalError("Task lambda did not serialize to a SerializedLambda: " + replacement);
+            }
+            ClassLoader loader = task.getClass().getClassLoader();
+            Class<?> implClass = Class.forName(serializedLambda.getImplClass().replace('/', '.'), false, loader);
+            Class<?>[] parameterTypes = parseParameterTypes(serializedLambda.getImplMethodSignature(), loader);
+            Method implementation = findDeclaredMethod(implClass, serializedLambda.getImplMethodName(), parameterTypes);
+            implementation.setAccessible(true);
+            return implementation;
+        } catch (ReflectiveOperationException e) {
+            throw new TornadoInternalError("Unable to resolve kernel entry via SerializedLambda on the JVMCI-absent path: " + e);
+        }
+    }
+
+    /** Walk the class hierarchy so implementation methods inherited from a supertype still resolve. */
+    private static Method findDeclaredMethod(Class<?> start, String name, Class<?>[] parameterTypes) throws NoSuchMethodException {
+        for (Class<?> c = start; c != null; c = c.getSuperclass()) {
+            try {
+                return c.getDeclaredMethod(name, parameterTypes);
+            } catch (NoSuchMethodException ignored) {
+                // try the superclass
+            }
+        }
+        throw new NoSuchMethodException(start.getName() + "." + name);
+    }
+
+    /** Parse the parameter portion of a JVM method descriptor (e.g. {@code (I[JLp/C;)V}) into classes. */
+    private static Class<?>[] parseParameterTypes(String methodDescriptor, ClassLoader loader) throws ClassNotFoundException {
+        List<Class<?>> types = new ArrayList<>();
+        int i = methodDescriptor.indexOf('(') + 1;
+        int end = methodDescriptor.indexOf(')');
+        while (i < end) {
+            int dims = 0;
+            while (methodDescriptor.charAt(i) == '[') {
+                dims++;
+                i++;
+            }
+            char c = methodDescriptor.charAt(i);
+            Class<?> type;
+            if (c == 'L') {
+                int semicolon = methodDescriptor.indexOf(';', i);
+                String binaryName = methodDescriptor.substring(i + 1, semicolon).replace('/', '.');
+                type = Class.forName(binaryName, false, loader);
+                i = semicolon + 1;
+            } else {
+                type = primitiveType(c);
+                i++;
+            }
+            if (dims > 0) {
+                type = java.lang.reflect.Array.newInstance(type, new int[dims]).getClass();
+            }
+            types.add(type);
+        }
+        return types.toArray(new Class<?>[0]);
+    }
+
+    private static Class<?> primitiveType(char descriptor) {
+        return switch (descriptor) {
+            case 'Z' -> boolean.class;
+            case 'B' -> byte.class;
+            case 'C' -> char.class;
+            case 'S' -> short.class;
+            case 'I' -> int.class;
+            case 'J' -> long.class;
+            case 'F' -> float.class;
+            case 'D' -> double.class;
+            default -> throw new TornadoInternalError("Unknown primitive descriptor: " + descriptor);
+        };
     }
 
     public static CompilableTask createTask(Method method, ScheduleContext meta, String id, Task code) {

@@ -119,6 +119,19 @@ public class TornadoMetaAccessProvider implements MetaAccessProvider {
         return backing;
     }
 
+    /**
+     * Access the host provider, or fail clearly on a JVMCI-absent JDK (JDK 27+) where there
+     * is no HotSpot backing provider. Methods still routed here have not yet been ported to
+     * the reflection/{@code Unsafe} implementation; the stack trace identifies the caller.
+     */
+    private MetaAccessProvider backing() {
+        if (backing == null) {
+            String caller = Thread.currentThread().getStackTrace()[2].getMethodName();
+            throw new UnsupportedOperationException("MetaAccessProvider." + caller + "() not yet available on the JVMCI-absent (reflection) path");
+        }
+        return backing;
+    }
+
     @Override
     public ResolvedJavaType lookupJavaType(Class<?> clazz) {
         if (reflectionUniverse != null) {
@@ -129,7 +142,7 @@ public class TornadoMetaAccessProvider implements MetaAccessProvider {
 
     @Override
     public ResolvedJavaType[] lookupJavaTypes(Class<?>[] classes) {
-        return backing.lookupJavaTypes(classes);
+        return backing().lookupJavaTypes(classes);
     }
 
     @Override
@@ -150,47 +163,57 @@ public class TornadoMetaAccessProvider implements MetaAccessProvider {
 
     @Override
     public ResolvedJavaType lookupJavaType(JavaConstant constant) {
-        return backing.lookupJavaType(constant);
+        if (reflectionUniverse != null) {
+            if (constant == null || constant.isNull() || constant.getJavaKind() != JavaKind.Object) {
+                return null;
+            }
+            if (constant instanceof TornadoObjectConstant objectConstant) {
+                Object object = objectConstant.getObject();
+                return object == null ? null : reflectionUniverse.lookupType(object.getClass());
+            }
+            return null;
+        }
+        return backing().lookupJavaType(constant);
     }
 
     @Override
     public long getMemorySize(JavaConstant constant) {
-        return backing.getMemorySize(constant);
+        return backing().getMemorySize(constant);
     }
 
     @Override
     public Signature parseMethodDescriptor(String methodDescriptor) {
-        return backing.parseMethodDescriptor(methodDescriptor);
+        return backing().parseMethodDescriptor(methodDescriptor);
     }
 
     @Override
     public JavaConstant encodeDeoptActionAndReason(DeoptimizationAction action, DeoptimizationReason reason, int debugId) {
-        return backing.encodeDeoptActionAndReason(action, reason, debugId);
+        return backing().encodeDeoptActionAndReason(action, reason, debugId);
     }
 
     @Override
     public JavaConstant encodeSpeculation(Speculation speculation) {
-        return backing.encodeSpeculation(speculation);
+        return backing().encodeSpeculation(speculation);
     }
 
     @Override
     public Speculation decodeSpeculation(JavaConstant constant, SpeculationLog speculationLog) {
-        return backing.decodeSpeculation(constant, speculationLog);
+        return backing().decodeSpeculation(constant, speculationLog);
     }
 
     @Override
     public DeoptimizationReason decodeDeoptReason(JavaConstant constant) {
-        return backing.decodeDeoptReason(constant);
+        return backing().decodeDeoptReason(constant);
     }
 
     @Override
     public DeoptimizationAction decodeDeoptAction(JavaConstant constant) {
-        return backing.decodeDeoptAction(constant);
+        return backing().decodeDeoptAction(constant);
     }
 
     @Override
     public int decodeDebugId(JavaConstant constant) {
-        return backing.decodeDebugId(constant);
+        return backing().decodeDebugId(constant);
     }
 
     /**
@@ -202,7 +225,7 @@ public class TornadoMetaAccessProvider implements MetaAccessProvider {
     public int getArrayBaseOffset(JavaKind elementKind) {
         Class<?> arrayClass = arrayClassFor(elementKind);
         if (arrayClass == null) {
-            return backing.getArrayBaseOffset(elementKind);
+            return backing().getArrayBaseOffset(elementKind);
         }
         return UNSAFE.arrayBaseOffset(arrayClass);
     }
@@ -215,7 +238,7 @@ public class TornadoMetaAccessProvider implements MetaAccessProvider {
     public int getArrayIndexScale(JavaKind elementKind) {
         Class<?> arrayClass = arrayClassFor(elementKind);
         if (arrayClass == null) {
-            return backing.getArrayIndexScale(elementKind);
+            return backing().getArrayIndexScale(elementKind);
         }
         return UNSAFE.arrayIndexScale(arrayClass);
     }

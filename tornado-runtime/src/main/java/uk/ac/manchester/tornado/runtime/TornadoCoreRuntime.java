@@ -97,13 +97,24 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
         initOptions();
         guarantee(!GraalOptions.OmitHotExceptionStacktrace.getValue(options), "error");
 
-        if (!(JVMCI.getRuntime() instanceof HotSpotJVMCIRuntime)) {
-            shouldNotReachHere("Unsupported JVMCIRuntime: ", JVMCI.getRuntime().getClass().getName());
+        if (TornadoMetaAccessProvider.USE_REFLECTION_FULL) {
+            // JVMCI-absent JDK (27+, openjdk/jdk#30834): there is no HotSpot JVMCI runtime
+            // or host backend to bootstrap from (JVMCI.getRuntime() throws
+            // UnsupportedOperationException). Type/constant metadata is served entirely by
+            // the reflection + Unsafe providers instead.
+            vmRuntime = null;
+            vmBackend = null;
+            vmConfig = new TornadoVMConfigAccess();
+            metaAccess = new TornadoMetaAccessProvider(null);
+        } else {
+            if (!(JVMCI.getRuntime() instanceof HotSpotJVMCIRuntime)) {
+                shouldNotReachHere("Unsupported JVMCIRuntime: ", JVMCI.getRuntime().getClass().getName());
+            }
+            vmRuntime = (HotSpotJVMCIRuntime) JVMCI.getRuntime();
+            vmBackend = vmRuntime.getHostJVMCIBackend();
+            vmConfig = new TornadoVMConfigAccess();
+            metaAccess = new TornadoMetaAccessProvider(vmBackend.getMetaAccess());
         }
-        vmRuntime = (HotSpotJVMCIRuntime) JVMCI.getRuntime();
-        vmBackend = vmRuntime.getHostJVMCIBackend();
-        vmConfig = new TornadoVMConfigAccess();
-        metaAccess = new TornadoMetaAccessProvider(vmBackend.getMetaAccess());
         tornadoVMBackends = loadBackends();
     }
 

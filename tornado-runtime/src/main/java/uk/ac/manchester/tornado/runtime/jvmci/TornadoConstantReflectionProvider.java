@@ -70,12 +70,31 @@ public class TornadoConstantReflectionProvider implements ConstantReflectionProv
         this.snippetReflection = snippetReflection;
     }
 
+    /**
+     * Access the host constant-reflection provider, or fail clearly on a JVMCI-absent JDK
+     * (JDK 27+) where there is no HotSpot backing provider. Reads still routed here have not
+     * yet been ported to the JDK-neutral (reflection) implementation.
+     */
+    private ConstantReflectionProvider backing() {
+        if (backing == null) {
+            throw new UnsupportedOperationException("ConstantReflectionProvider method not yet available on the JVMCI-absent (reflection) path");
+        }
+        return backing;
+    }
+
+    private MetaAccessProvider hostMetaAccess() {
+        if (hostMetaAccess == null) {
+            throw new UnsupportedOperationException("host MetaAccessProvider not available on the JVMCI-absent (reflection) path");
+        }
+        return hostMetaAccess;
+    }
+
     @Override
     public JavaConstant readFieldValue(ResolvedJavaField field, JavaConstant receiver) {
         if (field instanceof ReflectionResolvedJavaField reflectionField) {
             return readReflectionFieldValue(reflectionField, receiver);
         }
-        return backing.readFieldValue(field, receiver);
+        return backing().readFieldValue(field, receiver);
     }
 
     private JavaConstant readReflectionFieldValue(ReflectionResolvedJavaField reflectionField, JavaConstant receiver) {
@@ -100,45 +119,45 @@ public class TornadoConstantReflectionProvider implements ConstantReflectionProv
 
         // Instance fields still need the receiver object; bridge to the host
         // provider by resolving the reflective field to a host ResolvedJavaField.
-        ResolvedJavaField hostField = hostMetaAccess.lookupJavaField(javaField);
-        return backing.readFieldValue(hostField, receiver);
+        ResolvedJavaField hostField = hostMetaAccess().lookupJavaField(javaField);
+        return backing().readFieldValue(hostField, receiver);
     }
 
     // ---- everything else delegates to the backing provider ----
 
     @Override
     public Boolean constantEquals(Constant x, Constant y) {
-        return backing.constantEquals(x, y);
+        return backing().constantEquals(x, y);
     }
 
     @Override
     public Integer readArrayLength(JavaConstant array) {
-        return backing.readArrayLength(array);
+        return backing().readArrayLength(array);
     }
 
     @Override
     public JavaConstant readArrayElement(JavaConstant array, int index) {
-        return backing.readArrayElement(array, index);
+        return backing().readArrayElement(array, index);
     }
 
     @Override
     public JavaConstant boxPrimitive(JavaConstant source) {
-        return backing.boxPrimitive(source);
+        return backing().boxPrimitive(source);
     }
 
     @Override
     public JavaConstant unboxPrimitive(JavaConstant source) {
-        return backing.unboxPrimitive(source);
+        return backing().unboxPrimitive(source);
     }
 
     @Override
     public JavaConstant forString(String value) {
-        return backing.forString(value);
+        return backing().forString(value);
     }
 
     @Override
     public ResolvedJavaType asJavaType(Constant constant) {
-        return backing.asJavaType(constant);
+        return backing().asJavaType(constant);
     }
 
     @Override
@@ -147,31 +166,31 @@ public class TornadoConstantReflectionProvider implements ConstantReflectionProv
         // breaks downstream constant-propagation in the OpenCL intrinsics phase
         // (static-field-base / array sizing), so keep the VM Class constant until
         // that phase is taught to consume Tornado object constants.
-        return backing.asJavaClass(bridgeType(type));
+        return backing().asJavaClass(bridgeType(type));
     }
 
     @Override
     public Constant asObjectHub(ResolvedJavaType type) {
         // The object hub (klass pointer) is genuinely VM specific; still bridged
         // to the host provider until a Tornado hub-constant is introduced.
-        return backing.asObjectHub(bridgeType(type));
+        return backing().asObjectHub(bridgeType(type));
     }
 
     /** Resolve a reflection type to the host type before the host provider materialises a Class/hub constant. */
     private ResolvedJavaType bridgeType(ResolvedJavaType type) {
         if (type instanceof ReflectionResolvedJavaType reflectionType) {
-            return hostMetaAccess.lookupJavaType(reflectionType.getMirror());
+            return hostMetaAccess().lookupJavaType(reflectionType.getMirror());
         }
         return type;
     }
 
     @Override
     public MemoryAccessProvider getMemoryAccessProvider() {
-        return backing.getMemoryAccessProvider();
+        return backing().getMemoryAccessProvider();
     }
 
     @Override
     public MethodHandleAccessProvider getMethodHandleAccess() {
-        return backing.getMethodHandleAccess();
+        return backing().getMethodHandleAccess();
     }
 }

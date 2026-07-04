@@ -224,7 +224,8 @@ public final class ReflectionResolvedJavaType implements ResolvedJavaType {
         Method[] ms = clazz.getDeclaredMethods();
         ResolvedJavaMethod[] out = new ResolvedJavaMethod[ms.length];
         for (int i = 0; i < ms.length; i++) {
-            out[i] = new ReflectionResolvedJavaMethod(universe, ms[i]);
+            // via the universe cache so a given method is one canonical instance (plugin matching)
+            out[i] = universe.lookupMethod(ms[i]);
         }
         return out;
     }
@@ -240,7 +241,7 @@ public final class ReflectionResolvedJavaType implements ResolvedJavaType {
         Constructor<?>[] cs = clazz.getDeclaredConstructors();
         ResolvedJavaMethod[] out = new ResolvedJavaMethod[cs.length];
         for (int i = 0; i < cs.length; i++) {
-            out[i] = new ReflectionResolvedJavaMethod(universe, cs[i]);
+            out[i] = universe.lookupMethod(cs[i]);
         }
         return out;
     }

@@ -21,7 +21,9 @@
         <dependency>
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm</artifactId>
-            <version>9.5</version>
+            <!-- 9.7 accepts class-file versions up to v67 (Java 23); 9.5 capped at v65 (Java 21)
+                 and rejected the release-22 (v66) kernel classes emitted for JDK 27+. -->
+            <version>9.7</version>
         </dependency>
     </dependencies>
 

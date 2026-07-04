@@ -78,9 +78,18 @@ public class OCLHotSpotBackendFactory {
     private static final OCLAddressLowering addressLowering = new OCLAddressLowering();
 
     public static OCLBackend createJITCompiler(OptionValues options, HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfigAccess config, OCLContextInterface tornadoContext, OCLTargetDevice device) {
-        JVMCIBackend jvmciBackend = jvmciRuntime.getHostJVMCIBackend();
-        MetaAccessProvider metaAccess = new TornadoMetaAccessProvider(jvmciBackend.getMetaAccess());
-        ConstantReflectionProvider constantReflection = new TornadoConstantReflectionProvider(jvmciBackend.getConstantReflection(), jvmciBackend.getMetaAccess(), snippetReflection);
+        MetaAccessProvider metaAccess;
+        ConstantReflectionProvider constantReflection;
+        if (jvmciRuntime == null) {
+            // JVMCI-absent JDK (27+): no host JVMCI backend to source providers from.
+            // Type/constant metadata is served by the reflection + Unsafe providers.
+            metaAccess = new TornadoMetaAccessProvider(null);
+            constantReflection = new TornadoConstantReflectionProvider(null, null, snippetReflection);
+        } else {
+            JVMCIBackend jvmciBackend = jvmciRuntime.getHostJVMCIBackend();
+            metaAccess = new TornadoMetaAccessProvider(jvmciBackend.getMetaAccess());
+            constantReflection = new TornadoConstantReflectionProvider(jvmciBackend.getConstantReflection(), jvmciBackend.getMetaAccess(), snippetReflection);
+        }
 
         OCLKind wordKind = switch (device.getWordSize()) {
             case 4 -> OCLKind.UINT;

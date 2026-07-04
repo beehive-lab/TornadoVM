@@ -49,6 +49,13 @@ public final class ReflectionUniverse {
     static final Unsafe UNSAFE = initUnsafe();
 
     private final Map<Class<?>, ReflectionResolvedJavaType> types = new ConcurrentHashMap<>();
+    // Canonicalise methods/fields so a given Executable/Field always maps to the SAME
+    // ResolvedJavaMethod/Field instance. Graal's InvocationPlugins keys resolved plugins by
+    // ResolvedJavaMethod; without canonicalisation a fresh wrapper per lookup can miss the
+    // plugin (segment-access intrinsics never fire), driving the sketcher into abstract
+    // JDK-internal Panama methods that have no bytecode.
+    private final Map<Executable, ReflectionResolvedJavaMethod> methods = new ConcurrentHashMap<>();
+    private final Map<Field, ReflectionResolvedJavaField> fields = new ConcurrentHashMap<>();
 
     private static Unsafe initUnsafe() {
         try {
@@ -68,7 +75,7 @@ public final class ReflectionUniverse {
     }
 
     public ReflectionResolvedJavaMethod lookupMethod(Executable executable) {
-        return new ReflectionResolvedJavaMethod(this, executable);
+        return methods.computeIfAbsent(executable, e -> new ReflectionResolvedJavaMethod(this, e));
     }
 
     /** A signature-polymorphic method carrying the call-site descriptor as its signature. */
@@ -77,7 +84,7 @@ public final class ReflectionUniverse {
     }
 
     public ReflectionResolvedJavaField lookupField(Field field) {
-        return new ReflectionResolvedJavaField(this, field);
+        return fields.computeIfAbsent(field, f -> new ReflectionResolvedJavaField(this, f));
     }
 
     /** JVM type descriptor, e.g. {@code int -> "I"}, {@code Object -> "Ljava/lang/Object;"}, {@code int[] -> "[I"}. */
