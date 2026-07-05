@@ -37,6 +37,7 @@ import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.runtime.jvmci.reflection.ReflectionResolvedJavaField;
 import uk.ac.manchester.tornado.runtime.jvmci.reflection.ReflectionResolvedJavaType;
+import uk.ac.manchester.tornado.runtime.jvmci.reflection.ReflectionUniverse;
 
 /**
  * TornadoVM-owned {@link ConstantReflectionProvider}. It delegates to a backing
@@ -77,7 +78,8 @@ public class TornadoConstantReflectionProvider implements ConstantReflectionProv
      */
     private ConstantReflectionProvider backing() {
         if (backing == null) {
-            throw new UnsupportedOperationException("ConstantReflectionProvider method not yet available on the JVMCI-absent (reflection) path");
+            String caller = Thread.currentThread().getStackTrace()[2].getMethodName();
+            throw new UnsupportedOperationException("ConstantReflectionProvider." + caller + "() not yet available on the JVMCI-absent (reflection) path");
         }
         return backing;
     }
@@ -157,15 +159,35 @@ public class TornadoConstantReflectionProvider implements ConstantReflectionProv
 
     @Override
     public ResolvedJavaType asJavaType(Constant constant) {
+        // JVMCI-absent path: inverse of asJavaClass — recover the ResolvedJavaType from a Class
+        // object constant. Used by the same local/private-array sizing phase.
+        if (backing == null && constant instanceof JavaConstant javaConstant) {
+            Object object = snippetReflection.asObject(Object.class, javaConstant);
+            if (object instanceof Class<?> clazz) {
+                return reflectionUniverse().lookupType(clazz);
+            }
+        }
         return backing().asJavaType(constant);
+    }
+
+    // Lazily created only on the JVMCI-absent path (asJavaType); avoids the Unsafe init on JDK <=26.
+    private ReflectionUniverse reflectionUniverse;
+
+    private ReflectionUniverse reflectionUniverse() {
+        if (reflectionUniverse == null) {
+            reflectionUniverse = new ReflectionUniverse();
+        }
+        return reflectionUniverse;
     }
 
     @Override
     public JavaConstant asJavaClass(ResolvedJavaType type) {
-        // Bridged to the host provider: a native TornadoObjectConstant(Class) here
-        // breaks downstream constant-propagation in the OpenCL intrinsics phase
-        // (static-field-base / array sizing), so keep the VM Class constant until
-        // that phase is taught to consume Tornado object constants.
+        // JVMCI-absent path: there is no host provider to bridge to, so materialise the
+        // java.lang.Class of the reflection type directly as an object constant. Used by the
+        // local/private-array sizing phase to recover the element type.
+        if (type instanceof ReflectionResolvedJavaType reflectionType) {
+            return (JavaConstant) snippetReflection.forObject(reflectionType.getMirror());
+        }
         return backing().asJavaClass(bridgeType(type));
     }
 
@@ -184,9 +206,85 @@ public class TornadoConstantReflectionProvider implements ConstantReflectionProv
         return type;
     }
 
+    // Lazily created only on the JVMCI-absent path.
+    private MemoryAccessProvider memoryAccessProvider;
+
     @Override
     public MemoryAccessProvider getMemoryAccessProvider() {
+        if (backing == null) {
+            if (memoryAccessProvider == null) {
+                memoryAccessProvider = new ReflectionMemoryAccessProvider(snippetReflection);
+            }
+            return memoryAccessProvider;
+        }
         return backing().getMemoryAccessProvider();
+    }
+
+    /**
+     * JDK-neutral {@link MemoryAccessProvider} for the JVMCI-absent (reflection) path. Constant-folds
+     * reads from an object constant at a JVMCI field displacement using {@code sun.misc.Unsafe}, matching
+     * {@code HotSpotMemoryAccessProviderImpl} semantics (the displacement IS an {@code Unsafe} field offset).
+     * A non-object base (raw address / primitive) is not foldable here and returns {@code null}, which Graal
+     * treats as "leave the read in place" — safe, never a wrong fold.
+     */
+    private static final class ReflectionMemoryAccessProvider implements MemoryAccessProvider {
+
+        private static final sun.misc.Unsafe UNSAFE = initUnsafe();
+
+        private final SnippetReflectionProvider snippetReflection;
+
+        ReflectionMemoryAccessProvider(SnippetReflectionProvider snippetReflection) {
+            this.snippetReflection = snippetReflection;
+        }
+
+        private static sun.misc.Unsafe initUnsafe() {
+            try {
+                Field f = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
+                f.setAccessible(true);
+                return (sun.misc.Unsafe) f.get(null);
+            } catch (ReflectiveOperationException e) {
+                throw new InternalError("Unable to obtain sun.misc.Unsafe for reflection MemoryAccessProvider", e);
+            }
+        }
+
+        private Object baseObject(Constant base) {
+            if (base instanceof TornadoObjectConstant tornadoObjectConstant) {
+                return tornadoObjectConstant.getObject();
+            }
+            if (base instanceof JavaConstant javaConstant && javaConstant.getJavaKind() == JavaKind.Object) {
+                return snippetReflection.asObject(Object.class, javaConstant);
+            }
+            return null;
+        }
+
+        @Override
+        public JavaConstant readPrimitiveConstant(JavaKind kind, Constant base, long displacement, int bits) throws IllegalArgumentException {
+            Object object = baseObject(base);
+            if (object == null) {
+                return null;
+            }
+            return switch (kind) {
+                case Boolean -> JavaConstant.forBoolean(UNSAFE.getBoolean(object, displacement));
+                case Byte -> JavaConstant.forByte(UNSAFE.getByte(object, displacement));
+                case Short -> JavaConstant.forShort(UNSAFE.getShort(object, displacement));
+                case Char -> JavaConstant.forChar(UNSAFE.getChar(object, displacement));
+                case Int -> JavaConstant.forInt(UNSAFE.getInt(object, displacement));
+                case Long -> JavaConstant.forLong(UNSAFE.getLong(object, displacement));
+                case Float -> JavaConstant.forFloat(UNSAFE.getFloat(object, displacement));
+                case Double -> JavaConstant.forDouble(UNSAFE.getDouble(object, displacement));
+                default -> null;
+            };
+        }
+
+        @Override
+        public JavaConstant readObjectConstant(Constant base, long displacement) {
+            Object object = baseObject(base);
+            if (object == null) {
+                return null;
+            }
+            Object value = UNSAFE.getObject(object, displacement);
+            return value == null ? JavaConstant.NULL_POINTER : snippetReflection.forObject(value);
+        }
     }
 
     @Override

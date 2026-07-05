@@ -109,7 +109,7 @@ def download_jar_if_not_exists(jar_url, target_dir):
                 progress_bar.update(len(data))
 
 
-def main():
+def main(jdk=None):
     """
     Main function to download GraalVM JAR files.
     """
@@ -134,6 +134,14 @@ def main():
         logger.info(f"Relocating Graal into the {CYAN}tornado.graal{RESET} module...")
         import build_graal_module
         build_graal_module.build()
+
+    # Build and stage the vendored jvmci module if compiling for JDK 27
+    if jdk == "jdk27":
+        # Check if the artifact was already installed to Maven local repo, or exists.
+        # But build_jvmci_module also installs to local Maven. Let's run it.
+        logger.info(f"Building/staging vendored {CYAN}jdk.internal.vm.ci{RESET} module for JDK 27...")
+        import build_jvmci_module
+        build_jvmci_module.build()
 
 
 if __name__ == "__main__":

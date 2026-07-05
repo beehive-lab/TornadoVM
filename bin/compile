@@ -95,15 +95,16 @@ def check_java_version():
     return java_version_output
 
 
-def pull_graal_jars_if_needed(graal_jars_status):
+def pull_graal_jars_if_needed(graal_jars_status, jdk):
     """
     Pulls GraalVM jars if the specified JDK version does not contain the binaries.
 
     Args:
+        graal_jars_status (bool): Whether to pull GraalVM jars.
         jdk (str): The JDK version.
     """
     if graal_jars_status:
-        pull_graal_jars.main()
+        pull_graal_jars.main(jdk=jdk)
 
 
 def should_handle_graal_jars(jdk):
@@ -763,7 +764,7 @@ def main():
 
     maven_cleanup()
 
-    pull_graal_jars_if_needed(graal_jars_status)
+    pull_graal_jars_if_needed(graal_jars_status, args.jdk)
 
     backend_profiles = process_backends_as_mvn_profiles(args.backend)
 

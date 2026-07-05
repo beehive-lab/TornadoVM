@@ -77,10 +77,10 @@ public class CUDAArchitecture extends Architecture {
                 oclKind = CUDAKind.USHORT;
                 break;
             case Int:
-                oclKind = (javaKind.isUnsigned()) ? CUDAKind.UINT : CUDAKind.INT;
+                oclKind = (javaKind.isUnsigned() || getWordKind() == CUDAKind.UINT) ? CUDAKind.UINT : CUDAKind.INT;
                 break;
             case Long:
-                oclKind = (javaKind.isUnsigned()) ? CUDAKind.ULONG : CUDAKind.LONG;
+                oclKind = (javaKind.isUnsigned() || getWordKind() == CUDAKind.ULONG) ? CUDAKind.ULONG : CUDAKind.LONG;
                 break;
             case Float:
                 oclKind = CUDAKind.FLOAT;

@@ -44,6 +44,10 @@ MODULE_NAME = "jdk.internal.vm.ci"
 GROUP = "tornado.jvmci"
 ARTIFACT = "jvmci"
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT = os.path.dirname(SCRIPT_DIR)
+GRAAL_JARS_DIR = os.path.join(REPO_ROOT, "graalJars")
+
 JVMCI_PACKAGES = [
     "jdk.vm.ci.aarch64", "jdk.vm.ci.amd64", "jdk.vm.ci.code", "jdk.vm.ci.code.site",
     "jdk.vm.ci.code.stack", "jdk.vm.ci.common", "jdk.vm.ci.hotspot",

@@ -104,10 +104,10 @@ public class PTXArchitecture extends Architecture {
                 ptxKind = (javaKind.isUnsigned()) ? PTXKind.U16 : PTXKind.S16;
                 break;
             case Int:
-                ptxKind = (javaKind.isUnsigned()) ? PTXKind.U32 : PTXKind.S32;
+                ptxKind = (javaKind.isUnsigned() || getWordKind() == PTXKind.U32) ? PTXKind.U32 : PTXKind.S32;
                 break;
             case Long:
-                ptxKind = (javaKind.isUnsigned()) ? PTXKind.U64 : PTXKind.S64;
+                ptxKind = (javaKind.isUnsigned() || getWordKind() == PTXKind.U64) ? PTXKind.U64 : PTXKind.S64;
                 break;
             case Float:
                 ptxKind = PTXKind.F32;
