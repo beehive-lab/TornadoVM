@@ -70,6 +70,9 @@ __PTX_MODULE__ = "tornado.drivers.ptx"
 __OPENCL_MODULE__ = "tornado.drivers.opencl"
 __METAL_MODULE__ = "tornado.drivers.metal"
 __CUDA_MODULE__ = "tornado.drivers.cuda"
+__CUBLAS_MODULE__ = "tornado.cublas"
+__CUFFT_MODULE__ = "tornado.cufft"
+__CUDNN_MODULE__ = "tornado.cudnn"
 
 # ########################################################
 # JAVA FLAGS
@@ -1311,7 +1314,7 @@ class TornadoVMRunnerTool():
                 tornadoAddModules = tornadoAddModules + "," + __METAL_MODULE__
             if ("cuda-backend" in self.listOfBackends):
                 javaFlags = javaFlags + cuda + " "
-                tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__
+                tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__ + "," + __CUBLAS_MODULE__ + "," + __CUFFT_MODULE__ + "," + __CUDNN_MODULE__
         else:
             javaFlags = javaFlags + " @" + common + " "
             if ("opencl-backend" in self.listOfBackends):
@@ -1328,7 +1331,8 @@ class TornadoVMRunnerTool():
                 tornadoAddModules = tornadoAddModules + "," + __METAL_MODULE__
             if ("cuda-backend" in self.listOfBackends):
                 javaFlags = javaFlags + "@" + cuda + " "
-                tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__
+                tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__ + "," + __CUBLAS_MODULE__ + "," + __CUFFT_MODULE__ + "," + __CUDNN_MODULE__
+                tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__ + "," + __CUBLAS_MODULE__ + "," + __CUFFT_MODULE__ + "," + __CUDNN_MODULE__
 
         # Enable native access for backend modules to avoid restricted method warnings
         nativeAccessModules = []
@@ -1436,6 +1440,13 @@ class TornadoVMRunnerTool():
             command = javaFlags + " " + str(args.application) + " " + params
         ## Execute the command
         status = os.system(command)
+        ## os.system() returns a wait-status, not a plain exit code: on POSIX the exit code
+        ## sits in the high byte, so a JVM exit of 1 becomes 256 and sys.exit() truncates it
+        ## to 0, masking failures from CI. Decode it back to the real exit code / signal.
+        if os.name == 'posix':
+            if os.WIFSIGNALED(status):
+                sys.exit(128 + os.WTERMSIG(status))
+            status = os.WEXITSTATUS(status)
         sys.exit(status)
 
 
