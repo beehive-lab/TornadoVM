@@ -29,6 +29,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.collections.VectorDouble;
@@ -290,6 +291,7 @@ public class TestDoubles extends TornadoTestBase {
 
     @Test
     public void testDoubleAdd8() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.CUDA);
         int size = 1;
         Double8 a = new Double8(1., 2., 3., 4., 5., 6., 7., 8.);
         Double8 b = new Double8(8., 7., 6., 5., 4., 3., 2., 1.);
@@ -469,6 +471,7 @@ public class TestDoubles extends TornadoTestBase {
 
     @Test
     public void testVectorDouble8() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.CUDA);
         int size = 64;
 
         VectorDouble8 a = new VectorDouble8(size);
@@ -501,6 +504,7 @@ public class TestDoubles extends TornadoTestBase {
 
     @Test
     public void testVectorDouble16() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.CUDA);
         int size = 64;
 
         VectorDouble16 a = new VectorDouble16(size);
@@ -582,6 +586,7 @@ public class TestDoubles extends TornadoTestBase {
 
     @Test
     public void privateVectorDouble8() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.CUDA);
         int size = 16;
         VectorDouble8 sequentialOutput = new VectorDouble8(16);
         VectorDouble8 tornadoOutput = new VectorDouble8(16);
@@ -712,6 +717,7 @@ public class TestDoubles extends TornadoTestBase {
 
     @Test
     public void testInternalSetMethod04() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.CUDA);
         final int size = 16;
         VectorDouble8 tornadoInput = new VectorDouble8(size);
         VectorDouble8 sequentialInput = new VectorDouble8(size);

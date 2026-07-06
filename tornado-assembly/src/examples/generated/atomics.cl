@@ -12,8 +12,8 @@ __kernel void add(__global long *_kernel_context,
   int i_11, i_9, i_15, i_14, i_13, i_3, i_4;
 
   int ul_atomic = _kernel_context[0];
-  ul_0  =  a;
-  ul_1  =  b;
+  ul_0  =  (ulong) a;
+  ul_1  =  (ulong) b;
   i_3  =  get_global_id(0);
   i_4  =  i_3;
 

@@ -209,6 +209,12 @@ public class MetalBackend extends XPUBackend<MetalProviders> implements FrameMap
         crb.emit(lir);
         emitEpilogue(asm);
 
+        if (crb.isKernel()) {
+            // Preamble is emitted last so it can be scanned against the finished
+            // kernel source and trimmed to only the shims actually referenced.
+            asm.prependMinimalPreamble();
+        }
+
         profiler.stop(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId());
         profiler.sum(ProfilerType.TOTAL_CODE_GENERATION_TIME, profiler.getTaskTimer(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId()));
 
@@ -459,9 +465,20 @@ public class MetalBackend extends XPUBackend<MetalProviders> implements FrameMap
              * starting at address 0x0. (I assume that this is an interesting case that
              * leads to a few issues.) Iris Pro is the only culprit at the moment.
              */
-            // Metal Shading Language preamble: OpenCL-compatibility shims, extended vector
-            // types, and atomic helpers. See MetalPreamble for rationale on each section.
-            asm.emitLine(MetalPreamble.PREAMBLE);
+            // The Metal Shading Language preamble (OpenCL-compatibility shims, extended
+            // vector types, atomic helpers) is emitted at the end of emitCode via
+            // MetalAssembler.prependMinimalPreamble(), so it can be trimmed to only the
+            // sections this kernel references. See MetalPreamble for the rationale.
+
+            // Optional occupancy hint: when the local work-group size is statically known
+            // we tell the Metal compiler the max threadgroup size so it can size register
+            // allocation accordingly. Opt-in; see TornadoOptions.METAL_THREADGROUP_HINT.
+            if (TornadoOptions.METAL_THREADGROUP_HINT) {
+                int maxThreads = knownMaxThreadsPerThreadgroup(crb);
+                if (maxThreads > 0) {
+                    asm.emitLine(String.format("[[max_total_threads_per_threadgroup(%d)]]", maxThreads));
+                }
+            }
 
             asm.emit("%s void %s(%s", MetalAssemblerConstants.KERNEL_MODIFIER, methodName, architecture.getABIPretty());
             int nextBufferIdx = emitMethodParameters(asm, method, incomingArguments, true);
@@ -507,6 +524,32 @@ public class MetalBackend extends XPUBackend<MetalProviders> implements FrameMap
             emitVariableDefs(crb, asm, lir);
             asm.eol();
         }
+    }
+
+    /**
+     * Returns the total threads-per-threadgroup when it is statically known at
+     * compile time (a worker grid with a local work size is attached to the task),
+     * or {@code 0} when unknown or out of range. Used to emit the optional
+     * {@code [[max_total_threads_per_threadgroup]]} occupancy hint.
+     */
+    private int knownMaxThreadsPerThreadgroup(MetalCompilationResultBuilder crb) {
+        TaskDataContext meta = crb.getTaskMetaData();
+        if (meta == null || !meta.isWorkerGridAvailable()) {
+            return 0;
+        }
+        long[] localWork = meta.getWorkerGrid(meta.getId()).getLocalWork();
+        if (localWork == null || localWork.length == 0) {
+            return 0;
+        }
+        long total = 1;
+        for (long dim : localWork) {
+            if (dim <= 0) {
+                return 0;
+            }
+            total *= dim;
+        }
+        // Apple GPUs cap a threadgroup at 1024 threads; ignore anything outside [1, 1024].
+        return (total >= 1 && total <= 1024) ? (int) total : 0;
     }
 
     private String getParameterName(Local local) {

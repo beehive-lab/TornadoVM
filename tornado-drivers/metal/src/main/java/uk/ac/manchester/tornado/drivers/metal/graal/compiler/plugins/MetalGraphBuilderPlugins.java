@@ -81,11 +81,13 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.RawConstant;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.enums.MMAShape;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Float;
 import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
@@ -104,6 +106,10 @@ import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalBarrierNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalConvertHalfToFloat;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalSIMDShuffleDownNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalSIMDUnaryNode;
+import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalSimdgroupMatrixZeroNode;
+import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalSimdgroupMatrixLoadNode;
+import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalSimdgroupMatrixMmaNode;
+import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalSimdgroupMatrixStoreNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalFPBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalFPUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalIntBinaryIntrinsicNode;
@@ -418,6 +424,56 @@ public class MetalGraphBuilderPlugins {
                 return true;
             }
         });
+        registerSimdgroupMatrixPrimitives(r);
+    }
+
+    /**
+     * Low-level matrix-unit (simdgroup_float8x8) primitives: zero / load / multiply-accumulate
+     * / store. The surrounding GEMM loop is ordinary Java compiled by the normal pipeline; only
+     * these calls become hardware instructions. The fragment flows as an opaque
+     * {@code SIMDGROUP_FLOAT8X8} value (pushed as a {@code Matrix8x8Float} object reference).
+     */
+    private static void registerSimdgroupMatrixPrimitives(Registration r) {
+        r.register(new InvocationPlugin("simdgroupMatrixZero", Receiver.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new MetalSimdgroupMatrixZeroNode());
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin("simdgroupMatrixLoad", Receiver.class, FloatArray.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode base, ValueNode stride) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new MetalSimdgroupMatrixLoadNode(array, base, stride));
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin("simdgroupMatrixLoad", Receiver.class, float[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode base, ValueNode stride) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new MetalSimdgroupMatrixLoadNode(array, base, stride));
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin("simdgroupMatrixMultiplyAccumulate", Receiver.class, Matrix8x8Float.class, Matrix8x8Float.class, Matrix8x8Float.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode bMat, ValueNode c) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new MetalSimdgroupMatrixMmaNode(a, bMat, c));
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin("simdgroupMatrixStore", Receiver.class, Matrix8x8Float.class, FloatArray.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode matrix, ValueNode array, ValueNode base, ValueNode stride) {
+                receiver.get(true);
+                b.add(new MetalSimdgroupMatrixStoreNode(matrix, array, base, stride));
+                return true;
+            }
+        });
     }
 
     private static void registerKernelContextPlugins(InvocationPlugins plugins) {
@@ -428,7 +484,189 @@ public class MetalGraphBuilderPlugins {
         localArraysPlugins(r);
         registerAtomicAddOperation(r);
         registerSIMDPlugins(r);
+        registerMMAPlugins(r);
         registerSwizzledLocalAccessesPlugins(r);
+    }
+
+    private static void registerMMAPlugins(Registration r) {
+        // --- mmaFragment(float v) -> float[] ---
+        r.register(new InvocationPlugin("mmaFragment",
+                InvocationPlugin.Receiver.class, float.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode initValue) {
+                unimplemented("MMA instructions only supported for the PTX backend.");
+                return false;
+            }
+        });
+
+        // --- mmaLoadA(int[] aTile, int wmmaK) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadA",
+                InvocationPlugin.Receiver.class, int[].class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode wmmaK) {
+                unimplemented("MMA instructions only supported for the PTX backend.");
+                return false;
+            }
+        });
+
+        // --- mmaLoadB(int[] bTile, int wmmaK) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadB",
+                InvocationPlugin.Receiver.class, int[].class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode wmmaK) {
+                unimplemented("MMA instructions only supported for the PTX backend.");
+                return false;
+            }
+        });
+
+        // --- mmaLoadBSwizzled(HalfFloat[] bTile, int wmmaK) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadBSwizzled",
+                InvocationPlugin.Receiver.class, HalfFloat[].class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode wmmaK) {
+                unimplemented("MMA instructions only supported for the PTX backend.");
+                return false;
+            }
+        });
+
+        // --- mmaStoreBSwizzled(HalfFloat[] arr, int row, int col, int stride, HalfFloat value, int byteOffset) -> void ---
+        r.register(new InvocationPlugin("mmaStoreBSwizzled",
+                InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class,
+                int.class, HalfFloat.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode arr, ValueNode row, ValueNode col,
+                                 ValueNode stride, ValueNode value, ValueNode byteOffset) {
+                unimplemented("MMA instructions only supported for the PTX backend.");
+                return false;
+            }
+        });
+
+        // --- mma(HalfFloat[] fragA, HalfFloat[] fragB, float[] fragC, MMAShape shape) -> float[] ---
+        r.register(new InvocationPlugin("mma",
+                InvocationPlugin.Receiver.class,
+                HalfFloat[].class, HalfFloat[].class, float[].class, MMAShape.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver,
+                                 ValueNode fragA, ValueNode fragB, ValueNode fragC,
+                                 ValueNode shapeNode) {
+                unimplemented("MMA instructions only supported for the PTX backend.");
+                return false;
+            }
+        });
+
+        // --- mmaStore(float[] fragD, FloatArray c, int tileRow, int tileCol, int dimN) -> void ---
+        r.register(new InvocationPlugin("mmaStore",
+                InvocationPlugin.Receiver.class,
+                float[].class, FloatArray.class, int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver,
+                                 ValueNode fragD, ValueNode target,
+                                 ValueNode tileRow, ValueNode tileCol, ValueNode dimN) {
+                unimplemented("MMA instructions only supported for the PTX backend.");
+                return false;
+            }
+        });
+
+        r.register(new InvocationPlugin("mmaFragmentInt",
+                InvocationPlugin.Receiver.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode initValue) {
+                unimplemented("MMA instructions only supported for the PTX backend.");
+                return false;
+            }
+        });
+
+        // --- mmaLoadAInt8(int[], int) -> byte[] ---
+        r.register(new InvocationPlugin("mmaLoadAInt8",
+                InvocationPlugin.Receiver.class, int[].class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode tileK) {
+                unimplemented("MMA instructions only supported for the PTX backend.");
+                return false;
+            }
+        });
+
+        // --- mmaLoadBInt8(int[], int) -> byte[] ---
+        r.register(new InvocationPlugin("mmaLoadBInt8",
+                InvocationPlugin.Receiver.class, int[].class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode tileK) {
+                unimplemented("MMA instructions only supported for the PTX backend.");
+                return false;
+            }
+        });
+
+        // --- mmaInt8(byte[], byte[], int[], MMAShape) -> int[] ---
+        r.register(new InvocationPlugin("mmaInt8",
+                InvocationPlugin.Receiver.class,
+                byte[].class, byte[].class, int[].class, MMAShape.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver,
+                                 ValueNode fragA, ValueNode fragB, ValueNode fragC,
+                                 ValueNode shapeNode) {
+                unimplemented("MMA instructions only supported for the PTX backend.");
+                return false;
+            }
+        });
+
+        // --- mmaStoreInt(int[], IntArray, int, int, int) -> void ---
+        r.register(new InvocationPlugin("mmaStoreInt",
+                InvocationPlugin.Receiver.class,
+                int[].class, IntArray.class, int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver,
+                                 ValueNode fragD, ValueNode target,
+                                 ValueNode tileRow, ValueNode tileCol, ValueNode dimN) {
+                unimplemented("MMA instructions only supported for the PTX backend.");
+                return false;
+            }
+        });
+
+        // --- mmaLoadA(int[], int, int) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadA",
+                InvocationPlugin.Receiver.class, int[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode wmmaK, ValueNode byteOffset) {
+                unimplemented("MMA instructions only supported for the PTX backend.");
+                return false;
+            }
+        });
+
+        // --- mmaLoadB(int[], int, int) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadB",
+                InvocationPlugin.Receiver.class, int[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode wmmaK, ValueNode byteOffset) {
+                unimplemented("MMA instructions only supported for the PTX backend.");
+                return false;
+            }
+        });
+
+        // --- mmaLoadBSwizzled(HalfFloat[], int, int) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadBSwizzled",
+                InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode wmmaK, ValueNode byteOffset) {
+                unimplemented("MMA instructions only supported for the PTX backend.");
+                return false;
+            }
+        });
+
     }
 
     private static void registerSwizzledLocalAccessesPlugins(Registration r) {

@@ -163,6 +163,12 @@ public enum PTXKind implements PlatformKind {
     VECTORHALF4(4, VectorHalf4.TYPE, B16),
     VECTORHALF8(8, VectorHalf8.TYPE, B16),
     VECTORHALF16(16, VectorHalf16.TYPE, B16),
+    MMA_FRAG_A_F16(4, null, B32),    // A: 4 × b32 = 8 × f16 per lane (row-major 16×16 tile slice)
+    MMA_FRAG_B_F16(2, null, B32),    // B: 2 × b32 = 4 × f16 per lane (col-major 16×8 tile slice)
+    MMA_FRAG_ACC_F32(4, null, F32),  // C/D: 4 × f32 per lane (row-major 16×8 tile slice)
+    MMA_FRAG_ACC_S32(4, null, S32),  // C/D: 4 × s32 per lane (row-major 16×8 tile slice)
+    MMA_FRAG_A_S8(4, null, B32),     // A: 4 × b32 = 16 × s8 per lane (row-major 16×32 tile slice)
+    MMA_FRAG_B_S8(2, null, B32),     // B: 2 × b32 = 8 × s8 per lane (col-major 32×8 tile slice)
     ILLEGAL(0, null);
     // @formatter:on
 
@@ -517,6 +523,11 @@ public enum PTXKind implements PlatformKind {
         return size == 8 && !isVector();
     }
 
+    public boolean isMMAFragment() {
+        return this == MMA_FRAG_ACC_F32 || this == MMA_FRAG_A_F16 || this == MMA_FRAG_B_F16
+                || this == MMA_FRAG_ACC_S32 || this == MMA_FRAG_A_S8  || this == MMA_FRAG_B_S8;
+    }
+
     public PTXKind toUntyped() {
         switch (size) {
             case 1:
@@ -532,4 +543,5 @@ public enum PTXKind implements PlatformKind {
                 return null;
         }
     }
+
 }

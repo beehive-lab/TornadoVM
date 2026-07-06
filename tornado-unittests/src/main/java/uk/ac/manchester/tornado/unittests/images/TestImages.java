@@ -27,6 +27,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
@@ -471,6 +472,8 @@ public class TestImages extends TornadoTestBase {
 
     @Test
     public void testImageFloat11() throws TornadoExecutionPlanException {
+        // Uses Float8 image elements; CUDA has no native vector type beyond width 4.
+        assertNotBackend(TornadoVMBackendType.CUDA);
 
         final int M = 512;
         final int N = 32;
