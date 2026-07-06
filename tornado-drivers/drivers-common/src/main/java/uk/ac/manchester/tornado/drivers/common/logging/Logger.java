@@ -85,7 +85,8 @@ public class Logger {
         OpenCL("OpenCL"), //
         PTX("PTX"), //
         SPIRV("SPIRV"), //
-        Metal("Metal"); //
+        Metal("Metal"), //
+        CUDA("CUDA"); //
 
         String backendName;
 

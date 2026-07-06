@@ -1345,6 +1345,8 @@ class TornadoVMRunnerTool():
             nativeAccessModules.append(__PTX_MODULE__)
         if ("metal-backend" in self.listOfBackends):
             nativeAccessModules.append(__METAL_MODULE__)
+        if ("cuda-backend" in self.listOfBackends):
+            nativeAccessModules.append(__CUDA_MODULE__)
         if nativeAccessModules:
             javaFlags = javaFlags + "--enable-native-access=" + ",".join(nativeAccessModules) + " "
 

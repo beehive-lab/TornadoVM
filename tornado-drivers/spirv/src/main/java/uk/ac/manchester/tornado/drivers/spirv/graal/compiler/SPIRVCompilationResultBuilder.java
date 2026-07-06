@@ -76,8 +76,9 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
     private SPIRVDeviceContext deviceContext;
 
     public SPIRVCompilationResultBuilder(CoreProviders providers, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext, OptionValues options, DebugContext debug,
-                                         CompilationResult compilationResult, LIR lir) {
+            CompilationResult compilationResult, LIR lir) {
         super(providers, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult, Register.None, NO_VERIFIERS, lir);
+
         nonInlinedMethods = new HashSet<>();
     }
 
@@ -207,10 +208,14 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
      * have a LoopExit in the true branch contains a LoopExitNode or it is not a
      * control Split (due to nested control-flow).
      *
-     * @param basicBlock {@link HIRBlock}
-     * @param visitor    {@link SPIRVBlockVisitor}
-     * @param visited    {@link HashSet}
-     * @param pending    {@link HashMap}
+     * @param basicBlock
+     *     {@link HIRBlock}
+     * @param visitor
+     *     {@link SPIRVBlockVisitor}
+     * @param visited
+     *     {@link HashSet}
+     * @param pending
+     *     {@link HashMap}
      */
     private void rescheduleTrueBranchConditionsIfNeeded(HIRBlock basicBlock, SPIRVBlockVisitor visitor, HashSet<HIRBlock> visited, HashMap<HIRBlock, HIRBlock> pending) {
         if (!basicBlock.isLoopHeader() && basicBlock.getDominator() != null && basicBlock.getDominator().getEndNode() instanceof IfNode) {
