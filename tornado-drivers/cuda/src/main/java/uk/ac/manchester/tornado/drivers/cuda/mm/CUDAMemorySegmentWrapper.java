@@ -165,9 +165,13 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
         if (batchSize <= 0) {
             internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferOffset, bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
         } else {
+            // Honour the sub-region size like read() does: a reused (locked) buffer can be larger than
+            // the current chunk (e.g. a full-chunk buffer serving the smaller remainder chunk), and
+            // copying its full bufferSize would overrun the host segment.
+            final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : bufferSize;
             internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), 0, TornadoNativeArray.ARRAY_HEADER, segment.address(), 0, (useDeps) ? events : null);
             returnEvents.add(internalEvent);
-            internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferOffset + TornadoNativeArray.ARRAY_HEADER, bufferSize, segment.address(),
+            internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferOffset + TornadoNativeArray.ARRAY_HEADER, numBytes, segment.address(),
                     hostOffset + TornadoNativeArray.ARRAY_HEADER, (useDeps) ? events : null);
         }
         returnEvents.add(internalEvent);
