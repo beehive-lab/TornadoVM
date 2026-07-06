@@ -125,12 +125,8 @@ public final class CuFftLibraryProvider implements TornadoLibraryProvider {
         CuFftNativeLib.checkResult(result, functionName);
     }
 
-    /** (input, output, n, batch). */
-    private static void execC2C(CuFftContext context, LibraryInvocation invocation, int direction) {
-        final int n = (int) invocation.getArg(2);
-        final int batch = (int) invocation.getArg(3);
-
-        String planKey = n + ":" + batch;
+    private static long getOrCreatePlan(CuFftContext context, PlanKind kind, int dim1, int dim2) {
+        String planKey = kind + ":" + dim1 + ":" + dim2;
         Long plan = context.planCache.get(planKey);
         if (plan == null) {
             plan = switch (kind) {
