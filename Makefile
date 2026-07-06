@@ -2,7 +2,7 @@ all: build
 
 # Variable passed for the build process. List of backend/s to use { opencl, ptx, spirv, cuda, metal }. The default one is `opencl`.
 # make BACKEND=<comma_separated_backend_list>
-BACKEND ?= cuda
+BACKEND ?= opencl
 
 build jdk25:
 	bin/compile --jdk jdk25 --backend $(BACKEND)
