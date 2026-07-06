@@ -51,9 +51,10 @@ extern "C" {
 #define CL_BUILD_ERROR (-2)
 
 // Locates directories that contain the toolkit's cuda_fp16.h, so an explicit
-// NVRTC include path can be supplied on CUDA 11.x toolkits (see comment at the
-// call site). Candidate roots are probed in priority order and only those that
-// actually hold the header are returned. Returns an empty vector if none exist.
+// NVRTC include path can be supplied on toolkits whose NVRTC cannot resolve
+// the standard CUDA headers on its own (see comment at the call site).
+// Candidate roots are probed in priority order and only those that actually
+// hold the header are returned. Returns an empty vector if none exist.
 static std::vector<std::string> find_cuda_header_include_dirs() {
     std::vector<std::string> candidates;
     for (const char *var : {"CUDA_PATH", "CUDA_HOME", "CUDA_ROOT"}) {
@@ -78,6 +79,19 @@ static std::vector<std::string> find_cuda_header_include_dirs() {
         }
     }
     return found;
+}
+
+// Copies the NVRTC build log (errors and warnings) of `prog` into the
+// program's log buffer, replacing any log from a previous compile attempt.
+static void capture_nvrtc_log(nvrtcProgram prog, cuda_program_t *program) {
+    program->log.clear();
+    size_t log_size = 0;
+    nvrtcGetProgramLogSize(prog, &log_size);
+    if (log_size > 1) {
+        std::vector<char> log(log_size);
+        nvrtcGetProgramLog(prog, log.data());
+        program->log.assign(log.data(), log_size);
+    }
 }
 
 /*
@@ -157,44 +171,45 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
         nvrtcResult nv = nvrtcCreateProgram(&prog, program->source.c_str(), "tornado_kernel.cu", 0, nullptr, nullptr);
         LOG_NVRTC_AND_VALIDATE("nvrtcCreateProgram", nv);
 
-        // Header resolution for #include <cuda_fp16.h> et al. is version-dependent:
+        // Header resolution for #include <cuda_fp16.h> et al. varies by toolkit:
         //
-        //   * CUDA >= 12.0: NVRTC ships device-side built-in versions of the standard
-        //     CUDA headers (cuda_fp16.h, cuda_runtime.h, ...) designed for RTC mode.
-        //     Do NOT add a system include path here: the on-disk cuda_fp16.hpp guards
-        //     <nv/target> with !defined(__CUDACC_RTC__), so NV_IF_ELSE_TARGET /
-        //     NV_IS_DEVICE are undefined under NVRTC and produce 100+ errors. The
-        //     built-ins avoid that mismatch.
+        //   * Some NVRTC builds (observed on 12.x) resolve the standard CUDA
+        //     headers via RTC built-ins with an empty include list. For those,
+        //     adding the on-disk include dir is actively harmful: their on-disk
+        //     cuda_fp16.hpp guards <nv/target> with !defined(__CUDACC_RTC__),
+        //     so NV_IF_ELSE_TARGET / NV_IS_DEVICE are undefined under NVRTC and
+        //     produce 100+ errors.
         //
-        //   * CUDA < 12.0: NVRTC has NO built-in cuda_fp16.h, so a kernel that emits
-        //     #include <cuda_fp16.h> fails with "could not open source file". These
-        //     older toolkit headers are RTC-safe (no <nv/target> guard), so we point
-        //     NVRTC at the toolkit include dir to resolve them.
-        int nvrtcMajor = 0, nvrtcMinor = 0;
-        nvrtcVersion(&nvrtcMajor, &nvrtcMinor);
-
+        //   * Others (11.x, 13.x) have no built-in cuda_fp16.h and fail with
+        //     "could not open source file" unless the toolkit include dir is
+        //     supplied; their on-disk headers are RTC-safe.
+        //
+        // A version gate cannot capture this reliably across the toolkit matrix,
+        // so compile with NVRTC's own resolution first and, only if that fails
+        // on a missing header, retry once with the toolkit include dirs.
         std::vector<std::string> includeOpts; // storage must outlive `options`
-        if (nvrtcMajor > 0 && nvrtcMajor < 12) {
+        std::vector<const char *> options;
+        options.push_back(arch.c_str());
+        nv = nvrtcCompileProgram(prog, (int) options.size(), options.data());
+        LOG_NVRTC_AND_VALIDATE("nvrtcCompileProgram", nv);
+        capture_nvrtc_log(prog, program);
+
+        if (nv != NVRTC_SUCCESS && program->log.find("could not open source file") != std::string::npos) {
             for (const std::string &dir : find_cuda_header_include_dirs()) {
                 includeOpts.push_back("--include-path=" + dir);
             }
-        }
-
-        std::vector<const char *> options;
-        options.push_back(arch.c_str());
-        for (const std::string &opt : includeOpts) {
-            options.push_back(opt.c_str());
-        }
-        nv = nvrtcCompileProgram(prog, (int) options.size(), options.data());
-        LOG_NVRTC_AND_VALIDATE("nvrtcCompileProgram", nv);
-
-        // Always capture the build log (errors and warnings).
-        size_t log_size = 0;
-        nvrtcGetProgramLogSize(prog, &log_size);
-        if (log_size > 1) {
-            std::vector<char> log(log_size);
-            nvrtcGetProgramLog(prog, log.data());
-            program->log.assign(log.data(), log_size);
+            if (!includeOpts.empty()) {
+                // A failed nvrtcProgram cannot be recompiled; rebuild it for the retry.
+                nvrtcDestroyProgram(&prog);
+                nv = nvrtcCreateProgram(&prog, program->source.c_str(), "tornado_kernel.cu", 0, nullptr, nullptr);
+                LOG_NVRTC_AND_VALIDATE("nvrtcCreateProgram", nv);
+                for (const std::string &opt : includeOpts) {
+                    options.push_back(opt.c_str());
+                }
+                nv = nvrtcCompileProgram(prog, (int) options.size(), options.data());
+                LOG_NVRTC_AND_VALIDATE("nvrtcCompileProgram", nv);
+                capture_nvrtc_log(prog, program);
+            }
         }
 
         if (nv != NVRTC_SUCCESS) {
