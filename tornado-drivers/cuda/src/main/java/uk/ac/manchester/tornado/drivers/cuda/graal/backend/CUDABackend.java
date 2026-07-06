@@ -372,6 +372,14 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
             // kernel, before the kernel signature.
             asm.emit(CUDAPreamble.PREAMBLE);
 
+            // The CUB warp-reduce header is NVRTC-hostile (it transitively pulls in
+            // host C++ std headers such as <utility>), so only emit it for kernels
+            // that actually compose a cub::WarpReduce. Emitting it unconditionally
+            // breaks runtime compilation of every kernel, reductions or not.
+            if (usesCubWarpReduce(lir)) {
+                asm.emit(CUDAPreamble.CUB_REDUCE_INCLUDE);
+            }
+
             /*
              * BUG There is a bug on some CUDADriver devices which requires us to insert an
              * extra CUDADriver buffer into the kernel arguments. This has the effect of
@@ -427,6 +435,22 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
             emitVariableDefs(crb, asm, lir);
             asm.eol();
         }
+    }
+
+    /**
+     * Returns {@code true} if any instruction in {@code lir} is a
+     * {@link CUDALIRStmt.CubWarpReduceStmt}, i.e. the kernel composes a
+     * {@code cub::WarpReduce} and therefore needs the CUB header included.
+     */
+    private static boolean usesCubWarpReduce(LIR lir) {
+        for (int b : lir.linearScanOrder()) {
+            for (LIRInstruction lirInstruction : lir.getLIRforBlock(lir.getBlockById(b))) {
+                if (lirInstruction instanceof CUDALIRStmt.CubWarpReduceStmt) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private String getParameterName(Local local) {

@@ -820,6 +820,277 @@ public class ReduceGPUSnippets implements Snippets {
         }
     }
 
+    /*
+     * CUB-delegated variants (flag: -Dtornado.cuda.reduce.cub=True): the local
+     * reduction tree is replaced by a warp-composed cub::WarpReduce (see
+     * CUDACubReduceNode). Multiplication reductions keep the tree (CUB has no
+     * built-in product functor under NVRTC).
+     */
+
+    @Snippet
+    public static void partialReduceIntAddCub(int[] inputArray, int[] outputArray, int gidx) {
+        int localIdx = CUDAIntrinsics.get_local_id(0);
+        int groupID = CUDAIntrinsics.get_group_id(0);
+        int result = CUDAIntrinsics.cubReduceAddInt(inputArray[gidx]);
+        CUDAIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID + 1] = result;
+        }
+    }
+
+    @Snippet
+    public static void partialReduceIntAddCarrierValueCub(int[] inputArray, int[] outputArray, int gidx, int value) {
+        int localIdx = CUDAIntrinsics.get_local_id(0);
+        int groupID = CUDAIntrinsics.get_group_id(0);
+        int result = CUDAIntrinsics.cubReduceAddInt(value);
+        CUDAIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID + 1] = result;
+        }
+    }
+
+    @Snippet
+    public static void partialReduceLongAddCub(long[] inputArray, long[] outputArray, int gidx) {
+        int localIdx = CUDAIntrinsics.get_local_id(0);
+        int groupID = CUDAIntrinsics.get_group_id(0);
+        long result = CUDAIntrinsics.cubReduceAddLong(inputArray[gidx]);
+        CUDAIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID + 1] = result;
+        }
+    }
+
+    @Snippet
+    public static void partialReduceLongAddCarrierValueCub(long[] inputArray, long[] outputArray, int gidx, long value) {
+        int localIdx = CUDAIntrinsics.get_local_id(0);
+        int groupID = CUDAIntrinsics.get_group_id(0);
+        long result = CUDAIntrinsics.cubReduceAddLong(value);
+        CUDAIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID + 1] = result;
+        }
+    }
+
+    @Snippet
+    public static void partialReduceFloatAddCub(float[] inputArray, float[] outputArray, int gidx) {
+        int localIdx = CUDAIntrinsics.get_local_id(0);
+        int groupID = CUDAIntrinsics.get_group_id(0);
+        float result = CUDAIntrinsics.cubReduceAddFloat(inputArray[gidx]);
+        CUDAIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID + 1] = result;
+        }
+    }
+
+    @Snippet
+    public static void partialReduceFloatAddCarrierValueCub(float[] inputArray, float[] outputArray, int gidx, float value) {
+        int localIdx = CUDAIntrinsics.get_local_id(0);
+        int groupID = CUDAIntrinsics.get_group_id(0);
+        float result = CUDAIntrinsics.cubReduceAddFloat(value);
+        CUDAIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID + 1] = result;
+        }
+    }
+
+    @Snippet
+    public static void partialReduceDoubleAddCub(double[] inputArray, double[] outputArray, int gidx) {
+        int localIdx = CUDAIntrinsics.get_local_id(0);
+        int groupID = CUDAIntrinsics.get_group_id(0);
+        double result = CUDAIntrinsics.cubReduceAddDouble(inputArray[gidx]);
+        CUDAIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID + 1] = result;
+        }
+    }
+
+    @Snippet
+    public static void partialReduceDoubleAddCarrierValueCub(double[] inputArray, double[] outputArray, int gidx, double value) {
+        int localIdx = CUDAIntrinsics.get_local_id(0);
+        int groupID = CUDAIntrinsics.get_group_id(0);
+        double result = CUDAIntrinsics.cubReduceAddDouble(value);
+        CUDAIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID + 1] = result;
+        }
+    }
+
+    @Snippet
+    public static void partialReduceIntMaxCub(int[] inputArray, int[] outputArray, int gidx) {
+        int localIdx = CUDAIntrinsics.get_local_id(0);
+        int groupID = CUDAIntrinsics.get_group_id(0);
+        int result = CUDAIntrinsics.cubReduceMaxInt(inputArray[gidx]);
+        CUDAIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID + 1] = result;
+        }
+    }
+
+    @Snippet
+    public static void partialReduceIntMaxCarrierValueCub(int[] inputArray, int[] outputArray, int gidx, int value) {
+        int localIdx = CUDAIntrinsics.get_local_id(0);
+        int groupID = CUDAIntrinsics.get_group_id(0);
+        int result = CUDAIntrinsics.cubReduceMaxInt(value);
+        CUDAIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID + 1] = result;
+        }
+    }
+
+    @Snippet
+    public static void partialReduceLongMaxCub(long[] inputArray, long[] outputArray, int gidx) {
+        int localIdx = CUDAIntrinsics.get_local_id(0);
+        int groupID = CUDAIntrinsics.get_group_id(0);
+        long result = CUDAIntrinsics.cubReduceMaxLong(inputArray[gidx]);
+        CUDAIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID + 1] = result;
+        }
+    }
+
+    @Snippet
+    public static void partialReduceLongMaxCarrierValueCub(long[] inputArray, long[] outputArray, int gidx, long value) {
+        int localIdx = CUDAIntrinsics.get_local_id(0);
+        int groupID = CUDAIntrinsics.get_group_id(0);
+        long result = CUDAIntrinsics.cubReduceMaxLong(value);
+        CUDAIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID + 1] = result;
+        }
+    }
+
+    @Snippet
+    public static void partialReduceFloatMaxCub(float[] inputArray, float[] outputArray, int gidx) {
+        int localIdx = CUDAIntrinsics.get_local_id(0);
+        int groupID = CUDAIntrinsics.get_group_id(0);
+        float result = CUDAIntrinsics.cubReduceMaxFloat(inputArray[gidx]);
+        CUDAIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID + 1] = result;
+        }
+    }
+
+    @Snippet
+    public static void partialReduceFloatMaxCarrierValueCub(float[] inputArray, float[] outputArray, int gidx, float value) {
+        int localIdx = CUDAIntrinsics.get_local_id(0);
+        int groupID = CUDAIntrinsics.get_group_id(0);
+        float result = CUDAIntrinsics.cubReduceMaxFloat(value);
+        CUDAIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID + 1] = result;
+        }
+    }
+
+    @Snippet
+    public static void partialReduceDoubleMaxCub(double[] inputArray, double[] outputArray, int gidx) {
+        int localIdx = CUDAIntrinsics.get_local_id(0);
+        int groupID = CUDAIntrinsics.get_group_id(0);
+        double result = CUDAIntrinsics.cubReduceMaxDouble(inputArray[gidx]);
+        CUDAIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID + 1] = result;
+        }
+    }
+
+    @Snippet
+    public static void partialReduceDoubleMaxCarrierValueCub(double[] inputArray, double[] outputArray, int gidx, double value) {
+        int localIdx = CUDAIntrinsics.get_local_id(0);
+        int groupID = CUDAIntrinsics.get_group_id(0);
+        double result = CUDAIntrinsics.cubReduceMaxDouble(value);
+        CUDAIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID + 1] = result;
+        }
+    }
+
+    @Snippet
+    public static void partialReduceIntMinCub(int[] inputArray, int[] outputArray, int gidx) {
+        int localIdx = CUDAIntrinsics.get_local_id(0);
+        int groupID = CUDAIntrinsics.get_group_id(0);
+        int result = CUDAIntrinsics.cubReduceMinInt(inputArray[gidx]);
+        CUDAIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID + 1] = result;
+        }
+    }
+
+    @Snippet
+    public static void partialReduceIntMinCarrierValueCub(int[] inputArray, int[] outputArray, int gidx, int value) {
+        int localIdx = CUDAIntrinsics.get_local_id(0);
+        int groupID = CUDAIntrinsics.get_group_id(0);
+        int result = CUDAIntrinsics.cubReduceMinInt(value);
+        CUDAIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID + 1] = result;
+        }
+    }
+
+    @Snippet
+    public static void partialReduceLongMinCub(long[] inputArray, long[] outputArray, int gidx) {
+        int localIdx = CUDAIntrinsics.get_local_id(0);
+        int groupID = CUDAIntrinsics.get_group_id(0);
+        long result = CUDAIntrinsics.cubReduceMinLong(inputArray[gidx]);
+        CUDAIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID + 1] = result;
+        }
+    }
+
+    @Snippet
+    public static void partialReduceLongMinCarrierValueCub(long[] inputArray, long[] outputArray, int gidx, long value) {
+        int localIdx = CUDAIntrinsics.get_local_id(0);
+        int groupID = CUDAIntrinsics.get_group_id(0);
+        long result = CUDAIntrinsics.cubReduceMinLong(value);
+        CUDAIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID + 1] = result;
+        }
+    }
+
+    @Snippet
+    public static void partialReduceFloatMinCub(float[] inputArray, float[] outputArray, int gidx) {
+        int localIdx = CUDAIntrinsics.get_local_id(0);
+        int groupID = CUDAIntrinsics.get_group_id(0);
+        float result = CUDAIntrinsics.cubReduceMinFloat(inputArray[gidx]);
+        CUDAIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID + 1] = result;
+        }
+    }
+
+    @Snippet
+    public static void partialReduceFloatMinCarrierValueCub(float[] inputArray, float[] outputArray, int gidx, float value) {
+        int localIdx = CUDAIntrinsics.get_local_id(0);
+        int groupID = CUDAIntrinsics.get_group_id(0);
+        float result = CUDAIntrinsics.cubReduceMinFloat(value);
+        CUDAIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID + 1] = result;
+        }
+    }
+
+    @Snippet
+    public static void partialReduceDoubleMinCub(double[] inputArray, double[] outputArray, int gidx) {
+        int localIdx = CUDAIntrinsics.get_local_id(0);
+        int groupID = CUDAIntrinsics.get_group_id(0);
+        double result = CUDAIntrinsics.cubReduceMinDouble(inputArray[gidx]);
+        CUDAIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID + 1] = result;
+        }
+    }
+
+    @Snippet
+    public static void partialReduceDoubleMinCarrierValueCub(double[] inputArray, double[] outputArray, int gidx, double value) {
+        int localIdx = CUDAIntrinsics.get_local_id(0);
+        int groupID = CUDAIntrinsics.get_group_id(0);
+        double result = CUDAIntrinsics.cubReduceMinDouble(value);
+        CUDAIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID + 1] = result;
+        }
+    }
+
     public static class Templates extends AbstractTemplates implements TornadoSnippetTypeInference {
 
         // Add
@@ -869,9 +1140,24 @@ public class ReduceGPUSnippets implements Snippets {
             this.providers = providers;
         }
 
-        private SnippetInfo snippet(Tuple2<Class<? extends ReduceGPUSnippets>, String> tuple2) {
-            return snippet(providers, tuple2.t0, tuple2.t1);
+        // Opt-in: cub::WarpReduce is not NVRTC-compilable on all toolkits (CUB
+        // drags in host std headers such as <utility>, which NVRTC cannot resolve
+        // on e.g. CUDA 12.0 system CUB). Default @Reduce to the portable
+        // reduction-tree snippets; enable CUB explicitly with
+        // -Dtornado.cuda.reduce.cub=True where the toolkit supports it.
+        private static final boolean USE_CUB = Boolean.parseBoolean(System.getProperty("tornado.cuda.reduce.cub", "False"));
 
+        private static final java.util.Set<String> CUB_CAPABLE = java.util.Set.of( //
+                "partialReduceIntAdd", "partialReduceLongAdd", "partialReduceFloatAdd", "partialReduceDoubleAdd", //
+                "partialReduceIntMax", "partialReduceLongMax", "partialReduceFloatMax", "partialReduceDoubleMax", //
+                "partialReduceIntMin", "partialReduceLongMin", "partialReduceFloatMin", "partialReduceDoubleMin", //
+                "partialReduceIntAddCarrierValue", "partialReduceLongAddCarrierValue", "partialReduceFloatAddCarrierValue", "partialReduceDoubleAddCarrierValue", //
+                "partialReduceIntMaxCarrierValue", "partialReduceLongMaxCarrierValue", "partialReduceFloatMaxCarrierValue", "partialReduceDoubleMaxCarrierValue", //
+                "partialReduceIntMinCarrierValue", "partialReduceLongMinCarrierValue", "partialReduceFloatMinCarrierValue", "partialReduceDoubleMinCarrierValue");
+
+        private SnippetInfo snippet(Tuple2<Class<? extends ReduceGPUSnippets>, String> tuple2) {
+            String snippetName = (USE_CUB && CUB_CAPABLE.contains(tuple2.t1)) ? tuple2.t1 + "Cub" : tuple2.t1;
+            return snippet(providers, tuple2.t0, snippetName);
         }
 
         private SnippetInfo getSnippetFromCUDABinaryNodeInteger(CUDAIntBinaryIntrinsicNode value, ValueNode extra) {

@@ -777,6 +777,147 @@ public class CUDALIRStmt {
         }
     }
 
+    /**
+     * Block-wide reduction via CUB: two-stage {@code cub::WarpReduce}
+     * composition valid for any runtime block size (warp width 32 is a
+     * compile-time constant; partial warps use the valid_items overloads).
+     * The result is defined for all threads after stage 1 and holds the
+     * block-wide value on (warp 0, lane 0) after stage 2 — the reduction
+     * snippets consume it on local thread 0 only. Each instance emits uniquely
+     * suffixed shared-memory declarations so multiple reductions can coexist
+     * in one kernel.
+     */
+    @Opcode("CUB_WARP_REDUCE")
+    public static class CubWarpReduceStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<CubWarpReduceStmt> TYPE = LIRInstructionClass.create(CubWarpReduceStmt.class);
+
+        private static final java.util.concurrent.atomic.AtomicInteger SUFFIX_GENERATOR = new java.util.concurrent.atomic.AtomicInteger(0);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value input;
+
+        private final uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDACubReduceNode.Op op;
+        private final jdk.vm.ci.meta.JavaKind elementKind;
+        private final int suffix;
+
+        public CubWarpReduceStmt(Value result, Value input, uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDACubReduceNode.Op op, jdk.vm.ci.meta.JavaKind elementKind) {
+            super(TYPE);
+            this.result = result;
+            this.input = input;
+            this.op = op;
+            this.elementKind = elementKind;
+            this.suffix = SUFFIX_GENERATOR.incrementAndGet();
+        }
+
+        private String cType() {
+            return switch (elementKind) {
+                case Int -> "int";
+                case Long -> "long long";
+                case Float -> "float";
+                case Double -> "double";
+                default -> throw new RuntimeException("CUB reduction: unsupported kind " + elementKind);
+            };
+        }
+
+        private void emitReduceCall(CUDACompilationResultBuilder crb, CUDAAssembler asm, String warpReduceType, String tempExpr, String inputExpr, Value inputValue, String validExpr) {
+            asm.emit(warpReduceType);
+            asm.emit("(");
+            asm.emit(tempExpr);
+            asm.emit(")");
+            switch (op) {
+                case ADD -> asm.emit(".Sum(");
+                case MAX -> asm.emit(".Reduce(");
+                case MIN -> asm.emit(".Reduce(");
+            }
+            if (inputExpr != null) {
+                asm.emit(inputExpr);
+            } else {
+                asm.emitValue(crb, inputValue);
+            }
+            if (op == uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDACubReduceNode.Op.MAX) {
+                asm.emit(", cub::Max()");
+            } else if (op == uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDACubReduceNode.Op.MIN) {
+                asm.emit(", cub::Min()");
+            }
+            asm.emit(", ");
+            asm.emit(validExpr);
+            asm.emit(")");
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            final String type = cType();
+            final String wr = "CubWarpReduce_" + suffix;
+            final String temp = "cub_temp_" + suffix;
+            final String partials = "cub_partials_" + suffix;
+            final String lane = "cub_lane_" + suffix;
+            final String warp = "cub_warp_" + suffix;
+            final String valid = "cub_valid_" + suffix;
+            final String nwarps = "cub_nwarps_" + suffix;
+
+            asm.indent();
+            asm.emit("typedef cub::WarpReduce<" + type + "> " + wr);
+            asm.delimiter();
+            asm.eol();
+            asm.indent();
+            asm.emit("__shared__ typename " + wr + "::TempStorage " + temp + "[32]");
+            asm.delimiter();
+            asm.eol();
+            asm.indent();
+            asm.emit("__shared__ " + type + " " + partials + "[32]");
+            asm.delimiter();
+            asm.eol();
+            asm.indent();
+            asm.emit("int " + lane + " = ((int) threadIdx.x) & 31");
+            asm.delimiter();
+            asm.eol();
+            asm.indent();
+            asm.emit("int " + warp + " = ((int) threadIdx.x) >> 5");
+            asm.delimiter();
+            asm.eol();
+            asm.indent();
+            asm.emit("int " + valid + " = ((int) blockDim.x) - (" + warp + " << 5)");
+            asm.delimiter();
+            asm.eol();
+            asm.indent();
+            asm.emit("if (" + valid + " > 32) { " + valid + " = 32; }");
+            asm.eol();
+
+            // Stage 1: per-warp reduction (result defined for every thread)
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.emit(" = ");
+            emitReduceCall(crb, asm, wr, temp + "[" + warp + "]", null, input, valid);
+            asm.delimiter();
+            asm.eol();
+            asm.indent();
+            asm.emit("if (" + lane + " == 0) { " + partials + "[" + warp + "] = ");
+            asm.emitValue(crb, result);
+            asm.emit("; }");
+            asm.eol();
+            asm.indent();
+            asm.emit("__syncthreads()");
+            asm.delimiter();
+            asm.eol();
+
+            // Stage 2: first warp reduces the per-warp partials
+            asm.indent();
+            asm.emit("int " + nwarps + " = (((int) blockDim.x) + 31) >> 5");
+            asm.delimiter();
+            asm.eol();
+            asm.indent();
+            asm.emit("if (" + warp + " == 0) { ");
+            asm.emitValue(crb, result);
+            asm.emit(" = ");
+            emitReduceCall(crb, asm, wr, temp + "[0]", partials + "[(" + lane + " < " + nwarps + ") ? " + lane + " : 0]", null, nwarps);
+            asm.emit("; }");
+            asm.eol();
+        }
+    }
+
     @Opcode("MOVE")
     public static class MoveStmt extends AbstractInstruction {
 
