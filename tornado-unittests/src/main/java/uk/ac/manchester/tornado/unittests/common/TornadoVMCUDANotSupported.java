@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
+ * Copyright (c) 2026, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,25 +15,13 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.api.enums;
 
-public enum TornadoVMBackendType {
+package uk.ac.manchester.tornado.unittests.common;
 
-    OPENCL("OpenCL"), //
-    METAL("Metal"), //
-    PTX("PTX"), //
-    CUDA("CUDA"), //
-    SPIRV("SPIRV"), //
-    JAVA("Java"), //
-    VIRTUAL("Virtual");
+public class TornadoVMCUDANotSupported extends RuntimeException {
 
-    final String backendName;
-
-    TornadoVMBackendType(String backendName) {
-        this.backendName = backendName;
+    public TornadoVMCUDANotSupported(String message) {
+        super(message);
     }
 
-    String getName() {
-        return backendName;
-    }
 }
