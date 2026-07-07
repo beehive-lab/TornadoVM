@@ -139,8 +139,23 @@ bug; (b) `testPrivateVector*` = the CleanerFactory misfire above (was mis-labele
       write→readback chain: marshalling offsets/handle all correct (`storage`@20, handle=3→nested buffer), input
       transfer OK, but **no `transferDeviceToHost` at the interpreter and no `TRANSFER_DEVICE_TO_HOST` in the
       bytecode** for the matrix output, while `TestArrays` emits it 33×.
-      **Impact (per-suite):** `matrices.TestMatrixTypes` 27→7 fails, `images.TestImages` 18→9, `vectortypes.TestFloats`
-      25→20. Full-suite tally pending. Residual vector/image/matrix failures are a *different* remaining cause.
+      **Impact: full suite 520→587 PASS / 270→203 FAILED / 137 UNSUP (+67, zero real regressions; committed
+      a5be660f3, pushed mp/jdk27-jvmci-removal).** Per-suite: `matrices.TestMatrixTypes` 27→7, `images.TestImages`
+      18→9, `vectortypes.TestFloats` 25→20.
+      - RESIDUAL vector failures are a **DIFFERENT, pre-existing bug** (masked by the readback bug until now):
+        `VectorFloat4` etc. now correctly emit `TRANSFER_DEVICE_TO_HOST` (readback fix works) but still read 0.0.
+        Confirmed: `ARRAY_HEADER=16` (baseIndex=4 → correct data offset `+16`), but the emitted `vload4/vstore4`
+        kernel address is `nested_buffer + flatIndex*4 + 12` — a **`+12` header, off by one float (4 bytes)** —
+        so every vector element read/write is misaligned. The `+12` is added in BYTES after scaling, so it does
+        NOT come from `TornadoNativeTypeElimination`'s element-unit fold; there is no dedicated Float-vector
+        offset phase (only `TornadoHalfFloatVectorOffset` exists). The `vload4` comes from vectorizing the 4
+        consecutive scalar `array.get(flatIndex+k)` reads in `VectorFloat4.loadFromArray`; the vectorization
+        computes the group base with the wrong header. NEXT target (~34 `vectortypes` fails): find where the
+        vector-group base address is built (VectorLoadElementProxyNode / VectorStoreElementProxyNode / LIR
+        vectorization) and why the header is 12 not 16.
+      - **END GOAL clarified (user, 2026-07-07): reach parity with `develop`'s failure rate** (not zero — some
+        tests fail on develop too). Reductions (`@Reduce`, ~41) and HalfFloat v66/v71 may be out of scope if
+        develop/its JDK also skips/fails them; the reflection path should not ADD failures beyond develop's.
       (superseded investigation below kept for the record)
       - Investigation (2026-07-04): **JDK 27 defaults `UseCompactObjectHeaders=true`** (JDK 25+
         Project Lilliput; the flag didn't exist on JDK 21, so object field layout differs). BUT running
@@ -182,9 +197,36 @@ bug; (b) `testPrivateVector*` = the CleanerFactory misfire above (was mis-labele
       the array-return matching in the vendored `InvocationPlugins` lookup (also clears any other array-returning
       intrinsics), or (b) **workaround phase**: replace a surviving `InvokeNode`→`KernelContext.allocate*LocalArray`
       with a `LocalArrayNode` (mirrors `TornadoNativeTypeElimination`) — bounded and testable.
-- [ ] Run the full `make fast-tests-jdk27` whitelist and tabulate per-suite pass/fail
-- [ ] Triage remaining failures: (a) unsupported on reflection path, (b) reflection-provider gap
-      (`backing()` `UnsupportedOperationException` → port that method to reflection/`Unsafe`), (c) unrelated
+- [~] **"Fix all remaining failures" plan in progress (2026-07-07, plan file
+      `fix-all-remaining-failures-shimmering-peacock.md`). Suite 587→625→630 PASS / 203→165→149 FAILED / 137 UNSUP,
+      0 regressions, each phase pushed to mp/jdk27-jvmci-removal:**
+  - [x] **Phase 1 (b1d5f56fa) — vector vload/vstore.** `LoadIndexedVectorNode` used `getArrayBaseOffset(kind)` =
+        JVM Java-array offset (12 for float[]/int[] under JDK 27 compact headers) instead of the fixed native
+        `ARRAY_HEADER=16`. FIX: explicit-base `createArrayAddress(...,PANAMA_OBJECT_HEADER_SIZE,...)` in
+        `OCLLoweringProvider.createArrayAccess`/`lowerStoreIndexedNode`. +38.
+  - [x] **Phase 2 (4e222dda3) — KernelContext.** Plugin lookup misses `allocate*LocalArray` (array return) +
+        `local/globalBarrier` → survive as invokes passing the KernelContext obj as `argN` → OpenCL
+        "undeclared identifier 'arg0'". FIX: `TornadoOpenCLIntrinsicsReplacements` rewrites them to
+        `LocalArrayNode`/`OCLBarrierNode`; `OCLNodeLIRBuilder.emitPrologue` skips the unused KernelContext/
+        AtomicInteger param. Bytes 4→0, others −1..−3.
+  - [x] **Phase 3a (commit 3b59d91cb) — HalfFloatArray accessor.** New `registerHalfFloatArrayGetSet` in
+        `OCLGraphBuilderPlugins` emits `ReadHalfFloatNode`/`WriteHalfFloatNode` at `HalfFloatArray.get/set`
+        (`JavaKind.Short` sizing via `arrayElementAddress`), so the abstract `MemorySegment.getAtIndex`
+        (`this.code is null`) is never reached. CORRECT but **net-zero** for the count — every HalfFloat test is
+        also gated by v71 (below). Committed as a prerequisite.
+  - **TRACTABLE PHASES DONE (1, 2, 3a). Remaining = architectural / reassess territory (per plan decision):**
+  - [ ] **Phase 3b — v71 class-file (dominant HalfFloat blocker).** `HalfFloat` ctor/ops call
+        `java.lang.Float.floatToFloat16`/`float16ToFloat` (Java-20+, **v71** on JDK 27). `TornadoSketcher`
+        (line ~178) recursively sketches every non-intrinsified callee; it descends into `java.lang.Float`
+        (v71) which the frozen-Graal ClassfileParser (max v66) rejects → "Unsupported class file major version
+        71". These Float methods HAVE invocation plugins (`registerFP16ConversionPlugins`) but they don't fire
+        during the sketch graph-builder. FIX = teach `TornadoSketcher` to skip descent into invocation-plugin-
+        backed callees (general, JDK-neutral) OR raise the frozen-Graal version cap. **Risky** (touches the core
+        access-analysis fixed in Phase-nested-array); do with care / supervision, not blind.
+  - [ ] Residual KernelContext-reduction correctness `0.0`/bail (deeper — reduction logic, not compile).
+  - [ ] Phase 4 `@Reduce` (~41): architectural host-graph rewrite.
+  - [ ] **Phase 0 — develop baseline**: build develop on JDK 21, run the same suite; scope which of the
+        remaining ~149 are actually in-scope (parity target = JDK-27 failing-set ⊆ develop failing-set).
 - [ ] Vector types (`Float4`, `Int3`, …), matrices, `KernelContext`, atomics — note which work
 - [ ] Re-enable surefire for `jdk27` once green, or keep running via the launcher
 - [ ] **Regression:** confirm JDK 21 (`make jdk21`) still builds + passes — shared changes
