@@ -73,6 +73,7 @@ import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Float;
 import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
@@ -87,6 +88,8 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GetAtomicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IncAtomicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalArrayNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ReadHalfFloatNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.WriteHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLBarrierNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLConvertHalfToFloat;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode;
@@ -902,6 +905,44 @@ public class OCLGraphBuilderPlugins {
         registerNativeArrayGetSet(plugins, ShortArray.class, JavaKind.Short);
         registerNativeArrayGetSet(plugins, ByteArray.class, JavaKind.Byte);
         registerNativeArrayGetSet(plugins, CharArray.class, JavaKind.Char);
+        registerHalfFloatArrayGetSet(plugins);
+    }
+
+    /**
+     * Like {@link #registerNativeArrayGetSet}, but for {@link HalfFloatArray} whose {@code get}/{@code set}
+     * wrap a {@link uk.ac.manchester.tornado.api.types.HalfFloat} around a 2-byte {@code short} segment slot.
+     * Emits {@link ReadHalfFloatNode}/{@link WriteHalfFloatNode} directly at the accessor call site so the
+     * delegate chain {@code get -> TornadoMemorySegment.getShortAtIndex -> MemorySegment.getAtIndex} (abstract,
+     * bodiless on JDK 22+, "this.code is null") is never reached on the reflection path.
+     */
+    private static void registerHalfFloatArrayGetSet(InvocationPlugins plugins) {
+        final Field segmentField;
+        final Field baseIndexField;
+        try {
+            segmentField = HalfFloatArray.class.getDeclaredField("segment");
+            baseIndexField = HalfFloatArray.class.getDeclaredField("baseIndex");
+        } catch (NoSuchFieldException e) {
+            throw new TornadoRuntimeException("HalfFloatArray is missing expected fields for intrinsification: " + e);
+        }
+        Registration r = new Registration(plugins, HalfFloatArray.class);
+        r.register(new InvocationPlugin("get", Receiver.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index) {
+                AddressNode addressNode = arrayElementAddress(b, receiver, index, JavaKind.Short, segmentField, baseIndexField);
+                ReadHalfFloatNode readNode = b.append(new ReadHalfFloatNode(addressNode));
+                b.push(JavaKind.Object, readNode);
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin("set", Receiver.class, int.class, HalfFloat.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value) {
+                AddressNode addressNode = arrayElementAddress(b, receiver, index, JavaKind.Short, segmentField, baseIndexField);
+                WriteHalfFloatNode writeNode = new WriteHalfFloatNode(addressNode, value);
+                b.add(writeNode);
+                return true;
+            }
+        });
     }
 
     private static void registerNativeArrayGetSet(InvocationPlugins plugins, Class<?> arrayClass, JavaKind kind) {
