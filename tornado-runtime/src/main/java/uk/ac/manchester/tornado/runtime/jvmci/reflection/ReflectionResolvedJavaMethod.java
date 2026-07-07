@@ -370,6 +370,20 @@ final class ReflectionResolvedJavaMethod implements ResolvedJavaMethod {
 
     @Override
     public String toString() {
-        return "ReflectionMethod<" + executable + ">";
+        // Match the JVMCI-canonical "<holder>.<name>(<params>)" form (like HotSpotMethod's %H.%n(%p)):
+        // TornadoVM's vector/half-float NodePlugins match on method.toString().contains("FloatArray.<init>(int)")
+        // etc., so the "<init>" and parenthesised parameter list must be present or private-vector/HalfFloat
+        // construction is inlined into the (bodiless) native allocator instead of being intrinsified.
+        StringBuilder sb = new StringBuilder("ReflectionMethod<");
+        sb.append(executable.getDeclaringClass().getName()).append('.').append(getName()).append('(');
+        Class<?>[] parameterTypes = executable.getParameterTypes();
+        for (int i = 0; i < parameterTypes.length; i++) {
+            if (i > 0) {
+                sb.append(", ");
+            }
+            sb.append(parameterTypes[i].getSimpleName());
+        }
+        sb.append(")>");
+        return sb.toString();
     }
 }
