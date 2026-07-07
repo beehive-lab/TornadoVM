@@ -708,6 +708,10 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
         CUDACodeCache oclCodeCache = getCUDACodeCache(executionPlanId);
         oclCodeCache.reset();
         codeCache.remove(executionPlanId);
+        // Plan teardown may bulk-release device buffers without the per-buffer free hook
+        // running, which would leave host pins behind - the stale-pin hazard. Drain all
+        // owned pins here; live segments degrade to pageable until their next allocate.
+        context.getPinnedMemoryRegistry().unpinAll();
         wasReset = true;
     }
 
