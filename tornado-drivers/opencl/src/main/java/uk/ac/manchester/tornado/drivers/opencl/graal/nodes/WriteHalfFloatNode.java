@@ -37,9 +37,10 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkOCLWriteNode;
 
 @NodeInfo
-public class WriteHalfFloatNode extends FixedWithNextNode implements LIRLowerable {
+public class WriteHalfFloatNode extends FixedWithNextNode implements LIRLowerable, MarkOCLWriteNode {
 
     public static final NodeClass<WriteHalfFloatNode> TYPE = NodeClass.create(WriteHalfFloatNode.class);
 

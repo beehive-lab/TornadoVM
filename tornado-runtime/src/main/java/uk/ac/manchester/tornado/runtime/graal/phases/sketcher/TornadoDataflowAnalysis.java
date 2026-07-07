@@ -63,6 +63,7 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelStrideNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkArrayParameterAccess;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkOCLWriteNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkVectorStore;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
 
@@ -204,7 +205,8 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 if (((ValueNode) currentNode).stamp(NodeView.DEFAULT).javaType(metaAccess).isArray()) {
                     nodesToProcess.addAll(currentNode.usages().snapshot());
                 }
-            } else if (currentNode instanceof StoreIndexedNode || currentNode instanceof StoreAtomicIndexedNode || currentNode instanceof WriteNode || currentNode instanceof JavaWriteNode) {
+            } else if (currentNode instanceof StoreIndexedNode || currentNode instanceof StoreAtomicIndexedNode || currentNode instanceof WriteNode || currentNode instanceof JavaWriteNode
+                    || currentNode instanceof MarkOCLWriteNode) {
                 MetaControlFlow meta = analyseControlFlowForWriting(currentNode, fatherNodeStore, isWrittenTrueCondition, isWrittenFalseCondition);
                 fatherNodeStore = meta.fatherNodeStore();
                 isWrittenTrueCondition = meta.isWrittenTrueCondition();
