@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Provides a plan-private mapping of {@link PTXEvent}s to {@link PTXStream}s to
- * facilitate cross-stream synchronization. Each {@link ExecutionStreamSet} (i.e.
+ * facilitate cross-stream synchronization. Each {@link PTXExecutionStreamSet} (i.e.
  * each execution plan on a device) owns exactly one registry, which is what keeps
  * concurrent execution plans isolated from one another.
  *
@@ -42,11 +42,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * timing) and (b) cross-stream sync (insert {@code cuStreamWaitEvent} on a target stream).
  *
  * <p>In single-stream mode this registry is unused - local event ids are passed directly.
- *
- * <p>Extracted in Phase 1 from a private nested class of {@code PTXDeviceContext} into a
- * first-class, plan-private object owned by {@link ExecutionStreamSet}.
  */
-public final class EventRegistry {
+public final class PTXEventRegistry {
 
     /** Unique/global id for a {@link PTXEvent} across all {@link PTXEventPool} instances of one plan. */
     private final AtomicInteger globalIdCounter = new AtomicInteger(0);

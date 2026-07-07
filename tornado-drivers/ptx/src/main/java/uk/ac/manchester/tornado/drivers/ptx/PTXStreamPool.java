@@ -27,21 +27,22 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Per-device-context pool of {@link ExecutionStreamSet}s, keyed by execution plan.
- * Replaces the thread-keyed {@code PTXStreamTable}: streams are pooled per plan and
- * addressed by {@link PTXStreamType} role, decoupled from the issuing host thread.
+ * Owned by a {@link PTXDeviceContext}, this maps each execution plan to its own
+ * {@link PTXExecutionStreamSet} (its role streams and plan-private {@link PTXEventRegistry}).
+ * It is the device context's entry point for obtaining the {@link PTXStream} that should run a
+ * given operation: callers ask for a stream by execution plan and {@link PTXStreamType} role
+ * rather than by host thread.
  *
- * <p>The owning {@link PTXDeviceContext} is already per-device, so this pool does not
- * carry a device dimension. Later iterations will extend it with a stream cap and a
- * ring of generic streams ({@code acquire(n)}) for staged transfers; Phase 1 keeps it
- * to per-plan role streams plus the plan-private {@link EventRegistry}.
+ * <p>Replaces the former thread-keyed {@code PTXStreamTable}: pooling per plan (not per thread)
+ * is what lets independent plans hold isolated streams. The owning device context is already
+ * per-device, so this pool carries no device dimension.
  */
-public final class StreamPool {
+public final class PTXStreamPool {
 
-    private final Map<Long, ExecutionStreamSet> streamSets = new ConcurrentHashMap<>();
+    private final Map<Long, PTXExecutionStreamSet> streamSets = new ConcurrentHashMap<>();
 
     /**
-     * Returns the role stream for a plan, creating the {@link ExecutionStreamSet} and the
+     * Returns the role stream for a plan, creating the {@link PTXExecutionStreamSet} and the
      * stream lazily.
      *
      * @return the role stream, or {@code null} when called on the JVM shutdown-hook thread
@@ -51,7 +52,7 @@ public final class StreamPool {
         if (Thread.currentThread().threadId() == PTX.SHUTDOW_THREAD_ID_HOOK) {
             return null;
         }
-        return streamSets.computeIfAbsent(executionPlanId, k -> new ExecutionStreamSet()).acquire(type);
+        return streamSets.computeIfAbsent(executionPlanId, k -> new PTXExecutionStreamSet()).acquire(type);
     }
 
     /** Returns the COMPUTE stream at {@code index} in the plan's compute pool. */
@@ -59,32 +60,32 @@ public final class StreamPool {
         if (Thread.currentThread().threadId() == PTX.SHUTDOW_THREAD_ID_HOOK) {
             return null;
         }
-        return streamSets.computeIfAbsent(executionPlanId, k -> new ExecutionStreamSet()).acquireCompute(index);
+        return streamSets.computeIfAbsent(executionPlanId, k -> new PTXExecutionStreamSet()).acquireCompute(index);
     }
 
     /** Round-robin index of the next COMPUTE stream for this plan. */
     public int nextComputeIndex(long executionPlanId) {
-        return streamSets.computeIfAbsent(executionPlanId, k -> new ExecutionStreamSet()).nextComputeIndex();
+        return streamSets.computeIfAbsent(executionPlanId, k -> new PTXExecutionStreamSet()).nextComputeIndex();
     }
 
     /** Snapshot of all currently-created streams for a plan (or empty if the plan is unknown). */
     public java.util.Collection<PTXStream> activeStreams(long executionPlanId) {
-        ExecutionStreamSet set = streamSets.get(executionPlanId);
+        PTXExecutionStreamSet set = streamSets.get(executionPlanId);
         return set == null ? java.util.List.of() : set.activeStreams();
     }
 
-    /** Returns the role stream only if its {@link ExecutionStreamSet} and the stream already exist. */
+    /** Returns the role stream only if its {@link PTXExecutionStreamSet} and the stream already exist. */
     public PTXStream getIfExists(long executionPlanId, PTXStreamType type) {
         if (Thread.currentThread().threadId() == PTX.SHUTDOW_THREAD_ID_HOOK) {
             return null;
         }
-        ExecutionStreamSet set = streamSets.get(executionPlanId);
+        PTXExecutionStreamSet set = streamSets.get(executionPlanId);
         return set == null ? null : set.getIfExists(type);
     }
 
     /** The plan-private event registry, creating the plan's stream set if needed. */
-    public EventRegistry eventRegistry(long executionPlanId) {
-        return streamSets.computeIfAbsent(executionPlanId, k -> new ExecutionStreamSet()).eventRegistry();
+    public PTXEventRegistry eventRegistry(long executionPlanId) {
+        return streamSets.computeIfAbsent(executionPlanId, k -> new PTXExecutionStreamSet()).eventRegistry();
     }
 
     public boolean contains(long executionPlanId) {
@@ -93,7 +94,7 @@ public final class StreamPool {
 
     /** Destroys all streams and the registry for a plan and removes it from the pool. */
     public void remove(long executionPlanId) {
-        ExecutionStreamSet set = streamSets.remove(executionPlanId);
+        PTXExecutionStreamSet set = streamSets.remove(executionPlanId);
         if (set != null) {
             set.cleanup();
         }

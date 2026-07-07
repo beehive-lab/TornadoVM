@@ -38,7 +38,7 @@ import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
  * <p>These events are managed by {@link PTXEventPool} (one pool per {@link PTXStream}).
  * Each event has a <b>local event ID</b> - an index into its owning pool.
  *
- * <p>In multi-stream mode, a separate {@code EventRegistry} in {@link PTXDeviceContext}
+ * <p>In multi-stream mode, a separate {@code PTXEventRegistry} in {@link PTXDeviceContext}
  * assigns <b>global event IDs</b> that the TornadoVM interpreter uses for dependency
  * tracking. The registry maps each global ID to (streamType, localEventId) so that
  * the correct PTXEvent can be resolved from the correct stream's pool.

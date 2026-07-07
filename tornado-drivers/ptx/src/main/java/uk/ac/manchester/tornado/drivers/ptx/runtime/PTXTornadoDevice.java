@@ -441,7 +441,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
      * @return a list containing the H2D transfer event ID, or {@code null} if no
      *     transfer was needed. In single-stream mode the ID is a local
      *     {@code PTXEventPool} index; in multi-stream mode it is a global
-     *     {@code EventRegistry} ID that the interpreter uses to insert
+     *     {@code PTXEventRegistry} ID that the interpreter uses to insert
      *     {@code cuStreamWaitEvent} dependencies on the COMPUTE stream.
      */
     @Override

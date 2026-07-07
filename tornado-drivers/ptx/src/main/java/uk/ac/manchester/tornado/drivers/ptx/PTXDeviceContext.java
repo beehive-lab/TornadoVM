@@ -67,7 +67,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     private final PTXScheduler scheduler;
     private final TornadoBufferProvider bufferProvider;
     private final PowerMetric powerMetricHandler;
-    private final StreamPool streamPool;
+    private final PTXStreamPool streamPool;
     /** Execution plans (by id) for which intra-plan concurrency / multi-stream is enabled. Per-plan, set by the runtime. */
     private final Set<Long> intraPlanConcurrencyPlans = ConcurrentHashMap.newKeySet();
     /** Guards the one-time warning when concurrency is requested on hardware that cannot overlap work. */
@@ -84,7 +84,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
 
     public PTXDeviceContext(PTXDevice device) {
         this.device = device;
-        streamPool = new StreamPool();
+        streamPool = new PTXStreamPool();
         this.scheduler = new PTXScheduler(device);
         this.powerMetricHandler = new PTXNvidiaPowerMetricHandler(this);
         codeCache = new ConcurrentHashMap<>();
@@ -232,7 +232,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         return device.getByteOrder();
     }
 
-    private EventRegistry getEventRegistry(long executionPlanId) {
+    private PTXEventRegistry getEventRegistry(long executionPlanId) {
         return streamPool.eventRegistry(executionPlanId);
     }
 
@@ -242,8 +242,8 @@ public class PTXDeviceContext implements TornadoDeviceContext {
 
     public Event resolveEvent(long executionPlanId, int event) {
         if (isMultiStreamEnabled(executionPlanId)) {
-            EventRegistry registry = getEventRegistry(executionPlanId);
-            EventRegistry.PTXEventEntry entry = registry.resolve(event);
+            PTXEventRegistry registry = getEventRegistry(executionPlanId);
+            PTXEventRegistry.PTXEventEntry entry = registry.resolve(event);
             if (entry != null) {
                 PTXStream stream = getStream(executionPlanId, entry.streamType(), entry.streamIndex());
                 return stream.resolveEvent(entry.localEventId());
@@ -257,7 +257,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
      * Fine-grained cross-stream synchronization.
      *
      * <p>For each global event ID in {@code waitEvents}, resolves it through the
-     * {@link EventRegistry} to find the source stream and local event, then calls
+     * {@link PTXEventRegistry} to find the source stream and local event, then calls
      * {@code cuStreamWaitEvent} to make work submitted on {@code targetStream} to
      * wait upon event's completion before starting execution WITHOUT blocking the
      * host, in our case the TornadoVM Interpreter thread.
@@ -272,10 +272,10 @@ public class PTXDeviceContext implements TornadoDeviceContext {
      */
     private void resolveAndWaitCrossStream(long executionPlanId, int[] waitEvents, PTXStream targetStream) {
         if (waitEvents == null || !isMultiStreamEnabled(executionPlanId)) return;
-        EventRegistry registry = getEventRegistry(executionPlanId);
+        PTXEventRegistry registry = getEventRegistry(executionPlanId);
         for (int globalEventId : waitEvents) {
             if (globalEventId == -1) continue;
-            EventRegistry.PTXEventEntry entry = registry.resolve(globalEventId);
+            PTXEventRegistry.PTXEventEntry entry = registry.resolve(globalEventId);
             if (entry == null) continue;
             // Skip same-stream events - CUDA's in-order execution already guarantees ordering
             // within a stream. During graph capture, cuStreamWaitEvent(S, capturedEventOnS)
@@ -336,7 +336,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
      * Enqueues a barrier with fine-grained dependency resolution.
      *
      * <p>In multi-stream mode, resolves each global event ID in {@code events} through
-     * the {@link EventRegistry} and inserts a {@code cuStreamWaitEvent} on every active
+     * the {@link PTXEventRegistry} and inserts a {@code cuStreamWaitEvent} on every active
      * stream for each dependency, so each stream only waits on the specific operations
      * it depends on rather than all prior work. If {@code events} is null, delegates to
      * {@link #enqueueBarrier(long)}.
@@ -366,7 +366,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
 
     /**
      * End-of-iteration full sync: waits for all in-flight GPU work and resets the
-     * {@link EventRegistry}.
+     * {@link PTXEventRegistry}.
      *
      * <p>Called by the interpreter after all bytecodes have been dispatched
      * (when {@code VM_USE_DEPS=true}) to ensure the iteration is fully complete before
@@ -375,7 +375,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
      *
      * <p>In single-stream mode, issues {@code cuStreamSynchronize} on the default stream.
      * In multi-stream mode, issues {@code cuStreamSynchronize} on every active stream
-     * (H2D, COMPUTE, D2H) and then resets the {@link EventRegistry}, allowing global
+     * (H2D, COMPUTE, D2H) and then resets the {@link PTXEventRegistry}, allowing global
      * event IDs to be reused in the next iteration.
      *
      * @param executionPlanId the execution plan context
@@ -399,11 +399,11 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     }
 
     /**
-     * Enqueues a dependency-aware sync point, then resets the {@link EventRegistry}.
+     * Enqueues a dependency-aware sync point, then resets the {@link PTXEventRegistry}.
      *
      * <p>The primary caller is the interpreter's {@code BARRIER} bytecode handler, which
      * passes global event IDs from the interpreter dependency lists. In multi-stream mode,
-     * each ID is resolved through the {@link EventRegistry} to its source stream and a
+     * each ID is resolved through the {@link PTXEventRegistry} to its source stream and a
      * {@code cuStreamWaitEvent} is inserted on every active stream - providing fine-grained,
      * GPU-side synchronisation without blocking the CPU. The registry is reset afterwards
      * so global IDs can be reused in the next iteration.
@@ -431,7 +431,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
                 if (targetStream.getStreamType() == PTXStreamType.DEFAULT) continue;
                 resolveAndWaitCrossStream(executionPlanId, events, targetStream);
             }
-            // Only reset the EventRegistry when NOT inside a graph capture region.
+            // Only reset the PTXEventRegistry when NOT inside a graph capture region.
             // During capture the registry is still needed for resolving cross-stream deps.
             if (!isStreamCapturing(executionPlanId)) {
                 getEventRegistry(executionPlanId).reset();
