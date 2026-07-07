@@ -203,6 +203,7 @@ public class TestCUDAStreams extends TornadoTestBase {
     public void testTaskDependency() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
 
         FloatArray a = new FloatArray(N);
         FloatArray b = new FloatArray(N);
@@ -239,6 +240,7 @@ public class TestCUDAStreams extends TornadoTestBase {
     public void testMixedDependencyGraph() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
 
         FloatArray x = new FloatArray(N);
         FloatArray y = new FloatArray(N);
@@ -286,6 +288,7 @@ public class TestCUDAStreams extends TornadoTestBase {
     public void testManyIndependentUnitsSingleStream() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
 
         FloatArray[] x = new FloatArray[MANY_UNITS];
         FloatArray[] y = new FloatArray[MANY_UNITS];
@@ -323,6 +326,7 @@ public class TestCUDAStreams extends TornadoTestBase {
     public void testManyIndependentUnitsMultiStream() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
 
         FloatArray[] x = new FloatArray[MANY_UNITS];
         FloatArray[] y = new FloatArray[MANY_UNITS];
@@ -362,6 +366,7 @@ public class TestCUDAStreams extends TornadoTestBase {
     public void testMultipleIterations() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
 
         FloatArray x = new FloatArray(N);
         FloatArray y = new FloatArray(N);
@@ -397,6 +402,7 @@ public class TestCUDAStreams extends TornadoTestBase {
     public void testSingleStreamGraphReplay() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
 
         FloatArray x = new FloatArray(GRAPH_N);
         FloatArray y = new FloatArray(GRAPH_N);
@@ -431,6 +437,7 @@ public class TestCUDAStreams extends TornadoTestBase {
     public void testMultiStreamGraphReplay() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
 
         FloatArray x = new FloatArray(GRAPH_N);
         FloatArray y = new FloatArray(GRAPH_N);
@@ -468,6 +475,7 @@ public class TestCUDAStreams extends TornadoTestBase {
     public void testDecodeLoopConcurrent() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
 
         // Resident read-only weights (uploaded once, FIRST_EXECUTION) - row-stochastic (W[i][j] = 1/DIM).
         FloatArray[] weights = new FloatArray[LLAMA_LAYERS];
