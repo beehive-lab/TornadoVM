@@ -325,6 +325,11 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      * Pushed by the runtime before issuing a plan's bytecodes.
      */
     public void setIntraPlanConcurrency(long executionPlanId, boolean enabled) {
+        // Piggyback on this per-execution hook (the interpreter calls it before issuing any
+        // bytecode) to push the CURRENT profiler state to the native layer: the profiler can be
+        // enabled dynamically per plan (withProfiler), and per-op timing events are only worth
+        // creating while it is active.
+        CUDACommandQueue.nativeEnableTiming(TornadoOptions.isProfilerEnabled());
         if (enabled && deviceSupportsIntraPlanConcurrency()) {
             intraPlanConcurrencyPlans.add(executionPlanId);
         } else {

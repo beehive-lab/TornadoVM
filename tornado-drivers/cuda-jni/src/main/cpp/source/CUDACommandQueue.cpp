@@ -63,9 +63,12 @@ static bool stream_is_capturing(cuda_queue_t *queue) {
  * Creates and records a CUevent on the queue's stream, returning its boxed
  * handle. Used as the "event" result the OpenCL clone expects from enqueue ops.
  */
+static unsigned int event_flags();
+
 static jlong record_event(cuda_queue_t *queue) {
     cuda_event_t *ev = new cuda_event_t();
-    CUresult result = cuEventCreate(&ev->event, CU_EVENT_DEFAULT);
+    ev->start = nullptr;
+    CUresult result = cuEventCreate(&ev->event, event_flags());
     LOG_CUDA_AND_VALIDATE("cuEventCreate", result);
     result = cuEventRecord(ev->event, queue->stream);
     LOG_CUDA_AND_VALIDATE("cuEventRecord", result);
@@ -91,6 +94,60 @@ static void wait_events(JNIEnv *env, cuda_queue_t *queue, jlongArray array) {
         }
     }
     env->ReleasePrimitiveArrayCritical(array, raw, JNI_ABORT);
+}
+
+/*
+ * Whether per-operation device timing is wanted (the TornadoVM profiler is active).
+ * Pushed from Java before each plan execution. When off, the START timestamp event
+ * is skipped entirely (halving the events per operation) and the remaining events
+ * are created with CU_EVENT_DISABLE_TIMING, which is cheaper to record. Events
+ * without a start report an elapsed time of 0 (see CUDAEvent.cpp).
+ */
+static volatile jboolean tornado_timing_enabled = JNI_TRUE;
+
+static unsigned int event_flags() {
+    return tornado_timing_enabled ? CU_EVENT_DEFAULT : CU_EVENT_DISABLE_TIMING;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDACommandQueue
+ * Method:    nativeEnableTiming
+ * Signature: (Z)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQueue_nativeEnableTiming
+        (JNIEnv *env, jclass clazz, jboolean enabled) {
+    tornado_timing_enabled = enabled;
+}
+
+/*
+ * Allocates an event handle and, when the profiler is active, records a START
+ * timestamp on the stream to be paired with end_event() after the operation
+ * (cuEventElapsedTime(start, event) then yields the device time of the operation).
+ */
+static cuda_event_t *begin_event(cuda_queue_t *queue) {
+    cuda_event_t *ev = new cuda_event_t();
+    ev->event = nullptr;
+    ev->start = nullptr;
+    if (tornado_timing_enabled) {
+        CUresult result = cuEventCreate(&ev->start, CU_EVENT_DEFAULT);
+        LOG_CUDA_AND_VALIDATE("cuEventCreate(start)", result);
+        result = cuEventRecord(ev->start, queue->stream);
+        LOG_CUDA_AND_VALIDATE("cuEventRecord(start)", result);
+    }
+    return ev;
+}
+
+/*
+ * Records the END/completion event for an operation started with begin_event(),
+ * and returns the boxed handle. This event doubles as the operation's dependency
+ * handle (cuStreamWaitEvent / status queries), so it is always created.
+ */
+static jlong end_event(cuda_event_t *ev, cuda_queue_t *queue) {
+    CUresult result = cuEventCreate(&ev->event, event_flags());
+    LOG_CUDA_AND_VALIDATE("cuEventCreate(end)", result);
+    result = cuEventRecord(ev->event, queue->stream);
+    LOG_CUDA_AND_VALIDATE("cuEventRecord(end)", result);
+    return (jlong) ev;
 }
 
 /*
