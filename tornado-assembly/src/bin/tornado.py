@@ -294,6 +294,61 @@ def validate_ptx_backend(sdk_path):
 
     return True
 
+def validate_cuda_backend(sdk_path):
+    """Validate CUDA backend dependencies on Windows."""
+    if os.name != 'nt':
+        return True
+
+    cuda_dll = os.path.join(sdk_path, 'lib', 'tornado-cuda.dll')
+
+    if not os.path.exists(cuda_dll):
+        print(f"[WARNING] CUDA backend configured but tornado-cuda.dll not found")
+        print(f"[INFO] Expected location: {cuda_dll}")
+        print()
+        return False
+
+    if not check_dll_loadable(cuda_dll):
+        print("[ERROR] Cannot load CUDA JNI library")
+        print()
+        print(f"[INFO] Library location: {cuda_dll}")
+        print()
+
+        gpus = get_gpu_info()
+        if gpus:
+            print("[INFO] Detected GPU(s):")
+            for gpu in gpus:
+                print(f"       - {gpu}")
+                if "NVIDIA" not in gpu.upper():
+                    print("         (This is not an NVIDIA GPU - CUDA requires NVIDIA)")
+            print()
+
+        has_nvidia_driver = check_nvidia_driver()
+
+        print("[CAUSE] Missing NVIDIA CUDA Toolkit or drivers")
+        print("        The CUDA backend requires:")
+        print("        - NVIDIA GPU")
+        print("        - NVIDIA drivers (usually pre-installed on Windows)")
+        print("        - CUDA Toolkit 12.0+")
+        print()
+
+        if not has_nvidia_driver:
+            print("[FIX] Install NVIDIA CUDA Toolkit and drivers")
+            print("      Download from: https://developer.nvidia.com/cuda-downloads")
+            print()
+        else:
+            print("[INFO] NVIDIA drivers detected (nvidia-smi available)")
+            print()
+            print("[FIX] Reinstall or update NVIDIA CUDA Toolkit 12.0+")
+            print("      Download from: https://developer.nvidia.com/cuda-downloads")
+            print()
+
+        print("[NOTE] CUDA backend is NVIDIA-specific")
+        print("       For non-NVIDIA GPUs, use OpenCL or SPIR-V backends instead")
+        print()
+        sys.exit(1)
+
+    return True
+
 def validate_spirv_backend(sdk_path):
     """Validate SPIR-V backend dependencies on Windows."""
     if os.name != 'nt':
@@ -413,6 +468,9 @@ def validate_windows_dependencies(sdk_path):
 
                 if 'ptx-backend' in content:
                     validate_ptx_backend(sdk_path)
+
+                if 'cuda-backend' in content:
+                    validate_cuda_backend(sdk_path)
 
                 if 'spirv-backend' in content:
                     validate_spirv_backend(sdk_path)

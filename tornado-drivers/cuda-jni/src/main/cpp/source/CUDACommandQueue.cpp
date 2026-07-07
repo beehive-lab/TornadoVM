@@ -46,9 +46,12 @@ static bool stream_is_capturing(cuda_queue_t *queue) {
 /*
  * Creates and records a CUevent on the queue's stream, returning its boxed
  * handle. Used as the "event" result the OpenCL clone expects from enqueue ops.
+ * No start event is recorded, so the reported elapsed time is 0 (used by
+ * markers/barriers that do not bracket a timed operation).
  */
 static jlong record_event(cuda_queue_t *queue) {
     cuda_event_t *ev = new cuda_event_t();
+    ev->start = nullptr;
     CUresult result = cuEventCreate(&ev->event, CU_EVENT_DEFAULT);
     LOG_CUDA_AND_VALIDATE("cuEventCreate", result);
     result = cuEventRecord(ev->event, queue->stream);
@@ -75,6 +78,35 @@ static void wait_events(JNIEnv *env, cuda_queue_t *queue, jlongArray array) {
         }
     }
     env->ReleasePrimitiveArrayCritical(array, raw, JNI_ABORT);
+}
+
+/*
+ * Allocates an event handle and records a START timestamp on the stream, to be
+ * paired with end_event() after the operation. CU_EVENT_DEFAULT keeps timing
+ * enabled (CU_EVENT_DISABLE_TIMING would not), so cuEventElapsedTime works.
+ */
+static cuda_event_t *begin_event(cuda_queue_t *queue) {
+    cuda_event_t *ev = new cuda_event_t();
+    ev->event = nullptr;
+    ev->start = nullptr;
+    CUresult result = cuEventCreate(&ev->start, CU_EVENT_DEFAULT);
+    LOG_CUDA_AND_VALIDATE("cuEventCreate(start)", result);
+    result = cuEventRecord(ev->start, queue->stream);
+    LOG_CUDA_AND_VALIDATE("cuEventRecord(start)", result);
+    return ev;
+}
+
+/*
+ * Records the END/completion timestamp for an event started with begin_event(),
+ * and returns the boxed handle. cuEventElapsedTime(start, event) then yields the
+ * device time of the operation enqueued between the two records.
+ */
+static jlong end_event(cuda_event_t *ev, cuda_queue_t *queue) {
+    CUresult result = cuEventCreate(&ev->event, CU_EVENT_DEFAULT);
+    LOG_CUDA_AND_VALIDATE("cuEventCreate(end)", result);
+    result = cuEventRecord(ev->event, queue->stream);
+    LOG_CUDA_AND_VALIDATE("cuEventRecord(end)", result);
+    return (jlong) ev;
 }
 
 /*
@@ -210,6 +242,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
 
     cuCtxSetCurrent(queue->context);
     wait_events(env, queue, events);
+    cuda_event_t *ev = begin_event(queue);
     CUresult result = cuLaunchKernel(
             kernel->function,
             grid[0], grid[1], grid[2],
@@ -220,7 +253,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
             nullptr);
     LOG_CUDA_AND_VALIDATE("cuLaunchKernel", result);
 
-    return record_event(queue);
+    return end_event(ev, queue);
 }
 
 /*
@@ -245,6 +278,7 @@ static jlong transfer_to_device(JNIEnv *env, cuda_queue_t *queue, void *host_bas
     }
     cuCtxSetCurrent(queue->context);
     wait_events(env, queue, events);
+    cuda_event_t *ev = begin_event(queue);
     CUresult result = cuMemcpyHtoDAsync(
             (CUdeviceptr) (device_ptr + device_offset),
             (const void *) ((char *) host_base + host_offset),
@@ -254,7 +288,7 @@ static jlong transfer_to_device(JNIEnv *env, cuda_queue_t *queue, void *host_bas
     if (sync_after && !stream_is_capturing(queue)) {
         cuStreamSynchronize(queue->stream);
     }
-    return record_event(queue);
+    return end_event(ev, queue);
 }
 
 static jlong transfer_to_host(JNIEnv *env, cuda_queue_t *queue, void *host_base,
@@ -265,6 +299,7 @@ static jlong transfer_to_host(JNIEnv *env, cuda_queue_t *queue, void *host_base,
     }
     cuCtxSetCurrent(queue->context);
     wait_events(env, queue, events);
+    cuda_event_t *ev = begin_event(queue);
     CUresult result = cuMemcpyDtoHAsync(
             (void *) ((char *) host_base + host_offset),
             (CUdeviceptr) (device_ptr + device_offset),
@@ -274,7 +309,7 @@ static jlong transfer_to_host(JNIEnv *env, cuda_queue_t *queue, void *host_base,
     if (sync_after && !stream_is_capturing(queue)) {
         cuStreamSynchronize(queue->stream);
     }
-    return record_event(queue);
+    return end_event(ev, queue);
 }
 
 /* ---- writeArrayToDevice overloads (byte/char/short/int/long/float/double) ---- */

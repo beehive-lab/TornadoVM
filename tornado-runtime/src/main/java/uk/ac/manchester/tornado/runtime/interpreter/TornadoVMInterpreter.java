@@ -187,6 +187,10 @@ public class TornadoVMInterpreter {
             BatchConfiguration batchConfiguration = BatchConfiguration.computeChunkSizes(context, batchSize);
             int totalChunks = batchConfiguration.getTotalChunks();
             for (Object object : objects) {
+                // Deliberately counts only the EVEN chunks: the DEALLOC after the last even chunk must
+                // fire so the remainder chunk (if any) gets a fresh buffer sized to the remainder -
+                // transfers use the buffer's allocated size, so reusing the even-chunk buffer would
+                // overrun the host segment.
                 totalEvenBatchesPerObject.put(object, totalChunks);
                 currentBatchNumberPerObject.put(object, 0);
             }
@@ -291,6 +295,14 @@ public class TornadoVMInterpreter {
         // applied after this interpreter is built, so latching it at construction misses it and the
         // dependency DAG (waitList -> cross-stream events) would never engage for concurrent plans.
         useDependencies = VM_USE_DEPS || isIntraPlanConcurrencyActive();
+
+        // Batched plans: reset the per-object chunk counters so every execution behaves like the
+        // first (per-chunk DEALLOCs stay no-ops until the last even chunk). Without this reset the
+        // counters keep growing across execute() calls, so on re-execution every per-chunk DEALLOC
+        // frees for real and the buffers are deallocated and reallocated on every chunk.
+        if (graphExecutionContext.getBatchSize() != -1 && !isWarmup) {
+            currentBatchNumberPerObject.replaceAll((object, count) -> 0);
+        }
 
         if (isMemoryLimitEnabled() && graphExecutionContext.doesExceedExecutionPlanLimit()) {
             throw new TornadoMemoryException("OutofMemoryException due to executionPlan.withMemoryLimit of " + graphExecutionContext.getExecutionPlanMemoryLimit());
