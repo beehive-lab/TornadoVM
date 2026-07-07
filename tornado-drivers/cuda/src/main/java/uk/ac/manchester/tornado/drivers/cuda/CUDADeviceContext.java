@@ -71,6 +71,8 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
 
     /** Execution plans that requested intra-plan concurrency (multi-queue issue). */
     private final Set<Long> intraPlanConcurrencyPlans = Collections.synchronizedSet(new HashSet<>());
+    /** Guards the one-time warning emitted when concurrency is requested on hardware that cannot overlap. */
+    private boolean warnedUnsupportedConcurrency;
     /** Per-plan role queues (H2D / COMPUTE / D2H) used when intra-plan concurrency is enabled. */
     private final Map<Long, EnumMap<CUDAStreamType, CUDACommandQueue>> roleQueueTable = new ConcurrentHashMap<>();
 
@@ -311,11 +313,27 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      * Pushed by the runtime before issuing a plan's bytecodes.
      */
     public void setIntraPlanConcurrency(long executionPlanId, boolean enabled) {
-        if (enabled) {
+        if (enabled && deviceSupportsIntraPlanConcurrency()) {
             intraPlanConcurrencyPlans.add(executionPlanId);
         } else {
+            if (enabled && !warnedUnsupportedConcurrency) {
+                System.err.printf("Warning: intra-plan concurrency requested but device '%s' cannot overlap work "
+                        + "(asyncEngineCount=%d, concurrentKernels=%b); falling back to single-queue execution.%n",
+                        device.getDeviceName(), device.getAsyncEngineCount(), device.supportsConcurrentKernels());
+                warnedUnsupportedConcurrency = true;
+            }
             intraPlanConcurrencyPlans.remove(executionPlanId);
         }
+    }
+
+    /**
+     * Intra-plan concurrency (multi-queue issue) is only beneficial when the device can actually overlap
+     * work: either run kernels concurrently or overlap copies with compute (async copy engines). On hardware
+     * that supports neither, role queues add cross-queue event overhead for no gain, so we fall back to
+     * single-queue execution - mirroring the PTX backend.
+     */
+    private boolean deviceSupportsIntraPlanConcurrency() {
+        return device.supportsConcurrentKernels() || device.getAsyncEngineCount() >= 1;
     }
 
     /**
