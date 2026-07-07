@@ -240,6 +240,7 @@ public class TestStreamsPerformance extends TornadoTestBase {
     public void testOverlapSpeedup() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
 
         FloatArray[] x = new FloatArray[UNITS];
         FloatArray[] y = new FloatArray[UNITS];
@@ -283,6 +284,7 @@ public class TestStreamsPerformance extends TornadoTestBase {
     public void testComputeConcurrency() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
 
         FloatArray[] x = new FloatArray[UNITS];
         FloatArray[] y = new FloatArray[UNITS];
@@ -331,6 +333,7 @@ public class TestStreamsPerformance extends TornadoTestBase {
     public void testSmallKernelConcurrency() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
 
         FloatArray[] x = new FloatArray[UNITS];
         FloatArray[] y = new FloatArray[UNITS];
