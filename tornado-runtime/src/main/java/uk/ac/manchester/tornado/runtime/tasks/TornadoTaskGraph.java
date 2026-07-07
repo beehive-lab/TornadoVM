@@ -365,28 +365,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     @Override
     public void withIntraPlanConcurrency() {
-        // Per-plan (not a process-global flag): enables routing this plan's DAG-independent
-        // ops to role streams (PTX multi-stream). The dependency DAG is derived from this in
-        // the interpreter (useDependencies), and pushed to the backend per executionPlanId.
         executionContext.setIntraPlanConcurrencyEnabled(true);
     }
 
     @Override
     public void withoutIntraPlanConcurrency() {
         executionContext.setIntraPlanConcurrencyEnabled(false);
-    }
-
-    @Override
-    @Deprecated
-    public void withCUDAStreams() {
-        // Deprecated alias for withIntraPlanConcurrency(); kept for backward compatibility.
-        withIntraPlanConcurrency();
-    }
-
-    @Override
-    @Deprecated
-    public void withoutCUDAStreams() {
-        withoutIntraPlanConcurrency();
     }
 
     @Override

@@ -149,10 +149,4 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
     void withIntraPlanConcurrency();
 
     void withoutIntraPlanConcurrency();
-
-    @Deprecated
-    void withCUDAStreams();
-
-    @Deprecated
-    void withoutCUDAStreams();
 }

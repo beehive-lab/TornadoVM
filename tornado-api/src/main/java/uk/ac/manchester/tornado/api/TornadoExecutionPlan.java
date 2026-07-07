@@ -645,8 +645,10 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * Enables intra-plan concurrency for this execution plan: DAG-independent operations
      * (e.g. H2D copies, kernels, D2H copies) are routed to separate role streams so they
      * may overlap, with cross-stream ordering preserved via device events derived from the
-     * bytecode dependency DAG. Currently realised on the PTX backend (CUDA streams); a no-op
-     * for backends that do not support it. Default is off (single stream, today's behaviour).
+     * bytecode dependency DAG.
+     * Currently realised on the PTX and CUDA backends with CUDA streams.
+     * A no-op for OPENCL, METAL and SPIRV backends.
+     * Default is off (single stream).
      *
      * @return {@link TornadoExecutionPlan}
      */

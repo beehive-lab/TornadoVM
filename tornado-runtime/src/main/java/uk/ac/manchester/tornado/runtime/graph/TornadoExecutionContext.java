@@ -688,8 +688,7 @@ public class TornadoExecutionContext {
         newExecutionContext.profiler = this.profiler;
         newExecutionContext.nextTask = this.nextTask;
         newExecutionContext.executionPlanMemoryLimit = this.executionPlanMemoryLimit;
-        // Preserve build-time flags across snapshot() so e.g. TaskGraph.withCUDAStreams()
-        // (set before snapshot) survives into the executed (cloned) context.
+
         newExecutionContext.isExecutionGraphEnabled = this.isExecutionGraphEnabled;
         newExecutionContext.isIntraPlanConcurrencyEnabled = this.isIntraPlanConcurrencyEnabled;
 
