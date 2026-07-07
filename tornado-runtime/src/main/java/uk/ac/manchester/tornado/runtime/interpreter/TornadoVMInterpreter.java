@@ -829,7 +829,7 @@ public class TornadoVMInterpreter {
             DebugInterpreter.logTransferToDeviceOnce(allEvents, object, interpreterDevice, sizeObject, sizeBatch, offset, eventId, logBuilder);
         }
 
-        if (TornadoOptions.isProfilerEnabled() && allEvents != null) {
+        if (TornadoOptions.isProfilerEnabled() && !insideCaptureRegion && allEvents != null) {
             for (Integer e : allEvents) {
                 Event event = interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), e);
                 event.waitForEvents(graphExecutionContext.getExecutionPlanId());
@@ -868,7 +868,7 @@ public class TornadoVMInterpreter {
             DebugInterpreter.logTransferToDeviceAlways(object, interpreterDevice, sizeObject, sizeBatch, offset, eventId, logBuilder);
         }
 
-        if (TornadoOptions.isProfilerEnabled() && allEvents != null) {
+        if (TornadoOptions.isProfilerEnabled() && !insideCaptureRegion && allEvents != null) {
             for (Integer e : allEvents) {
                 Event event = interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), e);
                 event.waitForEvents(graphExecutionContext.getExecutionPlanId());
@@ -909,7 +909,7 @@ public class TornadoVMInterpreter {
 
         resetEventIndexes(eventId);
 
-        if (TornadoOptions.isProfilerEnabled() && readEvent != -1) {
+        if (TornadoOptions.isProfilerEnabled() && !insideCaptureRegion && readEvent != -1) {
             Event event = interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), readEvent);
             event.waitForEvents(graphExecutionContext.getExecutionPlanId());
             long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
@@ -941,7 +941,7 @@ public class TornadoVMInterpreter {
         }
         final int readEvent = interpreterDevice.streamOutBlocking(graphExecutionContext.getExecutionPlanId(), object, offset, objectState, eventWaitList);
 
-        if (TornadoOptions.isProfilerEnabled() && readEvent != -1) {
+        if (TornadoOptions.isProfilerEnabled() && !insideCaptureRegion && readEvent != -1) {
             Event event = interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), readEvent);
             event.waitForEvents(graphExecutionContext.getExecutionPlanId());
             long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
@@ -1135,7 +1135,7 @@ public class TornadoVMInterpreter {
         if (atomicsArray != null) {
             bufferAtomics = interpreterDevice.createOrReuseAtomicsBuffer(atomicsArray, Access.READ_WRITE);
             List<Integer> allEvents = bufferAtomics.enqueueWrite(graphExecutionContext.getExecutionPlanId(), null, 0, 0, null, false);
-            if (TornadoOptions.isProfilerEnabled()) {
+            if (TornadoOptions.isProfilerEnabled() && !insideCaptureRegion) {
                 for (Integer e : allEvents) {
                     Event event = interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), e);
                     event.waitForEvents(graphExecutionContext.getExecutionPlanId());

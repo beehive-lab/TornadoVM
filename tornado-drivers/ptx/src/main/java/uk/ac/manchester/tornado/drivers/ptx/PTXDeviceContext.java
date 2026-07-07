@@ -635,7 +635,9 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     }
 
     private void updateProfilerKernelContextWrite(long executionPlanId, int kernelContextWriteEventId, TaskDataContext meta, PTXKernelStackFrame callWrapper) {
-        if (TornadoOptions.isProfilerEnabled()) {
+        // Skipped while capturing into a CUDA graph: waiting on (or querying) an event that was
+        // recorded into a capturing stream is illegal and invalidates the capture.
+        if (TornadoOptions.isProfilerEnabled() && !isStreamCapturing(executionPlanId)) {
             TornadoProfiler profiler = meta.getProfiler();
             Event event = resolveEvent(executionPlanId, kernelContextWriteEventId);
             event.waitForEvents(executionPlanId);
@@ -651,7 +653,9 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     }
 
     private void updateProfiler(long executionPlanId, final int taskEvent, final TaskDataContext meta) {
-        if (TornadoOptions.isProfilerEnabled()) {
+        // Skipped while capturing into a CUDA graph: waiting on (or querying) an event that was
+        // recorded into a capturing stream is illegal and invalidates the capture.
+        if (TornadoOptions.isProfilerEnabled() && !isStreamCapturing(executionPlanId)) {
             // Metrics captured before blocking
             meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), getPowerUsage());
             if (TornadoOptions.isUpsReaderEnabled()) {
