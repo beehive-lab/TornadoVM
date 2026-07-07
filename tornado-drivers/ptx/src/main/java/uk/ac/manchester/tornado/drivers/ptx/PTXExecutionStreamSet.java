@@ -31,7 +31,7 @@ import java.util.Map;
 
 /**
  * The set of role streams owned by a single execution plan on a device, together
- * with that plan's private {@link EventRegistry}. This is the per-execution binding
+ * with that plan's private {@link PTXEventRegistry}. This is the per-execution binding
  * from the CUDA-streams design: streams are addressed by {@link PTXStreamType} role
  * (H2D / COMPUTE / D2H / DEFAULT) rather than by host thread.
  *
@@ -41,7 +41,7 @@ import java.util.Map;
  * streams to the plan (not the thread) is both sufficient and what enables later
  * inter-plan concurrency.
  */
-public final class ExecutionStreamSet {
+public final class PTXExecutionStreamSet {
 
     /**
      * Number of CUDA streams in the COMPUTE pool. DAG-independent kernels are round-robined
@@ -56,7 +56,7 @@ public final class ExecutionStreamSet {
     private final List<PTXStream> computeStreams = new ArrayList<>();
     /** Round-robin cursor for assigning kernels to compute streams. */
     private int nextCompute = 0;
-    private final EventRegistry eventRegistry = new EventRegistry();
+    private final PTXEventRegistry eventRegistry = new PTXEventRegistry();
 
     /** Returns the role stream, creating it lazily on first use. For COMPUTE, returns pool index 0. */
     public synchronized PTXStream acquire(PTXStreamType type) {
@@ -89,7 +89,7 @@ public final class ExecutionStreamSet {
         return streams.get(type);
     }
 
-    public EventRegistry eventRegistry() {
+    public PTXEventRegistry eventRegistry() {
         return eventRegistry;
     }
 

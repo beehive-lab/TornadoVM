@@ -303,7 +303,7 @@ public class TornadoVMInterpreter {
         // bytecode stores it into events[slot], building the wait-list that is passed
         // as waitList to the next dependent operation.
         // In single-stream mode: a local PTXEventPool index.
-        // In multi-stream mode: a global EventRegistry ID resolved via
+        // In multi-stream mode: a global PTXEventRegistry ID resolved via
         // resolveAndWaitCrossStream into cuStreamWaitEvent calls on the target stream.
         // Initialised to -1; ADD_DEPENDENCY skips it when -1 (no-op or warmup).
         int lastEvent = -1;
@@ -1284,7 +1284,7 @@ public class TornadoVMInterpreter {
      * <p>Appends {@code lastEvent} to {@code events[eventId]}, which is the wait-list
      * later passed as {@code waitList} to the operation that holds dependency slot
      * {@code eventId}. In multi-stream mode the stored value is a global
-     * {@code EventRegistry} ID; in single-stream mode it is a local
+     * {@code PTXEventRegistry} ID; in single-stream mode it is a local
      * {@code PTXEventPool} index. Skipped when {@code lastEvent == -1} (the preceding
      * operation produced no event) or when {@code useDependencies} is false.
      *
