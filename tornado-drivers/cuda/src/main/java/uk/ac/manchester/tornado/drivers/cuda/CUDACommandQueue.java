@@ -78,6 +78,13 @@ public class CUDACommandQueue extends CommandQueue {
 
     private static native void nvtxNameStream(long queueId, String name);
 
+    /**
+     * Pushes the profiler state to the native layer: when timing is off, per-operation
+     * START timestamp events are skipped (halving events per op) and the remaining
+     * dependency events are created with {@code CU_EVENT_DISABLE_TIMING} (cheaper).
+     */
+    static native void nativeEnableTiming(boolean enabled);
+
     static native void clGetCommandQueueInfo(long queueId, int info, byte[] buffer) throws CUDAException;
 
     /**
