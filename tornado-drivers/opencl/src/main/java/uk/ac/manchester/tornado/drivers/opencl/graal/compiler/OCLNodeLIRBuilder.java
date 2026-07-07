@@ -660,6 +660,14 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         final Local[] locals = graph.method().getLocalVariableTable().getLocalsAt(0);
         if (isKernel) {
             for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
+                // The KernelContext / AtomicInteger parameters are not emitted as kernel buffer arguments
+                // (see OCLBackend.emitMethodParameters, which skips them and starts the data args at the next
+                // index). Once their uses are intrinsified (barriers, local-array allocation, thread-id fields)
+                // the parameter is unused, so emitting a buffer load for it references an undeclared 'argN'
+                // and the OpenCL driver rejects the kernel. Skip the unused special parameter to match.
+                if (param.hasNoUsages() && isSpecialKernelParameter(locals[param.index()])) {
+                    continue;
+                }
                 setResult(param, getGen().getOCLGenTool().emitParameterLoad(locals[param.index()], param));
             }
         } else {
@@ -668,6 +676,11 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                 setResult(param, new OCLNullary.Parameter(locals[param.index()].getName(), lirKind));
             }
         }
+    }
+
+    private static boolean isSpecialKernelParameter(Local local) {
+        String typeName = local.getType().toJavaName();
+        return typeName.equals("uk.ac.manchester.tornado.api.KernelContext") || typeName.equals("java.util.concurrent.atomic.AtomicInteger");
     }
 
     private void emitOCLFPGAPragmas(HIRBlock block) {

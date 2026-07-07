@@ -133,8 +133,54 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
                     OpenCLPrintf printfNode = graph.addOrUnique(new OpenCLPrintf("\"\""));
                     graph.replaceFixed(invoke, printfNode);
                     break;
+                // KernelContext.allocate*LocalArray: normally intrinsified by an invocation plugin
+                // (OCLGraphBuilderPlugins.localArraysPlugins), but on the JVMCI-absent (reflection) path Graal's
+                // InvocationPlugins.lookupInvocation misses these array-returning methods, so the invoke survives
+                // and its int[]/float[]/... result reaches address lowering as an InvokeNode. Rewrite it here to a
+                // LocalArrayNode, exactly as the plugin would have. Only fires on graphs that already failed.
+                case "Direct#KernelContext.allocateIntLocalArray":
+                    lowerLocalArrayAllocation(graph, invoke, JavaKind.Int);
+                    break;
+                case "Direct#KernelContext.allocateLongLocalArray":
+                    lowerLocalArrayAllocation(graph, invoke, JavaKind.Long);
+                    break;
+                case "Direct#KernelContext.allocateFloatLocalArray":
+                    lowerLocalArrayAllocation(graph, invoke, JavaKind.Float);
+                    break;
+                case "Direct#KernelContext.allocateDoubleLocalArray":
+                    lowerLocalArrayAllocation(graph, invoke, JavaKind.Double);
+                    break;
+                case "Direct#KernelContext.allocateByteLocalArray":
+                    lowerLocalArrayAllocation(graph, invoke, JavaKind.Byte);
+                    break;
+                // Same reflection-path plugin-lookup miss as allocate*LocalArray: KernelContext.local/globalBarrier
+                // survives as a device-function call passing the KernelContext object. Intrinsify to the OpenCL
+                // barrier so the context receiver is dropped (matches the OpenCLIntrinsics.localBarrier case above).
+                case "Direct#KernelContext.localBarrier": {
+                    OCLBarrierNode kcLocalBarrier = graph.addOrUnique(new OCLBarrierNode(OCLBarrierNode.OCLMemFenceFlags.LOCAL));
+                    graph.replaceFixed(invoke, kcLocalBarrier);
+                    break;
+                }
+                case "Direct#KernelContext.globalBarrier": {
+                    OCLBarrierNode kcGlobalBarrier = graph.addOrUnique(new OCLBarrierNode(OCLBarrierNode.OCLMemFenceFlags.GLOBAL));
+                    graph.replaceFixed(invoke, kcGlobalBarrier);
+                    break;
+                }
             }
         }
+    }
+
+    /**
+     * Rewrite a surviving {@code KernelContext.allocate*LocalArray(size)} invoke into a {@link LocalArrayNode}
+     * (OpenCL {@code __local} memory), matching what the invocation plugin emits. Argument 0 is the
+     * {@code KernelContext} receiver; argument 1 is the size.
+     */
+    private void lowerLocalArrayAllocation(StructuredGraph graph, InvokeNode invoke, JavaKind elementKind) {
+        ValueNode size = invoke.callTarget().arguments().get(1);
+        LocalArrayNode localArrayNode = graph.addWithoutUnique(new LocalArrayNode(OCLArchitecture.localSpace, elementKind, size));
+        invoke.replaceAtUsages(localArrayNode);
+        invoke.clearInputs();
+        GraphUtil.unlinkFixedNode(invoke);
     }
 
     private void lowerLocalInvokeNodeNewArray(StructuredGraph graph, int length, JavaKind elementKind, InvokeNode newArray) {
