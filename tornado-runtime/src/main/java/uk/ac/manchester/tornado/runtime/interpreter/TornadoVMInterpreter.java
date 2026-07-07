@@ -275,10 +275,6 @@ public class TornadoVMInterpreter {
         return graphExecutionContext.isMemoryLimited();
     }
 
-    /**
-     * Intra-plan concurrency is active only when requested on the plan AND implemented by the
-     * backend; on other backends the request degrades to the default single-queue execution.
-     */
     private boolean isIntraPlanConcurrencyActive() {
         return graphExecutionContext.isIntraPlanConcurrencyEnabled() && interpreterDevice.isIntraPlanConcurrencySupported();
     }

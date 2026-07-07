@@ -758,7 +758,7 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
 
     @Override
     public String getDeviceName() {
-        return String.format("opencl-%d-%d", platformIndex, deviceIndex);
+        return String.format("cuda-%d-%d", platformIndex, deviceIndex);
     }
 
     @Override
