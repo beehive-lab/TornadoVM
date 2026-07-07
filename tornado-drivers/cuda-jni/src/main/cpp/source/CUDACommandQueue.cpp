@@ -21,6 +21,7 @@
  */
 
 #include <jni.h>
+#include <cstdio>
 #include "cuda_jni.h"
 #include "nvtx3/nvToolsExt.h"
 #include "nvtx3/nvToolsExtCuda.h"
@@ -38,6 +39,18 @@ struct NvtxRange {
         nvtxRangePop();
     }
 };
+
+/* Formats "<dir> <size>" (e.g. "H2D 24.0 MB", "D2H 24 B") for the NVTX transfer ranges,
+ * so individual copies are identifiable on the timeline instead of a generic label. */
+static void format_transfer_label(char *buf, size_t len, const char *dir, long long numBytes) {
+    if (numBytes >= 1048576) {
+        snprintf(buf, len, "%s %.1f MB", dir, (double) numBytes / 1048576.0);
+    } else if (numBytes >= 1024) {
+        snprintf(buf, len, "%s %.1f KB", dir, (double) numBytes / 1024.0);
+    } else {
+        snprintf(buf, len, "%s %lld B", dir, numBytes);
+    }
+}
 
 extern "C" {
 
@@ -281,7 +294,10 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
         params[i] = kernel->arg_data[i].empty() ? nullptr : (void *) kernel->arg_data[i].data();
     }
 
-    NvtxRange _nvtx("CUDA kernel");
+    // Label the launch with the actual kernel name: the profiler's own function-name
+    // table can go stale when modules are unloaded and their handles recycled (kernels
+    // then show under a previous kernel's name), so the NVTX row is the reliable source.
+    NvtxRange _nvtx(kernel->name.c_str());
     cuCtxSetCurrent(queue->context);
     wait_events(env, queue, events);
     CUresult result = cuLaunchKernel(
@@ -317,7 +333,9 @@ static jlong transfer_to_device(JNIEnv *env, cuda_queue_t *queue, void *host_bas
     if (queue == nullptr) {
         return 0;
     }
-    NvtxRange _nvtx("CUDA H2D");
+    char nvtxLabel[48];
+    format_transfer_label(nvtxLabel, sizeof(nvtxLabel), "H2D", (long long) num_bytes);
+    NvtxRange _nvtx(nvtxLabel);
     cuCtxSetCurrent(queue->context);
     wait_events(env, queue, events);
     CUresult result = cuMemcpyHtoDAsync(
@@ -338,7 +356,9 @@ static jlong transfer_to_host(JNIEnv *env, cuda_queue_t *queue, void *host_base,
     if (queue == nullptr) {
         return 0;
     }
-    NvtxRange _nvtx("CUDA D2H");
+    char nvtxLabel[48];
+    format_transfer_label(nvtxLabel, sizeof(nvtxLabel), "D2H", (long long) num_bytes);
+    NvtxRange _nvtx(nvtxLabel);
     cuCtxSetCurrent(queue->context);
     wait_events(env, queue, events);
     CUresult result = cuMemcpyDtoHAsync(
