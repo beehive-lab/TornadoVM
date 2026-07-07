@@ -55,6 +55,9 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
     private Access access;
     private final int sizeOfType;
 
+    /** Base address of the host segment this wrapper holds pinned, or 0 when not pinned. */
+    private long pinnedHostPointer;
+
     public CUDAMemorySegmentWrapper(long bufferSize, CUDADeviceContext deviceContext, long batchSize, Access access, int sizeOfType) {
         this.deviceContext = deviceContext;
         this.batchSize = batchSize;
@@ -187,6 +190,22 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
             bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize + TornadoNativeArray.ARRAY_HEADER, access);
         }
 
+        // Pin the full host segment so async H2D/D2H transfers DMA directly (no driver
+        // staging copy, true transfer/compute overlap). Ownership, aliasing and pin
+        // caching are handled by the central CUDAPinnedMemoryRegistry (refcounted,
+        // stale-pin safe). Any hold from a previous allocate is released first, so the
+        // refcount stays balanced across alloc/free cycles.
+        if (segment != null) {
+            CUDAPinnedMemoryRegistry pinRegistry = deviceContext.getPlatformContext().getPinnedMemoryRegistry();
+            if (pinnedHostPointer != 0) {
+                pinRegistry.unpin(pinnedHostPointer);
+                pinnedHostPointer = 0;
+            }
+            if (pinRegistry.pin(segment, segment.byteSize())) {
+                pinnedHostPointer = segment.address();
+            }
+        }
+
         if (bufferSize <= 0) {
             throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
         }
@@ -199,6 +218,14 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
     @Override
     public void markAsFreeBuffer() throws TornadoMemoryException {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
+
+        // Release this wrapper's hold on the host pin before recycling; the registry
+        // unregisters (after a context sync) only when the last holder releases.
+        if (pinnedHostPointer != 0) {
+            deviceContext.getPlatformContext().getPinnedMemoryRegistry().unpin(pinnedHostPointer);
+            pinnedHostPointer = 0;
+        }
+
         deviceContext.getBufferProvider().markBufferReleased(bufferId, access);
         bufferId = INIT_VALUE;
         bufferSize = INIT_VALUE;

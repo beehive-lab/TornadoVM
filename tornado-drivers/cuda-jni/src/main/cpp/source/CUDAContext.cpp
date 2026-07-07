@@ -279,4 +279,60 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAContext_c
     return -1;
 }
 
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAContext
+ * Method:    cuMemHostRegister
+ * Signature: (JJJ)I
+ *
+ * Registers an existing off-heap host buffer as *pinned* (page-locked) memory.
+ * After registration, cuMemcpyHtoDAsync() / cuMemcpyDtoHAsync() bypass CUDA's
+ * internal staging copy and DMA directly to/from this address, enabling true
+ * host-device overlap without blocking the calling (host) thread.
+ * CU_MEMHOSTREGISTER_PORTABLE makes the memory pinned across all CUDA contexts.
+ * Returns the raw CUresult so the Java registry can distinguish SUCCESS (0)
+ * from CUDA_ERROR_HOST_MEMORY_ALREADY_REGISTERED (712).
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAContext_cuMemHostRegister
+        (JNIEnv *env, jclass clazz, jlong context_id, jlong host_pointer, jlong num_bytes) {
+    cuda_context_t *ctx = (cuda_context_t *) context_id;
+    if (ctx == nullptr) {
+        return -1;
+    }
+    CUresult result = cuCtxSetCurrent(ctx->context);
+    LOG_CUDA_AND_VALIDATE("cuCtxSetCurrent", result);
+    result = cuMemHostRegister((void *) host_pointer, (size_t) num_bytes, CU_MEMHOSTREGISTER_PORTABLE);
+    if (result != CUDA_SUCCESS && result != CUDA_ERROR_HOST_MEMORY_ALREADY_REGISTERED) {
+        LOG_CUDA_AND_VALIDATE("cuMemHostRegister", result);
+    }
+    return (jint) result;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAContext
+ * Method:    cuMemHostUnregister
+ * Signature: (JJ)I
+ *
+ * Unregisters host memory previously registered with cuMemHostRegister().
+ * The context is synchronised FIRST so no async DMA can still be reading or
+ * writing the region when the pin is dropped: unregistering under an in-flight
+ * copy is the data hazard, since the transfer would keep using the page-locked
+ * mapping while the driver tears it down.
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAContext_cuMemHostUnregister
+        (JNIEnv *env, jclass clazz, jlong context_id, jlong host_pointer) {
+    cuda_context_t *ctx = (cuda_context_t *) context_id;
+    if (ctx == nullptr) {
+        return -1;
+    }
+    CUresult result = cuCtxSetCurrent(ctx->context);
+    LOG_CUDA_AND_VALIDATE("cuCtxSetCurrent", result);
+    result = cuCtxSynchronize();
+    LOG_CUDA_AND_VALIDATE("cuCtxSynchronize", result);
+    result = cuMemHostUnregister((void *) host_pointer);
+    if (result != CUDA_SUCCESS && result != CUDA_ERROR_HOST_MEMORY_NOT_REGISTERED) {
+        LOG_CUDA_AND_VALIDATE("cuMemHostUnregister", result);
+    }
+    return (jint) result;
+}
+
 } // extern "C"

@@ -33,6 +33,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoNoOpenCLPlatformException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDACommandQueueProperties;
 import uk.ac.manchester.tornado.drivers.cuda.exceptions.CUDAException;
+import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAPinnedMemoryRegistry;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -47,12 +48,20 @@ public class CUDAContext implements CUDAContextInterface {
 
     private final TornadoLogger logger;
 
+    /** Refcounted bookkeeping for user host memory pinned via {@code cuMemHostRegister}. */
+    private final CUDAPinnedMemoryRegistry pinnedMemoryRegistry;
+
     public CUDAContext(CUDAPlatform platform, long contextPointer, List<CUDATargetDevice> devices) {
         this.platform = platform;
         this.contextID = contextPointer;
         this.devices = devices;
         this.deviceContexts = new ArrayList<>(devices.size());
         this.logger = new TornadoLogger(this.getClass());
+        this.pinnedMemoryRegistry = new CUDAPinnedMemoryRegistry(this);
+    }
+
+    public CUDAPinnedMemoryRegistry getPinnedMemoryRegistry() {
+        return pinnedMemoryRegistry;
     }
 
     native void clReleaseContext(long id) throws CUDAException;
@@ -82,6 +91,34 @@ public class CUDAContext implements CUDAContextInterface {
     native long clCreateProgramWithBinary(long contextId, long deviceId, byte[] data, long[] lengths) throws CUDAException;
 
     native long clCreateProgramWithIL(long contextId, byte[] spirvBinaryCode, long[] lengths) throws CUDAException;
+
+    private static native int cuMemHostRegister(long contextId, long hostPointer, long numBytes);
+
+    private static native int cuMemHostUnregister(long contextId, long hostPointer);
+
+    /** Raw {@code CUresult} for "this host range is already page-locked" (see registry policy). */
+    public static final int CUDA_ERROR_HOST_MEMORY_ALREADY_REGISTERED = 712;
+
+    /**
+     * Registers an off-heap host region as pinned (page-locked) so async transfers DMA
+     * directly (no driver staging copy, true transfer/compute overlap).
+     *
+     * @return the raw {@code CUresult}: {@code 0} on success,
+     *     {@link #CUDA_ERROR_HOST_MEMORY_ALREADY_REGISTERED} when another registration
+     *     already covers this address (memory is pinned, but not owned by the caller).
+     */
+    public int registerPinnedMemory(long hostPointer, long numBytes) {
+        return cuMemHostRegister(contextID, hostPointer, numBytes);
+    }
+
+    /**
+     * Unregisters a previously pinned host region. The native call synchronises the
+     * context first, so no in-flight async DMA can still touch the region when the
+     * pin is dropped.
+     */
+    public int unregisterPinnedMemory(long hostPointer) {
+        return cuMemHostUnregister(contextID, hostPointer);
+    }
 
     public int getNumDevices() {
         return devices.size();
