@@ -71,11 +71,11 @@ public class CUDAContext implements CUDAContextInterface {
 
     public native long clCreateCommandQueue(long contextId, long deviceId, long properties) throws CUDAException;
 
-    native long allocateOffHeapMemory(long size, long alignment);
+    public native long allocateOffHeapMemory(long size, long alignment);
 
-    native void freeOffHeapMemory(long address);
+    public native void freeOffHeapMemory(long address);
 
-    native ByteBuffer asByteBuffer(long address, long size);
+    public native ByteBuffer asByteBuffer(long address, long size);
 
     // creates an empty buffer on the device
     native CUDABufferResult createBuffer(long contextId, long flags, long size, long hostPointer) throws CUDAException;
