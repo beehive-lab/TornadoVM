@@ -325,7 +325,17 @@ jobs:
           New-Item -ItemType Directory -Force -Path $env:RELEASE_ARCHIVES_DIR | Out-Null
           $platformPath = Join-Path $env:RELEASE_ARCHIVES_DIR (Join-Path $env:VERSION_TAG $env:PLATFORM_DIR)
           if (Test-Path $platformPath) {
-            Remove-Item -Recurse -Force $platformPath
+            $maxAttempts = 5
+            for ($i = 1; $i -le $maxAttempts; $i++) {
+              try {
+                Remove-Item -Recurse -Force $platformPath -ErrorAction Stop
+                break
+              } catch {
+                if ($i -eq $maxAttempts) { throw }
+                Write-Host "Remove-Item attempt $i failed (likely a transient lock), retrying in 3s..."
+                Start-Sleep -Seconds 3
+              }
+            }
           }
 
       - name: Build SDKs
