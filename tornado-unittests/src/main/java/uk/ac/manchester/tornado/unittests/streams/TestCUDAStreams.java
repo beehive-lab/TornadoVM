@@ -32,6 +32,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
@@ -431,7 +432,10 @@ public class TestCUDAStreams extends TornadoTestBase {
 
     /**
      * 7. Multi-stream (fork/join) CUDA-graph capture combined with intra-plan concurrency: a two-task
-     * H2D->COMPUTE->COMPUTE->D2H pipeline captured across role streams and replayed many times.
+     * H2D->COMPUTE->COMPUTE->D2H pipeline captured across role streams and replayed many times. The
+     * inputs are MUTATED before every replay and the outputs validated after each one: graph H2D copy
+     * nodes must re-read their host source pointers on every launch, so each replay has to observe the
+     * new input values (a stale capture would keep returning the first execution's results).
      */
     @Test
     public void testMultiStreamGraphReplay() throws TornadoExecutionPlanException {
@@ -443,8 +447,6 @@ public class TestCUDAStreams extends TornadoTestBase {
         FloatArray y = new FloatArray(GRAPH_N);
         FloatArray tmp = new FloatArray(GRAPH_N);
         FloatArray result = new FloatArray(GRAPH_N);
-        x.init(1.0f);
-        y.init(2.0f);
 
         TaskGraph tg = new TaskGraph("graphMulti")
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, y)
@@ -456,13 +458,57 @@ public class TestCUDAStreams extends TornadoTestBase {
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(itg)) {
             plan.withIntraPlanConcurrency().withCUDAGraph();
             for (int i = 0; i < GRAPH_REPLAYS; i++) {
+                float xValue = 1.0f + i;
+                float yValue = 2.0f + i;
+                x.init(xValue);
+                y.init(yValue);
                 plan.execute();
+                float expected = ALPHA * expectedAxpy(xValue, yValue, ALPHA);
+                for (int j = 0; j < GRAPH_N; j++) {
+                    assertEquals(expected, result.get(j), DELTA);
+                }
             }
         }
+    }
 
-        float expected = ALPHA * expectedAxpy(1.0f, 2.0f, ALPHA);
-        for (int i = 0; i < GRAPH_N; i++) {
-            assertEquals(expected, result.get(i), DELTA);
+    /**
+     * 9. The three features combined: intra-plan concurrency + CUDA-graph capture/replay + the
+     * dynamic profiler. Guards a regression where per-operation profiler bookkeeping waited on
+     * events recorded into the capturing stream (illegal: CUDA_ERROR_CAPTURED_EVENT), which
+     * invalidated the capture and failed every subsequent operation. Device-side per-op times are
+     * legitimately not collected for graph-captured operations; this test asserts correctness.
+     */
+    @Test
+    public void testMultiStreamGraphReplayWithProfiler() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
+        FloatArray x = new FloatArray(GRAPH_N);
+        FloatArray y = new FloatArray(GRAPH_N);
+        FloatArray tmp = new FloatArray(GRAPH_N);
+        FloatArray result = new FloatArray(GRAPH_N);
+
+        TaskGraph tg = new TaskGraph("graphMultiProfiler")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, y)
+                .task("t0", TestCUDAStreams::axpy, x, y, tmp, ALPHA)
+                .task("t1", TestCUDAStreams::scale, tmp, result, ALPHA)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph itg = tg.snapshot();
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(itg)) {
+            plan.withIntraPlanConcurrency().withCUDAGraph().withProfiler(ProfilerMode.SILENT);
+            for (int i = 0; i < GRAPH_REPLAYS; i++) {
+                float xValue = 1.0f + i;
+                float yValue = 2.0f + i;
+                x.init(xValue);
+                y.init(yValue);
+                plan.execute();
+                float expected = ALPHA * expectedAxpy(xValue, yValue, ALPHA);
+                for (int j = 0; j < GRAPH_N; j++) {
+                    assertEquals(expected, result.get(j), DELTA);
+                }
+            }
         }
     }
 
