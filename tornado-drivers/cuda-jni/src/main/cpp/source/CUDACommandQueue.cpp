@@ -22,6 +22,22 @@
 
 #include <jni.h>
 #include "cuda_jni.h"
+#include "nvtx3/nvToolsExt.h"
+#include "nvtx3/nvToolsExtCuda.h"
+
+/*
+ * RAII host-side NVTX range wrapped around a native issue point, so the Nsight
+ * Systems timeline shows a labelled span (CUDA H2D / kernel / D2H) on the issuing
+ * thread. NVTX is header-only and a near-zero-cost no-op when no profiler attaches.
+ */
+struct NvtxRange {
+    explicit NvtxRange(const char *name) {
+        nvtxRangePushA(name);
+    }
+    ~NvtxRange() {
+        nvtxRangePop();
+    }
+};
 
 extern "C" {
 
@@ -240,6 +256,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
         params[i] = kernel->arg_data[i].empty() ? nullptr : (void *) kernel->arg_data[i].data();
     }
 
+    NvtxRange _nvtx("CUDA kernel");
     cuCtxSetCurrent(queue->context);
     wait_events(env, queue, events);
     cuda_event_t *ev = begin_event(queue);
@@ -276,6 +293,7 @@ static jlong transfer_to_device(JNIEnv *env, cuda_queue_t *queue, void *host_bas
     if (queue == nullptr) {
         return 0;
     }
+    NvtxRange _nvtx("CUDA H2D");
     cuCtxSetCurrent(queue->context);
     wait_events(env, queue, events);
     cuda_event_t *ev = begin_event(queue);
@@ -297,6 +315,7 @@ static jlong transfer_to_host(JNIEnv *env, cuda_queue_t *queue, void *host_base,
     if (queue == nullptr) {
         return 0;
     }
+    NvtxRange _nvtx("CUDA D2H");
     cuCtxSetCurrent(queue->context);
     wait_events(env, queue, events);
     cuda_event_t *ev = begin_event(queue);
@@ -427,6 +446,26 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
     // Honour the wait list, then place a marker event.
     Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQueue_clEnqueueWaitForEvents(env, clazz, queue_id, array);
     return record_event(queue);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDACommandQueue
+ * Method:    nvtxNameStream
+ * Signature: (JLjava/lang/String;)V
+ *
+ * Labels a CUDA stream with a human-readable name (its role: DEFAULT / H2D /
+ * COMPUTE / D2H) so the Nsight Systems timeline shows named stream rows instead
+ * of raw stream ids.
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQueue_nvtxNameStream
+        (JNIEnv *env, jclass clazz, jlong queue_id, jstring name) {
+    cuda_queue_t *queue = (cuda_queue_t *) queue_id;
+    if (queue == nullptr || name == NULL) {
+        return;
+    }
+    const char *cname = env->GetStringUTFChars(name, NULL);
+    nvtxNameCuStreamA(queue->stream, cname);
+    env->ReleaseStringUTFChars(name, cname);
 }
 
 } // extern "C"

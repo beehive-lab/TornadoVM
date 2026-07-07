@@ -305,7 +305,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
         if (!commandQueueTable.containsKey(executionPlanId)) {
             CUDATargetDevice device = context.devices().get(getDeviceIndex());
             CUDACommandQueueTable oclCommandQueueTable = new CUDACommandQueueTable();
-            oclCommandQueueTable.get(device, context);
+            oclCommandQueueTable.get(device, context).nameStream(CUDAStreamType.DEFAULT.name());
             commandQueueTable.put(executionPlanId, oclCommandQueueTable);
         }
         return commandQueueTable.get(executionPlanId).get(context.devices().get(getDeviceIndex()), context);
@@ -365,7 +365,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
         if (streamType == CUDAStreamType.DEFAULT || !isMultiStreamEnabled(executionPlanId)) {
             return getCommandQueue(executionPlanId);
         }
-        return roleQueueTable.computeIfAbsent(executionPlanId, id -> new EnumMap<>(CUDAStreamType.class)).computeIfAbsent(streamType, type -> createQueue());
+        return roleQueueTable.computeIfAbsent(executionPlanId, id -> new EnumMap<>(CUDAStreamType.class)).computeIfAbsent(streamType, type -> createQueue(type.name()));
     }
 
     /**
@@ -382,7 +382,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
         List<CUDACommandQueue> pool = computePool.computeIfAbsent(executionPlanId, id -> new ArrayList<>());
         synchronized (pool) {
             while (pool.size() <= index) {
-                pool.add(createQueue());
+                pool.add(createQueue(pool.isEmpty() ? "COMPUTE" : "COMPUTE_" + pool.size()));
             }
             return pool.get(index);
         }
@@ -413,11 +413,13 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
         return all;
     }
 
-    private CUDACommandQueue createQueue() {
+    private CUDACommandQueue createQueue(String nvtxName) {
         CUDATargetDevice targetDevice = context.devices().get(getDeviceIndex());
         try {
             long queuePtr = context.clCreateCommandQueue(context.getContextId(), targetDevice.getDevicePointer(), context.getProperties());
-            return new CUDACommandQueue(queuePtr, context.getProperties(), targetDevice.deviceVersion());
+            CUDACommandQueue queue = new CUDACommandQueue(queuePtr, context.getProperties(), targetDevice.deviceVersion());
+            queue.nameStream(nvtxName);
+            return queue;
         } catch (uk.ac.manchester.tornado.drivers.cuda.exceptions.CUDAException e) {
             throw new uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException(e);
         }

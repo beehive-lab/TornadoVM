@@ -66,7 +66,17 @@ public class CUDACommandQueue extends CommandQueue {
         return commandQueuePtr;
     }
 
+    /**
+     * Labels this queue's CUDA stream with its role (DEFAULT / H2D / COMPUTE / D2H) so the Nsight
+     * Systems timeline shows named stream rows instead of raw stream ids. Mirrors the PTX backend.
+     */
+    public void nameStream(String name) {
+        nvtxNameStream(commandQueuePtr, name);
+    }
+
     static native void clReleaseCommandQueue(long queueId) throws CUDAException;
+
+    private static native void nvtxNameStream(long queueId, String name);
 
     static native void clGetCommandQueueInfo(long queueId, int info, byte[] buffer) throws CUDAException;
 
