@@ -51,6 +51,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GroupIdNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadIDFixedNode;
@@ -153,6 +154,9 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
                 case "Direct#KernelContext.allocateByteLocalArray":
                     lowerLocalArrayAllocation(graph, invoke, JavaKind.Byte);
                     break;
+                case "Direct#KernelContext.allocateHalfFloatLocalArray":
+                    lowerHalfFloatLocalArrayAllocation(graph, invoke);
+                    break;
                 // Same reflection-path plugin-lookup miss as allocate*LocalArray: KernelContext.local/globalBarrier
                 // survives as a device-function call passing the KernelContext object. Intrinsify to the OpenCL
                 // barrier so the context receiver is dropped (matches the OpenCLIntrinsics.localBarrier case above).
@@ -178,6 +182,20 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
     private void lowerLocalArrayAllocation(StructuredGraph graph, InvokeNode invoke, JavaKind elementKind) {
         ValueNode size = invoke.callTarget().arguments().get(1);
         LocalArrayNode localArrayNode = graph.addWithoutUnique(new LocalArrayNode(OCLArchitecture.localSpace, elementKind, size));
+        invoke.replaceAtUsages(localArrayNode);
+        invoke.clearInputs();
+        GraphUtil.unlinkFixedNode(invoke);
+    }
+
+    /**
+     * Half-float variant of {@link #lowerLocalArrayAllocation}: {@code KernelContext.allocateHalfFloatLocalArray}
+     * returns {@code HalfFloat[]}, so the {@link LocalArrayNode} is built with a {@code short} element type tagged
+     * {@link OCLKind#HALF} (matching {@code OCLGraphBuilderPlugins.registerHalfFloatLocalArray}).
+     */
+    private void lowerHalfFloatLocalArrayAllocation(StructuredGraph graph, InvokeNode invoke) {
+        ValueNode size = invoke.callTarget().arguments().get(1);
+        ResolvedJavaType elementType = metaAccess.lookupJavaType(short.class);
+        LocalArrayNode localArrayNode = graph.addWithoutUnique(new LocalArrayNode(OCLArchitecture.localSpace, elementType, size, OCLKind.HALF));
         invoke.replaceAtUsages(localArrayNode);
         invoke.clearInputs();
         GraphUtil.unlinkFixedNode(invoke);
