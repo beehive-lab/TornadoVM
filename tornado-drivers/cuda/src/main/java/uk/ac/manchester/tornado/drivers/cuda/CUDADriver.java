@@ -56,6 +56,8 @@ public class CUDADriver {
 
     public static final int CL_TRUE = 1;
     public static final int CL_FALSE = 0;
+    // CUDA driver API CUresult success code (CUDA_SUCCESS == 0).
+    public static final int CUDA_SUCCESS = 0;
 
     static {
         if (VIRTUAL_DEVICE_ENABLED) {

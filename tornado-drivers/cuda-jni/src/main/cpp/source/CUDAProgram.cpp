@@ -24,6 +24,7 @@
 #include <string>
 #include <vector>
 #include <cstdlib>
+#include <fstream>
 #include <unordered_map>
 #include <mutex>
 #include "cuda_jni.h"
@@ -48,6 +49,50 @@ extern "C" {
 /* CL_BUILD_* status codes (see cloned CUDABuildStatus enum). */
 #define CL_BUILD_SUCCESS 0
 #define CL_BUILD_ERROR (-2)
+
+// Locates directories that contain the toolkit's cuda_fp16.h, so an explicit
+// NVRTC include path can be supplied on toolkits whose NVRTC cannot resolve
+// the standard CUDA headers on its own (see comment at the call site).
+// Candidate roots are probed in priority order and only those that actually
+// hold the header are returned. Returns an empty vector if none exist.
+static std::vector<std::string> find_cuda_header_include_dirs() {
+    std::vector<std::string> candidates;
+    for (const char *var : {"CUDA_PATH", "CUDA_HOME", "CUDA_ROOT"}) {
+        const char *root = std::getenv(var);
+        if (root && *root) {
+            candidates.push_back(std::string(root) + "/include");
+        }
+    }
+    candidates.push_back("/usr/local/cuda/include");
+    candidates.push_back("/usr/include"); // distro-packaged toolkit (nvcc in /usr/bin)
+
+    std::vector<std::string> found;
+    for (const std::string &dir : candidates) {
+        if (std::ifstream(dir + "/cuda_fp16.h").good()) {
+            bool dup = false;
+            for (const std::string &f : found) {
+                if (f == dir) { dup = true; break; }
+            }
+            if (!dup) {
+                found.push_back(dir);
+            }
+        }
+    }
+    return found;
+}
+
+// Copies the NVRTC build log (errors and warnings) of `prog` into the
+// program's log buffer, replacing any log from a previous compile attempt.
+static void capture_nvrtc_log(nvrtcProgram prog, cuda_program_t *program) {
+    program->log.clear();
+    size_t log_size = 0;
+    nvrtcGetProgramLogSize(prog, &log_size);
+    if (log_size > 1) {
+        std::vector<char> log(log_size);
+        nvrtcGetProgramLog(prog, log.data());
+        program->log.assign(log.data(), log_size);
+    }
+}
 
 /*
  * Compiles the stored CUDA C source to a cubin using NVRTC, targeting the
@@ -126,38 +171,45 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
         nvrtcResult nv = nvrtcCreateProgram(&prog, program->source.c_str(), "tornado_kernel.cu", 0, nullptr, nullptr);
         LOG_NVRTC_AND_VALIDATE("nvrtcCreateProgram", nv);
 
-        // Give NVRTC a search path so kernels can #include CUDA headers
-        // (e.g. cuda_fp16.h for half support). NVRTC starts with an empty
-        // include list, so without this even a bundled header is unreachable.
-        // Common locations are added; a non-existent path is simply ignored.
-        std::vector<std::string> incDirs = {
-            "/usr/local/cuda/include",
-            "/usr/include",
-            "/usr/lib/cuda/include"
-        };
-        const char *cudaPathEnv = getenv("CUDA_PATH");
-        if (cudaPathEnv != nullptr) {
-            incDirs.push_back(std::string(cudaPathEnv) + "/include");
-        }
-        std::vector<std::string> optStrings;
-        optStrings.push_back(arch);
-        for (const std::string &d : incDirs) {
-            optStrings.push_back("--include-path=" + d);
-        }
+        // Header resolution for #include <cuda_fp16.h> et al. varies by toolkit:
+        //
+        //   * Some NVRTC builds (observed on 12.x) resolve the standard CUDA
+        //     headers via RTC built-ins with an empty include list. For those,
+        //     adding the on-disk include dir is actively harmful: their on-disk
+        //     cuda_fp16.hpp guards <nv/target> with !defined(__CUDACC_RTC__),
+        //     so NV_IF_ELSE_TARGET / NV_IS_DEVICE are undefined under NVRTC and
+        //     produce 100+ errors.
+        //
+        //   * Others (11.x, 13.x) have no built-in cuda_fp16.h and fail with
+        //     "could not open source file" unless the toolkit include dir is
+        //     supplied; their on-disk headers are RTC-safe.
+        //
+        // A version gate cannot capture this reliably across the toolkit matrix,
+        // so compile with NVRTC's own resolution first and, only if that fails
+        // on a missing header, retry once with the toolkit include dirs.
+        std::vector<std::string> includeOpts; // storage must outlive `options`
         std::vector<const char *> options;
-        for (const std::string &o : optStrings) {
-            options.push_back(o.c_str());
-        }
+        options.push_back(arch.c_str());
         nv = nvrtcCompileProgram(prog, (int) options.size(), options.data());
         LOG_NVRTC_AND_VALIDATE("nvrtcCompileProgram", nv);
+        capture_nvrtc_log(prog, program);
 
-        // Always capture the build log (errors and warnings).
-        size_t log_size = 0;
-        nvrtcGetProgramLogSize(prog, &log_size);
-        if (log_size > 1) {
-            std::vector<char> log(log_size);
-            nvrtcGetProgramLog(prog, log.data());
-            program->log.assign(log.data(), log_size);
+        if (nv != NVRTC_SUCCESS && program->log.find("could not open source file") != std::string::npos) {
+            for (const std::string &dir : find_cuda_header_include_dirs()) {
+                includeOpts.push_back("--include-path=" + dir);
+            }
+            if (!includeOpts.empty()) {
+                // A failed nvrtcProgram cannot be recompiled; rebuild it for the retry.
+                nvrtcDestroyProgram(&prog);
+                nv = nvrtcCreateProgram(&prog, program->source.c_str(), "tornado_kernel.cu", 0, nullptr, nullptr);
+                LOG_NVRTC_AND_VALIDATE("nvrtcCreateProgram", nv);
+                for (const std::string &opt : includeOpts) {
+                    options.push_back(opt.c_str());
+                }
+                nv = nvrtcCompileProgram(prog, (int) options.size(), options.data());
+                LOG_NVRTC_AND_VALIDATE("nvrtcCompileProgram", nv);
+                capture_nvrtc_log(prog, program);
+            }
         }
 
         if (nv != NVRTC_SUCCESS) {

@@ -62,7 +62,10 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAEvent_clGe
  * Method:    clGetEventProfilingInfo
  * Signature: (JJ[B)V
  *
- * STUB: profiling timestamps are not wired for MVP; report zero (cl_ulong).
+ * CUDA exposes no absolute event timestamps (unlike OpenCL's COMMAND_START/END),
+ * only cuEventElapsedTime between two events. The absolute-timestamp queries are
+ * therefore reported as zero; elapsed time is obtained via cuEventElapsedTime
+ * below.
  */
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAEvent_clGetEventProfilingInfo
         (JNIEnv *env, jclass clazz, jlong event_id, jlong param_name, jbyteArray array) {
@@ -70,6 +73,35 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAEvent_clGe
     jsize len = env->GetArrayLength(array);
     std::memset(buf, 0, len);
     env->ReleasePrimitiveArrayCritical(array, buf, 0);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAEvent
+ * Method:    cuEventElapsedTime
+ * Signature: (J)J
+ *
+ * Returns the device time, in NANOSECONDS, of the operation bracketed by the
+ * event's start/end CUevents (cuEventElapsedTime reports milliseconds as a
+ * float). Returns 0 when the event has no start timestamp (e.g. a marker), or if
+ * the events are not both complete / the query fails.
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAEvent_cuEventElapsedTime
+        (JNIEnv *env, jclass clazz, jlong event_id) {
+    cuda_event_t *ev = (cuda_event_t *) event_id;
+    if (ev == nullptr || ev->start == nullptr || ev->event == nullptr) {
+        return 0;
+    }
+    // Ensure both events have completed before querying (otherwise
+    // cuEventElapsedTime returns CUDA_ERROR_NOT_READY).
+    if (cuEventSynchronize(ev->event) != CUDA_SUCCESS) {
+        return 0;
+    }
+    float milliseconds = 0.0f;
+    CUresult result = cuEventElapsedTime(&milliseconds, ev->start, ev->event);
+    if (result != CUDA_SUCCESS) {
+        return 0;
+    }
+    return (jlong) (milliseconds * 1.0e6); // ms -> ns
 }
 
 /*
@@ -139,8 +171,14 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAEvent_clRe
     if (ev == nullptr) {
         return;
     }
-    CUresult result = cuEventDestroy(ev->event);
-    LOG_CUDA_AND_VALIDATE("cuEventDestroy", result);
+    if (ev->start != nullptr) {
+        CUresult startResult = cuEventDestroy(ev->start);
+        LOG_CUDA_AND_VALIDATE("cuEventDestroy(start)", startResult);
+    }
+    if (ev->event != nullptr) {
+        CUresult result = cuEventDestroy(ev->event);
+        LOG_CUDA_AND_VALIDATE("cuEventDestroy", result);
+    }
     delete ev;
 }
 
