@@ -25,7 +25,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 
 /**
- * Minimal JVM classfile parser (JVMS §4) used to recover the {@code Code}
+ * Minimal JVM classfile parser (JVMS section 4) used to recover the {@code Code}
  * attribute of a single method: max stack, max locals, raw bytecode and the
  * exception table. This is the JDK-neutral source of bytecode-derived metadata
  * that HotSpot JVMCI normally provides, so TornadoVM can read what it needs

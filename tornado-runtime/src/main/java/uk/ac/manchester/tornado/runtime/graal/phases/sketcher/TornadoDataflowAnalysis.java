@@ -226,7 +226,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 // followed: a write THROUGH the nested array (b.storage.set(...)) has to mark the enclosing
                 // parameter b as written, otherwise no DependentReadNode/CopyOut is emitted and the result is
                 // never copied back to the host (reads 0). The previous `isTornadoNativeArray` skip stopped this
-                // traversal — it fired spuriously on the JVMCI-absent (reflection) path where the field toString
+                // traversal - it fired spuriously on the JVMCI-absent (reflection) path where the field toString
                 // contains the full array type name (HotSpot's field toString did not, so JDK<=21 worked).
                 if (loadField.stamp(NodeView.DEFAULT) instanceof ObjectStamp) {
                     loadField.usages().forEach(nodesToProcess::add);

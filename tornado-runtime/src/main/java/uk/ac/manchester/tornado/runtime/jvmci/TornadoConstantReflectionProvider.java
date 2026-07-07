@@ -159,7 +159,7 @@ public class TornadoConstantReflectionProvider implements ConstantReflectionProv
 
     @Override
     public ResolvedJavaType asJavaType(Constant constant) {
-        // JVMCI-absent path: inverse of asJavaClass — recover the ResolvedJavaType from a Class
+        // JVMCI-absent path: inverse of asJavaClass - recover the ResolvedJavaType from a Class
         // object constant. Used by the same local/private-array sizing phase.
         if (backing == null && constant instanceof JavaConstant javaConstant) {
             Object object = snippetReflection.asObject(Object.class, javaConstant);
@@ -225,7 +225,7 @@ public class TornadoConstantReflectionProvider implements ConstantReflectionProv
      * reads from an object constant at a JVMCI field displacement using {@code sun.misc.Unsafe}, matching
      * {@code HotSpotMemoryAccessProviderImpl} semantics (the displacement IS an {@code Unsafe} field offset).
      * A non-object base (raw address / primitive) is not foldable here and returns {@code null}, which Graal
-     * treats as "leave the read in place" — safe, never a wrong fold.
+     * treats as "leave the read in place" - safe, never a wrong fold.
      */
     private static final class ReflectionMemoryAccessProvider implements MemoryAccessProvider {
 

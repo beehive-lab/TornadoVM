@@ -316,7 +316,7 @@ final class ReflectionResolvedJavaMethod implements ResolvedJavaMethod {
         // The reflection classfile path does not parse the optional (debug-only) LocalVariableTable
         // attribute, but backends need one to name kernel parameters (locals live at BCI 0). Synthesise
         // a table from the method parameters: stable identifiers (this/arg0/arg1/...) with the correct
-        // types and JVM local slots — semantically sufficient for code generation.
+        // types and JVM local slots - semantically sufficient for code generation.
         int endBci = Math.max(getCodeSize(), 1);
         List<Local> locals = new ArrayList<>();
         int slot = 0;

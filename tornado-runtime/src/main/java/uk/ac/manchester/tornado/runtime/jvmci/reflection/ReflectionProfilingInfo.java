@@ -27,7 +27,7 @@ import jdk.vm.ci.meta.ProfilingInfo;
 import jdk.vm.ci.meta.TriState;
 
 /**
- * An "unprofiled" {@link ProfilingInfo} — reports no runtime profile data. This
+ * An "unprofiled" {@link ProfilingInfo} - reports no runtime profile data. This
  * is the JDK-neutral counterpart to HotSpot's profiling info: TornadoVM does
  * not use profile-guided optimisation for kernel compilation (branch/type
  * profiles are absent), so the compiler simply proceeds without speculation.
