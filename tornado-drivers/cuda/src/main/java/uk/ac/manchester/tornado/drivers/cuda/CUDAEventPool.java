@@ -135,12 +135,18 @@ public class CUDAEventPool {
 
         int index = 0;
         for (final int value : dependencies) {
-            if (value != -1) {
-                index++;
-                waitEventsBuffer[index] = events[value];
-                logger.debug("[%d] 0x%x - %s\n", index, events[value], descriptors[value].getNameDescription());
-
+            if (value == -1) {
+                continue;
             }
+            // An in-order queue already orders against its OWN prior work: a
+            // cuStreamWaitEvent on an event recorded on the same queue is a no-op
+            // that still costs an API call per dependency, so skip those.
+            if (!outOfOrderQueue && eventQueues[value] == queue) {
+                continue;
+            }
+            index++;
+            waitEventsBuffer[index] = events[value];
+            logger.debug("[%d] 0x%x - %s\n", index, events[value], descriptors[value].getNameDescription());
         }
         waitEventsBuffer[0] = index;
         return (index > 0);
