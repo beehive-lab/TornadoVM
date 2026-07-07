@@ -660,7 +660,9 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     public int readBuffer(long executionPlanId, long bufferId, long offset, long bytes, long hostPointer, long hostOffset, int[] waitEvents) {
         CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_D2H);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.TRUE, offset, bytes, hostPointer, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
+        // non-blocking/async copy-out for off-heap (and therefore pinned) buffers when we go multi-stream
+        boolean blocking = (isMultiStreamEnabled(executionPlanId) && waitEvents != null) ? CUDABlocking.FALSE : CUDABlocking.TRUE;
+        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, blocking, offset, bytes, hostPointer, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_READ_SEGMENT, commandQueue);
     }
