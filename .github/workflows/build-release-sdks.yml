@@ -320,7 +320,7 @@ jobs:
           )
 
       - name: Prepare output directory
-        shell: pwsh
+        shell: powershell
         run: |
           New-Item -ItemType Directory -Force -Path $env:RELEASE_ARCHIVES_DIR | Out-Null
           $platformPath = Join-Path $env:RELEASE_ARCHIVES_DIR (Join-Path $env:VERSION_TAG $env:PLATFORM_DIR)
@@ -348,7 +348,7 @@ jobs:
 
       - name: Upload archives to matching Releases
         if: needs.preflight.outputs.upload_to_release == 'true'
-        shell: pwsh
+        shell: powershell
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
