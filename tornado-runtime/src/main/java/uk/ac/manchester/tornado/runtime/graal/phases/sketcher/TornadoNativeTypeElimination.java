@@ -137,9 +137,10 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
             node.replaceAtPredecessor(successor);
             predecessor.replaceFirstSuccessor(node, successor);
 
-            for (Node us : node.usages()) {
-                node.removeUsage(us);
-            }
+            // Detach any remaining usages (e.g. a PiNode still holding this node as its guard edge) by
+            // nulling the referrers' edges. Using removeUsage alone only trims this node's usage list and
+            // leaves the referrer pointing at the deleted node, which later crashes StructuredGraph.copy.
+            node.replaceAtUsages(null);
             node.clearInputs();
             node.safeDelete();
         }

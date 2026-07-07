@@ -96,7 +96,7 @@ public class HalfFloatStamp extends Stamp {
 
     @Override
     public Stamp improveWith(Stamp other) {
-        return null;
+        return this;
     }
 
     @Override
