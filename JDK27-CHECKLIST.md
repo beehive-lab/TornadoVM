@@ -215,14 +215,29 @@ bug; (b) `testPrivateVector*` = the CleanerFactory misfire above (was mis-labele
         (`this.code is null`) is never reached. CORRECT but **net-zero** for the count — every HalfFloat test is
         also gated by v71 (below). Committed as a prerequisite.
   - **TRACTABLE PHASES DONE (1, 2, 3a). Remaining = architectural / reassess territory (per plan decision):**
-  - [ ] **Phase 3b — v71 class-file (dominant HalfFloat blocker).** `HalfFloat` ctor/ops call
-        `java.lang.Float.floatToFloat16`/`float16ToFloat` (Java-20+, **v71** on JDK 27). `TornadoSketcher`
-        (line ~178) recursively sketches every non-intrinsified callee; it descends into `java.lang.Float`
-        (v71) which the frozen-Graal ClassfileParser (max v66) rejects → "Unsupported class file major version
-        71". These Float methods HAVE invocation plugins (`registerFP16ConversionPlugins`) but they don't fire
-        during the sketch graph-builder. FIX = teach `TornadoSketcher` to skip descent into invocation-plugin-
-        backed callees (general, JDK-neutral) OR raise the frozen-Graal version cap. **Risky** (touches the core
-        access-analysis fixed in Phase-nested-array); do with care / supervision, not blind.
+  - [x] **Phase 3b — v71 class-file — FIXED (commit ebbf72d7d), root cause CORRECTED.** The thrower was NOT
+        the frozen-Graal ClassfileParser (max v66) as hypothesized above — it was **ASM 9.7 `ClassReader`** in
+        `ASMClassVisitor.getParallelAnnotations` (`@Parallel` extraction) reading `java.lang.Float` (v71; ASM 9.7
+        caps at v67/Java 23) when the sketcher descends into `Float.floatToFloat16`. FIX: clamp the class-file
+        major version in the raw byte[] (bytes 6-7) to `MAX_SUPPORTED_MAJOR=67` before `new ClassReader(...)` —
+        annotation extraction is class-file-version-independent. Zero-regression (only fires when major>67).
+        Removed the v71 crash → exposed the next HalfFloat layer (toString + writeback below).
+  - [x] **Canonical `toString` (commit 588e8c905) — private vectors + HalfFloat ctor.**
+        `ReflectionResolvedJavaMethod.toString()` was `"ReflectionMethod<public …FloatArray(int)>"` but the
+        vector/HalfFloat `NodePlugin.handleInvoke` matches `.toString().contains("FloatArray.<init>(int)")` /
+        `"HalfFloat.<init>"` → MISS → `new VectorFloat2()`/HalfFloat ctor inlined into bodiless native `allocate`
+        → sketcher `this.code is null` NPE. FIX: emit JVMCI-canonical `<HolderFQN>.<name>(<simpleParams>)`. All
+        `testPrivateVector*` pass (TestFloats/Ints 3→0, TestVectorAllocation→0); HalfFloat ctor crashes gone.
+  - [x] **HalfFloat writeback (commit bd981f4ca).** `WriteHalfFloatNode extends FixedWithNextNode` (not a
+        WriteNode) → `TornadoDataflowAnalysis` never marked the `HalfFloatArray` output as WRITE → no
+        `TRANSFER_DEVICE_TO_HOST` → result read `0.0`. FIX: `WriteHalfFloatNode implements MarkOCLWriteNode` +
+        add that marker to the dataflow write branch. **arrays.TestArrays 5→0, foundation.TestHalfFloats 4→1.**
+        **Suite this session: 213→192 FAILED / 724 PASS, zero regressions.**
+  - [ ] **Remaining HalfFloat (harder) — stamp inference.** `improvedStamp is null` NPE + `!FixedGuard` bailouts
+        in HalfFloat-vector dot products (`testVectorDot`, `testSimpleDotProductHalf2/3`); `HalfFloatStamp cannot
+        be cast to AbstractObjectStamp` module-mismatch; `testMatrixVectorHalfFloatOptimized` "Bailout is
+        disabled". Graal stamp-improvement doesn't handle `HalfFloatStamp` on the reflection sketch path — deeper
+        than the accessor/writeback fixes.
   - [ ] Residual KernelContext-reduction correctness `0.0`/bail (deeper — reduction logic, not compile).
   - [ ] Phase 4 `@Reduce` (~41): architectural host-graph rewrite.
   - [ ] **Phase 0 — develop baseline**: build develop on JDK 21, run the same suite; scope which of the
