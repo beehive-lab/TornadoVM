@@ -179,10 +179,11 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
         if (TornadoOptions.USE_SYNC_FLUSH) {
             commandQueue.flush();
         }
+        // Join the plan's secondary queues (role + COMPUTE pool) into the default queue via
+        // events, then host-sync ONCE: a cuStreamSynchronize per queue would serialise the
+        // host against up to 7 queues per execution.
+        joinRoleQueues(executionPlanId, commandQueue);
         commandQueue.finish();
-        for (CUDACommandQueue roleQueue : secondaryQueues(executionPlanId)) {
-            roleQueue.finish();
-        }
     }
 
     @Override
