@@ -33,6 +33,22 @@
 
     <build>
         <plugins>
+            <!-- Pin the default-lifecycle plugins that the reactor also pins to non-default versions.
+                 The CI runner builds Maven offline (-o); its cache only holds the versions the reactor
+                 fetched, so the unversioned jar-packaging defaults for these two (compiler 3.1, jar 2.4)
+                 are absent and fail the graal-relocate step (and thus every build). Plugins the reactor
+                 leaves unversioned (resources, surefire) resolve to the same cached CI defaults, so they
+                 are deliberately not pinned here. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.1.2</version>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
