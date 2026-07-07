@@ -220,9 +220,12 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 }
                 isRead = true;
             } else if (currentNode instanceof LoadFieldNode loadField) {
-                if (isTornadoNativeArray(loadField)) {
-                    continue;
-                }
+                // A native-array field (e.g. Matrix2DFloat.storage, VectorFloat.storage) must have its usages
+                // followed: a write THROUGH the nested array (b.storage.set(...)) has to mark the enclosing
+                // parameter b as written, otherwise no DependentReadNode/CopyOut is emitted and the result is
+                // never copied back to the host (reads 0). The previous `isTornadoNativeArray` skip stopped this
+                // traversal — it fired spuriously on the JVMCI-absent (reflection) path where the field toString
+                // contains the full array type name (HotSpot's field toString did not, so JDK<=21 worked).
                 if (loadField.stamp(NodeView.DEFAULT) instanceof ObjectStamp) {
                     loadField.usages().forEach(nodesToProcess::add);
                 }
@@ -277,15 +280,6 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
         }
 
         return result;
-    }
-
-    private boolean isTornadoNativeArray(LoadFieldNode loadFieldNode) {
-        String field = loadFieldNode.field().toString();
-
-        return field.contains("uk.ac.manchester.tornado.api.types.arrays.IntArray") || field.contains("uk.ac.manchester.tornado.api.types.arrays.DoubleArray") || field.contains(
-                "uk.ac.manchester.tornado.api.types.arrays.FloatArray") || field.contains("uk.ac.manchester.tornado.api.types.arrays.LongArray") || field.contains(
-                        "uk.ac.manchester.tornado.api.types.arrays.CharArray") || field.contains("uk.ac.manchester.tornado.api.types.arrays.ShortArray") || field.contains(
-                                "uk.ac.manchester.tornado.api.types.arrays.ByteArray");
     }
 
     /**

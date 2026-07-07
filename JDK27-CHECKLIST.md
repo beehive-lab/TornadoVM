@@ -124,10 +124,24 @@ bug; (b) `testPrivateVector*` = the CleanerFactory misfire above (was mis-labele
       half-float plugins so `getShortAtIndex`/`getAtIndex` is never reached
 - [ ] Investigate the **v71 class-file** parsed in `initHalfFloatVector`
 - [x] Triage the `TestLoops` `10.0 → 0.0` correctness failures → nested-object (`Matrix2DFloat`) issue (see above)
-- [ ] **Fix nested native-array field access on the reflection path** (reflection field offset /
-      nested-object marshalling for an array reference held in another object's field) — unblocks
-      `Matrix*`/image/volume kernels. Verify `ReflectionResolvedJavaField.getOffset()` and the
-      object-marshalling path handle a `TornadoNativeArray`-typed field.
+- [x] **FIXED (2026-07-07) — nested native-array field access on the reflection path.** Root cause was NOT
+      marshalling/offsets (those were all verified correct). It was **`TornadoDataflowAnalysis.processUsages`**:
+      a `LoadFieldNode` of a native-array field (`Matrix2DFloat.storage`, `VectorFloat.storage`, image storage)
+      was skipped via `isTornadoNativeArray(loadField)` → `continue`, which stopped the usage traversal so a
+      write THROUGH the nested array (`b.set(...)` → `b.storage.set(...)` → `JavaWriteNode`) never marked the
+      enclosing parameter `b` as written. Result: `b` got `Access.READ_ONLY` → no `DependentReadNode` (TornadoGraphBuilder
+      line 183) → no `CopyOutNode` → **no `TRANSFER_DEVICE_TO_HOST` bytecode emitted → the output object is never
+      copied back → reads host-initial 0**. Reflection-specific because `isTornadoNativeArray` matched
+      `field().toString()` on the full array type name (`...arrays.IntArray`): the reflection field's toString
+      contains it (skip fires); HotSpot's field toString didn't (so JDK≤21 followed the usages and worked).
+      **Fix:** removed the skip so native-array field loads follow their usages (write-through-nested detected;
+      the enclosing param becomes READ_WRITE/WRITE_ONLY as appropriate). Diagnosed by tracing the whole
+      write→readback chain: marshalling offsets/handle all correct (`storage`@20, handle=3→nested buffer), input
+      transfer OK, but **no `transferDeviceToHost` at the interpreter and no `TRANSFER_DEVICE_TO_HOST` in the
+      bytecode** for the matrix output, while `TestArrays` emits it 33×.
+      **Impact (per-suite):** `matrices.TestMatrixTypes` 27→7 fails, `images.TestImages` 18→9, `vectortypes.TestFloats`
+      25→20. Full-suite tally pending. Residual vector/image/matrix failures are a *different* remaining cause.
+      (superseded investigation below kept for the record)
       - Investigation (2026-07-04): **JDK 27 defaults `UseCompactObjectHeaders=true`** (JDK 25+
         Project Lilliput; the flag didn't exist on JDK 21, so object field layout differs). BUT running
         `forConstant04` with `-XX:-UseCompactObjectHeaders` still writes 0.0 → the header toggle alone is not the fix.
