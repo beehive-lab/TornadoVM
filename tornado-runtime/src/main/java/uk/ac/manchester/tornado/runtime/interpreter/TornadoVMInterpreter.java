@@ -718,6 +718,17 @@ public class TornadoVMInterpreter {
         long allocationsTotalSize = allocationSize + preAllocatedSizes;
         increaseBatchNumber(sizeBatch);
 
+        // Re-establish the buffer-reuse lock on (re)allocation. Locking otherwise happens only
+        // once, when the task graph is built - so a SECOND execution plan created from the same
+        // ImmutableTaskGraph (the first plan's close() unlocked the shared object states) would
+        // run with unlocked buffers: every per-execution DEALLOC frees for real, resetting the
+        // buffer contents, and every TRANSFER_HOST_TO_DEVICE_ONCE re-uploads on each execution.
+        if (TornadoOptions.isReusedBuffersEnabled()) {
+            for (XPUDeviceBufferState objectState : objectStates) {
+                objectState.setLockBuffer(true);
+            }
+        }
+
         // Dump printing after object allocation, so the XPU-Buffer is created,
         // and we can query the size without having to use Java type analysis
         // to obtain the size at this point. 
