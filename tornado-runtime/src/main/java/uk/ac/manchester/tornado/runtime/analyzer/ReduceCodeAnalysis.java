@@ -39,6 +39,7 @@ import tornado.graal.compiler.nodes.ConstantNode;
 import tornado.graal.compiler.nodes.EndNode;
 import tornado.graal.compiler.nodes.FixedNode;
 import tornado.graal.compiler.nodes.IfNode;
+import tornado.graal.compiler.nodes.Invoke;
 import tornado.graal.compiler.nodes.InvokeNode;
 import tornado.graal.compiler.nodes.LogicNode;
 import tornado.graal.compiler.nodes.LoopBeginNode;
@@ -102,7 +103,7 @@ public class ReduceCodeAnalysis {
                 operations.add(REDUCE_OPERATION.SUM);
             } else if (operation instanceof MulNode) {
                 operations.add(REDUCE_OPERATION.MUL);
-            } else if (operation instanceof InvokeNode invoke) {
+            } else if (operation instanceof Invoke invoke) {
                 if (invoke.callTarget().targetName().equals("Math.max")) {
                     operations.add(REDUCE_OPERATION.MAX);
                 } else if (invoke.callTarget().targetName().equals("Math.min")) {
@@ -199,19 +200,18 @@ public class ReduceCodeAnalysis {
                     if (store.value() instanceof BinaryNode || store.value() instanceof BinaryArithmeticNode) {
                         ValueNode value = store.value();
                         reduceOperation.add(value);
-                    } else if (store.value() instanceof InvokeNode) {
-                        InvokeNode invoke = (InvokeNode) store.value();
+                    } else if (store.value() instanceof Invoke invoke) {
                         if (invoke.callTarget().targetName().startsWith("Math")) {
-                            reduceOperation.add(invoke);
+                            reduceOperation.add((ValueNode) invoke);
                         }
                     }
                 } else if (node instanceof WriteAtomicNode write) {
                     if (write.value() instanceof BinaryNode || write.value() instanceof BinaryArithmeticNode) {
                         ValueNode value = write.value();
                         reduceOperation.add(value);
-                    } else if (write.value() instanceof InvokeNode invoke) {
+                    } else if (write.value() instanceof Invoke invoke) {
                         if (invoke.callTarget().targetName().startsWith("Math")) {
-                            reduceOperation.add(invoke);
+                            reduceOperation.add((ValueNode) invoke);
                         }
                     }
                 }
@@ -274,7 +274,7 @@ public class ReduceCodeAnalysis {
                 break;
             } else if (aux instanceof LoopBeginNode) {
                 loopBegin = (LoopBeginNode) aux;
-            } else if (aux instanceof InvokeNode invokeNode) {
+            } else if (aux instanceof Invoke invokeNode) {
                 if (invokeNode.getTargetMethod().getName().equals("getSize")) {
                     ValueNode valueNode = invokeNode.callTarget().arguments().first();
                     loopBoundNode = valueNode;
@@ -340,13 +340,15 @@ public class ReduceCodeAnalysis {
         for (Node node : parameterNode.usages()) {
             if (node instanceof MethodCallTargetNode methodCallTargetNode) {
                 Node aux = methodCallTargetNode.usages().first();
-                if (!(aux instanceof InvokeNode panamaStoreNode)) {
+                // On the JVMCI-absent (reflection) high-level graph, TornadoVM native-array accessors are
+                // InvokeWithExceptionNode (with an exception edge), not InvokeNode; both implement Invoke.
+                if (!(aux instanceof Invoke panamaStoreNode)) {
                     continue;
                 }
                 if (!panamaStoreNode.getTargetMethod().getName().equals("set")) {
                     continue;
                 }
-                obtainLoopBoundForPanamaRegions(aux, loopBound);
+                obtainLoopBoundForPanamaRegions((Node) panamaStoreNode, loopBound);
             } else if (node instanceof StoreIndexedNode) {
                 obtainLoopBoundForOnHeapArrays(node, loopBound);
             }

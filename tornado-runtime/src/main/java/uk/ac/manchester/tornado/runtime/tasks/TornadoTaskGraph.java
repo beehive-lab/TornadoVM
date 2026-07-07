@@ -1465,14 +1465,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private TornadoTaskGraphInterface reduceAnalysis() {
         TornadoTaskGraphInterface abstractTaskGraph = null;
         if (analysisTaskGraph == null && !reduceAnalysis) {
-            // The @Reduce detector builds a host-side Graal graph through HotSpot JVMCI
-            // (CodeAnalysis -> HotSpotJVMCIRuntime.runtime()), which does not exist on a JVMCI-absent
-            // JDK (27+). Skip the analysis on the reflection path: ordinary kernels run normally;
-            // @Reduce kernels are not yet supported there.
-            if (uk.ac.manchester.tornado.runtime.jvmci.TornadoMetaAccessProvider.USE_REFLECTION_FULL) {
-                reduceAnalysis = true;
-                return null;
-            }
+            // CodeAnalysis.buildHighLevelGraalGraph is JDK-neutral: on the JVMCI-absent path (JDK 27+) it uses
+            // the TornadoVM backend's reflection providers instead of HotSpotJVMCIRuntime, so @Reduce analysis
+            // works there too.
             analysisTaskGraph = ReduceCodeAnalysis.analyzeTaskGraph(taskPackages);
             reduceAnalysis = true;
             if (analysisTaskGraph != null && analysisTaskGraph.isValid()) {

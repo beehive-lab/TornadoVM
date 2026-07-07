@@ -26,8 +26,10 @@
 package uk.ac.manchester.tornado.runtime.analyzer;
 
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getOptions;
 
 import java.lang.reflect.Method;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.graalvm.collections.EconomicMap;
 import tornado.graal.compiler.api.runtime.GraalJVMCICompiler;
@@ -64,6 +66,9 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ProfilingInfo;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.SpeculationLog;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCompilerIdentifier;
+import uk.ac.manchester.tornado.runtime.jvmci.TornadoMetaAccessProvider;
 
 public class CodeAnalysis {
 
@@ -99,25 +104,44 @@ public class CodeAnalysis {
      * @return {@link StructuredGraph} Control Flow and DataFlow Graphs for the
      *     input method in the Graal-IR format,
      */
+    private static final AtomicInteger codeAnalysisId = new AtomicInteger(0);
+
     public static StructuredGraph buildHighLevelGraalGraph(Object taskInputCode) {
         Method methodToCompile = TaskUtils.resolveMethodHandle(taskInputCode);
-        GraalJVMCICompiler graalCompiler = getGraalCompiler();
-        RuntimeProvider capability = graalCompiler.getGraalRuntime().getCapability(RuntimeProvider.class);
-        Backend backend = capability.getHostBackend();
-        Providers providers = backend.getProviders();
-        MetaAccessProvider metaAccess = providers.getMetaAccess();
-        ResolvedJavaMethod resolvedJavaMethod = metaAccess.lookupJavaMethod(methodToCompile);
-        CompilationIdentifier compilationIdentifier = backend.getCompilationIdentifier(resolvedJavaMethod);
 
-        SpeculationLog speculationLog = resolvedJavaMethod.getSpeculationLog();
-        if (speculationLog != null) {
-            speculationLog.collectFailedSpeculations();
+        final Providers providers;
+        final ResolvedJavaMethod resolvedJavaMethod;
+        final CompilationIdentifier compilationIdentifier;
+        final SpeculationLog speculationLog;
+        final OptionValues options;
+
+        if (TornadoMetaAccessProvider.USE_REFLECTION_FULL) {
+            // JVMCI-absent path (JDK 27+): HotSpotJVMCIRuntime's host backend is dead. Use the TornadoVM
+            // backend's reflection-backed providers. The default (empty-plugin) graph builder reads the
+            // kernel bytecode via ResolvedJavaMethod.getCode() (Classfile parser), and keeps IntArray.set /
+            // ArrayLength as high-level nodes that the reduce loop-bound + operator analysis relies on.
+            providers = TornadoCoreRuntime.getTornadoRuntime().getBackend(0).getProviders();
+            resolvedJavaMethod = providers.getMetaAccess().lookupJavaMethod(methodToCompile);
+            compilationIdentifier = new TornadoCompilerIdentifier("code-analysis-" + resolvedJavaMethod.getName(), codeAnalysisId.getAndIncrement());
+            speculationLog = null;
+            options = getOptions();
+        } else {
+            GraalJVMCICompiler graalCompiler = getGraalCompiler();
+            RuntimeProvider capability = graalCompiler.getGraalRuntime().getCapability(RuntimeProvider.class);
+            Backend backend = capability.getHostBackend();
+            providers = backend.getProviders();
+            resolvedJavaMethod = providers.getMetaAccess().lookupJavaMethod(methodToCompile);
+            compilationIdentifier = backend.getCompilationIdentifier(resolvedJavaMethod);
+            speculationLog = resolvedJavaMethod.getSpeculationLog();
+            if (speculationLog != null) {
+                speculationLog.collectFailedSpeculations();
+            }
+            EconomicMap<OptionKey<?>, Object> opts = OptionValues.newOptionMap();
+            opts.putAll(HotSpotGraalOptionValues.defaultOptions().getMap());
+            options = new OptionValues(opts);
         }
 
         try (DebugContext.Scope ignored = getDebugContext().scope("compileMethodAndInstall", new DebugDumpScope("TornadoVM-Code-Analysis", true))) {
-            EconomicMap<OptionKey<?>, Object> opts = OptionValues.newOptionMap();
-            opts.putAll(HotSpotGraalOptionValues.defaultOptions().getMap());
-            OptionValues options = new OptionValues(opts);
             StructuredGraph graph = new StructuredGraph.Builder(options, getDebugContext(), AllowAssumptions.YES).speculationLog(speculationLog).method(resolvedJavaMethod).compilationId(
                     compilationIdentifier).build();
             PhaseSuite<HighTierContext> graphBuilderSuite = new PhaseSuite<>();
