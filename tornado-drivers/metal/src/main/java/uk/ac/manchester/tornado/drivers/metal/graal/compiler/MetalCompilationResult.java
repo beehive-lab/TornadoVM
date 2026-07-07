@@ -31,6 +31,7 @@ import jdk.graal.compiler.code.CompilationResult;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.drivers.metal.graal.backend.MetalBackend;
+import uk.ac.manchester.tornado.drivers.metal.graal.backend.MetalPreamble;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class MetalCompilationResult extends CompilationResult {
@@ -66,21 +67,27 @@ public class MetalCompilationResult extends CompilationResult {
 
         // Each callee must appear AFTER the prologue (#include, typedef, helpers) and
         // BEFORE all previously-added callees, so that dependencies (inner callees) end
-        // up first in the source file.  We find the prologue end by locating the last
-        // "}\n\n" that occurs before the "kernel void" marker.  That sequence is emitted
-        // exactly once by the Metal backend – after the atomicMul_Tornado_Int helper and
-        // before the main kernel function – and it is not present inside any callee body.
+        // up first in the source file.  We find the prologue end by locating the stable
+        // MetalPreamble.PREAMBLE_END_MARKER, which the backend emits exactly once after
+        // the trimmed preamble and before the main kernel function (it is not present in
+        // any callee body).  The marker is followed by a blank line ("...marker\n\n").
         String oldStr = new String(oldCode);
         int kernelPos = oldStr.indexOf("kernel void ");
         int insertAt = -1;
-        if (kernelPos > 0) {
-            String beforeKernel = oldStr.substring(0, kernelPos);
-            int prolEndPos = beforeKernel.lastIndexOf("}\n\n");
-            if (prolEndPos >= 0) {
-                insertAt = prolEndPos + 3; // right after "}\n\n"
+        int markerPos = oldStr.indexOf(MetalPreamble.PREAMBLE_END_MARKER);
+        if (markerPos >= 0) {
+            // Insert after the marker line and its trailing blank line (marker\n\n),
+            // so the blank line separating the preamble from callee definitions is preserved.
+            int afterMarker = markerPos + MetalPreamble.PREAMBLE_END_MARKER.length();
+            int newline = oldStr.indexOf('\n', afterMarker);
+            if (newline >= 0 && newline + 1 < oldStr.length() && oldStr.charAt(newline + 1) == '\n') {
+                insertAt = newline + 2; // skip marker-line \n plus blank \n
             } else {
-                insertAt = kernelPos; // fallback: just before kernel void
+                insertAt = (newline >= 0) ? newline + 1 : afterMarker;
             }
+        } else if (kernelPos > 0) {
+            // Fallback (older/foreign sources without the marker): just before kernel void.
+            insertAt = kernelPos;
         }
 
         if (insertAt >= 0) {
@@ -95,6 +102,28 @@ public class MetalCompilationResult extends CompilationResult {
             buffer.put(oldCode);
         }
         setTargetCode(newCode, size);
+    }
+
+    /**
+     * Rebuilds the minimal preamble by scanning the full combined source — kernel
+     * body plus any callee methods inserted by {@link #addCompiledMethodCode}.
+     * Must be called after the callee worklist is exhausted so that shims
+     * referenced only from callee bodies are not omitted.
+     */
+    public void finalizePreamble() {
+        String combined = new String(getTargetCode());
+        int markerPos = combined.indexOf(MetalPreamble.PREAMBLE_END_MARKER);
+        if (markerPos < 0) {
+            return;
+        }
+        int afterMarker = markerPos + MetalPreamble.PREAMBLE_END_MARKER.length();
+        // Skip the marker-line \n and the trailing blank \n emitted by MetalPreamble.buildFor.
+        if (afterMarker < combined.length() && combined.charAt(afterMarker) == '\n') afterMarker++;
+        if (afterMarker < combined.length() && combined.charAt(afterMarker) == '\n') afterMarker++;
+        String nonPreamble = combined.substring(afterMarker);
+        String newSource = MetalPreamble.buildFor(nonPreamble) + nonPreamble;
+        byte[] newCode = newSource.getBytes();
+        setTargetCode(newCode, newCode.length);
     }
 
     public TaskDataContext getMeta() {

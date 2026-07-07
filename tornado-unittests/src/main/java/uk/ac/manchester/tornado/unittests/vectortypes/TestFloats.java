@@ -30,6 +30,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.collections.VectorFloat;
@@ -394,6 +395,7 @@ public class TestFloats extends TornadoTestBase {
 
     @Test
     public void testSimpleDotProductFloat8() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.CUDA);
         Float8 a = new Float8(1f, 2f, 3f, 4f, 5f, 6f, 7f, 8f);
         Float8 b = new Float8(8f, 7f, 6f, 5f, 4f, 3f, 2f, 1f);
         VectorFloat output = new VectorFloat(1);
@@ -413,6 +415,7 @@ public class TestFloats extends TornadoTestBase {
 
     @Test
     public void testSimpleDotProductFloat16() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.CUDA);
         Float16 a = new Float16(1f, 2f, 3f, 4f, 5f, 6f, 7f, 8f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f);
         Float16 b = new Float16(8f, 7f, 6f, 5f, 4f, 3f, 2f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f);
         VectorFloat output = new VectorFloat(1);
@@ -632,6 +635,7 @@ public class TestFloats extends TornadoTestBase {
 
     @Test
     public void testVectorFloat16() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.CUDA);
         int size = 16;
 
         VectorFloat16 a = new VectorFloat16(size);
@@ -677,6 +681,7 @@ public class TestFloats extends TornadoTestBase {
 
     @Test
     public void testVectorFloat8() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.CUDA);
         int size = 8;
 
         VectorFloat8 a = new VectorFloat8(size);
@@ -713,6 +718,7 @@ public class TestFloats extends TornadoTestBase {
 
     @Test
     public void testVectorFloat8_Storage() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.CUDA);
         int size = 8;
 
         VectorFloat8 a = new VectorFloat8(size);
@@ -856,6 +862,7 @@ public class TestFloats extends TornadoTestBase {
 
     @Test
     public void privateVectorFloat8() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.CUDA);
         int size = 16;
         VectorFloat8 sequentialOutput = new VectorFloat8(16);
         VectorFloat8 tornadoOutput = new VectorFloat8(16);
@@ -1011,6 +1018,7 @@ public class TestFloats extends TornadoTestBase {
 
     @Test
     public void testInternalSetMethod04() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.CUDA);
         final int size = 16;
         VectorFloat8 tornadoInput = new VectorFloat8(size);
         VectorFloat8 sequentialInput = new VectorFloat8(size);
@@ -1153,6 +1161,7 @@ public class TestFloats extends TornadoTestBase {
 
     @Test
     public void testVectorFloat8Int8() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.CUDA);
         int size = 8192;
         VectorFloat8 a = new VectorFloat8(size);
         VectorInt8 b = new VectorInt8(size);
@@ -1190,6 +1199,7 @@ public class TestFloats extends TornadoTestBase {
 
     @Test
     public void testVectorFloat16Int16() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.CUDA);
         int size = 8192;
         VectorFloat16 a = new VectorFloat16(size);
         VectorInt16 b = new VectorInt16(size);

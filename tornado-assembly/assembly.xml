@@ -187,6 +187,9 @@
                 <include>io.github.beehive-lab:tornado-examples</include>
                 <include>io.github.beehive-lab:tornado-benchmarks</include>
                 <include>io.github.beehive-lab:tornado-unittests</include>
+                <include>io.github.beehive-lab:tornado-cublas</include>
+                <include>io.github.beehive-lab:tornado-cufft</include>
+                <include>io.github.beehive-lab:tornado-cudnn</include>
             </includes>
             <binaries>
                 <outputDirectory>share/java/tornado</outputDirectory>
@@ -211,6 +214,10 @@
                 <include>io.github.beehive-lab:tornado-drivers-metal-jni:jar:libs</include>
                 <include>io.github.beehive-lab:tornado-drivers-ptx-jni:jar:libs</include>
                 <include>io.github.beehive-lab:tornado-drivers-opencl-jni:jar:libs</include>
+                <include>io.github.beehive-lab:tornado-drivers-cuda-jni:jar:libs</include>
+                <include>io.github.beehive-lab:tornado-drivers-cublas-jni:jar:libs</include>
+                <include>io.github.beehive-lab:tornado-drivers-cufft-jni:jar:libs</include>
+                <include>io.github.beehive-lab:tornado-drivers-cudnn-jni:jar:libs</include>
             </includes>
         </dependencySet>
     </dependencySets>

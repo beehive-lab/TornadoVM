@@ -98,4 +98,96 @@ public final class TornadoFunctions {
     public interface Task15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> {
         void apply(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15);
     }
+
+    @FunctionalInterface
+    public interface LibraryTask1<T1> {
+        LibraryTaskDescriptor apply(T1 arg1);
+    }
+
+    @FunctionalInterface
+    public interface LibraryTask2<T1, T2> {
+        LibraryTaskDescriptor apply(T1 arg1, T2 arg2);
+    }
+
+    @FunctionalInterface
+    public interface LibraryTask3<T1, T2, T3> {
+        LibraryTaskDescriptor apply(T1 arg1, T2 arg2, T3 arg3);
+    }
+
+    @FunctionalInterface
+    public interface LibraryTask4<T1, T2, T3, T4> {
+        LibraryTaskDescriptor apply(T1 arg1, T2 arg2, T3 arg3, T4 arg4);
+    }
+
+    @FunctionalInterface
+    public interface LibraryTask5<T1, T2, T3, T4, T5> {
+        LibraryTaskDescriptor apply(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5);
+    }
+
+    @FunctionalInterface
+    public interface LibraryTask6<T1, T2, T3, T4, T5, T6> {
+        LibraryTaskDescriptor apply(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6);
+    }
+
+    @FunctionalInterface
+    public interface LibraryTask7<T1, T2, T3, T4, T5, T6, T7> {
+        LibraryTaskDescriptor apply(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7);
+    }
+
+    @FunctionalInterface
+    public interface LibraryTask8<T1, T2, T3, T4, T5, T6, T7, T8> {
+        LibraryTaskDescriptor apply(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8);
+    }
+
+    @FunctionalInterface
+    public interface LibraryTask9<T1, T2, T3, T4, T5, T6, T7, T8, T9> {
+        LibraryTaskDescriptor apply(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9);
+    }
+
+    @FunctionalInterface
+    public interface LibraryTask10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> {
+        LibraryTaskDescriptor apply(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10);
+    }
+
+    @FunctionalInterface
+    public interface LibraryTask11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> {
+        LibraryTaskDescriptor apply(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11);
+    }
+
+    @FunctionalInterface
+    public interface LibraryTask12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> {
+        LibraryTaskDescriptor apply(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12);
+    }
+
+    @FunctionalInterface
+    public interface LibraryTask13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> {
+        LibraryTaskDescriptor apply(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13);
+    }
+
+    @FunctionalInterface
+    public interface LibraryTask14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> {
+        LibraryTaskDescriptor apply(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14);
+    }
+
+    @FunctionalInterface
+    public interface LibraryTask15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> {
+        LibraryTaskDescriptor apply(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15);
+    }
+
+    @FunctionalInterface
+    public interface LibraryTask16<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> {
+        LibraryTaskDescriptor apply(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15, T16 arg16);
+    }
+
+    @FunctionalInterface
+    public interface LibraryTask17<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17> {
+        LibraryTaskDescriptor apply(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15, T16 arg16,
+                T17 arg17);
+    }
+
+    @FunctionalInterface
+    public interface LibraryTask18<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18> {
+        LibraryTaskDescriptor apply(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15, T16 arg16,
+                T17 arg17, T18 arg18);
+    }
 }

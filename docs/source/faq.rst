@@ -89,8 +89,8 @@ particular device. Further details and instructions on how to enable this featur
 9. Does TornadoVM support only OpenCL devices?
 ----------------------------------------------
 
-No. Currently, TornadoVM supports three compiler backends and therefore, it is able to generate OpenCL, PTX, and SPIR-V code depending on the
-hardware configuration.
+No. Currently, TornadoVM supports multiple compiler backends and therefore, it is able to generate OpenCL C, NVIDIA PTX, CUDA C
+(compiled to PTX via NVRTC), SPIR-V, and Metal code depending on the hardware configuration.
 
 10. Why is it called a VM?
 --------------------------

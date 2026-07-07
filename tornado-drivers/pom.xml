@@ -66,6 +66,20 @@
                 <module>ptx-jni</module>
             </modules>
         </profile>
+
+        <profile>
+            <id>cuda-backend</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <modules>
+                <module>cuda</module>
+                <module>cuda-jni</module>
+                <module>cublas-jni</module>
+                <module>cufft-jni</module>
+                <module>cudnn-jni</module>
+            </modules>
+        </profile>
     </profiles>
 
     <dependencies>

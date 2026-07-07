@@ -128,6 +128,7 @@ def get_export_list_paths(tornado_sdk):
         "spirv": export_lists_dir / "spirv-exports",
         "ptx": export_lists_dir / "ptx-exports",
         "metal": export_lists_dir / "metal-exports",
+        "cuda": export_lists_dir / "cuda-exports",
     }
 
 

@@ -36,10 +36,12 @@ import org.junit.runner.notification.Failure;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP16NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
+import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceMMANotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoNoOpenCLPlatformException;
 import uk.ac.manchester.tornado.unittests.common.SPIRVOptNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupported;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMMetalNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMOpenCLNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMPTXNotSupported;
@@ -217,6 +219,14 @@ public class TornadoHelper {
                     continue;
                 }
 
+                if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof TornadoVMCUDANotSupported))) {
+                    message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [CUDA CONFIGURATION UNSUPPORTED] " + ColorsTerminal.RESET + "\n");
+                    bufferConsole.append(message);
+                    bufferFile.append(message);
+                    notSupported++;
+                    continue;
+                }
+
                 if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof SPIRVOptNotSupported)) && OPTIMIZE_LOAD_STORE_SPIRV) {
                     message = String.format("%20s", " ................ " + ColorsTerminal.RED + " [SPIRV OPTIMIZATION NOT SUPPORTED] " + ColorsTerminal.RESET + "\n");
                     bufferConsole.append(message);
@@ -235,6 +245,14 @@ public class TornadoHelper {
 
                 if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof TornadoDeviceFP16NotSupported))) {
                     message = String.format("%20s", " ................ " + ColorsTerminal.YELLOW + " [FP16 UNSUPPORTED FOR CURRENT DEVICE] " + ColorsTerminal.RESET + "\n");
+                    bufferConsole.append(message);
+                    bufferFile.append(message);
+                    notSupported++;
+                    continue;
+                }
+
+                if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof TornadoDeviceMMANotSupported))) {
+                    message = String.format("%20s", " ................ " + ColorsTerminal.YELLOW + " [MMA UNSUPPORTED FOR CURRENT DEVICE] " + ColorsTerminal.RESET + "\n");
                     bufferConsole.append(message);
                     bufferFile.append(message);
                     notSupported++;
