@@ -36,7 +36,15 @@ import uk.ac.manchester.tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
-public class PTXStream implements Stream {
+/**
+ * A single CUDA command stream (a {@code CUstream} wrapper) plus its backing {@link PTXEventPool}.
+ * Streams are addressed by their {@link PTXStreamType} role (DEFAULT / H2D / COMPUTE / D2H) and are
+ * owned per execution plan by a {@link PTXExecutionStreamSet}; the per-operation enqueue overloads all
+ * live on this class. The lifecycle surface used by the pool and device context is:
+ * {@link #getStreamType()}, {@link #getStreamHandle()}, {@link #sync()}, {@link #reset()},
+ * {@link #isDestroy()}, {@link #cuDestroyStream()} and {@link #getEventPool()}.
+ */
+public class PTXStream {
 
     protected static final Event EMPTY_EVENT = new EmptyEvent();
 
