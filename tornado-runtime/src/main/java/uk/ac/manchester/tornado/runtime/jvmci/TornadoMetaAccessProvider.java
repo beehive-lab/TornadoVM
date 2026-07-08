@@ -188,12 +188,25 @@ public class TornadoMetaAccessProvider implements MetaAccessProvider {
 
     @Override
     public JavaConstant encodeDeoptActionAndReason(DeoptimizationAction action, DeoptimizationReason reason, int debugId) {
-        return backing().encodeDeoptActionAndReason(action, reason, debugId);
+        if (getBackingProvider() != null) {
+            return backing().encodeDeoptActionAndReason(action, reason, debugId);
+        }
+        // JVMCI-absent path: TornadoVM lowers for the GPU where deoptimization never happens, so the
+        // encoded action/reason is inert (the guards carrying it are eliminated before code generation).
+        // Return a deterministic non-null constant packing the ordinals, mirroring HotSpot's
+        // ~(reason | action | debugId) layout, instead of delegating to the absent HotSpot provider.
+        int encoded = ~((reason.ordinal() << 3) | action.ordinal() | (debugId << 8));
+        return JavaConstant.forInt(encoded);
     }
 
     @Override
     public JavaConstant encodeSpeculation(Speculation speculation) {
-        return backing().encodeSpeculation(speculation);
+        if (getBackingProvider() != null) {
+            return backing().encodeSpeculation(speculation);
+        }
+        // JVMCI-absent path: the GPU never deoptimizes, so speculations are inert. Return the
+        // no-speculation encoding (0) instead of delegating to the absent HotSpot provider.
+        return JavaConstant.forLong(0);
     }
 
     @Override
