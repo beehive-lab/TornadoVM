@@ -66,6 +66,7 @@ import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis.REDUCE_OPERATION;
 import uk.ac.manchester.tornado.runtime.analyzer.TaskUtils;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.jvmci.TornadoMetaAccessProvider;
 import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils;
 import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils.BackendSelectionContainer;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
@@ -509,10 +510,17 @@ class ReduceTaskGraph {
                     }
                     hybridThreadMetas.add(meta);
 
-                    SequentialExecutionThread sequentialExecutionThread = new SequentialExecutionThread(compilationThread, taskPackage, hostHybridVariables);
-                    threadSequentialExecution.add(sequentialExecutionThread);
-                    sequentialExecutionThread.start();
-                    hybridInitialized = true;
+                    // On the JVMCI-absent (reflection) path the host reduction is a fast reflective invoke; if
+                    // it runs here (before setNeutralElement) its result is wiped by the neutral refill. Defer
+                    // it to the post-setNeutralElement start site by leaving hybridInitialized false so the
+                    // host thread starts after the array has been neutralised. On JVMCI the slow compile makes
+                    // the early start safe, so keep the original behaviour.
+                    if (!TornadoMetaAccessProvider.USE_REFLECTION_FULL) {
+                        SequentialExecutionThread sequentialExecutionThread = new SequentialExecutionThread(compilationThread, taskPackage, hostHybridVariables);
+                        threadSequentialExecution.add(sequentialExecutionThread);
+                        sequentialExecutionThread.start();
+                        hybridInitialized = true;
+                    }
                 }
             }
         }
