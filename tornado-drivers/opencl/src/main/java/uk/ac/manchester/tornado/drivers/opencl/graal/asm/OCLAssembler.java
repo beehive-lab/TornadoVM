@@ -51,6 +51,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIROp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLNullary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLReturnSlot;
+import uk.ac.manchester.tornado.runtime.jvmci.TornadoObjectConstant;
 
 public final class OCLAssembler extends Assembler {
 
@@ -439,6 +440,12 @@ public final class OCLAssembler extends Assembler {
             if (objConst.getJavaKind().isObject() && objConst.getType().getName().compareToIgnoreCase("Ljava/lang/String;") == 0) {
                 result = encodeString(objConst.toValueString());
             }
+        } else if (constant instanceof TornadoObjectConstant tornadoObjConst && tornadoObjConst.getObject() instanceof String stringLiteral) {
+            // JVMCI-absent (reflection) path: a String constant (e.g. a printf format) is a
+            // TornadoObjectConstant, not a HotSpotObjectConstant. Escape it as a C string literal instead
+            // of falling through to toValueString()+addLiteralSuffix, which emitted a raw newline and a
+            // spurious "UL" integer suffix and produced malformed OpenCL.
+            result = encodeString(stringLiteral);
         } else {
             result = constant.toValueString();
             result = addLiteralSuffix(oclKind, result);
