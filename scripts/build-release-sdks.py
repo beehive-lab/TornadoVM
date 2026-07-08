@@ -329,26 +329,31 @@ def patch_worktree_fix_pyinstaller(worktree_path):
     )
 
     new_func = '''def runPyInstaller(currentDirectory, tornadoSDKPath):
-    import tempfile
+    import subprocess, tempfile
 
     bin_dir = os.path.join(tornadoSDKPath, "bin")
     work_dir = tempfile.mkdtemp(prefix="pyinstaller-build-")
+    repo_root = os.environ.get("TORNADO_BUILD_REPO_ROOT", currentDirectory)
 
-    ## List of scripts to compile
     scripts = ["tornado.py", "tornado-test", "tornado-benchmarks.py"]
+    failed = []
     for s in scripts:
         print("creating " + s + " binary ....  "),
         script_path = os.path.join(bin_dir, s)
-        command = (
-            f'pyinstaller "{script_path}" --onefile '
-            f'--distpath "{bin_dir}" '
-            f'--workpath "{work_dir}" '
-            f'--specpath "{work_dir}"'
+        result = subprocess.run(
+            ["pyinstaller", script_path, "--onefile",
+             "--distpath", bin_dir, "--workpath", work_dir, "--specpath", work_dir],
+            cwd=repo_root,
         )
-        os.system(command)
-        print("ok ")
+        if result.returncode != 0:
+            print(f"[ERROR] PyInstaller failed for {s} (exit code {result.returncode})")
+            failed.append(s)
+        else:
+            print("ok ")
 
     shutil.rmtree(work_dir, ignore_errors=True)
+    if failed:
+        raise RuntimeError(f"PyInstaller failed for: {\', \'.join(failed)}")
 '''
 
     src, n = old_func_pattern.subn(new_func, src)
@@ -450,7 +455,7 @@ def clean_graal_jars(worktree_path):
         info(f"Removed {removed} stale file(s) from graalJars/")
 
 
-def build_sdk(worktree_path, jdk_home, jdk_arg, backends, label):
+def build_sdk(worktree_path, jdk_home, jdk_arg, backends, label, repo_root):
     """
     Build a single SDK variant inside *worktree_path*.
 
@@ -466,6 +471,7 @@ def build_sdk(worktree_path, jdk_home, jdk_arg, backends, label):
 
     env = os.environ.copy()
     env["JAVA_HOME"] = jdk_home
+    env["TORNADO_BUILD_REPO_ROOT"] = repo_root
     # Prepend the build JDK's bin/ to PATH so that any script that runs `java`
     # (e.g. gen-tornado-argfile-template.py's is_graalvm() check) sees the
     # correct JDK rather than whatever is current in the shell.
@@ -805,7 +811,7 @@ def main():
                 else:
                     backend_label = backends
                 label = f"{tag}-{backend_label}"
-                success = build_sdk(worktree_path, jdk_home, jdk_arg, backends, label)
+                success = build_sdk(worktree_path, jdk_home, jdk_arg, backends, label, repo_root)
                 results.append((label, success))
 
                 if success:
