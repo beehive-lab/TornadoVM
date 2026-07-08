@@ -20,25 +20,28 @@ import os
 import shutil
 
 def runPyInstaller(currentDirectory, tornadoSDKPath):
-    path = os.path.join(tornadoSDKPath, "bin")
-    os.chdir(path)
+    import tempfile
+
+    bin_dir = os.path.join(tornadoSDKPath, "bin")
+    work_dir = tempfile.mkdtemp(prefix="pyinstaller-build-")
 
     ## List of scripts to compile
     scripts = ["tornado.py", "tornado-test", "tornado-benchmarks.py"]
     for s in scripts:
-        print("creating " + s  + " binary ....  "),
-        command = "pyinstaller " + s + " --onefile"
+        print("creating " + s + " binary ....  "),
+        script_path = os.path.join(bin_dir, s)
+        command = (
+            f'pyinstaller "{script_path}" --onefile '
+            f'--distpath "{bin_dir}" '
+            f'--workpath "{work_dir}" '
+            f'--specpath "{work_dir}"'
+        )
+        # Run from currentDirectory (repo root) -- NOT from bin_dir -- so the
+        # cwd never looks like a PyInstaller output tree (which trips
+        # PyInstaller's own "don't run me from inside dist/" safety check
+        # when tornadoSDKPath itself contains a 'dist' segment, as it does
+        # for our per-backend SDK build output paths).
         os.system(command)
         print("ok ")
 
-    # Move .exe files from dist/ subdirectory to bin/ directory
-    dist_dir = os.path.join(path, "dist")
-    if os.path.exists(dist_dir):
-        for exe_file in os.listdir(dist_dir):
-            if exe_file.endswith(".exe"):
-                src = os.path.join(dist_dir, exe_file)
-                dst = os.path.join(path, exe_file)
-                shutil.move(src, dst)
-                print(f"Moved {exe_file} to bin directory")
-
-    os.chdir(currentDirectory)
+    shutil.rmtree(work_dir, ignore_errors=True)
