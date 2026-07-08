@@ -49,7 +49,6 @@ import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVIntBinaryI
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 
-import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;
@@ -79,7 +78,6 @@ import tornado.graal.compiler.nodes.java.NewArrayNode;
 import tornado.graal.compiler.nodes.java.StoreIndexedNode;
 import tornado.graal.compiler.nodes.memory.address.AddressNode;
 import tornado.graal.compiler.nodes.memory.address.OffsetAddressNode;
-import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import tornado.graal.compiler.core.common.memory.BarrierType;
@@ -139,7 +137,7 @@ public class SPIRVGraphBuilderPlugins {
         // FIXME: Atomics for SPIRV Backend not implemented.
     }
 
-    public static void registerInvocationPlugins(Plugins plugins, final InvocationPlugins invocationPlugins, HotSpotMetaAccessProvider metaAccessProvider) {
+    public static void registerInvocationPlugins(Plugins plugins, final InvocationPlugins invocationPlugins, MetaAccessProvider metaAccessProvider) {
 
         if (TornadoOptions.INLINE_DURING_BYTECODE_PARSING) {
             plugins.appendInlineInvokePlugin(new InlineDuringParsingPlugin());
@@ -774,7 +772,7 @@ public class SPIRVGraphBuilderPlugins {
         }
     }
 
-    private static void registerMemoryAccessPlugins(InvocationPlugins plugins, HotSpotMetaAccessProvider metaAccessProvider) {
+    private static void registerMemoryAccessPlugins(InvocationPlugins plugins, MetaAccessProvider metaAccessProvider) {
         var r = new Registration(plugins, TornadoMemorySegment.class);
         for (JavaKind kind : JavaKind.values()) {
             if (kind != JavaKind.Object && kind != JavaKind.Void && kind != JavaKind.Illegal) {

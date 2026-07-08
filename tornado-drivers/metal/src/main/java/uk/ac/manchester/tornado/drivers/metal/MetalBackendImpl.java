@@ -35,7 +35,6 @@ import java.util.stream.IntStream;
 import tornado.graal.compiler.options.OptionValues;
 import tornado.graal.compiler.phases.util.Providers;
 
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
@@ -63,7 +62,7 @@ public final class MetalBackendImpl implements TornadoAcceleratorBackend {
     private volatile List<TornadoDevice> devices;
     private final TornadoLogger logger;
 
-    public MetalBackendImpl(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfig) {
+    public MetalBackendImpl(final OptionValues options, TornadoVMConfigAccess vmConfig) {
         // Only allow Metal backend initialization on macOS hosts.
         String osName = System.getProperty("os.name").toLowerCase();
         if (!osName.contains("mac") && !osName.contains("darwin")) {
@@ -84,7 +83,7 @@ public final class MetalBackendImpl implements TornadoAcceleratorBackend {
         backends = new MetalBackend[numPlatforms][];
         contexts = new ArrayList<>();
         logger = new TornadoLogger(this.getClass());
-        discoverDevices(options, vmRuntime, vmConfig);
+        discoverDevices(options, vmConfig);
         flatBackends = flattenBackends(backends);
         flatBackends = orderFlattenBackends();
 
@@ -213,14 +212,14 @@ public final class MetalBackendImpl implements TornadoAcceleratorBackend {
         }
     }
 
-    private MetalBackend createMetalJITCompiler(final OptionValues options, final HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfigAccess vmConfig, final MetalContextInterface context,
+    private MetalBackend createMetalJITCompiler(final OptionValues options, TornadoVMConfigAccess vmConfig, final MetalContextInterface context,
             final int deviceIndex) {
         final MetalTargetDevice device = context.devices().get(deviceIndex);
         logger.info("Creating backend for %s", device.getDeviceName());
-        return MetalHotSpotBackendFactory.createJITCompiler(options, jvmciRuntime, vmConfig, context, device);
+        return MetalHotSpotBackendFactory.createJITCompiler(options, vmConfig, context, device);
     }
 
-    private void installDevices(int platformIndex, TornadoPlatformInterface platform, final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfig) {
+    private void installDevices(int platformIndex, TornadoPlatformInterface platform, final OptionValues options, TornadoVMConfigAccess vmConfig) {
         logger.info("Metal[%d]: Platform %s", platformIndex, platform.getName());
         final MetalContextInterface context = platform.createContext();
         assert context != null : "Metal context is null";
@@ -231,14 +230,14 @@ public final class MetalBackendImpl implements TornadoAcceleratorBackend {
         for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
             final MetalTargetDevice device = context.devices().get(deviceIndex);
             logger.info("Metal[%d]: device=%s", platformIndex, device.getDeviceName());
-            backends[platformIndex][deviceIndex] = createMetalJITCompiler(options, vmRuntime, vmConfig, context, deviceIndex);
+            backends[platformIndex][deviceIndex] = createMetalJITCompiler(options, vmConfig, context, deviceIndex);
         }
     }
 
-    private void discoverDevices(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfig) {
+    private void discoverDevices(final OptionValues options, TornadoVMConfigAccess vmConfig) {
         IntStream.range(0, Metal.getNumPlatforms()).forEach(i -> {
             final TornadoPlatformInterface platform = Metal.getPlatform(i);
-            installDevices(i, platform, options, vmRuntime, vmConfig);
+            installDevices(i, platform, options, vmConfig);
         });
     }
 

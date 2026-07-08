@@ -46,11 +46,8 @@ import tornado.graal.compiler.options.OptionKey;
 import tornado.graal.compiler.options.OptionValues;
 import tornado.graal.compiler.printer.GraalDebugHandlersFactory;
 
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.runtime.JVMCI;
-import jdk.vm.ci.runtime.JVMCIBackend;
 import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoRuntime;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
@@ -85,8 +82,6 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
     private static DebugContext debugContext = null;
     private static OptionValues options;
 
-    private final JVMCIBackend vmBackend;
-    private final HotSpotJVMCIRuntime vmRuntime;
     private final TornadoVMConfigAccess vmConfig;
     private final MetaAccessProvider metaAccess;
     private final TornadoAcceleratorBackend[] tornadoVMBackends;
@@ -100,8 +95,6 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
         // TornadoVM sources all type/constant metadata from the reflection + Unsafe providers
         // on every JDK: there is no dependency on a HotSpot JVMCI runtime or host backend
         // (JVMCI was removed from OpenJDK in JDK 27, openjdk/jdk#30834).
-        vmRuntime = null;
-        vmBackend = null;
         vmConfig = new TornadoVMConfigAccess();
         metaAccess = new TornadoMetaAccessProvider(null);
         tornadoVMBackends = loadBackends();
@@ -122,14 +115,6 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
 
     public static ExecutorService getTornadoExecutor() {
         return EXECUTOR;
-    }
-
-    public static JVMCIBackend getVMBackend() {
-        return runtime.vmBackend;
-    }
-
-    public static HotSpotJVMCIRuntime getVMRuntime() {
-        return runtime.vmRuntime;
     }
 
     public static TornadoVMConfigAccess getVMConfig() {
@@ -164,7 +149,7 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
             if (TornadoOptions.FULL_DEBUG) {
                 System.out.println("[INFO] TornadoVM Loading Backend: " + provider.getName());
             }
-            TornadoAcceleratorBackend backend = provider.createBackend(options, vmRuntime, vmConfig);
+            TornadoAcceleratorBackend backend = provider.createBackend(options, vmConfig);
             if (backend != null) {
                 tornadoAcceleratorBackends[index] = backend;
                 index++;

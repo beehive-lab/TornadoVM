@@ -43,10 +43,8 @@ import tornado.graal.compiler.replacements.classfile.ClassfileBytecodeProvider;
 import tornado.graal.compiler.word.WordTypes;
 
 import jdk.vm.ci.common.InitTimer;
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.runtime.JVMCIBackend;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
@@ -77,19 +75,10 @@ public class OCLHotSpotBackendFactory {
     private static final OCLCompilerConfiguration compilerConfiguration = new OCLCompilerConfiguration();
     private static final OCLAddressLowering addressLowering = new OCLAddressLowering();
 
-    public static OCLBackend createJITCompiler(OptionValues options, HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfigAccess config, OCLContextInterface tornadoContext, OCLTargetDevice device) {
-        MetaAccessProvider metaAccess;
-        ConstantReflectionProvider constantReflection;
-        if (jvmciRuntime == null) {
-            // JVMCI-absent JDK (27+): no host JVMCI backend to source providers from.
-            // Type/constant metadata is served by the reflection + Unsafe providers.
-            metaAccess = new TornadoMetaAccessProvider(null);
-            constantReflection = new TornadoConstantReflectionProvider(null, null, snippetReflection);
-        } else {
-            JVMCIBackend jvmciBackend = jvmciRuntime.getHostJVMCIBackend();
-            metaAccess = new TornadoMetaAccessProvider(jvmciBackend.getMetaAccess());
-            constantReflection = new TornadoConstantReflectionProvider(jvmciBackend.getConstantReflection(), jvmciBackend.getMetaAccess(), snippetReflection);
-        }
+    public static OCLBackend createJITCompiler(OptionValues options, TornadoVMConfigAccess config, OCLContextInterface tornadoContext, OCLTargetDevice device) {
+        // Type/constant metadata is served by the reflection + Unsafe providers on every JDK.
+        MetaAccessProvider metaAccess = new TornadoMetaAccessProvider(null);
+        ConstantReflectionProvider constantReflection = new TornadoConstantReflectionProvider(null, null, snippetReflection);
 
         OCLKind wordKind = switch (device.getWordSize()) {
             case 4 -> OCLKind.UINT;

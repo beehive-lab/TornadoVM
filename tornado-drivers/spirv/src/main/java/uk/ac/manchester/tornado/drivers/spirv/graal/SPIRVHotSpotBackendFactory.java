@@ -41,10 +41,6 @@ import tornado.graal.compiler.replacements.classfile.ClassfileBytecodeProvider;
 import tornado.graal.compiler.word.WordTypes;
 
 import jdk.vm.ci.common.InitTimer;
-import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
-import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
-import jdk.vm.ci.runtime.JVMCIBackend;
 import uk.ac.manchester.tornado.drivers.providers.TornadoMetaAccessExtensionProvider;
 import uk.ac.manchester.tornado.drivers.providers.TornadoPlatformConfigurationProvider;
 import uk.ac.manchester.tornado.drivers.providers.TornadoWordTypes;
@@ -64,6 +60,8 @@ import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoConstantFieldProvi
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoForeignCallsProvider;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoReplacements;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
+import uk.ac.manchester.tornado.runtime.jvmci.TornadoConstantReflectionProvider;
+import uk.ac.manchester.tornado.runtime.jvmci.TornadoMetaAccessProvider;
 
 public class SPIRVHotSpotBackendFactory {
 
@@ -78,11 +76,10 @@ public class SPIRVHotSpotBackendFactory {
     private static final SPIRVCompilerConfiguration compilerConfiguration = new SPIRVCompilerConfiguration();
     private static final SPIRVAddressLowering addressLowering = new SPIRVAddressLowering();
 
-    public static SPIRVBackend createJITCompiler(OptionValues options, HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfigAccess vmConfig, SPIRVDevice device, SPIRVContext context,
+    public static SPIRVBackend createJITCompiler(OptionValues options, TornadoVMConfigAccess vmConfig, SPIRVDevice device, SPIRVContext context,
             SPIRVRuntimeType spirvRuntime) {
-        JVMCIBackend jvmci = jvmciRuntime.getHostJVMCIBackend();
-        HotSpotMetaAccessProvider metaAccess = (HotSpotMetaAccessProvider) jvmci.getMetaAccess();
-        HotSpotConstantReflectionProvider constantReflection = (HotSpotConstantReflectionProvider) jvmci.getConstantReflection();
+        MetaAccessProvider metaAccess = new TornadoMetaAccessProvider(null);
+        ConstantReflectionProvider constantReflection = new TornadoConstantReflectionProvider(null, null, snippetReflection);
 
         // We specify an architecture of 64 bits
         SPIRVArchitecture architecture = new SPIRVArchitecture(SPIRVKind.OP_TYPE_INT_64, device.getByteOrder(), spirvRuntime);
@@ -132,12 +129,12 @@ public class SPIRVHotSpotBackendFactory {
      * Create the Plugins and register the SPIRV Plugins
      *
      * @param metaAccess
-     *     {@link HotSpotMetaAccessProvider}
+     *     {@link jdk.vm.ci.meta.MetaAccessProvider}
      * @param replacements
      *     {@link TornadoReplacements}
      * @return Plugins for SPIRV
      */
-    private static Plugins createGraphPlugins(HotSpotMetaAccessProvider metaAccess, TornadoReplacements replacements, SnippetReflectionProvider snippetReflectionProvider,
+    private static Plugins createGraphPlugins(MetaAccessProvider metaAccess, TornadoReplacements replacements, SnippetReflectionProvider snippetReflectionProvider,
             LoweringProvider loweringProvider) {
         InvocationPlugins invocationPlugins = new InvocationPlugins();
         Plugins plugins = new Plugins(invocationPlugins);

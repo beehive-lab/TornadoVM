@@ -25,7 +25,6 @@ package uk.ac.manchester.tornado.drivers.metal;
 
 import tornado.graal.compiler.options.OptionValues;
 
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorBackend;
 import uk.ac.manchester.tornado.runtime.TornadoBackendProvider;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
@@ -44,8 +43,8 @@ public class MetalTornadoDriverProvider implements TornadoBackendProvider {
     }
 
     @Override
-    public TornadoAcceleratorBackend createBackend(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfig) {
-        return new MetalBackendImpl(options, vmRuntime, vmConfig);
+    public TornadoAcceleratorBackend createBackend(OptionValues options, TornadoVMConfigAccess vmConfig) {
+        return new MetalBackendImpl(options, vmConfig);
     }
 
     @Override

@@ -43,10 +43,8 @@ import tornado.graal.compiler.replacements.classfile.ClassfileBytecodeProvider;
 import tornado.graal.compiler.word.WordTypes;
 
 import jdk.vm.ci.common.InitTimer;
-import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
-import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
-import jdk.vm.ci.runtime.JVMCIBackend;
+import jdk.vm.ci.meta.ConstantReflectionProvider;
+import jdk.vm.ci.meta.MetaAccessProvider;
 import uk.ac.manchester.tornado.drivers.metal.MetalContextInterface;
 import uk.ac.manchester.tornado.drivers.metal.MetalDeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.metal.MetalTargetDescription;
@@ -65,6 +63,8 @@ import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoConstantFieldProvi
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoForeignCallsProvider;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoReplacements;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
+import uk.ac.manchester.tornado.runtime.jvmci.TornadoConstantReflectionProvider;
+import uk.ac.manchester.tornado.runtime.jvmci.TornadoMetaAccessProvider;
 
 public class MetalHotSpotBackendFactory {
 
@@ -75,10 +75,9 @@ public class MetalHotSpotBackendFactory {
     private static final MetalCompilerConfiguration compilerConfiguration = new MetalCompilerConfiguration();
     private static final MetalAddressLowering addressLowering = new MetalAddressLowering();
 
-    public static MetalBackend createJITCompiler(OptionValues options, HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfigAccess config, MetalContextInterface tornadoContext, MetalTargetDevice device) {
-        JVMCIBackend jvmciBackend = jvmciRuntime.getHostJVMCIBackend();
-        HotSpotMetaAccessProvider metaAccess = (HotSpotMetaAccessProvider) jvmciBackend.getMetaAccess();
-        HotSpotConstantReflectionProvider constantReflection = (HotSpotConstantReflectionProvider) jvmciBackend.getConstantReflection();
+    public static MetalBackend createJITCompiler(OptionValues options, TornadoVMConfigAccess config, MetalContextInterface tornadoContext, MetalTargetDevice device) {
+        MetaAccessProvider metaAccess = new TornadoMetaAccessProvider(null);
+        ConstantReflectionProvider constantReflection = new TornadoConstantReflectionProvider(null, null, snippetReflection);
 
         MetalKind wordKind = switch (device.getWordSize()) {
             case 4 -> MetalKind.UINT;
@@ -127,7 +126,7 @@ public class MetalHotSpotBackendFactory {
         }
     }
 
-    protected static Plugins createGraphBuilderPlugins(HotSpotMetaAccessProvider metaAccess, Replacements replacements, SnippetReflectionProvider snippetReflectionProvider,
+    protected static Plugins createGraphBuilderPlugins(MetaAccessProvider metaAccess, Replacements replacements, SnippetReflectionProvider snippetReflectionProvider,
             LoweringProvider loweringProvider) {
         InvocationPlugins invocationPlugins = new InvocationPlugins();
         Plugins plugins = new Plugins(invocationPlugins);

@@ -26,7 +26,6 @@ package uk.ac.manchester.tornado.drivers.spirv.mm;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMRuntime;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEBUG;
 
 import java.lang.reflect.Field;
@@ -56,6 +55,7 @@ import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.Sizeof;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -91,7 +91,7 @@ public class SPIRVFieldBuffer implements XPUBuffer {
 
         hubOffset = getVMConfig().hubOffset;
         fieldsOffset = getVMConfig().instanceKlassFieldsOffset();
-        resolvedType = (HotSpotResolvedJavaType) getVMRuntime().getHostJVMCIBackend().getMetaAccess().lookupJavaType(objectType);
+        resolvedType = (HotSpotResolvedJavaType) TornadoCoreRuntime.getTornadoRuntime().getMetaAccess().lookupJavaType(objectType);
 
         fields = (HotSpotResolvedJavaField[]) resolvedType.getInstanceFields(includeSuperClasses);
         sortFieldsByOffset();

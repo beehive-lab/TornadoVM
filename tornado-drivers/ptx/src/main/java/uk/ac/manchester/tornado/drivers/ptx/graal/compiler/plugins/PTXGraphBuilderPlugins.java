@@ -23,7 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal.compiler.plugins;
 
-import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;
@@ -127,7 +126,7 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntUnaryIntrin
 
 public class PTXGraphBuilderPlugins {
 
-    public static void registerInvocationPlugins(final Plugins ps, final InvocationPlugins plugins, HotSpotMetaAccessProvider metaAccessProvider) {
+    public static void registerInvocationPlugins(final Plugins ps, final InvocationPlugins plugins, MetaAccessProvider metaAccessProvider) {
         if (TornadoOptions.INLINE_DURING_BYTECODE_PARSING) {
             ps.appendInlineInvokePlugin(new InlineDuringParsingPlugin());
         }
@@ -978,7 +977,7 @@ public class PTXGraphBuilderPlugins {
 
     }
 
-    private static void registerMemoryAccessPlugins(InvocationPlugins plugins, HotSpotMetaAccessProvider metaAccessProvider) {
+    private static void registerMemoryAccessPlugins(InvocationPlugins plugins, MetaAccessProvider metaAccessProvider) {
         var r = new Registration(plugins, TornadoMemorySegment.class);
         for (JavaKind kind : JavaKind.values()) {
             if (kind != JavaKind.Object && kind != JavaKind.Void && kind != JavaKind.Illegal) {
