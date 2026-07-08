@@ -1,4 +1,4 @@
-<img src="etc/tornadovm-logo.png" alt="TornadoVM logo" width="56" align="left">
+<img src="etc/tornadovm-logo.png" alt="TornadoVM logo" align="left">
 
 
 
