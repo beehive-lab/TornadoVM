@@ -904,6 +904,7 @@ public class OCLGraphBuilderPlugins {
         registerNativeArrayGetSet(plugins, LongArray.class, JavaKind.Long);
         registerNativeArrayGetSet(plugins, ShortArray.class, JavaKind.Short);
         registerNativeArrayGetSet(plugins, ByteArray.class, JavaKind.Byte);
+        registerNativeArrayGetSet(plugins, Int8Array.class, JavaKind.Byte);
         registerNativeArrayGetSet(plugins, CharArray.class, JavaKind.Char);
         registerHalfFloatArrayGetSet(plugins);
     }
