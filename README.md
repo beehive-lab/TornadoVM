@@ -1,8 +1,9 @@
-<img src="etc/tornadovm-logo.png" alt="TornadoVM logo" align="left">
+<img src="etc/tornadovm-logo.png" alt="TornadoVM logo" align="left" width="400">
 
 
+--- 
 
-### Write Java. Run on NVIDIA GPUs — and every other GPU too.
+## Write Java. Run on GPUs. Fast.
 
 TornadoVM is a GPU programming framework for Java that works with JDK 21+ (currently JDK 21 and JDK 25). It JIT-compiles Java bytecode into **NVIDIA CUDA PTX, OpenCL C, SPIR-V, and Apple Metal (MSL)** at runtime, so your existing Java code runs on **NVIDIA GPUs (via CUDA/PTX)**, AMD, Intel, and Apple Silicon GPUs, integrated GPUs, FPGAs, and multi-core CPUs. On NVIDIA hardware it goes further: beyond generating PTX, TornadoVM now calls straight into the **NVIDIA library ecosystem — cuBLAS, cuFFT, cuDNN — and exposes Tensor Core `mma.sync` instructions from pure Java**. No CUDA C. No JNI bindings to maintain. No native toolchain in your application.
 
