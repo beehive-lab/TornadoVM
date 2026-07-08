@@ -30,6 +30,7 @@ import tornado.graal.compiler.nodes.ConstantNode;
 import tornado.graal.compiler.nodes.FixedGuardNode;
 import tornado.graal.compiler.nodes.FixedNode;
 import tornado.graal.compiler.nodes.GraphState;
+import tornado.graal.compiler.nodes.ParameterNode;
 import tornado.graal.compiler.nodes.PiNode;
 import tornado.graal.compiler.nodes.StructuredGraph;
 import tornado.graal.compiler.nodes.ValueNode;
@@ -103,6 +104,13 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
     private static Node identifyFieldReplacement(Node input, ArrayList<Node> nodesToBeDeleted) {
         // the replacement is expected to be either the read node of a half value, or a phi node in case of accumulation
         if (input instanceof ReadHalfFloatNode || input instanceof ValuePhiNode) {
+            return input;
+        }
+        // A HalfFloat passed as a method parameter is lowered to a half-typed ParameterNode in the kernel
+        // signature, so calling getFloat32() on it (a LoadField of halfFloatValue over the parameter) has the
+        // parameter itself as the half source. Without this case the field load resolves to null and the
+        // OCLConvertHalfToFloat input is cleared (e.g. HalfFloat->Float matrix multiply).
+        if (input instanceof ParameterNode) {
             return input;
         }
         // A LoadIndexed on a local-memory HalfFloat[] (LocalArrayNode with OCLKind.HALF) is
@@ -498,7 +506,6 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
                 }
             }
         }
-
     }
 
 }
