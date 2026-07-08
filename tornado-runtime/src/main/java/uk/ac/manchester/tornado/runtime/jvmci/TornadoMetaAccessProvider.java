@@ -56,27 +56,12 @@ public class TornadoMetaAccessProvider implements MetaAccessProvider {
 
     private static final Unsafe UNSAFE = initUnsafe();
 
-    /**
-     * When {@code true}, type/method/field lookups are answered by the
-     * reflection/ASM/{@code Unsafe} implementation instead of delegating to the
-     * HotSpot JVMCI backing provider. Opt-in bring-up flag; default path stays
-     * on the verified delegating seam.
-     */
-    private static final boolean USE_REFLECTION = Boolean.getBoolean("tornado.jvmci.reflection") || Boolean.getBoolean("tornado.jvmci.reflection.full");
-
-    /**
-     * When set, the runtime-level metaAccess (kernel entry-method resolution) is
-     * also routed through this reflection provider, not just per-backend
-     * compilation. Requires the reflection {@code ConstantPool}.
-     */
-    public static final boolean USE_REFLECTION_FULL = Boolean.getBoolean("tornado.jvmci.reflection.full");
-
     private final MetaAccessProvider backing;
     private final ReflectionUniverse reflectionUniverse;
 
     public TornadoMetaAccessProvider(MetaAccessProvider backing) {
         this.backing = backing;
-        this.reflectionUniverse = USE_REFLECTION ? new ReflectionUniverse() : null;
+        this.reflectionUniverse = new ReflectionUniverse();
     }
 
     private static Unsafe initUnsafe() {

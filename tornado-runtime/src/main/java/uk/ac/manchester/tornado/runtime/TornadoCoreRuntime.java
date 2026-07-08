@@ -97,24 +97,13 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
         initOptions();
         guarantee(!GraalOptions.OmitHotExceptionStacktrace.getValue(options), "error");
 
-        if (TornadoMetaAccessProvider.USE_REFLECTION_FULL) {
-            // JVMCI-absent JDK (27+, openjdk/jdk#30834): there is no HotSpot JVMCI runtime
-            // or host backend to bootstrap from (JVMCI.getRuntime() throws
-            // UnsupportedOperationException). Type/constant metadata is served entirely by
-            // the reflection + Unsafe providers instead.
-            vmRuntime = null;
-            vmBackend = null;
-            vmConfig = new TornadoVMConfigAccess();
-            metaAccess = new TornadoMetaAccessProvider(null);
-        } else {
-            if (!(JVMCI.getRuntime() instanceof HotSpotJVMCIRuntime)) {
-                shouldNotReachHere("Unsupported JVMCIRuntime: ", JVMCI.getRuntime().getClass().getName());
-            }
-            vmRuntime = (HotSpotJVMCIRuntime) JVMCI.getRuntime();
-            vmBackend = vmRuntime.getHostJVMCIBackend();
-            vmConfig = new TornadoVMConfigAccess();
-            metaAccess = new TornadoMetaAccessProvider(vmBackend.getMetaAccess());
-        }
+        // TornadoVM sources all type/constant metadata from the reflection + Unsafe providers
+        // on every JDK: there is no dependency on a HotSpot JVMCI runtime or host backend
+        // (JVMCI was removed from OpenJDK in JDK 27, openjdk/jdk#30834).
+        vmRuntime = null;
+        vmBackend = null;
+        vmConfig = new TornadoVMConfigAccess();
+        metaAccess = new TornadoMetaAccessProvider(null);
         tornadoVMBackends = loadBackends();
     }
 
@@ -211,11 +200,8 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
     }
 
     public MetaAccessProvider getMetaAccess() {
-        // Under -Dtornado.jvmci.reflection.full the runtime resolves kernel entry
-        // methods through the reflection seam (needs the reflection ConstantPool);
-        // otherwise via the host provider (per-backend compilation still uses the
-        // reflection providers when -Dtornado.jvmci.reflection is set).
-        return TornadoMetaAccessProvider.USE_REFLECTION_FULL ? metaAccess : vmBackend.getMetaAccess();
+        // Kernel entry-method resolution goes through the reflection seam (reflection ConstantPool).
+        return metaAccess;
     }
 
     public ResolvedJavaMethod resolveMethod(final Method method) {

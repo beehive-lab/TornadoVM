@@ -25,8 +25,6 @@
  */
 package uk.ac.manchester.tornado.runtime.tasks;
 
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,8 +38,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import tornado.graal.compiler.graph.Graph;
 import tornado.graal.compiler.nodes.StructuredGraph;
 
-import jdk.vm.ci.code.InstalledCode;
-import jdk.vm.ci.code.InvalidInstalledCodeException;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -59,14 +55,12 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.analyzer.CodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceTasks;
 import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis.REDUCE_OPERATION;
 import uk.ac.manchester.tornado.runtime.analyzer.TaskUtils;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.jvmci.TornadoMetaAccessProvider;
 import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils;
 import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils.BackendSelectionContainer;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
@@ -316,11 +310,6 @@ class ReduceTaskGraph {
         }
     }
 
-    private ReduceCompilationThread createCompilationThread(final TaskPackage taskPackage, final int sizeTargetDevice) {
-        Object codeTask = taskPackage.getTaskParameters()[0];
-        return new ReduceCompilationThread(codeTask, sizeTargetDevice);
-    }
-
     private void updateStreamInOutVariables(Map<Integer, MetaReduceTasks> tableReduce) {
         // Update Stream IN and Stream OUT
         for (int taskNumber = 0; taskNumber < taskPackages.size(); taskNumber++) {
@@ -498,29 +487,17 @@ class ReduceTaskGraph {
                 streamReduceTable.put(taskNumber, streamReduceList);
 
                 if (hybridMode) {
-                    ReduceCompilationThread compilationThread = createCompilationThread(taskPackage, inputSize);
-                    compilationThread.start();
                     if (threadSequentialExecution == null) {
                         threadSequentialExecution = new ArrayList<>();
                     }
-
-                    HybridThreadMeta meta = new HybridThreadMeta(taskPackage, compilationThread);
                     if (hybridThreadMetas == null) {
                         hybridThreadMetas = new ArrayList<>();
                     }
-                    hybridThreadMetas.add(meta);
-
-                    // On the JVMCI-absent (reflection) path the host reduction is a fast reflective invoke; if
-                    // it runs here (before setNeutralElement) its result is wiped by the neutral refill. Defer
-                    // it to the post-setNeutralElement start site by leaving hybridInitialized false so the
-                    // host thread starts after the array has been neutralised. On JVMCI the slow compile makes
-                    // the early start safe, so keep the original behaviour.
-                    if (!TornadoMetaAccessProvider.USE_REFLECTION_FULL) {
-                        SequentialExecutionThread sequentialExecutionThread = new SequentialExecutionThread(compilationThread, taskPackage, hostHybridVariables);
-                        threadSequentialExecution.add(sequentialExecutionThread);
-                        sequentialExecutionThread.start();
-                        hybridInitialized = true;
-                    }
+                    // The host reduction is a fast reflective invoke; it must not run before
+                    // setNeutralElement() or its result is wiped by the neutral refill. The host thread is
+                    // therefore created and started only at the post-setNeutralElement site (leaving
+                    // hybridInitialized false here). inputSize is the power-of-two size reduced on the GPU.
+                    hybridThreadMetas.add(new HybridThreadMeta(taskPackage, inputSize));
                 }
             }
         }
@@ -667,7 +644,7 @@ class ReduceTaskGraph {
             hybridInitialized = true;
             threadSequentialExecution.clear();
             for (HybridThreadMeta meta : hybridThreadMetas) {
-                threadSequentialExecution.add(new SequentialExecutionThread(meta.compilationThread, meta.taskPackage, hostHybridVariables));
+                threadSequentialExecution.add(new SequentialExecutionThread(meta.taskPackage, hostHybridVariables, meta.sizeTargetDevice));
             }
             threadSequentialExecution.forEach(Thread::start);
         }
@@ -819,77 +796,40 @@ class ReduceTaskGraph {
         }
     }
 
-    private static class ReduceCompilationThread extends Thread {
-        private final int sizeTargetDevice;
-        private final Object codeTask;
-        private InstalledCode code;
-        private boolean finished;
-
-        ReduceCompilationThread(Object codeTask, final int sizeTargetDevice) {
-            this.codeTask = codeTask;
-            this.sizeTargetDevice = sizeTargetDevice;
-        }
-
-        public InstalledCode getCode() {
-            return this.code;
-        }
-
-        public int getSizeTargetDevice() {
-            return this.sizeTargetDevice;
-        }
-
-        public boolean isFinished() {
-            return finished;
-        }
-
-        @Override
-        public void run() {
-            StructuredGraph originalGraph = CodeAnalysis.buildHighLevelGraalGraph(codeTask);
-            assert originalGraph != null;
-            StructuredGraph graph = (StructuredGraph) originalGraph.copy(getDebugContext());
-            ReduceCodeAnalysis.performLoopBoundNodeSubstitution(graph, sizeTargetDevice);
-            code = CodeAnalysis.compileAndInstallMethod(graph);
-            finished = true;
-        }
-    }
-
     private static class HybridThreadMeta {
         private final TaskPackage taskPackage;
-        private final ReduceCompilationThread compilationThread;
+        private final int sizeTargetDevice;
 
-        HybridThreadMeta(TaskPackage taskPackage, ReduceCompilationThread compilationThread) {
+        HybridThreadMeta(TaskPackage taskPackage, int sizeTargetDevice) {
             this.taskPackage = taskPackage;
-            this.compilationThread = compilationThread;
+            this.sizeTargetDevice = sizeTargetDevice;
         }
     }
 
     private static class SequentialExecutionThread extends Thread {
 
-        final ReduceCompilationThread compilationThread;
         private final TaskPackage taskPackage;
         private final Map<Object, Object> hostHybridVariables;
+        private final int sizeTargetDevice;
 
-        SequentialExecutionThread(ReduceCompilationThread compilationThread, TaskPackage taskPackage, Map<Object, Object> hostHybridVariables) {
-            this.compilationThread = compilationThread;
+        SequentialExecutionThread(TaskPackage taskPackage, Map<Object, Object> hostHybridVariables, int sizeTargetDevice) {
             this.taskPackage = taskPackage;
             this.hostHybridVariables = hostHybridVariables;
+            this.sizeTargetDevice = sizeTargetDevice;
         }
 
         /**
-         * It runs a compiled method by Graal in HotSpot.
+         * Runs the reduction method on the host to combine the leftover tail of a
+         * non-power-of-two reduction with the GPU's partial result.
          *
          * @param taskPackage
          *     {@link TaskPackage} metadata that stores the method parameters.
-         * @param code
-         *     {@link InstalledCode} code to be executed
          * @param hostHybridVariables
          *     HashMap that relates the GPU buffer with the new CPU buffer.
          */
-        private void runBinaryCodeForReduction(TaskPackage taskPackage, InstalledCode code, Map<Object, Object> hostHybridVariables) {
+        private void runHostTailReduction(TaskPackage taskPackage, Map<Object, Object> hostHybridVariables) {
             try {
-                // Execute the generated binary with Graal with the host loop-bound
-
-                // 1. Set arguments to the method-compiled code
+                // 1. Set arguments to the reduction method.
                 int numArgs = taskPackage.getTaskParameters().length - 1;
                 Object[] args = new Object[numArgs];
                 for (int i = 0; i < numArgs; i++) {
@@ -897,19 +837,12 @@ class ReduceTaskGraph {
                     args[i] = hostHybridVariables.getOrDefault(argument, argument);
                 }
 
-                // 2. Run the binary. On a JVMCI-absent JDK (27+) the host reduction cannot be JIT-compiled
-                // and installed (code == null), so run the reduction method reflectively instead. The GPU
-                // reduced input[0, start); the host must reduce only the leftover tail input[start, size).
-                // Neutralise the prefix [0, start) of the input array with the reduction's neutral element so
-                // the unmodified kernel (which loops the full size) reduces only the tail; the output array is
-                // already pre-filled with the neutral element.
-                if (code == null) {
-                    runReflectiveTailReduction(taskPackage, args, hostHybridVariables, compilationThread.getSizeTargetDevice());
-                } else {
-                    code.executeVarargs(args);
-                }
-
-            } catch (InvalidInstalledCodeException | ReflectiveOperationException e) {
+                // 2. The GPU reduced input[0, start); the host must reduce only the leftover tail
+                // input[start, size). Neutralise the prefix [0, start) of the input array with the
+                // reduction's neutral element so the unmodified reduction method (which loops the full
+                // size) reduces only the tail; the output array is already pre-filled with the neutral.
+                runReflectiveTailReduction(taskPackage, args, hostHybridVariables, sizeTargetDevice);
+            } catch (ReflectiveOperationException e) {
                 e.printStackTrace();
             }
         }
@@ -1021,13 +954,7 @@ class ReduceTaskGraph {
 
         @Override
         public void run() {
-            try {
-                // We need to wait for the compilation to be finished
-                compilationThread.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            runBinaryCodeForReduction(taskPackage, compilationThread.getCode(), hostHybridVariables);
+            runHostTailReduction(taskPackage, hostHybridVariables);
         }
     }
 }
