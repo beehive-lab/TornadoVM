@@ -285,6 +285,86 @@ def check_pyinstaller():
     info("pyinstaller: found")
 
 
+def patch_worktree_fix_pyinstaller(worktree_path):
+    """
+    Patch runPyInstaller() in the worktree's config_utils.py so PyInstaller is
+    invoked without chdir'ing into <tornado_home>/bin first.
+
+    The tagged config_utils.py does:
+        path = os.path.join(tornadoSDKPath, "bin")
+        os.chdir(path)
+        ...
+        os.system("pyinstaller " + s + " --onefile")
+        ...
+        os.chdir(currentDirectory)
+
+    Since our release SDK build output paths contain a 'dist' segment
+    (dist/tornadovm-X.Y.Z-<backend>-windows-amd64/tornadovm-X.Y.Z-<backend>/bin),
+    PyInstaller's own safety check detects what looks like one of its previous
+    output trees and refuses to run:
+
+        ERROR: Do not run pyinstaller from <path>\\dist\\...\\bin.
+
+    This patch replaces the function body so PyInstaller runs from the
+    original working directory, with explicit --distpath/--workpath/--specpath
+    arguments, avoiding the chdir entirely.
+
+    The worktree is a throw-away detached checkout of a release tag, so
+    editing its config_utils.py here does not touch the repository or the
+    published tag itself.
+    """
+    config_utils_path = os.path.join(worktree_path, "config_utils.py")
+    if not os.path.isfile(config_utils_path):
+        warn("config_utils.py not found in worktree — cannot patch runPyInstaller.")
+        return
+
+    with open(config_utils_path, "r", encoding="utf-8") as f:
+        src = f.read()
+    original = src
+
+    old_func_pattern = re.compile(
+        r"def runPyInstaller\(currentDirectory, tornadoSDKPath\):.*?"
+        r"os\.chdir\(currentDirectory\)\n",
+        re.DOTALL,
+    )
+
+    new_func = '''def runPyInstaller(currentDirectory, tornadoSDKPath):
+    import tempfile
+
+    bin_dir = os.path.join(tornadoSDKPath, "bin")
+    work_dir = tempfile.mkdtemp(prefix="pyinstaller-build-")
+
+    ## List of scripts to compile
+    scripts = ["tornado.py", "tornado-test", "tornado-benchmarks.py"]
+    for s in scripts:
+        print("creating " + s + " binary ....  "),
+        script_path = os.path.join(bin_dir, s)
+        command = (
+            f'pyinstaller "{script_path}" --onefile '
+            f'--distpath "{bin_dir}" '
+            f'--workpath "{work_dir}" '
+            f'--specpath "{work_dir}"'
+        )
+        os.system(command)
+        print("ok ")
+
+    shutil.rmtree(work_dir, ignore_errors=True)
+'''
+
+    src, n = old_func_pattern.subn(new_func, src)
+
+    if n == 0:
+        warn(
+            "config_utils.py in the worktree did not match the expected "
+            "runPyInstaller pattern — the tag layout may have changed; "
+            "nothing was patched."
+        )
+        return
+
+    with open(config_utils_path, "w", encoding="utf-8") as f:
+        f.write(src)
+    ok("Patched worktree config_utils.py to fix PyInstaller dist-path check.")
+
 def patch_worktree_skip_executables(worktree_path):
     """
     Neutralise the places where the tagged bin/compile launches native
@@ -711,6 +791,9 @@ def main():
         worktree_path = tempfile.mkdtemp(prefix=f"tornadovm-{tag}-")
         try:
             add_worktree(tag, worktree_path)
+
+            if current_platform == "windows" and not skip_win_exe:
+                patch_worktree_fix_pyinstaller(worktree_path)
 
             if skip_win_exe:
                 patch_worktree_skip_executables(worktree_path)
