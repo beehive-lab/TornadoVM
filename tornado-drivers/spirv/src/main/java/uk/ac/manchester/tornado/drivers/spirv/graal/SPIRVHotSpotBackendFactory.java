@@ -78,8 +78,8 @@ public class SPIRVHotSpotBackendFactory {
 
     public static SPIRVBackend createJITCompiler(OptionValues options, TornadoVMConfigAccess vmConfig, SPIRVDevice device, SPIRVContext context,
             SPIRVRuntimeType spirvRuntime) {
-        MetaAccessProvider metaAccess = new TornadoMetaAccessProvider(null);
-        ConstantReflectionProvider constantReflection = new TornadoConstantReflectionProvider(null, null, snippetReflection);
+        MetaAccessProvider metaAccess = new TornadoMetaAccessProvider();
+        ConstantReflectionProvider constantReflection = new TornadoConstantReflectionProvider(snippetReflection);
 
         // We specify an architecture of 64 bits
         SPIRVArchitecture architecture = new SPIRVArchitecture(SPIRVKind.OP_TYPE_INT_64, device.getByteOrder(), spirvRuntime);

@@ -77,8 +77,8 @@ public class OCLHotSpotBackendFactory {
 
     public static OCLBackend createJITCompiler(OptionValues options, TornadoVMConfigAccess config, OCLContextInterface tornadoContext, OCLTargetDevice device) {
         // Type/constant metadata is served by the reflection + Unsafe providers on every JDK.
-        MetaAccessProvider metaAccess = new TornadoMetaAccessProvider(null);
-        ConstantReflectionProvider constantReflection = new TornadoConstantReflectionProvider(null, null, snippetReflection);
+        MetaAccessProvider metaAccess = new TornadoMetaAccessProvider();
+        ConstantReflectionProvider constantReflection = new TornadoConstantReflectionProvider(snippetReflection);
 
         OCLKind wordKind = switch (device.getWordSize()) {
             case 4 -> OCLKind.UINT;

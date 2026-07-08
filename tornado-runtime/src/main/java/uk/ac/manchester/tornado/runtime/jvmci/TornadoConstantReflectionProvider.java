@@ -51,23 +51,14 @@ import uk.ac.manchester.tornado.runtime.jvmci.reflection.ReflectionUniverse;
  */
 public class TornadoConstantReflectionProvider implements ConstantReflectionProvider {
 
-    private final ConstantReflectionProvider backing;
-    private final MetaAccessProvider hostMetaAccess;
     private final SnippetReflectionProvider snippetReflection;
 
     /**
-     * @param backing           the host (HotSpot) constant reflection provider
-     * @param hostMetaAccess    the host (HotSpot) meta-access, used to bridge the
-     *                          remaining object constant reads (instance fields,
-     *                          {@code asJavaClass}/{@code asObjectHub}) still
-     *                          pending a full JDK-neutral object-constant story.
      * @param snippetReflection materialises JDK-neutral object constants
      *                          ({@code TornadoObjectConstant}) for static object
      *                          field folds (e.g. {@code Integer.TYPE}).
      */
-    public TornadoConstantReflectionProvider(ConstantReflectionProvider backing, MetaAccessProvider hostMetaAccess, SnippetReflectionProvider snippetReflection) {
-        this.backing = backing;
-        this.hostMetaAccess = hostMetaAccess;
+    public TornadoConstantReflectionProvider(SnippetReflectionProvider snippetReflection) {
         this.snippetReflection = snippetReflection;
     }
 
@@ -76,19 +67,13 @@ public class TornadoConstantReflectionProvider implements ConstantReflectionProv
      * (JDK 27+) where there is no HotSpot backing provider. Reads still routed here have not
      * yet been ported to the JDK-neutral (reflection) implementation.
      */
-    private ConstantReflectionProvider backing() {
-        if (backing == null) {
-            String caller = Thread.currentThread().getStackTrace()[2].getMethodName();
-            throw new UnsupportedOperationException("ConstantReflectionProvider." + caller + "() not yet available on the JVMCI-absent (reflection) path");
-        }
-        return backing;
+    private static ConstantReflectionProvider backing() {
+        String caller = Thread.currentThread().getStackTrace()[2].getMethodName();
+        throw new UnsupportedOperationException("ConstantReflectionProvider." + caller + "() is not implemented on the reflection constant-reflection provider");
     }
 
-    private MetaAccessProvider hostMetaAccess() {
-        if (hostMetaAccess == null) {
-            throw new UnsupportedOperationException("host MetaAccessProvider not available on the JVMCI-absent (reflection) path");
-        }
-        return hostMetaAccess;
+    private static MetaAccessProvider hostMetaAccess() {
+        throw new UnsupportedOperationException("host MetaAccessProvider is not available on the reflection constant-reflection provider");
     }
 
     @Override
@@ -161,7 +146,7 @@ public class TornadoConstantReflectionProvider implements ConstantReflectionProv
     public ResolvedJavaType asJavaType(Constant constant) {
         // JVMCI-absent path: inverse of asJavaClass - recover the ResolvedJavaType from a Class
         // object constant. Used by the same local/private-array sizing phase.
-        if (backing == null && constant instanceof JavaConstant javaConstant) {
+        if (constant instanceof JavaConstant javaConstant) {
             Object object = snippetReflection.asObject(Object.class, javaConstant);
             if (object instanceof Class<?> clazz) {
                 return reflectionUniverse().lookupType(clazz);
@@ -211,13 +196,10 @@ public class TornadoConstantReflectionProvider implements ConstantReflectionProv
 
     @Override
     public MemoryAccessProvider getMemoryAccessProvider() {
-        if (backing == null) {
-            if (memoryAccessProvider == null) {
-                memoryAccessProvider = new ReflectionMemoryAccessProvider(snippetReflection);
-            }
-            return memoryAccessProvider;
+        if (memoryAccessProvider == null) {
+            memoryAccessProvider = new ReflectionMemoryAccessProvider(snippetReflection);
         }
-        return backing().getMemoryAccessProvider();
+        return memoryAccessProvider;
     }
 
     /**

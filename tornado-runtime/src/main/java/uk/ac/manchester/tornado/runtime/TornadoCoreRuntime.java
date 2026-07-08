@@ -96,7 +96,7 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
         // on every JDK: there is no dependency on a HotSpot JVMCI runtime or host backend
         // (JVMCI was removed from OpenJDK in JDK 27, openjdk/jdk#30834).
         vmConfig = new TornadoVMConfigAccess();
-        metaAccess = new TornadoMetaAccessProvider(null);
+        metaAccess = new TornadoMetaAccessProvider();
         tornadoVMBackends = loadBackends();
     }
 

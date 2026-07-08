@@ -75,8 +75,8 @@ public class PTXHotSpotBackendFactory {
     private static final PTXAddressLowering addressLowering = new PTXAddressLowering();
 
     public static PTXBackend createJITCompiler(OptionValues options, TornadoVMConfigAccess vmConfig, PTXDevice device) {
-        MetaAccessProvider metaAccess = new TornadoMetaAccessProvider(null);
-        ConstantReflectionProvider constantReflection = new TornadoConstantReflectionProvider(null, null, snippetReflection);
+        MetaAccessProvider metaAccess = new TornadoMetaAccessProvider();
+        ConstantReflectionProvider constantReflection = new TornadoConstantReflectionProvider(snippetReflection);
 
         PTXArchitecture arch = new PTXArchitecture(PTXKind.U64, device.getByteOrder());
         PTXTargetDescription target = new PTXTargetDescription(arch);

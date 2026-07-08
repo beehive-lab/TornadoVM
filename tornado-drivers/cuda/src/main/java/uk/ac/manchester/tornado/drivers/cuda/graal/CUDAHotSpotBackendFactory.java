@@ -76,8 +76,8 @@ public class CUDAHotSpotBackendFactory {
     private static final CUDAAddressLowering addressLowering = new CUDAAddressLowering();
 
     public static CUDABackend createJITCompiler(OptionValues options, TornadoVMConfigAccess config, CUDAContextInterface tornadoContext, CUDATargetDevice device) {
-        MetaAccessProvider metaAccess = new TornadoMetaAccessProvider(null);
-        ConstantReflectionProvider constantReflection = new TornadoConstantReflectionProvider(null, null, snippetReflection);
+        MetaAccessProvider metaAccess = new TornadoMetaAccessProvider();
+        ConstantReflectionProvider constantReflection = new TornadoConstantReflectionProvider(snippetReflection);
 
         CUDAKind wordKind = switch (device.getWordSize()) {
             case 4 -> CUDAKind.UINT;

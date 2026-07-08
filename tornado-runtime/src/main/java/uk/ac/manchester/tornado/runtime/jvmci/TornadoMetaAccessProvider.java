@@ -56,11 +56,9 @@ public class TornadoMetaAccessProvider implements MetaAccessProvider {
 
     private static final Unsafe UNSAFE = initUnsafe();
 
-    private final MetaAccessProvider backing;
     private final ReflectionUniverse reflectionUniverse;
 
-    public TornadoMetaAccessProvider(MetaAccessProvider backing) {
-        this.backing = backing;
+    public TornadoMetaAccessProvider() {
         this.reflectionUniverse = new ReflectionUniverse();
     }
 
@@ -95,34 +93,18 @@ public class TornadoMetaAccessProvider implements MetaAccessProvider {
     }
 
     /**
-     * @return the backing provider this seam currently delegates to. Retained so
-     *         that, during the incremental migration to a reflection-based
-     *         implementation, individual queries can be validated (A/B) against
-     *         the HotSpot provider.
-     */
-    public MetaAccessProvider getBackingProvider() {
-        return backing;
-    }
-
-    /**
      * Access the host provider, or fail clearly on a JVMCI-absent JDK (JDK 27+) where there
      * is no HotSpot backing provider. Methods still routed here have not yet been ported to
      * the reflection/{@code Unsafe} implementation; the stack trace identifies the caller.
      */
-    private MetaAccessProvider backing() {
-        if (backing == null) {
-            String caller = Thread.currentThread().getStackTrace()[2].getMethodName();
-            throw new UnsupportedOperationException("MetaAccessProvider." + caller + "() not yet available on the JVMCI-absent (reflection) path");
-        }
-        return backing;
+    private static MetaAccessProvider backing() {
+        String caller = Thread.currentThread().getStackTrace()[2].getMethodName();
+        throw new UnsupportedOperationException("MetaAccessProvider." + caller + "() is not implemented on the reflection metadata provider");
     }
 
     @Override
     public ResolvedJavaType lookupJavaType(Class<?> clazz) {
-        if (reflectionUniverse != null) {
-            return reflectionUniverse.lookupType(clazz);
-        }
-        return backing.lookupJavaType(clazz);
+        return reflectionUniverse.lookupType(clazz);
     }
 
     @Override
@@ -132,33 +114,24 @@ public class TornadoMetaAccessProvider implements MetaAccessProvider {
 
     @Override
     public ResolvedJavaMethod lookupJavaMethod(Executable reflectionMethod) {
-        if (reflectionUniverse != null) {
-            return reflectionUniverse.lookupMethod(reflectionMethod);
-        }
-        return backing.lookupJavaMethod(reflectionMethod);
+        return reflectionUniverse.lookupMethod(reflectionMethod);
     }
 
     @Override
     public ResolvedJavaField lookupJavaField(Field reflectionField) {
-        if (reflectionUniverse != null) {
-            return reflectionUniverse.lookupField(reflectionField);
-        }
-        return backing.lookupJavaField(reflectionField);
+        return reflectionUniverse.lookupField(reflectionField);
     }
 
     @Override
     public ResolvedJavaType lookupJavaType(JavaConstant constant) {
-        if (reflectionUniverse != null) {
-            if (constant == null || constant.isNull() || constant.getJavaKind() != JavaKind.Object) {
-                return null;
-            }
-            if (constant instanceof TornadoObjectConstant objectConstant) {
-                Object object = objectConstant.getObject();
-                return object == null ? null : reflectionUniverse.lookupType(object.getClass());
-            }
+        if (constant == null || constant.isNull() || constant.getJavaKind() != JavaKind.Object) {
             return null;
         }
-        return backing().lookupJavaType(constant);
+        if (constant instanceof TornadoObjectConstant objectConstant) {
+            Object object = objectConstant.getObject();
+            return object == null ? null : reflectionUniverse.lookupType(object.getClass());
+        }
+        return null;
     }
 
     @Override
@@ -173,10 +146,7 @@ public class TornadoMetaAccessProvider implements MetaAccessProvider {
 
     @Override
     public JavaConstant encodeDeoptActionAndReason(DeoptimizationAction action, DeoptimizationReason reason, int debugId) {
-        if (getBackingProvider() != null) {
-            return backing().encodeDeoptActionAndReason(action, reason, debugId);
-        }
-        // JVMCI-absent path: TornadoVM lowers for the GPU where deoptimization never happens, so the
+        // GPU-only path: TornadoVM lowers for the GPU where deoptimization never happens, so the
         // encoded action/reason is inert (the guards carrying it are eliminated before code generation).
         // Return a deterministic non-null constant packing the ordinals, mirroring HotSpot's
         // ~(reason | action | debugId) layout, instead of delegating to the absent HotSpot provider.
@@ -186,10 +156,7 @@ public class TornadoMetaAccessProvider implements MetaAccessProvider {
 
     @Override
     public JavaConstant encodeSpeculation(Speculation speculation) {
-        if (getBackingProvider() != null) {
-            return backing().encodeSpeculation(speculation);
-        }
-        // JVMCI-absent path: the GPU never deoptimizes, so speculations are inert. Return the
+        // GPU-only path: the GPU never deoptimizes, so speculations are inert. Return the
         // no-speculation encoding (0) instead of delegating to the absent HotSpot provider.
         return JavaConstant.forLong(0);
     }
