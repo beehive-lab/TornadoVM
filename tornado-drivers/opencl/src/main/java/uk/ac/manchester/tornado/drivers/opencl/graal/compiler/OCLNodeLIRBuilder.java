@@ -109,6 +109,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryI
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryOp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLNullaryOp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp;
+import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBinary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLControlFlow;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLDirectCall;
@@ -672,6 +673,15 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                 // path: FrameState nodes (deopt metadata, never lowered on the GPU) reference the parameter,
                 // so we skip when the only remaining usages are FrameStates.
                 if (isSpecialKernelParameter(locals[param.index()]) && !hasNonFrameStateUsage(param)) {
+                    // Only FrameState (deopt) usages remain. Skipping entirely leaves the FrameState
+                    // referencing an unlowered ParameterNode ("node is not LIRLowerable: Parameter"). For a
+                    // KernelContext parameter, bind it to the declared _kernel_context slot (already in the
+                    // signature, never emitted as a buffer arg) so the FrameState resolves without an
+                    // undeclared 'argN'. The value is inert - the GPU never deoptimizes.
+                    if (isKernelContextParameter(locals[param.index()])) {
+                        LIRKind lirKind = getGen().getLIRKind(param.stamp(NodeView.DEFAULT));
+                        setResult(param, new OCLNullary.Parameter(OCLAssemblerConstants.KERNEL_CONTEXT, lirKind));
+                    }
                     continue;
                 }
                 setResult(param, getGen().getOCLGenTool().emitParameterLoad(locals[param.index()], param));
@@ -687,6 +697,10 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
     private static boolean isSpecialKernelParameter(Local local) {
         String typeName = local.getType().toJavaName();
         return typeName.equals("uk.ac.manchester.tornado.api.KernelContext") || typeName.equals("java.util.concurrent.atomic.AtomicInteger");
+    }
+
+    private static boolean isKernelContextParameter(Local local) {
+        return local.getType().toJavaName().equals("uk.ac.manchester.tornado.api.KernelContext");
     }
 
     private static boolean hasNonFrameStateUsage(ParameterNode param) {
