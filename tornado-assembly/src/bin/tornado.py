@@ -510,6 +510,11 @@ class TornadoVMRunnerTool():
         # supplies jdk.internal.vm.ci itself as a vendored application module and runs its
         # compilation pipeline via the reflection provider path.
         self.jvmci_absent = self.java_version >= 27
+        # JDK 22-26 still ship jdk.internal.vm.ci, but its interfaces have drifted from the
+        # JDK-21 shape the reflection providers are compiled against. Patch the platform module
+        # with the frozen JDK-21 jvmci classes so the runtime SPI matches the compiled code
+        # (uniform vendoring; mirrors the compile-time --patch-module in the jdk25/jdk26 profiles).
+        self.jvmci_patched = 22 <= self.java_version <= 26
         self.checkCompatibilityWithTornadoVM()
         self.platform = sys.platform
         self.listOfBackends = self.getInstalledBackends(False)
@@ -1116,6 +1121,14 @@ class TornadoVMRunnerTool():
             # module of the same name would cause a "two versions of module" resolution error).
             if (self.jvmci_absent):
                 tornadoFlags = tornadoFlags + os.pathsep + self.sdk + "/share/java/jvmci"
+            # On JDK 22-26 the platform module stays on the module path (resolved via
+            # -XX:+EnableJVMCI); we overlay the frozen JDK-21 classes with --patch-module so the
+            # loaded jdk.vm.ci.* matches what the reflection providers were compiled against. The
+            # patched-in JDK-21 jdk.vm.ci.services.Services.checkJVMCIEnabled() reads the saved
+            # property jdk.internal.vm.ci.enabled, so set it explicitly (HotSpot's own +EnableJVMCI
+            # bookkeeping is not visible to the overlaid classes).
+            elif (self.jvmci_patched):
+                tornadoFlags = tornadoFlags + " -Djdk.internal.vm.ci.enabled=true --patch-module jdk.internal.vm.ci=" + self.sdk + "/share/java/jvmci/jvmci-21.0.2.jar"
 
         if (args.module_path != None):
             tornadoFlags = tornadoFlags + ":" + args.module_path + " "

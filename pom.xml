@@ -439,8 +439,12 @@
                         <version>3.11.0</version>
                         <configuration>
                             <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                            <source>26</source>
-                            <target>26</target>
+                            <!-- Compile at 22 (class-file v66), matching the jdk27 profile: the frozen
+                                 Graal 23.1.0 Classfile reader used by the @Reduce host-analysis path rejects
+                                 class-file versions newer than it knows (v70/JDK-26 -> "Unsupported class
+                                 file version"). v66 runs unchanged on JDK 26. -->
+                            <source>22</source>
+                            <target>22</target>
                             <showDeprecation>true</showDeprecation>
                             <annotationProcessorPaths>
                                 <path>
@@ -453,6 +457,12 @@
                                 <arg>--add-modules</arg>
                                 <arg>ALL-SYSTEM</arg>
                                 <arg>--add-modules=jdk.incubator.vector</arg>
+                                <!-- Override the platform jdk.internal.vm.ci (whose interfaces have
+                                     drifted since JDK 21) with the frozen JDK-21 jvmci classes, so the
+                                     reflection providers compile against the same stable SPI on every
+                                     JDK. Mirrors the tornado.graal relocation. -->
+                                <arg>--patch-module</arg>
+                                <arg>jdk.internal.vm.ci=${user.dir}/graalJars/jvmci-21.0.2.jar</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/common-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/opencl-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/ptx-exports</arg>
