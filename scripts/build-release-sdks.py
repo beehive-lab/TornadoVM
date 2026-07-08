@@ -313,7 +313,7 @@ def patch_worktree_fix_pyinstaller(worktree_path):
     editing its config_utils.py here does not touch the repository or the
     published tag itself.
     """
-    config_utils_path = os.path.join(worktree_path, "config_utils.py")
+    config_utils_path = os.path.join(worktree_path, "bin", "config_utils.py")
     if not os.path.isfile(config_utils_path):
         warn("config_utils.py not found in worktree — cannot patch runPyInstaller.")
         return
