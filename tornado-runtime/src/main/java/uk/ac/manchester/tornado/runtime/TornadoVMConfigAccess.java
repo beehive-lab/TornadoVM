@@ -51,7 +51,12 @@ public class TornadoVMConfigAccess {
     /** Object header size in bytes: the offset of the first instance field is the end of the header. */
     private static final int HEADER_SIZE = (int) UNSAFE.objectFieldOffset(firstField(HeaderProbe.class));
 
-    public final int hubOffset = MARK_WORD_SIZE;
+    // Offset at which the object's hub/klass placeholder is zeroed when marshalling to the device.
+    // Pre-Lilliput layouts keep the klass pointer immediately after the 8-byte mark word (hub at
+    // MARK_WORD_SIZE). JDK 24+ compact object headers (HEADER_SIZE == 8) fold the klass into the mark
+    // word, so the first field sits at offset 8; hub must then be written at offset 0 to stay inside the
+    // header rather than overrunning the buffer / clobbering the first field.
+    public final int hubOffset = HEADER_SIZE > MARK_WORD_SIZE ? MARK_WORD_SIZE : 0;
 
     private static final class HeaderProbe {
         @SuppressWarnings("unused")
