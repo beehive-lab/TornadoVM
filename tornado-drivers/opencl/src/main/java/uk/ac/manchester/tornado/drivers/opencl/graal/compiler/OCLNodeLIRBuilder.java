@@ -60,6 +60,7 @@ import tornado.graal.compiler.nodes.BreakpointNode;
 import tornado.graal.compiler.nodes.DirectCallTargetNode;
 import tornado.graal.compiler.nodes.EndNode;
 import tornado.graal.compiler.nodes.FixedNode;
+import tornado.graal.compiler.nodes.FrameState;
 import tornado.graal.compiler.nodes.IfNode;
 import tornado.graal.compiler.nodes.IndirectCallTargetNode;
 import tornado.graal.compiler.nodes.Invoke;
@@ -665,7 +666,12 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                 // index). Once their uses are intrinsified (barriers, local-array allocation, thread-id fields)
                 // the parameter is unused, so emitting a buffer load for it references an undeclared 'argN'
                 // and the OpenCL driver rejects the kernel. Skip the unused special parameter to match.
-                if (param.hasNoUsages() && isSpecialKernelParameter(locals[param.index()])) {
+                // Skip the KernelContext / AtomicInteger special parameter when it has no real data uses.
+                // OCLBackend.emitMethodParameters never declares it in the kernel signature, so emitting a
+                // buffer load references an undeclared 'argN'. hasNoUsages() is too strict on the reflection
+                // path: FrameState nodes (deopt metadata, never lowered on the GPU) reference the parameter,
+                // so we skip when the only remaining usages are FrameStates.
+                if (isSpecialKernelParameter(locals[param.index()]) && !hasNonFrameStateUsage(param)) {
                     continue;
                 }
                 setResult(param, getGen().getOCLGenTool().emitParameterLoad(locals[param.index()], param));
@@ -681,6 +687,15 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
     private static boolean isSpecialKernelParameter(Local local) {
         String typeName = local.getType().toJavaName();
         return typeName.equals("uk.ac.manchester.tornado.api.KernelContext") || typeName.equals("java.util.concurrent.atomic.AtomicInteger");
+    }
+
+    private static boolean hasNonFrameStateUsage(ParameterNode param) {
+        for (Node usage : param.usages()) {
+            if (!(usage instanceof FrameState)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void emitOCLFPGAPragmas(HIRBlock block) {
