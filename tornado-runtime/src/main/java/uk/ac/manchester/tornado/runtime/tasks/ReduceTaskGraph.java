@@ -27,6 +27,7 @@ package uk.ac.manchester.tornado.runtime.tasks;
 
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -63,6 +64,7 @@ import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceTasks;
 import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis.REDUCE_OPERATION;
+import uk.ac.manchester.tornado.runtime.analyzer.TaskUtils;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils;
 import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils.BackendSelectionContainer;
@@ -824,6 +826,10 @@ class ReduceTaskGraph {
             return this.code;
         }
 
+        public int getSizeTargetDevice() {
+            return this.sizeTargetDevice;
+        }
+
         public boolean isFinished() {
             return finished;
         }
@@ -883,11 +889,125 @@ class ReduceTaskGraph {
                     args[i] = hostHybridVariables.getOrDefault(argument, argument);
                 }
 
-                // 2. Run the binary
-                code.executeVarargs(args);
+                // 2. Run the binary. On a JVMCI-absent JDK (27+) the host reduction cannot be JIT-compiled
+                // and installed (code == null), so run the reduction method reflectively instead. The GPU
+                // reduced input[0, start); the host must reduce only the leftover tail input[start, size).
+                // Neutralise the prefix [0, start) of the input array with the reduction's neutral element so
+                // the unmodified kernel (which loops the full size) reduces only the tail; the output array is
+                // already pre-filled with the neutral element.
+                if (code == null) {
+                    runReflectiveTailReduction(taskPackage, args, hostHybridVariables, compilationThread.getSizeTargetDevice());
+                } else {
+                    code.executeVarargs(args);
+                }
 
-            } catch (InvalidInstalledCodeException e) {
+            } catch (InvalidInstalledCodeException | ReflectiveOperationException e) {
                 e.printStackTrace();
+            }
+        }
+
+        private static void runReflectiveTailReduction(TaskPackage taskPackage, Object[] args, Map<Object, Object> hostHybridVariables, int start) throws ReflectiveOperationException {
+            Object neutral = null;
+            for (Object a : args) {
+                if (a != null && hostHybridVariables.containsValue(a)) {
+                    neutral = elementZero(a);
+                    break;
+                }
+            }
+            Object[] hostArgs = args.clone();
+            if (neutral != null) {
+                for (int i = 0; i < hostArgs.length; i++) {
+                    Object a = hostArgs[i];
+                    if (a != null && !hostHybridVariables.containsValue(a) && isReducibleArray(a)) {
+                        hostArgs[i] = copyWithNeutralPrefix(a, start, neutral);
+                    }
+                }
+            }
+            Method method = TaskUtils.resolveMethodHandle(taskPackage.getTaskParameters()[0]);
+            method.setAccessible(true);
+            method.invoke(null, hostArgs);
+        }
+
+        private static boolean isReducibleArray(Object a) {
+            return a instanceof int[] || a instanceof float[] || a instanceof double[] || a instanceof long[] //
+                    || a instanceof IntArray || a instanceof FloatArray || a instanceof DoubleArray || a instanceof LongArray;
+        }
+
+        private static Object elementZero(Object a) {
+            return switch (a) {
+                case int[] v -> v[0];
+                case float[] v -> v[0];
+                case double[] v -> v[0];
+                case long[] v -> v[0];
+                case IntArray v -> v.get(0);
+                case FloatArray v -> v.get(0);
+                case DoubleArray v -> v.get(0);
+                case LongArray v -> v.get(0);
+                default -> null;
+            };
+        }
+
+        private static Object copyWithNeutralPrefix(Object input, int start, Object neutral) {
+            switch (input) {
+                case int[] v -> {
+                    int[] c = v.clone();
+                    for (int i = 0; i < Math.min(start, c.length); i++) {
+                        c[i] = (int) neutral;
+                    }
+                    return c;
+                }
+                case float[] v -> {
+                    float[] c = v.clone();
+                    for (int i = 0; i < Math.min(start, c.length); i++) {
+                        c[i] = (float) neutral;
+                    }
+                    return c;
+                }
+                case double[] v -> {
+                    double[] c = v.clone();
+                    for (int i = 0; i < Math.min(start, c.length); i++) {
+                        c[i] = (double) neutral;
+                    }
+                    return c;
+                }
+                case long[] v -> {
+                    long[] c = v.clone();
+                    for (int i = 0; i < Math.min(start, c.length); i++) {
+                        c[i] = (long) neutral;
+                    }
+                    return c;
+                }
+                case IntArray v -> {
+                    IntArray c = new IntArray(v.getSize());
+                    for (int i = 0; i < v.getSize(); i++) {
+                        c.set(i, i < start ? (int) neutral : v.get(i));
+                    }
+                    return c;
+                }
+                case FloatArray v -> {
+                    FloatArray c = new FloatArray(v.getSize());
+                    for (int i = 0; i < v.getSize(); i++) {
+                        c.set(i, i < start ? (float) neutral : v.get(i));
+                    }
+                    return c;
+                }
+                case DoubleArray v -> {
+                    DoubleArray c = new DoubleArray(v.getSize());
+                    for (int i = 0; i < v.getSize(); i++) {
+                        c.set(i, i < start ? (double) neutral : v.get(i));
+                    }
+                    return c;
+                }
+                case LongArray v -> {
+                    LongArray c = new LongArray(v.getSize());
+                    for (int i = 0; i < v.getSize(); i++) {
+                        c.set(i, i < start ? (long) neutral : v.get(i));
+                    }
+                    return c;
+                }
+                default -> {
+                    return input;
+                }
             }
         }
 
