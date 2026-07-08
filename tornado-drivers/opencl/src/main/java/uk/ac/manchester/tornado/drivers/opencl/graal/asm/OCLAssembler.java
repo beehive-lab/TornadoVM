@@ -40,7 +40,6 @@ import tornado.graal.compiler.lir.Variable;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.TargetDescription;
-import jdk.vm.ci.hotspot.HotSpotObjectConstant;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
@@ -434,17 +433,10 @@ public final class OCLAssembler extends Assembler {
             if (oclKind.isVector()) {
                 result = String.format("(%s)(%s)", oclKind.name(), result);
             }
-        } else if (constant instanceof HotSpotObjectConstant) {
-            HotSpotObjectConstant objConst = (HotSpotObjectConstant) constant;
-            // TODO should this be replaced with isInternedString()?
-            if (objConst.getJavaKind().isObject() && objConst.getType().getName().compareToIgnoreCase("Ljava/lang/String;") == 0) {
-                result = encodeString(objConst.toValueString());
-            }
         } else if (constant instanceof TornadoObjectConstant tornadoObjConst && tornadoObjConst.getObject() instanceof String stringLiteral) {
-            // JVMCI-absent (reflection) path: a String constant (e.g. a printf format) is a
-            // TornadoObjectConstant, not a HotSpotObjectConstant. Escape it as a C string literal instead
-            // of falling through to toValueString()+addLiteralSuffix, which emitted a raw newline and a
-            // spurious "UL" integer suffix and produced malformed OpenCL.
+            // A String constant (e.g. a printf format) is a TornadoObjectConstant; escape it as a C
+            // string literal instead of falling through to toValueString()+addLiteralSuffix, which
+            // emitted a raw newline and a spurious "UL" integer suffix and produced malformed OpenCL.
             result = encodeString(stringLiteral);
         } else {
             result = constant.toValueString();

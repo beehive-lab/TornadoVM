@@ -26,7 +26,7 @@
 #      the `jdk27` Maven profile as a provided-scope dependency.
 #
 # The bundled jdk.vm.ci.hotspot.* classes let everything COMPILE/link, but their native
-# glue is gone on JDK 27 -- the reflection provider path (-Dtornado.jvmci.reflection) is
+# glue is gone on JDK 27 -- the reflection provider path is
 # the exclusive runnable path there.
 #
 # Env:

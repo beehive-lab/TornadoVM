@@ -40,9 +40,8 @@ import jdk.vm.ci.meta.JavaKind;
  *
  * <p>
  * This is the JDK-neutral replacement for {@code HotSpotJVMCIRuntime}'s
- * metadata layer (Phase 4). It is reached only when
- * {@code -Dtornado.jvmci.reflection=true}; the default path stays on the
- * verified delegating + {@code Unsafe} seam.
+ * metadata layer: type/method/field metadata is resolved via core reflection and
+ * a classfile parser, so TornadoVM no longer depends on JVMCI on any JDK.
  */
 public final class ReflectionUniverse {
 

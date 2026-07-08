@@ -40,14 +40,11 @@ import uk.ac.manchester.tornado.runtime.jvmci.reflection.ReflectionResolvedJavaT
 import uk.ac.manchester.tornado.runtime.jvmci.reflection.ReflectionUniverse;
 
 /**
- * TornadoVM-owned {@link ConstantReflectionProvider}. It delegates to a backing
- * provider (the HotSpot one today), but reads constant field values for the
- * reflection-backed metadata layer via {@link java.lang.reflect.Field}, so
- * constant folding of (e.g.) {@code static final} fields works without routing
- * a {@link ReflectionResolvedJavaField} into a HotSpot-only implementation that
- * would fail with a {@code ClassCastException}. This is the JDK-neutral counter
- * part to {@code HotSpotConstantReflectionProvider} used with
- * {@code -Dtornado.jvmci.reflection=true}.
+ * TornadoVM-owned {@link ConstantReflectionProvider}. It reads constant field values via
+ * {@link java.lang.reflect.Field}, so constant folding of (e.g.) {@code static final} fields
+ * works for the reflection-backed metadata layer without a HotSpot-only implementation. This is
+ * the JDK-neutral replacement for {@code HotSpotConstantReflectionProvider}; queries that are
+ * genuinely VM specific and not needed for GPU compilation throw {@link UnsupportedOperationException}.
  */
 public class TornadoConstantReflectionProvider implements ConstantReflectionProvider {
 

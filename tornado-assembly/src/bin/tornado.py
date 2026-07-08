@@ -80,9 +80,9 @@ __CUDNN_MODULE__ = "tornado.cudnn"
 __JAVA_GC__ = "-XX:+UseParallelGC "
 __JAVA_BASE_OPTIONS__ = "-server -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI --enable-preview "
 # JDK 27+ removed JVMCI: -XX:+EnableJVMCI is an unrecognized (fatal) option and Panama is
-# final so --enable-preview is unnecessary. JVMCI metadata is sourced via the reflection
-# provider path (forced with tornado.jvmci.reflection.full) against the vendored module.
-__JAVA_BASE_OPTIONS_NO_JVMCI__ = ("-server -XX:+UnlockExperimentalVMOptions -Dtornado.jvmci.reflection.full=true "
+# final so --enable-preview is unnecessary. TornadoVM sources all metadata via the reflection
+# providers (the only path) against the vendored jdk.internal.vm.ci module.
+__JAVA_BASE_OPTIONS_NO_JVMCI__ = ("-server -XX:+UnlockExperimentalVMOptions "
                                   # The vendored jdk.vm.ci.services.Services gates on JVMCI_ENABLED,
                                   # read from VM.getSavedProperties().get("jdk.internal.vm.ci.enabled").
                                   # HotSpot used to set this when +EnableJVMCI; that flag is gone on

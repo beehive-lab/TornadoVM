@@ -136,7 +136,7 @@ def main(jdk=None):
         build_graal_module.build()
 
     # Build and stage the vendored jvmci module if compiling for JDK 27
-    if jdk == "jdk27":
+    if jdk in ("jdk25", "jdk26", "jdk27"):
         # Check if the artifact was already installed to Maven local repo, or exists.
         # But build_jvmci_module also installs to local Maven. Let's run it.
         logger.info(f"Building/staging vendored {CYAN}jdk.internal.vm.ci{RESET} module for JDK 27...")

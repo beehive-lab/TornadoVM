@@ -415,6 +415,59 @@
         </profile>
 
         <profile>
+            <!-- JDK 25: identical to the jdk26 profile (JDK 22-25 still ship jdk.internal.vm.ci with
+                 interfaces drifted from the JDK-21 shape the reflection providers target). --patch-module
+                 overlays the frozen JDK-21 classes; compiled at release 22 (class-file v66) for
+                 frozen-Graal 23.1.0 compatibility. -->
+            <id>jdk25</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <skipTests>true</skipTests>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <version>3.11.0</version>
+                        <configuration>
+                            <forceJavacCompilerUse>true</forceJavacCompilerUse>
+                            <source>22</source>
+                            <target>22</target>
+                            <showDeprecation>true</showDeprecation>
+                            <annotationProcessorPaths>
+                                <path>
+                                    <groupId>org.openjdk.jmh</groupId>
+                                    <artifactId>jmh-generator-annprocess</artifactId>
+                                    <version>${jmh.version}</version>
+                                </path>
+                            </annotationProcessorPaths>
+                            <compilerArgs>
+                                <arg>--add-modules</arg>
+                                <arg>ALL-SYSTEM</arg>
+                                <arg>--add-modules=jdk.incubator.vector</arg>
+                                <arg>--patch-module</arg>
+                                <arg>jdk.internal.vm.ci=${user.dir}/graalJars/jvmci-21.0.2.jar</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/common-exports</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/opencl-exports</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/ptx-exports</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/spirv-exports</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/metal-exports</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/cuda-exports</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
             <!-- Build on an arbitrary modern JDK (e.g. 26). Possible only because Graal is
                  now vendored as the relocated tornado.graal module: JDK 26 removed the
                  built-in jdk.internal.vm.compiler module that the upgrade-module-path
