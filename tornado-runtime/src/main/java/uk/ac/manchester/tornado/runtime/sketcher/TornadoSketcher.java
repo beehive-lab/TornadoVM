@@ -233,6 +233,13 @@ public class TornadoSketcher {
             }
             int paramIndex = param.index();
 
+            // The callee's argument-access array can be shorter than the call's argument list (e.g. an
+            // intrinsified KernelContext accessor whose sketch is looked up before it is fully built on the
+            // concurrent sketch path). A missing callee access is unknown, so leave the caller access as is
+            // rather than indexing out of bounds.
+            if (index >= calleeAccesses.length) {
+                continue;
+            }
             Access calleeAcc = calleeAccesses[index];
             Access callerAcc = callerAccesses[paramIndex];
 
