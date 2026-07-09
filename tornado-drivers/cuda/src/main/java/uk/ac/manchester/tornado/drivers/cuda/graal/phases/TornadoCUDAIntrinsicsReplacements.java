@@ -60,6 +60,8 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadBInt8Node;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadBSwizzledNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAStoreBSwizzledNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAStoreNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASwizzledLoadFP16Stride32Node;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASwizzledStoreFP16Stride32Node;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GlobalThreadSizeNode;
@@ -215,6 +217,12 @@ public class TornadoCUDAIntrinsicsReplacements extends BasePhase<TornadoHighTier
                 case "Direct#KernelContext.mmaStoreBSwizzled":
                     lowerMMAStoreBSwizzled(graph, invoke);
                     break;
+                case "Direct#KernelContext.swizzleLoadFp16Stride32":
+                    lowerSwizzleLoad(graph, invoke);
+                    break;
+                case "Direct#KernelContext.swizzleStoreFp16Stride32":
+                    lowerSwizzleStore(graph, invoke);
+                    break;
                 case "Direct#KernelContext.globalBarrier": {
                     CUDABarrierNode kcGlobalBarrier = graph.addOrUnique(new CUDABarrierNode(CUDABarrierNode.CUDAMemFenceFlags.GLOBAL));
                     graph.replaceFixed(invoke, kcGlobalBarrier);
@@ -317,6 +325,26 @@ public class TornadoCUDAIntrinsicsReplacements extends BasePhase<TornadoHighTier
     private void lowerMMAStoreBSwizzled(StructuredGraph graph, InvokeNode invoke) {
         NodeInputList<ValueNode> args = invoke.callTarget().arguments();
         CUDAMMAStoreBSwizzledNode node = graph.add(new CUDAMMAStoreBSwizzledNode(args.get(1), args.get(2), args.get(3), args.get(4), args.get(5), args.get(6)));
+        graph.replaceFixed(invoke, node);
+    }
+
+    /**
+     * Rewrite a surviving {@code KernelContext.swizzleLoadFp16Stride32(local, row, col, stride)} invoke into a
+     * {@link CUDASwizzledLoadFP16Stride32Node} (arguments 1-4 after the receiver).
+     */
+    private void lowerSwizzleLoad(StructuredGraph graph, InvokeNode invoke) {
+        NodeInputList<ValueNode> args = invoke.callTarget().arguments();
+        CUDASwizzledLoadFP16Stride32Node node = graph.add(new CUDASwizzledLoadFP16Stride32Node(args.get(1), args.get(2), args.get(3), args.get(4)));
+        graph.replaceFixed(invoke, node);
+    }
+
+    /**
+     * Rewrite a surviving {@code KernelContext.swizzleStoreFp16Stride32(local, row, col, stride, value)} invoke into a
+     * {@link CUDASwizzledStoreFP16Stride32Node} (arguments 1-5 after the receiver).
+     */
+    private void lowerSwizzleStore(StructuredGraph graph, InvokeNode invoke) {
+        NodeInputList<ValueNode> args = invoke.callTarget().arguments();
+        CUDASwizzledStoreFP16Stride32Node node = graph.add(new CUDASwizzledStoreFP16Stride32Node(args.get(1), args.get(2), args.get(3), args.get(4), args.get(5)));
         graph.replaceFixed(invoke, node);
     }
 
