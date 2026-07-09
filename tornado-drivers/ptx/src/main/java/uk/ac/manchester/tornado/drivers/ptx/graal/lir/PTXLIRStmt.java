@@ -2099,6 +2099,18 @@ public class PTXLIRStmt {
             asm.delimiter();
             asm.eol();
 
+            // convert byte offset back to fp16 element index for ld.shared.b16 arr[idx]
+            // swzByte is a byte offset. Shift right by 1 to get the element index.
+            asm.emitSymbol(TAB);
+            asm.emit("shr.b32 ");
+            asm.emitValue(swzByte);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(swzByte);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emit("1");
+            asm.delimiter();
+            asm.eol();
+
             // result = ld.shared.b16 sharedMem[swzByte]   (16-bit load = one fp16)
             asm.emitSymbol(TAB);
             asm.emit("ld.shared.b16 ");
@@ -2511,6 +2523,18 @@ public class PTXLIRStmt {
             asm.emitValue(byteOff);
             asm.emitSymbol(COMMA + SPACE);
             asm.emitValue(xorTerm);
+            asm.delimiter();
+            asm.eol();
+
+            // convert byte offset back to fp16 element index for st.shared.b16 arr[idx]
+            // swzByte is a byte offset. Shift right by 1 to get the element index.
+            asm.emitSymbol(TAB);
+            asm.emit("shr.b32 ");
+            asm.emitValue(swzByte);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(swzByte);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emit("1");
             asm.delimiter();
             asm.eol();
 
