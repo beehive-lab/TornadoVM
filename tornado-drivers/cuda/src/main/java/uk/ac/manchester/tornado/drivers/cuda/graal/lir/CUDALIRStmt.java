@@ -1034,9 +1034,22 @@ public class CUDALIRStmt {
             asm.space();
             asm.assign();
             asm.space();
-            asm.emitValueOrOp(crb, rhs);
+            emitStoreRhs(crb, asm);
             asm.delimiter();
             asm.eol();
+        }
+
+        /**
+         * Emit the stored value, wrapping a float/double in {@code __float2half(...)} when the store
+         * target is a {@code __half} slot (cuda_fp16.h has no implicit float-to-__half assignment, so a
+         * bare numeric would be stored incorrectly and read back as 0).
+         */
+        private void emitStoreRhs(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            if (cast.getElementKind() == CUDAKind.HALF) {
+                asm.emitHalfOperand(crb, rhs);
+            } else {
+                asm.emitValueOrOp(crb, rhs);
+            }
         }
 
         /**
@@ -1061,7 +1074,7 @@ public class CUDALIRStmt {
             asm.space();
             asm.assign();
             asm.space();
-            asm.emitValueOrOp(crb, rhs);
+            emitStoreRhs(crb, asm);
             asm.delimiter();
             asm.eol();
         }

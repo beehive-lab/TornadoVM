@@ -37,9 +37,10 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAArchitecture;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAUnary;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkOCLWriteNode;
 
 @NodeInfo
-public class WriteHalfFloatNode extends FixedWithNextNode implements LIRLowerable {
+public class WriteHalfFloatNode extends FixedWithNextNode implements LIRLowerable, MarkOCLWriteNode {
 
     public static final NodeClass<WriteHalfFloatNode> TYPE = NodeClass.create(WriteHalfFloatNode.class);
 

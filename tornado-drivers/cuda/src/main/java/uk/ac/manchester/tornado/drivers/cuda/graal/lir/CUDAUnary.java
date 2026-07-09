@@ -383,6 +383,10 @@ public class CUDAUnary {
             return base.getMemorySpace();
         }
 
+        public CUDAKind getElementKind() {
+            return getCUDAPlatformKind();
+        }
+
     }
 
 }
