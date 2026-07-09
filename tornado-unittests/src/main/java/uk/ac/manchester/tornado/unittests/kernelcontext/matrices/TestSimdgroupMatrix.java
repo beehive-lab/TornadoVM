@@ -79,7 +79,7 @@ public class TestSimdgroupMatrix extends TornadoTestBase {
     }
 
     private void runAndCheck(int m, int n, int k) throws TornadoExecutionPlanException {
-        // simdgroup_matrix is Metal-only.
+        // simdgroup_matrix is Metal-only: no equivalent in OpenCL, PTX, SPIR-V or CUDA.
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);

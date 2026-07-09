@@ -368,9 +368,10 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
         final CallingConvention incomingArguments = CodeUtil.getCallingConvention(codeCache, HotSpotCallingConventionType.JavaCallee, method);
 
         if (crb.isKernel()) {
-            // Emit the CUDA C preamble (cuda_fp16.h include) once at the top of the
-            // kernel, before the kernel signature.
-            asm.emit(CUDAPreamble.PREAMBLE);
+            // cuda_fp16.h is injected once, after code emission, when the generated
+            // kernel actually references __half / half2 / __float2half constructs
+            // (see CUDACompilationResultBuilder#finish). It is not emitted here because
+            // half usage is not always visible from the LIR operands at this point.
 
             /*
              * BUG There is a bug on some CUDADriver devices which requires us to insert an

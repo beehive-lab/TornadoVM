@@ -75,6 +75,8 @@ static bool stream_is_capturing(cuda_queue_t *queue) {
 /*
  * Creates and records a CUevent on the queue's stream, returning its boxed
  * handle. Used as the "event" result the OpenCL clone expects from enqueue ops.
+ * No start event is recorded, so the reported elapsed time is 0 (used by
+ * markers/barriers that do not bracket a timed operation).
  */
 static unsigned int event_flags();
 
@@ -300,6 +302,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
     NvtxRange _nvtx(kernel->name.c_str());
     cuCtxSetCurrent(queue->context);
     wait_events(env, queue, events);
+    cuda_event_t *ev = begin_event(queue);
     CUresult result = cuLaunchKernel(
             kernel->function,
             grid[0], grid[1], grid[2],
@@ -310,7 +313,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
             nullptr);
     LOG_CUDA_AND_VALIDATE("cuLaunchKernel", result);
 
-    return record_event(queue);
+    return end_event(ev, queue);
 }
 
 /*
@@ -338,6 +341,7 @@ static jlong transfer_to_device(JNIEnv *env, cuda_queue_t *queue, void *host_bas
     NvtxRange _nvtx(nvtxLabel);
     cuCtxSetCurrent(queue->context);
     wait_events(env, queue, events);
+    cuda_event_t *ev = begin_event(queue);
     CUresult result = cuMemcpyHtoDAsync(
             (CUdeviceptr) (device_ptr + device_offset),
             (const void *) ((char *) host_base + host_offset),
@@ -347,7 +351,7 @@ static jlong transfer_to_device(JNIEnv *env, cuda_queue_t *queue, void *host_bas
     if (sync_after && !stream_is_capturing(queue)) {
         cuStreamSynchronize(queue->stream);
     }
-    return record_event(queue);
+    return end_event(ev, queue);
 }
 
 static jlong transfer_to_host(JNIEnv *env, cuda_queue_t *queue, void *host_base,
@@ -361,6 +365,7 @@ static jlong transfer_to_host(JNIEnv *env, cuda_queue_t *queue, void *host_base,
     NvtxRange _nvtx(nvtxLabel);
     cuCtxSetCurrent(queue->context);
     wait_events(env, queue, events);
+    cuda_event_t *ev = begin_event(queue);
     CUresult result = cuMemcpyDtoHAsync(
             (void *) ((char *) host_base + host_offset),
             (CUdeviceptr) (device_ptr + device_offset),
@@ -370,7 +375,7 @@ static jlong transfer_to_host(JNIEnv *env, cuda_queue_t *queue, void *host_base,
     if (sync_after && !stream_is_capturing(queue)) {
         cuStreamSynchronize(queue->stream);
     }
-    return record_event(queue);
+    return end_event(ev, queue);
 }
 
 /* ---- writeArrayToDevice overloads (byte/char/short/int/long/float/double) ---- */

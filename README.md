@@ -1,122 +1,222 @@
-# TornadoVM
-[![Build on [push]](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk25.yml/badge.svg)](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk25.yml)
-
-[![API Version](https://img.shields.io/maven-central/v/io.github.beehive-lab/tornado-api?logo=apache-maven&color=blue&label=Tornado%20API)](https://central.sonatype.com/artifact/io.github.beehive-lab/tornado-api)
-[![Runtime Version](https://img.shields.io/maven-central/v/io.github.beehive-lab/tornado-runtime?logo=apache-maven&color=blue&label=Tornado%20Runtime)](https://central.sonatype.com/artifact/io.github.beehive-lab/tornado-runtime)
-[![SDKMAN!](https://img.shields.io/badge/Install%20with-SDKMAN!-2c7a7b?logo=sdkman&logoColor=white)](https://sdkman.io/sdks/tornadovm/)
-
-![TornadoVM version](https://img.shields.io/badge/version-4.0.1-jdk25-purple)  [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-1.4-4baaaa.svg)](CODE_OF_CONDUCT.md)  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2) ![License: GPL v2](https://img.shields.io/badge/License-GPL%20V2%20Classpath%20Exception-blue.svg)
-
-<img align="left" width="180" height="180" src="etc/tornadoVM_Logo.jpg">
-
-TornadoVM is a plug-in to OpenJDK and GraalVM that allows programmers to automatically run Java programs on
-heterogeneous hardware.
-TornadoVM targets **OpenCL, PTX, CUDA, Metal and SPIR-V** compatible devices which include multi-core CPUs, dedicated
-GPUs (Intel, NVIDIA, AMD), integrated GPUs (Apple Silicon, Intel HD Graphics and ARM Mali), and FPGAs (Intel and Xilinx).
-
-TornadoVM has five backends that generate OpenCL C, NVIDIA CUDA PTX assembly, CUDA C (compiled to PTX via NVRTC), SPIR-V binary, and Metal Shading Language.
-Developers can choose which backends to install and run.
-
-----------------------
-
-**Website**: [tornadovm.org](https://www.tornadovm.org)
-
-**Documentation**: [https://tornadovm.readthedocs.io/en/latest/](https://tornadovm.readthedocs.io/en/latest/)
-
-For a quick introduction please read the following [FAQ](https://tornadovm.readthedocs.io/en/latest/).
-
-**Latest Release:** TornadoVM 4.0.1-jdk25 - 29/04/2026 :
-See [CHANGELOG](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html).
-
-----------------------
-
-## 1. Quick Start - Install & Use the TornadoVM SDK
-
-### Prerequisites
-- **JDK 21** (or GraalVM based on JDK 21)
-- GCC/G++ >= 13.0
-- C toolchain / build tools (for native parts, depending on backend)
-- OpenCL Headers, CUDA Toolkit
-
-**Note:** Make sure `JAVA_HOME` points to your JDK/GraalVM 21 installation.
-
-### Install TornadoVM (via SDKMAN!)
-
-TornadoVM is distributed through our [**official website**](https://www.tornadovm.org/downloads) and **SDKMAN!**. Install a version that matches your OS, architecture, and accelerator backend.
-
-All TornadoVM SDKs are available on the [SDKMAN! TornadoVM page](https://sdkman.io/sdks/tornadovm/).
-
-You can choose a backend-specific build:
-
-Backend   | SDKMAN! Latest Version
---------- | --------------
-OpenCL   | `4.0.0-opencl` **(default)**
-PTX      | `4.0.0-ptx`
-CUDA     | `4.0.0-cuda`
-SPIR-V   | `4.0.0-spirv`
-Metal    | `4.0.0-metal`
-All Backends     | `4.0.0-full`
+<img src="etc/tornadovm-logo.png" alt="TornadoVM logo" align="left" width="400">
 
 
-Install **TornadoVM**:
-```bash
-sdk install tornadovm <version>
+--- 
+
+## Write Java. Run on GPUs. Fast.
+
+TornadoVM is a GPU programming framework for Java that works with JDK 21+ (currently JDK 21 and JDK 25). It JIT-compiles Java bytecode into **NVIDIA CUDA PTX, OpenCL C, SPIR-V, and Apple Metal (MSL)** at runtime, so your existing Java code runs on **NVIDIA GPUs (via CUDA/PTX)**, AMD, Intel, and Apple Silicon GPUs, integrated GPUs, FPGAs, and multi-core CPUs. On NVIDIA hardware it goes further: beyond generating PTX, TornadoVM now calls straight into the **NVIDIA library ecosystem — cuBLAS, cuFFT, cuDNN — and exposes Tensor Core `mma.sync` instructions from pure Java**. No CUDA C. No JNI bindings to maintain. No native toolchain in your application.
+
+[![Build & Test JDK 21](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk21.yml/badge.svg)](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk21.yml)
+[![Build & Test JDK 25](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk25.yml/badge.svg?branch=jdk25)](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk25.yml)
+[![Tornado API](https://img.shields.io/maven-central/v/io.github.beehive-lab/tornado-api?logo=apache-maven&color=blue&label=Tornado%20API)](https://central.sonatype.com/artifact/io.github.beehive-lab/tornado-api)
+[![Install with SDKMAN!](https://img.shields.io/badge/Install%20with-SDKMAN!-2c7a7b?logo=sdkman&logoColor=white)](https://sdkman.io/sdks/tornadovm/)
+[![Docs](https://img.shields.io/badge/docs-readthedocs-blue)](https://tornadovm.readthedocs.io/en/latest/)
+[![Slack](https://img.shields.io/badge/chat-Slack-4A154B?logo=slack)](https://join.slack.com/t/tornadovmcommunity/shared_invite/zt-3ai2wyqva-bKz~cQRFlaJ~ZnPrbkwIEw)
+
+**Latest release:** TornadoVM 4.0.1 (JDK 21 / JDK 25) — native **NVIDIA library integration** (cuBLAS / cuFFT / cuDNN) and Tensor Core intrinsics, plus a native **Apple Metal backend** for Apple Silicon. [Changelog](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html) · [Website](https://www.tornadovm.org) · [Documentation](https://tornadovm.readthedocs.io/en/latest/)
+
+
+---
+
+## This is the whole programming model
+
+Write the kernel in Java with the same thread-indexing model you'd use in CUDA — then build a task graph and execute. TornadoVM JIT-compiles the bytecode to a GPU kernel at runtime and manages all host↔device data transfers for you. On NVIDIA GPUs that kernel is emitted as **CUDA PTX** and compiled through NVRTC to a native cubin.
+
+<table>
+<tr>
+<th>Java + TornadoVM (Kernel API)</th>
+<th>The same kernel in CUDA C</th>
+</tr>
+<tr>
+<td>
+
+```java
+void mxv(KernelContext ctx,
+         FloatArray m,
+         FloatArray v,
+         FloatArray out,
+         int rows, int cols) {
+  int i = ctx.globalIdx;
+  if (i < rows) {
+    float sum = 0f;
+    for (int j=0; j<cols; j++)
+      sum += m.get(i*cols+j)*v.get(j);
+    out.set(i, sum);
+  }
+}
+
+// TornadoVM auto-manages device
+// memory + kernel dispatch via a
+// TaskGraph — no host plumbing,
+// runs unchanged on all 4 backends.
 ```
 
-### Verify Available Devices
-Check that TornadoVM can detect your CPU/GPU accelerators and that all required drivers are installed:
+</td>
+<td>
+
+```c
+__global__ void mxv(
+    const float *m,
+    const float *v,
+    float *out,
+    int rows, int cols) {
+  int i = blockIdx.x*blockDim.x
+        + threadIdx.x;
+  if (i < rows) {
+    float sum = 0.f;
+    for (int j=0; j<cols; j++)
+      sum += m[i*cols+j]*v[j];
+    out[i] = sum;
+  }
+}
+
+// ...and on the host you STILL write:
+//   cudaMalloc/cudaMemcpy per buffer
+//   grid/block dims, launch, sync
+//   cudaMemcpy back, then cudaFree
+//   nvcc build + per-GPU binaries
+//   + a rewrite for non-NVIDIA GPUs
+```
+
+</td>
+</tr>
+</table>
+
+
+
+<details>
+<summary><h2>…and the host side — wrap data, map a thread grid, execute (click to expand)</h2></summary>
+
+```java
+// TornadoVM off-heap arrays (flat, row-major)
+FloatArray m   = new FloatArray(rows * cols);
+FloatArray v   = new FloatArray(cols);
+FloatArray out = new FloatArray(rows);
+// ...fill m and v...
+
+KernelContext ctx  = new KernelContext();
+WorkerGrid worker  = new WorkerGrid1D(rows);
+GridScheduler grid = new GridScheduler("compute.mxv", worker);
+
+TaskGraph tg = new TaskGraph("compute")
+    .transferToDevice(DataTransferMode.FIRST_EXECUTION, m, v)
+    .task("mxv", Kernels::mxv, ctx, m, v, out, rows, cols)
+    .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+
+try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
+    plan.withGridScheduler(grid).execute();   // JIT-compiled to your GPU
+}
+```
+
+</details>
+
+`KernelContext` gives you the full GPU programming model — global/local thread IDs, local memory, and barriers, the same semantics as CUDA/OpenCL/SYCL — while TornadoVM handles memory management and runs the *identical* code across all four backends. Don't need that control? Drop `KernelContext` and just annotate the loop with `@Parallel` — TornadoVM infers the thread mapping for you. Both styles combine in the same `TaskGraph`. [Programming guide →](https://tornadovm.readthedocs.io/en/latest/programming.html)
+
+
+---
+
+## 🟩 The NVIDIA ecosystem, native to Java
+
+On NVIDIA hardware, TornadoVM is more than a PTX code generator — it's an open-source on-ramp to the whole CUDA software stack, callable from the same `TaskGraph` you already use. Generated kernels and native library calls **share TornadoVM-managed device buffers on one CUDA stream**, so a JIT-compiled kernel can feed a cuBLAS call and consume its output with no extra copies and no host synchronization.
+
+| Capability | What it gives Java developers |
+|---|---|
+| **CUDA PTX backend** | Java bytecode → Graal IR → **CUDA PTX → NVRTC → cubin**, JIT-compiled and specialized to your data sizes and GPU at runtime. |
+| **cuBLAS / cuBLASLt** library tasks | SGEMV, SGEMM, strided-batched, TF32 and FP16 GemmEx on Tensor Cores, and cuBLASLt with plan caching and fused `BIAS` / `GELU_BIAS` epilogues — one library task replaces a GEMM plus a separate activation kernel. |
+| **cuFFT** library tasks | C2C, R2C / C2R, and Z2Z transforms (1D and 2D) with capture-safe plan caching; FFT-filter pipelines mix with JIT kernels in one graph. |
+| **cuDNN** library tasks | Deep-learning primitives through the cuDNN graph API, including fused scaled-dot-product (flash) attention via cudnn-frontend. |
+| **Tensor Core MMA intrinsics** | `mma.sync` exposed through `KernelContext` (`mmaLoadA/B`, `mma`, `mmaStore`) — FP16 (`m16n8k16` → FP32) and INT8 (`m16n8k32` → INT32), with swizzled shared-memory staging. Not a binding: real PTX/CUDA generated from Java. |
+| **CUDA Graphs** | `executionPlan.withCUDAGraph()` records kernels, library calls, and transfers into a captured graph and replays them with a single `cuGraphLaunch`. |
+
+Mixing your own kernels with NVIDIA's tuned libraries looks like this:
+
+```java
+TaskGraph tg = new TaskGraph("hybrid")
+    .transferToDevice(DataTransferMode.EVERY_EXECUTION, matrix, vector)
+    .task("preprocess", MyKernels::preprocess, matrix)              // JIT-compiled Java kernel
+    .libraryTask("gemv", CuBlas::cublasSgemv,                       // native cuBLAS call
+            CUBLAS_OP_T, m, n, alpha, matrix, lda, vector, incx, beta, output, incy)
+    .task("postprocess", MyKernels::activate, output)              // JIT-compiled Java kernel
+    .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
+    plan.withCUDAGraph().execute();   // captured once, replayed each iteration
+}
+```
+
+Library bindings are discovered via Java `ServiceLoader` — implement `TornadoLibraryProvider`, add a JNI module, and any native library joins the graph with no core runtime changes. TornadoVM is a member of the **NVIDIA Inception Program** and has presented this work at **NVIDIA GTC**. [Hybrid API guide →](https://tornadovm.readthedocs.io/en/latest/)
+
+
+---
+
+## What people build with it
+
+| Project | What it shows |
+|---|---|
+| 🦙 [**GPULlama3.java**](https://github.com/beehive-lab/GPULlama3.java) | LLM inference (Llama 3, Qwen 3, Mistral, Phi-3, Granite, DeepSeek distills) in pure Java — **117 tok/s on an RTX 5090**, official GPU engine for [LangChain4j](https://docs.langchain4j.dev/integrations/language-models/gpullama3-java) and [Quarkus](https://docs.quarkiverse.io/quarkus-langchain4j/dev/gpullama3-chat-model.html) |
+| 🔆 [**TornadoVM-Ray-Tracer**](https://github.com/Vinhixus/TornadoVM-Ray-Tracer) | Real-time ray tracing in Java, interactive frame rates on consumer GPUs |
+| 📷 [**kfusion-tornadovm**](https://github.com/beehive-lab/kfusion-tornadovm) | KinectFusion 3D reconstruction — a full computer-vision pipeline on integrated and discrete GPUs |
+| 📷 Gaia Mission (ESA) | High-performance algorithms for space exploration at the European Space Agency use TornadoVM |
+
+
+TornadoVM is used to accelerate machine learning and deep learning, computer vision, physics simulations, financial applications, computational photography, and signal processing. Building something with TornadoVM? [Tell us](https://github.com/beehive-lab/TornadoVM/discussions) — we feature community projects.
+
+<!-- TODO: add a "Used in production by" line once 2–3 adopters agree to be named -->
+
+---
+
+## ⚡ Quick start
+
+### Prerequisites
+
+- **JDK 25** (or GraalVM based on JDK 25) — `JAVA_HOME` must point to it
+- GCC/G++ ≥ 13, plus the driver for your target (OpenCL runtime, CUDA Toolkit, Level Zero, or macOS for Metal)
+- For the NVIDIA library tasks (cuBLAS / cuFFT / cuDNN): the **CUDA Toolkit** with the corresponding libraries; on systems with multiple toolkits, `/usr/local/cuda` (or `$CUDA_PATH`) is preferred
+
+### Install via SDKMAN!
+
+```bash
+sdk install tornadovm
+```
+
+Pick a backend-specific build if you prefer a smaller install:
+
+| Backend | SDKMAN! version | Targets |
+|---|---|---|
+| OpenCL *(default)* | `4.0.0-opencl` | NVIDIA / AMD / Intel GPUs, multi-core CPUs, FPGAs |
+| PTX | `4.0.0-ptx` | **NVIDIA GPUs (CUDA) — PTX codegen, Tensor Cores, cuBLAS/cuFFT/cuDNN library tasks** |
+| SPIR-V | `4.0.0-spirv` | Intel GPUs (Level Zero / oneAPI) |
+| Metal 🆕 | `4.0.0-metal` | Apple Silicon GPUs (M1–M4), natively via MSL |
+| All backends | `4.0.0-full` | Everything above |
+
+Binaries are also on the [official website](https://www.tornadovm.org/downloads). For [Docker](https://github.com/beehive-lab/docker-tornado#docker-for-tornadovm) and [AWS (CPUs/GPUs/FPGAs)](https://tornadovm.readthedocs.io/en/latest/cloud.html) see the linked guides.
+
+### Verify your devices
+
 ```bash
 tornado --devices
 ```
-This command lists all supported devices available on your system.
 
-### Optional: Containers and Cloud
-If you are planning to use Docker with TornadoVM on GPUs, you can also
-follow [these](https://github.com/beehive-lab/docker-tornado#docker-for-tornadovm) guidelines.
+### Run your first program
 
-You can also run TornadoVM on Amazon AWS CPUs, GPUs, and FPGAs following the
-instructions [here](https://tornadovm.readthedocs.io/en/latest/cloud.html).
-
-## 2. Usage Instructions
-
-TornadoVM is currently being used to accelerate machine learning and deep learning applications, computer vision,
-physics simulations, financial applications, computational photography, and signal processing.
-
-Featured use-cases:
-
-- [GPULlama3.java](https://github.com/beehive-lab/GPULlama3.java): GPU-accelerated Llama3.java inference in pure Java using TornadoVM.
-- [kfusion-tornadovm](https://github.com/beehive-lab/kfusion-tornadovm): Java application for accelerating a
-  computer-vision application using the Tornado-APIs to run on discrete and integrated GPUs.
-- [Java Ray-Tracer](https://github.com/Vinhixus/TornadoVM-Ray-Tracer): Java application accelerated with TornadoVM for
-  real-time ray-tracing.
-
-### Run your First TornadoVM Program
-You can run a Matrix-Vector example by adapting the classpath to point to your TornadoVM version:
-
-#### Unix (Linux/macOS)
 ```bash
-java @$TORNADOVM_HOME/tornado-argfile -cp $TORNADOVM_HOME/share/java/tornado/tornado-examples-2.2.0.jar uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
+# Unix (Linux/macOS)
+java @$TORNADOVM_HOME/tornado-argfile \
+  -cp $TORNADOVM_HOME/share/java/tornado/tornado-examples-2.2.0.jar \
+  uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
+
+# Windows 10+
+java @%TORNADOVM_HOME%\tornado-argfile ^
+  -cp %TORNADOVM_HOME%\share\java\tornado\tornado-examples-2.2.0.jar ^
+  uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
 ```
 
-#### Windows (10+)
-```bash
-java @%TORNADOVM_HOME%\tornado-argfile -cp %TORNADOVM_HOME%\share\java\tornado\tornado-examples-2.2.0.jar uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
-```
+More examples — NBody, DFT, KMeans, matrix kernels, reductions: [tornado-examples](tornado-examples/src/main/java/uk/ac/manchester/tornado/examples)
 
-We also have a set
-of [examples](https://github.com/beehive-lab/TornadoVM/tree/master/tornado-examples/src/main/java/uk/ac/manchester/tornado/examples)
-that includes NBody, DFT, KMeans computation and matrix computations.
+---
 
-**Additional Information**
-
-- [General Documentation](https://tornadovm.readthedocs.io/en/latest/introduction.html)
-- [Benchmarks](https://tornadovm.readthedocs.io/en/latest/benchmarking.html)
-- [How TornadoVM executes reductions](https://tornadovm.readthedocs.io/en/latest/programming.html#parallel-reductions)
-- [Execution Flags](https://tornadovm.readthedocs.io/en/latest/flags.html)
-- [FPGA execution](https://tornadovm.readthedocs.io/en/latest/fpga-programming.html)
-- [Profiler Usage](https://tornadovm.readthedocs.io/en/latest/profiler.html)
-
-## 3. Use TornadoVM in Your Project (Maven)
+## 📦 Use TornadoVM in your project
 
 ```xml
 <dependencies>
@@ -133,117 +233,91 @@ that includes NBody, DFT, KMeans computation and matrix computations.
 </dependencies>
 ```
 
-## 4. Programming Model
+---
 
-TornadoVM offers two complementary ways to express parallelism:
+## ❓ FAQ
 
-### Loop Parallel API
-Use Java annotations such as `@Parallel` and `@Reduce` to parallelize loops.
+<details>
+<summary><b>How does TornadoVM relate to OpenJDK's Project Babylon / HAT?</b></summary>
 
-### Kernel API
-Use `KernelContext` for explicit GPU-style programming (thread IDs, local memory, barriers), similar to CUDA/OpenCL/SYCL.
+[Project Babylon](https://openjdk.org/projects/babylon/) is OpenJDK's exploratory work on code reflection, with HAT (Heterogeneous Accelerator Toolkit) as a research vehicle for GPU programming. We think it validates the direction TornadoVM has pursued since 2018 — and the projects are complementary rather than competing. The practical difference today: **TornadoVM is usable now**, with four production backends (OpenCL, PTX, SPIR-V, Metal), FPGA support, a profiler, dynamic reconfiguration, Maven Central artifacts, and years of hardening across vendor hardware — and it runs on standard JDK 21/25 releases. We follow Babylon closely and expect the ecosystems to converge over time.
+</details>
 
-Both models can be combined inside a `TaskGraph`.
+<details>
+<summary><b>What can TornadoVM do on NVIDIA GPUs specifically?</b></summary>
 
-Read more in our [documentation](https://tornadovm.readthedocs.io/en/latest/programming.html).
+On NVIDIA hardware TornadoVM JIT-compiles your Java kernels to **CUDA PTX** and compiles them through NVRTC to native cubins. On top of that, it integrates the NVIDIA software ecosystem directly into the `TaskGraph`: **cuBLAS / cuBLASLt** (including TF32 and FP16 GemmEx on Tensor Cores and fused epilogues), **cuFFT**, and **cuDNN** (including fused flash attention) are available as *library tasks* that share device buffers and a CUDA stream with your generated kernels. You can also target **Tensor Cores** directly from Java via `mma.sync` intrinsics (FP16 and INT8), and capture the whole pipeline into a **CUDA Graph** for single-launch replay. See [The NVIDIA ecosystem, native to Java](#-the-nvidia-ecosystem-native-to-java).
+</details>
 
-## 5. Contributing to TornadoVM
+<details>
+<summary><b>What's the licensing situation for commercial use?</b></summary>
 
-We welcome contributions from the community — bug reports, documentation improvements, new features, and backends.
+The parts your application links against — **Tornado-API** and all the modules you code with — are **Apache 2.0**. The runtime and drivers are **GPLv2 with Classpath Exception**, the same license as OpenJDK itself: it does not impose copyleft obligations on your application, exactly as running on OpenJDK doesn't. Full per-module breakdown [below](#licenses-per-module).
+</details>
 
-### Building From Source
-For contributors and developers, full build instructions are in:
+<details>
+<summary><b>Does it replace my JVM?</b></summary>
 
-👉 [INSTALL_FROM_SOURCE.md](INSTALL_FROM_SOURCE.md)
+No. TornadoVM is a plug-in to your existing OpenJDK or GraalVM installation. It complements the JVM with the ability to offload selected tasks to accelerators, handling device memory management and kernel orchestration. Everything else in your application runs on the JVM as normal.
+</details>
 
-### How to Contribute
-- Read the [CONTRIBUTING](CONTRIBUTING.md) page.
-- Write your questions in [GitHub discussions](https://github.com/beehive-lab/TornadoVM/discussions) or in the TornadoVM [Slack community](https://join.slack.com/t/tornadovmcommunity/shared_invite/zt-3ai2wyqva-bKz~cQRFlaJ~ZnPrbkwIEw).
-- Share your proposals with us in [GitHub discussions](https://github.com/beehive-lab/TornadoVM/discussions) or as a Google document.
-- Submit pull requests — all contributions are welcome.
+<details>
+<summary><b>Which hardware is supported?</b></summary>
 
-### Collaborations:
+Multi-core CPUs; dedicated GPUs from NVIDIA, AMD, and Intel; integrated GPUs (Apple Silicon M1–M4, Intel HD Graphics, ARM Mali); and FPGAs from Intel and Xilinx. Backends can be installed individually or together, and tasks can migrate between devices at runtime. NVIDIA GPUs can be driven either through the **PTX/CUDA** backend (with the library and Tensor Core features above) or through the OpenCL backend.
+</details>
 
-For Academic & Industrial collaborations, please contact [here](https://www.tornadovm.org/contact-us).
+<details>
+<summary><b>How fast is it?</b></summary>
 
-## 6. Additional Resources
+It depends on the workload — data-parallel kernels with enough arithmetic intensity see order-of-magnitude speedups over sequential Java; see the [benchmarking guide](https://tornadovm.readthedocs.io/en/latest/benchmarking.html) and the [GPULlama3.java performance tables](https://github.com/beehive-lab/GPULlama3.java#-performance) for end-to-end numbers on real applications (e.g. **117 tok/s for Llama-3 inference on an RTX 5090**). For compute-bound linear algebra, the cuBLAS library tasks reach the tuned vendor throughput — including full FP16 Tensor Core rates — from Java.
+</details>
 
-[Here](https://tornadovm.readthedocs.io/en/latest/resources.html) you can find videos, presentations, tech-articles and
-artefacts describing TornadoVM, and how to use it.
+---
 
-## 7. Academic Publications
+## 🤝 Contributing & community
 
-If you are using **TornadoVM >= 0.2** (which includes the Dynamic Reconfiguration, the initial FPGA support and CPU/GPU
-reductions), please use the following citation:
+- 💬 Questions and ideas: [GitHub Discussions](https://github.com/beehive-lab/TornadoVM/discussions) or the [TornadoVM Slack](https://join.slack.com/t/tornadovmcommunity/shared_invite/zt-3ai2wyqva-bKz~cQRFlaJ~ZnPrbkwIEw)
+- 🛠️ Building from source: [INSTALL_FROM_SOURCE.md](INSTALL_FROM_SOURCE.md)
+- 📋 How to contribute: [CONTRIBUTING.md](CONTRIBUTING.md) · [`good first issue`](https://github.com/beehive-lab/TornadoVM/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+- 🤖 Working with an AI coding agent? The repo ships a [TornadoVM developer skill](tornadovm-skill.skill) (build, test, debug workflows) for Claude.
+- 🏛️ Academic & industrial collaborations: [contact us](https://www.tornadovm.org/contact-us)
+
+---
+
+## 📚 Resources & publications
+
+Videos, presentations, and articles: [resources](https://tornadovm.readthedocs.io/en/latest/resources.html). Selected academic publications: [publications](https://tornadovm.readthedocs.io/en/latest/publications.html).
+
+If you use **TornadoVM ≥ 0.2** in research, please cite:
 
 ```bibtex
 @inproceedings{Fumero:DARHH:VEE:2019,
- author = {Fumero, Juan and Papadimitriou, Michail and Zakkak, Foivos S. and Xekalaki, Maria and Clarkson, James and Kotselidis, Christos},
- title = {{Dynamic Application Reconfiguration on Heterogeneous Hardware.}},
- booktitle = {Proceedings of the 15th ACM SIGPLAN/SIGOPS International Conference on Virtual Execution Environments},
- series = {VEE '19},
- year = {2019},
- doi = {10.1145/3313808.3313819},
+ author    = {Fumero, Juan and Papadimitriou, Michail and Zakkak, Foivos S. and
+              Xekalaki, Maria and Clarkson, James and Kotselidis, Christos},
+ title     = {{Dynamic Application Reconfiguration on Heterogeneous Hardware}},
+ booktitle = {Proceedings of the 15th ACM SIGPLAN/SIGOPS International
+              Conference on Virtual Execution Environments},
+ series    = {VEE '19},
+ year      = {2019},
+ doi       = {10.1145/3313808.3313819},
  publisher = {Association for Computing Machinery}
 }
 ```
 
-If you are using **Tornado 0.1** (Initial release), please use the following citation in your work.
+For **Tornado 0.1** (initial release), cite [Clarkson et al., ManLang '18](https://doi.org/10.1145/3237009.3237016).
 
-```bibtex
-@inproceedings{Clarkson:2018:EHH:3237009.3237016,
- author = {Clarkson, James and Fumero, Juan and Papadimitriou, Michail and Zakkak, Foivos S. and Xekalaki, Maria and Kotselidis, Christos and Luj\'{a}n, Mikel},
- title = {{Exploiting High-performance Heterogeneous Hardware for Java Programs Using Graal}},
- booktitle = {Proceedings of the 15th International Conference on Managed Languages \& Runtimes},
- series = {ManLang '18},
- year = {2018},
- isbn = {978-1-4503-6424-9},
- location = {Linz, Austria},
- pages = {4:1--4:13},
- articleno = {4},
- numpages = {13},
- url = {http://doi.acm.org/10.1145/3237009.3237016},
- doi = {10.1145/3237009.3237016},
- acmid = {3237016},
- publisher = {ACM},
- address = {New York, NY, USA},
- keywords = {Java, graal, heterogeneous hardware, openCL, virtual machine},
-}
-```
+## Licenses per module
 
-Selected publications can be found [here](https://tornadovm.readthedocs.io/en/latest/publications.html).
+Link the **Tornado-API** (Apache 2.0) into your application.
 
-## 8. Acknowledgments
+| Modules | License |
+|---|---|
+| Tornado-API, Tornado-Assembly, Tornado-scripts, Tornado-Annotation, Tornado-Unittests, Tornado-Benchmarks, Tornado-Examples, Tornado-Matrices, Tornado-Drivers-OpenCL-Headers | [Apache 2.0](LICENSE_APACHE2) |
+| Tornado-Runtime, Tornado-Drivers | [GPLv2 with Classpath Exception](LICENSE_GPLv2CE) |
 
-This work is partially funded by [Intel corporation](https://www.intel.com/content/www/us/en/homepage.html).
-In addition, it has been supported by the following EU & UKRI grants (most recent first):
+## Acknowledgments
 
-- EU Horizon Europe & UKRI [AERO 101092850](https://aero-project.eu/).
-- EU Horizon Europe & UKRI [P2CODE 101093069](https://p2code-project.eu/).
-- EU Horizon Europe & UKRI [ENCRYPT 101070670](https://encrypt-project.eu).
-- EU Horizon Europe & UKRI [TANGO 101070052](https://tango-project.eu).
-- EU Horizon 2020 [ELEGANT 957286](https://www.elegant-h2020.eu/).
-- EU Horizon 2020 [E2Data 780245](https://e2data.eu).
-- EU Horizon 2020 [ACTiCLOUD 732366](https://acticloud.eu).
+Partially funded by [Intel Corporation](https://www.intel.com/) and by EU & UKRI grants (most recent first): [AERO](https://aero-project.eu/) (101092850), [P2CODE](https://p2code-project.eu/) (101093069), [ENCRYPT](https://encrypt-project.eu) (101070670), [TANGO](https://tango-project.eu) (101070052), [ELEGANT](https://www.elegant-h2020.eu/) (957286), [E2Data](https://e2data.eu) (780245), [ACTiCLOUD](https://acticloud.eu) (732366); and EPSRC grants [PAMELA](http://apt.cs.manchester.ac.uk/projects/PAMELA/) (EP/K008730/1) and [AnyScale Apps](https://gow.epsrc.ukri.org/NGBOViewGrant.aspx?GrantRef=EP/L000725/1) (EP/L000725/1).
 
-Furthermore, TornadoVM has been supported by the following [EPSRC](https://www.ukri.org/councils/epsrc/) grants:
-
-- [PAMELA EP/K008730/1](http://apt.cs.manchester.ac.uk/projects/PAMELA/).
-- [AnyScale Apps EP/L000725/1](https://gow.epsrc.ukri.org/NGBOViewGrant.aspx?GrantRef=EP/L000725/1).
-
-## 9. TornadoVM Team
-
-Visit our [website](https://tornadovm.org) to meet the [team](https://www.tornadovm.org/about-us).
-
-## 10. Licenses Per Module
-
-To use TornadoVM, you can link the TornadoVM API to your application which is under [Apache 2](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2).
-
-Each Java TornadoVM module is licensed as follows:
-
-
-| Modules                                                                                                                                                                       | License                                                                                                                                                         |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Tornado-API, Tornado-Assembly, Tornado-scripts, <br/>Tornado-Annotation, Tornado-Unittests, Tornado-Benchmarks, <br/>Tornado-Examples, Tornado-Matrices, Tornado-Drivers-OpenCL-Headers | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)         |
-| Tornado-Runtime, Tornado-Drivers                                                                                                                                              | [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2%20Classpath%20Exception-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) |
-
+Meet the [team](https://www.tornadovm.org/about-us).

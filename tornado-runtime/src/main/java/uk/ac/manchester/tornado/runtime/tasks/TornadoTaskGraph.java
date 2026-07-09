@@ -34,6 +34,7 @@ import uk.ac.manchester.tornado.api.TornadoRuntime;
 import uk.ac.manchester.tornado.api.TornadoTaskGraphInterface;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
+import uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor;
 import uk.ac.manchester.tornado.api.common.PrebuiltTaskPackage;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
@@ -64,8 +65,10 @@ import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
@@ -75,6 +78,7 @@ import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.TaskUtils;
 import uk.ac.manchester.tornado.runtime.common.BatchConfiguration;
+import uk.ac.manchester.tornado.runtime.library.LibraryRegistry;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -700,8 +704,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             this.compilationGraph = lookup.getGraph();
             this.accesses = lookup.getArgumentsAccess();
         } else {
-            PrebuiltTask prebuiltTask = (PrebuiltTask) task;
-            this.accesses = prebuiltTask.getArgumentsAccess();
+            // Pre-built and library tasks carry explicit accesses (no sketch)
+            this.accesses = task.getArgumentsAccess();
         }
 
         // Prepare Initial Graph before the TornadoVM bytecode generation
@@ -733,9 +737,14 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private void logTaskMethodHandle(SchedulableTask task) {
         if ((task.getTaskName() != null) && (task.getId() != null)) {
-            String methodName = (task instanceof PrebuiltTask prebuiltTask)
-                    ? prebuiltTask.getFilename()
-                    : ((CompilableTask) task).getMethod().getDeclaringClass().getSimpleName() + "." + task.getTaskName();
+            String methodName;
+            if (task instanceof PrebuiltTask prebuiltTask) {
+                methodName = prebuiltTask.getFilename();
+            } else if (task instanceof LibraryTask libraryTask) {
+                methodName = libraryTask.getDescriptor().getFunctionName();
+            } else {
+                methodName = ((CompilableTask) task).getMethod().getDeclaringClass().getSimpleName() + "." + task.getTaskName();
+            }
             timeProfiler.registerMethodHandle(ProfilerType.METHOD, task.getId(), methodName);
         }
 
@@ -1250,6 +1259,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
 
         vm.destroyExecutionGraphs();
+        LibraryRegistry.destroyContexts(executionPlanId);
         freeIOObjects();
         meta().getXPUDevice().getDeviceContext().reset(executionPlanId);
     }
@@ -1492,10 +1502,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     private boolean isArgumentIgnorable(Object parameter) {
-        return parameter instanceof Number || parameter instanceof KernelContext || //
+        return parameter instanceof Number || parameter instanceof Boolean || parameter instanceof KernelContext || //
                 parameter instanceof IntArray || parameter instanceof FloatArray || //
                 parameter instanceof DoubleArray || parameter instanceof LongArray || //
-                parameter instanceof ShortArray;
+                parameter instanceof ShortArray || parameter instanceof HalfFloatArray || //
+                parameter instanceof ByteArray;
     }
 
     private void checkAllArgumentsPerTask() {
@@ -1801,6 +1812,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         taskPackages.add(taskPackage);
         PrebuiltTaskPackage prebuiltTaskPackage = (PrebuiltTaskPackage) taskPackage;
         addInner(TaskUtils.createTask(meta(), prebuiltTaskPackage));
+    }
+
+    @Override
+    public void addLibraryTask(String id, LibraryTaskDescriptor libraryTaskDescriptor) {
+        addInner(new LibraryTask(meta(), id, libraryTaskDescriptor));
     }
 
     @Override

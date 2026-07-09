@@ -91,6 +91,7 @@ import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAShortArrayWrapper;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAVectorWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
+import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
@@ -104,7 +105,7 @@ import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
-public class CUDATornadoDevice implements TornadoXPUDevice {
+public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamSupport {
 
     private static CUDABackendImpl driver = null;
     private static final Pattern NAME_PATTERN = Pattern.compile("^CUDADriver (\\d)\\.(\\d).*");
@@ -594,8 +595,13 @@ public class CUDATornadoDevice implements TornadoXPUDevice {
             if (!reuseBatchBuffer(batchSize, accesses[i], bufferProvider, distinctAccesses, states[i])) {
                 logger.debug("Allocate object %s with access: %s", objects[i], accesses[i]);
                 allocatedSpace += allocate(objects[i], batchSize, states[i], accesses[i]);
+            } else if (batchSize != 0 && states[i].hasObjectBuffer()) {
+                // Reusing the object's existing buffer skips allocate(), which is what normally
+                // refreshes the sub-region size. Without this the buffer keeps the sub-region of the
+                // LAST chunk it held (e.g. a smaller remainder chunk from a previous execution), and
+                // subsequent transfers silently copy too few bytes.
+                states[i].getXPUBuffer().setSizeSubRegion(batchSize);
             }
-
         }
         return allocatedSpace;
     }
@@ -795,6 +801,16 @@ public class CUDATornadoDevice implements TornadoXPUDevice {
     @Override
     public void destroyExecutionGraph(long executionGraphHandle) {
         getDeviceContext().destroyExecutionGraph(executionGraphHandle);
+    }
+
+    @Override
+    public long getNativeStream(long executionPlanId) {
+        return getDeviceContext().getNativeStream(executionPlanId);
+    }
+
+    @Override
+    public long getNativeContext(long executionPlanId) {
+        return getDeviceContext().getNativeContext(executionPlanId);
     }
 
     @Override
