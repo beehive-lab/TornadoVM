@@ -60,6 +60,7 @@ import tornado.graal.compiler.nodes.BreakpointNode;
 import tornado.graal.compiler.nodes.DirectCallTargetNode;
 import tornado.graal.compiler.nodes.EndNode;
 import tornado.graal.compiler.nodes.FixedNode;
+import tornado.graal.compiler.nodes.FrameState;
 import tornado.graal.compiler.nodes.IfNode;
 import tornado.graal.compiler.nodes.IndirectCallTargetNode;
 import tornado.graal.compiler.nodes.Invoke;
@@ -108,6 +109,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler.CUDABinaryI
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler.CUDABinaryOp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler.CUDANullaryOp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler.CUDAUnaryOp;
+import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDABinary;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAControlFlow;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDADirectCall;
@@ -672,6 +674,21 @@ public class CUDANodeLIRBuilder extends NodeLIRBuilder {
         final Local[] locals = graph.method().getLocalVariableTable().getLocalsAt(0);
         if (isKernel) {
             for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
+                // Skip the KernelContext / AtomicInteger special parameter when it has no real data uses.
+                // CUDABackend.emitMethodParameters never declares it in the kernel signature, so emitting a
+                // buffer load references an undeclared 'argN'. hasNoUsages() is too strict on the reflection
+                // path: FrameState nodes (deopt metadata, never lowered on the GPU) reference the parameter,
+                // so we skip when the only remaining usages are FrameStates.
+                if (isSpecialKernelParameter(locals[param.index()]) && !hasNonFrameStateUsage(param)) {
+                    // For a KernelContext parameter, bind it to the declared _kernel_context slot (already in
+                    // the signature, never emitted as a buffer arg) so any remaining FrameState resolves
+                    // without an undeclared 'argN'. The value is inert - the GPU never deoptimizes.
+                    if (isKernelContextParameter(locals[param.index()])) {
+                        LIRKind lirKind = getGen().getLIRKind(param.stamp(NodeView.DEFAULT));
+                        setResult(param, new CUDANullary.Parameter(CUDAAssemblerConstants.KERNEL_CONTEXT, lirKind));
+                    }
+                    continue;
+                }
                 setResult(param, getGen().getCUDAGenTool().emitParameterLoad(locals[param.index()], param));
             }
         } else {
@@ -685,6 +702,24 @@ public class CUDANodeLIRBuilder extends NodeLIRBuilder {
                 setResult(param, new CUDANullary.Parameter(paramName, lirKind));
             }
         }
+    }
+
+    private static boolean isSpecialKernelParameter(Local local) {
+        String typeName = local.getType().toJavaName();
+        return typeName.equals("uk.ac.manchester.tornado.api.KernelContext") || typeName.equals("java.util.concurrent.atomic.AtomicInteger");
+    }
+
+    private static boolean isKernelContextParameter(Local local) {
+        return local.getType().toJavaName().equals("uk.ac.manchester.tornado.api.KernelContext");
+    }
+
+    private static boolean hasNonFrameStateUsage(ParameterNode param) {
+        for (Node usage : param.usages()) {
+            if (!(usage instanceof FrameState)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void emitCUDAFPGAPragmas(HIRBlock block) {

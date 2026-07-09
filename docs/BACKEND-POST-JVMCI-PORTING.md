@@ -81,6 +81,29 @@ must be lowered by a dedicated high-tier phase.
 - OpenCL: `OCLAssembler.formatConstant` escapes a `TornadoObjectConstant` wrapping a `String` as a C
   string literal (a `HotSpotObjectConstant` no longer appears on the reflection path).
 
+### B10. Native-array accessor intrinsics (HIGH IMPACT — the biggest single fix)
+On JDK 22+ the terminal Panama accessor `MemorySegment.getAtIndex` is abstract (bodiless). On the
+reflection path the `getIntAtIndex`/`getFloatAtIndex`/... intrinsics only apply at real compile, so the
+sketcher descends into the bodiless method and fails with `"this.code is null"` — breaking almost every
+kernel that reads/writes a native array (IntArray/FloatArray/...). Intrinsify `get`/`set` at the array
+accessor call site.
+- OpenCL: `OCLGraphBuilderPlugins.registerNativeArrayAccessPlugins` → `registerNativeArrayGetSet(Int/Float/
+  Double/Long/Short/Byte/Int8/Char)` + `registerHalfFloatArrayGetSet` + the arch-neutral `arrayElementAddress`
+  helper (`&segment[(baseIndex+index)*elementBytes]`). Called from `registerInvocationPlugins`.
+- Port: copy verbatim into `XGraphBuilderPlugins` and call it — the helper uses only generic Graal nodes
+  (`OffsetAddressNode`, `JavaReadNode`/`JavaWriteNode`, `LoadFieldNode`, `SignExtendNode`, `AddNode`,
+  `MulNode`), plus the backend's `ReadHalfFloatNode`/`WriteHalfFloatNode`.
+
+### B11. Remove HotSpot casts / instanceof guards in codegen
+The reflection path yields `ReflectionResolvedJavaType`/`Field`, not the `HotSpot*` impls, so any
+`(HotSpotResolvedJavaField) f` cast throws `ClassCastException` and any `if (type instanceof
+HotSpotResolvedJavaType)` guard silently returns nothing (plugin never fires).
+- `XLoweringProvider.fieldOffset`/`staticFieldBase`: call the `ResolvedJavaField` interface methods
+  (`f.getOffset()`, `f.getDeclaringClass()`) directly — no cast (see `OCLLoweringProvider`).
+- `XVectorNodePlugin`/`XAtomicIntegerPlugin` `resolveKind`: drop the `instanceof HotSpotResolvedJavaType`
+  guard and call `XKind.fromResolvedJavaType(type)` (returns `ILLEGAL` when unmappable).
+- `XFieldBuffer`: retype `HotSpotResolvedJavaField/Type` fields to the `jdk.vm.ci.meta` interfaces.
+
 ### B9. @Reduce host reduction (if the backend supports @Reduce)
 - Shared: `ReduceTaskGraph.runHostTailReduction` runs the reduction method reflectively (no JVMCI
   compile+install). Started only after `setNeutralElement()` (avoids the neutral-refill race).

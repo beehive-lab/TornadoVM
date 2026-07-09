@@ -40,7 +40,6 @@ import tornado.graal.compiler.lir.Variable;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.TargetDescription;
-import jdk.vm.ci.hotspot.HotSpotObjectConstant;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
@@ -51,6 +50,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIROp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDANullary;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAReturnSlot;
+import uk.ac.manchester.tornado.runtime.jvmci.TornadoObjectConstant;
 
 public final class CUDAAssembler extends Assembler {
 
@@ -366,7 +366,7 @@ public final class CUDAAssembler extends Assembler {
         JavaConstant javaConstant = cv.getJavaConstant();
         Constant constant = cv.getConstant();
         CUDAKind oclKind = (CUDAKind) cv.getPlatformKind();
-        if (oclKind == CUDAKind.HALF && !(constant instanceof HotSpotObjectConstant)) {
+        if (oclKind == CUDAKind.HALF && !(constant instanceof TornadoObjectConstant)) {
             // A __half (cuda_fp16.h) constant cannot be written as a bare numeric
             // literal: such a literal is a float/double and would either make the
             // overloaded __half operators ambiguous or silently pick the wrong type.
@@ -380,12 +380,10 @@ public final class CUDAAssembler extends Assembler {
             if (oclKind.isVector()) {
                 result = String.format("(%s)(%s)", oclKind.name(), result);
             }
-        } else if (constant instanceof HotSpotObjectConstant) {
-            HotSpotObjectConstant objConst = (HotSpotObjectConstant) constant;
-            // TODO should this be replaced with isInternedString()?
-            if (objConst.getJavaKind().isObject() && objConst.getType().getName().compareToIgnoreCase("Ljava/lang/String;") == 0) {
-                result = encodeString(objConst.toValueString());
-            }
+        } else if (constant instanceof TornadoObjectConstant tornadoObjConst && tornadoObjConst.getObject() instanceof String stringLiteral) {
+            // A String constant (e.g. a printf format) is a TornadoObjectConstant; escape it as a C
+            // string literal instead of falling through to toValueString()+addLiteralSuffix.
+            result = encodeString(stringLiteral);
         } else {
             result = constant.toValueString();
             result = addLiteralSuffix(oclKind, result);

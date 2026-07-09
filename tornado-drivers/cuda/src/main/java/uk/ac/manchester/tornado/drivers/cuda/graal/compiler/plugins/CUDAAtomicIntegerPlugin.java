@@ -24,7 +24,6 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.compiler.plugins;
 import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import tornado.graal.compiler.nodes.graphbuilderconf.NodePlugin;
 
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
@@ -53,9 +52,8 @@ public class CUDAAtomicIntegerPlugin implements NodePlugin {
     }
 
     private CUDAKind resolveCUDAKind(ResolvedJavaType type) {
-        if (type instanceof HotSpotResolvedJavaType) {
-            return CUDAKind.fromResolvedJavaType(type);
-        }
-        return CUDAKind.ILLEGAL;
+        // JDK-neutral: fromResolvedJavaType returns ILLEGAL for any type it cannot map, so no
+        // HotSpot-specific instanceof guard is needed (the reflection path uses ReflectionResolvedJavaType).
+        return CUDAKind.fromResolvedJavaType(type);
     }
 }

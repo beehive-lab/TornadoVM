@@ -47,6 +47,7 @@ import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAArchitecture;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDALoweringProvider;
+import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GlobalThreadSizeNode;
@@ -133,8 +134,70 @@ public class TornadoCUDAIntrinsicsReplacements extends BasePhase<TornadoHighTier
                     CUDAPrintf printfNode = graph.addOrUnique(new CUDAPrintf("\"\""));
                     graph.replaceFixed(invoke, printfNode);
                     break;
+                // KernelContext.allocate*LocalArray: normally intrinsified by an invocation plugin, but on the
+                // JVMCI-absent (reflection) path Graal's InvocationPlugins.lookupInvocation misses these
+                // array-returning methods, so the invoke survives and its result reaches address lowering as an
+                // InvokeNode. Rewrite it here to a LocalArrayNode, exactly as the plugin would have.
+                case "Direct#KernelContext.allocateIntLocalArray":
+                    lowerLocalArrayAllocation(graph, invoke, JavaKind.Int);
+                    break;
+                case "Direct#KernelContext.allocateLongLocalArray":
+                    lowerLocalArrayAllocation(graph, invoke, JavaKind.Long);
+                    break;
+                case "Direct#KernelContext.allocateFloatLocalArray":
+                    lowerLocalArrayAllocation(graph, invoke, JavaKind.Float);
+                    break;
+                case "Direct#KernelContext.allocateDoubleLocalArray":
+                    lowerLocalArrayAllocation(graph, invoke, JavaKind.Double);
+                    break;
+                case "Direct#KernelContext.allocateByteLocalArray":
+                    lowerLocalArrayAllocation(graph, invoke, JavaKind.Byte);
+                    break;
+                case "Direct#KernelContext.allocateHalfFloatLocalArray":
+                    lowerHalfFloatLocalArrayAllocation(graph, invoke);
+                    break;
+                // Same reflection-path plugin-lookup miss: KernelContext.local/globalBarrier survives as a
+                // device-function call passing the KernelContext object. Intrinsify to the CUDA barrier so the
+                // context receiver is dropped.
+                case "Direct#KernelContext.localBarrier": {
+                    CUDABarrierNode kcLocalBarrier = graph.addOrUnique(new CUDABarrierNode(CUDABarrierNode.CUDAMemFenceFlags.LOCAL));
+                    graph.replaceFixed(invoke, kcLocalBarrier);
+                    break;
+                }
+                case "Direct#KernelContext.globalBarrier": {
+                    CUDABarrierNode kcGlobalBarrier = graph.addOrUnique(new CUDABarrierNode(CUDABarrierNode.CUDAMemFenceFlags.GLOBAL));
+                    graph.replaceFixed(invoke, kcGlobalBarrier);
+                    break;
+                }
             }
         }
+    }
+
+    /**
+     * Rewrite a surviving {@code KernelContext.allocate*LocalArray(size)} invoke into a {@link LocalArrayNode}
+     * (CUDA {@code __shared__} memory), matching what the invocation plugin emits. Argument 0 is the
+     * {@code KernelContext} receiver; argument 1 is the size.
+     */
+    private void lowerLocalArrayAllocation(StructuredGraph graph, InvokeNode invoke, JavaKind elementKind) {
+        ValueNode size = invoke.callTarget().arguments().get(1);
+        LocalArrayNode localArrayNode = graph.addWithoutUnique(new LocalArrayNode(CUDAArchitecture.localSpace, elementKind, size));
+        invoke.replaceAtUsages(localArrayNode);
+        invoke.clearInputs();
+        GraphUtil.unlinkFixedNode(invoke);
+    }
+
+    /**
+     * Half-float variant of {@link #lowerLocalArrayAllocation}: {@code KernelContext.allocateHalfFloatLocalArray}
+     * returns {@code HalfFloat[]}, so the {@link LocalArrayNode} is built with a {@code short} element type tagged
+     * {@link CUDAKind#HALF}.
+     */
+    private void lowerHalfFloatLocalArrayAllocation(StructuredGraph graph, InvokeNode invoke) {
+        ValueNode size = invoke.callTarget().arguments().get(1);
+        ResolvedJavaType elementType = metaAccess.lookupJavaType(short.class);
+        LocalArrayNode localArrayNode = graph.addWithoutUnique(new LocalArrayNode(CUDAArchitecture.localSpace, elementType, size, CUDAKind.HALF));
+        invoke.replaceAtUsages(localArrayNode);
+        invoke.clearInputs();
+        GraphUtil.unlinkFixedNode(invoke);
     }
 
     private void lowerLocalInvokeNodeNewArray(StructuredGraph graph, int length, JavaKind elementKind, InvokeNode newArray) {
