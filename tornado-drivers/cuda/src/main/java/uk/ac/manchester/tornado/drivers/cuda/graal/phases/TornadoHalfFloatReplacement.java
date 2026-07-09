@@ -30,6 +30,7 @@ import tornado.graal.compiler.nodes.ConstantNode;
 import tornado.graal.compiler.nodes.FixedGuardNode;
 import tornado.graal.compiler.nodes.FixedNode;
 import tornado.graal.compiler.nodes.GraphState;
+import tornado.graal.compiler.nodes.InvokeNode;
 import tornado.graal.compiler.nodes.PiNode;
 import tornado.graal.compiler.nodes.StructuredGraph;
 import tornado.graal.compiler.nodes.ValueNode;
@@ -367,6 +368,20 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
     }
 
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
+
+        // Reflection-path recovery: HalfFloat.getHalfFloatValue()'s InvocationPlugin misses when JVMCI is absent, so
+        // the call survives as a device-function invoke whose generated body dereferences the receiver as an object
+        // pointer (this + 8, the halfFloatValue field offset) instead of returning the half bits - for a small half
+        // value that reads ~address 0x8, faulting with an out-of-bounds global read (seen in the tensor-core kernels
+        // that bit-pack a.get(i).getHalfFloatValue() into shared tiles). Rewrite it to the HalfFloatPlaceholder the
+        // plugin would have produced; the placeholder handler at the end of this phase lowers it to the half bits.
+        for (InvokeNode invoke : graph.getNodes().filter(InvokeNode.class).snapshot()) {
+            if (invoke.callTarget() != null && invoke.callTarget().targetName() != null && invoke.callTarget().targetName().contains("getHalfFloatValue")) {
+                HalfFloatPlaceholder placeholder = graph.addWithoutUnique(new HalfFloatPlaceholder(invoke.callTarget().arguments().get(0)));
+                invoke.replaceAtUsages(placeholder);
+                deleteFixed(invoke);
+            }
+        }
 
         for (ValueAnchorNode valueAnchorNode : graph.getNodes().filter(ValueAnchorNode.class)) {
             ArrayList<PiNode> deletePi = new ArrayList<PiNode>();
