@@ -285,6 +285,91 @@ def check_pyinstaller():
     info("pyinstaller: found")
 
 
+def patch_worktree_fix_pyinstaller(worktree_path):
+    """
+    Patch runPyInstaller() in the worktree's config_utils.py so PyInstaller is
+    invoked without chdir'ing into <tornado_home>/bin first.
+
+    The tagged config_utils.py does:
+        path = os.path.join(tornadoSDKPath, "bin")
+        os.chdir(path)
+        ...
+        os.system("pyinstaller " + s + " --onefile")
+        ...
+        os.chdir(currentDirectory)
+
+    Since our release SDK build output paths contain a 'dist' segment
+    (dist/tornadovm-X.Y.Z-<backend>-windows-amd64/tornadovm-X.Y.Z-<backend>/bin),
+    PyInstaller's own safety check detects what looks like one of its previous
+    output trees and refuses to run:
+
+        ERROR: Do not run pyinstaller from <path>\\dist\\...\\bin.
+
+    This patch replaces the function body so PyInstaller runs from the
+    original working directory, with explicit --distpath/--workpath/--specpath
+    arguments, avoiding the chdir entirely.
+
+    The worktree is a throw-away detached checkout of a release tag, so
+    editing its config_utils.py here does not touch the repository or the
+    published tag itself.
+    """
+    config_utils_path = os.path.join(worktree_path, "bin", "config_utils.py")
+    if not os.path.isfile(config_utils_path):
+        warn("config_utils.py not found in worktree — cannot patch runPyInstaller.")
+        return
+
+    with open(config_utils_path, "r", encoding="utf-8") as f:
+        src = f.read()
+    original = src
+
+    old_func_pattern = re.compile(
+        r"def runPyInstaller\(currentDirectory, tornadoSDKPath\):.*?"
+        r"os\.chdir\(currentDirectory\)\n",
+        re.DOTALL,
+    )
+
+    new_func = '''def runPyInstaller(currentDirectory, tornadoSDKPath):
+    import subprocess, tempfile
+
+    bin_dir = os.path.join(tornadoSDKPath, "bin")
+    work_dir = tempfile.mkdtemp(prefix="pyinstaller-build-")
+    repo_root = os.environ.get("TORNADO_BUILD_REPO_ROOT", currentDirectory)
+
+    scripts = ["tornado.py", "tornado-test", "tornado-benchmarks.py"]
+    failed = []
+    for s in scripts:
+        print("creating " + s + " binary ....  "),
+        script_path = os.path.join(bin_dir, s)
+        result = subprocess.run(
+            ["pyinstaller", script_path, "--onefile",
+             "--distpath", bin_dir, "--workpath", work_dir, "--specpath", work_dir],
+            cwd=repo_root,
+        )
+        if result.returncode != 0:
+            print(f"[ERROR] PyInstaller failed for {s} (exit code {result.returncode})")
+            failed.append(s)
+        else:
+            print("ok ")
+
+    shutil.rmtree(work_dir, ignore_errors=True)
+    if failed:
+        raise RuntimeError(f"PyInstaller failed for: {\', \'.join(failed)}")
+'''
+
+    src, n = old_func_pattern.subn(new_func, src)
+
+    if n == 0:
+        warn(
+            "config_utils.py in the worktree did not match the expected "
+            "runPyInstaller pattern — the tag layout may have changed; "
+            "nothing was patched."
+        )
+        return
+
+    with open(config_utils_path, "w", encoding="utf-8") as f:
+        f.write(src)
+    ok("Patched worktree config_utils.py to fix PyInstaller dist-path check.")
+
 def patch_worktree_skip_executables(worktree_path):
     """
     Neutralise the places where the tagged bin/compile launches native
@@ -370,7 +455,7 @@ def clean_graal_jars(worktree_path):
         info(f"Removed {removed} stale file(s) from graalJars/")
 
 
-def build_sdk(worktree_path, jdk_home, jdk_arg, backends, label):
+def build_sdk(worktree_path, jdk_home, jdk_arg, backends, label, repo_root):
     """
     Build a single SDK variant inside *worktree_path*.
 
@@ -386,6 +471,7 @@ def build_sdk(worktree_path, jdk_home, jdk_arg, backends, label):
 
     env = os.environ.copy()
     env["JAVA_HOME"] = jdk_home
+    env["TORNADO_BUILD_REPO_ROOT"] = repo_root
     # Prepend the build JDK's bin/ to PATH so that any script that runs `java`
     # (e.g. gen-tornado-argfile-template.py's is_graalvm() check) sees the
     # correct JDK rather than whatever is current in the shell.
@@ -712,6 +798,9 @@ def main():
         try:
             add_worktree(tag, worktree_path)
 
+            if current_platform == "windows" and not skip_win_exe:
+                patch_worktree_fix_pyinstaller(worktree_path)
+
             if skip_win_exe:
                 patch_worktree_skip_executables(worktree_path)
 
@@ -722,7 +811,7 @@ def main():
                 else:
                     backend_label = backends
                 label = f"{tag}-{backend_label}"
-                success = build_sdk(worktree_path, jdk_home, jdk_arg, backends, label)
+                success = build_sdk(worktree_path, jdk_home, jdk_arg, backends, label, repo_root)
                 results.append((label, success))
 
                 if success:

@@ -152,7 +152,7 @@ jobs:
       VERSION: ${{ needs.preflight.outputs.version }}
       VERSION_TAG: ${{ needs.preflight.outputs.version_tag }}
       JDK21_HOME: /opt/jenkins/jdks/jdk-21.0.11+10/Contents/Home
-      JDK25_HOME: /opt/jenkins/jdks/jdk-25.0.2
+      JDK25_HOME: /opt/jenkins/jdks/jdk-25.0.2/Contents/Home
       RELEASE_ARCHIVES_DIR: /opt/release-archives
       PLATFORM_DIR: macos-arm64
     steps:
@@ -320,11 +320,16 @@ jobs:
           )
 
       - name: Prepare output directory
-        shell: pwsh
+        shell: powershell
         run: |
           New-Item -ItemType Directory -Force -Path $env:RELEASE_ARCHIVES_DIR | Out-Null
           $platformPath = Join-Path $env:RELEASE_ARCHIVES_DIR (Join-Path $env:VERSION_TAG $env:PLATFORM_DIR)
           if (Test-Path $platformPath) {
+            # Files here may be owned by an interactive account (not the runner's
+            # NETWORK SERVICE), which strips inherited ACLs. Take ownership and
+            # grant this service account rights before attempting removal.
+            icacls $platformPath /setowner "NT AUTHORITY\NETWORK SERVICE" /T /C | Out-Null
+            icacls $platformPath /grant "NT AUTHORITY\NETWORK SERVICE:(OI)(CI)F" /T /C | Out-Null
             Remove-Item -Recurse -Force $platformPath
           }
 
@@ -333,6 +338,8 @@ jobs:
         env:
           SKIP_WIN_EXE: ${{ needs.preflight.outputs.skip_windows_executables }}
         run: |
+          call "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDevCmd.bat" -startdir=none -arch=x64 -host_arch=x64
+          if errorlevel 1 exit /b 1
           set EXTRA_ARGS=
           if "%SKIP_WIN_EXE%"=="true" set EXTRA_ARGS=--skip-windows-executables
           python scripts\build-release-sdks.py ^
@@ -348,7 +355,7 @@ jobs:
 
       - name: Upload archives to matching Releases
         if: needs.preflight.outputs.upload_to_release == 'true'
-        shell: pwsh
+        shell: powershell
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
