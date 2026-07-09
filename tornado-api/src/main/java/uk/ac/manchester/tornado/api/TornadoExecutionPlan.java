@@ -43,6 +43,7 @@ import uk.ac.manchester.tornado.api.plan.types.WithDevice;
 import uk.ac.manchester.tornado.api.plan.types.WithFreeDeviceMemory;
 import uk.ac.manchester.tornado.api.plan.types.WithGraph;
 import uk.ac.manchester.tornado.api.plan.types.WithGridScheduler;
+import uk.ac.manchester.tornado.api.plan.types.WithIntraPlanConcurrency;
 import uk.ac.manchester.tornado.api.plan.types.WithMemoryLimit;
 import uk.ac.manchester.tornado.api.plan.types.WithPreCompilation;
 import uk.ac.manchester.tornado.api.plan.types.WithPrintKernel;
@@ -638,5 +639,31 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         //TODO: include a check to verify that the BACKEND is PTX
         tornadoExecutor.withCUDAGraph();
         return new WithCUDAGraph(this);
+    }
+
+    /**
+     * Enables intra-plan concurrency for this execution plan: DAG-independent operations
+     * (e.g. H2D copies, kernels, D2H copies) are routed to separate role streams so they
+     * may overlap, with cross-stream ordering preserved via device events derived from the
+     * bytecode dependency DAG.
+     * Currently realised on the PTX and CUDA backends with CUDA streams.
+     * A no-op for OPENCL, METAL and SPIRV backends.
+     * Default is off (single stream).
+     *
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan withIntraPlanConcurrency() {
+        tornadoExecutor.withIntraPlanConcurrency();
+        return new WithIntraPlanConcurrency(this);
+    }
+
+    /**
+     * Disables intra-plan concurrency for this execution plan (single-stream execution).
+     *
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan withoutIntraPlanConcurrency() {
+        tornadoExecutor.withoutIntraPlanConcurrency();
+        return this;
     }
 }

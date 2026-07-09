@@ -66,7 +66,24 @@ public class CUDACommandQueue extends CommandQueue {
         return commandQueuePtr;
     }
 
+    /**
+     * Labels this queue's CUDA stream with its role (DEFAULT / H2D / COMPUTE / D2H) so the Nsight
+     * Systems timeline shows named stream rows instead of raw stream ids. Mirrors the PTX backend.
+     */
+    public void nameStream(String name) {
+        nvtxNameStream(commandQueuePtr, name);
+    }
+
     static native void clReleaseCommandQueue(long queueId) throws CUDAException;
+
+    private static native void nvtxNameStream(long queueId, String name);
+
+    /**
+     * Pushes the profiler state to the native layer: when timing is off, per-operation
+     * START timestamp events are skipped (halving events per op) and the remaining
+     * dependency events are created with {@code CU_EVENT_DISABLE_TIMING} (cheaper).
+     */
+    static native void nativeEnableTiming(boolean enabled);
 
     static native void clGetCommandQueueInfo(long queueId, int info, byte[] buffer) throws CUDAException;
 

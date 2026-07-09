@@ -49,6 +49,14 @@ class TornadoExecutor {
         immutableTaskGraphList.forEach(ImmutableTaskGraph::withCUDAGraph);
     }
 
+    public void withIntraPlanConcurrency() {
+        immutableTaskGraphList.forEach(ImmutableTaskGraph::withIntraPlanConcurrency);
+    }
+
+    public void withoutIntraPlanConcurrency() {
+        immutableTaskGraphList.forEach(ImmutableTaskGraph::withoutIntraPlanConcurrency);
+    }
+
     void execute(ExecutorFrame executionPackage) {
         immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.execute(executionPackage));
     }

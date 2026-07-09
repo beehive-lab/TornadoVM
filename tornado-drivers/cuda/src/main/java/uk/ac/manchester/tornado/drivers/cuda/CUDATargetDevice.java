@@ -63,4 +63,22 @@ public interface CUDATargetDevice extends TornadoTargetDevice {
     int deviceVersion();
 
     boolean isSPIRVSupported();
+
+    /**
+     * Number of asynchronous DMA copy engines (CUDA {@code CU_DEVICE_ATTRIBUTE_ASYNC_ENGINE_COUNT}).
+     * {@code 0} = copies cannot overlap compute; {@code 1} = one direction can overlap compute;
+     * {@code >= 2} = H2D and D2H can both overlap compute and each other. This is the hardware ceiling
+     * on the number of useful role-based transfer streams. Virtual devices report {@code 0}.
+     */
+    default int getAsyncEngineCount() {
+        return 0;
+    }
+
+    /**
+     * Whether the device can execute multiple kernels from the same context concurrently
+     * (CUDA {@code CU_DEVICE_ATTRIBUTE_CONCURRENT_KERNELS}). Virtual devices report {@code false}.
+     */
+    default boolean supportsConcurrentKernels() {
+        return false;
+    }
 }

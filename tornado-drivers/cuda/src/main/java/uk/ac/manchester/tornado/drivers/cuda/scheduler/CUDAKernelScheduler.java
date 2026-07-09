@@ -66,7 +66,9 @@ public abstract class CUDAKernelScheduler {
     }
 
     private void updateProfiler(long executionPlanId, final int taskEvent, final TaskDataContext meta) {
-        if (TornadoOptions.isProfilerEnabled()) {
+        // Skipped while capturing into a CUDA graph: waiting on (or querying) an event that was
+        // recorded into a capturing stream is illegal and invalidates the capture.
+        if (TornadoOptions.isProfilerEnabled() && !deviceContext.isStreamCapturing(executionPlanId)) {
             // Metrics captured before blocking
             meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), deviceContext.getPowerUsage());
             if (TornadoOptions.isUpsReaderEnabled()) {

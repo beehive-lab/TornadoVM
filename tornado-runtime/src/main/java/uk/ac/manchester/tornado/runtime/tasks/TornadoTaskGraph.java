@@ -368,6 +368,16 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
+    public void withIntraPlanConcurrency() {
+        executionContext.setIntraPlanConcurrencyEnabled(true);
+    }
+
+    @Override
+    public void withoutIntraPlanConcurrency() {
+        executionContext.setIntraPlanConcurrencyEnabled(false);
+    }
+
+    @Override
     public void withThreadInfo() {
         meta().enableThreadInfo();
     }
@@ -984,7 +994,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     @Override
     public void waitOn() {
-        if (TornadoOptions.VM_USE_DEPS && event != null) {
+        if ((TornadoOptions.VM_USE_DEPS || executionContext.isIntraPlanConcurrencyEnabled()) && event != null) {
             event.waitOn();
         } else {
             for (TornadoXPUDevice tornadoXPUDevice : executionContext.getDevices()) {

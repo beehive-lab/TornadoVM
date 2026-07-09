@@ -114,3 +114,46 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuC
     LOG_PTX_AND_VALIDATE("cuCtxSetCurrent", result);
     return (jlong) result;
 }
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXContext
+ * Method:    cuMemHostRegister
+ * Signature: (JJJ)I
+ *
+ * Registers an existing off-heap host buffer as *pinned* (page-locked) memory.
+ * After registration, cuMemcpyHtoDAsync() / cuMemcpyDtoHAsync() bypass CUDA's
+ * internal staging copy and DMA directly to/from this address, enabling true
+ * host-device overlap without blocking the calling (host) thread.
+ * CU_MEMHOSTREGISTER_PORTABLE makes the memory pinned across all CUDA contexts.
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuMemHostRegister
+  (JNIEnv *env, jclass clazz, jlong cuContext, jlong hostPointer, jlong numBytes) {
+    CUcontext* ctx = (CUcontext*) cuContext;
+    CUresult result = cuCtxSetCurrent(*ctx);
+    LOG_PTX_AND_VALIDATE("cuCtxSetCurrent", result);
+    result = cuMemHostRegister((void *) hostPointer, (size_t) numBytes, CU_MEMHOSTREGISTER_PORTABLE);
+    // CUDA_ERROR_HOST_MEMORY_ALREADY_REGISTERED (712): another execution plan already pinned
+    // this address — the memory is in pinned state, async DMA will work correctly.
+    if (result != CUDA_SUCCESS && result != CUDA_ERROR_HOST_MEMORY_ALREADY_REGISTERED) {
+        LOG_PTX_AND_VALIDATE("cuMemHostRegister", result);
+    }
+    return (jint) result;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXContext
+ * Method:    cuMemHostUnregister
+ * Signature: (JJ)I
+ *
+ * Unregisters host memory previously registered with cuMemHostRegister().
+ * Must be called before the host memory is deallocated to avoid driver resource leaks.
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuMemHostUnregister
+  (JNIEnv *env, jclass clazz, jlong cuContext, jlong hostPointer) {
+    CUcontext* ctx = (CUcontext*) cuContext;
+    CUresult result = cuCtxSetCurrent(*ctx);
+    LOG_PTX_AND_VALIDATE("cuCtxSetCurrent", result);
+    result = cuMemHostUnregister((void *) hostPointer);
+    LOG_PTX_AND_VALIDATE("cuMemHostUnregister", result);
+    return (jint) result;
+  }
