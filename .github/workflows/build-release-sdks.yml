@@ -151,7 +151,7 @@ jobs:
     env:
       VERSION: ${{ needs.preflight.outputs.version }}
       VERSION_TAG: ${{ needs.preflight.outputs.version_tag }}
-      JDK21_HOME: /opt/jenkins/jdks/graalvm-community-openjdk-21.0.1+12.1/Contents/Home
+      JDK21_HOME: /opt/jenkins/jdks/jdk-21.0.11+10/Contents/Home
       JDK25_HOME: /opt/jenkins/jdks/jdk-25.0.2
       RELEASE_ARCHIVES_DIR: /opt/release-archives
       PLATFORM_DIR: macos-arm64
