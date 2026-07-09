@@ -42,6 +42,13 @@ public enum PTXDeviceAttribute {
     MAX_REGISTERS_PER_BLOCK(12), //
     CLOCK_RATE(13), //
     MULTIPROCESSOR_COUNT(16), //
+    // CU_DEVICE_ATTRIBUTE_CONCURRENT_KERNELS: 1 if the device supports executing multiple kernels
+    // within the same context simultaneously.
+    CONCURRENT_KERNELS(31), //
+    // CU_DEVICE_ATTRIBUTE_ASYNC_ENGINE_COUNT: number of asynchronous copy engines. 0 = copies cannot
+    // overlap compute; 1 = one direction can overlap compute; 2 = H2D and D2H can both overlap compute
+    // (and each other). This is the hardware ceiling on the number of concurrent copy streams.
+    ASYNC_ENGINE_COUNT(40), //
     COMPUTE_CAPABILITY_MAJOR(75), //
     COMPUTE_CAPABILITY_MINOR(76); //
 

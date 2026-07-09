@@ -86,6 +86,13 @@ public interface CUDADeviceContextInterface extends TornadoDeviceContext {
 
     CUDAProgram createProgramWithIL(byte[] binary, long[] lengths);
 
+    /**
+     * Records, per execution plan, whether intra-plan concurrency (multi-queue issue) is enabled.
+     */
+    default void setIntraPlanConcurrency(long executionPlanId, boolean enabled) {
+        // no-op by default
+    }
+
     /* ---- CUDA Graph (stream capture) support ---- */
 
     default void beginExecutionGraphCapture(long executionPlanId) {

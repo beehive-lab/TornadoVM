@@ -48,6 +48,8 @@ public class PTXDevice implements TornadoTargetDevice {
     private final long constantBufferSize;
     private final long maxAllocationSize;
     private int maxThreadsPerBlock;
+    private final int asyncEngineCount;
+    private final boolean concurrentKernels;
 
     public PTXDevice(int deviceIndex) {
         this.deviceIndex = deviceIndex;
@@ -61,6 +63,8 @@ public class PTXDevice implements TornadoTargetDevice {
         maxWorkItemSizes = initMaxWorkItemSizes();
         maxGridSizes = initMaxGridSizes();
         maxThreadsPerBlock = cuDeviceGetAttribute(cuDevice, PTXDeviceAttribute.MAX_THREADS_PER_BLOCK.value());
+        asyncEngineCount = cuDeviceGetAttribute(cuDevice, PTXDeviceAttribute.ASYNC_ENGINE_COUNT.value());
+        concurrentKernels = cuDeviceGetAttribute(cuDevice, PTXDeviceAttribute.CONCURRENT_KERNELS.value()) != 0;
         ptxVersion = CUDAVersion.getMaxPTXVersion(cuDriverGetVersion());
         computeCapability = initComputeCapability();
         targetArchitecture = ptxVersion.getArchitecture(computeCapability);
@@ -96,6 +100,21 @@ public class PTXDevice implements TornadoTargetDevice {
 
     public CUDAComputeCapability getComputeCapability() {
         return computeCapability;
+    }
+
+    /**
+     * Number of asynchronous DMA copy engines. {@code 0} = copies cannot overlap compute;
+     * {@code 1} = one copy direction can overlap compute; {@code >= 2} = H2D and D2H can both overlap
+     * compute and each other. This is the hardware ceiling on the number of copy operations that can
+     * run concurrently, and therefore on how many role-based transfer streams are useful.
+     */
+    public int getAsyncEngineCount() {
+        return asyncEngineCount;
+    }
+
+    /** Whether the device can execute multiple kernels from the same context concurrently. */
+    public boolean supportsConcurrentKernels() {
+        return concurrentKernels;
     }
 
     @Override

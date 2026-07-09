@@ -21,7 +21,36 @@
  */
 
 #include <jni.h>
+#include <cstdio>
 #include "cuda_jni.h"
+#include "nvtx3/nvToolsExt.h"
+#include "nvtx3/nvToolsExtCuda.h"
+
+/*
+ * RAII host-side NVTX range wrapped around a native issue point, so the Nsight
+ * Systems timeline shows a labelled span (CUDA H2D / kernel / D2H) on the issuing
+ * thread. NVTX is header-only and a near-zero-cost no-op when no profiler attaches.
+ */
+struct NvtxRange {
+    explicit NvtxRange(const char *name) {
+        nvtxRangePushA(name);
+    }
+    ~NvtxRange() {
+        nvtxRangePop();
+    }
+};
+
+/* Formats "<dir> <size>" (e.g. "H2D 24.0 MB", "D2H 24 B") for the NVTX transfer ranges,
+ * so individual copies are identifiable on the timeline instead of a generic label. */
+static void format_transfer_label(char *buf, size_t len, const char *dir, long long numBytes) {
+    if (numBytes >= 1048576) {
+        snprintf(buf, len, "%s %.1f MB", dir, (double) numBytes / 1048576.0);
+    } else if (numBytes >= 1024) {
+        snprintf(buf, len, "%s %.1f KB", dir, (double) numBytes / 1024.0);
+    } else {
+        snprintf(buf, len, "%s %lld B", dir, numBytes);
+    }
+}
 
 extern "C" {
 
@@ -49,10 +78,12 @@ static bool stream_is_capturing(cuda_queue_t *queue) {
  * No start event is recorded, so the reported elapsed time is 0 (used by
  * markers/barriers that do not bracket a timed operation).
  */
+static unsigned int event_flags();
+
 static jlong record_event(cuda_queue_t *queue) {
     cuda_event_t *ev = new cuda_event_t();
     ev->start = nullptr;
-    CUresult result = cuEventCreate(&ev->event, CU_EVENT_DEFAULT);
+    CUresult result = cuEventCreate(&ev->event, event_flags());
     LOG_CUDA_AND_VALIDATE("cuEventCreate", result);
     result = cuEventRecord(ev->event, queue->stream);
     LOG_CUDA_AND_VALIDATE("cuEventRecord", result);
@@ -60,28 +91,74 @@ static jlong record_event(cuda_queue_t *queue) {
 }
 
 /*
- * Allocates an event handle and records a START timestamp on the stream, to be
- * paired with end_event() after the operation. CU_EVENT_DEFAULT keeps timing
- * enabled (CU_EVENT_DISABLE_TIMING would not), so cuEventElapsedTime works.
+ * Makes the queue's stream wait (GPU-side) on each event of the wait list.
+ * The array is laid out as [count, e0, e1, ...]. Events are CUevents and are
+ * therefore valid across streams, which is what allows cross-queue ordering
+ * when a plan runs with intra-plan concurrency (one queue per role).
+ */
+static void wait_events(JNIEnv *env, cuda_queue_t *queue, jlongArray array) {
+    if (queue == nullptr || array == NULL) {
+        return;
+    }
+    jlong *raw = static_cast<jlong *>(env->GetPrimitiveArrayCritical(array, NULL));
+    jsize count = (jsize) raw[0];
+    for (jsize i = 0; i < count; i++) {
+        cuda_event_t *ev = (cuda_event_t *) raw[i + 1];
+        if (ev != nullptr) {
+            cuStreamWaitEvent(queue->stream, ev->event, 0);
+        }
+    }
+    env->ReleasePrimitiveArrayCritical(array, raw, JNI_ABORT);
+}
+
+/*
+ * Whether per-operation device timing is wanted (the TornadoVM profiler is active).
+ * Pushed from Java before each plan execution. When off, the START timestamp event
+ * is skipped entirely (halving the events per operation) and the remaining events
+ * are created with CU_EVENT_DISABLE_TIMING, which is cheaper to record. Events
+ * without a start report an elapsed time of 0 (see CUDAEvent.cpp).
+ */
+static volatile jboolean tornado_timing_enabled = JNI_TRUE;
+
+static unsigned int event_flags() {
+    return tornado_timing_enabled ? CU_EVENT_DEFAULT : CU_EVENT_DISABLE_TIMING;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDACommandQueue
+ * Method:    nativeEnableTiming
+ * Signature: (Z)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQueue_nativeEnableTiming
+        (JNIEnv *env, jclass clazz, jboolean enabled) {
+    tornado_timing_enabled = enabled;
+}
+
+/*
+ * Allocates an event handle and, when the profiler is active, records a START
+ * timestamp on the stream to be paired with end_event() after the operation
+ * (cuEventElapsedTime(start, event) then yields the device time of the operation).
  */
 static cuda_event_t *begin_event(cuda_queue_t *queue) {
     cuda_event_t *ev = new cuda_event_t();
     ev->event = nullptr;
     ev->start = nullptr;
-    CUresult result = cuEventCreate(&ev->start, CU_EVENT_DEFAULT);
-    LOG_CUDA_AND_VALIDATE("cuEventCreate(start)", result);
-    result = cuEventRecord(ev->start, queue->stream);
-    LOG_CUDA_AND_VALIDATE("cuEventRecord(start)", result);
+    if (tornado_timing_enabled) {
+        CUresult result = cuEventCreate(&ev->start, CU_EVENT_DEFAULT);
+        LOG_CUDA_AND_VALIDATE("cuEventCreate(start)", result);
+        result = cuEventRecord(ev->start, queue->stream);
+        LOG_CUDA_AND_VALIDATE("cuEventRecord(start)", result);
+    }
     return ev;
 }
 
 /*
- * Records the END/completion timestamp for an event started with begin_event(),
- * and returns the boxed handle. cuEventElapsedTime(start, event) then yields the
- * device time of the operation enqueued between the two records.
+ * Records the END/completion event for an operation started with begin_event(),
+ * and returns the boxed handle. This event doubles as the operation's dependency
+ * handle (cuStreamWaitEvent / status queries), so it is always created.
  */
 static jlong end_event(cuda_event_t *ev, cuda_queue_t *queue) {
-    CUresult result = cuEventCreate(&ev->event, CU_EVENT_DEFAULT);
+    CUresult result = cuEventCreate(&ev->event, event_flags());
     LOG_CUDA_AND_VALIDATE("cuEventCreate(end)", result);
     result = cuEventRecord(ev->event, queue->stream);
     LOG_CUDA_AND_VALIDATE("cuEventRecord(end)", result);
@@ -219,7 +296,12 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
         params[i] = kernel->arg_data[i].empty() ? nullptr : (void *) kernel->arg_data[i].data();
     }
 
+    // Label the launch with the actual kernel name: the profiler's own function-name
+    // table can go stale when modules are unloaded and their handles recycled (kernels
+    // then show under a previous kernel's name), so the NVTX row is the reliable source.
+    NvtxRange _nvtx(kernel->name.c_str());
     cuCtxSetCurrent(queue->context);
+    wait_events(env, queue, events);
     cuda_event_t *ev = begin_event(queue);
     CUresult result = cuLaunchKernel(
             kernel->function,
@@ -238,12 +320,27 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
  * Host <-> device transfer helper. The OpenCL semantics copy numBytes from the
  * host buffer (at byte hostOffset) to/from the device pointer (at byte offset).
  */
+/*
+ * sync_after: the caller requires the copy to have completed on return. Always
+ * true for Java-array transfers (the pinned critical region is released right
+ * after this call, so an in-flight async copy would race the GC) and for
+ * blocking off-heap transfers; false for async off-heap (MemorySegment)
+ * transfers, whose completion is ordered by events / the end-of-plan sync.
+ * While capturing into a CUDA graph the stream must NOT be synchronised (it
+ * would invalidate the capture); the copy becomes a graph node whose host
+ * pointer (a stable off-heap MemorySegment) is re-read on each graph launch.
+ */
 static jlong transfer_to_device(JNIEnv *env, cuda_queue_t *queue, void *host_base,
-                                jlong host_offset, jlong device_offset, jlong num_bytes, jlong device_ptr) {
+                                jlong host_offset, jlong device_offset, jlong num_bytes, jlong device_ptr,
+                                jlongArray events, bool sync_after) {
     if (queue == nullptr) {
         return 0;
     }
+    char nvtxLabel[48];
+    format_transfer_label(nvtxLabel, sizeof(nvtxLabel), "H2D", (long long) num_bytes);
+    NvtxRange _nvtx(nvtxLabel);
     cuCtxSetCurrent(queue->context);
+    wait_events(env, queue, events);
     cuda_event_t *ev = begin_event(queue);
     CUresult result = cuMemcpyHtoDAsync(
             (CUdeviceptr) (device_ptr + device_offset),
@@ -251,23 +348,23 @@ static jlong transfer_to_device(JNIEnv *env, cuda_queue_t *queue, void *host_bas
             (size_t) num_bytes,
             queue->stream);
     LOG_CUDA_AND_VALIDATE("cuMemcpyHtoDAsync", result);
-    // Synchronise to avoid a Java GC / driver race on pinned host array memory.
-    // While capturing into a CUDA graph the stream must NOT be synchronised
-    // (it would invalidate the capture); the copy becomes a graph node whose
-    // host source pointer (a stable off-heap MemorySegment) is re-read on each
-    // graph launch.
-    if (!stream_is_capturing(queue)) {
+    if (sync_after && !stream_is_capturing(queue)) {
         cuStreamSynchronize(queue->stream);
     }
     return end_event(ev, queue);
 }
 
 static jlong transfer_to_host(JNIEnv *env, cuda_queue_t *queue, void *host_base,
-                              jlong host_offset, jlong device_offset, jlong num_bytes, jlong device_ptr) {
+                              jlong host_offset, jlong device_offset, jlong num_bytes, jlong device_ptr,
+                              jlongArray events, bool sync_after) {
     if (queue == nullptr) {
         return 0;
     }
+    char nvtxLabel[48];
+    format_transfer_label(nvtxLabel, sizeof(nvtxLabel), "D2H", (long long) num_bytes);
+    NvtxRange _nvtx(nvtxLabel);
     cuCtxSetCurrent(queue->context);
+    wait_events(env, queue, events);
     cuda_event_t *ev = begin_event(queue);
     CUresult result = cuMemcpyDtoHAsync(
             (void *) ((char *) host_base + host_offset),
@@ -275,8 +372,7 @@ static jlong transfer_to_host(JNIEnv *env, cuda_queue_t *queue, void *host_base,
             (size_t) num_bytes,
             queue->stream);
     LOG_CUDA_AND_VALIDATE("cuMemcpyDtoHAsync", result);
-    // See transfer_to_device: skip the synchronise during graph capture.
-    if (!stream_is_capturing(queue)) {
+    if (sync_after && !stream_is_capturing(queue)) {
         cuStreamSynchronize(queue->stream);
     }
     return end_event(ev, queue);
@@ -290,7 +386,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
          jlong offset, jlong num_bytes, jlong device_ptr, jlongArray events) {                                  \
     cuda_queue_t *queue = (cuda_queue_t *) queue_id;                                                            \
     void *host = env->GetPrimitiveArrayCritical((jarray) host_array, NULL);                                     \
-    jlong ev = transfer_to_device(env, queue, host, host_offset, offset, num_bytes, device_ptr);               \
+    jlong ev = transfer_to_device(env, queue, host, host_offset, offset, num_bytes, device_ptr, events, true); \
     env->ReleasePrimitiveArrayCritical((jarray) host_array, host, JNI_ABORT);                                   \
     return ev;                                                                                                  \
 }
@@ -310,7 +406,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
         (JNIEnv *env, jclass clazz, jlong queue_id, jlong host_pointer, jlong host_offset, jboolean blocking,
          jlong offset, jlong num_bytes, jlong device_ptr, jlongArray events) {
     cuda_queue_t *queue = (cuda_queue_t *) queue_id;
-    return transfer_to_device(env, queue, (void *) host_pointer, host_offset, offset, num_bytes, device_ptr);
+    return transfer_to_device(env, queue, (void *) host_pointer, host_offset, offset, num_bytes, device_ptr, events, blocking);
 }
 
 /* ---- readArrayFromDevice overloads ---- */
@@ -321,7 +417,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
          jlong offset, jlong num_bytes, jlong device_ptr, jlongArray events) {                                   \
     cuda_queue_t *queue = (cuda_queue_t *) queue_id;                                                             \
     void *host = env->GetPrimitiveArrayCritical((jarray) host_array, NULL);                                      \
-    jlong ev = transfer_to_host(env, queue, host, host_offset, offset, num_bytes, device_ptr);                  \
+    jlong ev = transfer_to_host(env, queue, host, host_offset, offset, num_bytes, device_ptr, events, true);    \
     env->ReleasePrimitiveArrayCritical((jarray) host_array, host, 0);                                            \
     return ev;                                                                                                   \
 }
@@ -341,7 +437,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
         (JNIEnv *env, jclass clazz, jlong queue_id, jlong host_pointer, jlong host_offset, jboolean blocking,
          jlong offset, jlong num_bytes, jlong device_ptr, jlongArray events) {
     cuda_queue_t *queue = (cuda_queue_t *) queue_id;
-    return transfer_to_host(env, queue, (void *) host_pointer, host_offset, offset, num_bytes, device_ptr);
+    return transfer_to_host(env, queue, (void *) host_pointer, host_offset, offset, num_bytes, device_ptr, events, blocking);
 }
 
 /*
@@ -397,6 +493,26 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
     // Honour the wait list, then place a marker event.
     Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQueue_clEnqueueWaitForEvents(env, clazz, queue_id, array);
     return record_event(queue);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDACommandQueue
+ * Method:    nvtxNameStream
+ * Signature: (JLjava/lang/String;)V
+ *
+ * Labels a CUDA stream with a human-readable name (its role: DEFAULT / H2D /
+ * COMPUTE / D2H) so the Nsight Systems timeline shows named stream rows instead
+ * of raw stream ids.
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQueue_nvtxNameStream
+        (JNIEnv *env, jclass clazz, jlong queue_id, jstring name) {
+    cuda_queue_t *queue = (cuda_queue_t *) queue_id;
+    if (queue == nullptr || name == NULL) {
+        return;
+    }
+    const char *cname = env->GetStringUTFChars(name, NULL);
+    nvtxNameCuStreamA(queue->stream, cname);
+    env->ReleaseStringUTFChars(name, cname);
 }
 
 } // extern "C"

@@ -96,6 +96,7 @@ public class TornadoExecutionContext {
     private long executionPlanId;  // This is set at runtime. Thus, no need to clone this value.
     private long currentDeviceMemoryUsage;
     private boolean isExecutionGraphEnabled;
+    private boolean isIntraPlanConcurrencyEnabled;
 
     public TornadoExecutionContext(String id) {
         name = id;
@@ -120,6 +121,7 @@ public class TornadoExecutionContext {
         this.profiler = null;
         this.isDataDependencyDetected = isDataDependencyInTaskGraph();
         this.isExecutionGraphEnabled = false;
+        this.isIntraPlanConcurrencyEnabled = false;
     }
 
     public KernelStackFrame[] getKernelStackFrame() {
@@ -687,6 +689,9 @@ public class TornadoExecutionContext {
         newExecutionContext.nextTask = this.nextTask;
         newExecutionContext.executionPlanMemoryLimit = this.executionPlanMemoryLimit;
 
+        newExecutionContext.isExecutionGraphEnabled = this.isExecutionGraphEnabled;
+        newExecutionContext.isIntraPlanConcurrencyEnabled = this.isIntraPlanConcurrencyEnabled;
+
         return newExecutionContext;
     }
 
@@ -721,6 +726,14 @@ public class TornadoExecutionContext {
 
     public boolean isExecutionGraphEnabled() {
         return this.isExecutionGraphEnabled;
+    }
+
+    public void setIntraPlanConcurrencyEnabled(boolean enabled) {
+        this.isIntraPlanConcurrencyEnabled = enabled;
+    }
+
+    public boolean isIntraPlanConcurrencyEnabled() {
+        return this.isIntraPlanConcurrencyEnabled;
     }
 
 }
