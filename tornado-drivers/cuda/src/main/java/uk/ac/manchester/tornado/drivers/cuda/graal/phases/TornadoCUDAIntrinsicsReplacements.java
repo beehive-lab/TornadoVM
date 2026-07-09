@@ -69,7 +69,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalThreadIDFixedNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDABarrierNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAPrintf;
-import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 import uk.ac.manchester.tornado.runtime.jvmci.TornadoObjectConstant;
 
@@ -302,7 +302,10 @@ public class TornadoCUDAIntrinsicsReplacements extends BasePhase<TornadoHighTier
      */
     private void lowerMMAStore(StructuredGraph graph, InvokeNode invoke, JavaKind elementKind, boolean isInt) {
         NodeInputList<ValueNode> args = invoke.callTarget().arguments();
-        int headerElements = TornadoCoreRuntime.getVMConfig().getArrayBaseOffset(elementKind) / elementKind.getByteCount();
+        // The target is a Panama native array (FloatArray/IntArray), whose data begins after PANAMA_OBJECT_HEADER_SIZE
+        // (16) bytes - not the JVM array-base offset that getVMConfig().getArrayBaseOffset returns on the reflection
+        // path (12), which would place every store 4 bytes early and overrun the buffer for larger tiles.
+        int headerElements = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE / elementKind.getByteCount();
         CUDAMMAStoreNode node = graph.add(new CUDAMMAStoreNode(args.get(1), args.get(2), args.get(3), args.get(4), args.get(5), headerElements, isInt));
         graph.replaceFixed(invoke, node);
     }
