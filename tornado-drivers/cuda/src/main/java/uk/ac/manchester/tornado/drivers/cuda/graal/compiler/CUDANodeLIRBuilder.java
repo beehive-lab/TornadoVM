@@ -674,18 +674,20 @@ public class CUDANodeLIRBuilder extends NodeLIRBuilder {
         final Local[] locals = graph.method().getLocalVariableTable().getLocalsAt(0);
         if (isKernel) {
             for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
-                // Skip the KernelContext / AtomicInteger special parameter when it has no real data uses.
-                // CUDABackend.emitMethodParameters never declares it in the kernel signature, so emitting a
-                // buffer load references an undeclared 'argN'. hasNoUsages() is too strict on the reflection
-                // path: FrameState nodes (deopt metadata, never lowered on the GPU) reference the parameter,
-                // so we skip when the only remaining usages are FrameStates.
-                if (isSpecialKernelParameter(locals[param.index()]) && !hasNonFrameStateUsage(param)) {
-                    // For a KernelContext parameter, bind it to the declared _kernel_context slot (already in
-                    // the signature, never emitted as a buffer arg) so any remaining FrameState resolves
-                    // without an undeclared 'argN'. The value is inert - the GPU never deoptimizes.
+                // CUDABackend.emitMethodParameters never declares the KernelContext / AtomicInteger parameter
+                // as a data buffer arg; the KernelContext is declared as the dedicated _kernel_context slot.
+                // On the reflection path the KernelContext method is not always inlined, so the parameter has
+                // real uses (its receiver is passed to a device function, or a FrameState references it) and
+                // hasNoUsages() would emit a buffer load for an undeclared 'argN'. Bind the KernelContext
+                // parameter to the _kernel_context slot instead (the receiver value is inert - the device
+                // function ignores _this and the GPU never deoptimizes), and skip the buffer load entirely.
+                if (isSpecialKernelParameter(locals[param.index()])) {
                     if (isKernelContextParameter(locals[param.index()])) {
                         LIRKind lirKind = getGen().getLIRKind(param.stamp(NodeView.DEFAULT));
-                        setResult(param, new CUDANullary.Parameter(CUDAAssemblerConstants.KERNEL_CONTEXT, lirKind));
+                        // Cast the _kernel_context slot (a long*) to unsigned long: the KernelContext receiver
+                        // is passed to a device function as an `unsigned long _this` argument, matching how
+                        // emitParameterLoad casts an object parameter.
+                        setResult(param, new CUDANullary.Parameter(CUDAUnaryOp.CAST_TO_ULONG + CUDAAssemblerConstants.KERNEL_CONTEXT, lirKind));
                     }
                     continue;
                 }
@@ -713,14 +715,6 @@ public class CUDANodeLIRBuilder extends NodeLIRBuilder {
         return local.getType().toJavaName().equals("uk.ac.manchester.tornado.api.KernelContext");
     }
 
-    private static boolean hasNonFrameStateUsage(ParameterNode param) {
-        for (Node usage : param.usages()) {
-            if (!(usage instanceof FrameState)) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     private void emitCUDAFPGAPragmas(HIRBlock block) {
         for (ValueNode tempDomBlockNode : block.getNodes()) {
