@@ -416,9 +416,9 @@
 
         <profile>
             <!-- JDK 25: identical to the jdk26 profile (JDK 22-25 still ship jdk.internal.vm.ci with
-                 interfaces drifted from the JDK-21 shape the reflection providers target). --patch-module
-                 overlays the frozen JDK-21 classes; compiled at release 22 (class-file v66) for
-                 frozen-Graal 23.1.0 compatibility. -->
+                 interfaces drifted from the JDK-21 shape the reflection providers target). The
+                 patch-module argument overlays the frozen JDK-21 classes; compiled at release 22
+                 (class-file v66) for frozen-Graal 23.1.0 compatibility. -->
             <id>jdk25</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
