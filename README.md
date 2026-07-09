@@ -223,12 +223,12 @@ More examples — NBody, DFT, KMeans, matrix kernels, reductions: [tornado-examp
   <dependency>
     <groupId>io.github.beehive-lab</groupId>
     <artifactId>tornado-api</artifactId>
-    <version>4.0.1-jdk21</version>
+    <version>5.0.0-jdk21</version>
   </dependency>
   <dependency>
     <groupId>io.github.beehive-lab</groupId>
     <artifactId>tornado-runtime</artifactId>
-    <version>4.0.1-jdk21</version>
+    <version>5.0.0-jdk21</version>
   </dependency>
 </dependencies>
 ```
