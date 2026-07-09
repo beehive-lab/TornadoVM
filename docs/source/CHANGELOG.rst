@@ -7,6 +7,41 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 
 CHANGELOG
 
+TornadoVM 5.0.0-jdk25
+---------------------
+09/07/26
+
+Improvements
+~~~~~~~~~~~~
+
+- `#869 <https://github.com/beehive-lab/TornadoVM/pull/869>`_: [JDK25][PTX] Tensor Core MMA intrinsics for FP16 and INT8
+- `#843 <https://github.com/beehive-lab/TornadoVM/pull/843>`_: [jdk25] Add swizzled local memory accessors for FP16 and INT8 on the PTX backend
+
+Bug Fixes
+~~~~~~~~~~~~
+
+- `#883 <https://github.com/beehive-lab/TornadoVM/pull/883>`_: Fix repeated execution of batched plans
+- `#856 <https://github.com/beehive-lab/TornadoVM/pull/856>`_: [fix] Handle ObjectStamp compatibility for vector types in OpenCL, Metal and SPIRV backends
+
+Other Changes
+~~~~~~~~~~~~
+
+- `#904 <https://github.com/beehive-lab/TornadoVM/pull/904>`_: Fix for stride-16 swizzled FP16 shared-memory load and store that caused segfault in tests
+- `#897 <https://github.com/beehive-lab/TornadoVM/pull/897>`_: [JDK25] Support for CUDA streams for overlapping data transfers with TaskGraph execution
+- `#902 <https://github.com/beehive-lab/TornadoVM/pull/902>`_: Feat/update logo
+- `#900 <https://github.com/beehive-lab/TornadoVM/pull/900>`_: Backport Cuda fixes to jdk25
+- `#892 <https://github.com/beehive-lab/TornadoVM/pull/892>`_: Fix batch processing with a remainder chunk under device buffer reuse
+- `#896 <https://github.com/beehive-lab/TornadoVM/pull/896>`_: Backport Readme to jdk25
+- `#898 <https://github.com/beehive-lab/TornadoVM/pull/898>`_: Backport Hybrid API to jdk25
+- `#885 <https://github.com/beehive-lab/TornadoVM/pull/885>`_: [OpenCL] Fix pointer-to-ulong conversions rejected by strict OpenCL compilers (Intel iGPUs)
+- `#891 <https://github.com/beehive-lab/TornadoVM/pull/891>`_: [hotfix][PTX] Align compileTask exception handling with other backends to preserve original exception on bailout-disabled path
+- `#881 <https://github.com/beehive-lab/TornadoVM/pull/881>`_: Port the CUDA backend (CUDA C / NVRTC) from develop to jdk25
+- `#849 <https://github.com/beehive-lab/TornadoVM/pull/849>`_: [jdk25] Replace CFG block visitors with structured control-flow recovery (OpenCL + Metal)
+- `#880 <https://github.com/beehive-lab/TornadoVM/pull/880>`_: Backport Persist obj to jdk25
+- `#876 <https://github.com/beehive-lab/TornadoVM/pull/876>`_: Metal mma tiled jdk25
+- `#866 <https://github.com/beehive-lab/TornadoVM/pull/866>`_: Update level-zero library version to v1.18.1
+
+
 TornadoVM 4.0.1-jdk25
 ---------------------
 29/04/26
