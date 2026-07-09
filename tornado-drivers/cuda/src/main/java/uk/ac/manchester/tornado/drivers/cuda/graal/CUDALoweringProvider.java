@@ -572,7 +572,12 @@ public class CUDALoweringProvider extends DefaultJavaLoweringProvider {
         Node nd = storeIndexed.inputs().first();
         InvokeNode node = nd.inputs().filter(InvokeNode.class).first();
         boolean willLowerToLocalArrayNode = node != null && "Direct#NewArrayNode.newArray".equals(node.callTarget().targetName()) && gpuSnippet;
-        return (nd instanceof MarkLocalArray || willLowerToLocalArrayNode);
+        // On the reflection path KernelContext.allocate*LocalArray is intrinsified to a LocalArrayNode, but
+        // that rewrite runs after this lowering, so the array input may still be the allocate*LocalArray
+        // invoke here. Match both so a local array uses element addressing, not the native-array byte
+        // offset (index*size+header) which would overrun the __shared__ buffer.
+        boolean isAllocateLocalArrayInvoke = nd instanceof InvokeNode inv && inv.callTarget() != null && inv.callTarget().targetName().contains("LocalArray");
+        return (nd instanceof MarkLocalArray || nd instanceof LocalArrayNode || isAllocateLocalArrayInvoke || willLowerToLocalArrayNode);
     }
 
     private boolean isLocalIDNode(LoadIndexedNode loadIndexedNode) {
@@ -581,7 +586,12 @@ public class CUDALoweringProvider extends DefaultJavaLoweringProvider {
         Node nd = loadIndexedNode.inputs().first();
         InvokeNode node = nd.inputs().filter(InvokeNode.class).first();
         boolean willLowerToLocalArrayNode = node != null && "Direct#NewArrayNode.newArray".equals(node.callTarget().targetName()) && gpuSnippet;
-        return (nd instanceof MarkLocalArray || willLowerToLocalArrayNode);
+        // On the reflection path KernelContext.allocate*LocalArray is intrinsified to a LocalArrayNode, but
+        // that rewrite runs after this lowering, so the array input may still be the allocate*LocalArray
+        // invoke here. Match both so a local array uses element addressing, not the native-array byte
+        // offset (index*size+header) which would overrun the __shared__ buffer.
+        boolean isAllocateLocalArrayInvoke = nd instanceof InvokeNode inv && inv.callTarget() != null && inv.callTarget().targetName().contains("LocalArray");
+        return (nd instanceof MarkLocalArray || nd instanceof LocalArrayNode || isAllocateLocalArrayInvoke || willLowerToLocalArrayNode);
     }
 
     private boolean isPrivateIDNode(StoreIndexedNode storeIndexed) {
