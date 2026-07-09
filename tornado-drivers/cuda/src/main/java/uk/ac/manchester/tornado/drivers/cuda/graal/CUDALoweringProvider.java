@@ -401,7 +401,7 @@ public class CUDALoweringProvider extends DefaultJavaLoweringProvider {
         JavaKind elementKind = storeIndexed.elementKind();
         ValueNode value = storeIndexed.value();
         ValueNode array = storeIndexed.array();
-        AddressNode address = createArrayAddress(graph, array, elementKind, storeIndexed.index());
+        AddressNode address = createArrayAddress(graph, array, (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE, elementKind, storeIndexed.index());
         if (array instanceof LocalArrayNode localArrayNode && localArrayNode.getCUDAKind() == CUDAKind.HALF) {
             WriteHalfFloatNode localHalfFloatWrite = graph.add(new WriteHalfFloatNode(address, value, storeIndexed.index()));
             graph.replaceFixedWithFixed(storeIndexed, localHalfFloatWrite);
@@ -613,7 +613,7 @@ public class CUDALoweringProvider extends DefaultJavaLoweringProvider {
         if (isLocalIDNode(loadIndexed) || isPrivateIDNode(loadIndexed)) {
             address = createArrayLocalAddress(graph, loadIndexed.array(), loadIndexed.index());
         } else {
-            address = createArrayAddress(graph, loadIndexed.array(), elementKind, loadIndexed.index());
+            address = createArrayAddress(graph, loadIndexed.array(), (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE, elementKind, loadIndexed.index());
         }
         return address;
     }
