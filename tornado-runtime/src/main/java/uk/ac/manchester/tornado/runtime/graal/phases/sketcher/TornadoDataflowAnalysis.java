@@ -47,6 +47,7 @@ import tornado.graal.compiler.nodes.extended.JavaReadNode;
 import tornado.graal.compiler.nodes.extended.JavaWriteNode;
 import tornado.graal.compiler.nodes.java.LoadFieldNode;
 import tornado.graal.compiler.nodes.java.LoadIndexedNode;
+import tornado.graal.compiler.nodes.java.MethodCallTargetNode;
 import tornado.graal.compiler.nodes.java.StoreFieldNode;
 import tornado.graal.compiler.nodes.java.StoreIndexedNode;
 import tornado.graal.compiler.nodes.memory.ReadNode;
@@ -251,6 +252,13 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 if (declared == Access.WRITE_ONLY || declared == Access.READ_WRITE) {
                     isWritten = true;
                 }
+            } else if (currentNode instanceof MethodCallTargetNode callTarget && isSurvivingMMAStore(callTarget)) {
+                // Reflection-path only: the ctx.mmaStore*/tensor-core store intrinsic misses its InvocationPlugin
+                // at parse time, so the call survives as a plain invoke through sketch-time dataflow (the
+                // MarkArrayParameterAccess node it normally lowers to does not exist yet). Recognise it here so the
+                // output array parameter is marked written and gets allocated + copied device-to-host (otherwise the
+                // device buffer is never created and the kernel store faults with CUDA_ERROR_ILLEGAL_ADDRESS).
+                isWritten = true;
             } else if (isNodeFromKnownObject(currentNode)) {
                 // All known objects are passed by reference -> R/W (e.g., Atomics)
                 isRead = true;
@@ -282,6 +290,16 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
         }
 
         return result;
+    }
+
+    /**
+     * True when the call target is a surviving tensor-core store intrinsic (ctx.mmaStore / mmaStoreInt /
+     * mmaStoreBSwizzled) whose array argument is written on the device. Matched by name because on the
+     * reflection path the invoke is not yet lowered to its {@link MarkArrayParameterAccess} node.
+     */
+    private static boolean isSurvivingMMAStore(MethodCallTargetNode callTarget) {
+        String name = callTarget.targetName();
+        return name != null && name.contains("mmaStore");
     }
 
     /**

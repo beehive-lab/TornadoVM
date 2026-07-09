@@ -70,7 +70,7 @@ public class CUDABinary {
 
         @Override
         public String toString() {
-            return String.format("%s %s %s", opcode.toString(), x, y);
+            return String.format("%s %s %s", opcode, x, y);
         }
 
     }

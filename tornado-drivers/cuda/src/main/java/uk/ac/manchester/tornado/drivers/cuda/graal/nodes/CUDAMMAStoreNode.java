@@ -56,7 +56,10 @@ public class CUDAMMAStoreNode extends FixedWithNextNode implements LIRLowerable,
 
     @Override
     public Access getArrayParameterAccess(ValueNode parameter) {
-        return MarkArrayParameterAccess.unwrapPi(parameter) == target
+        // Unwrap Pi on both sides: on the reflection path the stored `target` input is a PiNode wrapping the
+        // parameter, so comparing the raw parameter against a Pi-wrapped target would spuriously report NONE and
+        // the output array would never be copied device-to-host (result reads 0).
+        return MarkArrayParameterAccess.unwrapPi(parameter) == MarkArrayParameterAccess.unwrapPi(target)
                 ? Access.READ_WRITE
                 : Access.NONE;
     }

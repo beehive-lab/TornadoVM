@@ -38,16 +38,28 @@ import tornado.graal.compiler.nodes.GraphState;
 import tornado.graal.compiler.nodes.InvokeNode;
 import tornado.graal.compiler.nodes.StructuredGraph;
 import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.java.LoadFieldNode;
 import tornado.graal.compiler.nodes.util.GraphUtil;
 import tornado.graal.compiler.phases.BasePhase;
 
+import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import uk.ac.manchester.tornado.api.enums.MMAShape;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAArchitecture;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDALoweringProvider;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAComputeNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAFragmentNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadANode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadAInt8Node;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadBNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadBInt8Node;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadBSwizzledNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAStoreBSwizzledNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAStoreNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GlobalThreadSizeNode;
@@ -57,7 +69,9 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalThreadIDFixedNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDABarrierNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAPrintf;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
+import uk.ac.manchester.tornado.runtime.jvmci.TornadoObjectConstant;
 
 public class TornadoCUDAIntrinsicsReplacements extends BasePhase<TornadoHighTierContext> {
 
@@ -164,6 +178,43 @@ public class TornadoCUDAIntrinsicsReplacements extends BasePhase<TornadoHighTier
                     graph.replaceFixed(invoke, kcLocalBarrier);
                     break;
                 }
+                // Tensor-core (WMMA) intrinsics: same reflection-path plugin-lookup miss as the KernelContext
+                // helpers above. The mma* calls survive as device-function invokes on the KernelContext receiver;
+                // rewrite each to the dedicated MMA node the invocation plugin would have produced.
+                case "Direct#KernelContext.mmaFragment":
+                    lowerMMAFragment(graph, invoke, false);
+                    break;
+                case "Direct#KernelContext.mmaFragmentInt":
+                    lowerMMAFragment(graph, invoke, true);
+                    break;
+                case "Direct#KernelContext.mmaLoadA":
+                    lowerMMALoad(graph, invoke, MMALoadKind.A);
+                    break;
+                case "Direct#KernelContext.mmaLoadB":
+                    lowerMMALoad(graph, invoke, MMALoadKind.B);
+                    break;
+                case "Direct#KernelContext.mmaLoadBSwizzled":
+                    lowerMMALoad(graph, invoke, MMALoadKind.B_SWIZZLED);
+                    break;
+                case "Direct#KernelContext.mmaLoadAInt8":
+                    lowerMMALoad(graph, invoke, MMALoadKind.A_INT8);
+                    break;
+                case "Direct#KernelContext.mmaLoadBInt8":
+                    lowerMMALoad(graph, invoke, MMALoadKind.B_INT8);
+                    break;
+                case "Direct#KernelContext.mma":
+                case "Direct#KernelContext.mmaInt8":
+                    lowerMMACompute(graph, invoke);
+                    break;
+                case "Direct#KernelContext.mmaStore":
+                    lowerMMAStore(graph, invoke, JavaKind.Float, false);
+                    break;
+                case "Direct#KernelContext.mmaStoreInt":
+                    lowerMMAStore(graph, invoke, JavaKind.Int, true);
+                    break;
+                case "Direct#KernelContext.mmaStoreBSwizzled":
+                    lowerMMAStoreBSwizzled(graph, invoke);
+                    break;
                 case "Direct#KernelContext.globalBarrier": {
                     CUDABarrierNode kcGlobalBarrier = graph.addOrUnique(new CUDABarrierNode(CUDABarrierNode.CUDAMemFenceFlags.GLOBAL));
                     graph.replaceFixed(invoke, kcGlobalBarrier);
@@ -198,6 +249,93 @@ public class TornadoCUDAIntrinsicsReplacements extends BasePhase<TornadoHighTier
         invoke.replaceAtUsages(localArrayNode);
         invoke.clearInputs();
         GraphUtil.unlinkFixedNode(invoke);
+    }
+
+    private enum MMALoadKind {
+        A, B, B_SWIZZLED, A_INT8, B_INT8
+    }
+
+    /**
+     * Rewrite a surviving {@code KernelContext.mmaFragment(init)} / {@code mmaFragmentInt(init)} invoke into a
+     * {@link CUDAMMAFragmentNode}. Argument 0 is the {@code KernelContext} receiver; argument 1 is the init value.
+     */
+    private void lowerMMAFragment(StructuredGraph graph, InvokeNode invoke, boolean isInt8) {
+        ValueNode initValue = invoke.callTarget().arguments().get(1);
+        CUDAMMAFragmentNode node = graph.add(new CUDAMMAFragmentNode(initValue, isInt8));
+        graph.replaceFixed(invoke, node);
+    }
+
+    /**
+     * Rewrite a surviving {@code KernelContext.mmaLoad*} invoke into the matching MMA load node. Argument 0 is the
+     * receiver, 1 the tile, 2 the wmmaK; an optional argument 3 is the per-lane byte offset (the offset-carrying
+     * plugin overload).
+     */
+    private void lowerMMALoad(StructuredGraph graph, InvokeNode invoke, MMALoadKind kind) {
+        NodeInputList<ValueNode> args = invoke.callTarget().arguments();
+        ValueNode tile = args.get(1);
+        ValueNode wmmaK = args.get(2);
+        ValueNode byteOffset = args.size() > 3 ? args.get(3) : null;
+        ValueNode node = switch (kind) {
+            case A -> new CUDAMMALoadANode(tile, wmmaK, byteOffset);
+            case B -> new CUDAMMALoadBNode(tile, wmmaK, byteOffset);
+            case B_SWIZZLED -> new CUDAMMALoadBSwizzledNode(tile, wmmaK, byteOffset);
+            case A_INT8 -> new CUDAMMALoadAInt8Node(tile, wmmaK, byteOffset);
+            case B_INT8 -> new CUDAMMALoadBInt8Node(tile, wmmaK, byteOffset);
+        };
+        graph.replaceFixed(invoke, graph.add(node));
+    }
+
+    /**
+     * Rewrite a surviving {@code KernelContext.mma(...)} / {@code mmaInt8(...)} invoke into a
+     * {@link CUDAMMAComputeNode}. Arguments 1-3 are fragA/fragB/fragC; argument 4 is the {@link MMAShape} constant.
+     */
+    private void lowerMMACompute(StructuredGraph graph, InvokeNode invoke) {
+        NodeInputList<ValueNode> args = invoke.callTarget().arguments();
+        MMAShape shape = resolveShape(args.get(4));
+        CUDAMMAComputeNode node = graph.add(new CUDAMMAComputeNode(args.get(1), args.get(2), args.get(3), shape));
+        graph.replaceFixed(invoke, node);
+    }
+
+    /**
+     * Rewrite a surviving {@code KernelContext.mmaStore(...)} / {@code mmaStoreInt(...)} invoke into a
+     * {@link CUDAMMAStoreNode}. Arguments 1-5 are fragD/target/tileRow/tileCol/dimN.
+     */
+    private void lowerMMAStore(StructuredGraph graph, InvokeNode invoke, JavaKind elementKind, boolean isInt) {
+        NodeInputList<ValueNode> args = invoke.callTarget().arguments();
+        int headerElements = TornadoCoreRuntime.getVMConfig().getArrayBaseOffset(elementKind) / elementKind.getByteCount();
+        CUDAMMAStoreNode node = graph.add(new CUDAMMAStoreNode(args.get(1), args.get(2), args.get(3), args.get(4), args.get(5), headerElements, isInt));
+        graph.replaceFixed(invoke, node);
+    }
+
+    /**
+     * Rewrite a surviving {@code KernelContext.mmaStoreBSwizzled(...)} invoke into a {@link CUDAMMAStoreBSwizzledNode}.
+     * Arguments 1-6 are arr/row/col/stride/value/byteOffset.
+     */
+    private void lowerMMAStoreBSwizzled(StructuredGraph graph, InvokeNode invoke) {
+        NodeInputList<ValueNode> args = invoke.callTarget().arguments();
+        CUDAMMAStoreBSwizzledNode node = graph.add(new CUDAMMAStoreBSwizzledNode(args.get(1), args.get(2), args.get(3), args.get(4), args.get(5), args.get(6)));
+        graph.replaceFixed(invoke, node);
+    }
+
+    /**
+     * Resolve an {@link MMAShape} enum argument to its compile-time constant. The enum reaches this phase as a
+     * static {@code LoadFieldNode} whose field name is the enum-constant name (e.g. {@code M16N16K16}); resolve it
+     * by name. We cannot use {@code ConstantReflectionProvider.readFieldValue} here because on the reflection path
+     * the constant-reflection provider has no host {@code MetaAccessProvider} backing.
+     */
+    private MMAShape resolveShape(ValueNode shapeNode) {
+        ValueNode node = GraphUtil.unproxify(shapeNode);
+        // Unfolded static enum-field load: the field name is the enum-constant name (e.g. M16N16K16).
+        if (node instanceof LoadFieldNode load && load.field().isStatic()) {
+            return MMAShape.valueOf(load.field().getName());
+        }
+        // Folded to an object constant: on the reflection path this is a TornadoObjectConstant that holds the
+        // actual enum instance, which we can read directly (SnippetReflection.asObject is unimplemented here).
+        JavaConstant constant = node.asJavaConstant();
+        if (constant instanceof TornadoObjectConstant tornadoConstant && tornadoConstant.getObject() instanceof MMAShape shape) {
+            return shape;
+        }
+        throw new IllegalStateException("MMAShape argument to ctx.mma() must be a compile-time constant; got " + shapeNode);
     }
 
     private void lowerLocalInvokeNodeNewArray(StructuredGraph graph, int length, JavaKind elementKind, InvokeNode newArray) {
