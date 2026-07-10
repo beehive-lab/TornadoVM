@@ -259,6 +259,12 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 // output array parameter is marked written and gets allocated + copied device-to-host (otherwise the
                 // device buffer is never created and the kernel store faults with CUDA_ERROR_ILLEGAL_ADDRESS).
                 isWritten = true;
+            } else if (currentNode instanceof MethodCallTargetNode callTarget && isSurvivingAtomicAdd(callTarget)) {
+                // Reflection-path only: ctx.atomicAdd misses its plugin, so the call survives through sketch-time
+                // dataflow. It atomically read-modify-writes its array argument, so mark the parameter read AND
+                // written; otherwise it is copied device->host WRITE_ONLY (or not at all) and the result reads 0.
+                isRead = true;
+                isWritten = true;
             } else if (isNodeFromKnownObject(currentNode)) {
                 // All known objects are passed by reference -> R/W (e.g., Atomics)
                 isRead = true;
@@ -300,6 +306,16 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
     private static boolean isSurvivingMMAStore(MethodCallTargetNode callTarget) {
         String name = callTarget.targetName();
         return name != null && name.contains("mmaStore");
+    }
+
+    /**
+     * True when the call target is a surviving {@code ctx.atomicAdd} intrinsic, which atomically
+     * read-modify-writes its array argument. Matched by name because on the reflection path the invoke is not yet
+     * lowered to its atomic node when this sketch-time analysis runs.
+     */
+    private static boolean isSurvivingAtomicAdd(MethodCallTargetNode callTarget) {
+        String name = callTarget.targetName();
+        return name != null && name.contains("atomicAdd");
     }
 
     /**

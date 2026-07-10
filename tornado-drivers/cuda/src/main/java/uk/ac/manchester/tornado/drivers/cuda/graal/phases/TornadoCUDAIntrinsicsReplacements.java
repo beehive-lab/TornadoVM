@@ -35,10 +35,17 @@ import tornado.graal.compiler.graph.iterators.NodeIterable;
 import tornado.graal.compiler.nodes.CallTargetNode;
 import tornado.graal.compiler.nodes.ConstantNode;
 import tornado.graal.compiler.nodes.GraphState;
+import tornado.graal.compiler.core.common.type.ObjectStamp;
+import tornado.graal.compiler.core.common.type.Stamp;
 import tornado.graal.compiler.nodes.InvokeNode;
+import tornado.graal.compiler.nodes.NodeView;
 import tornado.graal.compiler.nodes.StructuredGraph;
 import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.calc.AddNode;
+import tornado.graal.compiler.nodes.calc.MulNode;
+import tornado.graal.compiler.nodes.calc.SignExtendNode;
 import tornado.graal.compiler.nodes.java.LoadFieldNode;
+import tornado.graal.compiler.nodes.memory.address.OffsetAddressNode;
 import tornado.graal.compiler.nodes.util.GraphUtil;
 import tornado.graal.compiler.phases.BasePhase;
 
@@ -65,6 +72,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASimdBroadcastFirstN
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASimdSumNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASwizzledLoadFP16Stride32Node;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASwizzledStoreFP16Stride32Node;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.AtomAddNodeTemplate;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GlobalThreadSizeNode;
@@ -226,6 +234,13 @@ public class TornadoCUDAIntrinsicsReplacements extends BasePhase<TornadoHighTier
                 case "Direct#KernelContext.swizzleStoreFp16Stride32":
                     lowerSwizzleStore(graph, invoke);
                     break;
+                // KernelContext.atomicAdd: plugin misses on the reflection path, so the call survives and the
+                // KernelContext default body is compiled instead (its address reaches CUDAAddressLowering with an
+                // unhandled ConstantNode origin -> "address origin unimplemented"). Rewrite to the AtomAddNode the
+                // plugin would build.
+                case "Direct#KernelContext.atomicAdd":
+                    lowerAtomicAdd(graph, invoke);
+                    break;
                 // SIMD-group (warp-shuffle) reductions: their InvocationPlugins miss on the reflection path, so the
                 // call survives to a device function whose KernelContext default body is a no-op (returns the input
                 // unchanged) - producing a silently wrong reduction. Rewrite to the warp-shuffle nodes.
@@ -353,6 +368,46 @@ public class TornadoCUDAIntrinsicsReplacements extends BasePhase<TornadoHighTier
      * Rewrite a surviving {@code KernelContext.swizzleLoadFp16Stride32(local, row, col, stride)} invoke into a
      * {@link CUDASwizzledLoadFP16Stride32Node} (arguments 1-4 after the receiver).
      */
+    /**
+     * Rewrite a surviving {@code KernelContext.atomicAdd(array, index, inc)} invoke into an {@link AtomAddNodeTemplate},
+     * mirroring the invocation plugin. Argument 0 is the {@code KernelContext} receiver; 1 the array segment, 2 the
+     * element index, 3 the increment. The element address uses the Panama array header (16) that the kernel addresses
+     * with, so it matches the buffer laid out by CUDAArrayWrapper.
+     */
+    private void lowerAtomicAdd(StructuredGraph graph, InvokeNode invoke) {
+        NodeInputList<ValueNode> args = invoke.callTarget().arguments();
+        ValueNode segment = args.get(1);
+        ValueNode index = args.get(2);
+        ValueNode inc = args.get(3);
+        JavaKind kind = atomicElementKind(segment);
+        int headerElements = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE / kind.getByteCount();
+        AddNode newIndex = graph.addOrUniqueWithInputs(new AddNode(index, ConstantNode.forInt(headerElements, graph)));
+        SignExtendNode signExtend = graph.addOrUniqueWithInputs(new SignExtendNode(newIndex, JavaKind.Long.getBitCount()));
+        MulNode offset = graph.addOrUniqueWithInputs(new MulNode(signExtend, ConstantNode.forInt(kind.getByteCount(), graph)));
+        OffsetAddressNode address = graph.addWithoutUnique(new OffsetAddressNode(segment, offset));
+        AtomAddNodeTemplate atomicAdd = graph.add(new AtomAddNodeTemplate(address, inc, kind));
+        graph.replaceFixed(invoke, atomicAdd);
+    }
+
+    /**
+     * Element kind of the array argument to {@code atomicAdd}, from its stamp type: IntArray/int[]->Int,
+     * LongArray->Long, FloatArray->Float, DoubleArray->Double.
+     */
+    private static JavaKind atomicElementKind(ValueNode segment) {
+        Stamp stamp = GraphUtil.unproxify(segment).stamp(NodeView.DEFAULT);
+        String name = (stamp instanceof ObjectStamp objectStamp && objectStamp.type() != null) ? objectStamp.type().toJavaName() : "";
+        if (name.contains("LongArray")) {
+            return JavaKind.Long;
+        }
+        if (name.contains("FloatArray")) {
+            return JavaKind.Float;
+        }
+        if (name.contains("DoubleArray")) {
+            return JavaKind.Double;
+        }
+        return JavaKind.Int;
+    }
+
     private void lowerSwizzleLoad(StructuredGraph graph, InvokeNode invoke) {
         NodeInputList<ValueNode> args = invoke.callTarget().arguments();
         CUDASwizzledLoadFP16Stride32Node node = graph.add(new CUDASwizzledLoadFP16Stride32Node(args.get(1), args.get(2), args.get(3), args.get(4)));
