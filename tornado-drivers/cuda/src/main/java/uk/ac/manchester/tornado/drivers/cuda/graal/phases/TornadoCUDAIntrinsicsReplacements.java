@@ -112,6 +112,12 @@ public class TornadoCUDAIntrinsicsReplacements extends BasePhase<TornadoHighTier
         for (InvokeNode invoke : invokeNodes) {
             String methodName = invoke.callTarget().targetName();
 
+            // WP3A-PROBE (temporary): if the eager-resolving SuitesProvider fix works, KernelContext invokes
+            // are intrinsified at sketch time and never survive to this phase. Zero output = hypothesis confirmed.
+            if (methodName.startsWith("Direct#KernelContext.")) {
+                System.err.println("[WP3A-PROBE][CUDA] surviving KernelContext invoke reached IntrinsicsReplacements: " + methodName);
+            }
+
             switch (methodName) {
                 case "Direct#NewArrayNode.newArray": {
                     lowerInvokeNode(invoke);
