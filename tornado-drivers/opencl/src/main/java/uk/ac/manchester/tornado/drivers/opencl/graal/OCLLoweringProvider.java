@@ -368,6 +368,24 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         graph.replaceFixedWithFixed(arrayLengthNode, arrayLengthRead);
     }
 
+    /**
+     * True when {@code array} is a HALF-typed OpenCL local array. On the reflection path the array reference is
+     * wrapped in a {@link tornado.graal.compiler.nodes.PiNode} guard, so unproxify before the {@code instanceof}
+     * check; also match the still-surviving {@code allocateHalfFloatLocalArray} invoke if lowering runs before the
+     * intrinsics-replacement phase rewrites it to a {@link LocalArrayNode}. Without this the half element is read as
+     * a word-typed (ulong) value and truncated (1.5 -&gt; 1). Mirrors the CUDA backend.
+     */
+    private static boolean isLocalHalfArray(ValueNode array) {
+        Node node = GraphUtil.unproxify(array);
+        if (node instanceof LocalArrayNode localArrayNode) {
+            return localArrayNode.getOCLKind() == OCLKind.HALF;
+        }
+        if (node instanceof InvokeNode invoke && invoke.callTarget() != null && invoke.callTarget().targetName() != null) {
+            return invoke.callTarget().targetName().contains("allocateHalfFloatLocalArray");
+        }
+        return false;
+    }
+
     @Override
     public void lowerLoadIndexedNode(LoadIndexedNode loadIndexed, LoweringTool tool) {
         StructuredGraph graph = loadIndexed.graph();
@@ -379,7 +397,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             loadStamp = loadStamp(loadIndexed.stamp(NodeView.DEFAULT), elementKind, false);
         }
         address = createArrayAccess(graph, loadIndexed, elementKind);
-        if (loadIndexed.array() instanceof LocalArrayNode localArrayNode && localArrayNode.getOCLKind() == OCLKind.HALF) {
+        if (isLocalHalfArray(loadIndexed.array())) {
             ReadHalfFloatNode localHalfFloatRead = graph.add(new ReadHalfFloatNode(address, loadIndexed.index()));
             loadIndexed.replaceAtUsages(localHalfFloatRead);
             graph.replaceFixed(loadIndexed, localHalfFloatRead);
@@ -404,7 +422,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         // Native (Panama) arrays start data at the fixed ARRAY_HEADER (see createArrayAccess) — not the JVM's
         // compact-header-dependent Java-array base offset — so pass ARRAY_HEADER explicitly.
         AddressNode address = createArrayAddress(graph, array, (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE, elementKind, storeIndexed.index());
-        if (array instanceof LocalArrayNode localArrayNode && localArrayNode.getOCLKind() == OCLKind.HALF) {
+        if (isLocalHalfArray(array)) {
             WriteHalfFloatNode localHalfFloatWrite = graph.add(new WriteHalfFloatNode(address, value, storeIndexed.index()));
             graph.replaceFixedWithFixed(storeIndexed, localHalfFloatWrite);
         } else {
