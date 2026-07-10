@@ -368,6 +368,24 @@ public class CUDALoweringProvider extends DefaultJavaLoweringProvider {
         graph.replaceFixedWithFixed(arrayLengthNode, arrayLengthRead);
     }
 
+    /**
+     * A local ({@code __shared__}) HALF array reference. On the reflection path the read/write of an
+     * {@code allocateHalfFloatLocalArray} reaches lowering BEFORE the intrinsics-replacement phase rewrites the
+     * surviving invoke into a {@link LocalArrayNode}, so match the surviving invoke by name too (and unwrap PiNode
+     * bounds-check guards). Otherwise the element load is emitted as a word-typed (ULONG) read and NVRTC rejects the
+     * resulting ambiguous {@code __half} assignment ({@code half = ulong + ulong}).
+     */
+    private static boolean isLocalHalfArray(ValueNode array) {
+        Node node = GraphUtil.unproxify(array);
+        if (node instanceof LocalArrayNode localArrayNode) {
+            return localArrayNode.getCUDAKind() == CUDAKind.HALF;
+        }
+        if (node instanceof InvokeNode invoke && invoke.callTarget() != null && invoke.callTarget().targetName() != null) {
+            return invoke.callTarget().targetName().contains("allocateHalfFloatLocalArray");
+        }
+        return false;
+    }
+
     @Override
     public void lowerLoadIndexedNode(LoadIndexedNode loadIndexed, LoweringTool tool) {
         StructuredGraph graph = loadIndexed.graph();
@@ -379,7 +397,7 @@ public class CUDALoweringProvider extends DefaultJavaLoweringProvider {
             loadStamp = loadStamp(loadIndexed.stamp(NodeView.DEFAULT), elementKind, false);
         }
         address = createArrayAccess(graph, loadIndexed, elementKind);
-        if (loadIndexed.array() instanceof LocalArrayNode localArrayNode && localArrayNode.getCUDAKind() == CUDAKind.HALF) {
+        if (isLocalHalfArray(loadIndexed.array())) {
             ReadHalfFloatNode localHalfFloatRead = graph.add(new ReadHalfFloatNode(address, loadIndexed.index()));
             loadIndexed.replaceAtUsages(localHalfFloatRead);
             graph.replaceFixed(loadIndexed, localHalfFloatRead);
@@ -402,7 +420,7 @@ public class CUDALoweringProvider extends DefaultJavaLoweringProvider {
         ValueNode value = storeIndexed.value();
         ValueNode array = storeIndexed.array();
         AddressNode address = createArrayAddress(graph, array, (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE, elementKind, storeIndexed.index());
-        if (array instanceof LocalArrayNode localArrayNode && localArrayNode.getCUDAKind() == CUDAKind.HALF) {
+        if (isLocalHalfArray(array)) {
             WriteHalfFloatNode localHalfFloatWrite = graph.add(new WriteHalfFloatNode(address, value, storeIndexed.index()));
             graph.replaceFixedWithFixed(storeIndexed, localHalfFloatWrite);
         } else {
