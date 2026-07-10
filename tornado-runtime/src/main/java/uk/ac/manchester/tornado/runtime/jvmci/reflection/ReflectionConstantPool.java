@@ -24,6 +24,8 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.lang.reflect.Executable;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.JavaConstant;
@@ -74,6 +76,8 @@ final class ReflectionConstantPool implements ConstantPool {
     private final int[] refA; // Class: name_index; Ref: class_index; NameAndType: name_index; String/MethodType: index
     private final int[] refB; // Ref: name_and_type_index; NameAndType: descriptor_index
     private final long[] primitive; // Integer/Float(as int bits)/Long/Double bits
+    // Cache resolved Class per CP index: the same class ref is resolved repeatedly during a method's graph build.
+    private final Map<Integer, Class<?>> resolvedClasses = new ConcurrentHashMap<>();
 
     ReflectionConstantPool(ReflectionUniverse universe, Class<?> declaringClass, byte[] classfile) {
         this.universe = universe;
@@ -132,10 +136,14 @@ final class ReflectionConstantPool implements ConstantPool {
     }
 
     private Class<?> resolveClass(int classCpi) {
+        return resolvedClasses.computeIfAbsent(classCpi, this::doResolveClass);
+    }
+
+    private Class<?> doResolveClass(int classCpi) {
         String internal = classNameAt(classCpi);
         try {
-            // array class names are already in the "[L...;" form; plain classes use dotted names
-            String name = internal.charAt(0) == '[' ? internal.replace('/', '.') : internal.replace('/', '.');
+            // Both plain class names and array names ("[L...;") map to the binary name by replacing '/' with '.'.
+            String name = internal.replace('/', '.');
             return Class.forName(name, false, loader);
         } catch (ClassNotFoundException e) {
             throw new IllegalStateException("Unable to resolve class " + internal, e);
@@ -196,27 +204,11 @@ final class ReflectionConstantPool implements ConstantPool {
         }
         // The JDK reflection-filters some sensitive internal fields (e.g.
         // System.security); read their metadata straight from the classfile.
-        ClassfileParser.FieldInfo info = ClassfileParser.findFieldInfo(classfileOf(holder), name);
+        ClassfileParser.FieldInfo info = ClassfileParser.findFieldInfo(universe.classfileBytes(holder), name);
         if (info != null) {
             return new ClassfileResolvedJavaField(universe, holder, info, loader);
         }
         throw new IllegalStateException("Unable to resolve field " + holder.getName() + "." + name);
-    }
-
-    private byte[] classfileOf(Class<?> clazz) {
-        String internal = clazz.getName().replace('.', '/');
-        ClassLoader cl = clazz.getClassLoader();
-        if (cl == null) {
-            cl = ClassLoader.getSystemClassLoader();
-        }
-        try (java.io.InputStream in = cl.getResourceAsStream(internal + ".class")) {
-            if (in == null) {
-                throw new IllegalStateException("classfile not found for " + clazz.getName());
-            }
-            return in.readAllBytes();
-        } catch (IOException e) {
-            throw new IllegalStateException("failed reading classfile for " + clazz.getName(), e);
-        }
     }
 
     @Override

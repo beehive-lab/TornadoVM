@@ -20,8 +20,6 @@
  */
 package uk.ac.manchester.tornado.runtime.jvmci.reflection;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
@@ -74,6 +72,11 @@ final class ReflectionResolvedJavaMethod implements ResolvedJavaMethod {
     private MethodCode code;
     private boolean codeParsed;
     private ConstantPool constantPool;
+    // Memoized derived metadata (this instance is canonical per Executable via ReflectionUniverse.lookupMethod).
+    private Signature signature;
+    private LocalVariableTable localVariableTable;
+    private ProfilingInfo profilingInfo;
+    private String toStringCache;
 
     ReflectionResolvedJavaMethod(ReflectionUniverse universe, Executable executable) {
         this(universe, executable, null);
@@ -115,20 +118,7 @@ final class ReflectionResolvedJavaMethod implements ResolvedJavaMethod {
     }
 
     private byte[] classfileBytes() {
-        Class<?> declaring = executable.getDeclaringClass();
-        String internalName = declaring.getName().replace('.', '/');
-        ClassLoader loader = declaring.getClassLoader();
-        if (loader == null) {
-            loader = ClassLoader.getSystemClassLoader();
-        }
-        try (InputStream in = loader.getResourceAsStream(internalName + ".class")) {
-            if (in == null) {
-                throw new IllegalStateException("classfile not found for " + declaring.getName());
-            }
-            return in.readAllBytes();
-        } catch (IOException e) {
-            throw new IllegalStateException("failed reading classfile for " + declaring.getName(), e);
-        }
+        return universe.classfileBytes(executable.getDeclaringClass());
     }
 
     // ---- structural facts from reflection ----
@@ -145,11 +135,15 @@ final class ReflectionResolvedJavaMethod implements ResolvedJavaMethod {
 
     @Override
     public Signature getSignature() {
-        if (polymorphicDescriptor != null) {
-            ClassLoader loader = executable.getDeclaringClass().getClassLoader();
-            return new DescriptorSignature(universe, loader != null ? loader : ClassLoader.getSystemClassLoader(), polymorphicDescriptor);
+        if (signature == null) {
+            if (polymorphicDescriptor != null) {
+                ClassLoader loader = executable.getDeclaringClass().getClassLoader();
+                signature = new DescriptorSignature(universe, loader != null ? loader : ClassLoader.getSystemClassLoader(), polymorphicDescriptor);
+            } else {
+                signature = new ReflectionSignature(universe, executable);
+            }
         }
-        return new ReflectionSignature(universe, executable);
+        return signature;
     }
 
     @Override
@@ -313,6 +307,9 @@ final class ReflectionResolvedJavaMethod implements ResolvedJavaMethod {
 
     @Override
     public LocalVariableTable getLocalVariableTable() {
+        if (localVariableTable != null) {
+            return localVariableTable;
+        }
         // The reflection classfile path does not parse the optional (debug-only) LocalVariableTable
         // attribute, but backends need one to name kernel parameters (locals live at BCI 0). Synthesise
         // a table from the method parameters: stable identifiers (this/arg0/arg1/...) with the correct
@@ -330,7 +327,8 @@ final class ReflectionResolvedJavaMethod implements ResolvedJavaMethod {
             locals.add(new Local("arg" + i, type, 0, endBci, slot));
             slot += JavaKind.fromJavaClass(parameterTypes[i]).getSlotCount();
         }
-        return new LocalVariableTable(locals.toArray(new Local[0]));
+        localVariableTable = new LocalVariableTable(locals.toArray(new Local[0]));
+        return localVariableTable;
     }
 
     @Override
@@ -345,7 +343,10 @@ final class ReflectionResolvedJavaMethod implements ResolvedJavaMethod {
 
     @Override
     public ProfilingInfo getProfilingInfo(boolean includeNormal, boolean includeOSR) {
-        return new ReflectionProfilingInfo(getCodeSize());
+        if (profilingInfo == null) {
+            profilingInfo = new ReflectionProfilingInfo(getCodeSize());
+        }
+        return profilingInfo;
     }
 
     @Override
@@ -374,6 +375,10 @@ final class ReflectionResolvedJavaMethod implements ResolvedJavaMethod {
         // TornadoVM's vector/half-float NodePlugins match on method.toString().contains("FloatArray.<init>(int)")
         // etc., so the "<init>" and parenthesised parameter list must be present or private-vector/HalfFloat
         // construction is inlined into the (bodiless) native allocator instead of being intrinsified.
+        // Memoized: toString is on the hot NodePlugin-matching path.
+        if (toStringCache != null) {
+            return toStringCache;
+        }
         StringBuilder sb = new StringBuilder("ReflectionMethod<");
         sb.append(executable.getDeclaringClass().getName()).append('.').append(getName()).append('(');
         Class<?>[] parameterTypes = executable.getParameterTypes();
@@ -384,6 +389,7 @@ final class ReflectionResolvedJavaMethod implements ResolvedJavaMethod {
             sb.append(parameterTypes[i].getSimpleName());
         }
         sb.append(")>");
-        return sb.toString();
+        toStringCache = sb.toString();
+        return toStringCache;
     }
 }

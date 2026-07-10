@@ -20,6 +20,8 @@
  */
 package uk.ac.manchester.tornado.runtime.jvmci.reflection;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -54,7 +56,16 @@ public final class ReflectionUniverse {
     // plugin (segment-access intrinsics never fire), driving the sketcher into abstract
     // JDK-internal Panama methods that have no bytecode.
     private final Map<Executable, ReflectionResolvedJavaMethod> methods = new ConcurrentHashMap<>();
+    // Signature-polymorphic methods carry a call-site descriptor, so they canonicalise on (Executable, descriptor):
+    // the same descriptor must map to the SAME instance (same InvocationPlugin-matching guarantee as `methods`).
+    private final Map<PolymorphicKey, ReflectionResolvedJavaMethod> polymorphicMethods = new ConcurrentHashMap<>();
     private final Map<Field, ReflectionResolvedJavaField> fields = new ConcurrentHashMap<>();
+
+    private record PolymorphicKey(Executable executable, String callSiteDescriptor) {
+    }
+    // One classfile read per declaring class, shared by every method of that class and by both the Code-attribute
+    // parse and the constant-pool parse. Without this a class with N methods reads+parses its classfile ~2N times.
+    private final Map<Class<?>, byte[]> classfileBytes = new ConcurrentHashMap<>();
 
     private static Unsafe initUnsafe() {
         try {
@@ -79,11 +90,32 @@ public final class ReflectionUniverse {
 
     /** A signature-polymorphic method carrying the call-site descriptor as its signature. */
     ReflectionResolvedJavaMethod lookupPolymorphicMethod(Executable executable, String callSiteDescriptor) {
-        return new ReflectionResolvedJavaMethod(this, executable, callSiteDescriptor);
+        return polymorphicMethods.computeIfAbsent(new PolymorphicKey(executable, callSiteDescriptor), k -> new ReflectionResolvedJavaMethod(this, executable, callSiteDescriptor));
     }
 
     public ReflectionResolvedJavaField lookupField(Field field) {
         return fields.computeIfAbsent(field, f -> new ReflectionResolvedJavaField(this, f));
+    }
+
+    /** Raw bytes of {@code declaring}'s classfile, read once and cached (shared across all its methods). */
+    byte[] classfileBytes(Class<?> declaring) {
+        return classfileBytes.computeIfAbsent(declaring, ReflectionUniverse::readClassfileBytes);
+    }
+
+    private static byte[] readClassfileBytes(Class<?> declaring) {
+        String internalName = declaring.getName().replace('.', '/');
+        ClassLoader loader = declaring.getClassLoader();
+        if (loader == null) {
+            loader = ClassLoader.getSystemClassLoader();
+        }
+        try (InputStream in = loader.getResourceAsStream(internalName + ".class")) {
+            if (in == null) {
+                throw new IllegalStateException("classfile not found for " + declaring.getName());
+            }
+            return in.readAllBytes();
+        } catch (IOException e) {
+            throw new IllegalStateException("failed reading classfile for " + declaring.getName(), e);
+        }
     }
 
     /** JVM type descriptor, e.g. {@code int -> "I"}, {@code Object -> "Ljava/lang/Object;"}, {@code int[] -> "[I"}. */

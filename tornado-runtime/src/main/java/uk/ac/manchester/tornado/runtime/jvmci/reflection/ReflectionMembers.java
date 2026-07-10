@@ -26,18 +26,40 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Resolves a constant-pool method/field reference (holder + name + JVM
  * descriptor) to the corresponding reflective {@link Executable}/{@link Field},
  * walking the class hierarchy and interfaces as the JVM resolution rules do.
+ *
+ * <p>
+ * Resolution walks the super-chain + all interfaces (O(hierarchy) reflective
+ * {@code getDeclared*} calls), so results are memoized process-wide keyed by
+ * (holder, name, descriptor). {@link Optional#empty()} caches "not found".
  */
 final class ReflectionMembers {
+
+    private record MethodKey(Class<?> holder, String name, String descriptor) {
+    }
+
+    private record MemberKey(Class<?> holder, String name) {
+    }
+
+    private static final Map<MethodKey, Optional<Executable>> METHOD_CACHE = new ConcurrentHashMap<>();
+    private static final Map<MemberKey, Optional<Executable>> POLYMORPHIC_CACHE = new ConcurrentHashMap<>();
+    private static final Map<MemberKey, Optional<Field>> FIELD_CACHE = new ConcurrentHashMap<>();
 
     private ReflectionMembers() {
     }
 
     static Executable findMethod(Class<?> holder, String name, String descriptor, ClassLoader loader) {
+        return METHOD_CACHE.computeIfAbsent(new MethodKey(holder, name, descriptor), k -> Optional.ofNullable(findMethod0(holder, name, descriptor, loader))).orElse(null);
+    }
+
+    private static Executable findMethod0(Class<?> holder, String name, String descriptor, ClassLoader loader) {
         Class<?>[] paramTypes = parameterTypes(descriptor, loader);
         if ("<init>".equals(name)) {
             try {
@@ -70,6 +92,10 @@ final class ReflectionMembers {
      * only, since the call site's real signature comes from the constant pool.
      */
     static Executable findPolymorphic(Class<?> holder, String name) {
+        return POLYMORPHIC_CACHE.computeIfAbsent(new MemberKey(holder, name), k -> Optional.ofNullable(findPolymorphic0(holder, name))).orElse(null);
+    }
+
+    private static Executable findPolymorphic0(Class<?> holder, String name) {
         for (Class<?> c = holder; c != null; c = c.getSuperclass()) {
             try {
                 Method m = c.getDeclaredMethod(name, Object[].class);
@@ -84,6 +110,10 @@ final class ReflectionMembers {
     }
 
     static Field findField(Class<?> holder, String name) {
+        return FIELD_CACHE.computeIfAbsent(new MemberKey(holder, name), k -> Optional.ofNullable(findField0(holder, name))).orElse(null);
+    }
+
+    private static Field findField0(Class<?> holder, String name) {
         for (Class<?> c = holder; c != null; c = c.getSuperclass()) {
             try {
                 return c.getDeclaredField(name);

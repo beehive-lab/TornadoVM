@@ -28,7 +28,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 import jdk.vm.ci.meta.JavaConstant;
@@ -50,6 +52,12 @@ public final class ReflectionResolvedJavaType implements ResolvedJavaType {
 
     private final ReflectionUniverse universe;
     private final Class<?> clazz;
+
+    // Memoized field views (this type is canonical per Class via ReflectionUniverse.lookupType).
+    private ResolvedJavaField[] instanceFieldsWithSuper;
+    private ResolvedJavaField[] instanceFieldsNoSuper;
+    private ResolvedJavaField[] staticFields;
+    private Map<Long, ResolvedJavaField> instanceFieldByOffset;
 
     ReflectionResolvedJavaType(ReflectionUniverse universe, Class<?> clazz) {
         this.universe = universe;
@@ -196,27 +204,44 @@ public final class ReflectionResolvedJavaType implements ResolvedJavaType {
 
     @Override
     public ResolvedJavaField[] getInstanceFields(boolean includeSuperclasses) {
-        List<ReflectionResolvedJavaField> out = new ArrayList<>();
+        if (includeSuperclasses) {
+            if (instanceFieldsWithSuper == null) {
+                instanceFieldsWithSuper = computeInstanceFields(true);
+            }
+            return instanceFieldsWithSuper;
+        }
+        if (instanceFieldsNoSuper == null) {
+            instanceFieldsNoSuper = computeInstanceFields(false);
+        }
+        return instanceFieldsNoSuper;
+    }
+
+    private ResolvedJavaField[] computeInstanceFields(boolean includeSuperclasses) {
+        List<ResolvedJavaField> out = new ArrayList<>();
         for (Class<?> c = clazz; c != null; c = includeSuperclasses ? c.getSuperclass() : null) {
             for (Field f : c.getDeclaredFields()) {
                 if (!Modifier.isStatic(f.getModifiers())) {
-                    out.add(new ReflectionResolvedJavaField(universe, f));
+                    // Via the universe cache so a given Field is one canonical instance (field-identity canonicalization).
+                    out.add(universe.lookupField(f));
                 }
             }
         }
-        out.sort(Comparator.comparingInt(ReflectionResolvedJavaField::getOffset));
+        out.sort(Comparator.comparingInt(ResolvedJavaField::getOffset));
         return out.toArray(new ResolvedJavaField[0]);
     }
 
     @Override
     public ResolvedJavaField[] getStaticFields() {
-        List<ReflectionResolvedJavaField> out = new ArrayList<>();
-        for (Field f : clazz.getDeclaredFields()) {
-            if (Modifier.isStatic(f.getModifiers())) {
-                out.add(new ReflectionResolvedJavaField(universe, f));
+        if (staticFields == null) {
+            List<ResolvedJavaField> out = new ArrayList<>();
+            for (Field f : clazz.getDeclaredFields()) {
+                if (Modifier.isStatic(f.getModifiers())) {
+                    out.add(universe.lookupField(f));
+                }
             }
+            staticFields = out.toArray(new ResolvedJavaField[0]);
         }
-        return out.toArray(new ResolvedJavaField[0]);
+        return staticFields;
     }
 
     @Override
@@ -345,12 +370,14 @@ public final class ReflectionResolvedJavaType implements ResolvedJavaType {
 
     @Override
     public ResolvedJavaField findInstanceFieldWithOffset(long offset, JavaKind expectedKind) {
-        for (ResolvedJavaField field : getInstanceFields(true)) {
-            if (field.getOffset() == offset) {
-                return field;
+        if (instanceFieldByOffset == null) {
+            Map<Long, ResolvedJavaField> byOffset = new HashMap<>();
+            for (ResolvedJavaField field : getInstanceFields(true)) {
+                byOffset.putIfAbsent((long) field.getOffset(), field);
             }
+            instanceFieldByOffset = byOffset;
         }
-        return null;
+        return instanceFieldByOffset.get(offset);
     }
 
     @Override
