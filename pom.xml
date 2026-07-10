@@ -53,6 +53,11 @@
         <jmh.version>1.29</jmh.version>
         <tornadojmhjar.name>jmhbenchmarks</tornadojmhjar.name>
         <checkstyle.config.location>tornado-assembly/src/etc/checkstyle.xml</checkstyle.config.location>
+        <!-- Tests are skipped by default (GPU unit tests need a device); override with -DskipTests=false
+             to run the pure-JVM tornado-runtime unit tests. -->
+        <skipTests>true</skipTests>
+        <!-- Default: no extra JVM args; each jdkNN profile overrides with its module-access argLine. -->
+        <tornado.test.argLine></tornado.test.argLine>
     </properties>
 
     <profiles>
@@ -345,13 +350,20 @@
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
+            <properties>
+                <!-- Runtime module access for pure-JVM unit tests (mirrors this profile's compilerArgs). -->
+                <tornado.test.argLine>--enable-preview --add-modules ALL-SYSTEM --add-modules=jdk.incubator.vector @${user.dir}/tornado-assembly/src/etc/exportLists/common-exports</tornado.test.argLine>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <skipTests>true</skipTests>
+                            <skipTests>${skipTests}</skipTests>
+                            <!-- Pure-JVM unit tests need the same JVMCI module access as the main compile.
+                                 Skipped by default; run with: mvn -Pjdk21 -pl tornado-runtime test -DskipTests=false -->
+                            <argLine>${tornado.test.argLine}</argLine>
                         </configuration>
                     </plugin>
                     <plugin>
@@ -423,13 +435,20 @@
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
+            <properties>
+                <!-- Runtime module access for pure-JVM unit tests (mirrors this profile's compilerArgs). -->
+                <tornado.test.argLine>--add-modules ALL-SYSTEM --add-modules=jdk.incubator.vector --patch-module jdk.internal.vm.ci=${user.dir}/graalJars/jvmci-21.0.2.jar @${user.dir}/tornado-assembly/src/etc/exportLists/common-exports</tornado.test.argLine>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <skipTests>true</skipTests>
+                            <skipTests>${skipTests}</skipTests>
+                            <!-- Pure-JVM unit tests need the same JVMCI module access as the main compile.
+                                 Skipped by default; run with: mvn -Pjdk21 -pl tornado-runtime test -DskipTests=false -->
+                            <argLine>${tornado.test.argLine}</argLine>
                         </configuration>
                     </plugin>
                     <plugin>
@@ -477,13 +496,20 @@
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
+            <properties>
+                <!-- Runtime module access for pure-JVM unit tests (mirrors this profile's compilerArgs). -->
+                <tornado.test.argLine>--add-modules ALL-SYSTEM --add-modules=jdk.incubator.vector --patch-module jdk.internal.vm.ci=${user.dir}/graalJars/jvmci-21.0.2.jar @${user.dir}/tornado-assembly/src/etc/exportLists/common-exports</tornado.test.argLine>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <skipTests>true</skipTests>
+                            <skipTests>${skipTests}</skipTests>
+                            <!-- Pure-JVM unit tests need the same JVMCI module access as the main compile.
+                                 Skipped by default; run with: mvn -Pjdk21 -pl tornado-runtime test -DskipTests=false -->
+                            <argLine>${tornado.test.argLine}</argLine>
                         </configuration>
                     </plugin>
                     <plugin>
@@ -541,6 +567,11 @@
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
+            <properties>
+                <!-- Runtime module access for pure-JVM unit tests. JVMCI is supplied by the vendored
+                     tornado.jvmci application module (below), so no patch-module is needed here. -->
+                <tornado.test.argLine>--add-modules ALL-SYSTEM --add-modules=jdk.incubator.vector @${user.dir}/tornado-assembly/src/etc/exportLists/common-exports</tornado.test.argLine>
+            </properties>
             <dependencies>
                 <dependency>
                     <!-- Vendored jdk.internal.vm.ci (JDK-21 shape). Profile-scoped: on JDK <=26
@@ -557,7 +588,10 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <skipTests>true</skipTests>
+                            <skipTests>${skipTests}</skipTests>
+                            <!-- Pure-JVM unit tests need the same JVMCI module access as the main compile.
+                                 Skipped by default; run with: mvn -Pjdk21 -pl tornado-runtime test -DskipTests=false -->
+                            <argLine>${tornado.test.argLine}</argLine>
                         </configuration>
                     </plugin>
                     <plugin>

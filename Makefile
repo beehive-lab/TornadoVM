@@ -57,6 +57,12 @@ xilinx_emulation:
 checkstyle:
 	./mvnw checkstyle:check
 
+# Pure-JVM (no-GPU) unit tests for the reflection JVMCI layer. Every JDK profile skips surefire,
+# so force it on here. Override the profile with JDK=jdk25|jdk26|jdk27 to run under another JDK.
+JDK ?= jdk21
+unit-tests:
+	./mvnw -P$(JDK) -pl tornado-runtime test -DskipTests=false
+
 clean:
 	./mvnw -Popencl-backend,ptx-backend,spirv-backend clean
 
