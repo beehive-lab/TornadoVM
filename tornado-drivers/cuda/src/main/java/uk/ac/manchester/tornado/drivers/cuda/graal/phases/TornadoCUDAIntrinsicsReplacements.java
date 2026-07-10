@@ -60,6 +60,9 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadBInt8Node;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadBSwizzledNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAStoreBSwizzledNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAStoreNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAShuffleDownNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASimdBroadcastFirstNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASimdSumNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASwizzledLoadFP16Stride32Node;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASwizzledStoreFP16Stride32Node;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.FixedArrayNode;
@@ -223,6 +226,24 @@ public class TornadoCUDAIntrinsicsReplacements extends BasePhase<TornadoHighTier
                 case "Direct#KernelContext.swizzleStoreFp16Stride32":
                     lowerSwizzleStore(graph, invoke);
                     break;
+                // SIMD-group (warp-shuffle) reductions: their InvocationPlugins miss on the reflection path, so the
+                // call survives to a device function whose KernelContext default body is a no-op (returns the input
+                // unchanged) - producing a silently wrong reduction. Rewrite to the warp-shuffle nodes.
+                case "Direct#KernelContext.simdShuffleDown": {
+                    NodeInputList<ValueNode> a = invoke.callTarget().arguments();
+                    graph.replaceFixed(invoke, graph.add(new CUDAShuffleDownNode(a.get(1), a.get(2))));
+                    break;
+                }
+                case "Direct#KernelContext.simdSum": {
+                    NodeInputList<ValueNode> a = invoke.callTarget().arguments();
+                    graph.replaceFixed(invoke, graph.add(new CUDASimdSumNode(a.get(1))));
+                    break;
+                }
+                case "Direct#KernelContext.simdBroadcastFirst": {
+                    NodeInputList<ValueNode> a = invoke.callTarget().arguments();
+                    graph.replaceFixed(invoke, graph.add(new CUDASimdBroadcastFirstNode(a.get(1))));
+                    break;
+                }
                 case "Direct#KernelContext.globalBarrier": {
                     CUDABarrierNode kcGlobalBarrier = graph.addOrUnique(new CUDABarrierNode(CUDABarrierNode.CUDAMemFenceFlags.GLOBAL));
                     graph.replaceFixed(invoke, kcGlobalBarrier);
