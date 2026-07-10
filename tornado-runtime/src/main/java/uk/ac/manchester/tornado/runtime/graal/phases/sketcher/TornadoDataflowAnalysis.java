@@ -27,6 +27,7 @@ import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Queue;
+import java.util.Set;
 
 import tornado.graal.compiler.core.common.type.ObjectStamp;
 import tornado.graal.compiler.graph.Node;
@@ -58,6 +59,7 @@ import tornado.graal.compiler.phases.BasePhase;
 
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
@@ -298,24 +300,44 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
         return result;
     }
 
+    private static final String KERNEL_CONTEXT_CLASS = "uk.ac.manchester.tornado.api.KernelContext";
+    private static final Set<String> MMA_STORE_METHODS = Set.of("mmaStore", "mmaStoreInt", "mmaStoreBSwizzled");
+    private static final Set<String> ATOMIC_ADD_METHODS = Set.of("atomicAdd");
+
+    /**
+     * Pure matcher (unit-testable without a Graal graph): true when {@code declaringClassJavaName} is
+     * {@code uk.ac.manchester.tornado.api.KernelContext} and {@code methodName} is one of {@code methodNames}.
+     * Scoping to the declaring class + an exact name set avoids false positives from user methods that merely
+     * happen to contain "mmaStore"/"atomicAdd" in their name.
+     */
+    static boolean matchesKernelContextMethod(String declaringClassJavaName, String methodName, Set<String> methodNames) {
+        return KERNEL_CONTEXT_CLASS.equals(declaringClassJavaName) && methodNames.contains(methodName);
+    }
+
+    private static boolean matchesKernelContextCall(MethodCallTargetNode callTarget, Set<String> methodNames) {
+        ResolvedJavaMethod target = callTarget.targetMethod();
+        if (target == null || target.getDeclaringClass() == null) {
+            return false;
+        }
+        return matchesKernelContextMethod(target.getDeclaringClass().toJavaName(), target.getName(), methodNames);
+    }
+
     /**
      * True when the call target is a surviving tensor-core store intrinsic (ctx.mmaStore / mmaStoreInt /
-     * mmaStoreBSwizzled) whose array argument is written on the device. Matched by name because on the
-     * reflection path the invoke is not yet lowered to its {@link MarkArrayParameterAccess} node.
+     * mmaStoreBSwizzled) whose array argument is written on the device. On the reflection path the invoke is not yet
+     * lowered to its {@link MarkArrayParameterAccess} node, so it is recognised by declaring class + exact name.
      */
     private static boolean isSurvivingMMAStore(MethodCallTargetNode callTarget) {
-        String name = callTarget.targetName();
-        return name != null && name.contains("mmaStore");
+        return matchesKernelContextCall(callTarget, MMA_STORE_METHODS);
     }
 
     /**
      * True when the call target is a surviving {@code ctx.atomicAdd} intrinsic, which atomically
-     * read-modify-writes its array argument. Matched by name because on the reflection path the invoke is not yet
-     * lowered to its atomic node when this sketch-time analysis runs.
+     * read-modify-writes its array argument. On the reflection path the invoke is not yet lowered to its atomic node
+     * when this sketch-time analysis runs, so it is recognised by declaring class + exact name.
      */
     private static boolean isSurvivingAtomicAdd(MethodCallTargetNode callTarget) {
-        String name = callTarget.targetName();
-        return name != null && name.contains("atomicAdd");
+        return matchesKernelContextCall(callTarget, ATOMIC_ADD_METHODS);
     }
 
     /**
