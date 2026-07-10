@@ -48,7 +48,9 @@ import tornado.graal.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.SpeculationLog;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCompilerIdentifier;
 
 public class CodeAnalysis {
@@ -91,9 +93,12 @@ public class CodeAnalysis {
             getDebugContext().dump(DebugContext.BASIC_LEVEL, graph, "CodeToAnalyze");
             return graph;
         } catch (Throwable e) {
-            e.printStackTrace();
+            // Do not swallow the failure: returning null here leaves callers (e.g. reduce loop-bound analysis)
+            // to NPE downstream with no trace of the real cause. Log it and bail out so the compilation aborts
+            // cleanly with the underlying exception attached.
+            new TornadoLogger(CodeAnalysis.class).error("Code analysis graph build failed for %s: %s", resolvedJavaMethod.getName(), e);
+            throw new TornadoBailoutRuntimeException("Code analysis graph build failed for " + resolvedJavaMethod.getName(), e instanceof Exception ex ? ex : new RuntimeException(e));
         }
-        return null;
     }
 
 }
