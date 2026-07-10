@@ -38,6 +38,23 @@
 static std::mutex g_cubin_cache_mtx;
 static std::unordered_map<std::string, std::string> g_cubin_cache;
 
+// One-time NVRTC header-resolution mode. Whether NVRTC can resolve
+// #include <cuda_fp16.h> on its own, needs an explicit toolkit include path, or
+// cannot resolve it at all is a fixed property of the (NVRTC, toolkit) pair on
+// this machine — not of any individual kernel. It is therefore discovered once
+// (by the first FP16 kernel) and reused, so later FP16 kernels compile in a
+// single attempt instead of repeating the failed built-in probe. Kernels with
+// no #include never consult it. See compile_with_nvrtc.
+enum class Fp16IncludeMode { UNKNOWN, NEEDS_INCLUDE_PATHS, UNRESOLVABLE };
+static std::mutex g_fp16_mode_mtx;
+static Fp16IncludeMode g_fp16_mode = Fp16IncludeMode::UNKNOWN;
+static std::vector<std::string> g_fp16_include_opts; // "--include-path=..." dirs, once resolved
+
+// One-time latch for the working-but-suboptimal PTX-JIT fallback warning (GPU
+// arch newer than the toolkit). The fallback runs correctly, so this is a
+// warning, not an error; emit it once per process rather than once per kernel.
+static std::once_flag g_arch_fallback_warn_once;
+
 extern "C" {
 
 /* OpenCL cl_program_build_info / cl_program_info values used by the Java clone. */
@@ -81,6 +98,17 @@ static std::vector<std::string> find_cuda_header_include_dirs() {
     return found;
 }
 
+// Explanatory root cause + remediation for an unresolved <cuda_fp16.h>. The raw
+// NVRTC diagnostic is only "could not open source file", which says neither why
+// nor how to fix it; this spells out that the toolkit/host is missing the CUDA
+// headers the FP16 kernels need.
+static std::string fp16_unresolvable_message() {
+    return "NVRTC cannot resolve <cuda_fp16.h>: this NVRTC provides no built-in CUDA headers "
+           "and no CUDA toolkit include directory containing cuda_fp16.h was found (checked "
+           "$CUDA_PATH/$CUDA_HOME/$CUDA_ROOT/include, /usr/local/cuda/include, /usr/include). "
+           "Install a CUDA toolkit or set CUDA_PATH to one so the CUDA backend can compile FP16 kernels.";
+}
+
 // Copies the NVRTC build log (errors and warnings) of `prog` into the
 // program's log buffer, replacing any log from a previous compile attempt.
 static void capture_nvrtc_log(nvrtcProgram prog, cuda_program_t *program) {
@@ -99,6 +127,14 @@ static void capture_nvrtc_log(nvrtcProgram prog, cuda_program_t *program) {
  * compute capability of the program's device, then loads it as a CUmodule.
  */
 static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
+    // Hoisted to function scope so the module-load failure branch can explain an
+    // NVRTC/GPU-arch mismatch. Defaults suit the pre-built-binary path below,
+    // which loads a cubin directly (no PTX-JIT fallback).
+    int gpuArchNum = 0;        // device compute capability, e.g. cc 12.0 -> 120
+    int maxSupportedArch = 0;  // highest arch this NVRTC can emit
+    int fallbackArch = 0;      // highest supported arch <= GPU (0 if none)
+    bool useCubin = true;
+    bool archKnown = false;    // arch vars populated (false for pre-supplied images)
     if (!program->binary.empty()) {
         // Already have a module image (createProgramWithBinary path) - just load it below.
         program->build_status = CL_BUILD_SUCCESS;
@@ -121,9 +157,8 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
         //
         // This makes the backend robust across the full (toolkit, driver, GPU) matrix
         // instead of assuming toolkit >= GPU.
-        const int gpuArchNum = major * 10 + minor;   // e.g. cc 12.0 -> 120, 9.0 -> 90
+        gpuArchNum = major * 10 + minor;              // e.g. cc 12.0 -> 120, 9.0 -> 90
         bool gpuArchSupported = false;
-        int fallbackArch = 0;                         // highest supported arch <= GPU
         int numArchs = 0;
         if (nvrtcGetNumSupportedArchs(&numArchs) == NVRTC_SUCCESS && numArchs > 0) {
             std::vector<int> supported(numArchs);
@@ -135,11 +170,13 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
                     if (a <= gpuArchNum && a > fallbackArch) {
                         fallbackArch = a;
                     }
+                    if (a > maxSupportedArch) {
+                        maxSupportedArch = a;
+                    }
                 }
             }
         }
 
-        bool useCubin;
         std::string arch;
         if (gpuArchSupported) {
             arch = "--gpu-architecture=sm_" + std::to_string(gpuArchNum);
@@ -152,6 +189,7 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
             arch = "--gpu-architecture=compute_" + std::to_string(target);
             useCubin = false;
         }
+        archKnown = true; // gpuArchNum/maxSupportedArch/fallbackArch/useCubin now describe this compile
 
         // Cache lookup: identical kernel source for the same architecture yields an
         // identical cubin, so reuse a previously compiled image instead of invoking
@@ -185,19 +223,50 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
         //     supplied; their on-disk headers are RTC-safe.
         //
         // A version gate cannot capture this reliably across the toolkit matrix,
-        // so compile with NVRTC's own resolution first and, only if that fails
-        // on a missing header, retry once with the toolkit include dirs.
+        // and it is a fixed property of the (NVRTC, toolkit) pair rather than of
+        // any one kernel. So the first FP16 kernel probes it (built-in first,
+        // then the toolkit include dirs) and memoizes the outcome in g_fp16_mode;
+        // later FP16 kernels read the memo and compile in a single attempt. Only
+        // kernels that actually #include a header consult this at all.
+        const bool needsHeader = program->source.find("#include") != std::string::npos;
+
+        Fp16IncludeMode mode;
         std::vector<std::string> includeOpts; // storage must outlive `options`
+        {
+            std::lock_guard<std::mutex> lock(g_fp16_mode_mtx);
+            mode = g_fp16_mode;
+            if (needsHeader && mode == Fp16IncludeMode::NEEDS_INCLUDE_PATHS) {
+                includeOpts = g_fp16_include_opts;
+            }
+        }
+
+        // A previous probe already proved the header cannot be resolved on this
+        // host: skip the doomed compile and report the explanatory failure.
+        if (needsHeader && mode == Fp16IncludeMode::UNRESOLVABLE) {
+            program->build_status = CL_BUILD_ERROR;
+            program->log = fp16_unresolvable_message();
+            std::cout << "[TornadoVM-CUDA-JNI] " << program->log << std::endl;
+            nvrtcDestroyProgram(&prog);
+            return;
+        }
+
         std::vector<const char *> options;
         options.push_back(arch.c_str());
-        // A failure here may be recovered by the missing-header retry below,
+        for (const std::string &opt : includeOpts) {
+            options.push_back(opt.c_str());
+        }
+        // A failure here may be recovered by the missing-header probe below,
         // so don't print an ERROR for it; terminal failures are reported after
-        // the retry with the full NVRTC build log.
+        // the probe with the full NVRTC build log.
         nv = nvrtcCompileProgram(prog, (int) options.size(), options.data());
         LOG_NVRTC_CALL("nvrtcCompileProgram", nv);
         capture_nvrtc_log(prog, program);
 
-        if (nv != NVRTC_SUCCESS && program->log.find("could not open source file") != std::string::npos) {
+        // First FP16 kernel whose built-in header resolution failed: probe the
+        // toolkit include dirs once, retry, then memoize what worked so no other
+        // kernel in this process repeats the failed built-in attempt.
+        if (needsHeader && nv != NVRTC_SUCCESS && mode == Fp16IncludeMode::UNKNOWN &&
+                program->log.find("could not open source file") != std::string::npos) {
             for (const std::string &dir : find_cuda_header_include_dirs()) {
                 includeOpts.push_back("--include-path=" + dir);
             }
@@ -206,6 +275,8 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
                 nvrtcDestroyProgram(&prog);
                 nv = nvrtcCreateProgram(&prog, program->source.c_str(), "tornado_kernel.cu", 0, nullptr, nullptr);
                 LOG_NVRTC_AND_VALIDATE("nvrtcCreateProgram", nv);
+                options.clear();
+                options.push_back(arch.c_str());
                 for (const std::string &opt : includeOpts) {
                     options.push_back(opt.c_str());
                 }
@@ -213,10 +284,25 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
                 LOG_NVRTC_CALL("nvrtcCompileProgram", nv);
                 capture_nvrtc_log(prog, program);
             }
+            {
+                std::lock_guard<std::mutex> lock(g_fp16_mode_mtx);
+                if (nv == NVRTC_SUCCESS && !includeOpts.empty()) {
+                    g_fp16_mode = Fp16IncludeMode::NEEDS_INCLUDE_PATHS;
+                    g_fp16_include_opts = includeOpts;
+                } else if (program->log.find("could not open source file") != std::string::npos) {
+                    // Neither built-ins nor any toolkit include dir has the header.
+                    g_fp16_mode = Fp16IncludeMode::UNRESOLVABLE;
+                }
+            }
         }
 
         if (nv != NVRTC_SUCCESS) {
             program->build_status = CL_BUILD_ERROR;
+            // An unresolved cuda_fp16.h reports only "could not open source file";
+            // prepend the root cause + remediation so the failure is actionable.
+            if (program->log.find("could not open source file") != std::string::npos) {
+                program->log = fp16_unresolvable_message() + "\n\nNVRTC log:\n" + program->log;
+            }
             std::cout << "[TornadoVM-CUDA-JNI] NVRTC compilation failed:\n" << program->log << std::endl;
             nvrtcDestroyProgram(&prog);
             return;
@@ -265,10 +351,52 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
         if (jitErrorLog[0] != '\0') {
             program->log += std::string("\nJIT log:\n") + jitErrorLog;
         }
+        // A load failure on a freshly compiled image (archKnown) means the driver
+        // rejected our output; which component is stale depends on the image kind.
+        // The raw error is only INVALID_PTX/unsupported-version, so name the cause.
+        if (archKnown && !useCubin) {
+            // PTX fallback (toolkit older than GPU): the driver JIT'd compute_<fallback>
+            // PTX and failed, which means the driver's ptxas is too old for this
+            // toolkit's PTX ISA. Updating the driver is the direct fix; a newer
+            // toolkit that natively supports the GPU also helps by skipping PTX JIT.
+            program->log = std::string("Driver could not JIT compute_") +
+                           std::to_string(fallbackArch > 0 ? fallbackArch : gpuArchNum) +
+                           " PTX for this GPU (sm_" + std::to_string(gpuArchNum) +
+                           "): the GPU driver is too old for this toolkit's PTX ISA. Update the GPU "
+                           "driver, or use a CUDA toolkit whose NVRTC natively supports sm_" +
+                           std::to_string(gpuArchNum) + " (native cubin avoids PTX JIT entirely).\n\n" +
+                           program->log;
+        } else if (archKnown) {
+            // Native cubin (toolkit knew the GPU arch) rejected at load: the driver
+            // is older than the toolkit that produced the cubin. Update the driver,
+            // or build with a toolkit matching the driver.
+            program->log = std::string("Driver rejected the native sm_") + std::to_string(gpuArchNum) +
+                           " cubin: the GPU driver is older than the CUDA toolkit that produced it. "
+                           "Update the GPU driver, or use a CUDA toolkit matching the installed driver.\n\n" +
+                           program->log;
+        }
         std::cout << "[TornadoVM-CUDA-JNI] " << program->log << std::endl;
         program->module_loaded = false;
     } else {
         program->module_loaded = true;
+        // Working, but suboptimal: the toolkit did not know the GPU's arch, so we
+        // loaded compute_<fallback> PTX JIT'd by the (newer) driver. It runs, but
+        // every load pays a driver JIT and codegen is capped at the compute_<fallback>
+        // virtual ISA — no sm_<gpuArch>-native instructions (e.g. newer tensor-core
+        // MMA shapes). Warn once so the degraded path is visible; native codegen
+        // needs a newer toolkit, not a driver change (the driver is already ahead).
+        if (archKnown && !useCubin) {
+            std::call_once(g_arch_fallback_warn_once, [&]() {
+                std::cout << "[TornadoVM-CUDA-JNI] WARNING: CUDA toolkit (NVRTC max sm_"
+                          << maxSupportedArch << ") predates this GPU (sm_" << gpuArchNum
+                          << "). Using compute_" << (fallbackArch > 0 ? fallbackArch : gpuArchNum)
+                          << " PTX JIT'd by the driver - functional but not optimal (extra load-time "
+                             "JIT; codegen limited to the compute_"
+                          << (fallbackArch > 0 ? fallbackArch : gpuArchNum)
+                          << " ISA). Upgrade the CUDA toolkit to one supporting sm_" << gpuArchNum
+                          << " for native codegen." << std::endl;
+            });
+        }
     }
 }
 
