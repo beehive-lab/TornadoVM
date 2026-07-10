@@ -30,14 +30,21 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimp
 
 import java.util.Optional;
 
+import tornado.graal.compiler.core.common.type.ObjectStamp;
+import tornado.graal.compiler.core.common.type.Stamp;
 import tornado.graal.compiler.graph.NodeInputList;
 import tornado.graal.compiler.graph.iterators.NodeIterable;
 import tornado.graal.compiler.nodes.CallTargetNode;
 import tornado.graal.compiler.nodes.ConstantNode;
 import tornado.graal.compiler.nodes.GraphState;
 import tornado.graal.compiler.nodes.InvokeNode;
+import tornado.graal.compiler.nodes.NodeView;
 import tornado.graal.compiler.nodes.StructuredGraph;
 import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.calc.AddNode;
+import tornado.graal.compiler.nodes.calc.MulNode;
+import tornado.graal.compiler.nodes.calc.SignExtendNode;
+import tornado.graal.compiler.nodes.memory.address.OffsetAddressNode;
 import tornado.graal.compiler.nodes.util.GraphUtil;
 import tornado.graal.compiler.phases.BasePhase;
 
@@ -47,6 +54,7 @@ import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLLoweringProvider;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomAddNodeTemplate;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
@@ -57,6 +65,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadIDFixedNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLBarrierNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OpenCLPrintf;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
 public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTierContext> {
@@ -170,6 +179,12 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
                     graph.replaceFixed(invoke, kcGlobalBarrier);
                     break;
                 }
+                // KernelContext.atomicAdd: same reflection-path plugin-lookup miss - the invoke survives and its
+                // default body lowers to an address whose base is a ConstantNode that OCLAddressLowering rejects
+                // ("address origin unimplemented"). Rewrite to the AtomAddNodeTemplate the invocation plugin emits.
+                case "Direct#KernelContext.atomicAdd":
+                    lowerAtomicAdd(graph, invoke);
+                    break;
             }
         }
     }
@@ -199,6 +214,46 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
         invoke.replaceAtUsages(localArrayNode);
         invoke.clearInputs();
         GraphUtil.unlinkFixedNode(invoke);
+    }
+
+    /**
+     * Rewrite a surviving {@code KernelContext.atomicAdd(array, index, inc)} invoke into an {@link AtomAddNodeTemplate},
+     * mirroring the invocation plugin. Argument 0 is the {@code KernelContext} receiver; 1 the array segment, 2 the
+     * element index, 3 the increment. The element address uses the Panama array header (16) the kernel addresses with,
+     * matching the buffer laid out by OCLArrayWrapper on the reflection path.
+     */
+    private void lowerAtomicAdd(StructuredGraph graph, InvokeNode invoke) {
+        NodeInputList<ValueNode> args = invoke.callTarget().arguments();
+        ValueNode segment = args.get(1);
+        ValueNode index = args.get(2);
+        ValueNode inc = args.get(3);
+        JavaKind kind = atomicElementKind(segment);
+        int headerElements = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE / kind.getByteCount();
+        AddNode newIndex = graph.addOrUniqueWithInputs(new AddNode(index, ConstantNode.forInt(headerElements, graph)));
+        SignExtendNode signExtend = graph.addOrUniqueWithInputs(new SignExtendNode(newIndex, JavaKind.Long.getBitCount()));
+        MulNode offset = graph.addOrUniqueWithInputs(new MulNode(signExtend, ConstantNode.forInt(kind.getByteCount(), graph)));
+        OffsetAddressNode address = graph.addWithoutUnique(new OffsetAddressNode(segment, offset));
+        AtomAddNodeTemplate atomicAdd = graph.add(new AtomAddNodeTemplate(address, inc, kind));
+        graph.replaceFixed(invoke, atomicAdd);
+    }
+
+    /**
+     * Element kind of the array argument to {@code atomicAdd}, from its stamp type: IntArray/int[]-&gt;Int,
+     * LongArray-&gt;Long, FloatArray-&gt;Float, DoubleArray-&gt;Double.
+     */
+    private static JavaKind atomicElementKind(ValueNode segment) {
+        Stamp stamp = GraphUtil.unproxify(segment).stamp(NodeView.DEFAULT);
+        String name = (stamp instanceof ObjectStamp objectStamp && objectStamp.type() != null) ? objectStamp.type().toJavaName() : "";
+        if (name.contains("LongArray")) {
+            return JavaKind.Long;
+        }
+        if (name.contains("FloatArray")) {
+            return JavaKind.Float;
+        }
+        if (name.contains("DoubleArray")) {
+            return JavaKind.Double;
+        }
+        return JavaKind.Int;
     }
 
     private void lowerLocalInvokeNodeNewArray(StructuredGraph graph, int length, JavaKind elementKind, InvokeNode newArray) {
