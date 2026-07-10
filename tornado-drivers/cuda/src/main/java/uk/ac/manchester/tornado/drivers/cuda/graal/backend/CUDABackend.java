@@ -483,6 +483,12 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
                         oclKind = tmpKind;
                     }
                 }
+                // A HalfFloat receiver/parameter must be typed __half, not its SHORT platform kind: callers pass a
+                // __half value (e.g. getFloat32(A.get(i))), so a `short` parameter would numerically truncate 2.5 to
+                // 2 at the call before __half2float ever runs.
+                if (isHalfFloat(javaType)) {
+                    oclKind = CUDAKind.HALF;
+                }
                 guarantee(oclKind != CUDAKind.ILLEGAL, "illegal type for %s", param.getPlatformKind());
                 asm.emit(", ");
                 asm.emit("%s %s", oclKind.toString(), getParameterName(locals[i]));
