@@ -59,7 +59,7 @@ public class OCLSuitesProvider implements TornadoSuitesProvider {
         PhaseSuite<HighTierContext> suite = new PhaseSuite<>();
 
         GraphBuilderConfiguration config = GraphBuilderConfiguration.getSnippetDefault(plugins);
-        config = config.withEagerResolving(true);
+        config.withEagerResolving(true);
 
         // config.setUseProfiling(false);
         suite.appendPhase(new GraphBuilderPhase(config));
