@@ -20,13 +20,18 @@ on:
         required: true
         type: string
         default: '4.0.1'
-      include_windows:
-        description: 'Run the Windows build job (requires the self-hosted Windows runner to be online).'
+      include_macos:
+        description: 'Run the macOS arm64 build job.'
         required: false
         type: boolean
         default: true
-      skip_windows_executables:
-        description: 'On the Windows build, skip building/running the native .exe wrappers (tornado.exe via PyInstaller / pyinstaller.exe, and the zello_world Level Zero probe). Required on managed Windows runners that block running unsigned executables.'
+      include_linux:
+        description: 'Run the Linux x64 build job.'
+        required: false
+        type: boolean
+        default: true
+      include_windows:
+        description: 'Run the Windows x64 build job.'
         required: false
         type: boolean
         default: true
@@ -59,8 +64,9 @@ jobs:
       version: ${{ steps.derive.outputs.version }}
       version_tag: ${{ steps.derive.outputs.version_tag }}
       proceed: ${{ steps.gate.outputs.proceed }}
+      include_macos: ${{ steps.derive.outputs.include_macos }}
+      include_linux: ${{ steps.derive.outputs.include_linux }}
       include_windows: ${{ steps.derive.outputs.include_windows }}
-      skip_windows_executables: ${{ steps.derive.outputs.skip_windows_executables }}
       upload_to_release: ${{ steps.derive.outputs.upload_to_release }}
     steps:
       - name: Checkout repository
@@ -74,8 +80,9 @@ jobs:
           set -euo pipefail
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             VERSION="${{ inputs.version }}"
+            INCLUDE_MACOS="${{ inputs.include_macos }}"
+            INCLUDE_LINUX="${{ inputs.include_linux }}"
             INCLUDE_WIN="${{ inputs.include_windows }}"
-            SKIP_WIN_EXE="${{ inputs.skip_windows_executables }}"
             UPLOAD="${{ inputs.upload_to_release }}"
           else
             case "${{ github.event.workflow_run.name }}" in
@@ -104,16 +111,18 @@ jobs:
             fi
             BASE_TAG="${LATEST_TAG#v}"             # e.g. 4.0.1-jdk21
             VERSION="${BASE_TAG%-jdk*}"            # e.g. 4.0.1
+            INCLUDE_MACOS="true"
+            INCLUDE_LINUX="true"
             INCLUDE_WIN="true"
-            SKIP_WIN_EXE="true"
             UPLOAD="true"
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "version_tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "include_macos=$INCLUDE_MACOS" >> "$GITHUB_OUTPUT"
+          echo "include_linux=$INCLUDE_LINUX" >> "$GITHUB_OUTPUT"
           echo "include_windows=$INCLUDE_WIN" >> "$GITHUB_OUTPUT"
-          echo "skip_windows_executables=$SKIP_WIN_EXE" >> "$GITHUB_OUTPUT"
           echo "upload_to_release=$UPLOAD" >> "$GITHUB_OUTPUT"
-          echo "Derived: version=$VERSION include_windows=$INCLUDE_WIN skip_windows_executables=$SKIP_WIN_EXE upload=$UPLOAD"
+          echo "Derived: version=$VERSION include_macos=$INCLUDE_MACOS include_linux=$INCLUDE_LINUX include_windows=$INCLUDE_WIN upload=$UPLOAD"
 
       - name: Gate on both Releases existing
         id: gate
@@ -142,7 +151,7 @@ jobs:
 
   build-macos:
     needs: preflight
-    if: needs.preflight.outputs.proceed == 'true'
+    if: needs.preflight.outputs.proceed == 'true' && needs.preflight.outputs.include_macos == 'true'
     name: macOS arm64 (jdk21+jdk25 × opencl+metal)
     runs-on: [self-hosted, macOS, arm64]
     timeout-minutes: 120
@@ -155,6 +164,7 @@ jobs:
       JDK25_HOME: /opt/jenkins/jdks/jdk-25.0.2/Contents/Home
       RELEASE_ARCHIVES_DIR: /opt/release-archives
       PLATFORM_DIR: macos-arm64
+      VENV_PATH: /Users/beehiveUser/venv-build-sdks
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -172,6 +182,19 @@ jobs:
         run: |
           mkdir -p "$RELEASE_ARCHIVES_DIR"
           rm -rf "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR"
+
+      - name: Use pre-provisioned Python venv
+        run: |
+          if [ ! -x "$VENV_PATH/bin/python3" ]; then
+            echo "::error::$VENV_PATH is missing on this runner. Create it once with:"
+            echo "  python3 -m venv $VENV_PATH && $VENV_PATH/bin/pip install --upgrade pip requests tqdm urllib3 wget packaging streamlit psutil"
+            exit 1
+          fi
+          # Put the pre-provisioned venv's python3/pip3 first on PATH so
+          # bin/compile's dependency self-heal (pip3 install requests/urllib3/
+          # wget/packaging/streamlit) lands there instead of failing against
+          # Homebrew's externally-managed system Python.
+          echo "$VENV_PATH/bin" >> "$GITHUB_PATH"
 
       - name: Build SDKs
         run: |
@@ -210,7 +233,7 @@ jobs:
 
   build-linux:
     needs: preflight
-    if: needs.preflight.outputs.proceed == 'true'
+    if: needs.preflight.outputs.proceed == 'true' && needs.preflight.outputs.include_linux == 'true'
     name: Linux x64 (jdk21+jdk25 × opencl+ptx+spirv+cuda+full)
     runs-on: [self-hosted, Linux, x64, sdk-builder]
     timeout-minutes: 240
@@ -294,10 +317,6 @@ jobs:
     timeout-minutes: 240
     permissions:
       contents: write
-    # Note: on a managed Windows runner that blocks running unsigned executables,
-    # keep skip_windows_executables = true so the build never invokes
-    # pyinstaller.exe / tornado.exe / zello_world (the SDK then ships the .py
-    # launchers instead of the .exe wrappers).
     env:
       VERSION: ${{ needs.preflight.outputs.version }}
       VERSION_TAG: ${{ needs.preflight.outputs.version_tag }}
@@ -335,19 +354,14 @@ jobs:
 
       - name: Build SDKs
         shell: cmd
-        env:
-          SKIP_WIN_EXE: ${{ needs.preflight.outputs.skip_windows_executables }}
         run: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDevCmd.bat" -startdir=none -arch=x64 -host_arch=x64
           if errorlevel 1 exit /b 1
-          set EXTRA_ARGS=
-          if "%SKIP_WIN_EXE%"=="true" set EXTRA_ARGS=--skip-windows-executables
           python scripts\build-release-sdks.py ^
             --version %VERSION_TAG% ^
             --output-dir "%RELEASE_ARCHIVES_DIR%" ^
             --jdk21-home "%JDK21_HOME%" ^
-            --jdk25-home "%JDK25_HOME%" ^
-            %EXTRA_ARGS%
+            --jdk25-home "%JDK25_HOME%"
 
       - name: List produced archives
         shell: cmd
