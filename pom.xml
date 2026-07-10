@@ -352,7 +352,7 @@
             </activation>
             <properties>
                 <!-- Runtime module access for pure-JVM unit tests (mirrors this profile's compilerArgs). -->
-                <tornado.test.argLine>--enable-preview --add-modules ALL-SYSTEM --add-modules=jdk.incubator.vector @${user.dir}/tornado-assembly/src/etc/exportLists/common-exports</tornado.test.argLine>
+                <tornado.test.argLine>--enable-preview --add-modules=jdk.incubator.vector --add-modules=jdk.internal.vm.ci --add-exports jdk.internal.vm.ci/jdk.vm.ci.meta=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.code=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.common=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=ALL-UNNAMED</tornado.test.argLine>
             </properties>
             <build>
                 <plugins>
@@ -361,8 +361,12 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <skipTests>${skipTests}</skipTests>
-                            <!-- Pure-JVM unit tests need the same JVMCI module access as the main compile.
-                                 Skipped by default; run with: mvn -Pjdk21 -pl tornado-runtime test -DskipTests=false -->
+                            <!-- Pure-JVM unit tests need JVMCI package access. Run on the classpath
+                                 (useModulePath=false) so surefire does not ASM-parse the vendored jvmci jar's
+                                 module-info (its JDK-27 class version breaks Maven's bundled parser); the argLine
+                                 exports the jvmci packages to ALL-UNNAMED. Skipped by default; run with:
+                                 mvn -Pjdk21 -pl tornado-runtime test -DskipTests=false -->
+                            <useModulePath>false</useModulePath>
                             <argLine>${tornado.test.argLine}</argLine>
                         </configuration>
                     </plugin>
@@ -437,7 +441,7 @@
             </activation>
             <properties>
                 <!-- Runtime module access for pure-JVM unit tests (mirrors this profile's compilerArgs). -->
-                <tornado.test.argLine>--add-modules ALL-SYSTEM --add-modules=jdk.incubator.vector --patch-module jdk.internal.vm.ci=${user.dir}/graalJars/jvmci-21.0.2.jar @${user.dir}/tornado-assembly/src/etc/exportLists/common-exports</tornado.test.argLine>
+                <tornado.test.argLine>--add-modules=jdk.incubator.vector --add-modules=jdk.internal.vm.ci --patch-module jdk.internal.vm.ci=${user.dir}/graalJars/jvmci-21.0.2.jar --add-exports jdk.internal.vm.ci/jdk.vm.ci.meta=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.code=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.common=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=ALL-UNNAMED</tornado.test.argLine>
             </properties>
             <build>
                 <plugins>
@@ -446,8 +450,12 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <skipTests>${skipTests}</skipTests>
-                            <!-- Pure-JVM unit tests need the same JVMCI module access as the main compile.
-                                 Skipped by default; run with: mvn -Pjdk21 -pl tornado-runtime test -DskipTests=false -->
+                            <!-- Pure-JVM unit tests need JVMCI package access. Run on the classpath
+                                 (useModulePath=false) so surefire does not ASM-parse the vendored jvmci jar's
+                                 module-info (its JDK-27 class version breaks Maven's bundled parser); the argLine
+                                 exports the jvmci packages to ALL-UNNAMED. Skipped by default; run with:
+                                 mvn -Pjdk21 -pl tornado-runtime test -DskipTests=false -->
+                            <useModulePath>false</useModulePath>
                             <argLine>${tornado.test.argLine}</argLine>
                         </configuration>
                     </plugin>
@@ -498,7 +506,7 @@
             </activation>
             <properties>
                 <!-- Runtime module access for pure-JVM unit tests (mirrors this profile's compilerArgs). -->
-                <tornado.test.argLine>--add-modules ALL-SYSTEM --add-modules=jdk.incubator.vector --patch-module jdk.internal.vm.ci=${user.dir}/graalJars/jvmci-21.0.2.jar @${user.dir}/tornado-assembly/src/etc/exportLists/common-exports</tornado.test.argLine>
+                <tornado.test.argLine>--add-modules=jdk.incubator.vector --add-modules=jdk.internal.vm.ci --patch-module jdk.internal.vm.ci=${user.dir}/graalJars/jvmci-21.0.2.jar --add-exports jdk.internal.vm.ci/jdk.vm.ci.meta=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.code=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.common=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=ALL-UNNAMED</tornado.test.argLine>
             </properties>
             <build>
                 <plugins>
@@ -507,8 +515,12 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <skipTests>${skipTests}</skipTests>
-                            <!-- Pure-JVM unit tests need the same JVMCI module access as the main compile.
-                                 Skipped by default; run with: mvn -Pjdk21 -pl tornado-runtime test -DskipTests=false -->
+                            <!-- Pure-JVM unit tests need JVMCI package access. Run on the classpath
+                                 (useModulePath=false) so surefire does not ASM-parse the vendored jvmci jar's
+                                 module-info (its JDK-27 class version breaks Maven's bundled parser); the argLine
+                                 exports the jvmci packages to ALL-UNNAMED. Skipped by default; run with:
+                                 mvn -Pjdk21 -pl tornado-runtime test -DskipTests=false -->
+                            <useModulePath>false</useModulePath>
                             <argLine>${tornado.test.argLine}</argLine>
                         </configuration>
                     </plugin>
@@ -570,7 +582,7 @@
             <properties>
                 <!-- Runtime module access for pure-JVM unit tests. JVMCI is supplied by the vendored
                      tornado.jvmci application module (below), so no patch-module is needed here. -->
-                <tornado.test.argLine>--add-modules ALL-SYSTEM --add-modules=jdk.incubator.vector @${user.dir}/tornado-assembly/src/etc/exportLists/common-exports</tornado.test.argLine>
+                <tornado.test.argLine>--add-modules=jdk.incubator.vector</tornado.test.argLine>
             </properties>
             <dependencies>
                 <dependency>
@@ -589,8 +601,12 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <skipTests>${skipTests}</skipTests>
-                            <!-- Pure-JVM unit tests need the same JVMCI module access as the main compile.
-                                 Skipped by default; run with: mvn -Pjdk21 -pl tornado-runtime test -DskipTests=false -->
+                            <!-- Pure-JVM unit tests need JVMCI package access. Run on the classpath
+                                 (useModulePath=false) so surefire does not ASM-parse the vendored jvmci jar's
+                                 module-info (its JDK-27 class version breaks Maven's bundled parser); the argLine
+                                 exports the jvmci packages to ALL-UNNAMED. Skipped by default; run with:
+                                 mvn -Pjdk21 -pl tornado-runtime test -DskipTests=false -->
+                            <useModulePath>false</useModulePath>
                             <argLine>${tornado.test.argLine}</argLine>
                         </configuration>
                     </plugin>
