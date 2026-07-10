@@ -190,8 +190,11 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
         std::vector<std::string> includeOpts; // storage must outlive `options`
         std::vector<const char *> options;
         options.push_back(arch.c_str());
+        // A failure here may be recovered by the missing-header retry below,
+        // so don't print an ERROR for it; terminal failures are reported after
+        // the retry with the full NVRTC build log.
         nv = nvrtcCompileProgram(prog, (int) options.size(), options.data());
-        LOG_NVRTC_AND_VALIDATE("nvrtcCompileProgram", nv);
+        LOG_NVRTC_CALL("nvrtcCompileProgram", nv);
         capture_nvrtc_log(prog, program);
 
         if (nv != NVRTC_SUCCESS && program->log.find("could not open source file") != std::string::npos) {
@@ -207,7 +210,7 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
                     options.push_back(opt.c_str());
                 }
                 nv = nvrtcCompileProgram(prog, (int) options.size(), options.data());
-                LOG_NVRTC_AND_VALIDATE("nvrtcCompileProgram", nv);
+                LOG_NVRTC_CALL("nvrtcCompileProgram", nv);
                 capture_nvrtc_log(prog, program);
             }
         }
