@@ -676,5 +676,6 @@
         <module>tornado-cublas</module>
         <module>tornado-cufft</module>
         <module>tornado-cudnn</module>
+        <module>tornado-cutlass</module>
     </modules>
 </project>
