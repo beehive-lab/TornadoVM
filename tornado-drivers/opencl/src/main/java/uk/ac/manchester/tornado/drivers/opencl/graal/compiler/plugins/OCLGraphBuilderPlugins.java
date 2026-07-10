@@ -907,6 +907,45 @@ public class OCLGraphBuilderPlugins {
         registerNativeArrayGetSet(plugins, Int8Array.class, JavaKind.Byte);
         registerNativeArrayGetSet(plugins, CharArray.class, JavaKind.Char);
         registerHalfFloatArrayGetSet(plugins);
+        registerByteArrayHalfFloatAccess(plugins);
+    }
+
+    /**
+     * Intrinsify {@code ByteArray.getHalfFloat(byteIndex)}/{@code setHalfFloat(byteIndex, HalfFloat)} directly.
+     * These read/write a 2-byte HALF at a raw BYTE offset (Q8_0 tensors pack a fp16 scale inside a byte buffer),
+     * delegating {@code -> TornadoMemorySegment.getShortAtIndex -> MemorySegment.getAtIndex} (abstract/bodiless on
+     * JDK 22+). Without this the reflection-path sketcher descends into the abstract Panama accessor and fails
+     * ("readFieldValue not implemented" / a bogus folded index). The byte offset is {@code baseIndex + byteIndex}
+     * (baseIndex == arrayHeaderSize for ByteArray), i.e. {@link #arrayElementAddress} with a Byte element size.
+     */
+    private static void registerByteArrayHalfFloatAccess(InvocationPlugins plugins) {
+        final Field segmentField;
+        final Field baseIndexField;
+        try {
+            segmentField = ByteArray.class.getDeclaredField("segment");
+            baseIndexField = ByteArray.class.getDeclaredField("baseIndex");
+        } catch (NoSuchFieldException e) {
+            throw new TornadoRuntimeException("ByteArray is missing expected fields for intrinsification: " + e);
+        }
+        Registration r = new Registration(plugins, ByteArray.class);
+        r.register(new InvocationPlugin("getHalfFloat", Receiver.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode byteIndex) {
+                AddressNode addressNode = arrayElementAddress(b, receiver, byteIndex, JavaKind.Byte, segmentField, baseIndexField);
+                ReadHalfFloatNode readNode = b.append(new ReadHalfFloatNode(addressNode));
+                b.push(JavaKind.Object, readNode);
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin("setHalfFloat", Receiver.class, int.class, HalfFloat.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode byteIndex, ValueNode value) {
+                AddressNode addressNode = arrayElementAddress(b, receiver, byteIndex, JavaKind.Byte, segmentField, baseIndexField);
+                WriteHalfFloatNode writeNode = new WriteHalfFloatNode(addressNode, value);
+                b.add(writeNode);
+                return true;
+            }
+        });
     }
 
     /**
