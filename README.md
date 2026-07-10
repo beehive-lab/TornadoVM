@@ -184,11 +184,12 @@ Pick a backend-specific build if you prefer a smaller install:
 
 | Backend | SDKMAN! version | Targets |
 |---|---|---|
-| OpenCL *(default)* | `4.0.0-opencl` | NVIDIA / AMD / Intel GPUs, multi-core CPUs, FPGAs |
-| PTX | `4.0.0-ptx` | **NVIDIA GPUs (CUDA) — PTX codegen, Tensor Cores, cuBLAS/cuFFT/cuDNN library tasks** |
-| SPIR-V | `4.0.0-spirv` | Intel GPUs (Level Zero / oneAPI) |
-| Metal 🆕 | `4.0.0-metal` | Apple Silicon GPUs (M1–M4), natively via MSL |
-| All backends | `4.0.0-full` | Everything above |
+| OpenCL *(default)* | `5.0.0-opencl` | NVIDIA / AMD / Intel GPUs, multi-core CPUs, FPGAs |
+| CUDA | `5.0.0-cuda` | **NVIDIA GPUs (CUDA) — PTX codegen, Tensor Cores, cuBLAS/cuFFT/cuDNN library tasks** |
+| PTX | `5.0.0-ptx` | **NVIDIA GPUs (CUDA) — PTX codegen, Tensor Cores, cuBLAS/cuFFT/cuDNN library tasks** |
+| SPIR-V | `5.0.0-spirv` | Intel GPUs (Level Zero / oneAPI) |
+| Metal 🆕 | `5.0.0-metal` | Apple Silicon GPUs (M1–M4), natively via MSL |
+| All backends | `5.0.0-full` | Everything above |
 
 Binaries are also on the [official website](https://www.tornadovm.org/downloads). For [Docker](https://github.com/beehive-lab/docker-tornado#docker-for-tornadovm) and [AWS (CPUs/GPUs/FPGAs)](https://tornadovm.readthedocs.io/en/latest/cloud.html) see the linked guides.
 
