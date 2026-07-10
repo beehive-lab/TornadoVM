@@ -392,6 +392,12 @@ public class OCLBackend extends XPUBackend<OCLProviders> implements FrameMap.Ref
                         oclKind = tmpKind;
                     }
                 }
+                // A HalfFloat receiver/parameter must be typed `half`, not its SHORT platform kind: callers pass a
+                // half value (e.g. getFloat32(a.get(i))), so a `short` parameter would numerically truncate 1.5 to 1
+                // at the call before the half->float convert runs.
+                if (isHalfFloat(javaType)) {
+                    oclKind = OCLKind.HALF;
+                }
                 guarantee(oclKind != OCLKind.ILLEGAL, "illegal type for %s", param.getPlatformKind());
                 asm.emit(", ");
                 asm.emit("%s %s", oclKind.toString(), locals[i].getName());
