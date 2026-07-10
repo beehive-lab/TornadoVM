@@ -24,6 +24,8 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.phases;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.RawConstant;
+import tornado.graal.compiler.core.common.type.ObjectStamp;
+import tornado.graal.compiler.core.common.type.Stamp;
 import tornado.graal.compiler.core.common.type.StampFactory;
 import tornado.graal.compiler.graph.Node;
 import tornado.graal.compiler.nodes.ConstantNode;
@@ -31,6 +33,8 @@ import tornado.graal.compiler.nodes.FixedGuardNode;
 import tornado.graal.compiler.nodes.FixedNode;
 import tornado.graal.compiler.nodes.GraphState;
 import tornado.graal.compiler.nodes.InvokeNode;
+import tornado.graal.compiler.nodes.NodeView;
+import tornado.graal.compiler.nodes.ParameterNode;
 import tornado.graal.compiler.nodes.PiNode;
 import tornado.graal.compiler.nodes.StructuredGraph;
 import tornado.graal.compiler.nodes.ValueNode;
@@ -57,6 +61,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.MultHalfNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAConvertFloatToHalf;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAConvertHalfToFloat;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASwizzledLoadFP16Stride32Node;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.ReadHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.SubHalfNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.WriteHalfFloatNode;
@@ -115,6 +120,21 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
                 && loadIndexed.array() instanceof LocalArrayNode localArray //
                 && localArray.getCUDAKind() == CUDAKind.HALF) {
             return input;
+        }
+        // A swizzled fp16 load produces a __half value directly, so it is a valid half-source for
+        // CUDAConvertHalfToFloat (swizzleLoadFp16Stride32(...).getFloat32()).
+        if (input instanceof CUDASwizzledLoadFP16Stride32Node) {
+            return input;
+        }
+        // A HalfFloat-typed method parameter is itself the half value: when getFloat32() is compiled as its own
+        // device function (not inlined), `this` arrives as a HalfFloat parameter and this.halfFloatValue reads
+        // straight off it, so the ParameterNode is the half-source for CUDAConvertHalfToFloat.
+        if (input instanceof ParameterNode) {
+            Stamp paramStamp = ((ValueNode) input).stamp(NodeView.DEFAULT);
+            if (paramStamp instanceof ObjectStamp objectStamp && objectStamp.type() != null //
+                    && objectStamp.type().getAnnotation(HalfType.class) != null) {
+                return input;
+            }
         }
         if (input instanceof PiNode || input instanceof IsNullNode) {
             nodesToBeDeleted.add(input);

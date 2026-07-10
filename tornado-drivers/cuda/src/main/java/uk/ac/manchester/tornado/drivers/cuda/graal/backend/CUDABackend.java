@@ -405,6 +405,12 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
             asm.eol();
         } else {
 
+            // Non-kernel callees are emitted ahead of the kernel in the same compilation unit, so the
+            // cuda_fp16.h include from the kernel prologue lands after them. A __device__ callee compiled from a
+            // HalfFloat method (e.g. getFloat32 -> __half2float) would then reference __half2float before the
+            // header is included. Emit the preamble here too; cuda_fp16.h's include guard makes the duplicate safe.
+            asm.emit(CUDAPreamble.PREAMBLE);
+
             methodName = CUDAUtils.makeMethodName(method);
 
             final JavaKind returnKind = method.getSignature().getReturnKind();
