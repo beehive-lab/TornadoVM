@@ -6,6 +6,7 @@ open module tornado.unittests {
     requires tornado.cudnn;
     requires tornado.cusparse;
     requires tornado.cutlass;
+    requires tornado.cutensor;
     requires lucene.core;
     requires java.desktop;
     requires jdk.incubator.vector;
@@ -24,6 +25,7 @@ open module tornado.unittests {
     exports uk.ac.manchester.tornado.unittests.cudnn;
     exports uk.ac.manchester.tornado.unittests.cusparse;
     exports uk.ac.manchester.tornado.unittests.cutlass;
+    exports uk.ac.manchester.tornado.unittests.cutensor;
     exports uk.ac.manchester.tornado.unittests.fields;
     exports uk.ac.manchester.tornado.unittests.flatmap;
     exports uk.ac.manchester.tornado.unittests.functional;

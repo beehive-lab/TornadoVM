@@ -679,5 +679,6 @@
         <module>tornado-cudnn</module>
         <module>tornado-cusparse</module>
         <module>tornado-cutlass</module>
+        <module>tornado-cutensor</module>
     </modules>
 </project>
