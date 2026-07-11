@@ -515,4 +515,34 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQue
     env->ReleaseStringUTFChars(name, cname);
 }
 
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDACommandQueue
+ * Method:    nvtxRangePush
+ * Signature: (Ljava/lang/String;)V
+ *
+ * Opens a host-side NVTX range so native library tasks (cuBLAS, cuDNN, CUTLASS,
+ * cuTENSOR, ...) appear as named spans on the Nsight Systems timeline, next to
+ * the backend's own kernel and transfer ranges. No-op cost without a profiler.
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQueue_nvtxRangePush
+        (JNIEnv *env, jclass clazz, jstring name) {
+    if (name == NULL) {
+        nvtxRangePushA("library-task");
+        return;
+    }
+    const char *cname = env->GetStringUTFChars(name, NULL);
+    nvtxRangePushA(cname);
+    env->ReleaseStringUTFChars(name, cname);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDACommandQueue
+ * Method:    nvtxRangePop
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQueue_nvtxRangePop
+        (JNIEnv *env, jclass clazz) {
+    nvtxRangePop();
+}
+
 } // extern "C"
