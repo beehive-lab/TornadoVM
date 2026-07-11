@@ -194,6 +194,10 @@
                 <dependency>
                     <groupId>${project.groupId}</groupId>
                     <artifactId>tornado-cusparse</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
                     <artifactId>tornado-cutensor</artifactId>
                     <version>${project.version}</version>
                 </dependency>
@@ -211,6 +215,11 @@
                 <dependency>
                     <groupId>${project.groupId}</groupId>
                     <artifactId>tornado-drivers-cutlass-jni</artifactId>
+                    <version>${project.version}</version>
+                    <classifier>libs</classifier>
+                </dependency>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
                     <artifactId>tornado-drivers-cutensor-jni</artifactId>
                     <version>${project.version}</version>
                     <classifier>libs</classifier>
