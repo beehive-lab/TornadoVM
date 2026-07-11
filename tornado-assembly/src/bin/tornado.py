@@ -1392,6 +1392,7 @@ class TornadoVMRunnerTool():
                 tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__ + "," + __CUBLAS_MODULE__ + "," + __CUFFT_MODULE__ + "," + __CUDNN_MODULE__ + "," + __CUSPARSE_MODULE__
 
 
+
         # Enable native access for backend modules to avoid restricted method warnings
         nativeAccessModules = []
         if ("opencl-backend" in self.listOfBackends) or ("spirv-backend" in self.listOfBackends):
