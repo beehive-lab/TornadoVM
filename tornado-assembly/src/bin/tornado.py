@@ -118,8 +118,13 @@ def check_dll_loadable(dll_path):
     if os.name != 'nt':
         return True
     try:
-        # Try to load the DLL using ctypes
-        ctypes.WinDLL(dll_path)
+        # winmode=0 restores the standard LoadLibraryExW search order (which
+        # consults PATH), matching how java.exe actually resolves the JNI
+        # library's dependencies at runtime. ctypes.WinDLL's default winmode
+        # (Python >= 3.8) is more restrictive and does not reliably search
+        # PATH, which produced false "cannot load" negatives here even when
+        # the DLL and all its dependencies were perfectly resolvable.
+        ctypes.WinDLL(dll_path, winmode=0)
         return True
     except OSError:
         return False
