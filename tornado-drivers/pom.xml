@@ -78,6 +78,7 @@
                 <module>cublas-jni</module>
                 <module>cufft-jni</module>
                 <module>cudnn-jni</module>
+                <module>cusparse-jni</module>
             </modules>
         </profile>
     </profiles>

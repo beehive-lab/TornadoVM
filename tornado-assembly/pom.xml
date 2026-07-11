@@ -191,6 +191,17 @@
                     <version>${project.version}</version>
                     <classifier>libs</classifier>
                 </dependency>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>tornado-cusparse</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>tornado-drivers-cusparse-jni</artifactId>
+                    <version>${project.version}</version>
+                    <classifier>libs</classifier>
+                </dependency>
             </dependencies>
         </profile>
 
