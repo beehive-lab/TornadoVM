@@ -50,6 +50,11 @@ extern "C" {
 #define CL_BUILD_SUCCESS 0
 #define CL_BUILD_ERROR (-2)
 
+} // extern "C" -- the helpers below are internal (static) and need ordinary C++
+  // linkage: MSVC rejects a C-linkage function returning a C++ class (C2526),
+  // unlike GCC/Clang which tolerate it as an extension. Only the actual JNI
+  // entry points below need C linkage, so they get their own extern "C" block.
+
 // Locates directories that contain the toolkit's cuda_fp16.h, so an explicit
 // NVRTC include path can be supplied on toolkits whose NVRTC cannot resolve
 // the standard CUDA headers on its own (see comment at the call site).
@@ -268,6 +273,8 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
         program->module_loaded = true;
     }
 }
+
+extern "C" {
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAProgram
