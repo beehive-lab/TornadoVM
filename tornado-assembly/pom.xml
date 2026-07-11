@@ -194,6 +194,7 @@
                 <dependency>
                     <groupId>${project.groupId}</groupId>
                     <artifactId>tornado-cusparse</artifactId>
+                    <artifactId>tornado-cutensor</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>
@@ -210,6 +211,7 @@
                 <dependency>
                     <groupId>${project.groupId}</groupId>
                     <artifactId>tornado-drivers-cutlass-jni</artifactId>
+                    <artifactId>tornado-drivers-cutensor-jni</artifactId>
                     <version>${project.version}</version>
                     <classifier>libs</classifier>
                 </dependency>
