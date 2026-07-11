@@ -15,13 +15,20 @@ endif()
 # set before project() enables the CUDA language, otherwise CMake picks its own
 # default (sm_52 on this toolchain) - and the tensor-core MMA kernels compiled
 # for compute_52 fail at launch with CUDA_ERROR_LAUNCH_FAILED (the SIMT FP32
-# kernel would still run, masking the problem). The tensor-op kernels use the
-# Sm80 arch tag, so sm_80 (Ampere), sm_89 (Ada) and sm_90 (Hopper) all work.
-# Override with the CUDA_ARCH environment variable (e.g. CUDA_ARCH=89).
+# kernel would still run, masking the problem).
+#
+# Default "80-real;80-virtual": emit sm_80 SASS plus compute_80 PTX. The kernels
+# use the Sm80 arch tag, and sm_80 SASS is binary-compatible with every later
+# 8.x device (sm_86 Ampere, sm_89 Ada), while the embedded PTX JIT-compiles for
+# sm_90 (Hopper) and beyond at load time. Crucially this compiles on any toolkit
+# from CUDA 11.0 on - unlike sm_89/sm_90 targets, which the CI toolkit (older
+# than CUDA 11.8) rejects with "Unsupported gpu architecture". Override with the
+# CUDA_ARCH environment variable (e.g. CUDA_ARCH=89) to emit native SASS for a
+# specific device.
 if(DEFINED ENV{CUDA_ARCH})
     set(CMAKE_CUDA_ARCHITECTURES $ENV{CUDA_ARCH})
 else()
-    set(CMAKE_CUDA_ARCHITECTURES 80 89 90)
+    set(CMAKE_CUDA_ARCHITECTURES 80-real 80-virtual)
 endif()
 
 project (TornadoCutlass CXX CUDA)
