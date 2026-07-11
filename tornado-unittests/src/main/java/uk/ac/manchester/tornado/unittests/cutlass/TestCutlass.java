@@ -18,6 +18,7 @@
 package uk.ac.manchester.tornado.unittests.cutlass;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.util.Random;
 
@@ -30,7 +31,10 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.cutlass.Cutlass;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
@@ -189,6 +193,133 @@ public class TestCutlass extends TornadoTestBase {
                 plan.execute();
                 assertClose(m * n, expected, c, 1e-4f);
             }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // FP16 tensor-core kernels (require k, n multiples of 4).
+    // -------------------------------------------------------------------------
+
+    private static HalfFloatArray randomHalfArray(int size) {
+        HalfFloatArray array = new HalfFloatArray(size);
+        for (int i = 0; i < size; i++) {
+            array.set(i, new HalfFloat(random.nextFloat() - 0.5f));
+        }
+        return array;
+    }
+
+    /** Row-major reference GEMM over the FP16 inputs, accumulated in float. */
+    private static void hgemmJava(int m, int n, int k, HalfFloatArray a, HalfFloatArray b, float[] out) {
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                float acc = 0.0f;
+                for (int p = 0; p < k; p++) {
+                    acc += a.get(i * k + p).getFloat32() * b.get(p * n + j).getFloat32();
+                }
+                out[i * n + j] = acc;
+            }
+        }
+    }
+
+    @Test
+    public void testHgemm() throws TornadoExecutionPlanException {
+        final int m = 128;
+        final int n = 96;
+        final int k = 64;
+        HalfFloatArray a = randomHalfArray(m * k);
+        HalfFloatArray b = randomHalfArray(k * n);
+        HalfFloatArray d = new HalfFloatArray(m * n);
+
+        float[] expected = new float[m * n];
+        hgemmJava(m, n, k, a, b, expected);
+
+        TaskGraph taskGraph = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .libraryTask("hgemm", Cutlass::cutlassHgemm, m, n, k, 1.0f, a, b, 0.0f, d) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, d);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.execute();
+        }
+        for (int i = 0; i < m * n; i++) {
+            assertEquals(expected[i], d.get(i).getFloat32(), 2e-2f * Math.max(1.0f, Math.abs(expected[i])));
+        }
+    }
+
+    @Test
+    public void testGemmBiasRelu() throws TornadoExecutionPlanException {
+        final int m = 64;
+        final int n = 64;
+        final int k = 64;
+        HalfFloatArray a = randomHalfArray(m * k);
+        HalfFloatArray b = randomHalfArray(k * n);
+        HalfFloatArray bias = randomHalfArray(n);
+        HalfFloatArray d = new HalfFloatArray(m * n);
+
+        float[] gemm = new float[m * n];
+        hgemmJava(m, n, k, a, b, gemm);
+
+        TaskGraph taskGraph = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, bias) //
+                .libraryTask("fused", Cutlass::cutlassGemmBiasRelu, m, n, k, a, b, bias, d) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, d);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.execute();
+        }
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                float expected = Math.max(0.0f, gemm[i * n + j] + bias.get(j).getFloat32());
+                assertEquals(expected, d.get(i * n + j).getFloat32(), 0.05f);
+            }
+        }
+    }
+
+    @Test
+    public void testGemmBiasGelu() throws TornadoExecutionPlanException {
+        final int m = 64;
+        final int n = 64;
+        final int k = 64;
+        HalfFloatArray a = randomHalfArray(m * k);
+        HalfFloatArray b = randomHalfArray(k * n);
+        HalfFloatArray bias = randomHalfArray(n);
+        HalfFloatArray d = new HalfFloatArray(m * n);
+
+        float[] gemm = new float[m * n];
+        hgemmJava(m, n, k, a, b, gemm);
+
+        TaskGraph taskGraph = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, bias) //
+                .libraryTask("fused", Cutlass::cutlassGemmBiasGelu, m, n, k, a, b, bias, d) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, d);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.execute();
+        }
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                float x = gemm[i * n + j] + bias.get(j).getFloat32();
+                float expected = 0.5f * x * (1.0f + (float) erf(x / Math.sqrt(2.0)));
+                assertEquals(expected, d.get(i * n + j).getFloat32(), 0.05f);
+            }
+        }
+    }
+
+    /** Abramowitz-Stegun 7.1.26 erf approximation (reference only). */
+    private static double erf(double x) {
+        double t = 1.0 / (1.0 + 0.3275911 * Math.abs(x));
+        double y = 1.0 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+        return Math.signum(x) * y;
+    }
+
+    @Test
+    public void testHgemmBadAlignmentShape() {
+        // k = 62 is not a multiple of 4: the factory must reject it up front.
+        try {
+            Cutlass.cutlassHgemm(64, 64, 62, 1.0f, new HalfFloatArray(64 * 62), new HalfFloatArray(62 * 64), 0.0f, new HalfFloatArray(64 * 64));
+            fail("Expected a TornadoRuntimeException for k not a multiple of 4");
+        } catch (TornadoRuntimeException e) {
+            // expected
         }
     }
 

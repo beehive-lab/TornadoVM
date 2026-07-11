@@ -85,8 +85,15 @@ public final class CutlassLibraryProvider implements TornadoLibraryProvider {
     @Override
     public void prepare(LibraryTaskDescriptor descriptor, LibraryContext context) {
         Object[] p = descriptor.getParameters();
+        CutlassContext ctx = (CutlassContext) context;
+        int m = (int) p[0];
+        int n = (int) p[1];
+        int k = (int) p[2];
         switch (descriptor.getFunctionName()) {
-            case "cutlassSgemm" -> ((CutlassContext) context).growWorkspace(CutlassNativeLib.sgemmWorkspace((int) p[0], (int) p[1], (int) p[2]));
+            case "cutlassSgemm" -> ctx.growWorkspace(CutlassNativeLib.sgemmWorkspace(m, n, k));
+            case "cutlassHgemm" -> ctx.growWorkspace(CutlassNativeLib.hgemmWorkspace(m, n, k));
+            case "cutlassGemmBiasRelu" -> ctx.growWorkspace(CutlassNativeLib.gemmBiasReluWorkspace(m, n, k));
+            case "cutlassGemmBiasGelu" -> ctx.growWorkspace(CutlassNativeLib.gemmBiasGeluWorkspace(m, n, k));
             default -> {
                 // no per-shape native state
             }
@@ -103,6 +110,22 @@ public final class CutlassLibraryProvider implements TornadoLibraryProvider {
                     (float) invocation.getArg(3), //
                     invocation.getDevicePointer(4), invocation.getDevicePointer(5), //
                     (float) invocation.getArg(6), invocation.getDevicePointer(7), //
+                    context.workspacePtr, context.stream);
+            // (m, n, k, alpha, a, b, beta, d)
+            case "cutlassHgemm" -> CutlassNativeLib.hgemm( //
+                    (int) invocation.getArg(0), (int) invocation.getArg(1), (int) invocation.getArg(2), //
+                    (float) invocation.getArg(3), //
+                    invocation.getDevicePointer(4), invocation.getDevicePointer(5), //
+                    (float) invocation.getArg(6), invocation.getDevicePointer(7), //
+                    context.workspacePtr, context.stream);
+            // (m, n, k, a, b, bias, d)
+            case "cutlassGemmBiasRelu" -> CutlassNativeLib.gemmBiasRelu( //
+                    (int) invocation.getArg(0), (int) invocation.getArg(1), (int) invocation.getArg(2), //
+                    invocation.getDevicePointer(3), invocation.getDevicePointer(4), invocation.getDevicePointer(5), invocation.getDevicePointer(6), //
+                    context.workspacePtr, context.stream);
+            case "cutlassGemmBiasGelu" -> CutlassNativeLib.gemmBiasGelu( //
+                    (int) invocation.getArg(0), (int) invocation.getArg(1), (int) invocation.getArg(2), //
+                    invocation.getDevicePointer(3), invocation.getDevicePointer(4), invocation.getDevicePointer(5), invocation.getDevicePointer(6), //
                     context.workspacePtr, context.stream);
             default -> throw new TornadoRuntimeException("[ERROR] CUTLASS function not supported: " + functionName);
         };
