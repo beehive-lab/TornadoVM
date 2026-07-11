@@ -11,6 +11,19 @@ if(NOT DEFINED CMAKE_CUDA_COMPILER)
     endif()
 endif()
 
+# Target architecture(s) for the pre-instantiated CUTLASS kernels. This MUST be
+# set before project() enables the CUDA language, otherwise CMake picks its own
+# default (sm_52 on this toolchain) - and the tensor-core MMA kernels compiled
+# for compute_52 fail at launch with CUDA_ERROR_LAUNCH_FAILED (the SIMT FP32
+# kernel would still run, masking the problem). The tensor-op kernels use the
+# Sm80 arch tag, so sm_80 (Ampere), sm_89 (Ada) and sm_90 (Hopper) all work.
+# Override with the CUDA_ARCH environment variable (e.g. CUDA_ARCH=89).
+if(DEFINED ENV{CUDA_ARCH})
+    set(CMAKE_CUDA_ARCHITECTURES $ENV{CUDA_ARCH})
+else()
+    set(CMAKE_CUDA_ARCHITECTURES 80 89 90)
+endif()
+
 project (TornadoCutlass CXX CUDA)
 
 find_package(JNI REQUIRED)
@@ -19,18 +32,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_STANDARD 17)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
-
-# Target architecture(s) for the pre-instantiated CUTLASS kernels. The kernels
-# use the Sm80 arch tag (Ampere tensor ops), so any sm_80+ device works; the
-# default compiles for the build machine's common cases. Override with
-# -DCMAKE_CUDA_ARCHITECTURES or the CUDA_ARCH environment variable.
-if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES OR CMAKE_CUDA_ARCHITECTURES STREQUAL "")
-    if(DEFINED ENV{CUDA_ARCH})
-        set(CMAKE_CUDA_ARCHITECTURES $ENV{CUDA_ARCH})
-    else()
-        set(CMAKE_CUDA_ARCHITECTURES 89)
-    endif()
-endif()
 
 # Header-only CUTLASS (NVIDIA template library for GEMM). Populate the sources
 # but do NOT add_subdirectory — we only need its include/ directories.

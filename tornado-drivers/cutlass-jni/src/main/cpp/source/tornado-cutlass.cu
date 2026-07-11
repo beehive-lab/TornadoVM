@@ -36,8 +36,78 @@
 
 #include <cutlass/cutlass.h>
 #include <cutlass/gemm/device/gemm_universal.h>
+#include <cutlass/gemm/gemm.h>
 #include <cutlass/layout/matrix.h>
 #include <cutlass/numeric_types.h>
+#include <cutlass/epilogue/thread/linear_combination.h>
+#include <cutlass/epilogue/thread/linear_combination_relu.h>
+#include <cutlass/epilogue/thread/linear_combination_gelu.h>
+#include <cutlass/gemm/threadblock/threadblock_swizzle.h>
+
+// Shared driver: can_implement -> initialize(workspace,stream) -> run(stream).
+// Returns the cutlass::Status ordinal of the first non-success step.
+template <typename Gemm>
+static int runGemm(typename Gemm::Arguments const &args, void *workspace, cudaStream_t stream) {
+    Gemm op;
+    cutlass::Status status = op.can_implement(args);
+    if (status != cutlass::Status::kSuccess) {
+        return (int) status;
+    }
+    status = op.initialize(args, workspace, stream);
+    if (status != cutlass::Status::kSuccess) {
+        return (int) status;
+    }
+    return (int) op.run(stream);
+}
+
+// -----------------------------------------------------------------------------
+// FP16 tensor-core GEMM types (Ampere MMA, runs on sm_80+ incl. Ada sm_89).
+//
+// Operand alignment is 4 elements (8 bytes): TornadoVM device pointers are the
+// array base plus a 24-byte header, so only 8-byte alignment is guaranteed. The
+// default 128-bit (8-half) CUTLASS alignment would be rejected. The 4-element
+// alignment implies k and n must be multiples of 4 (enforced in the Java
+// factory). Accumulation is FP32; output is FP16. These are alias/function
+// templates, so they live outside the extern "C" block.
+// -----------------------------------------------------------------------------
+using ElementHalf = cutlass::half_t;
+using ElementAccum = float;
+using ElementCompute = float;
+static constexpr int kAlign = 4;
+
+using ThreadblockShape = cutlass::gemm::GemmShape<128, 128, 32>;
+using WarpShape = cutlass::gemm::GemmShape<64, 64, 32>;
+using InstructionShape = cutlass::gemm::GemmShape<16, 8, 16>;
+using Swizzle = cutlass::gemm::threadblock::GemmIdentityThreadblockSwizzle<>;
+static constexpr int kStages = 3;
+
+template <typename EpilogueOp>
+using HalfTensorOpGemm = cutlass::gemm::device::GemmUniversal<
+        ElementHalf, cutlass::layout::RowMajor,
+        ElementHalf, cutlass::layout::RowMajor,
+        ElementHalf, cutlass::layout::RowMajor,
+        ElementAccum, cutlass::arch::OpClassTensorOp, cutlass::arch::Sm80,
+        ThreadblockShape, WarpShape, InstructionShape,
+        EpilogueOp, Swizzle, kStages, kAlign, kAlign>;
+
+using HgemmTensor = HalfTensorOpGemm<
+        cutlass::epilogue::thread::LinearCombination<ElementHalf, kAlign, ElementAccum, ElementCompute>>;
+using GemmBiasRelu = HalfTensorOpGemm<
+        cutlass::epilogue::thread::LinearCombinationRelu<ElementHalf, kAlign, ElementAccum, ElementCompute>>;
+using GemmBiasGelu = HalfTensorOpGemm<
+        cutlass::epilogue::thread::LinearCombinationGELU<ElementHalf, kAlign, ElementAccum, ElementCompute>>;
+
+// Fused GEMM + bias + activation. The length-n bias vector is supplied as the C
+// source operand with ldc = 0 (row broadcast): every output row reads the same
+// bias, so the epilogue computes act(alpha*A*B + bias) with alpha = beta = 1.
+template <typename Gemm>
+static int gemmBiasAct(int m, int n, int k, jlong dA, jlong dB, jlong dBias, jlong dD, jlong workspace, jlong stream) {
+    typename Gemm::Arguments args(
+            cutlass::gemm::GemmUniversalMode::kGemm, {m, n, k}, 1, {1.0f, 1.0f},
+            (void const *) dA, (void const *) dB, (void const *) dBias, (void *) dD,
+            0, 0, 0, 0, k, n, 0, n);
+    return runGemm<Gemm>(args, (void *) workspace, (cudaStream_t) stream);
+}
 
 extern "C" {
 
@@ -96,6 +166,84 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_cutlass_provider_CutlassNat
     }
     status = gemm_op.run((cudaStream_t) stream);
     return (jint) status;
+}
+
+// -----------------------------------------------------------------------------
+// FP16 tensor-core GEMM entry points (types declared above, outside extern "C").
+// -----------------------------------------------------------------------------
+
+/*
+ * Class:     uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib
+ * Method:    hgemmWorkspace
+ * Signature: (III)J
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib_hgemmWorkspace
+        (JNIEnv *env, jclass clazz, jint m, jint n, jint k) {
+    HgemmTensor::Arguments args(
+            cutlass::gemm::GemmUniversalMode::kGemm, {m, n, k}, 1, {1.0f, 0.0f},
+            nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, k, n, n, n);
+    return (jlong) HgemmTensor::get_workspace_size(args);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib
+ * Method:    hgemm
+ * Signature: (IIIFJJFJJJ)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib_hgemm
+        (JNIEnv *env, jclass clazz, jint m, jint n, jint k, jfloat alpha,
+         jlong dA, jlong dB, jfloat beta, jlong dC, jlong workspace, jlong stream) {
+    HgemmTensor::Arguments args(
+            cutlass::gemm::GemmUniversalMode::kGemm, {m, n, k}, 1, {alpha, beta},
+            (void const *) dA, (void const *) dB, (void const *) dC, (void *) dC,
+            0, 0, 0, 0, k, n, n, n);
+    return runGemm<HgemmTensor>(args, (void *) workspace, (cudaStream_t) stream);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib
+ * Method:    gemmBiasReluWorkspace
+ * Signature: (III)J
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib_gemmBiasReluWorkspace
+        (JNIEnv *env, jclass clazz, jint m, jint n, jint k) {
+    GemmBiasRelu::Arguments args(
+            cutlass::gemm::GemmUniversalMode::kGemm, {m, n, k}, 1, {1.0f, 1.0f},
+            nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, k, n, 0, n);
+    return (jlong) GemmBiasRelu::get_workspace_size(args);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib
+ * Method:    gemmBiasRelu
+ * Signature: (IIIJJJJJJ)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib_gemmBiasRelu
+        (JNIEnv *env, jclass clazz, jint m, jint n, jint k, jlong dA, jlong dB, jlong dBias, jlong dD, jlong workspace, jlong stream) {
+    return gemmBiasAct<GemmBiasRelu>(m, n, k, dA, dB, dBias, dD, workspace, stream);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib
+ * Method:    gemmBiasGeluWorkspace
+ * Signature: (III)J
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib_gemmBiasGeluWorkspace
+        (JNIEnv *env, jclass clazz, jint m, jint n, jint k) {
+    GemmBiasGelu::Arguments args(
+            cutlass::gemm::GemmUniversalMode::kGemm, {m, n, k}, 1, {1.0f, 1.0f},
+            nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, k, n, 0, n);
+    return (jlong) GemmBiasGelu::get_workspace_size(args);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib
+ * Method:    gemmBiasGelu
+ * Signature: (IIIJJJJJJ)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib_gemmBiasGelu
+        (JNIEnv *env, jclass clazz, jint m, jint n, jint k, jlong dA, jlong dB, jlong dBias, jlong dD, jlong workspace, jlong stream) {
+    return gemmBiasAct<GemmBiasGelu>(m, n, k, dA, dB, dBias, dD, workspace, stream);
 }
 
 // -----------------------------------------------------------------------------
