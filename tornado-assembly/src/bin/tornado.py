@@ -324,22 +324,50 @@ def validate_cuda_backend(sdk_path):
 
         has_nvidia_driver = check_nvidia_driver()
 
-        print("[CAUSE] Missing NVIDIA CUDA Toolkit or drivers")
-        print("        The CUDA backend requires:")
-        print("        - NVIDIA GPU")
-        print("        - NVIDIA drivers (usually pre-installed on Windows)")
-        print("        - CUDA Toolkit 12.0+")
-        print()
+        # add_cuda_toolkit_to_path() already ran (see validate_windows_dependencies)
+        # and put %CUDA_PATH%\bin on PATH if it found one, so a load failure here
+        # is diagnosed from *why* that did or didn't help, rather than assuming
+        # the Toolkit itself is missing -- tornado-cuda.dll existing (checked
+        # above) plus a load failure almost always means a dependent runtime DLL
+        # (nvrtc64_*.dll, cudart64_*.dll, ...) couldn't be resolved, which is a
+        # different problem than "no Toolkit installed".
+        cuda_path = os.environ.get('CUDA_PATH')
+        cuda_bin = os.path.join(cuda_path, 'bin') if cuda_path else None
+        cuda_bin_exists = bool(cuda_bin and os.path.isdir(cuda_bin))
 
-        if not has_nvidia_driver:
-            print("[FIX] Install NVIDIA CUDA Toolkit and drivers")
+        if cuda_bin_exists:
+            print(f"[CAUSE] tornado-cuda.dll exists and {cuda_bin} is on PATH,")
+            print("        but the DLL still failed to load. This usually means a")
+            print("        dependent runtime DLL (nvrtc64_*.dll, cudart64_*.dll, ...) is")
+            print("        missing or version-mismatched, or a required Visual C++")
+            print("        Redistributable is not installed.")
+            print()
+            print("[FIX] Verify these exist and match your installed Toolkit version:")
+            print(f"        dir {cuda_bin}\\nvrtc64_*.dll")
+            print(f"        dir {cuda_bin}\\cudart64_*.dll")
+            print("      Also ensure the latest Microsoft Visual C++ Redistributable (x64):")
+            print("        https://aka.ms/vs/17/release/vc_redist.x64.exe")
+            print()
+        elif cuda_path:
+            print(f"[CAUSE] CUDA_PATH is set to '{cuda_path}' but '{cuda_bin}' does not exist")
+            print("        The CUDA Toolkit installation looks incomplete or corrupted.")
+            print()
+            print("[FIX] Reinstall NVIDIA CUDA Toolkit 12.0+")
             print("      Download from: https://developer.nvidia.com/cuda-downloads")
             print()
         else:
-            print("[INFO] NVIDIA drivers detected (nvidia-smi available)")
+            print("[CAUSE] CUDA_PATH environment variable is not set")
+            print("        tornado-cuda.dll depends on CUDA Toolkit runtime DLLs")
+            print("        (nvrtc64_*.dll, cudart64_*.dll, ...) that live under")
+            print("        %CUDA_PATH%\\bin, so without it they cannot be located.")
             print()
-            print("[FIX] Reinstall or update NVIDIA CUDA Toolkit 12.0+")
-            print("      Download from: https://developer.nvidia.com/cuda-downloads")
+            if not has_nvidia_driver:
+                print("[FIX] Install NVIDIA CUDA Toolkit and drivers")
+                print("      Download from: https://developer.nvidia.com/cuda-downloads")
+            else:
+                print("[INFO] NVIDIA drivers detected (nvidia-smi available)")
+                print("[FIX] Install NVIDIA CUDA Toolkit 12.0+ (drivers alone are not enough)")
+                print("      Download from: https://developer.nvidia.com/cuda-downloads")
             print()
 
         print("[NOTE] CUDA backend is NVIDIA-specific")
@@ -447,10 +475,39 @@ def validate_spirv_backend(sdk_path):
 
     return True
 
+def add_cuda_toolkit_to_path():
+    """Prepend the CUDA Toolkit's bin/ directory to PATH.
+
+    tornado-cuda.dll (and tornado-cublas.dll/tornado-cufft.dll/tornado-cudnn.dll)
+    depend on CUDA Toolkit runtime DLLs (nvrtc64_*.dll, cudart64_*.dll, ...) that
+    live under %CUDA_PATH%\\bin, not next to the tornado-*.dll themselves. The
+    CUDA installer normally adds that directory to the system PATH, but a shell
+    that predates the install (or never picked up the machine-wide PATH change,
+    unlike e.g. a VS Developer Command Prompt that re-derives its own PATH) will
+    not have it, causing LoadLibrary to fail with "module not found" even though
+    tornado-cuda.dll itself is present and the Toolkit is correctly installed.
+    """
+    if os.name != 'nt':
+        return
+    cuda_path = os.environ.get('CUDA_PATH')
+    if not cuda_path:
+        return
+    cuda_bin = os.path.join(cuda_path, 'bin')
+    if not os.path.isdir(cuda_bin):
+        return
+    current_path = os.environ.get('PATH', '')
+    if cuda_bin.lower() not in (p.lower() for p in current_path.split(os.pathsep)):
+        os.environ['PATH'] = cuda_bin + os.pathsep + current_path
+
 def validate_windows_dependencies(sdk_path):
     """Run all Windows-specific dependency checks."""
     if os.name != 'nt':
         return
+
+    # Make sure CUDA Toolkit runtime DLLs are resolvable before any DLL-load
+    # check or java launch below, regardless of whether this shell sourced the
+    # CUDA installer's PATH changes.
+    add_cuda_toolkit_to_path()
 
     # Validate TORNADOVM_HOME path format
     validate_tornadovm_home_path(sdk_path)
