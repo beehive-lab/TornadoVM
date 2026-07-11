@@ -121,7 +121,7 @@
                                 <include>**/*.dylib</include>
                                 <include>**/*.dll</include>
                             </includes>
-                            <classesDirectory>${basedir}/target/${platform}-${build.type}/cmake</classesDirectory>
+                            <classesDirectory>${basedir}/target/${platform}-${build.type}/classes</classesDirectory>
                             <outputDirectory>${basedir}/target</outputDirectory>
                         </configuration>
                     </execution>
