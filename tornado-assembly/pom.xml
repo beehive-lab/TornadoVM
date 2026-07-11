@@ -198,6 +198,11 @@
                 </dependency>
                 <dependency>
                     <groupId>${project.groupId}</groupId>
+                    <artifactId>tornado-nccl</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
                     <artifactId>tornado-drivers-cusparse-jni</artifactId>
                     <version>${project.version}</version>
                     <classifier>libs</classifier>
@@ -210,6 +215,12 @@
                 <dependency>
                     <groupId>${project.groupId}</groupId>
                     <artifactId>tornado-drivers-cutlass-jni</artifactId>
+                    <version>${project.version}</version>
+                    <classifier>libs</classifier>
+                </dependency>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>tornado-drivers-nccl-jni</artifactId>
                     <version>${project.version}</version>
                     <classifier>libs</classifier>
                 </dependency>
