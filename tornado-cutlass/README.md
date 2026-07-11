@@ -66,8 +66,14 @@ make BACKEND=cuda
 
 `tornado-drivers/cutlass-jni` fetches header-only CUTLASS (v3.5.1) via CMake
 `FetchContent` and compiles `tornado-cutlass.cu` with `nvcc` for SM
-architectures **80;89;90** (Ampere/Ada/Hopper). Override with the `CUDA_ARCH`
-environment variable, e.g. `CUDA_ARCH=89`.
+architecture **80** (`sm_80` SASS, binary-compatible with all Ampere/Ada 8.x
+devices) plus `compute_80` PTX that JIT-compiles for Hopper. Override with the
+`CUDA_ARCH` environment variable, e.g. `CUDA_ARCH=89`, to emit native SASS for a
+specific device.
+
+**CUTLASS 3.5.1 requires CUDA 12.0+.** On an older toolkit the native library is
+skipped at build time (the build still succeeds) and the CUTLASS tasks report
+`UNSUPPORTED` at runtime, since `System.loadLibrary("tornado-cutlass")` fails.
 
 Tests and benchmark:
 

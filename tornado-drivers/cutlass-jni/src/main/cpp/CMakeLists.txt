@@ -35,6 +35,18 @@ project (TornadoCutlass CXX CUDA)
 
 find_package(JNI REQUIRED)
 
+# CUTLASS 3.5.1 requires CUDA 12.0+. On older toolkits its headers fail to
+# compile (e.g. nvcc 11.x + GCC 11 chokes on libstdc++ <functional> with
+# "parameter packs not expanded"). Rather than break the whole CUDA build on
+# such machines (some CI runners still ship CUDA 11.5), skip the native library
+# entirely: System.loadLibrary("tornado-cutlass") then fails and the CUTLASS
+# unit tests report UNSUPPORTED. Mirrors the CUDA-version guard used by the
+# cudnn-jni SDPA path. Build on a CUDA 12+ toolkit to enable the provider.
+if(CMAKE_CUDA_COMPILER_VERSION VERSION_LESS 12.0)
+    message(WARNING "TornadoVM CUTLASS: nvcc ${CMAKE_CUDA_COMPILER_VERSION} is older than CUDA 12.0; CUTLASS requires CUDA 12+. Skipping the tornado-cutlass native library (CUTLASS tasks will report UNSUPPORTED at runtime).")
+    return()
+endif()
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_STANDARD 17)
