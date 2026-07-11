@@ -100,13 +100,26 @@ find_library(CUDART_LIB cudart
         /usr/lib/x86_64-linux-gnu
 )
 
+# cudnn-frontend's SDPA graph path transitively includes the experimental
+# sm90/sm100 prefill engine headers (see the toolkit guard comment in
+# tornado-cudnn-sdpa.cpp), which call into NVRTC directly since this
+# FetchContent is header-only (cudnn-frontend's own CMakeLists, which would
+# otherwise select its dlopen-based NVRTC shim, is never invoked).
+find_library(NVRTC_LIB nvrtc
+    HINTS
+        $ENV{CUDA_PATH}/lib64
+        /usr/local/cuda/lib64
+        ${CUDAToolkit_LIBRARY_DIR}
+        /usr/lib/x86_64-linux-gnu
+)
+
 target_include_directories(tornado-cudnn PRIVATE ${cudnn_frontend_SOURCE_DIR}/include)
 
-if(CUDNN_LIB AND CUDART_LIB)
-    target_link_libraries(tornado-cudnn ${JNI_LIB_DIRS} ${CUDNN_LIB} ${CUDART_LIB})
+if(CUDNN_LIB AND CUDART_LIB AND NVRTC_LIB)
+    target_link_libraries(tornado-cudnn ${JNI_LIB_DIRS} ${CUDNN_LIB} ${CUDART_LIB} ${NVRTC_LIB})
 else()
-    message(WARNING "Could not locate libcudnn via find_library; falling back to -lcudnn -lcudart")
-    target_link_libraries(tornado-cudnn ${JNI_LIB_DIRS} "-lcudnn -lcudart")
+    message(WARNING "Could not locate libcudnn/libcudart/libnvrtc via find_library; falling back to -lcudnn -lcudart -lnvrtc")
+    target_link_libraries(tornado-cudnn ${JNI_LIB_DIRS} "-lcudnn -lcudart -lnvrtc")
 endif()
 
-message(STATUS "TornadoVM cuFFT: include=${CUDA_INCLUDE_DIR}; cudnn=${CUDNN_LIB}")
+message(STATUS "TornadoVM cuDNN: include=${CUDA_INCLUDE_DIR}; cudnn=${CUDNN_LIB}; nvrtc=${NVRTC_LIB}")
