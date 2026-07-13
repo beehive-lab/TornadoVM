@@ -129,10 +129,13 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
         const int gpuArchNum = major * 10 + minor;   // e.g. cc 12.0 -> 120, 9.0 -> 90
         bool gpuArchSupported = false;
         int fallbackArch = 0;                         // highest supported arch <= GPU
+        int lowestSupportedArch = 0;                  // for a descriptive error if no arch <= GPU exists
+        bool queriedArchs = false;
         int numArchs = 0;
         if (nvrtcGetNumSupportedArchs(&numArchs) == NVRTC_SUCCESS && numArchs > 0) {
             std::vector<int> supported(numArchs);
             if (nvrtcGetSupportedArchs(supported.data()) == NVRTC_SUCCESS) {
+                queriedArchs = true;
                 for (int a : supported) {
                     if (a == gpuArchNum) {
                         gpuArchSupported = true;
@@ -140,8 +143,37 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
                     if (a <= gpuArchNum && a > fallbackArch) {
                         fallbackArch = a;
                     }
+                    if (lowestSupportedArch == 0 || a < lowestSupportedArch) {
+                        lowestSupportedArch = a;
+                    }
                 }
             }
+        }
+
+        // Toolkit is newer than the GPU and has dropped support for the GPU's
+        // family entirely (e.g. CUDA 13.x removed sm_5x/6x/7x, so a Pascal
+        // sm_61 device has no arch string this code can construct that NVRTC
+        // will accept). Bail here with a message naming the actual mismatch
+        // instead of forwarding a rejected -arch and surfacing NVRTC's opaque
+        // "invalid value for --gpu-architecture" error. Only trigger when the
+        // arch query succeeded; if it failed we still fall through and try the
+        // GPU's own arch as a last-resort compute_XX (existing behaviour).
+        if (!gpuArchSupported && queriedArchs && fallbackArch == 0) {
+            program->build_status = CL_BUILD_ERROR;
+            program->log =
+                "CUDA Toolkit does not support the GPU's compute capability "
+                "(sm_" + std::to_string(gpuArchNum) + ", cc " +
+                std::to_string(major) + "." + std::to_string(minor) +
+                "). The lowest architecture supported by this NVRTC is sm_" +
+                std::to_string(lowestSupportedArch) +
+                ". This typically happens when CUDA 13+ is used with an older "
+                "GPU: CUDA 13 removed Pascal/Volta and earlier (sm_50..sm_72). "
+                "Install a CUDA Toolkit old enough to still target sm_" +
+                std::to_string(gpuArchNum) +
+                " (CUDA 12.8 is the last release supporting Pascal), "
+                "or use a newer GPU (Turing sm_75 or later).";
+            std::cout << "[TornadoVM-CUDA-JNI] " << program->log << std::endl;
+            return;
         }
 
         bool useCubin;
