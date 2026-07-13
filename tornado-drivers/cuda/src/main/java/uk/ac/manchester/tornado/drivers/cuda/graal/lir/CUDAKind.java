@@ -493,8 +493,14 @@ public enum CUDAKind implements PlatformKind {
             return "unsigned short";
         } else if (this == CUDAKind.UINT) {
             return "unsigned int";
+        } else if (this == CUDAKind.LONG) {
+            // "long" is only 4 bytes under Windows' LLP64 model (vs. 8 on Linux/LP64),
+            // but this kind is documented and used throughout as an 8-byte quantity
+            // (pointer-sized arithmetic, decompression, spill slots). "long long" is
+            // guaranteed 8 bytes on both data models.
+            return "long long";
         } else if (this == CUDAKind.ULONG) {
-            return "unsigned long";
+            return "unsigned long long";
         } else if (this == CUDAKind.HALF) {
             // cuda_fp16.h half-precision scalar type.
             return "__half";
