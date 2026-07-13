@@ -196,7 +196,13 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
         std::vector<const char *> options;
         options.push_back(arch.c_str());
         nv = nvrtcCompileProgram(prog, (int) options.size(), options.data());
-        LOG_NVRTC_AND_VALIDATE("nvrtcCompileProgram", nv);
+        // Deliberately no LOG_NVRTC_AND_VALIDATE here: on toolkits whose NVRTC has no
+        // built-in cuda_fp16.h (see comment above), this first attempt is *expected*
+        // to fail with "could not open source file" and silently succeed on the
+        // include-path retry below. Logging an ERROR line for that handled, transient
+        // failure just alarms users over nothing. A failure that survives the retry
+        // (or isn't a missing-header failure at all) is still fully reported by the
+        // "NVRTC compilation failed" dump below, with the complete compiler log.
         capture_nvrtc_log(prog, program);
 
         if (nv != NVRTC_SUCCESS && program->log.find("could not open source file") != std::string::npos) {
