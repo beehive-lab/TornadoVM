@@ -1483,8 +1483,16 @@ class TornadoVMRunnerTool():
             executionFlags = javaFlags
 
         if os.name == 'nt':
-            # Properly quote the command path if it contains spaces
-            return '"' + self.cmd + '" ' + executionFlags
+            # -Dstdout.encoding=UTF-8 (see the generated argfile) makes the JVM
+            # write correct UTF-8 bytes, but os.system() below runs this command
+            # through cmd.exe, which decodes child-process output using the
+            # console's own active code page - normally a legacy OEM page (437/
+            # 850), not UTF-8. Without switching the console to code page 65001
+            # first, those UTF-8 bytes get misread back as the wrong single-byte
+            # characters (e.g. the checkmark in "Validation PASSED" renders as
+            # mojibake instead of a '?' substitution or the correct glyph).
+            # Properly quote the command path if it contains spaces.
+            return 'chcp 65001 >nul && "' + self.cmd + '" ' + executionFlags
         else:
             return self.cmd + " " + executionFlags
 
