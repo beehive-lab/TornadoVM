@@ -1,11 +1,11 @@
-name: Deploy to Maven Central [JDK 25]
+name: 4.2 - Deploy Maven Central JDK25 [auto]
 
 on:
   push:
     tags:
       - 'v*-jdk25'
   workflow_run:
-    workflows: ["2-Finalize TornadoVM Release [JDK25]"]
+    workflows: ["2.2 - Finalize Release JDK25 [auto]"]
     types: [completed]
   workflow_dispatch:
     inputs:

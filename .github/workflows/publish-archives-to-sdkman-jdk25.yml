@@ -1,4 +1,4 @@
-name: Release to SDKMAN (JDK 25)
+name: 5.2 - Publish SDKMAN JDK25 [auto]
 
 on:
   release:

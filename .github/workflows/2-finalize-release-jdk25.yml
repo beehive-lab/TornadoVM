@@ -1,4 +1,4 @@
-name: 2-Finalize TornadoVM Release [JDK25]
+name: 2.2 - Finalize Release JDK25 [auto]
 
 on:
   pull_request:
@@ -25,6 +25,7 @@ jobs:
     runs-on: [self-hosted, Linux, x64]
     permissions:
       contents: write
+      actions: write
     timeout-minutes: 10
 
     outputs:
@@ -172,6 +173,18 @@ jobs:
             });
 
             console.log(`✅ Created release: ${release.html_url}`);
+
+      - name: Dispatch Build Release SDKs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.get_version.outputs.version }}"
+          BASE_VERSION="${VERSION%-jdk25}"
+          echo "Dispatching build-release-sdks.yml for version=$BASE_VERSION..."
+          gh workflow run build-release-sdks.yml \
+            --repo "${{ github.repository }}" \
+            -f version="$BASE_VERSION"
 
   bump-jdk25-version:
     if: github.repository == 'beehive-lab/TornadoVM'
