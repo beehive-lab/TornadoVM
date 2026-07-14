@@ -66,6 +66,7 @@ public final class CuBlasLtLibraryProvider implements TornadoLibraryProvider {
     private static final Map<String, LtCall> FUNCTIONS = Map.of(//
             "ltMatmulFP32", new LtCall(CudaDataType.CUDA_R_32F, CudaDataType.CUDA_R_32F, CuBlasLtEpilogue.CUBLASLT_EPILOGUE_DEFAULT, false), //
             "ltMatmulFP16", new LtCall(CudaDataType.CUDA_R_16F, CudaDataType.CUDA_R_16F, CuBlasLtEpilogue.CUBLASLT_EPILOGUE_DEFAULT, false), //
+            "ltMatmulFP8", new LtCall(CudaDataType.CUDA_R_8F_E4M3, CudaDataType.CUDA_R_16F, CuBlasLtEpilogue.CUBLASLT_EPILOGUE_DEFAULT, false), //
             "ltMatmulBiasFP16", new LtCall(CudaDataType.CUDA_R_16F, CudaDataType.CUDA_R_16F, CuBlasLtEpilogue.CUBLASLT_EPILOGUE_BIAS, true), //
             "ltMatmulGeluBiasFP16", new LtCall(CudaDataType.CUDA_R_16F, CudaDataType.CUDA_R_16F, CuBlasLtEpilogue.CUBLASLT_EPILOGUE_GELU_BIAS, true));
 

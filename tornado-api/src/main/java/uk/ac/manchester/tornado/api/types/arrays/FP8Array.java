@@ -25,14 +25,14 @@ import java.lang.foreign.MemorySegment;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 /**
- * Off-heap array of 8-bit floating-point (FP8) values — one byte per element — for low-precision
+ * Off-heap array of 8-bit floating-point (FP8) values - one byte per element - for low-precision
  * weight/activation storage on the GPU. Layout is identical to {@link Int8Array} (1 byte/element
  * plus the standard Tornado array header); the bytes are interpreted as FP8 through the
  * {@link FP8} codecs, in either OCP format: <b>E4M3</b> (default) or <b>E5M2</b>.
  *
  * <p>The element decoders ({@link #getE4M3(int)} / {@link #getE5M2(int)}) are pure arithmetic
  * (see {@link FP8}), so reading and dequantizing FP8 weights <em>inside a TornadoVM kernel</em>
- * compiles and runs on the CUDA backend with no special code generation — the same pattern the
+ * compiles and runs on the CUDA backend with no special code generation - the same pattern the
  * Q8 dequant path uses. Host code fills the array with {@link #setE4M3(int, float)} /
  * {@link #setE5M2(int, float)} or writes raw bytes with {@link #set(int, byte)}.</p>
  */
@@ -92,7 +92,7 @@ public final class FP8Array extends TornadoNativeArray {
         return a;
     }
 
-    // ── Raw byte access ───────────────────────────────────────────────────────
+    // - Raw byte access -
 
     public void set(int index, byte value) {
         segment.setAtIndex(index, value, baseIndex);
@@ -102,9 +102,9 @@ public final class FP8Array extends TornadoNativeArray {
         return segment.getByteAtIndex(index, baseIndex);
     }
 
-    // ── FP8 float access ──────────────────────────────────────────────────────
+    // - FP8 float access -
 
-    /** Decode element {@code index} as E4M3 → float. Kernel-safe. */
+    /** Decode element {@code index} as E4M3 -> float. Kernel-safe. */
     public float getE4M3(int index) {
         return FP8.e4m3ToFloat(segment.getByteAtIndex(index, baseIndex));
     }
@@ -114,7 +114,7 @@ public final class FP8Array extends TornadoNativeArray {
         segment.setAtIndex(index, FP8.e4m3FromFloat(value), baseIndex);
     }
 
-    /** Decode element {@code index} as E5M2 → float. Kernel-safe. */
+    /** Decode element {@code index} as E5M2 -> float. Kernel-safe. */
     public float getE5M2(int index) {
         return FP8.e5m2ToFloat(segment.getByteAtIndex(index, baseIndex));
     }
@@ -124,7 +124,7 @@ public final class FP8Array extends TornadoNativeArray {
         segment.setAtIndex(index, FP8.e5m2FromFloat(value), baseIndex);
     }
 
-    // ── TornadoNativeArray contract ───────────────────────────────────────────
+    // - TornadoNativeArray contract -
 
     @Override
     public void clear() {
