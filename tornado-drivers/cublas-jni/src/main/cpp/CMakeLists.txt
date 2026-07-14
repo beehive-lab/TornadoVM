@@ -1,4 +1,9 @@
-cmake_minimum_required (VERSION 3.6)
+cmake_minimum_required (VERSION 3.15)
+
+# See the matching note in cuda-jni/CMakeLists.txt: must be set before
+# project() to affect CMAKE_MSVC_RUNTIME_LIBRARY below.
+cmake_policy(SET CMP0091 NEW)
+
 project (TornadoCuBlas)
 
 find_package(JNI REQUIRED)
@@ -7,8 +12,7 @@ set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_VERBOSE_MAKEFILE on)
 
 if(MSVC)
-	string(REPLACE "/MDd" "/MTd" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
-	string(REPLACE "/MD" "/MT" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 	if(NOT CMAKE_CXX_COMPILER_ID STREQUAL Clang)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 	endif()

@@ -1,5 +1,9 @@
 cmake_minimum_required (VERSION 3.18)
 
+# See the matching note in cuda-jni/CMakeLists.txt: must be set before
+# project() to affect CMAKE_MSVC_RUNTIME_LIBRARY below.
+cmake_policy(SET CMP0091 NEW)
+
 # Prefer the /usr/local/cuda toolkit so the CUTLASS kernels are compiled by the
 # same toolkit the CUDA backend JIT uses (see the matching note in
 # cuda-jni/src/main/cpp/CMakeLists.txt).
@@ -69,8 +73,21 @@ endif()
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_VERBOSE_MAKEFILE on)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -fPIC")
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3 --expt-relaxed-constexpr -Xcompiler=-fPIC -Xcompiler=-Wno-deprecated-declarations")
+# -fPIC is meaningless on Windows (no PIC/PIE distinction for DLLs) and, worse,
+# nvcc forwards it to cl.exe via -Xcompiler, which does not understand GCC-style
+# flags and floods the build with D9002 "ignoring unknown option" warnings for
+# every CUTLASS header. On MSVC, statically link the CRT instead (matching
+# cuda-jni/cublas-jni/cufft-jni/cudnn-jni) so tornado-cutlass.dll doesn't end up
+# dynamically linked against msvcp140.dll/vcruntime140.dll while its siblings
+# are statically linked.
+if(MSVC)
+	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
+	set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3 --expt-relaxed-constexpr")
+else()
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -fPIC")
+	set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3 --expt-relaxed-constexpr -Xcompiler=-fPIC -Xcompiler=-Wno-deprecated-declarations")
+endif()
 
 include_directories(
 	source/
