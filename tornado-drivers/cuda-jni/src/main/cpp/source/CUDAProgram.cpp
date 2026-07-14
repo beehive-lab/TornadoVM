@@ -132,6 +132,14 @@ static void capture_nvrtc_log(nvrtcProgram prog, cuda_program_t *program) {
  * compute capability of the program's device, then loads it as a CUmodule.
  */
 static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
+    // Hoisted to function scope so the module-load failure branch can explain an
+    // NVRTC/GPU-arch mismatch. Defaults suit the pre-built-binary path below,
+    // which loads a cubin directly (no PTX-JIT fallback).
+    int gpuArchNum = 0;        // device compute capability, e.g. cc 12.0 -> 120
+    int maxSupportedArch = 0;  // highest arch this NVRTC can emit
+    int fallbackArch = 0;      // highest supported arch <= GPU (0 if none)
+    bool useCubin = true;
+    bool archKnown = false;    // arch vars populated (false for pre-supplied images)
     if (!program->binary.empty()) {
         // Already have a module image (createProgramWithBinary path) - just load it below.
         program->build_status = CL_BUILD_SUCCESS;
@@ -154,9 +162,8 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
         //
         // This makes the backend robust across the full (toolkit, driver, GPU) matrix
         // instead of assuming toolkit >= GPU.
-        const int gpuArchNum = major * 10 + minor;   // e.g. cc 12.0 -> 120, 9.0 -> 90
+        gpuArchNum = major * 10 + minor;              // e.g. cc 12.0 -> 120, 9.0 -> 90
         bool gpuArchSupported = false;
-        int fallbackArch = 0;                         // highest supported arch <= GPU
         int lowestSupportedArch = 0;                  // for a descriptive error if no arch <= GPU exists
         bool queriedArchs = false;
         int numArchs = 0;
@@ -173,6 +180,9 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
                     }
                     if (lowestSupportedArch == 0 || a < lowestSupportedArch) {
                         lowestSupportedArch = a;
+                    }
+                    if (a > maxSupportedArch) {
+                        maxSupportedArch = a;
                     }
                 }
             }
@@ -204,7 +214,6 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
             return;
         }
 
-        bool useCubin;
         std::string arch;
         if (gpuArchSupported) {
             arch = "--gpu-architecture=sm_" + std::to_string(gpuArchNum);
@@ -217,6 +226,7 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
             arch = "--gpu-architecture=compute_" + std::to_string(target);
             useCubin = false;
         }
+        archKnown = true; // gpuArchNum/maxSupportedArch/fallbackArch/useCubin now describe this compile
 
         // Cache lookup: identical kernel source for the same architecture yields an
         // identical cubin, so reuse a previously compiled image instead of invoking
@@ -384,10 +394,52 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
         if (jitErrorLog[0] != '\0') {
             program->log += std::string("\nJIT log:\n") + jitErrorLog;
         }
+        // A load failure on a freshly compiled image (archKnown) means the driver
+        // rejected our output; which component is stale depends on the image kind.
+        // The raw error is only INVALID_PTX/unsupported-version, so name the cause.
+        if (archKnown && !useCubin) {
+            // PTX fallback (toolkit older than GPU): the driver JIT'd compute_<fallback>
+            // PTX and failed, which means the driver's ptxas is too old for this
+            // toolkit's PTX ISA. Updating the driver is the direct fix; a newer
+            // toolkit that natively supports the GPU also helps by skipping PTX JIT.
+            program->log = std::string("Driver could not JIT compute_") +
+                           std::to_string(fallbackArch > 0 ? fallbackArch : gpuArchNum) +
+                           " PTX for this GPU (sm_" + std::to_string(gpuArchNum) +
+                           "): the GPU driver is too old for this toolkit's PTX ISA. Update the GPU "
+                           "driver, or use a CUDA toolkit whose NVRTC natively supports sm_" +
+                           std::to_string(gpuArchNum) + " (native cubin avoids PTX JIT entirely).\n\n" +
+                           program->log;
+        } else if (archKnown) {
+            // Native cubin (toolkit knew the GPU arch) rejected at load: the driver
+            // is older than the toolkit that produced the cubin. Update the driver,
+            // or build with a toolkit matching the driver.
+            program->log = std::string("Driver rejected the native sm_") + std::to_string(gpuArchNum) +
+                           " cubin: the GPU driver is older than the CUDA toolkit that produced it. "
+                           "Update the GPU driver, or use a CUDA toolkit matching the installed driver.\n\n" +
+                           program->log;
+        }
         std::cout << "[TornadoVM-CUDA-JNI] " << program->log << std::endl;
         program->module_loaded = false;
     } else {
         program->module_loaded = true;
+        // Working, but suboptimal: the toolkit did not know the GPU's arch, so we
+        // loaded compute_<fallback> PTX JIT'd by the (newer) driver. It runs, but
+        // every load pays a driver JIT and codegen is capped at the compute_<fallback>
+        // virtual ISA — no sm_<gpuArch>-native instructions (e.g. newer tensor-core
+        // MMA shapes). Warn once so the degraded path is visible; native codegen
+        // needs a newer toolkit, not a driver change (the driver is already ahead).
+        if (archKnown && !useCubin) {
+            std::call_once(g_arch_fallback_warn_once, [&]() {
+                std::cout << "[TornadoVM-CUDA-JNI] WARNING: CUDA toolkit (NVRTC max sm_"
+                          << maxSupportedArch << ") predates this GPU (sm_" << gpuArchNum
+                          << "). Using compute_" << (fallbackArch > 0 ? fallbackArch : gpuArchNum)
+                          << " PTX JIT'd by the driver - functional but not optimal (extra load-time "
+                             "JIT; codegen limited to the compute_"
+                          << (fallbackArch > 0 ? fallbackArch : gpuArchNum)
+                          << " ISA). Upgrade the CUDA toolkit to one supporting sm_" << gpuArchNum
+                          << " for native codegen." << std::endl;
+            });
+        }
     }
 }
 
