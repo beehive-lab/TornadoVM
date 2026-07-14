@@ -1,4 +1,4 @@
-name: Release to SDKMAN
+name: 5.1 - Publish SDKMAN JDK21 [auto]
 
 on:
   release:
