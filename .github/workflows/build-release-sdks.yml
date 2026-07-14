@@ -1,16 +1,24 @@
-name: Build Release SDKs (multi-platform)
+name: 3 - Build Release SDKs [auto]
 
-# Triggered either:
-#   - manually via workflow_dispatch (full control over inputs)
-#   - automatically when a 2-Finalize TornadoVM Release workflow completes
+# Triggered via workflow_dispatch only:
+#   - dispatched programmatically by 2-finalize-release-jdkXX.yml right after it
+#     pushes each v<version>-jdkXX tag and creates the (draft) Release — this is
+#     an explicit `gh workflow run` call, not an implicit push/release event,
+#     because GITHUB_TOKEN-authored pushes/API calls don't trigger downstream
+#     event-based workflow runs (push, release, etc). workflow_run is exempt
+#     from that restriction but waits for the *entire* finalize workflow
+#     (including the unrelated dev-version-bump job) to finish, so we dispatch
+#     explicitly instead to fire as soon as the tag/Release exist.
+#   - or manually, for smoke tests / recovery.
 #
-# When auto-triggered, the workflow only proceeds once BOTH the v<version>-jdk21
-# and v<version>-jdk25 (draft) Releases exist. The first finalize completion
-# triggers a run that exits in preflight; the second completion's run actually
+# Either way, the workflow only proceeds once BOTH the v<version>-jdk21 and
+# v<version>-jdk25 (draft) Releases exist. The dispatch from whichever finalize
+# completes first exits cleanly in preflight; the second dispatch actually
 # builds and uploads.
 #
-# After all archives are uploaded, the two draft Releases are un-drafted, which
-# emits "release: published" and triggers publish-archives-to-sdkman-jdkXX.
+# After all archives are uploaded, the two draft Releases are un-drafted and
+# publish-archives-to-sdkman-jdkXX.yml is dispatched explicitly (same reasoning
+# as above — un-drafting via GITHUB_TOKEN won't reliably fire `release: published`).
 
 on:
   workflow_dispatch:
@@ -20,13 +28,18 @@ on:
         required: true
         type: string
         default: '4.0.1'
-      include_windows:
-        description: 'Run the Windows build job (requires the self-hosted Windows runner to be online).'
+      include_macos:
+        description: 'Run the macOS arm64 build job.'
         required: false
         type: boolean
         default: true
-      skip_windows_executables:
-        description: 'On the Windows build, skip building/running the native .exe wrappers (tornado.exe via PyInstaller / pyinstaller.exe, and the zello_world Level Zero probe). Required on managed Windows runners that block running unsigned executables.'
+      include_linux:
+        description: 'Run the Linux x64 build job.'
+        required: false
+        type: boolean
+        default: true
+      include_windows:
+        description: 'Run the Windows x64 build job.'
         required: false
         type: boolean
         default: true
@@ -35,11 +48,6 @@ on:
         required: false
         type: boolean
         default: true
-  workflow_run:
-    workflows:
-      - "2-Finalize TornadoVM Release [JDK21]"
-      - "2-Finalize TornadoVM Release [JDK25]"
-    types: [completed]
 
 concurrency:
   group: build-release-sdks
@@ -47,9 +55,7 @@ concurrency:
 
 jobs:
   preflight:
-    if: |
-      github.repository == 'beehive-lab/TornadoVM' &&
-      (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
+    if: github.repository == 'beehive-lab/TornadoVM'
     name: Preflight (derive version, gate on Releases)
     runs-on: [self-hosted, Linux, x64]
     permissions:
@@ -59,8 +65,9 @@ jobs:
       version: ${{ steps.derive.outputs.version }}
       version_tag: ${{ steps.derive.outputs.version_tag }}
       proceed: ${{ steps.gate.outputs.proceed }}
+      include_macos: ${{ steps.derive.outputs.include_macos }}
+      include_linux: ${{ steps.derive.outputs.include_linux }}
       include_windows: ${{ steps.derive.outputs.include_windows }}
-      skip_windows_executables: ${{ steps.derive.outputs.skip_windows_executables }}
       upload_to_release: ${{ steps.derive.outputs.upload_to_release }}
     steps:
       - name: Checkout repository
@@ -72,48 +79,18 @@ jobs:
         id: derive
         run: |
           set -euo pipefail
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ inputs.version }}"
-            INCLUDE_WIN="${{ inputs.include_windows }}"
-            SKIP_WIN_EXE="${{ inputs.skip_windows_executables }}"
-            UPLOAD="${{ inputs.upload_to_release }}"
-          else
-            case "${{ github.event.workflow_run.name }}" in
-              *JDK21*) JDK="jdk21" ;;
-              *JDK25*) JDK="jdk25" ;;
-              *)
-                echo "::error::Unrecognized triggering workflow: ${{ github.event.workflow_run.name }}"
-                exit 1
-                ;;
-            esac
-            git fetch --tags --prune origin
-            # Prefer the tag that points at the exact commit the triggering
-            # finalize run ran against. The finalize workflow creates v${VERSION}
-            # at the checked-out master HEAD, which is workflow_run.head_sha for
-            # the run we are reacting to here — so --points-at picks the tag that
-            # run produced, even if a newer release was tagged in the meantime.
-            HEAD_SHA="${{ github.event.workflow_run.head_sha }}"
-            LATEST_TAG=$(git tag --list --points-at "$HEAD_SHA" "v*-${JDK}" | head -1)
-            if [ -z "$LATEST_TAG" ]; then
-              echo "::warning::No v*-${JDK} tag points at workflow_run head_sha $HEAD_SHA; falling back to most recent matching tag."
-              LATEST_TAG=$(git tag --list "v*-${JDK}" --sort=-creatordate | head -1)
-            fi
-            if [ -z "$LATEST_TAG" ]; then
-              echo "::error::No tags matching v*-${JDK} found."
-              exit 1
-            fi
-            BASE_TAG="${LATEST_TAG#v}"             # e.g. 4.0.1-jdk21
-            VERSION="${BASE_TAG%-jdk*}"            # e.g. 4.0.1
-            INCLUDE_WIN="true"
-            SKIP_WIN_EXE="true"
-            UPLOAD="true"
-          fi
+          VERSION="${{ inputs.version }}"
+          INCLUDE_MACOS="${{ inputs.include_macos }}"
+          INCLUDE_LINUX="${{ inputs.include_linux }}"
+          INCLUDE_WIN="${{ inputs.include_windows }}"
+          UPLOAD="${{ inputs.upload_to_release }}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "version_tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "include_macos=$INCLUDE_MACOS" >> "$GITHUB_OUTPUT"
+          echo "include_linux=$INCLUDE_LINUX" >> "$GITHUB_OUTPUT"
           echo "include_windows=$INCLUDE_WIN" >> "$GITHUB_OUTPUT"
-          echo "skip_windows_executables=$SKIP_WIN_EXE" >> "$GITHUB_OUTPUT"
           echo "upload_to_release=$UPLOAD" >> "$GITHUB_OUTPUT"
-          echo "Derived: version=$VERSION include_windows=$INCLUDE_WIN skip_windows_executables=$SKIP_WIN_EXE upload=$UPLOAD"
+          echo "Derived: version=$VERSION include_macos=$INCLUDE_MACOS include_linux=$INCLUDE_LINUX include_windows=$INCLUDE_WIN upload=$UPLOAD"
 
       - name: Gate on both Releases existing
         id: gate
@@ -142,7 +119,7 @@ jobs:
 
   build-macos:
     needs: preflight
-    if: needs.preflight.outputs.proceed == 'true'
+    if: needs.preflight.outputs.proceed == 'true' && needs.preflight.outputs.include_macos == 'true'
     name: macOS arm64 (jdk21+jdk25 × opencl+metal)
     runs-on: [self-hosted, macOS, arm64]
     timeout-minutes: 120
@@ -155,6 +132,7 @@ jobs:
       JDK25_HOME: /opt/jenkins/jdks/jdk-25.0.2/Contents/Home
       RELEASE_ARCHIVES_DIR: /opt/release-archives
       PLATFORM_DIR: macos-arm64
+      VENV_PATH: /Users/beehiveUser/venv-build-sdks
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -172,6 +150,19 @@ jobs:
         run: |
           mkdir -p "$RELEASE_ARCHIVES_DIR"
           rm -rf "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR"
+
+      - name: Use pre-provisioned Python venv
+        run: |
+          if [ ! -x "$VENV_PATH/bin/python3" ]; then
+            echo "::error::$VENV_PATH is missing on this runner. Create it once with:"
+            echo "  python3 -m venv $VENV_PATH && $VENV_PATH/bin/pip install --upgrade pip requests tqdm urllib3 wget packaging streamlit psutil"
+            exit 1
+          fi
+          # Put the pre-provisioned venv's python3/pip3 first on PATH so
+          # bin/compile's dependency self-heal (pip3 install requests/urllib3/
+          # wget/packaging/streamlit) lands there instead of failing against
+          # Homebrew's externally-managed system Python.
+          echo "$VENV_PATH/bin" >> "$GITHUB_PATH"
 
       - name: Build SDKs
         run: |
@@ -210,7 +201,7 @@ jobs:
 
   build-linux:
     needs: preflight
-    if: needs.preflight.outputs.proceed == 'true'
+    if: needs.preflight.outputs.proceed == 'true' && needs.preflight.outputs.include_linux == 'true'
     name: Linux x64 (jdk21+jdk25 × opencl+ptx+spirv+cuda+full)
     runs-on: [self-hosted, Linux, x64, sdk-builder]
     timeout-minutes: 240
@@ -294,10 +285,6 @@ jobs:
     timeout-minutes: 240
     permissions:
       contents: write
-    # Note: on a managed Windows runner that blocks running unsigned executables,
-    # keep skip_windows_executables = true so the build never invokes
-    # pyinstaller.exe / tornado.exe / zello_world (the SDK then ships the .py
-    # launchers instead of the .exe wrappers).
     env:
       VERSION: ${{ needs.preflight.outputs.version }}
       VERSION_TAG: ${{ needs.preflight.outputs.version_tag }}
@@ -335,19 +322,14 @@ jobs:
 
       - name: Build SDKs
         shell: cmd
-        env:
-          SKIP_WIN_EXE: ${{ needs.preflight.outputs.skip_windows_executables }}
         run: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDevCmd.bat" -startdir=none -arch=x64 -host_arch=x64
           if errorlevel 1 exit /b 1
-          set EXTRA_ARGS=
-          if "%SKIP_WIN_EXE%"=="true" set EXTRA_ARGS=--skip-windows-executables
           python scripts\build-release-sdks.py ^
             --version %VERSION_TAG% ^
             --output-dir "%RELEASE_ARCHIVES_DIR%" ^
             --jdk21-home "%JDK21_HOME%" ^
-            --jdk25-home "%JDK25_HOME%" ^
-            %EXTRA_ARGS%
+            --jdk25-home "%JDK25_HOME%"
 
       - name: List produced archives
         shell: cmd
@@ -379,7 +361,7 @@ jobs:
           Write-Host "Uploaded $uploaded archive(s) from Windows x64."
 
   publish-releases:
-    name: Un-draft Releases (publish, fires SDKMAN)
+    name: Un-draft Releases and dispatch SDKMAN publish
     needs: [preflight, build-macos, build-linux, build-windows]
     if: |
       always() &&
@@ -391,6 +373,7 @@ jobs:
     runs-on: [self-hosted, Linux, x64]
     permissions:
       contents: write
+      actions: write
     timeout-minutes: 10
     steps:
       - name: Un-draft both Releases
@@ -403,7 +386,27 @@ jobs:
             echo "Publishing $tag (un-drafting)..."
             gh release edit "$tag" --draft=false --repo "${{ github.repository }}"
           done
-          echo "Both Releases are now public — release:published events will trigger SDKMAN publish."
+          echo "Both Releases are now public."
+
+      - name: Dispatch SDKMAN publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # gh release edit above ran with GITHUB_TOKEN, and GitHub does not let
+          # GITHUB_TOKEN-authored actions trigger further event-based workflow runs
+          # (push/release/etc — workflow_run is the one exception). So the un-draft
+          # above will NOT reliably fire publish-archives-to-sdkman-jdkXX.yml's
+          # `release: published` trigger. Dispatch it explicitly instead.
+          for jdk in jdk21 jdk25; do
+            tag="${{ needs.preflight.outputs.version_tag }}-$jdk"
+            echo "Dispatching publish-archives-to-sdkman-$jdk.yml for $tag..."
+            gh workflow run "publish-archives-to-sdkman-$jdk.yml" \
+              --repo "${{ github.repository }}" \
+              -f tag="$tag" \
+              -f publish=true
+          done
+          echo "Dispatched SDKMAN publish for both jdk21 and jdk25."
 
       - name: Summary
         run: |
@@ -415,5 +418,5 @@ jobs:
             echo "| [v${{ needs.preflight.outputs.version }}-jdk21](https://github.com/${{ github.repository }}/releases/tag/v${{ needs.preflight.outputs.version }}-jdk21) | Published |"
             echo "| [v${{ needs.preflight.outputs.version }}-jdk25](https://github.com/${{ github.repository }}/releases/tag/v${{ needs.preflight.outputs.version }}-jdk25) | Published |"
             echo ""
-            echo "Downstream: \`publish-archives-to-sdkman-jdkXX\` (release:published) and \`deploy-maven-central-jdkXX\` (workflow_run on finalize) handle the rest."
+            echo "Downstream: \`publish-archives-to-sdkman-jdkXX\` dispatched explicitly above. \`deploy-maven-central-jdkXX\` runs via workflow_run on finalize completion."
           } >> "$GITHUB_STEP_SUMMARY"
