@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+         xmlns="http://maven.apache.org/POM/4.0.0">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.github.beehive-lab</groupId>
+        <artifactId>tornado</artifactId>
+        <version>5.0.1-jdk21-dev</version>
+    </parent>
+    <artifactId>tornado-cutensor</artifactId>
+    <name>tornado-cutensor</name>
+    <description>TornadoVM cuTENSOR bindings: NVIDIA cuTENSOR contraction tasks for TornadoVM task graphs</description>
+    <licenses>
+        <license>
+            <name>Apache 2</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.html</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>tornado-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>tornado-runtime</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
+    <developers>
+        <developer>
+            <id>beehive-lab</id>
+            <name>Beehive Lab</name>
+            <email>info@tornadovm.org</email>
+        </developer>
+    </developers>
+    <scm>
+        <connection>scm:git:https://github.com/beehive-lab/tornadovm.git</connection>
+        <developerConnection>scm:git:https://github.com/beehive-lab/tornadovm.git</developerConnection>
+        <url>https://github.com/beehive-lab/tornadovm</url>
+    </scm>
+</project>

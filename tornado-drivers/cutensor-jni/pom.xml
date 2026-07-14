@@ -8,8 +8,8 @@
         <artifactId>tornado-drivers</artifactId>
         <version>5.0.1-jdk21-dev</version>
     </parent>
-    <artifactId>tornado-drivers-cufft-jni</artifactId>
-    <name>tornado-drivers-cufft-jni</name>
+    <artifactId>tornado-drivers-cutensor-jni</artifactId>
+    <name>tornado-drivers-cutensor-jni</name>
     <build>
 
         <directory>${basedir}/target/${platform}-${build.type}</directory>
@@ -121,7 +121,7 @@
                                 <include>**/*.dylib</include>
                                 <include>**/*.dll</include>
                             </includes>
-                            <classesDirectory>${basedir}/target/${platform}-${build.type}/classes</classesDirectory>
+                            <classesDirectory>${basedir}/target/${platform}-${build.type}/cmake</classesDirectory>
                             <outputDirectory>${basedir}/target</outputDirectory>
                         </configuration>
                     </execution>
