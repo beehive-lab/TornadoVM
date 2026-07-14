@@ -1,4 +1,4 @@
-name: 1-Prepare TornadoVM Release [JDK21]
+name: 1.1 - Prepare Release JDK21 [auto]
 
 on:
   workflow_dispatch:

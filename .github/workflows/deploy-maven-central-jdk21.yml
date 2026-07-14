@@ -1,11 +1,11 @@
-name: Deploy to Maven Central (JDK 21)
+name: 4.1 - Deploy Maven Central JDK21 [auto]
 
 on:
   push:
     tags:
       - 'v*-jdk21'
   workflow_run:
-    workflows: ["2-Finalize TornadoVM Release [JDK21]"]
+    workflows: ["2.1 - Finalize Release JDK21 [auto]"]
     types: [completed]
   workflow_dispatch:
     inputs:
