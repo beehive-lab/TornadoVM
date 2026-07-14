@@ -1,4 +1,4 @@
-name: 0-Release Orchestrator (fan out prepare-jdk21 + prepare-jdk25)
+name: 0 - Release Orchestrator [manual]
 
 # Single entry point that dispatches both 1-prepare-release-jdkXX workflows in
 # parallel. Once the two release PRs they create are reviewed and merged, the

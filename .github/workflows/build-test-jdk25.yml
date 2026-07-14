@@ -10,7 +10,10 @@ on:
 
 jobs:
   code-quality:
-    if: github.repository == 'beehive-lab/TornadoVM'
+    if: |
+      github.repository == 'beehive-lab/TornadoVM' &&
+      !(github.event_name == 'push' && contains(github.event.head_commit.message, 'from beehive-lab/release-jdk25/')) &&
+      !(github.event_name == 'pull_request' && startsWith(github.head_ref, 'release-jdk25/'))
     runs-on: [self-hosted, Linux, x64]
     env:
       JAVA_HOME: /opt/jenkins/jdks/jdk-25.0.2
@@ -26,7 +29,10 @@ jobs:
           ./mvnw checkstyle:check
 
   build-opencl:
-    if: github.repository == 'beehive-lab/TornadoVM'
+    if: |
+      github.repository == 'beehive-lab/TornadoVM' &&
+      !(github.event_name == 'push' && contains(github.event.head_commit.message, 'from beehive-lab/release-jdk25/')) &&
+      !(github.event_name == 'pull_request' && startsWith(github.head_ref, 'release-jdk25/'))
     runs-on: [self-hosted, Linux, x64]
     needs: code-quality
     timeout-minutes: 30
@@ -79,7 +85,10 @@ jobs:
           ./bin/tornadovm-ray-tracer regression
 
   build-ptx:
-    if: github.repository == 'beehive-lab/TornadoVM'
+    if: |
+      github.repository == 'beehive-lab/TornadoVM' &&
+      !(github.event_name == 'push' && contains(github.event.head_commit.message, 'from beehive-lab/release-jdk25/')) &&
+      !(github.event_name == 'pull_request' && startsWith(github.head_ref, 'release-jdk25/'))
     runs-on: [self-hosted, Linux, x64]
     needs: build-opencl
     timeout-minutes: 20
@@ -142,7 +151,10 @@ jobs:
   # installed the unit tests can silently run on the OpenCL device and report false positives. A
   # CUDA-only build exposes a single backend (Tornado device 0:0), so the results are unambiguous.
   build-cuda:
-    if: github.repository == 'beehive-lab/TornadoVM'
+    if: |
+      github.repository == 'beehive-lab/TornadoVM' &&
+      !(github.event_name == 'push' && contains(github.event.head_commit.message, 'from beehive-lab/release-jdk25/')) &&
+      !(github.event_name == 'pull_request' && startsWith(github.head_ref, 'release-jdk25/'))
     runs-on: [self-hosted, Linux, x64]
     needs: build-ptx                         # Serialize after PTX (shares the NVIDIA GPU runner)
     timeout-minutes: 20
@@ -183,7 +195,10 @@ jobs:
           make fast-tests
 
   build-spirv:
-    if: github.repository == 'beehive-lab/TornadoVM'
+    if: |
+      github.repository == 'beehive-lab/TornadoVM' &&
+      !(github.event_name == 'push' && contains(github.event.head_commit.message, 'from beehive-lab/release-jdk25/')) &&
+      !(github.event_name == 'pull_request' && startsWith(github.head_ref, 'release-jdk25/'))
     runs-on: [self-hosted, Linux, x64]
     needs: code-quality
     timeout-minutes: 20
@@ -222,7 +237,10 @@ jobs:
           make fast-tests
 
   build-macOs-opencl:
-    if: github.repository == 'beehive-lab/TornadoVM'
+    if: |
+      github.repository == 'beehive-lab/TornadoVM' &&
+      !(github.event_name == 'push' && contains(github.event.head_commit.message, 'from beehive-lab/release-jdk25/')) &&
+      !(github.event_name == 'pull_request' && startsWith(github.head_ref, 'release-jdk25/'))
     runs-on: [self-hosted, macOS, arm64]
     needs: code-quality
     timeout-minutes: 45
@@ -276,7 +294,10 @@ jobs:
           ./bin/tornadovm-ray-tracer regression
 
   build-macOs-metal:
-    if: github.repository == 'beehive-lab/TornadoVM'
+    if: |
+      github.repository == 'beehive-lab/TornadoVM' &&
+      !(github.event_name == 'push' && contains(github.event.head_commit.message, 'from beehive-lab/release-jdk25/')) &&
+      !(github.event_name == 'pull_request' && startsWith(github.head_ref, 'release-jdk25/'))
     runs-on: [self-hosted, macOS, arm64]
     needs: code-quality
     timeout-minutes: 45
