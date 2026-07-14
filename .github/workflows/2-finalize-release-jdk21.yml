@@ -1,4 +1,4 @@
-name: 2-Finalize TornadoVM Release [JDK21]
+name: 2.1 - Finalize Release JDK21 [auto]
 
 on:
   pull_request:

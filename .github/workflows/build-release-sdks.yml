@@ -1,4 +1,4 @@
-name: Build Release SDKs (multi-platform)
+name: 3 - Build Release SDKs [auto]
 
 # Triggered via workflow_dispatch only:
 #   - dispatched programmatically by 2-finalize-release-jdkXX.yml right after it
