@@ -26,12 +26,14 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.FP8;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.FP8Array;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
 
 /**
  * FP8 (8-bit float, CUDA-only storage type) tests: host-side codec correctness plus on-device
@@ -41,6 +43,23 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * <p>How to run: {@code tornado-test -V uk.ac.manchester.tornado.unittests.arrays.TestFP8}</p>
  */
 public class TestFP8 extends TornadoTestBase {
+
+    /**
+     * FP8 is a CUDA-only storage type (the array is registered only in the CUDA device dispatch and
+     * the decoders are tuned for the CUDA code generator). The on-device tests must therefore run on
+     * the CUDA backend only; on other backends they report Unsupported rather than Failed. The
+     * host-codec tests are backend-agnostic and always run.
+     */
+    private void assumeCudaBackend() {
+        TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
+        if (backendType != TornadoVMBackendType.CUDA) {
+            String message = "FP8 device kernels require the CUDA backend (default device is " + backendType + ")";
+            switch (backendType) {
+                case OPENCL, PTX, SPIRV, METAL -> assertNotBackend(backendType, message);
+                default -> throw new TornadoVMCUDANotSupported(message);
+            }
+        }
+    }
 
     /** Kernel: dequantize E4M3 bytes to float on the device (FP8 weights live in a ByteArray). */
     public static void decodeE4M3(ByteArray in, FloatArray out) {
@@ -183,6 +202,7 @@ public class TestFP8 extends TornadoTestBase {
 
     @Test
     public void testE4M3DecodeOnDevice() throws TornadoExecutionPlanException {
+        assumeCudaBackend();
         float[] values = { 0.0f, 1.0f, -1.0f, 0.5f, 2.0f, -3.5f, 0.125f, 448.0f, -448.0f, 0.015625f, 100.0f, -0.25f };
         ByteArray in = new ByteArray(values.length);
         for (int i = 0; i < values.length; i++) {
@@ -207,6 +227,7 @@ public class TestFP8 extends TornadoTestBase {
 
     @Test
     public void testE5M2DecodeOnDevice() throws TornadoExecutionPlanException {
+        assumeCudaBackend();
         float[] values = { 0.0f, 1.0f, -1.0f, 0.5f, 16.0f, -256.0f, 57344.0f, 0.0001f, -12.5f, 3.0f };
         ByteArray in = new ByteArray(values.length);
         for (int i = 0; i < values.length; i++) {
@@ -229,6 +250,7 @@ public class TestFP8 extends TornadoTestBase {
 
     @Test
     public void testE4M3DecodeLargeArrayOnDevice() throws TornadoExecutionPlanException {
+        assumeCudaBackend();
         // Cover the whole E4M3 code space (256 values) through the device decode kernel.
         int n = 256;
         ByteArray in = new ByteArray(n);
@@ -254,6 +276,7 @@ public class TestFP8 extends TornadoTestBase {
 
     @Test
     public void testE4M3MultiplyOnDevice() throws TornadoExecutionPlanException {
+        assumeCudaBackend();
         // FP8 weights used in real arithmetic on the device: element-wise product of two FP8 arrays.
         float[] av = { 1.0f, 2.0f, -0.5f, 3.0f, 0.25f, -4.0f, 8.0f, 0.125f };
         float[] bv = { 2.0f, -1.0f, 4.0f, 0.5f, 8.0f, -0.25f, 0.5f, 16.0f };
@@ -280,6 +303,7 @@ public class TestFP8 extends TornadoTestBase {
 
     @Test
     public void testE4M3EncodeOnDevice() throws TornadoExecutionPlanException {
+        assumeCudaBackend();
         // In-kernel quantization: quantize float -> E4M3 -> float on the device, matching the host
         // codec exactly (covers normals, subnormals, saturation and negatives).
         float[] values = { 0.0f, 1.0f, -1.3f, 0.7f, 2.5f, -3.14f, 0.02f, 500.0f, -500.0f, 0.001f, 42.0f, -0.6f };
