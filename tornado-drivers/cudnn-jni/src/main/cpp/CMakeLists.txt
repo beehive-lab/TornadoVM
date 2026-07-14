@@ -59,11 +59,25 @@ add_library(tornado-cudnn SHARED ${SOURCE_FILES})
 # (see the matching note in cuda-jni/src/main/cpp/CMakeLists.txt).
 find_package(CUDAToolkit QUIET)
 
+# NVIDIA's Windows cuDNN 9.x installer no longer merges its headers/libs into
+# the CUDA toolkit's own include/lib directories (the layout every HINTS list
+# below otherwise assumes). Instead it installs under its own tree (the
+# CUDNN_ROOT env var the installer sets, e.g. "C:/Program Files/NVIDIA/CUDNN/
+# v9.x"), nesting headers/libs one level deeper under a subdirectory named for
+# the CUDA major version they target (e.g. include/13.3, lib/13.3/x64). Glob
+# for the subdirectory matching the CUDA toolkit in use so headers/libs come
+# from the same CUDA version family.
+if(DEFINED ENV{CUDNN_ROOT} AND CUDAToolkit_FOUND)
+    file(GLOB CUDNN_ROOT_INCLUDE_DIRS "$ENV{CUDNN_ROOT}/include/${CUDAToolkit_VERSION_MAJOR}.*")
+    file(GLOB CUDNN_ROOT_LIB_DIRS "$ENV{CUDNN_ROOT}/lib/${CUDAToolkit_VERSION_MAJOR}.*/x64")
+endif()
+
 find_path(CUDA_INCLUDE_DIR cudnn.h
     HINTS
         $ENV{CUDA_PATH}/include
         /usr/local/cuda/include
         ${CUDAToolkit_INCLUDE_DIRS}
+        ${CUDNN_ROOT_INCLUDE_DIRS}
         /usr/include
         /usr/include/x86_64-linux-gnu
         /usr/lib/cuda/include
@@ -85,6 +99,7 @@ find_library(CUDNN_LIB cudnn
         $ENV{CUDA_PATH}/lib64
         /usr/local/cuda/lib64
         ${CUDAToolkit_LIBRARY_DIR}
+        ${CUDNN_ROOT_LIB_DIRS}
         /usr/lib/x86_64-linux-gnu
 )
 
