@@ -375,6 +375,30 @@ public final class CUDAAssembler extends Assembler {
             String literal = javaConstant.isNull() ? "0" : constant.toValueString();
             return "__float2half(" + literal + "F)";
         }
+        if (!javaConstant.isNull() && (oclKind == CUDAKind.FLOAT || oclKind == CUDAKind.DOUBLE)) {
+            // CUDA C has no NaN/Infinity literal, and Java's toValueString() emits the bare
+            // identifiers "NaN"/"Infinity" (suffixed to "NaNF"), which do not compile. Materialise
+            // these special values through the bit-reinterpretation intrinsics instead.
+            if (oclKind == CUDAKind.FLOAT) {
+                float f = javaConstant.asFloat();
+                if (Float.isNaN(f)) {
+                    return "__int_as_float(0x7fc00000)";
+                } else if (f == Float.POSITIVE_INFINITY) {
+                    return "__int_as_float(0x7f800000)";
+                } else if (f == Float.NEGATIVE_INFINITY) {
+                    return "__int_as_float(0xff800000)";
+                }
+            } else {
+                double d = javaConstant.asDouble();
+                if (Double.isNaN(d)) {
+                    return "__longlong_as_double(0x7ff8000000000000ULL)";
+                } else if (d == Double.POSITIVE_INFINITY) {
+                    return "__longlong_as_double(0x7ff0000000000000ULL)";
+                } else if (d == Double.NEGATIVE_INFINITY) {
+                    return "__longlong_as_double(0xfff0000000000000ULL)";
+                }
+            }
+        }
         if (javaConstant.isNull()) {
             result = addLiteralSuffix(oclKind, "0");
             if (oclKind.isVector()) {
