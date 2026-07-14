@@ -25,6 +25,7 @@ jobs:
     runs-on: [self-hosted, Linux, x64]
     permissions:
       contents: write
+      actions: write
     timeout-minutes: 10
 
     outputs:
@@ -172,6 +173,18 @@ jobs:
             });
 
             console.log(`✅ Created release: ${release.html_url}`);
+
+      - name: Dispatch Build Release SDKs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.get_version.outputs.version }}"
+          BASE_VERSION="${VERSION%-jdk21}"
+          echo "Dispatching build-release-sdks.yml for version=$BASE_VERSION..."
+          gh workflow run build-release-sdks.yml \
+            --repo "${{ github.repository }}" \
+            -f version="$BASE_VERSION"
 
   update-develop:
     if: github.repository == 'beehive-lab/TornadoVM'

@@ -1,16 +1,24 @@
 name: Build Release SDKs (multi-platform)
 
-# Triggered either:
-#   - manually via workflow_dispatch (full control over inputs)
-#   - automatically when a 2-Finalize TornadoVM Release workflow completes
+# Triggered via workflow_dispatch only:
+#   - dispatched programmatically by 2-finalize-release-jdkXX.yml right after it
+#     pushes each v<version>-jdkXX tag and creates the (draft) Release — this is
+#     an explicit `gh workflow run` call, not an implicit push/release event,
+#     because GITHUB_TOKEN-authored pushes/API calls don't trigger downstream
+#     event-based workflow runs (push, release, etc). workflow_run is exempt
+#     from that restriction but waits for the *entire* finalize workflow
+#     (including the unrelated dev-version-bump job) to finish, so we dispatch
+#     explicitly instead to fire as soon as the tag/Release exist.
+#   - or manually, for smoke tests / recovery.
 #
-# When auto-triggered, the workflow only proceeds once BOTH the v<version>-jdk21
-# and v<version>-jdk25 (draft) Releases exist. The first finalize completion
-# triggers a run that exits in preflight; the second completion's run actually
+# Either way, the workflow only proceeds once BOTH the v<version>-jdk21 and
+# v<version>-jdk25 (draft) Releases exist. The dispatch from whichever finalize
+# completes first exits cleanly in preflight; the second dispatch actually
 # builds and uploads.
 #
-# After all archives are uploaded, the two draft Releases are un-drafted, which
-# emits "release: published" and triggers publish-archives-to-sdkman-jdkXX.
+# After all archives are uploaded, the two draft Releases are un-drafted and
+# publish-archives-to-sdkman-jdkXX.yml is dispatched explicitly (same reasoning
+# as above — un-drafting via GITHUB_TOKEN won't reliably fire `release: published`).
 
 on:
   workflow_dispatch:
@@ -40,11 +48,6 @@ on:
         required: false
         type: boolean
         default: true
-  workflow_run:
-    workflows:
-      - "2-Finalize TornadoVM Release [JDK21]"
-      - "2-Finalize TornadoVM Release [JDK25]"
-    types: [completed]
 
 concurrency:
   group: build-release-sdks
@@ -52,9 +55,7 @@ concurrency:
 
 jobs:
   preflight:
-    if: |
-      github.repository == 'beehive-lab/TornadoVM' &&
-      (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
+    if: github.repository == 'beehive-lab/TornadoVM'
     name: Preflight (derive version, gate on Releases)
     runs-on: [self-hosted, Linux, x64]
     permissions:
@@ -78,44 +79,11 @@ jobs:
         id: derive
         run: |
           set -euo pipefail
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ inputs.version }}"
-            INCLUDE_MACOS="${{ inputs.include_macos }}"
-            INCLUDE_LINUX="${{ inputs.include_linux }}"
-            INCLUDE_WIN="${{ inputs.include_windows }}"
-            UPLOAD="${{ inputs.upload_to_release }}"
-          else
-            case "${{ github.event.workflow_run.name }}" in
-              *JDK21*) JDK="jdk21" ;;
-              *JDK25*) JDK="jdk25" ;;
-              *)
-                echo "::error::Unrecognized triggering workflow: ${{ github.event.workflow_run.name }}"
-                exit 1
-                ;;
-            esac
-            git fetch --tags --prune origin
-            # Prefer the tag that points at the exact commit the triggering
-            # finalize run ran against. The finalize workflow creates v${VERSION}
-            # at the checked-out master HEAD, which is workflow_run.head_sha for
-            # the run we are reacting to here — so --points-at picks the tag that
-            # run produced, even if a newer release was tagged in the meantime.
-            HEAD_SHA="${{ github.event.workflow_run.head_sha }}"
-            LATEST_TAG=$(git tag --list --points-at "$HEAD_SHA" "v*-${JDK}" | head -1)
-            if [ -z "$LATEST_TAG" ]; then
-              echo "::warning::No v*-${JDK} tag points at workflow_run head_sha $HEAD_SHA; falling back to most recent matching tag."
-              LATEST_TAG=$(git tag --list "v*-${JDK}" --sort=-creatordate | head -1)
-            fi
-            if [ -z "$LATEST_TAG" ]; then
-              echo "::error::No tags matching v*-${JDK} found."
-              exit 1
-            fi
-            BASE_TAG="${LATEST_TAG#v}"             # e.g. 4.0.1-jdk21
-            VERSION="${BASE_TAG%-jdk*}"            # e.g. 4.0.1
-            INCLUDE_MACOS="true"
-            INCLUDE_LINUX="true"
-            INCLUDE_WIN="true"
-            UPLOAD="true"
-          fi
+          VERSION="${{ inputs.version }}"
+          INCLUDE_MACOS="${{ inputs.include_macos }}"
+          INCLUDE_LINUX="${{ inputs.include_linux }}"
+          INCLUDE_WIN="${{ inputs.include_windows }}"
+          UPLOAD="${{ inputs.upload_to_release }}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "version_tag=v$VERSION" >> "$GITHUB_OUTPUT"
           echo "include_macos=$INCLUDE_MACOS" >> "$GITHUB_OUTPUT"
@@ -393,7 +361,7 @@ jobs:
           Write-Host "Uploaded $uploaded archive(s) from Windows x64."
 
   publish-releases:
-    name: Un-draft Releases (publish, fires SDKMAN)
+    name: Un-draft Releases and dispatch SDKMAN publish
     needs: [preflight, build-macos, build-linux, build-windows]
     if: |
       always() &&
@@ -405,6 +373,7 @@ jobs:
     runs-on: [self-hosted, Linux, x64]
     permissions:
       contents: write
+      actions: write
     timeout-minutes: 10
     steps:
       - name: Un-draft both Releases
@@ -417,7 +386,27 @@ jobs:
             echo "Publishing $tag (un-drafting)..."
             gh release edit "$tag" --draft=false --repo "${{ github.repository }}"
           done
-          echo "Both Releases are now public — release:published events will trigger SDKMAN publish."
+          echo "Both Releases are now public."
+
+      - name: Dispatch SDKMAN publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # gh release edit above ran with GITHUB_TOKEN, and GitHub does not let
+          # GITHUB_TOKEN-authored actions trigger further event-based workflow runs
+          # (push/release/etc — workflow_run is the one exception). So the un-draft
+          # above will NOT reliably fire publish-archives-to-sdkman-jdkXX.yml's
+          # `release: published` trigger. Dispatch it explicitly instead.
+          for jdk in jdk21 jdk25; do
+            tag="${{ needs.preflight.outputs.version_tag }}-$jdk"
+            echo "Dispatching publish-archives-to-sdkman-$jdk.yml for $tag..."
+            gh workflow run "publish-archives-to-sdkman-$jdk.yml" \
+              --repo "${{ github.repository }}" \
+              -f tag="$tag" \
+              -f publish=true
+          done
+          echo "Dispatched SDKMAN publish for both jdk21 and jdk25."
 
       - name: Summary
         run: |
@@ -429,5 +418,5 @@ jobs:
             echo "| [v${{ needs.preflight.outputs.version }}-jdk21](https://github.com/${{ github.repository }}/releases/tag/v${{ needs.preflight.outputs.version }}-jdk21) | Published |"
             echo "| [v${{ needs.preflight.outputs.version }}-jdk25](https://github.com/${{ github.repository }}/releases/tag/v${{ needs.preflight.outputs.version }}-jdk25) | Published |"
             echo ""
-            echo "Downstream: \`publish-archives-to-sdkman-jdkXX\` (release:published) and \`deploy-maven-central-jdkXX\` (workflow_run on finalize) handle the rest."
+            echo "Downstream: \`publish-archives-to-sdkman-jdkXX\` dispatched explicitly above. \`deploy-maven-central-jdkXX\` runs via workflow_run on finalize completion."
           } >> "$GITHUB_STEP_SUMMARY"
