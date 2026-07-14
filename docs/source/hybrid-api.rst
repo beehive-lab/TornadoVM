@@ -116,3 +116,12 @@ compilation, not the library-task path.
 Note that cuBLAS assumes column-major storage: for row-major TornadoVM arrays
 pass the transpose operation (SGEMV) or swap operands (SGEMM), as in the
 example tests.
+
+See also
+--------
+
+``HYBRID_API_GUIDE.md`` (repository root) is a complete, example-driven guide to
+every provider (cuBLAS, cuBLASLt, cuFFT, cuDNN, CUTLASS, cuTENSOR): factory
+tables, code snippets, composition patterns, CUDA-Graph usage, build/install
+requirements, CLI flags, a "write your own provider" walkthrough, and a
+troubleshooting table.
