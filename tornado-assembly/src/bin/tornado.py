@@ -73,6 +73,8 @@ __CUDA_MODULE__ = "tornado.drivers.cuda"
 __CUBLAS_MODULE__ = "tornado.cublas"
 __CUFFT_MODULE__ = "tornado.cufft"
 __CUDNN_MODULE__ = "tornado.cudnn"
+__CUSPARSE_MODULE__ = "tornado.cusparse"
+__CUTLASS_MODULE__ = "tornado.cutlass"
 
 # ########################################################
 # JAVA FLAGS
@@ -1442,7 +1444,7 @@ class TornadoVMRunnerTool():
                 tornadoAddModules = tornadoAddModules + "," + __METAL_MODULE__
             if ("cuda-backend" in self.listOfBackends):
                 javaFlags = javaFlags + cuda + " "
-                tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__ + "," + __CUBLAS_MODULE__ + "," + __CUFFT_MODULE__ + "," + __CUDNN_MODULE__
+                tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__ + "," + __CUBLAS_MODULE__ + "," + __CUFFT_MODULE__ + "," + __CUDNN_MODULE__ + "," + __CUSPARSE_MODULE__ + "," + __CUTLASS_MODULE__
         else:
             javaFlags = javaFlags + " @" + common + " "
             if ("opencl-backend" in self.listOfBackends):
@@ -1459,7 +1461,7 @@ class TornadoVMRunnerTool():
                 tornadoAddModules = tornadoAddModules + "," + __METAL_MODULE__
             if ("cuda-backend" in self.listOfBackends):
                 javaFlags = javaFlags + "@" + cuda + " "
-                tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__ + "," + __CUBLAS_MODULE__ + "," + __CUFFT_MODULE__ + "," + __CUDNN_MODULE__
+                tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__ + "," + __CUBLAS_MODULE__ + "," + __CUFFT_MODULE__ + "," + __CUDNN_MODULE__ + "," + __CUSPARSE_MODULE__ + "," + __CUTLASS_MODULE__
 
         javaFlags = javaFlags + tornadoAddModules + " "
 

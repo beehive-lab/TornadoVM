@@ -78,6 +78,12 @@ public class CUDACommandQueue extends CommandQueue {
 
     private static native void nvtxNameStream(long queueId, String name);
 
+    /** Opens a host-side NVTX range labelled {@code name} (no-op without a profiler). */
+    public static native void nvtxRangePush(String name);
+
+    /** Closes the most recently opened host-side NVTX range. */
+    public static native void nvtxRangePop();
+
     /**
      * Pushes the profiler state to the native layer: when timing is off, per-operation
      * START timestamp events are skipped (halving events per op) and the remaining
