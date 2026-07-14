@@ -80,6 +80,7 @@
                 <module>cudnn-jni</module>
                 <module>cusparse-jni</module>
                 <module>cutlass-jni</module>
+                <module>nccl-jni</module>
             </modules>
         </profile>
     </profiles>
