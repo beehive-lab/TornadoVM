@@ -21,14 +21,14 @@ package uk.ac.manchester.tornado.drivers.spirv.graal.phases;
 
 import java.util.Optional;
 
-import org.graalvm.compiler.core.common.type.Stamp;
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.NodeView;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.calc.SqrtNode;
-import org.graalvm.compiler.nodes.memory.ReadNode;
-import org.graalvm.compiler.nodes.memory.WriteNode;
-import org.graalvm.compiler.phases.Phase;
+import tornado.graal.compiler.core.common.type.Stamp;
+import tornado.graal.compiler.nodes.GraphState;
+import tornado.graal.compiler.nodes.NodeView;
+import tornado.graal.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.nodes.calc.SqrtNode;
+import tornado.graal.compiler.nodes.memory.ReadNode;
+import tornado.graal.compiler.nodes.memory.WriteNode;
+import tornado.graal.compiler.phases.Phase;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;

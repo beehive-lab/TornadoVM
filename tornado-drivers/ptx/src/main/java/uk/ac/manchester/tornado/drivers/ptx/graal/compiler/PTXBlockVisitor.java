@@ -22,8 +22,8 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.compiler;
 
-import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
-import org.graalvm.compiler.nodes.cfg.HIRBlock;
+import tornado.graal.compiler.nodes.cfg.ControlFlowGraph;
+import tornado.graal.compiler.nodes.cfg.HIRBlock;
 
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 

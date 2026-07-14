@@ -24,11 +24,11 @@ package uk.ac.manchester.tornado.runtime.graal.nodes;
 import jdk.vm.ci.code.CallingConvention.Type;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import org.graalvm.compiler.core.common.type.StampPair;
-import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.DirectCallTargetNode;
-import org.graalvm.compiler.nodes.ValueNode;
+import tornado.graal.compiler.core.common.type.StampPair;
+import tornado.graal.compiler.graph.NodeClass;
+import tornado.graal.compiler.nodeinfo.NodeInfo;
+import tornado.graal.compiler.nodes.DirectCallTargetNode;
+import tornado.graal.compiler.nodes.ValueNode;
 
 @NodeInfo
 public class TornadoDirectCallTargetNode extends DirectCallTargetNode {

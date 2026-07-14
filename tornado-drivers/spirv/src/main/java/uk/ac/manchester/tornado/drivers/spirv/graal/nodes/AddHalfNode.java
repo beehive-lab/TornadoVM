@@ -25,12 +25,12 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.nodes;
 
 import jdk.vm.ci.meta.Value;
-import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
-import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.spi.ArithmeticLIRLowerable;
-import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import tornado.graal.compiler.graph.NodeClass;
+import tornado.graal.compiler.lir.gen.ArithmeticLIRGeneratorTool;
+import tornado.graal.compiler.nodeinfo.NodeInfo;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.spi.ArithmeticLIRLowerable;
+import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.HalfFloatStamp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.lir.SPIRVArithmeticTool;
 

@@ -25,19 +25,14 @@
  */
 package uk.ac.manchester.tornado.runtime.analyzer;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
+import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.graalvm.compiler.bytecode.Bytecodes;
-
-import jdk.vm.ci.meta.ConstantPool;
-import jdk.vm.ci.meta.JavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.PrebuiltTaskPackage;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task;
@@ -53,18 +48,11 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleContext;
 
 public class TaskUtils {
-
-    private static final String JDK_VM_CI_HOTSPOT_JDK_REFLECTION = "jdk.vm.ci.hotspot.HotSpotJDKReflection";
-    private static final String JDK_VM_CI_HOTSPOT_RESOLVED_JAVA_METHOD_IMPL = "jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl";
-
-    private static boolean useToJavaMethod = false;
 
     public static CompilableTask scalaTask(String id, Object object, Object... args) {
         Class<?> type = object.getClass();
@@ -80,55 +68,6 @@ public class TaskUtils {
     }
 
     /**
-     * JDK distributions before JDK 13 that to not backport JVMCI do not implement
-     * {@link jdk.vm.ci.hotspot.HotSpotJDKReflection#getMethod}. Instead, we have to
-     * rely on {@link jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl#toJava} that
-     * uses pure reflection.
-     */
-    private static Method callToJava(JavaMethod javaMethod) {
-        try {
-            Class hotSpotResolvedJavaMethodImpl = Class.forName(JDK_VM_CI_HOTSPOT_RESOLVED_JAVA_METHOD_IMPL);
-            Method toJava = hotSpotResolvedJavaMethodImpl.getDeclaredMethod("toJava");
-
-            toJava.setAccessible(true);
-            Method m = (Method) toJava.invoke(javaMethod);
-            m.setAccessible(true);
-            return m;
-        } catch (InvocationTargetException | NoSuchMethodException | IllegalAccessException | ClassNotFoundException e) {
-            TornadoInternalError.shouldNotReachHere("Both HotSpotResolvedJavaMethodImpl::toJava and HotSpotJDKReflection::getMethod are missing from the JDK !");
-        }
-        return null;
-    }
-
-    /**
-     * JDK distributions that backport JVMCI or after JDK 13 implement
-     * {@link jdk.vm.ci.hotspot.HotSpotJDKReflection#getMethod} which relies on a
-     * native call to the JVM. If this method is not available, then we call
-     * {@link jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl#toJava} that uses pure
-     * reflection.
-     */
-    private static Method callGetMethod(JavaMethod javaMethod) {
-        try {
-            Class hotSpotJDKReflection = Class.forName(JDK_VM_CI_HOTSPOT_JDK_REFLECTION);
-            Method getMethod = null;
-            for (Method method : hotSpotJDKReflection.getDeclaredMethods()) {
-                if ("getMethod".equals(method.getName())) {
-                    getMethod = method;
-                    break;
-                }
-            }
-            getMethod.setAccessible(true);
-            Method m = (Method) getMethod.invoke(hotSpotJDKReflection, javaMethod);
-            m.setAccessible(true);
-            return m;
-        } catch (SecurityException | IllegalArgumentException | ClassNotFoundException | IllegalAccessException | InvocationTargetException e) {
-            new TornadoLogger().debug("HotSpotJDKReflection::getMethod is missing from the JDK distribution. Falling back to HotSpotResolvedJavaMethodImpl::toJava");
-            useToJavaMethod = true;
-            return callToJava(javaMethod);
-        }
-    }
-
-    /**
      * When obtaining the method to be compiled it returns a lambda expression that
      * contains the invocation to the actual code. The actual code is an INVOKE that
      * is inside the apply method of the lambda. This method searches for the nested
@@ -138,63 +77,94 @@ public class TaskUtils {
      *     Input Tornado task that corresponds to the user code.
      */
     public static Method resolveMethodHandle(Object task) {
-        final Class<?> type = task.getClass();
+        // The kernel entry is a lambda/method-reference whose proxy is a hidden class with no
+        // classfile resource, so its bytecode cannot be read reflectively. The compute Task
+        // interfaces are Serializable, so resolve the implementation method through the
+        // compiler-generated writeReplace() -> SerializedLambda.
+        return resolveViaSerializedLambda(task);
+    }
 
-        /*
-         * task should implement one of the TaskX interfaces... ...so we look for the
-         * apply function. Note: apply will perform some type casting and then call the
-         * function we really want to use, so we need to resolve the nested function.
-         */
-        Method entryPoint = null;
-        for (Method m : type.getDeclaredMethods()) {
-            if (m.getName().equals("apply")) {
-                entryPoint = m;
+    /**
+     * JDK-neutral kernel-entry resolution for JVMCI-absent JDKs (27+). The compute Task
+     * interfaces are {@link java.io.Serializable}, so the compiler emits a {@code writeReplace()}
+     * on each task lambda that yields a {@link SerializedLambda} describing the implementation
+     * method (its declaring class, name and JVM signature). We resolve that directly to a
+     * {@link Method} via core reflection, avoiding both the hidden lambda-proxy bytecode and the
+     * removed HotSpot JVMCI reflection helpers.
+     */
+    private static Method resolveViaSerializedLambda(Object task) {
+        try {
+            Method writeReplace = task.getClass().getDeclaredMethod("writeReplace");
+            writeReplace.setAccessible(true);
+            Object replacement = writeReplace.invoke(task);
+            if (!(replacement instanceof SerializedLambda serializedLambda)) {
+                throw new TornadoInternalError("Task lambda did not serialize to a SerializedLambda: " + replacement);
+            }
+            ClassLoader loader = task.getClass().getClassLoader();
+            Class<?> implClass = Class.forName(serializedLambda.getImplClass().replace('/', '.'), false, loader);
+            Class<?>[] parameterTypes = parseParameterTypes(serializedLambda.getImplMethodSignature(), loader);
+            Method implementation = findDeclaredMethod(implClass, serializedLambda.getImplMethodName(), parameterTypes);
+            implementation.setAccessible(true);
+            return implementation;
+        } catch (ReflectiveOperationException e) {
+            throw new TornadoInternalError("Unable to resolve kernel entry via SerializedLambda on the JVMCI-absent path: " + e);
+        }
+    }
+
+    /** Walk the class hierarchy so implementation methods inherited from a supertype still resolve. */
+    private static Method findDeclaredMethod(Class<?> start, String name, Class<?>[] parameterTypes) throws NoSuchMethodException {
+        for (Class<?> c = start; c != null; c = c.getSuperclass()) {
+            try {
+                return c.getDeclaredMethod(name, parameterTypes);
+            } catch (NoSuchMethodException ignored) {
+                // try the superclass
             }
         }
+        throw new NoSuchMethodException(start.getName() + "." + name);
+    }
 
-        guarantee(entryPoint != null, "unable to find entry point");
-        /*
-         * Fortunately we can do a bit of JVMCI magic to resolve the function to a
-         * Method.
-         */
-        final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getVMBackend().getMetaAccess().lookupJavaMethod(entryPoint);
-        final ConstantPool cp = resolvedMethod.getConstantPool();
-        final byte[] bc = resolvedMethod.getCode();
-
-        for (int i = 0; i < bc.length; i++) {
-            if (bc[i] == (byte) Bytecodes.INVOKESTATIC) {
-                cp.loadReferencedType(bc[i + 2], Bytecodes.INVOKESTATIC);
-                JavaMethod jm = cp.lookupMethod(bc[i + 2], Bytecodes.INVOKESTATIC);
-
-                if (useToJavaMethod) {
-                    return callToJava(jm);
-                } else {
-                    return callGetMethod(jm);
-                }
-            } else if (bc[i] == (byte) Bytecodes.INVOKEVIRTUAL) {
-                cp.loadReferencedType(bc[i + 2], Bytecodes.INVOKEVIRTUAL);
-                JavaMethod jm = cp.lookupMethod(bc[i + 2], Bytecodes.INVOKEVIRTUAL);
-                switch (jm.getName()) {
-                    case "booleanValue":
-                    case "byteValue":
-                    case "charValue":
-                    case "shortValue":
-                    case "intValue":
-                    case "floatValue":
-                    case "doubleValue":
-                    case "longValue":
-                        continue;
-                }
-
-                if (useToJavaMethod) {
-                    return callToJava(jm);
-                } else {
-                    return callGetMethod(jm);
-                }
+    /** Parse the parameter portion of a JVM method descriptor (e.g. {@code (I[JLp/C;)V}) into classes. */
+    private static Class<?>[] parseParameterTypes(String methodDescriptor, ClassLoader loader) throws ClassNotFoundException {
+        List<Class<?>> types = new ArrayList<>();
+        int i = methodDescriptor.indexOf('(') + 1;
+        int end = methodDescriptor.indexOf(')');
+        while (i < end) {
+            int dims = 0;
+            while (methodDescriptor.charAt(i) == '[') {
+                dims++;
+                i++;
             }
+            char c = methodDescriptor.charAt(i);
+            Class<?> type;
+            if (c == 'L') {
+                int semicolon = methodDescriptor.indexOf(';', i);
+                String binaryName = methodDescriptor.substring(i + 1, semicolon).replace('/', '.');
+                type = Class.forName(binaryName, false, loader);
+                i = semicolon + 1;
+            } else {
+                type = primitiveType(c);
+                i++;
+            }
+            if (dims > 0) {
+                type = java.lang.reflect.Array.newInstance(type, new int[dims]).getClass();
+            }
+            types.add(type);
         }
-        shouldNotReachHere();
-        return null;
+        return types.toArray(new Class<?>[0]);
+    }
+
+    private static Class<?> primitiveType(char descriptor) {
+        return switch (descriptor) {
+            case 'Z' -> boolean.class;
+            case 'B' -> byte.class;
+            case 'C' -> char.class;
+            case 'S' -> short.class;
+            case 'I' -> int.class;
+            case 'J' -> long.class;
+            case 'F' -> float.class;
+            case 'D' -> double.class;
+            default -> throw new TornadoInternalError("Unknown primitive descriptor: " + descriptor);
+        };
     }
 
     public static CompilableTask createTask(Method method, ScheduleContext meta, String id, Task code) {

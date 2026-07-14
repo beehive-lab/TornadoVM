@@ -23,9 +23,8 @@
  */
 package uk.ac.manchester.tornado.runtime;
 
-import org.graalvm.compiler.options.OptionValues;
+import tornado.graal.compiler.options.OptionValues;
 
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import uk.ac.manchester.tornado.runtime.common.enums.TornadoBackends;
 
 /**
@@ -43,7 +42,7 @@ public interface TornadoBackendProvider extends Comparable<TornadoBackendProvide
 
     String getName();
 
-    TornadoAcceleratorBackend createBackend(OptionValues options, HotSpotJVMCIRuntime hostRuntime, TornadoVMConfigAccess config);
+    TornadoAcceleratorBackend createBackend(OptionValues options, TornadoVMConfigAccess config);
 
     TornadoBackends getDevicePriority();
 }

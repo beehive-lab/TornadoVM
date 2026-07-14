@@ -25,9 +25,9 @@ package uk.ac.manchester.tornado.drivers.metal.graal.lir;
 
 import jdk.vm.ci.meta.Value;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.LIRInstruction.Use;
-import org.graalvm.compiler.lir.Opcode;
+import tornado.graal.compiler.core.common.LIRKind;
+import tornado.graal.compiler.lir.LIRInstruction.Use;
+import tornado.graal.compiler.lir.Opcode;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssembler;

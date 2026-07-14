@@ -28,22 +28,22 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.memory.BarrierType;
-import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
-import org.graalvm.compiler.core.common.type.Stamp;
-import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.graph.iterators.NodeIterable;
-import org.graalvm.compiler.nodeinfo.InputType;
-import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.FrameState;
-import org.graalvm.compiler.nodes.NodeView;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.memory.AbstractWriteNode;
-import org.graalvm.compiler.nodes.memory.FixedAccessNode;
-import org.graalvm.compiler.nodes.memory.LIRLowerableAccess;
-import org.graalvm.compiler.nodes.memory.address.AddressNode;
-import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import tornado.graal.compiler.core.common.LIRKind;
+import tornado.graal.compiler.core.common.memory.BarrierType;
+import tornado.graal.compiler.core.common.memory.MemoryOrderMode;
+import tornado.graal.compiler.core.common.type.Stamp;
+import tornado.graal.compiler.graph.NodeClass;
+import tornado.graal.compiler.graph.iterators.NodeIterable;
+import tornado.graal.compiler.nodeinfo.InputType;
+import tornado.graal.compiler.nodeinfo.NodeInfo;
+import tornado.graal.compiler.nodes.FrameState;
+import tornado.graal.compiler.nodes.NodeView;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.memory.AbstractWriteNode;
+import tornado.graal.compiler.nodes.memory.FixedAccessNode;
+import tornado.graal.compiler.nodes.memory.LIRLowerableAccess;
+import tornado.graal.compiler.nodes.memory.address.AddressNode;
+import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.JavaKind;

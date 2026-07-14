@@ -26,13 +26,13 @@ package uk.ac.manchester.tornado.drivers.spirv.graal.phases;
 
 import java.util.Optional;
 
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.FloatDivNode;
-import org.graalvm.compiler.nodes.calc.SqrtNode;
-import org.graalvm.compiler.phases.Phase;
+import tornado.graal.compiler.nodes.ConstantNode;
+import tornado.graal.compiler.nodes.GraphState;
+import tornado.graal.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.calc.FloatDivNode;
+import tornado.graal.compiler.nodes.calc.SqrtNode;
+import tornado.graal.compiler.phases.Phase;
 
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.RSqrtNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryIntrinsicNode;

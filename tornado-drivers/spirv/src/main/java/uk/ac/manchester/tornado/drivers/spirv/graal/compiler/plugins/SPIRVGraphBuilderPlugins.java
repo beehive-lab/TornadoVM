@@ -49,56 +49,54 @@ import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVIntBinaryI
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 
-import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.RawConstant;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import org.graalvm.compiler.core.common.memory.BarrierType;
-import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
-import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FixedWithNextNode;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.AddNode;
-import org.graalvm.compiler.nodes.calc.MulNode;
-import org.graalvm.compiler.nodes.calc.SignExtendNode;
-import org.graalvm.compiler.nodes.extended.BoxNode;
-import org.graalvm.compiler.nodes.extended.JavaReadNode;
-import org.graalvm.compiler.nodes.extended.JavaWriteNode;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
-import org.graalvm.compiler.nodes.java.NewArrayNode;
-import org.graalvm.compiler.nodes.java.StoreIndexedNode;
-import org.graalvm.compiler.nodes.memory.address.AddressNode;
-import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
-import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
+import tornado.graal.compiler.core.common.memory.BarrierType;
+import tornado.graal.compiler.core.common.memory.MemoryOrderMode;
+import tornado.graal.compiler.core.common.type.StampFactory;
+import tornado.graal.compiler.graph.Node;
+import tornado.graal.compiler.nodes.ConstantNode;
+import tornado.graal.compiler.nodes.FixedWithNextNode;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.calc.AddNode;
+import tornado.graal.compiler.nodes.calc.MulNode;
+import tornado.graal.compiler.nodes.calc.SignExtendNode;
+import tornado.graal.compiler.nodes.extended.BoxNode;
+import tornado.graal.compiler.nodes.extended.JavaReadNode;
+import tornado.graal.compiler.nodes.extended.JavaWriteNode;
+import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderContext;
+import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugin;
+import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
+import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
+import tornado.graal.compiler.nodes.java.NewArrayNode;
+import tornado.graal.compiler.nodes.java.StoreIndexedNode;
+import tornado.graal.compiler.nodes.memory.address.AddressNode;
+import tornado.graal.compiler.nodes.memory.address.OffsetAddressNode;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import org.graalvm.compiler.core.common.memory.BarrierType;
-import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
-import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.MulNode;
-import org.graalvm.compiler.nodes.extended.JavaReadNode;
-import org.graalvm.compiler.nodes.extended.JavaWriteNode;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
-import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
-import org.graalvm.compiler.nodes.memory.address.AddressNode;
-import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
-import org.graalvm.compiler.replacements.InlineDuringParsingPlugin;
+import tornado.graal.compiler.core.common.memory.BarrierType;
+import tornado.graal.compiler.core.common.memory.MemoryOrderMode;
+import tornado.graal.compiler.core.common.type.StampFactory;
+import tornado.graal.compiler.nodes.ConstantNode;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.calc.MulNode;
+import tornado.graal.compiler.nodes.extended.JavaReadNode;
+import tornado.graal.compiler.nodes.extended.JavaWriteNode;
+import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderContext;
+import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugin;
+import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
+import tornado.graal.compiler.nodes.graphbuilderconf.NodePlugin;
+import tornado.graal.compiler.nodes.memory.address.AddressNode;
+import tornado.graal.compiler.nodes.memory.address.OffsetAddressNode;
+import tornado.graal.compiler.replacements.InlineDuringParsingPlugin;
 import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.JavaKind;
@@ -139,7 +137,7 @@ public class SPIRVGraphBuilderPlugins {
         // FIXME: Atomics for SPIRV Backend not implemented.
     }
 
-    public static void registerInvocationPlugins(Plugins plugins, final InvocationPlugins invocationPlugins, HotSpotMetaAccessProvider metaAccessProvider) {
+    public static void registerInvocationPlugins(Plugins plugins, final InvocationPlugins invocationPlugins, MetaAccessProvider metaAccessProvider) {
 
         if (TornadoOptions.INLINE_DURING_BYTECODE_PARSING) {
             plugins.appendInlineInvokePlugin(new InlineDuringParsingPlugin());
@@ -774,7 +772,7 @@ public class SPIRVGraphBuilderPlugins {
         }
     }
 
-    private static void registerMemoryAccessPlugins(InvocationPlugins plugins, HotSpotMetaAccessProvider metaAccessProvider) {
+    private static void registerMemoryAccessPlugins(InvocationPlugins plugins, MetaAccessProvider metaAccessProvider) {
         var r = new Registration(plugins, TornadoMemorySegment.class);
         for (JavaKind kind : JavaKind.values()) {
             if (kind != JavaKind.Object && kind != JavaKind.Void && kind != JavaKind.Illegal) {

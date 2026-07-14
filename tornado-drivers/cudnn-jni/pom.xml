@@ -10,6 +10,11 @@
     </parent>
     <artifactId>tornado-drivers-cudnn-jni</artifactId>
     <name>tornado-drivers-cudnn-jni</name>
+    <properties>
+        <!-- cpp-only JNI module (no Java sources). Skip maven-compiler-plugin, which otherwise NPEs with
+             getPathElements() null under the jdk25/jdk26 profiles' patch-module compilerArgs (mvn-compiler 3.11.0). -->
+        <maven.main.skip>true</maven.main.skip>
+    </properties>
     <build>
 
         <directory>${basedir}/target/${platform}-${build.type}</directory>

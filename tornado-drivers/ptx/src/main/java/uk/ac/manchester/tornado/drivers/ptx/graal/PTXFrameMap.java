@@ -21,8 +21,8 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal;
 
-import org.graalvm.compiler.core.common.NumUtil;
-import org.graalvm.compiler.lir.framemap.FrameMap;
+import tornado.graal.compiler.core.common.NumUtil;
+import tornado.graal.compiler.lir.framemap.FrameMap;
 
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.RegisterConfig;

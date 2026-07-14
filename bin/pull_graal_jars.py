@@ -28,15 +28,18 @@ from urllib3.util.retry import Retry
 TARGET_DIR = "graalJars"
 VERSION = "23.1.0"
 BASE_URL = "https://repo1.maven.org/maven2/org/graalvm"
+# Bare minimum Graal modules TornadoVM needs to compile and run kernels.
+# The `jdk.internal.vm.compiler` module (compiler jar) transitively requires only
+# org.graalvm.word, org.graalvm.collections and org.graalvm.truffle.compiler; its
+# `uses` of Truffle runtime/polyglot services are optional (ServiceLoader) and never
+# exercised by TornadoVM's GPU pipeline. So truffle-api (16MB), polyglot (935KB),
+# graal-sdk (requires the absent org.graalvm.nativeimage) and compiler-management
+# are dead weight and are intentionally NOT downloaded/shipped.
 GRAAL_JARS = [
     f"compiler/compiler/{VERSION}/compiler-{VERSION}.jar",
-    f"compiler/compiler-management/{VERSION}/compiler-management-{VERSION}.jar",
-    f"sdk/graal-sdk/{VERSION}/graal-sdk-{VERSION}.jar",
-    f"truffle/truffle-api/{VERSION}/truffle-api-{VERSION}.jar",
     f"truffle/truffle-compiler/{VERSION}/truffle-compiler-{VERSION}.jar",
     f"sdk/collections/{VERSION}/collections-{VERSION}.jar",
     f"sdk/word/{VERSION}/word-{VERSION}.jar",
-    f"polyglot/polyglot/{VERSION}/polyglot-{VERSION}.jar",
 ]
 
 # Define ANSI escape codes for colors
@@ -106,7 +109,7 @@ def download_jar_if_not_exists(jar_url, target_dir):
                 progress_bar.update(len(data))
 
 
-def main():
+def main(jdk=None):
     """
     Main function to download GraalVM JAR files.
     """
@@ -119,6 +122,26 @@ def main():
         download_jar_if_not_exists(f"{BASE_URL}/{jar_url}", TARGET_DIR)
 
     logger.info("Download complete.")
+
+    # Relocate the Graal compiler off the jdk.* namespace into the vendored module
+    # `tornado.graal` so it can live on the regular --module-path (no upgrade-module-path).
+    # This replaces compiler-<ver>.jar with tornado-graal-<ver>.jar and installs the
+    # latter to the local Maven repo for the reactor to compile against.
+    relocated = os.path.join(TARGET_DIR, f"tornado-graal-{VERSION}.jar")
+    if os.path.exists(relocated):
+        logger.info(f"Graal module {CYAN}tornado.graal{RESET} already relocated; skipping.")
+    else:
+        logger.info(f"Relocating Graal into the {CYAN}tornado.graal{RESET} module...")
+        import build_graal_module
+        build_graal_module.build()
+
+    # Build and stage the vendored jvmci module if compiling for JDK 27
+    if jdk in ("jdk25", "jdk26", "jdk27"):
+        # Check if the artifact was already installed to Maven local repo, or exists.
+        # But build_jvmci_module also installs to local Maven. Let's run it.
+        logger.info(f"Building/staging vendored {CYAN}jdk.internal.vm.ci{RESET} module for JDK 27...")
+        import build_jvmci_module
+        build_jvmci_module.build()
 
 
 if __name__ == "__main__":

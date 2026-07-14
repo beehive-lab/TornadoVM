@@ -23,9 +23,9 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.LIRInstruction.Use;
-import org.graalvm.compiler.lir.Opcode;
+import tornado.graal.compiler.core.common.LIRKind;
+import tornado.graal.compiler.lir.LIRInstruction.Use;
+import tornado.graal.compiler.lir.Opcode;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
@@ -381,6 +381,10 @@ public class CUDAUnary {
 
         CUDAMemorySpace getMemorySpace() {
             return base.getMemorySpace();
+        }
+
+        public CUDAKind getElementKind() {
+            return getCUDAPlatformKind();
         }
 
     }

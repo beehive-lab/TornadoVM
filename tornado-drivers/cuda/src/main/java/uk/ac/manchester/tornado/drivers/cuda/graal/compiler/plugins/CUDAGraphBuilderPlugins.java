@@ -24,36 +24,35 @@
 package uk.ac.manchester.tornado.drivers.cuda.graal.compiler.plugins;
 
 import jdk.vm.ci.meta.ResolvedJavaField;
-import org.graalvm.compiler.core.common.memory.BarrierType;
-import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
-import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FixedWithNextNode;
-import org.graalvm.compiler.nodes.NodeView;
-import org.graalvm.compiler.nodes.PiNode;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.AddNode;
-import org.graalvm.compiler.nodes.calc.MulNode;
-import org.graalvm.compiler.nodes.calc.SignExtendNode;
-import org.graalvm.compiler.nodes.extended.BoxNode;
-import org.graalvm.compiler.nodes.extended.JavaReadNode;
-import org.graalvm.compiler.nodes.extended.JavaWriteNode;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
-import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
-import org.graalvm.compiler.nodes.java.LoadFieldNode;
-import org.graalvm.compiler.nodes.java.NewArrayNode;
-import org.graalvm.compiler.nodes.java.StoreIndexedNode;
-import org.graalvm.compiler.nodes.memory.address.AddressNode;
-import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
-import org.graalvm.compiler.nodes.util.GraphUtil;
-import org.graalvm.compiler.replacements.InlineDuringParsingPlugin;
-import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
+import tornado.graal.compiler.core.common.memory.BarrierType;
+import tornado.graal.compiler.core.common.memory.MemoryOrderMode;
+import tornado.graal.compiler.core.common.type.StampFactory;
+import tornado.graal.compiler.graph.Node;
+import tornado.graal.compiler.nodes.ConstantNode;
+import tornado.graal.compiler.nodes.FixedWithNextNode;
+import tornado.graal.compiler.nodes.NodeView;
+import tornado.graal.compiler.nodes.PiNode;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.calc.AddNode;
+import tornado.graal.compiler.nodes.calc.MulNode;
+import tornado.graal.compiler.nodes.calc.SignExtendNode;
+import tornado.graal.compiler.nodes.extended.BoxNode;
+import tornado.graal.compiler.nodes.extended.JavaReadNode;
+import tornado.graal.compiler.nodes.extended.JavaWriteNode;
+import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderContext;
+import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugin;
+import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
+import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
+import tornado.graal.compiler.nodes.graphbuilderconf.NodePlugin;
+import tornado.graal.compiler.nodes.java.LoadFieldNode;
+import tornado.graal.compiler.nodes.java.NewArrayNode;
+import tornado.graal.compiler.nodes.java.StoreIndexedNode;
+import tornado.graal.compiler.nodes.memory.address.AddressNode;
+import tornado.graal.compiler.nodes.memory.address.OffsetAddressNode;
+import tornado.graal.compiler.nodes.util.GraphUtil;
+import tornado.graal.compiler.replacements.InlineDuringParsingPlugin;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;
@@ -64,17 +63,24 @@ import org.graalvm.word.LocationIdentity;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.enums.MMAShape;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
+import uk.ac.manchester.tornado.api.types.arrays.CharArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoMemorySegment;
 import uk.ac.manchester.tornado.api.utils.QuantizationUtils;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAArchitecture;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAUnary;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.ReadHalfFloatNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.WriteHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.AtomAddNodeTemplate;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAComputeNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAFragmentNode;
@@ -108,6 +114,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.TornadoAtomicIntegerNod
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
+import java.lang.reflect.Field;
 import java.util.function.Supplier;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
@@ -131,12 +138,13 @@ import static uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAIntUnaryIntr
 
 public class CUDAGraphBuilderPlugins {
 
-    public static void registerInvocationPlugins(final Plugins ps, final InvocationPlugins plugins, final HotSpotMetaAccessProvider metaAccessProvider) {
+    public static void registerInvocationPlugins(final Plugins ps, final InvocationPlugins plugins, final MetaAccessProvider metaAccessProvider) {
         if (TornadoOptions.INLINE_DURING_BYTECODE_PARSING) {
             ps.appendInlineInvokePlugin(new InlineDuringParsingPlugin());
         }
 
         registerFP16ConversionPlugins(plugins);
+        registerNativeArrayAccessPlugins(plugins);
         registerTornadoVMIntrinsicsPlugins(plugins);
 
         // Register Atomics
@@ -902,7 +910,7 @@ public class CUDAGraphBuilderPlugins {
 
     }
 
-    private static void registerMemoryAccessPlugins(InvocationPlugins plugins, HotSpotMetaAccessProvider metaAccessProvider) {
+    private static void registerMemoryAccessPlugins(InvocationPlugins plugins, MetaAccessProvider metaAccessProvider) {
         Registration r = new Registration(plugins, TornadoMemorySegment.class);
 
         for (JavaKind kind : JavaKind.values()) {
@@ -1105,5 +1113,140 @@ public class CUDAGraphBuilderPlugins {
 
     public static void registerParameterPlugins(Plugins plugins) {
         CUDAVectorPlugins.registerParameterPlugins(plugins);
+    }
+
+    /**
+     * Intrinsify the {@code get(int)}/{@code set(int,val)} accessors of the TornadoVM native array types
+     * directly at the accessor call site. Bypasses the delegate chain {@code get -> getXAtIndex ->
+     * MemorySegment.getAtIndex}; the terminal Panama accessor is abstract (bodiless) on JDK 22+, so on the
+     * reflection path the sketcher would descend into it and fail ("this.code is null"). Emitting the
+     * memory read/write up front avoids reaching the abstract method.
+     */
+    private static void registerNativeArrayAccessPlugins(InvocationPlugins plugins) {
+        registerNativeArrayGetSet(plugins, IntArray.class, JavaKind.Int);
+        registerNativeArrayGetSet(plugins, FloatArray.class, JavaKind.Float);
+        registerNativeArrayGetSet(plugins, DoubleArray.class, JavaKind.Double);
+        registerNativeArrayGetSet(plugins, LongArray.class, JavaKind.Long);
+        registerNativeArrayGetSet(plugins, ShortArray.class, JavaKind.Short);
+        registerNativeArrayGetSet(plugins, ByteArray.class, JavaKind.Byte);
+        registerNativeArrayGetSet(plugins, Int8Array.class, JavaKind.Byte);
+        registerNativeArrayGetSet(plugins, CharArray.class, JavaKind.Char);
+        registerHalfFloatArrayGetSet(plugins);
+        registerByteArrayHalfFloatAccess(plugins);
+    }
+
+    /**
+     * Intrinsify {@code ByteArray.getHalfFloat(byteIndex)}/{@code setHalfFloat(byteIndex, HalfFloat)} directly.
+     * These read/write a 2-byte HALF at a raw BYTE offset (Q8_0 tensors pack a fp16 scale inside a byte buffer),
+     * delegating {@code -> TornadoMemorySegment.getShortAtIndex -> MemorySegment.getAtIndex} (abstract/bodiless on
+     * JDK 22+). Without this the reflection-path sketcher descends into the abstract Panama accessor and fails.
+     * The byte offset is {@code baseIndex + byteIndex} (baseIndex == arrayHeaderSize for ByteArray), i.e.
+     * {@link #arrayElementAddress} with a Byte element size.
+     */
+    private static void registerByteArrayHalfFloatAccess(InvocationPlugins plugins) {
+        final Field segmentField;
+        final Field baseIndexField;
+        try {
+            segmentField = ByteArray.class.getDeclaredField("segment");
+            baseIndexField = ByteArray.class.getDeclaredField("baseIndex");
+        } catch (NoSuchFieldException e) {
+            throw new TornadoRuntimeException("ByteArray is missing expected fields for intrinsification: " + e);
+        }
+        Registration r = new Registration(plugins, ByteArray.class);
+        r.register(new InvocationPlugin("getHalfFloat", Receiver.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode byteIndex) {
+                AddressNode addressNode = arrayElementAddress(b, receiver, byteIndex, JavaKind.Byte, segmentField, baseIndexField);
+                ReadHalfFloatNode readNode = b.append(new ReadHalfFloatNode(addressNode));
+                b.push(JavaKind.Object, readNode);
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin("setHalfFloat", Receiver.class, int.class, HalfFloat.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode byteIndex, ValueNode value) {
+                AddressNode addressNode = arrayElementAddress(b, receiver, byteIndex, JavaKind.Byte, segmentField, baseIndexField);
+                WriteHalfFloatNode writeNode = new WriteHalfFloatNode(addressNode, value);
+                b.add(writeNode);
+                return true;
+            }
+        });
+    }
+
+    private static void registerHalfFloatArrayGetSet(InvocationPlugins plugins) {
+        final Field segmentField;
+        final Field baseIndexField;
+        try {
+            segmentField = HalfFloatArray.class.getDeclaredField("segment");
+            baseIndexField = HalfFloatArray.class.getDeclaredField("baseIndex");
+        } catch (NoSuchFieldException e) {
+            throw new TornadoRuntimeException("HalfFloatArray is missing expected fields for intrinsification: " + e);
+        }
+        Registration r = new Registration(plugins, HalfFloatArray.class);
+        r.register(new InvocationPlugin("get", Receiver.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index) {
+                AddressNode addressNode = arrayElementAddress(b, receiver, index, JavaKind.Short, segmentField, baseIndexField);
+                ReadHalfFloatNode readNode = b.append(new ReadHalfFloatNode(addressNode));
+                b.push(JavaKind.Object, readNode);
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin("set", Receiver.class, int.class, HalfFloat.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value) {
+                AddressNode addressNode = arrayElementAddress(b, receiver, index, JavaKind.Short, segmentField, baseIndexField);
+                WriteHalfFloatNode writeNode = new WriteHalfFloatNode(addressNode, value);
+                b.add(writeNode);
+                return true;
+            }
+        });
+    }
+
+    private static void registerNativeArrayGetSet(InvocationPlugins plugins, Class<?> arrayClass, JavaKind kind) {
+        final Field segmentField;
+        final Field baseIndexField;
+        try {
+            segmentField = arrayClass.getDeclaredField("segment");
+            baseIndexField = arrayClass.getDeclaredField("baseIndex");
+        } catch (NoSuchFieldException e) {
+            throw new TornadoRuntimeException("Native array type " + arrayClass.getName() + " is missing expected fields for intrinsification: " + e);
+        }
+        Registration r = new Registration(plugins, arrayClass);
+        r.register(new InvocationPlugin("get", Receiver.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index) {
+                AddressNode addressNode = arrayElementAddress(b, receiver, index, kind, segmentField, baseIndexField);
+                JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
+                b.addPush(kind, readNode);
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin("set", Receiver.class, int.class, kind.toJavaClass()) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value) {
+                AddressNode addressNode = arrayElementAddress(b, receiver, index, kind, segmentField, baseIndexField);
+                JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
+                b.add(writeNode);
+                return true;
+            }
+        });
+    }
+
+    /**
+     * Build {@code &segment[(baseIndex + index) * elementBytes]} for a native array accessor, matching the
+     * inlined {@code TornadoMemorySegment.get/setAtIndex} intrinsic.
+     */
+    private static AddressNode arrayElementAddress(GraphBuilderContext b, Receiver receiver, ValueNode index, JavaKind kind, Field segmentField, Field baseIndexField) {
+        ValueNode arrayNode = receiver.get(true); // adds the null check
+        ResolvedJavaField segment = b.getMetaAccess().lookupJavaField(segmentField);
+        ResolvedJavaField baseIndex = b.getMetaAccess().lookupJavaField(baseIndexField);
+        ValueNode segmentNode = b.append(LoadFieldNode.create(b.getGraph().getAssumptions(), arrayNode, segment));
+        ValueNode baseIndexNode = b.append(LoadFieldNode.create(b.getGraph().getAssumptions(), arrayNode, baseIndex));
+        ValueNode longIndex = b.append(SignExtendNode.create(index, 64, NodeView.DEFAULT));
+        ValueNode longBaseIndex = b.append(SignExtendNode.create(baseIndexNode, 64, NodeView.DEFAULT));
+        AddNode absoluteIndexNode = b.append(new AddNode(longIndex, longBaseIndex));
+        MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forLong(kind.getByteCount())));
+        return b.append(new OffsetAddressNode(segmentNode, mulNode));
     }
 }

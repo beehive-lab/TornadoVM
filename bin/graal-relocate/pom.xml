@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Standalone helper POM used by bin/build_graal_module.py to relocate the frozen
+  Graal compiler (org.graalvm.compiler.* to tornado.graal.compiler.*) so it can be
+  vendored as a normal application module (tornado.graal) on the regular module-path,
+  removing the need for the upgrade-module-path graalJars mechanism.
+
+  It is not part of the reactor build; it is invoked out-of-band. The relocated
+  classes jar it produces has no module-info (excluded here); a correct module-info
+  for the tornado.graal module is generated and injected by bin/build_graal_module.py.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>tornado.graal</groupId>
+    <artifactId>tornado-graal</artifactId>
+    <version>23.1.0</version>
+    <packaging>jar</packaging>
+
+    <properties>
+        <maven.compiler.release>21</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.graalvm.compiler</groupId>
+            <artifactId>compiler</artifactId>
+            <version>23.1.0</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Pin the default-lifecycle plugins that the reactor also pins to non-default versions.
+                 The CI runner builds Maven offline (-o); its cache only holds the versions the reactor
+                 fetched, so the unversioned jar-packaging defaults for these two (compiler 3.1, jar 2.4)
+                 are absent and fail the graal-relocate step (and thus every build). Plugins the reactor
+                 leaves unversioned (resources, surefire) resolve to the same cached CI defaults, so they
+                 are deliberately not pinned here. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.1.2</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals><goal>shade</goal></goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <shadedArtifactAttached>false</shadedArtifactAttached>
+                            <artifactSet>
+                                <includes>
+                                    <include>org.graalvm.compiler:compiler</include>
+                                </includes>
+                            </artifactSet>
+                            <relocations>
+                                <relocation>
+                                    <pattern>org.graalvm.compiler</pattern>
+                                    <shadedPattern>tornado.graal.compiler</shadedPattern>
+                                </relocation>
+                            </relocations>
+                            <filters>
+                                <filter>
+                                    <artifact>org.graalvm.compiler:compiler</artifact>
+                                    <excludes>
+                                        <!-- shade cannot rewrite module-info.class; regenerated + injected downstream -->
+                                        <exclude>module-info.class</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

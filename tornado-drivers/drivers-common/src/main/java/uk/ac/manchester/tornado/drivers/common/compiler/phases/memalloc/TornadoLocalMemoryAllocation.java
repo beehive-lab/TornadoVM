@@ -25,12 +25,12 @@ package uk.ac.manchester.tornado.drivers.common.compiler.phases.memalloc;
 
 import java.util.Optional;
 
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.graph.iterators.NodeIterable;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.phases.BasePhase;
+import tornado.graal.compiler.graph.Node;
+import tornado.graal.compiler.graph.iterators.NodeIterable;
+import tornado.graal.compiler.nodes.ConstantNode;
+import tornado.graal.compiler.nodes.GraphState;
+import tornado.graal.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.phases.BasePhase;
 
 import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkLocalArray;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;

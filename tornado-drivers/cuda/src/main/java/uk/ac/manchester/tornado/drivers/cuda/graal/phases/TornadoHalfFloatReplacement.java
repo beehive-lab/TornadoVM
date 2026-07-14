@@ -24,27 +24,32 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.phases;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.RawConstant;
-import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FixedGuardNode;
-import org.graalvm.compiler.nodes.FixedNode;
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.PiNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.ValuePhiNode;
-import org.graalvm.compiler.nodes.ValueProxyNode;
-import org.graalvm.compiler.nodes.calc.FloatConvertNode;
-import org.graalvm.compiler.nodes.calc.IsNullNode;
-import org.graalvm.compiler.nodes.extended.JavaReadNode;
-import org.graalvm.compiler.nodes.extended.JavaWriteNode;
-import org.graalvm.compiler.nodes.extended.ValueAnchorNode;
-import org.graalvm.compiler.nodes.java.LoadFieldNode;
-import org.graalvm.compiler.nodes.java.LoadIndexedNode;
-import org.graalvm.compiler.nodes.java.NewInstanceNode;
-import org.graalvm.compiler.nodes.memory.address.AddressNode;
-import org.graalvm.compiler.phases.BasePhase;
+import tornado.graal.compiler.core.common.type.ObjectStamp;
+import tornado.graal.compiler.core.common.type.Stamp;
+import tornado.graal.compiler.core.common.type.StampFactory;
+import tornado.graal.compiler.graph.Node;
+import tornado.graal.compiler.nodes.ConstantNode;
+import tornado.graal.compiler.nodes.FixedGuardNode;
+import tornado.graal.compiler.nodes.FixedNode;
+import tornado.graal.compiler.nodes.GraphState;
+import tornado.graal.compiler.nodes.InvokeNode;
+import tornado.graal.compiler.nodes.NodeView;
+import tornado.graal.compiler.nodes.ParameterNode;
+import tornado.graal.compiler.nodes.PiNode;
+import tornado.graal.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.ValuePhiNode;
+import tornado.graal.compiler.nodes.ValueProxyNode;
+import tornado.graal.compiler.nodes.calc.FloatConvertNode;
+import tornado.graal.compiler.nodes.calc.IsNullNode;
+import tornado.graal.compiler.nodes.extended.JavaReadNode;
+import tornado.graal.compiler.nodes.extended.JavaWriteNode;
+import tornado.graal.compiler.nodes.extended.ValueAnchorNode;
+import tornado.graal.compiler.nodes.java.LoadFieldNode;
+import tornado.graal.compiler.nodes.java.LoadIndexedNode;
+import tornado.graal.compiler.nodes.java.NewInstanceNode;
+import tornado.graal.compiler.nodes.memory.address.AddressNode;
+import tornado.graal.compiler.phases.BasePhase;
 import uk.ac.manchester.tornado.api.internal.annotations.HalfType;
 import uk.ac.manchester.tornado.drivers.cuda.graal.HalfFloatStamp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
@@ -56,6 +61,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.MultHalfNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAConvertFloatToHalf;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAConvertHalfToFloat;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASwizzledLoadFP16Stride32Node;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.ReadHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.SubHalfNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.WriteHalfFloatNode;
@@ -114,6 +120,21 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
                 && loadIndexed.array() instanceof LocalArrayNode localArray //
                 && localArray.getCUDAKind() == CUDAKind.HALF) {
             return input;
+        }
+        // A swizzled fp16 load produces a __half value directly, so it is a valid half-source for
+        // CUDAConvertHalfToFloat (swizzleLoadFp16Stride32(...).getFloat32()).
+        if (input instanceof CUDASwizzledLoadFP16Stride32Node) {
+            return input;
+        }
+        // A HalfFloat-typed method parameter is itself the half value: when getFloat32() is compiled as its own
+        // device function (not inlined), `this` arrives as a HalfFloat parameter and this.halfFloatValue reads
+        // straight off it, so the ParameterNode is the half-source for CUDAConvertHalfToFloat.
+        if (input instanceof ParameterNode) {
+            Stamp paramStamp = ((ValueNode) input).stamp(NodeView.DEFAULT);
+            if (paramStamp instanceof ObjectStamp objectStamp && objectStamp.type() != null //
+                    && objectStamp.type().getAnnotation(HalfType.class) != null) {
+                return input;
+            }
         }
         if (input instanceof PiNode || input instanceof IsNullNode) {
             nodesToBeDeleted.add(input);
@@ -367,6 +388,20 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
     }
 
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
+
+        // Reflection-path recovery: HalfFloat.getHalfFloatValue()'s InvocationPlugin misses when JVMCI is absent, so
+        // the call survives as a device-function invoke whose generated body dereferences the receiver as an object
+        // pointer (this + 8, the halfFloatValue field offset) instead of returning the half bits - for a small half
+        // value that reads ~address 0x8, faulting with an out-of-bounds global read (seen in the tensor-core kernels
+        // that bit-pack a.get(i).getHalfFloatValue() into shared tiles). Rewrite it to the HalfFloatPlaceholder the
+        // plugin would have produced; the placeholder handler at the end of this phase lowers it to the half bits.
+        for (InvokeNode invoke : graph.getNodes().filter(InvokeNode.class).snapshot()) {
+            if (invoke.callTarget() != null && invoke.callTarget().targetName() != null && invoke.callTarget().targetName().contains("getHalfFloatValue")) {
+                HalfFloatPlaceholder placeholder = graph.addWithoutUnique(new HalfFloatPlaceholder(invoke.callTarget().arguments().get(0)));
+                invoke.replaceAtUsages(placeholder);
+                deleteFixed(invoke);
+            }
+        }
 
         for (ValueAnchorNode valueAnchorNode : graph.getNodes().filter(ValueAnchorNode.class)) {
             ArrayList<PiNode> deletePi = new ArrayList<PiNode>();

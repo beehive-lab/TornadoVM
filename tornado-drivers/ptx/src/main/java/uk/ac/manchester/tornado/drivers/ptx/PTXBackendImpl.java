@@ -27,10 +27,9 @@ package uk.ac.manchester.tornado.drivers.ptx;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.util.Providers;
+import tornado.graal.compiler.options.OptionValues;
+import tornado.graal.compiler.phases.util.Providers;
 
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
@@ -50,7 +49,7 @@ public final class PTXBackendImpl implements TornadoAcceleratorBackend {
     private final TornadoLogger logger;
     private volatile List<TornadoDevice> devices;
 
-    public PTXBackendImpl(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfig) {
+    public PTXBackendImpl(final OptionValues options, TornadoVMConfigAccess vmConfig) {
 
         int deviceCount = PTX.getPlatform().getDeviceCount();
         logger = new TornadoLogger(this.getClass());
@@ -61,14 +60,14 @@ public final class PTXBackendImpl implements TornadoAcceleratorBackend {
         }
 
         for (int i = 0; i < deviceCount; i++) {
-            installDevice(i, options, vmRuntime, vmConfig);
+            installDevice(i, options, vmConfig);
         }
     }
 
-    private void installDevice(int deviceIndex, OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfig) {
+    private void installDevice(int deviceIndex, OptionValues options, TornadoVMConfigAccess vmConfig) {
         PTXDevice device = PTX.getPlatform().getDevice(deviceIndex);
         logger.info("Creating backend for %s", device.getDeviceName());
-        backends[deviceIndex] = PTXHotSpotBackendFactory.createJITCompiler(options, vmRuntime, vmConfig, device);
+        backends[deviceIndex] = PTXHotSpotBackendFactory.createJITCompiler(options, vmConfig, device);
     }
 
     @Override

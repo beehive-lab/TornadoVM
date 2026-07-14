@@ -68,7 +68,11 @@ public abstract class CUDAArrayWrapper<T> implements XPUBuffer {
         this.access = access;
 
         arrayLengthOffset = getVMConfig().arrayOopDescLengthOffset();
-        arrayHeaderSize = getVMConfig().getArrayBaseOffset(kind);
+        // Raw Java arrays must use the fixed ARRAY_HEADER (PANAMA_OBJECT_HEADER_SIZE = 16) that the kernel codegen
+        // addresses with, not the JVM base offset getArrayBaseOffset returns (12 under compact object headers).
+        // Leaving it at 12 put the host buffer header out of step with the kernel (16), so raw-array reads/writes
+        // landed 4 bytes off and overran the buffer (results read back as 0). Mirrors OCLArrayWrapper.
+        arrayHeaderSize = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
         logger = new TornadoLogger(this.getClass());
     }
 

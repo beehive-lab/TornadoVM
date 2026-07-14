@@ -91,19 +91,17 @@
                         <argument>-XX:-UseCompressedClassPointers</argument>
                         <argument>--enable-preview</argument>
                         <argument>-Djava.library.path=${env.TORNADOVM_HOME}/lib</argument>
-                        <argument>--module-path=.:${env.TORNADOVM_HOME}/share/java/tornado</argument>
+                        <argument>--module-path=.:${env.TORNADOVM_HOME}/share/java/tornado:${env.TORNADOVM_HOME}/share/java/graalJars</argument>
                         <argument>-Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph</argument>
                         <argument>-Dtornado.load.runtime.implementation=uk.ac.manchester.tornado.runtime.TornadoCoreRuntime</argument>
                         <argument>-Dtornado.load.tornado.implementation=uk.ac.manchester.tornado.runtime.common.Tornado</argument>
                         <argument>-Dtornado.load.annotation.implementation=uk.ac.manchester.tornado.annotation.ASMClassVisitor</argument>
                         <argument>-Dtornado.load.annotation.parallel=uk.ac.manchester.tornado.api.annotations.Parallel</argument>
-                        <argument>--upgrade-module-path</argument>
-                        <argument>${tornado.sdk}/share/java/graalJars</argument>
                         <argument>-XX:+UseParallelGC</argument>
                         <argument>@${tornado.sdk}/etc/exportLists/common-exports</argument>
                         <argument>@${tornado.sdk}/etc/exportLists/opencl-exports</argument>
                         <argument>--add-modules</argument>
-                        <argument>ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.common,tornado.drivers.opencl</argument>
+                        <argument>ALL-SYSTEM,tornado.graal,tornado.runtime,tornado.annotation,tornado.drivers.common,tornado.drivers.opencl</argument>
                         <argument>-cp</argument>
                         <argument>${project.build.outputDirectory}</argument>
                         <argument>-Xmx6g</argument>

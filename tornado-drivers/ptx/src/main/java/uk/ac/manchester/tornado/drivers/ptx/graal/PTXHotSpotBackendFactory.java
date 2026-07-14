@@ -25,28 +25,26 @@ package uk.ac.manchester.tornado.drivers.ptx.graal;
 
 import static jdk.vm.ci.common.InitTimer.timer;
 
-import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
-import org.graalvm.compiler.core.common.spi.MetaAccessExtensionProvider;
-import org.graalvm.compiler.hotspot.meta.HotSpotStampProvider;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
-import org.graalvm.compiler.nodes.loop.LoopsDataProviderImpl;
-import org.graalvm.compiler.nodes.spi.LoopsDataProvider;
-import org.graalvm.compiler.nodes.spi.LoweringProvider;
-import org.graalvm.compiler.nodes.spi.Replacements;
-import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.util.Providers;
-import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
-import org.graalvm.compiler.replacements.StandardGraphBuilderPlugins;
-import org.graalvm.compiler.replacements.classfile.ClassfileBytecodeProvider;
-import org.graalvm.compiler.word.WordTypes;
+import tornado.graal.compiler.api.replacements.SnippetReflectionProvider;
+import tornado.graal.compiler.core.common.spi.MetaAccessExtensionProvider;
+import tornado.graal.compiler.hotspot.meta.HotSpotStampProvider;
+import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
+import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import tornado.graal.compiler.nodes.loop.LoopsDataProviderImpl;
+import tornado.graal.compiler.nodes.spi.LoopsDataProvider;
+import tornado.graal.compiler.nodes.spi.LoweringProvider;
+import tornado.graal.compiler.nodes.spi.Replacements;
+import tornado.graal.compiler.options.OptionValues;
+import tornado.graal.compiler.phases.util.Providers;
+import tornado.graal.compiler.printer.GraalDebugHandlersFactory;
+import tornado.graal.compiler.replacements.StandardGraphBuilderPlugins;
+import tornado.graal.compiler.replacements.classfile.ClassfileBytecodeProvider;
+import tornado.graal.compiler.word.WordTypes;
 
 import jdk.vm.ci.common.InitTimer;
-import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
-import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
+import jdk.vm.ci.meta.ConstantReflectionProvider;
+import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.runtime.JVMCIBackend;
 import uk.ac.manchester.tornado.drivers.providers.TornadoMetaAccessExtensionProvider;
 import uk.ac.manchester.tornado.drivers.providers.TornadoPlatformConfigurationProvider;
 import uk.ac.manchester.tornado.drivers.providers.TornadoWordTypes;
@@ -64,6 +62,8 @@ import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoConstantFieldProvi
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoForeignCallsProvider;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoReplacements;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
+import uk.ac.manchester.tornado.runtime.jvmci.TornadoConstantReflectionProvider;
+import uk.ac.manchester.tornado.runtime.jvmci.TornadoMetaAccessProvider;
 
 public class PTXHotSpotBackendFactory {
 
@@ -74,10 +74,9 @@ public class PTXHotSpotBackendFactory {
     private static final PTXCompilerConfiguration compilerConfiguration = new PTXCompilerConfiguration();
     private static final PTXAddressLowering addressLowering = new PTXAddressLowering();
 
-    public static PTXBackend createJITCompiler(OptionValues options, HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfigAccess vmConfig, PTXDevice device) {
-        JVMCIBackend jvmci = jvmciRuntime.getHostJVMCIBackend();
-        HotSpotMetaAccessProvider metaAccess = (HotSpotMetaAccessProvider) jvmci.getMetaAccess();
-        HotSpotConstantReflectionProvider constantReflection = (HotSpotConstantReflectionProvider) jvmci.getConstantReflection();
+    public static PTXBackend createJITCompiler(OptionValues options, TornadoVMConfigAccess vmConfig, PTXDevice device) {
+        MetaAccessProvider metaAccess = new TornadoMetaAccessProvider();
+        ConstantReflectionProvider constantReflection = new TornadoConstantReflectionProvider(snippetReflection);
 
         PTXArchitecture arch = new PTXArchitecture(PTXKind.U64, device.getByteOrder());
         PTXTargetDescription target = new PTXTargetDescription(arch);
@@ -120,7 +119,7 @@ public class PTXHotSpotBackendFactory {
 
     }
 
-    protected static GraphBuilderConfiguration.Plugins createGraphBuilderPlugins(HotSpotMetaAccessProvider metaAccess, Replacements replacements, SnippetReflectionProvider snippetReflectionProvider,
+    protected static GraphBuilderConfiguration.Plugins createGraphBuilderPlugins(MetaAccessProvider metaAccess, Replacements replacements, SnippetReflectionProvider snippetReflectionProvider,
             LoweringProvider loweringProvider) {
         InvocationPlugins invocationPlugins = new InvocationPlugins();
         GraphBuilderConfiguration.Plugins plugins = new GraphBuilderConfiguration.Plugins(invocationPlugins);

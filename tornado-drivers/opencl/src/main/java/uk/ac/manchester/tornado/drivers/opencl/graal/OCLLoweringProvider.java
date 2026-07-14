@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal;
 
-import static org.graalvm.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCATION;
+import static tornado.graal.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCATION;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.providers.TornadoMemoryOrder.GPU_MEMORY_MODE;
@@ -31,60 +31,59 @@ import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
 
 import java.util.Iterator;
 
-import org.graalvm.compiler.core.common.memory.BarrierType;
-import org.graalvm.compiler.core.common.memory.MemoryExtendKind;
-import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
-import org.graalvm.compiler.core.common.spi.MetaAccessExtensionProvider;
-import org.graalvm.compiler.core.common.type.ObjectStamp;
-import org.graalvm.compiler.core.common.type.Stamp;
-import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.core.common.type.StampPair;
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.graph.NodeInputList;
-import org.graalvm.compiler.nodes.AbstractDeoptimizeNode;
-import org.graalvm.compiler.nodes.CompressionNode;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FieldLocationIdentity;
-import org.graalvm.compiler.nodes.FixedNode;
-import org.graalvm.compiler.nodes.Invoke;
-import org.graalvm.compiler.nodes.InvokeNode;
-import org.graalvm.compiler.nodes.LoweredCallTargetNode;
-import org.graalvm.compiler.nodes.NamedLocationIdentity;
-import org.graalvm.compiler.nodes.NodeView;
-import org.graalvm.compiler.nodes.PhiNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.UnwindNode;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.BinaryArithmeticNode;
-import org.graalvm.compiler.nodes.calc.FloatConvertNode;
-import org.graalvm.compiler.nodes.calc.IntegerDivRemNode;
-import org.graalvm.compiler.nodes.calc.MulNode;
-import org.graalvm.compiler.nodes.calc.RemNode;
-import org.graalvm.compiler.nodes.java.ArrayLengthNode;
-import org.graalvm.compiler.nodes.java.InstanceOfNode;
-import org.graalvm.compiler.nodes.java.LoadFieldNode;
-import org.graalvm.compiler.nodes.java.LoadIndexedNode;
-import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
-import org.graalvm.compiler.nodes.java.StoreFieldNode;
-import org.graalvm.compiler.nodes.java.StoreIndexedNode;
-import org.graalvm.compiler.nodes.memory.AbstractWriteNode;
-import org.graalvm.compiler.nodes.memory.ExtendableMemoryAccess;
-import org.graalvm.compiler.nodes.memory.ReadNode;
-import org.graalvm.compiler.nodes.memory.WriteNode;
-import org.graalvm.compiler.nodes.memory.address.AddressNode;
-import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
-import org.graalvm.compiler.nodes.spi.LoweringTool;
-import org.graalvm.compiler.nodes.spi.PlatformConfigurationProvider;
-import org.graalvm.compiler.nodes.type.StampTool;
-import org.graalvm.compiler.nodes.util.GraphUtil;
-import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.util.Providers;
-import org.graalvm.compiler.replacements.DefaultJavaLoweringProvider;
-import org.graalvm.compiler.replacements.SnippetCounter;
+import tornado.graal.compiler.core.common.memory.BarrierType;
+import tornado.graal.compiler.core.common.memory.MemoryExtendKind;
+import tornado.graal.compiler.core.common.spi.ForeignCallsProvider;
+import tornado.graal.compiler.core.common.spi.MetaAccessExtensionProvider;
+import tornado.graal.compiler.core.common.type.ObjectStamp;
+import tornado.graal.compiler.core.common.type.Stamp;
+import tornado.graal.compiler.core.common.type.StampFactory;
+import tornado.graal.compiler.core.common.type.StampPair;
+import tornado.graal.compiler.graph.Node;
+import tornado.graal.compiler.graph.NodeInputList;
+import tornado.graal.compiler.nodes.AbstractDeoptimizeNode;
+import tornado.graal.compiler.nodes.CompressionNode;
+import tornado.graal.compiler.nodes.ConstantNode;
+import tornado.graal.compiler.nodes.FieldLocationIdentity;
+import tornado.graal.compiler.nodes.FixedNode;
+import tornado.graal.compiler.nodes.Invoke;
+import tornado.graal.compiler.nodes.InvokeNode;
+import tornado.graal.compiler.nodes.LoweredCallTargetNode;
+import tornado.graal.compiler.nodes.NamedLocationIdentity;
+import tornado.graal.compiler.nodes.NodeView;
+import tornado.graal.compiler.nodes.PhiNode;
+import tornado.graal.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.nodes.UnwindNode;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.calc.BinaryArithmeticNode;
+import tornado.graal.compiler.nodes.calc.FloatConvertNode;
+import tornado.graal.compiler.nodes.calc.IntegerDivRemNode;
+import tornado.graal.compiler.nodes.calc.MulNode;
+import tornado.graal.compiler.nodes.calc.RemNode;
+import tornado.graal.compiler.nodes.java.ArrayLengthNode;
+import tornado.graal.compiler.nodes.java.InstanceOfNode;
+import tornado.graal.compiler.nodes.java.LoadFieldNode;
+import tornado.graal.compiler.nodes.java.LoadIndexedNode;
+import tornado.graal.compiler.nodes.java.MethodCallTargetNode;
+import tornado.graal.compiler.nodes.java.StoreFieldNode;
+import tornado.graal.compiler.nodes.java.StoreIndexedNode;
+import tornado.graal.compiler.nodes.memory.AbstractWriteNode;
+import tornado.graal.compiler.nodes.memory.ExtendableMemoryAccess;
+import tornado.graal.compiler.nodes.memory.ReadNode;
+import tornado.graal.compiler.nodes.memory.WriteNode;
+import tornado.graal.compiler.nodes.memory.address.AddressNode;
+import tornado.graal.compiler.nodes.memory.address.OffsetAddressNode;
+import tornado.graal.compiler.nodes.spi.LoweringTool;
+import tornado.graal.compiler.nodes.spi.PlatformConfigurationProvider;
+import tornado.graal.compiler.nodes.type.StampTool;
+import tornado.graal.compiler.nodes.util.GraphUtil;
+import tornado.graal.compiler.options.OptionValues;
+import tornado.graal.compiler.phases.util.Providers;
+import tornado.graal.compiler.replacements.DefaultJavaLoweringProvider;
+import tornado.graal.compiler.replacements.SnippetCounter;
 import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
@@ -369,6 +368,24 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         graph.replaceFixedWithFixed(arrayLengthNode, arrayLengthRead);
     }
 
+    /**
+     * True when {@code array} is a HALF-typed OpenCL local array. On the reflection path the array reference is
+     * wrapped in a {@link tornado.graal.compiler.nodes.PiNode} guard, so unproxify before the {@code instanceof}
+     * check; also match the still-surviving {@code allocateHalfFloatLocalArray} invoke if lowering runs before the
+     * intrinsics-replacement phase rewrites it to a {@link LocalArrayNode}. Without this the half element is read as
+     * a word-typed (ulong) value and truncated (1.5 -&gt; 1). Mirrors the CUDA backend.
+     */
+    private static boolean isLocalHalfArray(ValueNode array) {
+        Node node = GraphUtil.unproxify(array);
+        if (node instanceof LocalArrayNode localArrayNode) {
+            return localArrayNode.getOCLKind() == OCLKind.HALF;
+        }
+        if (node instanceof InvokeNode invoke && invoke.callTarget() != null && invoke.callTarget().targetName() != null) {
+            return invoke.callTarget().targetName().contains("allocateHalfFloatLocalArray");
+        }
+        return false;
+    }
+
     @Override
     public void lowerLoadIndexedNode(LoadIndexedNode loadIndexed, LoweringTool tool) {
         StructuredGraph graph = loadIndexed.graph();
@@ -380,7 +397,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             loadStamp = loadStamp(loadIndexed.stamp(NodeView.DEFAULT), elementKind, false);
         }
         address = createArrayAccess(graph, loadIndexed, elementKind);
-        if (loadIndexed.array() instanceof LocalArrayNode localArrayNode && localArrayNode.getOCLKind() == OCLKind.HALF) {
+        if (isLocalHalfArray(loadIndexed.array())) {
             ReadHalfFloatNode localHalfFloatRead = graph.add(new ReadHalfFloatNode(address, loadIndexed.index()));
             loadIndexed.replaceAtUsages(localHalfFloatRead);
             graph.replaceFixed(loadIndexed, localHalfFloatRead);
@@ -402,8 +419,10 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         JavaKind elementKind = storeIndexed.elementKind();
         ValueNode value = storeIndexed.value();
         ValueNode array = storeIndexed.array();
-        AddressNode address = createArrayAddress(graph, array, elementKind, storeIndexed.index());
-        if (array instanceof LocalArrayNode localArrayNode && localArrayNode.getOCLKind() == OCLKind.HALF) {
+        // Native (Panama) arrays start data at the fixed ARRAY_HEADER (see createArrayAccess) — not the JVM's
+        // compact-header-dependent Java-array base offset — so pass ARRAY_HEADER explicitly.
+        AddressNode address = createArrayAddress(graph, array, (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE, elementKind, storeIndexed.index());
+        if (isLocalHalfArray(array)) {
             WriteHalfFloatNode localHalfFloatWrite = graph.add(new WriteHalfFloatNode(address, value, storeIndexed.index()));
             graph.replaceFixedWithFixed(storeIndexed, localHalfFloatWrite);
         } else {
@@ -543,8 +562,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
     @Override
     public int fieldOffset(ResolvedJavaField f) {
-        HotSpotResolvedJavaField field = (HotSpotResolvedJavaField) f;
-        return field.getOffset();
+        return f.getOffset();
     }
 
     @Override
@@ -560,8 +578,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
     @Override
     public ValueNode staticFieldBase(StructuredGraph graph, ResolvedJavaField f) {
-        HotSpotResolvedJavaField field = (HotSpotResolvedJavaField) f;
-        JavaConstant base = constantReflection.asJavaClass(field.getDeclaringClass());
+        JavaConstant base = constantReflection.asJavaClass(f.getDeclaringClass());
         return ConstantNode.forConstant(base, metaAccess, graph);
     }
 
@@ -570,21 +587,22 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     private boolean isLocalIDNode(StoreIndexedNode storeIndexed) {
-        // Either the node has as input a LocalArray or has a node which will be lowered
-        // to a LocalArray
-        Node nd = storeIndexed.inputs().first();
-        InvokeNode node = nd.inputs().filter(InvokeNode.class).first();
-        boolean willLowerToLocalArrayNode = node != null && "Direct#NewArrayNode.newArray".equals(node.callTarget().targetName()) && gpuSnippet;
-        return (nd instanceof MarkLocalArray || willLowerToLocalArrayNode);
+        return isLocalArrayInput(storeIndexed.inputs().first());
     }
 
     private boolean isLocalIDNode(LoadIndexedNode loadIndexedNode) {
-        // Either the node has as input a LocalArray or has a node which will be lowered
-        // to a LocalArray
-        Node nd = loadIndexedNode.inputs().first();
+        return isLocalArrayInput(loadIndexedNode.inputs().first());
+    }
+
+    private boolean isLocalArrayInput(Node nd) {
+        // Either the node has as input a LocalArray or has a node which will be lowered to a LocalArray.
         InvokeNode node = nd.inputs().filter(InvokeNode.class).first();
         boolean willLowerToLocalArrayNode = node != null && "Direct#NewArrayNode.newArray".equals(node.callTarget().targetName()) && gpuSnippet;
-        return (nd instanceof MarkLocalArray || willLowerToLocalArrayNode);
+        // On the JVMCI-absent path KernelContext.allocate*LocalArray is intrinsified to a LocalArrayNode, but
+        // that rewrite runs after this lowering, so the array input is still the allocate*LocalArray invoke
+        // here. Match both the eventual LocalArrayNode and the surviving allocate*LocalArray invoke.
+        boolean isAllocateLocalArrayInvoke = nd instanceof InvokeNode invoke && invoke.callTarget() != null && invoke.callTarget().targetName().contains("LocalArray");
+        return (nd instanceof MarkLocalArray || nd instanceof LocalArrayNode || isAllocateLocalArrayInvoke || willLowerToLocalArrayNode);
     }
 
     private boolean isPrivateIDNode(StoreIndexedNode storeIndexed) {
@@ -616,7 +634,11 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         if (isLocalIDNode(loadIndexed) || isPrivateIDNode(loadIndexed)) {
             address = createArrayLocalAddress(graph, loadIndexed.array(), loadIndexed.index());
         } else {
-            address = createArrayAddress(graph, loadIndexed.array(), elementKind, loadIndexed.index());
+            // Native (Panama) arrays start their data at the fixed ARRAY_HEADER, not at the JVM's Java-array
+            // base offset (metaAccess.getArrayBaseOffset), which is object-header-layout dependent and returns
+            // 12 for float[]/int[] under JDK 27 compact object headers -> misaligns vector (vload/vstore)
+            // access by one element. Use the explicit-base overload with ARRAY_HEADER (JDK-neutral).
+            address = createArrayAddress(graph, loadIndexed.array(), (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE, elementKind, loadIndexed.index());
         }
         return address;
     }

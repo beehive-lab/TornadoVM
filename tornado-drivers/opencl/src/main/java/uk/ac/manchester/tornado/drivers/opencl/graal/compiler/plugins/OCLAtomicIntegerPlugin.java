@@ -21,10 +21,9 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins;
 
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
-import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
+import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderContext;
+import tornado.graal.compiler.nodes.graphbuilderconf.NodePlugin;
 
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
@@ -53,9 +52,8 @@ public class OCLAtomicIntegerPlugin implements NodePlugin {
     }
 
     private OCLKind resolveOCLKind(ResolvedJavaType type) {
-        if (type instanceof HotSpotResolvedJavaType) {
-            return OCLKind.fromResolvedJavaType(type);
-        }
-        return OCLKind.ILLEGAL;
+        // fromResolvedJavaType returns ILLEGAL for any type it cannot map, so no
+        // HotSpot-specific instanceof guard is needed (JDK-neutral).
+        return OCLKind.fromResolvedJavaType(type);
     }
 }

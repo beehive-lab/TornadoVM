@@ -159,10 +159,30 @@
         </fileSet>
         <fileSet>
             <directory>../graalJars</directory>
-            <!-- Graal compiler JARs for JDK 21 -->
+            <!-- Bare-minimum Graal JARs for JDK 21. The compiler is shipped relocated as
+                 the vendored tornado.graal module (tornado-graal-*.jar) so it resolves
+                 from the regular module-path; word/collections/truffle-compiler are its
+                 transitive requires. truffle-api/polyglot/graal-sdk/compiler-management
+                 are excluded. -->
             <outputDirectory>share/java/graalJars</outputDirectory>
             <includes>
-                <include>*.jar</include>
+                <include>tornado-graal-*.jar</include>
+                <include>truffle-compiler-*.jar</include>
+                <include>collections-*.jar</include>
+                <include>word-*.jar</include>
+            </includes>
+            <fileMode>0644</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>../graalJars</directory>
+            <!-- Vendored jdk.internal.vm.ci (JDK-21 jvmci repackaged as a same-named
+                 application module by bin/build_jvmci_module.py). Shipped to a SEPARATE
+                 directory: the tornado launcher adds it to the module-path ONLY on JDK 27+
+                 where the platform no longer provides jdk.internal.vm.ci. On JDK <=26 a
+                 module of the same name would collide with the platform module. -->
+            <outputDirectory>share/java/jvmci</outputDirectory>
+            <includes>
+                <include>jvmci-*.jar</include>
             </includes>
             <fileMode>0644</fileMode>
         </fileSet>

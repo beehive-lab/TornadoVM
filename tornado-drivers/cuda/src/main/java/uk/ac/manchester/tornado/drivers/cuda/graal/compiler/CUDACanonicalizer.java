@@ -23,9 +23,9 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.graal.compiler;
 
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.spi.SimplifierTool;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
+import tornado.graal.compiler.graph.Node;
+import tornado.graal.compiler.nodes.spi.SimplifierTool;
+import tornado.graal.compiler.phases.common.CanonicalizerPhase;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;

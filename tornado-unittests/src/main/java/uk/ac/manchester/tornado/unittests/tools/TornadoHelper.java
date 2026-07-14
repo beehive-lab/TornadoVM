@@ -28,6 +28,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Request;
@@ -52,8 +53,22 @@ public class TornadoHelper {
 
     public static final boolean OPTIMIZE_LOAD_STORE_SPIRV = Boolean.parseBoolean(System.getProperty("tornado.spirv.loadstore", "False"));
 
+    // Exceptions that mean a test cannot run on the current configuration/device - it is NOT a failure.
+    // Kept in sync with the per-method classification in the verbose runner below.
+    private static final List<Class<? extends Throwable>> UNSUPPORTED_EXCEPTIONS = List.of(UnsupportedConfigurationException.class, TornadoVMPTXNotSupported.class, TornadoNoOpenCLPlatformException.class,
+            TornadoVMMultiDeviceNotSupported.class, TornadoVMOpenCLNotSupported.class, TornadoVMSPIRVNotSupported.class, TornadoVMMetalNotSupported.class, TornadoVMCUDANotSupported.class,
+            TornadoDeviceFP64NotSupported.class, TornadoDeviceFP16NotSupported.class, TornadoDeviceMMANotSupported.class);
+
+    private static boolean isUnsupported(Throwable exception) {
+        return UNSUPPORTED_EXCEPTIONS.stream().anyMatch(type -> type.isInstance(exception));
+    }
+
     private static void printResult(Result result) {
-        System.out.printf("Test ran: %s, Failed: %s%n", result.getRunCount(), result.getFailureCount());
+        // Separate genuinely-failed tests from those skipped as unsupported on this configuration, so the terse
+        // (non-verbose) runner does not report unsupported tests as failures (which reads as false regressions).
+        long notSupported = result.getFailures().stream().filter(failure -> isUnsupported(failure.getException())).count();
+        long failed = result.getFailureCount() - notSupported;
+        System.out.printf("Test ran: %s, Failed: %s, Unsupported: %s%n", result.getRunCount(), failed, notSupported);
     }
 
     private static void printResult(int success, int failed, int notSupported) {

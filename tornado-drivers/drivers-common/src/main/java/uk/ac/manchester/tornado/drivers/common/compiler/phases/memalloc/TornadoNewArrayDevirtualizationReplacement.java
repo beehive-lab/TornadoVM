@@ -23,10 +23,10 @@ package uk.ac.manchester.tornado.drivers.common.compiler.phases.memalloc;
 
 import java.util.Optional;
 
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.java.NewArrayNode;
-import org.graalvm.compiler.phases.Phase;
+import tornado.graal.compiler.nodes.GraphState;
+import tornado.graal.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.nodes.java.NewArrayNode;
+import tornado.graal.compiler.phases.Phase;
 
 import uk.ac.manchester.tornado.runtime.graal.nodes.NewArrayNonVirtualizableNode;
 

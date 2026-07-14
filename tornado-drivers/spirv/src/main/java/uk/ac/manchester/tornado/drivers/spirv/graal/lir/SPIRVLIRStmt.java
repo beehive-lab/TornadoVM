@@ -27,12 +27,12 @@ package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 import java.util.List;
 import java.util.Map;
 
-import org.graalvm.compiler.lir.ConstantValue;
-import org.graalvm.compiler.lir.LIRInstruction;
-import org.graalvm.compiler.lir.LIRInstructionClass;
-import org.graalvm.compiler.lir.Opcode;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
+import tornado.graal.compiler.lir.ConstantValue;
+import tornado.graal.compiler.lir.LIRInstruction;
+import tornado.graal.compiler.lir.LIRInstructionClass;
+import tornado.graal.compiler.lir.Opcode;
+import tornado.graal.compiler.lir.Variable;
+import tornado.graal.compiler.lir.asm.CompilationResultBuilder;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;

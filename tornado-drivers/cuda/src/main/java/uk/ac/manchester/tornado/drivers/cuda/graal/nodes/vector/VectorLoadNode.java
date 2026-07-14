@@ -23,13 +23,13 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.graal.nodes.vector;
 
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.NodeView;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.java.AccessIndexedNode;
-import org.graalvm.compiler.nodes.spi.CanonicalizerTool;
+import tornado.graal.compiler.graph.Node;
+import tornado.graal.compiler.graph.NodeClass;
+import tornado.graal.compiler.nodeinfo.NodeInfo;
+import tornado.graal.compiler.nodes.NodeView;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.java.AccessIndexedNode;
+import tornado.graal.compiler.nodes.spi.CanonicalizerTool;
 
 import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAStamp;

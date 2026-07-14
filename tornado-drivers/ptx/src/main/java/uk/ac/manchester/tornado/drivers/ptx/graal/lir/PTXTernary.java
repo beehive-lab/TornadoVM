@@ -24,11 +24,11 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.lir;
 
-import static org.graalvm.compiler.lir.LIRInstruction.Use;
+import static tornado.graal.compiler.lir.LIRInstruction.Use;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.Opcode;
-import org.graalvm.compiler.lir.Variable;
+import tornado.graal.compiler.core.common.LIRKind;
+import tornado.graal.compiler.lir.Opcode;
+import tornado.graal.compiler.lir.Variable;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;

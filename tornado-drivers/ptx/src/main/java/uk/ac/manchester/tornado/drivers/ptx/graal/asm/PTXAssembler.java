@@ -50,13 +50,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.graalvm.compiler.asm.AbstractAddress;
-import org.graalvm.compiler.asm.Assembler;
-import org.graalvm.compiler.asm.Label;
-import org.graalvm.compiler.lir.ConstantValue;
-import org.graalvm.compiler.lir.LabelRef;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.nodes.cfg.HIRBlock;
+import tornado.graal.compiler.asm.AbstractAddress;
+import tornado.graal.compiler.asm.Assembler;
+import tornado.graal.compiler.asm.Label;
+import tornado.graal.compiler.lir.ConstantValue;
+import tornado.graal.compiler.lir.LabelRef;
+import tornado.graal.compiler.lir.Variable;
+import tornado.graal.compiler.nodes.cfg.HIRBlock;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.TargetDescription;

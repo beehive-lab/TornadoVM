@@ -22,10 +22,10 @@
 package uk.ac.manchester.tornado.runtime.graal.nodes;
 
 import jdk.vm.ci.meta.JavaKind;
-import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.FixedWithNextNode;
+import tornado.graal.compiler.core.common.type.StampFactory;
+import tornado.graal.compiler.graph.NodeClass;
+import tornado.graal.compiler.nodeinfo.NodeInfo;
+import tornado.graal.compiler.nodes.FixedWithNextNode;
 
 @NodeInfo
 public class VectorHalfRead extends FixedWithNextNode {

@@ -21,8 +21,8 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.graal;
 
-import org.graalvm.compiler.lir.framemap.FrameMap;
-import org.graalvm.compiler.lir.framemap.FrameMapBuilderImpl;
+import tornado.graal.compiler.lir.framemap.FrameMap;
+import tornado.graal.compiler.lir.framemap.FrameMapBuilderImpl;
 
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.RegisterConfig;

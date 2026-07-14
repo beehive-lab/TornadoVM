@@ -49,8 +49,8 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.graalvm.compiler.graph.Graph;
-import org.graalvm.compiler.phases.util.Providers;
+import tornado.graal.compiler.graph.Graph;
+import tornado.graal.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.GridScheduler;
@@ -1475,6 +1475,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private TornadoTaskGraphInterface reduceAnalysis() {
         TornadoTaskGraphInterface abstractTaskGraph = null;
         if (analysisTaskGraph == null && !reduceAnalysis) {
+            // CodeAnalysis.buildHighLevelGraalGraph is JDK-neutral: on the JVMCI-absent path (JDK 27+) it uses
+            // the TornadoVM backend's reflection providers instead of HotSpotJVMCIRuntime, so @Reduce analysis
+            // works there too.
             analysisTaskGraph = ReduceCodeAnalysis.analyzeTaskGraph(taskPackages);
             reduceAnalysis = true;
             if (analysisTaskGraph != null && analysisTaskGraph.isValid()) {

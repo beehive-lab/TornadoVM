@@ -26,14 +26,14 @@ import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerat
 import java.util.HashMap;
 import java.util.Map;
 
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.graph.iterators.NodePredicate;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.java.LoadFieldNode;
-import org.graalvm.compiler.nodes.java.NewInstanceNode;
-import org.graalvm.compiler.nodes.java.StoreFieldNode;
-import org.graalvm.compiler.phases.BasePhase;
+import tornado.graal.compiler.graph.Node;
+import tornado.graal.compiler.graph.iterators.NodePredicate;
+import tornado.graal.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.java.LoadFieldNode;
+import tornado.graal.compiler.nodes.java.NewInstanceNode;
+import tornado.graal.compiler.nodes.java.StoreFieldNode;
+import tornado.graal.compiler.phases.BasePhase;
 
 import jdk.vm.ci.meta.ResolvedJavaField;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;

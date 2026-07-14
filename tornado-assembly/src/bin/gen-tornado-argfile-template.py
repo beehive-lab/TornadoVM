@@ -79,12 +79,12 @@ def get_tornado_flags():
         )
         flags_output = result.stdout.strip()
 
-        # Strip off 'java ' prefix if present
-        if flags_output.startswith("java "):
-            flags_output = flags_output[5:]
-
-        # Split flags by whitespace
-        return flags_output.split()
+        # Split flags by whitespace and drop the leading java-binary token. --printJavaFlags emits
+        # the full launcher command, so the first token is the (possibly absolute) path to java.
+        flags = flags_output.split()
+        if flags and (flags[0].endswith("java") or flags[0].endswith("java.exe")):
+            flags = flags[1:]
+        return flags
     except subprocess.CalledProcessError as e:
         print(f"[ERROR] Failed to run tornado --printJavaFlags: {e}")
         print(f"[ERROR] stderr: {e.stderr if hasattr(e, 'stderr') else 'N/A'}")
@@ -147,118 +147,85 @@ def strip_comments(file_path):
 
 def generate_argfile(backends, output_dir=None):
     """
-    Generate the tornado-argfile.template based on selected backends.
+    Generate tornado-argfile.template as a FAITHFUL reproduction of the exact JVM flags the
+    tornado launcher runs (``tornado --printJavaFlags``), so ``java @<file> -m <module>/<Main>``
+    launches TornadoVM identically.
 
-    This function creates a Java argument file template (@argfile) that contains all the JVM
-    flags needed to run TornadoVM applications. The template uses ${TORNADOVM_HOME} placeholders
-    which can be expanded using envsubst. The argfile includes:
-    - JVM mode and memory settings (-XX flags, -server, etc.)
-    - Native library paths (with ${TORNADOVM_HOME} placeholder)
-    - TornadoVM runtime properties
-    - Module system configuration (--module-path, --add-modules with ${TORNADOVM_HOME} placeholder)
-    - Module exports (--add-exports) for common and backend-specific modules
+    Two things are transformed so the flags work as a single Java argument file:
+    - ``@<export-list>`` references are INLINED. Java does not recursively expand a nested
+      ``@argfile`` referenced from inside another argfile, so the export-list contents are copied
+      in verbatim (this is why an earlier template that kept the ``@`` refs failed).
+    - Absolute ``$TORNADOVM_HOME`` paths (module-path entries incl. the reflection-path
+      ``share/java/jvmci`` module dir, native library path) are replaced with the
+      ``${TORNADOVM_HOME}`` placeholder for portability (expand via envsubst before use).
+
+    Every other flag from ``--printJavaFlags`` is preserved verbatim - crucially the
+    ``--add-exports java.base/jdk.internal.*=jdk.internal.vm.ci`` and
+    ``-Djdk.internal.vm.ci.enabled=true`` flags the reflection (JVMCI-absent) path needs, and the
+    ``--module-path`` that already includes the jvmci module dir. The earlier version rebuilt the
+    argfile from cherry-picked categories and dropped both, producing an unusable file on JDK 27.
 
     Args:
-        backends (str): Comma-separated list of backends (e.g., "opencl,ptx,spirv")
-        output_dir (str): Optional output directory. If None, uses TORNADOVM_HOME directory
+        backends (str): Comma-separated backend list. Advisory only - the flags come from the
+            installed SDK via --printJavaFlags, which already carries the built backends' exports.
+        output_dir (str): Optional output directory. If None, uses TORNADOVM_HOME.
     """
     tornado_sdk = os.environ.get("TORNADOVM_HOME")
-    project_root = get_project_root()
 
-    # Generate argfile template in specified directory or SDK directory
     if output_dir:
         output_file = Path(output_dir) / "tornado-argfile.template"
     else:
         output_file = Path(tornado_sdk) / "tornado-argfile.template"
-    export_paths = get_export_list_paths(tornado_sdk)
 
-    # Clean old file
     if output_file.exists():
         output_file.unlink()
 
-    # Get Java flags from tornado command
     java_flags = get_tornado_flags()
 
-    # Parse backends (split comma-separated list and trim whitespace)
-    # Normalize backend names by removing "-backend" suffix if present
-    backend_list = [b.strip().replace("-backend", "") for b in backends.split(",")]
+    # Templatize the SDK path so the file is relocatable. tornado --printJavaFlags builds its paths
+    # from $TORNADOVM_HOME, so replacing that exact prefix (and its real target, in case it is a
+    # symlink) yields ${TORNADOVM_HOME}-relative paths.
+    sdk_candidates = [tornado_sdk, str(Path(tornado_sdk).resolve())]
 
-    # Start building the output content
-    output_lines = []
+    def templatize(token):
+        for base in sdk_candidates:
+            if base and base in token:
+                token = token.replace(base, "${TORNADOVM_HOME}")
+        return token
 
-    # === JVM mode and memory settings ===
-    # Extract JVM-specific flags like -XX:+UseParallelGC, -server, --enable-preview
-    output_lines.append("# === JVM mode and memory settings ===")
-    for flag in java_flags:
-        if flag.startswith("-XX") or flag == "-server" or flag == "--enable-preview":
-            output_lines.append(flag)
-    output_lines.append("")
+    # Options that take a following value token (keep the pair on one line).
+    valued_options = {"--module-path", "-p", "--add-modules", "--add-exports",
+                      "--add-opens", "--add-reads", "--patch-module", "--upgrade-module-path"}
 
-    # === Native library path ===
-    # Note: This will be expanded by the tornado launcher or manually via envsubst
-    output_lines.append("# === Native library path ===")
-    # Use OS-appropriate path separator (\ on Windows, / on Unix)
-    lib_path = f"-Djava.library.path=${{TORNADOVM_HOME}}{os.sep}lib"
-    output_lines.append(lib_path)
-    output_lines.append("")
+    output_lines = [
+        "# Generated by gen-tornado-argfile-template.py - faithful copy of `tornado --printJavaFlags`.",
+        "# Expand ${TORNADOVM_HOME} (e.g. `envsubst < this > tornado.args`), then run:",
+        "#   java @tornado.args -m <module>/<Main-Class> [app args]",
+        "",
+    ]
 
-    # === Tornado runtime classes ===
-    # Extract TornadoVM-specific system properties
-    output_lines.append("# === Tornado runtime classes ===")
-    for flag in java_flags:
-        if flag.startswith("-Dtornado"):
-            output_lines.append(flag)
-    output_lines.append("")
-
-    # === Module system ===
-    output_lines.append("# === Module system ===")
-    # Add module paths with ${TORNADOVM_HOME} placeholders
-    # Use OS-appropriate separators: ; on Windows, : on Unix for path lists
-    # Use \ on Windows, / on Unix for file paths
-    module_path = f"--module-path .{os.pathsep}${{TORNADOVM_HOME}}{os.sep}share{os.sep}java{os.sep}tornado"
-    upgrade_module_path = f"--upgrade-module-path ${{TORNADOVM_HOME}}{os.sep}share{os.sep}java{os.sep}graalJars"
-    output_lines.append(module_path)
-    output_lines.append(upgrade_module_path)
-    # Extract and add --add-modules
     i = 0
-    while i < len(java_flags):
-        flag = java_flags[i]
-        if flag == "--add-modules":
-            if i + 1 < len(java_flags):
-                output_lines.append(f"{flag} {java_flags[i+1]}")
-                i += 2
-                continue
-        i += 1
-    output_lines.append("")
-
-    # === Export lists ===
-    # Add --add-exports directives that expose internal JDK modules to TornadoVM
-    output_lines.append("# === Export lists ===")
-    output_lines.append("")
-
-    # Common exports (always included regardless of backend)
-    # These expose core compiler and runtime modules needed by all backends
-    output_lines.append(f"# ===: {export_paths['common'].name} ===")
-    output_lines.extend(strip_comments(export_paths["common"]))
-    output_lines.append("")
-
-    # SPIRV backend depends on OpenCL runtime, so ensure OpenCL exports are included
-    # when SPIRV is in the backend list (but don't add opencl to backend_list itself)
-    exports_to_include = backend_list.copy()
-    if "spirv" in backend_list and "opencl" not in exports_to_include:
-        exports_to_include.insert(0, "opencl")
-
-    # Backend-specific exports
-    # Each backend (opencl, ptx, spirv) requires access to different internal modules
-    for backend in exports_to_include:
-        if backend in export_paths:
-            output_lines.append(f"# === {export_paths[backend].name} ===")
-            output_lines.extend(strip_comments(export_paths[backend]))
+    n = len(java_flags)
+    while i < n:
+        token = java_flags[i]
+        if token.startswith("@"):
+            # Inline the export-list file (nested @argfiles are not expanded inside an argfile).
+            include = token[1:]
+            output_lines.append(f"# --- inlined {os.path.basename(include)} ---")
+            output_lines.extend(strip_comments(include))
             output_lines.append("")
+            i += 1
+        elif token in valued_options and i + 1 < n:
+            output_lines.append(f"{token} {templatize(java_flags[i + 1])}")
+            i += 2
+        else:
+            output_lines.append(templatize(token))
+            i += 1
 
-    # Write to file (argfile format: one argument per line)
     with open(output_file, "w") as f:
         f.write("\n".join(output_lines) + "\n")
+
+    print(f"[INFO] Wrote {output_file} ({backends})")
 
 def main():
     if len(sys.argv) < 2:

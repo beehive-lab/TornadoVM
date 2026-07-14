@@ -28,7 +28,6 @@ package uk.ac.manchester.tornado.drivers.cuda.mm;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMRuntime;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEBUG;
 
 import java.lang.reflect.Field;
@@ -37,9 +36,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
 import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaField;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
@@ -57,6 +56,7 @@ import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -66,8 +66,8 @@ public class CUDAFieldBuffer implements XPUBuffer {
 
     private final long bytesObjectReference;
     private final boolean areCoopsEnabled;
-    private final HotSpotResolvedJavaType resolvedType;
-    private final HotSpotResolvedJavaField[] fields;
+    private final ResolvedJavaType resolvedType;
+    private final ResolvedJavaField[] fields;
     private final FieldBuffer[] wrappedFields;
     private final Class<?> objectType;
     private final int hubOffset;
@@ -91,15 +91,15 @@ public class CUDAFieldBuffer implements XPUBuffer {
 
         hubOffset = getVMConfig().hubOffset;
         fieldsOffset = getVMConfig().instanceKlassFieldsOffset();
-        resolvedType = (HotSpotResolvedJavaType) getVMRuntime().getHostJVMCIBackend().getMetaAccess().lookupJavaType(objectType);
+        resolvedType = (ResolvedJavaType) TornadoCoreRuntime.getTornadoRuntime().getMetaAccess().lookupJavaType(objectType);
 
-        fields = (HotSpotResolvedJavaField[]) resolvedType.getInstanceFields(includeSuperClasses);
+        fields = (ResolvedJavaField[]) resolvedType.getInstanceFields(includeSuperClasses);
         sortFieldsByOffset();
 
         wrappedFields = new FieldBuffer[fields.length];
 
         for (int index = 0; index < fields.length; index++) {
-            HotSpotResolvedJavaField field = fields[index];
+            ResolvedJavaField field = fields[index];
             final Field reflectedField = getField(findDeclaringClass(field), field.getName());
             final Class<?> type = reflectedField.getType();
 
@@ -285,7 +285,7 @@ public class CUDAFieldBuffer implements XPUBuffer {
         for (int i = 0; i < fields.length; i++) {
             for (int j = 0; j < fields.length; j++) {
                 if (fields[i].getOffset() < fields[j].getOffset()) {
-                    final HotSpotResolvedJavaField tmp = fields[j];
+                    final ResolvedJavaField tmp = fields[j];
                     fields[j] = fields[i];
                     fields[i] = tmp;
                 }
@@ -302,7 +302,7 @@ public class CUDAFieldBuffer implements XPUBuffer {
         if (fields.length > 0) {
             buffer.position(fields[0].getOffset());
             for (int i = 0; i < fields.length; i++) {
-                HotSpotResolvedJavaField field = fields[i];
+                ResolvedJavaField field = fields[i];
                 Field f = getField(findDeclaringClass(field), field.getName());
                 if (DEBUG) {
                     logger.trace("writing field: name=%s, offset=%d", field.getName(), field.getOffset());
@@ -321,7 +321,7 @@ public class CUDAFieldBuffer implements XPUBuffer {
             buffer.position(fields[0].getOffset());
 
             for (int i = 0; i < fields.length; i++) {
-                HotSpotResolvedJavaField field = fields[i];
+                ResolvedJavaField field = fields[i];
                 Field f = getField(findDeclaringClass(field), field.getName());
                 f.setAccessible(true);
                 if (DEBUG) {
@@ -332,7 +332,7 @@ public class CUDAFieldBuffer implements XPUBuffer {
         }
     }
 
-    private Class<?> findDeclaringClass(HotSpotResolvedJavaField field) {
+    private Class<?> findDeclaringClass(ResolvedJavaField field) {
         Class<?> objectTypeTemp = objectType;
         while (objectTypeTemp != null && !objectTypeTemp.getName().equals(field.getDeclaringClass().toJavaName())) {
             objectTypeTemp = objectTypeTemp.getSuperclass();
@@ -481,7 +481,7 @@ public class CUDAFieldBuffer implements XPUBuffer {
     private long getObjectSize() {
         long size = fieldsOffset;
         if (fields.length > 0) {
-            HotSpotResolvedJavaField field = fields[fields.length - 1];
+            ResolvedJavaField field = fields[fields.length - 1];
             size = field.getOffset() + ((field.getJavaKind().isObject()) ? bytesObjectReference : field.getJavaKind().getByteCount());
         }
         // when coops are enabled, padding is required to ensure an 8-byte object alignment

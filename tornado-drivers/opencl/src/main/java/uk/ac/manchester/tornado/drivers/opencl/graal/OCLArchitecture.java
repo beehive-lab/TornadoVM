@@ -77,10 +77,10 @@ public class OCLArchitecture extends Architecture {
                 oclKind = OCLKind.USHORT;
                 break;
             case Int:
-                oclKind = (javaKind.isUnsigned()) ? OCLKind.UINT : OCLKind.INT;
+                oclKind = (javaKind.isUnsigned() || getWordKind() == OCLKind.UINT) ? OCLKind.UINT : OCLKind.INT;
                 break;
             case Long:
-                oclKind = (javaKind.isUnsigned()) ? OCLKind.ULONG : OCLKind.LONG;
+                oclKind = (javaKind.isUnsigned() || getWordKind() == OCLKind.ULONG) ? OCLKind.ULONG : OCLKind.LONG;
                 break;
             case Float:
                 oclKind = OCLKind.FLOAT;

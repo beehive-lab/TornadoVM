@@ -26,18 +26,18 @@
 
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes.calc;
 
-import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
-import org.graalvm.compiler.core.common.type.Stamp;
-import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.lir.LIRFrameState;
-import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
-import org.graalvm.compiler.nodeinfo.NodeCycles;
-import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.NodeView;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.BinaryArithmeticNode;
-import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import tornado.graal.compiler.core.common.type.ArithmeticOpTable;
+import tornado.graal.compiler.core.common.type.Stamp;
+import tornado.graal.compiler.graph.NodeClass;
+import tornado.graal.compiler.lir.LIRFrameState;
+import tornado.graal.compiler.lir.gen.ArithmeticLIRGeneratorTool;
+import tornado.graal.compiler.nodeinfo.NodeCycles;
+import tornado.graal.compiler.nodeinfo.NodeInfo;
+import tornado.graal.compiler.nodes.ConstantNode;
+import tornado.graal.compiler.nodes.NodeView;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.calc.BinaryArithmeticNode;
+import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 
 
 /*

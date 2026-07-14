@@ -24,8 +24,8 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.spi.LIRKindTool;
+import tornado.graal.compiler.core.common.LIRKind;
+import tornado.graal.compiler.core.common.spi.LIRKindTool;
 
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVTargetDescription;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;

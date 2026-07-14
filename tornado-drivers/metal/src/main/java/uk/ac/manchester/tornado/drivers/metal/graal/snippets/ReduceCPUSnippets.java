@@ -23,17 +23,17 @@
  */
 package uk.ac.manchester.tornado.drivers.metal.graal.snippets;
 
-import org.graalvm.compiler.api.replacements.Snippet;
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.spi.LoweringTool;
-import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.util.Providers;
-import org.graalvm.compiler.replacements.SnippetTemplate;
-import org.graalvm.compiler.replacements.SnippetTemplate.AbstractTemplates;
-import org.graalvm.compiler.replacements.SnippetTemplate.Arguments;
-import org.graalvm.compiler.replacements.SnippetTemplate.SnippetInfo;
-import org.graalvm.compiler.replacements.Snippets;
+import tornado.graal.compiler.api.replacements.Snippet;
+import tornado.graal.compiler.nodes.GraphState;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.spi.LoweringTool;
+import tornado.graal.compiler.options.OptionValues;
+import tornado.graal.compiler.phases.util.Providers;
+import tornado.graal.compiler.replacements.SnippetTemplate;
+import tornado.graal.compiler.replacements.SnippetTemplate.AbstractTemplates;
+import tornado.graal.compiler.replacements.SnippetTemplate.Arguments;
+import tornado.graal.compiler.replacements.SnippetTemplate.SnippetInfo;
+import tornado.graal.compiler.replacements.Snippets;
 
 import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.api.math.TornadoMath;

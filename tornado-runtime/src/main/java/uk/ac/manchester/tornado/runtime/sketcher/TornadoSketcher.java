@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.runtime.sketcher;
 
-import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
+import static tornado.graal.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getOptions;
@@ -41,21 +41,21 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.graalvm.compiler.debug.DebugCloseable;
-import org.graalvm.compiler.debug.DebugContext;
-import org.graalvm.compiler.debug.DebugDumpScope;
-import org.graalvm.compiler.debug.TimerKey;
-import org.graalvm.compiler.nodes.CallTargetNode;
-import org.graalvm.compiler.nodes.ParameterNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
-import org.graalvm.compiler.nodes.StructuredGraph.Builder;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.phases.OptimisticOptimizations;
-import org.graalvm.compiler.phases.PhaseSuite;
-import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
-import org.graalvm.compiler.phases.tiers.HighTierContext;
-import org.graalvm.compiler.phases.util.Providers;
+import tornado.graal.compiler.debug.DebugCloseable;
+import tornado.graal.compiler.debug.DebugContext;
+import tornado.graal.compiler.debug.DebugDumpScope;
+import tornado.graal.compiler.debug.TimerKey;
+import tornado.graal.compiler.nodes.CallTargetNode;
+import tornado.graal.compiler.nodes.ParameterNode;
+import tornado.graal.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.nodes.StructuredGraph.AllowAssumptions;
+import tornado.graal.compiler.nodes.StructuredGraph.Builder;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.phases.OptimisticOptimizations;
+import tornado.graal.compiler.phases.PhaseSuite;
+import tornado.graal.compiler.phases.common.DeadCodeEliminationPhase;
+import tornado.graal.compiler.phases.tiers.HighTierContext;
+import tornado.graal.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
@@ -233,6 +233,13 @@ public class TornadoSketcher {
             }
             int paramIndex = param.index();
 
+            // The callee's argument-access array can be shorter than the call's argument list (e.g. an
+            // intrinsified KernelContext accessor whose sketch is looked up before it is fully built on the
+            // concurrent sketch path). A missing callee access is unknown, so leave the caller access as is
+            // rather than indexing out of bounds.
+            if (index >= calleeAccesses.length) {
+                continue;
+            }
             Access calleeAcc = calleeAccesses[index];
             Access callerAcc = callerAccesses[paramIndex];
 

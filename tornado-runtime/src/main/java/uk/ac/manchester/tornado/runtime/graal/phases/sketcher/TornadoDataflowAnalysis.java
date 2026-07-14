@@ -27,42 +27,46 @@ import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Queue;
+import java.util.Set;
 
-import org.graalvm.compiler.core.common.type.ObjectStamp;
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.BeginNode;
-import org.graalvm.compiler.nodes.BinaryOpLogicNode;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.IfNode;
-import org.graalvm.compiler.nodes.NodeView;
-import org.graalvm.compiler.nodes.ParameterNode;
-import org.graalvm.compiler.nodes.PhiNode;
-import org.graalvm.compiler.nodes.PiNode;
-import org.graalvm.compiler.nodes.StartNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.BinaryArithmeticNode;
-import org.graalvm.compiler.nodes.extended.JavaReadNode;
-import org.graalvm.compiler.nodes.extended.JavaWriteNode;
-import org.graalvm.compiler.nodes.java.LoadFieldNode;
-import org.graalvm.compiler.nodes.java.LoadIndexedNode;
-import org.graalvm.compiler.nodes.java.StoreFieldNode;
-import org.graalvm.compiler.nodes.java.StoreIndexedNode;
-import org.graalvm.compiler.nodes.memory.ReadNode;
-import org.graalvm.compiler.nodes.memory.WriteNode;
-import org.graalvm.compiler.nodes.memory.address.AddressNode;
-import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
-import org.graalvm.compiler.phases.BasePhase;
+import tornado.graal.compiler.core.common.type.ObjectStamp;
+import tornado.graal.compiler.graph.Node;
+import tornado.graal.compiler.nodes.BeginNode;
+import tornado.graal.compiler.nodes.BinaryOpLogicNode;
+import tornado.graal.compiler.nodes.ConstantNode;
+import tornado.graal.compiler.nodes.GraphState;
+import tornado.graal.compiler.nodes.IfNode;
+import tornado.graal.compiler.nodes.NodeView;
+import tornado.graal.compiler.nodes.ParameterNode;
+import tornado.graal.compiler.nodes.PhiNode;
+import tornado.graal.compiler.nodes.PiNode;
+import tornado.graal.compiler.nodes.StartNode;
+import tornado.graal.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.calc.BinaryArithmeticNode;
+import tornado.graal.compiler.nodes.extended.JavaReadNode;
+import tornado.graal.compiler.nodes.extended.JavaWriteNode;
+import tornado.graal.compiler.nodes.java.LoadFieldNode;
+import tornado.graal.compiler.nodes.java.LoadIndexedNode;
+import tornado.graal.compiler.nodes.java.MethodCallTargetNode;
+import tornado.graal.compiler.nodes.java.StoreFieldNode;
+import tornado.graal.compiler.nodes.java.StoreIndexedNode;
+import tornado.graal.compiler.nodes.memory.ReadNode;
+import tornado.graal.compiler.nodes.memory.WriteNode;
+import tornado.graal.compiler.nodes.memory.address.AddressNode;
+import tornado.graal.compiler.nodes.memory.address.OffsetAddressNode;
+import tornado.graal.compiler.phases.BasePhase;
 
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelStrideNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkArrayParameterAccess;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkOCLWriteNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkVectorStore;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
 
@@ -204,7 +208,8 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 if (((ValueNode) currentNode).stamp(NodeView.DEFAULT).javaType(metaAccess).isArray()) {
                     nodesToProcess.addAll(currentNode.usages().snapshot());
                 }
-            } else if (currentNode instanceof StoreIndexedNode || currentNode instanceof StoreAtomicIndexedNode || currentNode instanceof WriteNode || currentNode instanceof JavaWriteNode) {
+            } else if (currentNode instanceof StoreIndexedNode || currentNode instanceof StoreAtomicIndexedNode || currentNode instanceof WriteNode || currentNode instanceof JavaWriteNode
+                    || currentNode instanceof MarkOCLWriteNode) {
                 MetaControlFlow meta = analyseControlFlowForWriting(currentNode, fatherNodeStore, isWrittenTrueCondition, isWrittenFalseCondition);
                 fatherNodeStore = meta.fatherNodeStore();
                 isWrittenTrueCondition = meta.isWrittenTrueCondition();
@@ -220,9 +225,12 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 }
                 isRead = true;
             } else if (currentNode instanceof LoadFieldNode loadField) {
-                if (isTornadoNativeArray(loadField)) {
-                    continue;
-                }
+                // A native-array field (e.g. Matrix2DFloat.storage, VectorFloat.storage) must have its usages
+                // followed: a write THROUGH the nested array (b.storage.set(...)) has to mark the enclosing
+                // parameter b as written, otherwise no DependentReadNode/CopyOut is emitted and the result is
+                // never copied back to the host (reads 0). The previous `isTornadoNativeArray` skip stopped this
+                // traversal - it fired spuriously on the JVMCI-absent (reflection) path where the field toString
+                // contains the full array type name (HotSpot's field toString did not, so JDK<=21 worked).
                 if (loadField.stamp(NodeView.DEFAULT) instanceof ObjectStamp) {
                     loadField.usages().forEach(nodesToProcess::add);
                 }
@@ -246,6 +254,19 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 if (declared == Access.WRITE_ONLY || declared == Access.READ_WRITE) {
                     isWritten = true;
                 }
+            } else if (currentNode instanceof MethodCallTargetNode callTarget && isSurvivingMMAStore(callTarget)) {
+                // Reflection-path only: the ctx.mmaStore*/tensor-core store intrinsic misses its InvocationPlugin
+                // at parse time, so the call survives as a plain invoke through sketch-time dataflow (the
+                // MarkArrayParameterAccess node it normally lowers to does not exist yet). Recognise it here so the
+                // output array parameter is marked written and gets allocated + copied device-to-host (otherwise the
+                // device buffer is never created and the kernel store faults with CUDA_ERROR_ILLEGAL_ADDRESS).
+                isWritten = true;
+            } else if (currentNode instanceof MethodCallTargetNode callTarget && isSurvivingAtomicAdd(callTarget)) {
+                // Reflection-path only: ctx.atomicAdd misses its plugin, so the call survives through sketch-time
+                // dataflow. It atomically read-modify-writes its array argument, so mark the parameter read AND
+                // written; otherwise it is copied device->host WRITE_ONLY (or not at all) and the result reads 0.
+                isRead = true;
+                isWritten = true;
             } else if (isNodeFromKnownObject(currentNode)) {
                 // All known objects are passed by reference -> R/W (e.g., Atomics)
                 isRead = true;
@@ -279,13 +300,44 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
         return result;
     }
 
-    private boolean isTornadoNativeArray(LoadFieldNode loadFieldNode) {
-        String field = loadFieldNode.field().toString();
+    private static final String KERNEL_CONTEXT_CLASS = "uk.ac.manchester.tornado.api.KernelContext";
+    private static final Set<String> MMA_STORE_METHODS = Set.of("mmaStore", "mmaStoreInt", "mmaStoreBSwizzled");
+    private static final Set<String> ATOMIC_ADD_METHODS = Set.of("atomicAdd");
 
-        return field.contains("uk.ac.manchester.tornado.api.types.arrays.IntArray") || field.contains("uk.ac.manchester.tornado.api.types.arrays.DoubleArray") || field.contains(
-                "uk.ac.manchester.tornado.api.types.arrays.FloatArray") || field.contains("uk.ac.manchester.tornado.api.types.arrays.LongArray") || field.contains(
-                        "uk.ac.manchester.tornado.api.types.arrays.CharArray") || field.contains("uk.ac.manchester.tornado.api.types.arrays.ShortArray") || field.contains(
-                                "uk.ac.manchester.tornado.api.types.arrays.ByteArray");
+    /**
+     * Pure matcher (unit-testable without a Graal graph): true when {@code declaringClassJavaName} is
+     * {@code uk.ac.manchester.tornado.api.KernelContext} and {@code methodName} is one of {@code methodNames}.
+     * Scoping to the declaring class + an exact name set avoids false positives from user methods that merely
+     * happen to contain "mmaStore"/"atomicAdd" in their name.
+     */
+    static boolean matchesKernelContextMethod(String declaringClassJavaName, String methodName, Set<String> methodNames) {
+        return KERNEL_CONTEXT_CLASS.equals(declaringClassJavaName) && methodNames.contains(methodName);
+    }
+
+    private static boolean matchesKernelContextCall(MethodCallTargetNode callTarget, Set<String> methodNames) {
+        ResolvedJavaMethod target = callTarget.targetMethod();
+        if (target == null || target.getDeclaringClass() == null) {
+            return false;
+        }
+        return matchesKernelContextMethod(target.getDeclaringClass().toJavaName(), target.getName(), methodNames);
+    }
+
+    /**
+     * True when the call target is a surviving tensor-core store intrinsic (ctx.mmaStore / mmaStoreInt /
+     * mmaStoreBSwizzled) whose array argument is written on the device. On the reflection path the invoke is not yet
+     * lowered to its {@link MarkArrayParameterAccess} node, so it is recognised by declaring class + exact name.
+     */
+    private static boolean isSurvivingMMAStore(MethodCallTargetNode callTarget) {
+        return matchesKernelContextCall(callTarget, MMA_STORE_METHODS);
+    }
+
+    /**
+     * True when the call target is a surviving {@code ctx.atomicAdd} intrinsic, which atomically
+     * read-modify-writes its array argument. On the reflection path the invoke is not yet lowered to its atomic node
+     * when this sketch-time analysis runs, so it is recognised by declaring class + exact name.
+     */
+    private static boolean isSurvivingAtomicAdd(MethodCallTargetNode callTarget) {
+        return matchesKernelContextCall(callTarget, ATOMIC_ADD_METHODS);
     }
 
     /**

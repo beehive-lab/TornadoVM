@@ -10,6 +10,12 @@ build jdk21:
 rebuild-deps-jdk21:
 	bin/compile --jdk jdk21 --rebuild --backend $(BACKEND)
 
+jdk27:
+	bin/compile --jdk jdk27 --backend $(BACKEND)
+
+rebuild-deps-jdk27:
+	bin/compile --jdk jdk27 --rebuild --backend $(BACKEND)
+
 graal-jdk-21:
 	bin/compile --jdk graal-jdk-21 --backend $(BACKEND)
 
@@ -51,6 +57,12 @@ xilinx_emulation:
 checkstyle:
 	./mvnw checkstyle:check
 
+# Pure-JVM (no-GPU) unit tests for the reflection JVMCI layer. Every JDK profile skips surefire,
+# so force it on here. Override the profile with JDK=jdk25|jdk26|jdk27 to run under another JDK.
+JDK ?= jdk21
+unit-tests:
+	./mvnw -P$(JDK) -pl tornado-runtime test -DskipTests=false
+
 clean:
 	./mvnw -Popencl-backend,ptx-backend,spirv-backend,cuda-backend,metal-backend clean
 
@@ -69,6 +81,17 @@ fast-tests:
 	tornado --devices
 	tornado-test --ea --verbose --quickPass
 	tornado-test --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	test-native.sh
+
+# NOTE: JDK 27 (JVMCI-free) omits --ea. Graal 23.1.0's StandardGraphBuilderPlugins.registerUnsafePlugins0
+# registers an invocation plugin for jdk.internal.misc.Unsafe.getObject (renamed getReference on JDK 27),
+# and the InvocationPlugins.checkResolvable ASSERTION aborts backend init before any kernel runs -> all
+# tests fail. Assertions off, the suite runs normally. See JDK27-CHECKLIST.md §1.
+fast-tests-jdk27:
+	rm -f tornado_unittests.log
+	tornado --devices
+	tornado-test --verbose --quickPass
+	tornado-test -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
 
 tests-uncompressed:

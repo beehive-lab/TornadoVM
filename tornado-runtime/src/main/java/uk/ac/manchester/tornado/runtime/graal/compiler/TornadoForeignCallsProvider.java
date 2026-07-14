@@ -25,11 +25,11 @@ package uk.ac.manchester.tornado.runtime.graal.compiler;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
-import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
-import org.graalvm.compiler.core.common.spi.ForeignCallSignature;
-import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
+import tornado.graal.compiler.core.common.LIRKind;
+import tornado.graal.compiler.core.common.spi.ForeignCallDescriptor;
+import tornado.graal.compiler.core.common.spi.ForeignCallLinkage;
+import tornado.graal.compiler.core.common.spi.ForeignCallSignature;
+import tornado.graal.compiler.core.common.spi.ForeignCallsProvider;
 
 import jdk.vm.ci.meta.JavaKind;
 

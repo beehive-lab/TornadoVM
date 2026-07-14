@@ -26,42 +26,32 @@
 package uk.ac.manchester.tornado.runtime.analyzer;
 
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getOptions;
 
 import java.lang.reflect.Method;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import org.graalvm.collections.EconomicMap;
-import org.graalvm.compiler.api.runtime.GraalJVMCICompiler;
-import org.graalvm.compiler.code.CompilationResult;
-import org.graalvm.compiler.core.GraalCompiler;
-import org.graalvm.compiler.core.common.CompilationIdentifier;
-import org.graalvm.compiler.core.common.CompilationRequestIdentifier;
-import org.graalvm.compiler.core.target.Backend;
-import org.graalvm.compiler.debug.DebugContext;
-import org.graalvm.compiler.debug.DebugDumpScope;
-import org.graalvm.compiler.hotspot.HotSpotGraalOptionValues;
-import org.graalvm.compiler.java.GraphBuilderPhase;
-import org.graalvm.compiler.lir.asm.CompilationResultBuilderFactory;
-import org.graalvm.compiler.lir.phases.LIRSuites;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
-import org.graalvm.compiler.options.OptionKey;
-import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.OptimisticOptimizations;
-import org.graalvm.compiler.phases.PhaseSuite;
-import org.graalvm.compiler.phases.tiers.HighTierContext;
-import org.graalvm.compiler.phases.tiers.Suites;
-import org.graalvm.compiler.phases.util.Providers;
-import org.graalvm.compiler.runtime.RuntimeProvider;
+import tornado.graal.compiler.core.common.CompilationIdentifier;
+import tornado.graal.compiler.debug.DebugContext;
+import tornado.graal.compiler.debug.DebugDumpScope;
+import tornado.graal.compiler.java.GraphBuilderPhase;
+import tornado.graal.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.nodes.StructuredGraph.AllowAssumptions;
+import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
+import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import tornado.graal.compiler.options.OptionValues;
+import tornado.graal.compiler.phases.OptimisticOptimizations;
+import tornado.graal.compiler.phases.PhaseSuite;
+import tornado.graal.compiler.phases.tiers.HighTierContext;
+import tornado.graal.compiler.phases.util.Providers;
 
-import jdk.vm.ci.code.InstalledCode;
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.ProfilingInfo;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.SpeculationLog;
-import jdk.vm.ci.runtime.JVMCI;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCompilerIdentifier;
 
 public class CodeAnalysis {
 
@@ -73,25 +63,28 @@ public class CodeAnalysis {
      * @return {@link StructuredGraph} Control Flow and DataFlow Graphs for the
      *     input method in the Graal-IR format,
      */
+    private static final AtomicInteger codeAnalysisId = new AtomicInteger(0);
+
     public static StructuredGraph buildHighLevelGraalGraph(Object taskInputCode) {
         Method methodToCompile = TaskUtils.resolveMethodHandle(taskInputCode);
-        GraalJVMCICompiler graalCompiler = (GraalJVMCICompiler) JVMCI.getRuntime().getCompiler();
-        RuntimeProvider capability = graalCompiler.getGraalRuntime().getCapability(RuntimeProvider.class);
-        Backend backend = capability.getHostBackend();
-        Providers providers = backend.getProviders();
-        MetaAccessProvider metaAccess = providers.getMetaAccess();
-        ResolvedJavaMethod resolvedJavaMethod = metaAccess.lookupJavaMethod(methodToCompile);
-        CompilationIdentifier compilationIdentifier = backend.getCompilationIdentifier(resolvedJavaMethod);
 
-        SpeculationLog speculationLog = resolvedJavaMethod.getSpeculationLog();
-        if (speculationLog != null) {
-            speculationLog.collectFailedSpeculations();
-        }
+        final Providers providers;
+        final ResolvedJavaMethod resolvedJavaMethod;
+        final CompilationIdentifier compilationIdentifier;
+        final SpeculationLog speculationLog;
+        final OptionValues options;
+
+        // Build the analysis graph from the TornadoVM backend's reflection-backed providers. The default
+        // (empty-plugin) graph builder reads the kernel bytecode via ResolvedJavaMethod.getCode() (Classfile
+        // parser), and keeps IntArray.set / ArrayLength as high-level nodes that the reduce loop-bound +
+        // operator analysis relies on.
+        providers = TornadoCoreRuntime.getTornadoRuntime().getBackend(0).getProviders();
+        resolvedJavaMethod = providers.getMetaAccess().lookupJavaMethod(methodToCompile);
+        compilationIdentifier = new TornadoCompilerIdentifier("code-analysis-" + resolvedJavaMethod.getName(), codeAnalysisId.getAndIncrement());
+        speculationLog = null;
+        options = getOptions();
 
         try (DebugContext.Scope ignored = getDebugContext().scope("compileMethodAndInstall", new DebugDumpScope("TornadoVM-Code-Analysis", true))) {
-            EconomicMap<OptionKey<?>, Object> opts = OptionValues.newOptionMap();
-            opts.putAll(HotSpotGraalOptionValues.defaultOptions().getMap());
-            OptionValues options = new OptionValues(opts);
             StructuredGraph graph = new StructuredGraph.Builder(options, getDebugContext(), AllowAssumptions.YES).speculationLog(speculationLog).method(resolvedJavaMethod).compilationId(
                     compilationIdentifier).build();
             PhaseSuite<HighTierContext> graphBuilderSuite = new PhaseSuite<>();
@@ -100,40 +93,11 @@ public class CodeAnalysis {
             getDebugContext().dump(DebugContext.BASIC_LEVEL, graph, "CodeToAnalyze");
             return graph;
         } catch (Throwable e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    /**
-     * It compiles and installs the method that represents the object {@code graph}.
-     *
-     * @param graph
-     *     Compile-graph
-     * @return {@link InstalledCode}
-     */
-    public static InstalledCode compileAndInstallMethod(StructuredGraph graph) {
-        ResolvedJavaMethod method = graph.method();
-        GraalJVMCICompiler graalCompiler = (GraalJVMCICompiler) JVMCI.getRuntime().getCompiler();
-        RuntimeProvider capability = graalCompiler.getGraalRuntime().getCapability(RuntimeProvider.class);
-        Backend backend = capability.getHostBackend();
-        Providers providers = backend.getProviders();
-        CompilationIdentifier compilationID = backend.getCompilationIdentifier(method);
-        EconomicMap<OptionKey<?>, Object> opts = OptionValues.newOptionMap();
-        opts.putAll(HotSpotGraalOptionValues.defaultOptions().getMap());
-        OptionValues options = new OptionValues(opts);
-        try (DebugContext.Scope ignored = getDebugContext().scope("compileMethodAndInstall", new DebugDumpScope(String.valueOf(compilationID), true))) {
-            PhaseSuite<HighTierContext> graphBuilderPhase = backend.getSuites().getDefaultGraphBuilderSuite();
-            Suites suites = backend.getSuites().getDefaultSuites(options, providers.getLowerer().getTarget().arch);
-            LIRSuites lirSuites = backend.getSuites().getDefaultLIRSuites(options);
-            OptimisticOptimizations optimizationsOpts = OptimisticOptimizations.ALL;
-            ProfilingInfo profilerInfo = graph.getProfilingInfo(method);
-            CompilationResult compilationResult = new CompilationResult(method.getSignature().toMethodDescriptor());
-            CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
-            GraalCompiler.compileGraph(graph, method, providers, backend, graphBuilderPhase, optimizationsOpts, profilerInfo, suites, lirSuites, compilationResult, factory, false);
-            return backend.addInstalledCode(getDebugContext(), method, CompilationRequestIdentifier.asCompilationRequest(compilationID), compilationResult);
-        } catch (Throwable e) {
-            throw getDebugContext().handle(e);
+            // Do not swallow the failure: returning null here leaves callers (e.g. reduce loop-bound analysis)
+            // to NPE downstream with no trace of the real cause. Log it and bail out so the compilation aborts
+            // cleanly with the underlying exception attached.
+            new TornadoLogger(CodeAnalysis.class).error("Code analysis graph build failed for %s: %s", resolvedJavaMethod.getName(), e);
+            throw new TornadoBailoutRuntimeException("Code analysis graph build failed for " + resolvedJavaMethod.getName(), e instanceof Exception ex ? ex : new RuntimeException(e));
         }
     }
 
