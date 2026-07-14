@@ -89,6 +89,18 @@ else()
 	set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3 --expt-relaxed-constexpr -Xcompiler=-fPIC -Xcompiler=-Wno-deprecated-declarations")
 endif()
 
+# CUTLASS 3.5.1's cuda_host_adapter.hpp casts function pointers loaded via
+# cudaGetDriverEntryPoint() to unversioned typedefs like
+# PFN_cuTensorMapEncodeTiled/PFN_cuTensorMapEncodeIm2col for CUDA 12.0-12.4.
+# CUDA 13.x's cudaTypedefs.h dropped those unversioned aliases (only the
+# versioned PFN_..._v12000 typedefs remain), so nvcc 13.x fails with
+# "identifier ... is undefined" merely parsing the (uninstantiated) template.
+# CUTLASS_ENABLE_DIRECT_CUDA_DRIVER_CALL switches that wrapper to call the
+# driver function directly instead of going through the missing typedef.
+if(CMAKE_CUDA_COMPILER_VERSION VERSION_GREATER_EQUAL 13.0)
+	set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -DCUTLASS_ENABLE_DIRECT_CUDA_DRIVER_CALL")
+endif()
+
 include_directories(
 	source/
 	${JNI_INCLUDE_DIRS}

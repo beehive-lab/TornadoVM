@@ -70,14 +70,14 @@ fast-tests:
 
 tests-uncompressed:
 	del /f tornado_unittests.log
-	python %TORNADOVM_HOME%\bin\tornado --devices
+	python %TORNADOVM_HOME%\bin\tornado.py --devices
 	python %TORNADOVM_HOME%\bin\tornado-test --verbose --uncompressed
 	python %TORNADOVM_HOME%\bin\tornado-test -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	%TORNADOVM_HOME%\bin\test-native.cmd
 
 fast-tests-uncompressed:
 	del /f tornado_unittests.log
-	python %TORNADOVM_HOME%\bin\tornado --devices
+	python %TORNADOVM_HOME%\bin\tornado.py --devices
 	python %TORNADOVM_HOME%\bin\tornado-test --verbose --quickPass --uncompressed
 	python %TORNADOVM_HOME%\bin\tornado-test -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	%TORNADOVM_HOME%\bin\test-native.cmd
