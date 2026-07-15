@@ -108,6 +108,14 @@ public interface CUDADeviceContextInterface extends TornadoDeviceContext {
         return TornadoOptions.ENABLE_STAGED_TRANSFERS;
     }
 
+    /**
+     * Releases the pinned host block backing the staging ring. Called at device teardown, once every
+     * plan has been reset.
+     */
+    default void releaseStagedRing() {
+        // no-op by default
+    }
+
     /* ---- CUDA Graph (stream capture) support ---- */
 
     default void beginExecutionGraphCapture(long executionPlanId) {

@@ -193,6 +193,9 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
         Set<Long> ids = new HashSet<>(device.getDeviceContext().getRegisteredPlanIds());
         ids.forEach(id -> device.getDeviceContext().reset(id));
         ids.clear();
+        // Every plan is now reset, so the device-wide staging ring has no user left: release its
+        // pinned host block here rather than in the per-plan reset above.
+        device.getDeviceContext().releaseStagedRing();
         disableProfilerOptions();
     }
 
