@@ -45,7 +45,6 @@ Debugging and Logging
    Flag                                              Description
    ================================================  ============================================================================
    ``-Dtornado.fullDebug=true``                      Enables full debug output including bytecode and runtime internals.
-   ``-Dtornado.fpgaDumpLog=true``                    Dumps FPGA HLS compilation logs.
    ``-Dtornado.printKernel=true``                    Prints generated OpenCL/PTX/SPIR-V kernels.
    ``-Dtornado.print.kernel.dir=FILENAME``           Saves generated kernels to the specified file.
    ``-Dtornado.threadInfo=true``                     Displays the number of threads used.
@@ -97,7 +96,11 @@ Performance & Scheduling
    ``-Ds0.t0.global.workgroup.size=X,Y,Z``                           Sets custom global workgroup size.
    ``-Ds0.t0.local.workgroup.size=X,Y,Z``                            Sets custom local workgroup size.
    ``-Dtornado.concurrent.devices=true``                             Enables concurrent execution across devices (default: false).
-   ``-Dtornado.{ptx,opencl}.priority=X``                             Sets driver priority (default: PTX=1, OpenCL=0).
+   ``-Dtornado.backend=N`` / ``-Dtornado.device=N``                  Sets the default backend/device index used when none is explicitly selected (default: 0 for both).
+   ``-Dtornado.{opencl,ptx,cuda,spirv,metal}.priority=X``            Sets backend priority; higher wins when multiple backends can run a task (default: OpenCL=10, SPIR-V=11, PTX=0, CUDA=0, Metal=0).
+   ``-Dtornado.reuse.device.buffers=false``                          Disables reusing device buffers across executions of the same task-graph (default: true).
+   ``-Dtornado.deallocate.buffers=false``                            Disables freeing device resources when the execution plan closes (default: true).
+   ``-Dtornado.scheduler.block=true``                                Partitions the iteration space into blocks (one per visible CPU core when running on CPUs) (default: false).
    ================================================================  ==============================================================================
 
 Precompiled and FPGA Options
@@ -112,7 +115,7 @@ Precompiled and FPGA Options
    Flag                                              Description
    ================================================  ============================================================
    ``-Dtornado.precompiled.binary=PATH``             Path to precompiled kernel or FPGA bitstream.
-   ``-Dtornado.fpga.conf.file=FILE``                 Path to the FPGA configuration file.
+   ``-Dtornado.fpga.conf.file=FILE``                 Path to the FPGA configuration file (default: none).
    ================================================  ============================================================
 
 Optimizations
@@ -128,12 +131,15 @@ Optimizations
    ================================================================  ===================================================================================================
    ``-Dtornado.enable.fma=true``                                     Enables fused multiply-add (default: true). May cause issues on some platforms.
    ``-Dtornado.enable.mathOptimizations=true``                       Enables math simplifications (e.g., ``1/sqrt(x)`` → ``rsqrt``) (default: true).
-   ``-Dtornado.experimental.partial.unroll=true``                    Enables loop partial unrolling (default: false). Use ``-Dtornado.partial.unroll.factor=FACTOR``.
-   ``-Dtornado.enable.nativeFunctions=true``                         Enables native math functions (default: false).
+   ``-Dtornado.enable.fastMathOptimizations=true``                   Enables more aggressive fast-math optimizations (default: true).
+   ``-Dtornado.experimental.partial.unroll=true``                    Enables loop partial unrolling (default: false). Use ``-Dtornado.unroll.factor=FACTOR`` (default: 4).
+   ``-Dtornado.enable.nativeFunctions=true``                         Enables native math functions (default: true).
    ================================================================  ===================================================================================================
 
-CUDA (PTX Specific)
-----------------------------
+PTX Backend Specific (CU_JIT Flags)
+-------------------------------------
+
+These are sub-flags passed as the value of ``-Dtornado.ptx.compiler.flags="..."`` (space-separated ``FLAG VALUE`` pairs), not standalone ``-D`` properties. They configure the PTX backend's JIT compilation, not the separate CUDA C backend below.
 
 **Flags**
 
@@ -156,6 +162,27 @@ CUDA (PTX Specific)
    ``CU_JIT_GENERATE_LINE_INFO``                                     Generate line number information (-lineinfo) (0: false) (default: none).
    ================================================================  ==================================================================================================================
 
+CUDA C Backend Specific
+---------------------------
+
+TornadoVM provides two separate NVIDIA backends: **PTX** (emits PTX assembly directly) and **CUDA C** (emits CUDA C, compiled to PTX via NVRTC, built on its own with :code:`make BACKEND=cuda`). The flags below apply to the CUDA C backend specifically.
+
+**JVM Flags**
+
+.. table::
+   :align: left
+
+   ================================================================  ==================================================================================================================
+   Flag                                                              Description
+   ================================================================  ==================================================================================================================
+   ``-Dtornado.cuda.compiler.flags=FLAGS``                           Passes additional flags to NVRTC when compiling the generated CUDA C source (default: none).
+   ``-Dtornado.cuda.host.pinning=false``                             Disables pinning host memory for faster host↔device transfers (default: true).
+   ================================================================  ==================================================================================================================
+
+.. note::
+
+   The CUDA C backend's code cache is controlled by properties that still carry the ``opencl`` prefix — inherited unchanged from the OpenCL backend's code cache implementation, and not (yet) renamed for CUDA. They apply to **both** backends: ``-Dtornado.opencl.codecache.enable=true``, ``-Dtornado.opencl.codecache.dump=true``, ``-Dtornado.opencl.source.dump=true``, ``-Dtornado.opencl.codecache.dir=PATH`` (default: ``/var/opencl-codecache``), ``-Dtornado.opencl.source.dir=PATH`` (default: ``/var/opencl-compiler``), ``-Dtornado.opencl.log.dir=PATH`` (default: ``/var/opencl-logs``).
+
 Level Zero (SPIR-V Specific)
 ----------------------------
 
@@ -168,9 +195,28 @@ Level Zero (SPIR-V Specific)
    Flag                                                              Description
    ================================================================  ==================================================================================================================
    ``-Dtornado.spirv.levelzero.alignment=64``                        Sets memory alignment (in bytes) for Level Zero buffers (default: 64).
-   ``-Dtornado.spirv.levelzero.thread.dispatcher=true``              Uses Level Zero’s thread block suggestion (default: true).
-   ``-Dtornado.spirv.loadstore=false``                               Optimizes Loads/Stores and simplifies the generated SPIR-V binary (experimental - default: false).
-   ``-Dtornado.spirv.levelzero.memoryAlloc.shared=false``            Enables shared memory buffers (default: false).
+   ``-Dtornado.spirv.loadstore=false``                               Optimizes loads/stores, using fewer virtual registers (experimental - default: true).
+   ``-Dtornado.spirv.levelzero.memoryAlloc.shared=false``            Enables shared memory buffers for the Level Zero backend (default: false).
+   ``-Dtornado.spirv.levelzero.extended.memory=false``               Disables the extended memory allocation mode for the Level Zero backend (default: true).
+   ``-Dtornado.spirv.runtimes=opencl,levelzero``                     Sets the SPIR-V dispatch runtime(s); the first in the list is the default (default: ``opencl,levelzero``).
+   ``-Dtornado.spirv.version=1.2``                                   Sets the minimum SPIR-V version to target (default: 1.2).
+   ================================================================  ==================================================================================================================
+
+Metal Specific
+--------------
+
+**JVM Flags**
+
+.. table::
+   :align: left
+
+   ================================================================  ==================================================================================================================
+   Flag                                                              Description
+   ================================================================  ==================================================================================================================
+   ``-Dtornado.metal.fastmath=true``                                 Compiles Metal kernels with fast/relaxed math (Metal's analogue of OpenCL's ``-cl-fast-relaxed-math``); trades some FP precision for speed (default: false).
+   ``-Dtornado.metal.threadgroupHint=true``                          Emits a ``max_total_threads_per_threadgroup`` attribute when the local work-group size is statically known, to help the Metal compiler tune occupancy (default: false).
+   ``-Dtornado.metal.profiling.enable=false``                        Disables Metal profiling (default: true).
+   ``-Dtornado.metal.compiler.flags=FLAGS``                          Passes additional flags to the Metal compiler (default: none).
    ================================================================  ==================================================================================================================
 
 Notes
