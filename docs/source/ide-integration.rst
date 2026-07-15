@@ -158,7 +158,7 @@ Configuring IntelliJ for TornadoVM
 1. Initializing the IntelliJ Project Files
 ==========================================
 
-To initialize IDE project files for building and running TornadoVM from IntelliJ, you must have first built TornadoVM and loaded the environment variables, as explained in the :ref:`installation`.
+To initialize IDE project files for building and running TornadoVM from IntelliJ, you must have first built TornadoVM and loaded the environment variables, as explained in :ref:`build-from-source`.
 
 .. code:: bash
 
