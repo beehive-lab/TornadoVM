@@ -83,7 +83,7 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
      * large enough that the per-chunk staging overhead is amortised.
      */
     private boolean useStagedTransfer() {
-        return TornadoOptions.ENABLE_STAGED_TRANSFERS && batchSize <= 0 && bufferSize >= TornadoOptions.STAGED_TRANSFER_MIN_SIZE;
+        return deviceContext.isStagedTransfersEnabled() && batchSize <= 0 && bufferSize >= TornadoOptions.STAGED_TRANSFER_MIN_SIZE;
     }
 
     @Override

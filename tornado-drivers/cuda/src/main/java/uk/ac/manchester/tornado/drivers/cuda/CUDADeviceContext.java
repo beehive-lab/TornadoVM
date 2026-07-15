@@ -84,6 +84,14 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
 
     /** Execution plans that requested intra-plan concurrency (multi-queue issue). */
     private final Set<Long> intraPlanConcurrencyPlans = Collections.synchronizedSet(new HashSet<>());
+
+    /**
+     * Whether large one-shot H2D uploads go through the pinned staging ring. Defaults to the
+     * -Dtornado.staged.transfers property and is overridden by the plan-level withStagedTransfers()
+     * API. Device-wide rather than per-plan: it also drives the host-pin decision in
+     * {@code allocate()}, and pinning is a property of the buffer, not of the plan using it.
+     */
+    private volatile boolean stagedTransfersEnabled = TornadoOptions.ENABLE_STAGED_TRANSFERS;
     /** Guards the one-time warning emitted when concurrency is requested on hardware that cannot overlap. */
     private boolean warnedUnsupportedConcurrency;
     /** Per-plan single-instance role queues (H2D / D2H) used when intra-plan concurrency is enabled. */
@@ -352,6 +360,16 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
             }
             intraPlanConcurrencyPlans.remove(executionPlanId);
         }
+    }
+
+    @Override
+    public void setStagedTransfers(boolean enabled) {
+        stagedTransfersEnabled = enabled;
+    }
+
+    @Override
+    public boolean isStagedTransfersEnabled() {
+        return stagedTransfersEnabled;
     }
 
     /**

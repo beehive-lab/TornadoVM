@@ -292,6 +292,10 @@ public class TornadoVMInterpreter {
         // bytecode, so transfer/launch routing (single- vs multi-stream) is decided per plan.
         interpreterDevice.setIntraPlanConcurrency(graphExecutionContext.getExecutionPlanId(), isIntraPlanConcurrencyActive());
 
+        // Push the staged-transfer setting before the plan's ALLOCs: it also decides whether a
+        // staged buffer skips the whole-segment host pin, which is settled at allocation time.
+        interpreterDevice.setStagedTransfers(graphExecutionContext.isStagedTransfersEnabled());
+
         // Recompute here (not just in the constructor): plan-level withIntraPlanConcurrency() is
         // applied after this interpreter is built, so latching it at construction misses it and the
         // dependency DAG (waitList -> cross-stream events) would never engage for concurrent plans.

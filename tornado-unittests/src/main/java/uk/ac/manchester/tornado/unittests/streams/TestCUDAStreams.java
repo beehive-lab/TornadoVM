@@ -561,11 +561,11 @@ public class TestCUDAStreams extends TornadoTestBase {
 
     /**
      * Staged transfers: a large FIRST_EXECUTION read-only input routed through the
-     * pinned host staging ring. A/B via {@code -Dtornado.staged.transfers=true}: with the flag
-     * off this exercises the direct (whole-segment-registered) path, with it on the chunked
-     * staging-ring path - including slot wrap-around (input >> ring capacity), the remainder chunk,
-     * and the kernel's dependency on the LAST chunk's event. Executes twice so the second run
-     * verifies the FIRST_EXECUTION buffer stays resident and correct.
+     * pinned host staging ring. {@link TornadoExecutionPlan#withStagedTransfers()} engages the
+     * chunked staging-ring path regardless of {@code -Dtornado.staged.transfers}, so this covers
+     * slot wrap-around (input >> ring capacity), the remainder chunk, and the kernel's dependency
+     * on the LAST chunk's event. Executes twice so the second run verifies the FIRST_EXECUTION
+     * buffer stays resident and correct.
      */
     @Test
     public void testStagedFirstExecutionTransfer() throws TornadoExecutionPlanException {
@@ -587,13 +587,46 @@ public class TestCUDAStreams extends TornadoTestBase {
 
         ImmutableTaskGraph itg = tg.snapshot();
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(itg)) {
-            plan.withIntraPlanConcurrency();
+            plan.withIntraPlanConcurrency().withStagedTransfers();
             for (int iteration = 0; iteration < 2; iteration++) {
                 out.init(-1.0f);
                 plan.execute();
                 for (int i = 0; i < size; i++) {
                     assertEquals(2.0f * (i % 1013), out.get(i), DELTA);
                 }
+            }
+        }
+    }
+
+    /**
+     * withoutStagedTransfers() must keep the direct path even when staging is enabled
+     * process-wide via {@code -Dtornado.staged.transfers=true}, so the plan-level opt-out
+     * overrides the property rather than the other way round.
+     */
+    @Test
+    public void testWithoutStagedTransfersOverridesProperty() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        final int size = 48 * 1024 * 1024;
+        FloatArray weights = new FloatArray(size);
+        FloatArray out = new FloatArray(size);
+        for (int i = 0; i < size; i++) {
+            weights.set(i, i % 1013);
+        }
+
+        TaskGraph tg = new TaskGraph("unstaged")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, weights)
+                .task("t0", TestCUDAStreams::scale, weights, out, 2.0f)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+
+        ImmutableTaskGraph itg = tg.snapshot();
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(itg)) {
+            plan.withoutStagedTransfers();
+            out.init(-1.0f);
+            plan.execute();
+            for (int i = 0; i < size; i++) {
+                assertEquals(2.0f * (i % 1013), out.get(i), DELTA);
             }
         }
     }
