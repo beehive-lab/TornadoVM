@@ -266,6 +266,14 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuMe
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+ * Method:    memcpyHostToHost
+ * Signature: (JJJ)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_memcpyHostToHost
+  (JNIEnv *, jclass, jlong, jlong, jlong);
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    cuMemFreeHost
  * Signature: (J)V
  */

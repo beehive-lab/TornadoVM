@@ -173,6 +173,15 @@ public class CUDACommandQueue extends CommandQueue {
 
     static native void clEnqueueWaitForEvents(long queueId, long[] events) throws CUDAException;
 
+    /** Allocates page-locked (pinned) host memory; returns 0 on failure. */
+    static native long cuMemAllocHost(long numBytes);
+
+    /** Releases pinned host memory allocated by {@link #cuMemAllocHost(long)}. */
+    static native void cuMemFreeHost(long hostPtr);
+
+    /** Plain host-side memcpy between raw pointers (staged-transfer slot fill). */
+    static native void memcpyHostToHost(long dstPtr, long srcPtr, long numBytes);
+
     /*
      * for CUDADriver 1.2 implementations
      */

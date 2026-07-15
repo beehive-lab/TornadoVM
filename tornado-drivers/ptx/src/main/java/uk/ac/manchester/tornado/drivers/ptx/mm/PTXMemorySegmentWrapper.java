@@ -77,6 +77,15 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
         this(deviceContext, INIT_VALUE, batchSize, access, sizeOfType);
     }
 
+    /**
+     * Whether transfers of this buffer should go through the pinned staging ring -
+     * enabled, non-batch (batched chunks are pipelined by the device-buffer ring instead), and
+     * large enough that the per-chunk staging overhead is amortised.
+     */
+    private boolean useStagedTransfer() {
+        return deviceContext.isStagedTransfersEnabled() && batchSize <= 0 && bufferSize >= TornadoOptions.STAGED_TRANSFER_MIN_SIZE;
+    }
+
     @Override
     public long toBuffer() {
         return this.bufferId;
@@ -166,7 +175,13 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
 
         int internalEvent;
         if (batchSize <= 0) {
-            internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
+            if (useStagedTransfer()) {
+                // Large one-shot upload (e.g. FIRST_EXECUTION weights) through the pinned
+                // staging ring - the source segment is deliberately NOT registered (see allocate()).
+                internalEvent = deviceContext.enqueueStagedWriteBuffer(executionPlanId, toBuffer(), bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
+            } else {
+                internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
+            }
         } else {
             // Honour the sub-region size like read() does: a reused (locked) buffer can be larger than
             // the current chunk (e.g. a full-chunk buffer serving the smaller remainder chunk), and
@@ -194,8 +209,15 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
         }
 
         // Register the full segment as pinned so that async H2D/D2H transfers
-        // can be non-blocking (DMA, avoids CUDA's internal staging copy)
-        if (registeredHostPointer == 0 && segment != null) {
+        // can be non-blocking (DMA, avoids CUDA's internal staging copy).
+        // For large read-only segments served by the staged-transfer ring, skip the upfront
+        // cuMemHostRegister (it synchronously pages in and pins the whole segment); the ring's own
+        // pinned slots make the chunked DMA async.
+        if (useStagedTransfer() && access == Access.READ_ONLY) {
+            if (TornadoOptions.FULL_DEBUG) {
+                logger.info("skipping host registration (staged transfers): %s", toString());
+            }
+        } else if (registeredHostPointer == 0 && segment != null) {
             boolean pinnedByThisCall = deviceContext.getDevice().getPTXContext()
                     .registerHostMemory(segment.address(), segment.byteSize());
             // Always record the address to prevent repeated cuMemHostRegister attempts

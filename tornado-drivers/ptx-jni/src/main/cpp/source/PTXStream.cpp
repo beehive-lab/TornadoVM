@@ -325,6 +325,20 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuMe
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+ * Method:    memcpyHostToHost
+ * Signature: (JJJ)V
+ *
+ * Plain host-side memcpy between raw pointers. Used by the staged-transfer
+ * path to fill a pinned staging slot from the (pageable) source segment on
+ * the CPU while a previous slot's async DMA is in flight.
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_memcpyHostToHost
+        (JNIEnv *env, jclass clazz, jlong dstPtr, jlong srcPtr, jlong numBytes) {
+    memcpy((void *) dstPtr, (const void *) srcPtr, (size_t) numBytes);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    cuMemFreeHost
  * Signature: (J)V
  *

@@ -22,6 +22,7 @@
 
 #include <jni.h>
 #include <cstdio>
+#include <cstring>
 #include "cuda_jni.h"
 #include "nvtx3/nvToolsExt.h"
 #include "nvtx3/nvToolsExtCuda.h"
@@ -438,6 +439,49 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
          jlong offset, jlong num_bytes, jlong device_ptr, jlongArray events) {
     cuda_queue_t *queue = (cuda_queue_t *) queue_id;
     return transfer_to_host(env, queue, (void *) host_pointer, host_offset, offset, num_bytes, device_ptr, events, blocking);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDACommandQueue
+ * Method:    cuMemAllocHost
+ * Signature: (J)J
+ *
+ * Allocates page-locked (pinned) host memory for the staged-transfer ring.
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQueue_cuMemAllocHost
+        (JNIEnv *env, jclass clazz, jlong numBytes) {
+    void *ptr = nullptr;
+    CUresult result = cuMemAllocHost(&ptr, (size_t) numBytes);
+    LOG_CUDA_AND_VALIDATE("cuMemAllocHost", result);
+    if (result != CUDA_SUCCESS) {
+        return 0L;
+    }
+    return (jlong) ptr;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDACommandQueue
+ * Method:    cuMemFreeHost
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQueue_cuMemFreeHost
+        (JNIEnv *env, jclass clazz, jlong hostPtr) {
+    CUresult result = cuMemFreeHost((void *) hostPtr);
+    LOG_CUDA_AND_VALIDATE("cuMemFreeHost", result);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDACommandQueue
+ * Method:    memcpyHostToHost
+ * Signature: (JJJ)V
+ *
+ * Plain host-side memcpy between raw pointers. Used by the staged-transfer
+ * path to fill a pinned staging slot from the (pageable) source segment on
+ * the CPU while a previous slot's async DMA is in flight.
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQueue_memcpyHostToHost
+        (JNIEnv *env, jclass clazz, jlong dstPtr, jlong srcPtr, jlong numBytes) {
+    memcpy((void *) dstPtr, (const void *) srcPtr, (size_t) numBytes);
 }
 
 /*
