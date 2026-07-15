@@ -34,6 +34,7 @@ if [[ $selected_backends == *"cuda"* ]]; then
   echo -e "\nTesting the Native CUDA API\n"
   tornado uk.ac.manchester.tornado.drivers.cuda.tests.TestCUDAJITCompiler
   tornado uk.ac.manchester.tornado.drivers.cuda.tests.TestCUDATornadoCompiler
+  tornado uk.ac.manchester.tornado.drivers.cuda.tests.TestHalf2PackedCodegen
 fi
 
 if [[ $selected_backends == *"spirv"* ]]; then
