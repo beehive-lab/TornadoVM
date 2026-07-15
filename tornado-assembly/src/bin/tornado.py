@@ -118,8 +118,13 @@ def check_dll_loadable(dll_path):
     if os.name != 'nt':
         return True
     try:
-        # Try to load the DLL using ctypes
-        ctypes.WinDLL(dll_path)
+        # winmode=0 restores the standard LoadLibraryExW search order (which
+        # consults PATH), matching how java.exe actually resolves the JNI
+        # library's dependencies at runtime. ctypes.WinDLL's default winmode
+        # (Python >= 3.8) is more restrictive and does not reliably search
+        # PATH, which produced false "cannot load" negatives here even when
+        # the DLL and all its dependencies were perfectly resolvable.
+        ctypes.WinDLL(dll_path, winmode=0)
         return True
     except OSError:
         return False
@@ -326,22 +331,56 @@ def validate_cuda_backend(sdk_path):
 
         has_nvidia_driver = check_nvidia_driver()
 
-        print("[CAUSE] Missing NVIDIA CUDA Toolkit or drivers")
-        print("        The CUDA backend requires:")
-        print("        - NVIDIA GPU")
-        print("        - NVIDIA drivers (usually pre-installed on Windows)")
-        print("        - CUDA Toolkit 12.0+")
-        print()
+        # add_cuda_toolkit_to_path() already ran (see validate_windows_dependencies)
+        # and put every existing %CUDA_PATH%\bin / %CUDA_PATH%\bin\x64 on PATH,
+        # so a load failure here is diagnosed from *why* that did or didn't
+        # help, rather than assuming the Toolkit itself is missing --
+        # tornado-cuda.dll existing (checked above) plus a load failure almost
+        # always means a dependent runtime DLL (nvrtc64_*.dll, cudart64_*.dll,
+        # ...) couldn't be resolved, which is a different problem than "no
+        # Toolkit installed".
+        cuda_path = os.environ.get('CUDA_PATH')
+        cuda_bin_dirs = get_cuda_bin_dirs()
 
-        if not has_nvidia_driver:
-            print("[FIX] Install NVIDIA CUDA Toolkit and drivers")
+        if cuda_bin_dirs:
+            print("[CAUSE] tornado-cuda.dll exists and the following are on PATH:")
+            for d in cuda_bin_dirs:
+                print(f"          {d}")
+            print("        but the DLL still failed to load. This usually means a")
+            print("        dependent runtime DLL (nvrtc64_*.dll, cudart64_*.dll, ...) is")
+            print("        missing or version-mismatched, or a required Visual C++")
+            print("        Redistributable is not installed.")
+            print()
+            print("[FIX] Verify these exist and match your installed Toolkit version:")
+            for d in cuda_bin_dirs:
+                print(f"        dir {d}\\nvrtc64_*.dll")
+                print(f"        dir {d}\\cudart64_*.dll")
+            print("      Also ensure the latest Microsoft Visual C++ Redistributable (x64):")
+            print("        https://aka.ms/vs/17/release/vc_redist.x64.exe")
+            print()
+        elif cuda_path:
+            print(f"[CAUSE] CUDA_PATH is set to '{cuda_path}' but neither")
+            print(f"        '{os.path.join(cuda_path, 'bin')}' nor")
+            print(f"        '{os.path.join(cuda_path, 'bin', 'x64')}' exists.")
+            print("        The CUDA Toolkit installation looks incomplete or corrupted.")
+            print()
+            print("[FIX] Reinstall NVIDIA CUDA Toolkit 12.0+")
             print("      Download from: https://developer.nvidia.com/cuda-downloads")
             print()
         else:
-            print("[INFO] NVIDIA drivers detected (nvidia-smi available)")
+            print("[CAUSE] CUDA_PATH environment variable is not set")
+            print("        tornado-cuda.dll depends on CUDA Toolkit runtime DLLs")
+            print("        (nvrtc64_*.dll, cudart64_*.dll, ...) that live under")
+            print("        %CUDA_PATH%\\bin or %CUDA_PATH%\\bin\\x64, so without it")
+            print("        they cannot be located.")
             print()
-            print("[FIX] Reinstall or update NVIDIA CUDA Toolkit 12.0+")
-            print("      Download from: https://developer.nvidia.com/cuda-downloads")
+            if not has_nvidia_driver:
+                print("[FIX] Install NVIDIA CUDA Toolkit and drivers")
+                print("      Download from: https://developer.nvidia.com/cuda-downloads")
+            else:
+                print("[INFO] NVIDIA drivers detected (nvidia-smi available)")
+                print("[FIX] Install NVIDIA CUDA Toolkit 12.0+ (drivers alone are not enough)")
+                print("      Download from: https://developer.nvidia.com/cuda-downloads")
             print()
 
         print("[NOTE] CUDA backend is NVIDIA-specific")
@@ -449,10 +488,54 @@ def validate_spirv_backend(sdk_path):
 
     return True
 
+def get_cuda_bin_dirs():
+    """Return the CUDA Toolkit bin directories that may hold runtime DLLs.
+
+    Toolkit layout has varied across releases: older toolkits put 64-bit
+    runtime DLLs (nvrtc64_*.dll, cudart64_*.dll, ...) directly under
+    %CUDA_PATH%\\bin, while CUDA 13.x nests them one level deeper under
+    %CUDA_PATH%\\bin\\x64 (mirroring the long-standing lib\\x64 split for
+    import libraries). Both are checked, most-specific first, and only
+    directories that actually exist are returned.
+    """
+    if os.name != 'nt':
+        return []
+    cuda_path = os.environ.get('CUDA_PATH')
+    if not cuda_path:
+        return []
+    candidates = [os.path.join(cuda_path, 'bin', 'x64'), os.path.join(cuda_path, 'bin')]
+    return [d for d in candidates if os.path.isdir(d)]
+
+def add_cuda_toolkit_to_path():
+    """Prepend the CUDA Toolkit's bin directories to PATH.
+
+    tornado-cuda.dll (and tornado-cublas.dll/tornado-cufft.dll/tornado-cudnn.dll)
+    depend on CUDA Toolkit runtime DLLs that live under %CUDA_PATH%\\bin or
+    %CUDA_PATH%\\bin\\x64 (see get_cuda_bin_dirs), not next to the tornado-*.dll
+    themselves. The CUDA installer normally adds these to the system PATH, but
+    a shell that predates the install (or never picked up the machine-wide
+    PATH change, unlike e.g. a VS Developer Command Prompt that re-derives its
+    own PATH) will not have them, causing LoadLibrary to fail with "module not
+    found" even though tornado-cuda.dll itself is present and the Toolkit is
+    correctly installed.
+    """
+    if os.name != 'nt':
+        return
+    current_path = os.environ.get('PATH', '')
+    existing = [p.lower() for p in current_path.split(os.pathsep)]
+    new_dirs = [d for d in get_cuda_bin_dirs() if d.lower() not in existing]
+    if new_dirs:
+        os.environ['PATH'] = os.pathsep.join(new_dirs) + os.pathsep + current_path
+
 def validate_windows_dependencies(sdk_path):
     """Run all Windows-specific dependency checks."""
     if os.name != 'nt':
         return
+
+    # Make sure CUDA Toolkit runtime DLLs are resolvable before any DLL-load
+    # check or java launch below, regardless of whether this shell sourced the
+    # CUDA installer's PATH changes.
+    add_cuda_toolkit_to_path()
 
     # Validate TORNADOVM_HOME path format
     validate_tornadovm_home_path(sdk_path)
@@ -1430,8 +1513,16 @@ class TornadoVMRunnerTool():
             executionFlags = javaFlags
 
         if os.name == 'nt':
-            # Properly quote the command path if it contains spaces
-            return '"' + self.cmd + '" ' + executionFlags
+            # -Dstdout.encoding=UTF-8 (see the generated argfile) makes the JVM
+            # write correct UTF-8 bytes, but os.system() below runs this command
+            # through cmd.exe, which decodes child-process output using the
+            # console's own active code page - normally a legacy OEM page (437/
+            # 850), not UTF-8. Without switching the console to code page 65001
+            # first, those UTF-8 bytes get misread back as the wrong single-byte
+            # characters (e.g. the checkmark in "Validation PASSED" renders as
+            # mojibake instead of a '?' substitution or the correct glyph).
+            # Properly quote the command path if it contains spaces.
+            return 'chcp 65001 >nul && "' + self.cmd + '" ' + executionFlags
         else:
             return self.cmd + " " + executionFlags
 
