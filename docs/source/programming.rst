@@ -9,7 +9,7 @@ In addition, TornadoVM uses single-source property, in which the code to be acce
 
 Programming in TornadoVM involves the development of four parts:
 
-1. **Data Representation:** TornadoVM offers an API to efficiently allocate data off-heap. These data is automatically managed by the TornadoVM Runtime and the compiler. 
+1. **Data Representation:** TornadoVM offers a set of data types, built on top of the `Foreign Function & Memory API <https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/foreign/package-summary.html>`_ from Project Panama, to allocate data off-heap and to migrate data from on-heap to off-heap (and vice versa). These off-heap data types are automatically managed by the TornadoVM Runtime and the compiler.
 2. **Expressing parallelism within Java methods:** TornadoVM offers two APIs: one for loop parallelization using Java annotations; and a second one for low-level programming using a Kernel API.
    Developers can choose which one to use. The loop API is recommended for non-expert GPU/FPGA programmers.
    The kernel API is recommended for experts GPU programmers than want more control (access to GPU's local memory, barriers, etc.).
@@ -99,6 +99,8 @@ Thus, TornadoVM needs a hint about how to parallelize the code.
 TornadoVM has two APIs to achieve this goal: one for loop parallelization using Java annotations; and a second one for low-level programming using a Kernel API.
 Developers can choose which one to use. The loop API is recommended for non-expert GPU/FPGA programmers.
 
+
+.. _loop-parallel-api:
 
 Loop Parallel API
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -318,6 +320,8 @@ You can see more examples on `GitHub <https://github.com/beehive-lab/TornadoVM/t
 
 
 
+.. _task-graph-api:
+
 3. Selecting the methods to be accelerated using a Task-Graph API
 -----------------------------------------------------------------
 
@@ -400,6 +404,8 @@ Example:
 
    taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, output1, output2);
 
+
+.. _execution-plan:
 
 4. Execution Plans
 ------------------------------------------------
@@ -600,12 +606,14 @@ The next example illustrates this case with the ``PI`` computation.
 
 .. _dynamic_reconfiguration:
 
-Dynamic Reconfiguration [Supported up to v1.1.1]
-------------------------------
-
+Dynamic Reconfiguration (Research Feature)
+-------------------------------------------
 
 The dynamic configuration in TornadoVM is the capability to migrate tasks at runtime from one device to another (e.g., from one GPU to another, or from one CPU to GPU, etc).
-The dynamic reconfiguration is not enabled by default, but it can be easily activated through the execution plan as follows:
+
+.. important::
+
+   Dynamic reconfiguration is **not** enabled automatically and is currently maintained as a research feature rather than a core runtime capability. It must be explicitly opted into through the execution plan API, as follows:
 
 
 .. code:: java

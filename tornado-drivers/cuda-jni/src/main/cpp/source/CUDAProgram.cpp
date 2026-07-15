@@ -67,6 +67,11 @@ extern "C" {
 #define CL_BUILD_SUCCESS 0
 #define CL_BUILD_ERROR (-2)
 
+} // extern "C" -- the helpers below are internal (static) and need ordinary C++
+  // linkage: MSVC rejects a C-linkage function returning a C++ class (C2526),
+  // unlike GCC/Clang which tolerate it as an extension. Only the actual JNI
+  // entry points below need C linkage, so they get their own extern "C" block.
+
 // Locates directories that contain the toolkit's cuda_fp16.h, so an explicit
 // NVRTC include path can be supplied on toolkits whose NVRTC cannot resolve
 // the standard CUDA headers on its own (see comment at the call site).
@@ -159,10 +164,13 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
         // instead of assuming toolkit >= GPU.
         gpuArchNum = major * 10 + minor;              // e.g. cc 12.0 -> 120, 9.0 -> 90
         bool gpuArchSupported = false;
+        int lowestSupportedArch = 0;                  // for a descriptive error if no arch <= GPU exists
+        bool queriedArchs = false;
         int numArchs = 0;
         if (nvrtcGetNumSupportedArchs(&numArchs) == NVRTC_SUCCESS && numArchs > 0) {
             std::vector<int> supported(numArchs);
             if (nvrtcGetSupportedArchs(supported.data()) == NVRTC_SUCCESS) {
+                queriedArchs = true;
                 for (int a : supported) {
                     if (a == gpuArchNum) {
                         gpuArchSupported = true;
@@ -170,11 +178,40 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
                     if (a <= gpuArchNum && a > fallbackArch) {
                         fallbackArch = a;
                     }
+                    if (lowestSupportedArch == 0 || a < lowestSupportedArch) {
+                        lowestSupportedArch = a;
+                    }
                     if (a > maxSupportedArch) {
                         maxSupportedArch = a;
                     }
                 }
             }
+        }
+
+        // Toolkit is newer than the GPU and has dropped support for the GPU's
+        // family entirely (e.g. CUDA 13.x removed sm_5x/6x/7x, so a Pascal
+        // sm_61 device has no arch string this code can construct that NVRTC
+        // will accept). Bail here with a message naming the actual mismatch
+        // instead of forwarding a rejected -arch and surfacing NVRTC's opaque
+        // "invalid value for --gpu-architecture" error. Only trigger when the
+        // arch query succeeded; if it failed we still fall through and try the
+        // GPU's own arch as a last-resort compute_XX (existing behaviour).
+        if (!gpuArchSupported && queriedArchs && fallbackArch == 0) {
+            program->build_status = CL_BUILD_ERROR;
+            program->log =
+                "CUDA Toolkit does not support the GPU's compute capability "
+                "(sm_" + std::to_string(gpuArchNum) + ", cc " +
+                std::to_string(major) + "." + std::to_string(minor) +
+                "). The lowest architecture supported by this NVRTC is sm_" +
+                std::to_string(lowestSupportedArch) +
+                ". This typically happens when CUDA 13+ is used with an older "
+                "GPU: CUDA 13 removed Pascal/Volta and earlier (sm_50..sm_72). "
+                "Install a CUDA Toolkit old enough to still target sm_" +
+                std::to_string(gpuArchNum) +
+                " (CUDA 12.8 is the last release supporting Pascal), "
+                "or use a newer GPU (Turing sm_75 or later).";
+            std::cout << "[TornadoVM-CUDA-JNI] " << program->log << std::endl;
+            return;
         }
 
         std::string arch;
@@ -259,7 +296,13 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
         // so don't print an ERROR for it; terminal failures are reported after
         // the probe with the full NVRTC build log.
         nv = nvrtcCompileProgram(prog, (int) options.size(), options.data());
-        LOG_NVRTC_CALL("nvrtcCompileProgram", nv);
+        // Deliberately no LOG_NVRTC_AND_VALIDATE here: on toolkits whose NVRTC has no
+        // built-in cuda_fp16.h (see comment above), this first attempt is *expected*
+        // to fail with "could not open source file" and silently succeed on the
+        // include-path retry below. Logging an ERROR line for that handled, transient
+        // failure just alarms users over nothing. A failure that survives the retry
+        // (or isn't a missing-header failure at all) is still fully reported by the
+        // "NVRTC compilation failed" dump below, with the complete compiler log.
         capture_nvrtc_log(prog, program);
 
         // First FP16 kernel whose built-in header resolution failed: probe the
@@ -399,6 +442,8 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
         }
     }
 }
+
+extern "C" {
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAProgram

@@ -1,4 +1,4 @@
-Migrating from v0.15.2 to v1.0
+Use TornadoVM Data Types
 ==================================
 Starting from v1.0, TornadoVM is providing its custom off-heap data types. Below is a list of the new types, with an arrow pointing from the on-heap primitive array types to their off-heap equivalent.
 
@@ -12,7 +12,7 @@ Starting from v1.0, TornadoVM is providing its custom off-heap data types. Below
 
 The existing Matrix and Vector collection types that TornadoVM offers (e.g., ``VectorFloat``, ``Matrix2DDouble``, etc.)  have been refactored to use internally these off-heap data types instead of primitive arrays.
 
-1. Off-heap types API
+1. Off-heap Data Types
 -------------------------
 The new off-heap types encapsulate a `Memory Segment <https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/foreign/MemorySegment.html>`_, a contiguous region of memory outside the Java heap. To allocate off-heap memory using the TornadoVM API, each type offers a constructor with one argument that indicates the number of elements that the Memory Segment will contain.
 
@@ -66,7 +66,7 @@ The main methods that the off-heap types expose to manage the Memory Segment of 
    
 **NOTE:** The methods ``init()`` and ``clear()`` are essential because, contrary to their counterpart primitive arrays which are initialized by default with 0, the new types contain garbage values when first created.
 
-2. Example: Migrating TornadoVM applications from <= 0.15.2 to 1.0
+2. Example: Migrating from On-heap to Off-heap Data Types
 -------------------------------------------------------------------
 
 Below is an example of a TornadoVM program that uses primitive arrays:

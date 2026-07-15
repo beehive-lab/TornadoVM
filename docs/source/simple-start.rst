@@ -7,9 +7,19 @@ Running Examples and Benchmarks
 Running TornadoVM Programs
 ------------------------------
 
-TornadoVM includes a tool for launching applications from the command-line:
+TornadoVM includes a tool for launching applications from the command-line. ``tornado`` is essentially an alias for the ``java`` command, combined with a set of runtime flags and module/classpath options that enable TornadoVM. In fact, you can run any TornadoVM program without the ``tornado`` launcher at all: generate an arg-file once with ``tornado --generate-argfile``, and then invoke ``java`` directly with it:
 
-.. code-block:: bash 
+.. code-block:: bash
+
+   $ java @$TORNADOVM_HOME/tornado-argfile -cp $TORNADOVM_HOME/share/java/tornado/tornado-examples-5.0.0-jdk21.jar uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
+
+This is equivalent to:
+
+.. code-block:: bash
+
+   $ tornado -cp $TORNADOVM_HOME/share/java/tornado/tornado-examples-5.0.0-jdk21.jar uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
+
+.. code-block:: bash
 
   $ tornado --help
   usage: tornado [-h] [--version] [-version] [--debug] [--threadInfo] [--igv] [--igvLowTier] [--printKernel] [--printBytecodes] [--enableProfiler ENABLE_PROFILER] [--dumpProfiler DUMP_PROFILER] [--printJavaFlags] [--devices] [--ea]
