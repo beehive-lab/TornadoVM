@@ -111,6 +111,25 @@ public class CUDABinary {
             asm.endStackPush();
 
             String op = opcode.toString();
+
+            if (resultKind.getElementKind() == CUDAKind.HALF && length == 2) {
+                // cuda_fp16.h packed half2 intrinsics keep the pair in one 32-bit
+                // register instead of decomposing into scalar half lanes.
+                String intrinsic = switch (op) {
+                    case "+" -> "__hadd2";
+                    case "-" -> "__hsub2";
+                    case "*" -> "__hmul2";
+                    case "/" -> "__h2div";
+                    default -> null;
+                };
+                if (intrinsic != null) {
+                    String xe = xIsVector ? xs : "__half2half2(" + xs + ")";
+                    String ye = yIsVector ? ys : "__half2half2(" + ys + ")";
+                    asm.emit(intrinsic + "(" + xe + ", " + ye + ")");
+                    return;
+                }
+            }
+
             StringBuilder sb = new StringBuilder();
             sb.append("make_").append(resultKind.getElementKind().toString()).append(length).append("(");
             for (int i = 0; i < length; i++) {
