@@ -66,6 +66,7 @@ import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.cuda.CUDABackendImpl;
 import uk.ac.manchester.tornado.drivers.cuda.CUDACodeCache;
+import uk.ac.manchester.tornado.drivers.cuda.CUDACommandQueue;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.cuda.CUDATargetDevice;
@@ -811,6 +812,16 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
     @Override
     public long getNativeContext(long executionPlanId) {
         return getDeviceContext().getNativeContext(executionPlanId);
+    }
+
+    @Override
+    public void nvtxRangePush(String name) {
+        CUDACommandQueue.nvtxRangePush(name);
+    }
+
+    @Override
+    public void nvtxRangePop() {
+        CUDACommandQueue.nvtxRangePop();
     }
 
     @Override
