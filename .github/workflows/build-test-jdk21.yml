@@ -1,8 +1,6 @@
 name: Build & Test [JDK 21]
 
 on:
-  push:
-    branches: [master]
   pull_request:
     branches: [develop]
     types: [opened, synchronize, reopened]
