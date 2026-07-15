@@ -280,8 +280,18 @@ public class TornadoVMInterpreter {
         return graphExecutionContext.isMemoryLimited();
     }
 
+    /**
+     * Three conditions should be satisfied to allow intra-plan concurrency:
+     * <ol>
+     * <li> withIntraPlanConcurrency() API call</li>
+     * <li>supported by backend</li>
+     * <li>TaskGraph can indeed be parallelized</li>
+     * </ol>
+     */
     private boolean isIntraPlanConcurrencyActive() {
-        return graphExecutionContext.isIntraPlanConcurrencyEnabled() && interpreterDevice.isIntraPlanConcurrencySupported();
+        return graphExecutionContext.isIntraPlanConcurrencyEnabled()
+                && interpreterDevice.isIntraPlanConcurrencySupported()
+                && !bytecodeResult.isSerialTaskGraph();
     }
 
     private Event execute(boolean isWarmup) {
