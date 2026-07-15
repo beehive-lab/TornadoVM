@@ -72,6 +72,13 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     private final Set<Long> intraPlanConcurrencyPlans = ConcurrentHashMap.newKeySet();
     /** Guards the one-time warning when concurrency is requested on hardware that cannot overlap work. */
     private boolean warnedUnsupportedConcurrency;
+    /**
+     * Whether large one-shot H2D uploads go through the pinned staging ring. Defaults to the
+     * -Dtornado.staged.transfers property and is overridden by the plan-level withStagedTransfers()
+     * API. Device-wide rather than per-plan: it also drives the host-pin decision in
+     * {@code allocate()}, and pinning is a property of the buffer, not of the plan using it.
+     */
+    private volatile boolean stagedTransfersEnabled = TornadoOptions.ENABLE_STAGED_TRANSFERS;
     private boolean wasReset;
     private final Set<Long> executionIDs;
     private PTXKernelStackFrame pendingKernelContextWrite;
@@ -144,6 +151,21 @@ public class PTXDeviceContext implements TornadoDeviceContext {
             }
             intraPlanConcurrencyPlans.remove(executionPlanId);
         }
+    }
+
+    /**
+     * Records whether large one-shot H2D uploads are routed through the pinned staging ring.
+     * Pushed by the runtime ({@code TornadoVMInterpreter}) before issuing a plan's bytecodes.
+     */
+    public void setStagedTransfers(boolean enabled) {
+        stagedTransfersEnabled = enabled;
+    }
+
+    /**
+     * Whether large one-shot H2D uploads are routed through the pinned staging ring.
+     */
+    public boolean isStagedTransfersEnabled() {
+        return stagedTransfersEnabled;
     }
 
     /**
