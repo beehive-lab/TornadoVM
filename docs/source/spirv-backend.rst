@@ -1,4 +1,6 @@
-\SPIR-V Devices
+:orphan:
+
+SPIR-V Devices
 ====================================
 
 SPIR-V makes use of the `Intel Level Zero API <https://spec.oneapi.io/level-zero/latest/index.html>`__.

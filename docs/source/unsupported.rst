@@ -1,6 +1,6 @@
 .. _unsupported:
 
-Unsupported Java features
+Unsupported Java Features
 =================================
 
 TornadoVM currently supports a subset of Java. Most limitations are due to the underlying programming model (OpenCL) that TornadoVM uses.

@@ -1,16 +1,19 @@
-:orphan:
+.. _dev-tools:
 
-.. note::
+Developer Tools
+================
 
-   This content has been merged into :ref:`dev-tools`. This standalone page is kept as a file but is no longer linked from the documentation navigation.
+Beyond the compiler and runtime, the TornadoVM ecosystem includes a small set of tools that help you write, debug and profile TornadoVM applications. All of them are open-source and maintained by the `beehive-lab <https://github.com/beehive-lab>`_ organization. An up-to-date overview is also available at `tornadovm.org/tooling <https://www.tornadovm.org/tooling>`_.
 
-TornadoVM Profiler
-==================
+.. _profiler:
 
-The TornadoVM profiler can be enabled either from the command line (via a flag from the ``tornado`` command), or via an ``ExecutionPlan`` in the source code.
+TornadoVM Profiler (built-in)
+------------------------------
+
+The TornadoVM profiler is shipped with TornadoVM itself and can be enabled either from the command line (via a flag from the ``tornado`` command), or via an ``ExecutionPlan`` in the source code.
 
 1. Enable the Profiler from the Command Line
----------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To enable the TornadoVM profiler, developers can  use ``--enableProfiler <silent|console>``.
 
@@ -51,9 +54,8 @@ Example:
 
 All timers are printed in nanoseconds.
 
-
 2. Enable/Disable the Profiler using the TornadoExecutionPlan
-----------------------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The profiler can be enabled/disabled using the `TornadoExecutionPlan` API:
 
@@ -82,14 +84,16 @@ It is also possible to enable the profiler without live reporting in STDOUT and 
     System.out.println(profilerResult.getDeviceKernelTime() + " (ns)");
 
 3. Configure and Enable/Disable the Power Usage of Compute Functions via the Profiler
--------------------------------------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The profiler can query low-level system management API implementations to obtain the power usage of an executed TornadoVM task.
 More specifically, TornadoVM is integrated with the `NVIDIA NVML API <https://docs.nvidia.com/deploy/nvml-api/index.html>`__ to support power usage for NVIDIA GPUs that operate with the ``OpenCL`` or ``PTX`` backend (:ref:`NVIDIA NVML Configuration <nvidia_nvml_configuration>`).
 Additionally, it is integrated with the `oneAPI Level Zero SYSMAN API <https://spec.oneapi.io/level-zero/latest/sysman/api.html>`__) to support power usage for Intel GPUs that operate with the ``SPIRV`` backend (:ref:`oneAPI Level Zero SYSMAN Configuration <oneapi_sysman_configuration>`).
 
+.. _nvidia_nvml_configuration:
+
 A) NVIDIA NVML Configuration for the OpenCL and PTX backends
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 TornadoVM can leverage the NVIDIA NVML (NVIDIA Management Library) to monitor and manage power metrics for supported NVIDIA GPUs. The NVML library allows TornadoVM to access the power consumption metric, which enhances its profiling capabilities.
 To enable NVML support in TornadoVM, ensure the following:
@@ -97,8 +101,10 @@ To enable NVML support in TornadoVM, ensure the following:
 i) The libnvidia-ml.so (Linux) or nvml.dll (Windows) library is accessible in your system's library path (default location: ``${CUDA_TOOLKIT_ROOT_DIR}/lib/x64``).
 ii) The nvml.h header file is accessible (default location: ``${CUDA_INCLUDE_DIRS}``).
 
+.. _oneapi_sysman_configuration:
+
 B) oneAPI Level Zero SYSMAN Configuration for the SPIRV backend
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To configure TornadoVM to utilize the oneAPI Level Zero SYSMAN API, the target device must comply with the Level Zero specification.
 Note that support is available for discrete Intel GPUs (e.g., Intel ARC A770), while integrated graphics are not supported.
@@ -113,7 +119,7 @@ The power metric is determined by reading energy counters at two timestamps: i) 
 Note that when, dispatching occurs through the OpenCL runtime, power metrics are not supported, and the TornadoVM profiler will again report "n/a".
 
 4. Explanation of all values
--------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  *COPY_IN_TIME*: OpenCL timers for copy in (host to device)
 -  *COPY_OUT_TIME*: OpenCL timers for copy out (device to host)
@@ -152,19 +158,19 @@ When the task-graph is executed multiple times (through an execution plan), time
 This is because the generated binary is cached and there is no compilation after the second iteration.
 
 A) Print timers at the end of the execution
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The options ``--enableProfiler silent`` print a full report only when
 the method ``ts.getProfileLog()`` is called.
 
 B) Save profiler into a file
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Use the option ``--dumpProfiler <FILENAME>`` to store the profiler
 output in a JSON file.
 
 C) Parsing Json files
-~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^
 
 TornadoVM creates the ``profiler-app.json`` file with multiple entries
 for the application (one per task-graph invocation).
@@ -205,7 +211,7 @@ obtaining statistics:
 
 
 5. Code feature extraction for the OpenCL/PTX generated code
-------------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To enable TornadoVM’s code feature extraction, use the following flag:
 ``-Dtornado.feature.extraction=True``.
@@ -245,14 +251,14 @@ Example:
    }
 
 A) Save features into a file
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Use the option ``-Dtornado.feature.extraction=True``
 ``-Dtornado.features.dump.dir=FILENAME``. ``FILENAME`` can contain the
-filename and the full path (e.g. features.json).
+filename and the full path (e.g. features.json).
 
 B) Send log over a socket
-~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 | TornadoVM allows redirecting profiling and feature extraction logs to
   a specific port. This feature can be enabled with the option
@@ -270,3 +276,54 @@ in a different terminal with the following command:
 .. code:: bash
 
    $ ncat -k -l 2000
+
+TornadoVMPulse (profiling dashboard)
+--------------------------------------
+
+`TornadoVMPulse <https://github.com/beehive-lab/TornadoVMPulse>`_ is a Streamlit dashboard for the **profiler** output described above (JSON/log/CSV): kernel time distributions, memory and power usage, copy-in/out metrics, and a sunburst view per task-graph.
+
+.. code-block:: bash
+
+   git clone https://github.com/beehive-lab/TornadoVMPulse.git
+   cd TornadoVMPulse
+   pip install -r requirements.txt
+   streamlit run src/app.py
+
+Then upload the profiler log file (e.g. produced via ``--dumpProfiler profiler-app.json``, described above) through the web UI.
+
+TornadoInsight (IntelliJ plugin)
+----------------------------------
+
+`TornadoInsight <https://github.com/beehive-lab/tornado-insight>`_ is an IntelliJ IDEA plugin that catches TornadoVM-unsupported Java constructs (unsupported data types, exceptions, recursion, native calls, ``assert`` statements, ...) as you type, and lets you dynamically run and debug a single TornadoVM task straight from the IDE, without hand-writing a ``TaskGraph`` and main method.
+
+* Install from the `JetBrains Marketplace <https://plugins.jetbrains.com/plugin/23309-tornadoinsight>`_, or build it yourself:
+
+  .. code-block:: bash
+
+     git clone --recurse-submodules https://github.com/beehive-lab/tornado-insight.git
+     cd tornado-insight
+     ./gradlew clean build
+     # Install the generated zip from build/distributions via
+     # IntelliJ > Help > Find Action > "Install plugin from disk"
+
+* Requires TornadoVM >= 1.0 and JDK >= 21. Configure the TornadoVM installation directory and JDK path under *Settings > TornadoInsight*.
+
+TornadoViz (bytecode visualizer)
+------------------------------------
+
+`TornadoViz <https://github.com/beehive-lab/tornadoviz>`_ visualizes TornadoVM **bytecode execution logs**: task-graph dependencies, memory operations (allocations, transfers, deallocations) and object lifecycles, plus a searchable view of the raw bytecode operations. Use it to spot bytecode-level bottlenecks and unexpected data-copy or object-retention patterns.
+
+.. code-block:: bash
+
+   git clone https://github.com/beehive-lab/tornadoviz.git
+   cd tornadoviz
+   pip install -r requirements.txt
+   streamlit run tornado-visualizer-fixed.py
+
+Feed it the bytecode log produced by running with ``--printBytecodes``.
+
+Third-Party Profilers
+-------------------------
+
+* **NVIDIA Nsight Systems** — timeline and kernel-level profiling for TornadoVM applications running on the PTX or CUDA backend.
+* **Intel VTune Profiler** — hotspot detection and low-level metrics for the OpenCL and SPIR-V backends.

@@ -1,3 +1,5 @@
+:orphan:
+
 .. _cuda-backend:
 
 NVIDIA CUDA Devices (PTX and CUDA C backends)
@@ -213,11 +215,9 @@ Prerequisites
 ----------------------------------------------
 
 - **JDK 21** (set ``JAVA_HOME`` accordingly).
-- **CUDA Toolkit** including **NVRTC** and ``libcuda`` (see
+- **CUDA Toolkit 13.0+** including **NVRTC** and ``libcuda`` (see
   `Driver Installation`_ above).
 - **GCC** and **CMake** to build the native JNI layer.
-
-Verified on an NVIDIA RTX 3070 (compute capability 8.6) with CUDA 11.x.
 
 Building the CUDA backend
 ----------------------------------------------
