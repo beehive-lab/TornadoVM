@@ -522,6 +522,37 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     }
 
     /**
+     * Frees the pinned staging ring. Called at device teardown, matching the ring's scope: the ring is
+     * device-wide and shared across plans, so it must NOT be released from the per-plan reset - that
+     * would pull it out from under a concurrent plan. Mirrors the PTX backend, which frees its ring in
+     * {@code PTXStream.cuDestroyStream()}.
+     * <p>
+     * Each in-flight slot DMA reads FROM ring memory, so every outstanding slot event is drained
+     * before the pinned block is released; freeing it under a live DMA is undefined behaviour. The
+     * ring is left unallocated, so a subsequent staged transfer lazily rebuilds it.
+     */
+    @Override
+    public synchronized void releaseStagedRing() {
+        if (stagedRingPtr == 0L) {
+            return;
+        }
+        for (int slot = 0; slot < stagedSlotEvents.length; slot++) {
+            if (stagedSlotEvents[slot] != 0) {
+                try {
+                    CUDAEvent.clWaitForEvents(new long[] { 1, stagedSlotEvents[slot] });
+                    CUDAEvent.clReleaseEvent(stagedSlotEvents[slot]);
+                } catch (uk.ac.manchester.tornado.drivers.cuda.exceptions.CUDAException e) {
+                    throw new uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException(e.getMessage());
+                }
+                stagedSlotEvents[slot] = 0;
+            }
+        }
+        CUDACommandQueue.cuMemFreeHost(stagedRingPtr);
+        stagedRingPtr = 0L;
+        stagedSlotEvents = null;
+    }
+
+    /**
      * Fills a pinned staging slot from the source. A single thread's memcpy is slower than the
      * PCIe DMA it feeds, which would make the staged path fill-bound; splitting the copy across
      * threads lifts the fill above the DMA rate so the transfer stays DMA-bound.
