@@ -281,7 +281,7 @@ public class TornadoVMInterpreter {
     }
 
     /**
-     * Three conditions should be satisfied to allow intra-plan concurrency:
+     * Three conditions should be satisfied to allow intra-plan concurrency.
      * <ol>
      * <li> withIntraPlanConcurrency() API call</li>
      * <li>supported by backend</li>
