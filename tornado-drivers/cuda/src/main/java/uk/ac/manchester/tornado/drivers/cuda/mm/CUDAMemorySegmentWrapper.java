@@ -75,6 +75,15 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
         this(INIT_VALUE, deviceContext, batchSize, access, sizeOfType);
     }
 
+    /**
+     * Whether transfers of this buffer should go through the pinned staging ring -
+     * enabled, non-batch (batched chunks are pipelined by the device-buffer ring instead), and
+     * large enough that the per-chunk staging overhead is amortised.
+     */
+    private boolean useStagedTransfer() {
+        return deviceContext.isStagedTransfersEnabled() && batchSize <= 0 && bufferSize >= TornadoOptions.STAGED_TRANSFER_MIN_SIZE;
+    }
+
     @Override
     public long toBuffer() {
         return this.bufferId;
@@ -166,7 +175,12 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
 
         int internalEvent;
         if (batchSize <= 0) {
-            internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferOffset, bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
+            if (useStagedTransfer()) {
+                // Large one-shot upload (e.g. FIRST_EXECUTION weights) through the pinned staging ring.
+                internalEvent = deviceContext.enqueueStagedWriteBuffer(executionPlanId, toBuffer(), bufferOffset, bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
+            } else {
+                internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferOffset, bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
+            }
         } else {
             // Honour the sub-region size like read() does: a reused (locked) buffer can be larger than
             // the current chunk (e.g. a full-chunk buffer serving the smaller remainder chunk), and
@@ -199,7 +213,15 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
         // caching are handled by the central CUDAPinnedMemoryRegistry (refcounted,
         // stale-pin safe). Any hold from a previous allocate is released first, so the
         // refcount stays balanced across alloc/free cycles.
-        if (segment != null) {
+        // For large read-only segments served by the staged-transfer ring, skip the whole-segment
+        // pin: registering synchronously pages in and pins the entire (possibly cold, mmap'd)
+        // segment - exactly the upfront cost the staging ring exists to avoid - and the ring's
+        // own pinned slots already make the chunked H2D DMA async. Mirrors the PTX backend.
+        if (useStagedTransfer() && access == Access.READ_ONLY) {
+            if (TornadoOptions.FULL_DEBUG) {
+                new TornadoLogger().info("skipping host pinning (staged transfers): %s", toString());
+            }
+        } else if (segment != null) {
             CUDAPinnedMemoryRegistry pinRegistry = deviceContext.getPlatformContext().getPinnedMemoryRegistry();
             if (pinnedHostPointer != 0) {
                 pinRegistry.unpin(pinnedHostPointer);

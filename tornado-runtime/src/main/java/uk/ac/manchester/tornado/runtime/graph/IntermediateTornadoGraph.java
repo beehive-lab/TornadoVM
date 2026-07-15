@@ -110,6 +110,41 @@ public class IntermediateTornadoGraph {
         return dependencies;
     }
 
+    /**
+     * Whether the task nodes of this graph form a dependency CHAIN (max antichain width == 1),
+     * i.e. no two tasks are mutually independent, so no two kernels could ever execute
+     * concurrently. Used to auto-disable intra-plan concurrency for such graphs: multi-queue
+     * issue cannot overlap anything on a chain and only adds cross-stream event overhead.
+     *
+     * <p>Must be called after {@link #analyzeDependencies()}.</p>
+     */
+    public boolean isTaskChain() {
+        // Transitive closure of the dependency relation, indexed by node id. Node ids are
+        // assigned in construction order and dependency edges point at earlier nodes, so one
+        // ascending pass folds each dependency's already-computed closure.
+        final BitSet[] reachable = new BitSet[graph.getValid().length()];
+        for (int i = 0; i < index; i++) {
+            final BitSet reach = new BitSet(reachable.length);
+            reach.or(dependencies[i]);
+            for (int dep = dependencies[i].nextSetBit(0); dep != -1; dep = dependencies[i].nextSetBit(dep + 1)) {
+                if (dep < reachable.length && reachable[dep] != null) {
+                    reach.or(reachable[dep]);
+                }
+            }
+            reachable[nodeIds[i]] = reach;
+        }
+
+        // Two tasks are concurrent if neither (transitively) depends on the other.
+        for (int t1 = tasks.nextSetBit(0); t1 != -1; t1 = tasks.nextSetBit(t1 + 1)) {
+            for (int t2 = tasks.nextSetBit(t1 + 1); t2 != -1; t2 = tasks.nextSetBit(t2 + 1)) {
+                if (!reachable[nodeIds[t2]].get(nodeIds[t1]) && !reachable[nodeIds[t1]].get(nodeIds[t2])) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     public void printDependencyMatrix() {
         StringBuilder output = new StringBuilder();
         output.append("TornadoGraph dependency matrix...\n");

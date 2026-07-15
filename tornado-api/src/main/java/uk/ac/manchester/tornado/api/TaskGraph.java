@@ -988,6 +988,14 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.withoutIntraPlanConcurrency();
     }
 
+    void withStagedTransfers() {
+        taskGraphImpl.withStagedTransfers();
+    }
+
+    void withoutStagedTransfers() {
+        taskGraphImpl.withoutStagedTransfers();
+    }
+
     void dumpProfiles() {
         taskGraphImpl.dumpProfiles();
     }

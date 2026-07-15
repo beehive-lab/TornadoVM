@@ -89,6 +89,14 @@
                                     </includes>
                                 </resource>
                                 <resource>
+                                    <!-- linux/mac: the Makefile generator places the library directly in cmake/ -->
+                                    <directory>${project.build.directory}/cmake</directory>
+                                    <includes>
+                                        <include>*.so</include>
+                                        <include>*.dylib</include>
+                                    </includes>
+                                </resource>
+                                <resource>
                                     <directory>${project.build.directory}/cmake/Release</directory>
                                     <includes>
                                         <!-- windows -->
@@ -121,7 +129,7 @@
                                 <include>**/*.dylib</include>
                                 <include>**/*.dll</include>
                             </includes>
-                            <classesDirectory>${basedir}/target/${platform}-${build.type}/cmake</classesDirectory>
+                            <classesDirectory>${basedir}/target/${platform}-${build.type}/classes</classesDirectory>
                             <outputDirectory>${basedir}/target</outputDirectory>
                         </configuration>
                     </execution>

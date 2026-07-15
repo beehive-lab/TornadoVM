@@ -54,6 +54,13 @@ public class CUDACommandQueue extends CommandQueue {
     private final long properties;
     private final int openclVersion;
 
+    /**
+     * Set when work is issued to this (secondary) queue under intra-plan concurrency; drained
+     * by the per-plan join (see {@code CUDADeviceContext#joinRoleQueues}), which only needs to
+     * synchronise queues that were actually touched since the last join.
+     */
+    private volatile boolean dirty;
+
     public CUDACommandQueue(long commandQueuePtr, long properties, int version) {
         this.commandQueuePtr = commandQueuePtr;
         this.properties = properties;
@@ -64,6 +71,22 @@ public class CUDACommandQueue extends CommandQueue {
 
     public long getCommandQueuePtr() {
         return commandQueuePtr;
+    }
+
+    /** Marks this queue as having received work since the last join. */
+    public void markDirty() {
+        if (!dirty) {
+            dirty = true;
+        }
+    }
+
+    /** Returns whether this queue was touched since the last join, clearing the flag. */
+    public boolean pollDirty() {
+        if (dirty) {
+            dirty = false;
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -77,6 +100,12 @@ public class CUDACommandQueue extends CommandQueue {
     static native void clReleaseCommandQueue(long queueId) throws CUDAException;
 
     private static native void nvtxNameStream(long queueId, String name);
+
+    /** Opens a host-side NVTX range labelled {@code name} (no-op without a profiler). */
+    public static native void nvtxRangePush(String name);
+
+    /** Closes the most recently opened host-side NVTX range. */
+    public static native void nvtxRangePop();
 
     /**
      * Pushes the profiler state to the native layer: when timing is off, per-operation
@@ -143,6 +172,15 @@ public class CUDACommandQueue extends CommandQueue {
     static native long readArrayFromDeviceOffHeap(long queueId, long hostPointer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException;
 
     static native void clEnqueueWaitForEvents(long queueId, long[] events) throws CUDAException;
+
+    /** Allocates page-locked (pinned) host memory; returns 0 on failure. */
+    static native long cuMemAllocHost(long numBytes);
+
+    /** Releases pinned host memory allocated by {@link #cuMemAllocHost(long)}. */
+    static native void cuMemFreeHost(long hostPtr);
+
+    /** Plain host-side memcpy between raw pointers (staged-transfer slot fill). */
+    static native void memcpyHostToHost(long dstPtr, long srcPtr, long numBytes);
 
     /*
      * for CUDADriver 1.2 implementations

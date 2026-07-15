@@ -71,6 +71,7 @@ import uk.ac.manchester.tornado.runtime.library.LibraryRegistry;
 import uk.ac.manchester.tornado.runtime.library.spi.LibraryContext;
 import uk.ac.manchester.tornado.runtime.library.spi.LibraryInvocation;
 import uk.ac.manchester.tornado.runtime.library.spi.TornadoLibraryProvider;
+import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
 import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
 import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.LibraryTask;
@@ -279,8 +280,18 @@ public class TornadoVMInterpreter {
         return graphExecutionContext.isMemoryLimited();
     }
 
+    /**
+     * Three conditions should be satisfied to allow intra-plan concurrency.
+     * <ol>
+     * <li> withIntraPlanConcurrency() API call</li>
+     * <li>supported by backend</li>
+     * <li>TaskGraph can indeed be parallelized</li>
+     * </ol>
+     */
     private boolean isIntraPlanConcurrencyActive() {
-        return graphExecutionContext.isIntraPlanConcurrencyEnabled() && interpreterDevice.isIntraPlanConcurrencySupported();
+        return graphExecutionContext.isIntraPlanConcurrencyEnabled()
+                && interpreterDevice.isIntraPlanConcurrencySupported()
+                && !bytecodeResult.isSerialTaskGraph();
     }
 
     private Event execute(boolean isWarmup) {
@@ -290,6 +301,10 @@ public class TornadoVMInterpreter {
         // Push the per-plan intra-plan-concurrency setting to the backend before issuing any
         // bytecode, so transfer/launch routing (single- vs multi-stream) is decided per plan.
         interpreterDevice.setIntraPlanConcurrency(graphExecutionContext.getExecutionPlanId(), isIntraPlanConcurrencyActive());
+
+        // Push the staged-transfer setting before the plan's ALLOCs: it also decides whether a
+        // staged buffer skips the whole-segment host pin, which is settled at allocation time.
+        interpreterDevice.setStagedTransfers(graphExecutionContext.isStagedTransfersEnabled());
 
         // Recompute here (not just in the constructor): plan-level withIntraPlanConcurrency() is
         // applied after this interpreter is built, so latching it at construction misses it and the
@@ -1283,8 +1298,21 @@ public class TornadoVMInterpreter {
             profilerStartTime = System.nanoTime();
         }
 
-        provider.dispatch(descriptor.getFunctionName(), new LibraryInvocation(callArgs, devicePointers, isReference, interpreterDevice, graphExecutionContext.getExecutionPlanId(), libraryContext,
-                descriptor.getTuning()));
+        // Wrap the native library call in an NVTX range so it shows up as a named
+        // span (e.g. "cutlassHgemm") on the Nsight Systems timeline, alongside the
+        // backend's own kernel/transfer ranges. No-op without a profiler attached.
+        TornadoNativeStreamSupport nvtxDevice = (interpreterDevice instanceof TornadoNativeStreamSupport) ? (TornadoNativeStreamSupport) interpreterDevice : null;
+        if (nvtxDevice != null) {
+            nvtxDevice.nvtxRangePush(descriptor.getLibraryName() + "/" + descriptor.getFunctionName());
+        }
+        try {
+            provider.dispatch(descriptor.getFunctionName(), new LibraryInvocation(callArgs, devicePointers, isReference, interpreterDevice, graphExecutionContext.getExecutionPlanId(), libraryContext,
+                    descriptor.getTuning()));
+        } finally {
+            if (nvtxDevice != null) {
+                nvtxDevice.nvtxRangePop();
+            }
+        }
 
         int lastEvent = ((useDependencies && !insideCaptureRegion) || profileCall) ? interpreterDevice.enqueueMarker(graphExecutionContext.getExecutionPlanId()) : -1;
 
