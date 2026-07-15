@@ -54,6 +54,13 @@ public class CUDACommandQueue extends CommandQueue {
     private final long properties;
     private final int openclVersion;
 
+    /**
+     * Set when work is issued to this (secondary) queue under intra-plan concurrency; drained
+     * by the per-plan join (see {@code CUDADeviceContext#joinRoleQueues}), which only needs to
+     * synchronise queues that were actually touched since the last join.
+     */
+    private volatile boolean dirty;
+
     public CUDACommandQueue(long commandQueuePtr, long properties, int version) {
         this.commandQueuePtr = commandQueuePtr;
         this.properties = properties;
@@ -64,6 +71,22 @@ public class CUDACommandQueue extends CommandQueue {
 
     public long getCommandQueuePtr() {
         return commandQueuePtr;
+    }
+
+    /** Marks this queue as having received work since the last join. */
+    public void markDirty() {
+        if (!dirty) {
+            dirty = true;
+        }
+    }
+
+    /** Returns whether this queue was touched since the last join, clearing the flag. */
+    public boolean pollDirty() {
+        if (dirty) {
+            dirty = false;
+            return true;
+        }
+        return false;
     }
 
     /**
