@@ -72,6 +72,13 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     private final Set<Long> intraPlanConcurrencyPlans = ConcurrentHashMap.newKeySet();
     /** Guards the one-time warning when concurrency is requested on hardware that cannot overlap work. */
     private boolean warnedUnsupportedConcurrency;
+    /**
+     * Whether large one-shot H2D uploads go through the pinned staging ring. Defaults to the
+     * -Dtornado.staged.transfers property and is overridden by the plan-level withStagedTransfers()
+     * API. Device-wide rather than per-plan: it also drives the host-pin decision in
+     * {@code allocate()}, and pinning is a property of the buffer, not of the plan using it.
+     */
+    private volatile boolean stagedTransfersEnabled = TornadoOptions.ENABLE_STAGED_TRANSFERS;
     private boolean wasReset;
     private final Set<Long> executionIDs;
     private PTXKernelStackFrame pendingKernelContextWrite;
@@ -144,6 +151,21 @@ public class PTXDeviceContext implements TornadoDeviceContext {
             }
             intraPlanConcurrencyPlans.remove(executionPlanId);
         }
+    }
+
+    /**
+     * Records whether large one-shot H2D uploads are routed through the pinned staging ring.
+     * Pushed by the runtime ({@code TornadoVMInterpreter}) before issuing a plan's bytecodes.
+     */
+    public void setStagedTransfers(boolean enabled) {
+        stagedTransfersEnabled = enabled;
+    }
+
+    /**
+     * Whether large one-shot H2D uploads are routed through the pinned staging ring.
+     */
+    public boolean isStagedTransfersEnabled() {
+        return stagedTransfersEnabled;
     }
 
     /**
@@ -1003,6 +1025,23 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueAsyncWrite(executionPlanId, address, length, hostPointer, hostOffset, waitEvents);
+    }
+
+    /**
+     * H2D write staged through the stream's pinned host ring (see
+     * {@link PTXStream#enqueueStagedWrite}). Same routing as the direct
+     * {@link #enqueueWriteBuffer(long, long, long, long, long, int[])}; the caller decides when
+     * staging is worthwhile (large one-shot transfers from unpinned sources).
+     */
+    public int enqueueStagedWriteBuffer(long executionPlanId, long address, long length, long hostPointer, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled(executionPlanId)) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueStagedWrite(executionPlanId, address, length, hostPointer, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_H2D, localEventId);
+        }
+        PTXStream stream = getStream(executionPlanId);
+        return stream.enqueueStagedWrite(executionPlanId, address, length, hostPointer, hostOffset, waitEvents);
     }
 
     public int enqueueWriteBuffer(long executionPlanId, long address, long length, byte[] array, long hostOffset, int[] waitEvents) {

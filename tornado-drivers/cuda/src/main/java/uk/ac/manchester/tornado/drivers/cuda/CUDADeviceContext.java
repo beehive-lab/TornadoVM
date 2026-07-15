@@ -71,8 +71,27 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     private boolean wasReset;
     private final Set<Long> executionIDs;
 
+    /**
+     * Ring of pinned host staging slots for staged transfers (one pinned block of
+     * depth * chunk bytes, sliced into slots). 0 = unallocated (lazy). Shared across plans;
+     * access is serialised by the synchronized staged-write method.
+     */
+    private long stagedRingPtr = 0L;
+    private long stagedChunkSize;
+    private int stagedRingDepth;
+    /** Per-slot raw CUevent handle of the slot's last enqueued DMA; 0 = slot never used. */
+    private long[] stagedSlotEvents;
+
     /** Execution plans that requested intra-plan concurrency (multi-queue issue). */
     private final Set<Long> intraPlanConcurrencyPlans = Collections.synchronizedSet(new HashSet<>());
+
+    /**
+     * Whether large one-shot H2D uploads go through the pinned staging ring. Defaults to the
+     * -Dtornado.staged.transfers property and is overridden by the plan-level withStagedTransfers()
+     * API. Device-wide rather than per-plan: it also drives the host-pin decision in
+     * {@code allocate()}, and pinning is a property of the buffer, not of the plan using it.
+     */
+    private volatile boolean stagedTransfersEnabled = TornadoOptions.ENABLE_STAGED_TRANSFERS;
     /** Guards the one-time warning emitted when concurrency is requested on hardware that cannot overlap. */
     private boolean warnedUnsupportedConcurrency;
     /** Per-plan single-instance role queues (H2D / D2H) used when intra-plan concurrency is enabled. */
@@ -343,6 +362,16 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
         }
     }
 
+    @Override
+    public void setStagedTransfers(boolean enabled) {
+        stagedTransfersEnabled = enabled;
+    }
+
+    @Override
+    public boolean isStagedTransfersEnabled() {
+        return stagedTransfersEnabled;
+    }
+
     /**
      * Intra-plan concurrency (multi-queue issue) is only beneficial when the device can actually overlap
      * work: either run kernels concurrently or overlap copies with compute (async copy engines). On hardware
@@ -442,6 +471,118 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
         } catch (uk.ac.manchester.tornado.drivers.cuda.exceptions.CUDAException e) {
             throw new uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException(e);
         }
+    }
+
+    /**
+     * Staged H2D transfer through a ring of pinned host slots. The transfer is split into
+     * chunks; each chunk is memcpy'd (multi-threaded) into a pinned slot and uploaded with an
+     * async copy, so the staging of chunk i+1 overlaps the DMA of chunk i. Slot reuse is gated
+     * on the slot's previous DMA event. Unlike the direct path, the source segment does not
+     * need to be page-locked - the pinned slots are what makes the DMA asynchronous. Returns
+     * the pool id of the LAST chunk's event (ordering-equivalent to the single-copy event of
+     * the direct path, since all chunks are issued in-order on the same queue).
+     */
+    public synchronized int enqueueStagedWriteBuffer(long executionPlanId, long bufferId, long deviceOffset, long bytes, long hostPointer, long hostOffset, int[] waitEvents) {
+        if (isStreamCapturing(executionPlanId)) {
+            // Host-side slot waits are illegal during CUDA graph capture; use the direct path.
+            return enqueueWriteBuffer(executionPlanId, bufferId, deviceOffset, bytes, hostPointer, hostOffset, waitEvents);
+        }
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_H2D);
+        CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
+        ensureStagedRing();
+        long[] firstChunkWaits = eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId)) ? eventPool.waitEventsBuffer : null;
+        long offset = 0;
+        int chunkIndex = 0;
+        while (offset < bytes) {
+            int slot = chunkIndex % stagedRingDepth;
+            long chunkBytes = Math.min(stagedChunkSize, bytes - offset);
+            if (stagedSlotEvents[slot] != 0) {
+                // Wait (host-side) until the slot's previous upload has drained before refilling
+                // it, then destroy the guard: slot-guard events are RING-owned. They must NOT be
+                // registered in the per-plan event pool - the pool destroys its events on slot
+                // recycling and on plan reset, while this ring is device-wide and outlives plans,
+                // so a pooled handle kept here would dangle (use-after-free in the driver).
+                try {
+                    CUDAEvent.clWaitForEvents(new long[] { 1, stagedSlotEvents[slot] });
+                    CUDAEvent.clReleaseEvent(stagedSlotEvents[slot]);
+                } catch (uk.ac.manchester.tornado.drivers.cuda.exceptions.CUDAException e) {
+                    throw new uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException(e.getMessage());
+                }
+                stagedSlotEvents[slot] = 0;
+            }
+            long slotPtr = stagedRingPtr + (long) slot * stagedChunkSize;
+            fillSlot(slotPtr, hostPointer + hostOffset + offset, chunkBytes);
+            stagedSlotEvents[slot] = commandQueue.enqueueWrite(bufferId, CUDABlocking.FALSE, deviceOffset + offset, chunkBytes, slotPtr, 0, chunkIndex == 0 ? firstChunkWaits : null);
+            offset += chunkBytes;
+            chunkIndex++;
+        }
+        // The dependency event handed back to the caller is a pool-registered marker enqueued
+        // AFTER all chunks (the queue is in-order, so it is ordering-equivalent to the last
+        // chunk's event). The pool owns this marker; the ring keeps owning the chunk events.
+        return eventPool.registerEvent(commandQueue.enqueueMarker(), EventDescriptor.DESC_WRITE_SEGMENT, commandQueue);
+    }
+
+    private void ensureStagedRing() {
+        if (stagedRingPtr == 0L) {
+            stagedChunkSize = TornadoOptions.STAGED_TRANSFER_CHUNK_SIZE;
+            stagedRingDepth = Math.max(2, TornadoOptions.STAGED_TRANSFER_RING_DEPTH);
+            stagedRingPtr = CUDACommandQueue.cuMemAllocHost(stagedChunkSize * stagedRingDepth);
+            if (stagedRingPtr == 0L) {
+                throw new uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException("[CUDA] cuMemAllocHost failed: could not allocate " + (stagedChunkSize * stagedRingDepth) + " bytes of pinned host memory for the staging ring");
+            }
+            stagedSlotEvents = new long[stagedRingDepth];
+        }
+    }
+
+    /**
+     * Frees the pinned staging ring. Called at device teardown, matching the ring's scope: the ring is
+     * device-wide and shared across plans, so it must NOT be released from the per-plan reset - that
+     * would pull it out from under a concurrent plan. Mirrors the PTX backend, which frees its ring in
+     * {@code PTXStream.cuDestroyStream()}.
+     * <p>
+     * Each in-flight slot DMA reads FROM ring memory, so every outstanding slot event is drained
+     * before the pinned block is released; freeing it under a live DMA is undefined behaviour. The
+     * ring is left unallocated, so a subsequent staged transfer lazily rebuilds it.
+     */
+    @Override
+    public synchronized void releaseStagedRing() {
+        if (stagedRingPtr == 0L) {
+            return;
+        }
+        for (int slot = 0; slot < stagedSlotEvents.length; slot++) {
+            if (stagedSlotEvents[slot] != 0) {
+                try {
+                    CUDAEvent.clWaitForEvents(new long[] { 1, stagedSlotEvents[slot] });
+                    CUDAEvent.clReleaseEvent(stagedSlotEvents[slot]);
+                } catch (uk.ac.manchester.tornado.drivers.cuda.exceptions.CUDAException e) {
+                    throw new uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException(e.getMessage());
+                }
+                stagedSlotEvents[slot] = 0;
+            }
+        }
+        CUDACommandQueue.cuMemFreeHost(stagedRingPtr);
+        stagedRingPtr = 0L;
+        stagedSlotEvents = null;
+    }
+
+    /**
+     * Fills a pinned staging slot from the source. A single thread's memcpy is slower than the
+     * PCIe DMA it feeds, which would make the staged path fill-bound; splitting the copy across
+     * threads lifts the fill above the DMA rate so the transfer stays DMA-bound.
+     */
+    private void fillSlot(long dstPtr, long srcPtr, long bytes) {
+        int threads = TornadoOptions.STAGED_TRANSFER_FILL_THREADS;
+        long minPerThread = 1 << 21;
+        if (threads <= 1 || bytes < threads * minPerThread) {
+            CUDACommandQueue.memcpyHostToHost(dstPtr, srcPtr, bytes);
+            return;
+        }
+        long subSize = bytes / threads;
+        java.util.stream.IntStream.range(0, threads).parallel().forEach(t -> {
+            long subOffset = t * subSize;
+            long subBytes = (t == threads - 1) ? bytes - subOffset : subSize;
+            CUDACommandQueue.memcpyHostToHost(dstPtr + subOffset, srcPtr + subOffset, subBytes);
+        });
     }
 
     /**

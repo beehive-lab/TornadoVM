@@ -378,6 +378,16 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
+    public void withStagedTransfers() {
+        executionContext.setStagedTransfersEnabled(true);
+    }
+
+    @Override
+    public void withoutStagedTransfers() {
+        executionContext.setStagedTransfersEnabled(false);
+    }
+
+    @Override
     public void withThreadInfo() {
         meta().enableThreadInfo();
     }
