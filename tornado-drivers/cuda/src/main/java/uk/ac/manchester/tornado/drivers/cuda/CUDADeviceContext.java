@@ -371,7 +371,9 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
         if (streamType == CUDAStreamType.DEFAULT || !isMultiStreamEnabled(executionPlanId)) {
             return getCommandQueue(executionPlanId);
         }
-        return roleQueueTable.computeIfAbsent(executionPlanId, id -> new EnumMap<>(CUDAStreamType.class)).computeIfAbsent(streamType, type -> createQueue(type.name()));
+        CUDACommandQueue queue = roleQueueTable.computeIfAbsent(executionPlanId, id -> new EnumMap<>(CUDAStreamType.class)).computeIfAbsent(streamType, type -> createQueue(type.name()));
+        queue.markDirty();
+        return queue;
     }
 
     /**
@@ -390,7 +392,9 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
             while (pool.size() <= index) {
                 pool.add(createQueue(pool.isEmpty() ? "COMPUTE" : "COMPUTE_" + pool.size()));
             }
-            return pool.get(index);
+            CUDACommandQueue queue = pool.get(index);
+            queue.markDirty();
+            return queue;
         }
     }
 
@@ -401,22 +405,31 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     }
 
     /**
-     * All secondary queues for a plan under intra-plan concurrency: the single-instance role queues
-     * (H2D / D2H) plus the whole COMPUTE pool. Excludes the plan's default queue, which is the join target.
+     * The plan's secondary queues (role + COMPUTE pool) that received work since the last join,
+     * clearing their dirty flags. Untouched queues are excluded: their last marker is already
+     * ordered into the default queue by the previous join, so re-joining them is pure overhead.
      */
-    private List<CUDACommandQueue> secondaryQueues(long executionPlanId) {
-        List<CUDACommandQueue> all = new ArrayList<>();
+    private List<CUDACommandQueue> drainDirtySecondaryQueues(long executionPlanId) {
+        List<CUDACommandQueue> dirty = new ArrayList<>();
         EnumMap<CUDAStreamType, CUDACommandQueue> roles = roleQueueTable.get(executionPlanId);
         if (roles != null) {
-            all.addAll(roles.values());
+            for (CUDACommandQueue queue : roles.values()) {
+                if (queue.pollDirty()) {
+                    dirty.add(queue);
+                }
+            }
         }
         List<CUDACommandQueue> pool = computePool.get(executionPlanId);
         if (pool != null) {
             synchronized (pool) {
-                all.addAll(pool);
+                for (CUDACommandQueue queue : pool) {
+                    if (queue.pollDirty()) {
+                        dirty.add(queue);
+                    }
+                }
             }
         }
-        return all;
+        return dirty;
     }
 
     private CUDACommandQueue createQueue(String nvtxName) {
@@ -432,12 +445,12 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     }
 
     /**
-     * Joins the plan's role queues into its default queue: records a marker event on each role
-     * queue and makes the default queue wait on all of them, so a subsequent marker/barrier on the
-     * default queue covers the whole plan.
+     * Joins the plan's dirty (touched since the last join) secondary queues into its default
+     * queue: records a marker event on each and makes the default queue wait on all of them,
+     * so a subsequent marker/barrier on the default queue covers the whole plan.
      */
     private void joinRoleQueues(long executionPlanId, CUDACommandQueue defaultQueue) {
-        List<CUDACommandQueue> queues = secondaryQueues(executionPlanId);
+        List<CUDACommandQueue> queues = drainDirtySecondaryQueues(executionPlanId);
         if (queues.isEmpty()) {
             return;
         }

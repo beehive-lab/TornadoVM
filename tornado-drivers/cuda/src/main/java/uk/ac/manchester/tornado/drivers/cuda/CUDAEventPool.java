@@ -131,8 +131,6 @@ public class CUDAEventPool {
             return false;
         }
 
-        Arrays.fill(waitEventsBuffer, 0);
-
         int index = 0;
         for (final int value : dependencies) {
             if (value == -1) {
