@@ -46,6 +46,9 @@ public abstract class Expr {
 
     public abstract Expr withChildren(List<Expr> kids);
 
+    /** Operator category for coverage ({@code null} for leaves). See {@link CoverageModel#CATEGORIES}. */
+    public abstract String category();
+
     public int nodeCount() {
         int n = 1;
         for (Expr c : children()) {
@@ -71,25 +74,34 @@ public abstract class Expr {
     private static final String[] ARITH = { "+", "-", "*", "&", "|", "^" };
     private static final int[] EDGE_CONSTS = { Integer.MIN_VALUE, Integer.MAX_VALUE, -1, 0, 1, 2, -2, 255 };
 
+    /** Fixed fragile-biased generation (no coverage feedback). */
     public static Expr generate(RandomGen rng, int depth) {
+        return generate(rng, depth, null);
+    }
+
+    /**
+     * Coverage-guided generation: when {@code cov} is non-null the operator
+     * category at each internal node is chosen with weights that boost
+     * under-covered categories, so the grammar keeps exploring rare codegen
+     * paths. With {@code cov == null} the fixed fragile-biased weights are used.
+     */
+    public static Expr generate(RandomGen rng, int depth, CoverageModel cov) {
         if (depth <= 0 || rng.nextInt(100) < 25) {
             return leaf(rng);
         }
-        int w = rng.nextInt(100);
-        if (w < 30) {
-            return new Binary(rng.pick(ARITH), generate(rng, depth - 1), generate(rng, depth - 1));
-        }
-        if (w < 55) { // fragile: division / remainder
-            return new Div(rng.nextBoolean() ? "/" : "%", generate(rng, depth - 1), generate(rng, depth - 1));
-        }
-        if (w < 75) { // fragile: shifts
-            return new Shift(rng.nextBoolean() ? "<<" : ">>", generate(rng, depth - 1), generate(rng, depth - 1));
-        }
-        if (w < 88) { // fragile: 64-bit high-multiply + narrowing convert
-            return new HighMul(generate(rng, depth - 1), generate(rng, depth - 1));
-        }
-        return new Unary(rng.nextBoolean() ? "-" : "~", generate(rng, depth - 1));
+        int[] weights = cov != null ? cov.categoryWeights() : DEFAULT_WEIGHTS;
+        String category = CoverageModel.CATEGORIES[rng.pickWeighted(weights)];
+        return switch (category) {
+            case "ARITH" -> new Binary(rng.pick(ARITH), generate(rng, depth - 1, cov), generate(rng, depth - 1, cov));
+            case "DIV" -> new Div(rng.nextBoolean() ? "/" : "%", generate(rng, depth - 1, cov), generate(rng, depth - 1, cov));
+            case "SHIFT" -> new Shift(rng.nextBoolean() ? "<<" : ">>", generate(rng, depth - 1, cov), generate(rng, depth - 1, cov));
+            case "HIGHMUL" -> new HighMul(generate(rng, depth - 1, cov), generate(rng, depth - 1, cov));
+            default -> new Unary(rng.nextBoolean() ? "-" : "~", generate(rng, depth - 1, cov));
+        };
     }
+
+    /** Fixed weights matching CoverageModel's baseline (fragile ops favored). */
+    private static final int[] DEFAULT_WEIGHTS = { 30, 25, 20, 13, 12 };
 
     private static Expr leaf(RandomGen rng) {
         return switch (rng.nextInt(4)) {
@@ -120,6 +132,11 @@ public abstract class Expr {
         @Override
         public Expr withChildren(List<Expr> kids) {
             return this;
+        }
+
+        @Override
+        public String category() {
+            return null;
         }
     }
 
@@ -155,6 +172,11 @@ public abstract class Expr {
         public Expr withChildren(List<Expr> kids) {
             return new Binary(op, kids.get(0), kids.get(1));
         }
+
+        @Override
+        public String category() {
+            return "ARITH";
+        }
     }
 
     private static final class Div extends Bin {
@@ -173,6 +195,11 @@ public abstract class Expr {
         @Override
         public Expr withChildren(List<Expr> kids) {
             return new Div(op, kids.get(0), kids.get(1));
+        }
+
+        @Override
+        public String category() {
+            return "DIV";
         }
     }
 
@@ -193,6 +220,11 @@ public abstract class Expr {
         public Expr withChildren(List<Expr> kids) {
             return new Shift(op, kids.get(0), kids.get(1));
         }
+
+        @Override
+        public String category() {
+            return "SHIFT";
+        }
     }
 
     private static final class HighMul extends Bin {
@@ -208,6 +240,11 @@ public abstract class Expr {
         @Override
         public Expr withChildren(List<Expr> kids) {
             return new HighMul(kids.get(0), kids.get(1));
+        }
+
+        @Override
+        public String category() {
+            return "HIGHMUL";
         }
     }
 
@@ -233,6 +270,11 @@ public abstract class Expr {
         @Override
         public Expr withChildren(List<Expr> kids) {
             return new Unary(op, kids.get(0));
+        }
+
+        @Override
+        public String category() {
+            return "UNARY";
         }
     }
 }

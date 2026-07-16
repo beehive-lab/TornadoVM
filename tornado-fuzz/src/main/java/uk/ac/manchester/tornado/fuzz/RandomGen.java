@@ -68,6 +68,25 @@ public final class RandomGen {
         return options[random.nextInt(options.length)];
     }
 
+    /** Pick an index in [0, weights.length) with probability proportional to its weight. */
+    public int pickWeighted(int[] weights) {
+        int total = 0;
+        for (int w : weights) {
+            total += Math.max(0, w);
+        }
+        if (total <= 0) {
+            return random.nextInt(weights.length);
+        }
+        int r = random.nextInt(total);
+        for (int i = 0; i < weights.length; i++) {
+            r -= Math.max(0, weights[i]);
+            if (r < 0) {
+                return i;
+            }
+        }
+        return weights.length - 1;
+    }
+
     public int pick(int[] options) {
         return options[random.nextInt(options.length)];
     }

@@ -73,6 +73,7 @@ public final class FuzzMain {
         KernelTemplate[] templates = filterTemplates(allTemplates, opts.get("only"));
         DataGen.Profile[] profiles = DataGen.Profile.values();
 
+        boolean coverageGuided = !"false".equalsIgnoreCase(opts.getOrDefault("covGuided", "true"));
         Phase2Fuzzer phase2 = null;
         if (phase == 2) {
             InProcessCompiler compiler = new InProcessCompiler();
@@ -82,7 +83,8 @@ public final class FuzzMain {
                 System.out.println("         Example: tornado -cp /tmp/gen -m tornado.fuzz/...FuzzMain \\");
                 System.out.println("                    --jvm=\"-Dtornado.fuzz.genDir=/tmp/gen\" --params \"phase=2 ...\"");
             }
-            phase2 = new Phase2Fuzzer(compiler);
+            phase2 = new Phase2Fuzzer(compiler, coverageGuided);
+            System.out.println("Phase 2 generation: " + (coverageGuided ? "coverage-guided" : "fixed fragile-weighted"));
         }
 
         FindingRecorder recorder = new FindingRecorder(outDir);
@@ -133,7 +135,8 @@ public final class FuzzMain {
             }
         }
 
-        System.out.println("Done. cases=" + count + " pass=" + passes + " findings=" + findings + " buckets=" + buckets.size() + " outDir=" + outDir);
+        String coverageNote = phase == 2 ? " coverage=" + phase2.coverage() + " op-bigrams" : "";
+        System.out.println("Done. cases=" + count + " pass=" + passes + " findings=" + findings + " buckets=" + buckets.size() + coverageNote + " outDir=" + outDir);
         writeBucketSummary(outDir, buckets);
         buckets.forEach((k, n) -> System.out.println("  bucket " + n + "x  " + k));
     }
