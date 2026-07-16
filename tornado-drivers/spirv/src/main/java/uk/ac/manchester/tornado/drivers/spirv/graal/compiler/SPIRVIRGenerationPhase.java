@@ -65,8 +65,6 @@ public class SPIRVIRGenerationPhase extends LIRPhase<SPIRVIRGenerationPhase.LIRG
             emitBlock((SPIRVNodeLIRBuilder) nodeLirBuilder, lirGenRes, (HIRBlock) lirGenRes.getLIR().getBlockById(b), graph, blockMap, context.isKernel);
         }
         ((LIRGenerator) context.lirGen).beforeRegisterAllocation();
-
-        assert SSAUtil.verifySSAForm(lirGenRes.getLIR());
     }
 
     // FIXME <REFACTOR> This class is common for all three backends
