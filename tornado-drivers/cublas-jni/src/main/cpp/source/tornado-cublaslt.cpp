@@ -32,6 +32,7 @@
 
 #include <jni.h>
 #include <cublasLt.h>
+#include <iostream>
 
 extern "C" {
 
@@ -124,6 +125,14 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_cublas_provider_CuBlasLtNa
     cublasLtMatmulPreferenceDestroy(preference);
 
     if (status != CUBLAS_STATUS_SUCCESS || returnedResults == 0) {
+        // The caller only sees a null plan, so report why here: status 15
+        // (CUBLAS_STATUS_NOT_SUPPORTED) or 0 results means this cuBLAS has no
+        // kernel for the requested types on this GPU (e.g. FP8 on an arch the
+        // library predates); other statuses point at the descriptor/layouts.
+        std::cerr << "[TornadoVM-cuBLASLt] plan creation failed: cublasLtMatmulAlgoGetHeuristic"
+                  << " status=" << (int) status << " returnedResults=" << returnedResults
+                  << " (aType=" << a_type << " bType=" << b_type << " cType=" << c_type
+                  << " m=" << m << " n=" << n << " k=" << k << ")" << std::endl;
         cublasLtMatmulDescDestroy(plan->matmulDesc);
         cublasLtMatrixLayoutDestroy(plan->aLayout);
         cublasLtMatrixLayoutDestroy(plan->bLayout);
