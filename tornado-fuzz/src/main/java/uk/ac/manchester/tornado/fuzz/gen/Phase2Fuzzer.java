@@ -58,9 +58,20 @@ public final class Phase2Fuzzer {
 
     private final InProcessCompiler compiler;
     private final AtomicLong classCounter = new AtomicLong();
+    private final CoverageModel coverage = new CoverageModel();
 
     public Phase2Fuzzer(InProcessCompiler compiler) {
         this.compiler = compiler;
+    }
+
+    public Phase2Fuzzer(InProcessCompiler compiler, boolean coverageGuided) {
+        this.compiler = compiler;
+        this.coverage.setEnabled(coverageGuided);
+    }
+
+    /** Distinct operator-bigram coverage accumulated so far. */
+    public int coverage() {
+        return coverage.coverage();
     }
 
     public CaseResult run(FuzzConfig cfg, RandomGen rng, TornadoDevice device) {
@@ -72,11 +83,13 @@ public final class Phase2Fuzzer {
         cfg.localSize = local;
 
         int depth = rng.nextIntBetween(2, MAX_DEPTH);
-        Expr expr = Expr.generate(rng, depth);
+        Expr expr = Expr.generate(rng, depth, coverage);
+        coverage.observe(expr); // feed codegen-feature coverage back into future generation
         String exprText = expr.render();
         cfg.put("depth", depth);
         cfg.put("expr", exprText);
         cfg.put("nodes", expr.nodeCount());
+        cfg.put("coverage", coverage.coverage());
 
         IntArray a = new IntArray(size);
         IntArray b = new IntArray(size);
