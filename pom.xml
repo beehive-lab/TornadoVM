@@ -668,6 +668,7 @@
         <module>tornado-matrices</module>
         <module>tornado-drivers</module>
         <module>tornado-examples</module>
+        <module>tornado-fuzz</module>
         <module>tornado-benchmarks</module>
         <module>tornado-unittests</module>
         <module>tornado-assembly</module>
