@@ -23,6 +23,7 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 
 import jdk.vm.ci.meta.JavaKind;
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.Opcode;
@@ -1687,14 +1688,19 @@ public class CUDALIRStmt {
             CUDAKind vectorKind = (CUDAKind) rhs.getPlatformKind();
             int n = vectorKind.getVectorLength();
             String elem = vectorKind.getElementKind().toString();
-            String idx = CUDAAssembler.getAbsoluteIndexFromValue(index);
 
             asm.beginStackPush();
             address.emit(crb);
             final String addr = asm.getLastOp();
             asm.emitValueWithFormat(crb, rhs);
             final String v = asm.getLastOp();
+            asm.emitValue(crb, index);
+            final String emittedIdx = asm.getLastOp();
             asm.endStackPush();
+
+            // The string-parsing fallback only understands constants; a runtime-variable
+            // index (packed __half2 local arrays) must be emitted as a proper value.
+            String idx = index instanceof ConstantValue ? CUDAAssembler.getAbsoluteIndexFromValue(index) : emittedIdx;
 
             if (vectorKind.getElementKind() == CUDAKind.HALF && n == 2) {
                 // Packed 32-bit store; see the matching VectorLoadStmt comment on

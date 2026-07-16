@@ -89,7 +89,9 @@ public class CUDABinary {
         @Override
         public void emit(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
             CUDAKind resultKind = getCUDAPlatformKind();
-            if (resultKind == null || !resultKind.isVector()) {
+            // Template opcodes (e.g. __shared__ array declarations) are plain format
+            // strings, not componentwise vector arithmetic, even for a vector kind.
+            if (resultKind == null || !resultKind.isVector() || opcode instanceof CUDAAssembler.CUDABinaryTemplate) {
                 super.emit(crb, asm);
                 return;
             }

@@ -292,6 +292,10 @@ public enum CUDAKind implements PlatformKind {
     }
 
     public static CUDAAssembler.CUDABinaryTemplate resolveTemplateType(JavaKind type, CUDAKind kind) {
+        if (kind == CUDAKind.HALF2) {
+            // Packed half2 local arrays are element-typed __half2, regardless of the Java-side type.
+            return CUDAAssembler.CUDABinaryTemplate.NEW_LOCAL_HALF2_ARRAY;
+        }
         if (type == JavaKind.Int) {
             return CUDAAssembler.CUDABinaryTemplate.NEW_LOCAL_INT_ARRAY;
         } else if (type == JavaKind.Double) {

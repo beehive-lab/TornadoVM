@@ -469,6 +469,11 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
         // add after the loadindexedvector nodes the marker node to fix the offset of its read
 
         for (LoadIndexedVectorNode loadIndexedVectorNode : graph.getNodes().filter(LoadIndexedVectorNode.class)) {
+            // Local-memory arrays (e.g. packed __half2 tiles) have no object header, so the
+            // header-offset fix applied through VectorHalfRead must not be emitted for them.
+            if (loadIndexedVectorNode.array() instanceof LocalArrayNode) {
+                continue;
+            }
             if (loadIndexedVectorNode.getCUDAKind().isHalf()) {
                 VectorHalfRead vectorHalfRead;
                 if (loadIndexedVectorNode.index() instanceof ConstantNode constantNode) {
