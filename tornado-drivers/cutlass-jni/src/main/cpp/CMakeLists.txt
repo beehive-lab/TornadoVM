@@ -89,6 +89,15 @@ else()
 	set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3 --expt-relaxed-constexpr -Xcompiler=-fPIC -Xcompiler=-Wno-deprecated-declarations")
 endif()
 
+# GCC 14+ diagnoses invalid code inside uninstantiated template bodies
+# (-Wtemplate-body, an error by default). CUTLASS 3.5.1's matrix.h calls a
+# misspelled set_slice3x3 member from its rotation()/reflection() helpers;
+# nothing here instantiates them, and older GCC ignored the typo, so disable
+# just that diagnostic on the nvcc host-compiler pass.
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 14.0)
+	set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler=-Wno-template-body")
+endif()
+
 # CUTLASS 3.5.1's cuda_host_adapter.hpp casts function pointers loaded via
 # cudaGetDriverEntryPoint() to unversioned typedefs like
 # PFN_cuTensorMapEncodeTiled/PFN_cuTensorMapEncodeIm2col for CUDA 12.0-12.4.
