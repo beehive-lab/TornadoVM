@@ -6,8 +6,8 @@ project = "TornadoVM"
 copyright = "2013-2025, APT Group, Department of Computer Science"
 author = "The University of Manchester"
 
-release = "v4.0.1-jdk21"
-version = "v4.0.1-jdk21"
+release = "v5.0.0-jdk21"
+version = "v5.0.0-jdk21"
 
 # -- General configuration
 
@@ -32,6 +32,8 @@ templates_path = ["_templates"]
 # -- Options for HTML output
 
 html_theme = "sphinx_rtd_theme"
+html_static_path = ["_static"]
+html_css_files = ["custom.css"]
 
 # -- Options for EPUB output
 epub_show_urls = "footnote"

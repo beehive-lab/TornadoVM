@@ -27,13 +27,16 @@ import static uk.ac.manchester.tornado.drivers.cuda.CUDACommandQueue.EMPTY_EVENT
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.EVENT_WINDOW;
 
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.EnumMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
@@ -67,6 +70,44 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     private final TornadoBufferProvider bufferProvider;
     private boolean wasReset;
     private final Set<Long> executionIDs;
+
+    /**
+     * Ring of pinned host staging slots for staged transfers (one pinned block of
+     * depth * chunk bytes, sliced into slots). 0 = unallocated (lazy). Shared across plans;
+     * access is serialised by the synchronized staged-write method.
+     */
+    private long stagedRingPtr = 0L;
+    private long stagedChunkSize;
+    private int stagedRingDepth;
+    /** Per-slot raw CUevent handle of the slot's last enqueued DMA; 0 = slot never used. */
+    private long[] stagedSlotEvents;
+
+    /** Execution plans that requested intra-plan concurrency (multi-queue issue). */
+    private final Set<Long> intraPlanConcurrencyPlans = Collections.synchronizedSet(new HashSet<>());
+
+    /**
+     * Whether large one-shot H2D uploads go through the pinned staging ring. Defaults to the
+     * -Dtornado.staged.transfers property and is overridden by the plan-level withStagedTransfers()
+     * API. Device-wide rather than per-plan: it also drives the host-pin decision in
+     * {@code allocate()}, and pinning is a property of the buffer, not of the plan using it.
+     */
+    private volatile boolean stagedTransfersEnabled = TornadoOptions.ENABLE_STAGED_TRANSFERS;
+    /** Guards the one-time warning emitted when concurrency is requested on hardware that cannot overlap. */
+    private boolean warnedUnsupportedConcurrency;
+    /** Per-plan single-instance role queues (H2D / D2H) used when intra-plan concurrency is enabled. */
+    private final Map<Long, EnumMap<CUDAStreamType, CUDACommandQueue>> roleQueueTable = new ConcurrentHashMap<>();
+
+    /**
+     * Number of CUDA streams in the per-plan COMPUTE pool. DAG-independent kernels are round-robined
+     * across these so they can execute concurrently (CUDA serialises within a single stream). A single
+     * COMPUTE queue would serialise every kernel, which is why kernel/kernel overlap needs a pool.
+     * Configurable via {@code -Dtornado.cuda.compute.streams}; defaults to 4 (mirrors the PTX backend).
+     */
+    private static final int COMPUTE_POOL_SIZE = Math.max(1, Integer.getInteger("tornado.cuda.compute.streams", 4));
+    /** Per-plan COMPUTE stream pool, grown lazily up to {@link #COMPUTE_POOL_SIZE}. */
+    private final Map<Long, List<CUDACommandQueue>> computePool = new ConcurrentHashMap<>();
+    /** Per-plan round-robin cursor for assigning kernels to COMPUTE-pool streams. */
+    private final Map<Long, AtomicInteger> computeCursor = new ConcurrentHashMap<>();
 
     /**
      * Kernel stack-frame writes deferred during CUDA graph capture. The stack
@@ -157,6 +198,10 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
         if (TornadoOptions.USE_SYNC_FLUSH) {
             commandQueue.flush();
         }
+        // Join the plan's secondary queues (role + COMPUTE pool) into the default queue via
+        // events, then host-sync ONCE: a cuStreamSynchronize per queue would serialise the
+        // host against up to 7 queues per execution.
+        joinRoleQueues(executionPlanId, commandQueue);
         commandQueue.finish();
     }
 
@@ -168,6 +213,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     @Override
     public int enqueueBarrier(long executionPlanId) {
         CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        joinRoleQueues(executionPlanId, commandQueue);
         long oclEvent = commandQueue.enqueueBarrier();
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
         return (commandQueue.getOpenclVersion() < 120) ? -1 : eventPool.registerEvent(oclEvent, EventDescriptor.DESC_SYNC_BARRIER, commandQueue);
@@ -176,6 +222,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     @Override
     public int enqueueMarker(long executionPlanId) {
         CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        joinRoleQueues(executionPlanId, commandQueue);
         long oclEvent = commandQueue.enqueueMarker();
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
         return commandQueue.getOpenclVersion() < 120 ? -1 : eventPool.registerEvent(oclEvent, EventDescriptor.DESC_SYNC_MARKER, commandQueue);
@@ -197,9 +244,9 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     }
 
     public int enqueueNDRangeKernel(long executionPlanId, CUDAKernel kernel, int dim, long[] globalWorkOffset, long[] globalWorkSize, long[] localWorkSize, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getComputeQueue(executionPlanId);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        return eventPool.registerEvent(commandQueue.enqueueNDRangeKernel(kernel, dim, globalWorkOffset, globalWorkSize, localWorkSize, eventPool.serialiseEvents(waitEvents, commandQueue)
+        return eventPool.registerEvent(commandQueue.enqueueNDRangeKernel(kernel, dim, globalWorkOffset, globalWorkSize, localWorkSize, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_PARALLEL_KERNEL, commandQueue);
     }
@@ -218,57 +265,57 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      * Asynchronous writes to device
      */
     public int enqueueWriteBuffer(long executionPlanId, long bufferId, long offset, long bytes, byte[] array, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_H2D);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        return eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, CUDABlocking.FALSE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        return eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, CUDABlocking.FALSE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_WRITE_BYTE, commandQueue);
     }
 
     public int enqueueWriteBuffer(long executionPlanId, long bufferId, long offset, long bytes, char[] array, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_H2D);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        return eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, CUDABlocking.FALSE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        return eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, CUDABlocking.FALSE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_WRITE_BYTE, commandQueue);
     }
 
     public int enqueueWriteBuffer(long executionPlanId, long bufferId, long offset, long bytes, int[] array, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_H2D);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        return eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, CUDABlocking.FALSE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        return eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, CUDABlocking.FALSE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_WRITE_INT, commandQueue);
     }
 
     public int enqueueWriteBuffer(long executionPlanId, long bufferId, long offset, long bytes, long[] array, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_H2D);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        return eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, CUDABlocking.FALSE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        return eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, CUDABlocking.FALSE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_WRITE_LONG, commandQueue);
     }
 
     public int enqueueWriteBuffer(long executionPlanId, long bufferId, long offset, long bytes, short[] array, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_H2D);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        return eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, CUDABlocking.FALSE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        return eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, CUDABlocking.FALSE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_WRITE_SHORT, commandQueue);
     }
 
     public int enqueueWriteBuffer(long executionPlanId, long bufferId, long offset, long bytes, float[] array, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_H2D);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        return eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, CUDABlocking.FALSE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        return eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, CUDABlocking.FALSE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_WRITE_FLOAT, commandQueue);
     }
 
     public int enqueueWriteBuffer(long executionPlanId, long bufferId, long offset, long bytes, double[] array, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_H2D);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        return eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, CUDABlocking.FALSE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        return eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, CUDABlocking.FALSE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_WRITE_DOUBLE, commandQueue);
     }
@@ -278,7 +325,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
         if (!commandQueueTable.containsKey(executionPlanId)) {
             CUDATargetDevice device = context.devices().get(getDeviceIndex());
             CUDACommandQueueTable oclCommandQueueTable = new CUDACommandQueueTable();
-            oclCommandQueueTable.get(device, context);
+            oclCommandQueueTable.get(device, context).nameStream(CUDAStreamType.DEFAULT.name());
             commandQueueTable.put(executionPlanId, oclCommandQueueTable);
         }
         return commandQueueTable.get(executionPlanId).get(context.devices().get(getDeviceIndex()), context);
@@ -292,10 +339,278 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
         return oclEventPool.get(executionPlanId);
     }
 
-    public int enqueueWriteBuffer(long executionPlanId, long bufferId, long deviceOffset, long bytes, long hostPointer, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+    /**
+     * Records, per execution plan, whether intra-plan concurrency (multi-queue issue) is enabled.
+     * Pushed by the runtime before issuing a plan's bytecodes.
+     */
+    public void setIntraPlanConcurrency(long executionPlanId, boolean enabled) {
+        // Piggyback on this per-execution hook (the interpreter calls it before issuing any
+        // bytecode) to push the CURRENT profiler state to the native layer: the profiler can be
+        // enabled dynamically per plan (withProfiler), and per-op timing events are only worth
+        // creating while it is active.
+        CUDACommandQueue.nativeEnableTiming(TornadoOptions.isProfilerEnabled());
+        if (enabled && deviceSupportsIntraPlanConcurrency()) {
+            intraPlanConcurrencyPlans.add(executionPlanId);
+        } else {
+            if (enabled && !warnedUnsupportedConcurrency) {
+                System.err.printf("Warning: intra-plan concurrency requested but device '%s' cannot overlap work "
+                        + "(asyncEngineCount=%d, concurrentKernels=%b); falling back to single-queue execution.%n",
+                        device.getDeviceName(), device.getAsyncEngineCount(), device.supportsConcurrentKernels());
+                warnedUnsupportedConcurrency = true;
+            }
+            intraPlanConcurrencyPlans.remove(executionPlanId);
+        }
+    }
+
+    @Override
+    public void setStagedTransfers(boolean enabled) {
+        stagedTransfersEnabled = enabled;
+    }
+
+    @Override
+    public boolean isStagedTransfersEnabled() {
+        return stagedTransfersEnabled;
+    }
+
+    /**
+     * Intra-plan concurrency (multi-queue issue) is only beneficial when the device can actually overlap
+     * work: either run kernels concurrently or overlap copies with compute (async copy engines). On hardware
+     * that supports neither, role queues add cross-queue event overhead for no gain, so we fall back to
+     * single-queue execution - mirroring the PTX backend.
+     */
+    private boolean deviceSupportsIntraPlanConcurrency() {
+        return device.supportsConcurrentKernels() || device.getAsyncEngineCount() >= 1;
+    }
+
+    /**
+     * Multi-queue issue is disabled while the plan's stream is capturing into a CUDA graph:
+     * capture records a single stream, and touching other streams would invalidate it.
+     */
+    private boolean isMultiStreamEnabled(long executionPlanId) {
+        return intraPlanConcurrencyPlans.contains(executionPlanId) && !isStreamCapturing(executionPlanId);
+    }
+
+    /**
+     * Returns the queue that should execute an operation of the given role: a dedicated per-plan
+     * role queue under intra-plan concurrency, the plan's default queue otherwise. Cross-queue
+     * ordering is preserved by serialising the dependency wait lists into CUevent waits (see
+     * {@link CUDAEventPool#serialiseEvents(int[], CUDACommandQueue, boolean)}).
+     */
+    private CUDACommandQueue getCommandQueue(long executionPlanId, CUDAStreamType streamType) {
+        if (streamType == CUDAStreamType.DEFAULT || !isMultiStreamEnabled(executionPlanId)) {
+            return getCommandQueue(executionPlanId);
+        }
+        CUDACommandQueue queue = roleQueueTable.computeIfAbsent(executionPlanId, id -> new EnumMap<>(CUDAStreamType.class)).computeIfAbsent(streamType, type -> createQueue(type.name()));
+        queue.markDirty();
+        return queue;
+    }
+
+    /**
+     * Returns the COMPUTE queue a kernel should run on: round-robined across the per-plan COMPUTE pool
+     * under intra-plan concurrency so DAG-independent kernels overlap, or the plan's default queue
+     * otherwise. During CUDA-graph capture {@link #isMultiStreamEnabled} is already false, so capture
+     * records on the single default queue. Mirrors the PTX COMPUTE stream pool.
+     */
+    private CUDACommandQueue getComputeQueue(long executionPlanId) {
+        if (!isMultiStreamEnabled(executionPlanId)) {
+            return getCommandQueue(executionPlanId);
+        }
+        int index = nextComputeIndex(executionPlanId);
+        List<CUDACommandQueue> pool = computePool.computeIfAbsent(executionPlanId, id -> new ArrayList<>());
+        synchronized (pool) {
+            while (pool.size() <= index) {
+                pool.add(createQueue(pool.isEmpty() ? "COMPUTE" : "COMPUTE_" + pool.size()));
+            }
+            CUDACommandQueue queue = pool.get(index);
+            queue.markDirty();
+            return queue;
+        }
+    }
+
+    /** Round-robin index of the next COMPUTE-pool stream for this plan (0..COMPUTE_POOL_SIZE-1). */
+    private int nextComputeIndex(long executionPlanId) {
+        AtomicInteger cursor = computeCursor.computeIfAbsent(executionPlanId, id -> new AtomicInteger());
+        return Math.floorMod(cursor.getAndIncrement(), COMPUTE_POOL_SIZE);
+    }
+
+    /**
+     * The plan's secondary queues (role + COMPUTE pool) that received work since the last join,
+     * clearing their dirty flags. Untouched queues are excluded: their last marker is already
+     * ordered into the default queue by the previous join, so re-joining them is pure overhead.
+     */
+    private List<CUDACommandQueue> drainDirtySecondaryQueues(long executionPlanId) {
+        List<CUDACommandQueue> dirty = new ArrayList<>();
+        EnumMap<CUDAStreamType, CUDACommandQueue> roles = roleQueueTable.get(executionPlanId);
+        if (roles != null) {
+            for (CUDACommandQueue queue : roles.values()) {
+                if (queue.pollDirty()) {
+                    dirty.add(queue);
+                }
+            }
+        }
+        List<CUDACommandQueue> pool = computePool.get(executionPlanId);
+        if (pool != null) {
+            synchronized (pool) {
+                for (CUDACommandQueue queue : pool) {
+                    if (queue.pollDirty()) {
+                        dirty.add(queue);
+                    }
+                }
+            }
+        }
+        return dirty;
+    }
+
+    private CUDACommandQueue createQueue(String nvtxName) {
+        CUDATargetDevice targetDevice = context.devices().get(getDeviceIndex());
+        try {
+            long queuePtr = context.clCreateCommandQueue(context.getContextId(), targetDevice.getDevicePointer(), context.getProperties());
+            CUDACommandQueue queue = new CUDACommandQueue(queuePtr, context.getProperties(), targetDevice.deviceVersion());
+            queue.nameStream(nvtxName);
+            return queue;
+        } catch (uk.ac.manchester.tornado.drivers.cuda.exceptions.CUDAException e) {
+            throw new uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException(e);
+        }
+    }
+
+    /**
+     * Staged H2D transfer through a ring of pinned host slots. The transfer is split into
+     * chunks; each chunk is memcpy'd (multi-threaded) into a pinned slot and uploaded with an
+     * async copy, so the staging of chunk i+1 overlaps the DMA of chunk i. Slot reuse is gated
+     * on the slot's previous DMA event. Unlike the direct path, the source segment does not
+     * need to be page-locked - the pinned slots are what makes the DMA asynchronous. Returns
+     * the pool id of the LAST chunk's event (ordering-equivalent to the single-copy event of
+     * the direct path, since all chunks are issued in-order on the same queue).
+     */
+    public synchronized int enqueueStagedWriteBuffer(long executionPlanId, long bufferId, long deviceOffset, long bytes, long hostPointer, long hostOffset, int[] waitEvents) {
+        if (isStreamCapturing(executionPlanId)) {
+            // Host-side slot waits are illegal during CUDA graph capture; use the direct path.
+            return enqueueWriteBuffer(executionPlanId, bufferId, deviceOffset, bytes, hostPointer, hostOffset, waitEvents);
+        }
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_H2D);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        long eventId = commandQueue.enqueueWrite(bufferId, CUDABlocking.FALSE, deviceOffset, bytes, hostPointer, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        ensureStagedRing();
+        long[] firstChunkWaits = eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId)) ? eventPool.waitEventsBuffer : null;
+        long offset = 0;
+        int chunkIndex = 0;
+        while (offset < bytes) {
+            int slot = chunkIndex % stagedRingDepth;
+            long chunkBytes = Math.min(stagedChunkSize, bytes - offset);
+            if (stagedSlotEvents[slot] != 0) {
+                // Wait (host-side) until the slot's previous upload has drained before refilling
+                // it, then destroy the guard: slot-guard events are RING-owned. They must NOT be
+                // registered in the per-plan event pool - the pool destroys its events on slot
+                // recycling and on plan reset, while this ring is device-wide and outlives plans,
+                // so a pooled handle kept here would dangle (use-after-free in the driver).
+                try {
+                    CUDAEvent.clWaitForEvents(new long[] { 1, stagedSlotEvents[slot] });
+                    CUDAEvent.clReleaseEvent(stagedSlotEvents[slot]);
+                } catch (uk.ac.manchester.tornado.drivers.cuda.exceptions.CUDAException e) {
+                    throw new uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException(e.getMessage());
+                }
+                stagedSlotEvents[slot] = 0;
+            }
+            long slotPtr = stagedRingPtr + (long) slot * stagedChunkSize;
+            fillSlot(slotPtr, hostPointer + hostOffset + offset, chunkBytes);
+            stagedSlotEvents[slot] = commandQueue.enqueueWrite(bufferId, CUDABlocking.FALSE, deviceOffset + offset, chunkBytes, slotPtr, 0, chunkIndex == 0 ? firstChunkWaits : null);
+            offset += chunkBytes;
+            chunkIndex++;
+        }
+        // The dependency event handed back to the caller is a pool-registered marker enqueued
+        // AFTER all chunks (the queue is in-order, so it is ordering-equivalent to the last
+        // chunk's event). The pool owns this marker; the ring keeps owning the chunk events.
+        return eventPool.registerEvent(commandQueue.enqueueMarker(), EventDescriptor.DESC_WRITE_SEGMENT, commandQueue);
+    }
+
+    private void ensureStagedRing() {
+        if (stagedRingPtr == 0L) {
+            stagedChunkSize = TornadoOptions.STAGED_TRANSFER_CHUNK_SIZE;
+            stagedRingDepth = Math.max(2, TornadoOptions.STAGED_TRANSFER_RING_DEPTH);
+            stagedRingPtr = CUDACommandQueue.cuMemAllocHost(stagedChunkSize * stagedRingDepth);
+            if (stagedRingPtr == 0L) {
+                throw new uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException("[CUDA] cuMemAllocHost failed: could not allocate " + (stagedChunkSize * stagedRingDepth) + " bytes of pinned host memory for the staging ring");
+            }
+            stagedSlotEvents = new long[stagedRingDepth];
+        }
+    }
+
+    /**
+     * Frees the pinned staging ring. Called at device teardown, matching the ring's scope: the ring is
+     * device-wide and shared across plans, so it must NOT be released from the per-plan reset - that
+     * would pull it out from under a concurrent plan. Mirrors the PTX backend, which frees its ring in
+     * {@code PTXStream.cuDestroyStream()}.
+     * <p>
+     * Each in-flight slot DMA reads FROM ring memory, so every outstanding slot event is drained
+     * before the pinned block is released; freeing it under a live DMA is undefined behaviour. The
+     * ring is left unallocated, so a subsequent staged transfer lazily rebuilds it.
+     */
+    @Override
+    public synchronized void releaseStagedRing() {
+        if (stagedRingPtr == 0L) {
+            return;
+        }
+        for (int slot = 0; slot < stagedSlotEvents.length; slot++) {
+            if (stagedSlotEvents[slot] != 0) {
+                try {
+                    CUDAEvent.clWaitForEvents(new long[] { 1, stagedSlotEvents[slot] });
+                    CUDAEvent.clReleaseEvent(stagedSlotEvents[slot]);
+                } catch (uk.ac.manchester.tornado.drivers.cuda.exceptions.CUDAException e) {
+                    throw new uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException(e.getMessage());
+                }
+                stagedSlotEvents[slot] = 0;
+            }
+        }
+        CUDACommandQueue.cuMemFreeHost(stagedRingPtr);
+        stagedRingPtr = 0L;
+        stagedSlotEvents = null;
+    }
+
+    /**
+     * Fills a pinned staging slot from the source. A single thread's memcpy is slower than the
+     * PCIe DMA it feeds, which would make the staged path fill-bound; splitting the copy across
+     * threads lifts the fill above the DMA rate so the transfer stays DMA-bound.
+     */
+    private void fillSlot(long dstPtr, long srcPtr, long bytes) {
+        int threads = TornadoOptions.STAGED_TRANSFER_FILL_THREADS;
+        long minPerThread = 1 << 21;
+        if (threads <= 1 || bytes < threads * minPerThread) {
+            CUDACommandQueue.memcpyHostToHost(dstPtr, srcPtr, bytes);
+            return;
+        }
+        long subSize = bytes / threads;
+        java.util.stream.IntStream.range(0, threads).parallel().forEach(t -> {
+            long subOffset = t * subSize;
+            long subBytes = (t == threads - 1) ? bytes - subOffset : subSize;
+            CUDACommandQueue.memcpyHostToHost(dstPtr + subOffset, srcPtr + subOffset, subBytes);
+        });
+    }
+
+    /**
+     * Joins the plan's dirty (touched since the last join) secondary queues into its default
+     * queue: records a marker event on each and makes the default queue wait on all of them,
+     * so a subsequent marker/barrier on the default queue covers the whole plan.
+     */
+    private void joinRoleQueues(long executionPlanId, CUDACommandQueue defaultQueue) {
+        List<CUDACommandQueue> queues = drainDirtySecondaryQueues(executionPlanId);
+        if (queues.isEmpty()) {
+            return;
+        }
+        CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
+        long[] buffer = new long[queues.size() + 1];
+        int index = 0;
+        for (CUDACommandQueue queue : queues) {
+            long event = queue.enqueueMarker();
+            eventPool.registerEvent(event, EventDescriptor.DESC_SYNC_MARKER, queue);
+            buffer[++index] = event;
+        }
+        buffer[0] = index;
+        defaultQueue.enqueueBarrier(buffer);
+    }
+
+    public int enqueueWriteBuffer(long executionPlanId, long bufferId, long deviceOffset, long bytes, long hostPointer, long hostOffset, int[] waitEvents) {
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_H2D);
+        CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
+        long eventId = commandQueue.enqueueWrite(bufferId, CUDABlocking.FALSE, deviceOffset, bytes, hostPointer, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null);
         return eventPool.registerEvent(eventId, EventDescriptor.DESC_WRITE_SEGMENT, commandQueue);
@@ -306,65 +621,65 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      *
      */
     public int enqueueReadBuffer(long executionPlanId, long bufferId, long offset, long bytes, byte[] array, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_D2H);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.FALSE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.FALSE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_READ_BYTE, commandQueue);
     }
 
     public int enqueueReadBuffer(long executionPlanId, long bufferId, long offset, long bytes, char[] array, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_D2H);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.FALSE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.FALSE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_READ_BYTE, commandQueue);
     }
 
     public int enqueueReadBuffer(long executionPlanId, long bufferId, long offset, long bytes, int[] array, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_D2H);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.FALSE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.FALSE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_READ_INT, commandQueue);
     }
 
     public int enqueueReadBuffer(long executionPlanId, long bufferId, long offset, long bytes, long[] array, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_D2H);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.FALSE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.FALSE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_READ_LONG, commandQueue);
     }
 
     public int enqueueReadBuffer(long executionPlanId, long bufferId, long offset, long bytes, float[] array, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_D2H);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.FALSE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.FALSE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_READ_FLOAT, commandQueue);
     }
 
     public int enqueueReadBuffer(long executionPlanId, long bufferId, long offset, long bytes, double[] array, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_D2H);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.FALSE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.FALSE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_READ_DOUBLE, commandQueue);
     }
 
     public int enqueueReadBuffer(long executionPlanId, long bufferId, long offset, long bytes, short[] array, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_D2H);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.FALSE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.FALSE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_READ_SHORT, commandQueue);
     }
 
     public int enqueueReadBuffer(long executionPlanId, long bufferId, long offset, long bytes, long hostPointer, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_D2H);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.FALSE, offset, bytes, hostPointer, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.FALSE, offset, bytes, hostPointer, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_READ_SEGMENT, commandQueue);
     }
@@ -373,65 +688,65 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      * Synchronous writes to device
      */
     public void writeBuffer(long executionPlanId, long bufferId, long offset, long bytes, byte[] array, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_H2D);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, CUDABlocking.TRUE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, CUDABlocking.TRUE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_WRITE_BYTE, commandQueue);
     }
 
     public void writeBuffer(long executionPlanId, long bufferId, long offset, long bytes, char[] array, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_H2D);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, CUDABlocking.TRUE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, CUDABlocking.TRUE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_WRITE_BYTE, commandQueue);
     }
 
     public void writeBuffer(long executionPlanId, long bufferId, long offset, long bytes, int[] array, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_H2D);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, CUDABlocking.TRUE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, CUDABlocking.TRUE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_WRITE_INT, commandQueue);
     }
 
     public void writeBuffer(long executionPlanId, long bufferId, long offset, long bytes, long[] array, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_H2D);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, CUDABlocking.TRUE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, CUDABlocking.TRUE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_WRITE_LONG, commandQueue);
     }
 
     public void writeBuffer(long executionPlanId, long bufferId, long offset, long bytes, short[] array, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_H2D);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, CUDABlocking.TRUE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, CUDABlocking.TRUE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_WRITE_SHORT, commandQueue);
     }
 
     public void writeBuffer(long executionPlanId, long bufferId, long offset, long bytes, float[] array, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_H2D);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, CUDABlocking.TRUE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, CUDABlocking.TRUE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_WRITE_FLOAT, commandQueue);
     }
 
     public void writeBuffer(long executionPlanId, long bufferId, long offset, long bytes, double[] array, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_H2D);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, CUDABlocking.TRUE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, CUDABlocking.TRUE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_WRITE_DOUBLE, commandQueue);
     }
 
     public void writeBuffer(long executionPlanId, long bufferId, long offset, long bytes, long hostPointer, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_H2D);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, CUDABlocking.TRUE, offset, bytes, hostPointer, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, CUDABlocking.TRUE, offset, bytes, hostPointer, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_WRITE_SEGMENT, commandQueue);
     }
@@ -440,66 +755,68 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      * Synchronous reads from device
      */
     public int readBuffer(long executionPlanId, long bufferId, long offset, long bytes, byte[] array, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_D2H);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.TRUE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.TRUE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_READ_BYTE, commandQueue);
     }
 
     public int readBuffer(long executionPlanId, long bufferId, long offset, long bytes, char[] array, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_D2H);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.TRUE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.TRUE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_READ_BYTE, commandQueue);
     }
 
     public int readBuffer(long executionPlanId, long bufferId, long offset, long bytes, int[] array, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_D2H);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.TRUE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.TRUE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_READ_INT, commandQueue);
     }
 
     public int readBuffer(long executionPlanId, long bufferId, long offset, long bytes, long[] array, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_D2H);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.TRUE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.TRUE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_READ_LONG, commandQueue);
     }
 
     public int readBuffer(long executionPlanId, long bufferId, long offset, long bytes, float[] array, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_D2H);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.TRUE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.TRUE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_READ_FLOAT, commandQueue);
     }
 
     public int readBuffer(long executionPlanId, long bufferId, long offset, long bytes, double[] array, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_D2H);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.TRUE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.TRUE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_READ_DOUBLE, commandQueue);
 
     }
 
     public int readBuffer(long executionPlanId, long bufferId, long offset, long bytes, short[] array, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_D2H);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.TRUE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.TRUE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_READ_SHORT, commandQueue);
     }
 
     public int readBuffer(long executionPlanId, long bufferId, long offset, long bytes, long hostPointer, long hostOffset, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_D2H);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, CUDABlocking.TRUE, offset, bytes, hostPointer, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        // non-blocking/async copy-out for off-heap (and therefore pinned) buffers when we go multi-stream
+        boolean blocking = (isMultiStreamEnabled(executionPlanId) && waitEvents != null) ? CUDABlocking.FALSE : CUDABlocking.TRUE;
+        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, blocking, offset, bytes, hostPointer, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_READ_SEGMENT, commandQueue);
     }
@@ -507,16 +824,18 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     @Override
     public int enqueueBarrier(long executionPlanId, int[] events) {
         CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        joinRoleQueues(executionPlanId, commandQueue);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        long oclEvent = commandQueue.enqueueBarrier(eventPool.serialiseEvents(events, commandQueue) ? eventPool.waitEventsBuffer : null);
+        long oclEvent = commandQueue.enqueueBarrier(eventPool.serialiseEvents(events, commandQueue, isMultiStreamEnabled(executionPlanId)) ? eventPool.waitEventsBuffer : null);
         return commandQueue.getOpenclVersion() < 120 ? -1 : eventPool.registerEvent(oclEvent, EventDescriptor.DESC_SYNC_BARRIER, commandQueue);
     }
 
     @Override
     public int enqueueMarker(long executionPlanId, int[] events) {
         CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        joinRoleQueues(executionPlanId, commandQueue);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        long oclEvent = commandQueue.enqueueMarker(eventPool.serialiseEvents(events, commandQueue) ? eventPool.waitEventsBuffer : null);
+        long oclEvent = commandQueue.enqueueMarker(eventPool.serialiseEvents(events, commandQueue, isMultiStreamEnabled(executionPlanId)) ? eventPool.waitEventsBuffer : null);
         return commandQueue.getOpenclVersion() < 120 ? -1 : eventPool.registerEvent(oclEvent, EventDescriptor.DESC_SYNC_MARKER, commandQueue);
     }
 
@@ -524,6 +843,20 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     public void reset(long executionPlanId) {
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
         eventPool.reset();
+        EnumMap<CUDAStreamType, CUDACommandQueue> queues = roleQueueTable.remove(executionPlanId);
+        if (queues != null) {
+            for (CUDACommandQueue roleQueue : queues.values()) {
+                roleQueue.cleanup();
+            }
+        }
+        List<CUDACommandQueue> pool = computePool.remove(executionPlanId);
+        if (pool != null) {
+            for (CUDACommandQueue computeQueue : pool) {
+                computeQueue.cleanup();
+            }
+        }
+        computeCursor.remove(executionPlanId);
+        intraPlanConcurrencyPlans.remove(executionPlanId);
         oclEventPool.remove(executionPlanId);
         CUDACommandQueueTable table = commandQueueTable.get(executionPlanId);
         if (table != null) {
@@ -537,6 +870,10 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
         CUDACodeCache oclCodeCache = getCUDACodeCache(executionPlanId);
         oclCodeCache.reset();
         codeCache.remove(executionPlanId);
+        // Plan teardown may bulk-release device buffers without the per-buffer free hook
+        // running, which would leave host pins behind - the stale-pin hazard. Drain all
+        // owned pins here; live segments degrade to pageable until their next allocate.
+        context.getPinnedMemoryRegistry().unpinAll();
         wasReset = true;
     }
 
@@ -754,5 +1091,22 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
         if (anyPlanId != null) {
             getCommandQueue(anyPlanId).destroyGraph(executionGraphHandle);
         }
+    }
+
+    /* ---- Native interop (external libraries, e.g. cuBLAS) ---- */
+
+    /**
+     * Raw CUstream handle of the execution-plan queue, for binding external
+     * libraries (e.g., cublasSetStream) to TornadoVM's stream.
+     */
+    public long getNativeStream(long executionPlanId) {
+        return getCommandQueue(executionPlanId).getNativeStream();
+    }
+
+    /**
+     * Raw CUcontext handle of the execution-plan queue.
+     */
+    public long getNativeContext(long executionPlanId) {
+        return getCommandQueue(executionPlanId).getNativeContext();
     }
 }

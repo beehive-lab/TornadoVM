@@ -235,7 +235,7 @@ public class CUDAInstalledCode extends InstalledCode implements TornadoInstalled
         if (meta == null) {
             task = deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, waitEvents);
         } else {
-            if (meta.isParallel()) {
+            if (meta.isParallel() || meta.isWorkerGridAvailable()) {
                 task = scheduler.submit(executionPlanId, kernel, meta, waitEvents, batchThreads);
             } else {
                 if (meta.isDebug()) {
@@ -269,7 +269,9 @@ public class CUDAInstalledCode extends InstalledCode implements TornadoInstalled
             // Ahead Of Time kernel execution
             task = deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, 1, null, meta.getGlobalWork(), meta.getLocalWork(), null);
         }
-        if (TornadoOptions.isProfilerEnabled()) {
+        // Skipped while capturing into a CUDA graph: waiting on a capture-recorded event is
+        // illegal and invalidates the capture.
+        if (TornadoOptions.isProfilerEnabled() && !deviceContext.isStreamCapturing(executionPlanId)) {
             Event tornadoKernelEvent = deviceContext.resolveEvent(executionPlanId, task);
             tornadoKernelEvent.waitForEvents(executionPlanId);
             long timer = meta.getProfiler().getTimer(ProfilerType.TOTAL_KERNEL_TIME);

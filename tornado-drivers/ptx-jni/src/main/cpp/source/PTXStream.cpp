@@ -25,22 +25,52 @@
 
 #include <jni.h>
 #include <cuda.h>
+#include "nvtx3/nvToolsExt.h"
+#include "nvtx3/nvToolsExtCuda.h"
 
 #include <iostream>
+#include <cstring>
 #include "PTXStream.h"
 #include "PTXModule.h"
 #include "PTXEvent.h"
 #include "ptx_utils.h"
 #include "ptx_log.h"
 
-static void stream_from_array(JNIEnv *env, CUstream *stream_ptr, jbyteArray array) {
-    env->GetByteArrayRegion(array, 0, sizeof(CUstream), reinterpret_cast<jbyte *>(stream_ptr));
+/*
+ * RAII helper that wraps a host-side NVTX range around a stream issue point
+ * (an H2D/D2H copy or a kernel launch). The range is popped automatically on
+ * every return path, so it labels the Nsight Systems timeline with where each
+ * device operation is dispatched. NVTX is header-only and a near-zero-cost no-op
+ * unless a profiler (e.g. nsys) injection library is attached.
+ */
+namespace {
+struct NvtxRange {
+    explicit NvtxRange(const char *name) {
+        nvtxRangePushA(name);
+    }
+    ~NvtxRange() {
+        nvtxRangePop();
+    }
+};
 }
 
-static jbyteArray array_from_stream(JNIEnv *env, CUstream *stream) {
-    jbyteArray array = env->NewByteArray(sizeof(CUstream));
-    env->SetByteArrayRegion(array, 0, sizeof(CUstream), reinterpret_cast<const jbyte *>(stream));
-    return array;
+
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+ * Method:    nvtxNameStream
+ * Signature: ([BLjava/lang/String;)V
+ *
+ * Labels a CUDA stream with a human-readable name (its role: H2D / COMPUTE / D2H)
+ * so the Nsight Systems timeline shows named stream rows instead of raw stream ids.
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_nvtxNameStream
+        (JNIEnv *env, jclass klass, jbyteArray streamWrapper, jstring name) {
+    CUstream stream;
+    stream_from_array(env, &stream, streamWrapper);
+    const char *cname = env->GetStringUTFChars(name, NULL);
+    nvtxNameCuStreamA(stream, cname);
+    env->ReleaseStringUTFChars(name, cname);
 }
 
 jobjectArray transferFromDeviceToHost(
@@ -59,6 +89,7 @@ jobjectArray transferFromDeviceToHost(
     record_events_create(&beforeEvent, &afterEvent);
     jbyte *buffer = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(hostArray, NULL));
     record_event(&beforeEvent, &stream);
+    NvtxRange _nvtx("PTX D2H");
     result = cuMemcpyDtoHAsync(&buffer[hostOffset], devicePtr, (size_t) length, stream);
     LOG_PTX_AND_VALIDATE("cuMemcpyDtoHAsync", result);
     record_event(&afterEvent, &stream);
@@ -223,6 +254,7 @@ jobjectArray transferFromHostToDevice(JNIEnv* env,
     record_events_create(&beforeEvent, &afterEvent);
     jbyte *buffer = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(hostArray, NULL));
     record_event(&beforeEvent, &stream);
+    NvtxRange _nvtx("PTX H2D");
     result = cuMemcpyHtoDAsync(devicePtr, &buffer[hostOffset], (size_t) length, stream);
     LOG_PTX_AND_VALIDATE("cuMemcpyHtoDAsync", result);
     record_event(&afterEvent, &stream);
@@ -231,6 +263,93 @@ jobjectArray transferFromHostToDevice(JNIEnv* env,
     env->ReleasePrimitiveArrayCritical(hostArray, buffer, JNI_ABORT);
     return wrapper_from_events(env, &beforeEvent, &afterEvent);
 }
+
+/*
+ * Staged async H2D transfer via a per-stream pinned buffer.
+ *
+ * 1. cuStreamSynchronize  – ensures the staging buffer is no longer being read
+ *    by the previous in-flight DMA before we overwrite it.
+ * 2. GetPrimitiveArrayCritical / memcpy  – copies the JVM array into the pinned
+ *    staging region; the JVM critical section is released immediately after.
+ * 3. cuMemcpyHtoDAsync  – enqueues a truly async DMA from pinned staging to the
+ *    device; returns to the caller without blocking.
+ */
+static jobjectArray stagedTransferFromHostToDevice(JNIEnv *env,
+                                                   jlong devicePtr,
+                                                   jlong length,
+                                                   jbyteArray hostArray,
+                                                   jlong hostOffset,
+                                                   jlong stagingPtr,
+                                                   jbyteArray stream_wrapper
+                                                   ) {
+    CUevent beforeEvent, afterEvent;
+    CUstream stream;
+    stream_from_array(env, &stream, stream_wrapper);
+    record_events_create(&beforeEvent, &afterEvent);
+
+    NvtxRange _nvtx("PTX H2D staged");
+    CUresult result = cuStreamSynchronize(stream);
+    LOG_PTX_AND_VALIDATE("cuStreamSynchronize (stage guard)", result);
+
+    jbyte *buffer = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(hostArray, NULL));
+    memcpy(reinterpret_cast<void *>(stagingPtr), &buffer[hostOffset], (size_t) length);
+    env->ReleasePrimitiveArrayCritical(hostArray, buffer, JNI_ABORT);
+
+    record_event(&beforeEvent, &stream);
+    result = cuMemcpyHtoDAsync(devicePtr, reinterpret_cast<void *>(stagingPtr), (size_t) length, stream);
+    LOG_PTX_AND_VALIDATE("cuMemcpyHtoDAsyncStaged", result);
+    record_event(&afterEvent, &stream);
+
+    return wrapper_from_events(env, &beforeEvent, &afterEvent);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+ * Method:    cuMemAllocHost
+ * Signature: (J)J
+ *
+ * Allocates a page-locked (pinned) host buffer. Used as a per-stream staging
+ * area so that JVM arrays can be copied to it and immediately released from
+ * the GC critical section before the async DMA is enqueued.
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuMemAllocHost
+        (JNIEnv *env, jclass clazz, jlong numBytes) {
+    void *ptr = nullptr;
+    CUresult result = cuMemAllocHost(&ptr, (size_t) numBytes);
+    LOG_PTX_AND_VALIDATE("cuMemAllocHost", result);
+    if (result != CUDA_SUCCESS) {
+        return 0L;
+    }
+    return (jlong) ptr;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+ * Method:    memcpyHostToHost
+ * Signature: (JJJ)V
+ *
+ * Plain host-side memcpy between raw pointers. Used by the staged-transfer
+ * path to fill a pinned staging slot from the (pageable) source segment on
+ * the CPU while a previous slot's async DMA is in flight.
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_memcpyHostToHost
+        (JNIEnv *env, jclass clazz, jlong dstPtr, jlong srcPtr, jlong numBytes) {
+    memcpy((void *) dstPtr, (const void *) srcPtr, (size_t) numBytes);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+ * Method:    cuMemFreeHost
+ * Signature: (J)V
+ *
+ * Releases a pinned host buffer previously allocated by cuMemAllocHost.
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuMemFreeHost
+        (JNIEnv *env, jclass clazz, jlong hostPtr) {
+    CUresult result = cuMemFreeHost((void *) hostPtr);
+    LOG_PTX_AND_VALIDATE("cuMemFreeHost", result);
+}
+
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
@@ -305,71 +424,71 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayHtoDAsync
- * Signature: (JJ[BJ[B)[[B
+ * Signature: (JJ[BJJ[B)[[B
  */
-JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3BJ_3B
-        (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jbyteArray array, jlong host_offset, jbyteArray stream_wrapper) {
-    return transferFromHostToDevice(env, klass, device_ptr, length, array, host_offset, stream_wrapper);
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3BJJ_3B
+        (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jbyteArray array, jlong host_offset, jlong staging, jbyteArray stream_wrapper) {
+    return stagedTransferFromHostToDevice(env, device_ptr, length, array, host_offset, staging, stream_wrapper);
 }
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayHtoDAsync
- * Signature: (JJ[SJ[B)[[B
+ * Signature: (JJ[SJJ[B)[[B
  */
-JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3SJ_3B
-        (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jshortArray array, jlong host_offset, jbyteArray stream_wrapper) {
-    return transferFromHostToDevice(env, klass, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, stream_wrapper);
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3SJJ_3B
+        (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jshortArray array, jlong host_offset, jlong staging, jbyteArray stream_wrapper) {
+    return stagedTransferFromHostToDevice(env, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, staging, stream_wrapper);
 }
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayHtoDAsync
- * Signature: (JJ[CJ[B)[[B
+ * Signature: (JJ[CJJ[B)[[B
  */
-JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3CJ_3B
-        (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jcharArray array, jlong host_offset, jbyteArray stream_wrapper) {
-    return transferFromHostToDevice(env, klass, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, stream_wrapper);
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3CJJ_3B
+        (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jcharArray array, jlong host_offset, jlong staging, jbyteArray stream_wrapper) {
+    return stagedTransferFromHostToDevice(env, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, staging, stream_wrapper);
 }
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayHtoDAsync
- * Signature: (JJ[IJ[B)[[B
+ * Signature: (JJ[IJJ[B)[[B
  */
-JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3IJ_3B
-        (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jintArray array, jlong host_offset, jbyteArray stream_wrapper) {
-    return transferFromHostToDevice(env, klass, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, stream_wrapper);
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3IJJ_3B
+        (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jintArray array, jlong host_offset, jlong staging, jbyteArray stream_wrapper) {
+    return stagedTransferFromHostToDevice(env, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, staging, stream_wrapper);
 }
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayHtoDAsync
- * Signature: (JJ[JJ[B)[[B
+ * Signature: (JJ[JJJ[B)[[B
  */
-JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3JJ_3B
-        (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jlongArray array, jlong host_offset, jbyteArray stream_wrapper) {
-    return transferFromHostToDevice(env, klass, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, stream_wrapper);
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3JJJ_3B
+        (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jlongArray array, jlong host_offset, jlong staging, jbyteArray stream_wrapper) {
+    return stagedTransferFromHostToDevice(env, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, staging, stream_wrapper);
 }
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayHtoDAsync
- * Signature: (JJ[FJ[B)[[B
+ * Signature: (JJ[FJJ[B)[[B
  */
-JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3FJ_3B
-        (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jfloatArray array, jlong host_offset, jbyteArray stream_wrapper) {
-    return transferFromHostToDevice(env, klass, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, stream_wrapper);
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3FJJ_3B
+        (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jfloatArray array, jlong host_offset, jlong staging, jbyteArray stream_wrapper) {
+    return stagedTransferFromHostToDevice(env, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, staging, stream_wrapper);
 }
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayHtoDAsync
- * Signature: (JJ[DJ[I)[[B
+ * Signature: (JJ[DJJ[I)[[B
  */
-JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3DJ_3B
-        (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jdoubleArray array, jlong host_offset, jbyteArray stream_wrapper) {
-    return transferFromHostToDevice(env, klass, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, stream_wrapper);
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3DJJ_3B
+        (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jdoubleArray array, jlong host_offset, jlong staging, jbyteArray stream_wrapper) {
+    return stagedTransferFromHostToDevice(env, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, staging, stream_wrapper);
 }
 
 /*
@@ -417,6 +536,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 
     record_events_create(&beforeEvent, &afterEvent);
     record_event(&beforeEvent, &stream);
+    NvtxRange _nvtx("PTX kernel");
     result = cuLaunchKernel(
             kernel,
             (unsigned int) gridDimX,  (unsigned int) gridDimY,  (unsigned int) gridDimZ,
@@ -512,6 +632,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
     stream_from_array(env, &stream, stream_wrapper);
     record_events_create(&beforeEvent, &afterEvent);
     record_event(&beforeEvent, &stream);
+    NvtxRange _nvtx("PTX D2H memseg");
     CUresult result = cuMemcpyDtoHAsync((void*) (hostPointer + host_offset), device_ptr, (size_t) length, stream);
     LOG_PTX_AND_VALIDATE("cuMemcpyDtoHMemSeg", result);
     record_event(&afterEvent, &stream);
@@ -540,6 +661,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
     CUevent afterEvent;
     record_events_create(&beforeEvent, &afterEvent);
     record_event(&beforeEvent, &stream);
+    NvtxRange _nvtx("PTX D2H memseg");
     CUresult result = cuMemcpyDtoHAsync((void *) (hostPointer + hostOffset), devicePtr, (size_t) length, stream);
     LOG_PTX_AND_VALIDATE("cuMemcpyDtoHAsyncMemSeg", result);
     record_event(&afterEvent, &stream);
@@ -558,6 +680,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
     stream_from_array(env, &stream, stream_wrapper);
     record_events_create(&beforeEvent, &afterEvent);
     record_event(&beforeEvent, &stream);
+    NvtxRange _nvtx("PTX H2D memseg");
     CUresult result = cuMemcpyHtoDAsync(device_ptr, (void *) (hostPointer + host_offset), (size_t) length, stream);
     LOG_PTX_AND_VALIDATE("cuMemcpyHtoDMemSeg", result);
     record_event(&afterEvent, &stream);
@@ -584,6 +707,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
     stream_from_array(env, &stream, stream_wrapper);
     record_events_create(&beforeEvent, &afterEvent);
     record_event(&beforeEvent, &stream);
+    NvtxRange _nvtx("PTX H2D memseg");
     CUresult result = cuMemcpyHtoDAsync(device_ptr, (void *) (hostPointer + host_offset), (size_t) length, stream);
     LOG_PTX_AND_VALIDATE("cuMemcpyHtoDAsyncMemSeg", result);
     record_event(&afterEvent, &stream);
@@ -690,4 +814,43 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuGr
     CUresult result = cuGraphDestroy(graph);
     LOG_PTX_AND_VALIDATE("cuGraphDestroy", result);
     return (jlong) result;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+ * Method:    cuRecordEventOnStream
+ * Signature: ([B)[B
+ *
+ * Records a single lightweight CUDA event on the given stream and returns its
+ * raw handle. Used during multi-stream graph capture fork/join to create
+ * cross-stream dependency edges without allocating a full PTXEvent pair.
+ */
+JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuRecordEventOnStream
+  (JNIEnv *env, jclass clazz, jbyteArray stream_wrapper) {
+    CUstream stream;
+    stream_from_array(env, &stream, stream_wrapper);
+    CUevent event;
+    CUresult result = sync_event_create(&event);
+    LOG_PTX_AND_VALIDATE("sync_event_create", result);
+    record_event(&event, &stream);
+    return array_from_event(env, &event);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+ * Method:    cuStreamWaitEventOnStream
+ * Signature: ([B[B)V
+ *
+ * Makes the given stream wait (GPU-side, non-blocking) for the event recorded
+ * by cuRecordEventOnStream. Used during multi-stream graph capture fork/join to
+ * make secondary streams join the capture of the primary stream.
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuStreamWaitEventOnStream
+  (JNIEnv *env, jclass clazz, jbyteArray stream_wrapper, jbyteArray event_wrapper) {
+    CUstream stream;
+    stream_from_array(env, &stream, stream_wrapper);
+    CUevent event;
+    event_from_array(env, &event, event_wrapper);
+    CUresult result = cuStreamWaitEvent(stream, event, 0);
+    LOG_PTX_AND_VALIDATE("cuStreamWaitEvent (capture fork/join)", result);
 }

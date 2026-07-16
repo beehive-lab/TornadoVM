@@ -1,6 +1,6 @@
 all: build
 
-# Variable passed for the build process. List of backend/s to use { opencl, ptx, spirv }. The default one is `opencl`.
+# Variable passed for the build process. List of backend/s to use { opencl, ptx, spirv, cuda, metal }. The default one is `opencl`.
 # make BACKEND=<comma_separated_backend_list>
 BACKEND ?= opencl
 
@@ -52,7 +52,7 @@ checkstyle:
 	./mvnw checkstyle:check
 
 clean:
-	./mvnw -Popencl-backend,ptx-backend,spirv-backend clean
+	./mvnw -Popencl-backend,ptx-backend,spirv-backend,cuda-backend,metal-backend clean
 
 example:
 	tornado --printKernel --debug -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt --params="8192"

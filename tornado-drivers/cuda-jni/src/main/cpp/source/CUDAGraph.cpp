@@ -214,4 +214,35 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
     return (jlong) result;
 }
 
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDACommandQueue
+ * Method:    getStreamPointer
+ * Signature: (J)J
+ *
+ * Exposes the raw CUstream so external native libraries (e.g. cuBLAS via
+ * cublasSetStream) can enqueue work ordered with TornadoVM's own stream.
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQueue_getStreamPointer
+        (JNIEnv *env, jclass clazz, jlong queue_id) {
+    cuda_queue_t *queue = (cuda_queue_t *) queue_id;
+    if (queue == nullptr) {
+        return 0;
+    }
+    return (jlong) queue->stream;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDACommandQueue
+ * Method:    getContextPointer
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQueue_getContextPointer
+        (JNIEnv *env, jclass clazz, jlong queue_id) {
+    cuda_queue_t *queue = (cuda_queue_t *) queue_id;
+    if (queue == nullptr) {
+        return 0;
+    }
+    return (jlong) queue->context;
+}
+
 } // extern "C"

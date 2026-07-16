@@ -54,6 +54,13 @@ public class CUDACommandQueue extends CommandQueue {
     private final long properties;
     private final int openclVersion;
 
+    /**
+     * Set when work is issued to this (secondary) queue under intra-plan concurrency; drained
+     * by the per-plan join (see {@code CUDADeviceContext#joinRoleQueues}), which only needs to
+     * synchronise queues that were actually touched since the last join.
+     */
+    private volatile boolean dirty;
+
     public CUDACommandQueue(long commandQueuePtr, long properties, int version) {
         this.commandQueuePtr = commandQueuePtr;
         this.properties = properties;
@@ -66,7 +73,46 @@ public class CUDACommandQueue extends CommandQueue {
         return commandQueuePtr;
     }
 
+    /** Marks this queue as having received work since the last join. */
+    public void markDirty() {
+        if (!dirty) {
+            dirty = true;
+        }
+    }
+
+    /** Returns whether this queue was touched since the last join, clearing the flag. */
+    public boolean pollDirty() {
+        if (dirty) {
+            dirty = false;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Labels this queue's CUDA stream with its role (DEFAULT / H2D / COMPUTE / D2H) so the Nsight
+     * Systems timeline shows named stream rows instead of raw stream ids. Mirrors the PTX backend.
+     */
+    public void nameStream(String name) {
+        nvtxNameStream(commandQueuePtr, name);
+    }
+
     static native void clReleaseCommandQueue(long queueId) throws CUDAException;
+
+    private static native void nvtxNameStream(long queueId, String name);
+
+    /** Opens a host-side NVTX range labelled {@code name} (no-op without a profiler). */
+    public static native void nvtxRangePush(String name);
+
+    /** Closes the most recently opened host-side NVTX range. */
+    public static native void nvtxRangePop();
+
+    /**
+     * Pushes the profiler state to the native layer: when timing is off, per-operation
+     * START timestamp events are skipped (halving events per op) and the remaining
+     * dependency events are created with {@code CU_EVENT_DISABLE_TIMING} (cheaper).
+     */
+    static native void nativeEnableTiming(boolean enabled);
 
     static native void clGetCommandQueueInfo(long queueId, int info, byte[] buffer) throws CUDAException;
 
@@ -127,6 +173,15 @@ public class CUDACommandQueue extends CommandQueue {
 
     static native void clEnqueueWaitForEvents(long queueId, long[] events) throws CUDAException;
 
+    /** Allocates page-locked (pinned) host memory; returns 0 on failure. */
+    static native long cuMemAllocHost(long numBytes);
+
+    /** Releases pinned host memory allocated by {@link #cuMemAllocHost(long)}. */
+    static native void cuMemFreeHost(long hostPtr);
+
+    /** Plain host-side memcpy between raw pointers (staged-transfer slot fill). */
+    static native void memcpyHostToHost(long dstPtr, long srcPtr, long numBytes);
+
     /*
      * for CUDADriver 1.2 implementations
      */
@@ -155,6 +210,28 @@ public class CUDACommandQueue extends CommandQueue {
     private static native long cuGraphExecDestroy(long graphExecHandle);
 
     private static native long cuGraphDestroy(long graphHandle);
+
+    /* ---- Native interop (external libraries, e.g. cuBLAS) ---- */
+
+    private static native long getStreamPointer(long queueId);
+
+    private static native long getContextPointer(long queueId);
+
+    /**
+     * Raw CUstream handle of this queue, for handing to external native
+     * libraries (e.g., {@code cublasSetStream}) so their work is ordered with
+     * TornadoVM kernels and transfers on the same stream.
+     */
+    public long getNativeStream() {
+        return getStreamPointer(commandQueuePtr);
+    }
+
+    /**
+     * Raw CUcontext handle of this queue.
+     */
+    public long getNativeContext() {
+        return getContextPointer(commandQueuePtr);
+    }
 
     /** CU_STREAM_CAPTURE_MODE_GLOBAL. */
     private static final int CU_STREAM_CAPTURE_MODE_GLOBAL = 0;

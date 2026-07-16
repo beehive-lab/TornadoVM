@@ -137,6 +137,41 @@ public class TornadoOptions {
     public static final boolean PRINT_BYTECODES = getBooleanValue("tornado.print.bytecodes", FALSE);
 
     /**
+     * Experimental (PTX and CUDA backends): route large one-shot host-to-device transfers (e.g. FIRST_EXECUTION
+     * weight uploads) through a ring of pinned host staging buffers (the llama.cpp
+     * "ring of 4" pattern). Each chunk is memcpy'd into a pinned slot and uploaded with
+     * cuMemcpyHtoDAsync while the next chunk is being staged, overlapping the host-side copy
+     * (and the page-in it forces) with the PCIe DMA - and removing the need to
+     * cuMemHostRegister the whole source segment up front. Default off.
+     */
+    public static final boolean ENABLE_STAGED_TRANSFERS = getBooleanValue("tornado.staged.transfers", FALSE);
+
+    /**
+     * Chunk size in bytes for {@link #ENABLE_STAGED_TRANSFERS} (size of each pinned staging slot).
+     */
+    public static final long STAGED_TRANSFER_CHUNK_SIZE = Long.parseLong(getProperty("tornado.staged.chunk.size", Integer.toString(16 * 1024 * 1024)));
+
+    /**
+     * Number of pinned staging slots cycled by {@link #ENABLE_STAGED_TRANSFERS}. Depth 2 already
+     * overlaps staging with DMA; llama.cpp uses 4.
+     */
+    public static final int STAGED_TRANSFER_RING_DEPTH = Integer.parseInt(getProperty("tornado.staged.ring.depth", "4"));
+
+    /**
+     * Minimum transfer size in bytes for {@link #ENABLE_STAGED_TRANSFERS} to engage; smaller
+     * transfers keep the direct path (staging overhead would dominate).
+     */
+    public static final long STAGED_TRANSFER_MIN_SIZE = Long.parseLong(getProperty("tornado.staged.min.size", Integer.toString(16 * 1024 * 1024)));
+
+    /**
+     * Threads used to fill a pinned staging slot for {@link #ENABLE_STAGED_TRANSFERS}. A single
+     * thread's memcpy (~4-5 GB/s) is slower than the PCIe DMA it feeds, so the fill is split
+     * across threads. Default: half the available cores, capped at 8.
+     */
+    public static final int STAGED_TRANSFER_FILL_THREADS = Integer.parseInt(getProperty("tornado.staged.fill.threads", Integer.toString(Math.min(8, Math.max(1, Runtime.getRuntime()
+            .availableProcessors() / 2)))));
+
+    /**
      * Option to dump TornadoVM Internal Bytecodes into a file.
      */
     public static final String DUMP_BYTECODES = getProperty("tornado.dump.bytecodes.dir", "");
@@ -468,7 +503,7 @@ public class TornadoOptions {
     /**
      * Enable VM Dependency Path. Disabled by default. This option is only for testing.
      */
-    public static final boolean VM_USE_DEPS = getBooleanValue("tornado.vm.deps", FALSE);
+    public static boolean VM_USE_DEPS = getBooleanValue("tornado.vm.deps", FALSE);
 
     /**
      * Enable OpenCL Profiling. Enabled by default.

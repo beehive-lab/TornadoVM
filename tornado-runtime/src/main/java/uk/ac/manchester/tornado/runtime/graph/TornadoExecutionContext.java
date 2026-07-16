@@ -96,6 +96,8 @@ public class TornadoExecutionContext {
     private long executionPlanId;  // This is set at runtime. Thus, no need to clone this value.
     private long currentDeviceMemoryUsage;
     private boolean isExecutionGraphEnabled;
+    private boolean isIntraPlanConcurrencyEnabled;
+    private boolean isStagedTransfersEnabled;
 
     public TornadoExecutionContext(String id) {
         name = id;
@@ -120,6 +122,10 @@ public class TornadoExecutionContext {
         this.profiler = null;
         this.isDataDependencyDetected = isDataDependencyInTaskGraph();
         this.isExecutionGraphEnabled = false;
+        this.isIntraPlanConcurrencyEnabled = false;
+        // Defaults to the -Dtornado.staged.transfers property, so the plan-level API overrides it
+        // rather than replacing it.
+        this.isStagedTransfersEnabled = TornadoOptions.ENABLE_STAGED_TRANSFERS;
     }
 
     public KernelStackFrame[] getKernelStackFrame() {
@@ -687,6 +693,10 @@ public class TornadoExecutionContext {
         newExecutionContext.nextTask = this.nextTask;
         newExecutionContext.executionPlanMemoryLimit = this.executionPlanMemoryLimit;
 
+        newExecutionContext.isExecutionGraphEnabled = this.isExecutionGraphEnabled;
+        newExecutionContext.isIntraPlanConcurrencyEnabled = this.isIntraPlanConcurrencyEnabled;
+        newExecutionContext.isStagedTransfersEnabled = this.isStagedTransfersEnabled;
+
         return newExecutionContext;
     }
 
@@ -721,6 +731,22 @@ public class TornadoExecutionContext {
 
     public boolean isExecutionGraphEnabled() {
         return this.isExecutionGraphEnabled;
+    }
+
+    public void setIntraPlanConcurrencyEnabled(boolean enabled) {
+        this.isIntraPlanConcurrencyEnabled = enabled;
+    }
+
+    public boolean isIntraPlanConcurrencyEnabled() {
+        return this.isIntraPlanConcurrencyEnabled;
+    }
+
+    public void setStagedTransfersEnabled(boolean enabled) {
+        this.isStagedTransfersEnabled = enabled;
+    }
+
+    public boolean isStagedTransfersEnabled() {
+        return this.isStagedTransfersEnabled;
     }
 
 }

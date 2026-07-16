@@ -194,12 +194,13 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
             profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
             return installedCode;
         } catch (Exception e) {
-            if (TornadoOptions.DEBUG) {
-                System.err.println(e.getMessage());
+            logger.fatal("Unable to compile %s for device %s\n", task.getId(), getDeviceName());
+            logger.fatal("Exception occurred when compiling %s\n", ((CompilableTask) task).getMethod().getName());
+            if (TornadoOptions.RECOVER_BAILOUT) {
+                throw new TornadoBailoutRuntimeException("[Error during the Task Compilation]: " + e.getMessage());
+            } else {
+                throw e;
             }
-            logger.fatal("unable to compile %s for device %s\n", task.getId(), getDeviceName());
-            logger.fatal("exception occurred when compiling %s\n", ((CompilableTask) task).getMethod().getName());
-            throw new TornadoBailoutRuntimeException("[Error During the Task Compilation] ", e);
         }
     }
 
@@ -318,8 +319,13 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
             if (!reuseBatchBuffer(batchSize, accesses[i], bufferProvider, distinctAccesses)) {
                 logger.debug("Allocate object %s with access: %s", objects[i], accesses[i]);
                 allocatedSpace += allocate(objects[i], batchSize, states[i], accesses[i]);
+            } else if (batchSize != 0 && states[i].hasObjectBuffer()) {
+                // Reusing the object's existing buffer skips allocate(), which is what normally
+                // refreshes the sub-region size. Without this the buffer keeps the sub-region of the
+                // LAST chunk it held (e.g. a smaller remainder chunk from a previous execution), and
+                // subsequent transfers silently copy too few bytes.
+                states[i].getXPUBuffer().setSizeSubRegion(batchSize);
             }
-
         }
         return allocatedSpace;
     }
@@ -420,22 +426,28 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     }
 
     /**
-     * It allocates and copy in the content of the object to the target device.
+     * Copies the object to the device if it is not already present (lazy H2D transfer).
+     * If the object has already been transfered ({@code objectState.hasContent() == true}),
+     * this is a no-op and returns {@code null}.
      *
+     * @param executionPlanId
+     *     the execution plan context
      * @param object
-     *     to be allocated
+     *     to host object to transfer
      * @param objectState
      *     state of the object in the target device
      *     {@link DeviceBufferState}
      * @param events
-     *     list of pending events (dependencies)
+     *     array of event IDs this transfer depends on, or {@code null} for none
      * @param batchSize
-     *     size of the object to be allocated. If this value is <= 0, then it
-     *     allocates the sizeof(object).
+     *     number of bytes to transfer; if {@code <= 0} the full buffer size is used
      * @param hostOffset
-     *     offset in bytes for the copy within the host input array (or
-     *     object)
-     * @return an event ID
+     *     byte offset into the host buffer at which the copy starts
+     * @return a list containing the H2D transfer event ID, or {@code null} if no
+     *     transfer was needed. In single-stream mode the ID is a local
+     *     {@code PTXEventPool} index; in multi-stream mode it is a global
+     *     {@code PTXEventRegistry} ID that the interpreter uses to insert
+     *     {@code cuStreamWaitEvent} dependencies on the COMPUTE stream.
      */
     @Override
     public List<Integer> ensurePresent(long executionPlanId, Object object, DeviceBufferState objectState, int[] events, long batchSize, long hostOffset) {
@@ -721,6 +733,21 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     @Override
     public void setAtomicRegion(XPUBuffer bufferAtomics) {
 
+    }
+
+    @Override
+    public void setIntraPlanConcurrency(long executionPlanId, boolean enabled) {
+        getDeviceContext().setIntraPlanConcurrency(executionPlanId, enabled);
+    }
+
+    @Override
+    public void setStagedTransfers(boolean enabled) {
+        getDeviceContext().setStagedTransfers(enabled);
+    }
+
+    @Override
+    public boolean isIntraPlanConcurrencySupported() {
+        return true;
     }
 
     @Override

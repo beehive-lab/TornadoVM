@@ -55,6 +55,9 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
     private Access access;
     private final int sizeOfType;
 
+    /** Base address of the host segment this wrapper holds pinned, or 0 when not pinned. */
+    private long pinnedHostPointer;
+
     public CUDAMemorySegmentWrapper(long bufferSize, CUDADeviceContext deviceContext, long batchSize, Access access, int sizeOfType) {
         this.deviceContext = deviceContext;
         this.batchSize = batchSize;
@@ -70,6 +73,15 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
 
     public CUDAMemorySegmentWrapper(CUDADeviceContext deviceContext, long batchSize, Access access, int sizeOfType) {
         this(INIT_VALUE, deviceContext, batchSize, access, sizeOfType);
+    }
+
+    /**
+     * Whether transfers of this buffer should go through the pinned staging ring -
+     * enabled, non-batch (batched chunks are pipelined by the device-buffer ring instead), and
+     * large enough that the per-chunk staging overhead is amortised.
+     */
+    private boolean useStagedTransfer() {
+        return deviceContext.isStagedTransfersEnabled() && batchSize <= 0 && bufferSize >= TornadoOptions.STAGED_TRANSFER_MIN_SIZE;
     }
 
     @Override
@@ -163,11 +175,20 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
 
         int internalEvent;
         if (batchSize <= 0) {
-            internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferOffset, bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
+            if (useStagedTransfer()) {
+                // Large one-shot upload (e.g. FIRST_EXECUTION weights) through the pinned staging ring.
+                internalEvent = deviceContext.enqueueStagedWriteBuffer(executionPlanId, toBuffer(), bufferOffset, bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
+            } else {
+                internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferOffset, bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
+            }
         } else {
+            // Honour the sub-region size like read() does: a reused (locked) buffer can be larger than
+            // the current chunk (e.g. a full-chunk buffer serving the smaller remainder chunk), and
+            // copying its full bufferSize would overrun the host segment.
+            final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : bufferSize;
             internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), 0, TornadoNativeArray.ARRAY_HEADER, segment.address(), 0, (useDeps) ? events : null);
             returnEvents.add(internalEvent);
-            internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferOffset + TornadoNativeArray.ARRAY_HEADER, bufferSize, segment.address(),
+            internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferOffset + TornadoNativeArray.ARRAY_HEADER, numBytes, segment.address(),
                     hostOffset + TornadoNativeArray.ARRAY_HEADER, (useDeps) ? events : null);
         }
         returnEvents.add(internalEvent);
@@ -187,6 +208,30 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
             bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize + TornadoNativeArray.ARRAY_HEADER, access);
         }
 
+        // Pin the full host segment so async H2D/D2H transfers DMA directly (no driver
+        // staging copy, true transfer/compute overlap). Ownership, aliasing and pin
+        // caching are handled by the central CUDAPinnedMemoryRegistry (refcounted,
+        // stale-pin safe). Any hold from a previous allocate is released first, so the
+        // refcount stays balanced across alloc/free cycles.
+        // For large read-only segments served by the staged-transfer ring, skip the whole-segment
+        // pin: registering synchronously pages in and pins the entire (possibly cold, mmap'd)
+        // segment - exactly the upfront cost the staging ring exists to avoid - and the ring's
+        // own pinned slots already make the chunked H2D DMA async. Mirrors the PTX backend.
+        if (useStagedTransfer() && access == Access.READ_ONLY) {
+            if (TornadoOptions.FULL_DEBUG) {
+                new TornadoLogger().info("skipping host pinning (staged transfers): %s", toString());
+            }
+        } else if (segment != null) {
+            CUDAPinnedMemoryRegistry pinRegistry = deviceContext.getPlatformContext().getPinnedMemoryRegistry();
+            if (pinnedHostPointer != 0) {
+                pinRegistry.unpin(pinnedHostPointer);
+                pinnedHostPointer = 0;
+            }
+            if (pinRegistry.pin(segment, segment.byteSize())) {
+                pinnedHostPointer = segment.address();
+            }
+        }
+
         if (bufferSize <= 0) {
             throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
         }
@@ -199,6 +244,14 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
     @Override
     public void markAsFreeBuffer() throws TornadoMemoryException {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
+
+        // Release this wrapper's hold on the host pin before recycling; the registry
+        // unregisters (after a context sync) only when the last holder releases.
+        if (pinnedHostPointer != 0) {
+            deviceContext.getPlatformContext().getPinnedMemoryRegistry().unpin(pinnedHostPointer);
+            pinnedHostPointer = 0;
+        }
+
         deviceContext.getBufferProvider().markBufferReleased(bufferId, access);
         bufferId = INIT_VALUE;
         bufferSize = INIT_VALUE;

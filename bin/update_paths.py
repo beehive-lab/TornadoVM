@@ -146,6 +146,10 @@ def update_tornado_paths():
         backend_info = "PTX"
     elif '-spirv' in selected_sdk.lower():
         backend_info = "SPIR-V"
+    elif '-cuda' in selected_sdk.lower():
+        backend_info = "CUDA"
+    elif '-metal' in selected_sdk.lower():
+        backend_info = "Metal"
 
     log_messages.append(
         "###########################################################################"

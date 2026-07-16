@@ -202,6 +202,40 @@ public interface TornadoXPUDevice extends TornadoDevice {
     }
 
     /**
+     * Informs the backend whether the given execution plan should run with intra-plan
+     * concurrency (DAG-independent ops routed to separate role streams). Called by the
+     * interpreter before issuing a plan's bytecodes. Per-plan (keyed by executionPlanId),
+     * replacing any process-global flag. No-op by default; the PTX backend overrides it.
+     *
+     * @param executionPlanId the execution plan
+     * @param enabled whether intra-plan concurrency is enabled for this plan
+     */
+    default void setIntraPlanConcurrency(long executionPlanId, boolean enabled) {
+        // no-op by default
+    }
+
+    /**
+     * Whether this backend implements intra-plan concurrency (role streams and cross-stream
+     * event dependencies). When false, a plan-level {@code withIntraPlanConcurrency()} request
+     * is ignored and the plan runs on the backend's default single-queue path.
+     */
+    default boolean isIntraPlanConcurrencySupported() {
+        return false;
+    }
+
+    /**
+     * Informs the backend whether large one-shot host-to-device uploads should be routed through
+     * the pinned staging ring. Called by the interpreter before issuing a plan's bytecodes, so the
+     * setting is in place for the plan's allocations (which decide host pinning) and transfers.
+     * No-op by default; the CUDA and PTX backends override it.
+     *
+     * @param enabled whether staged transfers are enabled
+     */
+    default void setStagedTransfers(boolean enabled) {
+        // no-op by default
+    }
+
+    /**
      * Returns whether this device supports execution graph capture and replay.
      * When false, the graph compiler will not emit graph bytecodes for this device,
      * and the interpreter will reject them at runtime as a safety net.

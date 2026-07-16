@@ -126,7 +126,13 @@ public enum CUDADeviceInfo {
     CL_DEVICE_OPENCL_C_FEATURES(0x106F),
     CL_DEVICE_DEVICE_ENQUEUE_CAPABILITIES(0x1070),
     CL_DEVICE_PIPE_SUPPORT(0x1071),
-    CL_DEVICE_LATEST_CONFORMANCE_VERSION_PASSED(0x1072);
+    CL_DEVICE_LATEST_CONFORMANCE_VERSION_PASSED(0x1072),
+
+    // TornadoVM-private info keys (not OpenCL): handled by the native CUDADevice shim, which maps
+    // them to the CUDA driver attributes CU_DEVICE_ATTRIBUTE_ASYNC_ENGINE_COUNT / _CONCURRENT_KERNELS.
+    // Used to gate intra-plan concurrency on the same hardware overlap capability as the PTX backend.
+    TORNADO_DEVICE_ASYNC_ENGINE_COUNT(0x4100),
+    TORNADO_DEVICE_CONCURRENT_KERNELS(0x4101);
     // @formatter:on
 
     private final int value;

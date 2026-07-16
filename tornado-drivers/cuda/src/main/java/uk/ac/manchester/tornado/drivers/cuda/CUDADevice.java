@@ -76,6 +76,8 @@ public class CUDADevice implements CUDATargetDevice {
     private CUDALocalMemType localMemoryType;
     private int deviceVendorID;
     private CUDADeviceContextInterface deviceContext;
+    private int asyncEngineCount = INIT_VALUE;
+    private int concurrentKernels = INIT_VALUE;
     private float spirvVersion = SPIRV_VERSION_INIT;
 
     private static final int SPIRV_VERSION_INIT = -1;
@@ -495,6 +497,24 @@ public class CUDADevice implements CUDATargetDevice {
             spirvVersion = SPIRV_NOT_SUPPORTED;
             return false;
         }
+    }
+
+    @Override
+    public int getAsyncEngineCount() {
+        if (asyncEngineCount == INIT_VALUE) {
+            queryOpenCLAPI(CUDADeviceInfo.TORNADO_DEVICE_ASYNC_ENGINE_COUNT.getValue());
+            asyncEngineCount = buffer.getInt();
+        }
+        return asyncEngineCount;
+    }
+
+    @Override
+    public boolean supportsConcurrentKernels() {
+        if (concurrentKernels == INIT_VALUE) {
+            queryOpenCLAPI(CUDADeviceInfo.TORNADO_DEVICE_CONCURRENT_KERNELS.getValue());
+            concurrentKernels = buffer.getInt();
+        }
+        return concurrentKernels != 0;
     }
 
     public int getWordSize() {

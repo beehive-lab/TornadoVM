@@ -55,6 +55,9 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
     private long setSubRegionSize;
     private final Access access;
     private final int sizeOfType;
+    /** Native address of the registered host region, or 0 if not currently pinned. */
+    private long registeredHostPointer = 0L;
+    private boolean ownsRegistration = false; // true only when this wrapper pinned the region
 
     public PTXMemorySegmentWrapper(PTXDeviceContext deviceContext, long bufferSize, long batchSize, Access access, int sizeOfType) {
         this.deviceContext = deviceContext;
@@ -72,6 +75,15 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
 
     public PTXMemorySegmentWrapper(PTXDeviceContext deviceContext, long batchSize, Access access, int sizeOfType) {
         this(deviceContext, INIT_VALUE, batchSize, access, sizeOfType);
+    }
+
+    /**
+     * Whether transfers of this buffer should go through the pinned staging ring -
+     * enabled, non-batch (batched chunks are pipelined by the device-buffer ring instead), and
+     * large enough that the per-chunk staging overhead is amortised.
+     */
+    private boolean useStagedTransfer() {
+        return deviceContext.isStagedTransfersEnabled() && batchSize <= 0 && bufferSize >= TornadoOptions.STAGED_TRANSFER_MIN_SIZE;
     }
 
     @Override
@@ -163,11 +175,21 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
 
         int internalEvent;
         if (batchSize <= 0) {
-            internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
+            if (useStagedTransfer()) {
+                // Large one-shot upload (e.g. FIRST_EXECUTION weights) through the pinned
+                // staging ring - the source segment is deliberately NOT registered (see allocate()).
+                internalEvent = deviceContext.enqueueStagedWriteBuffer(executionPlanId, toBuffer(), bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
+            } else {
+                internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
+            }
         } else {
+            // Honour the sub-region size like read() does: a reused (locked) buffer can be larger than
+            // the current chunk (e.g. a full-chunk buffer serving the smaller remainder chunk), and
+            // copying its full bufferSize would overrun the host segment.
+            final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : bufferSize;
             internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), TornadoNativeArray.ARRAY_HEADER, segment.address(), 0, (useDeps) ? events : null);
             returnEvents.add(internalEvent);
-            internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer() + TornadoNativeArray.ARRAY_HEADER, bufferSize, segment.address(), hostOffset + TornadoNativeArray.ARRAY_HEADER,
+            internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer() + TornadoNativeArray.ARRAY_HEADER, numBytes, segment.address(), hostOffset + TornadoNativeArray.ARRAY_HEADER,
                     (useDeps) ? events : null);
         }
         returnEvents.add(internalEvent);
@@ -186,6 +208,24 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
             bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize + TornadoNativeArray.ARRAY_HEADER, access);
         }
 
+        // Register the full segment as pinned so that async H2D/D2H transfers
+        // can be non-blocking (DMA, avoids CUDA's internal staging copy).
+        // For large read-only segments served by the staged-transfer ring, skip the upfront
+        // cuMemHostRegister (it synchronously pages in and pins the whole segment); the ring's own
+        // pinned slots make the chunked DMA async.
+        if (useStagedTransfer() && access == Access.READ_ONLY) {
+            if (TornadoOptions.FULL_DEBUG) {
+                logger.info("skipping host registration (staged transfers): %s", toString());
+            }
+        } else if (registeredHostPointer == 0 && segment != null) {
+            boolean pinnedByThisCall = deviceContext.getDevice().getPTXContext()
+                    .registerHostMemory(segment.address(), segment.byteSize());
+            // Always record the address to prevent repeated cuMemHostRegister attempts
+            // on the same region, even when another caller already holds the pin.
+            registeredHostPointer = segment.address();
+            ownsRegistration = pinnedByThisCall;
+        }
+
         if (bufferSize <= 0) {
             throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
         }
@@ -198,6 +238,14 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
     @Override
     public void markAsFreeBuffer() throws TornadoMemoryException {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
+
+        // Unpin the host region before "recycling"; re-registered on the next allocate().
+        if (registeredHostPointer != 0L && ownsRegistration) {
+            deviceContext.getDevice().getPTXContext().unregisterHostMemory(registeredHostPointer);
+        }
+        registeredHostPointer = 0L;
+        ownsRegistration = false;
+
         deviceContext.getBufferProvider().markBufferReleased(bufferId, access);
         bufferId = INIT_VALUE;
         bufferSize = INIT_VALUE;
