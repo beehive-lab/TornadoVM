@@ -20,9 +20,11 @@ package uk.ac.manchester.tornado.cublas.provider;
 import java.util.HashMap;
 import java.util.Map;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP8NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.cublas.CuBlasLt;
 import uk.ac.manchester.tornado.cublas.enums.CuBlasLtEpilogue;
+import uk.ac.manchester.tornado.cublas.enums.CuBlasOperation;
 import uk.ac.manchester.tornado.cublas.enums.CublasComputeType;
 import uk.ac.manchester.tornado.cublas.enums.CudaDataType;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
@@ -105,6 +107,40 @@ public final class CuBlasLtLibraryProvider implements TornadoLibraryProvider {
         ltMatmul((CuBlasLtContext) invocation.getContext(), functionName, call, invocation);
     }
 
+    private static boolean isFP8(CudaDataType type) {
+        return type == CudaDataType.CUDA_R_8F_E4M3 || type == CudaDataType.CUDA_R_8F_E5M2;
+    }
+
+    /**
+     * Probes whether hardware FP8 matmul is usable at all, by asking cuBLASLt to
+     * plan a minimal FP8 GEMM that satisfies every documented FP8 constraint
+     * (TN layout, dimensions and leading dimensions multiples of 16, E4M3 in ->
+     * FP16 out, FP32 compute).
+     *
+     * <p>This is the honest discriminator for a failed plan: the heuristic
+     * reports the same "no algorithm" outcome whether FP8 is absent from the
+     * (device, library) pair or the caller's own shape is malformed. A device
+     * check cannot separate them either - FP8 needs sm_89+, but a Blackwell
+     * sm_120 GPU satisfies that and still has no FP8 kernels in a pre-12.8
+     * cuBLAS. Only cuBLASLt knows, so ask it: if this known-good plan also
+     * fails, FP8 is genuinely unavailable; if it succeeds, the caller's request
+     * was at fault and must still be reported as an error.</p>
+     */
+    private static boolean hasFP8Support(CuBlasLtContext context) {
+        final int dim = 16;
+        long probe = CuBlasLtNativeLib.ltCreatePlan(context.handle, //
+                CuBlasOperation.CUBLAS_OP_T.operation(), CuBlasOperation.CUBLAS_OP_N.operation(), //
+                dim, dim, dim, dim, dim, dim, //
+                CudaDataType.CUDA_R_8F_E4M3.value(), CudaDataType.CUDA_R_8F_E4M3.value(), CudaDataType.CUDA_R_16F.value(), //
+                CublasComputeType.CUBLAS_COMPUTE_32F.value(), CudaDataType.CUDA_R_32F.value(), //
+                CuBlasLtEpilogue.CUBLASLT_EPILOGUE_DEFAULT.value(), WORKSPACE_BYTES);
+        if (probe == 0) {
+            return false;
+        }
+        CuBlasLtNativeLib.ltDestroyPlan(probe);
+        return true;
+    }
+
     /**
      * (transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc [, bias]).
      */
@@ -129,6 +165,11 @@ public final class CuBlasLtLibraryProvider implements TornadoLibraryProvider {
                     CublasComputeType.CUBLAS_COMPUTE_32F.value(), CudaDataType.CUDA_R_32F.value(), //
                     call.epilogue().value(), WORKSPACE_BYTES);
             if (plan == 0) {
+                if (isFP8(call.inputType()) && !hasFP8Support(context)) {
+                    throw new TornadoDeviceFP8NotSupported("[UNSUPPORTED] hardware FP8 matmul is not available for this device/cuBLAS pair " //
+                            + "(requires FP8 tensor cores - Ada sm_89 or later - and a cuBLAS carrying FP8 kernels for that architecture; " //
+                            + "Blackwell sm_120 needs CUDA 12.8+). Function: " + functionName);
+                }
                 throw new TornadoRuntimeException("[ERROR] cublasLtMatmul plan creation failed for " + functionName + " (" + planKey + ")");
             }
             context.planCache.put(planKey, plan);
