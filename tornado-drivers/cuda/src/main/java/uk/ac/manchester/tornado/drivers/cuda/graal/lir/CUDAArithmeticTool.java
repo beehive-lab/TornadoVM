@@ -510,6 +510,10 @@ public class CUDAArithmeticTool extends ArithmeticLIRGenerator {
     private Value getOffsetValue(CUDAKind oclKind, MemoryAccess memoryAccess) {
         if (memoryAccess.getBase().getMemorySpace() == CUDAMemorySpace.GLOBAL.getBase().getMemorySpace()) {
             return new ConstantValue(LIRKind.value(CUDAKind.INT), PrimitiveConstant.INT_0);
+        } else if (oclKind == CUDAKind.HALF2) {
+            // __half2 local arrays are element-typed, so the index (possibly a runtime
+            // variable) is already in vector elements and is used as-is.
+            return memoryAccess.getIndex();
         } else {
             return getPrivateOffsetValue(oclKind, memoryAccess);
         }

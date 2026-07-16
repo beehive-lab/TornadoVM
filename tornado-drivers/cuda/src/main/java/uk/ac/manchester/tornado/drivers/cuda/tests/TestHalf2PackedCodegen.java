@@ -28,6 +28,7 @@ import java.lang.reflect.Method;
 import jdk.graal.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
@@ -74,6 +75,16 @@ public class TestHalf2PackedCodegen {
             Half2 sum = Half2.add(fma, Half2.fromFloats(e.get(i * 2), e.get(i * 2 + 1)));
             d.setHalf2(i * 2, Half2.mult(sum, sum));
         }
+    }
+
+    public static void localTileDot(KernelContext context, HalfFloatArray k, HalfFloatArray q, FloatArray out, int tileSize) {
+        Half2[] kTile = context.allocateHalf2LocalArray(tileSize);
+        int localId = context.localIdx;
+        kTile[localId] = k.getHalf2(localId * 2);
+        context.localBarrier();
+        Half2 pair = kTile[localId];
+        Half2 qPair = q.getHalf2(localId * 2);
+        out.set(context.globalIdx, Half2.lowFloat(pair) * Half2.lowFloat(qPair) + Half2.highFloat(pair) * Half2.highFloat(qPair));
     }
 
     private static String compileToSource(String methodName, Object... parameters) {
@@ -133,6 +144,16 @@ public class TestHalf2PackedCodegen {
                 "__hadd2(", //
                 "__hmul2(", //
                 "__floats2half2_rn(");
+
+        String localTileSource = compileToSource("localTileDot", new KernelContext(), a, b, result, 64);
+        if (Boolean.getBoolean("tornado.test.half2.printKernel")) {
+            System.out.println(localTileSource);
+        }
+        ok &= assertContains(localTileSource, "localTileDot", //
+                "#include <cuda_fp16.h>", //
+                "__shared__ __half2", //
+                "__low2float(", //
+                "__high2float(");
 
         if (!ok) {
             System.out.println("Test failed");

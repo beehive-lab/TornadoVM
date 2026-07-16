@@ -21,9 +21,13 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
@@ -101,6 +105,21 @@ public class TestHalf2Packed extends TornadoTestBase {
             float y = input.get(i * 2 + 1);
             output.setHalf2(i * 2, Half2.fromFloats(x - y, x + y));
         }
+    }
+
+    /**
+     * Local-memory tile pattern: stage packed pairs into a __half2 shared-memory
+     * tile, then consume them with FP32 accumulation after a barrier.
+     */
+    public static void localTileDot(KernelContext context, HalfFloatArray a, HalfFloatArray b, FloatArray result) {
+        Half2[] tile = context.allocateHalf2LocalArray(128);
+        int localId = context.localIdx;
+        int globalId = context.globalIdx;
+        tile[localId] = a.getHalf2(globalId * 2);
+        context.localBarrier();
+        Half2 pa = tile[localId];
+        Half2 pb = b.getHalf2(globalId * 2);
+        result.set(globalId, Half2.lowFloat(pa) * Half2.lowFloat(pb) + Half2.highFloat(pa) * Half2.highFloat(pb));
     }
 
     private static HalfFloatArray createSequenceArray(int numElements, float scale) {
@@ -220,6 +239,34 @@ public class TestHalf2Packed extends TornadoTestBase {
                 expected += a.get(row * rowSize + d).getFloat32() * b.get(row * rowSize + d).getFloat32();
             }
             assertEquals(expected, result.get(row), Math.abs(expected) * 0.01f + DELTA);
+        }
+    }
+
+    @Test
+    public void testLocalTileDot() throws TornadoExecutionPlanException {
+        final int numPairs = NUM_ELEMENTS / 2;
+        HalfFloatArray a = createSequenceArray(NUM_ELEMENTS, 0.25f);
+        HalfFloatArray b = createSequenceArray(NUM_ELEMENTS, 0.5f);
+        FloatArray result = new FloatArray(numPairs);
+
+        KernelContext context = new KernelContext();
+        WorkerGrid workerGrid = new WorkerGrid1D(numPairs);
+        workerGrid.setLocalWork(128, 1, 1);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestHalf2Packed::localTileDot, context, a, b, result) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler).execute();
+        }
+
+        for (int i = 0; i < numPairs; i++) {
+            float expected = a.get(i * 2).getFloat32() * b.get(i * 2).getFloat32() + a.get(i * 2 + 1).getFloat32() * b.get(i * 2 + 1).getFloat32();
+            assertEquals(expected, result.get(i), Math.abs(expected) * 0.01f + DELTA);
         }
     }
 
