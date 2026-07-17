@@ -7,6 +7,35 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 
 CHANGELOG
 
+TornadoVM 5.1.0-jdk25
+---------------------
+17/07/26
+
+Improvements
+~~~~~~~~~~~~
+
+- `#929 <https://github.com/beehive-lab/TornadoVM/pull/929>`_: Add FP8 (E4M3/E5M2) support for the CUDA backend + fix NaN/Infinity float constants
+- `#937 <https://github.com/beehive-lab/TornadoVM/pull/937>`_: Stage large H2D transfers through a pinned host buffer ring
+- `#935 <https://github.com/beehive-lab/TornadoVM/pull/935>`_: Auto-disable intra-plan concurrency on serial task graphs
+
+Bug Fixes
+~~~~~~~~~~~~
+
+- `#933 <https://github.com/beehive-lab/TornadoVM/pull/933>`_: Fix vmDeps path to dispatch KernelContext/WorkerGrid kernels
+
+Other Changes
+~~~~~~~~~~~~
+
+- `#946 <https://github.com/beehive-lab/TornadoVM/pull/946>`_: [fix] Restore cutlass-jni build on GCC 15+ hosts (-Wtemplate-body)
+- `#943 <https://github.com/beehive-lab/TornadoVM/pull/943>`_: Backport Cuda windows to jdk25
+- `#944 <https://github.com/beehive-lab/TornadoVM/pull/944>`_: Backport Docs to jdk25
+- `#927 <https://github.com/beehive-lab/TornadoVM/pull/927>`_: Backport Nvtx cusparse to jdk25
+- `#926 <https://github.com/beehive-lab/TornadoVM/pull/926>`_: Back port Hybrid cutlass to jdk25
+- `#916 <https://github.com/beehive-lab/TornadoVM/pull/916>`_: [docs] Complete hybrid API guide (HYBRID_API_GUIDE.md): all providers, examples, flags, custom-provider walkthrough
+- `#924 <https://github.com/beehive-lab/TornadoVM/pull/924>`_: [cleanup] remove deprecated files 
+- `#911 <https://github.com/beehive-lab/TornadoVM/pull/911>`_: [cuda] Fix misleading NVRTC compile-error logging and drop the cuda_fp16.h include dependency
+
+
 TornadoVM 5.0.0-jdk25
 ---------------------
 09/07/26
