@@ -33,7 +33,6 @@ import java.nio.ByteOrder;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalDeviceType;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalLocalMemType;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 
 public class MetalDevice implements MetalTargetDevice {
@@ -73,11 +72,6 @@ public class MetalDevice implements MetalTargetDevice {
     private MetalLocalMemType localMemoryType;
     private int deviceVendorID;
     private MetalDeviceContextInterface deviceContext;
-    private float spirvVersion = SPIRV_VERSION_INIT;
-
-    private static final int SPIRV_VERSION_INIT = -1;
-    private static final int SPIRV_NOT_SUPPORTED = -2;
-    private static final float SPIRV_SUPPPORTED = TornadoOptions.SPIRV_VERSION_SUPPORTED;
 
     public MetalDevice(int index, long devicePointer) {
         this.index = index;
@@ -429,12 +423,6 @@ public class MetalDevice implements MetalTargetDevice {
     @Override
     public int deviceVersion() {
         return Integer.parseInt(getVersion().split(" ")[1].replace(".", "")) * 10;
-    }
-
-    @Override
-    public boolean isSPIRVSupported() {
-        // Metal does not use SPIR-V; it uses Metal Shading Language (MSL).
-        return false;
     }
 
     public int getWordSize() {

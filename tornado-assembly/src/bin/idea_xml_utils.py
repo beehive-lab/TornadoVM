@@ -45,9 +45,9 @@ def compute_tornado_backend_variant(backend_profiles):
     Compute the tornado.backend property value from backend profiles.
 
     This follows the same logic as bin/compile:
-    - Single backend: "opencl", "ptx", or "spirv"
+    - Single backend: "opencl", "ptx", "cuda", or "metal"
     - Multiple backends: sorted and joined with "-" (e.g., "opencl-ptx")
-    - All three backends: "full"
+    - All backends: "full"
 
     Args:
         backend_profiles: List of backend profile names (e.g., ["opencl-backend", "ptx-backend"])
@@ -59,7 +59,7 @@ def compute_tornado_backend_variant(backend_profiles):
     backend_list = [b.replace("-backend", "") for b in backend_profiles]
 
     # Check if all backends are present -> use "full"
-    all_backends = {"opencl", "ptx", "spirv"}
+    all_backends = {"opencl", "ptx", "cuda", "metal"}
     if set(backend_list) == all_backends:
         return "full"
 

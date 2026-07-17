@@ -62,7 +62,6 @@ __TORNADOVM_PROVIDERS__ = """\
 __COMMON_EXPORTS__ = "/etc/exportLists/common-exports"
 __OPENCL_EXPORTS__ = "/etc/exportLists/opencl-exports"
 __PTX_EXPORTS__ = "/etc/exportLists/ptx-exports"
-__SPIRV_EXPORTS__ = "/etc/exportLists/spirv-exports"
 __METAL_EXPORTS__ = "/etc/exportLists/metal-exports"
 __CUDA_EXPORTS__ = "/etc/exportLists/cuda-exports"
 __TORNADOVM_ADD_MODULES__ = "--add-modules ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.common"
@@ -295,7 +294,7 @@ def validate_ptx_backend(sdk_path):
 
         print()
         print("[NOTE] PTX backend is NVIDIA-specific")
-        print("       For non-NVIDIA GPUs, use OpenCL or SPIR-V backends instead")
+        print("       For non-NVIDIA GPUs, use the OpenCL backend instead")
         print()
         sys.exit(1)
 
@@ -384,105 +383,7 @@ def validate_cuda_backend(sdk_path):
             print()
 
         print("[NOTE] CUDA backend is NVIDIA-specific")
-        print("       For non-NVIDIA GPUs, use OpenCL or SPIR-V backends instead")
-        print()
-        sys.exit(1)
-
-    return True
-
-def validate_spirv_backend(sdk_path):
-    """Validate SPIR-V backend dependencies on Windows."""
-    if os.name != 'nt':
-        return True
-
-    # SPIR-V can run through OpenCL or Level Zero runtimes
-    opencl_dll = os.path.join(sdk_path, 'lib', 'tornado-opencl.dll')
-    levelzero_dll = os.path.join(sdk_path, 'lib', 'tornado-levelzero.dll')
-
-    has_opencl = os.path.exists(opencl_dll)
-    has_levelzero = os.path.exists(levelzero_dll)
-
-    if not has_opencl and not has_levelzero:
-        print(f"[WARNING] SPIR-V backend configured but no compatible runtime found")
-        print(f"[INFO] SPIR-V requires either:")
-        print(f"       - tornado-opencl.dll at: {opencl_dll}")
-        print(f"       - tornado-levelzero.dll at: {levelzero_dll}")
-        print()
-        return False
-
-    # Try to load at least one of the DLLs
-    opencl_loadable = has_opencl and check_dll_loadable(opencl_dll)
-    levelzero_loadable = has_levelzero and check_dll_loadable(levelzero_dll)
-
-    if not opencl_loadable and not levelzero_loadable:
-        print("[ERROR] Cannot load SPIR-V runtime libraries")
-        print()
-        if has_opencl:
-            print(f"[INFO] Found but failed to load: {opencl_dll}")
-        if has_levelzero:
-            print(f"[INFO] Found but failed to load: {levelzero_dll}")
-        print()
-
-        # Detect GPU to provide better guidance
-        gpus = get_gpu_info()
-        if gpus:
-            print("[INFO] Detected GPU(s):")
-            for gpu in gpus:
-                print(f"       - {gpu}")
-            print()
-
-        print("[CAUSE] Missing Level Zero loader or Intel Compute Runtime")
-        print("        The SPIR-V backend requires:")
-        print("        - Intel Level Zero 1.2+ (recommended for Intel GPUs)")
-        print("        - Intel Compute Runtime (for OpenCL support)")
-        print("        - Supports Intel HD Graphics (integrated) and Intel ARC GPUs")
-        print()
-
-        # Check if ze_loader.dll exists in System32
-        system_root = os.environ.get('SystemRoot', 'C:\\Windows')
-        ze_loader = os.path.join(system_root, 'System32', 'ze_loader.dll')
-
-        try:
-            if os.path.exists(ze_loader):
-                print(f"[INFO] Level Zero loader found at: {ze_loader}")
-                print("       But additional dependencies may be missing")
-            else:
-                print("[INFO] Level Zero loader (ze_loader.dll) not found in System32")
-                print("       Level Zero runtime is not installed")
-        except Exception:
-            pass
-        print()
-
-        # Check system OpenCL.dll
-        system_opencl = os.path.join(system_root, 'System32', 'OpenCL.dll')
-        try:
-            if os.path.exists(system_opencl):
-                print(f"[INFO] System OpenCL.dll found at: {system_opencl}")
-            else:
-                print("[INFO] System OpenCL.dll not found")
-                print("       Intel Compute Runtime is likely not installed")
-        except Exception:
-            pass
-        print()
-
-        print("[FIX] Install Intel GPU drivers and runtime:")
-        print()
-        print("      Option 1: Install Intel Graphics drivers (recommended)")
-        print("      1. Download Intel Graphics drivers from:")
-        print("         https://www.intel.com/content/www/us/en/download-center/home.html")
-        print("      2. Run the installer")
-        print("      3. Restart your system")
-        print("      4. Run tornado --devices again")
-        print()
-        print("      Option 2: Install Intel Compute Runtime")
-        print("      1. Download from: https://github.com/intel/compute-runtime/releases")
-        print("      2. Install both Level Zero (1.2+) and OpenCL packages")
-        print("      3. Restart your system")
-        print("      4. Run tornado --devices again")
-        print()
-        print("[NOTE] SPIR-V backend works best with Intel GPUs")
-        print("       For NVIDIA GPUs, use PTX backend instead")
-        print("       For AMD GPUs, use OpenCL backend instead")
+        print("       For non-NVIDIA GPUs, use the OpenCL backend instead")
         print()
         sys.exit(1)
 
@@ -556,9 +457,6 @@ def validate_windows_dependencies(sdk_path):
 
                 if 'cuda-backend' in content:
                     validate_cuda_backend(sdk_path)
-
-                if 'spirv-backend' in content:
-                    validate_spirv_backend(sdk_path)
 
         except (OSError, PermissionError, IOError):
             # Silently skip if we can't read the backend file
@@ -864,15 +762,12 @@ class TornadoVMRunnerTool():
         try:
             # Check if OpenCL backend is installed
             opencl_lib = os.path.join(self.sdk, 'lib', 'libtornado-opencl.so')
-            spirv_lib = os.path.join(self.sdk, 'lib', 'libtornado-levelzero.so')
             ptx_lib = os.path.join(self.sdk, 'lib', 'libtornado-ptx.so')
 
             # Find at least one native library to check
             lib_to_check = None
             if os.path.exists(opencl_lib):
                 lib_to_check = opencl_lib
-            elif os.path.exists(spirv_lib):
-                lib_to_check = spirv_lib
             elif os.path.exists(ptx_lib):
                 lib_to_check = ptx_lib
 
@@ -1043,14 +938,11 @@ class TornadoVMRunnerTool():
 
             # Check native libraries for deployment target
             opencl_lib = os.path.join(self.sdk, 'lib', 'libtornado-opencl.dylib')
-            spirv_lib = os.path.join(self.sdk, 'lib', 'libtornado-levelzero.dylib')
             ptx_lib = os.path.join(self.sdk, 'lib', 'libtornado-ptx.dylib')
 
             lib_to_check = None
             if os.path.exists(opencl_lib):
                 lib_to_check = opencl_lib
-            elif os.path.exists(spirv_lib):
-                lib_to_check = spirv_lib
             elif os.path.exists(ptx_lib):
                 lib_to_check = ptx_lib
 
@@ -1414,7 +1306,6 @@ class TornadoVMRunnerTool():
         common = self.sdk + __COMMON_EXPORTS__
         opencl = self.sdk + __OPENCL_EXPORTS__
         ptx = self.sdk + __PTX_EXPORTS__
-        spirv = self.sdk + __SPIRV_EXPORTS__
         metal = self.sdk + __METAL_EXPORTS__
         cuda = self.sdk + __CUDA_EXPORTS__
 
@@ -1422,7 +1313,6 @@ class TornadoVMRunnerTool():
             common = self.truffleCompatibleExports(common)
             opencl = self.truffleCompatibleExports(opencl)
             ptx = self.truffleCompatibleExports(ptx)
-            spirv = self.truffleCompatibleExports(spirv)
             metal = self.truffleCompatibleExports(metal)
             cuda = self.truffleCompatibleExports(cuda)
 
@@ -1432,9 +1322,6 @@ class TornadoVMRunnerTool():
             javaFlags = javaFlags + " " + common + " "
             if ("opencl-backend" in self.listOfBackends):
                 javaFlags = javaFlags + opencl + " "
-                tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
-            if ("spirv-backend" in self.listOfBackends):
-                javaFlags = javaFlags + opencl + " " + spirv + " "
                 tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
             if ("ptx-backend" in self.listOfBackends):
                 javaFlags = javaFlags + ptx + " "
@@ -1449,9 +1336,6 @@ class TornadoVMRunnerTool():
             javaFlags = javaFlags + " @" + common + " "
             if ("opencl-backend" in self.listOfBackends):
                 javaFlags = javaFlags + "@" + opencl + " "
-                tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
-            if ("spirv-backend" in self.listOfBackends):
-                javaFlags = javaFlags + "@" + opencl + " @" + spirv + " "
                 tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
             if ("ptx-backend" in self.listOfBackends):
                 javaFlags = javaFlags + "@" + ptx + " "
@@ -1588,7 +1472,7 @@ def parseArguments():
     parser.add_argument('--igvLowTier', action="store_true", dest="igvLowTier", default=False,
                         help="Debug Low Tier Compilation Graphs using Ideal Graph Visualizer (IGV)")
     parser.add_argument('--printKernel', '-pk', action="store_true", dest="printKernel", default=False,
-                        help="Print generated kernel (OpenCL, PTX or SPIR-V)")
+                        help="Print generated kernel (OpenCL, PTX or Metal)")
     parser.add_argument('--printBytecodes', '-pbc', action="store_true", dest="printBytecodes", default=False,
                         help="Print the generated TornadoVM bytecodes from the Task-Graphs")
     parser.add_argument('--enableProfiler', action="store", dest="enable_profiler", default=None,

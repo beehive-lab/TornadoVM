@@ -111,7 +111,6 @@ public class TestDevices extends TornadoTestBase {
     @Test
     public void test04() {
 
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         TornadoDeviceMap tornadoDeviceMap = TornadoExecutionPlan.getTornadoDeviceMap();
 
@@ -129,9 +128,6 @@ public class TestDevices extends TornadoTestBase {
 
         // If the multi-backend list is not empty, then it found at least one backend with multiple devices
         assertTrue(multiDeviceBackends.size() >= 1);
-
-        // Obtain the backend that can support SPIR-V as default device
-        List<TornadoBackend> spirvSupported = tornadoDeviceMap.getBackendsWithPredicate(backend -> backend.getDefaultDevice().isSPIRVSupported());
 
         // Return all backends that can access an NVIDIA GPU
         List<TornadoBackend> backendsWithNVIDIAAccess = tornadoDeviceMap.getBackendsWithDevicePredicate(device -> device //
@@ -159,7 +155,6 @@ public class TestDevices extends TornadoTestBase {
 
     @Test
     public void test05() {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         TornadoDeviceMap deviceMap = new TornadoDeviceMap();
         Stream<TornadoDevice> deviceStream = deviceMap.getDevicesByName("NVIDIA");

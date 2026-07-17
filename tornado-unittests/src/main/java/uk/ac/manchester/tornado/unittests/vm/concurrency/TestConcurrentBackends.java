@@ -38,7 +38,7 @@ import uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices
 /**
  * Test running two and three tasks in serial and concurrent on two devices and
  * three devices on different backends if are available. You need to build with
- * multiple backends (e.g. make graal-jdk-21 BACKEND=opencl,ptx,spirv).
+ * multiple backends (e.g. make graal-jdk-21 BACKEND=opencl,ptx).
  *
  * <p>
  * How to test?:

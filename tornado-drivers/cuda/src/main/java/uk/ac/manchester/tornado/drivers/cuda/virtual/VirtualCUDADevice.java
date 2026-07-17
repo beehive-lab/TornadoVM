@@ -203,11 +203,6 @@ public class VirtualCUDADevice implements CUDATargetDevice {
         return 0;
     }
 
-    @Override
-    public boolean isSPIRVSupported() {
-        return true;
-    }
-
     public int getWordSize() {
         return getDeviceAddressBits() >> 3;
     }

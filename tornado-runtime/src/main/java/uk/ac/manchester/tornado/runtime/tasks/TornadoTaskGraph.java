@@ -1598,7 +1598,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         // Single context ID per execution plan.
         // This is used to create/obtain low-level command queues from the driver
-        // and other resources (e.g., Level Zero Command Lists).
+        // and other backend resources.
         executionContext.setExecutionPlanId(executionPlanId);
 
         updatePersistedObjectState();

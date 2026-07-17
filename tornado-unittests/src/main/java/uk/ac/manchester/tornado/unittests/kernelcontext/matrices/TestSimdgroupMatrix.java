@@ -39,7 +39,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * Unit tests for {@link KernelContext#matrixMultiply8x8}, which lowers to Apple's
  * {@code simdgroup_float8x8} hardware matrix-multiply instructions.
  *
- * <p>Metal-only: simdgroup_matrix has no equivalent in the OpenCL, PTX or SPIR-V
+ * <p>Metal-only: simdgroup_matrix has no equivalent in the OpenCL or PTX
  * backends, so the tests are skipped there.
  *
  * <p>How to run:
@@ -79,10 +79,9 @@ public class TestSimdgroupMatrix extends TornadoTestBase {
     }
 
     private void runAndCheck(int m, int n, int k) throws TornadoExecutionPlanException {
-        // simdgroup_matrix is Metal-only: no equivalent in OpenCL, PTX, SPIR-V or CUDA.
+        // simdgroup_matrix is Metal-only: no equivalent in OpenCL, PTX or CUDA.
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.PTX);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.CUDA);
 
         FloatArray a = new FloatArray(m * k);

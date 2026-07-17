@@ -40,17 +40,12 @@ jobs:
         run: |
           mkdir -p graalJars && cp $GRAAL_JARS/* graalJars/
           java -version
-          make graal-jdk-21 BACKEND=ptx,opencl,spirv
-      - name: Run fast unit-tests for SPIR-V with OpenCL runtime
+          make graal-jdk-21 BACKEND=ptx,opencl
+      - name: Run fast unit-tests
         run: |
           source $VENV_PATH/bin/activate
           source setvars.sh
           make fast-tests
-      - name: Run fast unit-tests for SPIR-V with Level Zero runtime
-        run: |
-          source $VENV_PATH/bin/activate
-          source setvars.sh
-          tornado-test --ea --verbose --jvm="-Dtornado.unittests.device=0:1" -qp
       - name: Run fast unit-tests for OpenCL on NVIDIA GPU
         run: |
           source $VENV_PATH/bin/activate
@@ -66,20 +61,13 @@ jobs:
           source $VENV_PATH/bin/activate
           source setvars.sh
           tornado-test --ea --verbose --jvm="-Dtornado.unittests.device=2:0" -qp
-      - name: Run polyglot tests for SPIR-V with OpenCL runtime
+      - name: Run polyglot tests with OpenCL runtime
         run: |
           source $VENV_PATH/bin/activate
           source setvars.sh
           tornado --jvm="-Ds0.t0.device=0:0" --printKernel --truffle python $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.py
           tornado --jvm="-Ds0.t0.device=0:0" --printKernel --truffle js     $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.js
           tornado --jvm="-Ds0.t0.device=0:0" --printKernel --truffle ruby   $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.rb
-      - name: Run polyglot tests for SPIR-V with Level Zero runtime
-        run: |
-          source $VENV_PATH/bin/activate
-          source setvars.sh
-          tornado --jvm="-Ds0.t0.device=0:1" --printKernel --truffle python $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.py
-          tornado --jvm="-Ds0.t0.device=0:1" --printKernel --truffle js     $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.js
-          tornado --jvm="-Ds0.t0.device=0:1" --printKernel --truffle ruby   $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.rb
       - name: Run polyglot tests for OpenCL on NVIDIA GPU
         run: |
           source $VENV_PATH/bin/activate

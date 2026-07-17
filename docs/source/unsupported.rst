@@ -9,7 +9,7 @@ This document summarizes each of the limitations and their explanations.
 1. No Recursion
 '''''''''''''''
 
-TornadoVM does not support recursion. This is also a current limitation of OpenCL, CUDA and SPIR-V.
+TornadoVM does not support recursion. This is also a current limitation of OpenCL and CUDA.
 
 2. No Object Support (*)
 ''''''''''''''''''''''''''''''''''''

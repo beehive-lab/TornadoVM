@@ -40,18 +40,13 @@ jobs:
         run: |
           mkdir -p graalJars && cp $GRAAL_JARS/* graalJars/
           java -version
-          make jdk21 BACKEND=ptx,opencl,spirv
-      - name: Run full unit tests for SPIR-V with OpenCL runtime
+          make jdk21 BACKEND=ptx,opencl
+      - name: Run full unit tests
         working-directory: ${{ env.TORNADO_ROOT }}
         run: |
           source $VENV_PATH/bin/activate
           source setvars.sh
           make tests
-      - name: Run full unit tests for SPIR-V with Level Zero runtime
-        run: |
-          source $VENV_PATH/bin/activate
-          source setvars.sh
-          tornado-test --ea --verbose --jvm="-Dtornado.unittests.device=0:1"
       - name: Run full unit tests for OpenCL on NVIDIA GPU
         run: |
           source $VENV_PATH/bin/activate

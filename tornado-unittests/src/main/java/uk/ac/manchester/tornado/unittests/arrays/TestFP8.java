@@ -55,7 +55,7 @@ public class TestFP8 extends TornadoTestBase {
         if (backendType != TornadoVMBackendType.CUDA) {
             String message = "FP8 device kernels require the CUDA backend (default device is " + backendType + ")";
             switch (backendType) {
-                case OPENCL, PTX, SPIRV, METAL -> assertNotBackend(backendType, message);
+                case OPENCL, PTX, METAL -> assertNotBackend(backendType, message);
                 default -> throw new TornadoVMCUDANotSupported(message);
             }
         }

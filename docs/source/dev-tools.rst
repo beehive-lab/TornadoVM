@@ -39,7 +39,7 @@ Example:
            "TOTAL_COPY_OUT_SIZE_BYTES": "400024",
            "TOTAL_COPY_IN_SIZE_BYTES": "1600096",
            "s0.t0": {
-               "BACKEND": "SPIRV",
+               "BACKEND": "OPENCL",
                "METHOD": "VectorAddInt.vectorAdd",
                "DEVICE_ID": "0:0",
                "DEVICE": "Intel(R) UHD Graphics [0x9bc4]",
@@ -88,7 +88,6 @@ It is also possible to enable the profiler without live reporting in STDOUT and 
 
 The profiler can query low-level system management API implementations to obtain the power usage of an executed TornadoVM task.
 More specifically, TornadoVM is integrated with the `NVIDIA NVML API <https://docs.nvidia.com/deploy/nvml-api/index.html>`__ to support power usage for NVIDIA GPUs that operate with the ``OpenCL`` or ``PTX`` backend (:ref:`NVIDIA NVML Configuration <nvidia_nvml_configuration>`).
-Additionally, it is integrated with the `oneAPI Level Zero SYSMAN API <https://spec.oneapi.io/level-zero/latest/sysman/api.html>`__) to support power usage for Intel GPUs that operate with the ``SPIRV`` backend (:ref:`oneAPI Level Zero SYSMAN Configuration <oneapi_sysman_configuration>`).
 
 .. _nvidia_nvml_configuration:
 
@@ -101,22 +100,9 @@ To enable NVML support in TornadoVM, ensure the following:
 i) The libnvidia-ml.so (Linux) or nvml.dll (Windows) library is accessible in your system's library path (default location: ``${CUDA_TOOLKIT_ROOT_DIR}/lib/x64``).
 ii) The nvml.h header file is accessible (default location: ``${CUDA_INCLUDE_DIRS}``).
 
-.. _oneapi_sysman_configuration:
-
-B) oneAPI Level Zero SYSMAN Configuration for the SPIRV backend
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-To configure TornadoVM to utilize the oneAPI Level Zero SYSMAN API, the target device must comply with the Level Zero specification.
-Note that support is available for discrete Intel GPUs (e.g., Intel ARC A770), while integrated graphics are not supported.
-To enable the low-level system management API, users need to export the ``ZES_ENABLE_SYSNAM`` environment variable as per the level-zero specification.
-
-.. code:: bash
-
-    export ZES_ENABLE_SYSMAN=1
-
 The power metric is determined by reading energy counters at two timestamps: i) before the execution of a task, and ii) immediately after the execution. If the compute task is lightweight the energy counters may show no change, resulting in a reported power consumption close to zero. In such cases, the TornadoVM profiler will display "n/a".
 
-Note that when, dispatching occurs through the OpenCL runtime, power metrics are not supported, and the TornadoVM profiler will again report "n/a".
+Note that when dispatching occurs through the OpenCL runtime, power metrics are not supported, and the TornadoVM profiler will again report "n/a".
 
 4. Explanation of all values
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -132,12 +118,12 @@ Note that when, dispatching occurs through the OpenCL runtime, power metrics are
 -  *TOTAL_DRIVER_COMPILE_TIME*: Total compilation with the driver (once the OpenCL C / PTX code is generated, the time that the driver takes to generate the final binary).
 -  *TOTAL_CODE_GENERATION_TIME*: Total code generation time. This value
    represents the elapsed time from the last Graal compilation phase in
-   the LIR to the target backend code (e.g., OpenCL, PTX or SPIR-V).
+   the LIR to the target backend code (e.g., OpenCL, PTX or Metal).
 
 Then, for each task within a task-graph, there are usually three timers, one device identifier and two data transfer metrics:
 
 -  *BACKEND*: TornadoVM backend selected for the method execution on the
-   target device. It could be either ``SPIRV``, ``PTX`` or ``OpenCL``.
+   target device. It could be either ``PTX``, ``OpenCL``, ``CUDA`` or ``Metal``.
 -  *DEVICE_ID*: platform and device ID index.
 -  *DEVICE*: device name as provided by the OpenCL driver.
 -  *TASK_COPY_IN_SIZE_BYTES*: size in bytes of total bytes copied-in for
@@ -148,11 +134,11 @@ Then, for each task within a task-graph, there are usually three timers, one dev
    with Graal.
 -  *TASK_COMPILE_DRIVER_TIME*: time that takes to compile a given task
    with the OpenCL/CUDA driver.
--  *POWER_USAGE_mW*: power consumed to execute a given task, reported in milliwatts. This metric is collected using low-level APIs (e.g., NVIDIA NVML or oneAPI Level Zero SYSMAN).
+-  *POWER_USAGE_mW*: power consumed to execute a given task, reported in milliwatts. This metric is collected using low-level APIs (e.g., NVIDIA NVML).
 -  *TASK_KERNEL_TIME*: kernel execution for the given task (Java
    method).
 -  *TASK_CODE_GENERATION_TIME*: time that takes the code generation from
-   the LIR to the target backend code (e.g., SPIR-V).
+   the LIR to the target backend code (e.g., OpenCL).
 
 When the task-graph is executed multiple times (through an execution plan), timers related to compilation will not appear in the Json time-report.
 This is because the generated binary is cached and there is no compilation after the second iteration.
@@ -326,4 +312,4 @@ Third-Party Profilers
 -------------------------
 
 * **NVIDIA Nsight Systems** — timeline and kernel-level profiling for TornadoVM applications running on the PTX or CUDA backend.
-* **Intel VTune Profiler** — hotspot detection and low-level metrics for the OpenCL and SPIR-V backends.
+* **Intel VTune Profiler** — hotspot detection and low-level metrics for the OpenCL backend.

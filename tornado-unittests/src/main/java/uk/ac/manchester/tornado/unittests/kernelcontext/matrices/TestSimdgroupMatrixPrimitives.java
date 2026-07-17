@@ -45,7 +45,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * primitive calls are replaced by hardware instructions. This exercises the opaque
  * fragment value flowing through a normally-compiled, loop-carried accumulator.
  *
- * <p>Metal-only: the primitives have no OpenCL/PTX/SPIR-V equivalent.
+ * <p>Metal-only: the primitives have no OpenCL/PTX equivalent.
  */
 public class TestSimdgroupMatrixPrimitives extends TornadoTestBase {
 
@@ -107,7 +107,6 @@ public class TestSimdgroupMatrixPrimitives extends TornadoTestBase {
     public void testRegisterTiled() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.PTX);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.CUDA);
         int m = 32, n = 32, k = 32;
         FloatArray a = new FloatArray(m * k);
@@ -187,7 +186,6 @@ public class TestSimdgroupMatrixPrimitives extends TornadoTestBase {
     public void testTiledGemmViaPrimitives() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.PTX);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.CUDA);
         int m = 64, n = 64, k = 64;
         FloatArray a = new FloatArray(m * k);
@@ -234,7 +232,6 @@ public class TestSimdgroupMatrixPrimitives extends TornadoTestBase {
     private void runAndCheck(int m, int n, int k) throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.PTX);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.CUDA);
 
         FloatArray a = new FloatArray(m * k);

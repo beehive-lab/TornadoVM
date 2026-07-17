@@ -107,20 +107,6 @@
             <fileMode>0444</fileMode>
         </fileSet>
         <fileSet>
-            <directory>../levelzero-jni/levelZeroLib/build</directory>
-            <outputDirectory>./lib/</outputDirectory>
-            <includes>
-                <include>libtornado-levelzero.so</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>../levelzero-jni/levelZeroLib/build/Release</directory>
-            <outputDirectory>./lib/</outputDirectory>
-            <includes>
-                <include>*.dll</include>
-            </includes>
-        </fileSet>
-        <fileSet>
             <directory>../tornado-drivers/opencl-jni/target/windows-i386-release/cmake/Release</directory>
             <outputDirectory>./lib/</outputDirectory>
             <includes>
@@ -173,8 +159,6 @@
             <useAllReactorProjects>true</useAllReactorProjects>
             <!-- Now, select which projects to include in this module-set. -->
             <includes>
-                <include>tornado:beehive-spirv-toolkit</include>
-                <include>tornado:beehive-levelzero-jni</include>
                 <include>io.github.beehive-lab:tornado-api</include>
                 <include>io.github.beehive-lab:tornado-runtime</include>
                 <include>io.github.beehive-lab:tornado-annotation</include>
@@ -182,7 +166,6 @@
                 <include>io.github.beehive-lab:tornado-drivers-common</include>
                 <include>io.github.beehive-lab:tornado-drivers-ptx</include>
                 <include>io.github.beehive-lab:tornado-drivers-opencl</include>
-                <include>io.github.beehive-lab:tornado-drivers-spirv</include>
                 <include>io.github.beehive-lab:tornado-drivers-metal</include>
                 <include>io.github.beehive-lab:tornado-examples</include>
                 <include>io.github.beehive-lab:tornado-benchmarks</include>

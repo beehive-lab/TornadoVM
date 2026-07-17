@@ -82,7 +82,7 @@ public interface TornadoBackend {
     TornadoDeviceType getTypeDefaultDevice();
 
     /**
-     * Returns the name of the Backend. E.g., "OpenCL", "SPIR-V".
+     * Returns the name of the Backend. E.g., "OpenCL", "PTX".
      * 
      * @return {@link String}
      */
@@ -101,7 +101,6 @@ public interface TornadoBackend {
      * <ul>
      * <li>OpenCL: An OpenCL C Device</li>
      * <li>PTX: An NVIDIA Device with CUDA Support</li>
-     * <li>SPIRV: An SPIR-V Device (OpenCL >= 2.1) </li>
      * <li>JAVA: A Java device. This might be removed in future versions</li>
      * <li>VIRTUAL: A Virtual Device</li>
      * </ul>

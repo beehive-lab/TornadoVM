@@ -97,31 +97,6 @@
         </profile>
 
         <profile>
-            <id>spirv-backend</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>${project.groupId}</groupId>
-                    <artifactId>tornado-drivers-opencl</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>${project.groupId}</groupId>
-                    <artifactId>tornado-drivers-spirv</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>${project.groupId}</groupId>
-                    <artifactId>tornado-drivers-opencl-jni</artifactId>
-                    <version>${project.version}</version>
-                    <classifier>libs</classifier>
-                </dependency>
-            </dependencies>
-        </profile>
-
-        <profile>
             <id>ptx-backend</id>
             <activation>
                 <activeByDefault>false</activeByDefault>

@@ -58,11 +58,6 @@ jobs:
             platform: LINUX_64
             variant: cuda-linux-amd64
 
-          # spirv
-          - sdk_suffix: spirv
-            platform: LINUX_64
-            variant: spirv-linux-amd64
-
     steps:
       - name: Derive versions and URLs
         id: vars

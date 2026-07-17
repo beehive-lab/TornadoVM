@@ -42,7 +42,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  *
  * <p>These tests run on Metal (MSL SIMD-group functions) and PTX (CUDA
  * {@code shfl.sync} warp-shuffle instructions). They are skipped on OpenCL
- * and SPIR-V backends which do not yet support these intrinsics.
+ * backend which does not yet support these intrinsics.
  *
  * <p>How to run:
  * <code>
@@ -290,7 +290,6 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
     @Test
     public void testIrregularSizes_MultiplesOf32() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         // 3, 5, 31, 33, 99 groups — not powers of two
         for (int n : new int[]{96, 160, 992, 1056, 3168}) {
@@ -306,7 +305,6 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
     @Test
     public void testIrregularSizes_NotMultipleOf32() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         for (int n : new int[]{1, 31, 33, 63, 65, 100, 1000, 1023, 1025, 65537}) {
             runIrregularComparison(n, "irr_" + n + "_");
@@ -327,7 +325,6 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
     @Test
     public void testSIMDSum() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 256;
         final int localSize = SIMD_GROUP_SIZE;
@@ -369,7 +366,6 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
     @Test
     public void testSIMDShuffleDownReduction() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 256;
         final int localSize = SIMD_GROUP_SIZE;
@@ -410,7 +406,6 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
     @Test
     public void testSIMDBroadcastFirst() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 256;
         final int localSize = SIMD_GROUP_SIZE;
@@ -456,7 +451,6 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
     @Test
     public void testSIMDSumAllLanesReceiveResult() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 256;
         final int localSize = SIMD_GROUP_SIZE;
@@ -497,7 +491,6 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
     @Test
     public void testSIMDSumAllZeros() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 128;
         final int localSize = SIMD_GROUP_SIZE;
@@ -532,7 +525,6 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
     @Test
     public void testSIMDSumIdenticalValues() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 256;
         final int localSize = SIMD_GROUP_SIZE;
@@ -568,7 +560,6 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
     @Test
     public void testSIMDSumNegativeValues() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 256;
         final int localSize = SIMD_GROUP_SIZE;
@@ -605,7 +596,6 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
     @Test
     public void testSIMDShuffleDownDeltaZero() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 256;
         final int localSize = SIMD_GROUP_SIZE;
@@ -640,7 +630,6 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
     @Test
     public void testSIMDBroadcastFirstSingleGroup() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = SIMD_GROUP_SIZE; // exactly 1 group
         final int localSize = SIMD_GROUP_SIZE;

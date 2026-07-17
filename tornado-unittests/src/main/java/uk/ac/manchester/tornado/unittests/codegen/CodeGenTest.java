@@ -316,7 +316,6 @@ public class CodeGenTest extends TornadoTestBase {
 
     @Test
     public void test04() throws TornadoExecutionPlanException {
-        assertNotBackendOptimization(TornadoVMBackendType.SPIRV);
         if (isRunningOnCPU()) {
             return;
         }
@@ -372,7 +371,6 @@ public class CodeGenTest extends TornadoTestBase {
 
     @Test
     public void testFlashAttention() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int dim = 2048;
         final int nHeads = 32;
@@ -482,7 +480,6 @@ public class CodeGenTest extends TornadoTestBase {
 
     @Test
     public void testLoopConditionWithBreakInsideIf() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         final int numBodies = 8;
         final int numSamples = 4;
         final int numRays = 256;

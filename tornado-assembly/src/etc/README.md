@@ -91,7 +91,7 @@ If you encounter issues:
 
 1. Ensure `JAVA_HOME` points to a compatible JDK (JDK 21 or later)
 2. Verify that all environment variables are correctly set in your current session
-3. Check that your GPU drivers are properly installed for your target backend (OpenCL, PTX, or SPIR-V)
+3. Check that your GPU drivers are properly installed for your target backend (OpenCL, PTX, CUDA, or Metal)
 4. Ensure `TORNADOVM_HOME` points to the root directory of this SDK
 
 For more help, visit: https://github.com/beehive-lab/TornadoVM

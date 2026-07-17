@@ -49,7 +49,7 @@ public class Logger {
     }
 
     /**
-     * Method to track SPIR-V IR Builder (from last IR phase to IR Builder for
+     * Method to track the IR Builder (from last IR phase to IR Builder for
      * codegen).
      *
      * @param backend
@@ -67,7 +67,7 @@ public class Logger {
 
     /**
      * Method to track internal calls in the TornadoVM Runtime for running the
-     * SPIR-V code.
+     * generated code.
      *
      * @param backend
      *     Backend selection
@@ -84,7 +84,6 @@ public class Logger {
 
         OpenCL("OpenCL"), //
         PTX("PTX"), //
-        SPIRV("SPIRV"), //
         Metal("Metal"); //
 
         String backendName;

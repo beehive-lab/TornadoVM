@@ -298,68 +298,6 @@ check_ptx_backend() {
     return 0
 }
 
-# Check SPIR-V dependencies
-check_spirv_backend() {
-    local spirv_ok=true
-
-    # SPIR-V backend can use either Level Zero or OpenCL 2.1+
-    if [ "$OS" == "linux" ]; then
-        # Check if SPIR-V backend library exists in SDK
-        local spirv_lib=""
-        if [ -f "$TORNADOVM_HOME/lib/libtornado-levelzero.so" ]; then
-            spirv_lib="$TORNADOVM_HOME/lib/libtornado-levelzero.so"
-        fi
-
-        # If SPIR-V library exists, check if its dependencies are satisfied
-        if [ -n "$spirv_lib" ]; then
-            # Use ldd to check if all dependencies can be resolved
-            if ! ldd "$spirv_lib" 2>/dev/null | grep -q "not found"; then
-                # All dependencies satisfied, Level Zero is available (bundled or system-wide)
-                spirv_ok=true
-            else
-                # Dependencies missing
-                print_warning "SPIR-V backend dependencies are missing"
-                echo "" >&2
-                echo "The SPIR-V backend requires Level Zero or OpenCL 2.1+." >&2
-                echo "" >&2
-                echo "Missing dependencies:" >&2
-                ldd "$spirv_lib" 2>/dev/null | grep "not found" >&2
-                echo "" >&2
-                echo "To install Level Zero for Intel GPUs:" >&2
-                echo "" >&2
-
-                case $DISTRO in
-                    ubuntu|debian)
-                        echo -e "  ${GREEN}sudo apt update${NC}" >&2
-                        echo -e "  ${GREEN}sudo apt install -y intel-level-zero-gpu level-zero${NC}" >&2
-                        echo "" >&2
-                        echo "For Intel Compute Runtime:" >&2
-                        echo "  Visit: https://github.com/intel/compute-runtime/releases" >&2
-                        ;;
-                    fedora|rhel|centos|rocky|almalinux)
-                        echo -e "  ${GREEN}sudo dnf install -y level-zero intel-level-zero${NC}" >&2
-                        ;;
-                    arch|manjaro)
-                        echo -e "  ${GREEN}sudo pacman -S level-zero-loader${NC}" >&2
-                        ;;
-                    *)
-                        echo "  Visit: https://github.com/oneapi-src/level-zero" >&2
-                        ;;
-                esac
-                echo "" >&2
-                echo "Alternatively, SPIR-V can use OpenCL 2.1+ (see OpenCL dependencies above)" >&2
-                echo "" >&2
-                spirv_ok=false
-            fi
-        else
-            # SPIR-V library not found in SDK, skip check (backend not installed)
-            spirv_ok=true
-        fi
-    fi
-
-    return $([ "$spirv_ok" = true ] && echo 0 || echo 1)
-}
-
 # Check backend-specific dependencies
 check_backend_dependencies() {
     get_installed_backends
@@ -379,11 +317,6 @@ check_backend_dependencies() {
                 ;;
             *ptx*)
                 if ! check_ptx_backend; then
-                    has_warnings=true
-                fi
-                ;;
-            *spirv*)
-                if ! check_spirv_backend; then
                     has_warnings=true
                 fi
                 ;;

@@ -32,8 +32,6 @@ import update_paths as updp
 import pull_graal_jars
 
 
-__LEVEL_ZERO_JNI_VERSION__ = "0.1.5"
-__BEEHIVE_SPIRV_TOOLKIT_VERSION__ = "0.0.5"
 
 
 
@@ -113,10 +111,10 @@ def should_handle_graal_jars(jdk):
 
 def maven_cleanup():
     mvn_cmd = get_mvn_command()
-    print("mvnw -Popencl-backend,ptx-backend,spirv-backend clean")
+    print("mvnw -Popencl-backend,ptx-backend clean")
 
     subprocess.run(
-        [mvn_cmd, "-Popencl-backend,ptx-backend,spirv-backend", "clean"],
+        [mvn_cmd, "-Popencl-backend,ptx-backend", "clean"],
         stdout=subprocess.PIPE, shell=is_win_or_bat()
     )
 
@@ -177,141 +175,6 @@ def clone_opencl_headers():
         os.chdir(current)
 
 
-def build_levelzero_jni_lib(rebuild=False):
-    """
-    Pulls and Builds the Level Zero JNI library
-    """
-    current = os.getcwd()
-    levelzero_jni = "levelzero-jni"
-    build=False
-    if not os.path.exists(levelzero_jni):
-        ## clone only if directory does not exist
-        subprocess.run(
-            [
-                "git",
-                "clone",
-                "https://github.com/beehive-lab/levelzero-jni.git",
-            ],
-        )
-        build=True
-
-    if (rebuild or build):
-
-        os.chdir(levelzero_jni)
-
-        ## Switch branch to the tagged version
-        subprocess.run(
-            [
-                "git",
-                "switch",
-                "-c",
-                __LEVEL_ZERO_JNI_VERSION__
-            ],
-        )
-
-        mvn_cmd = get_mvn_command()
-        ## Always pull for the latest changes
-        subprocess.run(["git", "pull", "origin", __LEVEL_ZERO_JNI_VERSION__])
-        subprocess.run([mvn_cmd, "clean", "install"], shell=is_win_or_bat())
-
-        ## Build native library
-        os.chdir("levelZeroLib")
-        levelzero_build_directory_cpp = "build"
-        if not os.path.exists(levelzero_build_directory_cpp):
-            os.mkdir(levelzero_build_directory_cpp)
-        os.chdir(levelzero_build_directory_cpp)
-
-        subprocess.run(["cmake", "..", ],)
-        subprocess.run(["cmake", "--build", ".", "--config", "Release"],)
-
-        os.chdir(current)
-
-
-def build_spirv_toolkit_and_level_zero(rebuild=False):
-    """
-    Builds the SPIR-V Toolkit and Level Zero libraries.
-    """
-    current = os.getcwd()
-    spirv_tool_kit = "beehive-spirv-toolkit"
-    build=True
-    if not os.path.exists(spirv_tool_kit):
-        subprocess.run(
-            [
-                "git",
-                "clone",
-                "https://github.com/beehive-lab//beehive-spirv-toolkit.git",
-            ],
-        )
-        build = True
-
-    if (rebuild or build):
-        os.chdir(spirv_tool_kit)
-
-        ## Switch branch to the tagged version
-        subprocess.run(
-            [
-                "git",
-                "switch",
-                "-c",
-                __BEEHIVE_SPIRV_TOOLKIT_VERSION__
-            ],
-        )
-
-        mvn_cmd = get_mvn_command()
-        subprocess.run(["git", "pull", "origin", "master"])
-
-        subprocess.run([mvn_cmd, "clean", "package"], shell=is_win_or_bat())
-        subprocess.run([mvn_cmd, "install"], shell=is_win_or_bat())
-        os.chdir(current)
-
-        level_zero_lib = "level-zero"
-
-        if not os.path.exists(level_zero_lib):
-            subprocess.run(["git", "clone", "--branch", "v1.18.1", "https://github.com/oneapi-src/level-zero"])
-            os.chdir(level_zero_lib)
-            os.mkdir("build")
-            os.chdir("build")
-            subprocess.run(["cmake", ".."])
-            subprocess.run(["cmake", "--build", ".", "--config", "Release"])
-            os.chdir(current)
-
-    if os.name == 'nt':
-        subprocess.run([os.path.join(level_zero_lib, "build", "bin", "Release", "zello_world")])
-        zeSharedLoader = os.path.join("level-zero", "build", "lib", "Release", "ze_loader.lib")
-    else:
-        subprocess.run([os.path.join(level_zero_lib, "build", "bin", "zello_world")])
-        zeSharedLoader = os.path.join("level-zero", "build", "lib", "libze_loader.so")
-
-
-    os.environ["ZE_SHARED_LOADER"] = os.path.join(
-        current, zeSharedLoader
-    )
-    os.environ["CPLUS_INCLUDE_PATH"] = (
-        os.path.join(current, "level-zero", "include")
-        + os.pathsep
-        + os.environ.get("CPLUS_INCLUDE_PATH", "")
-    )
-    os.environ["C_INCLUDE_PATH"] = (
-        os.path.join(current, "level-zero", "include")
-        + os.pathsep
-        + os.environ.get("C_INCLUDE_PATH", "")
-    )
-    if os.name == 'nt':
-        os.environ["PATH"] = (
-            os.path.join(current, "level-zero", "build", "bin", "Release")
-            + os.pathsep
-            + os.environ.get("PATH", "")
-        )
-    else:
-        os.environ["LD_LIBRARY_PATH"] = (
-            os.path.join(current, "level-zero", "build", "lib")
-            + os.pathsep
-            + os.environ.get("LD_LIBRARY_PATH", "")
-        )
-
-    return current
-
-
 def build_tornadovm(args, backend_profiles):
     """
     Builds TornadoVM with the specified JDK and backend options.
@@ -347,8 +210,8 @@ def build_tornadovm(args, backend_profiles):
         backend_list = args.backend.split(",")
         backend_list_sorted = sorted(backend_list)
 
-        # If all four backends, use "full"
-        if set(backend_list_sorted) == {"opencl", "ptx", "spirv", "cuda"}:
+        # If all backends, use "full"
+        if set(backend_list_sorted) == {"opencl", "ptx", "cuda", "metal"}:
             backend_variant = "full"
         else:
             # Single backend or partial combination - use exact name(s)
@@ -517,7 +380,7 @@ def parse_args():
     parser.add_argument(
         "--jdk", help="JDK version (e.g., jdk21, graal-jdk-21)"
     )
-    parser.add_argument("--backend", help="e.g., opencl,ptx,spirv")
+    parser.add_argument("--backend", help="e.g., opencl,ptx,cuda,metal")
     parser.add_argument(
         "--polyglot",
         action="store_true",
@@ -555,17 +418,7 @@ def generate_argfile_template(backend):
         """
         Generate the argfile template for your current build.
         The template contains ${TORNADOVM_HOME} placeholders that will be expanded at runtime.
-
-        Note: SPIRV backend depends on OpenCL runtime, so when building with SPIRV,
-        we automatically include OpenCL exports in the argfile.
         """
-        # If SPIRV is in the backend list, ensure OpenCL is also included for exports
-        # SPIRV can run on the OpenCL runtime, so OpenCL module must be available
-        backend_list = [b.strip() for b in backend.split(",")]
-        if "spirv" in backend_list and "opencl" not in backend_list:
-            backend_list.insert(0, "opencl")  # Add OpenCL before SPIRV
-            backend = ",".join(backend_list)
-
         tornado_home = os.environ.get('TORNADOVM_HOME')
         scripts_dir = os.path.join(f"{tornado_home}", "bin")
         current = os.getcwd()
@@ -769,13 +622,6 @@ def main():
 
     if "opencl" in args.backend:
         clone_opencl_headers()
-
-    if "spirv" in args.backend:
-        # 1) Build the SPIR-V Toolkit
-        build_spirv_toolkit_and_level_zero(args.rebuild)
-
-        # 2) Build the Level Zero JNI library
-        build_levelzero_jni_lib(args.rebuild)
 
     mvn_build_result = build_tornadovm(args, backend_profiles)
 

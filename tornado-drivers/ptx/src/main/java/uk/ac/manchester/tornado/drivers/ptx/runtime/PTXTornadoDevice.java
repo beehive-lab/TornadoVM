@@ -709,11 +709,6 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public boolean isSPIRVSupported() {
-        return false;
-    }
-
-    @Override
     public void mapDeviceRegion(long executionPlanId, Object destArray, Object srcArray, DeviceBufferState deviceStateSrc, DeviceBufferState deviceStateDest, long offset) {
         XPUBuffer devicePointer = deviceStateDest.getXPUBuffer();
         XPUBuffer srcPointer = deviceStateSrc.getXPUBuffer();

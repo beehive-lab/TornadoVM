@@ -202,7 +202,7 @@ jobs:
   build-linux:
     needs: preflight
     if: needs.preflight.outputs.proceed == 'true' && needs.preflight.outputs.include_linux == 'true'
-    name: Linux x64 (jdk21+jdk25 × opencl+ptx+spirv+cuda+full)
+    name: Linux x64 (jdk21+jdk25 × opencl+ptx+cuda+full)
     runs-on: [self-hosted, Linux, x64, sdk-builder]
     timeout-minutes: 240
     permissions:
@@ -280,7 +280,7 @@ jobs:
   build-windows:
     needs: preflight
     if: needs.preflight.outputs.proceed == 'true' && needs.preflight.outputs.include_windows == 'true'
-    name: Windows x64 (jdk21+jdk25 × opencl+ptx+spirv+cuda+full)
+    name: Windows x64 (jdk21+jdk25 × opencl+ptx+cuda+full)
     runs-on: [self-hosted, Windows, x64]
     timeout-minutes: 240
     permissions:

@@ -517,7 +517,6 @@ public class QuantizationTests extends TornadoTestBase {
     @Test
     public void testDP4A() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         
         int N = 512;
         Int8Array a = new Int8Array(N);
@@ -550,7 +549,6 @@ public class QuantizationTests extends TornadoTestBase {
 
     @Test
     public void testQuantization() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         Random random = new Random(42);
         int local_workgroup_size = 128;
@@ -592,7 +590,6 @@ public class QuantizationTests extends TornadoTestBase {
     @Test
     public void testMatrixVectorDP4AKernelContext() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         
         Random random = new Random(42);
         int local_workgroup_size = 32;
@@ -654,7 +651,6 @@ public class QuantizationTests extends TornadoTestBase {
     @Test
     public void testMatrixVectorDP4AKernelLocalMemory() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
         
         Random random = new Random(42);
@@ -716,7 +712,6 @@ public class QuantizationTests extends TornadoTestBase {
     @Test
     public void testMatrixVectorDP4AKernelPacked() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
         
         Random random = new Random(42);
@@ -777,7 +772,6 @@ public class QuantizationTests extends TornadoTestBase {
     @Test
     public void testMatrixVector4WayDP4AKernel() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         
         Random random = new Random(42);
         int local_workgroup_size = 32;
@@ -836,7 +830,6 @@ public class QuantizationTests extends TornadoTestBase {
 
     @Test
     public void testMatrixVectorVectorized() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         Random random = new Random(42);
         int localWorkgroupSize = 64;

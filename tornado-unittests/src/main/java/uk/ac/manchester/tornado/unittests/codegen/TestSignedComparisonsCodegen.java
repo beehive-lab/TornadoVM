@@ -79,7 +79,6 @@ public class TestSignedComparisonsCodegen extends TornadoTestBase {
 
     @Test
     public void testSigned01() {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         int size = 8;
         IntArray testArr = new IntArray(size);
         testArr.init(0);
@@ -104,7 +103,6 @@ public class TestSignedComparisonsCodegen extends TornadoTestBase {
 
     @Test
     public void testSigned02() {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         int size = 8;
         IntArray testArr = new IntArray(size);
         testArr.init(0);
@@ -129,7 +127,6 @@ public class TestSignedComparisonsCodegen extends TornadoTestBase {
 
     @Test
     public void testSigned03() {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         int size = 8;
         IntArray testArr = new IntArray(size);
         testArr.init(0);
@@ -154,7 +151,6 @@ public class TestSignedComparisonsCodegen extends TornadoTestBase {
 
     @Test
     public void testSigned04() {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.PTX);
         int size = 8;
         IntArray testArr = new IntArray(size);
