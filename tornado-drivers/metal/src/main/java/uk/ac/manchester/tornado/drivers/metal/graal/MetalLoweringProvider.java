@@ -83,7 +83,6 @@ import tornado.graal.compiler.replacements.SnippetCounter;
 import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
@@ -537,8 +536,8 @@ public class MetalLoweringProvider extends DefaultJavaLoweringProvider {
 
     @Override
     public int fieldOffset(ResolvedJavaField f) {
-        HotSpotResolvedJavaField field = (HotSpotResolvedJavaField) f;
-        return field.getOffset();
+        // getOffset() is on the ResolvedJavaField interface; no HotSpot cast (JDK-neutral / reflection path).
+        return f.getOffset();
     }
 
     @Override
@@ -554,8 +553,8 @@ public class MetalLoweringProvider extends DefaultJavaLoweringProvider {
 
     @Override
     public ValueNode staticFieldBase(StructuredGraph graph, ResolvedJavaField f) {
-        HotSpotResolvedJavaField field = (HotSpotResolvedJavaField) f;
-        JavaConstant base = constantReflection.asJavaClass(field.getDeclaringClass());
+        // getDeclaringClass() is on the ResolvedJavaField interface; no HotSpot cast (JDK-neutral / reflection path).
+        JavaConstant base = constantReflection.asJavaClass(f.getDeclaringClass());
         return ConstantNode.forConstant(base, metaAccess, graph);
     }
 

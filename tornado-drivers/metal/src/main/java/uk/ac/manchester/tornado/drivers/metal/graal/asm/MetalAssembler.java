@@ -27,6 +27,7 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guara
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalKind.FLOAT;
+import static uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalKind.HALF;
 import static uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalKind.LONG;
 import static uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalKind.ULONG;
 
@@ -42,7 +43,6 @@ import tornado.graal.compiler.lir.Variable;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.TargetDescription;
-import jdk.vm.ci.hotspot.HotSpotObjectConstant;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
@@ -54,6 +54,7 @@ import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalKind;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalLIROp;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalNullary;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalReturnSlot;
+import uk.ac.manchester.tornado.runtime.jvmci.TornadoObjectConstant;
 
 public final class MetalAssembler extends Assembler {
     /**
@@ -480,6 +481,10 @@ public final class MetalAssembler extends Assembler {
         String result = value;
         if (metalKind == FLOAT) {
             result += "F";
+        } else if (metalKind == HALF) {
+            // MSL has no double; a bare `100.0` literal stored into a `half` is a double literal that the
+            // native Metal compiler mishandles (the store silently produces 0). Emit the MSL half suffix.
+            result += "h";
         } else if (metalKind.isInteger()) {
             if (metalKind.isUnsigned()) {
                 result += "U";
@@ -510,12 +515,10 @@ public final class MetalAssembler extends Assembler {
             if (metalKind.isVector()) {
                 result = String.format("(%s)(%s)", metalKind.name(), result);
             }
-        } else if (constant instanceof HotSpotObjectConstant) {
-            HotSpotObjectConstant objConst = (HotSpotObjectConstant) constant;
-            // TODO should this be replaced with isInternedString()?
-            if (objConst.getJavaKind().isObject() && objConst.getType().getName().compareToIgnoreCase("Ljava/lang/String;") == 0) {
-                result = encodeString(objConst.toValueString());
-            }
+        } else if (constant instanceof TornadoObjectConstant tornadoObjConst && tornadoObjConst.getObject() instanceof String stringLiteral) {
+            // A String constant (e.g. a printf format) is a TornadoObjectConstant on the reflection path;
+            // escape it as a C string literal instead of casting to HotSpotObjectConstant (JDK-neutral).
+            result = encodeString(stringLiteral);
         } else {
             result = constant.toValueString();
             result = addLiteralSuffix(metalKind, result);

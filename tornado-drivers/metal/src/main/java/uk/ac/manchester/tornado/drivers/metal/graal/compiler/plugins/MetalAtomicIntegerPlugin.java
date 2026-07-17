@@ -26,7 +26,6 @@ package uk.ac.manchester.tornado.drivers.metal.graal.compiler.plugins;
 import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import tornado.graal.compiler.nodes.graphbuilderconf.NodePlugin;
 
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
@@ -55,9 +54,8 @@ public class MetalAtomicIntegerPlugin implements NodePlugin {
     }
 
     private MetalKind resolveMetalKind(ResolvedJavaType type) {
-        if (type instanceof HotSpotResolvedJavaType) {
-            return MetalKind.fromResolvedJavaType(type);
-        }
-        return MetalKind.ILLEGAL;
+        // fromResolvedJavaType returns ILLEGAL for any type it cannot map, so no
+        // HotSpot-specific instanceof guard is needed (JDK-neutral / reflection path).
+        return MetalKind.fromResolvedJavaType(type);
     }
 }
