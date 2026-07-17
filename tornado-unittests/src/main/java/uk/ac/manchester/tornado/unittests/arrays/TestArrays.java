@@ -331,7 +331,6 @@ public class TestArrays extends TornadoTestBase {
     @Test
     public void testVectorAdditionDoubleCUDAGraph() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int numElements = 4096;
         DoubleArray a = new DoubleArray(numElements);
@@ -371,7 +370,6 @@ public class TestArrays extends TornadoTestBase {
     @Test
     public void testVectorAdditionDoubleUpdateCUDAGraph() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int numElements = 4096;
         DoubleArray a = new DoubleArray(numElements);
@@ -426,7 +424,6 @@ public class TestArrays extends TornadoTestBase {
     @Test
     public void testCUDAGraphWithKernelContextChained() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
 
         final int numElements = 256;
@@ -492,7 +489,6 @@ public class TestArrays extends TornadoTestBase {
     @Test
     public void testCUDAGraphPersistConsume() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
 
         final int numElements = 256;

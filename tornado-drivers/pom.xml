@@ -45,18 +45,6 @@
         </profile>
 
         <profile>
-            <id>spirv-backend</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <modules>
-                <module>opencl</module>
-                <module>opencl-jni</module>
-                <module>spirv</module>
-            </modules>
-        </profile>
-
-        <profile>
             <id>ptx-backend</id>
             <activation>
                 <activeByDefault>false</activeByDefault>

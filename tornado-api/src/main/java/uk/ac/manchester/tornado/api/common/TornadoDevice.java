@@ -199,7 +199,5 @@ public interface TornadoDevice {
 
     TornadoVMBackendType getTornadoVMBackend();
 
-    boolean isSPIRVSupported();
-
     void mapDeviceRegion(long executionPlanId, Object destArray, Object srcArray, DeviceBufferState deviceStateSrc, DeviceBufferState deviceStateDest, long offset);
 }

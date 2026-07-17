@@ -567,7 +567,6 @@ public class TestConditionals extends TornadoTestBase {
 
     @Test
     public void testConditionalShortCircuit() {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         IntArray testArr = new IntArray(8);
 
         // When using the kernel-parallel API, we need to create a Grid and a Worker

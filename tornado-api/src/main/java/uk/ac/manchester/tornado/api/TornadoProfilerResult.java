@@ -82,8 +82,7 @@ public class TornadoProfilerResult implements ProfilerInterface {
 
     /**
      * Returns the compilation time (in ns)that took the device driver (e.g., OpenCL
-     * driver) to create the device binary (e.g., from OpenCL C to binary, or from
-     * SPIR-V to binary).
+     * driver) to create the device binary (e.g., from OpenCL C to binary).
      *
      * @return long
      */

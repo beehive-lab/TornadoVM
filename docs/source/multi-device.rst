@@ -16,7 +16,7 @@ TornadoVM executes on multiple devices in two modes:
 Prerequisites
 ----------------------------------------------
 
-Before using TornadoVM's multi-device execution, make sure that you have one of the supported backends (e.g., OpenCL, PTX, and SPIRV) with at least 2 available devices.
+Before using TornadoVM's multi-device execution, make sure that you have one of the supported backends (e.g., OpenCL, PTX, and CUDA) with at least 2 available devices.
 
 Ensuring that multiple devices are available
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

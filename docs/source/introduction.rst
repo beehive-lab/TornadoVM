@@ -9,7 +9,7 @@ Introduction to TornadoVM
 
 TornadoVM is a plug-in to OpenJDK and other JDK distributions (e.g., GraalVM, SapMachine, Temurin, Red Hat Mandrel, Amazon Corretto, Microsoft OpenJDK, Azul Zulu)
 that allows developers to automatically offload and run a subset of Java programs on heterogeneous hardware.
-TornadoVM targets devices compatible with OpenCL, PTX, CUDA, Level Zero, and Apple Metal, which include multi-core CPUs,
+TornadoVM targets devices compatible with OpenCL, PTX, CUDA, and Apple Metal, which include multi-core CPUs,
 dedicated GPUs, integrated GPUs, and FPGAs from multiple vendors.
 
 .. image:: images/tornadovm-01.png
@@ -18,7 +18,7 @@ dedicated GPUs, integrated GPUs, and FPGAs from multiple vendors.
 
 
 TornadoVM compiles Java code, at runtime, from Java bytecode to OpenCL C, PTX, CUDA C
-(compiled to PTX via NVRTC), SPIR-V binary, and Metal Shading Language.
+(compiled to PTX via NVRTC), and Metal Shading Language.
 Developers can choose which backend/s to install and run.
 
 .. image:: images/tornadovm-02.png
@@ -26,7 +26,7 @@ Developers can choose which backend/s to install and run.
   :alt: Sample Text
 
 
-TornadoVM does not replace existing VMs, but it rather complements them with the capability of offloading Java code to OpenCL, PTX, CUDA, SPIR-V and Metal,
+TornadoVM does not replace existing VMs, but it rather complements them with the capability of offloading Java code to OpenCL, PTX, CUDA and Metal,
 handling memory management between Java and hardware accelerators, and running/coordinating the compute-kernels.
 
 

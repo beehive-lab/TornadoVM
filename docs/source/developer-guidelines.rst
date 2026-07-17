@@ -22,20 +22,18 @@ Pre-requisites
 
   * OpenCL: GPUs and CPUs >= 2.1, FPGAs >= 1.0
   * NVIDIA driver + CUDA Toolkit 10.0+ (12.0+ on Windows) for the **PTX** backend; CUDA Toolkit 13.0+ for the **CUDA** backend
-  * Intel compute-runtime and/or GPU drivers (OpenCL), and Level-Zero >= 1.2
+  * Intel compute-runtime and/or GPU drivers (OpenCL)
 
 Supported Platforms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. csv-table::
-   :header: "OS", "OpenCL Backend", "PTX Backend", "CUDA Backend", "SPIR-V Backend", "Metal Backend"
-   :widths: 22, 28, 12, 12, 13, 13
+   :header: "OS", "OpenCL Backend", "PTX Backend", "CUDA Backend", "Metal Backend"
+   :widths: 22, 28, 12, 12, 13
 
-   "CentOS / Fedora / Ubuntu / Pop!_OS / Suse", "OpenCL for GPUs and CPUs >= 2.1, OpenCL for FPGAs >= 1.0", "CUDA 10.0+", "CUDA 13.0+", "Level-Zero >= 1.2", "Not supported"
-   "Apple M1/M2/M3/M4/M5", "OpenCL for GPUs and CPUs >= 1.2", "Not supported", "Not supported", "Not supported", "macOS (Apple Silicon)"
-   "Windows 10/11 (native/WSL)", "OpenCL for GPUs and CPUs >= 2.1, FPGAs not tested", "CUDA 12.0+", "CUDA 13.0+", "Level-Zero >= 1.2", "Not supported"
-
-**Note:** The SPIR-V backend runs on Linux and Windows, either via Level Zero (Intel HD Graphics and Intel ARC GPUs) or via OpenCL (any device with OpenCL >= 2.1).
+   "CentOS / Fedora / Ubuntu / Pop!_OS / Suse", "OpenCL for GPUs and CPUs >= 2.1, OpenCL for FPGAs >= 1.0", "CUDA 10.0+", "CUDA 13.0+", "Not supported"
+   "Apple M1/M2/M3/M4/M5", "OpenCL for GPUs and CPUs >= 1.2", "Not supported", "Not supported", "macOS (Apple Silicon)"
+   "Windows 10/11 (native/WSL)", "OpenCL for GPUs and CPUs >= 2.1, FPGAs not tested", "CUDA 12.0+", "CUDA 13.0+", "Not supported"
 
 For Intel-based macOS users, OpenCL support can be confirmed `here <https://support.apple.com/en-gb/HT202823>`_.
 
@@ -49,7 +47,7 @@ The ``tornadovm-installer`` script downloads/builds ``OpenJDK``, ``CMake`` and `
    git clone https://github.com/beehive-lab/TornadoVM.git
    cd TornadoVM
    ./bin/tornadovm-installer
-   # Select the backend(s) to install: 1. opencl  2. spirv  3. ptx  4. metal  5. cuda
+   # Select the backend(s) to install: 1. opencl  2. ptx  3. metal  4. cuda
    # (you can select more than one, comma-separated, e.g. 1, 2, 3)
    source setvars.sh        # Linux / macOS
    # setvars.cmd             # Windows
@@ -61,7 +59,7 @@ The ``tornadovm-installer`` script downloads/builds ``OpenJDK``, ``CMake`` and `
 
      options:
        --jdk JDK             Specify a JDK to install (e.g., 'jdk21', 'graal-jdk-21'). Use --listJDKs to see all options.
-       --backend BACKEND     Select the backend(s) to install: { opencl, ptx, cuda, spirv, metal }
+       --backend BACKEND     Select the backend(s) to install: { opencl, ptx, cuda, metal }
        --listJDKs            List supported JDKs
        --polyglot            Enable Truffle Interoperability with GraalVM
        --mvn_single_threaded  Run Maven in single-threaded mode
@@ -84,7 +82,7 @@ If you already have a JDK, Maven and CMake on your ``PATH``, you can build direc
 
    git clone https://github.com/beehive-lab/TornadoVM.git
    cd TornadoVM
-   make BACKEND=opencl,ptx,spirv   # build only the backends you need { opencl, ptx, cuda, spirv, metal }
+   make BACKEND=opencl,ptx   # build only the backends you need { opencl, ptx, cuda, metal }
    source setvars.sh
 
 To rebuild with a different backend selection later:
@@ -170,7 +168,6 @@ Tested on Linux Bianbu OS 2.0/2.1 (Bananapi F3, Sipeed Lichee PI 3A). The native
 
    git clone https://github.com/beehive-lab/tornadovm-riscv-patch.git
    bash tornadovm-riscv-patch/apply-riscv-patch-opencl.sh   # OpenCL only
-   # bash tornadovm-riscv-patch/apply-riscv-patch-spirv.sh  # OpenCL + SPIR-V
 
    source setvars.sh
    tornado --devices

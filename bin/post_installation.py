@@ -43,8 +43,8 @@ def detect_backends_from_sdk_path(sdk_path):
     For example:
     - tornadovm-2.2.1-dev-opencl-linux-amd64 → opencl
     - tornadovm-2.2.1-dev-ptx-linux-amd64 → ptx
-    - tornadovm-2.2.1-dev-spirv-linux-amd64 → spirv
-    - tornadovm-2.2.1-dev-full-linux-amd64 → opencl,ptx,spirv
+    - tornadovm-2.2.1-dev-cuda-linux-amd64 → cuda
+    - tornadovm-2.2.1-dev-full-linux-amd64 → opencl,ptx,cuda,metal
 
     Args:
         sdk_path (str): The absolute path to the SDK directory
@@ -56,12 +56,12 @@ def detect_backends_from_sdk_path(sdk_path):
     sdk_dir_name = os.path.basename(sdk_path)
 
     # Known backends
-    known_backends = ["opencl", "ptx", "spirv"]
+    known_backends = ["opencl", "ptx", "cuda", "metal"]
     detected_backends = []
 
     # Check for "full" which means all backends
     if "-full-" in sdk_dir_name or sdk_dir_name.endswith("-full"):
-        detected_backends = ["opencl", "ptx", "spirv"]
+        detected_backends = ["opencl", "ptx", "cuda", "metal"]
     else:
         # Check for individual backends in the directory name
         for backend in known_backends:
@@ -233,19 +233,9 @@ def generate_argfile_template(backend):
     Generate the argfile template for your current build.
     The template contains ${TORNADOVM_HOME} placeholders that will be expanded at runtime.
 
-    Note: SPIRV backend depends on OpenCL runtime, so when building with SPIRV,
-    we automatically include OpenCL exports in the argfile.
-
     Args:
-        backend (str): Comma-separated string of backends (e.g., "opencl" or "opencl,ptx,spirv")
+        backend (str): Comma-separated string of backends (e.g., "opencl" or "opencl,ptx,cuda")
     """
-    # If SPIRV is in the backend list, ensure OpenCL is also included for exports
-    # SPIRV can run on the OpenCL runtime, so OpenCL module must be available
-    backend_list = [b.strip() for b in backend.split(",")]
-    if "spirv" in backend_list and "opencl" not in backend_list:
-        backend_list.insert(0, "opencl")  # Add OpenCL before SPIRV
-        backend = ",".join(backend_list)
-
     tornado_home = os.environ.get('TORNADOVM_HOME')
     scripts_dir = os.path.join(f"{tornado_home}", "bin")
     current = os.getcwd()

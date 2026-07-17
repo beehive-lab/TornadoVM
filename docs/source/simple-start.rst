@@ -39,7 +39,7 @@ This is equivalent to:
     --threadInfo          Print thread deploy information per task on the accelerator
     --igv                 Debug Compilation Graphs using Ideal Graph Visualizer (IGV)
     --igvLowTier          Debug Low Tier Compilation Graphs using Ideal Graph Visualizer (IGV)
-    --printKernel, -pk    Print generated kernel (OpenCL, PTX or SPIR-V)
+    --printKernel, -pk    Print generated kernel (OpenCL, PTX or Metal)
     --printBytecodes, -pc
                           Print the generated TornadoVM bytecodes
     --enableProfiler ENABLE_PROFILER

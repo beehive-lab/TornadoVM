@@ -69,7 +69,7 @@ you can find examples of how to use TornadoVM with GraalVM Polyglot.
 5. Is TornadoVM a Domain Specific Language (DSL)?
 --------------------------------------------------------------
 
-No, TornadoVM is not a DSL. It compiles a subset of Java code to OpenCL C, NVIDIA PTX, NVIDIA CUDA C, SPIR-V, and Apple Metal.
+No, TornadoVM is not a DSL. It compiles a subset of Java code to OpenCL C, NVIDIA PTX, NVIDIA CUDA C, and Apple Metal.
 
 To express parallelism, TornadoVM offers the :ref:`Loop Parallel API <loop-parallel-api>` (``@Parallel`` and ``@Reduce`` annotations) and the lower-level :ref:`Kernel API <kernel-context-api>` (``KernelContext``), plus an API to:
 
@@ -92,7 +92,7 @@ With **Dynamic Reconfiguration** opted into (see :ref:`dynamic_reconfiguration`)
 ----------------------------------------------
 
 No. Currently, TornadoVM supports multiple compiler backends and therefore, it is able to generate OpenCL C, NVIDIA PTX, CUDA C
-(compiled to PTX via NVRTC), SPIR-V, and Metal code depending on the hardware configuration.
+(compiled to PTX via NVRTC), and Metal code depending on the hardware configuration.
 
 9. Why is it called a VM?
 --------------------------
@@ -107,7 +107,7 @@ You can find more information here: `https://dl.acm.org/doi/10.1145/3313808.3313
 10. How does it interact with OpenJDK?
 --------------------------------------
 
-TornadoVM makes use of the Java Virtual Machine Common Interface (JVMCI) that is included from Java 9 to compile Java bytecode to OpenCL C, NVIDIA PTX, NVIDIA CUDA C, SPIR-V, and Apple Metal at runtime.
+TornadoVM makes use of the Java Virtual Machine Common Interface (JVMCI) that is included from Java 9 to compile Java bytecode to OpenCL C, NVIDIA PTX, NVIDIA CUDA C, and Apple Metal at runtime.
 As a JVMCI implementation, TornadoVM uses Graal (it extends the Graal IR and includes new backends for each of these targets).
 
 11.  How do I know which parts of my application are suitable for acceleration?

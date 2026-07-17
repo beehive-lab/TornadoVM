@@ -57,11 +57,6 @@ public class TornadoOptions {
     public static final String DEFAULT_CUDA_COMPILER_FLAGS = getProperty("tornado.cuda.compiler.flags", "");
 
     /**
-     * Default SPIR-V/LevelZero Flags.
-     */
-    public static final String DEFAULT_SPIRV_LEVEL_ZERO_COMPILER_FLAGS = getProperty("tornado.spirv.levelzero.flags", "-ze-opt-level 2 -ze-opt-large-register-file");
-
-    /**
      * Use internal timers for profiling in ns if enabled, in ms if disabled. Default is ns (enabled).
      */
     public static final boolean TIME_IN_NANOSECONDS = Boolean.parseBoolean(System.getProperty("tornado.ns.time", TRUE));
@@ -89,7 +84,7 @@ public class TornadoOptions {
     public static final boolean THREAD_INFO = getBooleanValue("tornado.threadInfo", FALSE);
 
     /**
-     * Enable the runtime to dump the generated code (e.g., OpenCL, CUDA PTX or SPIR-V) from the TornadoVM JIT Compiler.
+     * Enable the runtime to dump the generated code (e.g., OpenCL or CUDA PTX) from the TornadoVM JIT Compiler.
      */
     public static final boolean PRINT_KERNEL_SOURCE = getBooleanValue("tornado.printKernel", FALSE);
 
@@ -113,11 +108,6 @@ public class TornadoOptions {
      * the rest of the backends.
      */
     public static final int OPENCL_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.opencl.priority", "10"));
-    /**
-     * Priority of the SPIR-V Backend. The higher the number, the more priority over
-     * the rest of the backends.
-     */
-    public static final int SPIRV_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.spirv.priority", "11"));
     /**
      * Check if the FPGA emulation mode has been set.
      */
@@ -195,12 +185,6 @@ public class TornadoOptions {
     public static final boolean ENABLE_FMA = getBooleanValue("tornado.enable.fma", TRUE);
 
     /**
-     * Enable/Disable Loop Unroll SPIR-V instruction: True by default.
-     *
-     * <p>This flag only applies for the SPIR-V Backend</p>
-     */
-    public static final boolean ENABLE_SPIRV_LOOP_UNROLL = getBooleanValue("tornado.spirv.loopunroll", TRUE);
-    /**
      * Enable/Disable Fix Reads Optimization. True by default.
      */
     public static final boolean ENABLE_FIX_READS = getBooleanValue("tornado.enable.fix.reads", TRUE);
@@ -227,10 +211,6 @@ public class TornadoOptions {
      */
     public static final int OPENCL_ARRAY_ALIGNMENT = Integer.parseInt(getProperty("tornado.opencl.array.align", "128"));
     /**
-     * Sets the array memory alignment for SPIRV devices. Default is 128 bytes.
-     */
-    public static final int SPIRV_ARRAY_ALIGNMENT = Integer.parseInt(getProperty("tornado.spirv.array.align", "128"));
-    /**
      * Enables OpenCL code generation based on a virtual device. Default is False.
      */
     public static final boolean VIRTUAL_DEVICE_ENABLED = getBooleanValue("tornado.virtual.device", FALSE);
@@ -249,8 +229,8 @@ public class TornadoOptions {
      */
     public static final boolean DUMP_LOW_TIER_WITH_IGV = getBooleanValue("tornado.debug.lowtier", FALSE);
     /**
-     * In the case of a TornadoVM runtime, JIT compiler or driver failure (OpenCL,
-     * PTX or SPIRV), this option allows users to automatically execute the code
+     * In the case of a TornadoVM runtime, JIT compiler or driver failure (OpenCL
+     * or PTX), this option allows users to automatically execute the code
      * with plain Java if an exception occurs when compiling or running the parallel
      * code. This option is True by default.
      */
@@ -283,43 +263,9 @@ public class TornadoOptions {
     public static final boolean INLINE_DURING_BYTECODE_PARSING = getBooleanValue("tornado.compiler.bytecodeInlining", FALSE);
 
     /**
-     * List of installed SPIR-V runtimes. Allowed values : "opencl,levelzero". The first in the list is set to the
-     * default one.
-     *
-     * <p>
-     * <ul>
-     * <il>Use <code>-Dtornado.spirv.runtimes=opencl</code> for OpenCL only.
-     * <il>Use <code>-Dtornado.spirv.runtimes=levelzero</code> for LevelZero only.
-     * <il>Use <code>-Dtornado.spirv.runtimes=opencl,levelzero</code> for both OpenCL and Level Zero runtimes, being
-     * OpenCL the first in the list (default).
-     * *</ul>
-     * </p>
-     */
-    public static final String SPIRV_INSTALLED_RUNTIMES = getProperty("tornado.spirv.runtimes", "opencl,levelzero");
-
-    /**
      * Check I/O parameters for every task within a task-graph.
      */
     public static final boolean FORCE_CHECK_PARAMETERS = getBooleanValue("tornado.check.parameters", TRUE);
-    /**
-     * Select Shared Memory allocator for SPIRV-Level Zero implementation.
-     */
-    public static final boolean LEVEL_ZERO_SHARED_MEMORY = getBooleanValue("tornado.spirv.levelzero.memoryAlloc.shared", FALSE);
-    /**
-     * Use return as a common label and insert the instruction before function
-     * ending.
-     */
-    public static final boolean SPIRV_RETURN_LABEL = getBooleanValue("tornado.spirv.returnlabel", TRUE);
-    /**
-     * Use the heap and frame index for any direct call invocation inside the
-     * generated SPIRV kernel.
-     */
-    public static final boolean SPIRV_DIRECT_CALL_WITH_LOAD_HEAP = getBooleanValue("tornado.spirv.directcall.heap", FALSE);
-
-    /**
-     * Set the SPIR-V Version Supported. It is set to 1.2 by default.
-     */
-    public static final float SPIRV_VERSION_SUPPORTED = getFloatValue("tornado.spirv.version", "1.2");
     /**
      * Trace code generation.
      */
@@ -355,21 +301,6 @@ public class TornadoOptions {
      */
     public static final boolean METAL_THREADGROUP_HINT = getBooleanValue("tornado.metal.threadgroupHint", FALSE);
     /**
-     * It optimizes loads and stores for the SPIRV backend. It uses less virtual
-     * registers. Experimental Feature.
-     */
-    public static final boolean OPTIMIZE_LOAD_STORE_SPIRV = getBooleanValue("tornado.spirv.loadstore", TRUE);
-    /**
-     * Memory Alignment for the Level Zero buffers (shared memory and or device
-     * memory).
-     */
-    public static final int LEVEL_ZERO_BUFFER_ALIGNMENT = getIntValue("tornado.spirv.levelzero.alignment", "64");
-    /**
-     * Enable/Disable the extended memory allocation mode for the Level Zero
-     * Backend. It is enabled by default.
-     */
-    public static final boolean LEVEL_ZERO_EXTENDED_MEMORY_MODE = getBooleanValue("tornado.spirv.levelzero.extended.memory", TRUE);
-    /**
      * If enabled, the TornadoVM will substitute the last READ (data transfer from
      * the device to the host) using a STREAM_OUT_BLOCKING. This is FALSE by
      * default.
@@ -388,7 +319,7 @@ public class TornadoOptions {
     public static final long PANAMA_OBJECT_HEADER_SIZE = TornadoNativeArray.ARRAY_HEADER;
 
     /**
-     * Option to define the maximum number of internal events related to OpenCL/PTX/SPIR-V events to keep alive.
+     * Option to define the maximum number of internal events related to OpenCL/PTX events to keep alive.
      * This is application specific. In a large application, there are probably many events that need to keep alive
      * to perform the sync.
      */

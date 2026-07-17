@@ -186,17 +186,6 @@ if exist "%TORNADOVM_HOME%\etc\tornado.backend" (
         )
     )
 
-    findstr "spirv-backend" "%TORNADOVM_HOME%\etc\tornado.backend" >nul 2>nul
-    if !errorlevel! equ 0 (
-        REM Check for Level Zero (Intel)
-        if not exist "%SystemRoot%\System32\ze_loader.dll" (
-            echo [WARNING] SPIR-V backend is configured but Level Zero may not be installed
-            echo.
-            echo For Intel GPUs: Install Intel GPU drivers with Level Zero support
-            echo Visit: https://github.com/intel/compute-runtime/releases
-            echo.
-        )
-    )
 )
 
 REM Execute the Python launcher
@@ -220,7 +209,6 @@ REM ########################################################
     set NATIVE_LIB_FOUND=0
     if exist "%TORNADOVM_HOME%\lib\tornado-opencl.dll" set NATIVE_LIB_FOUND=1
     if exist "%TORNADOVM_HOME%\lib\tornado-ptx.dll" set NATIVE_LIB_FOUND=1
-    if exist "%TORNADOVM_HOME%\lib\tornado-spirv.dll" set NATIVE_LIB_FOUND=1
 
     if !NATIVE_LIB_FOUND! equ 0 (
         REM No native libraries found, skip check

@@ -462,7 +462,7 @@ public class MetalCompiler {
         return kernelCompResult;
     }
 
-    // FIXME <REFACTOR> Remove the inheritance (See SPIRV and PTX)
+    // FIXME <REFACTOR> Remove the inheritance (See PTX)
     public static class Request<T extends MetalCompilationResult> {
 
         public final StructuredGraph graph;

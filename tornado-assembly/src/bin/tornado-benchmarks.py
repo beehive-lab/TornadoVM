@@ -69,10 +69,6 @@ __DUMP_ENERGY_METRICS_TO_DIRECTORY__ = " -Ddump.energy.metrics.to.directory="
 __SKIP_DEVICES__ = " -Dtornado.blacklist.devices="
 __VALIDATE__ = " -Dtornado.benchmarks.validate=True "
 __ENABLE_PROFILER__ = " --enableProfiler "
-__DISABLE_LEVEL_ZERO_DEFAULT_SCHEDULER__ = (
-    " -Dtornado.spirv.levelzero.thread.dispatcher=False "
-)
-__ENABLE_SPIRV_OPTIMIZER__ = " -Dtornado.spirv.loadstore=True "
 ## ========================================================================================
 
 ## ========================================================================================
@@ -215,10 +211,6 @@ def composeAllOptions(args):
         tornado_options = tornado_options + __ENABLE_PROFILER__ + args.profiler + " "
     if args.jvmFlags != None:
         jvm_options = jvm_options + args.jvmFlags + " "
-    if args.tornadoThreadScheduler == True:
-        jvm_options = jvm_options + __DISABLE_LEVEL_ZERO_DEFAULT_SCHEDULER__ + " "
-    if args.spirvOptimizer:
-        jvm_options = jvm_options + __ENABLE_SPIRV_OPTIMIZER__ + " "
     return jvm_options, tornado_options
 
 
@@ -402,7 +394,7 @@ def parseArguments():
         action="store",
         dest="profiler",
         required=False,
-        help="Run Benchmarks with the OpenCL|PTX|SPIRV profiler",
+        help="Run Benchmarks with the OpenCL|PTX profiler",
     )
     parser.add_argument(
         "--jmh", action="store_true", dest="jmh", default=False, help="Run with JMH"
@@ -414,21 +406,6 @@ def parseArguments():
         required=False,
         default=None,
         help='Pass options to the JVM e.g. -J="-Ds0.t0.device=0:1"',
-    )
-    parser.add_argument(
-        "--tornadoThreadScheduler",
-        action="store_true",
-        dest="tornadoThreadScheduler",
-        required=False,
-        default=False,
-        help="Use the thread scheduler provided with TornadoVM when running SPIRV",
-    )
-    parser.add_argument(
-        "--spirvOptimizer",
-        action="store_true",
-        dest="spirvOptimizer",
-        default=False,
-        help="Enable the SPIRV optimizer",
     )
     parser.add_argument(
         "--properties",

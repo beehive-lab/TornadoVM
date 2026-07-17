@@ -68,12 +68,12 @@ The build matrix depends on the detected platform:
 | macOS    | jdk21, jdk25 | `metal` | `metal` |
 | Linux    | jdk21, jdk25 | `opencl` | `opencl` |
 | Linux    | jdk21, jdk25 | `ptx` | `ptx` |
-| Linux    | jdk21, jdk25 | `spirv` | `spirv` |
-| Linux    | jdk21, jdk25 | `opencl,ptx,spirv` | `full` |
+| Linux    | jdk21, jdk25 | `cuda` | `cuda` |
+| Linux    | jdk21, jdk25 | `opencl,ptx,cuda` | `full` |
 | Windows  | jdk21, jdk25 | `opencl` | `opencl` |
 | Windows  | jdk21, jdk25 | `ptx` | `ptx` |
-| Windows  | jdk21, jdk25 | `spirv` | `spirv` |
-| Windows  | jdk21, jdk25 | `opencl,ptx,spirv` | `full` |
+| Windows  | jdk21, jdk25 | `cuda` | `cuda` |
+| Windows  | jdk21, jdk25 | `opencl,ptx,cuda` | `full` |
 
 Each build calls `bin/compile --sdk` from the checked-out worktree, which
 compiles TornadoVM and produces `.tar.gz` and `.zip` archives in that

@@ -113,7 +113,6 @@ public class CodeFail extends TornadoTestBase {
             executionPlan.execute();
         } catch (TornadoBailoutRuntimeException e) {
             assertNotBackend(TornadoVMBackendType.OPENCL);
-            assertNotBackend(TornadoVMBackendType.SPIRV);
         }
     }
 

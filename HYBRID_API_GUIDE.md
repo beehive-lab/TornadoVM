@@ -9,7 +9,7 @@ captured into CUDA Graphs — so data produced by a JIT kernel feeds a library
 call (and vice-versa) with **no extra copies and no manual memory management**.
 
 > Requires the **CUDA backend** (`make BACKEND=cuda`) and an NVIDIA GPU.
-> Library tasks are silently reported as `UNSUPPORTED` on OpenCL/PTX/SPIR-V/Metal.
+> Library tasks are silently reported as `UNSUPPORTED` on OpenCL/PTX/CUDA/Metal.
 
 ---
 

@@ -6,7 +6,7 @@ Installation & Configuration
 Quick Install (recommended)
 ****************************
 
-Most users do not need to build TornadoVM from source. Prebuilt SDKs (OpenCL, PTX, CUDA, SPIR-V, Metal, or a full bundle) are available from the official website:
+Most users do not need to build TornadoVM from source. Prebuilt SDKs (OpenCL, PTX, CUDA, Metal, or a full bundle) are available from the official website:
 
 `tornadovm.org/downloads <https://www.tornadovm.org/downloads>`__
 
@@ -20,7 +20,7 @@ Via SDKMAN!:
    sdk install tornadovm 5.0.0-jdk21-cuda
    sdk install tornadovm 5.0.0-jdk25-metal
 
-To install a specific JDK and/or backend combination, pass the candidate version as ``<version>-<jdk-version>-<backend>`` (e.g. ``opencl``, ``ptx``, ``cuda``, ``spirv``, ``metal``, or ``full`` for all backends). Run ``sdk list tornadovm`` to see all available combinations.
+To install a specific JDK and/or backend combination, pass the candidate version as ``<version>-<jdk-version>-<backend>`` (e.g. ``opencl``, ``ptx``, ``cuda``, ``metal``, or ``full`` for all backends). Run ``sdk list tornadovm`` to see all available combinations.
 
 The TornadoVM API is also published on Maven Central, so you can add it directly to an existing Java project without installing the SDK at all. The artifact version's suffix must match the JDK you run on: ``-jdk21`` for JDK 21, ``-jdk25`` for JDK 25.
 

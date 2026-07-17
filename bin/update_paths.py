@@ -119,7 +119,7 @@ def update_tornado_paths():
     The TORNADOVM_HOME environment variable will point to the selected SDK installation.
 
     Selection Strategy:
-        - Prefers 'full' backend (includes all backends: OpenCL, PTX, SPIR-V)
+        - Prefers 'full' backend (includes all backends: OpenCL, PTX, CUDA, Metal)
         - Falls back to most recently built SDK if 'full' not available
         - Backend information is extracted from archive filename
 
@@ -144,8 +144,6 @@ def update_tornado_paths():
         backend_info = "OpenCL"
     elif '-ptx' in selected_sdk.lower():
         backend_info = "PTX"
-    elif '-spirv' in selected_sdk.lower():
-        backend_info = "SPIR-V"
     elif '-cuda' in selected_sdk.lower():
         backend_info = "CUDA"
     elif '-metal' in selected_sdk.lower():
