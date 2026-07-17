@@ -189,7 +189,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_cublas_provider_CuBlasLtNat
         }
     }
 
-    return (jint) cublasLtMatmul((cublasLtHandle_t) handle, plan->matmulDesc,
+    cublasStatus_t status = cublasLtMatmul((cublasLtHandle_t) handle, plan->matmulDesc,
                                  &host_alpha, (const void *) d_a, plan->aLayout,
                                  (const void *) d_b, plan->bLayout,
                                  &host_beta, (const void *) d_c, plan->cLayout,
@@ -197,6 +197,23 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_cublas_provider_CuBlasLtNat
                                  plan->hasAlgo ? &plan->algo : nullptr,
                                  (void *) workspace_ptr, (size_t) workspace_bytes,
                                  (cudaStream_t) stream_ptr);
+
+    // The algorithm heuristic (cublasLtMatmulAlgoGetHeuristic) can hand back an
+    // algorithm that cublasLtMatmul itself then rejects for the same descriptors
+    // (observed for FP16 matmul on some GPU/driver combinations). Retry once
+    // without a preselected algorithm, letting cuBLASLt choose internally.
+    if (status == CUBLAS_STATUS_NOT_SUPPORTED && plan->hasAlgo) {
+        status = cublasLtMatmul((cublasLtHandle_t) handle, plan->matmulDesc,
+                                 &host_alpha, (const void *) d_a, plan->aLayout,
+                                 (const void *) d_b, plan->bLayout,
+                                 &host_beta, (const void *) d_c, plan->cLayout,
+                                 (void *) d_c, plan->cLayout,
+                                 nullptr,
+                                 (void *) workspace_ptr, (size_t) workspace_bytes,
+                                 (cudaStream_t) stream_ptr);
+    }
+
+    return (jint) status;
 }
 
 } // extern "C"

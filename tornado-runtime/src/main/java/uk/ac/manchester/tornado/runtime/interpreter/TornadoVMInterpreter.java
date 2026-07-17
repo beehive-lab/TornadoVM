@@ -280,8 +280,18 @@ public class TornadoVMInterpreter {
         return graphExecutionContext.isMemoryLimited();
     }
 
+    /**
+     * Three conditions should be satisfied to allow intra-plan concurrency.
+     * <ol>
+     * <li> withIntraPlanConcurrency() API call</li>
+     * <li>supported by backend</li>
+     * <li>TaskGraph can indeed be parallelized</li>
+     * </ol>
+     */
     private boolean isIntraPlanConcurrencyActive() {
-        return graphExecutionContext.isIntraPlanConcurrencyEnabled() && interpreterDevice.isIntraPlanConcurrencySupported();
+        return graphExecutionContext.isIntraPlanConcurrencyEnabled()
+                && interpreterDevice.isIntraPlanConcurrencySupported()
+                && !bytecodeResult.isSerialTaskGraph();
     }
 
     private Event execute(boolean isWarmup) {
@@ -291,6 +301,10 @@ public class TornadoVMInterpreter {
         // Push the per-plan intra-plan-concurrency setting to the backend before issuing any
         // bytecode, so transfer/launch routing (single- vs multi-stream) is decided per plan.
         interpreterDevice.setIntraPlanConcurrency(graphExecutionContext.getExecutionPlanId(), isIntraPlanConcurrencyActive());
+
+        // Push the staged-transfer setting before the plan's ALLOCs: it also decides whether a
+        // staged buffer skips the whole-segment host pin, which is settled at allocation time.
+        interpreterDevice.setStagedTransfers(graphExecutionContext.isStagedTransfersEnabled());
 
         // Recompute here (not just in the constructor): plan-level withIntraPlanConcurrency() is
         // applied after this interpreter is built, so latching it at construction misses it and the

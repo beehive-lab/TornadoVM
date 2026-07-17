@@ -629,16 +629,16 @@ public final class CUDAAssembler extends Assembler {
 
         public static final CUDAUnaryOp CAST_TO_INT = new CUDAUnaryOp("(int) ", true);
         public static final CUDAUnaryOp CAST_TO_SHORT = new CUDAUnaryOp("(short) ", true);
-        public static final CUDAUnaryOp CAST_TO_LONG = new CUDAUnaryOp("(long) ", true);
-        public static final CUDAUnaryOp CAST_TO_ULONG = new CUDAUnaryOp("(unsigned long) ", true);
+        public static final CUDAUnaryOp CAST_TO_LONG = new CUDAUnaryOp("(long long) ", true);
+        public static final CUDAUnaryOp CAST_TO_ULONG = new CUDAUnaryOp("(unsigned long long) ", true);
         public static final CUDAUnaryOp CAST_TO_FLOAT = new CUDAUnaryOp("(float) ", true);
         public static final CUDAUnaryOp CAST_TO_BYTE = new CUDAUnaryOp("(char) ", true);
         public static final CUDAUnaryOp CAST_TO_DOUBLE = new CUDAUnaryOp("(double) ", true);
 
         public static final CUDAUnaryOp CAST_TO_INT_PTR = new CUDAUnaryOp("(int *) ", true);
         public static final CUDAUnaryOp CAST_TO_SHORT_PTR = new CUDAUnaryOp("(short *) ", true);
-        public static final CUDAUnaryOp CAST_TO_LONG_PTR = new CUDAUnaryOp("(long *) ", true);
-        public static final CUDAUnaryOp CAST_TO_ULONG_PTR = new CUDAUnaryOp("(unsigned long *) ", true);
+        public static final CUDAUnaryOp CAST_TO_LONG_PTR = new CUDAUnaryOp("(long long *) ", true);
+        public static final CUDAUnaryOp CAST_TO_ULONG_PTR = new CUDAUnaryOp("(unsigned long long *) ", true);
         public static final CUDAUnaryOp CAST_TO_FLOAT_PTR = new CUDAUnaryOp("(float *) ", true);
         public static final CUDAUnaryOp CAST_TO_BYTE_PTR = new CUDAUnaryOp("(char *) ", true);
         // @formatter:on

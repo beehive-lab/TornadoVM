@@ -1,11 +1,20 @@
+.. _hybrid-api:
+
 Hybrid API: Native Library Tasks
 ================================
 
 The hybrid API lets a :code:`TaskGraph` mix JIT-compiled Java tasks with calls
-into vendor-optimized native libraries (e.g., NVIDIA cuBLAS). Library tasks
-share TornadoVM-managed device buffers with regular tasks, so data produced by
-a JIT kernel can feed a library call (and vice versa) without extra copies or
-special memory management.
+into vendor-optimized native libraries (e.g., NVIDIA cuBLAS, cuFFT, cuDNN).
+Library tasks share TornadoVM-managed device buffers with regular tasks, so
+data produced by a JIT kernel can feed a library call (and vice versa)
+without extra copies or special memory management, and everything runs on
+the **same CUDA stream** — no host synchronization is introduced between a
+JIT task and a library call.
+
+Requires the CUDA backend: :code:`make BACKEND=cuda` (see :ref:`build-from-source`).
+
+Example: cuBLAS (dense linear algebra)
+---------------------------------------
 
 .. code:: java
 
@@ -18,8 +27,7 @@ special memory management.
        .task("postprocess", MyClass::postprocess, output)                  // JIT-compiled kernel
        .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
-Run with the CUDA backend (:code:`make BACKEND=cuda`). Examples live in the
-``tornado-cublas`` module:
+Runnable examples in the ``tornado-cublas`` module:
 
 .. code:: bash
 
@@ -27,6 +35,52 @@ Run with the CUDA backend (:code:`make BACKEND=cuda`). Examples live in the
    tornado -m tornado.cublas/uk.ac.manchester.tornado.cublas.tests.TestCuBlasSgemvBeta
    tornado -m tornado.cublas/uk.ac.manchester.tornado.cublas.tests.TestCuBlasSgemm
    tornado -m tornado.cublas/uk.ac.manchester.tornado.cublas.tests.TestCuBlasSgemvWithTornadoVMTasksPOST
+
+Example: cuFFT (fast Fourier transforms)
+-------------------------------------------
+
+A low-pass filter pipeline that mixes **two library tasks and two JIT tasks** in a
+single graph, entirely on-device: cuFFT real-to-complex forward transform, a
+JIT-compiled kernel that zeroes the high-frequency bins, cuFFT complex-to-real
+inverse transform, and a JIT normalization kernel.
+
+.. code:: java
+
+   TaskGraph taskGraph = new TaskGraph("filter")
+       .transferToDevice(DataTransferMode.EVERY_EXECUTION, signal)
+       .libraryTask("forward", CuFft::cufftForwardR2C, signal, spectrum, n, 1)   // native cuFFT call
+       .task("lowPass", FrequencyFilterExample::lowPass, spectrum, cutoff, bins) // JIT-compiled kernel
+       .libraryTask("inverse", CuFft::cufftInverseC2R, spectrum, filtered, n, 1) // native cuFFT call
+       .task("normalize", FrequencyFilterExample::scaleBy, filtered, 1.0f / n)   // JIT-compiled kernel
+       .transferToHost(DataTransferMode.EVERY_EXECUTION, filtered);
+
+.. code:: bash
+
+   tornado -m tornado.cufft/uk.ac.manchester.tornado.cufft.tests.FrequencyFilterExample
+   tornado -m tornado.cufft/uk.ac.manchester.tornado.cufft.tests.BenchmarkFft
+
+Example: cuDNN (deep-learning primitives)
+--------------------------------------------
+
+``BenchmarkConv2d`` runs a ResNet-style 2D convolution both as a JIT-compiled
+direct-convolution kernel and as a cuDNN library task on the same device
+buffers, and cross-validates the results:
+
+.. code:: java
+
+   TaskGraph cudnnGraph = new TaskGraph("cudnn")
+       .transferToDevice(DataTransferMode.FIRST_EXECUTION, input, filter)
+       .libraryTask("conv", CuDnn::cudnnConv2d, input, filter, output, n, c, h, w, k, r, s, pad, stride)
+       .transferToHost(DataTransferMode.UNDER_DEMAND, output);
+
+.. code:: bash
+
+   tornado -m tornado.cudnn/uk.ac.manchester.tornado.cudnn.tests.BenchmarkConv2d
+   tornado -m tornado.cudnn/uk.ac.manchester.tornado.cudnn.tests.BenchmarkSdpa
+
+``cuDNN`` also exposes ``cudnnSoftmax``, ``cudnnRelu``/``cudnnSigmoid``/``cudnnTanh``,
+``cudnnMaxPool2d``, and fused FP16 scaled-dot-product (flash) attention via
+``sdpaForward`` — see the full provider catalog linked below.
 
 Performance
 -----------
@@ -41,6 +95,9 @@ against a cuBLAS SGEMM library task on the same device buffers:
 Reference numbers on an NVIDIA GeForce RTX 4090 (FP32, CUDA 12.6): the cuBLAS
 library task reaches 24 / 46 / 51 TFLOP/s at sizes 1024 / 2048 / 4096, a 6-10x
 speedup over the JIT-generated kernel (~4-5 TFLOP/s) with identical results.
+On the same GPU, ``BenchmarkFft`` shows cuFFT at ~793x the JIT DFT kernel, and
+``BenchmarkSdpa`` shows fused FP16 attention at 339-499x the JIT attention
+kernel (64-84 TFLOP/s).
 
 With :code:`--enableProfiler console`, library tasks report ``TASK_KERNEL_TIME``
 (host-timed, bounded by stream markers) together with ``BACKEND``, ``DEVICE``
@@ -99,19 +156,27 @@ Backends expose their native stream to providers through
 Scope and roadmap
 -----------------
 
-Currently supported: FP32 :code:`cublasSgemv` and :code:`cublasSgemm` on the
-CUDA backend. When :code:`beta != 0` the output operand is also read by cuBLAS;
-the binding marks it ``READ_WRITE`` automatically (include it in
+Implemented today, via the same provider SPI: **cuBLAS** and **cuBLASLt**
+(dense linear algebra, fused-epilogue GEMM), **cuFFT** (FFTs), **cuDNN**
+(deep-learning primitives, including fused FP16 flash attention), **CUTLASS**
+(open-template FP32/FP16 GEMM with fused epilogues), and **cuTENSOR** (tensor
+contractions / einsum). Each is a Java module pair (a ``tornado-<lib>`` API
+module plus a native ``*-jni`` module) with per-(plan, device) contexts for
+cached descriptors and plans. The native ``*-jni`` module for each library
+builds only under the ``cuda-backend`` Maven profile, and is
+self-guarding — if the library/toolkit isn't installed, the native side is
+skipped and that provider reports ``UNSUPPORTED`` at runtime rather than
+failing the build. Some libraries need an extra runtime dependency (e.g.,
+cuDNN needs ``libcudnn9``); see the full guide linked below for per-library
+install requirements.
+
+When :code:`beta != 0` in a cuBLAS GEMM/GEMV call, the output operand is also
+read; the binding marks it ``READ_WRITE`` automatically (include it in
 :code:`transferToDevice` if its initial values come from the host). Batch
 processing (:code:`withBatch`) is not supported for library tasks.
 
-The same SPI accommodates other host-API libraries (cuBLASLt, cuDNN, cuFFT,
-cuSPARSE, cuSOLVER, cuTENSOR, NCCL): each is a module pair implementing the
-provider interface, with per-(plan, device) contexts for cached descriptors
-and plans, and a workspace-allocation hook planned for libraries that need
-scratch buffers. Header-only device libraries (CUB, CUTLASS/CuTe) are a
-different integration track — they plug into the CUDA-C backend's NVRTC
-compilation, not the library-task path.
+Header-only device libraries (CUB, CUTLASS/CuTe) plug into the CUDA-C
+backend's NVRTC compilation rather than the library-task path.
 
 Note that cuBLAS assumes column-major storage: for row-major TornadoVM arrays
 pass the transpose operation (SGEMV) or swap operands (SGEMM), as in the
@@ -120,8 +185,9 @@ example tests.
 See also
 --------
 
-``HYBRID_API_GUIDE.md`` (repository root) is a complete, example-driven guide to
-every provider (cuBLAS, cuBLASLt, cuFFT, cuDNN, CUTLASS, cuTENSOR): factory
-tables, code snippets, composition patterns, CUDA-Graph usage, build/install
+`HYBRID_API_GUIDE.md <https://github.com/beehive-lab/TornadoVM/blob/master/HYBRID_API_GUIDE.md>`__
+(repository root) is a complete, example-driven guide to every provider
+(cuBLAS, cuBLASLt, cuFFT, cuDNN, CUTLASS, cuTENSOR): factory tables, code
+snippets, composition patterns, CUDA-Graph usage, build/install
 requirements, CLI flags, a "write your own provider" walkthrough, and a
 troubleshooting table.
