@@ -273,6 +273,37 @@ For **PTX**, **SPIR-V**, **Metal**, **CUDA**:
 
 Priority order: **CUDA** (same NVIDIA HW, quickest to validate) → PTX → Metal →
 
+### Metal — reflection-path status (Apple Silicon, JDK 21 baseline, backend build `make metal`)
+
+Landed (mirrors OpenCL/CUDA):
+- [x] **Accessor intrinsics** — `registerNativeArrayGetSet` + `arrayElementAddress` for all primitive
+      native arrays, plus `HalfFloatArray.get/set` and `ByteArray.getHalfFloat/setHalfFloat`, in
+      `MetalGraphBuilderPlugins`. Fixes the surviving-invoke `MethodCallTargetNode` NPE that broke every
+      primitive kernel.
+- [x] **Remove JVMCI HotSpot casts** — `MetalVectorNodePlugin`/`MetalAtomicIntegerPlugin` (drop the
+      `instanceof HotSpotResolvedJavaType` guard), `MetalLoweringProvider.fieldOffset/staticFieldBase`
+      (use the `ResolvedJavaField` interface), `MetalAssembler` (String const via `TornadoObjectConstant`),
+      and **`MetalFieldBuffer` rewritten to plain reflection + `Unsafe.objectFieldOffset`** like
+      `OCLFieldBuffer`. Greens vector types, fields, matrices, KernelContext.
+- [x] **KernelContext recovery** in `TornadoMetalIntrinsicsReplacements` — `atomicAdd`,
+      `allocate*LocalArray` (Int/Long/Float/Double/Byte/HalfFloat), `local/globalBarrier`.
+- [x] Also emit the MSL `h` half-literal suffix (`MetalAssembler.addLiteralSuffix`).
+
+Result: every primitive kernel went from crashing (surviving-invoke NPE / HotSpot `ClassCastException`)
+to passing; `tornado-test --quickPass` ends at **78 real failures / 913 run (202 unsupported), ≈91.5% pass**
+on Apple M3 Pro, JDK 21. Run Metal as backend 0 (`-Dtornado.metal.priority=20`) so the auto-generated
+`@Reduce` combine task also lands on Metal — otherwise `ReduceTaskGraph` pins it to backend 0 and splits
+reductions across backends, which reads back zeros. Primitive / vector / matrix / field / KernelContext /
+atomics / `@Reduce` all pass. The residual 78 split roughly: ~24 HalfFloat/quant/transformer, ~24
+local-memory reductions, ~15 simdgroup/MMA, ~15 misc.
+
+Remaining Metal-specific items (not JVMCI-related — no OpenCL/CUDA precedent to mirror):
+- [ ] **`half` store defect** — `*((device half*)p) = v` (MSL correct, compiles) does not persist, reads
+      back 0; gates HalfFloat / quantization / transformer tests. A Metal codegen/runtime issue.
+- [ ] **Local-memory reduction correctness** — `allocate*LocalArray` reductions now compile but the
+      cross-workgroup combine is wrong (e.g. 1770 vs 32640).
+- [ ] **simdgroup / MMA** advanced tests (`TestSimdgroup*`, `TestSIMDGroupReductions`).
+
 ---
 
 ## 3. Try JDK 25 and JDK 26 — document what it takes
