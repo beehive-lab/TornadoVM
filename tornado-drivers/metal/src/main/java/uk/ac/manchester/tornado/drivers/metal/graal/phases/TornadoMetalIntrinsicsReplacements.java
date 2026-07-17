@@ -52,6 +52,8 @@ import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.drivers.metal.graal.MetalArchitecture;
 import uk.ac.manchester.tornado.drivers.metal.graal.MetalLoweringProvider;
+import uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssembler;
+import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalKind;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.AtomAddNodeTemplate;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.GlobalThreadIdNode;
@@ -140,6 +142,38 @@ public class TornadoMetalIntrinsicsReplacements extends BasePhase<TornadoHighTie
                     MetalPrintf printfNode = graph.addOrUnique(new MetalPrintf("\"\""));
                     graph.replaceFixed(invoke, printfNode);
                     break;
+                // KernelContext.allocate*LocalArray / local/globalBarrier: on the reflection path these miss their
+                // InvocationPlugin at sketch time and survive as raw invokes (an InvokeNode reaches
+                // MetalAddressLowering, "address origin unimplemented"). Recover them the way the plugin would
+                // (mirrors the OpenCL backend).
+                case "Direct#KernelContext.allocateIntLocalArray":
+                    lowerLocalArrayAllocation(graph, invoke, JavaKind.Int);
+                    break;
+                case "Direct#KernelContext.allocateLongLocalArray":
+                    lowerLocalArrayAllocation(graph, invoke, JavaKind.Long);
+                    break;
+                case "Direct#KernelContext.allocateFloatLocalArray":
+                    lowerLocalArrayAllocation(graph, invoke, JavaKind.Float);
+                    break;
+                case "Direct#KernelContext.allocateDoubleLocalArray":
+                    lowerLocalArrayAllocation(graph, invoke, JavaKind.Double);
+                    break;
+                case "Direct#KernelContext.allocateByteLocalArray":
+                    lowerLocalArrayAllocation(graph, invoke, JavaKind.Byte);
+                    break;
+                case "Direct#KernelContext.allocateHalfFloatLocalArray":
+                    lowerHalfFloatLocalArrayAllocation(graph, invoke);
+                    break;
+                case "Direct#KernelContext.localBarrier": {
+                    MetalBarrierNode kcLocalBarrier = graph.addOrUnique(new MetalBarrierNode(MetalBarrierNode.MetalMemFenceFlags.LOCAL));
+                    graph.replaceFixed(invoke, kcLocalBarrier);
+                    break;
+                }
+                case "Direct#KernelContext.globalBarrier": {
+                    MetalBarrierNode kcGlobalBarrier = graph.addOrUnique(new MetalBarrierNode(MetalBarrierNode.MetalMemFenceFlags.GLOBAL));
+                    graph.replaceFixed(invoke, kcGlobalBarrier);
+                    break;
+                }
                 // KernelContext.atomicAdd: on the reflection path the invoke misses its InvocationPlugin and
                 // survives, and its default body lowers to an address whose base is a ConstantNode that
                 // MetalAddressLowering rejects ("address origin unimplemented") / a NewInstance for LongArray.
@@ -157,6 +191,31 @@ public class TornadoMetalIntrinsicsReplacements extends BasePhase<TornadoHighTie
      * element index, 3 the increment. The element address uses the Panama array header (16) the kernel addresses with,
      * matching the buffer laid out by MetalArrayWrapper on the reflection path.
      */
+    /**
+     * Recover a surviving {@code KernelContext.allocate&lt;Type&gt;LocalArray(size)} invoke as a {@link LocalArrayNode}
+     * in Metal's threadgroup (local) address space, mirroring the invocation plugin. Argument 0 is the
+     * {@code KernelContext} receiver; 1 the element count.
+     */
+    private void lowerLocalArrayAllocation(StructuredGraph graph, InvokeNode invoke, JavaKind elementKind) {
+        ValueNode size = invoke.callTarget().arguments().get(1);
+        LocalArrayNode localArrayNode = graph.addWithoutUnique(new LocalArrayNode(MetalArchitecture.localSpace, elementKind, size));
+        invoke.replaceAtUsages(localArrayNode);
+        invoke.clearInputs();
+        GraphUtil.unlinkFixedNode(invoke);
+    }
+
+    /**
+     * Recover a surviving {@code KernelContext.allocateHalfFloatLocalArray(size)} invoke as a HALF-typed
+     * {@link LocalArrayNode} (mirrors the invocation plugin and the OpenCL backend).
+     */
+    private void lowerHalfFloatLocalArrayAllocation(StructuredGraph graph, InvokeNode invoke) {
+        ValueNode size = invoke.callTarget().arguments().get(1);
+        LocalArrayNode localArrayNode = graph.addWithoutUnique(new LocalArrayNode(MetalArchitecture.localSpace, MetalKind.HALF, MetalAssembler.MetalBinaryTemplate.NEW_LOCAL_HALF_ARRAY, size));
+        invoke.replaceAtUsages(localArrayNode);
+        invoke.clearInputs();
+        GraphUtil.unlinkFixedNode(invoke);
+    }
+
     private void lowerAtomicAdd(StructuredGraph graph, InvokeNode invoke) {
         NodeInputList<ValueNode> args = invoke.callTarget().arguments();
         ValueNode segment = args.get(1);
