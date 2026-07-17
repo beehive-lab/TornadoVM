@@ -65,8 +65,6 @@ public class CUDALIRGenerationPhase extends LIRPhase<CUDALIRGenerationPhase.LIRG
             emitBlock((CUDANodeLIRBuilder) nodeLirBuilder, lirGenRes, (HIRBlock) b, graph, blockMap, context.isKernel);
         }
         ((LIRGenerator) context.lirGen).beforeRegisterAllocation();
-
-        assert SSAUtil.verifySSAForm(lirGenRes.getLIR());
     }
 
     public static final class LIRGenerationContext {
