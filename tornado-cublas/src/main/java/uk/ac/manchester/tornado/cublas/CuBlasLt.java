@@ -21,6 +21,7 @@ import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 
@@ -77,6 +78,25 @@ public final class CuBlasLt {
         return new LibraryTaskDescriptor() //
                 .withLibrary(LIBRARY_NAME) //
                 .withFunction("ltMatmulFP16") //
+                .withParameters(new Object[] { transa, transb, m, n, k, alpha, matrixA, lda, matrixB, ldb, beta, matrixC, ldc }) //
+                .withAccess(readOnlyExcept(13, 11, beta));
+    }
+
+    /**
+     * FP8 matmul on the GPU's FP8 tensor cores: C = alpha * op(A) * op(B) + beta * C, with A and B
+     * in 8-bit E4M3 (one byte per element, held in a {@link ByteArray}) and C in FP16. Compute and
+     * scale are FP32. This is the hardware FP8 path (Ada sm_89 / Hopper) via cuBLASLt - the FP8
+     * complement to {@code FP8.e4m3ToFloat} software dequant.
+     *
+     * <p>cuBLASLt FP8 requires the {@code TN} form: pass {@code transa = CUBLAS_OP_T} and
+     * {@code transb = CUBLAS_OP_N}. Leading dimensions must be multiples of 16 bytes.</p>
+     */
+    public static LibraryTaskDescriptor ltMatmulFP8(int transa, int transb, int m, int n, int k, //
+            float alpha, ByteArray matrixA, int lda, ByteArray matrixB, int ldb, //
+            float beta, HalfFloatArray matrixC, int ldc) {
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("ltMatmulFP8") //
                 .withParameters(new Object[] { transa, transb, m, n, k, alpha, matrixA, lda, matrixB, ldb, beta, matrixC, ldc }) //
                 .withAccess(readOnlyExcept(13, 11, beta));
     }
