@@ -23,7 +23,8 @@ package uk.ac.manchester.tornado.api.enums;
  * <p>A shape is only the M/N/K tile geometry; the operand element type comes from
  * the KernelContext method used:
  * <ul>
- *   <li>{@code M16N8K16} - fp16 ({@code mma}, f32 accumulator, sm_80+)</li>
+ *   <li>{@code M16N8K16} - fp16 ({@code mma}, f32 accumulator, sm_80+) or
+ *       bf16 ({@code mmaBF16}, f32 accumulator, sm_80+, CUDA backend)</li>
  *   <li>{@code M16N8K32} - int8 ({@code mmaInt8}, s32 accumulator, sm_80+) or
  *       FP8 E4M3/E5M2 ({@code mmaFP8E4M3}/{@code mmaFP8E5M2}, f32 accumulator,
  *       sm_89+, CUDA backend)</li>

@@ -425,6 +425,39 @@ public class CUDALIRStmt {
 
     }
 
+    @Opcode("CONVERT_BF16_TO_FLOAT")
+    public static class ConvertBF16ToFloatStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<ConvertBF16ToFloatStmt> TYPE = LIRInstructionClass.create(ConvertBF16ToFloatStmt.class);
+
+        @Def
+        protected Value floatValue;
+        @Use
+        protected Value bf16Bits;
+
+        public ConvertBF16ToFloatStmt(Value floatValue, Value bf16Bits) {
+            super(TYPE);
+            this.floatValue = floatValue;
+            this.bf16Bits = bf16Bits;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            // f = __bfloat162float(__ushort_as_bfloat16((unsigned short) s));
+            asm.indent();
+            asm.emitValue(crb, floatValue);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emit("__bfloat162float(__ushort_as_bfloat16((unsigned short) ");
+            asm.emitValue(crb, bf16Bits);
+            asm.emit("))");
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
     @Opcode("CONVERT_FLOAT_TO_HALF")
     public static class ConvertFloatToHalfStmt extends AbstractInstruction {
 
@@ -1914,7 +1947,8 @@ public class CUDALIRStmt {
             F16(".row.col.f32.f16.f16.f32"),
             S8(".row.col.s32.s8.s8.s32"),
             E4M3(".row.col.f32.e4m3.e4m3.f32"),
-            E5M2(".row.col.f32.e5m2.e5m2.f32");
+            E5M2(".row.col.f32.e5m2.e5m2.f32"),
+            BF16(".row.col.f32.bf16.bf16.f32");
 
             final String suffix;
 

@@ -66,6 +66,7 @@ import org.graalvm.word.LocationIdentity;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.enums.MMAShape;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
+import uk.ac.manchester.tornado.api.types.BFloat16;
 import uk.ac.manchester.tornado.api.types.FP8;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
@@ -102,6 +103,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.DP4APackedNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.Dp4aNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDABarrierNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAConvertBF16ToFloat;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAConvertFP8ToFloat;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDACpAsyncCommitGroupNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDACpAsyncCopyNode;
@@ -148,6 +150,7 @@ public class CUDAGraphBuilderPlugins {
 
         registerFP16ConversionPlugins(plugins);
         registerFP8ConversionPlugins(plugins);
+        registerBF16ConversionPlugins(plugins);
         registerTornadoVMIntrinsicsPlugins(plugins);
 
         // Register Atomics
@@ -714,6 +717,25 @@ public class CUDAGraphBuilderPlugins {
             }
         });
 
+        // --- mmaBF16(HalfFloat[], HalfFloat[], float[], MMAShape) -> float[] ---
+        // BF16 shares fp16's m16n8k16 fragment layout; the loads are the fp16 ones and
+        // only the mma.sync element type changes.
+        r.register(new InvocationPlugin("mmaBF16",
+                InvocationPlugin.Receiver.class,
+                HalfFloat[].class, HalfFloat[].class, float[].class, MMAShape.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver,
+                                 ValueNode fragA, ValueNode fragB, ValueNode fragC,
+                                 ValueNode shapeNode) {
+                receiver.get(true);
+                MMAShape shape = resolveShape(b, shapeNode);
+                b.addPush(JavaKind.Object, new CUDAMMAComputeNode(fragA, fragB, fragC, shape,
+                        CUDALIRStmt.MMAComputeStmt.MMAOperand.BF16));
+                return true;
+            }
+        });
+
         // --- mmaFP8E4M3(byte[], byte[], float[], MMAShape) -> float[] ---
         // --- mmaFP8E5M2(byte[], byte[], float[], MMAShape) -> float[] ---
         // FP8 tensor-core MMA (m16n8k32, f32 accumulator). The A/B fragments are raw
@@ -1003,6 +1025,26 @@ public class CUDAGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode fp8Byte) {
                 CUDAConvertFP8ToFloat convert = new CUDAConvertFP8ToFloat(fp8Byte, CUDAConvertFP8ToFloat.FP8Format.E5M2);
+                b.getGraph().addOrUnique(convert);
+                b.push(JavaKind.Float, convert);
+                return true;
+            }
+        });
+    }
+
+    /**
+     * Routes the in-kernel bfloat16 decoder to the native cuda_bf16.h conversion
+     * ({@code __bfloat162float}). Decode only, like the FP8 plugins: the hardware
+     * encoder rounds ties to even while {@code BFloat16.bf16FromFloat} rounds half
+     * away from zero, so the encoder stays software on every backend.
+     */
+    private static void registerBF16ConversionPlugins(InvocationPlugins plugins) {
+        Registration r = new Registration(plugins, BFloat16.class);
+
+        r.register(new InvocationPlugin("bf16ToFloat", short.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode bits) {
+                CUDAConvertBF16ToFloat convert = new CUDAConvertBF16ToFloat(bits);
                 b.getGraph().addOrUnique(convert);
                 b.push(JavaKind.Float, convert);
                 return true;
