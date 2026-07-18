@@ -107,6 +107,7 @@ public enum CUDAKind implements PlatformKind {
     HALF(2, java.lang.Short.TYPE),
     FP8_E4M3(1, null),
     FP8_E5M2(1, null),
+    BFLOAT(2, null),
     FLOAT(4, java.lang.Float.TYPE),
     DOUBLE(8, java.lang.Double.TYPE),
     CHAR2(2, null, CHAR),
@@ -511,6 +512,9 @@ public enum CUDAKind implements PlatformKind {
             return "__nv_fp8_e4m3";
         } else if (this == CUDAKind.FP8_E5M2) {
             return "__nv_fp8_e5m2";
+        } else if (this == CUDAKind.BFLOAT) {
+            // cuda_bf16.h bfloat16 scalar type.
+            return "__nv_bfloat16";
         } else {
             return name().toLowerCase();
         }

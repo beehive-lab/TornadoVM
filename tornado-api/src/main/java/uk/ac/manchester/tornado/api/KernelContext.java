@@ -686,6 +686,26 @@ public class KernelContext implements ExecutionContext {
     }
 
     /**
+     * Warp-collective bfloat16 matrix multiply-accumulate: D = A * B + C.
+     *
+     * <p>BF16 shares fp16's m16n8k16 tile shape and per-lane fragment layout, so the
+     * A/B fragments are loaded with the same {@link #mmaLoadA(int[], int)} /
+     * {@link #mmaLoadB(int[], int)} calls from int tiles packed with raw bf16 bit
+     * pairs ({@code lo | (hi << 16)}); only the mma.sync element type differs. The
+     * {@code HalfFloat[]} fragment handles are opaque register tuples - the bits are
+     * interpreted as bf16 by this call, never decoded as fp16.
+     *
+     * PTX equivalent:
+     *   mma.sync.aligned.m16n8k16.row.col.f32.bf16.bf16.f32
+     *
+     * <p><b>Note:</b> CUDA backend only, compute capability 8.0+ (same floor as the
+     * fp16/int8 MMA ops).
+     */
+    public float[] mmaBF16(HalfFloat[] fragA, HalfFloat[] fragB, float[] fragC, MMAShape mmaShape) {
+        return fragC; // CPU fallback: accumulator unchanged
+    }
+
+    /**
      * Allocates a 4xs32 accumulator fragment for int8 MMA, initialised to the given value.
      */
     public int[] mmaFragmentInt(int initValue) {
