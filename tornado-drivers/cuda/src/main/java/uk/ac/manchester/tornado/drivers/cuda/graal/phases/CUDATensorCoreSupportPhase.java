@@ -29,6 +29,7 @@ import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceMMANotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADevice;
+import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAComputeNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAFragmentNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadAInt8Node;
@@ -50,6 +51,9 @@ public class CUDATensorCoreSupportPhase extends Phase {
 
     private static final int MMA_MAJOR_MIN = 8;
     private static final int MMA_MINOR_MIN = 0;
+    // FP8 (e4m3/e5m2) mma.sync operands need the Ada/Hopper tensor cores.
+    private static final int FP8_MMA_MAJOR_MIN = 8;
+    private static final int FP8_MMA_MINOR_MIN = 9;
 
     private final TornadoDeviceContext deviceContext;
 
@@ -65,6 +69,7 @@ public class CUDATensorCoreSupportPhase extends Phase {
     @Override
     protected void run(StructuredGraph graph) {
         boolean hasMMA = false;
+        boolean hasFP8MMA = false;
         for (Node n : graph.getNodes()) {
             if (n instanceof CUDAMMALoadANode || n instanceof CUDAMMALoadBNode
                     || n instanceof CUDAMMALoadBSwizzledNode
@@ -72,10 +77,15 @@ public class CUDATensorCoreSupportPhase extends Phase {
                     || n instanceof CUDAMMAStoreBSwizzledNode
                     || n instanceof CUDAMMALoadAInt8Node
                     || n instanceof CUDAMMALoadBInt8Node
-                    || n instanceof CUDAMMAComputeNode
                     || n instanceof CUDAMMAFragmentNode) {
                 hasMMA = true;
-                break;
+            } else if (n instanceof CUDAMMAComputeNode compute) {
+                hasMMA = true;
+                CUDALIRStmt.MMAComputeStmt.MMAOperand operand = compute.getOperand();
+                if (operand == CUDALIRStmt.MMAComputeStmt.MMAOperand.E4M3
+                        || operand == CUDALIRStmt.MMAComputeStmt.MMAOperand.E5M2) {
+                    hasFP8MMA = true;
+                }
             }
         }
         if (!hasMMA) {
@@ -93,6 +103,14 @@ public class CUDATensorCoreSupportPhase extends Phase {
                     "MMA instructions require compute capability "
                             + MMA_MAJOR_MIN + "." + MMA_MINOR_MIN
                             + " or higher (Ampere+); device reports "
+                            + major + "." + minor);
+        }
+        if (hasFP8MMA && (major < FP8_MMA_MAJOR_MIN
+                || (major == FP8_MMA_MAJOR_MIN && minor < FP8_MMA_MINOR_MIN))) {
+            throw new TornadoDeviceMMANotSupported(
+                    "FP8 (e4m3/e5m2) MMA instructions require compute capability "
+                            + FP8_MMA_MAJOR_MIN + "." + FP8_MMA_MINOR_MIN
+                            + " or higher (Ada/Hopper+); device reports "
                             + major + "." + minor);
         }
     }
