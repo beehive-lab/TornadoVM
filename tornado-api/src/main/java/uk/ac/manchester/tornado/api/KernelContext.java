@@ -718,6 +718,50 @@ public class KernelContext implements ExecutionContext {
     }
 
     /**
+     * Loads an A fragment (16x32 FP8 tile) for FP8 tensor-core MMA (m16n8k32).
+     *
+     * <p>The shared-memory tile holds raw FP8 storage bytes packed four per int,
+     * exactly like the int8 tile layout of {@link #mmaLoadAInt8(int[], int)} - the
+     * load is format-agnostic; the FP8 interpretation happens in
+     * {@link #mmaFP8E4M3}/{@link #mmaFP8E5M2}.
+     *
+     * <p><b>Note:</b> CUDA backend only; FP8 MMA requires compute capability 8.9+
+     * (Ada/Hopper).
+     */
+    public byte[] mmaLoadAFP8(int[] aTile, int tileK) {
+        return new byte[16]; // CPU fallback
+    }
+
+    /**
+     * Loads a B fragment (32x8 FP8 tile, col-major) for FP8 tensor-core MMA
+     * (m16n8k32). See {@link #mmaLoadAFP8(int[], int)} for layout notes.
+     */
+    public byte[] mmaLoadBFP8(int[] bTile, int tileK) {
+        return new byte[8]; // CPU fallback
+    }
+
+    /**
+     * Warp-collective FP8 (OCP E4M3) MMA: D = A*B + C with an f32 accumulator.
+     *
+     * PTX equivalent:
+     *   mma.sync.aligned.m16n8k32.row.col.f32.e4m3.e4m3.f32
+     *
+     * <p><b>Note:</b> CUDA backend only, compute capability 8.9+ (Ada/Hopper);
+     * on older devices the compiler raises TornadoDeviceMMANotSupported.
+     */
+    public float[] mmaFP8E4M3(byte[] fragA, byte[] fragB, float[] fragC, MMAShape shape) {
+        return fragC; // CPU fallback: accumulator unchanged
+    }
+
+    /**
+     * Warp-collective FP8 (OCP E5M2) MMA: D = A*B + C with an f32 accumulator.
+     * See {@link #mmaFP8E4M3} for shape and gating notes.
+     */
+    public float[] mmaFP8E5M2(byte[] fragA, byte[] fragB, float[] fragC, MMAShape shape) {
+        return fragC; // CPU fallback: accumulator unchanged
+    }
+
+    /**
      * MMA A-operand load from a shared-memory tile with a byte-offset base.
      *
      * <p>Variant of {@link #mmaLoadA(int[], int)} that advances the base address

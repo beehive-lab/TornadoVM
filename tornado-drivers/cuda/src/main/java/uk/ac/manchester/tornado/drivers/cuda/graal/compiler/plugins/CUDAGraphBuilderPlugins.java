@@ -64,6 +64,7 @@ import org.graalvm.word.LocationIdentity;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.enums.MMAShape;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
+import uk.ac.manchester.tornado.api.types.FP8;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
@@ -74,6 +75,7 @@ import uk.ac.manchester.tornado.api.types.arrays.TornadoMemorySegment;
 import uk.ac.manchester.tornado.api.utils.QuantizationUtils;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAArchitecture;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
+import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAUnary;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.AtomAddNodeTemplate;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAComputeNode;
@@ -96,6 +98,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.DP4APackedNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.Dp4aNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDABarrierNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAConvertFP8ToFloat;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAConvertHalfToFloat;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAFPBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAFPUnaryIntrinsicNode;
@@ -137,6 +140,7 @@ public class CUDAGraphBuilderPlugins {
         }
 
         registerFP16ConversionPlugins(plugins);
+        registerFP8ConversionPlugins(plugins);
         registerTornadoVMIntrinsicsPlugins(plugins);
 
         // Register Atomics
@@ -528,7 +532,8 @@ public class CUDAGraphBuilderPlugins {
                                  ValueNode shapeNode) {
                 receiver.get(true);
                 MMAShape shape = resolveShape(b, shapeNode);
-                b.addPush(JavaKind.Object, new CUDAMMAComputeNode(fragA, fragB, fragC, shape));
+                b.addPush(JavaKind.Object, new CUDAMMAComputeNode(fragA, fragB, fragC, shape,
+                        CUDALIRStmt.MMAComputeStmt.MMAOperand.F16));
                 return true;
             }
         });
@@ -596,7 +601,40 @@ public class CUDAGraphBuilderPlugins {
                                  ValueNode shapeNode) {
                 receiver.get(true);
                 MMAShape shape = resolveShape(b, shapeNode);
-                b.addPush(JavaKind.Object, new CUDAMMAComputeNode(fragA, fragB, fragC, shape));
+                b.addPush(JavaKind.Object, new CUDAMMAComputeNode(fragA, fragB, fragC, shape,
+                        CUDALIRStmt.MMAComputeStmt.MMAOperand.S8));
+                return true;
+            }
+        });
+
+        // --- mmaFP8E4M3(byte[], byte[], float[], MMAShape) -> float[] ---
+        // --- mmaFP8E5M2(byte[], byte[], float[], MMAShape) -> float[] ---
+        // FP8 tensor-core MMA (m16n8k32, f32 accumulator). The A/B fragments are raw
+        // byte tuples with the same shared-memory tile layout as the int8 path, so the
+        // loads reuse the int8 load nodes; only the mma.sync element type differs.
+        registerMMAFP8Compute(r, "mmaFP8E4M3", CUDALIRStmt.MMAComputeStmt.MMAOperand.E4M3);
+        registerMMAFP8Compute(r, "mmaFP8E5M2", CUDALIRStmt.MMAComputeStmt.MMAOperand.E5M2);
+
+        // --- mmaLoadAFP8(int[], int) -> byte[] --- (same tile layout as int8: reuse its load node)
+        r.register(new InvocationPlugin("mmaLoadAFP8",
+                InvocationPlugin.Receiver.class, int[].class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode tileK) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDAMMALoadAInt8Node(tile, tileK));
+                return true;
+            }
+        });
+
+        // --- mmaLoadBFP8(int[], int) -> byte[] ---
+        r.register(new InvocationPlugin("mmaLoadBFP8",
+                InvocationPlugin.Receiver.class, int[].class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode tileK) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDAMMALoadBInt8Node(tile, tileK));
                 return true;
             }
         });
@@ -654,6 +692,25 @@ public class CUDAGraphBuilderPlugins {
             }
         });
 
+    }
+
+    /** Registers one FP8 mma compute plugin ({@code (byte[], byte[], float[], MMAShape) -> float[]}). */
+    private static void registerMMAFP8Compute(Registration r, String methodName,
+                                              CUDALIRStmt.MMAComputeStmt.MMAOperand operand) {
+        r.register(new InvocationPlugin(methodName,
+                InvocationPlugin.Receiver.class,
+                byte[].class, byte[].class, float[].class, MMAShape.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver,
+                                 ValueNode fragA, ValueNode fragB, ValueNode fragC,
+                                 ValueNode shapeNode) {
+                receiver.get(true);
+                MMAShape shape = resolveShape(b, shapeNode);
+                b.addPush(JavaKind.Object, new CUDAMMAComputeNode(fragA, fragB, fragC, shape, operand));
+                return true;
+            }
+        });
     }
 
     /**
@@ -802,6 +859,42 @@ public class CUDAGraphBuilderPlugins {
                 CUDAConvertHalfToFloat convertHalfToFloat = new CUDAConvertHalfToFloat(halfValue);
                 b.getGraph().addOrUnique(convertHalfToFloat);
                 b.push(JavaKind.Float, convertHalfToFloat);
+                return true;
+            }
+        });
+    }
+
+    /**
+     * Routes the in-kernel FP8 decoders to the native cuda_fp8.h conversion path.
+     *
+     * <p>{@code FP8.e4m3ToFloat}/{@code e5m2ToFloat} are written as pure arithmetic so
+     * they compile on any backend; on CUDA that software decode costs 2-10x more than a
+     * hardware convert. Intercepting the call here swaps in
+     * {@code __nv_cvt_fp8_to_halfraw} (hardware {@code cvt} on sm_89+, the header's own
+     * emulation below that) while other backends keep inlining the Java bytecode. Decode
+     * only: the hardware float-to-fp8 encoder rounds ties to even while the software
+     * encoder rounds half away from zero, so replacing the encoders would change results
+     * between host- and device-quantized data.
+     */
+    private static void registerFP8ConversionPlugins(InvocationPlugins plugins) {
+        Registration r = new Registration(plugins, FP8.class);
+
+        r.register(new InvocationPlugin("e4m3ToFloat", byte.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode fp8Byte) {
+                CUDAConvertFP8ToFloat convert = new CUDAConvertFP8ToFloat(fp8Byte, CUDAConvertFP8ToFloat.FP8Format.E4M3);
+                b.getGraph().addOrUnique(convert);
+                b.push(JavaKind.Float, convert);
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("e5m2ToFloat", byte.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode fp8Byte) {
+                CUDAConvertFP8ToFloat convert = new CUDAConvertFP8ToFloat(fp8Byte, CUDAConvertFP8ToFloat.FP8Format.E5M2);
+                b.getGraph().addOrUnique(convert);
+                b.push(JavaKind.Float, convert);
                 return true;
             }
         });

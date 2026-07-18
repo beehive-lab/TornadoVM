@@ -46,20 +46,26 @@ public class CUDAMMAComputeNode extends FixedWithNextNode implements LIRLowerabl
     @Input private ValueNode fragB;
     @Input private ValueNode fragC;
     private final MMAShape shape;
+    private final CUDALIRStmt.MMAComputeStmt.MMAOperand operand;
 
-    public CUDAMMAComputeNode(ValueNode a, ValueNode b, ValueNode c, MMAShape shape) {
+    public CUDAMMAComputeNode(ValueNode a, ValueNode b, ValueNode c, MMAShape shape,
+                              CUDALIRStmt.MMAComputeStmt.MMAOperand operand) {
         super(TYPE, StampFactory.forKind(JavaKind.Object));
-        this.fragA = a; this.fragB = b; this.fragC = c; this.shape = shape;
+        this.fragA = a; this.fragB = b; this.fragC = c; this.shape = shape; this.operand = operand;
+    }
+
+    public CUDALIRStmt.MMAComputeStmt.MMAOperand getOperand() {
+        return operand;
     }
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
-        CUDAKind accKind = (shape == MMAShape.M16N8K32)
+        CUDAKind accKind = (operand == CUDALIRStmt.MMAComputeStmt.MMAOperand.S8)
                 ? CUDAKind.MMA_FRAG_ACC_S32 : CUDAKind.MMA_FRAG_ACC_F32;
         Variable fragD = tool.newVariable(LIRKind.value(accKind));
         tool.append(new CUDALIRStmt.MMAComputeStmt(
-                fragD, gen.operand(fragA), gen.operand(fragB), gen.operand(fragC), shape));
+                fragD, gen.operand(fragA), gen.operand(fragB), gen.operand(fragC), shape, operand));
         gen.setResult(this, fragD);
     }
 }
