@@ -264,9 +264,6 @@ public class CUDACompilationResultBuilder extends CompilationResultBuilder {
         if ((source.contains("__nv_fp8") || source.contains("__nv_cvt_fp8") || source.contains("cvt_float_to_fp8")) && !source.contains("cuda_fp8.h")) {
             source = CUDAPreamble.FP8_PREAMBLE + source;
         }
-        if ((source.contains("__nv_bfloat16") || source.contains("bfloat162float") || source.contains("2bfloat16")) && !source.contains("cuda_bf16.h")) {
-            source = CUDAPreamble.BF16_PREAMBLE + source;
-        }
         if ((source.contains("__half") || source.contains("half2") || source.contains("2half")) && !source.contains("cuda_fp16.h")) {
             source = CUDAPreamble.PREAMBLE + source;
         }

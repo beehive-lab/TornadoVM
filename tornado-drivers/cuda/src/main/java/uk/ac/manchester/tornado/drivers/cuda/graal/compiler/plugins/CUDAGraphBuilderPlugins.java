@@ -78,6 +78,7 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoMemorySegment;
 import uk.ac.manchester.tornado.api.utils.QuantizationUtils;
+import uk.ac.manchester.tornado.drivers.cuda.CUDAProgram;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAArchitecture;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt;
@@ -1007,6 +1008,12 @@ public class CUDAGraphBuilderPlugins {
      * only: the hardware float-to-fp8 encoder rounds ties to even while the software
      * encoder rounds half away from zero, so replacing the encoders would change results
      * between host- and device-quantized data.
+     *
+     * <p>The interception is conditional on the toolkit: cuda_fp8.h only exists since
+     * CUDA 11.8, so each plugin first checks (once per process, via NVRTC) that the
+     * header actually compiles and otherwise declines, letting the graph builder inline
+     * the Java software decoder as on every other backend - an old or mismatched toolkit
+     * degrades FP8 decode performance, not correctness.
      */
     private static void registerFP8ConversionPlugins(InvocationPlugins plugins) {
         Registration r = new Registration(plugins, FP8.class);
@@ -1014,6 +1021,9 @@ public class CUDAGraphBuilderPlugins {
         r.register(new InvocationPlugin("e4m3ToFloat", byte.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode fp8Byte) {
+                if (!CUDAProgram.isNativeFP8ConversionAvailable()) {
+                    return false; // no cuda_fp8.h on this toolkit: inline the Java software decoder
+                }
                 CUDAConvertFP8ToFloat convert = new CUDAConvertFP8ToFloat(fp8Byte, CUDAConvertFP8ToFloat.FP8Format.E4M3);
                 b.getGraph().addOrUnique(convert);
                 b.push(JavaKind.Float, convert);
@@ -1024,6 +1034,9 @@ public class CUDAGraphBuilderPlugins {
         r.register(new InvocationPlugin("e5m2ToFloat", byte.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode fp8Byte) {
+                if (!CUDAProgram.isNativeFP8ConversionAvailable()) {
+                    return false; // no cuda_fp8.h on this toolkit: inline the Java software decoder
+                }
                 CUDAConvertFP8ToFloat convert = new CUDAConvertFP8ToFloat(fp8Byte, CUDAConvertFP8ToFloat.FP8Format.E5M2);
                 b.getGraph().addOrUnique(convert);
                 b.push(JavaKind.Float, convert);
@@ -1033,10 +1046,12 @@ public class CUDAGraphBuilderPlugins {
     }
 
     /**
-     * Routes the in-kernel bfloat16 decoder to the native cuda_bf16.h conversion
-     * ({@code __bfloat162float}). Decode only, like the FP8 plugins: the hardware
-     * encoder rounds ties to even while {@code BFloat16.bf16FromFloat} rounds half
-     * away from zero, so the encoder stays software on every backend.
+     * Routes the in-kernel bfloat16 decoder to a single-instruction bit reinterpretation:
+     * bf16 is the high half of the f32 pattern, so the decode is
+     * {@code __int_as_float(bits << 16)} - a core CUDA builtin, no header and no toolkit
+     * version requirement. Decode only, like the FP8 plugins: the hardware encoder rounds
+     * ties to even while {@code BFloat16.bf16FromFloat} rounds half away from zero, so the
+     * encoder stays software on every backend.
      */
     private static void registerBF16ConversionPlugins(InvocationPlugins plugins) {
         Registration r = new Registration(plugins, BFloat16.class);

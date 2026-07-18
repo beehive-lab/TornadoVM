@@ -443,15 +443,19 @@ public class CUDALIRStmt {
 
         @Override
         public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
-            // f = __bfloat162float(__ushort_as_bfloat16((unsigned short) s));
+            // bf16 is the high half of the f32 bit pattern, so the decode is a bare shift
+            // and reinterpret. __int_as_float is a core CUDA builtin: no cuda_bf16.h, no
+            // toolkit version requirement (its helpers, e.g. __ushort_as_bfloat16, vary
+            // across 11.x header revisions).
+            // f = __int_as_float(((int) (unsigned short) s) << 16);
             asm.indent();
             asm.emitValue(crb, floatValue);
             asm.space();
             asm.assign();
             asm.space();
-            asm.emit("__bfloat162float(__ushort_as_bfloat16((unsigned short) ");
+            asm.emit("__int_as_float(((int) (unsigned short) ");
             asm.emitValue(crb, bf16Bits);
-            asm.emit("))");
+            asm.emit(") << 16)");
             asm.delimiter();
             asm.eol();
         }

@@ -26,8 +26,8 @@ package uk.ac.manchester.tornado.api.types;
  * to {@code float} on use. Like {@link FP8}, the decoder here uses <em>only</em> integer
  * arithmetic and float multiplies (no {@code Float.intBitsToFloat}), with a single return and
  * sequential (not branched) power-of-two loops, so the same method compiles and runs inside a
- * TornadoVM kernel on any backend - and the CUDA backend swaps it for the hardware
- * {@code __bfloat162float} conversion at code-generation time.</p>
+ * TornadoVM kernel on any backend - and the CUDA backend swaps it for a single
+ * {@code __int_as_float(bits << 16)} bit reinterpretation at code-generation time.</p>
  */
 public final class BFloat16 {
 

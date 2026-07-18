@@ -38,10 +38,11 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt;
 
 /**
- * Native bfloat16 (raw bits in a {@code short}) to {@code float} conversion via
- * cuda_bf16.h ({@code __bfloat162float}). Replaces the software arithmetic decode
- * of {@code BFloat16#bf16ToFloat} inside CUDA kernels; other backends keep
- * inlining the Java decoder. Mirrors {@link CUDAConvertFP8ToFloat}.
+ * Native bfloat16 (raw bits in a {@code short}) to {@code float} conversion: bf16 is the
+ * high half of the f32 bit pattern, so this lowers to a single
+ * {@code __int_as_float(bits << 16)} - a core CUDA builtin, no header dependency. Replaces
+ * the software arithmetic decode of {@code BFloat16#bf16ToFloat} inside CUDA kernels;
+ * other backends keep inlining the Java decoder. Mirrors {@link CUDAConvertFP8ToFloat}.
  */
 @NodeInfo
 public class CUDAConvertBF16ToFloat extends ValueNode implements LIRLowerable {
