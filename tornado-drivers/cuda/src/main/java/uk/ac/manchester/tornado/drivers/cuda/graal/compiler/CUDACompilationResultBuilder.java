@@ -258,10 +258,16 @@ public class CUDACompilationResultBuilder extends CompilationResultBuilder {
         // every spelling (__half, half2 vectors, __float2half / __half2float). See
         // CUDAPreamble for why the header is not emitted unconditionally.
         String source = new String(code);
+        // cuda_fp8.h before the fp16 check: the fp8 include is emitted together with the
+        // fp16 one (its conversions produce __half values), and both prepends keep the
+        // fp16 include first because cuda_fp8.h builds on cuda_fp16.h types.
+        if ((source.contains("__nv_fp8") || source.contains("__nv_cvt_fp8") || source.contains("cvt_float_to_fp8")) && !source.contains("cuda_fp8.h")) {
+            source = CUDAPreamble.FP8_PREAMBLE + source;
+        }
         if ((source.contains("__half") || source.contains("half2") || source.contains("2half")) && !source.contains("cuda_fp16.h")) {
             source = CUDAPreamble.PREAMBLE + source;
-            code = source.getBytes();
         }
+        code = source.getBytes();
 
         compilationResult.setTargetCode(code, code.length);
     }

@@ -18,11 +18,19 @@
 package uk.ac.manchester.tornado.api.enums;
 
 /**
- * Supported mma.sync tile shapes for TornadoVM's PTX backend.
- * Each entry encodes the M, N, K dimensions and the minimum sm requirement.
+ * Supported mma.sync tile shapes for TornadoVM's PTX and CUDA backends.
+ *
+ * <p>A shape is only the M/N/K tile geometry; the operand element type comes from
+ * the KernelContext method used:
+ * <ul>
+ *   <li>{@code M16N8K16} - fp16 ({@code mma}, f32 accumulator, sm_80+)</li>
+ *   <li>{@code M16N8K32} - int8 ({@code mmaInt8}, s32 accumulator, sm_80+) or
+ *       FP8 E4M3/E5M2 ({@code mmaFP8E4M3}/{@code mmaFP8E5M2}, f32 accumulator,
+ *       sm_89+, CUDA backend)</li>
+ * </ul>
  *
  * PTX instruction emitted:
- *   mma.sync.aligned.{shape}.row.col.f32.f16.f16.f32
+ *   mma.sync.aligned.{shape}.row.col.{acc}.{ab}.{ab}.{acc}
  */
 public enum MMAShape {
     M16N8K16("m16n8k16"),

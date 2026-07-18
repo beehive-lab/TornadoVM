@@ -388,6 +388,43 @@ public class CUDALIRStmt {
 
     }
 
+    @Opcode("CONVERT_FP8_TO_FLOAT")
+    public static class ConvertFP8ToFloatStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<ConvertFP8ToFloatStmt> TYPE = LIRInstructionClass.create(ConvertFP8ToFloatStmt.class);
+
+        @Def
+        protected Value floatValue;
+        @Use
+        protected Value fp8Value;
+        private final boolean isE4M3;
+
+        public ConvertFP8ToFloatStmt(Value floatValue, Value fp8Value, boolean isE4M3) {
+            super(TYPE);
+            this.floatValue = floatValue;
+            this.fp8Value = fp8Value;
+            this.isE4M3 = isE4M3;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            // f = __half2float(__nv_cvt_fp8_to_halfraw((unsigned char) b, __NV_E4M3));
+            // The storage byte arrives as the backend's signed char kind; the cast to
+            // unsigned char matches cuda_fp8.h's __nv_fp8_storage_t.
+            asm.indent();
+            asm.emitValue(crb, floatValue);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emit("__half2float(__nv_cvt_fp8_to_halfraw((unsigned char) ");
+            asm.emitValue(crb, fp8Value);
+            asm.emit(isE4M3 ? ", __NV_E4M3))" : ", __NV_E5M2))");
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
     @Opcode("CONVERT_FLOAT_TO_HALF")
     public static class ConvertFloatToHalfStmt extends AbstractInstruction {
 
@@ -1866,24 +1903,46 @@ public class CUDALIRStmt {
 
     @Opcode("MMA_COMPUTE")
     public static class MMAComputeStmt extends AbstractInstruction {
+
+        /**
+         * Element type of the A/B operands fed to mma.sync. The tile shape alone no
+         * longer identifies it: m16n8k32 serves both s8 and the FP8 formats, and
+         * m16n8k16 serves both f16 and bf16. Only S8 accumulates in s32; every other
+         * operand kind accumulates in f32.
+         */
+        public enum MMAOperand {
+            F16(".row.col.f32.f16.f16.f32"),
+            S8(".row.col.s32.s8.s8.s32"),
+            E4M3(".row.col.f32.e4m3.e4m3.f32"),
+            E5M2(".row.col.f32.e5m2.e5m2.f32");
+
+            final String suffix;
+
+            MMAOperand(String suffix) {
+                this.suffix = suffix;
+            }
+        }
+
         public static final LIRInstructionClass<MMAComputeStmt> TYPE =
                 LIRInstructionClass.create(MMAComputeStmt.class);
 
         @Def protected Value result;
         @Use protected Value fragA, fragB, fragC;
         private final MMAShape shape;
+        private final MMAOperand operand;
 
-        public MMAComputeStmt(Value result, Value a, Value b, Value c, MMAShape shape) {
+        public MMAComputeStmt(Value result, Value a, Value b, Value c, MMAShape shape, MMAOperand operand) {
             super(TYPE);
-            this.result = result; this.fragA = a; this.fragB = b; this.fragC = c; this.shape = shape;
+            this.result = result; this.fragA = a; this.fragB = b; this.fragC = c;
+            this.shape = shape; this.operand = operand;
         }
 
         @Override
         public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
-            boolean i8 = (shape == MMAShape.M16N8K32);
+            boolean i8 = (operand == MMAOperand.S8);
             String accType  = i8 ? "int"  : "float";
             String accCons  = i8 ? "r"    : "f";        // s32 -> "r", f32 -> "f"
-            String suffix   = i8 ? ".row.col.s32.s8.s8.s32" : ".row.col.f32.f16.f16.f32";
+            String suffix   = operand.suffix;
             String d = asm.getStringValue(crb, result);
             String a = asm.getStringValue(crb, fragA);
             String b = asm.getStringValue(crb, fragB);
