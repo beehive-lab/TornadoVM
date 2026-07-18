@@ -75,6 +75,24 @@ public class CUDAProgram {
 
     static native void getBinaries(long programId, long numDevices, ByteBuffer buffer) throws CUDAException;
 
+    static native boolean nvrtcCanCompileHeader(String headerName);
+
+    private static Boolean nativeFP8ConversionAvailable;
+
+    /**
+     * Whether this NVRTC/toolkit pair can compile kernels that include {@code cuda_fp8.h}
+     * (absent before CUDA 11.8). Probed once per process: the FP8 conversion plugins consult
+     * this to choose between emitting the native {@code __nv_cvt} intrinsics and inlining the
+     * Java software decoder, so an old or mismatched toolkit degrades FP8 decode performance,
+     * not correctness.
+     */
+    public static synchronized boolean isNativeFP8ConversionAvailable() {
+        if (nativeFP8ConversionAvailable == null) {
+            nativeFP8ConversionAvailable = nvrtcCanCompileHeader("cuda_fp8.h");
+        }
+        return nativeFP8ConversionAvailable;
+    }
+
     public CUDABuildStatus getStatus(long deviceId) {
         CUDABuildStatus result;
         buffer.clear();

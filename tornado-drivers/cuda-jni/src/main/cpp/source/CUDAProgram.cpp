@@ -605,4 +605,48 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAProgram_ge
     }
 }
 
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAProgram
+ * Method:    nvrtcCanCompileHeader
+ * Signature: (Ljava/lang/String;)Z
+ *
+ * Probes whether this NVRTC can compile a kernel that includes the given CUDA
+ * header, using the same resolution order as real kernels (built-in headers
+ * first, then the toolkit include directories). Codegen consults this once to
+ * decide whether a native conversion that needs a header (cuda_fp8.h, absent
+ * before CUDA 11.8) can be emitted, or the Java software codec must be inlined
+ * instead - so a missing or toolkit-mismatched header degrades performance,
+ * not correctness.
+ */
+JNIEXPORT jboolean JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAProgram_nvrtcCanCompileHeader
+        (JNIEnv *env, jclass clazz, jstring headerName) {
+    const char *hdr = env->GetStringUTFChars(headerName, nullptr);
+    std::string source = std::string("#include <") + hdr + ">\nextern \"C\" __global__ void tornado_header_probe() {}\n";
+    env->ReleaseStringUTFChars(headerName, hdr);
+
+    auto tryCompile = [&source](const std::vector<std::string> &includeDirs) -> bool {
+        nvrtcProgram prog;
+        if (nvrtcCreateProgram(&prog, source.c_str(), "tornado_header_probe.cu", 0, nullptr, nullptr) != NVRTC_SUCCESS) {
+            return false;
+        }
+        std::vector<std::string> opts;         // storage must outlive optPtrs
+        std::vector<const char *> optPtrs;
+        for (const std::string &dir : includeDirs) {
+            opts.push_back("--include-path=" + dir);
+        }
+        for (const std::string &opt : opts) {
+            optPtrs.push_back(opt.c_str());
+        }
+        nvrtcResult result = nvrtcCompileProgram(prog, (int) optPtrs.size(), optPtrs.empty() ? nullptr : optPtrs.data());
+        nvrtcDestroyProgram(&prog);
+        return result == NVRTC_SUCCESS;
+    };
+
+    if (tryCompile({})) {
+        return JNI_TRUE;
+    }
+    std::vector<std::string> dirs = find_cuda_header_include_dirs();
+    return (!dirs.empty() && tryCompile(dirs)) ? JNI_TRUE : JNI_FALSE;
+}
+
 } // extern "C"
