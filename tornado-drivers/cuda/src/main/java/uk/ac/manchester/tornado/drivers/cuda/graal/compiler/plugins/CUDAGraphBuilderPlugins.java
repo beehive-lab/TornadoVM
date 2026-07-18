@@ -68,6 +68,7 @@ import uk.ac.manchester.tornado.api.types.FP8;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
@@ -99,6 +100,9 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.Dp4aNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDABarrierNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAConvertFP8ToFloat;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDACpAsyncCommitGroupNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDACpAsyncCopyNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDACpAsyncWaitGroupNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAConvertHalfToFloat;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAFPBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAFPUnaryIntrinsicNode;
@@ -455,7 +459,55 @@ public class CUDAGraphBuilderPlugins {
         registerAtomicAddOperation(r);
         registerSIMDPlugins(r);
         registerMMAPlugins(r);
+        registerCpAsyncPlugins(r);
         registerSwizzledLocalAccessesPlugins(r);
+    }
+
+    /**
+     * cp.async (Ampere+/sm_80) asynchronous global-to-shared copies. Each copy plugin
+     * shares one node shape; only the source element size / header differ per array type.
+     */
+    private static void registerCpAsyncPlugins(Registration r) {
+        registerCpAsyncCopy(r, HalfFloatArray.class, JavaKind.Short);
+        registerCpAsyncCopy(r, uk.ac.manchester.tornado.api.types.arrays.FP8Array.class, JavaKind.Byte);
+        registerCpAsyncCopy(r, uk.ac.manchester.tornado.api.types.arrays.ByteArray.class, JavaKind.Byte);
+
+        r.register(new InvocationPlugin("asyncCopyCommit", InvocationPlugin.Receiver.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                receiver.get(true);
+                b.add(new CUDACpAsyncCommitGroupNode());
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("asyncCopyWaitGroup", InvocationPlugin.Receiver.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode groups) {
+                receiver.get(true);
+                JavaConstant constant = groups.asJavaConstant();
+                if (constant == null) {
+                    throw new IllegalStateException("asyncCopyWaitGroup requires a compile-time constant group count");
+                }
+                b.add(new CUDACpAsyncWaitGroupNode(constant.asInt()));
+                return true;
+            }
+        });
+    }
+
+    private static void registerCpAsyncCopy(Registration r, Class<?> arrayClass, JavaKind elementKind) {
+        r.register(new InvocationPlugin("asyncCopyToLocal",
+                InvocationPlugin.Receiver.class, int[].class, int.class, arrayClass, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver,
+                                 ValueNode dstTile, ValueNode dstIndex, ValueNode srcArray, ValueNode srcIndex) {
+                receiver.get(true);
+                int headerBytes = TornadoCoreRuntime.getVMConfig().getArrayBaseOffset(elementKind);
+                b.add(new CUDACpAsyncCopyNode(dstTile, dstIndex, srcArray, srcIndex,
+                        elementKind.getByteCount(), headerBytes));
+                return true;
+            }
+        });
     }
 
     private static void registerMMAPlugins(Registration r) {

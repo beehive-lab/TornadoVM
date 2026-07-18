@@ -19,7 +19,10 @@ package uk.ac.manchester.tornado.api;
 
 import uk.ac.manchester.tornado.api.enums.MMAShape;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FP8Array;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
@@ -799,6 +802,71 @@ public class KernelContext implements ExecutionContext {
      */
     public HalfFloat[] mmaLoadBSwizzled(HalfFloat[] bTile, int wmmaK, int byteOffset) {
         return new HalfFloat[4]; // CPU fallback
+    }
+
+    /**
+     * Asynchronous 4-byte global-to-shared copy (CUDA {@code cp.async}, Ampere+/sm_80):
+     * copies two adjacent fp16 elements ({@code src[srcIndex]}, {@code src[srcIndex+1]})
+     * into {@code dstTile[dstIndex]} as one packed b32, bypassing the register file.
+     *
+     * <p>The packed layout matches the cooperative-load idiom
+     * {@code lo | (hi << 16)} used by the MMA GEMM kernels (little-endian), so an
+     * existing synchronous tile load can be replaced element-for-element.
+     *
+     * <p>The copy is asynchronous: issue all copies for a tile, then call
+     * {@link #asyncCopyCommit()} once and {@link #asyncCopyWaitGroup(int)} (with 0)
+     * before the barrier that publishes the tile.
+     *
+     * <p>On non-CUDA backends the Java fallback performs the copy synchronously.
+     */
+    public void asyncCopyToLocal(int[] dstTile, int dstIndex, HalfFloatArray src, int srcIndex) {
+        int lo = src.get(srcIndex).getHalfFloatValue() & 0xFFFF;
+        int hi = src.get(srcIndex + 1).getHalfFloatValue() & 0xFFFF;
+        dstTile[dstIndex] = lo | (hi << 16);
+    }
+
+    /**
+     * Asynchronous 4-byte global-to-shared copy of four adjacent FP8 storage bytes
+     * into one packed b32 tile slot. See {@link #asyncCopyToLocal(int[], int, HalfFloatArray, int)}
+     * for the synchronization contract.
+     */
+    public void asyncCopyToLocal(int[] dstTile, int dstIndex, FP8Array src, int srcIndex) {
+        int b0 = src.get(srcIndex) & 0xFF;
+        int b1 = src.get(srcIndex + 1) & 0xFF;
+        int b2 = src.get(srcIndex + 2) & 0xFF;
+        int b3 = src.get(srcIndex + 3) & 0xFF;
+        dstTile[dstIndex] = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
+    }
+
+    /**
+     * Asynchronous 4-byte global-to-shared copy of four adjacent bytes into one packed
+     * b32 tile slot. See {@link #asyncCopyToLocal(int[], int, HalfFloatArray, int)}
+     * for the synchronization contract.
+     */
+    public void asyncCopyToLocal(int[] dstTile, int dstIndex, ByteArray src, int srcIndex) {
+        int b0 = src.get(srcIndex) & 0xFF;
+        int b1 = src.get(srcIndex + 1) & 0xFF;
+        int b2 = src.get(srcIndex + 2) & 0xFF;
+        int b3 = src.get(srcIndex + 3) & 0xFF;
+        dstTile[dstIndex] = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
+    }
+
+    /**
+     * Commits the cp.async copies issued since the last commit as one group
+     * (CUDA {@code cp.async.commit_group}). No-op on other backends, where
+     * {@link #asyncCopyToLocal(int[], int, HalfFloatArray, int)} copies synchronously.
+     */
+    public void asyncCopyCommit() {
+        // CPU fallback: no-op; the async copies are synchronous off-GPU.
+    }
+
+    /**
+     * Waits until at most {@code groups} committed cp.async groups are still in flight
+     * (CUDA {@code cp.async.wait_group N}; 0 waits for all). Must be a compile-time
+     * constant. No-op on other backends.
+     */
+    public void asyncCopyWaitGroup(int groups) {
+        // CPU fallback: no-op.
     }
 
     /**
