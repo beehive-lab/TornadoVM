@@ -194,6 +194,110 @@ public class MatrixMultiplicationMMA {
         ctx.mmaStore(c17, C, rBase + 16, cBase + 56, N);
     }
 
+    // KERNEL 2a: multi-warp MMA non-swizzled with cp.async tile loads (B is [K, N] row-major).
+    // Identical to gemmMMA except that every packed b32 tile slot is filled by an
+    // asynchronous cp.async copy (global -> shared, no register round-trip), closed by
+    // one commit/wait pair before the barrier. CUDA backend, sm_80+.
+    public static void gemmMMACpAsync(KernelContext ctx,
+                                      HalfFloatArray A, HalfFloatArray B, FloatArray C,
+                                      int M, int N, int K) {
+        int tid = ctx.localIdx;
+        int warpId = tid / WARP_SIZE;
+        int warpM = warpId / WARPS_N;
+        int warpN = warpId % WARPS_N;
+        int blockRow = BM * ctx.groupIdx;
+        int blockCol = BN * ctx.groupIdy;
+
+        int[] aTile = ctx.allocateIntLocalArray(BM * BK / 2);
+        int[] bTile = ctx.allocateIntLocalArray(BK * BN / 2);
+
+        float[] c00 = ctx.mmaFragment(0.0f); float[] c01 = ctx.mmaFragment(0.0f);
+        float[] c02 = ctx.mmaFragment(0.0f); float[] c03 = ctx.mmaFragment(0.0f);
+        float[] c04 = ctx.mmaFragment(0.0f); float[] c05 = ctx.mmaFragment(0.0f);
+        float[] c06 = ctx.mmaFragment(0.0f); float[] c07 = ctx.mmaFragment(0.0f);
+        float[] c10 = ctx.mmaFragment(0.0f); float[] c11 = ctx.mmaFragment(0.0f);
+        float[] c12 = ctx.mmaFragment(0.0f); float[] c13 = ctx.mmaFragment(0.0f);
+        float[] c14 = ctx.mmaFragment(0.0f); float[] c15 = ctx.mmaFragment(0.0f);
+        float[] c16 = ctx.mmaFragment(0.0f); float[] c17 = ctx.mmaFragment(0.0f);
+
+        int numKSteps = K / BK;
+        for (int kStep = 0; kStep < numKSteps; kStep++) {
+            int kBase = kStep * BK;
+            for (int idx = tid; idx < BM * BK / 2; idx += THREADS_PER_BLOCK) {
+                int m_row = idx / (BK / 2);
+                int k_pair = idx % (BK / 2);
+                int k_base = k_pair * 2;
+                int gA = (blockRow + m_row) * K + (kBase + k_base);
+                ctx.asyncCopyToLocal(aTile, m_row * (BK / 2) + k_pair, A, gA);
+            }
+            for (int idx = tid; idx < BK * BN / 2; idx += THREADS_PER_BLOCK) {
+                int subTileId = idx / 64;
+                int intInSub = idx % 64;
+                int k_row = intInSub / 4;
+                int j_pair = intInSub % 4;
+                int j_base = j_pair * 2;
+                int col_in_block = subTileId * 8 + j_base;
+                int gB = (kBase + k_row) * N + (blockCol + col_in_block);
+                ctx.asyncCopyToLocal(bTile, idx, B, gB);
+            }
+            ctx.asyncCopyCommit();
+            ctx.asyncCopyWaitGroup(0);
+            ctx.localBarrier();
+
+            int aOff0 = warpM * 1024;
+            int aOff1 = warpM * 1024 + 512;
+            HalfFloat[] a0 = ctx.mmaLoadA(aTile, BK, aOff0);
+            HalfFloat[] a1 = ctx.mmaLoadA(aTile, BK, aOff1);
+            int bBase = warpN * 8;
+            HalfFloat[] b0 = ctx.mmaLoadB(bTile, BK, (bBase + 0) * B_SUBTILE_BYTES);
+            HalfFloat[] b1 = ctx.mmaLoadB(bTile, BK, (bBase + 1) * B_SUBTILE_BYTES);
+            HalfFloat[] b2 = ctx.mmaLoadB(bTile, BK, (bBase + 2) * B_SUBTILE_BYTES);
+            HalfFloat[] b3 = ctx.mmaLoadB(bTile, BK, (bBase + 3) * B_SUBTILE_BYTES);
+            HalfFloat[] b4 = ctx.mmaLoadB(bTile, BK, (bBase + 4) * B_SUBTILE_BYTES);
+            HalfFloat[] b5 = ctx.mmaLoadB(bTile, BK, (bBase + 5) * B_SUBTILE_BYTES);
+            HalfFloat[] b6 = ctx.mmaLoadB(bTile, BK, (bBase + 6) * B_SUBTILE_BYTES);
+            HalfFloat[] b7 = ctx.mmaLoadB(bTile, BK, (bBase + 7) * B_SUBTILE_BYTES);
+
+            c00 = ctx.mma(a0, b0, c00, MMAShape.M16N8K16);
+            c01 = ctx.mma(a0, b1, c01, MMAShape.M16N8K16);
+            c02 = ctx.mma(a0, b2, c02, MMAShape.M16N8K16);
+            c03 = ctx.mma(a0, b3, c03, MMAShape.M16N8K16);
+            c04 = ctx.mma(a0, b4, c04, MMAShape.M16N8K16);
+            c05 = ctx.mma(a0, b5, c05, MMAShape.M16N8K16);
+            c06 = ctx.mma(a0, b6, c06, MMAShape.M16N8K16);
+            c07 = ctx.mma(a0, b7, c07, MMAShape.M16N8K16);
+            c10 = ctx.mma(a1, b0, c10, MMAShape.M16N8K16);
+            c11 = ctx.mma(a1, b1, c11, MMAShape.M16N8K16);
+            c12 = ctx.mma(a1, b2, c12, MMAShape.M16N8K16);
+            c13 = ctx.mma(a1, b3, c13, MMAShape.M16N8K16);
+            c14 = ctx.mma(a1, b4, c14, MMAShape.M16N8K16);
+            c15 = ctx.mma(a1, b5, c15, MMAShape.M16N8K16);
+            c16 = ctx.mma(a1, b6, c16, MMAShape.M16N8K16);
+            c17 = ctx.mma(a1, b7, c17, MMAShape.M16N8K16);
+            ctx.localBarrier();
+        }
+
+        int rBase = blockRow + warpM * WM;
+        int cBase = blockCol + warpN * WN;
+        ctx.mmaStore(c00, C, rBase + 0,  cBase + 0,  N);
+        ctx.mmaStore(c01, C, rBase + 0,  cBase + 8,  N);
+        ctx.mmaStore(c02, C, rBase + 0,  cBase + 16, N);
+        ctx.mmaStore(c03, C, rBase + 0,  cBase + 24, N);
+        ctx.mmaStore(c04, C, rBase + 0,  cBase + 32, N);
+        ctx.mmaStore(c05, C, rBase + 0,  cBase + 40, N);
+        ctx.mmaStore(c06, C, rBase + 0,  cBase + 48, N);
+        ctx.mmaStore(c07, C, rBase + 0,  cBase + 56, N);
+        ctx.mmaStore(c10, C, rBase + 16, cBase + 0,  N);
+        ctx.mmaStore(c11, C, rBase + 16, cBase + 8,  N);
+        ctx.mmaStore(c12, C, rBase + 16, cBase + 16, N);
+        ctx.mmaStore(c13, C, rBase + 16, cBase + 24, N);
+        ctx.mmaStore(c14, C, rBase + 16, cBase + 32, N);
+        ctx.mmaStore(c15, C, rBase + 16, cBase + 40, N);
+        ctx.mmaStore(c16, C, rBase + 16, cBase + 48, N);
+        ctx.mmaStore(c17, C, rBase + 16, cBase + 56, N);
+    }
+
+
     // KERNEL 2b: multi-warp MMA non-swizzled, B in [N, K] row-major
     // (matches GPULlama3 W1/W3 layout: weights stored as [output_dim, input_dim])
     public static void gemmMMA_NK(KernelContext ctx,
@@ -513,6 +617,7 @@ public class MatrixMultiplicationMMA {
 
         FloatArray cBaseline = new FloatArray(M * N);
         FloatArray cMMA      = new FloatArray(M * N);
+        FloatArray cCpAsync  = new FloatArray(M * N);
         FloatArray cMMA_NK   = new FloatArray(M * N);
         FloatArray cSwizzled = new FloatArray(M * N);
 
@@ -540,6 +645,16 @@ public class MatrixMultiplicationMMA {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, cMMA);
         ImmutableTaskGraph itgMMA = tgMMA.snapshot();
 
+        WorkerGrid2D wgCpAsync = new WorkerGrid2D((M / BM) * THREADS_PER_BLOCK, (N / BN));
+        wgCpAsync.setLocalWork(THREADS_PER_BLOCK, 1, 1);
+        GridScheduler gsCpAsync = new GridScheduler("s_mma_cpasync.gemm", wgCpAsync);
+        TaskGraph tgCpAsync = new TaskGraph("s_mma_cpasync")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, A, B_KN)
+                .task("gemm", MatrixMultiplicationMMA::gemmMMACpAsync,
+                        new KernelContext(), A, B_KN, cCpAsync, M, N, K)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, cCpAsync);
+        ImmutableTaskGraph itgCpAsync = tgCpAsync.snapshot();
+
         WorkerGrid2D wgMMA_NK = new WorkerGrid2D((M / BM) * THREADS_PER_BLOCK, (N / BN));
         wgMMA_NK.setLocalWork(THREADS_PER_BLOCK, 1, 1);
         GridScheduler gsMMA_NK = new GridScheduler("s_mma_nk.gemm", wgMMA_NK);
@@ -562,6 +677,7 @@ public class MatrixMultiplicationMMA {
 
         TornadoExecutionPlan planBaseline = new TornadoExecutionPlan(itgBaseline);
         TornadoExecutionPlan planMMA      = new TornadoExecutionPlan(itgMMA);
+        TornadoExecutionPlan planCpAsync  = new TornadoExecutionPlan(itgCpAsync);
         TornadoExecutionPlan planMMA_NK   = new TornadoExecutionPlan(itgMMA_NK);
         TornadoExecutionPlan planSwz      = new TornadoExecutionPlan(itgSwz);
 
@@ -569,6 +685,7 @@ public class MatrixMultiplicationMMA {
         for (int i = 0; i < WARM_UP_ITERATIONS; i++) {
             planBaseline.withGridScheduler(gsBaseline).execute();
             planMMA.withGridScheduler(gsMMA).execute();
+            planCpAsync.withGridScheduler(gsCpAsync).execute();
             planMMA_NK.withGridScheduler(gsMMA_NK).execute();
             planSwz.withGridScheduler(gsSwz).execute();
         }
@@ -576,11 +693,13 @@ public class MatrixMultiplicationMMA {
         System.out.println("Validating...");
         validate("baseline",    cBaseline, ref, M, N);
         validate("mma (B=KN)",  cMMA,      ref, M, N);
+        validate("mma+cp.async", cCpAsync,  ref, M, N);
         validate("mma (B=NK)",  cMMA_NK,   ref, M, N);
         validate("mma+swizzle", cSwizzled, ref, M, N);
 
         ArrayList<Long> tB  = new ArrayList<>();
         ArrayList<Long> tM  = new ArrayList<>();
+        ArrayList<Long> tCA = new ArrayList<>();
         ArrayList<Long> tNK = new ArrayList<>();
         ArrayList<Long> tS  = new ArrayList<>();
         System.out.println("Benchmarking...");
@@ -591,6 +710,9 @@ public class MatrixMultiplicationMMA {
             long s1 = System.nanoTime();
             planMMA.withGridScheduler(gsMMA).execute();
             tM.add(System.nanoTime() - s1);
+            long sCA = System.nanoTime();
+            planCpAsync.withGridScheduler(gsCpAsync).execute();
+            tCA.add(System.nanoTime() - sCA);
             long s2 = System.nanoTime();
             planMMA_NK.withGridScheduler(gsMMA_NK).execute();
             tNK.add(System.nanoTime() - s2);
@@ -603,16 +725,19 @@ public class MatrixMultiplicationMMA {
         System.out.println("====================");
         report("Baseline fp16 (tiled, no MMA)", tB,  M, N, K);
         report("MMA fp16 (B=KN row-major)",    tM,  M, N, K);
+        report("MMA fp16 (cp.async, B=KN)",    tCA, M, N, K);
         report("MMA fp16 (B=NK row-major)",    tNK, M, N, K);
         report("MMA fp16 (swizzled, B=KN)",    tS,  M, N, K);
 
         double avgB  = tB.stream().mapToLong(Long::longValue).average().orElse(0);
         double avgM  = tM.stream().mapToLong(Long::longValue).average().orElse(0);
+        double avgCA = tCA.stream().mapToLong(Long::longValue).average().orElse(0);
         double avgNK = tNK.stream().mapToLong(Long::longValue).average().orElse(0);
         double avgS  = tS.stream().mapToLong(Long::longValue).average().orElse(0);
         System.out.println("\nSpeedups:");
         System.out.printf("  MMA(KN) vs baseline:          %.2fx%n", avgB / avgM);
         System.out.printf("  MMA(NK) vs baseline:          %.2fx%n", avgB / avgNK);
+        System.out.printf("  MMA+cp.async vs MMA(KN):      %.2fx  (async tile loads)%n", avgM / avgCA);
         System.out.printf("  MMA(NK) vs MMA(KN):           %.2fx  (cost of NK layout)%n", avgM / avgNK);
         System.out.printf("  MMA+swizzle vs baseline:      %.2fx%n", avgB / avgS);
     }

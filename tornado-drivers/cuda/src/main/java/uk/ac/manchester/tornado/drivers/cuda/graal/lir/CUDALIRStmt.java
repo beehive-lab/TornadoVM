@@ -2122,6 +2122,121 @@ public class CUDALIRStmt {
         }
     }
 
+    /**
+     * Emits a 4-byte {@code cp.async.ca.shared.global} copy (Ampere+, sm_80): one
+     * packed b32 slot moves from a global Tornado array straight into a shared-memory
+     * int tile without a register round-trip. The source address is
+     * {@code srcArray + headerBytes + srcIndex * srcElemBytes}; the destination is
+     * {@code dstTile[dstIndex]}. Callers must follow the copies with
+     * {@link CpAsyncCommitGroupStmt} and {@link CpAsyncWaitGroupStmt} (plus the usual
+     * barrier) before reading the tile.
+     */
+    @Opcode("CP_ASYNC_COPY")
+    public static class CpAsyncCopyStmt extends AbstractInstruction {
+        public static final LIRInstructionClass<CpAsyncCopyStmt> TYPE =
+                LIRInstructionClass.create(CpAsyncCopyStmt.class);
+
+        @Use protected Value dstTile;
+        @Use protected Value dstIndex;
+        @Use protected Value srcArray;
+        @Use protected Value srcIndex;
+        private final int srcElemBytes;
+        private final int headerBytes;
+
+        public CpAsyncCopyStmt(Value dstTile, Value dstIndex, Value srcArray, Value srcIndex,
+                               int srcElemBytes, int headerBytes) {
+            super(TYPE);
+            this.dstTile = dstTile;
+            this.dstIndex = dstIndex;
+            this.srcArray = srcArray;
+            this.srcIndex = srcIndex;
+            this.srcElemBytes = srcElemBytes;
+            this.headerBytes = headerBytes;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            String tile = asm.getStringValue(crb, dstTile);
+            String dIdx = asm.getStringValue(crb, dstIndex);
+            String src  = asm.getStringValue(crb, srcArray);
+            String sIdx = asm.getStringValue(crb, srcIndex);
+
+            asm.indent();
+            asm.emit("{");
+            asm.eol();
+            asm.pushIndent();
+
+            // Shared-memory 32-bit address of &tile[dstIndex] via cvta.to.shared,
+            // mirroring the ldmatrix address computation.
+            asm.indent();
+            asm.emit("unsigned __smem");
+            asm.delimiter();
+            asm.eol();
+            asm.indent();
+            asm.emit("asm volatile(\"{ .reg .u64 u; cvta.to.shared.u64 u, %1; cvt.u32.u64 %0, u; }\" "
+                    + ": \"=r\"(__smem) : \"l\"((char *) " + tile + " + (((unsigned) " + dIdx + ") << 2)))");
+            asm.delimiter();
+            asm.eol();
+
+            // cp.async 4-byte copy from the global element address (past the array header).
+            asm.indent();
+            asm.emit("asm volatile(\"cp.async.ca.shared.global [%0], [%1], 4;\" :: \"r\"(__smem), "
+                    + "\"l\"((const char *) " + src + " + " + headerBytes + "u + ((long long) " + sIdx + ") * "
+                    + srcElemBytes + "))");
+            asm.delimiter();
+            asm.eol();
+
+            asm.popIndent();
+            asm.indent();
+            asm.emit("}");
+            asm.eol();
+        }
+    }
+
+    /** Emits {@code cp.async.commit_group}: closes the current batch of cp.async copies. */
+    @Opcode("CP_ASYNC_COMMIT_GROUP")
+    public static class CpAsyncCommitGroupStmt extends AbstractInstruction {
+        public static final LIRInstructionClass<CpAsyncCommitGroupStmt> TYPE =
+                LIRInstructionClass.create(CpAsyncCommitGroupStmt.class);
+
+        public CpAsyncCommitGroupStmt() {
+            super(TYPE);
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            asm.indent();
+            asm.emit("asm volatile(\"cp.async.commit_group;\")");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
+    /**
+     * Emits {@code cp.async.wait_group N}: blocks until at most N committed cp.async
+     * groups are still in flight (N = 0 waits for all of them).
+     */
+    @Opcode("CP_ASYNC_WAIT_GROUP")
+    public static class CpAsyncWaitGroupStmt extends AbstractInstruction {
+        public static final LIRInstructionClass<CpAsyncWaitGroupStmt> TYPE =
+                LIRInstructionClass.create(CpAsyncWaitGroupStmt.class);
+
+        private final int groups;
+
+        public CpAsyncWaitGroupStmt(int groups) {
+            super(TYPE);
+            this.groups = groups;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            asm.indent();
+            asm.emit("asm volatile(\"cp.async.wait_group " + groups + ";\")");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
     @Opcode("HALF_BITS_TO_INT")
     public static class HalfBitsToIntStmt extends AbstractInstruction {
         public static final LIRInstructionClass<HalfBitsToIntStmt> TYPE =
