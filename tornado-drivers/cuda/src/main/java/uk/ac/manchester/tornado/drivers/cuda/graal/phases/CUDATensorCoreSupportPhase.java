@@ -30,6 +30,9 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceMMANotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADevice;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDACpAsyncCommitGroupNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDACpAsyncCopyNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDACpAsyncWaitGroupNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAComputeNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAFragmentNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadAInt8Node;
@@ -71,13 +74,18 @@ public class CUDATensorCoreSupportPhase extends Phase {
         boolean hasMMA = false;
         boolean hasFP8MMA = false;
         for (Node n : graph.getNodes()) {
+            // cp.async shares the sm_80 floor with mma.sync, so its nodes are gated by
+            // this same phase rather than a separate one.
             if (n instanceof CUDAMMALoadANode || n instanceof CUDAMMALoadBNode
                     || n instanceof CUDAMMALoadBSwizzledNode
                     || n instanceof CUDAMMAStoreNode
                     || n instanceof CUDAMMAStoreBSwizzledNode
                     || n instanceof CUDAMMALoadAInt8Node
                     || n instanceof CUDAMMALoadBInt8Node
-                    || n instanceof CUDAMMAFragmentNode) {
+                    || n instanceof CUDAMMAFragmentNode
+                    || n instanceof CUDACpAsyncCopyNode
+                    || n instanceof CUDACpAsyncCommitGroupNode
+                    || n instanceof CUDACpAsyncWaitGroupNode) {
                 hasMMA = true;
             } else if (n instanceof CUDAMMAComputeNode compute) {
                 hasMMA = true;
@@ -93,14 +101,14 @@ public class CUDATensorCoreSupportPhase extends Phase {
         }
         if (!(deviceContext.getDevice() instanceof CUDADevice cudaDevice)) {
             throw new TornadoDeviceMMANotSupported(
-                    "MMA instructions require an NVIDIA CUDA device, got: "
+                    "MMA/cp.async instructions require an NVIDIA CUDA device, got: "
                             + deviceContext.getDevice().getClass().getName());
         }
         int major = cudaDevice.getComputeCapabilityMajor();
         int minor = cudaDevice.getComputeCapabilityMinor();
         if (major < MMA_MAJOR_MIN || (major == MMA_MAJOR_MIN && minor < MMA_MINOR_MIN)) {
             throw new TornadoDeviceMMANotSupported(
-                    "MMA instructions require compute capability "
+                    "MMA/cp.async instructions require compute capability "
                             + MMA_MAJOR_MIN + "." + MMA_MINOR_MIN
                             + " or higher (Ampere+); device reports "
                             + major + "." + minor);
