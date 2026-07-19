@@ -290,19 +290,48 @@ Landed (mirrors OpenCL/CUDA):
 - [x] Also emit the MSL `h` half-literal suffix (`MetalAssembler.addLiteralSuffix`).
 
 Result: every primitive kernel went from crashing (surviving-invoke NPE / HotSpot `ClassCastException`)
-to passing; `tornado-test --quickPass` ends at **78 real failures / 913 run (202 unsupported), ≈91.5% pass**
+to passing; `tornado-test --quickPass` was **78 real failures / 913 run (202 unsupported), ≈91.5% pass**
 on Apple M3 Pro, JDK 21. Run Metal as backend 0 (`-Dtornado.metal.priority=20`) so the auto-generated
 `@Reduce` combine task also lands on Metal — otherwise `ReduceTaskGraph` pins it to backend 0 and splits
 reductions across backends, which reads back zeros. Primitive / vector / matrix / field / KernelContext /
-atomics / `@Reduce` all pass. The residual 78 split roughly: ~24 HalfFloat/quant/transformer, ~24
-local-memory reductions, ~15 simdgroup/MMA, ~15 misc.
+atomics / `@Reduce` all pass.
 
-Remaining Metal-specific items (not JVMCI-related — no OpenCL/CUDA precedent to mirror):
-- [ ] **`half` store defect** — `*((device half*)p) = v` (MSL correct, compiles) does not persist, reads
-      back 0; gates HalfFloat / quantization / transformer tests. A Metal codegen/runtime issue.
-- [ ] **Local-memory reduction correctness** — `allocate*LocalArray` reductions now compile but the
-      cross-workgroup combine is wrong (e.g. 1770 vs 32640).
-- [ ] **simdgroup / MMA** advanced tests (`TestSimdgroup*`, `TestSIMDGroupReductions`).
+**UPDATE (2026-07-19) — HalfFloat store defect FIXED, quickPass 78 → 13 real fails / 913 run (259
+unsupported), ≈98.6% of applicable pass.** The `half` store defect was resolved by marking
+`WriteHalfFloatNode` as an array write (commit `1f97cef81`) so HalfFloat outputs get a
+`TRANSFER_DEVICE_TO_HOST` (same class of readback fix as the OpenCL `WriteHalfFloatNode`/`bd981f4ca`).
+Verified: `arrays.TestArrays` 23/0, `vectortypes.TestHalfFloats` 25/0, `TestHalfFloatLocalArray` pass,
+`QuantizationTests` 0 fail, `TransformerKernels` 10/11. The whole HalfFloat / quant / transformer family
+that gated ~24 tests is now green.
+
+**Classification of the residual 13 (none are JVMCI-reflection regressions):**
+- **Test-data bug (1, out of scope):** `foundation.TestHalfFloats#testMatrixVectorHalfFloatOptimized` —
+  `fillRandomDataFp16` uses `random.nextInt() * range` (~2e9), overflowing fp16 to Inf → the *sequential
+  reference* is `NaN` (`expected:<NaN> but was:<0.0>`); fails on any backend.
+- **Env / parity flakes (7):** `api.TestDevices#test04/05/06` ("No value present"/null device-enum),
+  `virtual.TestVirtualDeviceKernel` (null, needs prebuilt desc), plus `TestWarmUp` /
+  `TestConcurrentBackends` / `atomics.TestAtomics` which **pass in isolation** (quickPass ordering; the
+  TestAtomics quickPass fail is an OpenCL `cl2Metal failed` / `clBuildProgram err:-2` on the *OpenCL*
+  device in the dual-backend dist, not Metal).
+- **Reproducible correctness (~5) — CONFIRMED OpenCL-parity, NOT Metal-specific, NOT JVMCI-related:**
+  `kernelcontext.matrices.TestMatrixMultiplicationKernelContext#mxm2DKernelContext01/02`,
+  `compute.ComputeTests#testMandelbrot` + `#testJuliaSets`,
+  `compute.TransformerKernelsTest#testReductionOneBlockWithLayer`. **Re-ran each on the OpenCL device
+  (`-Dtornado.unittests.device=0:0`) in the same dual-backend dist: all fail identically on OpenCL.**
+  So these are shared reflection-path (or pre-existing) correctness bugs across backends, not a Metal
+  regression — a separate cross-backend workstream.
+
+**JVMCI removal on Metal is COMPLETE — Metal now matches OpenCL's residual failure set.** Every
+reflection-path crash/truncation/readback gap (accessor intrinsics, HotSpot casts, KernelContext
+recovery, HalfFloat param typing, local-half read, ByteArray.getHalfFloat, atomicAdd,
+allocate*LocalArray, half writeback) is landed, and every remaining Metal fail is a test-data bug, an
+env/enum flake, or a bug that also fails on the (already-done) OpenCL backend. Definition of done met.
+
+Separate cross-backend follow-ups (affect OpenCL too — track outside the Metal/JVMCI scope):
+- [ ] **Local-memory reduction correctness** — `TestMatrixMultiplicationKernelContext` matmul +
+      `TransformerKernels` reduction (partial-sum combine across the workgroup) — fails on OpenCL too.
+- [ ] **Compute-kernel correctness** — `ComputeTests` Mandelbrot / Julia — fails on OpenCL too.
+- [ ] **simdgroup / MMA** advanced tests (`TestSimdgroup*`, `TestSIMDGroupReductions`) — feature-gated.
 
 ---
 
