@@ -273,7 +273,17 @@ For **PTX**, **SPIR-V**, **Metal**, **CUDA**:
 
 Priority order: **CUDA** (same NVIDIA HW, quickest to validate) → PTX → Metal →
 
-### Metal — reflection-path status (Apple Silicon, JDK 21 baseline, backend build `make metal`)
+### Metal — reflection-path status (Apple Silicon, backend build `make metal`)
+
+**Multi-JDK build+run verified (2026-07-19, Apple M3 Pro):** Metal builds and runs a kernel on
+**JDK 21 / 25 / 26 / 27** — `bin/compile --jdk jdk<NN> --backend metal,opencl` then
+`arrays.TestArrays` = 23 pass / 0 fail / 5 unsupported on the Metal device for each. JDK 27 is the true
+no-JVMCI reflection path (no native `jdk.vm.ci`; vendored jvmci module patched in); JDK 21/25/26 patch the
+vendored module too. **Build fix required for jdk25/jdk26:** `tornado-drivers/metal-jni` (cpp-only, zero
+Java sources) NPE'd in `maven-compiler-plugin` (`getPathElements() null`) under those profiles' patch-module
+compilerArgs — fixed with `<maven.main.skip>true</maven.main.skip>`, mirroring the cublas/cufft/cudnn fix
+`0ceef1243` (commit `9578c4542`). jdk21/jdk27 were unaffected.
+
 
 Landed (mirrors OpenCL/CUDA):
 - [x] **Accessor intrinsics** — `registerNativeArrayGetSet` + `arrayElementAddress` for all primitive
