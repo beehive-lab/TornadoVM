@@ -63,6 +63,11 @@ JDK ?= jdk21
 unit-tests:
 	./mvnw -P$(JDK) -pl tornado-runtime test -DskipTests=false
 
+# Only the reflection JVMCI-layer suites (uk.ac.manchester.tornado.runtime.jvmci.reflection.*Test) —
+# the standalone metadata API. Same JDK override as unit-tests.
+test-reflection:
+	./mvnw -P$(JDK) -pl tornado-runtime test -DskipTests=false -Dtest="uk.ac.manchester.tornado.runtime.jvmci.reflection.*Test"
+
 clean:
 	./mvnw -Popencl-backend,ptx-backend,spirv-backend clean
 
