@@ -375,11 +375,18 @@ JDK 25/26 still **have** JVMCI and a built-in Graal (renamed
 
 ---
 
-## 4. Deferred features (JVMCI-free path)
-- [ ] `@Reduce` kernels — the detector + hybrid combiner use host-side Graal-as-JIT via
-      `HotSpotJVMCIRuntime`; replace with a JDK-neutral path (reflective invocation, or reflection-built
-      host graph) so reductions work on JDK 27
-- [ ] Any other code paths that reach `HotSpotJVMCIRuntime`/`CompilerToVM` at runtime
+## 4. Deferred features (JVMCI-free path) — **COMPLETE**
+- [x] `@Reduce` kernels — **DONE (commits `1e2f8e691`, `dd208420e`)**: the analysis high-level graph is
+      built via the TornadoVM backend reflection providers instead of `HotSpotJVMCIRuntime`
+      (`CodeAnalysis.buildHighLevelGraalGraph` is JDK-neutral; reduce loop-bound/operator detection also
+      accepts `InvokeWithExceptionNode`), and the hybrid host combiner is always the reflective tail
+      reduction. **Re-verified 2026-07-19 on the clean-room JDK 27.ea.24 Metal dist:** reductions family
+      all green — `TestReductionsIntegers` 15/0, `Floats` 13/0, `Long` 6/0, `Automatic` 4/0,
+      `InstanceReduction` 1/0, `MultipleReductions` 1/0 (`Doubles` 16 unsupported = FP64 device gating).
+      The checklist §1 "Phase 4 @Reduce (~41): architectural host-graph rewrite" note is superseded.
+- [x] Any other code paths that reach `HotSpotJVMCIRuntime`/`CompilerToVM` at runtime — `dd208420e`
+      deleted the HotSpot JVMCI dual-path entirely (runtime bootstrap, kernel-entry resolution,
+      code-analysis provider selection); the reflection metadata path is the only path.
 
 ---
 
