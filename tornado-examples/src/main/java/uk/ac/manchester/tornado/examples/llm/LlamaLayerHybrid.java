@@ -49,7 +49,7 @@ import uk.ac.manchester.tornado.cudnn.CuDnn;
  * no RoPE - this is a scheduling/throughput benchmark, not a model).
  *
  * <pre>
- * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.llm.LlamaLayerHybrid [s] [--cudaGraph]
+ * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.llm.LlamaLayerHybrid [s] [cudagraph]
  * </pre>
  */
 public class LlamaLayerHybrid {
@@ -66,7 +66,12 @@ public class LlamaLayerHybrid {
             }
             float inv = 1.0f / TornadoMath.sqrt(ss / e + 1e-5f);
             for (int j = 0; j < e; j++) {
-                out.set(i * e + j, new HalfFloat(x.get(i * e + j) * inv));
+                // The float value must land in a local before the HalfFloat
+                // allocation: the CUDA half-float replacement phase only
+                // rewrites `new HalfFloat(<variable>)`, not inline expressions.
+                float scaled = x.get(i * e + j) * inv;
+                HalfFloat h = new HalfFloat(scaled);
+                out.set(i * e + j, h);
             }
         }
     }
@@ -112,7 +117,7 @@ public class LlamaLayerHybrid {
         int sArg = 512;
         boolean cudaGraph = false;
         for (String arg : args) {
-            if ("--cudaGraph".equals(arg)) {
+            if ("cudagraph".equals(arg) || "--cudaGraph".equals(arg)) {
                 cudaGraph = true;
             } else {
                 sArg = Integer.parseInt(arg);
