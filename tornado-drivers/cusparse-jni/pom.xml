@@ -80,6 +80,13 @@
                             <outputDirectory>${project.build.outputDirectory}</outputDirectory>
                             <resources>
                                 <resource>
+                                    <directory>${project.build.directory}/cmake</directory>
+                                    <includes>
+                                        <include>*.so</include>
+                                        <include>*.dylib</include>
+                                    </includes>
+                                </resource>
+                                <resource>
                                     <directory>${project.build.directory}/cmake/build</directory>
                                     <includes>
                                         <!-- linux -->
