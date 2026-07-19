@@ -24,17 +24,27 @@ Legend: `[x]` done · `[ ]` todo · `[~]` partial
 The `jdk27` profile **skips surefire** (`skipTests`), so tests run via the launcher
 (`tornado-test`; user-added `make fast-tests-jdk27` target).
 
-> **BLOCKER (2026-07-05): `make fast-tests` / `--ea` aborts 100% of tests at backend init on JDK 27.**
+> **KNOWN LIMITATION — WON'T FIX for this branch (decision 2026-07-19): `--ea` (assertions) aborts
+> 100% of tests at backend init on JDK 27.**
 > With assertions enabled, Graal's `StandardGraphBuilderPlugins.registerUnsafePlugins0`
 > (vendored `tornado.graal` jar, v23.1.0) registers an invocation plugin for
-> `jdk.internal.misc.Unsafe.getObject(Object,long)` — a method **renamed to `getReference`**
-> and absent on JDK 27 — and the `InvocationPlugins$Checks.checkResolvable` **assertion** throws
-> `NoSuchMethodError` from `OCLHotSpotBackendFactory.createGraphBuilderPlugins` before any kernel
-> compiles. Result: `tornado-test --ea` reports `{PASS:0, FAILED:916}` (all fail identically at
-> `TornadoCoreRuntime` init). **Not a regression from the reflection work — it's a Graal-23.1.0-vs-JDK27
-> `Unsafe` naming mismatch, gated purely by `-ea`.** Running the same suite **without `-ea` works**
-> (`TestIntegers#test01` passes). TODO: teach the Unsafe-plugin registration to use `getReference` on
-> JDK ≥ 12 (or make `make fast-tests-jdk27` drop `--ea`), otherwise the assertion-enabled suite is unusable.
+> `jdk.internal.misc.Unsafe.getObject(Object,long)` — a method **renamed to `getReference`** in
+> JDK ~12 and absent on JDK 27. The registration sanity check `InvocationPlugins$Checks.checkResolvable`
+> lives inside an `assert`, so:
+> - **without `-ea`**: the assert never evaluates; the plugin targets a nonexistent method, never
+>   matches, is a harmless dead entry — the suite runs normally.
+> - **with `-ea`**: the assert runs at `OCLHotSpotBackendFactory.createGraphBuilderPlugins`, throws
+>   `NoSuchMethodError`, backend init dies → `{PASS:0, FAILED:916}`, all identical at
+>   `TornadoCoreRuntime` init.
+>
+> **Not a regression from the reflection work** — pure frozen-Graal-23.1.0 vs modern-JDK `Unsafe`
+> naming drift; would hit any project running Graal 23.1.0 on JDK 25+ with assertions.
+> **Mitigation in place:** `make fast-tests-jdk27` drops `--ea`; normal/production runs unaffected.
+> **Cost of passing:** only assertion-enabled test runs are lost on JDK 25+ — deliberately accepted.
+> **Fix routes if ever needed:** (1) preferred — patch `StandardGraphBuilderPlugins` when
+> `build_graal_module.py` rebuilds the vendored `tornado-graal` jar (inject a class override that
+> registers `getReference` on JDK ≥ 12); (2) register both names conditionally at our plugin-setup
+> call site (no vendored-byte edits, but messier).
 
 **First-pass results (2026-07-04, OpenCL / RTX 4090, JDK 27.ea.24) — core works broadly:**
 - `arrays.TestArrays` ~14–18/23 pass. **All failures are HalfFloat** (`getShortAtIndex → getAtIndex`
