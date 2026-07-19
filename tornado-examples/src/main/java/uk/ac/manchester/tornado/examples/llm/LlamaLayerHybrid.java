@@ -56,20 +56,26 @@ public class LlamaLayerHybrid {
 
     private static final String BENCH = "llamalayer";
 
-    /** RMSNorm over the hidden dim; reads FP32 activations, writes FP16 for the tensor-core GEMMs. */
-    public static void rmsnorm(FloatArray x, HalfFloatArray out, int s, int e) {
+    /** RMSNorm pass 1: per-row inverse RMS. One thread per row (s-way parallel). */
+    public static void rmsnormReduce(FloatArray x, FloatArray invRms, int s, int e) {
         for (@Parallel int i = 0; i < s; i++) {
             float ss = 0.0f;
             for (int j = 0; j < e; j++) {
                 float val = x.get(i * e + j);
                 ss += val * val;
             }
-            float inv = 1.0f / TornadoMath.sqrt(ss / e + 1e-5f);
-            for (int j = 0; j < e; j++) {
+            invRms.set(i, 1.0f / TornadoMath.sqrt(ss / e + 1e-5f));
+        }
+    }
+
+    /** RMSNorm pass 2: scale and narrow to FP16 for the tensor-core GEMMs (s*e-way parallel). */
+    public static void rmsnormScale(FloatArray x, FloatArray invRms, HalfFloatArray out, int s, int e) {
+        for (@Parallel int i = 0; i < s; i++) {
+            for (@Parallel int j = 0; j < e; j++) {
                 // The float value must land in a local before the HalfFloat
                 // allocation: the CUDA half-float replacement phase only
                 // rewrites `new HalfFloat(<variable>)`, not inline expressions.
-                float scaled = x.get(i * e + j) * inv;
+                float scaled = x.get(i * e + j) * invRms.get(i);
                 HalfFloat h = new HalfFloat(scaled);
                 out.set(i * e + j, h);
             }
@@ -145,6 +151,8 @@ public class LlamaLayerHybrid {
         HalfFloatArray biasUp = LlmBench.randomFp16(ffn, 5, -0.02f, 0.02f);
         HalfFloatArray wDown = LlmBench.randomFp16(ffn * e, 6, -0.02f, 0.02f);
 
+        FloatArray invRms1 = new FloatArray(s);
+        FloatArray invRms2 = new FloatArray(s);
         HalfFloatArray normed1 = new HalfFloatArray(s * e);
         HalfFloatArray qkv = new HalfFloatArray(s * 3 * e);
         HalfFloatArray q = new HalfFloatArray(h * s * d);
@@ -163,7 +171,8 @@ public class LlamaLayerHybrid {
 
         TaskGraph graph = new TaskGraph("llamalayer") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, x, wQkv, wO, wUp, biasUp, wDown) //
-                .task("rmsnorm1", LlamaLayerHybrid::rmsnorm, x, normed1, s, e) //
+                .task("rmsnorm1r", LlamaLayerHybrid::rmsnormReduce, x, invRms1, s, e) //
+                .task("rmsnorm1s", LlamaLayerHybrid::rmsnormScale, x, invRms1, normed1, s, e) //
                 // QKV: row-major [s,e] x [e,3e] -> [s,3e] via the column-major swap trick
                 .libraryTask("qkv", CuBlasLt::ltMatmulFP16, opN, opN, 3 * e, s, e, 1.0f, wQkv, 3 * e, normed1, e, 0.0f, qkv, 3 * e) //
                 .task("split", LlamaLayerHybrid::splitQkv, qkv, q, k, v, s, h, d) //
@@ -171,7 +180,8 @@ public class LlamaLayerHybrid {
                 .task("merge", LlamaLayerHybrid::mergeHeads, attn, merged, s, h, d) //
                 .libraryTask("oproj", CuBlasLt::ltMatmulFP16, opN, opN, e, s, e, 1.0f, wO, e, merged, e, 0.0f, oProj, e) //
                 .task("residual1", LlamaLayerHybrid::residual, x, oProj, x1, s * e) //
-                .task("rmsnorm2", LlamaLayerHybrid::rmsnorm, x1, normed2, s, e) //
+                .task("rmsnorm2r", LlamaLayerHybrid::rmsnormReduce, x1, invRms2, s, e) //
+                .task("rmsnorm2s", LlamaLayerHybrid::rmsnormScale, x1, invRms2, normed2, s, e) //
                 .libraryTask("ffnup", CuBlasLt::ltMatmulGeluBiasFP16, opN, opN, ffn, s, e, 1.0f, wUp, ffn, normed2, e, 0.0f, up, ffn, biasUp) //
                 .libraryTask("ffndown", CuBlasLt::ltMatmulFP16, opN, opN, e, s, ffn, 1.0f, wDown, e, up, ffn, 0.0f, down, e) //
                 .task("residual2", LlamaLayerHybrid::residual, x1, down, out, s * e) //
