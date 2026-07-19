@@ -284,6 +284,11 @@ Java sources) NPE'd in `maven-compiler-plugin` (`getPathElements() null`) under 
 compilerArgs — fixed with `<maven.main.skip>true</maven.main.skip>`, mirroring the cublas/cufft/cudnn fix
 `0ceef1243` (commit `9578c4542`). jdk21/jdk27 were unaffected.
 
+**JDK 27 full quickPass (2026-07-19, clean-room dist, 27.ea.24, no JVMCI): 913 ran / 12 real fails /
+259 unsupported — one FEWER fail than the JDK 21 baseline (13), identical failing-class profile**
+(same test-data bug, same env/enum flakes minus the TestWarmUp flake, same 5 shared cross-backend
+correctness tests). The no-JVMCI reflection path on Metal is at full parity with JDK 21.
+
 
 Landed (mirrors OpenCL/CUDA):
 - [x] **Accessor intrinsics** — `registerNativeArrayGetSet` + `arrayElementAddress` for all primitive
