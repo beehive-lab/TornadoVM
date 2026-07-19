@@ -135,14 +135,20 @@ def main(jdk=None):
         import build_graal_module
         build_graal_module.build()
 
-    # Build and stage the vendored jvmci module if compiling for JDK 27
+    # Build and stage the vendored jvmci module for JDKs whose build patches or replaces
+    # jdk.internal.vm.ci (jdk25/26 patch-module it; jdk27 has no platform jvmci at all).
+    # build_jvmci_module stages graalJars/jvmci-<ver>.jar (shipped by the assembly to
+    # share/java/jvmci) and installs tornado.jvmci:jvmci to the local Maven repository.
     if jdk in ("jdk25", "jdk26", "jdk27"):
-        # Check if the artifact was already installed to Maven local repo, or exists.
-        # But build_jvmci_module also installs to local Maven. Let's run it.
-        logger.info(f"Building/staging vendored {CYAN}jdk.internal.vm.ci{RESET} module for JDK 27...")
+        logger.info(f"Building/staging vendored {CYAN}jdk.internal.vm.ci{RESET} module for {jdk}...")
         import build_jvmci_module
         build_jvmci_module.build()
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+    parser = argparse.ArgumentParser(description="Download/stage the vendored Graal and jvmci jars.")
+    parser.add_argument("--jdk", default=None,
+                        help="Target JDK profile (jdk21|jdk25|jdk26|jdk27); jdk25+ also builds the vendored jvmci module")
+    args = parser.parse_args()
+    main(jdk=args.jdk)

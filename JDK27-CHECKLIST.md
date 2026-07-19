@@ -383,17 +383,26 @@ JDK 25/26 still **have** JVMCI and a built-in Graal (renamed
 
 ---
 
-## 5. Packaging / reproducibility polish
-Right now a clean `bin/compile jdk27` does **not** produce a runnable SDK without manual fixups.
-- [ ] Auto-stage the vendored jvmci jar into `graalJars/` and ship it to `share/java/jvmci`
-      (wire `bin/build_jvmci_module.py` into `bin/pull_graal_jars.py` / `bin/compile`)
+## 5. Packaging / reproducibility polish — **COMPLETE (2026-07-19)**
+A clean `bin/compile jdk27` now produces a runnable SDK with **zero manual fixups** — verified by a
+clean-room test: deleted `graalJars/jvmci-21.0.2.jar`, `~/.m2/repository/tornado/jvmci`, and `dist/`,
+then one `bin/compile --jdk jdk27 --backend metal,opencl` regenerated + staged + shipped everything;
+`tornado --devices` shows Metal+OpenCL and `arrays.TestArrays` = 23/0/5 on the fresh dist (JDK 27.ea.24).
+- [x] Auto-stage the vendored jvmci jar into `graalJars/` and ship it to `share/java/jvmci` —
+      already wired: `bin/compile` → `pull_graal_jars.main(jdk=...)` → `build_jvmci_module.build()`
+      (stages `graalJars/jvmci-*.jar` + installs `tornado.jvmci:jvmci` to the local Maven repo), and
+      `tornado-assembly/assembly.xml` ships `graalJars/jvmci-*.jar` → `share/java/jvmci`. `tornado.py`
+      puts it on the module path (jdk27, jvmci-absent) or `--patch-module`s it (jdk22–26). Also added
+      an `--jdk` CLI arg to `bin/pull_graal_jars.py` so a standalone invocation stages jvmci too
+      (previously only the `bin/compile` code path passed the jdk).
 - [x] Fix ASM dependency mediation so the SDK ships **asm-9.7** (needed for release-22/v66 class files).
       Verified (2026-07-05): both `tornado-annotation/pom.xml` and `tornado-runtime/pom.xml` now declare
       `org.ow2.asm:asm:9.7`, and the assembled dist ships **only `asm-9.7.jar`** in `share/java/tornado`
       (`dist/.../share/java/tornado/asm-9.7.jar`; no `asm-9.5` anywhere). `tornado-assembly` has no separate
       asm path — its profiles are backend-based, not JDK-based, so the jdk27 assembly resolves identically.
-- [ ] Verify `make jdk27 BACKEND=opencl` end-to-end produces a working `bin/sdk` with no manual copies
-- [ ] Consider a `Makefile` `fast-tests-jdk27` target
+- [x] Verify `make jdk27 BACKEND=opencl` end-to-end produces a working `bin/sdk` with no manual copies —
+      clean-room verified above (`make jdk27` is a thin wrapper over the same `bin/compile` invocation).
+- [x] `Makefile` `fast-tests-jdk27` target — exists (Makefile line ~90; runs without `--ea`, see §1).
 
 ## 6. Can the apporach of bypassing JVCI can be a standlone tool 
 - [ ] Can it be a standalone tool
