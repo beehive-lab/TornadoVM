@@ -18,7 +18,10 @@
 package uk.ac.manchester.tornado.api.tile;
 
 import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.enums.MMAShape;
+import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 
 /**
  * jTile - a minimal, cuTile/Tilus-inspired <b>tile</b> programming surface for TornadoVM.
@@ -53,7 +56,92 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
  */
 public final class Tile {
 
+    private static final int WMMA_M = 16;
+    private static final int WMMA_N = 16;
+    private static final int WMMA_K = 16;
+    private static final int WARP_SIZE = 32;
+
     private Tile() {
+    }
+
+    /**
+     * Tile-level tensor-core GEMM: {@code C[M x N] = A[M x K] * B[K x N]}, the jTile analog of
+     * cuTile's {@code dot} (milestone M2, CUDA backend only).
+     *
+     * <p>
+     * One work-group (one warp of {@value #WARP_SIZE} lanes) computes one {@value #WMMA_M}x
+     * {@value #WMMA_N} output tile via NVIDIA {@code mma.sync} tensor-core instructions, looping
+     * over K in {@value #WMMA_K}-wide steps. {@code A}/{@code B} are row-major fp16
+     * ({@link HalfFloatArray}); {@code C} is a row-major fp32 accumulator. All MMA fragments stay
+     * within this method (they cannot cross inlined-method boundaries in the sketcher), so the
+     * whole tensor-core dot is exposed as a single tile-level call.
+     * </p>
+     *
+     * <p>
+     * Launch: {@code localWork = 32}, {@code globalWork = (M/16)*(N/16)*32}. {@code M}, {@code N}
+     * must be multiples of 16 and {@code K} a multiple of 16. Requires the CUDA backend (tensor
+     * cores); unsupported on OpenCL/Metal.
+     * </p>
+     */
+    public static void matmul(KernelContext context, HalfFloatArray a, HalfFloatArray b, FloatArray c, int dimM, int dimN, int dimK) {
+        int warpId = context.groupIdx;
+        int lane = context.localIdx;
+
+        int numTilesN = dimN / WMMA_N;
+        int tileRow = (warpId / numTilesN) * WMMA_M;
+        int tileCol = (warpId % numTilesN) * WMMA_N;
+
+        // Packed shared tiles: 2 fp16 per int.
+        int[] aTile = context.allocateIntLocalArray(WMMA_M * WMMA_K / 2);
+        int[] bTile0 = context.allocateIntLocalArray(WMMA_K * WMMA_N / 2);
+        int[] bTile1 = context.allocateIntLocalArray(WMMA_K * WMMA_N / 2);
+
+        float[] fragC0 = context.mmaFragment(0.0f);
+        float[] fragC1 = context.mmaFragment(0.0f);
+
+        for (int kBase = 0; kBase < dimK; kBase += WMMA_K) {
+            // Cooperative load of A: pack 2 adjacent fp16 into one int.
+            for (int idx = lane; idx < (WMMA_M * WMMA_K) / 2; idx += WARP_SIZE) {
+                int elemBase = idx * 2;
+                int r = elemBase / WMMA_K;
+                int kk = elemBase % WMMA_K;
+                int globalBase = (tileRow + r) * dimK + kBase + kk;
+                int lo = a.get(globalBase).getHalfFloatValue() & 0xFFFF;
+                int hi = a.get(globalBase + 1).getHalfFloatValue() & 0xFFFF;
+                aTile[r * (WMMA_K / 2) + kk / 2] = lo | (hi << 16);
+            }
+
+            // Cooperative load of B: two 16x8 panels, transposed per 8-column panel.
+            for (int idx = lane; idx < 64; idx += WARP_SIZE) {
+                int kRow = idx / 4;
+                int jPair = idx % 4;
+                int jBase = jPair * 2;
+
+                int gL0 = (kBase + kRow) * dimN + tileCol + jBase;
+                int gL1 = (kBase + kRow) * dimN + tileCol + jBase + 1;
+                int loLeft = b.get(gL0).getHalfFloatValue() & 0xFFFF;
+                int hiLeft = b.get(gL1).getHalfFloatValue() & 0xFFFF;
+                bTile0[kRow * 4 + jPair] = loLeft | (hiLeft << 16);
+
+                int gR0 = (kBase + kRow) * dimN + tileCol + 8 + jBase;
+                int gR1 = (kBase + kRow) * dimN + tileCol + 8 + jBase + 1;
+                int loRight = b.get(gR0).getHalfFloatValue() & 0xFFFF;
+                int hiRight = b.get(gR1).getHalfFloatValue() & 0xFFFF;
+                bTile1[kRow * 4 + jPair] = loRight | (hiRight << 16);
+            }
+            context.localBarrier();
+
+            HalfFloat[] fragA = context.mmaLoadA(aTile, WMMA_K);
+            HalfFloat[] fragB0 = context.mmaLoadB(bTile0, WMMA_K);
+            fragC0 = context.mma(fragA, fragB0, fragC0, MMAShape.M16N8K16);
+            HalfFloat[] fragB1 = context.mmaLoadB(bTile1, WMMA_K);
+            fragC1 = context.mma(fragA, fragB1, fragC1, MMAShape.M16N8K16);
+
+            context.localBarrier();
+        }
+
+        context.mmaStore(fragC0, c, tileRow, tileCol, dimN);
+        context.mmaStore(fragC1, c, tileRow, tileCol + 8, dimN);
     }
 
     /**
