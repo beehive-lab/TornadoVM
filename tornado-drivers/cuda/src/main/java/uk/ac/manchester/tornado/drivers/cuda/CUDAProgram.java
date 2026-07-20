@@ -77,7 +77,28 @@ public class CUDAProgram {
 
     static native boolean nvrtcCanCompileHeader(String headerName);
 
+    static native int nvrtcVersion();
+
     private static Boolean nativeFP8ConversionAvailable;
+
+    private static Integer nvrtcVersionCached;
+
+    /**
+     * NVRTC version as {@code major * 1000 + minor} (CUDA 12.4 gives 12004), or {@code -1} when the
+     * query fails. Queried once per process.
+     *
+     * <p>This gates features whose PTX encoding needs a minimum PTX ISA version: NVRTC stamps the
+     * PTX it emits with its own {@code .version}, so an instruction introduced in a later ISA
+     * cannot be expressed by an older toolkit, however capable the GPU is. FP8 {@code mma.sync}
+     * (PTX ISA 8.4 / CUDA 12.4) is the motivating case - on an older toolkit ptxas rejects it with
+     * "Feature 'mma with FP8 floating point type' requires PTX ISA .version 8.4 or later".</p>
+     */
+    public static synchronized int getNvrtcVersion() {
+        if (nvrtcVersionCached == null) {
+            nvrtcVersionCached = nvrtcVersion();
+        }
+        return nvrtcVersionCached;
+    }
 
     /**
      * Whether this NVRTC/toolkit pair can compile kernels that include {@code cuda_fp8.h}
