@@ -25,6 +25,7 @@ module tornado.api {
     exports uk.ac.manchester.tornado.api.memory;
     exports uk.ac.manchester.tornado.api.profiler;
     exports uk.ac.manchester.tornado.api.runtime;
+    exports uk.ac.manchester.tornado.api.tile;
     exports uk.ac.manchester.tornado.api.internal.annotations;
     exports uk.ac.manchester.tornado.api.utils;
 
