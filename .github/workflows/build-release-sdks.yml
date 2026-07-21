@@ -280,7 +280,7 @@ jobs:
   build-windows:
     needs: preflight
     if: needs.preflight.outputs.proceed == 'true' && needs.preflight.outputs.include_windows == 'true'
-    name: Windows x64 (jdk21+jdk25 × opencl+ptx+spirv+cuda+full)
+    name: Windows x64 (jdk21+jdk25 × opencl+ptx+spirv+cuda)
     runs-on: [self-hosted, Windows, x64]
     timeout-minutes: 240
     permissions:
@@ -292,6 +292,7 @@ jobs:
       JDK25_HOME: 'C:\jdks\jdk25'
       RELEASE_ARCHIVES_DIR: 'C:\release-archives'
       PLATFORM_DIR: windows-amd64
+      VENV_PATH: '${{ github.workspace }}\venv-build-sdks'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -319,6 +320,25 @@ jobs:
             icacls $platformPath /grant "NT AUTHORITY\NETWORK SERVICE:(OI)(CI)F" /T /C | Out-Null
             Remove-Item -Recurse -Force $platformPath
           }
+
+      - name: Setup Python venv
+        shell: powershell
+        run: |
+          if (Test-Path $env:VENV_PATH) {
+            Remove-Item -Recurse -Force $env:VENV_PATH
+          }
+          python -m venv "$env:VENV_PATH"
+          & "$env:VENV_PATH\Scripts\python.exe" -m pip install --upgrade pip
+          & "$env:VENV_PATH\Scripts\pip.exe" install requests tqdm urllib3 wget packaging streamlit psutil pyinstaller
+          # Put the venv's Scripts\ first on PATH so `python`, `pip3`, and
+          # `pyinstaller` all resolve here for every later step (including the
+          # nested `python bin\compile` invocations inside each worktree) —
+          # matching the Linux/macOS jobs, which already do this. Without it,
+          # bin/compile's dependency self-heal (install_python_modules.py) and
+          # the PyInstaller .exe wrapper build fall back to whatever bare
+          # system Python/pip happen to be on the runner's PATH, which may be
+          # missing required packages entirely.
+          echo "$env:VENV_PATH\Scripts" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Build SDKs
         shell: cmd
