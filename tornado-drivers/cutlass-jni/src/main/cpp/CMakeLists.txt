@@ -58,12 +58,22 @@ set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
 # Header-only CUTLASS (NVIDIA template library for GEMM). Populate the sources
 # but do NOT add_subdirectory — we only need its include/ directories.
+#
+# CUTLASS's docs/ tree contains thousands of Doxygen-generated HTML files with
+# very long, template-mangled names (e.g. "classcutlass_1_1gemm_1_1warp_1_1..."
+# past 100 chars). Nested under a build directory, the combined path routinely
+# exceeds Windows' 260-char MAX_PATH, so git's checkout of those files fails
+# and the FetchContent populate step aborts (CMake error: "Build step for
+# cutlass failed"). GIT_CONFIG core.longpaths=true makes git for Windows use
+# the \\?\ long-path form when writing the working tree, sidestepping the
+# limit entirely; it's a no-op on Linux/macOS where MAX_PATH doesn't apply.
 include(FetchContent)
 FetchContent_Declare(
     cutlass
     GIT_REPOSITORY https://github.com/NVIDIA/cutlass.git
     GIT_TAG v3.5.1
     GIT_SHALLOW TRUE
+    GIT_CONFIG "core.longpaths=true"
 )
 FetchContent_GetProperties(cutlass)
 if(NOT cutlass_POPULATED)
