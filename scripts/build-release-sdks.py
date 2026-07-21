@@ -321,9 +321,25 @@ def patch_worktree_fix_pyinstaller(worktree_path):
         src = f.read()
     original = src
 
-    old_func_pattern = re.compile(
+    # v5.1.0-jdk25 tag shape: chdir's into <sdk>/bin before invoking PyInstaller
+    # and chdir's back afterwards — the classic "run me from inside dist/"
+    # trigger.
+    old_func_pattern_chdir = re.compile(
         r"def runPyInstaller\(currentDirectory, tornadoSDKPath\):.*?"
         r"os\.chdir\(currentDirectory\)\n",
+        re.DOTALL,
+    )
+
+    # v5.1.0-jdk21 tag shape: already avoids the chdir and already passes
+    # explicit --distpath/--workpath/--specpath via os.system(), but never
+    # overrides the *process* cwd — so it still inherits the worktree root
+    # (created under the OS temp dir), which trips the same PyInstaller safety
+    # check for a different reason. This variant has no trailing
+    # os.chdir(...) and instead ends with the shutil.rmtree(work_dir, ...)
+    # cleanup line.
+    old_func_pattern_system = re.compile(
+        r"def runPyInstaller\(currentDirectory, tornadoSDKPath\):.*?"
+        r"shutil\.rmtree\(work_dir, ignore_errors=True\)\n",
         re.DOTALL,
     )
 
@@ -355,11 +371,13 @@ def patch_worktree_fix_pyinstaller(worktree_path):
         raise RuntimeError(f"PyInstaller failed for: {\', \'.join(failed)}")
 '''
 
-    src, n = old_func_pattern.subn(new_func, src)
+    src, n = old_func_pattern_chdir.subn(new_func, src)
+    if n == 0:
+        src, n = old_func_pattern_system.subn(new_func, src)
 
     if n == 0:
         warn(
-            "config_utils.py in the worktree did not match the expected "
+            "config_utils.py in the worktree did not match either known "
             "runPyInstaller pattern — the tag layout may have changed; "
             "nothing was patched."
         )
