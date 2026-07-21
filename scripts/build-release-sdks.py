@@ -28,7 +28,7 @@ and cleans up — without touching the current working branch.
 SDKs built per platform:
   - macOS   : opencl, metal                    (JDK 21 and JDK 25, via sdkman Temurin)
   - Linux   : opencl, ptx, spirv, cuda, full   (JDK 21 and JDK 25, via sdkman Temurin)
-  - Windows : opencl, ptx, spirv, cuda, full   (JDK 21 and JDK 25, --jdkXX-home required)
+  - Windows : opencl, ptx, spirv, cuda         (JDK 21 and JDK 25, --jdkXX-home required)
 
 "full" means opencl+ptx+spirv+cuda combined into a single archive.
 
@@ -200,7 +200,6 @@ BUILDS = {
         "ptx",
         "spirv",
         "cuda",
-        "opencl,ptx,spirv,cuda",
     ],
 }
 
