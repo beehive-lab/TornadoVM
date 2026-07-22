@@ -22,6 +22,7 @@ import java.util.Arrays;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 
@@ -88,6 +89,25 @@ public final class Cutlass {
                 .withLibrary(LIBRARY_NAME) //
                 .withFunction("cutlassHgemm") //
                 .withParameters(new Object[] { m, n, k, alpha, a, b, beta, d }) //
+                .withAccess(access);
+    }
+
+    /**
+     * BF16 tensor-core GEMM (FP32 accumulate): {@code C = alpha * A * B + beta * C},
+     * all operands row-major bfloat16 ({@link BFloat16Array}). Requires
+     * {@code k, n} multiples of 4 (same 8-byte operand alignment as FP16). BF16
+     * keeps FP32's exponent range and is the standard LLM datatype; it runs on the
+     * tensor cores at FP16 throughput on Ampere (sm_80) and later.
+     */
+    public static LibraryTaskDescriptor cutlassBgemm(int m, int n, int k, float alpha, BFloat16Array a, BFloat16Array b, float beta, BFloat16Array c) {
+        checkHalfShape(n, k);
+        Access[] access = new Access[8];
+        Arrays.fill(access, Access.READ_ONLY);
+        access[7] = (beta == 0.0f) ? Access.WRITE_ONLY : Access.READ_WRITE;
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cutlassBgemm") //
+                .withParameters(new Object[] { m, n, k, alpha, a, b, beta, c }) //
                 .withAccess(access);
     }
 

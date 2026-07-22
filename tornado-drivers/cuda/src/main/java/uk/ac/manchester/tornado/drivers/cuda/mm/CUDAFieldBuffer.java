@@ -49,6 +49,7 @@ import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
@@ -155,6 +156,10 @@ public class CUDAFieldBuffer implements XPUBuffer {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long size = ((HalfFloatArray) objectFromField).getSegmentWithHeader().byteSize();
                 wrappedField = new CUDAMemorySegmentWrapper(size, device, 0, access, CUDAKind.SHORT.getSizeInBytes());
+            } else if (type == BFloat16Array.class) {
+                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
+                long size = ((BFloat16Array) objectFromField).getSegmentWithHeader().byteSize();
+                wrappedField = new CUDAMemorySegmentWrapper(size, device, 0, access, CUDAKind.BF16.getSizeInBytes());
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 wrappedField = new CUDAVectorWrapper(device, object, 0, access);
             } else if (field.getJavaKind().isObject()) {

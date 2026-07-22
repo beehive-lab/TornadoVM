@@ -55,6 +55,11 @@ final class CutlassNativeLib {
     /** Row-major FP16 tensor-core GEMM (FP32 accumulate): D = alpha*A*B + beta*D. */
     static native int hgemm(int m, int n, int k, float alpha, long dA, long dB, float beta, long dD, long workspace, long stream);
 
+    static native long bgemmWorkspace(int m, int n, int k);
+
+    /** Row-major BF16 tensor-core GEMM (FP32 accumulate): C = alpha*A*B + beta*C. */
+    static native int bgemm(int m, int n, int k, float alpha, long dA, long dB, float beta, long dC, long workspace, long stream);
+
     static native long gemmBiasReluWorkspace(int m, int n, int k);
 
     /** Fused FP16 D = relu(A*B + bias); bias is a length-n row vector (broadcast). */

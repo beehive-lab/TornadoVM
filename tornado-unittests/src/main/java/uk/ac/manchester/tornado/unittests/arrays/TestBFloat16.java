@@ -30,6 +30,7 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.BFloat16;
+import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -61,6 +62,20 @@ public class TestBFloat16 extends TornadoTestBase {
     public static void decodeBF16(ShortArray in, FloatArray out) {
         for (@Parallel int i = 0; i < out.getSize(); i++) {
             out.set(i, BFloat16.bf16ToFloat(in.get(i)));
+        }
+    }
+
+    /** Kernel: decode a typed {@link BFloat16Array} to float on the device. */
+    public static void decodeBFloat16Array(BFloat16Array in, FloatArray out) {
+        for (@Parallel int i = 0; i < out.getSize(); i++) {
+            out.set(i, BFloat16.bf16ToFloat(in.get(i)));
+        }
+    }
+
+    /** Kernel: full bfloat16 round trip - read, decode, scale, re-encode, write - all in {@link BFloat16Array}. */
+    public static void scaleBFloat16Array(BFloat16Array in, BFloat16Array out) {
+        for (@Parallel int i = 0; i < out.getSize(); i++) {
+            out.set(i, BFloat16.bf16FromFloat(BFloat16.bf16ToFloat(in.get(i)) * 2.0f));
         }
     }
 
@@ -158,6 +173,55 @@ public class TestBFloat16 extends TornadoTestBase {
         for (int i = 0; i < values.length; i++) {
             // Device output must match the host decode of the same bf16 bits, exactly.
             assertEquals(BFloat16.bf16ToFloat(in.get(i)), out.get(i), 0.0f);
+        }
+    }
+
+    @Test
+    public void testBFloat16ArrayDecodeOnDevice() throws TornadoExecutionPlanException {
+        assumeCudaBackend();
+        float[] values = { 0.0f, 1.0f, -1.0f, 0.5f, 2.0f, -3.5f, 0.125f, 100.0f, -0.25f, 3.0e38f, 1.0e-38f, -7.75f };
+        BFloat16Array in = BFloat16Array.fromFloats(values);
+        FloatArray out = new FloatArray(values.length);
+
+        TaskGraph tg = new TaskGraph("bfa0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, in) //
+                .task("t0", TestBFloat16::decodeBFloat16Array, in, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
+            plan.execute();
+        }
+        for (int i = 0; i < values.length; i++) {
+            assertEquals(in.getFloat(i), out.get(i), 0.0f);
+        }
+    }
+
+    /**
+     * Full on-device bfloat16 round trip through the typed {@link BFloat16Array}: the kernel reads
+     * a bf16 element, decodes it to float (hardware {@code __int_as_float} node), scales, re-encodes
+     * to bf16 (software encoder) and writes it back to a bf16 array.
+     */
+    @Test
+    public void testBFloat16ArrayScaleOnDevice() throws TornadoExecutionPlanException {
+        assumeCudaBackend();
+        int n = 256;
+        java.util.Random rng = new java.util.Random(11);
+        BFloat16Array in = new BFloat16Array(n);
+        for (int i = 0; i < n; i++) {
+            in.setFloat(i, (rng.nextFloat() - 0.5f) * 10.0f);
+        }
+        BFloat16Array out = new BFloat16Array(n);
+
+        TaskGraph tg = new TaskGraph("bfa1") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, in) //
+                .task("t0", TestBFloat16::scaleBFloat16Array, in, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
+            plan.execute();
+        }
+        for (int i = 0; i < n; i++) {
+            // Reference: same decode/scale/encode on the host.
+            short expected = BFloat16.bf16FromFloat(in.getFloat(i) * 2.0f);
+            assertEquals(BFloat16.bf16ToFloat(expected), out.getFloat(i), 0.0f);
         }
     }
 
