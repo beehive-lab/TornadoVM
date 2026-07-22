@@ -39,6 +39,7 @@
 #include <cutlass/gemm/gemm.h>
 #include <cutlass/layout/matrix.h>
 #include <cutlass/numeric_types.h>
+#include <cutlass/bfloat16.h>
 #include <cutlass/epilogue/thread/linear_combination.h>
 #include <cutlass/epilogue/thread/linear_combination_relu.h>
 #include <cutlass/epilogue/thread/linear_combination_gelu.h>
@@ -94,6 +95,21 @@ using HgemmTensor = HalfTensorOpGemm<
         cutlass::epilogue::thread::LinearCombination<ElementHalf, kAlign, ElementAccum, ElementCompute>>;
 using GemmBiasRelu = HalfTensorOpGemm<
         cutlass::epilogue::thread::LinearCombinationRelu<ElementHalf, kAlign, ElementAccum, ElementCompute>>;
+// BF16 tensor-core GEMM (FP32 accumulate). Same MMA shapes and 4-element (8-byte)
+// operand alignment as the FP16 path - bfloat16 is also 2 bytes, so the k/n
+// multiple-of-4 constraint is identical. BF16 keeps FP32's exponent range and is
+// the de-facto LLM datatype; Ampere (sm_80) and later run it on the tensor cores
+// at FP16 throughput.
+using ElementBF16 = cutlass::bfloat16_t;
+using BF16TensorOpGemm = cutlass::gemm::device::GemmUniversal<
+        ElementBF16, cutlass::layout::RowMajor,
+        ElementBF16, cutlass::layout::RowMajor,
+        ElementBF16, cutlass::layout::RowMajor,
+        ElementAccum, cutlass::arch::OpClassTensorOp, cutlass::arch::Sm80,
+        ThreadblockShape, WarpShape, InstructionShape,
+        cutlass::epilogue::thread::LinearCombination<ElementBF16, kAlign, ElementAccum, ElementCompute>,
+        Swizzle, kStages, kAlign, kAlign>;
+
 using GemmBiasGelu = HalfTensorOpGemm<
         cutlass::epilogue::thread::LinearCombinationGELU<ElementHalf, kAlign, ElementAccum, ElementCompute>>;
 
@@ -198,6 +214,34 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_cutlass_provider_CutlassNat
             (void const *) dA, (void const *) dB, (void const *) dC, (void *) dC,
             0, 0, 0, 0, k, n, n, n);
     return runGemm<HgemmTensor>(args, (void *) workspace, (cudaStream_t) stream);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib
+ * Method:    bgemmWorkspace
+ * Signature: (III)J
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib_bgemmWorkspace
+        (JNIEnv *env, jclass clazz, jint m, jint n, jint k) {
+    BF16TensorOpGemm::Arguments args(
+            cutlass::gemm::GemmUniversalMode::kGemm, {m, n, k}, 1, {1.0f, 0.0f},
+            nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, k, n, n, n);
+    return (jlong) BF16TensorOpGemm::get_workspace_size(args);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib
+ * Method:    bgemm
+ * Signature: (IIIFJJFJJJ)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib_bgemm
+        (JNIEnv *env, jclass clazz, jint m, jint n, jint k, jfloat alpha,
+         jlong dA, jlong dB, jfloat beta, jlong dC, jlong workspace, jlong stream) {
+    BF16TensorOpGemm::Arguments args(
+            cutlass::gemm::GemmUniversalMode::kGemm, {m, n, k}, 1, {alpha, beta},
+            (void const *) dA, (void const *) dB, (void const *) dC, (void *) dC,
+            0, 0, 0, 0, k, n, n, n);
+    return runGemm<BF16TensorOpGemm>(args, (void *) workspace, (cudaStream_t) stream);
 }
 
 /*

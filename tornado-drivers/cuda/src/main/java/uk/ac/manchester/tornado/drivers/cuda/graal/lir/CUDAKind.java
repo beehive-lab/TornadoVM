@@ -105,6 +105,7 @@ public enum CUDAKind implements PlatformKind {
     LONG(8, java.lang.Long.TYPE),
     ULONG(8, null),
     HALF(2, java.lang.Short.TYPE),
+    BF16(2, java.lang.Short.TYPE),
     FP8_E4M3(1, null),
     FP8_E5M2(1, null),
     FLOAT(4, java.lang.Float.TYPE),
