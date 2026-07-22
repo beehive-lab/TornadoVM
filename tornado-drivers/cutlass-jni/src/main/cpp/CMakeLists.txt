@@ -56,29 +56,44 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_STANDARD 17)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
-# Header-only CUTLASS (NVIDIA template library for GEMM). Populate the sources
-# but do NOT add_subdirectory — we only need its include/ directories.
+# Header-only CUTLASS (NVIDIA template library for GEMM) — we only need its
+# include/ and tools/util/include/ directories (see target_include_directories
+# below), never add_subdirectory.
 #
 # CUTLASS's docs/ tree contains thousands of Doxygen-generated HTML files with
 # very long, template-mangled names (e.g. "classcutlass_1_1gemm_1_1warp_1_1..."
-# past 100 chars). Nested under a build directory, the combined path routinely
-# exceeds Windows' 260-char MAX_PATH, so git's checkout of those files fails
-# and the FetchContent populate step aborts (CMake error: "Build step for
-# cutlass failed"). GIT_CONFIG core.longpaths=true makes git for Windows use
-# the \\?\ long-path form when writing the working tree, sidestepping the
-# limit entirely; it's a no-op on Linux/macOS where MAX_PATH doesn't apply.
-include(FetchContent)
-FetchContent_Declare(
-    cutlass
-    GIT_REPOSITORY https://github.com/NVIDIA/cutlass.git
-    GIT_TAG v3.5.1
-    GIT_SHALLOW TRUE
-    GIT_CONFIG "core.longpaths=true"
-)
-FetchContent_GetProperties(cutlass)
-if(NOT cutlass_POPULATED)
-    FetchContent_Populate(cutlass)
+# past 100 chars). A plain FetchContent git clone checks out the *entire* tree
+# including docs/, and on Windows the combined path (build dir + docs/<long
+# name>.html) exceeds what git-for-windows can write there — confirmed even
+# with GIT_CONFIG core.longpaths=true set, checkout still fails with
+# "unable to create file docs/...: Filename too long". Rather than keep
+# fighting the Windows path limit, avoid ever fetching docs/ at all: use git's
+# sparse-checkout (cone mode) to pull only the two subtrees this build uses.
+set(CUTLASS_SOURCE_DIR "${CMAKE_BINARY_DIR}/_deps/cutlass-src")
+if(NOT EXISTS "${CUTLASS_SOURCE_DIR}/include/cutlass/cutlass.h")
+    find_package(Git REQUIRED)
+    file(REMOVE_RECURSE "${CUTLASS_SOURCE_DIR}")
+    file(MAKE_DIRECTORY "${CUTLASS_SOURCE_DIR}")
+
+    macro(cutlass_git)
+        execute_process(
+            COMMAND ${GIT_EXECUTABLE} ${ARGN}
+            WORKING_DIRECTORY "${CUTLASS_SOURCE_DIR}"
+            RESULT_VARIABLE _cutlass_git_rc
+        )
+        if(NOT _cutlass_git_rc EQUAL 0)
+            message(FATAL_ERROR "CUTLASS sparse checkout failed: git ${ARGN}")
+        endif()
+    endmacro()
+
+    cutlass_git(init -q)
+    cutlass_git(remote add origin https://github.com/NVIDIA/cutlass.git)
+    cutlass_git(sparse-checkout init --cone)
+    cutlass_git(sparse-checkout set include tools/util/include)
+    cutlass_git(fetch --depth 1 origin v3.5.1)
+    cutlass_git(checkout FETCH_HEAD)
 endif()
+set(cutlass_SOURCE_DIR "${CUTLASS_SOURCE_DIR}")
 
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_VERBOSE_MAKEFILE on)
