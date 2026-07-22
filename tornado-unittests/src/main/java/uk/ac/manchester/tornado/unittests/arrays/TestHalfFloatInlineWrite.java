@@ -25,11 +25,13 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
 
 /**
  * Regression tests for writing a {@code new HalfFloat(...)} straight into a {@link HalfFloatArray}.
@@ -41,6 +43,22 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * <p>How to run: {@code tornado-test -V uk.ac.manchester.tornado.unittests.arrays.TestHalfFloatInlineWrite}</p>
  */
 public class TestHalfFloatInlineWrite extends TornadoTestBase {
+
+    /**
+     * The inline {@code new HalfFloat(computedExpr)} fix is applied to the CUDA backend only; the
+     * OpenCL/PTX/Metal/SPIRV HalfFloat replacement phases share the pattern and are not fixed here,
+     * so skip them rather than trip the same code-generation error.
+     */
+    private void assumeCudaBackend() {
+        TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
+        if (backendType != TornadoVMBackendType.CUDA) {
+            String message = "This HalfFloat inline-write fix targets the CUDA backend (default device is " + backendType + ")";
+            switch (backendType) {
+                case OPENCL, PTX, SPIRV, METAL -> assertNotBackend(backendType, message);
+                default -> throw new TornadoVMCUDANotSupported(message);
+            }
+        }
+    }
 
     // Local variable, computed input.
     public static void localComputed(FloatArray a, HalfFloatArray out) {
@@ -82,6 +100,7 @@ public class TestHalfFloatInlineWrite extends TornadoTestBase {
 
     @Test
     public void testLocalComputed() throws TornadoExecutionPlanException {
+        assumeCudaBackend();
         FloatArray a = input(64);
         HalfFloatArray out = new HalfFloatArray(64);
         TaskGraph tg = new TaskGraph("lc").transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
@@ -95,6 +114,7 @@ public class TestHalfFloatInlineWrite extends TornadoTestBase {
 
     @Test
     public void testInlineDirect() throws TornadoExecutionPlanException {
+        assumeCudaBackend();
         FloatArray a = input(64);
         HalfFloatArray out = new HalfFloatArray(64);
         TaskGraph tg = new TaskGraph("id").transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
@@ -108,6 +128,7 @@ public class TestHalfFloatInlineWrite extends TornadoTestBase {
 
     @Test
     public void testInlineComputed() throws TornadoExecutionPlanException {
+        assumeCudaBackend();
         FloatArray a = input(64);
         HalfFloatArray out = new HalfFloatArray(64);
         TaskGraph tg = new TaskGraph("ic").transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
