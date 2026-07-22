@@ -30,8 +30,10 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.BFloat16;
+import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
@@ -76,6 +78,27 @@ public class TestBFloat16 extends TornadoTestBase {
     public static void scaleBFloat16Array(BFloat16Array in, BFloat16Array out) {
         for (@Parallel int i = 0; i < out.getSize(); i++) {
             out.set(i, BFloat16.bf16FromFloat(BFloat16.bf16ToFloat(in.get(i)) * 2.0f));
+        }
+    }
+
+    /** Mixed precision kernel: {@code out(fp32) = a * x(bf16) + y(fp32)}. bf16 decode + FP32 math. */
+    public static void mixedAxpyBF16(BFloat16Array x, FloatArray y, FloatArray out, float a) {
+        for (@Parallel int i = 0; i < out.getSize(); i++) {
+            out.set(i, a * BFloat16.bf16ToFloat(x.get(i)) + y.get(i));
+        }
+    }
+
+    /** Mixed precision kernel: sum a bf16 operand and an fp16 operand into fp32 (both decoded on device). */
+    public static void mixedBf16Fp16(BFloat16Array a, HalfFloatArray b, FloatArray out) {
+        for (@Parallel int i = 0; i < out.getSize(); i++) {
+            out.set(i, BFloat16.bf16ToFloat(a.get(i)) + b.get(i).getFloat32());
+        }
+    }
+
+    /** Mixed precision kernel: fp16 -&gt; bf16. Decodes an FP16 {@link HalfFloatArray} to float, encodes as bf16. */
+    public static void fp16ToBf16(HalfFloatArray in, BFloat16Array out) {
+        for (@Parallel int i = 0; i < out.getSize(); i++) {
+            out.set(i, BFloat16.bf16FromFloat(in.get(i).getFloat32()));
         }
     }
 
@@ -219,9 +242,90 @@ public class TestBFloat16 extends TornadoTestBase {
             plan.execute();
         }
         for (int i = 0; i < n; i++) {
-            // Reference: same decode/scale/encode on the host.
-            short expected = BFloat16.bf16FromFloat(in.getFloat(i) * 2.0f);
-            assertEquals(BFloat16.bf16ToFloat(expected), out.getFloat(i), 0.0f);
+            // The device encoder rounds ties to even (hardware node) while the host BFloat16
+            // encoder rounds half away from zero, so allow one bfloat16 step (1/128 relative).
+            float ref = in.getFloat(i) * 2.0f;
+            float tol = Math.max(1e-38f, Math.abs(ref) / 128.0f);
+            assertEquals(ref, out.getFloat(i), tol);
+        }
+    }
+
+    @Test
+    public void testMixedAxpyBF16OnDevice() throws TornadoExecutionPlanException {
+        assumeCudaBackend();
+        int n = 256;
+        java.util.Random rng = new java.util.Random(3);
+        BFloat16Array x = new BFloat16Array(n);
+        FloatArray y = new FloatArray(n);
+        FloatArray out = new FloatArray(n);
+        for (int i = 0; i < n; i++) {
+            x.setFloat(i, (rng.nextFloat() - 0.5f) * 4.0f);
+            y.set(i, rng.nextFloat() - 0.5f);
+        }
+        final float a = 3.0f;
+
+        TaskGraph tg = new TaskGraph("mix0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, x, y) //
+                .task("t0", TestBFloat16::mixedAxpyBF16, x, y, out, a) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
+            plan.execute();
+        }
+        for (int i = 0; i < n; i++) {
+            float expected = a * x.getFloat(i) + y.get(i);
+            assertEquals(expected, out.get(i), 1e-4f * Math.max(1.0f, Math.abs(expected)));
+        }
+    }
+
+    @Test
+    public void testMixedBf16Fp16OnDevice() throws TornadoExecutionPlanException {
+        assumeCudaBackend();
+        int n = 256;
+        java.util.Random rng = new java.util.Random(5);
+        BFloat16Array a = new BFloat16Array(n);
+        HalfFloatArray b = new HalfFloatArray(n);
+        FloatArray out = new FloatArray(n);
+        for (int i = 0; i < n; i++) {
+            a.setFloat(i, (rng.nextFloat() - 0.5f) * 8.0f);
+            b.set(i, new HalfFloat((rng.nextFloat() - 0.5f) * 8.0f));
+        }
+
+        TaskGraph tg = new TaskGraph("mix1") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestBFloat16::mixedBf16Fp16, a, b, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
+            plan.execute();
+        }
+        for (int i = 0; i < n; i++) {
+            float expected = a.getFloat(i) + b.get(i).getFloat32();
+            assertEquals(expected, out.get(i), 1e-3f * Math.max(1.0f, Math.abs(expected)));
+        }
+    }
+
+    @Test
+    public void testFp16ToBf16OnDevice() throws TornadoExecutionPlanException {
+        assumeCudaBackend();
+        int n = 256;
+        java.util.Random rng = new java.util.Random(6);
+        HalfFloatArray in = new HalfFloatArray(n);
+        for (int i = 0; i < n; i++) {
+            in.set(i, new HalfFloat((rng.nextFloat() - 0.5f) * 8.0f));
+        }
+        BFloat16Array out = new BFloat16Array(n);
+
+        TaskGraph tg = new TaskGraph("mix2") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, in) //
+                .task("t0", TestBFloat16::fp16ToBf16, in, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
+            plan.execute();
+        }
+        for (int i = 0; i < n; i++) {
+            // fp16 value re-encoded to bf16: within one bf16 step (1/128 relative).
+            float ref = in.get(i).getFloat32();
+            float tol = Math.max(1e-38f, Math.abs(ref) / 128.0f);
+            assertEquals(ref, out.getFloat(i), tol);
         }
     }
 
