@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+         xmlns="http://maven.apache.org/POM/4.0.0">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.github.beehive-lab</groupId>
+        <artifactId>tornado</artifactId>
+        <version>5.1.1-jdk21-dev</version>
+    </parent>
+    <properties>
+        <checkstyle.skip>true</checkstyle.skip>
+    </properties>
+    <artifactId>tornado-fuzz</artifactId>
+    <name>tornado-fuzz</name>
+    <description>TornadoVM Fuzz Tester: generative fuzzing of the CUDA backend against a JVM oracle</description>
+    <dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>tornado-api</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>tornado-matrices</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
+</project>

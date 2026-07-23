@@ -26,6 +26,7 @@ open module tornado.unittests {
     exports uk.ac.manchester.tornado.unittests.cutlass;
     exports uk.ac.manchester.tornado.unittests.fields;
     exports uk.ac.manchester.tornado.unittests.flatmap;
+    exports uk.ac.manchester.tornado.unittests.fuzz;
     exports uk.ac.manchester.tornado.unittests.functional;
     exports uk.ac.manchester.tornado.unittests.images;
     exports uk.ac.manchester.tornado.unittests.kernelcontext.api;
