@@ -20,6 +20,11 @@ open module tornado.examples {
     requires transitive tornado.api;
     requires org.graalvm.polyglot;
     requires jdk.incubator.vector;
+    requires tornado.cublas;
+    requires tornado.cudnn;
+    requires tornado.cutlass;
+    requires tornado.cutensor;
+    requires tornado.cusparse;
 
     exports uk.ac.manchester.tornado.examples;
     exports uk.ac.manchester.tornado.examples.arrays;
@@ -30,6 +35,7 @@ open module tornado.examples {
     exports uk.ac.manchester.tornado.examples.kernelcontext.compute;
     exports uk.ac.manchester.tornado.examples.kernelcontext.matrices;
     exports uk.ac.manchester.tornado.examples.kernelcontext.reductions;
+    exports uk.ac.manchester.tornado.examples.llm;
     exports uk.ac.manchester.tornado.examples.matrices;
     exports uk.ac.manchester.tornado.examples.polyglot;
     exports uk.ac.manchester.tornado.examples.reductions;
