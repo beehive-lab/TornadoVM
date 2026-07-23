@@ -31,6 +31,7 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
+import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.cublas.CuBlas;
@@ -272,6 +273,39 @@ public class TestCuBlas extends TornadoTestBase {
                     sum += matrixA.get(i * SIZE + p).getFloat32() * matrixB.get(p * SIZE + j).getFloat32();
                 }
                 assertEquals(sum, matrixC.get(i * SIZE + j).getFloat32(), 2e-3f * Math.max(1.0f, Math.abs(sum)));
+            }
+        }
+    }
+
+    @Test
+    public void testGemmExBF16() throws TornadoExecutionPlanException {
+        BFloat16Array matrixA = new BFloat16Array(SIZE * SIZE);
+        BFloat16Array matrixB = new BFloat16Array(SIZE * SIZE);
+        BFloat16Array matrixC = new BFloat16Array(SIZE * SIZE);
+        for (int i = 0; i < SIZE * SIZE; i++) {
+            matrixA.setFloat(i, random.nextFloat());
+            matrixB.setFloat(i, random.nextFloat());
+        }
+
+        TaskGraph taskGraph = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, matrixA, matrixB) //
+                .libraryTask("gemmEx", CuBlas::cublasGemmExBF16, //
+                        CuBlasOperation.CUBLAS_OP_N.operation(), CuBlasOperation.CUBLAS_OP_N.operation(), //
+                        SIZE, SIZE, SIZE, 1.0f, matrixB, SIZE, matrixA, SIZE, 0.0f, matrixC, SIZE) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixC);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.execute();
+        }
+
+        // bfloat16 inputs, FP32 Tensor Core accumulation: 7 mantissa bits give a looser bound.
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                float sum = 0.0f;
+                for (int p = 0; p < SIZE; p++) {
+                    sum += matrixA.getFloat(i * SIZE + p) * matrixB.getFloat(p * SIZE + j);
+                }
+                assertEquals(sum, matrixC.getFloat(i * SIZE + j), 6e-2f * Math.max(1.0f, Math.abs(sum)));
             }
         }
     }

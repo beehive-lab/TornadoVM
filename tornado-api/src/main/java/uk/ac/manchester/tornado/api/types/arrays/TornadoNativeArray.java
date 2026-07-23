@@ -38,7 +38,7 @@ import static java.lang.String.format;
 public abstract sealed class TornadoNativeArray //
         permits ByteArray, CharArray, DoubleArray, //
         FloatArray, HalfFloatArray, IntArray, //
-        LongArray, ShortArray, Int8Array {
+        LongArray, ShortArray, Int8Array, FP8Array, BFloat16Array {
 
     /**
      * The size of the header in bytes. It sets the default value either to 16 or 24, depending on whether the uncompressed flags are passed by the user. It can also be configurable through the

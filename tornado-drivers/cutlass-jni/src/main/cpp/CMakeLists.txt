@@ -56,19 +56,44 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_STANDARD 17)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
-# Header-only CUTLASS (NVIDIA template library for GEMM). Populate the sources
-# but do NOT add_subdirectory — we only need its include/ directories.
-include(FetchContent)
-FetchContent_Declare(
-    cutlass
-    GIT_REPOSITORY https://github.com/NVIDIA/cutlass.git
-    GIT_TAG v3.5.1
-    GIT_SHALLOW TRUE
-)
-FetchContent_GetProperties(cutlass)
-if(NOT cutlass_POPULATED)
-    FetchContent_Populate(cutlass)
+# Header-only CUTLASS (NVIDIA template library for GEMM) — we only need its
+# include/ and tools/util/include/ directories (see target_include_directories
+# below), never add_subdirectory.
+#
+# CUTLASS's docs/ tree contains thousands of Doxygen-generated HTML files with
+# very long, template-mangled names (e.g. "classcutlass_1_1gemm_1_1warp_1_1..."
+# past 100 chars). A plain FetchContent git clone checks out the *entire* tree
+# including docs/, and on Windows the combined path (build dir + docs/<long
+# name>.html) exceeds what git-for-windows can write there — confirmed even
+# with GIT_CONFIG core.longpaths=true set, checkout still fails with
+# "unable to create file docs/...: Filename too long". Rather than keep
+# fighting the Windows path limit, avoid ever fetching docs/ at all: use git's
+# sparse-checkout (cone mode) to pull only the two subtrees this build uses.
+set(CUTLASS_SOURCE_DIR "${CMAKE_BINARY_DIR}/_deps/cutlass-src")
+if(NOT EXISTS "${CUTLASS_SOURCE_DIR}/include/cutlass/cutlass.h")
+    find_package(Git REQUIRED)
+    file(REMOVE_RECURSE "${CUTLASS_SOURCE_DIR}")
+    file(MAKE_DIRECTORY "${CUTLASS_SOURCE_DIR}")
+
+    macro(cutlass_git)
+        execute_process(
+            COMMAND ${GIT_EXECUTABLE} ${ARGN}
+            WORKING_DIRECTORY "${CUTLASS_SOURCE_DIR}"
+            RESULT_VARIABLE _cutlass_git_rc
+        )
+        if(NOT _cutlass_git_rc EQUAL 0)
+            message(FATAL_ERROR "CUTLASS sparse checkout failed: git ${ARGN}")
+        endif()
+    endmacro()
+
+    cutlass_git(init -q)
+    cutlass_git(remote add origin https://github.com/NVIDIA/cutlass.git)
+    cutlass_git(sparse-checkout init --cone)
+    cutlass_git(sparse-checkout set include tools/util/include)
+    cutlass_git(fetch --depth 1 origin v3.5.1)
+    cutlass_git(checkout FETCH_HEAD)
 endif()
+set(cutlass_SOURCE_DIR "${CUTLASS_SOURCE_DIR}")
 
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_VERBOSE_MAKEFILE on)
@@ -87,6 +112,16 @@ if(MSVC)
 else()
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -fPIC")
 	set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3 --expt-relaxed-constexpr -Xcompiler=-fPIC -Xcompiler=-Wno-deprecated-declarations")
+endif()
+
+# GCC 15+ diagnoses invalid code inside uninstantiated template bodies
+# (-Wtemplate-body, an error by default; GCC <= 14 never checked such bodies
+# and has no such flag). CUTLASS 3.5.1's matrix.h calls a misspelled
+# set_slice3x3 member from its rotation()/reflection() helpers; nothing here
+# instantiates them, so disable just that diagnostic on the nvcc
+# host-compiler pass.
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 15.0)
+	set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler=-Wno-template-body")
 endif()
 
 # CUTLASS 3.5.1's cuda_host_adapter.hpp casts function pointers loaded via

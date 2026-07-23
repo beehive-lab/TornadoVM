@@ -30,7 +30,7 @@ The TornadoVM API is also published on Maven Central, so you can add it directly
    <dependency>
       <groupId>io.github.beehive-lab</groupId>
       <artifactId>tornado-api</artifactId>
-      <version>5.0.0-jdk21</version>
+      <version>5.2.0-jdk21</version>
    </dependency>
 
    <!-- JDK 25 -->

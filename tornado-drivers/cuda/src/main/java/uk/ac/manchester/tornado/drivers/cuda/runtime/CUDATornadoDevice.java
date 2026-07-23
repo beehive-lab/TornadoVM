@@ -59,6 +59,8 @@ import uk.ac.manchester.tornado.api.types.arrays.CharArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
+import uk.ac.manchester.tornado.api.types.arrays.FP8Array;
 import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
@@ -559,7 +561,13 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
                 result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.CHAR.getSizeInBytes());
             } else if (object instanceof HalfFloatArray) {
                 result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.HALF.getSizeInBytes());
+            } else if (object instanceof BFloat16Array) {
+                result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.BF16.getSizeInBytes());
             } else if (object instanceof Int8Array) {
+                result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.CHAR.getSizeInBytes());
+            } else if (object instanceof FP8Array) {
+                // FP8 is one byte per element (CUDA-only storage type); the bytes are dequantized
+                // to float in-kernel via the FP8 codecs (no special code generation needed).
                 result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.CHAR.getSizeInBytes());
             } else {
                 result = new CUDAFieldBuffer(deviceContext, object, access);
