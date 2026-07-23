@@ -37,7 +37,7 @@ The TornadoVM API is also published on Maven Central, so you can add it directly
    <dependency>
       <groupId>io.github.beehive-lab</groupId>
       <artifactId>tornado-api</artifactId>
-      <version>5.1.0-jdk25</version>
+      <version>5.2.0-jdk25</version>
    </dependency>
 
 Docker images and cloud (AWS) images are also available; see :ref:`docker` and :ref:`cloud`.
