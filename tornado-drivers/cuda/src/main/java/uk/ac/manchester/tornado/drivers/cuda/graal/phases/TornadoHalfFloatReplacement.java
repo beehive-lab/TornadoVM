@@ -429,17 +429,26 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
                 // This casting is safe to do as it is already checked by the isWriteHalfFloat function
                 HalfFloatPlaceholder placeholder = (HalfFloatPlaceholder) javaWrite.value();
                 ValueNode writingValue;
-                if (javaWrite.predecessor() instanceof NewHalfFloatInstance) {
-                    // if a new HalfFloat instance is written
-                    NewHalfFloatInstance newHalfFloatInstance = (NewHalfFloatInstance) javaWrite.predecessor();
+                // A written HalfFloat that comes from `new HalfFloat(x)` shows up as a
+                // NewHalfFloatInstance, either as the write's control-flow predecessor (simple
+                // read argument) or, when the ctor argument is a computed expression that
+                // reorders the fixed nodes, only as the placeholder's data input. Handle both,
+                // and drop the instance unconditionally: leaving it (as happened when the
+                // NewInstanceNode was not adjacent) makes it reach LIR with
+                // "node is not LIRLowerable: NewHalfFloatInstance".
+                NewHalfFloatInstance newHalfFloatInstance = null;
+                if (javaWrite.predecessor() instanceof NewHalfFloatInstance predInstance) {
+                    newHalfFloatInstance = predInstance;
+                } else if (placeholder.getInput() instanceof NewHalfFloatInstance inputInstance) {
+                    newHalfFloatInstance = inputInstance;
+                }
+                if (newHalfFloatInstance != null) {
                     writingValue = newHalfFloatInstance.getValue();
-                    if (newHalfFloatInstance.predecessor() instanceof NewInstanceNode) {
-                        NewInstanceNode newInstanceNode = (NewInstanceNode) newHalfFloatInstance.predecessor();
-                        if (newInstanceNode.instanceClass().toString().contains("HalfFloat")) {
-                            deleteFixed(newInstanceNode);
-                            deleteFixed(newHalfFloatInstance);
-                        }
+                    if (newHalfFloatInstance.predecessor() instanceof NewInstanceNode newInstanceNode //
+                            && newInstanceNode.instanceClass().toString().contains("HalfFloat")) {
+                        deleteFixed(newInstanceNode);
                     }
+                    deleteFixed(newHalfFloatInstance);
                 } else {
                     // if the result of an operation or a stored value is written
                     writingValue = placeholder.getInput();
@@ -451,6 +460,16 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
                 graph.addWithoutUnique(writeHalfFloatNode);
                 replaceFixed(javaWrite, writeHalfFloatNode);
                 deleteFixed(javaWrite);
+            }
+        }
+
+        // A `new HalfFloat(computedExpr)` leaves the HalfFloat allocation (NewInstanceNode) in the
+        // fixed control flow when the computed argument breaks the adjacency the matching above
+        // relies on. Once its usages have been rewired it is a dead allocation that would otherwise
+        // lower as an (unsupported) on-device object allocation, so remove any leftover.
+        for (NewInstanceNode newInstanceNode : graph.getNodes().filter(NewInstanceNode.class)) {
+            if (newInstanceNode.instanceClass().getAnnotation(HalfType.class) != null && newInstanceNode.hasNoUsages()) {
+                deleteFixed(newInstanceNode);
             }
         }
 
