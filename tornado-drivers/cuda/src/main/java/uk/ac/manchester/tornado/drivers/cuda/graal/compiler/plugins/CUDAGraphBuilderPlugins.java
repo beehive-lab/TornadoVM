@@ -103,6 +103,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.Dp4aNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDABarrierNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAConvertBF16ToFloat;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAConvertFloatToBF16;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAConvertFP8ToFloat;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDACpAsyncCommitGroupNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDACpAsyncCopyNode;
@@ -1022,6 +1023,16 @@ public class CUDAGraphBuilderPlugins {
                 CUDAConvertBF16ToFloat convert = new CUDAConvertBF16ToFloat(bits);
                 b.getGraph().addOrUnique(convert);
                 b.push(JavaKind.Float, convert);
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("bf16FromFloat", float.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                CUDAConvertFloatToBF16 convert = new CUDAConvertFloatToBF16(value);
+                b.getGraph().addOrUnique(convert);
+                b.push(JavaKind.Short, convert);
                 return true;
             }
         });

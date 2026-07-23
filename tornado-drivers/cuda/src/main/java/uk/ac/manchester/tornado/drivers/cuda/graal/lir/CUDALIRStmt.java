@@ -507,6 +507,49 @@ public class CUDALIRStmt {
 
     }
 
+    @Opcode("CONVERT_FLOAT_TO_BF16")
+    public static class ConvertFloatToBF16Stmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<ConvertFloatToBF16Stmt> TYPE = LIRInstructionClass.create(ConvertFloatToBF16Stmt.class);
+
+        @Def
+        protected Value bf16Bits;
+        @Use
+        protected Value floatValue;
+
+        public ConvertFloatToBF16Stmt(Value bf16Bits, Value floatValue) {
+            super(TYPE);
+            this.bf16Bits = bf16Bits;
+            this.floatValue = floatValue;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            // bf16 is the high half of the f32 bit pattern. Encode = round-to-nearest-even of
+            // the discarded low 16 bits, then truncate. Header-free: __float_as_uint is a core
+            // CUDA builtin (no cuda_bf16.h). NaN is forced to a canonical quiet NaN (0x7FC0)
+            // since the additive rounding would otherwise perturb its payload.
+            // s = isnan(f) ? 0x7FC0 : (short)((u + 0x7FFF + ((u >> 16) & 1)) >> 16), u=__float_as_uint(f)
+            asm.indent();
+            asm.emitValue(crb, bf16Bits);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emit("(");
+            asm.emitValue(crb, floatValue);
+            asm.emit(" != ");
+            asm.emitValue(crb, floatValue);
+            asm.emit(") ? (short) 0x7FC0 : (short) ((__float_as_uint(");
+            asm.emitValue(crb, floatValue);
+            asm.emit(") + 0x7FFFU + ((__float_as_uint(");
+            asm.emitValue(crb, floatValue);
+            asm.emit(") >> 16) & 1U)) >> 16)");
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
     @Opcode("CONVERT_FLOAT_TO_HALF")
     public static class ConvertFloatToHalfStmt extends AbstractInstruction {
 

@@ -92,6 +92,7 @@ public final class CutlassLibraryProvider implements TornadoLibraryProvider {
         switch (descriptor.getFunctionName()) {
             case "cutlassSgemm" -> ctx.growWorkspace(CutlassNativeLib.sgemmWorkspace(m, n, k));
             case "cutlassHgemm" -> ctx.growWorkspace(CutlassNativeLib.hgemmWorkspace(m, n, k));
+            case "cutlassBgemm" -> ctx.growWorkspace(CutlassNativeLib.bgemmWorkspace(m, n, k));
             case "cutlassGemmBiasRelu" -> ctx.growWorkspace(CutlassNativeLib.gemmBiasReluWorkspace(m, n, k));
             case "cutlassGemmBiasGelu" -> ctx.growWorkspace(CutlassNativeLib.gemmBiasGeluWorkspace(m, n, k));
             case "cutlassGemmBiasSilu" -> ctx.growWorkspace(CutlassNativeLib.gemmBiasSiluWorkspace(m, n, k));
@@ -117,6 +118,12 @@ public final class CutlassLibraryProvider implements TornadoLibraryProvider {
                     context.workspacePtr, context.stream);
             // (m, n, k, alpha, a, b, beta, d)
             case "cutlassHgemm" -> CutlassNativeLib.hgemm((int) invocation.getArg(0), (int) invocation.getArg(1), (int) invocation.getArg(2), //
+                    (float) invocation.getArg(3), //
+                    invocation.getDevicePointer(4), invocation.getDevicePointer(5), //
+                    (float) invocation.getArg(6), invocation.getDevicePointer(7), //
+                    context.workspacePtr, context.stream);
+            // (m, n, k, alpha, a, b, beta, c)
+            case "cutlassBgemm" -> CutlassNativeLib.bgemm((int) invocation.getArg(0), (int) invocation.getArg(1), (int) invocation.getArg(2), //
                     (float) invocation.getArg(3), //
                     invocation.getDevicePointer(4), invocation.getDevicePointer(5), //
                     (float) invocation.getArg(6), invocation.getDevicePointer(7), //
