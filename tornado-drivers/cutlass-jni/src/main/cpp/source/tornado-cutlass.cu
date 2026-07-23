@@ -42,6 +42,11 @@
 #include <cutlass/epilogue/thread/linear_combination.h>
 #include <cutlass/epilogue/thread/linear_combination_relu.h>
 #include <cutlass/epilogue/thread/linear_combination_gelu.h>
+#include <cutlass/epilogue/thread/linear_combination_silu.h>
+#include <cutlass/epilogue/thread/linear_combination_sigmoid.h>
+#include <cutlass/epilogue/thread/linear_combination_hardswish.h>
+#include <cutlass/epilogue/thread/linear_combination_generic.h>
+#include <cutlass/epilogue/thread/activation.h>
 #include <cutlass/gemm/threadblock/threadblock_swizzle.h>
 
 // Shared driver: can_implement -> initialize(workspace,stream) -> run(stream).
@@ -96,6 +101,15 @@ using GemmBiasRelu = HalfTensorOpGemm<
         cutlass::epilogue::thread::LinearCombinationRelu<ElementHalf, kAlign, ElementAccum, ElementCompute>>;
 using GemmBiasGelu = HalfTensorOpGemm<
         cutlass::epilogue::thread::LinearCombinationGELU<ElementHalf, kAlign, ElementAccum, ElementCompute>>;
+using GemmBiasSilu = HalfTensorOpGemm<
+        cutlass::epilogue::thread::LinearCombinationSilu<ElementHalf, kAlign, ElementAccum, ElementCompute>>;
+using GemmBiasSigmoid = HalfTensorOpGemm<
+        cutlass::epilogue::thread::LinearCombinationSigmoid<ElementHalf, kAlign, ElementAccum, ElementCompute>>;
+using GemmBiasTanh = HalfTensorOpGemm<
+        cutlass::epilogue::thread::LinearCombinationGeneric<
+                cutlass::epilogue::thread::Tanh, ElementHalf, kAlign, ElementAccum, ElementCompute>>;
+using GemmBiasHardSwish = HalfTensorOpGemm<
+        cutlass::epilogue::thread::LinearCombinationHardSwish<ElementHalf, kAlign, ElementAccum, ElementCompute>>;
 
 // Fused GEMM + bias + activation. The length-n bias vector is supplied as the C
 // source operand with ldc = 0 (row broadcast): every output row reads the same
@@ -244,6 +258,134 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_cutlass_provider_CutlassNa
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib_gemmBiasGelu
         (JNIEnv *env, jclass clazz, jint m, jint n, jint k, jlong dA, jlong dB, jlong dBias, jlong dD, jlong workspace, jlong stream) {
     return gemmBiasAct<GemmBiasGelu>(m, n, k, dA, dB, dBias, dD, workspace, stream);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib
+ * Method:    gemmBiasSiluWorkspace
+ * Signature: (III)J
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib_gemmBiasSiluWorkspace
+        (JNIEnv *env, jclass clazz, jint m, jint n, jint k) {
+    GemmBiasSilu::Arguments args(
+            cutlass::gemm::GemmUniversalMode::kGemm, {m, n, k}, 1, {1.0f, 1.0f},
+            nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, k, n, 0, n);
+    return (jlong) GemmBiasSilu::get_workspace_size(args);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib
+ * Method:    gemmBiasSilu
+ * Signature: (IIIJJJJJJ)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib_gemmBiasSilu
+        (JNIEnv *env, jclass clazz, jint m, jint n, jint k, jlong dA, jlong dB, jlong dBias, jlong dD, jlong workspace, jlong stream) {
+    return gemmBiasAct<GemmBiasSilu>(m, n, k, dA, dB, dBias, dD, workspace, stream);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib
+ * Method:    gemmBiasSigmoidWorkspace
+ * Signature: (III)J
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib_gemmBiasSigmoidWorkspace
+        (JNIEnv *env, jclass clazz, jint m, jint n, jint k) {
+    GemmBiasSigmoid::Arguments args(
+            cutlass::gemm::GemmUniversalMode::kGemm, {m, n, k}, 1, {1.0f, 1.0f},
+            nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, k, n, 0, n);
+    return (jlong) GemmBiasSigmoid::get_workspace_size(args);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib
+ * Method:    gemmBiasSigmoid
+ * Signature: (IIIJJJJJJ)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib_gemmBiasSigmoid
+        (JNIEnv *env, jclass clazz, jint m, jint n, jint k, jlong dA, jlong dB, jlong dBias, jlong dD, jlong workspace, jlong stream) {
+    return gemmBiasAct<GemmBiasSigmoid>(m, n, k, dA, dB, dBias, dD, workspace, stream);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib
+ * Method:    gemmBiasTanhWorkspace
+ * Signature: (III)J
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib_gemmBiasTanhWorkspace
+        (JNIEnv *env, jclass clazz, jint m, jint n, jint k) {
+    GemmBiasTanh::Arguments args(
+            cutlass::gemm::GemmUniversalMode::kGemm, {m, n, k}, 1, {1.0f, 1.0f},
+            nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, k, n, 0, n);
+    return (jlong) GemmBiasTanh::get_workspace_size(args);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib
+ * Method:    gemmBiasTanh
+ * Signature: (IIIJJJJJJ)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib_gemmBiasTanh
+        (JNIEnv *env, jclass clazz, jint m, jint n, jint k, jlong dA, jlong dB, jlong dBias, jlong dD, jlong workspace, jlong stream) {
+    return gemmBiasAct<GemmBiasTanh>(m, n, k, dA, dB, dBias, dD, workspace, stream);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib
+ * Method:    gemmBiasHardSwishWorkspace
+ * Signature: (III)J
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib_gemmBiasHardSwishWorkspace
+        (JNIEnv *env, jclass clazz, jint m, jint n, jint k) {
+    GemmBiasHardSwish::Arguments args(
+            cutlass::gemm::GemmUniversalMode::kGemm, {m, n, k}, 1, {1.0f, 1.0f},
+            nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, k, n, 0, n);
+    return (jlong) GemmBiasHardSwish::get_workspace_size(args);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib
+ * Method:    gemmBiasHardSwish
+ * Signature: (IIIJJJJJJ)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib_gemmBiasHardSwish
+        (JNIEnv *env, jclass clazz, jint m, jint n, jint k, jlong dA, jlong dB, jlong dBias, jlong dD, jlong workspace, jlong stream) {
+    return gemmBiasAct<GemmBiasHardSwish>(m, n, k, dA, dB, dBias, dD, workspace, stream);
+}
+
+// -----------------------------------------------------------------------------
+// Batched FP16 tensor-core GEMM (strided): batchCount independent m x n x k
+// GEMMs packed contiguously (batch strides m*k, k*n, m*n). Reuses the FP16
+// GemmUniversal kernel in kBatched mode - the core primitive behind batched
+// linear layers and multi-head attention projections.
+// -----------------------------------------------------------------------------
+
+/*
+ * Class:     uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib
+ * Method:    hgemmBatchedWorkspace
+ * Signature: (IIII)J
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib_hgemmBatchedWorkspace
+        (JNIEnv *env, jclass clazz, jint m, jint n, jint k, jint batchCount) {
+    HgemmTensor::Arguments args(
+            cutlass::gemm::GemmUniversalMode::kBatched, {m, n, k}, batchCount, {1.0f, 0.0f},
+            nullptr, nullptr, nullptr, nullptr,
+            (int64_t) m * k, (int64_t) k * n, (int64_t) m * n, (int64_t) m * n, k, n, n, n);
+    return (jlong) HgemmTensor::get_workspace_size(args);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib
+ * Method:    hgemmBatched
+ * Signature: (IIIFJJFJIJJ)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_cutlass_provider_CutlassNativeLib_hgemmBatched
+        (JNIEnv *env, jclass clazz, jint m, jint n, jint k, jfloat alpha,
+         jlong dA, jlong dB, jfloat beta, jlong dC, jint batchCount, jlong workspace, jlong stream) {
+    HgemmTensor::Arguments args(
+            cutlass::gemm::GemmUniversalMode::kBatched, {m, n, k}, batchCount, {alpha, beta},
+            (void const *) dA, (void const *) dB, (void const *) dC, (void *) dC,
+            (int64_t) m * k, (int64_t) k * n, (int64_t) m * n, (int64_t) m * n, k, n, n, n);
+    return runGemm<HgemmTensor>(args, (void *) workspace, (cudaStream_t) stream);
 }
 
 // -----------------------------------------------------------------------------

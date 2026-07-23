@@ -108,6 +108,67 @@ public final class Cutlass {
         return biasActivation("cutlassGemmBiasGelu", m, n, k, a, b, bias, d);
     }
 
+    /**
+     * Fused FP16 GEMM + bias + SiLU (a.k.a. swish): {@code D = silu(A * B + bias)},
+     * where {@code silu(x) = x * sigmoid(x)}. This is the gating activation used by
+     * SwiGLU feed-forward blocks in modern LLMs. Same shape and layout rules as
+     * {@link #cutlassGemmBiasRelu}.
+     */
+    public static LibraryTaskDescriptor cutlassGemmBiasSilu(int m, int n, int k, HalfFloatArray a, HalfFloatArray b, HalfFloatArray bias, HalfFloatArray d) {
+        return biasActivation("cutlassGemmBiasSilu", m, n, k, a, b, bias, d);
+    }
+
+    /**
+     * Fused FP16 GEMM + bias + Sigmoid: {@code D = sigmoid(A * B + bias)}, same
+     * shape and layout rules as {@link #cutlassGemmBiasRelu}.
+     */
+    public static LibraryTaskDescriptor cutlassGemmBiasSigmoid(int m, int n, int k, HalfFloatArray a, HalfFloatArray b, HalfFloatArray bias, HalfFloatArray d) {
+        return biasActivation("cutlassGemmBiasSigmoid", m, n, k, a, b, bias, d);
+    }
+
+    /**
+     * Fused FP16 GEMM + bias + Tanh: {@code D = tanh(A * B + bias)}, same shape
+     * and layout rules as {@link #cutlassGemmBiasRelu}.
+     */
+    public static LibraryTaskDescriptor cutlassGemmBiasTanh(int m, int n, int k, HalfFloatArray a, HalfFloatArray b, HalfFloatArray bias, HalfFloatArray d) {
+        return biasActivation("cutlassGemmBiasTanh", m, n, k, a, b, bias, d);
+    }
+
+    /**
+     * Fused FP16 GEMM + bias + HardSwish: {@code D = hardswish(A * B + bias)},
+     * where {@code hardswish(x) = x * relu6(x + 3) / 6}. A cheap, quantization
+     * friendly SiLU approximation used by MobileNet-v3 / EfficientNet families.
+     * Same shape and layout rules as {@link #cutlassGemmBiasRelu}.
+     */
+    public static LibraryTaskDescriptor cutlassGemmBiasHardSwish(int m, int n, int k, HalfFloatArray a, HalfFloatArray b, HalfFloatArray bias, HalfFloatArray d) {
+        return biasActivation("cutlassGemmBiasHardSwish", m, n, k, a, b, bias, d);
+    }
+
+    /**
+     * Strided-batched FP16 tensor-core GEMM: for each {@code i} in
+     * {@code [0, batchCount)}, {@code C[i] = alpha * A[i] * B[i] + beta * C[i]}.
+     * The {@code batchCount} matrices are packed contiguously in each array
+     * (batch strides {@code m*k}, {@code k*n}, {@code m*n}), so {@code a} has
+     * {@code batchCount*m*k} elements, {@code b} has {@code batchCount*k*n}, and
+     * {@code c} has {@code batchCount*m*n}. All operands row-major half; requires
+     * {@code k, n} multiples of 4. This is the primitive behind batched linear
+     * layers and multi-head attention projections.
+     */
+    public static LibraryTaskDescriptor cutlassHgemmBatched(int m, int n, int k, float alpha, HalfFloatArray a, HalfFloatArray b, float beta, HalfFloatArray c, int batchCount) {
+        checkHalfShape(n, k);
+        if (batchCount <= 0) {
+            throw new TornadoRuntimeException("[ERROR] CUTLASS batched GEMM requires batchCount > 0; got " + batchCount);
+        }
+        Access[] access = new Access[9];
+        Arrays.fill(access, Access.READ_ONLY);
+        access[7] = (beta == 0.0f) ? Access.WRITE_ONLY : Access.READ_WRITE;
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cutlassHgemmBatched") //
+                .withParameters(new Object[] { m, n, k, alpha, a, b, beta, c, batchCount }) //
+                .withAccess(access);
+    }
+
     private static LibraryTaskDescriptor biasActivation(String function, int m, int n, int k, HalfFloatArray a, HalfFloatArray b, HalfFloatArray bias, HalfFloatArray d) {
         checkHalfShape(n, k);
         // params: m, n, k, a, b, bias, d - only d is written
