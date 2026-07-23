@@ -33,6 +33,7 @@ import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
+import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.cutlass.Cutlass;
@@ -243,6 +244,58 @@ public class TestCutlass extends TornadoTestBase {
         }
         for (int i = 0; i < m * n; i++) {
             assertEquals(expected[i], d.get(i).getFloat32(), 2e-2f * Math.max(1.0f, Math.abs(expected[i])));
+        }
+    }
+
+    private static BFloat16Array randomBFloat16Array(int size) {
+        BFloat16Array array = new BFloat16Array(size);
+        for (int i = 0; i < size; i++) {
+            array.setFloat(i, random.nextFloat() - 0.5f);
+        }
+        return array;
+    }
+
+    /** Row-major reference GEMM over the BF16 inputs, accumulated in float. */
+    private static void bgemmJava(int m, int n, int k, BFloat16Array a, BFloat16Array b, float[] out) {
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                float acc = 0.0f;
+                for (int p = 0; p < k; p++) {
+                    acc += a.getFloat(i * k + p) * b.getFloat(p * n + j);
+                }
+                out[i * n + j] = acc;
+            }
+        }
+    }
+
+    /**
+     * End-to-end BF16: host {@code float -> bfloat16}, device transfer, CUTLASS
+     * bfloat16 tensor-core GEMM, {@code bfloat16 -> float} readback, checked against
+     * an FP32 reference. Exercises the {@link BFloat16Array} interop path on CUDA.
+     */
+    @Test
+    public void testBgemm() throws TornadoExecutionPlanException {
+        final int m = 128;
+        final int n = 96;
+        final int k = 64;
+        BFloat16Array a = randomBFloat16Array(m * k);
+        BFloat16Array b = randomBFloat16Array(k * n);
+        BFloat16Array c = new BFloat16Array(m * n);
+
+        float[] expected = new float[m * n];
+        bgemmJava(m, n, k, a, b, expected);
+
+        TaskGraph taskGraph = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .libraryTask("bgemm", Cutlass::cutlassBgemm, m, n, k, 1.0f, a, b, 0.0f, c) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.execute();
+        }
+        // bfloat16 has 7 mantissa bits, so the tolerance is looser than the FP16 path.
+        for (int i = 0; i < m * n; i++) {
+            assertEquals(expected[i], c.getFloat(i), 5e-2f * Math.max(1.0f, Math.abs(expected[i])));
         }
     }
 
