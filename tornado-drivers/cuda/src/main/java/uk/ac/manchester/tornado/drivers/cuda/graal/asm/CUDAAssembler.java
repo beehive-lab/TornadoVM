@@ -1057,6 +1057,7 @@ public final class CUDAAssembler extends Assembler {
         public static final CUDABinaryTemplate NEW_LOCAL_SHORT_ARRAY = new CUDABinaryTemplate("local memory array short", "__shared__ short %s[%s]");
         public static final CUDABinaryTemplate NEW_LOCAL_CHAR_ARRAY = new CUDABinaryTemplate("local memory array char", "__shared__ char %s[%s]");
         public static final CUDABinaryTemplate NEW_LOCAL_HALF_FLOAT_ARRAY = new CUDABinaryTemplate("local memory array half", "__shared__ half %s[%s]");
+        public static final CUDABinaryTemplate NEW_LOCAL_HALF2_ARRAY = new CUDABinaryTemplate("local memory array half2", "__shared__ __half2 %s[%s]");
         // @formatter:on
         private final String template;
 

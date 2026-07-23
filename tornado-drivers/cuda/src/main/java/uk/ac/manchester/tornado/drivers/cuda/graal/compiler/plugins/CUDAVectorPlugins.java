@@ -25,6 +25,7 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.compiler.plugins;
 
 import jdk.graal.compiler.core.common.type.ObjectStamp;
 import jdk.graal.compiler.core.common.type.StampPair;
+import jdk.graal.compiler.core.common.type.StampFactory;
 import jdk.graal.compiler.nodes.ParameterNode;
 import jdk.graal.compiler.nodes.PiNode;
 import jdk.graal.compiler.nodes.ValueNode;
@@ -77,6 +78,7 @@ import uk.ac.manchester.tornado.api.types.vectors.Int8;
 import uk.ac.manchester.tornado.api.types.vectors.Short2;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAStampFactory;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.Half2IntrinsicNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.vector.GetArrayNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.vector.VectorAddNode;
@@ -178,6 +180,8 @@ public final class CUDAVectorPlugins {
         registerVectorCollectionsPlugins(plugins, CUDAKind.VECTORDOUBLE16, DoubleArray.class, Double16.class);
 
         registerVectorCollectionsPlugins(plugins, CUDAKind.VECTORHALF2, HalfFloatArray.class, Half2.class);
+
+        registerHalf2PackedPlugins(plugins);
         registerVectorCollectionsPlugins(plugins, CUDAKind.VECTORHALF3, HalfFloatArray.class, Half3.class);
         registerVectorCollectionsPlugins(plugins, CUDAKind.VECTORHALF4, HalfFloatArray.class, Half4.class);
         registerVectorCollectionsPlugins(plugins, CUDAKind.VECTORHALF8, HalfFloatArray.class, Half8.class);
@@ -203,6 +207,70 @@ public final class CUDAVectorPlugins {
             registerGeometricBIFS(plugins, CUDAKind.FLOAT3);
             registerGeometricBIFS(plugins, CUDAKind.FLOAT4);
         }
+    }
+
+    /**
+     * Packed half2 support: single 32-bit loads/stores on {@link HalfFloatArray} plus the
+     * {@link Half2} fma/conversion helpers, mapped to cuda_fp16.h packed intrinsics.
+     */
+    private static void registerHalf2PackedPlugins(final InvocationPlugins plugins) {
+        final Registration arrayRegistration = new Registration(plugins, HalfFloatArray.class);
+
+        arrayRegistration.register(new InvocationPlugin("getHalf2", Receiver.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index) {
+                LoadIndexedVectorNode indexedLoad = new LoadIndexedVectorNode(CUDAKind.HALF2, receiver.get(true), index, JavaKind.Short);
+                b.push(JavaKind.Object, b.append(indexedLoad));
+                return true;
+            }
+        });
+
+        arrayRegistration.register(new InvocationPlugin("setHalf2", Receiver.class, int.class, Half2.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value) {
+                StoreIndexedNode indexedStore = new StoreIndexedNode(receiver.get(true), index, null, null, JavaKind.Short, value);
+                b.append(indexedStore);
+                return true;
+            }
+        });
+
+        final Registration half2Registration = new Registration(plugins, Half2.class);
+
+        half2Registration.register(new InvocationPlugin("fma", Half2.class, Half2.class, Half2.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode x, ValueNode c) {
+                Half2IntrinsicNode fmaNode = new Half2IntrinsicNode("__hfma2", CUDAStampFactory.getStampFor(CUDAKind.HALF2), a, x, c);
+                b.push(JavaKind.Object, b.append(fmaNode));
+                return true;
+            }
+        });
+
+        half2Registration.register(new InvocationPlugin("lowFloat", Half2.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode vector) {
+                Half2IntrinsicNode lowNode = new Half2IntrinsicNode("__low2float", StampFactory.forKind(JavaKind.Float), vector);
+                b.push(JavaKind.Float, b.append(lowNode));
+                return true;
+            }
+        });
+
+        half2Registration.register(new InvocationPlugin("highFloat", Half2.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode vector) {
+                Half2IntrinsicNode highNode = new Half2IntrinsicNode("__high2float", StampFactory.forKind(JavaKind.Float), vector);
+                b.push(JavaKind.Float, b.append(highNode));
+                return true;
+            }
+        });
+
+        half2Registration.register(new InvocationPlugin("fromFloats", float.class, float.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
+                Half2IntrinsicNode packNode = new Half2IntrinsicNode("__floats2half2_rn", CUDAStampFactory.getStampFor(CUDAKind.HALF2), x, y);
+                b.push(JavaKind.Object, b.append(packNode));
+                return true;
+            }
+        });
     }
 
     private static VectorValueNode resolveReceiver(ValueNode thisObject) {

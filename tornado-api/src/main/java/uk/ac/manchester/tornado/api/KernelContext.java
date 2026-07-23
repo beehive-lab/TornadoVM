@@ -27,6 +27,7 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Float;
+import uk.ac.manchester.tornado.api.types.vectors.Half2;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -180,6 +181,20 @@ public class KernelContext implements ExecutionContext {
     @Override
     public HalfFloat[] allocateHalfFloatLocalArray(int size) {
         return new HalfFloat[size];
+    }
+
+    /**
+     * It allocates a single dimensional array of packed {@link Half2} pairs in
+     * local memory (known as shared memory in PTX). On backends with packed
+     * half2 support each element maps to a single 32-bit {@code __half2}.
+     *
+     * @param size
+     *     the size of the array, in {@link Half2} elements
+     * @return Half2[]: reference to the Half2 array
+     */
+    @Override
+    public Half2[] allocateHalf2LocalArray(int size) {
+        return new Half2[size];
     }
 
     /**

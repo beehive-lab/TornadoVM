@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.api.types.arrays;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
+import uk.ac.manchester.tornado.api.types.vectors.Half2;
 
 import java.lang.foreign.MemorySegment;
 import java.util.Arrays;
@@ -234,6 +235,40 @@ public final class HalfFloatArray extends TornadoNativeArray {
     public HalfFloat get(int index) {
         short halfFloatValue = segment.getShortAtIndex(index, baseIndex);
         return new HalfFloat(halfFloatValue);
+    }
+
+    /**
+     * Gets two consecutive {@link HalfFloat} values starting at the specified element index as a packed {@link Half2}.
+     * On backends with packed half2 support this maps to a single 32-bit load; {@code index} must be even so the
+     * access is 4-byte aligned.
+     *
+     * @param index
+     *         The element index of the first lane; must be even.
+     * @return A {@link Half2} holding elements {@code index} and {@code index + 1}.
+     */
+    public Half2 getHalf2(int index) {
+        if (index < 0 || index + 1 >= numberOfElements) {
+            throw new IndexOutOfBoundsException("HalfFloatArray.getHalf2 access [" + index + ", " + (index + 1) + "] out of bounds for length " + numberOfElements);
+        }
+        return new Half2(get(index), get(index + 1));
+    }
+
+    /**
+     * Stores a {@link Half2} into two consecutive elements starting at the specified element index.
+     * On backends with packed half2 support this maps to a single 32-bit store; {@code index} must be even so the
+     * access is 4-byte aligned.
+     *
+     * @param index
+     *         The element index of the first lane; must be even.
+     * @param value
+     *         The {@link Half2} whose lanes are stored at {@code index} and {@code index + 1}.
+     */
+    public void setHalf2(int index, Half2 value) {
+        if (index < 0 || index + 1 >= numberOfElements) {
+            throw new IndexOutOfBoundsException("HalfFloatArray.setHalf2 access [" + index + ", " + (index + 1) + "] out of bounds for length " + numberOfElements);
+        }
+        set(index, value.getX());
+        set(index + 1, value.getY());
     }
 
     /**
