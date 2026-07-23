@@ -100,9 +100,14 @@ jobs:
           set -euo pipefail
           PROCEED="true"
           if [ "${{ steps.derive.outputs.upload_to_release }}" = "true" ]; then
+            # `gh release view`/the "get release by tag" API never returns
+            # draft releases, and both jdk21/jdk25 Releases are created as
+            # drafts by finalize — so list all releases (which does include
+            # drafts) instead of looking each one up by tag directly.
+            existing_tags=$(gh api "repos/${{ github.repository }}/releases" --paginate -q '.[].tag_name')
             for jdk in jdk21 jdk25; do
               tag="${{ steps.derive.outputs.version_tag }}-$jdk"
-              if gh release view "$tag" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+              if grep -qx "$tag" <<< "$existing_tags"; then
                 echo "Release $tag exists."
               else
                 echo "Release $tag does not exist yet."
