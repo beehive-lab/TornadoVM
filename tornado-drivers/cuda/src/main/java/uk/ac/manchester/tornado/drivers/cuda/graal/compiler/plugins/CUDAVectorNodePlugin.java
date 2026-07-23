@@ -23,14 +23,19 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.graal.compiler.plugins;
 
+import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.extended.GuardingNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
+import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalArrayNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.vector.VectorValueNode;
 
 public class CUDAVectorNodePlugin implements NodePlugin {
@@ -39,6 +44,35 @@ public class CUDAVectorNodePlugin implements NodePlugin {
     public boolean handleNewInstance(GraphBuilderContext b, ResolvedJavaType type) {
         if (type.getAnnotation(Vector.class) != null) {
             return createVectorInstance(b, type);
+        }
+        return false;
+    }
+
+    /**
+     * Indexed loads on a packed half2 local array ({@link LocalArrayNode} of kind
+     * {@link CUDAKind#HALF2}) produce a packed 32-bit {@code __half2} element, so they
+     * are parsed as vector loads instead of object array accesses.
+     */
+    @Override
+    public boolean handleLoadIndexed(GraphBuilderContext b, ValueNode array, ValueNode index, GuardingNode boundsCheck, JavaKind elementKind) {
+        if (array instanceof LocalArrayNode localArrayNode && localArrayNode.getCUDAKind() == CUDAKind.HALF2) {
+            LoadIndexedVectorNode indexedLoad = new LoadIndexedVectorNode(CUDAKind.HALF2, array, index, JavaKind.Short);
+            b.push(JavaKind.Object, b.append(indexedLoad));
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Indexed stores on a packed half2 local array write the vector value as a single
+     * 32-bit {@code __half2} element.
+     */
+    @Override
+    public boolean handleStoreIndexed(GraphBuilderContext b, ValueNode array, ValueNode index, GuardingNode boundsCheck, GuardingNode storeCheck, JavaKind elementKind, ValueNode value) {
+        if (array instanceof LocalArrayNode localArrayNode && localArrayNode.getCUDAKind() == CUDAKind.HALF2) {
+            StoreIndexedNode indexedStore = new StoreIndexedNode(array, index, null, null, JavaKind.Short, value);
+            b.add(b.append(indexedStore));
+            return true;
         }
         return false;
     }

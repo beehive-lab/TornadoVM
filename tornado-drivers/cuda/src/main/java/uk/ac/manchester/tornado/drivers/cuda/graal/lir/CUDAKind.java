@@ -292,6 +292,10 @@ public enum CUDAKind implements PlatformKind {
     }
 
     public static CUDAAssembler.CUDABinaryTemplate resolveTemplateType(JavaKind type, CUDAKind kind) {
+        if (kind == CUDAKind.HALF2) {
+            // Packed half2 local arrays are element-typed __half2, regardless of the Java-side type.
+            return CUDAAssembler.CUDABinaryTemplate.NEW_LOCAL_HALF2_ARRAY;
+        }
         if (type == JavaKind.Int) {
             return CUDAAssembler.CUDABinaryTemplate.NEW_LOCAL_INT_ARRAY;
         } else if (type == JavaKind.Double) {
@@ -530,15 +534,19 @@ public enum CUDAKind implements PlatformKind {
             return toString();
         }
         int len = getVectorLength();
+        CUDAKind element = getElementKind();
+        if (element == HALF) {
+            // cuda_fp16.h provides only __half2; report wider half vectors as an FP16
+            // device limitation (unsupported) rather than a hard compiler bailout.
+            if (len == 2) {
+                return "__half2";
+            }
+            throw new uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP16NotSupported(
+                    "CUDA backend does not support half-precision vector type " + name() + "; only __half2 is available.");
+        }
         if (len != 2 && len != 3 && len != 4) {
             throw new uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException(
                     "CUDA backend does not support vector width " + len + " (kind " + name() + "); only widths 2, 3 and 4 are supported.");
-        }
-        CUDAKind element = getElementKind();
-        if (element == HALF) {
-            // CUDA cuda_fp16.h only provides __half2 (no half3/half4 built-ins).
-            throw new uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException(
-                    "CUDA backend does not support half-precision vector type " + name() + ".");
         }
         return element.toString() + len;
     }

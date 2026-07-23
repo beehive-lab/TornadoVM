@@ -23,6 +23,7 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 
 import jdk.vm.ci.meta.JavaKind;
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.Opcode;
@@ -351,6 +352,50 @@ public class CUDALIRStmt {
             asm.emit("), \"r\"(");
             asm.emitValue(crb, accumulator);
             asm.emit("))");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
+    /**
+     * Emits a call to a cuda_fp16.h intrinsic of the form {@code result = __fn(arg0, arg1, ...);}
+     * over packed half2 / float operands.
+     */
+    @Opcode("HALF2_INTRINSIC")
+    public static class Half2IntrinsicStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<Half2IntrinsicStmt> TYPE = LIRInstructionClass.create(Half2IntrinsicStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value[] operands;
+
+        private final String function;
+
+        public Half2IntrinsicStmt(String function, Value result, Value... operands) {
+            super(TYPE);
+            this.function = function;
+            this.result = result;
+            this.operands = operands;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emit(function);
+            asm.emit("(");
+            for (int i = 0; i < operands.length; i++) {
+                if (i > 0) {
+                    asm.emit(", ");
+                }
+                asm.emitValue(crb, operands[i]);
+            }
+            asm.emit(")");
             asm.delimiter();
             asm.eol();
         }
@@ -1027,6 +1072,15 @@ public class CUDALIRStmt {
             asm.space();
             asm.assign();
             asm.space();
+            if (vectorKind.getElementKind() == CUDAKind.HALF && n == 2) {
+                // __half2 is only 4-byte aligned, so (unlike float4) the packed
+                // reinterpret load is safe on element-aligned buffers as long as
+                // the element index is even. Emit a single 32-bit load.
+                asm.emit("((__half2 *)(" + addr + "))[(" + idx + ")]");
+                asm.delimiter();
+                asm.eol();
+                return;
+            }
             StringBuilder sb = new StringBuilder();
             sb.append("make_").append(elem).append(n).append("(");
             for (int i = 0; i < n; i++) {
@@ -1634,14 +1688,32 @@ public class CUDALIRStmt {
             CUDAKind vectorKind = (CUDAKind) rhs.getPlatformKind();
             int n = vectorKind.getVectorLength();
             String elem = vectorKind.getElementKind().toString();
-            String idx = CUDAAssembler.getAbsoluteIndexFromValue(index);
 
             asm.beginStackPush();
             address.emit(crb);
             final String addr = asm.getLastOp();
             asm.emitValueWithFormat(crb, rhs);
             final String v = asm.getLastOp();
+            asm.emitValue(crb, index);
+            final String emittedIdx = asm.getLastOp();
             asm.endStackPush();
+
+            // The string-parsing fallback only understands constants; a runtime-variable
+            // index (packed __half2 local arrays) must be emitted as a proper value.
+            String idx = index instanceof ConstantValue ? CUDAAssembler.getAbsoluteIndexFromValue(index) : emittedIdx;
+
+            if (vectorKind.getElementKind() == CUDAKind.HALF && n == 2) {
+                // Packed 32-bit store; see the matching VectorLoadStmt comment on
+                // __half2 alignment.
+                asm.emit(String.format("((__half2 *)(%s))[(%s)]", addr, idx));
+                asm.space();
+                asm.assign();
+                asm.space();
+                asm.emit(v);
+                asm.delimiter();
+                asm.eol();
+                return;
+            }
 
             for (int i = 0; i < n; i++) {
                 if (i > 0) {

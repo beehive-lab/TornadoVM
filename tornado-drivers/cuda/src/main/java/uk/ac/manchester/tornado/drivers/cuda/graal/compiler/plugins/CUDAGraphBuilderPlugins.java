@@ -74,6 +74,7 @@ import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoMemorySegment;
+import uk.ac.manchester.tornado.api.types.vectors.Half2;
 import uk.ac.manchester.tornado.api.utils.QuantizationUtils;
 import uk.ac.manchester.tornado.drivers.cuda.CUDAProgram;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAArchitecture;
@@ -433,6 +434,21 @@ public class CUDAGraphBuilderPlugins {
         });
     }
 
+    private static void registerHalf2LocalArray(Registration r, JavaKind returnedJavaKind) {
+        r.register(new InvocationPlugin("allocateHalf2LocalArray", InvocationPlugin.Receiver.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                receiver.get(true);
+                MetaAccessProvider metaAccess = b.getMetaAccess();
+                ResolvedJavaType resolvedElementType = metaAccess.lookupJavaType(Half2.class);
+                LocalArrayNode localArrayNode = new LocalArrayNode(CUDAArchitecture.localSpace, resolvedElementType, size, CUDAKind.HALF2);
+                b.getGraph().addOrUnique(localArrayNode);
+                b.push(returnedJavaKind, localArrayNode);
+                return true;
+            }
+        });
+    }
+
     private static void localArraysPlugins(Registration r) {
         JavaKind returnedJavaKind = JavaKind.Object;
 
@@ -452,6 +468,8 @@ public class CUDAGraphBuilderPlugins {
 
         returnedJavaKind = JavaKind.fromJavaClass(short.class);
         registerHalfFloatLocalArray(r, returnedJavaKind);
+
+        registerHalf2LocalArray(r, JavaKind.Object);
     }
 
     private static void registerKernelContextPlugins(InvocationPlugins plugins) {

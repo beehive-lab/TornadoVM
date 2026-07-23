@@ -226,9 +226,18 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDADevice_clG
         case CL_DEVICE_OPENCL_C_VERSION:
             put_string(buf, len, "CUDA C 1.0");
             break;
-        case CL_DEVICE_EXTENSIONS:
-            put_string(buf, len, "cl_khr_fp64");
+        case CL_DEVICE_EXTENSIONS: {
+            // FP16 arithmetic requires compute capability >= 5.3.
+            int major = 0, minor = 0;
+            cuDeviceGetAttribute(&major, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR, cuDevice);
+            cuDeviceGetAttribute(&minor, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR, cuDevice);
+            std::string extensions = "cl_khr_fp64";
+            if (major > 5 || (major == 5 && minor >= 3)) {
+                extensions += " cl_khr_fp16";
+            }
+            put_string(buf, len, extensions);
             break;
+        }
         case CL_DEVICE_DOUBLE_FP_CONFIG:
             put_long(buf, len, CL_FP_NONZERO); // all NVIDIA GPUs support fp64
             break;
