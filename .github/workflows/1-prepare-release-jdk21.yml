@@ -160,11 +160,12 @@ jobs:
               console.log(`Using fallback date: ${sinceDate}`);
             }
             
-            // Fetch merged PRs since last release
+            // Fetch merged PRs targeting develop branch since last release
             const { data: prs } = await github.rest.pulls.list({
               owner: context.repo.owner,
               repo: context.repo.repo,
               state: 'closed',
+              base: 'develop',
               sort: 'updated',
               direction: 'desc',
               per_page: 100
