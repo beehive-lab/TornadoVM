@@ -398,17 +398,35 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
         // rejected our output; which component is stale depends on the image kind.
         // The raw error is only INVALID_PTX/unsupported-version, so name the cause.
         if (archKnown && !useCubin) {
-            // PTX fallback (toolkit older than GPU): the driver JIT'd compute_<fallback>
-            // PTX and failed, which means the driver's ptxas is too old for this
-            // toolkit's PTX ISA. Updating the driver is the direct fix; a newer
-            // toolkit that natively supports the GPU also helps by skipping PTX JIT.
-            program->log = std::string("Driver could not JIT compute_") +
-                           std::to_string(fallbackArch > 0 ? fallbackArch : gpuArchNum) +
-                           " PTX for this GPU (sm_" + std::to_string(gpuArchNum) +
-                           "): the GPU driver is too old for this toolkit's PTX ISA. Update the GPU "
-                           "driver, or use a CUDA toolkit whose NVRTC natively supports sm_" +
-                           std::to_string(gpuArchNum) + " (native cubin avoids PTX JIT entirely).\n\n" +
-                           program->log;
+            // PTX fallback (toolkit older than GPU). Two opposite causes land here and the
+            // JIT log is what separates them, so check it before naming a culprit:
+            //
+            //   * "requires PTX ISA .version X or later" - the TOOLKIT is behind. NVRTC
+            //     stamped an older .version onto PTX using a feature that needs a newer
+            //     one (e.g. FP8 mma.sync needs ISA 8.4 / CUDA 12.4). Updating the driver
+            //     does nothing here; the PTX itself is the problem.
+            //   * anything else - the DRIVER's ptxas is older than this toolkit's PTX ISA.
+            //
+            // Blaming the driver unconditionally sends people chasing driver updates for a
+            // toolkit problem, so keep these distinct.
+            const bool isaTooOld = std::string(jitErrorLog).find("requires PTX ISA") != std::string::npos;
+            if (isaTooOld) {
+                program->log = std::string("Driver could not JIT compute_") +
+                               std::to_string(fallbackArch > 0 ? fallbackArch : gpuArchNum) +
+                               " PTX for this GPU (sm_" + std::to_string(gpuArchNum) +
+                               "): the CUDA toolkit is too old to encode an instruction this kernel "
+                               "uses (see the PTX ISA version named below). Install a newer CUDA "
+                               "toolkit; updating the GPU driver will not help.\n\n" +
+                               program->log;
+            } else {
+                program->log = std::string("Driver could not JIT compute_") +
+                               std::to_string(fallbackArch > 0 ? fallbackArch : gpuArchNum) +
+                               " PTX for this GPU (sm_" + std::to_string(gpuArchNum) +
+                               "): the GPU driver is too old for this toolkit's PTX ISA. Update the GPU "
+                               "driver, or use a CUDA toolkit whose NVRTC natively supports sm_" +
+                               std::to_string(gpuArchNum) + " (native cubin avoids PTX JIT entirely).\n\n" +
+                               program->log;
+            }
         } else if (archKnown) {
             // Native cubin (toolkit knew the GPU arch) rejected at load: the driver
             // is older than the toolkit that produced the cubin. Update the driver,
@@ -603,6 +621,67 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAProgram_ge
     if (dst != nullptr && n > 0) {
         std::memcpy(dst, program->binary.c_str(), n);
     }
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAProgram
+ * Method:    nvrtcCanCompileHeader
+ * Signature: (Ljava/lang/String;)Z
+ *
+ * Probes whether this NVRTC can compile a kernel that includes the given CUDA
+ * header, using the same resolution order as real kernels (built-in headers
+ * first, then the toolkit include directories). Codegen consults this once to
+ * decide whether a native conversion that needs a header (cuda_fp8.h, absent
+ * before CUDA 11.8) can be emitted, or the Java software codec must be inlined
+ * instead - so a missing or toolkit-mismatched header degrades performance,
+ * not correctness.
+ */
+JNIEXPORT jboolean JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAProgram_nvrtcCanCompileHeader
+        (JNIEnv *env, jclass clazz, jstring headerName) {
+    const char *hdr = env->GetStringUTFChars(headerName, nullptr);
+    std::string source = std::string("#include <") + hdr + ">\nextern \"C\" __global__ void tornado_header_probe() {}\n";
+    env->ReleaseStringUTFChars(headerName, hdr);
+
+    auto tryCompile = [&source](const std::vector<std::string> &includeDirs) -> bool {
+        nvrtcProgram prog;
+        if (nvrtcCreateProgram(&prog, source.c_str(), "tornado_header_probe.cu", 0, nullptr, nullptr) != NVRTC_SUCCESS) {
+            return false;
+        }
+        std::vector<std::string> opts;         // storage must outlive optPtrs
+        std::vector<const char *> optPtrs;
+        for (const std::string &dir : includeDirs) {
+            opts.push_back("--include-path=" + dir);
+        }
+        for (const std::string &opt : opts) {
+            optPtrs.push_back(opt.c_str());
+        }
+        nvrtcResult result = nvrtcCompileProgram(prog, (int) optPtrs.size(), optPtrs.empty() ? nullptr : optPtrs.data());
+        nvrtcDestroyProgram(&prog);
+        return result == NVRTC_SUCCESS;
+    };
+
+    if (tryCompile({})) {
+        return JNI_TRUE;
+    }
+    std::vector<std::string> dirs = find_cuda_header_include_dirs();
+    return (!dirs.empty() && tryCompile(dirs)) ? JNI_TRUE : JNI_FALSE;
+}
+
+/*
+ * NVRTC version as major * 1000 + minor (e.g. CUDA 12.4 -> 12004), or -1 if the
+ * query fails. Callers gate PTX-ISA-versioned features on this: the emitted PTX
+ * carries the .version directive of the NVRTC that produced it, so a feature
+ * needing a newer ISA than this toolkit can express is unusable regardless of
+ * how capable the GPU is. See CUDATensorCoreSupportPhase.
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAProgram_nvrtcVersion
+        (JNIEnv *env, jclass clazz) {
+    int major = 0;
+    int minor = 0;
+    if (nvrtcVersion(&major, &minor) != NVRTC_SUCCESS) {
+        return -1;
+    }
+    return (jint) (major * 1000 + minor);
 }
 
 } // extern "C"

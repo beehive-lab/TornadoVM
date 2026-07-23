@@ -136,6 +136,9 @@ __TEST_THE_WORLD__ = [
     ## TornadoVM standard test-suite
     TestEntry("uk.ac.manchester.tornado.unittests.TestHello"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestArrays"),
+    TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestFP8"),
+    TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestBFloat16"),
+    TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestHalfFloatInlineWrite"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestArrayCopies"),
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestFloats"),
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestHalfFloats"),
@@ -153,6 +156,8 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestSingleTaskSingleDevice"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksSingleDevice"),
+    TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestLibraryTaskArity"),
+    TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestManyArgumentTasks"),
     TestEntry("uk.ac.manchester.tornado.unittests.temporary.values.TestTemporaryValues"),
     TestEntry("uk.ac.manchester.tornado.unittests.images.TestImages"),
     TestEntry("uk.ac.manchester.tornado.unittests.images.TestResizeImage"),
@@ -187,6 +192,9 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationMMA"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationMMAInt8"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationMMAFP8"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationMMACpAsync"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationMMABF16"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestSimdgroupMatrix"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestSimdgroupTiledMatrix"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestSimdgroupMatrixPrimitives"),
@@ -420,7 +428,7 @@ else:
 
 ENABLE_ASSERTIONS = "-ea "
 
-__VERSION__ = "5.0.1-jdk21-dev"
+__VERSION__ = "5.1.1-jdk21-dev"
 
 try:
     javaHome = os.environ["JAVA_HOME"]

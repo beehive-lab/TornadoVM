@@ -28,7 +28,7 @@ and cleans up — without touching the current working branch.
 SDKs built per platform:
   - macOS   : opencl, metal                    (JDK 21 and JDK 25, via sdkman Temurin)
   - Linux   : opencl, ptx, spirv, cuda, full   (JDK 21 and JDK 25, via sdkman Temurin)
-  - Windows : opencl, ptx, spirv, cuda, full   (JDK 21 and JDK 25, --jdkXX-home required)
+  - Windows : opencl, ptx, spirv, cuda         (JDK 21 and JDK 25, --jdkXX-home required)
 
 "full" means opencl+ptx+spirv+cuda combined into a single archive.
 
@@ -200,7 +200,6 @@ BUILDS = {
         "ptx",
         "spirv",
         "cuda",
-        "opencl,ptx,spirv,cuda",
     ],
 }
 
@@ -322,9 +321,25 @@ def patch_worktree_fix_pyinstaller(worktree_path):
         src = f.read()
     original = src
 
-    old_func_pattern = re.compile(
+    # v5.1.0-jdk25 tag shape: chdir's into <sdk>/bin before invoking PyInstaller
+    # and chdir's back afterwards — the classic "run me from inside dist/"
+    # trigger.
+    old_func_pattern_chdir = re.compile(
         r"def runPyInstaller\(currentDirectory, tornadoSDKPath\):.*?"
         r"os\.chdir\(currentDirectory\)\n",
+        re.DOTALL,
+    )
+
+    # v5.1.0-jdk21 tag shape: already avoids the chdir and already passes
+    # explicit --distpath/--workpath/--specpath via os.system(), but never
+    # overrides the *process* cwd — so it still inherits the worktree root
+    # (created under the OS temp dir), which trips the same PyInstaller safety
+    # check for a different reason. This variant has no trailing
+    # os.chdir(...) and instead ends with the shutil.rmtree(work_dir, ...)
+    # cleanup line.
+    old_func_pattern_system = re.compile(
+        r"def runPyInstaller\(currentDirectory, tornadoSDKPath\):.*?"
+        r"shutil\.rmtree\(work_dir, ignore_errors=True\)\n",
         re.DOTALL,
     )
 
@@ -356,11 +371,13 @@ def patch_worktree_fix_pyinstaller(worktree_path):
         raise RuntimeError(f"PyInstaller failed for: {\', \'.join(failed)}")
 '''
 
-    src, n = old_func_pattern.subn(new_func, src)
+    src, n = old_func_pattern_chdir.subn(new_func, src)
+    if n == 0:
+        src, n = old_func_pattern_system.subn(new_func, src)
 
     if n == 0:
         warn(
-            "config_utils.py in the worktree did not match the expected "
+            "config_utils.py in the worktree did not match either known "
             "runPyInstaller pattern — the tag layout may have changed; "
             "nothing was patched."
         )
@@ -369,6 +386,102 @@ def patch_worktree_fix_pyinstaller(worktree_path):
     with open(config_utils_path, "w", encoding="utf-8") as f:
         f.write(src)
     ok("Patched worktree config_utils.py to fix PyInstaller dist-path check.")
+
+
+def patch_worktree_fix_cutlass(worktree_path):
+    """
+    Patch tornado-drivers/cutlass-jni/src/main/cpp/CMakeLists.txt in the
+    worktree so its CUTLASS fetch uses git sparse-checkout instead of a plain
+    FetchContent git clone.
+
+    The tagged CMakeLists.txt does:
+        include(FetchContent)
+        FetchContent_Declare(cutlass GIT_REPOSITORY ... GIT_TAG v3.5.1 GIT_SHALLOW TRUE)
+        FetchContent_GetProperties(cutlass)
+        if(NOT cutlass_POPULATED)
+            FetchContent_Populate(cutlass)
+        endif()
+
+    This checks out CUTLASS's entire tree, including its docs/ folder —
+    thousands of Doxygen-generated HTML files with very long, template-mangled
+    names. On Windows, the combined path (worktree + build dir + docs/<long
+    name>.html) exceeds the 260-char MAX_PATH, and git's checkout of those
+    files fails ("unable to create file docs/...: Filename too long") even
+    with core.longpaths=true set — confirmed in CI, this git-for-windows
+    install doesn't fully honor that flag for the checkout inside git clone.
+
+    v5.1.0-jdk21 and v5.1.0-jdk25 are already-published, immutable release
+    tags, so the fix (landed on develop/ci branches) can't reach them by
+    editing the source tree directly — same reason runPyInstaller is patched
+    above instead of just fixed on the tag. This rewrites the fetch to use
+    git sparse-checkout (cone mode), pulling only include/ and
+    tools/util/include/ — the two subtrees the build actually uses — so
+    docs/ is never fetched at all, on any platform, and the worktree is a
+    throw-away detached checkout, so editing its CMakeLists.txt here does not
+    touch the repository or the published tag itself.
+    """
+    cmake_path = os.path.join(
+        worktree_path, "tornado-drivers", "cutlass-jni", "src", "main", "cpp", "CMakeLists.txt"
+    )
+    if not os.path.isfile(cmake_path):
+        warn("cutlass-jni/CMakeLists.txt not found in worktree — cannot patch CUTLASS fetch.")
+        return
+
+    with open(cmake_path, "r", encoding="utf-8") as f:
+        src = f.read()
+    original = src
+
+    old_fetch_pattern = re.compile(
+        r"include\(FetchContent\)\s*"
+        r"FetchContent_Declare\(\s*cutlass.*?\)\s*"
+        r"FetchContent_GetProperties\(cutlass\)\s*"
+        r"if\(NOT cutlass_POPULATED\)\s*"
+        r"FetchContent_Populate\(cutlass\)\s*"
+        r"endif\(\)\n",
+        re.DOTALL,
+    )
+
+    new_fetch = '''set(CUTLASS_SOURCE_DIR "${CMAKE_BINARY_DIR}/_deps/cutlass-src")
+if(NOT EXISTS "${CUTLASS_SOURCE_DIR}/include/cutlass/cutlass.h")
+    find_package(Git REQUIRED)
+    file(REMOVE_RECURSE "${CUTLASS_SOURCE_DIR}")
+    file(MAKE_DIRECTORY "${CUTLASS_SOURCE_DIR}")
+
+    macro(cutlass_git)
+        execute_process(
+            COMMAND ${GIT_EXECUTABLE} ${ARGN}
+            WORKING_DIRECTORY "${CUTLASS_SOURCE_DIR}"
+            RESULT_VARIABLE _cutlass_git_rc
+        )
+        if(NOT _cutlass_git_rc EQUAL 0)
+            message(FATAL_ERROR "CUTLASS sparse checkout failed: git ${ARGN}")
+        endif()
+    endmacro()
+
+    cutlass_git(init -q)
+    cutlass_git(remote add origin https://github.com/NVIDIA/cutlass.git)
+    cutlass_git(sparse-checkout init --cone)
+    cutlass_git(sparse-checkout set include tools/util/include)
+    cutlass_git(fetch --depth 1 origin v3.5.1)
+    cutlass_git(checkout FETCH_HEAD)
+endif()
+set(cutlass_SOURCE_DIR "${CUTLASS_SOURCE_DIR}")
+'''
+
+    src, n = old_fetch_pattern.subn(new_fetch, src)
+
+    if n == 0:
+        warn(
+            "cutlass-jni/CMakeLists.txt in the worktree did not match the "
+            "expected FetchContent pattern — the tag layout may have "
+            "changed; nothing was patched."
+        )
+        return
+
+    with open(cmake_path, "w", encoding="utf-8") as f:
+        f.write(src)
+    ok("Patched worktree cutlass-jni/CMakeLists.txt to sparse-checkout CUTLASS (avoids Windows MAX_PATH).")
+
 
 def patch_worktree_skip_executables(worktree_path):
     """
@@ -800,6 +913,9 @@ def main():
 
             if current_platform == "windows" and not skip_win_exe:
                 patch_worktree_fix_pyinstaller(worktree_path)
+
+            if current_platform == "windows":
+                patch_worktree_fix_cutlass(worktree_path)
 
             if skip_win_exe:
                 patch_worktree_skip_executables(worktree_path)
