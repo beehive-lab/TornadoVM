@@ -7,6 +7,26 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 
 CHANGELOG
 
+TornadoVM 5.2.0-jdk25
+---------------------
+23/07/26
+
+Improvements
+~~~~~~~~~~~~
+
+- `#955 <https://github.com/beehive-lab/TornadoVM/pull/955>`_: [JDK25][feat] CUDA backend: native FP8 conversion + FP8/BF16 tensor-core MMA and cp.async copies
+
+Other Changes
+~~~~~~~~~~~~
+
+- `#948 <https://github.com/beehive-lab/TornadoVM/pull/948>`_: Add tornado-fuzz: differential + sanitizer fuzz tester for the CUDA backend
+- `#971 <https://github.com/beehive-lab/TornadoVM/pull/971>`_: [jdk25] Packed half2 support for the CUDA backend
+- `#968 <https://github.com/beehive-lab/TornadoVM/pull/968>`_: [cuda] BFloat16Array: first-class bfloat16 native array + JIT conversions + cuBLAS/CUTLASS bf16 GEMM
+- `#964 <https://github.com/beehive-lab/TornadoVM/pull/964>`_: [cuda] Saturate CUTLASS provider: SiLU/Sigmoid/Tanh/HardSwish epilogues + batched FP16 GEMM
+- `#970 <https://github.com/beehive-lab/TornadoVM/pull/970>`_: [cuda] Fix HalfFloat codegen for inline new HalfFloat(computedExpr) writes
+- `#959 <https://github.com/beehive-lab/TornadoVM/pull/959>`_: Extend TaskGraph task/libraryTask arity to 20 for hybrid API
+
+
 TornadoVM 5.1.0-jdk25
 ---------------------
 17/07/26
