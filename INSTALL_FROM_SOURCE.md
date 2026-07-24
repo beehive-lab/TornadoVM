@@ -73,7 +73,7 @@ TornadoVM can be installed automatically with the [installation script](https://
 $ ./bin/tornadovm-installer --help
 usage: tornadovm-installer [-h] [--jdk JDK] [--backend BACKEND] [--version] [--listJDKs] [--polyglot] [--mvn_single_threaded] [--auto-deps]
 
-TornadoVM Installer Tool. It will install all software dependencies except the GPU/FPGA drivers
+TornadoVM Installer Tool. It will install all software dependencies except the GPU drivers
 
 options:
   -h, --help            show this help message and exit
@@ -115,7 +115,7 @@ python -m venv .venv
 python bin\tornadovm-installer --help
 usage: tornadovm-installer [-h] [--jdk JDK] [--backend BACKEND] [--version] [--listJDKs] [--polyglot] [--mvn_single_threaded] [--auto-deps]
 
-TornadoVM Installer Tool. It will install all software dependencies except the GPU/FPGA drivers
+TornadoVM Installer Tool. It will install all software dependencies except the GPU drivers
 
 options:
   -h, --help            show this help message and exit

@@ -121,16 +121,6 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     }
 
     @Override
-    public boolean isPlatformFPGA() {
-        return false;
-    }
-
-    @Override
-    public boolean isPlatformXilinxFPGA() {
-        return false;
-    }
-
-    @Override
     public boolean isFP64Supported() {
         return true;
     }

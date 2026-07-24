@@ -4,7 +4,7 @@ Frequently Asked Questions
 1. What can TornadoVM do?
 -------------------------
 
-TornadoVM accelerates parts of your Java applications on heterogeneous hardware devices such as multicore CPUs, GPUs, and FPGAs.
+TornadoVM accelerates parts of your Java applications on heterogeneous hardware devices such as multicore CPUs and GPUs.
 
 TornadoVM is currently being used to accelerate machine learning and deep learning applications, computer vision, physics simulations,
 financial applications, computational photography, natural language processing and signal processing.
@@ -99,7 +99,7 @@ No. Currently, TornadoVM supports multiple compiler backends and therefore, it i
 
 The VM name is used because TornadoVM implements its own set of bytecodes for handling heterogeneous execution.
 These bytecodes are used for handling JIT compilation, device exploration, data management and live task-migration
-for heterogeneous devices (multi-core CPUs, GPUs, and FPGAs). We sometimes refer to a VM inside a VM (nested VM).
+for heterogeneous devices (multi-core CPUs and GPUs). We sometimes refer to a VM inside a VM (nested VM).
 The main VM is the Java Virtual Machine, and TornadoVM sits on top of that.
 
 You can find more information here: `https://dl.acm.org/doi/10.1145/3313808.3313819 <https://dl.acm.org/doi/10.1145/3313808.3313819>`_.
@@ -144,7 +144,5 @@ Note that this restriction also applies to low-level parallel programming models
 14. Do I need a GPU to run TornadoVM?
 ------------------------------------------------------------
 
-No. TornadoVM can also run on multi-core CPUs and/or FPGAs. What TornadoVM needs is a compatible driver/runtime installed in the machine.
+No. TornadoVM can also run on multi-core CPUs. What TornadoVM needs is a compatible driver/runtime installed in the machine.
 For example, to enable TornadoVM getting access to an Intel CPU, developers can use the `Intel CPU Runtime for OpenCL <https://www.intel.com/content/www/us/en/developer/articles/technical/intel-cpu-runtime-for-opencl-applications-with-sycl-support.html>`__ (also part of the `Intel oneAPI Base Toolkit <https://www.intel.com/content/www/us/en/developer/tools/oneapi/base-toolkit.html>`__).
-
-To enable TornadoVM accessing FPGAs, developers can use the Intel and AMD OpenCL implementations for the Intel and Xilinx FPGAs, respectively.

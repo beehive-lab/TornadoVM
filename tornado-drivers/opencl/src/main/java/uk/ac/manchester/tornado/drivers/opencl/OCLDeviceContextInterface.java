@@ -46,8 +46,6 @@ public interface OCLDeviceContextInterface extends TornadoDeviceContext {
 
     OCLInstalledCode installCode(long executionPlanId, TaskDataContext meta, String id, String entryPoint, byte[] code);
 
-    OCLInstalledCode installCode(long executionPlanId, String id, String entryPoint, byte[] code, boolean printKernel);
-
     boolean isKernelAvailable(long executionPlanId);
 
     void reset(long executionPlanId);

@@ -408,7 +408,7 @@ public class TornadoExecutionContext {
         // Device Table:
         // [0]: null
         // [1]: null
-        // [2]: [Intel(R) FPGA EmulationPlatform for OpenCL(TM)] -- Intel(R) FPGA
+        // [2]: [Intel(R) OpenCL HD Graphics] -- Intel(R) Gen GPU
         return (int) getDevices().stream().filter(Objects::nonNull).count();
     }
 

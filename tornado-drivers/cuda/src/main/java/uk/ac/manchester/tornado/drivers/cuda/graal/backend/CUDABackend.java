@@ -101,7 +101,6 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDANodeMatchRules;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDAReferenceMapBuilder;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt;
-import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.FPGAWorkGroupSizeNode;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.CUDATokens;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -126,10 +125,6 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
         this.codeCache = codeCache;
         this.deviceContext = deviceContext;
         architecture = (CUDAArchitecture) target.arch;
-    }
-
-    public static boolean isDeviceAnFPGAAccelerator(CUDADeviceContextInterface deviceContext) {
-        return deviceContext.isPlatformFPGA();
     }
 
     @Override
@@ -380,14 +375,6 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
              * starting at address 0x0. (I assume that this is an interesting case that
              * leads to a few issues.) Iris Pro is the only culprit at the moment.
              */
-            final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
-            if (cfg.getStartBlock().getEndNode().predecessor() instanceof FPGAWorkGroupSizeNode) {
-                FPGAWorkGroupSizeNode fpgaNode = (FPGAWorkGroupSizeNode) (cfg.getStartBlock().getEndNode().predecessor());
-                String attribute = fpgaNode.createThreadAttribute();
-
-                asm.emitSymbol(attribute);
-                asm.emitLine("");
-            }
 
             asm.emit("%s void %s(%s", CUDAAssemblerConstants.KERNEL_MODIFIER, methodName, architecture.getABI());
             emitMethodParameters(asm, method, incomingArguments, true);

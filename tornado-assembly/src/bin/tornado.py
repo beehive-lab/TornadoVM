@@ -183,8 +183,7 @@ def validate_opencl_backend(sdk_path):
         has_nvidia_driver = check_nvidia_driver()
 
         print("[CAUSE] Missing OpenCL drivers or dependencies")
-        print("        The OpenCL backend requires OpenCL 2.1+ drivers for GPUs/CPUs")
-        print("        or OpenCL 1.0+ for FPGAs.")
+        print("        The OpenCL backend requires OpenCL 2.1+ drivers for GPUs/CPUs.")
         print()
 
         # Check system OpenCL.dll (safe read-only operation)

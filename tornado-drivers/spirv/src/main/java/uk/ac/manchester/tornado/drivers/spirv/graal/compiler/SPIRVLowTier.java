@@ -41,8 +41,6 @@ import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.analysis.TornadoFeatureExtraction;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.loops.TornadoLoopCanonicalization;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.utils.DumpLowTierGraph;
-import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFPGAPragmaPhase;
-import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFPGAThreadScheduler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.InverseSquareRootPhase;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.InfinityReplacementPhase;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.PartialLoopUnrollPhase;
@@ -83,11 +81,6 @@ public class SPIRVLowTier extends TornadoLowTier {
         appendPhase(new AddressLoweringByNodePhase(addressLowering));
 
         appendPhase(new DeadCodeEliminationPhase(Required));
-
-        if (deviceContext.isPlatformFPGA()) {
-            appendPhase(new OCLFPGAPragmaPhase(deviceContext));
-            appendPhase(new OCLFPGAThreadScheduler());
-        }
 
         appendPhase(new TornadoLoopCanonicalization());
 

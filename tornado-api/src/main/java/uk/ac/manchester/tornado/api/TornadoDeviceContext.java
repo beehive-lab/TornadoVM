@@ -34,10 +34,6 @@ public interface TornadoDeviceContext {
 
     void setResetToFalse();
 
-    boolean isPlatformFPGA();
-
-    boolean isPlatformXilinxFPGA();
-
     boolean isFP64Supported();
 
     boolean isCached(long executionPlanId, String methodName, SchedulableTask task);

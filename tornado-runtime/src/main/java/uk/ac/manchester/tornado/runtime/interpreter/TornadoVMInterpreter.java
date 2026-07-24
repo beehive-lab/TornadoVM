@@ -81,7 +81,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 /**
  * TornadoVMInterpreter: serves as a bytecode interpreter for TornadoVM
  * bytecodes. Also, it functions as a memory manager for various devices,
- * including FPGAs, GPUs, and multicore processors that adhere to any of the
+ * including GPUs and multicore processors that adhere to any of the
  * supported programming models. Additionally, it features a Just-In-Time (JIT)
  * compiler that compiles Java bytecode to OpenCL, PTX, and SPIR-V.
  */
@@ -1091,8 +1091,7 @@ public class TornadoVMInterpreter {
                 task.attachProfiler(timeProfiler);
                 if (taskIndex == (taskExecutionContexts.size() - 1)) {
                     // If it is the last task within the task-schedule or doUpdate is true -> we
-                    // force compilation. This is useful when compiling code for Xilinx/Altera
-                    // FPGAs, that has to be a single source.
+                    // force compilation.
                     task.forceCompilation();
                 }
 
@@ -1135,7 +1134,7 @@ public class TornadoVMInterpreter {
 
         if (installedCodes[globalToLocalTaskIndex(taskIndex)] == null) {
             // After warming-up, it is possible to get a null pointer in the task-cache due
-            // to lazy compilation for FPGAs. In tha case, we check again the code cache.
+            // to lazy compilation. In that case, we check again the code cache.
             installedCodes[globalToLocalTaskIndex(taskIndex)] = interpreterDevice.getCodeFromCache(graphExecutionContext.getExecutionPlanId(), task);
         }
 

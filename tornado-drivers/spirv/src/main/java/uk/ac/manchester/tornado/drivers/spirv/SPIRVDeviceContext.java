@@ -133,11 +133,6 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
     }
 
     @Override
-    public boolean isPlatformFPGA() {
-        return false;
-    }
-
-    @Override
     public boolean isFP64Supported() {
         return device.isDeviceDoubleFPSupported();
     }
@@ -454,11 +449,6 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
         executionIds.add(executionPlanId);
         spirvContext.enqueueBarrier(executionPlanId, getDeviceIndex());
         return 0;
-    }
-
-    @Override
-    public boolean isPlatformXilinxFPGA() {
-        return false;
     }
 
     public Event resolveEvent(long executionPlanId, int eventId) {

@@ -97,7 +97,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLNodeLIRBuilder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLNodeMatchRules;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLReferenceMapBuilder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FPGAWorkGroupSizeNode;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.OCLTokens;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -122,10 +121,6 @@ public class OCLBackend extends XPUBackend<OCLProviders> implements FrameMap.Ref
         this.codeCache = codeCache;
         this.deviceContext = deviceContext;
         architecture = (OCLArchitecture) target.arch;
-    }
-
-    public static boolean isDeviceAnFPGAAccelerator(OCLDeviceContextInterface deviceContext) {
-        return deviceContext.isPlatformFPGA();
     }
 
     @Override
@@ -302,15 +297,6 @@ public class OCLBackend extends XPUBackend<OCLProviders> implements FrameMap.Ref
              * starting at address 0x0. (I assume that this is an interesting case that
              * leads to a few issues.) Iris Pro is the only culprit at the moment.
              */
-            final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
-            if (cfg.getStartBlock().getEndNode().predecessor() instanceof FPGAWorkGroupSizeNode) {
-                FPGAWorkGroupSizeNode fpgaNode = (FPGAWorkGroupSizeNode) (cfg.getStartBlock().getEndNode().predecessor());
-                String attribute = fpgaNode.createThreadAttribute();
-
-                asm.emitSymbol(attribute);
-                asm.emitLine("");
-            }
-
             asm.emit("%s void %s(%s", OCLAssemblerConstants.KERNEL_MODIFIER, methodName, architecture.getABI());
             emitMethodParameters(asm, method, incomingArguments, true);
             asm.emitLine(")");

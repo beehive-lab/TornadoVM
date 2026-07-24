@@ -150,7 +150,7 @@ public class SPIRVOCLDevice extends SPIRVDevice {
         return switch (type) {
             case CL_DEVICE_TYPE_CPU -> TornadoDeviceType.CPU;
             case CL_DEVICE_TYPE_GPU -> TornadoDeviceType.GPU;
-            case CL_DEVICE_TYPE_ACCELERATOR -> TornadoDeviceType.FPGA;
+            case CL_DEVICE_TYPE_ACCELERATOR -> TornadoDeviceType.ACCELERATOR;
             case CL_DEVICE_TYPE_ALL -> TornadoDeviceType.DEFAULT;
             default -> null;
         };

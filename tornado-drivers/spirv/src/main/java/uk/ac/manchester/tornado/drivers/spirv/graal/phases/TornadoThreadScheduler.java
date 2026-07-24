@@ -39,9 +39,6 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
 public class TornadoThreadScheduler extends BasePhase<TornadoHighTierContext> {
 
-    /**
-     * This value was chosen for Intel FPGAs due to experimental results.
-     */
     private int oneD = 64;
     private int twoD = 1;
     private int threeD = 1;

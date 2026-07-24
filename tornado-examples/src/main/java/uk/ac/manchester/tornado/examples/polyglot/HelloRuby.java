@@ -27,7 +27,7 @@ import org.graalvm.polyglot.Context;
  * Example of GraalVM Polyglot using Ruby and Tornado.
  * 
  * The Ruby program calls MyCompute.compute() to accelerate vector addition on a
- * GPU/FPGA.
+ * GPU.
  * 
  * How to run:
  * 

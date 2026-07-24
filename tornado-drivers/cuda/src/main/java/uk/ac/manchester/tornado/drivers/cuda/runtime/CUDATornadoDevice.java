@@ -248,11 +248,6 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
         return atomicsBuffer;
     }
 
-    private boolean isOpenCLPreLoadBinary(long executionPlanId, CUDADeviceContextInterface deviceContext, String deviceInfo) {
-        CUDACodeCache installedCode = deviceContext.getCodeCache(executionPlanId);
-        return (installedCode.isLoadBinaryOptionEnabled() && (installedCode.getOpenCLBinary(deviceInfo) != null));
-    }
-
     private TornadoInstalledCode compileTask(long executionPlanId, SchedulableTask task) {
         final CUDADeviceContextInterface deviceContext = getDeviceContext();
         final CompilableTask executable = (CompilableTask) task;
@@ -296,14 +291,7 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
 
             profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
             // Compile the code
-            CUDAInstalledCode installedCode;
-            if (CUDABackend.isDeviceAnFPGAAccelerator(deviceContext)) {
-                // A) for FPGA
-                installedCode = deviceContext.installCode(executionPlanId, result.getId(), result.getName(), result.getTargetCode(), task.meta().isPrintKernelEnabled());
-            } else {
-                // B) for CPU multi-core or GPU
-                installedCode = deviceContext.installCode(executionPlanId, result);
-            }
+            CUDAInstalledCode installedCode = deviceContext.installCode(executionPlanId, result);
             profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
             profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
 
@@ -330,16 +318,7 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
         TornadoInternalError.guarantee(path.toFile().exists(), "file does not exist: %s", executable.getFilename());
         try {
             final byte[] source = Files.readAllBytes(path);
-
-            CUDAInstalledCode installedCode;
-            if (CUDABackend.isDeviceAnFPGAAccelerator(deviceContext)) {
-                // A) for FPGA
-                installedCode = deviceContext.installCode(executionPlanId, task.getId(), executable.getEntryPoint(), source, task.meta().isPrintKernelEnabled());
-            } else {
-                // B) for CPU multi-core or GPU
-                installedCode = deviceContext.installCode(executionPlanId, executable.meta(), task.getId(), executable.getEntryPoint(), source);
-            }
-            return installedCode;
+            return deviceContext.installCode(executionPlanId, executable.meta(), task.getId(), executable.getEntryPoint(), source);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -360,35 +339,9 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
         return task.getTaskName();
     }
 
-    private TornadoInstalledCode loadPreCompiledBinaryForTask(long executionPlanId, SchedulableTask task) {
-        final CUDADeviceContextInterface deviceContext = getDeviceContext();
-        final CUDACodeCache codeCache = deviceContext.getCodeCache(executionPlanId);
-        final String deviceFullName = getFullTaskIdDevice(task);
-        final Path lookupPath = Paths.get(codeCache.getOpenCLBinary(deviceFullName));
-        String entry = getTaskEntryName(task);
-
-        if (deviceContext.getInstalledCode(executionPlanId, task.getId(), entry) != null) {
-            return deviceContext.getInstalledCode(executionPlanId, task.getId(), entry);
-        } else {
-            return codeCache.installEntryPointForBinaryForFPGAs(task.getId(), lookupPath, entry);
-        }
-    }
-
-    private String getFullTaskIdDevice(SchedulableTask task) {
-        TaskContextInterface meta = task.meta();
-        if (meta instanceof TaskDataContext) {
-            TaskDataContext metaData = (TaskDataContext) task.meta();
-            return task.getId() + ".device=" + metaData.getBackendIndex() + ":" + metaData.getDeviceIndex();
-        } else {
-            throw new RuntimeException("[ERROR] TaskMetadata expected");
-        }
-    }
-
     @Override
     public boolean isFullJITMode(long executionPlanId, SchedulableTask task) {
-        final CUDADeviceContextInterface deviceContext = getDeviceContext();
-        final String deviceFullName = getFullTaskIdDevice(task);
-        return (!isOpenCLPreLoadBinary(executionPlanId, deviceContext, deviceFullName) && deviceContext.isPlatformFPGA());
+        return false;
     }
 
     @Override
@@ -450,34 +403,9 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
         return TornadoAtomicIntegerNode.globalAtomicsParameters.containsKey(task.meta().getCompiledResolvedJavaMethod());
     }
 
-    private boolean isJITTaskForFGPA(long executionPlanId, SchedulableTask task) {
-        final CUDADeviceContextInterface deviceContext = getDeviceContext();
-        final String deviceFullName = getFullTaskIdDevice(task);
-        return !isOpenCLPreLoadBinary(executionPlanId, deviceContext, deviceFullName) && deviceContext.isPlatformFPGA();
-    }
-
-    private boolean isJITTaskForGPUsAndCPUs(long executionplanId, SchedulableTask task) {
-        final CUDADeviceContextInterface deviceContext = getDeviceContext();
-        final String deviceFullName = getFullTaskIdDevice(task);
-        return !isOpenCLPreLoadBinary(executionplanId, deviceContext, deviceFullName) && !deviceContext.isPlatformFPGA();
-    }
-
-    private TornadoInstalledCode compileJavaForFPGAs(long executionPlanId, SchedulableTask task) {
-        TornadoInstalledCode tornadoInstalledCode = compileJavaToAccelerator(executionPlanId, task);
-        if (tornadoInstalledCode != null) {
-            return loadPreCompiledBinaryForTask(executionPlanId, task);
-        }
-        return null;
-    }
-
     @Override
     public TornadoInstalledCode installCode(long executionPlanId, SchedulableTask task) {
-        if (isJITTaskForFGPA(executionPlanId, task)) {
-            return compileJavaForFPGAs(executionPlanId, task);
-        } else if (isJITTaskForGPUsAndCPUs(executionPlanId, task)) {
-            return compileJavaToAccelerator(executionPlanId, task);
-        }
-        return loadPreCompiledBinaryForTask(executionPlanId, task);
+        return compileJavaToAccelerator(executionPlanId, task);
     }
 
     private XPUBuffer createArrayWrapper(Class<?> type, CUDADeviceContext device, long batchSize, Access access) {

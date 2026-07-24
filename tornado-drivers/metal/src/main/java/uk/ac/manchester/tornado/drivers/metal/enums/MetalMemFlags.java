@@ -24,7 +24,7 @@
 package uk.ac.manchester.tornado.drivers.metal.enums;
 
 /**
- * Metal Memory Flags for Metal 1.2 and Intel FPGA extensions.
+ * Metal Memory Flags for Metal 1.2.
  *
  * Link: https://github.com/KhronosGroup/Metal-Headers/blob/master/CL/cl.h
  *

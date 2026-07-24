@@ -43,8 +43,7 @@ public class CUDAPlatform implements TornadoPlatformInterface {
         INTEL("Intel"), //
         AMD("AMD"), //
         NVIDIA("Nvidia"), //
-        MESA("Mesa/X.org"), //
-        XILINX("Xilinx");
+        MESA("Mesa/X.org");
 
         final String vendorName;
 
@@ -64,18 +63,14 @@ public class CUDAPlatform implements TornadoPlatformInterface {
 
         final int deviceCount;
 
-        if (isVendor(Vendor.XILINX)) {
-            deviceCount = clGetDeviceCount(platformPointers, CUDADeviceType.CL_DEVICE_TYPE_ACCELERATOR.getValue());
-        } else if (isVendor(Vendor.MESA)) {
+        if (isVendor(Vendor.MESA)) {
             deviceCount = clGetDeviceCount(platformPointers, CUDADeviceType.CL_DEVICE_TYPE_GPU.getValue());
         } else {
             deviceCount = clGetDeviceCount(platformPointers, CUDADeviceType.CL_DEVICE_TYPE_ALL.getValue());
         }
 
         final long[] ids = new long[deviceCount];
-        if (isVendor(Vendor.XILINX)) {
-            clGetDeviceIDs(platformPointers, CUDADeviceType.CL_DEVICE_TYPE_ACCELERATOR.getValue(), ids);
-        } else if (isVendor(Vendor.MESA)) {
+        if (isVendor(Vendor.MESA)) {
             clGetDeviceIDs(platformPointers, CUDADeviceType.CL_DEVICE_TYPE_GPU.getValue(), ids);
         } else {
             clGetDeviceIDs(platformPointers, CUDADeviceType.CL_DEVICE_TYPE_ALL.getValue(), ids);
