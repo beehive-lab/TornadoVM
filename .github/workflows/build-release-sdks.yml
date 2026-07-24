@@ -48,8 +48,8 @@ on:
         required: false
         type: boolean
         default: true
-      dry_run:
-        description: 'Dry run: still build the SDKs for real, but never upload/un-draft/publish anything (forces upload_to_release off).'
+      draft_release_test:
+        description: 'Draft release (test): still build the SDKs for real, but never upload/un-draft/publish anything (forces upload_to_release off).'
         required: false
         type: boolean
         default: false
@@ -76,6 +76,7 @@ jobs:
       include_linux: ${{ steps.derive.outputs.include_linux }}
       include_windows: ${{ steps.derive.outputs.include_windows }}
       upload_to_release: ${{ steps.derive.outputs.upload_to_release }}
+      draft_release_test: ${{ steps.derive.outputs.draft_release_test }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -91,8 +92,8 @@ jobs:
           INCLUDE_LINUX="${{ inputs.include_linux }}"
           INCLUDE_WIN="${{ inputs.include_windows }}"
           UPLOAD="${{ inputs.upload_to_release }}"
-          if [ "${{ inputs.dry_run }}" = "true" ]; then
-            echo "Dry run: forcing upload_to_release=false (still building for real, nothing gets uploaded/un-drafted/published)."
+          if [ "${{ inputs.draft_release_test }}" = "true" ]; then
+            echo "Draft release (test): forcing upload_to_release=false (still building for real, nothing gets uploaded/un-drafted/published)."
             UPLOAD="false"
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
@@ -101,6 +102,7 @@ jobs:
           echo "include_linux=$INCLUDE_LINUX" >> "$GITHUB_OUTPUT"
           echo "include_windows=$INCLUDE_WIN" >> "$GITHUB_OUTPUT"
           echo "upload_to_release=$UPLOAD" >> "$GITHUB_OUTPUT"
+          echo "draft_release_test=${{ inputs.draft_release_test }}" >> "$GITHUB_OUTPUT"
           echo "Derived: version=$VERSION include_macos=$INCLUDE_MACOS include_linux=$INCLUDE_LINUX include_windows=$INCLUDE_WIN upload=$UPLOAD"
 
       - name: Gate on both Releases existing
@@ -215,6 +217,12 @@ jobs:
           done < <(find "$src_dir" -type f \( -name '*.zip' -o -name '*.tar.gz' \) | sort)
           echo "Uploaded $uploaded archive(s) from macOS arm64."
 
+      - name: Clean up test build archives
+        if: needs.preflight.outputs.draft_release_test == 'true'
+        run: |
+          echo "Draft release (test): removing built archives from this runner — nothing was uploaded."
+          rm -rf "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR"
+
   build-linux:
     needs: preflight
     if: needs.preflight.outputs.proceed == 'true' && needs.preflight.outputs.include_linux == 'true'
@@ -292,6 +300,12 @@ jobs:
             uploaded=$((uploaded + 1))
           done < <(find "$src_dir" -type f \( -name '*.zip' -o -name '*.tar.gz' \) | sort)
           echo "Uploaded $uploaded archive(s) from Linux x64."
+
+      - name: Clean up test build archives
+        if: needs.preflight.outputs.draft_release_test == 'true'
+        run: |
+          echo "Draft release (test): removing built archives from this runner — nothing was uploaded."
+          rm -rf "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR"
 
   build-windows:
     needs: preflight
@@ -395,6 +409,16 @@ jobs:
             $uploaded++
           }
           Write-Host "Uploaded $uploaded archive(s) from Windows x64."
+
+      - name: Clean up test build archives
+        if: needs.preflight.outputs.draft_release_test == 'true'
+        shell: powershell
+        run: |
+          Write-Host "Draft release (test): removing built archives from this runner - nothing was uploaded."
+          $platformPath = Join-Path $env:RELEASE_ARCHIVES_DIR (Join-Path $env:VERSION_TAG $env:PLATFORM_DIR)
+          if (Test-Path $platformPath) {
+            Remove-Item -Recurse -Force $platformPath
+          }
 
   publish-releases:
     name: Un-draft Releases and dispatch SDKMAN publish
