@@ -78,7 +78,30 @@ jobs:
         env:
           GPG_TTY: $(tty)
 
+      - name: Check whether the triggering finalize run was a draft test
+        id: check_draft
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          IS_DRAFT="false"
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            # A draft_release_test run of 2.1 finalize skips "Create GitHub
+            # Release" (it runs "Dry run - GitHub Release" instead), so
+            # check that step's conclusion on the triggering run to tell
+            # real from draft — workflow_dispatch inputs aren't easily
+            # queryable after the fact via the runs API.
+            CONCLUSION=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}/jobs" --paginate \
+              -q '.jobs[].steps[]? | select(.name == "Create GitHub Release") | .conclusion' || true)
+            if [ "$CONCLUSION" != "success" ]; then
+              IS_DRAFT="true"
+            fi
+          fi
+          echo "is_draft=$IS_DRAFT" >> "$GITHUB_OUTPUT"
+          echo "Triggering event: ${{ github.event_name }}, is_draft=$IS_DRAFT"
+
       - name: Deploy to Maven Central
+        if: steps.check_draft.outputs.is_draft != 'true'
         run: |
           mvn clean deploy \
             -pl tornado-api,tornado-runtime,tornado-matrices \
@@ -91,3 +114,9 @@ jobs:
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
           GPG_KEYNAME: ${{ secrets.GPG_KEYNAME }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+
+      - name: Draft release (test) - Maven Central
+        if: steps.check_draft.outputs.is_draft == 'true'
+        run: |
+          echo "Draft release (test): skipping the actual Maven Central deploy (mvn clean deploy -P release ...)."
+          echo "Everything up to this point (checkout, GraalVM jars, Maven settings, GPG import) ran for real."
