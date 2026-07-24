@@ -128,10 +128,34 @@ jobs:
               fi
             done
           fi
+
+          if [ "$PROCEED" = "true" ]; then
+            # Both jdk21 and jdk25 finalize dispatch this workflow
+            # independently. The release-existence check above (when it
+            # runs) usually keeps only one of the two dispatches proceeding,
+            # since normally one finalize finishes noticeably before the
+            # other — but if both release PRs get merged close together in
+            # time, both Releases can end up existing before either
+            # dispatch's own Preflight actually runs, so both would proceed.
+            # In draft_release_test mode there's no release-existence check
+            # at all. Either way, use a throwaway git tag as a race-safe
+            # final tie-breaker: whichever dispatch pushes it first actually
+            # builds, the other sees it already exists and bails out here.
+            # Deleted by the cleanup job below once the winner's builds finish.
+            LOCK_TAG="build-lock-${{ steps.derive.outputs.version_tag }}"
+            git tag "$LOCK_TAG"
+            if git push origin "$LOCK_TAG" 2>/tmp/lock_push.log; then
+              echo "Acquired $LOCK_TAG — this dispatch will build."
+            else
+              cat /tmp/lock_push.log
+              echo "$LOCK_TAG already exists — another dispatch is already building this version. Skipping."
+              PROCEED="false"
+            fi
+          fi
           echo "proceed=$PROCEED" >> "$GITHUB_OUTPUT"
           if [ "$PROCEED" = "false" ]; then
             echo ""
-            echo "Skipping build: both v${{ steps.derive.outputs.version }}-jdk21 and v${{ steps.derive.outputs.version }}-jdk25 Releases must exist."
+            echo "Skipping build: another dispatch for this version is already handling it (or, for a real release, both v${{ steps.derive.outputs.version }}-jdk21 and v${{ steps.derive.outputs.version }}-jdk25 Releases must exist)."
             echo "The next finalize completion will trigger another run."
           fi
 
@@ -480,3 +504,30 @@ jobs:
             echo ""
             echo "Downstream: \`publish-archives-to-sdkman-jdkXX\` dispatched explicitly above. \`deploy-maven-central-jdkXX\` runs via workflow_run on finalize completion."
           } >> "$GITHUB_STEP_SUMMARY"
+
+  cleanup-build-lock:
+    name: Release the build dedup lock
+    needs: [preflight, build-macos, build-linux, build-windows]
+    # Only the run that acquired the lock (proceed == 'true') is responsible
+    # for releasing it; always() so this still runs if the builds failed,
+    # otherwise a failed run would permanently block rebuilding the same
+    # version (real or draft_release_test alike).
+    if: |
+      always() &&
+      needs.preflight.outputs.proceed == 'true'
+    runs-on: [self-hosted, Linux, x64]
+    permissions:
+      contents: write
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Delete build lock tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          LOCK_TAG="build-lock-${{ needs.preflight.outputs.version_tag }}"
+          git push origin --delete "$LOCK_TAG" || echo "Lock tag $LOCK_TAG already gone."
