@@ -499,26 +499,6 @@ jobs:
           done
           echo "Both Releases are now public."
 
-      - name: Dispatch SDKMAN publish
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          # gh release edit above ran with GITHUB_TOKEN, and GitHub does not let
-          # GITHUB_TOKEN-authored actions trigger further event-based workflow runs
-          # (push/release/etc — workflow_run is the one exception). So the un-draft
-          # above will NOT reliably fire publish-archives-to-sdkman-jdkXX.yml's
-          # `release: published` trigger. Dispatch it explicitly instead.
-          for jdk in jdk21 jdk25; do
-            tag="${{ needs.preflight.outputs.version_tag }}-$jdk"
-            echo "Dispatching publish-archives-to-sdkman-$jdk.yml for $tag..."
-            gh workflow run "publish-archives-to-sdkman-$jdk.yml" \
-              --repo "${{ github.repository }}" \
-              -f tag="$tag" \
-              -f publish=true
-          done
-          echo "Dispatched SDKMAN publish for both jdk21 and jdk25."
-
       - name: Summary
         run: |
           {
@@ -529,7 +509,7 @@ jobs:
             echo "| [v${{ needs.preflight.outputs.version }}-jdk21](https://github.com/${{ github.repository }}/releases/tag/v${{ needs.preflight.outputs.version }}-jdk21) | Published |"
             echo "| [v${{ needs.preflight.outputs.version }}-jdk25](https://github.com/${{ github.repository }}/releases/tag/v${{ needs.preflight.outputs.version }}-jdk25) | Published |"
             echo ""
-            echo "Downstream: \`publish-archives-to-sdkman-jdkXX\` dispatched explicitly above. \`deploy-maven-central-jdkXX\` runs via workflow_run on finalize completion."
+            echo "Downstream: \`deploy-maven-central-jdkXX\` dispatched explicitly by mark-version-built below; \`publish-archives-to-sdkman-jdkXX\` follows once both jdk21/jdk25 Maven Central deploys succeed."
           } >> "$GITHUB_STEP_SUMMARY"
 
   mark-version-built:
@@ -553,6 +533,7 @@ jobs:
     runs-on: [self-hosted, Linux, x64]
     permissions:
       contents: write
+      actions: write
     timeout-minutes: 5
     steps:
       - name: Checkout repository
@@ -574,3 +555,23 @@ jobs:
           git tag -a "$MARKER_TAG" -m "Built successfully by run ${{ github.run_id }} (${{ github.run_attempt }})"
           git push origin "$MARKER_TAG"
           echo "Marked $MARKER_TAG — future dispatches for this version will skip rebuilding."
+
+      - name: Dispatch Maven Central deploy
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # Runs for both real and draft_release_test builds (this job's own
+          # condition already covers both) — deploy-maven-central-jdkXX.yml
+          # itself skips the actual `mvn deploy` push when draft_release_test
+          # is true, so a test run still exercises checkout/setup/GPG import
+          # for real without publishing anything.
+          for jdk in jdk21 jdk25; do
+            tag="${{ needs.preflight.outputs.version_tag }}-$jdk"
+            echo "Dispatching deploy-maven-central-$jdk.yml for $tag (draft_release_test=${{ needs.preflight.outputs.draft_release_test }})..."
+            gh workflow run "deploy-maven-central-$jdk.yml" \
+              --repo "${{ github.repository }}" \
+              -f tag="$tag" \
+              -f draft_release_test="${{ needs.preflight.outputs.draft_release_test }}"
+          done
+          echo "Dispatched Maven Central deploy for both jdk21 and jdk25."

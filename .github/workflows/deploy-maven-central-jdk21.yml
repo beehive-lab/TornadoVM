@@ -1,28 +1,40 @@
 name: 4.1 - Deploy Maven Central JDK21 [auto]
 
+# Dispatched explicitly by build-release-sdks.yml's mark-version-built job
+# once step 3 finishes successfully (real or draft_release_test alike) —
+# not via workflow_run/push-tag. workflow_run on finalize completion never
+# actually fired in this repo's history (confirmed empirically), and even if
+# it had, it would fire far too early (right after finalize, before the SDKs
+# are even built). Explicit dispatch also lets draft_release_test be passed
+# straight through instead of having to guess it from the triggering run.
+#
+# Once both jdk21 and jdk25 deploys finish (whichever completes second,
+# after confirming its sibling also finished — same "first exits, second
+# proceeds" pattern used elsewhere in this pipeline), this dispatches 5.1/5.2
+# (SDKMAN publish), with publish=false during a draft_release_test so those
+# still run for real up to the point of actually publishing.
+
 on:
-  push:
-    tags:
-      - 'v*-jdk21'
-  workflow_run:
-    workflows: ["2.1 - Finalize Release JDK21 [auto]"]
-    types: [completed]
   workflow_dispatch:
     inputs:
       tag:
         description: 'Tag to deploy (e.g., v2.1.0-jdk21)'
         required: false
         type: string
+      draft_release_test:
+        description: 'Draft release (test): skip the actual `mvn deploy` push, and pass publish=false down to SDKMAN.'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   deploy:
-    # When triggered by workflow_run, only proceed if the upstream finalize workflow succeeded.
-    # (Other triggers — push tag, workflow_dispatch — are unaffected.)
-    if: |
-      github.repository == 'beehive-lab/TornadoVM' &&
-      (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
+    if: github.repository == 'beehive-lab/TornadoVM'
     name: Deploy to Maven Central (JDK 21)
     runs-on: [self-hosted, Linux, x64]
+    permissions:
+      contents: write
+      actions: write
     timeout-minutes: 15
     env:
       JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
@@ -32,7 +44,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.tag || github.ref }}
+          # draft_release_test never actually creates inputs.tag as a real
+          # git ref (finalize's tag creation is itself skipped in draft
+          # mode), so checking it out would fail — use master instead, which
+          # is what the draft finalize run actually operated on.
+          ref: ${{ (inputs.draft_release_test == true && 'master') || inputs.tag || github.ref }}
           fetch-depth: 0
 
       - name: Setup environment
@@ -78,30 +94,8 @@ jobs:
         env:
           GPG_TTY: $(tty)
 
-      - name: Check whether the triggering finalize run was a draft test
-        id: check_draft
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          IS_DRAFT="false"
-          if [ "${{ github.event_name }}" = "workflow_run" ]; then
-            # A draft_release_test run of 2.1 finalize skips "Create GitHub
-            # Release" (it runs "Dry run - GitHub Release" instead), so
-            # check that step's conclusion on the triggering run to tell
-            # real from draft — workflow_dispatch inputs aren't easily
-            # queryable after the fact via the runs API.
-            CONCLUSION=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}/jobs" --paginate \
-              -q '.jobs[].steps[]? | select(.name == "Create GitHub Release") | .conclusion' || true)
-            if [ "$CONCLUSION" != "success" ]; then
-              IS_DRAFT="true"
-            fi
-          fi
-          echo "is_draft=$IS_DRAFT" >> "$GITHUB_OUTPUT"
-          echo "Triggering event: ${{ github.event_name }}, is_draft=$IS_DRAFT"
-
       - name: Deploy to Maven Central
-        if: steps.check_draft.outputs.is_draft != 'true'
+        if: ${{ inputs.draft_release_test != true }}
         run: |
           mvn clean deploy \
             -pl tornado-api,tornado-runtime,tornado-matrices \
@@ -116,7 +110,41 @@ jobs:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
 
       - name: Draft release (test) - Maven Central
-        if: steps.check_draft.outputs.is_draft == 'true'
+        if: ${{ inputs.draft_release_test == true }}
         run: |
           echo "Draft release (test): skipping the actual Maven Central deploy (mvn clean deploy -P release ...)."
           echo "Everything up to this point (checkout, GraalVM jars, Maven settings, GPG import) ran for real."
+
+      - name: Check sibling Maven Central deploy, dispatch SDKMAN if both done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="${{ inputs.tag }}"
+          BASE_TAG="${TAG%-jdk21}"
+          MY_MARKER="maven-central-done-${BASE_TAG}-jdk21"
+          SIBLING_MARKER="maven-central-done-${BASE_TAG}-jdk25"
+
+          git tag "$MY_MARKER"
+          git push origin "$MY_MARKER"
+          echo "Marked $MY_MARKER."
+
+          if git ls-remote --exit-code --tags origin "refs/tags/$SIBLING_MARKER" >/dev/null 2>&1; then
+            echo "$SIBLING_MARKER already exists — both jdk21 and jdk25 Maven Central deploys are done."
+            if [ "${{ inputs.draft_release_test }}" = "true" ]; then
+              PUBLISH="false"
+            else
+              PUBLISH="true"
+            fi
+            for jdk in jdk21 jdk25; do
+              sdk_tag="${BASE_TAG}-$jdk"
+              echo "Dispatching publish-archives-to-sdkman-$jdk.yml for $sdk_tag (publish=$PUBLISH)..."
+              gh workflow run "publish-archives-to-sdkman-$jdk.yml" \
+                --repo "${{ github.repository }}" \
+                -f tag="$sdk_tag" \
+                -f publish="$PUBLISH"
+            done
+            echo "Dispatched SDKMAN publish for both jdk21 and jdk25."
+          else
+            echo "$SIBLING_MARKER does not exist yet — jdk25's Maven Central deploy hasn't finished. Nothing more to do here; its own completion will pick this up."
+          fi
