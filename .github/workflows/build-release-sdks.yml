@@ -48,6 +48,11 @@ on:
         required: false
         type: boolean
         default: true
+      draft_release_test:
+        description: 'Draft release (test): still build the SDKs for real, but never upload/un-draft/publish anything (forces upload_to_release off).'
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: build-release-sdks
@@ -59,7 +64,9 @@ jobs:
     name: Preflight (derive version, gate on Releases)
     runs-on: [self-hosted, Linux, x64]
     permissions:
-      contents: read
+      # Draft releases are only visible to tokens with push (write) access —
+      # `contents: read` silently sees zero releases in the gate check below.
+      contents: write
     timeout-minutes: 5
     outputs:
       version: ${{ steps.derive.outputs.version }}
@@ -69,6 +76,7 @@ jobs:
       include_linux: ${{ steps.derive.outputs.include_linux }}
       include_windows: ${{ steps.derive.outputs.include_windows }}
       upload_to_release: ${{ steps.derive.outputs.upload_to_release }}
+      draft_release_test: ${{ steps.derive.outputs.draft_release_test }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -84,12 +92,17 @@ jobs:
           INCLUDE_LINUX="${{ inputs.include_linux }}"
           INCLUDE_WIN="${{ inputs.include_windows }}"
           UPLOAD="${{ inputs.upload_to_release }}"
+          if [ "${{ inputs.draft_release_test }}" = "true" ]; then
+            echo "Draft release (test): forcing upload_to_release=false (still building for real, nothing gets uploaded/un-drafted/published)."
+            UPLOAD="false"
+          fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "version_tag=v$VERSION" >> "$GITHUB_OUTPUT"
           echo "include_macos=$INCLUDE_MACOS" >> "$GITHUB_OUTPUT"
           echo "include_linux=$INCLUDE_LINUX" >> "$GITHUB_OUTPUT"
           echo "include_windows=$INCLUDE_WIN" >> "$GITHUB_OUTPUT"
           echo "upload_to_release=$UPLOAD" >> "$GITHUB_OUTPUT"
+          echo "draft_release_test=${{ inputs.draft_release_test }}" >> "$GITHUB_OUTPUT"
           echo "Derived: version=$VERSION include_macos=$INCLUDE_MACOS include_linux=$INCLUDE_LINUX include_windows=$INCLUDE_WIN upload=$UPLOAD"
 
       - name: Gate on both Releases existing
@@ -100,9 +113,14 @@ jobs:
           set -euo pipefail
           PROCEED="true"
           if [ "${{ steps.derive.outputs.upload_to_release }}" = "true" ]; then
+            # `gh release view`/the "get release by tag" API never returns
+            # draft releases, and both jdk21/jdk25 Releases are created as
+            # drafts by finalize — so list all releases (which does include
+            # drafts) instead of looking each one up by tag directly.
+            existing_tags=$(gh api "repos/${{ github.repository }}/releases" --paginate -q '.[].tag_name')
             for jdk in jdk21 jdk25; do
               tag="${{ steps.derive.outputs.version_tag }}-$jdk"
-              if gh release view "$tag" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+              if grep -qx "$tag" <<< "$existing_tags"; then
                 echo "Release $tag exists."
               else
                 echo "Release $tag does not exist yet."
@@ -199,6 +217,12 @@ jobs:
           done < <(find "$src_dir" -type f \( -name '*.zip' -o -name '*.tar.gz' \) | sort)
           echo "Uploaded $uploaded archive(s) from macOS arm64."
 
+      - name: Clean up test build archives
+        if: needs.preflight.outputs.draft_release_test == 'true'
+        run: |
+          echo "Draft release (test): removing built archives from this runner — nothing was uploaded."
+          rm -rf "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR"
+
   build-linux:
     needs: preflight
     if: needs.preflight.outputs.proceed == 'true' && needs.preflight.outputs.include_linux == 'true'
@@ -276,6 +300,12 @@ jobs:
             uploaded=$((uploaded + 1))
           done < <(find "$src_dir" -type f \( -name '*.zip' -o -name '*.tar.gz' \) | sort)
           echo "Uploaded $uploaded archive(s) from Linux x64."
+
+      - name: Clean up test build archives
+        if: needs.preflight.outputs.draft_release_test == 'true'
+        run: |
+          echo "Draft release (test): removing built archives from this runner — nothing was uploaded."
+          rm -rf "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR"
 
   build-windows:
     needs: preflight
@@ -370,7 +400,7 @@ jobs:
             } elseif ($fname -match 'jdk25') {
               $tag = "$env:VERSION_TAG-jdk25"
             } else {
-              Write-Host "::warning::Skipping $fname — filename does not contain jdk21 or jdk25"
+              Write-Host "::warning::Skipping $fname - filename does not contain jdk21 or jdk25"
               return
             }
             Write-Host "-> $fname  ->  release $tag"
@@ -379,6 +409,16 @@ jobs:
             $uploaded++
           }
           Write-Host "Uploaded $uploaded archive(s) from Windows x64."
+
+      - name: Clean up test build archives
+        if: needs.preflight.outputs.draft_release_test == 'true'
+        shell: powershell
+        run: |
+          Write-Host "Draft release (test): removing built archives from this runner - nothing was uploaded."
+          $platformPath = Join-Path $env:RELEASE_ARCHIVES_DIR (Join-Path $env:VERSION_TAG $env:PLATFORM_DIR)
+          if (Test-Path $platformPath) {
+            Remove-Item -Recurse -Force $platformPath
+          }
 
   publish-releases:
     name: Un-draft Releases and dispatch SDKMAN publish
