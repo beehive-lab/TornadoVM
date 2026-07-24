@@ -16,6 +16,19 @@ name: 3 - Build Release SDKs [auto]
 # completes first exits cleanly in preflight; the second dispatch actually
 # builds and uploads.
 #
+# Both jdk21 and jdk25 finalize dispatch this workflow independently, so a
+# given version is always dispatched twice. concurrency.group below is scoped
+# per-version, so with cancel-in-progress: false, GitHub itself strictly
+# serializes the two: the second dispatch's Preflight job doesn't even start
+# until the first one's entire run (all platform jobs, cleanup, everything)
+# has finished — no window where both could be mid-build at once, regardless
+# of runner queueing/scheduling delays. Once the second one finally gets its
+# turn, Preflight's "already built" marker check (a build-lock-<version_tag>
+# / draft-test-built-<version_tag> git tag, created only once a run fully
+# succeeds — never on failure, so a genuine retry isn't blocked) tells it the
+# first dispatch already handled this version, and it exits cleanly instead
+# of rebuilding.
+#
 # After all archives are uploaded, the two draft Releases are un-drafted and
 # publish-archives-to-sdkman-jdkXX.yml is dispatched explicitly (same reasoning
 # as above — un-drafting via GITHUB_TOKEN won't reliably fire `release: published`).
@@ -55,7 +68,11 @@ on:
         default: false
 
 concurrency:
-  group: build-release-sdks
+  # Scoped per-version (not a single global group) so unrelated versions
+  # don't needlessly queue behind each other, but the two dispatches for the
+  # *same* version (one from jdk21 finalize, one from jdk25 finalize) are
+  # strictly serialized instead of racing.
+  group: build-release-sdks-${{ github.event.inputs.version }}
   cancel-in-progress: false
 
 jobs:
@@ -77,6 +94,7 @@ jobs:
       include_windows: ${{ steps.derive.outputs.include_windows }}
       upload_to_release: ${{ steps.derive.outputs.upload_to_release }}
       draft_release_test: ${{ steps.derive.outputs.draft_release_test }}
+      marker_tag: ${{ steps.gate.outputs.marker_tag }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -105,57 +123,66 @@ jobs:
           echo "draft_release_test=${{ inputs.draft_release_test }}" >> "$GITHUB_OUTPUT"
           echo "Derived: version=$VERSION include_macos=$INCLUDE_MACOS include_linux=$INCLUDE_LINUX include_windows=$INCLUDE_WIN upload=$UPLOAD"
 
-      - name: Gate on both Releases existing
+      - name: Gate on both Releases existing / already built
         id: gate
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          PROCEED="true"
-          if [ "${{ steps.derive.outputs.upload_to_release }}" = "true" ]; then
-            # `gh release view`/the "get release by tag" API never returns
-            # draft releases, and both jdk21/jdk25 Releases are created as
-            # drafts by finalize — so list all releases (which does include
-            # drafts) instead of looking each one up by tag directly.
-            existing_tags=$(gh api "repos/${{ github.repository }}/releases" --paginate -q '.[].tag_name')
-            for jdk in jdk21 jdk25; do
-              tag="${{ steps.derive.outputs.version_tag }}-$jdk"
-              if grep -qx "$tag" <<< "$existing_tags"; then
-                echo "Release $tag exists."
-              else
-                echo "Release $tag does not exist yet."
-                PROCEED="false"
-              fi
-            done
+          if [ "${{ steps.derive.outputs.draft_release_test }}" = "true" ]; then
+            MARKER_TAG="draft-test-built-${{ steps.derive.outputs.version_tag }}"
+          elif [ "${{ steps.derive.outputs.upload_to_release }}" = "true" ]; then
+            MARKER_TAG="build-lock-${{ steps.derive.outputs.version_tag }}"
+          else
+            # Ad-hoc manual dispatch with upload_to_release=false that isn't
+            # a draft_release_test either (e.g. a one-off smoke test of a
+            # single platform) — deliberately no persistent marker for this
+            # case. Otherwise a smoke test's success would permanently block
+            # a real future release of the same version from ever building,
+            # since it'd find a stale build-lock-<version_tag> already there.
+            MARKER_TAG=""
           fi
+          echo "marker_tag=$MARKER_TAG" >> "$GITHUB_OUTPUT"
 
-          if [ "$PROCEED" = "true" ]; then
-            # Both jdk21 and jdk25 finalize dispatch this workflow
-            # independently. The release-existence check above (when it
-            # runs) usually keeps only one of the two dispatches proceeding,
-            # since normally one finalize finishes noticeably before the
-            # other — but if both release PRs get merged close together in
-            # time, both Releases can end up existing before either
-            # dispatch's own Preflight actually runs, so both would proceed.
-            # In draft_release_test mode there's no release-existence check
-            # at all. Either way, use a throwaway git tag as a race-safe
-            # final tie-breaker: whichever dispatch pushes it first actually
-            # builds, the other sees it already exists and bails out here.
-            # Deleted by the cleanup job below once the winner's builds finish.
-            LOCK_TAG="build-lock-${{ steps.derive.outputs.version_tag }}"
-            git tag "$LOCK_TAG"
-            if git push origin "$LOCK_TAG" 2>/tmp/lock_push.log; then
-              echo "Acquired $LOCK_TAG — this dispatch will build."
-            else
-              cat /tmp/lock_push.log
-              echo "$LOCK_TAG already exists — another dispatch is already building this version. Skipping."
-              PROCEED="false"
+          # Both jdk21 and jdk25 finalize dispatch this workflow
+          # independently, so a given version is always dispatched twice.
+          # concurrency.group (top of file) is scoped per-version, so the
+          # second dispatch's Preflight doesn't even start until the first
+          # dispatch's entire run has finished — no window where both could
+          # be mid-build simultaneously. But that alone isn't enough: once
+          # the second dispatch's Preflight finally runs, it would otherwise
+          # pass the same checks the first one did (both Releases now exist
+          # for real runs; nothing to check at all for draft runs) and
+          # rebuild everything from scratch. MARKER_TAG is created (see the
+          # mark-version-built job below) only once a run fully succeeds, so
+          # checking for it here catches that case regardless of how long
+          # the second dispatch was queued.
+          if [ -n "$MARKER_TAG" ] && git ls-remote --exit-code --tags origin "refs/tags/$MARKER_TAG" >/dev/null 2>&1; then
+            echo "$MARKER_TAG already exists — this version was already built successfully. Skipping."
+            PROCEED="false"
+          else
+            PROCEED="true"
+            if [ "${{ steps.derive.outputs.upload_to_release }}" = "true" ]; then
+              # `gh release view`/the "get release by tag" API never returns
+              # draft releases, and both jdk21/jdk25 Releases are created as
+              # drafts by finalize — so list all releases (which does
+              # include drafts) instead of looking each one up by tag.
+              existing_tags=$(gh api "repos/${{ github.repository }}/releases" --paginate -q '.[].tag_name')
+              for jdk in jdk21 jdk25; do
+                tag="${{ steps.derive.outputs.version_tag }}-$jdk"
+                if grep -qx "$tag" <<< "$existing_tags"; then
+                  echo "Release $tag exists."
+                else
+                  echo "Release $tag does not exist yet."
+                  PROCEED="false"
+                fi
+              done
             fi
           fi
           echo "proceed=$PROCEED" >> "$GITHUB_OUTPUT"
           if [ "$PROCEED" = "false" ]; then
             echo ""
-            echo "Skipping build: another dispatch for this version is already handling it (or, for a real release, both v${{ steps.derive.outputs.version }}-jdk21 and v${{ steps.derive.outputs.version }}-jdk25 Releases must exist)."
+            echo "Skipping build: either already built (see above), or both v${{ steps.derive.outputs.version }}-jdk21 and v${{ steps.derive.outputs.version }}-jdk25 Releases must exist first."
             echo "The next finalize completion will trigger another run."
           fi
 
@@ -505,16 +532,24 @@ jobs:
             echo "Downstream: \`publish-archives-to-sdkman-jdkXX\` dispatched explicitly above. \`deploy-maven-central-jdkXX\` runs via workflow_run on finalize completion."
           } >> "$GITHUB_STEP_SUMMARY"
 
-  cleanup-build-lock:
-    name: Release the build dedup lock
+  mark-version-built:
+    name: Mark this version as built
     needs: [preflight, build-macos, build-linux, build-windows]
-    # Only the run that acquired the lock (proceed == 'true') is responsible
-    # for releasing it; always() so this still runs if the builds failed,
-    # otherwise a failed run would permanently block rebuilding the same
-    # version (real or draft_release_test alike).
+    # Only mark it once every requested platform actually succeeded (a
+    # platform job shows 'skipped' only when its include_* flag was false,
+    # since this job itself requires proceed == 'true'). On a partial/full
+    # failure, deliberately do NOT create the marker, so the next dispatch
+    # for this version (a manual retry, or the next finalize completion)
+    # sees no marker and proceeds normally instead of being blocked forever.
+    # marker_tag is empty for ad-hoc smoke-test dispatches (see Preflight) —
+    # nothing to mark in that case.
     if: |
       always() &&
-      needs.preflight.outputs.proceed == 'true'
+      needs.preflight.outputs.proceed == 'true' &&
+      needs.preflight.outputs.marker_tag != '' &&
+      (needs.build-macos.result == 'success' || needs.build-macos.result == 'skipped') &&
+      (needs.build-linux.result == 'success' || needs.build-linux.result == 'skipped') &&
+      (needs.build-windows.result == 'success' || needs.build-windows.result == 'skipped')
     runs-on: [self-hosted, Linux, x64]
     permissions:
       contents: write
@@ -525,9 +560,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Delete build lock tag
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Push marker tag
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          LOCK_TAG="build-lock-${{ needs.preflight.outputs.version_tag }}"
-          git push origin --delete "$LOCK_TAG" || echo "Lock tag $LOCK_TAG already gone."
+          set -euo pipefail
+          MARKER_TAG="${{ needs.preflight.outputs.marker_tag }}"
+          git tag -a "$MARKER_TAG" -m "Built successfully by run ${{ github.run_id }} (${{ github.run_attempt }})"
+          git push origin "$MARKER_TAG"
+          echo "Marked $MARKER_TAG — future dispatches for this version will skip rebuilding."
