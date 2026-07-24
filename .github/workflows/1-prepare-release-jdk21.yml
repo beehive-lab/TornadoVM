@@ -90,9 +90,10 @@ jobs:
           # Update version badge
           sed -i 's/version-[0-9]\+\.[0-9]\+\.[0-9]\+\(-jdk21\)\?-purple/version-${{ env.VERSION }}-purple/g' README.md
 
-          # Update "Latest Release" line with current date (DD/MM/YYYY format)
-          RELEASE_DATE=$(date +"%d/%m/%Y")
-          sed -i "s|\*\*Latest Release:\*\* TornadoVM [0-9]\+\.[0-9]\+\.[0-9]\+\(-jdk21\)\? - [0-9/]\+|**Latest Release:** TornadoVM ${{ env.VERSION }} - ${RELEASE_DATE}|" README.md
+          # Update the "Latest release" banner version number (top of README),
+          # keeping the hand-written highlight text after it untouched
+          BASE_VERSION="${VERSION%-jdk21}"
+          sed -i -E "s/(\*\*Latest [Rr]elease:\*\* TornadoVM )[0-9]+\.[0-9]+\.[0-9]+(-jdk21)?/\1${BASE_VERSION}/" README.md
 
           # Update Maven Central dependency versions (io.github.beehive-lab groupId)
           sed -i 's|<version>[0-9]\+\.[0-9]\+\.[0-9]\+\(-jdk21\)\?</version>|<version>${{ env.VERSION }}</version>|g' README.md
