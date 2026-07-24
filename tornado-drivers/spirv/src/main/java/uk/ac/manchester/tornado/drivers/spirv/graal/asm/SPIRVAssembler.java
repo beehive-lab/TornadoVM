@@ -266,10 +266,6 @@ public final class SPIRVAssembler extends Assembler {
         return currentBlockScopeStack.pop();
     }
 
-    public void emitAttribute(SPIRVCompilationResultBuilder crb) {
-        throw new RuntimeException("[Not supported for SPIR-V] FPGA ATTRIBUTES - Check with the OpenCL Backend");
-    }
-
     public SPIRVId createArrayDeclaration(SPIRVId elementTypeId, SPIRVId elementsId) {
         SPIRVId resultArrayId = module.getNextId();
         module.add(new SPIRVOpTypeArray(resultArrayId, elementTypeId, elementsId));

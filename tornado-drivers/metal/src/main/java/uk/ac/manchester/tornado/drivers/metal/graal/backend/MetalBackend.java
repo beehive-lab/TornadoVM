@@ -101,7 +101,6 @@ import uk.ac.manchester.tornado.drivers.metal.graal.compiler.MetalNodeLIRBuilder
 import uk.ac.manchester.tornado.drivers.metal.graal.compiler.MetalNodeMatchRules;
 import uk.ac.manchester.tornado.drivers.metal.graal.compiler.MetalReferenceMapBuilder;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalKind;
-import uk.ac.manchester.tornado.drivers.metal.graal.nodes.FPGAWorkGroupSizeNode;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.MetalTokens;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;

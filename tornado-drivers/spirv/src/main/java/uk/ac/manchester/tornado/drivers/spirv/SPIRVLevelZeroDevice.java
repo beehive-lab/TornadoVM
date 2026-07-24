@@ -235,7 +235,7 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
         ZeDeviceType type = deviceProperties.getType();
         return switch (type) {
             case ZE_DEVICE_TYPE_GPU -> TornadoDeviceType.GPU;
-            case ZE_DEVICE_TYPE_FPGA -> TornadoDeviceType.FPGA;
+            case ZE_DEVICE_TYPE_FPGA -> TornadoDeviceType.ACCELERATOR;
             case ZE_DEVICE_TYPE_CPU -> TornadoDeviceType.CPU;
             // Memory Copy Accelerator
             case ZE_DEVICE_TYPE_MCA -> TornadoDeviceType.ACCELERATOR;

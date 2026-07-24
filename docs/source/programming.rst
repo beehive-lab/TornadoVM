@@ -11,7 +11,7 @@ Programming in TornadoVM involves the development of four parts:
 
 1. **Data Representation:** TornadoVM offers a set of data types, built on top of the `Foreign Function & Memory API <https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/foreign/package-summary.html>`_ from Project Panama, to allocate data off-heap and to migrate data from on-heap to off-heap (and vice versa). These off-heap data types are automatically managed by the TornadoVM Runtime and the compiler.
 2. **Expressing parallelism within Java methods:** TornadoVM offers two APIs: one for loop parallelization using Java annotations; and a second one for low-level programming using a Kernel API.
-   Developers can choose which one to use. The loop API is recommended for non-expert GPU/FPGA programmers.
+   Developers can choose which one to use. The loop API is recommended for non-expert GPU programmers.
    The kernel API is recommended for experts GPU programmers than want more control (access to GPU's local memory, barriers, etc.).
 3. **Selecting the methods to be accelerated using a Task-Graph API:** once Java methods have been identified for acceleration (either using the loop parallel API or kernel API), Java methods can be grouped together in a graph.
    TornadoVM offers an API to define the data as well as the Java methods to be accelerated.
@@ -91,13 +91,13 @@ The main methods that the off-heap types expose to manage the Memory Segment of 
 ------------------------------------------------
 
 
-TornadoVM offloads Java methods to heterogeneous hardware such as GPUs and FPGAs for parallel execution.
+TornadoVM offloads Java methods to heterogeneous hardware such as GPUs and multi-core CPUs for parallel execution.
 Those Java methods usually represents the sequential (single thread) implementation of the work to perform on the accelerator.
 However, TornadoVM does not auto-parallelize Java methods.
 
 Thus, TornadoVM needs a hint about how to parallelize the code.
 TornadoVM has two APIs to achieve this goal: one for loop parallelization using Java annotations; and a second one for low-level programming using a Kernel API.
-Developers can choose which one to use. The loop API is recommended for non-expert GPU/FPGA programmers.
+Developers can choose which one to use. The loop API is recommended for non-expert GPU programmers.
 
 
 .. _loop-parallel-api:
@@ -133,7 +133,7 @@ Another way to express compute-kernels in TornadoVM is via the kernel API.
 To do so, TornadoVM exposes a ``KernelContext`` with which the application can directly access
 the thread-id, allocate memory in local memory (shared memory on NVIDIA devices), and insert barriers.
 This model is similar to programming compute-kernels in OpenCL and CUDA.
-Therefore, this API is more suitable for GPU/FPGA expert programmers that want more control or want to port existing CUDA/OpenCL compute kernels into TornadoVM.
+Therefore, this API is more suitable for GPU expert programmers that want more control or want to port existing CUDA/OpenCL compute kernels into TornadoVM.
 
 The following code-snippet shows the Matrix Multiplication example using the kernel-parallel API:
 
@@ -383,7 +383,6 @@ This is performed using the ``task`` API call as follows:
 
 Developers can add as many tasks as needed.
 The maximum number of tasks depends on the amount of code that can be shipped to the accelerator.
-Usually, FPGAs are more limited than GPUs.
 
 
 C. Copy out from the device (accelerator) to the host (main CPU).

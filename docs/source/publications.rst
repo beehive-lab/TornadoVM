@@ -4,7 +4,7 @@ Publications
 .. _publications:
 
 
-If you are using TornadoVM >= 0.2 (which includes the Dynamic Reconfiguration, the initial FPGA support and CPU/GPU reductions), please use the following citation:
+If you are using TornadoVM >= 0.2 (which includes the Dynamic Reconfiguration and CPU/GPU reductions), please use the following citation:
 
 
 .. code-block:: bibtex

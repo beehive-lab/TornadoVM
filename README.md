@@ -5,7 +5,7 @@
 
 ## Write Java. Run on GPUs. Fast.
 
-TornadoVM is a GPU programming framework for Java that works with JDK 21+ (currently JDK 21 and JDK 25). It JIT-compiles Java bytecode into **NVIDIA CUDA PTX, OpenCL C, SPIR-V, and Apple Metal (MSL)** at runtime, so your existing Java code runs on **NVIDIA GPUs (via CUDA/PTX)**, AMD, Intel, and Apple Silicon GPUs, integrated GPUs, FPGAs, and multi-core CPUs. On NVIDIA hardware it goes further: beyond generating PTX, TornadoVM now calls straight into the **NVIDIA library ecosystem — cuBLAS, cuFFT, cuDNN — and exposes Tensor Core `mma.sync` instructions from pure Java**. No CUDA C. No JNI bindings to maintain. No native toolchain in your application.
+TornadoVM is a GPU programming framework for Java that works with JDK 21+ (currently JDK 21 and JDK 25). It JIT-compiles Java bytecode into **NVIDIA CUDA PTX, OpenCL C, SPIR-V, and Apple Metal (MSL)** at runtime, so your existing Java code runs on **NVIDIA GPUs (via CUDA/PTX)**, AMD, Intel, and Apple Silicon GPUs, integrated GPUs, and multi-core CPUs. On NVIDIA hardware it goes further: beyond generating PTX, TornadoVM now calls straight into the **NVIDIA library ecosystem — cuBLAS, cuFFT, cuDNN — and exposes Tensor Core `mma.sync` instructions from pure Java**. No CUDA C. No JNI bindings to maintain. No native toolchain in your application.
 
 [![Build & Test JDK 21](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk21.yml/badge.svg)](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk21.yml)
 [![Build & Test JDK 25](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk25.yml/badge.svg?branch=jdk25)](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk25.yml)
@@ -184,14 +184,14 @@ Pick a backend-specific build if you prefer a smaller install:
 
 | Backend | SDKMAN! version | Targets |
 |---|---|---|
-| OpenCL *(default)* | `5.2.0-opencl` | NVIDIA / AMD / Intel GPUs, multi-core CPUs, FPGAs |
+| OpenCL *(default)* | `5.2.0-opencl` | NVIDIA / AMD / Intel GPUs, multi-core CPUs |
 | CUDA | `5.2.0-cuda` | **NVIDIA GPUs (CUDA) — PTX codegen, Tensor Cores, cuBLAS/cuFFT/cuDNN library tasks** |
 | PTX | `5.2.0-ptx` | **NVIDIA GPUs (CUDA) — PTX codegen, Tensor Cores, cuBLAS/cuFFT/cuDNN library tasks** |
 | SPIR-V | `5.2.0-spirv` | Intel GPUs (Level Zero / oneAPI) |
 | Metal 🆕 | `5.2.0-metal` | Apple Silicon GPUs (M1–M4), natively via MSL |
 | All backends | `5.2.0-full` | Everything above |
 
-Binaries are also on the [official website](https://www.tornadovm.org/downloads). For [Docker](https://github.com/beehive-lab/docker-tornado#docker-for-tornadovm) and [AWS (CPUs/GPUs/FPGAs)](https://tornadovm.readthedocs.io/en/latest/cloud.html) see the linked guides.
+Binaries are also on the [official website](https://www.tornadovm.org/downloads). For [Docker](https://github.com/beehive-lab/docker-tornado#docker-for-tornadovm) and [AWS (CPUs/GPUs)](https://tornadovm.readthedocs.io/en/latest/cloud.html) see the linked guides.
 
 ### Verify your devices
 
@@ -241,7 +241,7 @@ More examples — NBody, DFT, KMeans, matrix kernels, reductions: [tornado-examp
 <details>
 <summary><b>How does TornadoVM relate to OpenJDK's Project Babylon / HAT?</b></summary>
 
-[Project Babylon](https://openjdk.org/projects/babylon/) is OpenJDK's exploratory work on code reflection, with HAT (Heterogeneous Accelerator Toolkit) as a research vehicle for GPU programming. We think it validates the direction TornadoVM has pursued since 2018 — and the projects are complementary rather than competing. The practical difference today: **TornadoVM is usable now**, with four production backends (OpenCL, PTX, SPIR-V, Metal), FPGA support, a profiler, dynamic reconfiguration, Maven Central artifacts, and years of hardening across vendor hardware — and it runs on standard JDK 21/25 releases. We follow Babylon closely and expect the ecosystems to converge over time.
+[Project Babylon](https://openjdk.org/projects/babylon/) is OpenJDK's exploratory work on code reflection, with HAT (Heterogeneous Accelerator Toolkit) as a research vehicle for GPU programming. We think it validates the direction TornadoVM has pursued since 2018 — and the projects are complementary rather than competing. The practical difference today: **TornadoVM is usable now**, with four production backends (OpenCL, PTX, SPIR-V, Metal), a profiler, dynamic reconfiguration, Maven Central artifacts, and years of hardening across vendor hardware — and it runs on standard JDK 21/25 releases. We follow Babylon closely and expect the ecosystems to converge over time.
 </details>
 
 <details>
@@ -265,7 +265,7 @@ No. TornadoVM is a plug-in to your existing OpenJDK or GraalVM installation. It 
 <details>
 <summary><b>Which hardware is supported?</b></summary>
 
-Multi-core CPUs; dedicated GPUs from NVIDIA, AMD, and Intel; integrated GPUs (Apple Silicon M1–M4, Intel HD Graphics, ARM Mali); and FPGAs from Intel and Xilinx. Backends can be installed individually or together, and tasks can migrate between devices at runtime. NVIDIA GPUs can be driven either through the **PTX/CUDA** backend (with the library and Tensor Core features above) or through the OpenCL backend.
+Multi-core CPUs; dedicated GPUs from NVIDIA, AMD, and Intel; and integrated GPUs (Apple Silicon M1–M4, Intel HD Graphics, ARM Mali). Backends can be installed individually or together, and tasks can migrate between devices at runtime. NVIDIA GPUs can be driven either through the **PTX/CUDA** backend (with the library and Tensor Core features above) or through the OpenCL backend.
 </details>
 
 <details>

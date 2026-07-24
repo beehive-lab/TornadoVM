@@ -4,10 +4,10 @@ Docker Containers
 ===========================
 
 *We have tested our docker images for CentOS >= 7.4 and Ubuntu >= 16.04.* We currently have docker images for NVIDIA GPUs, and Intel
-Integrated GPUs, Intel CPUs and Intel FPGAs using OpenJDK 11, 17 and GraalVM 22.2.0:
+Integrated GPUs and Intel CPUs using OpenJDK 11, 17 and GraalVM 22.2.0:
 
 -  TornadoVM docker images for **NVIDIA GPUs**
--  TornadoVM docker images for **Intel Integrated Graphics, Intel FPGAs, and Intel CPUs**
+-  TornadoVM docker images for **Intel Integrated Graphics and Intel CPUs**
 
 Nvidia GPUs
 ------------------

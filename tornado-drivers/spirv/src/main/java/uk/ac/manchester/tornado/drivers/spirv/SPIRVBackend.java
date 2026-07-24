@@ -112,7 +112,6 @@ import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.common.utils.BackendDeopt;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FPGAWorkGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.WriteHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVCodeProvider;
@@ -776,10 +775,6 @@ public class SPIRVBackend extends XPUBackend<SPIRVProviders> implements FrameMap
 
     private void emitPrologueForMainKernelEntry(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm, ResolvedJavaMethod method, LIR lir, SPIRVModule module) {
         final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
-
-        if (cfg.getStartBlock().getEndNode().predecessor() instanceof FPGAWorkGroupSizeNode) {
-            throw new TornadoBailoutRuntimeException("FPGA Thread Attributes not supported yet.");
-        }
 
         emitSPIRVCapabilities(module);
         emitImportOpenCL(asm, module);

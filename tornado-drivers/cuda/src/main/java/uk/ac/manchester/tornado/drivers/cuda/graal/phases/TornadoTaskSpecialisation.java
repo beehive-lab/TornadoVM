@@ -203,10 +203,8 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
             /**
              * This condition covers the case that loop bounds should be taken based on the
              * grid size given by {@link GridScheduler}. This allows the loop bounds to be
-             * dynamically configured, without requiring recompilation.
-             *
-             * This condition will disable the FPGA HLS loop optimizations, because the loop
-             * bound is not retrievable at compile time.
+             * dynamically configured, without requiring recompilation. The loop bound is
+             * not retrievable at compile time in this case.
              */
             if (gridScheduling && isParameterInvolvedInParallelLoopBound(node)) {
                 printWarningMessageForDynamicLoopBounds();
@@ -290,10 +288,8 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
             /*
              * This condition covers the case that loop bounds should be taken based on the
              * grid size given by {@link GridScheduler}. This allows the loop bounds to be
-             * dynamically configured, without requiring recompilation.
-             *
-             * This condition will disable the FPGA HLS loop optimizations, because the loop
-             * bound is not retrievable at compile time.
+             * dynamically configured, without requiring recompilation. The loop bound is
+             * not retrievable at compile time in this case.
              */
             if (gridScheduling && isParameterInvolvedInParallelLoopBound(parameterNode)) {
                 printWarningMessageForDynamicLoopBounds();

@@ -70,13 +70,6 @@ Mark the OS where this PR is tested.
 - [ ] OSx
 - [ ] Windows
 
-#### Did you check on FPGAs?
-
-If it is applicable, check your changes on FPGAs.
-
-- [ ] Yes
-- [ ] No
-
 #### How to test the new patch?
 
 Provide instructions about how to test the new patch. 

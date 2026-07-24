@@ -41,7 +41,6 @@ public class TornadoUtils {
                 // CPU
                 return Runtime.getRuntime().availableProcessors();
             case GPU:
-            case FPGA:
                 // size will be the number of work-groups on the GPU
                 int size = 1;
                 if (inputSize > 256) {

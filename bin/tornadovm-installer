@@ -616,7 +616,7 @@ class TornadoInstaller:
         return config
 
 def parseArguments():
-    parser = argparse.ArgumentParser(description="TornadoVM Installer Tool.  It will install all software dependencies except the GPU/FPGA drivers")
+    parser = argparse.ArgumentParser(description="TornadoVM Installer Tool.  It will install all software dependencies except the GPU drivers")
     parser.add_argument("--jdk", action="store", dest="jdk", default=None,
                         help=(
                             "Specify a JDK to install by its keyword (e.g., 'jdk21', 'graal-jdk-21'). "

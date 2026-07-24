@@ -107,10 +107,8 @@ public class CUDAHighTier extends TornadoHighTier {
 
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.EARLIEST));
 
-        if (!deviceContext.isPlatformFPGA()) {
-            LoopPolicies loopPolicies = new DefaultLoopPolicies();
-            appendPhase(new LoopFullUnrollPhase(canonicalizer, loopPolicies));
-        }
+        LoopPolicies loopPolicies = new DefaultLoopPolicies();
+        appendPhase(new LoopFullUnrollPhase(canonicalizer, loopPolicies));
 
         appendPhase(canonicalizer);
         appendPhase(new DeadCodeEliminationPhase(Optional));

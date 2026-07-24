@@ -7,7 +7,7 @@ TornadoVM
   :align: left
 
 TornadoVM is a GPU programming framework for Java (JDK 21+, including JDK 21 and JDK 25) that JIT-compiles Java bytecode at runtime to **NVIDIA PTX, NVIDIA CUDA C, OpenCL C, SPIR-V, and Apple Metal (MSL)**.
-It runs the same Java source on NVIDIA, AMD, Intel and Apple Silicon GPUs, integrated GPUs (Intel HD Graphics, Apple M1-M5, ARM Mali), FPGAs (Intel and Xilinx), and multi-core CPUs.
+It runs the same Java source on NVIDIA, AMD, Intel and Apple Silicon GPUs, integrated GPUs (Intel HD Graphics, Apple M1-M5, ARM Mali), and multi-core CPUs.
 TornadoVM is a plug-in to OpenJDK and other JDK distributions (GraalVM, Red Hat Mandrel, Amazon Corretto, Microsoft OpenJDK, SAP, Azul Zulu); it does not replace your JVM, it complements it.
 
 TornadoVM provides five backends, and developers choose which one/s to install and run:
@@ -25,7 +25,7 @@ What is unique about TornadoVM?
 
 Beyond JIT-compiling Java bytecode to each backend, TornadoVM's runtime provides:
 
-- **Live profiling:** utilities to profile and debug code on multiple platforms, including FPGAs (see :ref:`dev-tools`).
+- **Live profiling:** utilities to profile and debug code on multiple platforms (see :ref:`dev-tools`).
 - **Batch processing:** automatic split and batch processing for big-data applications.
 - **Multi-device & multi-backend support:** offload and run multiple kernels concurrently across different accelerators and backends.
 - **Multi-vendor:** NVIDIA, Intel, AMD, Apple, ARM, and RISC-V hardware accelerators.
@@ -61,7 +61,6 @@ Beyond JIT-compiling Java bytecode to each backend, TornadoVM's runtime provides
    programming
    offheap-types
    truffle-languages
-   fpga-programming
    unsupported
 
 .. toctree::

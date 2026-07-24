@@ -188,7 +188,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private Access[] accesses;
 
     /**
-     * Task Schedule implementation that uses GPU/FPGA and multicore backends. This constructor must be public. It is invoked using the reflection API.
+     * Task Schedule implementation that uses GPU and multicore backends. This constructor must be public. It is invoked using the reflection API.
      *
      * @param taskScheduleName
      *     Task-Schedule name
@@ -885,31 +885,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         return compileInfo.compile;
     }
 
-    private void compileTaskToOpenCL() {
-        vm.withPreCompilation();
-    }
-
-    /**
-     * If current FPGA execution and JIT mode, then run warm-up.
-     */
-    private void preCompileForFPGAs() {
-        boolean compile = false;
-        if (TornadoOptions.FPGA_EMULATION) {
-            compile = true;
-        } else if (executionContext.getDeviceOfFirstTask() instanceof TornadoXPUDevice tornadoAcceleratorDevice) {
-            if (tornadoAcceleratorDevice.isFullJITMode(executionPlanId, executionContext.getTask(0))) {
-                compile = true;
-            }
-        }
-
-        if (compile) {
-            if (DEBUG) {
-                System.out.println("[DEBUG] JIT compilation for the FPGA");
-            }
-            compileTaskToOpenCL();
-        }
-    }
-
     private void updateProfiler() {
         if (!TornadoOptions.isProfilerEnabled()) {
             return;
@@ -954,11 +929,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     @Override
     public void scheduleInner() {
-        boolean compile = compileComputeGraphToTornadoVMBytecode();
-        TornadoXPUDevice deviceForTask = executionContext.getDeviceForTask(0);
-        if (compile && deviceForTask.getDeviceContext().isPlatformFPGA()) {
-            preCompileForFPGAs();
-        }
+        compileComputeGraphToTornadoVMBytecode();
 
         try {
             event = vm.execute(isConcurrentDevicesEnabled, timeProfiler);

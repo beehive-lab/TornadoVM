@@ -7,6 +7,15 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 
 CHANGELOG
 
+TornadoVM Unreleased
+---------------------
+
+Breaking Changes
+~~~~~~~~~~~~
+
+- `#975 <https://github.com/beehive-lab/TornadoVM/issues/975>`_: Remove all FPGA support (Xilinx/Intel ``.aocx``/``.xclbin`` bitstream flows, HLS emulation glue, AWS F1 post-processing, FPGA config files, and FPGA codegen phases/nodes/schedulers across all backends). Removes the ``TornadoDeviceType.FPGA`` enum constant and the ``isPlatformFPGA()``/``isPlatformXilinxFPGA()`` methods from the ``TornadoDeviceContext`` interface.
+
+
 TornadoVM 5.2.0-jdk21
 ---------------------
 23/07/26

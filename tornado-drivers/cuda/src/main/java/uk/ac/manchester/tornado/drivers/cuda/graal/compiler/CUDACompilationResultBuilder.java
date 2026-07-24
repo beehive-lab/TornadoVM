@@ -75,7 +75,6 @@ public class CUDACompilationResultBuilder extends CompilationResultBuilder {
     protected LIR lir;
     private int currentBlockIndex;
     private boolean isKernel;
-    private int loops = 0;
     private boolean isParallel;
     private TaskDataContext metaData;
     private long[] localGrid;
@@ -174,9 +173,6 @@ public class CUDACompilationResultBuilder extends CompilationResultBuilder {
         instructions.addAll(index - 1, moved);
     }
 
-    private static boolean isLoopDependencyNode(LIRInstruction op) {
-        return ((op instanceof CUDAControlFlow.LoopInitOp || op instanceof CUDAControlFlow.LoopConditionOp || op instanceof CUDAControlFlow.LoopPostOp));
-    }
 
     private static void emitOp(CompilationResultBuilder crb, LIRInstruction op) {
         try {
@@ -197,10 +193,6 @@ public class CUDACompilationResultBuilder extends CompilationResultBuilder {
 
     public CUDACompilationResult getResult() {
         return (CUDACompilationResult) compilationResult;
-    }
-
-    public boolean shouldRemoveLoop() {
-        return (isParallel() && deviceContext.isPlatformFPGA());
     }
 
     public boolean isKernel() {
@@ -323,15 +315,6 @@ public class CUDACompilationResultBuilder extends CompilationResultBuilder {
                 continue;
             } else if (op instanceof CUDAControlFlow.LoopBreakOp) {
                 breakInst = op;
-                continue;
-            } else if ((shouldRemoveLoop() && loops == 0) && isLoopDependencyNode(op)) {
-                /**
-                 * Apply the Loop Flattening optimization for FPGAs,
-                 * which omits the outermost for loop along with every data dependency associated with it.
-                 */
-                if (op instanceof CUDAControlFlow.LoopPostOp) {
-                    loops++;
-                }
                 continue;
             }
             if (Options.PrintLIRWithAssembly.getValue(getOptions())) {
