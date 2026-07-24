@@ -96,7 +96,13 @@ jobs:
 
           # Update Maven Central dependency versions (io.github.beehive-lab groupId)
           sed -i 's|<version>[0-9]\+\.[0-9]\+\.[0-9]\+\(-jdk21\)\?</version>|<version>${{ env.VERSION }}</version>|g' README.md
-          
+
+          # Update SDKMAN! per-backend candidate versions (e.g. `4.0.1-jdk21-opencl`)
+          sed -i -E 's/`[0-9]+\.[0-9]+\.[0-9]+(-jdk21)?-(opencl|cuda|ptx|spirv|metal|full)`/`${{ env.VERSION }}-\2`/g' README.md
+
+          # Update the tornado-examples jar version in the "Run your first program" snippet
+          sed -i 's/tornado-examples-[0-9]\+\.[0-9]\+\.[0-9]\+\(-jdk21\)\?\.jar/tornado-examples-${{ env.VERSION }}.jar/g' README.md
+
           echo "✅ Updated README.md"
 
       - name: Update docs/source/conf.py
