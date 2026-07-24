@@ -59,7 +59,9 @@ jobs:
     name: Preflight (derive version, gate on Releases)
     runs-on: [self-hosted, Linux, x64]
     permissions:
-      contents: read
+      # Draft releases are only visible to tokens with push (write) access —
+      # `contents: read` silently sees zero releases in the gate check below.
+      contents: write
     timeout-minutes: 5
     outputs:
       version: ${{ steps.derive.outputs.version }}
@@ -375,7 +377,7 @@ jobs:
             } elseif ($fname -match 'jdk25') {
               $tag = "$env:VERSION_TAG-jdk25"
             } else {
-              Write-Host "::warning::Skipping $fname — filename does not contain jdk21 or jdk25"
+              Write-Host "::warning::Skipping $fname - filename does not contain jdk21 or jdk25"
               return
             }
             Write-Host "-> $fname  ->  release $tag"
