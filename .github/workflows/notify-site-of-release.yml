@@ -1,0 +1,21 @@
+name: Notify Site of Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  notify:
+    name: Trigger tornadovm-site rebuild
+    if: github.repository == 'beehive-lab/TornadoVM'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Dispatch to beehive-lab/tornadovm-site
+        env:
+          GH_TOKEN: ${{ secrets.SITE_DISPATCH_TOKEN }}
+        run: |
+          gh api repos/beehive-lab/tornadovm-site/dispatches \
+            -f event_type=tornadovm-release \
+            -f "client_payload[tag]=${{ github.event.release.tag_name }}"
