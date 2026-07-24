@@ -48,6 +48,11 @@ on:
         required: false
         type: boolean
         default: true
+      dry_run:
+        description: 'Dry run: still build the SDKs for real, but never upload/un-draft/publish anything (forces upload_to_release off).'
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: build-release-sdks
@@ -86,6 +91,10 @@ jobs:
           INCLUDE_LINUX="${{ inputs.include_linux }}"
           INCLUDE_WIN="${{ inputs.include_windows }}"
           UPLOAD="${{ inputs.upload_to_release }}"
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "Dry run: forcing upload_to_release=false (still building for real, nothing gets uploaded/un-drafted/published)."
+            UPLOAD="false"
+          fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "version_tag=v$VERSION" >> "$GITHUB_OUTPUT"
           echo "include_macos=$INCLUDE_MACOS" >> "$GITHUB_OUTPUT"

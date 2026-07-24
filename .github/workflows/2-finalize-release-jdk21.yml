@@ -14,6 +14,11 @@ on:
         description: 'Next development version (e.g., 4.0.2-jdk21-dev)'
         required: true
         type: string
+      dry_run:
+        description: 'Dry run: skip tag/GitHub Release/develop push, still exercise the rest of the pipeline (build-release-sdks runs for real but never uploads).'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   create-release-tag:
@@ -56,9 +61,13 @@ jobs:
       - name: Create and push tag
         run: |
           VERSION="${{ steps.get_version.outputs.version }}"
-          git tag -a "v${VERSION}" -m "Release ${VERSION}"
-          git push origin "v${VERSION}"
-          echo "✅ Created tag v${VERSION}"
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "DRY RUN: would create and push tag v${VERSION} (skipped)."
+          else
+            git tag -a "v${VERSION}" -m "Release ${VERSION}"
+            git push origin "v${VERSION}"
+            echo "✅ Created tag v${VERSION}"
+          fi
 
       - name: Extract changelog for release notes
         id: changelog
@@ -146,6 +155,7 @@ jobs:
           sed -i "s|@@VERSION@@|${VERSION}|g" /tmp/release_notes_jdk21.md
 
       - name: Create GitHub Release
+        if: ${{ inputs.dry_run != true }}
         uses: actions/github-script@v7
         with:
           script: |
@@ -174,6 +184,13 @@ jobs:
 
             console.log(`✅ Created release: ${release.html_url}`);
 
+      - name: Dry run - GitHub Release
+        if: ${{ inputs.dry_run == true }}
+        run: |
+          echo "DRY RUN: would create draft GitHub Release v${{ steps.get_version.outputs.version }} here (skipped)."
+          echo "Generated release notes (not published):"
+          cat /tmp/release_notes_jdk21.md
+
       - name: Dispatch Build Release SDKs
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -181,10 +198,12 @@ jobs:
           set -euo pipefail
           VERSION="${{ steps.get_version.outputs.version }}"
           BASE_VERSION="${VERSION%-jdk21}"
-          echo "Dispatching build-release-sdks.yml for version=$BASE_VERSION..."
+          DRY_RUN="${{ inputs.dry_run == true }}"
+          echo "Dispatching build-release-sdks.yml for version=$BASE_VERSION (dry_run=$DRY_RUN)..."
           gh workflow run build-release-sdks.yml \
             --repo "${{ github.repository }}" \
-            -f version="$BASE_VERSION"
+            -f version="$BASE_VERSION" \
+            -f dry_run="$DRY_RUN"
 
   update-develop:
     if: github.repository == 'beehive-lab/TornadoVM'
@@ -246,22 +265,37 @@ jobs:
 
           if ! git diff --cached --quiet; then
             git commit -m "Bump version to ${NEXT} for development"
-            git push origin develop
-            echo "✅ Changes committed and pushed"
+            if [ "${{ inputs.dry_run }}" = "true" ]; then
+              echo "DRY RUN: committed locally in this ephemeral checkout, not pushing to develop."
+            else
+              git push origin develop
+              echo "✅ Changes committed and pushed"
+            fi
           else
             echo "ℹ️ No changes to commit"
           fi
 
       - name: Summary
         run: |
-          echo "## 🎉 Release Finalized" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Step | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Tag created | ✅ v${{ needs.create-release-tag.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| GitHub Release | ✅ Created |" >> $GITHUB_STEP_SUMMARY
-          echo "| Develop bumped | ✅ ${{ steps.next_version.outputs.next_version }} |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Remaining manual steps:" >> $GITHUB_STEP_SUMMARY
-          echo "1. Run **deploy-maven-central** workflow" >> $GITHUB_STEP_SUMMARY
-          echo "2. Announce release" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "## 🧪 Release Finalized (DRY RUN — nothing tagged, released, or pushed)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Step | Status |" >> $GITHUB_STEP_SUMMARY
+            echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Tag | skipped (would be v${{ needs.create-release-tag.outputs.version }}) |" >> $GITHUB_STEP_SUMMARY
+            echo "| GitHub Release | skipped |" >> $GITHUB_STEP_SUMMARY
+            echo "| Develop bumped | skipped (would be ${{ steps.next_version.outputs.next_version }}) |" >> $GITHUB_STEP_SUMMARY
+            echo "| Build Release SDKs | dispatched with dry_run=true (builds for real, no upload) |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## 🎉 Release Finalized" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Step | Status |" >> $GITHUB_STEP_SUMMARY
+            echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Tag created | ✅ v${{ needs.create-release-tag.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
+            echo "| GitHub Release | ✅ Created |" >> $GITHUB_STEP_SUMMARY
+            echo "| Develop bumped | ✅ ${{ steps.next_version.outputs.next_version }} |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Remaining manual steps:" >> $GITHUB_STEP_SUMMARY
+            echo "1. Run **deploy-maven-central** workflow" >> $GITHUB_STEP_SUMMARY
+            echo "2. Announce release" >> $GITHUB_STEP_SUMMARY
+          fi

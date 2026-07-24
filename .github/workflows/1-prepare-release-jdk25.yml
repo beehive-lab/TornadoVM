@@ -28,6 +28,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      actions: write
     timeout-minutes: 15
     env:
       JAVA_HOME: /opt/jenkins/jdks/jdk-25.0.2
@@ -375,3 +376,24 @@ jobs:
           echo ""
           echo "=== Full diff ==="
           git diff
+
+      - name: Dry run - continue pipeline
+        if: ${{ inputs.dry_run == true }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # No PR was opened (and won't be merged) in dry-run mode, so simulate
+          # the "PR merged" trigger by dispatching finalize directly with
+          # dry_run=true. That in turn dispatches build-release-sdks with
+          # dry_run=true, which still builds the SDKs for real but never
+          # uploads/un-drafts/publishes anything.
+          BASE_VERSION="${VERSION%-jdk25}"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE_VERSION"
+          NEXT_DEV="${MAJOR}.${MINOR}.$((PATCH + 1))-jdk25-dev"
+          echo "Dispatching 2-finalize-release-jdk25.yml with dry_run=true (version=${VERSION}, next_dev_version=${NEXT_DEV})..."
+          gh workflow run 2-finalize-release-jdk25.yml \
+            --repo "${{ github.repository }}" \
+            -f version="${VERSION}" \
+            -f next_dev_version="${NEXT_DEV}" \
+            -f dry_run=true
