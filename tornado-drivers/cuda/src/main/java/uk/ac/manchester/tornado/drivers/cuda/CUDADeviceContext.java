@@ -108,6 +108,11 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     private final Map<Long, List<CUDACommandQueue>> computePool = new ConcurrentHashMap<>();
     /** Per-plan round-robin cursor for assigning kernels to COMPUTE-pool streams. */
     private final Map<Long, AtomicInteger> computeCursor = new ConcurrentHashMap<>();
+    /**
+     * Label of the stream the last operation of each plan was issued to. Read back by the bytecode
+     * logger ({@code --printBytecodes}) so stream routing is visible without an Nsight timeline.
+     */
+    private final Map<Long, String> lastQueueLabel = new ConcurrentHashMap<>();
 
     /**
      * Kernel stack-frame writes deferred during CUDA graph capture. The stack
@@ -194,7 +199,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
 
     @Override
     public void sync(long executionPlanId) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = defaultQueue(executionPlanId);
         if (TornadoOptions.USE_SYNC_FLUSH) {
             commandQueue.flush();
         }
@@ -212,7 +217,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
 
     @Override
     public int enqueueBarrier(long executionPlanId) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = defaultQueue(executionPlanId);
         joinRoleQueues(executionPlanId, commandQueue);
         long oclEvent = commandQueue.enqueueBarrier();
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
@@ -221,7 +226,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
 
     @Override
     public int enqueueMarker(long executionPlanId) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = defaultQueue(executionPlanId);
         joinRoleQueues(executionPlanId, commandQueue);
         long oclEvent = commandQueue.enqueueMarker();
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
@@ -320,7 +325,14 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
                 : null), EventDescriptor.DESC_WRITE_DOUBLE, commandQueue);
     }
 
-    private CUDACommandQueue getCommandQueue(long executionPlanId) {
+    /**
+     * The plan's DEFAULT queue, without recording it as the last queue used. Used by internal
+     * predicates (such as {@link #isStreamCapturing(long)}), which are evaluated in the middle of
+     * issuing an operation, and by markers/barriers/sync/flush and graph calls, which always run on
+     * the default stream. Only the routing decisions for data transfers and kernels record a label,
+     * so {@code --printBytecodes} reports the stream of the operation itself.
+     */
+    private CUDACommandQueue defaultQueue(long executionPlanId) {
         executionIDs.add(executionPlanId);
         if (!commandQueueTable.containsKey(executionPlanId)) {
             CUDATargetDevice device = context.devices().get(getDeviceIndex());
@@ -329,6 +341,20 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
             commandQueueTable.put(executionPlanId, oclCommandQueueTable);
         }
         return commandQueueTable.get(executionPlanId).get(context.devices().get(getDeviceIndex()), context);
+    }
+
+    /**
+     * Remembers which stream an operation of this plan was issued to, so {@code --printBytecodes} can
+     * report it. Called on every routing decision; the logger reads it right after the enqueue.
+     */
+    private CUDACommandQueue recordQueue(long executionPlanId, CUDACommandQueue queue) {
+        lastQueueLabel.put(executionPlanId, queue.getLabel());
+        return queue;
+    }
+
+    @Override
+    public String getLastQueueLabel(long executionPlanId) {
+        return lastQueueLabel.getOrDefault(executionPlanId, "");
     }
 
     private CUDAEventPool getCUDAEventPool(long executionPlanId) {
@@ -398,11 +424,11 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      */
     private CUDACommandQueue getCommandQueue(long executionPlanId, CUDAStreamType streamType) {
         if (streamType == CUDAStreamType.DEFAULT || !isMultiStreamEnabled(executionPlanId)) {
-            return getCommandQueue(executionPlanId);
+            return recordQueue(executionPlanId, defaultQueue(executionPlanId));
         }
         CUDACommandQueue queue = roleQueueTable.computeIfAbsent(executionPlanId, id -> new EnumMap<>(CUDAStreamType.class)).computeIfAbsent(streamType, type -> createQueue(type.name()));
         queue.markDirty();
-        return queue;
+        return recordQueue(executionPlanId, queue);
     }
 
     /**
@@ -413,7 +439,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      */
     private CUDACommandQueue getComputeQueue(long executionPlanId) {
         if (!isMultiStreamEnabled(executionPlanId)) {
-            return getCommandQueue(executionPlanId);
+            return recordQueue(executionPlanId, defaultQueue(executionPlanId));
         }
         int index = nextComputeIndex(executionPlanId);
         List<CUDACommandQueue> pool = computePool.computeIfAbsent(executionPlanId, id -> new ArrayList<>());
@@ -423,7 +449,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
             }
             CUDACommandQueue queue = pool.get(index);
             queue.markDirty();
-            return queue;
+            return recordQueue(executionPlanId, queue);
         }
     }
 
@@ -823,7 +849,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
 
     @Override
     public int enqueueBarrier(long executionPlanId, int[] events) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = defaultQueue(executionPlanId);
         joinRoleQueues(executionPlanId, commandQueue);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
         long oclEvent = commandQueue.enqueueBarrier(eventPool.serialiseEvents(events, commandQueue, isMultiStreamEnabled(executionPlanId)) ? eventPool.waitEventsBuffer : null);
@@ -832,7 +858,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
 
     @Override
     public int enqueueMarker(long executionPlanId, int[] events) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = defaultQueue(executionPlanId);
         joinRoleQueues(executionPlanId, commandQueue);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
         long oclEvent = commandQueue.enqueueMarker(eventPool.serialiseEvents(events, commandQueue, isMultiStreamEnabled(executionPlanId)) ? eventPool.waitEventsBuffer : null);
@@ -856,6 +882,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
             }
         }
         computeCursor.remove(executionPlanId);
+        lastQueueLabel.remove(executionPlanId);
         intraPlanConcurrencyPlans.remove(executionPlanId);
         oclEventPool.remove(executionPlanId);
         CUDACommandQueueTable table = commandQueueTable.get(executionPlanId);
@@ -943,20 +970,20 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
         if (event == -1) {
             return EMPTY_EVENT;
         }
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = defaultQueue(executionPlanId);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
         return new CUDAEvent(eventPool.getDescriptor(event).getNameDescription(), commandQueue, event, eventPool.getCUDAEvent(event));
     }
 
     @Override
     public void flush(long executionPlanId) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = defaultQueue(executionPlanId);
         commandQueue.flush();
     }
 
     @Override
     public void flushEvents(long executionPlanId) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = defaultQueue(executionPlanId);
         commandQueue.flushEvents();
     }
 
@@ -1017,7 +1044,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     }
 
     public long mapOnDeviceMemoryRegion(long executionPlanId, long destDevicePtr, long srcDevicePtr, long offset, int sizeOfType, long sizeSource, long sizeDest) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = defaultQueue(executionPlanId);
         return commandQueue.mapOnDeviceMemoryRegion(commandQueue.getCommandQueuePtr(), destDevicePtr, srcDevicePtr, offset, sizeOfType, sizeSource, sizeDest);
     }
 
@@ -1029,7 +1056,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      * launches and device-to-host copies are recorded as graph nodes.
      */
     public void beginExecutionGraphCapture(long executionPlanId) {
-        getCommandQueue(executionPlanId).beginGraphCapture();
+        defaultQueue(executionPlanId).beginGraphCapture();
     }
 
     /**
@@ -1040,7 +1067,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      * graph launch.
      */
     public long endExecutionGraphCaptureAndInstantiate(long executionPlanId) {
-        long handle = getCommandQueue(executionPlanId).endGraphCaptureAndInstantiate();
+        long handle = defaultQueue(executionPlanId).endGraphCaptureAndInstantiate();
         flushPendingKernelContextWrites(executionPlanId);
         return handle;
     }
@@ -1071,7 +1098,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      * source pointers, so updated host data is picked up on every launch.
      */
     public int launchExecutionGraph(long executionPlanId, long executionGraphHandle) {
-        getCommandQueue(executionPlanId).launchGraph(executionGraphHandle);
+        defaultQueue(executionPlanId).launchGraph(executionGraphHandle);
         return -1;
     }
 
@@ -1079,7 +1106,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      * @return whether the execution-plan stream is currently capturing.
      */
     public boolean isStreamCapturing(long executionPlanId) {
-        return getCommandQueue(executionPlanId).isCapturing();
+        return defaultQueue(executionPlanId).isCapturing();
     }
 
     /**
@@ -1089,7 +1116,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     public void destroyExecutionGraph(long executionGraphHandle) {
         Long anyPlanId = executionIDs.stream().findFirst().orElse(null);
         if (anyPlanId != null) {
-            getCommandQueue(anyPlanId).destroyGraph(executionGraphHandle);
+            defaultQueue(anyPlanId).destroyGraph(executionGraphHandle);
         }
     }
 
@@ -1100,13 +1127,13 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      * libraries (e.g., cublasSetStream) to TornadoVM's stream.
      */
     public long getNativeStream(long executionPlanId) {
-        return getCommandQueue(executionPlanId).getNativeStream();
+        return defaultQueue(executionPlanId).getNativeStream();
     }
 
     /**
      * Raw CUcontext handle of the execution-plan queue.
      */
     public long getNativeContext(long executionPlanId) {
-        return getCommandQueue(executionPlanId).getNativeContext();
+        return defaultQueue(executionPlanId).getNativeContext();
     }
 }

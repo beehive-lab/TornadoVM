@@ -793,6 +793,11 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
         return true;
     }
 
+    @Override
+    public String getLastQueueLabel(long executionPlanId) {
+        return getDeviceContext().getLastQueueLabel(executionPlanId);
+    }
+
     /* ---- CUDA Graph (stream capture) support ---- */
 
     @Override

@@ -61,6 +61,13 @@ public class CUDACommandQueue extends CommandQueue {
      */
     private volatile boolean dirty;
 
+    /**
+     * Role label of this queue's stream (DEFAULT / DATA_TRANSFER_H2D / COMPUTE / COMPUTE_n /
+     * DATA_TRANSFER_D2H). Same string that names the stream for Nsight; also reported by
+     * {@code --printBytecodes} so the bytecode log shows which stream each operation was issued to.
+     */
+    private volatile String label = "";
+
     public CUDACommandQueue(long commandQueuePtr, long properties, int version) {
         this.commandQueuePtr = commandQueuePtr;
         this.properties = properties;
@@ -94,7 +101,13 @@ public class CUDACommandQueue extends CommandQueue {
      * Systems timeline shows named stream rows instead of raw stream ids. Mirrors the PTX backend.
      */
     public void nameStream(String name) {
+        this.label = name;
         nvtxNameStream(commandQueuePtr, name);
+    }
+
+    /** Role label of this queue's stream, or an empty string if it was never named. */
+    public String getLabel() {
+        return label;
     }
 
     static native void clReleaseCommandQueue(long queueId) throws CUDAException;

@@ -860,7 +860,7 @@ public class TornadoVMInterpreter {
         if (TornadoOptions.LOG_BYTECODES() && isNotObjectAtomic(object)) {
             long sizeObject = objectState.getXPUBuffer().size();
             logBuilder.append(captureIndent());
-            DebugInterpreter.logTransferToDeviceOnce(allEvents, object, interpreterDevice, sizeObject, sizeBatch, offset, eventId, logBuilder);
+            DebugInterpreter.logTransferToDeviceOnce(allEvents, object, interpreterDevice, sizeObject, sizeBatch, offset, eventId, graphExecutionContext.getExecutionPlanId(), logBuilder);
         }
 
         if (TornadoOptions.isProfilerEnabled() && !insideCaptureRegion && allEvents != null) {
@@ -899,7 +899,7 @@ public class TornadoVMInterpreter {
         if (TornadoOptions.LOG_BYTECODES() && isNotObjectAtomic(object)) {
             long sizeObject = objectState.getXPUBuffer().size();
             logBuilder.append(captureIndent());
-            DebugInterpreter.logTransferToDeviceAlways(object, interpreterDevice, sizeObject, sizeBatch, offset, eventId, logBuilder);
+            DebugInterpreter.logTransferToDeviceAlways(object, interpreterDevice, sizeObject, sizeBatch, offset, eventId, graphExecutionContext.getExecutionPlanId(), logBuilder);
         }
 
         if (TornadoOptions.isProfilerEnabled() && !insideCaptureRegion && allEvents != null) {
@@ -933,13 +933,14 @@ public class TornadoVMInterpreter {
         }
 
         final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
+        int readEvent = interpreterDevice.streamOutBlocking(graphExecutionContext.getExecutionPlanId(), object, offset, objectState, eventWaitList);
+
+        // Logged after the copy is issued: the backend only knows which stream carried it once routed.
         if (TornadoOptions.LOG_BYTECODES()) {
             long sizeObject = objectState.getXPUBuffer().size();
             logBuilder.append(captureIndent());
-            DebugInterpreter.logTransferToHostAlways(object, interpreterDevice, sizeObject, sizeBatch, offset, eventId, logBuilder);
+            DebugInterpreter.logTransferToHostAlways(object, interpreterDevice, sizeObject, sizeBatch, offset, eventId, graphExecutionContext.getExecutionPlanId(), logBuilder);
         }
-
-        int readEvent = interpreterDevice.streamOutBlocking(graphExecutionContext.getExecutionPlanId(), object, offset, objectState, eventWaitList);
 
         resetEventIndexes(eventId);
 
@@ -968,12 +969,14 @@ public class TornadoVMInterpreter {
         }
 
         final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
+        final int readEvent = interpreterDevice.streamOutBlocking(graphExecutionContext.getExecutionPlanId(), object, offset, objectState, eventWaitList);
+
+        // Logged after the copy is issued: the backend only knows which stream carried it once routed.
         if (TornadoOptions.LOG_BYTECODES()) {
             long sizeOfObject = objectState.getXPUBuffer().size();
             logBuilder.append(captureIndent());
-            DebugInterpreter.logTransferToHostAlwaysBlocking(object, interpreterDevice, logBuilder, sizeOfObject, sizeBatch, offset, eventId);
+            DebugInterpreter.logTransferToHostAlwaysBlocking(object, interpreterDevice, logBuilder, sizeOfObject, sizeBatch, offset, eventId, graphExecutionContext.getExecutionPlanId());
         }
-        final int readEvent = interpreterDevice.streamOutBlocking(graphExecutionContext.getExecutionPlanId(), object, offset, objectState, eventWaitList);
 
         if (TornadoOptions.isProfilerEnabled() && !insideCaptureRegion && readEvent != -1) {
             Event event = interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), readEvent);
@@ -1207,14 +1210,9 @@ public class TornadoVMInterpreter {
             }
             if (TornadoOptions.LOG_BYTECODES()) {
                 logBuilder.append(captureIndent());
-                DebugInterpreter.logStreamInAtomic(bufferAtomics, interpreterDevice, eventId, logBuilder);
+                DebugInterpreter.logStreamInAtomic(bufferAtomics, interpreterDevice, eventId, graphExecutionContext.getExecutionPlanId(), logBuilder);
 
             }
-        }
-
-        if (TornadoOptions.LOG_BYTECODES()) {
-            logBuilder.append(captureIndent());
-            DebugInterpreter.logLaunchTask(task, interpreterDevice, batchThreads, offset, eventId, logBuilder);
         }
 
         if (task.meta() instanceof TaskDataContext dataContext) {
@@ -1236,6 +1234,13 @@ public class TornadoVMInterpreter {
                     e.printStackTrace();
                 }
                 throw new TornadoBailoutRuntimeException("Bailout from LAUNCH Bytecode: \nReason: " + e, e);
+            } finally {
+                // Logged after the launch is issued (even on bailout): the COMPUTE stream a kernel is
+                // routed to is only known once the backend has picked it.
+                if (TornadoOptions.LOG_BYTECODES()) {
+                    logBuilder.append(captureIndent());
+                    DebugInterpreter.logLaunchTask(task, interpreterDevice, batchThreads, offset, eventId, graphExecutionContext.getExecutionPlanId(), logBuilder);
+                }
             }
         } else {
             throw new TornadoRuntimeException("task.meta is not instanceof TaskDataContext");
@@ -1283,7 +1288,7 @@ public class TornadoVMInterpreter {
 
         if (TornadoOptions.LOG_BYTECODES()) {
             logBuilder.append(captureIndent());
-            DebugInterpreter.logLaunchTask(task, interpreterDevice, batchThreads, 0, eventId, logBuilder);
+            DebugInterpreter.logLaunchTask(task, interpreterDevice, batchThreads, 0, eventId, graphExecutionContext.getExecutionPlanId(), logBuilder);
         }
 
         // The CUDA-C backend does not expose device-event timestamps yet, so the

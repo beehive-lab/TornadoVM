@@ -31,6 +31,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
@@ -667,6 +668,60 @@ public class TestCUDAStreams extends TornadoTestBase {
             for (int i = 0; i < size; i++) {
                 assertEquals(2.0f * (i % 1013), out.get(i), DELTA);
             }
+        }
+    }
+
+    /**
+     * 14. Stream routing is reported per operation. The backend records which stream each transfer
+     * and kernel was issued to, which is what {@code --printBytecodes} appends as
+     * {@code [stream=...]}. Asserted through {@link TornadoDevice#getLastQueueLabel(long)}: with
+     * intra-plan concurrency the last operation of the plan (a device-to-host copy) must have gone
+     * to the D2H role stream, and without it to the single default stream.
+     */
+    @Test
+    public void testStreamRoutingIsReported() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
+        final int size = GRAPH_N;
+        FloatArray x = new FloatArray(size);
+        FloatArray y = new FloatArray(size);
+        FloatArray r1 = new FloatArray(size);
+        FloatArray r2 = new FloatArray(size);
+        x.init(1.0f);
+        y.init(2.0f);
+
+        // Two independent units, so the graph is not a chain and concurrency is not auto-disabled.
+        TaskGraph tg = new TaskGraph("routing")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, y)
+                .task("t0", TestCUDAStreams::axpy, x, y, r1, ALPHA)
+                .task("t1", TestCUDAStreams::axpy, y, x, r2, ALPHA)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, r1, r2);
+
+        ImmutableTaskGraph itg = tg.snapshot();
+        TornadoDevice device = getTornadoRuntime().getDefaultDevice();
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(itg)) {
+            plan.withIntraPlanConcurrency();
+            plan.execute();
+            assertEquals("D2H copies must be issued on the D2H role stream under intra-plan concurrency", //
+                    "DATA_TRANSFER_D2H", device.getLastQueueLabel(plan.getId()));
+        }
+
+        // Explicitly off: plan options are held on the execution context shared through the
+        // ImmutableTaskGraph, so a second plan built from the same snapshot inherits the first
+        // plan's concurrency setting unless it is turned off.
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(itg)) {
+            plan.withoutIntraPlanConcurrency();
+            plan.execute();
+            assertEquals("Without intra-plan concurrency every operation stays on the default stream", //
+                    "DEFAULT", device.getLastQueueLabel(plan.getId()));
+        }
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(expectedAxpy(1.0f, 2.0f, ALPHA), r1.get(i), DELTA);
+            assertEquals(expectedAxpy(2.0f, 1.0f, ALPHA), r2.get(i), DELTA);
         }
     }
 }
