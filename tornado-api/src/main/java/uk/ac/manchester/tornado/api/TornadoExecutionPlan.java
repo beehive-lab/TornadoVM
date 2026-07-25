@@ -636,6 +636,20 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         return new WithWarmUpIterations(this, iterations);
     }
 
+    /**
+     * Captures this execution plan into a CUDA graph on its first execution and replays the graph on
+     * subsequent ones, so the per-operation launch and copy submissions are issued once instead of
+     * every execution. Worth it for short plans that are re-executed many times with the same
+     * buffers and grid, where host-side submission is a visible share of the time.
+     * Realised on the PTX and CUDA backends; a no-op elsewhere.
+     *
+     * <p>Two consequences of capture are worth knowing: capture records a single stream, so a captured
+     * plan runs single-stream even if {@link #withIntraPlanConcurrency()} was also requested; and
+     * device-side per-operation timings are not collected for captured operations, so the profiler's
+     * kernel and transfer timers under-report (host wall-clock metrics stay valid).
+     *
+     * @return {@link TornadoExecutionPlan}
+     */
     public TornadoExecutionPlan withCUDAGraph() {
         //TODO: include a check to verify that the BACKEND is PTX
         tornadoExecutor.withCUDAGraph();

@@ -456,6 +456,36 @@ And then:
 
 
 
+Concurrency within one execution plan (CUDA and PTX)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+By default every operation of a plan is issued to a single command queue, so transfers and kernels run
+in the order they were issued. ``withIntraPlanConcurrency()`` instead routes the plan's operations to
+separate role streams - host-to-device, device-to-host and a pool of COMPUTE streams - and rebuilds the
+ordering from the task-graph dependencies using device events. Operations that are independent in the
+graph may then overlap.
+
+.. code:: java
+
+   executionPlan.withIntraPlanConcurrency()      // route independent operations to separate streams
+       .withStagedTransfers();                   // chunk large one-shot uploads through pinned slots
+
+   executionPlan.withIntraPlanConcurrency(8);    // ... and use 8 COMPUTE streams instead of the default 4
+   executionPlan.withStagedTransfers(16 << 20, 16 << 20, 4); // minimum size, chunk size, ring depth
+
+Notes:
+
+- Both options are no-ops on the OpenCL, Metal and SPIR-V backends, and are off by default.
+- A task graph that is a single dependency chain gains nothing from concurrency, so it stays on the
+  single-stream path automatically.
+- ``withCUDAGraph()`` captures on one stream: a captured plan runs single-stream even if intra-plan
+  concurrency was requested.
+- Kernels that already saturate the device do not overlap with each other; the pool size matters for
+  plans made of many small kernels. Measure with
+  ``tornado-examples/.../examples/streams/ConcurrentKernelsPoolSweep.java``.
+- ``--printBytecodes`` reports the stream each operation was issued to as ``[stream=COMPUTE_2]``,
+  which is the quickest way to check how a plan was routed.
+
 Obtain the result and the profiler
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
