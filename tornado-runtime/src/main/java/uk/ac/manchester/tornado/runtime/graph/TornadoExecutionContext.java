@@ -98,6 +98,12 @@ public class TornadoExecutionContext {
     private boolean isExecutionGraphEnabled;
     private boolean isIntraPlanConcurrencyEnabled;
     private boolean isStagedTransfersEnabled;
+    /** Requested size of the backend's COMPUTE stream pool, or {@link #INIT_VALUE} for the backend default. */
+    private int computeStreams;
+    /** Staging-ring tuning, or {@link #INIT_VALUE} for the backend defaults (the -Dtornado.staged.* values). */
+    private long stagedMinTransferSize;
+    private long stagedChunkSize;
+    private int stagedRingDepth;
 
     public TornadoExecutionContext(String id) {
         name = id;
@@ -126,6 +132,10 @@ public class TornadoExecutionContext {
         // Defaults to the -Dtornado.staged.transfers property, so the plan-level API overrides it
         // rather than replacing it.
         this.isStagedTransfersEnabled = TornadoOptions.ENABLE_STAGED_TRANSFERS;
+        this.computeStreams = INIT_VALUE;
+        this.stagedMinTransferSize = INIT_VALUE;
+        this.stagedChunkSize = INIT_VALUE;
+        this.stagedRingDepth = INIT_VALUE;
     }
 
     public KernelStackFrame[] getKernelStackFrame() {
@@ -696,6 +706,10 @@ public class TornadoExecutionContext {
         newExecutionContext.isExecutionGraphEnabled = this.isExecutionGraphEnabled;
         newExecutionContext.isIntraPlanConcurrencyEnabled = this.isIntraPlanConcurrencyEnabled;
         newExecutionContext.isStagedTransfersEnabled = this.isStagedTransfersEnabled;
+        newExecutionContext.computeStreams = this.computeStreams;
+        newExecutionContext.stagedMinTransferSize = this.stagedMinTransferSize;
+        newExecutionContext.stagedChunkSize = this.stagedChunkSize;
+        newExecutionContext.stagedRingDepth = this.stagedRingDepth;
 
         return newExecutionContext;
     }
@@ -747,6 +761,34 @@ public class TornadoExecutionContext {
 
     public boolean isStagedTransfersEnabled() {
         return this.isStagedTransfersEnabled;
+    }
+
+    /** Requested COMPUTE stream-pool size, or {@link #INIT_VALUE} to leave the backend default. */
+    public void setComputeStreams(int computeStreams) {
+        this.computeStreams = computeStreams;
+    }
+
+    public int getComputeStreams() {
+        return this.computeStreams;
+    }
+
+    /** Staging-ring tuning; any value of {@link #INIT_VALUE} leaves the corresponding backend default. */
+    public void setStagedTransferTuning(long minTransferSize, long chunkSize, int ringDepth) {
+        this.stagedMinTransferSize = minTransferSize;
+        this.stagedChunkSize = chunkSize;
+        this.stagedRingDepth = ringDepth;
+    }
+
+    public long getStagedMinTransferSize() {
+        return this.stagedMinTransferSize;
+    }
+
+    public long getStagedChunkSize() {
+        return this.stagedChunkSize;
+    }
+
+    public int getStagedRingDepth() {
+        return this.stagedRingDepth;
     }
 
 }
