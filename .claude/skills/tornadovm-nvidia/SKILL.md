@@ -1,6 +1,6 @@
 ---
 name: tornadovm-nvidia
-description: NVIDIA-specific TornadoVM workflows on the CUDA backend — profile with Nsight Systems (nsys) and read NVTX ranges, use the hybrid library-task API (cuBLAS/cuBLASLt/cuDNN/cuFFT/cuSPARSE/cuTENSOR/CUTLASS/NCCL native calls from Java), print the generated CUDA-C kernel, and fuzz-test the CUDA-C backend with tornado-fuzz. Use for anything about nsys/Nsight, hybrid/library tasks, cuBLAS & friends, inspecting CUDA kernels, or fuzzing. Requires an NVIDIA GPU + `make BACKEND=cuda`. For generic build/test/commit basics see the `tornadovm` skill.
+description: NVIDIA-specific TornadoVM workflows on the CUDA backend — profile with Nsight Systems (nsys) and read NVTX ranges, use multi-stream execution (withIntraPlanConcurrency, staged transfers, per-operation stream routing in --printBytecodes), use the hybrid library-task API (cuBLAS/cuBLASLt/cuDNN/cuFFT/cuSPARSE/cuTENSOR/CUTLASS/NCCL native calls from Java), print the generated CUDA-C kernel, and fuzz-test the CUDA-C backend with tornado-fuzz. Use for anything about nsys/Nsight, hybrid/library tasks, cuBLAS & friends, inspecting CUDA kernels, or fuzzing. Requires an NVIDIA GPU + `make BACKEND=cuda`. For generic build/test/commit basics see the `tornadovm` skill.
 ---
 
 # TornadoVM on NVIDIA (CUDA backend)
@@ -26,7 +26,32 @@ Open `run.nsys-rep` in the Nsight Systems GUI. `--trace=cuda` alone gives kernel
 ```
 (`racecheck`, `memcheck`, `initcheck`, `synccheck`.)
 
-## 2. Hybrid library-task API (NVIDIA CUDA-X from Java)
+## 2. Streams and concurrency
+
+A plan is single-stream by default. `withIntraPlanConcurrency()` routes its operations to role streams
+(`DATA_TRANSFER_H2D`, a `COMPUTE` pool, `DATA_TRANSFER_D2H`) and rebuilds ordering from the task-graph
+dependencies with CUDA events, so independent operations overlap; `withStagedTransfers()` chunks large
+one-shot uploads through pinned host slots.
+
+```java
+plan.withIntraPlanConcurrency()          // or withIntraPlanConcurrency(8) to size the COMPUTE pool
+    .withStagedTransfers();              // or withStagedTransfers(minSize, chunkSize, ringDepth)
+```
+
+See which stream each operation went to — this is the fastest way to check a plan was routed as expected:
+
+```bash
+tornado --printBytecodes -m tornado.examples/uk.ac.manchester.tornado.examples.streams.MultiStreamOverlap
+# bc:  LAUNCH  task overlap.u3 - compute on ... [event list=2] [stream=COMPUTE_3]
+```
+
+**Before benchmarking this, read the traps**: a graph that is a single task chain silently stays
+single-stream; `withCUDAGraph()` forces single-stream capture; the profiler serialises every operation;
+staged transfers lose to direct for warm host memory. Full reference (stream roles, assignment rules,
+flags, measurement recipes): [references/streams-concurrency.md](references/streams-concurrency.md).
+Measured numbers for the changes: `docs/perf/cuda-streams/README.md`.
+
+## 3. Hybrid library-task API (NVIDIA CUDA-X from Java)
 
 A **library task** hands a step of the task graph to a native NVIDIA library instead of JIT-generating a kernel. It reuses the same TornadoVM device buffers and rides the normal LAUNCH pipeline (no unified-memory copies), dispatched through a ServiceLoader SPI (`TornadoLibraryProvider`).
 
@@ -63,7 +88,7 @@ TaskGraph graph = new TaskGraph("g")
 
 Build note: library JNI modules link against the CUDA toolkit at `/usr/local/cuda` (prefer it over any older apt CUDA to avoid NVRTC-version mismatch); each JNI CMake is guarded — a missing library skips that provider.
 
-## 3. Print the generated CUDA-C kernel
+## 4. Print the generated CUDA-C kernel
 
 To see the CUDA-C that the JIT emits for a `task(...)`:
 
@@ -78,7 +103,7 @@ tornado -m <module>/<MainClass> --jvm="-Dtornado.printKernel=true -Dtornado.prin
 
 Flags: `-pk`/`--printKernel` (test runner) ↔ `-Dtornado.printKernel=true` (`TornadoOptions.PRINT_KERNEL_SOURCE`); `-Dtornado.print.kernel.dir=<dir>` writes each kernel to a file; add `--printBytecodes`/`-pbc` to also see the TornadoVM bytecode. Library tasks emit no kernel (they call native code) — inspect those with nsys/NVTX instead.
 
-## 4. Fuzz-testing the CUDA-C backend (`tornado-fuzz`)
+## 5. Fuzz-testing the CUDA-C backend (`tornado-fuzz`)
 
 `tornado-fuzz` (module `tornado.fuzz`) is a differential fuzzer for the **CUDA-C backend only**. Oracle: a kernel is a static Java method → run it as plain Java on the host (golden) and via the CUDA backend, then compare (int/bitwise exact; float rel+abs 1e-3; NaN==NaN); plus a crash/exception oracle.
 
