@@ -24,6 +24,7 @@
 package uk.ac.manchester.tornado.unittests.streams;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import org.junit.Test;
 
@@ -36,6 +37,7 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.cublas.CuBlas;
 import uk.ac.manchester.tornado.cublas.enums.CuBlasOperation;
@@ -734,6 +736,103 @@ public class TestCUDAStreams extends TornadoTestBase {
         for (int i = 0; i < size; i++) {
             assertEquals(expectedAxpy(1.0f, 2.0f, ALPHA), r1.get(i), DELTA);
             assertEquals(expectedAxpy(2.0f, 1.0f, ALPHA), r2.get(i), DELTA);
+        }
+    }
+
+    /**
+     * 18. Plan-level tuning of the COMPUTE stream pool. The pool size bounds how many independent
+     * kernels are in flight; results must be identical for any size, and an invalid size must be
+     * rejected rather than silently clamped. The routing itself (how many distinct COMPUTE streams
+     * appear) is visible with {@code --printBytecodes}.
+     */
+    @Test
+    public void testComputeStreamPoolSizeIsHonoured() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
+        FloatArray[] x = new FloatArray[MANY_UNITS];
+        FloatArray[] r = new FloatArray[MANY_UNITS];
+        TaskGraph tg = new TaskGraph("poolSize");
+        for (int u = 0; u < MANY_UNITS; u++) {
+            x[u] = new FloatArray(MANY_UNIT_SIZE);
+            r[u] = new FloatArray(MANY_UNIT_SIZE);
+            x[u].init(u + 1.0f);
+            tg.transferToDevice(DataTransferMode.EVERY_EXECUTION, x[u]) //
+                    .task("u" + u, TestCUDAStreams::scale, x[u], r[u], 2.0f) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, r[u]);
+        }
+        ImmutableTaskGraph itg = tg.snapshot();
+
+        for (int streams : new int[] { 1, 2, MANY_UNITS }) {
+            try (TornadoExecutionPlan plan = new TornadoExecutionPlan(itg)) {
+                plan.withIntraPlanConcurrency(streams);
+                plan.execute();
+            }
+            for (int u = 0; u < MANY_UNITS; u++) {
+                for (int i = 0; i < MANY_UNIT_SIZE; i++) {
+                    assertEquals("pool size " + streams, 2.0f * (u + 1.0f), r[u].get(i), DELTA);
+                }
+            }
+        }
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(itg)) {
+            plan.withIntraPlanConcurrency(0);
+            fail("A COMPUTE stream pool of 0 must be rejected");
+        } catch (TornadoRuntimeException expected) {
+            // expected
+        }
+    }
+
+    /**
+     * 19. Plan-level tuning of the staging ring. A deliberately small chunk size against a much larger
+     * buffer forces many chunks and repeated slot wrap-around with the minimum ring depth, and the
+     * second plan changes the geometry, which rebuilds the pinned block while the first plan's ring is
+     * already allocated.
+     */
+    @Test
+    public void testStagedTransferTuningIsHonoured() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        final int size = 12 * 1024 * 1024; // 48 MB
+        FloatArray weights = new FloatArray(size);
+        FloatArray out = new FloatArray(size);
+        for (int i = 0; i < size; i++) {
+            weights.set(i, i % 1013);
+        }
+
+        TaskGraph tg = new TaskGraph("stagedTuned")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, weights)
+                .task("t0", TestCUDAStreams::scale, weights, out, 2.0f)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        ImmutableTaskGraph itg = tg.snapshot();
+
+        // 1 MB chunks, 2 slots: 48 chunks through 2 pinned slots.
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(itg)) {
+            plan.withStagedTransfers(1024 * 1024, 1024 * 1024, 2);
+            out.init(-1.0f);
+            plan.execute();
+            for (int i = 0; i < size; i++) {
+                assertEquals(2.0f * (i % 1013), out.get(i), DELTA);
+            }
+        }
+
+        // Different geometry: the ring is rebuilt at 4 MB x 3 slots.
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(itg)) {
+            plan.withStagedTransfers(4L * 1024 * 1024, 4L * 1024 * 1024, 3);
+            out.init(-1.0f);
+            plan.execute();
+            for (int i = 0; i < size; i++) {
+                assertEquals(2.0f * (i % 1013), out.get(i), DELTA);
+            }
+        }
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(itg)) {
+            plan.withStagedTransfers(1024 * 1024, 1024 * 1024, 1);
+            fail("A staging ring with a single slot must be rejected");
+        } catch (TornadoRuntimeException expected) {
+            // expected
         }
     }
 

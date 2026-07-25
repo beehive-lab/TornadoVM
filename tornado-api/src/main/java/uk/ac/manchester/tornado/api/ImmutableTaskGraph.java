@@ -62,12 +62,20 @@ public class ImmutableTaskGraph {
         taskGraph.withIntraPlanConcurrency();
     }
 
+    void withIntraPlanConcurrency(int computeStreams) {
+        taskGraph.withIntraPlanConcurrency(computeStreams);
+    }
+
     void withoutIntraPlanConcurrency() {
         taskGraph.withoutIntraPlanConcurrency();
     }
 
     void withStagedTransfers() {
         taskGraph.withStagedTransfers();
+    }
+
+    void withStagedTransfers(long minTransferSize, long chunkSize, int ringDepth) {
+        taskGraph.withStagedTransfers(minTransferSize, chunkSize, ringDepth);
     }
 
     void withoutStagedTransfers() {

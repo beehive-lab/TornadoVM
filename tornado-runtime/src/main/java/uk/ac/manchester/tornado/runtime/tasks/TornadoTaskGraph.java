@@ -379,6 +379,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
+    public void withIntraPlanConcurrency(int computeStreams) {
+        executionContext.setIntraPlanConcurrencyEnabled(true);
+        executionContext.setComputeStreams(computeStreams);
+    }
+
+    @Override
     public void withoutIntraPlanConcurrency() {
         executionContext.setIntraPlanConcurrencyEnabled(false);
     }
@@ -386,6 +392,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     @Override
     public void withStagedTransfers() {
         executionContext.setStagedTransfersEnabled(true);
+    }
+
+    @Override
+    public void withStagedTransfers(long minTransferSize, long chunkSize, int ringDepth) {
+        executionContext.setStagedTransfersEnabled(true);
+        executionContext.setStagedTransferTuning(minTransferSize, chunkSize, ringDepth);
     }
 
     @Override
