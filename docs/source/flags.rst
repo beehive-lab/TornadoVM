@@ -177,6 +177,12 @@ TornadoVM provides two separate NVIDIA backends: **PTX** (emits PTX assembly dir
    ================================================================  ==================================================================================================================
    ``-Dtornado.cuda.compiler.flags=FLAGS``                           Passes additional flags to NVRTC when compiling the generated CUDA C source (default: none).
    ``-Dtornado.cuda.host.pinning=false``                             Disables pinning host memory for faster host↔device transfers (default: true).
+   ``-Dtornado.cuda.compute.streams=N``                              Size of the per-execution-plan COMPUTE stream pool used by ``withIntraPlanConcurrency()`` (default: 4). A plan can override it with ``withIntraPlanConcurrency(int)``.
+   ``-Dtornado.staged.transfers=true``                               Routes large one-shot host-to-device uploads through a ring of pinned staging slots (default: false). Per-plan equivalent: ``withStagedTransfers()``.
+   ``-Dtornado.staged.min.size=BYTES``                               Smallest transfer routed through the staging ring (default: 16MB).
+   ``-Dtornado.staged.chunk.size=BYTES``                             Size of each staged chunk (default: 16MB).
+   ``-Dtornado.staged.ring.depth=N``                                 Number of pinned staging slots, at least 2 (default: 4).
+   ``-Dtornado.staged.fill.threads=N``                               Host threads used to fill a staging slot (default: half the cores, capped at 8).
    ================================================================  ==================================================================================================================
 
 .. note::

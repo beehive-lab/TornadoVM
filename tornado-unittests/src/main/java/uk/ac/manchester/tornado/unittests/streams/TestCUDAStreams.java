@@ -24,6 +24,7 @@
 package uk.ac.manchester.tornado.unittests.streams;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import org.junit.Test;
 
@@ -31,11 +32,15 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.cublas.CuBlas;
+import uk.ac.manchester.tornado.cublas.enums.CuBlasOperation;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -89,6 +94,16 @@ public class TestCUDAStreams extends TornadoTestBase {
     private static final int LLAMA_LAYERS = 6;
     private static final int LLAMA_TOKENS = 16;
     private static final float LLAMA_DELTA = 0.05f;
+
+    // Bulk-upload dependency test: several steady-state executions (the first one's JIT compile would
+    // mask a missing dependency), sampling the 200 MB output rather than every element.
+    private static final int BULK_UPLOAD_EXECUTIONS = 5;
+    private static final int BULK_UPLOAD_CHECK_STRIDE = 4096;
+
+    // Library-task ordering test: a wide matrix plus a long producer loop, so a missing cross-stream
+    // wait before the cuBLAS call is observable rather than a narrow race.
+    private static final int LIBRARY_ORDER_SIZE = 2048;
+    private static final int LIBRARY_ORDER_ITERATIONS = 1 << 14;
 
     private static final float DELTA = 1e-3f;
     private static final float ALPHA = 0.5f;
@@ -667,6 +682,315 @@ public class TestCUDAStreams extends TornadoTestBase {
             for (int i = 0; i < size; i++) {
                 assertEquals(2.0f * (i % 1013), out.get(i), DELTA);
             }
+        }
+    }
+
+    /**
+     * 14. Stream routing is reported per operation. The backend records which stream each transfer
+     * and kernel was issued to, which is what {@code --printBytecodes} appends as
+     * {@code [stream=...]}. Asserted through {@link TornadoDevice#getLastQueueLabel(long)}: with
+     * intra-plan concurrency the last operation of the plan (a device-to-host copy) must have gone
+     * to the D2H role stream, and without it to the single default stream.
+     */
+    @Test
+    public void testStreamRoutingIsReported() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
+        final int size = GRAPH_N;
+        FloatArray x = new FloatArray(size);
+        FloatArray y = new FloatArray(size);
+        FloatArray r1 = new FloatArray(size);
+        FloatArray r2 = new FloatArray(size);
+        x.init(1.0f);
+        y.init(2.0f);
+
+        // Two independent units, so the graph is not a chain and concurrency is not auto-disabled.
+        TaskGraph tg = new TaskGraph("routing")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, y)
+                .task("t0", TestCUDAStreams::axpy, x, y, r1, ALPHA)
+                .task("t1", TestCUDAStreams::axpy, y, x, r2, ALPHA)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, r1, r2);
+
+        ImmutableTaskGraph itg = tg.snapshot();
+        TornadoDevice device = getTornadoRuntime().getDefaultDevice();
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(itg)) {
+            plan.withIntraPlanConcurrency();
+            plan.execute();
+            assertEquals("D2H copies must be issued on the D2H role stream under intra-plan concurrency", //
+                    "DATA_TRANSFER_D2H", device.getLastQueueLabel(plan.getId()));
+        }
+
+        // Explicitly off: plan options are held on the execution context shared through the
+        // ImmutableTaskGraph, so a second plan built from the same snapshot inherits the first
+        // plan's concurrency setting unless it is turned off.
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(itg)) {
+            plan.withoutIntraPlanConcurrency();
+            plan.execute();
+            assertEquals("Without intra-plan concurrency every operation stays on the default stream", //
+                    "DEFAULT", device.getLastQueueLabel(plan.getId()));
+        }
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(expectedAxpy(1.0f, 2.0f, ALPHA), r1.get(i), DELTA);
+            assertEquals(expectedAxpy(2.0f, 1.0f, ALPHA), r2.get(i), DELTA);
+        }
+    }
+
+    /**
+     * 18. Plan-level tuning of the COMPUTE stream pool. The pool size bounds how many independent
+     * kernels are in flight; results must be identical for any size, and an invalid size must be
+     * rejected rather than silently clamped. The routing itself (how many distinct COMPUTE streams
+     * appear) is visible with {@code --printBytecodes}.
+     */
+    @Test
+    public void testComputeStreamPoolSizeIsHonoured() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
+        FloatArray[] x = new FloatArray[MANY_UNITS];
+        FloatArray[] r = new FloatArray[MANY_UNITS];
+        TaskGraph tg = new TaskGraph("poolSize");
+        for (int u = 0; u < MANY_UNITS; u++) {
+            x[u] = new FloatArray(MANY_UNIT_SIZE);
+            r[u] = new FloatArray(MANY_UNIT_SIZE);
+            x[u].init(u + 1.0f);
+            tg.transferToDevice(DataTransferMode.EVERY_EXECUTION, x[u]) //
+                    .task("u" + u, TestCUDAStreams::scale, x[u], r[u], 2.0f) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, r[u]);
+        }
+        ImmutableTaskGraph itg = tg.snapshot();
+
+        for (int streams : new int[] { 1, 2, MANY_UNITS }) {
+            try (TornadoExecutionPlan plan = new TornadoExecutionPlan(itg)) {
+                plan.withIntraPlanConcurrency(streams);
+                plan.execute();
+            }
+            for (int u = 0; u < MANY_UNITS; u++) {
+                for (int i = 0; i < MANY_UNIT_SIZE; i++) {
+                    assertEquals("pool size " + streams, 2.0f * (u + 1.0f), r[u].get(i), DELTA);
+                }
+            }
+        }
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(itg)) {
+            plan.withIntraPlanConcurrency(0);
+            fail("A COMPUTE stream pool of 0 must be rejected");
+        } catch (TornadoRuntimeException expected) {
+            // expected
+        }
+    }
+
+    /**
+     * 19. Plan-level tuning of the staging ring. A deliberately small chunk size against a much larger
+     * buffer forces many chunks and repeated slot wrap-around with the minimum ring depth, and the
+     * second plan changes the geometry, which rebuilds the pinned block while the first plan's ring is
+     * already allocated.
+     */
+    @Test
+    public void testStagedTransferTuningIsHonoured() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        final int size = 12 * 1024 * 1024; // 48 MB
+        FloatArray weights = new FloatArray(size);
+        FloatArray out = new FloatArray(size);
+        for (int i = 0; i < size; i++) {
+            weights.set(i, i % 1013);
+        }
+
+        TaskGraph tg = new TaskGraph("stagedTuned")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, weights)
+                .task("t0", TestCUDAStreams::scale, weights, out, 2.0f)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        ImmutableTaskGraph itg = tg.snapshot();
+
+        // 1 MB chunks, 2 slots: 48 chunks through 2 pinned slots.
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(itg)) {
+            plan.withStagedTransfers(1024 * 1024, 1024 * 1024, 2);
+            out.init(-1.0f);
+            plan.execute();
+            for (int i = 0; i < size; i++) {
+                assertEquals(2.0f * (i % 1013), out.get(i), DELTA);
+            }
+        }
+
+        // Different geometry: the ring is rebuilt at 4 MB x 3 slots.
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(itg)) {
+            plan.withStagedTransfers(4L * 1024 * 1024, 4L * 1024 * 1024, 3);
+            out.init(-1.0f);
+            plan.execute();
+            for (int i = 0; i < size; i++) {
+                assertEquals(2.0f * (i % 1013), out.get(i), DELTA);
+            }
+        }
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(itg)) {
+            plan.withStagedTransfers(1024 * 1024, 1024 * 1024, 1);
+            fail("A staging ring with a single slot must be rejected");
+        } catch (TornadoRuntimeException expected) {
+            // expected
+        }
+    }
+
+    /**
+     * 17. Two independent two-task chains. Each chain must stay on one COMPUTE stream (the second
+     * kernel is issued on its producer's stream, so no cross-stream event is needed), while the two
+     * chains run on different streams. Only ordering is asserted here - the routing itself is visible
+     * with {@code --printBytecodes}, which prints {@code [stream=COMPUTE_n]} per launch.
+     */
+    @Test
+    public void testIndependentChainsUnderConcurrency() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
+        final int size = MANY_UNIT_SIZE;
+        FloatArray a0 = new FloatArray(size);
+        FloatArray a1 = new FloatArray(size);
+        FloatArray a2 = new FloatArray(size);
+        FloatArray b0 = new FloatArray(size);
+        FloatArray b1 = new FloatArray(size);
+        FloatArray b2 = new FloatArray(size);
+        a0.init(1.0f);
+        b0.init(5.0f);
+
+        TaskGraph tg = new TaskGraph("chains")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a0, b0)
+                .task("a1", TestCUDAStreams::scale, a0, a1, 2.0f)
+                .task("a2", TestCUDAStreams::scale, a1, a2, 3.0f)
+                .task("b1", TestCUDAStreams::scale, b0, b1, 2.0f)
+                .task("b2", TestCUDAStreams::scale, b1, b2, 3.0f)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a2, b2);
+
+        ImmutableTaskGraph itg = tg.snapshot();
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(itg)) {
+            plan.withIntraPlanConcurrency();
+            for (int it = 0; it < 3; it++) {
+                a2.init(-1.0f);
+                b2.init(-1.0f);
+                plan.execute();
+                for (int i = 0; i < size; i++) {
+                    assertEquals(6.0f, a2.get(i), DELTA);
+                    assertEquals(30.0f, b2.get(i), DELTA);
+                }
+            }
+        }
+    }
+
+    /**
+     * 16. A kernel whose input arrives through a large host-to-device copy must still wait for that
+     * copy, even though its argument-block write no longer shares the H2D stream (it goes to the
+     * KERNEL_ARGS stream, so kernels are not queued behind bulk uploads). The dependency now travels
+     * with the launch itself; if it were lost, the kernel would read a partially-copied 200 MB input
+     * and the result would be wrong rather than merely late.
+     *
+     * <p>A second, independent unit keeps the graph off the single-stream (task-chain) fast path.
+     */
+    @Test
+    public void testKernelWaitsForBulkUploadUnderConcurrency() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
+        FloatArray big = new FloatArray(N);
+        FloatArray bigOut = new FloatArray(N);
+        FloatArray small = new FloatArray(GRAPH_N);
+        FloatArray smallOut = new FloatArray(GRAPH_N);
+        big.init(4.0f);
+        small.init(3.0f);
+
+        TaskGraph tg = new TaskGraph("bulkUpload")
+                // 200 MB re-uploaded on every execution: the copy is long enough that a kernel issued
+                // without the dependency would start while it is still in flight.
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, big, small)
+                .task("consumer", TestCUDAStreams::scale, big, bigOut, 2.0f)
+                .task("independent", TestCUDAStreams::scale, small, smallOut, 2.0f)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, bigOut, smallOut);
+
+        ImmutableTaskGraph itg = tg.snapshot();
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(itg)) {
+            plan.withIntraPlanConcurrency();
+            // Several steady-state executions: on the first one the JIT compile happens between the
+            // copy being issued and the kernel being launched, which would hide a missing dependency.
+            // A fresh input value per iteration makes a stale or partial read visible.
+            for (int it = 0; it < BULK_UPLOAD_EXECUTIONS; it++) {
+                big.init(4.0f + it);
+                small.init(3.0f + it);
+                plan.execute();
+                for (int i = 0; i < N; i += BULK_UPLOAD_CHECK_STRIDE) {
+                    assertEquals(2.0f * (4.0f + it), bigOut.get(i), DELTA);
+                }
+                for (int i = 0; i < GRAPH_N; i++) {
+                    assertEquals(2.0f * (3.0f + it), smallOut.get(i), DELTA);
+                }
+            }
+        }
+    }
+
+    /** Slow producer: writes {@code out} after a long per-element loop, widening the ordering window. */
+    private static void slowFill(FloatArray out, float value) {
+        for (@Parallel int i = 0; i < out.getSize(); i++) {
+            float acc = value;
+            for (int j = 0; j < LIBRARY_ORDER_ITERATIONS; j++) {
+                acc = acc * 1.0000001f + 1.0e-7f;
+            }
+            out.set(i, acc);
+        }
+    }
+
+    /**
+     * 15. A library task must not start before the kernels it depends on have finished, even when
+     * those kernels run on a different stream. The dependency is carried by a marker with a wait
+     * list on the library task's stream; if that wait list is ignored, cuBLAS reads the matrix while
+     * the producing kernel is still running and the result is wrong.
+     *
+     * <p>The graph deliberately contains an independent second unit, otherwise it is a task chain
+     * and intra-plan concurrency is auto-disabled (single in-order stream would order it anyway).
+     */
+    @Test
+    public void testLibraryTaskOrderingUnderConcurrency() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
+        final int n = LIBRARY_ORDER_SIZE;
+        FloatArray matrix = new FloatArray(n * n);
+        FloatArray vector = new FloatArray(n);
+        FloatArray output = new FloatArray(n);
+        FloatArray independentIn = new FloatArray(n);
+        FloatArray independentOut = new FloatArray(n);
+        vector.init(1.0f);
+        independentIn.init(3.0f);
+
+        TaskGraph tg = new TaskGraph("libOrder")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, vector, independentIn)
+                // Independent unit: keeps the graph off the single-stream fast path.
+                .task("independent", TestCUDAStreams::scale, independentIn, independentOut, 2.0f)
+                // Producer of the cuBLAS input, issued on a COMPUTE stream.
+                .task("produce", TestCUDAStreams::slowFill, matrix, 1.0f)
+                .libraryTask("sgemv", CuBlas::cublasSgemv, //
+                        CuBlasOperation.CUBLAS_OP_T.operation(), n, n, 1.0f, matrix, n, vector, 1, 0.0f, output, 1)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output, independentOut);
+
+        ImmutableTaskGraph itg = tg.snapshot();
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(itg)) {
+            plan.withIntraPlanConcurrency();
+            plan.execute();
+        }
+
+        // Every matrix element holds the same produced value, so each row sum is n * value.
+        float produced = 1.0f;
+        for (int j = 0; j < LIBRARY_ORDER_ITERATIONS; j++) {
+            produced = produced * 1.0000001f + 1.0e-7f;
+        }
+        float expected = n * produced;
+        for (int i = 0; i < n; i++) {
+            assertEquals(expected, output.get(i), 0.01f * expected);
+            assertEquals(6.0f, independentOut.get(i), DELTA);
         }
     }
 }

@@ -636,6 +636,20 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         return new WithWarmUpIterations(this, iterations);
     }
 
+    /**
+     * Captures this execution plan into a CUDA graph on its first execution and replays the graph on
+     * subsequent ones, so the per-operation launch and copy submissions are issued once instead of
+     * every execution. Worth it for short plans that are re-executed many times with the same
+     * buffers and grid, where host-side submission is a visible share of the time.
+     * Realised on the PTX and CUDA backends; a no-op elsewhere.
+     *
+     * <p>Two consequences of capture are worth knowing: capture records a single stream, so a captured
+     * plan runs single-stream even if {@link #withIntraPlanConcurrency()} was also requested; and
+     * device-side per-operation timings are not collected for captured operations, so the profiler's
+     * kernel and transfer timers under-report (host wall-clock metrics stay valid).
+     *
+     * @return {@link TornadoExecutionPlan}
+     */
     public TornadoExecutionPlan withCUDAGraph() {
         //TODO: include a check to verify that the BACKEND is PTX
         tornadoExecutor.withCUDAGraph();
@@ -655,6 +669,26 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      */
     public TornadoExecutionPlan withIntraPlanConcurrency() {
         tornadoExecutor.withIntraPlanConcurrency();
+        return new WithIntraPlanConcurrency(this);
+    }
+
+    /**
+     * Enables intra-plan concurrency (see {@link #withIntraPlanConcurrency()}) and sizes the backend's
+     * COMPUTE stream pool, which bounds how many DAG-independent kernels of this plan can be in flight
+     * at once. Larger pools help plans with many small, non-saturating kernels; they do nothing for
+     * kernels that already fill the device. Without this call the backend default is used
+     * ({@code -Dtornado.cuda.compute.streams}, default 4).
+     * Honoured by the CUDA backend; other backends ignore the pool size.
+     *
+     * @param computeStreams
+     *     number of COMPUTE streams to use, at least 1
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan withIntraPlanConcurrency(int computeStreams) {
+        if (computeStreams < 1) {
+            throw new TornadoRuntimeException("[ERROR] The number of compute streams must be at least 1: " + computeStreams);
+        }
+        tornadoExecutor.withIntraPlanConcurrency(computeStreams);
         return new WithIntraPlanConcurrency(this);
     }
 
@@ -686,6 +720,35 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      */
     public TornadoExecutionPlan withStagedTransfers() {
         tornadoExecutor.withStagedTransfers();
+        return new WithStagedTransfers(this);
+    }
+
+    /**
+     * Enables staged host-to-device transfers (see {@link #withStagedTransfers()}) with explicit
+     * tuning, instead of the {@code -Dtornado.staged.*} defaults. The three knobs trade staging
+     * overhead against overlap: transfers below {@code minTransferSize} keep the direct path,
+     * {@code chunkSize} is the granularity at which copies overlap host-side filling, and
+     * {@code ringDepth} is how many pinned slots rotate (so how many chunks may be in flight).
+     * Pinned host memory of {@code chunkSize * ringDepth} bytes is reserved on first use; changing
+     * either value rebuilds the ring.
+     * Honoured by the CUDA backend; other backends ignore the tuning values.
+     *
+     * @param minTransferSize
+     *     smallest transfer, in bytes, that is routed through the staging ring
+     * @param chunkSize
+     *     size, in bytes, of each staged chunk
+     * @param ringDepth
+     *     number of pinned staging slots, at least 2
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan withStagedTransfers(long minTransferSize, long chunkSize, int ringDepth) {
+        if (minTransferSize < 1 || chunkSize < 1) {
+            throw new TornadoRuntimeException("[ERROR] Staged transfer sizes must be positive: minTransferSize=" + minTransferSize + ", chunkSize=" + chunkSize);
+        }
+        if (ringDepth < 2) {
+            throw new TornadoRuntimeException("[ERROR] The staging ring needs at least 2 slots to overlap filling with DMA: " + ringDepth);
+        }
+        tornadoExecutor.withStagedTransfers(minTransferSize, chunkSize, ringDepth);
         return new WithStagedTransfers(this);
     }
 

@@ -53,12 +53,20 @@ class TornadoExecutor {
         immutableTaskGraphList.forEach(ImmutableTaskGraph::withIntraPlanConcurrency);
     }
 
+    public void withIntraPlanConcurrency(int computeStreams) {
+        immutableTaskGraphList.forEach(graph -> graph.withIntraPlanConcurrency(computeStreams));
+    }
+
     public void withoutIntraPlanConcurrency() {
         immutableTaskGraphList.forEach(ImmutableTaskGraph::withoutIntraPlanConcurrency);
     }
 
     public void withStagedTransfers() {
         immutableTaskGraphList.forEach(ImmutableTaskGraph::withStagedTransfers);
+    }
+
+    public void withStagedTransfers(long minTransferSize, long chunkSize, int ringDepth) {
+        immutableTaskGraphList.forEach(graph -> graph.withStagedTransfers(minTransferSize, chunkSize, ringDepth));
     }
 
     public void withoutStagedTransfers() {

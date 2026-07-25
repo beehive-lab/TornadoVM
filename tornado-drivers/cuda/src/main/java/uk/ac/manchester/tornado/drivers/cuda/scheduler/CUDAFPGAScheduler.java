@@ -77,18 +77,18 @@ public class CUDAFPGAScheduler extends CUDAKernelScheduler {
     }
 
     @Override
-    public int launch(long executionPlanId, final CUDAKernel kernel, final TaskDataContext meta, final int[] waitEvents, long batchThreads) {
+    public int launch(long executionPlanId, final CUDAKernel kernel, final TaskDataContext meta, final int[] waitEvents, final int[] dependencyHint, long batchThreads) {
         if (meta.isWorkerGridAvailable()) {
             WorkerGrid grid = meta.getWorkerGrid(meta.getId());
             long[] global = grid.getGlobalWork();
             long[] offset = grid.getGlobalOffset();
             long[] local = grid.getLocalWork();
-            return deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, grid.dimension(), offset, global, local, waitEvents);
+            return deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, grid.dimension(), offset, global, local, waitEvents, dependencyHint);
         } else {
             if (meta.shouldUseOpenCLDriverScheduling()) {
                 System.out.println(WARNING_FPGA_DEFAULT_LOCAL);
             }
-            return deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
+            return deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), meta.getLocalWork(), waitEvents, dependencyHint);
         }
     }
 

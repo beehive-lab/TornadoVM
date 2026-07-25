@@ -1,0 +1,41 @@
+Start (ns),Duration (ns),Bytes (MB),SrcMemKd,Strm,Name
+1040598253,8448,0.131,Pinned,15,[CUDA memcpy Host-to-Device]
+1040607629,8512,0.131,Pinned,15,[CUDA memcpy Host-to-Device]
+1040631341,384,0.000,Pinned,16,[CUDA memcpy Host-to-Device]
+1040669933,215809,,,17,computeSmall
+1040692685,8320,0.131,Pinned,15,[CUDA memcpy Host-to-Device]
+1040701933,7616,0.131,Pinned,15,[CUDA memcpy Host-to-Device]
+1040720397,384,0.000,Pinned,16,[CUDA memcpy Host-to-Device]
+1040753518,215809,,,18,computeSmall
+1040783278,8384,0.131,Pinned,15,[CUDA memcpy Host-to-Device]
+1040792590,8000,0.131,Pinned,15,[CUDA memcpy Host-to-Device]
+1040811118,384,0.000,Pinned,16,[CUDA memcpy Host-to-Device]
+1040842830,215874,,,19,computeSmall
+1040864782,7905,0.131,Pinned,15,[CUDA memcpy Host-to-Device]
+1040873967,8031,0.131,Pinned,15,[CUDA memcpy Host-to-Device]
+1040897806,353,0.000,Pinned,16,[CUDA memcpy Host-to-Device]
+1040928687,215873,,,20,computeSmall
+1040950511,7968,0.131,Pinned,15,[CUDA memcpy Host-to-Device]
+1040959407,7904,0.131,Pinned,15,[CUDA memcpy Host-to-Device]
+1040977615,384,0.000,Pinned,16,[CUDA memcpy Host-to-Device]
+1041008047,215874,,,17,computeSmall
+1041028431,8256,0.131,Pinned,15,[CUDA memcpy Host-to-Device]
+1041037615,8064,0.131,Pinned,15,[CUDA memcpy Host-to-Device]
+1041064624,352,0.000,Pinned,16,[CUDA memcpy Host-to-Device]
+1041095344,215809,,,18,computeSmall
+1041115632,8224,0.131,Pinned,15,[CUDA memcpy Host-to-Device]
+1041124784,8224,0.131,Pinned,15,[CUDA memcpy Host-to-Device]
+1041155664,384,0.000,Pinned,16,[CUDA memcpy Host-to-Device]
+1041186865,215681,,,19,computeSmall
+1041219985,7872,0.131,Pinned,15,[CUDA memcpy Host-to-Device]
+1041228785,8192,0.131,Pinned,15,[CUDA memcpy Host-to-Device]
+1041292273,384,0.000,Pinned,16,[CUDA memcpy Host-to-Device]
+1041334898,215649,,,20,computeSmall
+1041350162,5984,0.131,Device,21,[CUDA memcpy Device-to-Host]
+1041366738,6304,0.131,Device,21,[CUDA memcpy Device-to-Host]
+1041379218,6624,0.131,Device,21,[CUDA memcpy Device-to-Host]
+1041391602,6624,0.131,Device,21,[CUDA memcpy Device-to-Host]
+1041402770,6624,0.131,Device,21,[CUDA memcpy Device-to-Host]
+1041414322,6592,0.131,Device,21,[CUDA memcpy Device-to-Host]
+1041425554,6560,0.131,Device,21,[CUDA memcpy Device-to-Host]
+1041552883,6400,0.131,Device,21,[CUDA memcpy Device-to-Host]

@@ -62,7 +62,6 @@ public class CUDAInstalledCode extends InstalledCode implements TornadoInstalled
     private final CUDADeviceContext deviceContext;
     private final CUDAKernel kernel;
     private final CUDAKernelScheduler scheduler;
-    private final int[] internalEvents = new int[1];
     private final long[] singleThreadGlobalWorkSize = new long[] { 1 };
     private final long[] singleThreadLocalWorkSize = new long[] { 1 };
     private final boolean isSPIRVBinary;
@@ -226,25 +225,31 @@ public class CUDAInstalledCode extends InstalledCode implements TornadoInstalled
         if (deviceContext.deferKernelContextWriteIfCapturing(executionPlanId, kernelArgs)) {
             waitEvents = events;
         } else {
-            internalEvents[0] = kernelArgs.enqueueWrite(executionPlanId, events);
-            waitEvents = internalEvents;
-            updateProfilerKernelContextWrite(executionPlanId, internalEvents[0], meta, kernelArgs);
+            // The kernel's dependencies are handed to the argument-block write, and the launch waits on
+            // that single event. This is deliberate: the write shares the H2D stream with the transfers
+            // it depends on, so those waits are filtered out as same-stream (see
+            // CUDAEventPool#serialiseEvents) and the launch pays exactly one cross-stream wait. Handing
+            // the dependency list to the launch instead costs one cuStreamWaitEvent per producer, which
+            // measurably slows plans made of many short kernels.
+            int[] frameWriteEvent = { kernelArgs.enqueueWrite(executionPlanId, events) };
+            waitEvents = frameWriteEvent;
+            updateProfilerKernelContextWrite(executionPlanId, frameWriteEvent[0], meta, kernelArgs);
         }
 
         int task;
         if (meta == null) {
-            task = deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, waitEvents);
+            task = deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, waitEvents, events);
         } else {
             if (meta.isParallel() || meta.isWorkerGridAvailable()) {
-                task = scheduler.submit(executionPlanId, kernel, meta, waitEvents, batchThreads);
+                task = scheduler.submit(executionPlanId, kernel, meta, waitEvents, events, batchThreads);
             } else {
                 if (meta.isDebug()) {
                     printDebugLaunchInfo(meta);
                 }
                 if (meta.getGlobalWork() == null) {
-                    task = deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, waitEvents);
+                    task = deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, waitEvents, events);
                 } else {
-                    task = deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, 1, null, meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
+                    task = deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, 1, null, meta.getGlobalWork(), meta.getLocalWork(), waitEvents, events);
                 }
             }
         }

@@ -92,6 +92,14 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      * {@code allocate()}, and pinning is a property of the buffer, not of the plan using it.
      */
     private volatile boolean stagedTransfersEnabled = TornadoOptions.ENABLE_STAGED_TRANSFERS;
+    /**
+     * Staging-ring tuning in force, defaulting to the {@code -Dtornado.staged.*} values and overridden
+     * by {@code withStagedTransfers(minTransferSize, chunkSize, ringDepth)}. Device-wide, like the ring
+     * itself; a change to the chunk size or ring depth rebuilds the pinned block on next use.
+     */
+    private volatile long stagedMinSize = TornadoOptions.STAGED_TRANSFER_MIN_SIZE;
+    private volatile long requestedChunkSize = TornadoOptions.STAGED_TRANSFER_CHUNK_SIZE;
+    private volatile int requestedRingDepth = Math.max(2, TornadoOptions.STAGED_TRANSFER_RING_DEPTH);
     /** Guards the one-time warning emitted when concurrency is requested on hardware that cannot overlap. */
     private boolean warnedUnsupportedConcurrency;
     /** Per-plan single-instance role queues (H2D / D2H) used when intra-plan concurrency is enabled. */
@@ -103,11 +111,18 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      * COMPUTE queue would serialise every kernel, which is why kernel/kernel overlap needs a pool.
      * Configurable via {@code -Dtornado.cuda.compute.streams}; defaults to 4 (mirrors the PTX backend).
      */
-    private static final int COMPUTE_POOL_SIZE = Math.max(1, Integer.getInteger("tornado.cuda.compute.streams", 4));
+    private static final int DEFAULT_COMPUTE_POOL_SIZE = Math.max(1, Integer.getInteger("tornado.cuda.compute.streams", 4));
+    /** Per-plan COMPUTE pool size, when the plan asked for one with {@code withIntraPlanConcurrency(int)}. */
+    private final Map<Long, Integer> computePoolSizes = new ConcurrentHashMap<>();
     /** Per-plan COMPUTE stream pool, grown lazily up to {@link #COMPUTE_POOL_SIZE}. */
     private final Map<Long, List<CUDACommandQueue>> computePool = new ConcurrentHashMap<>();
     /** Per-plan round-robin cursor for assigning kernels to COMPUTE-pool streams. */
     private final Map<Long, AtomicInteger> computeCursor = new ConcurrentHashMap<>();
+    /**
+     * Label of the stream the last operation of each plan was issued to. Read back by the bytecode
+     * logger ({@code --printBytecodes}) so stream routing is visible without an Nsight timeline.
+     */
+    private final Map<Long, String> lastQueueLabel = new ConcurrentHashMap<>();
 
     /**
      * Kernel stack-frame writes deferred during CUDA graph capture. The stack
@@ -194,7 +209,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
 
     @Override
     public void sync(long executionPlanId) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = defaultQueue(executionPlanId);
         if (TornadoOptions.USE_SYNC_FLUSH) {
             commandQueue.flush();
         }
@@ -212,7 +227,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
 
     @Override
     public int enqueueBarrier(long executionPlanId) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = defaultQueue(executionPlanId);
         joinRoleQueues(executionPlanId, commandQueue);
         long oclEvent = commandQueue.enqueueBarrier();
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
@@ -221,7 +236,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
 
     @Override
     public int enqueueMarker(long executionPlanId) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = defaultQueue(executionPlanId);
         joinRoleQueues(executionPlanId, commandQueue);
         long oclEvent = commandQueue.enqueueMarker();
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
@@ -243,8 +258,20 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
         return context.createProgramWithIL(spirvBinary, lengths, this);
     }
 
+    /** Launch with no separate dependency hint: the wait list itself decides the COMPUTE stream. */
     public int enqueueNDRangeKernel(long executionPlanId, CUDAKernel kernel, int dim, long[] globalWorkOffset, long[] globalWorkSize, long[] localWorkSize, int[] waitEvents) {
-        CUDACommandQueue commandQueue = getComputeQueue(executionPlanId);
+        return enqueueNDRangeKernel(executionPlanId, kernel, dim, globalWorkOffset, globalWorkSize, localWorkSize, waitEvents, waitEvents);
+    }
+
+    /**
+     * @param waitEvents
+     *     events the launch must wait for (turned into cross-stream waits)
+     * @param dependencyHint
+     *     the task's producer events. Used only to choose the COMPUTE stream, so a kernel can be placed
+     *     on its producer's stream without adding a single wait; may be {@code null}.
+     */
+    public int enqueueNDRangeKernel(long executionPlanId, CUDAKernel kernel, int dim, long[] globalWorkOffset, long[] globalWorkSize, long[] localWorkSize, int[] waitEvents, int[] dependencyHint) {
+        CUDACommandQueue commandQueue = getComputeQueue(executionPlanId, dependencyHint);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
         return eventPool.registerEvent(commandQueue.enqueueNDRangeKernel(kernel, dim, globalWorkOffset, globalWorkSize, localWorkSize, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
@@ -320,7 +347,14 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
                 : null), EventDescriptor.DESC_WRITE_DOUBLE, commandQueue);
     }
 
-    private CUDACommandQueue getCommandQueue(long executionPlanId) {
+    /**
+     * The plan's DEFAULT queue, without recording it as the last queue used. Used by internal
+     * predicates (such as {@link #isStreamCapturing(long)}), which are evaluated in the middle of
+     * issuing an operation, and by markers/barriers/sync/flush and graph calls, which always run on
+     * the default stream. Only the routing decisions for data transfers and kernels record a label,
+     * so {@code --printBytecodes} reports the stream of the operation itself.
+     */
+    private CUDACommandQueue defaultQueue(long executionPlanId) {
         executionIDs.add(executionPlanId);
         if (!commandQueueTable.containsKey(executionPlanId)) {
             CUDATargetDevice device = context.devices().get(getDeviceIndex());
@@ -329,6 +363,20 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
             commandQueueTable.put(executionPlanId, oclCommandQueueTable);
         }
         return commandQueueTable.get(executionPlanId).get(context.devices().get(getDeviceIndex()), context);
+    }
+
+    /**
+     * Remembers which stream an operation of this plan was issued to, so {@code --printBytecodes} can
+     * report it. Called on every routing decision; the logger reads it right after the enqueue.
+     */
+    private CUDACommandQueue recordQueue(long executionPlanId, CUDACommandQueue queue) {
+        lastQueueLabel.put(executionPlanId, queue.getLabel());
+        return queue;
+    }
+
+    @Override
+    public String getLastQueueLabel(long executionPlanId) {
+        return lastQueueLabel.getOrDefault(executionPlanId, "");
     }
 
     private CUDAEventPool getCUDAEventPool(long executionPlanId) {
@@ -343,6 +391,17 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      * Records, per execution plan, whether intra-plan concurrency (multi-queue issue) is enabled.
      * Pushed by the runtime before issuing a plan's bytecodes.
      */
+    public void setIntraPlanConcurrency(long executionPlanId, boolean enabled, int computeStreams) {
+        if (enabled && computeStreams > 0) {
+            Integer previous = computePoolSizes.put(executionPlanId, computeStreams);
+            if (previous != null && previous != computeStreams) {
+                // The pool is created once per plan; a different size means the existing streams must go.
+                releaseComputePool(executionPlanId);
+            }
+        }
+        setIntraPlanConcurrency(executionPlanId, enabled);
+    }
+
     public void setIntraPlanConcurrency(long executionPlanId, boolean enabled) {
         // Piggyback on this per-execution hook (the interpreter calls it before issuing any
         // bytecode) to push the CURRENT profiler state to the native layer: the profiler can be
@@ -351,6 +410,10 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
         CUDACommandQueue.nativeEnableTiming(TornadoOptions.isProfilerEnabled());
         if (enabled && deviceSupportsIntraPlanConcurrency()) {
             intraPlanConcurrencyPlans.add(executionPlanId);
+            // Restart the round-robin from stream 0 on every execution, so a given task lands on the
+            // same COMPUTE stream run after run. Without this the assignment rotates with the number
+            // of kernels issued so far, which makes profiles and timelines differ between executions.
+            computeCursor.computeIfAbsent(executionPlanId, id -> new AtomicInteger()).set(0);
         } else {
             if (enabled && !warnedUnsupportedConcurrency) {
                 System.err.printf("Warning: intra-plan concurrency requested but device '%s' cannot overlap work "
@@ -365,6 +428,25 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     @Override
     public void setStagedTransfers(boolean enabled) {
         stagedTransfersEnabled = enabled;
+    }
+
+    @Override
+    public void setStagedTransfers(boolean enabled, long minTransferSize, long chunkSize, int ringDepth) {
+        stagedTransfersEnabled = enabled;
+        if (minTransferSize > 0) {
+            stagedMinSize = minTransferSize;
+        }
+        if (chunkSize > 0) {
+            requestedChunkSize = chunkSize;
+        }
+        if (ringDepth >= 2) {
+            requestedRingDepth = ringDepth;
+        }
+    }
+
+    @Override
+    public long getStagedMinSize() {
+        return stagedMinSize;
     }
 
     @Override
@@ -398,39 +480,100 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      */
     private CUDACommandQueue getCommandQueue(long executionPlanId, CUDAStreamType streamType) {
         if (streamType == CUDAStreamType.DEFAULT || !isMultiStreamEnabled(executionPlanId)) {
-            return getCommandQueue(executionPlanId);
+            return recordQueue(executionPlanId, defaultQueue(executionPlanId));
         }
         CUDACommandQueue queue = roleQueueTable.computeIfAbsent(executionPlanId, id -> new EnumMap<>(CUDAStreamType.class)).computeIfAbsent(streamType, type -> createQueue(type.name()));
         queue.markDirty();
-        return queue;
+        return recordQueue(executionPlanId, queue);
     }
 
     /**
-     * Returns the COMPUTE queue a kernel should run on: round-robined across the per-plan COMPUTE pool
-     * under intra-plan concurrency so DAG-independent kernels overlap, or the plan's default queue
-     * otherwise. During CUDA-graph capture {@link #isMultiStreamEnabled} is already false, so capture
-     * records on the single default queue. Mirrors the PTX COMPUTE stream pool.
+     * Returns the COMPUTE queue a kernel should run on, under intra-plan concurrency. During
+     * CUDA-graph capture {@link #isMultiStreamEnabled} is already false, so capture records on the
+     * single default queue.
+     *
+     * <p>The choice is dependency-aware. When every COMPUTE-pool producer in the kernel's wait list
+     * is the same stream, the kernel is issued on that stream: an in-order stream already orders it
+     * after its producer, so the cross-stream {@code cuStreamWaitEvent} is dropped by
+     * {@link CUDAEventPool#serialiseEvents} and the chain does not bounce between streams. Kernels
+     * with no COMPUTE producer (DAG-independent work) are round-robined across the pool so they can
+     * overlap. Mirrors the PTX COMPUTE stream pool.
      */
-    private CUDACommandQueue getComputeQueue(long executionPlanId) {
+    private CUDACommandQueue getComputeQueue(long executionPlanId, int[] waitEvents) {
         if (!isMultiStreamEnabled(executionPlanId)) {
-            return getCommandQueue(executionPlanId);
+            return recordQueue(executionPlanId, defaultQueue(executionPlanId));
         }
-        int index = nextComputeIndex(executionPlanId);
-        List<CUDACommandQueue> pool = computePool.computeIfAbsent(executionPlanId, id -> new ArrayList<>());
-        synchronized (pool) {
-            while (pool.size() <= index) {
-                pool.add(createQueue(pool.isEmpty() ? "COMPUTE" : "COMPUTE_" + pool.size()));
-            }
-            CUDACommandQueue queue = pool.get(index);
-            queue.markDirty();
-            return queue;
+        List<CUDACommandQueue> pool = computePoolOf(executionPlanId);
+        CUDACommandQueue queue = soleComputeProducer(executionPlanId, waitEvents, pool);
+        if (queue == null) {
+            queue = pool.get(nextComputeIndex(executionPlanId));
         }
+        queue.markDirty();
+        return recordQueue(executionPlanId, queue);
     }
 
-    /** Round-robin index of the next COMPUTE-pool stream for this plan (0..COMPUTE_POOL_SIZE-1). */
+    /**
+     * The plan's COMPUTE pool, created in full on first use so stream identities (and therefore
+     * Nsight timelines) are the same from one execution to the next.
+     */
+    private List<CUDACommandQueue> computePoolOf(long executionPlanId) {
+        final int poolSize = computePoolSize(executionPlanId);
+        return computePool.computeIfAbsent(executionPlanId, id -> {
+            List<CUDACommandQueue> queues = new ArrayList<>(poolSize);
+            for (int i = 0; i < poolSize; i++) {
+                queues.add(createQueue(i == 0 ? "COMPUTE" : "COMPUTE_" + i));
+            }
+            return queues;
+        });
+    }
+
+    /**
+     * The single COMPUTE-pool queue that produced all of this operation's dependencies, or
+     * {@code null} when there is none or more than one. Dependencies produced outside the pool (bulk
+     * transfers, kernel-argument writes) are ignored: they cannot be satisfied by stream order.
+     */
+    private CUDACommandQueue soleComputeProducer(long executionPlanId, int[] waitEvents, List<CUDACommandQueue> pool) {
+        if (waitEvents == null || waitEvents.length == 0 || pool.size() == 1) {
+            return null;
+        }
+        CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
+        CUDACommandQueue candidate = null;
+        for (int event : waitEvents) {
+            CUDACommandQueue producer = eventPool.queueOfEvent(event);
+            if (producer == null || !pool.contains(producer)) {
+                continue;
+            }
+            if (candidate == null) {
+                candidate = producer;
+            } else if (candidate != producer) {
+                return null;
+            }
+        }
+        return candidate;
+    }
+
+    /** COMPUTE pool size for this plan: the plan's own request, else the device-wide default. */
+    private int computePoolSize(long executionPlanId) {
+        return computePoolSizes.getOrDefault(executionPlanId, DEFAULT_COMPUTE_POOL_SIZE);
+    }
+
+    /** Round-robin index of the next COMPUTE-pool stream for this plan. */
     private int nextComputeIndex(long executionPlanId) {
         AtomicInteger cursor = computeCursor.computeIfAbsent(executionPlanId, id -> new AtomicInteger());
-        return Math.floorMod(cursor.getAndIncrement(), COMPUTE_POOL_SIZE);
+        return Math.floorMod(cursor.getAndIncrement(), computePoolSize(executionPlanId));
+    }
+
+    /** Destroys and forgets a plan's COMPUTE pool, so the next use recreates it at the current size. */
+    private void releaseComputePool(long executionPlanId) {
+        List<CUDACommandQueue> pool = computePool.remove(executionPlanId);
+        if (pool == null) {
+            return;
+        }
+        synchronized (pool) {
+            for (CUDACommandQueue queue : pool) {
+                queue.cleanup();
+            }
+        }
     }
 
     /**
@@ -523,9 +666,13 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     }
 
     private void ensureStagedRing() {
+        if (stagedRingPtr != 0L && (stagedChunkSize != requestedChunkSize || stagedRingDepth != requestedRingDepth)) {
+            // Geometry changed through withStagedTransfers(...): drain and drop the old pinned block.
+            releaseStagedRing();
+        }
         if (stagedRingPtr == 0L) {
-            stagedChunkSize = TornadoOptions.STAGED_TRANSFER_CHUNK_SIZE;
-            stagedRingDepth = Math.max(2, TornadoOptions.STAGED_TRANSFER_RING_DEPTH);
+            stagedChunkSize = requestedChunkSize;
+            stagedRingDepth = requestedRingDepth;
             stagedRingPtr = CUDACommandQueue.cuMemAllocHost(stagedChunkSize * stagedRingDepth);
             if (stagedRingPtr == 0L) {
                 throw new uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException("[CUDA] cuMemAllocHost failed: could not allocate " + (stagedChunkSize * stagedRingDepth) + " bytes of pinned host memory for the staging ring");
@@ -823,7 +970,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
 
     @Override
     public int enqueueBarrier(long executionPlanId, int[] events) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = defaultQueue(executionPlanId);
         joinRoleQueues(executionPlanId, commandQueue);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
         long oclEvent = commandQueue.enqueueBarrier(eventPool.serialiseEvents(events, commandQueue, isMultiStreamEnabled(executionPlanId)) ? eventPool.waitEventsBuffer : null);
@@ -832,7 +979,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
 
     @Override
     public int enqueueMarker(long executionPlanId, int[] events) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = defaultQueue(executionPlanId);
         joinRoleQueues(executionPlanId, commandQueue);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
         long oclEvent = commandQueue.enqueueMarker(eventPool.serialiseEvents(events, commandQueue, isMultiStreamEnabled(executionPlanId)) ? eventPool.waitEventsBuffer : null);
@@ -856,6 +1003,8 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
             }
         }
         computeCursor.remove(executionPlanId);
+        computePoolSizes.remove(executionPlanId);
+        lastQueueLabel.remove(executionPlanId);
         intraPlanConcurrencyPlans.remove(executionPlanId);
         oclEventPool.remove(executionPlanId);
         CUDACommandQueueTable table = commandQueueTable.get(executionPlanId);
@@ -943,20 +1092,20 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
         if (event == -1) {
             return EMPTY_EVENT;
         }
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = defaultQueue(executionPlanId);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
         return new CUDAEvent(eventPool.getDescriptor(event).getNameDescription(), commandQueue, event, eventPool.getCUDAEvent(event));
     }
 
     @Override
     public void flush(long executionPlanId) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = defaultQueue(executionPlanId);
         commandQueue.flush();
     }
 
     @Override
     public void flushEvents(long executionPlanId) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = defaultQueue(executionPlanId);
         commandQueue.flushEvents();
     }
 
@@ -1017,7 +1166,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     }
 
     public long mapOnDeviceMemoryRegion(long executionPlanId, long destDevicePtr, long srcDevicePtr, long offset, int sizeOfType, long sizeSource, long sizeDest) {
-        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        CUDACommandQueue commandQueue = defaultQueue(executionPlanId);
         return commandQueue.mapOnDeviceMemoryRegion(commandQueue.getCommandQueuePtr(), destDevicePtr, srcDevicePtr, offset, sizeOfType, sizeSource, sizeDest);
     }
 
@@ -1029,7 +1178,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      * launches and device-to-host copies are recorded as graph nodes.
      */
     public void beginExecutionGraphCapture(long executionPlanId) {
-        getCommandQueue(executionPlanId).beginGraphCapture();
+        defaultQueue(executionPlanId).beginGraphCapture();
     }
 
     /**
@@ -1040,7 +1189,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      * graph launch.
      */
     public long endExecutionGraphCaptureAndInstantiate(long executionPlanId) {
-        long handle = getCommandQueue(executionPlanId).endGraphCaptureAndInstantiate();
+        long handle = defaultQueue(executionPlanId).endGraphCaptureAndInstantiate();
         flushPendingKernelContextWrites(executionPlanId);
         return handle;
     }
@@ -1071,7 +1220,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      * source pointers, so updated host data is picked up on every launch.
      */
     public int launchExecutionGraph(long executionPlanId, long executionGraphHandle) {
-        getCommandQueue(executionPlanId).launchGraph(executionGraphHandle);
+        defaultQueue(executionPlanId).launchGraph(executionGraphHandle);
         return -1;
     }
 
@@ -1079,7 +1228,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      * @return whether the execution-plan stream is currently capturing.
      */
     public boolean isStreamCapturing(long executionPlanId) {
-        return getCommandQueue(executionPlanId).isCapturing();
+        return defaultQueue(executionPlanId).isCapturing();
     }
 
     /**
@@ -1089,7 +1238,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     public void destroyExecutionGraph(long executionGraphHandle) {
         Long anyPlanId = executionIDs.stream().findFirst().orElse(null);
         if (anyPlanId != null) {
-            getCommandQueue(anyPlanId).destroyGraph(executionGraphHandle);
+            defaultQueue(anyPlanId).destroyGraph(executionGraphHandle);
         }
     }
 
@@ -1100,13 +1249,13 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      * libraries (e.g., cublasSetStream) to TornadoVM's stream.
      */
     public long getNativeStream(long executionPlanId) {
-        return getCommandQueue(executionPlanId).getNativeStream();
+        return defaultQueue(executionPlanId).getNativeStream();
     }
 
     /**
      * Raw CUcontext handle of the execution-plan queue.
      */
     public long getNativeContext(long executionPlanId) {
-        return getCommandQueue(executionPlanId).getNativeContext();
+        return defaultQueue(executionPlanId).getNativeContext();
     }
 }

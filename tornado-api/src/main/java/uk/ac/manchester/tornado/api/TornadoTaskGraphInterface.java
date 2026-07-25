@@ -151,9 +151,13 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     void withIntraPlanConcurrency();
 
+    void withIntraPlanConcurrency(int computeStreams);
+
     void withoutIntraPlanConcurrency();
 
     void withStagedTransfers();
+
+    void withStagedTransfers(long minTransferSize, long chunkSize, int ringDepth);
 
     void withoutStagedTransfers();
 }

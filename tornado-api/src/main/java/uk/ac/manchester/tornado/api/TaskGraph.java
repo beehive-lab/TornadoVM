@@ -1060,12 +1060,20 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.withIntraPlanConcurrency();
     }
 
+    void withIntraPlanConcurrency(int computeStreams) {
+        taskGraphImpl.withIntraPlanConcurrency(computeStreams);
+    }
+
     void withoutIntraPlanConcurrency() {
         taskGraphImpl.withoutIntraPlanConcurrency();
     }
 
     void withStagedTransfers() {
         taskGraphImpl.withStagedTransfers();
+    }
+
+    void withStagedTransfers(long minTransferSize, long chunkSize, int ringDepth) {
+        taskGraphImpl.withStagedTransfers(minTransferSize, chunkSize, ringDepth);
     }
 
     void withoutStagedTransfers() {

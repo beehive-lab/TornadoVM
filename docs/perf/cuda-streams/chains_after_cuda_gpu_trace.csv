@@ -1,0 +1,41 @@
+Start (ns),Duration (ns),CorrId,GrdX,GrdY,GrdZ,BlkX,BlkY,BlkZ,Reg/Trd,StcSMem (MB),DymSMem (MB),Bytes (MB),Throughput (MB/s),SrcMemKd,DstMemKd,Device,Ctx,GreenCtx,Strm,Name
+900537763,1408,40,,,,,,,,,,0.131,93102.237,Device,,NVIDIA GeForce RTX 4090 (0),1,,7,[CUDA memset]
+901614887,8128,48,,,,,,,,,,0.131,16127.888,Pinned,Device,NVIDIA GeForce RTX 4090 (0),1,,15,[CUDA memcpy Host-to-Device]
+965611813,511,61,,,,,,,,,,0.000,46.967,Pinned,Device,NVIDIA GeForce RTX 4090 (0),1,,15,[CUDA memcpy Host-to-Device]
+967219594,1536,74,32,1,1,1024,1,1,22,0.000,0.000,,,,,NVIDIA GeForce RTX 4090 (0),1,,16,scale
+967397611,1248,80,,,,,,,,,,0.131,105038.455,Device,,NVIDIA GeForce RTX 4090 (0),1,,7,[CUDA memset]
+990692572,352,90,,,,,,,,,,0.000,68.182,Pinned,Device,NVIDIA GeForce RTX 4090 (0),1,,15,[CUDA memcpy Host-to-Device]
+991219133,1440,95,32,1,1,1024,1,1,22,0.000,0.000,,,,,NVIDIA GeForce RTX 4090 (0),1,,16,scale
+991655647,1024,105,,,,,,,,,,0.131,128015.559,Device,,NVIDIA GeForce RTX 4090 (0),1,,7,[CUDA memset]
+991746783,8032,109,,,,,,,,,,0.131,16320.587,Pinned,Device,NVIDIA GeForce RTX 4090 (0),1,,15,[CUDA memcpy Host-to-Device]
+998306390,384,118,,,,,,,,,,0.000,62.500,Pinned,Device,NVIDIA GeForce RTX 4090 (0),1,,15,[CUDA memcpy Host-to-Device]
+998439766,1408,123,32,1,1,1024,1,1,22,0.000,0.000,,,,,NVIDIA GeForce RTX 4090 (0),1,,17,scale
+998561719,1024,129,,,,,,,,,,0.131,128015.559,Device,,NVIDIA GeForce RTX 4090 (0),1,,7,[CUDA memset]
+1003697065,384,139,,,,,,,,,,0.000,62.500,Pinned,Device,NVIDIA GeForce RTX 4090 (0),1,,15,[CUDA memcpy Host-to-Device]
+1003819241,1440,144,32,1,1,1024,1,1,22,0.000,0.000,,,,,NVIDIA GeForce RTX 4090 (0),1,,17,scale
+1003957130,5920,151,,,,,,,,,,0.131,22143.123,Device,Pinned,NVIDIA GeForce RTX 4090 (0),1,,20,[CUDA memcpy Device-to-Host]
+1004028810,5952,156,,,,,,,,,,0.131,22024.095,Device,Pinned,NVIDIA GeForce RTX 4090 (0),1,,20,[CUDA memcpy Device-to-Host]
+1007911703,6880,177,,,,,,,,,,0.131,19053.379,Pinned,Device,NVIDIA GeForce RTX 4090 (0),1,,15,[CUDA memcpy Host-to-Device]
+1008054904,352,181,,,,,,,,,,0.000,68.182,Pinned,Device,NVIDIA GeForce RTX 4090 (0),1,,15,[CUDA memcpy Host-to-Device]
+1008134840,1248,186,32,1,1,1024,1,1,22,0.000,0.000,,,,,NVIDIA GeForce RTX 4090 (0),1,,16,scale
+1008271512,385,191,,,,,,,,,,0.000,62.338,Pinned,Device,NVIDIA GeForce RTX 4090 (0),1,,15,[CUDA memcpy Host-to-Device]
+1008334457,1216,196,32,1,1,1024,1,1,22,0.000,0.000,,,,,NVIDIA GeForce RTX 4090 (0),1,,16,scale
+1008371897,6752,200,,,,,,,,,,0.131,19414.657,Pinned,Device,NVIDIA GeForce RTX 4090 (0),1,,15,[CUDA memcpy Host-to-Device]
+1008466681,352,204,,,,,,,,,,0.000,68.182,Pinned,Device,NVIDIA GeForce RTX 4090 (0),1,,15,[CUDA memcpy Host-to-Device]
+1008529850,1215,209,32,1,1,1024,1,1,22,0.000,0.000,,,,,NVIDIA GeForce RTX 4090 (0),1,,17,scale
+1008663098,352,214,,,,,,,,,,0.000,68.182,Pinned,Device,NVIDIA GeForce RTX 4090 (0),1,,15,[CUDA memcpy Host-to-Device]
+1008725370,1184,219,32,1,1,1024,1,1,22,0.000,0.000,,,,,NVIDIA GeForce RTX 4090 (0),1,,17,scale
+1008809883,5695,224,,,,,,,,,,0.131,23018.004,Device,Pinned,NVIDIA GeForce RTX 4090 (0),1,,20,[CUDA memcpy Device-to-Host]
+1008891803,5760,229,,,,,,,,,,0.131,22758.319,Device,Pinned,NVIDIA GeForce RTX 4090 (0),1,,20,[CUDA memcpy Device-to-Host]
+1009989566,6753,250,,,,,,,,,,0.131,19411.773,Pinned,Device,NVIDIA GeForce RTX 4090 (0),1,,15,[CUDA memcpy Host-to-Device]
+1010094207,352,254,,,,,,,,,,0.000,68.182,Pinned,Device,NVIDIA GeForce RTX 4090 (0),1,,15,[CUDA memcpy Host-to-Device]
+1010161503,1216,259,32,1,1,1024,1,1,22,0.000,0.000,,,,,NVIDIA GeForce RTX 4090 (0),1,,16,scale
+1010449504,352,264,,,,,,,,,,0.000,68.182,Pinned,Device,NVIDIA GeForce RTX 4090 (0),1,,15,[CUDA memcpy Host-to-Device]
+1010517248,1184,269,32,1,1,1024,1,1,22,0.000,0.000,,,,,NVIDIA GeForce RTX 4090 (0),1,,16,scale
+1010559041,6656,273,,,,,,,,,,0.131,19694.661,Pinned,Device,NVIDIA GeForce RTX 4090 (0),1,,15,[CUDA memcpy Host-to-Device]
+1010661793,352,277,,,,,,,,,,0.000,68.182,Pinned,Device,NVIDIA GeForce RTX 4090 (0),1,,15,[CUDA memcpy Host-to-Device]
+1010727361,1216,282,32,1,1,1024,1,1,22,0.000,0.000,,,,,NVIDIA GeForce RTX 4090 (0),1,,17,scale
+1010848705,353,287,,,,,,,,,,0.000,67.989,Pinned,Device,NVIDIA GeForce RTX 4090 (0),1,,15,[CUDA memcpy Host-to-Device]
+1010914338,1216,292,32,1,1,1024,1,1,22,0.000,0.000,,,,,NVIDIA GeForce RTX 4090 (0),1,,17,scale
+1010995394,5728,297,,,,,,,,,,0.131,22885.474,Device,Pinned,NVIDIA GeForce RTX 4090 (0),1,,20,[CUDA memcpy Device-to-Host]
+1011076738,5792,302,,,,,,,,,,0.131,22632.474,Device,Pinned,NVIDIA GeForce RTX 4090 (0),1,,20,[CUDA memcpy Device-to-Host]

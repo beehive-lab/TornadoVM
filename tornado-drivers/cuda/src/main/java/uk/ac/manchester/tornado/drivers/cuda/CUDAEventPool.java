@@ -120,6 +120,18 @@ public class CUDAEventPool {
     }
 
     /**
+     * The queue an event was recorded on, or {@code null} for an unknown/out-of-range event id. Used
+     * to keep a dependent kernel on its producer's stream, where in-order execution already provides
+     * the ordering and no cross-stream event wait is needed.
+     */
+    public CUDACommandQueue queueOfEvent(int eventId) {
+        if (eventId < 0 || eventId >= eventQueues.length) {
+            return null;
+        }
+        return eventQueues[eventId];
+    }
+
+    /**
      * Serialises the dependency wait list into {@link #waitEventsBuffer}. On an in-order queue the
      * list is normally redundant (queue order implies it) and is skipped; {@code forceSerialisation}
      * overrides that for plans running with intra-plan concurrency, where dependencies may have been

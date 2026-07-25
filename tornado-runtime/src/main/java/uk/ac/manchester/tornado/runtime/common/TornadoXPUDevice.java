@@ -215,6 +215,20 @@ public interface TornadoXPUDevice extends TornadoDevice {
     }
 
     /**
+     * As {@link #setIntraPlanConcurrency(long, boolean)}, and additionally sizes the backend's COMPUTE
+     * stream pool for this plan. A {@code computeStreams} of
+     * {@link uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext#INIT_VALUE} means "leave the
+     * backend default". Backends that do not have a sizeable pool ignore the value.
+     *
+     * @param executionPlanId the execution plan
+     * @param enabled whether intra-plan concurrency is enabled for this plan
+     * @param computeStreams requested COMPUTE stream-pool size, or INIT_VALUE for the backend default
+     */
+    default void setIntraPlanConcurrency(long executionPlanId, boolean enabled, int computeStreams) {
+        setIntraPlanConcurrency(executionPlanId, enabled);
+    }
+
+    /**
      * Whether this backend implements intra-plan concurrency (role streams and cross-stream
      * event dependencies). When false, a plan-level {@code withIntraPlanConcurrency()} request
      * is ignored and the plan runs on the backend's default single-queue path.
@@ -222,6 +236,7 @@ public interface TornadoXPUDevice extends TornadoDevice {
     default boolean isIntraPlanConcurrencySupported() {
         return false;
     }
+
 
     /**
      * Informs the backend whether large one-shot host-to-device uploads should be routed through
@@ -233,6 +248,22 @@ public interface TornadoXPUDevice extends TornadoDevice {
      */
     default void setStagedTransfers(boolean enabled) {
         // no-op by default
+    }
+
+    /**
+     * As {@link #setStagedTransfers(boolean)}, and additionally tunes the staging ring for this plan.
+     * Any argument equal to
+     * {@link uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext#INIT_VALUE} keeps the
+     * backend default (the {@code -Dtornado.staged.*} values). Backends without a staging ring ignore
+     * the tuning.
+     *
+     * @param enabled whether staged transfers are enabled
+     * @param minTransferSize smallest transfer routed through the ring, or INIT_VALUE
+     * @param chunkSize staged chunk size in bytes, or INIT_VALUE
+     * @param ringDepth number of pinned staging slots, or INIT_VALUE
+     */
+    default void setStagedTransfers(boolean enabled, long minTransferSize, long chunkSize, int ringDepth) {
+        setStagedTransfers(enabled);
     }
 
     /**

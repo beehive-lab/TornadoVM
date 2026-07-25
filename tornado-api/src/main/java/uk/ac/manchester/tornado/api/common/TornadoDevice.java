@@ -149,6 +149,21 @@ public interface TornadoDevice {
 
     void sync(long executionPlanId);
 
+    /**
+     * Label of the backend queue/stream that the last operation of this execution plan was issued
+     * to, for example {@code DEFAULT}, {@code DATA_TRANSFER_H2D}, {@code COMPUTE_2}. Diagnostic
+     * only: it is what {@code --printBytecodes} appends to each bytecode line so stream routing is
+     * visible without a vendor profiler. Backends that do not route per operation return an empty
+     * string.
+     *
+     * @param executionPlanId
+     *     the execution plan
+     * @return the queue label, or an empty string when the backend does not expose one
+     */
+    default String getLastQueueLabel(long executionPlanId) {
+        return "";
+    }
+
     void flush(long executionPlanId);
 
     void clean();
