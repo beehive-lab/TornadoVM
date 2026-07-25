@@ -95,6 +95,14 @@ public interface CUDADeviceContextInterface extends TornadoDeviceContext {
     }
 
     /**
+     * As {@link #setIntraPlanConcurrency(long, boolean)}, and additionally sizes the plan's COMPUTE
+     * stream pool. A non-positive {@code computeStreams} keeps the device-wide default.
+     */
+    default void setIntraPlanConcurrency(long executionPlanId, boolean enabled, int computeStreams) {
+        setIntraPlanConcurrency(executionPlanId, enabled);
+    }
+
+    /**
      * Role label of the stream the last operation of this plan was issued to (DEFAULT,
      * DATA_TRANSFER_H2D, COMPUTE, COMPUTE_n, DATA_TRANSFER_D2H), or an empty string if unknown.
      * Used by {@code --printBytecodes} to show stream routing.
@@ -108,6 +116,21 @@ public interface CUDADeviceContextInterface extends TornadoDeviceContext {
      */
     default void setStagedTransfers(boolean enabled) {
         // no-op by default
+    }
+
+    /**
+     * Records whether large one-shot H2D uploads are routed through the pinned staging ring, and the
+     * ring tuning to use. Values that are not positive keep the current setting.
+     */
+    default void setStagedTransfers(boolean enabled, long minTransferSize, long chunkSize, int ringDepth) {
+        setStagedTransfers(enabled);
+    }
+
+    /**
+     * Smallest transfer, in bytes, that is routed through the pinned staging ring.
+     */
+    default long getStagedMinSize() {
+        return TornadoOptions.STAGED_TRANSFER_MIN_SIZE;
     }
 
     /**
