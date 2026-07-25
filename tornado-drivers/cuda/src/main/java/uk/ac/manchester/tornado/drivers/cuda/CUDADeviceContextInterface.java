@@ -95,6 +95,15 @@ public interface CUDADeviceContextInterface extends TornadoDeviceContext {
     }
 
     /**
+     * Role label of the stream the last operation of this plan was issued to (DEFAULT,
+     * DATA_TRANSFER_H2D, COMPUTE, COMPUTE_n, DATA_TRANSFER_D2H), or an empty string if unknown.
+     * Used by {@code --printBytecodes} to show stream routing.
+     */
+    default String getLastQueueLabel(long executionPlanId) {
+        return "";
+    }
+
+    /**
      * Records whether large one-shot H2D uploads are routed through the pinned staging ring.
      */
     default void setStagedTransfers(boolean enabled) {

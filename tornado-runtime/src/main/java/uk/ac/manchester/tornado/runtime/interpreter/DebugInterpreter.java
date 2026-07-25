@@ -73,7 +73,7 @@ class DebugInterpreter {
     }
 
     static void logTransferToDeviceOnce(List<Integer> allEvents, Object object, TornadoXPUDevice deviceForInterpreter, //
-            long sizeObject, long sizeBatch, long offset, final int eventList, StringBuilder logBuilder) {
+            long sizeObject, long sizeBatch, long offset, final int eventList, long executionPlanId, StringBuilder logBuilder) {
 
         boolean executed = allEvents != null;
 
@@ -83,23 +83,24 @@ class DebugInterpreter {
                 ? InterpreterUtilities.debugHighLightBC("TRANSFER_HOST_TO_DEVICE_ONCE") //
                 : InterpreterUtilities.debugHighLightNonExecBC("TRANSFER_HOST_TO_DEVICE_ONCE"); //
 
-        String verbose = String.format("bc: %s [Object Hash Code=0x%x] %s on %s, size=%d, batchSize=%d, offset=%d [event list=%d], [Status:%s] ", //
+        String verbose = String.format("bc: %s [Object Hash Code=0x%x] %s on %s, size=%d, batchSize=%d, offset=%d [event list=%d]%s, [Status:%s] ", //
                 coloredText, //
                 object.hashCode(), //
                 object, //
                 InterpreterUtilities.debugDeviceBC(deviceForInterpreter), //
-                sizeObject, // 
+                sizeObject, //
                 sizeBatch, //
                 offset, //
                 eventList, //
+                executed ? InterpreterUtilities.debugStreamBC(deviceForInterpreter, executionPlanId) : "", //
                 InterpreterUtilities.debugHighLightNonExecBC(transferStatus));
 
         appendLogBuilder(verbose, logBuilder);
     }
 
     static void logTransferToDeviceAlways(Object object, TornadoXPUDevice deviceForInterpreter, long sizeObject, long sizeBatch, long offset, //
-            final int eventList, StringBuilder logBuilder) {
-        String verbose = String.format("bc: %s [0x%x] %s on %s, size=%d, batchSize=%d, offset=%d [event list=%d]", //
+            final int eventList, long executionPlanId, StringBuilder logBuilder) {
+        String verbose = String.format("bc: %s [0x%x] %s on %s, size=%d, batchSize=%d, offset=%d [event list=%d]%s", //
                 InterpreterUtilities.debugHighLightBC("TRANSFER_HOST_TO_DEVICE_ALWAYS"), //
                 object.hashCode(), //
                 object, //
@@ -107,61 +108,66 @@ class DebugInterpreter {
                 sizeObject, //
                 sizeBatch, //
                 offset, //
-                eventList); //
+                eventList, //
+                InterpreterUtilities.debugStreamBC(deviceForInterpreter, executionPlanId)); //
         appendLogBuilder(verbose, logBuilder);
     }
 
     static void logTransferToHostAlways(Object object, TornadoXPUDevice interpreterDevice, long sizeObject, long sizeBatch, //
-            long offset, final int eventList, StringBuilder logBuilder) {
+            long offset, final int eventList, long executionPlanId, StringBuilder logBuilder) {
         String verbose = String.format("bc: " //
                 + InterpreterUtilities.debugHighLightBC("TRANSFER_DEVICE_TO_HOST_ALWAYS") //
-                + "[0x%x] %s on %s, size=%d, batchSize=%d, offset=%d [event list=%d]", //
+                + "[0x%x] %s on %s, size=%d, batchSize=%d, offset=%d [event list=%d]%s", //
                 object.hashCode(), //
                 object, //
                 InterpreterUtilities.debugDeviceBC(interpreterDevice), //
-                sizeObject, // 
+                sizeObject, //
                 sizeBatch, //
                 offset, //
-                eventList);
+                eventList, //
+                InterpreterUtilities.debugStreamBC(interpreterDevice, executionPlanId));
         appendLogBuilder(verbose, logBuilder);
     }
 
     static void logTransferToHostAlwaysBlocking(Object object, TornadoXPUDevice interpreterDevice, StringBuilder logBuilder, //
-            long sizeObject, long sizeBatch, long offset, int eventId) {
+            long sizeObject, long sizeBatch, long offset, int eventId, long executionPlanId) {
         String verbose = String.format("bc: " //
                 + InterpreterUtilities.debugHighLightBC("TRANSFER_DEVICE_TO_HOST_ALWAYS_BLOCKING") //
-                + " [0x%x] %s on %s, size=%d, sizeBatch=%d, offset=%d [event list=%d]", //
+                + " [0x%x] %s on %s, size=%d, sizeBatch=%d, offset=%d [event list=%d]%s", //
                 object.hashCode(), //
                 object, //
                 InterpreterUtilities.debugDeviceBC(interpreterDevice), //
-                sizeObject, // 
+                sizeObject, //
                 sizeBatch, //
                 offset, //
-                eventId);
+                eventId, //
+                InterpreterUtilities.debugStreamBC(interpreterDevice, executionPlanId));
         appendLogBuilder(verbose, logBuilder);
     }
 
-    public static void logLaunchTask(SchedulableTask task, TornadoXPUDevice interpreterDevice, long numBatchThreads, long offset, int eventId, StringBuilder logBuilder) {
+    public static void logLaunchTask(SchedulableTask task, TornadoXPUDevice interpreterDevice, long numBatchThreads, long offset, int eventId, long executionPlanId, StringBuilder logBuilder) {
         String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("LAUNCH") //
-                + " %s on %s, numThreadBatch=%d, offset=%d [event list=%d]", //
+                + " %s on %s, numThreadBatch=%d, offset=%d [event list=%d]%s", //
                 task.getFullName(), //
                 interpreterDevice, //
                 numBatchThreads, //
                 offset, //
-                eventId);
+                eventId, //
+                InterpreterUtilities.debugStreamBC(interpreterDevice, executionPlanId));
         appendLogBuilder(verbose, logBuilder);
     }
 
-    public static void logStreamInAtomic(Object bufferAtomics, TornadoXPUDevice interpreterDevice, int eventId, StringBuilder logBuilder) {
+    public static void logStreamInAtomic(Object bufferAtomics, TornadoXPUDevice interpreterDevice, int eventId, long executionPlanId, StringBuilder logBuilder) {
         String verbose = String.format("bc: " //
                 + InterpreterUtilities.debugHighLightBC("STREAM_IN") //
-                + "  ATOMIC [0x%x] %s on %s, batchSize=%d, offset=%d [event list=%d]", //
+                + "  ATOMIC [0x%x] %s on %s, batchSize=%d, offset=%d [event list=%d]%s", //
                 bufferAtomics.hashCode(), //
                 bufferAtomics, //
                 interpreterDevice, //
                 0, //
                 0, //
-                eventId);
+                eventId, //
+                InterpreterUtilities.debugStreamBC(interpreterDevice, executionPlanId));
         appendLogBuilder(verbose, logBuilder);
     }
 

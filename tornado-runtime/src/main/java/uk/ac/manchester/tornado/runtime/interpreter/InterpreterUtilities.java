@@ -52,7 +52,22 @@ public class InterpreterUtilities {
             return ColoursTerminal.PURPLE + " " + device + " " + ColoursTerminal.RESET;
         } else if (tornadoVMBackend == TornadoVMBackendType.PTX) {
             return ColoursTerminal.GREEN + " " + device + " " + ColoursTerminal.RESET;
+        } else if (tornadoVMBackend == TornadoVMBackendType.CUDA) {
+            return ColoursTerminal.GREEN + " " + device + " " + ColoursTerminal.RESET;
         }
         return ColoursTerminal.YELLOW + " " + device + " " + ColoursTerminal.RESET;
+    }
+
+    /**
+     * Tag naming the backend stream the operation just issued was routed to, for example
+     * {@code [stream=COMPUTE_2]}. Empty for backends that do not expose queue labels, so their
+     * bytecode log is unchanged.
+     */
+    static String debugStreamBC(TornadoXPUDevice device, long executionPlanId) {
+        String label = device.getLastQueueLabel(executionPlanId);
+        if (label == null || label.isEmpty()) {
+            return "";
+        }
+        return " [stream=" + label + "]";
     }
 }

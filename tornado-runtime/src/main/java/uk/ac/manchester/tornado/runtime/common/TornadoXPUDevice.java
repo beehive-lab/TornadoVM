@@ -223,6 +223,7 @@ public interface TornadoXPUDevice extends TornadoDevice {
         return false;
     }
 
+
     /**
      * Informs the backend whether large one-shot host-to-device uploads should be routed through
      * the pinned staging ring. Called by the interpreter before issuing a plan's bytecodes, so the
