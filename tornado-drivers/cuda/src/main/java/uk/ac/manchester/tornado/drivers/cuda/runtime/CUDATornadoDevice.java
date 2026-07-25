@@ -784,8 +784,18 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
     }
 
     @Override
+    public void setIntraPlanConcurrency(long executionPlanId, boolean enabled, int computeStreams) {
+        getDeviceContext().setIntraPlanConcurrency(executionPlanId, enabled, computeStreams);
+    }
+
+    @Override
     public void setStagedTransfers(boolean enabled) {
         getDeviceContext().setStagedTransfers(enabled);
+    }
+
+    @Override
+    public void setStagedTransfers(boolean enabled, long minTransferSize, long chunkSize, int ringDepth) {
+        getDeviceContext().setStagedTransfers(enabled, minTransferSize, chunkSize, ringDepth);
     }
 
     @Override

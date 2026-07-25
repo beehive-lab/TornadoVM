@@ -43,15 +43,15 @@ public class CUDAAMDScheduler extends CUDAKernelScheduler {
     }
 
     @Override
-    public int launch(long executionPlanId, CUDAKernel kernel, TaskDataContext meta, int[] waitEvents, long batchThreads) {
+    public int launch(long executionPlanId, CUDAKernel kernel, TaskDataContext meta, int[] waitEvents, int[] dependencyHint, long batchThreads) {
         if (meta.isWorkerGridAvailable()) {
             WorkerGrid grid = meta.getWorkerGrid(meta.getId());
             long[] global = grid.getGlobalWork();
             long[] offset = grid.getGlobalOffset();
             long[] local = grid.getLocalWork();
-            return deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, grid.dimension(), offset, global, local, waitEvents);
+            return deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, grid.dimension(), offset, global, local, waitEvents, dependencyHint);
         } else {
-            return deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), null, waitEvents);
+            return deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), null, waitEvents, dependencyHint);
         }
     }
 

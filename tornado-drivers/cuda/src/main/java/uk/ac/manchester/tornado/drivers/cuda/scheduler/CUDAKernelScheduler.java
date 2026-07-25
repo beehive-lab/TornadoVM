@@ -62,7 +62,7 @@ public abstract class CUDAKernelScheduler {
     }
 
     public int submit(long executionPlanId, final CUDAKernel kernel, final TaskDataContext meta, long batchThreads) {
-        return submit(executionPlanId, kernel, meta, null, batchThreads);
+        return submit(executionPlanId, kernel, meta, null, null, batchThreads);
     }
 
     private void updateProfiler(long executionPlanId, final int taskEvent, final TaskDataContext meta) {
@@ -94,17 +94,24 @@ public abstract class CUDAKernelScheduler {
         }
     }
 
-    public int launch(long executionPlanId, final CUDAKernel kernel, final TaskDataContext meta, final int[] waitEvents, long batchThreads) {
+    /**
+     * @param waitEvents
+     *     events this launch must wait for
+     * @param dependencyHint
+     *     the task's producer events, used only to pick the COMPUTE stream (see
+     *     {@code CUDADeviceContext#enqueueNDRangeKernel}); it adds no waits of its own
+     */
+    public int launch(long executionPlanId, final CUDAKernel kernel, final TaskDataContext meta, final int[] waitEvents, final int[] dependencyHint, long batchThreads) {
         if (meta.isWorkerGridAvailable()) {
             WorkerGrid grid = meta.getWorkerGrid(meta.getId());
             long[] global = grid.getGlobalWork();
             long[] offset = grid.getGlobalOffset();
             long[] local = grid.getLocalWork();
-            return deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, grid.dimension(), offset, global, local, waitEvents);
+            return deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, grid.dimension(), offset, global, local, waitEvents, dependencyHint);
         } else {
             return deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), (meta.shouldUseOpenCLDriverScheduling()
                     ? null
-                    : meta.getLocalWork()), waitEvents);
+                    : meta.getLocalWork()), waitEvents, dependencyHint);
         }
     }
 
@@ -137,7 +144,7 @@ public abstract class CUDAKernelScheduler {
         }
     }
 
-    public int submit(long executionPlanId, final CUDAKernel kernel, final TaskDataContext meta, final int[] waitEvents, long batchThreads) {
+    public int submit(long executionPlanId, final CUDAKernel kernel, final TaskDataContext meta, final int[] waitEvents, final int[] dependencyHint, long batchThreads) {
         if (!meta.isWorkerGridAvailable()) {
             if (!meta.isGlobalWorkDefined()) {
                 calculateGlobalWork(meta, batchThreads);
@@ -163,7 +170,7 @@ public abstract class CUDAKernelScheduler {
         if (meta.isThreadInfoEnabled()) {
             meta.printThreadDims();
         }
-        final int taskEvent = launch(executionPlanId, kernel, meta, waitEvents, batchThreads);
+        final int taskEvent = launch(executionPlanId, kernel, meta, waitEvents, dependencyHint, batchThreads);
         updateProfiler(executionPlanId, taskEvent, meta);
         return taskEvent;
     }
