@@ -37,6 +37,8 @@ import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.cublas.CuBlas;
+import uk.ac.manchester.tornado.cublas.enums.CuBlasOperation;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -90,6 +92,11 @@ public class TestCUDAStreams extends TornadoTestBase {
     private static final int LLAMA_LAYERS = 6;
     private static final int LLAMA_TOKENS = 16;
     private static final float LLAMA_DELTA = 0.05f;
+
+    // Library-task ordering test: a wide matrix plus a long producer loop, so a missing cross-stream
+    // wait before the cuBLAS call is observable rather than a narrow race.
+    private static final int LIBRARY_ORDER_SIZE = 2048;
+    private static final int LIBRARY_ORDER_ITERATIONS = 1 << 14;
 
     private static final float DELTA = 1e-3f;
     private static final float ALPHA = 0.5f;
@@ -722,6 +729,69 @@ public class TestCUDAStreams extends TornadoTestBase {
         for (int i = 0; i < size; i++) {
             assertEquals(expectedAxpy(1.0f, 2.0f, ALPHA), r1.get(i), DELTA);
             assertEquals(expectedAxpy(2.0f, 1.0f, ALPHA), r2.get(i), DELTA);
+        }
+    }
+
+    /** Slow producer: writes {@code out} after a long per-element loop, widening the ordering window. */
+    private static void slowFill(FloatArray out, float value) {
+        for (@Parallel int i = 0; i < out.getSize(); i++) {
+            float acc = value;
+            for (int j = 0; j < LIBRARY_ORDER_ITERATIONS; j++) {
+                acc = acc * 1.0000001f + 1.0e-7f;
+            }
+            out.set(i, acc);
+        }
+    }
+
+    /**
+     * 15. A library task must not start before the kernels it depends on have finished, even when
+     * those kernels run on a different stream. The dependency is carried by a marker with a wait
+     * list on the library task's stream; if that wait list is ignored, cuBLAS reads the matrix while
+     * the producing kernel is still running and the result is wrong.
+     *
+     * <p>The graph deliberately contains an independent second unit, otherwise it is a task chain
+     * and intra-plan concurrency is auto-disabled (single in-order stream would order it anyway).
+     */
+    @Test
+    public void testLibraryTaskOrderingUnderConcurrency() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
+        final int n = LIBRARY_ORDER_SIZE;
+        FloatArray matrix = new FloatArray(n * n);
+        FloatArray vector = new FloatArray(n);
+        FloatArray output = new FloatArray(n);
+        FloatArray independentIn = new FloatArray(n);
+        FloatArray independentOut = new FloatArray(n);
+        vector.init(1.0f);
+        independentIn.init(3.0f);
+
+        TaskGraph tg = new TaskGraph("libOrder")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, vector, independentIn)
+                // Independent unit: keeps the graph off the single-stream fast path.
+                .task("independent", TestCUDAStreams::scale, independentIn, independentOut, 2.0f)
+                // Producer of the cuBLAS input, issued on a COMPUTE stream.
+                .task("produce", TestCUDAStreams::slowFill, matrix, 1.0f)
+                .libraryTask("sgemv", CuBlas::cublasSgemv, //
+                        CuBlasOperation.CUBLAS_OP_T.operation(), n, n, 1.0f, matrix, n, vector, 1, 0.0f, output, 1)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output, independentOut);
+
+        ImmutableTaskGraph itg = tg.snapshot();
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(itg)) {
+            plan.withIntraPlanConcurrency();
+            plan.execute();
+        }
+
+        // Every matrix element holds the same produced value, so each row sum is n * value.
+        float produced = 1.0f;
+        for (int j = 0; j < LIBRARY_ORDER_ITERATIONS; j++) {
+            produced = produced * 1.0000001f + 1.0e-7f;
+        }
+        float expected = n * produced;
+        for (int i = 0; i < n; i++) {
+            assertEquals(expected, output.get(i), 0.01f * expected);
+            assertEquals(6.0f, independentOut.get(i), DELTA);
         }
     }
 }

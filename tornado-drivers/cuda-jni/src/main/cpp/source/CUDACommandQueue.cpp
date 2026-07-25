@@ -520,6 +520,10 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
     if (queue == nullptr) {
         return 0;
     }
+    // A marker with a wait list must order this stream after the listed events before recording,
+    // otherwise the marker completes early and anything waiting on it (library tasks, plan-end
+    // joins) proceeds while the producers are still running on their own streams.
+    wait_events(env, queue, array);
     return record_event(queue);
 }
 
@@ -535,7 +539,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
         return 0;
     }
     // Honour the wait list, then place a marker event.
-    Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQueue_clEnqueueWaitForEvents(env, clazz, queue_id, array);
+    wait_events(env, queue, array);
     return record_event(queue);
 }
 
