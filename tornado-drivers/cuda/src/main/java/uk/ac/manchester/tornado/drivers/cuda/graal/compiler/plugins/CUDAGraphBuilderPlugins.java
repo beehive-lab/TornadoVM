@@ -96,6 +96,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAStoreBSwizzledNo
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAStoreNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAShuffleDownNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASimdBroadcastFirstNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAAtomicRmwNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASimdSumNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.DecAtomicNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GetAtomicNode;
@@ -935,11 +936,58 @@ public class CUDAGraphBuilderPlugins {
             }
         });
 
+        registerAtomicRmwPlugins(r);
+
         r.register(new InvocationPlugin("simdBroadcastFirst", InvocationPlugin.Receiver.class, float.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val) {
                 receiver.get(true);
                 b.addPush(JavaKind.Float, new CUDASimdBroadcastFirstNode(val));
+                return true;
+            }
+        });
+    }
+
+    /**
+     * Read-modify-write atomics over a local (shared) int array. Without these the KernelContext defaults
+     * apply the operation non-atomically, which is only correct for a single thread.
+     */
+    private static void registerAtomicRmwPlugins(Registration r) {
+        r.register(new InvocationPlugin("atomicCAS", InvocationPlugin.Receiver.class, int[].class, int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index, ValueNode expected, ValueNode value) {
+                if (!isLocalArray(array)) {
+                    return false;
+                }
+                receiver.get(true);
+                b.addPush(JavaKind.Int, new CUDAAtomicRmwNode(CUDALIRStmt.AtomicRmwStmt.Mode.CAS, array, index, expected, value));
+                return true;
+            }
+        });
+
+        registerAtomicRmwPlugin(r, "atomicExchange", CUDALIRStmt.AtomicRmwStmt.Mode.EXCHANGE);
+        registerAtomicRmwPlugin(r, "atomicMin", CUDALIRStmt.AtomicRmwStmt.Mode.MIN);
+        registerAtomicRmwPlugin(r, "atomicMax", CUDALIRStmt.AtomicRmwStmt.Mode.MAX);
+    }
+
+    /**
+     * Whether {@code array} is a local (shared) array declared inside the kernel. Only those are addressable
+     * as {@code &name[index]}; a global array parameter arrives as a raw address held in an integer, so the
+     * same emission would not compile. Global arrays keep their existing lowering.
+     */
+    private static boolean isLocalArray(ValueNode array) {
+        return GraphUtil.unproxify(array) instanceof LocalArrayNode;
+    }
+
+    private static void registerAtomicRmwPlugin(Registration r, String name, CUDALIRStmt.AtomicRmwStmt.Mode mode) {
+        r.register(new InvocationPlugin(name, InvocationPlugin.Receiver.class, int[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index, ValueNode value) {
+                if (!isLocalArray(array)) {
+                    return false;
+                }
+                receiver.get(true);
+                b.addPush(JavaKind.Int, new CUDAAtomicRmwNode(mode, array, index, null, value));
                 return true;
             }
         });

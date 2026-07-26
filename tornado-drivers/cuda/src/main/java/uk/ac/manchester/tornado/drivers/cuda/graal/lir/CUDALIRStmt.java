@@ -873,6 +873,76 @@ public class CUDALIRStmt {
     }
 
     @Opcode("SHUFFLE_SYNC")
+    /**
+     * Read-modify-write atomic on one element of a local (shared) array:
+     * {@code atomicCAS} / {@code atomicExch} / {@code atomicMin} / {@code atomicMax}. All four return the
+     * element's previous value.
+     */
+    public static class AtomicRmwStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<AtomicRmwStmt> TYPE = LIRInstructionClass.create(AtomicRmwStmt.class);
+
+        public enum Mode {
+            CAS("atomicCAS", true),
+            EXCHANGE("atomicExch", false),
+            MIN("atomicMin", false),
+            MAX("atomicMax", false);
+
+            private final String intrinsic;
+            private final boolean comparing;
+
+            Mode(String intrinsic, boolean comparing) {
+                this.intrinsic = intrinsic;
+                this.comparing = comparing;
+            }
+        }
+
+        private final Mode mode;
+        @Def
+        protected Value result;
+        @Use
+        protected Value array;
+        @Use
+        protected Value index;
+        @Use({ OperandFlag.REG, OperandFlag.ILLEGAL })
+        protected Value expected;
+        @Use
+        protected Value value;
+
+        public AtomicRmwStmt(Mode mode, Value result, Value array, Value index, Value expected, Value value) {
+            super(TYPE);
+            this.mode = mode;
+            this.result = result;
+            this.array = array;
+            this.index = index;
+            this.expected = (expected == null) ? Value.ILLEGAL : expected;
+            this.value = value;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emit(mode.intrinsic);
+            asm.emit("(&");
+            asm.emitValue(crb, array);
+            asm.emit("[");
+            asm.emitValue(crb, index);
+            asm.emit("], ");
+            if (mode.comparing) {
+                asm.emitValue(crb, expected);
+                asm.emit(", ");
+            }
+            asm.emitValue(crb, value);
+            asm.emit(")");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
     public static class ShuffleSyncStmt extends AbstractInstruction {
 
         public static final LIRInstructionClass<ShuffleSyncStmt> TYPE = LIRInstructionClass.create(ShuffleSyncStmt.class);

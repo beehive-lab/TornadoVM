@@ -275,6 +275,98 @@ public class KernelContext implements ExecutionContext {
     }
 
     /**
+     * Atomic compare-and-swap on {@code array[index]}: if the element equals {@code expected} it is
+     * replaced with {@code value}. Returns the element's value before the call, so success is
+     * {@code atomicCAS(a, i, expected, v) == expected}.
+     * <p>
+     * The building block for anything atomics-with-add cannot express: locks, lock-free update loops
+     * ({@code do { old = a[i]; } while (atomicCAS(a, i, old, f(old)) != old);}), and claiming a slot exactly
+     * once.
+     * <p>
+     * CUDA equivalent: {@code atomicCAS(&array[index], expected, value)}
+     *
+     * @param array
+     *     local (shared) array to update
+     * @param index
+     *     element index
+     * @param expected
+     *     value the element must currently hold for the swap to happen
+     * @param value
+     *     value to store when the comparison succeeds
+     * @return the element's previous value
+     */
+    public int atomicCAS(int[] array, int index, int expected, int value) {
+        int previous = array[index];
+        if (previous == expected) {
+            array[index] = value;
+        }
+        return previous;
+    }
+
+    /**
+     * Atomically stores {@code value} into {@code array[index]} and returns the previous value.
+     * <p>
+     * CUDA equivalent: {@code atomicExch(&array[index], value)}
+     *
+     * @param array
+     *     local (shared) array to update
+     * @param index
+     *     element index
+     * @param value
+     *     value to store
+     * @return the element's previous value
+     */
+    public int atomicExchange(int[] array, int index, int value) {
+        int previous = array[index];
+        array[index] = value;
+        return previous;
+    }
+
+    /**
+     * Atomically replaces {@code array[index]} with the smaller of it and {@code value}, returning the
+     * previous value. One instruction instead of a compare-and-swap loop.
+     * <p>
+     * CUDA equivalent: {@code atomicMin(&array[index], value)}
+     *
+     * @param array
+     *     local (shared) array to update
+     * @param index
+     *     element index
+     * @param value
+     *     candidate minimum
+     * @return the element's previous value
+     */
+    public int atomicMin(int[] array, int index, int value) {
+        int previous = array[index];
+        if (value < previous) {
+            array[index] = value;
+        }
+        return previous;
+    }
+
+    /**
+     * Atomically replaces {@code array[index]} with the larger of it and {@code value}, returning the
+     * previous value.
+     * <p>
+     * CUDA equivalent: {@code atomicMax(&array[index], value)}
+     *
+     * @param array
+     *     local (shared) array to update
+     * @param index
+     *     element index
+     * @param value
+     *     candidate maximum
+     * @return the element's previous value
+     */
+    public int atomicMax(int[] array, int index, int value) {
+        int previous = array[index];
+        if (value > previous) {
+            array[index] = value;
+        }
+        return previous;
+    }
+
+    /**
      * Cooperative 8x8 single-precision matrix multiply for one SIMD group, using
      * Apple's {@code simdgroup_float8x8} hardware matrix units (MMA).
      * <p>
