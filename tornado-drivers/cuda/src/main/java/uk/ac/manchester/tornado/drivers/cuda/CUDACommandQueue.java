@@ -101,6 +101,21 @@ public class CUDACommandQueue extends CommandQueue {
 
     private static native void nvtxNameStream(long queueId, String name);
 
+    /**
+     * Enqueues a host callback carrying {@code token} into this queue's stream: the driver runs it once
+     * the stream reaches this point. See {@link CUDAHostCallbacks} for what the callback may do.
+     *
+     * @param token
+     *     token obtained from {@link CUDAHostCallbacks#register(Runnable)}
+     * @return true when the driver accepted the callback; the caller must fall back to a blocking wait
+     *     otherwise
+     */
+    public boolean enqueueHostCallback(long token) {
+        return cuLaunchHostFunc(commandQueuePtr, token) == 0;
+    }
+
+    private static native int cuLaunchHostFunc(long queueId, long token);
+
     /** Opens a host-side NVTX range labelled {@code name} (no-op without a profiler). */
     public static native void nvtxRangePush(String name);
 
