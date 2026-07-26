@@ -1007,6 +1007,35 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         vm.clearProfiles();
     }
 
+    /**
+     * Arms {@code action} to run when this task graph's issued work completes, instead of blocking the
+     * caller in {@link #waitOn()}. Returns false when the plan's device cannot notify (or the plan spans
+     * several devices, where a single notification would not cover all of them), leaving the caller to
+     * fall back to a blocking wait.
+     */
+    @Override
+    public void setAsyncCompletion(boolean enabled) {
+        executionContext.setAsyncCompletion(enabled);
+    }
+
+    @Override
+    public boolean armCompletionCallback(Runnable action) {
+        TornadoXPUDevice single = null;
+        for (TornadoXPUDevice device : executionContext.getDevices()) {
+            if (device == null) {
+                continue;
+            }
+            if (single != null && single != device) {
+                return false;
+            }
+            single = device;
+        }
+        if (single == null) {
+            return false;
+        }
+        return single.enqueueCompletionCallback(executionPlanId, action);
+    }
+
     @Override
     public void waitOn() {
         if ((TornadoOptions.VM_USE_DEPS || executionContext.isIntraPlanConcurrencyEnabled()) && event != null) {

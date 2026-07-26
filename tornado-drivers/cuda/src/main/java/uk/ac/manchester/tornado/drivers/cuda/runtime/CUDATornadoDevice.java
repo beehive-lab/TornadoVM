@@ -789,6 +789,16 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
     }
 
     @Override
+    public void setAsyncCompletion(long executionPlanId, boolean enabled) {
+        getDeviceContext().setAsyncCompletion(executionPlanId, enabled);
+    }
+
+    @Override
+    public boolean enqueueCompletionCallback(long executionPlanId, Runnable action) {
+        return getDeviceContext().enqueueCompletionCallback(executionPlanId, action);
+    }
+
+    @Override
     public boolean isIntraPlanConcurrencySupported() {
         return true;
     }

@@ -215,6 +215,14 @@ public interface TornadoXPUDevice extends TornadoDevice {
     }
 
     /**
+     * Records whether this plan is being issued asynchronously (through {@code executeAsync()}), so the
+     * backend can avoid host-blocking operations on the issue path - copy-out in particular.
+     */
+    default void setAsyncCompletion(long executionPlanId, boolean enabled) {
+        // no-op by default
+    }
+
+    /**
      * Whether this backend implements intra-plan concurrency (role streams and cross-stream
      * event dependencies). When false, a plan-level {@code withIntraPlanConcurrency()} request
      * is ignored and the plan runs on the backend's default single-queue path.

@@ -84,6 +84,12 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
 
     /** Execution plans that requested intra-plan concurrency (multi-queue issue). */
     private final Set<Long> intraPlanConcurrencyPlans = Collections.synchronizedSet(new HashSet<>());
+    /**
+     * Execution plans issued through {@code executeAsync()}. Copy-out for these must not block the
+     * issuing thread: the plan's completion is reported by a host callback, and the data is only
+     * promised to be valid once that callback has fired.
+     */
+    private final Set<Long> asyncCompletionPlans = Collections.synchronizedSet(new HashSet<>());
 
     /**
      * Whether large one-shot H2D uploads go through the pinned staging ring. Defaults to the
@@ -359,6 +365,15 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
                 warnedUnsupportedConcurrency = true;
             }
             intraPlanConcurrencyPlans.remove(executionPlanId);
+        }
+    }
+
+    /** Records whether this plan is issued asynchronously; see {@link #asyncCompletionPlans}. */
+    public void setAsyncCompletion(long executionPlanId, boolean enabled) {
+        if (enabled) {
+            asyncCompletionPlans.add(executionPlanId);
+        } else {
+            asyncCompletionPlans.remove(executionPlanId);
         }
     }
 
@@ -814,8 +829,11 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     public int readBuffer(long executionPlanId, long bufferId, long offset, long bytes, long hostPointer, long hostOffset, int[] waitEvents) {
         CUDACommandQueue commandQueue = getCommandQueue(executionPlanId, CUDAStreamType.DATA_TRANSFER_D2H);
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
-        // non-blocking/async copy-out for off-heap (and therefore pinned) buffers when we go multi-stream
-        boolean blocking = (isMultiStreamEnabled(executionPlanId) && waitEvents != null) ? CUDABlocking.FALSE : CUDABlocking.TRUE;
+        // Non-blocking/async copy-out for off-heap (and therefore pinned) buffers, either because the plan
+        // runs multi-stream or because it was issued asynchronously. Both cases have something that
+        // guarantees host visibility later: the plan-end wait, or the completion callback.
+        boolean asyncPlan = isMultiStreamEnabled(executionPlanId) || asyncCompletionPlans.contains(executionPlanId);
+        boolean blocking = (asyncPlan && waitEvents != null) ? CUDABlocking.FALSE : CUDABlocking.TRUE;
         return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, blocking, offset, bytes, hostPointer, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue, isMultiStreamEnabled(executionPlanId))
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_READ_SEGMENT, commandQueue);
@@ -839,6 +857,31 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
         return commandQueue.getOpenclVersion() < 120 ? -1 : eventPool.registerEvent(oclEvent, EventDescriptor.DESC_SYNC_MARKER, commandQueue);
     }
 
+    /**
+     * Arms a host callback that fires once this plan's work has completed. All of the plan's secondary
+     * queues are joined into the default queue first, so the callback covers the whole plan rather than
+     * one stream, and the callback goes behind that join.
+     *
+     * <p>{@code cuLaunchHostFunc} serialises the stream it is enqueued on - work after it does not start
+     * until the callback returns - so it belongs exactly here, at the end of a plan, and not in the
+     * middle of a transfer or launch sequence.
+     */
+    public boolean enqueueCompletionCallback(long executionPlanId, Runnable action) {
+        if (isStreamCapturing(executionPlanId)) {
+            // A host callback would be captured as a graph node and replayed, which is not what a
+            // one-shot completion notification means.
+            return false;
+        }
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        joinRoleQueues(executionPlanId, commandQueue);
+        long token = CUDAHostCallbacks.register(action);
+        if (commandQueue.enqueueHostCallback(token)) {
+            return true;
+        }
+        CUDAHostCallbacks.cancel(token);
+        return false;
+    }
+
     @Override
     public void reset(long executionPlanId) {
         CUDAEventPool eventPool = getCUDAEventPool(executionPlanId);
@@ -857,6 +900,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
         }
         computeCursor.remove(executionPlanId);
         intraPlanConcurrencyPlans.remove(executionPlanId);
+        asyncCompletionPlans.remove(executionPlanId);
         oclEventPool.remove(executionPlanId);
         CUDACommandQueueTable table = commandQueueTable.get(executionPlanId);
         if (table != null) {
