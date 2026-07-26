@@ -98,6 +98,12 @@ public class TornadoExecutionContext {
     private boolean isExecutionGraphEnabled;
     private boolean isIntraPlanConcurrencyEnabled;
     private boolean isStagedTransfersEnabled;
+    /**
+     * Set while the plan is issued through {@code executeAsync()}. The issue path must not block, so the
+     * end-of-execution flush is skipped, dependency events are generated (the backend needs them to make
+     * copy-out asynchronous), and completion is reported by a callback instead of a wait.
+     */
+    private boolean isAsyncCompletion;
 
     public TornadoExecutionContext(String id) {
         name = id;
@@ -126,6 +132,7 @@ public class TornadoExecutionContext {
         // Defaults to the -Dtornado.staged.transfers property, so the plan-level API overrides it
         // rather than replacing it.
         this.isStagedTransfersEnabled = TornadoOptions.ENABLE_STAGED_TRANSFERS;
+        this.isAsyncCompletion = false;
     }
 
     public KernelStackFrame[] getKernelStackFrame() {
@@ -696,6 +703,7 @@ public class TornadoExecutionContext {
         newExecutionContext.isExecutionGraphEnabled = this.isExecutionGraphEnabled;
         newExecutionContext.isIntraPlanConcurrencyEnabled = this.isIntraPlanConcurrencyEnabled;
         newExecutionContext.isStagedTransfersEnabled = this.isStagedTransfersEnabled;
+        newExecutionContext.isAsyncCompletion = this.isAsyncCompletion;
 
         return newExecutionContext;
     }
@@ -747,6 +755,14 @@ public class TornadoExecutionContext {
 
     public boolean isStagedTransfersEnabled() {
         return this.isStagedTransfersEnabled;
+    }
+
+    public void setAsyncCompletion(boolean enabled) {
+        this.isAsyncCompletion = enabled;
+    }
+
+    public boolean isAsyncCompletion() {
+        return this.isAsyncCompletion;
     }
 
 }

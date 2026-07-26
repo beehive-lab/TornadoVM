@@ -73,6 +73,18 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     void clearProfiles();
 
+    /**
+     * Arms a completion notification for the work this task graph has issued, instead of waiting for it.
+     *
+     * @param action
+     *     what to run once the device has finished
+     * @return true when armed; false when the backend or device layout cannot notify
+     */
+    /** Marks the next issue of this task graph as asynchronous, so the issue path does not block. */
+    void setAsyncCompletion(boolean enabled);
+
+    boolean armCompletionCallback(Runnable action);
+
     void waitOn();
 
     void transferToDevice(int mode, Object... objects);
