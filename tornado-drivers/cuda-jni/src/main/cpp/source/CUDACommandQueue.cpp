@@ -313,6 +313,13 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
             params.empty() ? nullptr : params.data(),
             nullptr);
     LOG_CUDA_AND_VALIDATE("cuLaunchKernel", result);
+    if (result != CUDA_SUCCESS) {
+        // Do not hand back an event for work that was never launched: the caller would treat the
+        // kernel as done and read whatever the output buffer happened to contain.
+        delete ev;
+        tornado_throw_cuda(env, "cuLaunchKernel", result);
+        return 0;
+    }
 
     return end_event(ev, queue);
 }
@@ -349,6 +356,12 @@ static jlong transfer_to_device(JNIEnv *env, cuda_queue_t *queue, void *host_bas
             (size_t) num_bytes,
             queue->stream);
     LOG_CUDA_AND_VALIDATE("cuMemcpyHtoDAsync", result);
+    if (result != CUDA_SUCCESS) {
+        // A copy that never started must not be reported as an event the caller can wait on.
+        delete ev;
+        tornado_throw_cuda(env, "cuMemcpyHtoDAsync", result);
+        return 0;
+    }
     if (sync_after && !stream_is_capturing(queue)) {
         cuStreamSynchronize(queue->stream);
     }
@@ -373,6 +386,12 @@ static jlong transfer_to_host(JNIEnv *env, cuda_queue_t *queue, void *host_base,
             (size_t) num_bytes,
             queue->stream);
     LOG_CUDA_AND_VALIDATE("cuMemcpyDtoHAsync", result);
+    if (result != CUDA_SUCCESS) {
+        // A copy that never started must not be reported as an event the caller can wait on.
+        delete ev;
+        tornado_throw_cuda(env, "cuMemcpyDtoHAsync", result);
+        return 0;
+    }
     if (sync_after && !stream_is_capturing(queue)) {
         cuStreamSynchronize(queue->stream);
     }
