@@ -40,8 +40,29 @@
 #include <vector>
 #include <string>
 #include <cstring>
+#include <cstdio>
+#include <jni.h>
 
 #define LOG_CUDA 0
+
+/*
+ * Raises CUDAException on the Java side. The Java wrappers already translate that into a
+ * TornadoBailoutRuntimeException, so a failed driver call surfaces as a failure instead of leaving the
+ * caller with untouched (and therefore wrong) output buffers.
+ */
+static inline void tornado_throw_cuda(JNIEnv *env, const char *op, CUresult result) {
+    const char *name = nullptr;
+    const char *desc = nullptr;
+    cuGetErrorName(result, &name);
+    cuGetErrorString(result, &desc);
+    char message[512];
+    snprintf(message, sizeof(message), "%s failed: %s (%d)%s%s", op, name ? name : "?", (int) result, //
+            desc ? " - " : "", desc ? desc : "");
+    jclass exceptionClass = env->FindClass("uk/ac/manchester/tornado/drivers/cuda/exceptions/CUDAException");
+    if (exceptionClass != nullptr) {
+        env->ThrowNew(exceptionClass, message);
+    }
+}
 
 #define LOG_CUDA_AND_VALIDATE(name, result)                       \
     if (LOG_CUDA == 1) {                                          \
