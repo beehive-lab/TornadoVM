@@ -275,6 +275,54 @@ public class KernelContext implements ExecutionContext {
     }
 
     /**
+     * Returns whether {@code predicate} holds for at least one active lane of the SIMD group.
+     * <p>
+     * Warp/SIMD-group vote. Useful to skip work that no lane in the group needs, without a
+     * shared-memory round trip: every lane gets the same answer.
+     * <p>
+     * CUDA equivalent: {@code __any_sync(0xffffffff, predicate)}
+     *
+     * @param predicate
+     *     per-lane condition
+     * @return true when any active lane passes {@code predicate}
+     */
+    public boolean simdAny(boolean predicate) {
+        return predicate;
+    }
+
+    /**
+     * Returns whether {@code predicate} holds for every active lane of the SIMD group.
+     * <p>
+     * CUDA equivalent: {@code __all_sync(0xffffffff, predicate)}
+     *
+     * @param predicate
+     *     per-lane condition
+     * @return true when all active lanes pass {@code predicate}
+     */
+    public boolean simdAll(boolean predicate) {
+        return predicate;
+    }
+
+    /**
+     * Returns a bit mask with one bit per lane of the SIMD group, set where {@code predicate} holds.
+     * Bit {@code i} corresponds to lane {@code i}, so on a 32-lane warp the result covers bits 0-31.
+     * <p>
+     * This is the building block for warp-aggregated atomics and stream compaction:
+     * {@code Integer.bitCount(simdBallot(p))} counts the lanes that pass without any atomic, and
+     * {@code Integer.bitCount(simdBallot(p) & ((1 << laneId) - 1))} gives each lane its rank among
+     * them, so one lane can reserve space for the whole group with a single atomic.
+     * <p>
+     * CUDA equivalent: {@code __ballot_sync(0xffffffff, predicate)}
+     *
+     * @param predicate
+     *     per-lane condition
+     * @return lane mask of the lanes that pass {@code predicate}
+     */
+    public int simdBallot(boolean predicate) {
+        return predicate ? 1 : 0;
+    }
+
+    /**
      * Cooperative 8x8 single-precision matrix multiply for one SIMD group, using
      * Apple's {@code simdgroup_float8x8} hardware matrix units (MMA).
      * <p>

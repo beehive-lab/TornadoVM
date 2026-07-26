@@ -97,6 +97,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAStoreNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAShuffleDownNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASimdBroadcastFirstNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASimdSumNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAWarpVoteNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.DecAtomicNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GetAtomicNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GlobalThreadIdNode;
@@ -940,6 +941,32 @@ public class CUDAGraphBuilderPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val) {
                 receiver.get(true);
                 b.addPush(JavaKind.Float, new CUDASimdBroadcastFirstNode(val));
+                return true;
+            }
+        });
+
+        // Warp votes. Same reasoning as above: the KernelContext defaults answer for a single lane,
+        // so without these plugins a vote would silently reduce to its own predicate.
+        r.register(new InvocationPlugin("simdAny", InvocationPlugin.Receiver.class, boolean.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode predicate) {
+                b.addPush(JavaKind.Boolean, new CUDAWarpVoteNode(CUDALIRStmt.WarpVoteStmt.Mode.ANY, predicate));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("simdAll", InvocationPlugin.Receiver.class, boolean.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode predicate) {
+                b.addPush(JavaKind.Boolean, new CUDAWarpVoteNode(CUDALIRStmt.WarpVoteStmt.Mode.ALL, predicate));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("simdBallot", InvocationPlugin.Receiver.class, boolean.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode predicate) {
+                b.addPush(JavaKind.Int, new CUDAWarpVoteNode(CUDALIRStmt.WarpVoteStmt.Mode.BALLOT, predicate));
                 return true;
             }
         });

@@ -873,6 +873,69 @@ public class CUDALIRStmt {
     }
 
     @Opcode("SHUFFLE_SYNC")
+    /**
+     * Warp vote: {@code __any_sync} / {@code __all_sync} / {@code __ballot_sync}. All three take the
+     * full member mask and a per-lane predicate; the first two yield a boolean (the intrinsic returns
+     * non-zero, so the result is compared against 0), the third a lane mask.
+     */
+    public static class WarpVoteStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<WarpVoteStmt> TYPE = LIRInstructionClass.create(WarpVoteStmt.class);
+
+        public enum Mode {
+            ANY("__any_sync", true),
+            ALL("__all_sync", true),
+            BALLOT("__ballot_sync", false);
+
+            private final String intrinsic;
+            private final boolean booleanResult;
+
+            Mode(String intrinsic, boolean booleanResult) {
+                this.intrinsic = intrinsic;
+                this.booleanResult = booleanResult;
+            }
+        }
+
+        // All active lanes participate (CUDA 9+ requires an explicit member mask).
+        private static final String FULL_MASK = "0xffffffff";
+
+        private final Mode mode;
+        @Def
+        protected Value result;
+        @Use
+        protected Value predicate;
+
+        public WarpVoteStmt(Mode mode, Value result, Value predicate) {
+            super(TYPE);
+            this.mode = mode;
+            this.result = result;
+            this.predicate = predicate;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.space();
+            asm.assign();
+            asm.space();
+            if (mode.booleanResult) {
+                asm.emit("(");
+            }
+            asm.emit(mode.intrinsic);
+            asm.emit("(");
+            asm.emit(FULL_MASK);
+            asm.emit(", ");
+            asm.emitValue(crb, predicate);
+            asm.emit(")");
+            if (mode.booleanResult) {
+                asm.emit(" != 0)");
+            }
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
     public static class ShuffleSyncStmt extends AbstractInstruction {
 
         public static final LIRInstructionClass<ShuffleSyncStmt> TYPE = LIRInstructionClass.create(ShuffleSyncStmt.class);
