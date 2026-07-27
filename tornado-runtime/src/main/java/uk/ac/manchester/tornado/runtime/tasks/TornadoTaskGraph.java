@@ -139,6 +139,13 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private static final String RESET = "\u001B[0m";
     private static final String RED = "\u001B[31m";
     private static final String WARNING_DEOPT_MESSAGE = RED + "WARNING: Code Bailout to Java sequential. Use --debug to see the reason" + RESET;
+    private static final String WARNING_APPLE_OPENCL_PROFILER_MESSAGE = RED
+            + "WARNING: Profiling the OpenCL backend on Apple's OpenCL platform. Apple's OpenCL driver is deprecated and "
+            + "does not provide reliable event-profiling timestamps: TOTAL_KERNEL_TIME, TOTAL_DISPATCH_KERNEL_TIME, and the "
+            + "copy timers can report values that are not physically possible on the underlying hardware. "
+            + "TOTAL_TASK_GRAPH_TIME is unaffected and remains a reliable end-to-end measurement. "
+            + "Prefer the Metal backend for absolute or cross-backend timing on Apple Silicon." + RESET;
+    private static boolean appleOpenCLProfilerWarningShown = false;
 
     private static final Pattern SIZE_PATTERN = Pattern.compile("(\\d+)(MB|mg|gb|GB)");
     private static final CompileInfo COMPILE_ONLY = new CompileInfo(true, false);
@@ -346,6 +353,31 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         TornadoOptions.TORNADO_PROFILER = true;
         if (profilerMode == ProfilerMode.SILENT) {
             TornadoOptions.TORNADO_PROFILER_LOG = true;
+        }
+    }
+
+    /**
+     * Apple's OpenCL implementation on macOS is deprecated and its event-profiling timestamps are not
+     * reliable (kernel/dispatch/copy timers can report values that are not physically possible on the
+     * underlying hardware). Warn the user once per JVM run so profiler-based conclusions on this
+     * platform are not taken at face value.
+     */
+    private void warnIfAppleOpenCLProfiler() {
+        if (appleOpenCLProfilerWarningShown) {
+            return;
+        }
+        try {
+            TornadoDevice device = executionContext.getDeviceOfFirstTask();
+            if (device == null || device.getTornadoVMBackend() != TornadoVMBackendType.OPENCL) {
+                return;
+            }
+            String platformName = device.getPlatformName();
+            if (platformName != null && platformName.toLowerCase().contains("apple")) {
+                appleOpenCLProfilerWarningShown = true;
+                System.out.println(WARNING_APPLE_OPENCL_PROFILER_MESSAGE);
+            }
+        } catch (Exception e) {
+            // Best-effort diagnostic only; never let it interfere with execution.
         }
     }
 
@@ -914,6 +946,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         if (!TornadoOptions.isProfilerEnabled()) {
             return;
         }
+
+        warnIfAppleOpenCLProfiler();
 
         if (!TornadoOptions.PROFILER_LOGS_ACCUMULATE()) {
             timeProfiler.dumpJson(new StringBuilder(), this.getId());
