@@ -247,9 +247,7 @@ public final class HalfFloatArray extends TornadoNativeArray {
      * @return A {@link Half2} holding elements {@code index} and {@code index + 1}.
      */
     public Half2 getHalf2(int index) {
-        if (index < 0 || index + 1 >= numberOfElements) {
-            throw new IndexOutOfBoundsException("HalfFloatArray.getHalf2 access [" + index + ", " + (index + 1) + "] out of bounds for length " + numberOfElements);
-        }
+        // Unchecked, like get(int)/set(int): device kernels cannot throw. Callers guarantee bounds.
         return new Half2(get(index), get(index + 1));
     }
 
@@ -264,9 +262,7 @@ public final class HalfFloatArray extends TornadoNativeArray {
      *         The {@link Half2} whose lanes are stored at {@code index} and {@code index + 1}.
      */
     public void setHalf2(int index, Half2 value) {
-        if (index < 0 || index + 1 >= numberOfElements) {
-            throw new IndexOutOfBoundsException("HalfFloatArray.setHalf2 access [" + index + ", " + (index + 1) + "] out of bounds for length " + numberOfElements);
-        }
+        // Unchecked, like get(int)/set(int): device kernels cannot throw. Callers guarantee bounds.
         set(index, value.getX());
         set(index + 1, value.getY());
     }
