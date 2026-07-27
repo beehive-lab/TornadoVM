@@ -44,6 +44,7 @@ import uk.ac.manchester.tornado.api.plan.types.WithFreeDeviceMemory;
 import uk.ac.manchester.tornado.api.plan.types.WithGraph;
 import uk.ac.manchester.tornado.api.plan.types.WithGridScheduler;
 import uk.ac.manchester.tornado.api.plan.types.WithIntraPlanConcurrency;
+import uk.ac.manchester.tornado.api.plan.types.WithStagedTransfers;
 import uk.ac.manchester.tornado.api.plan.types.WithMemoryLimit;
 import uk.ac.manchester.tornado.api.plan.types.WithPreCompilation;
 import uk.ac.manchester.tornado.api.plan.types.WithPrintKernel;
@@ -664,6 +665,37 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      */
     public TornadoExecutionPlan withoutIntraPlanConcurrency() {
         tornadoExecutor.withoutIntraPlanConcurrency();
+        return this;
+    }
+
+    /**
+     * Enables staged host-to-device transfers for this execution plan: large one-shot uploads
+     * (e.g. {@code FIRST_EXECUTION} model weights) are chunked and copied through a ring of
+     * pinned host staging buffers, so filling chunk {@code i+1} overlaps the DMA of chunk
+     * {@code i}. Buffers served by the ring also skip the whole-segment host pin, whose
+     * synchronous page-in dominates the cost of large (often mmap'd) sources.
+     * Only transfers that are non-batched, read-only and at least
+     * {@code -Dtornado.staged.min.size} bytes (default 16MB) are staged; every other buffer keeps
+     * the default direct path, including host pinning.
+     * Currently realised on the PTX and CUDA backends.
+     * A no-op for OPENCL, METAL and SPIRV backends.
+     * Default is off, and can also be enabled process-wide with
+     * {@code -Dtornado.staged.transfers=true}.
+     *
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan withStagedTransfers() {
+        tornadoExecutor.withStagedTransfers();
+        return new WithStagedTransfers(this);
+    }
+
+    /**
+     * Disables staged host-to-device transfers for this execution plan (direct transfers).
+     *
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan withoutStagedTransfers() {
+        tornadoExecutor.withoutStagedTransfers();
         return this;
     }
 }

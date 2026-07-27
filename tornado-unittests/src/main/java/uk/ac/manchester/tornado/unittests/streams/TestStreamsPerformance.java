@@ -371,4 +371,115 @@ public class TestStreamsPerformance extends TornadoTestBase {
                 UNITS, (N_SMALL * 4L) / 1024, SMALL_ITERATIONS), singleNs, concurrentNs);
     }
 
+    /** Strided sample of a large read-only input; consumes it without a large compute cost. */
+    public static void sampleStrided(FloatArray weights, FloatArray out, int stride) {
+        for (@Parallel int i = 0; i < out.getSize(); i++) {
+            out.set(i, weights.get(i * stride));
+        }
+    }
+
+    /**
+     * First-execution upload cost of a large read-only input (the LLM weight
+     * copy-in shape). Measures the FIRST {@code execute()} (allocation + host pinning or staging +
+     * H2D + tiny kernel + D2H) against a steady-state execution (no weight H2D), so
+     * {@code first - steady} approximates the upload-attributable cost. A/B via
+     * {@code -Dtornado.staged.transfers=true}:
+     * <ul>
+     * <li>flag off - direct path: cuMemHostRegister of the whole segment (synchronous page-in +
+     * pin), then one large async DMA;</li>
+     * <li>flag on - staged path: no whole-segment registration; chunks are memcpy'd into the
+     * pinned ring and uploaded with the staging of chunk i+1 overlapping the DMA of chunk i.</li>
+     * </ul>
+     * Printed, not asserted (workload/driver dependent). Run each mode in a fresh JVM.
+     */
+    @Test
+    public void testFirstExecutionUpload() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        // GPULlama-like shape: the model's weights are many separate read-only tensors, each
+        // uploaded once on first execution (the direct path pays one cuMemHostRegister per tensor).
+        final int layers = 8;
+        final int layerSize = 128 * 1024 * 1024 / 4; // 128 MB per tensor -> 1 GB total
+        final int outSize = 1024;
+        final int stride = layerSize / outSize;
+
+        // JVM/JIT warm-up on an identical (small) plan so the measured first execute() below
+        // isolates device allocation + upload rather than interpreter/JIT warm-up.
+        warmUpUploadPath(stride);
+
+        // cold=true leaves the weight pages untouched (zero-fill-on-demand): the upload is then the
+        // FIRST touch, so both modes additionally pay the page faults - serially inside
+        // cuMemHostRegister on the direct path, inside the (parallel, DMA-overlapped) fill on the
+        // staged path. This models the mmap'd-weights case (GPULlama) minus the disk read.
+        final boolean cold = Boolean.getBoolean("tornado.test.upload.cold");
+
+        FloatArray[] weights = new FloatArray[layers];
+        FloatArray[] out = new FloatArray[layers];
+        TaskGraph tg = new TaskGraph("upload");
+        for (int l = 0; l < layers; l++) {
+            weights[l] = new FloatArray(layerSize);
+            out[l] = new FloatArray(outSize);
+            final FloatArray w = weights[l];
+            if (!cold) {
+                java.util.stream.IntStream.range(0, layerSize).parallel().forEach(i -> w.set(i, i % 1013));
+            }
+            tg.transferToDevice(DataTransferMode.FIRST_EXECUTION, weights[l])
+                    .task("t" + l, TestStreamsPerformance::sampleStrided, weights[l], out[l], stride)
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, out[l]);
+        }
+        ImmutableTaskGraph itg = tg.snapshot();
+
+        long firstNs;
+        long[] steady = new long[ITERATIONS];
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(itg)) {
+            plan.withIntraPlanConcurrency();
+            // Compile the kernels up front so the first timed execute() isolates alloc + upload.
+            plan.withPreCompilation();
+            long t0 = System.nanoTime();
+            plan.execute();
+            firstNs = System.nanoTime() - t0;
+            for (int i = 0; i < ITERATIONS; i++) {
+                long t1 = System.nanoTime();
+                plan.execute();
+                steady[i] = System.nanoTime() - t1;
+            }
+        }
+        for (int l = 0; l < layers; l++) {
+            for (int i = 0; i < outSize; i++) {
+                assertEquals(cold ? 0.0f : (float) ((i * stride) % 1013), out[l].get(i), DELTA);
+            }
+        }
+
+        long steadyNs = medianNanos(steady);
+        boolean staged = Boolean.getBoolean("tornado.staged.transfers");
+        double uploadMs = (firstNs - steadyNs) / 1e6;
+        long totalBytes = (long) layers * layerSize * 4;
+        System.out.println("==== TestStreamsPerformance (first-execution upload) ====");
+        System.out.printf("  mode              : %s%n", staged ? "STAGED (pinned ring)" : "DIRECT (single copy per tensor)");
+        System.out.printf("  weights           : %d tensors x %d MB = %d MB, FIRST_EXECUTION, read-only, %s pages%n", layers, (layerSize * 4L) / (1024 * 1024), totalBytes / (1024 * 1024), cold
+                ? "COLD (fault on first touch)"
+                : "WARM (resident)");
+        System.out.printf("  first execute     : %.2f ms (pre-compiled + JVM-warm; alloc + upload + kernels)%n", firstNs / 1e6);
+        System.out.printf("  steady execute    : %.2f ms (median of %d; no weight H2D)%n", steadyNs / 1e6, ITERATIONS);
+        System.out.printf("  upload-attributed : %.2f ms  (~%.2f GB/s effective)%n", uploadMs, totalBytes / (uploadMs / 1e3) / 1e9);
+        System.out.println("  note: compare across two JVM runs, flag off vs -Dtornado.staged.transfers=true.");
+    }
+
+    /** Runs a small identical-shape plan to warm the interpreter/JIT paths and the driver. */
+    private void warmUpUploadPath(int stride) throws TornadoExecutionPlanException {
+        FloatArray w = new FloatArray(stride * 8);
+        FloatArray o = new FloatArray(8);
+        w.init(1.0f);
+        TaskGraph tg = new TaskGraph("uploadWarmup")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, w)
+                .task("t0", TestStreamsPerformance::sampleStrided, w, o, stride)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, o);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
+            plan.withIntraPlanConcurrency();
+            for (int i = 0; i < WARMUP; i++) {
+                plan.execute();
+            }
+        }
+    }
 }

@@ -741,6 +741,11 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
+    public void setStagedTransfers(boolean enabled) {
+        getDeviceContext().setStagedTransfers(enabled);
+    }
+
+    @Override
     public boolean isIntraPlanConcurrencySupported() {
         return true;
     }

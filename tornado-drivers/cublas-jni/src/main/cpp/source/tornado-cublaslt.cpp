@@ -32,6 +32,7 @@
 
 #include <jni.h>
 #include <cublasLt.h>
+#include <iostream>
 
 extern "C" {
 
@@ -124,6 +125,14 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_cublas_provider_CuBlasLtNa
     cublasLtMatmulPreferenceDestroy(preference);
 
     if (status != CUBLAS_STATUS_SUCCESS || returnedResults == 0) {
+        // The caller only sees a null plan, so report why here: status 15
+        // (CUBLAS_STATUS_NOT_SUPPORTED) or 0 results means this cuBLAS has no
+        // kernel for the requested types on this GPU (e.g. FP8 on an arch the
+        // library predates); other statuses point at the descriptor/layouts.
+        std::cerr << "[TornadoVM-cuBLASLt] plan creation failed: cublasLtMatmulAlgoGetHeuristic"
+                  << " status=" << (int) status << " returnedResults=" << returnedResults
+                  << " (aType=" << a_type << " bType=" << b_type << " cType=" << c_type
+                  << " m=" << m << " n=" << n << " k=" << k << ")" << std::endl;
         cublasLtMatmulDescDestroy(plan->matmulDesc);
         cublasLtMatrixLayoutDestroy(plan->aLayout);
         cublasLtMatrixLayoutDestroy(plan->bLayout);
@@ -180,7 +189,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_cublas_provider_CuBlasLtNat
         }
     }
 
-    return (jint) cublasLtMatmul((cublasLtHandle_t) handle, plan->matmulDesc,
+    cublasStatus_t status = cublasLtMatmul((cublasLtHandle_t) handle, plan->matmulDesc,
                                  &host_alpha, (const void *) d_a, plan->aLayout,
                                  (const void *) d_b, plan->bLayout,
                                  &host_beta, (const void *) d_c, plan->cLayout,
@@ -188,6 +197,23 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_cublas_provider_CuBlasLtNat
                                  plan->hasAlgo ? &plan->algo : nullptr,
                                  (void *) workspace_ptr, (size_t) workspace_bytes,
                                  (cudaStream_t) stream_ptr);
+
+    // The algorithm heuristic (cublasLtMatmulAlgoGetHeuristic) can hand back an
+    // algorithm that cublasLtMatmul itself then rejects for the same descriptors
+    // (observed for FP16 matmul on some GPU/driver combinations). Retry once
+    // without a preselected algorithm, letting cuBLASLt choose internally.
+    if (status == CUBLAS_STATUS_NOT_SUPPORTED && plan->hasAlgo) {
+        status = cublasLtMatmul((cublasLtHandle_t) handle, plan->matmulDesc,
+                                 &host_alpha, (const void *) d_a, plan->aLayout,
+                                 (const void *) d_b, plan->bLayout,
+                                 &host_beta, (const void *) d_c, plan->cLayout,
+                                 (void *) d_c, plan->cLayout,
+                                 nullptr,
+                                 (void *) workspace_ptr, (size_t) workspace_bytes,
+                                 (cudaStream_t) stream_ptr);
+    }
+
+    return (jint) status;
 }
 
 } // extern "C"

@@ -1,3 +1,5 @@
+.. _truffle-languages:
+
 Polyglot Programming
 =============================
 TornadoVM can be used with the GraalVM Truffle Polyglot API to invoke Task-Graphs from guest programming languages such as Python, Ruby, etc. This guide will describe how to execute TornadoVM programs through code written in Python, JavaScript, and Ruby.
@@ -8,7 +10,7 @@ TornadoVM can be used with the GraalVM Truffle Polyglot API to invoke Task-Graph
 A) Configuration of the JAVA_HOME Variable
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 To enable polyglot support, the ``JAVA_HOME`` variable must be set to the GraalVM path.
-Instructions on how to install TornadoVM with GraalVM can be found here: :ref:`installation_graalvm`.
+Instructions on how to install TornadoVM with GraalVM can be found here: :ref:`GraalVM build instructions <installation_graalvm>`.
 
 .. code-block:: bash
 

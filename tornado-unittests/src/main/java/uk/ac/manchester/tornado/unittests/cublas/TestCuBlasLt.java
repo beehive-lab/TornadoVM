@@ -29,7 +29,9 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.types.FP8;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.cublas.CuBlasLt;
@@ -121,6 +123,52 @@ public class TestCuBlasLt extends TornadoTestBase {
         reference(matrixA, matrixB, expected, null, false, SIZE);
         for (int i = 0; i < SIZE * SIZE; i++) {
             assertEquals(expected.get(i), matrixC.get(i), 0.01f * Math.max(1.0f, Math.abs(expected.get(i))));
+        }
+    }
+
+    /**
+     * FP8 (E4M3) matmul on the GPU's FP8 tensor cores via cuBLASLt: A, B as one-byte E4M3 in a
+     * {@link ByteArray}, C in FP16. cuBLASLt FP8 requires the TN form (op(A) = A^T, op(B) = B), so
+     * for square, column-major {@code lda=ldb=ldc=FP8}: {@code C[i+j*N] = sum_l A[l+i*N]*B[l+j*N]}.
+     * Inputs are exactly-FP8-representable values, so the only error is the FP16 store of C.
+     */
+    @Test
+    public void testLtMatmulFP8() throws TornadoExecutionPlanException {
+        final int fp8 = 64; // multiple of 16 (FP8 leading-dim alignment)
+        // Exact E4M3 values -> decoded inputs carry no quantization error.
+        float[] palette = { -2.0f, -1.0f, -0.5f, 0.5f, 1.0f, 2.0f };
+        ByteArray a = new ByteArray(fp8 * fp8);
+        ByteArray b = new ByteArray(fp8 * fp8);
+        float[] aF = new float[fp8 * fp8];
+        float[] bF = new float[fp8 * fp8];
+        for (int i = 0; i < fp8 * fp8; i++) {
+            float va = palette[random.nextInt(palette.length)];
+            float vb = palette[random.nextInt(palette.length)];
+            a.set(i, FP8.e4m3FromFloat(va));
+            b.set(i, FP8.e4m3FromFloat(vb));
+            aF[i] = FP8.e4m3ToFloat(a.get(i));
+            bF[i] = FP8.e4m3ToFloat(b.get(i));
+        }
+        HalfFloatArray c = new HalfFloatArray(fp8 * fp8);
+
+        TaskGraph taskGraph = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .libraryTask("ltFP8", CuBlasLt::ltMatmulFP8, //
+                        CuBlasOperation.CUBLAS_OP_T.operation(), CuBlasOperation.CUBLAS_OP_N.operation(), //
+                        fp8, fp8, fp8, 1.0f, a, fp8, b, fp8, 0.0f, c, fp8) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.execute();
+        }
+
+        for (int i = 0; i < fp8; i++) {
+            for (int j = 0; j < fp8; j++) {
+                float sum = 0.0f;
+                for (int l = 0; l < fp8; l++) {
+                    sum += aF[l + i * fp8] * bF[l + j * fp8];
+                }
+                assertEquals(sum, c.get(i + j * fp8).getFloat32(), 1e-2f * Math.max(1.0f, Math.abs(sum)));
+            }
         }
     }
 

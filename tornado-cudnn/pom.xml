@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.beehive-lab</groupId>
         <artifactId>tornado</artifactId>
-        <version>5.0.1-jdk21-dev</version>
+        <version>5.2.1-jdk21-dev</version>
     </parent>
     <artifactId>tornado-cudnn</artifactId>
     <name>tornado-cudnn</name>

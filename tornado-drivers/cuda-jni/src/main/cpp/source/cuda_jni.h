@@ -70,6 +70,16 @@
                   << std::endl;                                   \
     }
 
+// Variant without the unconditional ERROR print, for calls whose failure may
+// be handled by a retry; the caller is responsible for reporting terminal
+// failures (with the full NVRTC build log) itself.
+#define LOG_NVRTC_CALL(name, result)                              \
+    if (LOG_CUDA == 1) {                                          \
+        std::cout << "[TornadoVM-CUDA-NVRTC-JNI] Calling : "      \
+                  << name << " -> Status: " << result             \
+                  << std::endl;                                   \
+    }
+
 /*
  * One physical platform is modelled. The OpenCL clone enumerates one platform
  * (CUDA) and then asks it for its devices.

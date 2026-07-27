@@ -52,5 +52,13 @@ public final class CUDAPreamble {
     // @formatter:off
     public static final String PREAMBLE =
         "#include <cuda_fp16.h>\n";
+
+    /**
+     * FP8 header, injected (after the fp16 include - cuda_fp8.h builds on
+     * cuda_fp16.h's __half_raw) only when the kernel references cuda_fp8.h
+     * constructs, with the same source-scan gating as PREAMBLE.
+     */
+    public static final String FP8_PREAMBLE =
+        "#include <cuda_fp8.h>\n";
     // @formatter:on
 }

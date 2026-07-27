@@ -44,4 +44,21 @@ public interface TornadoNativeStreamSupport {
      * plan on this device.
      */
     long getNativeContext(long executionPlanId);
+
+    /**
+     * Opens a host-side NVTX range labelled {@code name} on the issuing thread,
+     * so a native library task shows up as a named span in NVIDIA Nsight
+     * Systems (alongside the backend's own kernel/transfer ranges). NVTX is a
+     * near-zero-cost no-op when no profiler is attached. Default: no-op for
+     * backends without NVTX support.
+     */
+    default void nvtxRangePush(String name) {
+    }
+
+    /**
+     * Closes the most recently opened NVTX range on the issuing thread.
+     * Default: no-op.
+     */
+    default void nvtxRangePop() {
+    }
 }

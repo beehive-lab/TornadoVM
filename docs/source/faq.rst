@@ -12,33 +12,45 @@ financial applications, computational photography, natural language processing a
 2. Can I use TornadoVM in a commercial application?
 ---------------------------------------------------
 
-Absolutely yes! TornadoVM employs many licenses as shown `here <https://github.com/beehive-lab/TornadoVM#11-licenses>`__, but its
-API is under **Apache 2**, and hence it can be freely used in any application.
+Absolutely yes! TornadoVM employs several licenses as shown `here <https://github.com/beehive-lab/TornadoVM#licenses-per-module>`__. The **Tornado-API** module that your application links against is **Apache 2.0**, and hence it can be freely used in any application. The runtime and drivers are **GPLv2 with Classpath Exception** (the same license as OpenJDK itself), which does not impose copyleft obligations on your application.
 
 3. How can I use it?
 --------------------
 
-In Linux and Mac OSx, TornadoVM can be installed by the `installer <https://github.com/beehive-lab/TornadoVM/blob/master/bin/tornadovm-installer>`__.
-Alternatively, TornadoVM can be configured either manually (:ref:`installation`) or by using docker images (:ref:`docker`).
+You can be running a TornadoVM example on a GPU in three commands:
+
+.. code-block:: bash
+
+   # 1. Install with SDKMAN!
+   $ sdk install tornadovm
+
+   # 2. Verify devices
+   $ tornado --devices
+
+   # 3. Run an example
+   $ java @$TORNADOVM_HOME/tornado-argfile -cp $TORNADOVM_HOME/share/java/tornado/tornado-examples-5.0.0-jdk21.jar uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
+
+See :ref:`installation` for all install options (SDKMAN!, the official downloads page, Maven Central, or Docker images), or :ref:`build-from-source` if you want to build TornadoVM yourself.
 
 List of compatible JDKs
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-TornadoVM can be currently executed with the following configurations:
+TornadoVM currently supports:
 
--  TornadoVM with GraalVM (JDK 21).
--  TornadoVM with JDK21 (e.g. OpenJDK 21, Red Hat Mandrel 21, Amazon Corretto 21, Azul Zulu JDK 21).
+-  JDK 21 (e.g. OpenJDK 21, Red Hat Mandrel 21, Amazon Corretto 21, Azul Zulu JDK 21).
+-  JDK 25.
+-  GraalVM (JDK 21), for polyglot interoperability (see :ref:`truffle-languages`).
 
 Windows
 ~~~~~~~~~~
 
-To run TornadoVM on **Windows 10/11 OS**, install TornadoVM with GraalVM. More information here: :ref:`installation_windows`.
+To run TornadoVM on **Windows 10/11 OS**, more information here: :ref:`installation_windows`.
 
 
 ARM Mali GPUs and Linux
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To run TornadoVM on ARM Mali, install TornadoVM with GraalVM and JDK 11. More information here: :ref:`installation_mali`.
+To run TornadoVM on ARM Mali, install TornadoVM with GraalVM and JDK 21. More information here: :ref:`installation_mali`.
 
 Usage
 ^^^^^
@@ -57,11 +69,12 @@ you can find examples of how to use TornadoVM with GraalVM Polyglot.
 5. Is TornadoVM a Domain Specific Language (DSL)?
 --------------------------------------------------------------
 
-No, TornadoVM is not a DSL. It compiles a subset of Java code to OpenCL C, NVIDIA PTX, and SPIR-V binary.
+No, TornadoVM is not a DSL. It compiles a subset of Java code to OpenCL C, NVIDIA PTX, NVIDIA CUDA C, SPIR-V, and Apple Metal.
 
-The TornadoVM API only provides two Java annotations (``@Parallel`` and ``@Reduce``) plus an APIs to:
-a) Create and define task-graphs (groups of Java methods to be accelerated by TornadoVM), and the data needed to execute those task-graphs.
-b) Define execution plans.
+To express parallelism, TornadoVM offers the :ref:`Loop Parallel API <loop-parallel-api>` (``@Parallel`` and ``@Reduce`` annotations) and the lower-level :ref:`Kernel API <kernel-context-api>` (``KernelContext``), plus an API to:
+
+a) Create and define task-graphs with the :ref:`Task-Graph API <task-graph-api>` (groups of Java methods to be accelerated by TornadoVM, and the data involved).
+b) Define :ref:`execution plans <execution-plan>`.
 
 6. Does it support the whole Java Language?
 -------------------------------------------
@@ -71,28 +84,17 @@ No, TornadoVM supports a subset of the Java programming language. A list of unsu
 7. Can TornadoVM degrade the performance of my application?
 -----------------------------------------------------------
 
-No, TornadoVM can only increase the performance of your application because it can dynamically change the execution of a program at runtime
-onto another device. If a particular code segment cannot be accelerated, then execution falls back to the host JVM which will execute your code
-on the CPU as it would normally do.
+No, TornadoVM cannot degrade the performance of your application: if a particular code segment cannot be accelerated, execution falls back to the host JVM, which runs your code on the CPU exactly as it would without TornadoVM.
 
-Also with the **Dynamic Reconfiguration**, TornadoVM discovers the fastest possible device for a particular code segment completely
-transparently to the user.
+With **Dynamic Reconfiguration** opted into (see :ref:`dynamic_reconfiguration`), TornadoVM can also discover the fastest available device for a particular code segment.
 
-8. Dynamic Reconfiguration? What is this?
------------------------------------------
-
-It is a novel feature of TornadoVM, in which the user selects a metric on which the system decides how to map a specific computation on a
-particular device. Further details and instructions on how to enable this feature can be found here:
-
--  Dynamic reconfiguration: `https://dl.acm.org/doi/10.1145/3313808.3313819 <https://dl.acm.org/doi/10.1145/3313808.3313819>`_.
-
-9. Does TornadoVM support only OpenCL devices?
+8. Does TornadoVM support only OpenCL devices?
 ----------------------------------------------
 
 No. Currently, TornadoVM supports multiple compiler backends and therefore, it is able to generate OpenCL C, NVIDIA PTX, CUDA C
 (compiled to PTX via NVRTC), SPIR-V, and Metal code depending on the hardware configuration.
 
-10. Why is it called a VM?
+9. Why is it called a VM?
 --------------------------
 
 The VM name is used because TornadoVM implements its own set of bytecodes for handling heterogeneous execution.
@@ -102,13 +104,13 @@ The main VM is the Java Virtual Machine, and TornadoVM sits on top of that.
 
 You can find more information here: `https://dl.acm.org/doi/10.1145/3313808.3313819 <https://dl.acm.org/doi/10.1145/3313808.3313819>`_.
 
-11. How does it interact with OpenJDK?
+10. How does it interact with OpenJDK?
 --------------------------------------
 
-TornadoVM makes use of the Java Virtual Machine Common Interface (JVMCI) that is included from Java 9 to compile Java bytecode to OpenCL C/PTX/SPIR-V at runtime.
-As a JVMCI implementation, TornadoVM uses Graal (it extends the Graal IR and includes new backends for OpenCL C, PTX and SPIR-V code generation).
+TornadoVM makes use of the Java Virtual Machine Common Interface (JVMCI) that is included from Java 9 to compile Java bytecode to OpenCL C, NVIDIA PTX, NVIDIA CUDA C, SPIR-V, and Apple Metal at runtime.
+As a JVMCI implementation, TornadoVM uses Graal (it extends the Graal IR and includes new backends for each of these targets).
 
-12.  How do I know which parts of my application are suitable for acceleration?
+11.  How do I know which parts of my application are suitable for acceleration?
 -------------------------------------------------------------------------------
 
 Workloads with for-loops that do not have dependencies between iterations are very good candidates to offload on accelerators.
@@ -116,7 +118,7 @@ Examples of this pattern are NBody computation, Black-scholes, DFT, KMeans, etc.
 
 Besides, matrix-type applications are good candidates, such as matrix-multiplication widely used in machine and deep learning.
 
-13. How can I contribute to TornadoVM?
+12. How can I contribute to TornadoVM?
 --------------------------------------
 
 TornadoVM is an open-source project, and, as such, we welcome contributions from all levels.
@@ -129,9 +131,9 @@ TornadoVM is an open-source project, and, as such, we welcome contributions from
 
 `Here <https://github.com/beehive-lab/TornadoVM/blob/master/CONTRIBUTING.md>`__
 you can find more information about how to contribute, code conventions,
-and tasks.
+and tasks. See also :ref:`developer-guidelines` for how to build from source, configure your IDE, and set up code formatting and pre-commit hooks.
 
-14. Does TornadoVM support calls to standard Java libraries?
+13. Does TornadoVM support calls to standard Java libraries?
 ------------------------------------------------------------
 
 Partially yes. TornadoVM currently supports calls to the Math library.
@@ -139,7 +141,7 @@ However, invocations that imply I/O are not supported.
 Note that this restriction also applies to low-level parallel programming models such as OpenCL, SYCL, oneAPI and CUDA.
 
 
-15. Do I need a GPU to run TornadoVM?
+14. Do I need a GPU to run TornadoVM?
 ------------------------------------------------------------
 
 No. TornadoVM can also run on multi-core CPUs and/or FPGAs. What TornadoVM needs is a compatible driver/runtime installed in the machine.

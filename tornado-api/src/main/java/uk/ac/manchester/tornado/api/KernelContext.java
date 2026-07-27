@@ -19,11 +19,15 @@ package uk.ac.manchester.tornado.api;
 
 import uk.ac.manchester.tornado.api.enums.MMAShape;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FP8Array;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Float;
+import uk.ac.manchester.tornado.api.types.vectors.Half2;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -177,6 +181,20 @@ public class KernelContext implements ExecutionContext {
     @Override
     public HalfFloat[] allocateHalfFloatLocalArray(int size) {
         return new HalfFloat[size];
+    }
+
+    /**
+     * It allocates a single dimensional array of packed {@link Half2} pairs in
+     * local memory (known as shared memory in PTX). On backends with packed
+     * half2 support each element maps to a single 32-bit {@code __half2}.
+     *
+     * @param size
+     *     the size of the array, in {@link Half2} elements
+     * @return Half2[]: reference to the Half2 array
+     */
+    @Override
+    public Half2[] allocateHalf2LocalArray(int size) {
+        return new Half2[size];
     }
 
     /**
@@ -683,6 +701,26 @@ public class KernelContext implements ExecutionContext {
     }
 
     /**
+     * Warp-collective bfloat16 matrix multiply-accumulate: D = A * B + C.
+     *
+     * <p>BF16 shares fp16's m16n8k16 tile shape and per-lane fragment layout, so the
+     * A/B fragments are loaded with the same {@link #mmaLoadA(int[], int)} /
+     * {@link #mmaLoadB(int[], int)} calls from int tiles packed with raw bf16 bit
+     * pairs ({@code lo | (hi << 16)}); only the mma.sync element type differs. The
+     * {@code HalfFloat[]} fragment handles are opaque register tuples - the bits are
+     * interpreted as bf16 by this call, never decoded as fp16.
+     *
+     * PTX equivalent:
+     *   mma.sync.aligned.m16n8k16.row.col.f32.bf16.bf16.f32
+     *
+     * <p><b>Note:</b> CUDA backend only, compute capability 8.0+ (same floor as the
+     * fp16/int8 MMA ops).
+     */
+    public float[] mmaBF16(HalfFloat[] fragA, HalfFloat[] fragB, float[] fragC, MMAShape mmaShape) {
+        return fragC; // CPU fallback: accumulator unchanged
+    }
+
+    /**
      * Allocates a 4xs32 accumulator fragment for int8 MMA, initialised to the given value.
      */
     public int[] mmaFragmentInt(int initValue) {
@@ -715,6 +753,50 @@ public class KernelContext implements ExecutionContext {
      */
     public void mmaStoreInt(int[] fragD, IntArray out, int row, int col, int stride) {
         // no-op placeholder
+    }
+
+    /**
+     * Loads an A fragment (16x32 FP8 tile) for FP8 tensor-core MMA (m16n8k32).
+     *
+     * <p>The shared-memory tile holds raw FP8 storage bytes packed four per int,
+     * exactly like the int8 tile layout of {@link #mmaLoadAInt8(int[], int)} - the
+     * load is format-agnostic; the FP8 interpretation happens in
+     * {@link #mmaFP8E4M3}/{@link #mmaFP8E5M2}.
+     *
+     * <p><b>Note:</b> CUDA backend only; FP8 MMA requires compute capability 8.9+
+     * (Ada/Hopper).
+     */
+    public byte[] mmaLoadAFP8(int[] aTile, int tileK) {
+        return new byte[16]; // CPU fallback
+    }
+
+    /**
+     * Loads a B fragment (32x8 FP8 tile, col-major) for FP8 tensor-core MMA
+     * (m16n8k32). See {@link #mmaLoadAFP8(int[], int)} for layout notes.
+     */
+    public byte[] mmaLoadBFP8(int[] bTile, int tileK) {
+        return new byte[8]; // CPU fallback
+    }
+
+    /**
+     * Warp-collective FP8 (OCP E4M3) MMA: D = A*B + C with an f32 accumulator.
+     *
+     * PTX equivalent:
+     *   mma.sync.aligned.m16n8k32.row.col.f32.e4m3.e4m3.f32
+     *
+     * <p><b>Note:</b> CUDA backend only, compute capability 8.9+ (Ada/Hopper);
+     * on older devices the compiler raises TornadoDeviceMMANotSupported.
+     */
+    public float[] mmaFP8E4M3(byte[] fragA, byte[] fragB, float[] fragC, MMAShape shape) {
+        return fragC; // CPU fallback: accumulator unchanged
+    }
+
+    /**
+     * Warp-collective FP8 (OCP E5M2) MMA: D = A*B + C with an f32 accumulator.
+     * See {@link #mmaFP8E4M3} for shape and gating notes.
+     */
+    public float[] mmaFP8E5M2(byte[] fragA, byte[] fragB, float[] fragC, MMAShape shape) {
+        return fragC; // CPU fallback: accumulator unchanged
     }
 
     /**
@@ -755,6 +837,71 @@ public class KernelContext implements ExecutionContext {
      */
     public HalfFloat[] mmaLoadBSwizzled(HalfFloat[] bTile, int wmmaK, int byteOffset) {
         return new HalfFloat[4]; // CPU fallback
+    }
+
+    /**
+     * Asynchronous 4-byte global-to-shared copy (CUDA {@code cp.async}, Ampere+/sm_80):
+     * copies two adjacent fp16 elements ({@code src[srcIndex]}, {@code src[srcIndex+1]})
+     * into {@code dstTile[dstIndex]} as one packed b32, bypassing the register file.
+     *
+     * <p>The packed layout matches the cooperative-load idiom
+     * {@code lo | (hi << 16)} used by the MMA GEMM kernels (little-endian), so an
+     * existing synchronous tile load can be replaced element-for-element.
+     *
+     * <p>The copy is asynchronous: issue all copies for a tile, then call
+     * {@link #asyncCopyCommit()} once and {@link #asyncCopyWaitGroup(int)} (with 0)
+     * before the barrier that publishes the tile.
+     *
+     * <p>On non-CUDA backends the Java fallback performs the copy synchronously.
+     */
+    public void asyncCopyToLocal(int[] dstTile, int dstIndex, HalfFloatArray src, int srcIndex) {
+        int lo = src.get(srcIndex).getHalfFloatValue() & 0xFFFF;
+        int hi = src.get(srcIndex + 1).getHalfFloatValue() & 0xFFFF;
+        dstTile[dstIndex] = lo | (hi << 16);
+    }
+
+    /**
+     * Asynchronous 4-byte global-to-shared copy of four adjacent FP8 storage bytes
+     * into one packed b32 tile slot. See {@link #asyncCopyToLocal(int[], int, HalfFloatArray, int)}
+     * for the synchronization contract.
+     */
+    public void asyncCopyToLocal(int[] dstTile, int dstIndex, FP8Array src, int srcIndex) {
+        int b0 = src.get(srcIndex) & 0xFF;
+        int b1 = src.get(srcIndex + 1) & 0xFF;
+        int b2 = src.get(srcIndex + 2) & 0xFF;
+        int b3 = src.get(srcIndex + 3) & 0xFF;
+        dstTile[dstIndex] = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
+    }
+
+    /**
+     * Asynchronous 4-byte global-to-shared copy of four adjacent bytes into one packed
+     * b32 tile slot. See {@link #asyncCopyToLocal(int[], int, HalfFloatArray, int)}
+     * for the synchronization contract.
+     */
+    public void asyncCopyToLocal(int[] dstTile, int dstIndex, ByteArray src, int srcIndex) {
+        int b0 = src.get(srcIndex) & 0xFF;
+        int b1 = src.get(srcIndex + 1) & 0xFF;
+        int b2 = src.get(srcIndex + 2) & 0xFF;
+        int b3 = src.get(srcIndex + 3) & 0xFF;
+        dstTile[dstIndex] = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
+    }
+
+    /**
+     * Commits the cp.async copies issued since the last commit as one group
+     * (CUDA {@code cp.async.commit_group}). No-op on other backends, where
+     * {@link #asyncCopyToLocal(int[], int, HalfFloatArray, int)} copies synchronously.
+     */
+    public void asyncCopyCommit() {
+        // CPU fallback: no-op; the async copies are synchronous off-GPU.
+    }
+
+    /**
+     * Waits until at most {@code groups} committed cp.async groups are still in flight
+     * (CUDA {@code cp.async.wait_group N}; 0 waits for all). Must be a compile-time
+     * constant. No-op on other backends.
+     */
+    public void asyncCopyWaitGroup(int groups) {
+        // CPU fallback: no-op.
     }
 
     /**

@@ -63,6 +63,16 @@ public class PTXStream {
     /** Current capacity of the staging buffer in bytes. */
     private long stagingBufferSize = 0L;
 
+    /**
+     * Ring of pinned staging slots for large one-shot H2D transfers (a single pinned
+     * block of {@code depth * chunk} bytes, sliced into slots). 0 = unallocated (lazy).
+     */
+    private long stagedRingPtr = 0L;
+    private long stagedChunkSize;
+    private int stagedRingDepth;
+    /** Per-slot local event id of the slot's last enqueued DMA; -1 = slot never used. */
+    private int[] stagedSlotEventIds;
+
     public PTXStream() {
         this(PTXStreamType.DEFAULT);
     }
@@ -147,6 +157,8 @@ public class PTXStream {
 
     private static native void cuMemFreeHost(long hostPtr);
 
+    private static native void memcpyHostToHost(long dstPtr, long srcPtr, long numBytes);
+
     //@formatter:on
 
     private static native byte[][] cuLaunchKernel(byte[] module, String name, int gridDimX, int gridDimY, int gridDimZ, int blockDimX, int blockDimY, int blockDimZ, long sharedMemBytes, byte[] stream,
@@ -217,6 +229,10 @@ public class PTXStream {
 
     public void reset() {
         ptxEventPool.reset();
+        // Local event ids become invalid after a pool reset; treat all staging slots as never used.
+        if (stagedSlotEventIds != null) {
+            Arrays.fill(stagedSlotEventIds, -1);
+        }
     }
 
     public void sync() {
@@ -227,6 +243,10 @@ public class PTXStream {
         if (stagingBufferPtr != 0L) {
             cuMemFreeHost(stagingBufferPtr);
             stagingBufferPtr = 0L;
+        }
+        if (stagedRingPtr != 0L) {
+            cuMemFreeHost(stagedRingPtr);
+            stagedRingPtr = 0L;
         }
         cuDestroyStream(streamPool);
         isDestroy = true;
@@ -418,6 +438,93 @@ public class PTXStream {
     public int enqueueAsyncWrite(long executionPlanId, long address, long length, long hostPointer, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
         return registerEvent(writeArrayHtoDAsync(address, length, hostPointer, hostOffset, streamPool), EventDescriptor.DESC_WRITE_BYTE);
+    }
+
+    /**
+     * Staged H2D transfer through a ring of pinned host slots (the llama.cpp "ring of 4"
+     * pattern). The transfer is split into {@code STAGED_TRANSFER_CHUNK_SIZE} chunks; each chunk is
+     * memcpy'd into a pinned slot (forcing the page-in on the CPU) and uploaded with
+     * cuMemcpyHtoDAsync, so the staging of chunk {@code i+1} overlaps the DMA of chunk {@code i}.
+     * Slot reuse is gated by the slot's previous DMA event. Unlike the direct path, the source does
+     * NOT need to be cuMemHostRegister'ed - the pinned slots are what makes the DMA async.
+     *
+     * @return the local event id of the LAST chunk's DMA (ordering-equivalent to the single-copy
+     *     event of the direct path, since all chunks are issued in-order on this stream).
+     */
+    public int enqueueStagedWrite(long executionPlanId, long address, long length, long hostPointer, long hostOffset, int[] waitEvents) {
+        if (capturing) {
+            // Host-side slot waits are illegal during CUDA graph capture; use the direct path.
+            return enqueueAsyncWrite(executionPlanId, address, length, hostPointer, hostOffset, waitEvents);
+        }
+        waitForEvents(waitEvents);
+        ensureStagedRing();
+        long offset = 0;
+        int chunkIndex = 0;
+        int lastEvent = -1;
+        long waitNs = 0;
+        long fillNs = 0;
+        long enqueueNs = 0;
+        boolean debug = TornadoOptions.FULL_DEBUG;
+        while (offset < length) {
+            int slot = chunkIndex % stagedRingDepth;
+            long chunkBytes = Math.min(stagedChunkSize, length - offset);
+            long t0 = debug ? System.nanoTime() : 0;
+            if (stagedSlotEventIds[slot] != -1) {
+                // Wait (host-side) until the slot's previous upload has drained before refilling it.
+                waitForEvents(new int[] { stagedSlotEventIds[slot] });
+            }
+            long t1 = debug ? System.nanoTime() : 0;
+            long slotPtr = stagedRingPtr + (long) slot * stagedChunkSize;
+            fillSlot(slotPtr, hostPointer + hostOffset + offset, chunkBytes);
+            long t2 = debug ? System.nanoTime() : 0;
+            lastEvent = registerEvent(writeArrayHtoDAsync(address + offset, chunkBytes, slotPtr, 0, streamPool), EventDescriptor.DESC_WRITE_BYTE);
+            stagedSlotEventIds[slot] = lastEvent;
+            offset += chunkBytes;
+            chunkIndex++;
+            if (debug) {
+                long t3 = System.nanoTime();
+                waitNs += t1 - t0;
+                fillNs += t2 - t1;
+                enqueueNs += t3 - t2;
+            }
+        }
+        if (debug) {
+            System.out.printf("[staged write] %d bytes in %d chunks | slot-wait %.2f ms, fill %.2f ms (%.2f GB/s), enqueue %.2f ms%n", length, chunkIndex, waitNs / 1e6, fillNs / 1e6, length / (fillNs / 1e9) / 1e9, enqueueNs / 1e6);
+        }
+        return lastEvent;
+    }
+
+    /**
+     * Fills a pinned staging slot from the source. A single thread's memcpy (~4-5 GB/s) is slower
+     * than the PCIe DMA it feeds, which would make the staged path fill-bound; splitting the copy
+     * across threads lifts the fill above the DMA rate so the transfer stays DMA-bound.
+     */
+    private void fillSlot(long dstPtr, long srcPtr, long bytes) {
+        int threads = TornadoOptions.STAGED_TRANSFER_FILL_THREADS;
+        long minPerThread = 1 << 21; // below ~2MB per thread the fork/join overhead dominates
+        if (threads <= 1 || bytes < threads * minPerThread) {
+            memcpyHostToHost(dstPtr, srcPtr, bytes);
+            return;
+        }
+        long subSize = bytes / threads;
+        java.util.stream.IntStream.range(0, threads).parallel().forEach(t -> {
+            long subOffset = t * subSize;
+            long subBytes = (t == threads - 1) ? bytes - subOffset : subSize;
+            memcpyHostToHost(dstPtr + subOffset, srcPtr + subOffset, subBytes);
+        });
+    }
+
+    private void ensureStagedRing() {
+        if (stagedRingPtr == 0L) {
+            stagedChunkSize = TornadoOptions.STAGED_TRANSFER_CHUNK_SIZE;
+            stagedRingDepth = Math.max(2, TornadoOptions.STAGED_TRANSFER_RING_DEPTH);
+            stagedRingPtr = cuMemAllocHost(stagedChunkSize * stagedRingDepth);
+            if (stagedRingPtr == 0L) {
+                throw new TornadoOutOfMemoryException("[PTX] cuMemAllocHost failed: could not allocate " + (stagedChunkSize * stagedRingDepth) + " bytes of pinned host memory for the staging ring");
+            }
+            stagedSlotEventIds = new int[stagedRingDepth];
+            Arrays.fill(stagedSlotEventIds, -1);
+        }
     }
 
     public int enqueueAsyncWrite(long executionPlanId, long address, long length, byte[] array, long hostOffset, int[] waitEvents) {

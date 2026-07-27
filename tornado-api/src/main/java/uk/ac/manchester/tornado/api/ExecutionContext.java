@@ -22,6 +22,7 @@ import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.api.types.vectors.Half2;
 
 /**
  * Generic interface for TornadoVM to implement a Thread-Context API. This
@@ -111,6 +112,15 @@ public interface ExecutionContext {
      * @return HalfFloat[]
      */
     HalfFloat[] allocateHalfFloatLocalArray(int size);
+
+    /**
+     * Array Allocation in Local Memory (OpenCL terminology).
+     *
+     * @param size
+     *     size of the {@link Half2}-array.
+     * @return Half2[]
+     */
+    Half2[] allocateHalf2LocalArray(int size);
 
     /**
      * Method used to read a memory address by using the array and the index,

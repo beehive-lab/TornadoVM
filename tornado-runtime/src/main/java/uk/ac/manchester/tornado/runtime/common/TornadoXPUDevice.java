@@ -224,6 +224,18 @@ public interface TornadoXPUDevice extends TornadoDevice {
     }
 
     /**
+     * Informs the backend whether large one-shot host-to-device uploads should be routed through
+     * the pinned staging ring. Called by the interpreter before issuing a plan's bytecodes, so the
+     * setting is in place for the plan's allocations (which decide host pinning) and transfers.
+     * No-op by default; the CUDA and PTX backends override it.
+     *
+     * @param enabled whether staged transfers are enabled
+     */
+    default void setStagedTransfers(boolean enabled) {
+        // no-op by default
+    }
+
+    /**
      * Returns whether this device supports execution graph capture and replay.
      * When false, the graph compiler will not emit graph bytecodes for this device,
      * and the interpreter will reject them at runtime as a safety net.

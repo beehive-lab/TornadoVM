@@ -229,7 +229,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         if (meta == null) {
             task = deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, waitEvents);
         } else {
-            if (meta.isParallel()) {
+            if (meta.isParallel() || meta.isWorkerGridAvailable()) {
                 task = scheduler.submit(executionPlanId, kernel, meta, waitEvents, batchThreads);
             } else {
                 if (meta.isDebug()) {

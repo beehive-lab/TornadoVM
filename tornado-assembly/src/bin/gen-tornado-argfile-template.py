@@ -202,6 +202,13 @@ def generate_argfile(backends, output_dir=None):
     output_lines.append(lib_path)
     output_lines.append("")
 
+    # === Console output encoding ===
+    # Ensures Unicode characters (e.g. checkmarks) print correctly instead of
+    # being replaced with '?' when stdout is not already UTF-8 (e.g. Windows consoles)
+    output_lines.append("# === Console output encoding ===")
+    output_lines.append("-Dstdout.encoding=UTF-8")
+    output_lines.append("")
+
     # === Tornado runtime classes ===
     # Extract TornadoVM-specific system properties
     output_lines.append("# === Tornado runtime classes ===")

@@ -1,4 +1,4 @@
-name: Release to SDKMAN (JDK 25)
+name: 5.2 - Publish SDKMAN JDK25 [auto]
 
 on:
   release:
@@ -34,17 +34,11 @@ jobs:
           - sdk_suffix: full
             platform: LINUX_64
             variant: full-linux-amd64
-          - sdk_suffix: full
-            platform: WINDOWS_64
-            variant: full-windows-amd64
 
           # opencl
           - sdk_suffix: opencl
             platform: LINUX_64
             variant: opencl-linux-amd64
-          - sdk_suffix: opencl
-            platform: WINDOWS_64
-            variant: opencl-windows-amd64
           - sdk_suffix: opencl
             platform: MAC_ARM64
             variant: opencl-mac-aarch64
@@ -58,17 +52,16 @@ jobs:
           - sdk_suffix: ptx
             platform: LINUX_64
             variant: ptx-linux-amd64
-          - sdk_suffix: ptx
-            platform: WINDOWS_64
-            variant: ptx-windows-amd64
+
+          # cuda
+          - sdk_suffix: cuda
+            platform: LINUX_64
+            variant: cuda-linux-amd64
 
           # spirv
           - sdk_suffix: spirv
             platform: LINUX_64
             variant: spirv-linux-amd64
-          - sdk_suffix: spirv
-            platform: WINDOWS_64
-            variant: spirv-windows-amd64
 
     steps:
       - name: Derive versions and URLs

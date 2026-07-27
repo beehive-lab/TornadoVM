@@ -1,4 +1,9 @@
-cmake_minimum_required (VERSION 3.6)
+cmake_minimum_required (VERSION 3.15)
+
+# See the matching note in cuda-jni/CMakeLists.txt: must be set before
+# project() to affect CMAKE_MSVC_RUNTIME_LIBRARY below.
+cmake_policy(SET CMP0091 NEW)
+
 project (TornadoCuDnn)
 
 find_package(JNI REQUIRED)
@@ -26,8 +31,7 @@ set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_VERBOSE_MAKEFILE on)
 
 if(MSVC)
-	string(REPLACE "/MDd" "/MTd" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
-	string(REPLACE "/MD" "/MT" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 	if(NOT CMAKE_CXX_COMPILER_ID STREQUAL Clang)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 	endif()
@@ -55,11 +59,25 @@ add_library(tornado-cudnn SHARED ${SOURCE_FILES})
 # (see the matching note in cuda-jni/src/main/cpp/CMakeLists.txt).
 find_package(CUDAToolkit QUIET)
 
+# NVIDIA's Windows cuDNN 9.x installer no longer merges its headers/libs into
+# the CUDA toolkit's own include/lib directories (the layout every HINTS list
+# below otherwise assumes). Instead it installs under its own tree (the
+# CUDNN_ROOT env var the installer sets, e.g. "C:/Program Files/NVIDIA/CUDNN/
+# v9.x"), nesting headers/libs one level deeper under a subdirectory named for
+# the CUDA major version they target (e.g. include/13.3, lib/13.3/x64). Glob
+# for the subdirectory matching the CUDA toolkit in use so headers/libs come
+# from the same CUDA version family.
+if(DEFINED ENV{CUDNN_ROOT} AND CUDAToolkit_FOUND)
+    file(GLOB CUDNN_ROOT_INCLUDE_DIRS "$ENV{CUDNN_ROOT}/include/${CUDAToolkit_VERSION_MAJOR}.*")
+    file(GLOB CUDNN_ROOT_LIB_DIRS "$ENV{CUDNN_ROOT}/lib/${CUDAToolkit_VERSION_MAJOR}.*/x64")
+endif()
+
 find_path(CUDA_INCLUDE_DIR cudnn.h
     HINTS
         $ENV{CUDA_PATH}/include
         /usr/local/cuda/include
         ${CUDAToolkit_INCLUDE_DIRS}
+        ${CUDNN_ROOT_INCLUDE_DIRS}
         /usr/include
         /usr/include/x86_64-linux-gnu
         /usr/lib/cuda/include
@@ -81,6 +99,7 @@ find_library(CUDNN_LIB cudnn
         $ENV{CUDA_PATH}/lib64
         /usr/local/cuda/lib64
         ${CUDAToolkit_LIBRARY_DIR}
+        ${CUDNN_ROOT_LIB_DIRS}
         /usr/lib/x86_64-linux-gnu
 )
 
@@ -100,13 +119,26 @@ find_library(CUDART_LIB cudart
         /usr/lib/x86_64-linux-gnu
 )
 
+# cudnn-frontend's SDPA graph path transitively includes the experimental
+# sm90/sm100 prefill engine headers (see the toolkit guard comment in
+# tornado-cudnn-sdpa.cpp), which call into NVRTC directly since this
+# FetchContent is header-only (cudnn-frontend's own CMakeLists, which would
+# otherwise select its dlopen-based NVRTC shim, is never invoked).
+find_library(NVRTC_LIB nvrtc
+    HINTS
+        $ENV{CUDA_PATH}/lib64
+        /usr/local/cuda/lib64
+        ${CUDAToolkit_LIBRARY_DIR}
+        /usr/lib/x86_64-linux-gnu
+)
+
 target_include_directories(tornado-cudnn PRIVATE ${cudnn_frontend_SOURCE_DIR}/include)
 
-if(CUDNN_LIB AND CUDART_LIB)
-    target_link_libraries(tornado-cudnn ${JNI_LIB_DIRS} ${CUDNN_LIB} ${CUDART_LIB})
+if(CUDNN_LIB AND CUDART_LIB AND NVRTC_LIB)
+    target_link_libraries(tornado-cudnn ${JNI_LIB_DIRS} ${CUDNN_LIB} ${CUDART_LIB} ${NVRTC_LIB})
 else()
-    message(WARNING "Could not locate libcudnn via find_library; falling back to -lcudnn -lcudart")
-    target_link_libraries(tornado-cudnn ${JNI_LIB_DIRS} "-lcudnn -lcudart")
+    message(WARNING "Could not locate libcudnn/libcudart/libnvrtc via find_library; falling back to -lcudnn -lcudart -lnvrtc")
+    target_link_libraries(tornado-cudnn ${JNI_LIB_DIRS} "-lcudnn -lcudart -lnvrtc")
 endif()
 
-message(STATUS "TornadoVM cuFFT: include=${CUDA_INCLUDE_DIR}; cudnn=${CUDNN_LIB}")
+message(STATUS "TornadoVM cuDNN: include=${CUDA_INCLUDE_DIR}; cudnn=${CUDNN_LIB}; nvrtc=${NVRTC_LIB}")
