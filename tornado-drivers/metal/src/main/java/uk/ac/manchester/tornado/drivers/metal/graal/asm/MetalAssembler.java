@@ -557,6 +557,19 @@ public final class MetalAssembler extends Assembler {
     public void emitValueWithFormat(MetalCompilationResultBuilder crb, Value value) {
         if (value instanceof MetalReturnSlot) {
             ((MetalReturnSlot) value).emit(crb, this);
+        } else if (value instanceof ConstantValue) {
+            // convertValueFromGraalFormat()/getAbsoluteIndexFromValue() assume a
+            // Variable whose toString() looks like "v10|DOUBLE"; a ConstantValue's
+            // toString() doesn't match that shape (no '[' or '|'), which throws
+            // a StringIndexOutOfBoundsException below. toString(Value) already
+            // special-cases ConstantValue this same way - mirror it here.
+            emit(formatConstant((ConstantValue) value));
+        } else if (value instanceof MetalNullary.Parameter) {
+            // Same reasoning as ConstantValue above: a MetalNullary.Parameter's
+            // toString() is just its parameter name (e.g. "value"), not the
+            // "vNN|KIND" shape getAbsoluteIndexFromValue() expects. toString(Value)
+            // already special-cases this too - mirror it here.
+            emit(value.toString());
         } else {
             emit(MetalAssembler.convertValueFromGraalFormat(value));
         }

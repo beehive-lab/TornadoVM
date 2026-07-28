@@ -480,6 +480,19 @@ public final class OCLAssembler extends Assembler {
     public void emitValueWithFormat(OCLCompilationResultBuilder crb, Value value) {
         if (value instanceof OCLReturnSlot) {
             ((OCLReturnSlot) value).emit(crb, this);
+        } else if (value instanceof ConstantValue) {
+            // convertValueFromGraalFormat()/getAbsoluteIndexFromValue() assume a
+            // Variable whose toString() looks like "v10|DOUBLE"; a ConstantValue's
+            // toString() doesn't match that shape (no '[' or '|'), which throws
+            // a StringIndexOutOfBoundsException below. toString(Value) already
+            // special-cases ConstantValue this same way - mirror it here.
+            emit(formatConstant((ConstantValue) value));
+        } else if (value instanceof OCLNullary.Parameter) {
+            // Same reasoning as ConstantValue above: an OCLNullary.Parameter's
+            // toString() is just its parameter name (e.g. "value"), not the
+            // "vNN|KIND" shape getAbsoluteIndexFromValue() expects. toString(Value)
+            // already special-cases this too - mirror it here.
+            emit(value.toString());
         } else {
             emit(OCLAssembler.convertValueFromGraalFormat(value));
         }
