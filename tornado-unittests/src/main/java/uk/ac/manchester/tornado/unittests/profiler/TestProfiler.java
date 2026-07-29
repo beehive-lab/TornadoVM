@@ -57,10 +57,10 @@ public class TestProfiler extends TornadoTestBase {
         }
     }
 
-    private boolean isBackendPTXOrSPIRV(int driverIndex) {
+    private boolean isBackendSPIRV(int driverIndex) {
         TornadoVMBackendType type = TornadoRuntimeProvider.getTornadoRuntime().getBackend(driverIndex).getBackendType();
         return switch (type) {
-            case PTX, SPIRV -> true;
+            case SPIRV -> true;
             default -> false;
         };
     }
@@ -102,8 +102,8 @@ public class TestProfiler extends TornadoTestBase {
             assertTrue(executionResult.getProfilerResult().getDataTransfersTime() >= 0);
             assertTrue(executionResult.getProfilerResult().getDeviceReadTime() >= 0);
             assertTrue(executionResult.getProfilerResult().getDeviceWriteTime() >= 0);
-            // We do not support dispatch timers for the PTX and SPIRV backends
-            if (!isBackendPTXOrSPIRV(driverIndex)) {
+            // We do not support dispatch timers for the SPIR-V backend
+            if (!isBackendSPIRV(driverIndex)) {
                 assertTrue(executionResult.getProfilerResult().getDataTransferDispatchTime() > 0);
                 assertTrue(executionResult.getProfilerResult().getKernelDispatchTime() > 0);
             }
@@ -193,8 +193,8 @@ public class TestProfiler extends TornadoTestBase {
             assertTrue(profilerResult.getDataTransfersTime() >= 0);
             assertTrue(profilerResult.getDeviceReadTime() >= 0);
             assertTrue(profilerResult.getDeviceWriteTime() >= 0);
-            // We do not support dispatch timers for the PTX and SPIRV backends
-            if (!isBackendPTXOrSPIRV(driverIndex)) {
+            // We do not support dispatch timers for the SPIR-V backend
+            if (!isBackendSPIRV(driverIndex)) {
                 assertTrue(profilerResult.getDataTransferDispatchTime() > 0);
                 assertTrue(profilerResult.getKernelDispatchTime() > 0);
             }
@@ -240,8 +240,8 @@ public class TestProfiler extends TornadoTestBase {
             assertTrue(executionResult.getProfilerResult().getDataTransfersTime() >= 0);
             assertTrue(executionResult.getProfilerResult().getDeviceReadTime() >= 0);
             assertTrue(executionResult.getProfilerResult().getDeviceWriteTime() >= 0);
-            // We do not support dispatch timers for the PTX and SPIRV backends
-            if (!isBackendPTXOrSPIRV(driverIndex)) {
+            // We do not support dispatch timers for the SPIR-V backend
+            if (!isBackendSPIRV(driverIndex)) {
                 assertTrue(executionResult.getProfilerResult().getDataTransferDispatchTime() > 0);
                 assertTrue(executionResult.getProfilerResult().getKernelDispatchTime() > 0);
             }

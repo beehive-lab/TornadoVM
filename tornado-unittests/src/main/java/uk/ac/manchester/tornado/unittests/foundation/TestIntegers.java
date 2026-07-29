@@ -46,7 +46,7 @@ public class TestIntegers extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 // use an odd task-id to check that the task is compiled correctly.
-                // task-name only affects the generated kernel name in the PTX backend.
+                // task-name only affects the generated kernel name in the CUDA backend.
                 .task("t,@", TestKernels::copyTestZero, a) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
 

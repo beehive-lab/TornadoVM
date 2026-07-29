@@ -50,7 +50,7 @@ public class InterpreterUtilities {
             return ColoursTerminal.CYAN + " " + device + " " + ColoursTerminal.RESET;
         } else if (tornadoVMBackend == TornadoVMBackendType.SPIRV) {
             return ColoursTerminal.PURPLE + " " + device + " " + ColoursTerminal.RESET;
-        } else if (tornadoVMBackend == TornadoVMBackendType.PTX) {
+        } else if (tornadoVMBackend == TornadoVMBackendType.CUDA) {
             return ColoursTerminal.GREEN + " " + device + " " + ColoursTerminal.RESET;
         }
         return ColoursTerminal.YELLOW + " " + device + " " + ColoursTerminal.RESET;

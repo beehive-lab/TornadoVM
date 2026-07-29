@@ -222,8 +222,7 @@ public class TestHalf2Packed extends TornadoTestBase {
 
     @Test
     public void testDotRowsFloatAccumulate() throws TornadoExecutionPlanException {
-        // Packed half2 lane extraction is not lowered correctly by the PTX backend.
-        assertNotBackend(TornadoVMBackendType.PTX);
+        // Packed half2 lane extraction is not supported on the SPIR-V and Metal backends.
         assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
         final int rowSize = 128;
@@ -253,9 +252,8 @@ public class TestHalf2Packed extends TornadoTestBase {
 
     @Test
     public void testLocalTileDot() throws TornadoExecutionPlanException {
-        // Half2 local-memory arrays are unsupported on OpenCL (no half2 storage) and PTX.
+        // Half2 local-memory arrays are unsupported on OpenCL (no half2 storage).
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
         final int numPairs = NUM_ELEMENTS / 2;

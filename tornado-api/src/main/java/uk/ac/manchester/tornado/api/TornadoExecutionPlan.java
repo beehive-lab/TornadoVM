@@ -637,7 +637,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     }
 
     public TornadoExecutionPlan withCUDAGraph() {
-        //TODO: include a check to verify that the BACKEND is PTX
+        //TODO: include a check to verify that the BACKEND is CUDA
         tornadoExecutor.withCUDAGraph();
         return new WithCUDAGraph(this);
     }
@@ -647,7 +647,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * (e.g. H2D copies, kernels, D2H copies) are routed to separate role streams so they
      * may overlap, with cross-stream ordering preserved via device events derived from the
      * bytecode dependency DAG.
-     * Currently realised on the PTX and CUDA backends with CUDA streams.
+     * Currently realised on the CUDA backend with CUDA streams.
      * A no-op for OPENCL, METAL and SPIRV backends.
      * Default is off (single stream).
      *
@@ -677,7 +677,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * Only transfers that are non-batched, read-only and at least
      * {@code -Dtornado.staged.min.size} bytes (default 16MB) are staged; every other buffer keeps
      * the default direct path, including host pinning.
-     * Currently realised on the PTX and CUDA backends.
+     * Currently realised on the CUDA backend.
      * A no-op for OPENCL, METAL and SPIRV backends.
      * Default is off, and can also be enabled process-wide with
      * {@code -Dtornado.staged.transfers=true}.

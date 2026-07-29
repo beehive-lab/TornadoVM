@@ -40,7 +40,7 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
  * and Loop Tiling.
  *
  * <p>
- * This program requires both OpenCL and PTX backends to be built. It compares
+ * This program requires both OpenCL and CUDA backends to be built. It compares
  * the following implementations against the Java functionally equivalent code.
  * </p>
  *
@@ -58,7 +58,7 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
  * How to run:
  * </p>
  * <code>
- * $ make BACKEND=opencl,ptx
+ * $ make BACKEND=opencl,cuda
  * $ tornado --debug -m tornado.examples/uk.ac.manchester.tornado.examples.kernelcontext.matrices.MatrixMul2DLocalMemory
  * </code>
  *
@@ -217,7 +217,7 @@ public class MatrixMul2DLocalMemory {
             }
         }
         if (oclDevice == null) {
-            System.err.println("There is no device with both OpenCL and CUDA-PTX support");
+            System.err.println("There is no device with both OpenCL and CUDA support");
             System.exit(1);
         }
         workerOpenCLOld.setGlobalWork(N, N, 1);
@@ -407,12 +407,12 @@ public class MatrixMul2DLocalMemory {
 
         System.out.println("\tOpenCL Execution: " + formatOpenCLFGlops + " GFlops, Total time = " + averageOpenCL + " ms");
         System.out.println("\tOpenCL Execution with Local Memory and Loop Tiling: " + formatOpenCLNewApiFGlops + " GFlops, Total time = " + averageOpenCLNewApi + " ms");
-        System.out.println("\tPTX Execution: " + formatCUDAFGlops + " GFlops, Total Time = " + averageCUDA + " ms");
-        System.out.println("\tPTX Execution with Local Memory and Loop Tiling: " + formatCUDANewApiFGlops + " GFlops, Total time = " + averageCUDANewApi + " ms");
+        System.out.println("\tCUDA Execution: " + formatCUDAFGlops + " GFlops, Total Time = " + averageCUDA + " ms");
+        System.out.println("\tCUDA Execution with Local Memory and Loop Tiling: " + formatCUDANewApiFGlops + " GFlops, Total time = " + averageCUDANewApi + " ms");
         System.out.println("\tOpenCL Speedup: " + OpenCLspeedup + "x");
         System.out.println("\tOpenCL Speedup with Local Memory and Loop Tiling: " + OpenCLNewApispeedup + "x");
-        System.out.println("\tPTX Speedup: " + CUDAspeedup + "x");
-        System.out.println("\tPTX Speedup with Local Memory and Loop Tiling: " + CUDANewApispeedup + "x");
+        System.out.println("\tCUDA Speedup: " + CUDAspeedup + "x");
+        System.out.println("\tCUDA Speedup with Local Memory and Loop Tiling: " + CUDANewApispeedup + "x");
         System.out.println();
 
     }

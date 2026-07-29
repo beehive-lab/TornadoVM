@@ -27,7 +27,7 @@ Please, ensure that your changes are merged with the latest changes in the `deve
 
 ### What's next? 
 
-We check the PR and test it internally. Be aware we are a very small team. Thus, depending on the PR, it might take some time for us to review it since we check the PR with our regression tests and benchmarks for all backends (OCL/SPIR-V/PTX platforms) as well as with different drivers and Operating Systems. 
+We check the PR and test it internally. Be aware we are a very small team. Thus, depending on the PR, it might take some time for us to review it since we check the PR with our regression tests and benchmarks for all backends (OCL/SPIR-V/CUDA platforms) as well as with different drivers and Operating Systems. 
 
 ## Code of Conduct 
 

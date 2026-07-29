@@ -5,7 +5,7 @@
 
 ## Write Java. Run on GPUs. Fast.
 
-TornadoVM is a GPU programming framework for Java that works with JDK 21+ (currently JDK 21 and JDK 25). It JIT-compiles Java bytecode into **NVIDIA CUDA PTX, OpenCL C, SPIR-V, and Apple Metal (MSL)** at runtime, so your existing Java code runs on **NVIDIA GPUs (via CUDA/PTX)**, AMD, Intel, and Apple Silicon GPUs, integrated GPUs, and multi-core CPUs. On NVIDIA hardware it goes further: beyond generating PTX, TornadoVM now calls straight into the **NVIDIA library ecosystem — cuBLAS, cuFFT, cuDNN — and exposes Tensor Core `mma.sync` instructions from pure Java**. No CUDA C. No JNI bindings to maintain. No native toolchain in your application.
+TornadoVM is a GPU programming framework for Java that works with JDK 21+ (currently JDK 21 and JDK 25). It JIT-compiles Java bytecode into **NVIDIA CUDA, OpenCL C, SPIR-V, and Apple Metal (MSL)** at runtime, so your existing Java code runs on **NVIDIA GPUs (via CUDA)**, AMD, Intel, and Apple Silicon GPUs, integrated GPUs, and multi-core CPUs. On NVIDIA hardware it goes further: beyond generating PTX, TornadoVM now calls straight into the **NVIDIA library ecosystem — cuBLAS, cuFFT, cuDNN — and exposes Tensor Core `mma.sync` instructions from pure Java**. No CUDA C. No JNI bindings to maintain. No native toolchain in your application.
 
 [![Build & Test JDK 21](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk21.yml/badge.svg)](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk21.yml)
 [![Build & Test JDK 25](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk25.yml/badge.svg?branch=jdk25)](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk25.yml)
@@ -122,11 +122,11 @@ On NVIDIA hardware, TornadoVM is more than a PTX code generator — it's an open
 
 | Capability | What it gives Java developers |
 |---|---|
-| **CUDA PTX backend** | Java bytecode → Graal IR → **CUDA PTX → NVRTC → cubin**, JIT-compiled and specialized to your data sizes and GPU at runtime. |
+| **CUDA backend** | Java bytecode → Graal IR → **CUDA PTX → NVRTC → cubin**, JIT-compiled and specialized to your data sizes and GPU at runtime. |
 | **cuBLAS / cuBLASLt** library tasks | SGEMV, SGEMM, strided-batched, TF32 and FP16 GemmEx on Tensor Cores, and cuBLASLt with plan caching and fused `BIAS` / `GELU_BIAS` epilogues — one library task replaces a GEMM plus a separate activation kernel. |
 | **cuFFT** library tasks | C2C, R2C / C2R, and Z2Z transforms (1D and 2D) with capture-safe plan caching; FFT-filter pipelines mix with JIT kernels in one graph. |
 | **cuDNN** library tasks | Deep-learning primitives through the cuDNN graph API, including fused scaled-dot-product (flash) attention via cudnn-frontend. |
-| **Tensor Core MMA intrinsics** | `mma.sync` exposed through `KernelContext` (`mmaLoadA/B`, `mma`, `mmaStore`) — FP16 (`m16n8k16` → FP32) and INT8 (`m16n8k32` → INT32), with swizzled shared-memory staging. Not a binding: real PTX/CUDA generated from Java. |
+| **Tensor Core MMA intrinsics** | `mma.sync` exposed through `KernelContext` (`mmaLoadA/B`, `mma`, `mmaStore`) — FP16 (`m16n8k16` → FP32) and INT8 (`m16n8k32` → INT32), with swizzled shared-memory staging. Not a binding: real CUDA generated from Java. |
 | **CUDA Graphs** | `executionPlan.withCUDAGraph()` records kernels, library calls, and transfers into a captured graph and replays them with a single `cuGraphLaunch`. |
 
 Mixing your own kernels with NVIDIA's tuned libraries looks like this:
@@ -184,9 +184,8 @@ Pick a backend-specific build if you prefer a smaller install:
 
 | Backend | SDKMAN! version | Targets |
 |---|---|---|
-| OpenCL *(default)* | `5.2.0-opencl` | NVIDIA / AMD / Intel GPUs, multi-core CPUs |
-| CUDA | `5.2.0-cuda` | **NVIDIA GPUs (CUDA) — PTX codegen, Tensor Cores, cuBLAS/cuFFT/cuDNN library tasks** |
-| PTX | `5.2.0-ptx` | **NVIDIA GPUs (CUDA) — PTX codegen, Tensor Cores, cuBLAS/cuFFT/cuDNN library tasks** |
+| OpenCL *(default)* | `5.2.0-opencl` | NVIDIA / AMD / Intel GPUs, multi-core CPUs, FPGAs |
+| CUDA | `5.2.0-cuda` | **NVIDIA GPUs (CUDA) — codegen, Tensor Cores, cuBLAS/cuFFT/cuDNN library tasks** |
 | SPIR-V | `5.2.0-spirv` | Intel GPUs (Level Zero / oneAPI) |
 | Metal 🆕 | `5.2.0-metal` | Apple Silicon GPUs (M1–M4), natively via MSL |
 | All backends | `5.2.0-full` | Everything above |
@@ -241,7 +240,7 @@ More examples — NBody, DFT, KMeans, matrix kernels, reductions: [tornado-examp
 <details>
 <summary><b>How does TornadoVM relate to OpenJDK's Project Babylon / HAT?</b></summary>
 
-[Project Babylon](https://openjdk.org/projects/babylon/) is OpenJDK's exploratory work on code reflection, with HAT (Heterogeneous Accelerator Toolkit) as a research vehicle for GPU programming. We think it validates the direction TornadoVM has pursued since 2018 — and the projects are complementary rather than competing. The practical difference today: **TornadoVM is usable now**, with four production backends (OpenCL, PTX, SPIR-V, Metal), a profiler, dynamic reconfiguration, Maven Central artifacts, and years of hardening across vendor hardware — and it runs on standard JDK 21/25 releases. We follow Babylon closely and expect the ecosystems to converge over time.
+[Project Babylon](https://openjdk.org/projects/babylon/) is OpenJDK's exploratory work on code reflection, with HAT (Heterogeneous Accelerator Toolkit) as a research vehicle for GPU programming. We think it validates the direction TornadoVM has pursued since 2018 — and the projects are complementary rather than competing. The practical difference today: **TornadoVM is usable now**, with four production backends (OpenCL, CUDA, SPIR-V, Metal), a profiler, dynamic reconfiguration, Maven Central artifacts, and years of hardening across vendor hardware — and it runs on standard JDK 21/25 releases. We follow Babylon closely and expect the ecosystems to converge over time.
 </details>
 
 <details>
@@ -265,7 +264,7 @@ No. TornadoVM is a plug-in to your existing OpenJDK or GraalVM installation. It 
 <details>
 <summary><b>Which hardware is supported?</b></summary>
 
-Multi-core CPUs; dedicated GPUs from NVIDIA, AMD, and Intel; and integrated GPUs (Apple Silicon M1–M4, Intel HD Graphics, ARM Mali). Backends can be installed individually or together, and tasks can migrate between devices at runtime. NVIDIA GPUs can be driven either through the **PTX/CUDA** backend (with the library and Tensor Core features above) or through the OpenCL backend.
+Multi-core CPUs; dedicated GPUs from NVIDIA, AMD, and Intel; and integrated GPUs (Apple Silicon M1–M4, Intel HD Graphics, ARM Mali). Backends can be installed individually or together, and tasks can migrate between devices at runtime. NVIDIA GPUs can be driven either through the **CUDA** backend (with the library and Tensor Core features above) or through the OpenCL backend.
 </details>
 
 <details>

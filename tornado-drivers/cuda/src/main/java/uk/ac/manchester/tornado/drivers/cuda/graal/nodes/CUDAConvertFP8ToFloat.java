@@ -45,7 +45,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt;
  * intrinsic path ({@code __nv_cvt_fp8_to_halfraw} + {@code __half2float}),
  * which compiles to the hardware {@code cvt} instructions on sm_89+ and to
  * the header's own emulation below that. The software decoders remain the
- * path for every other backend (OpenCL/PTX/SPIR-V/Metal), which simply
+ * path for every other backend (OpenCL/SPIR-V/Metal), which simply
  * inline the Java bytecode. Mirrors {@link CUDAConvertHalfToFloat}.
  */
 @NodeInfo

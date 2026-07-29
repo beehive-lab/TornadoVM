@@ -172,7 +172,6 @@ public class TestDevices extends TornadoTestBase {
 
     @Test
     public void test06() {
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         TornadoDeviceType typeToFind = TornadoDeviceType.CPU;
         TornadoDeviceMap deviceMap = new TornadoDeviceMap();

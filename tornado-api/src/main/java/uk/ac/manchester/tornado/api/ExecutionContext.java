@@ -27,7 +27,7 @@ import uk.ac.manchester.tornado.api.types.vectors.Half2;
 /**
  * Generic interface for TornadoVM to implement a Thread-Context API. This
  * interface allows the client to implement barriers, allocate memory in local
- * memory (OpenCL) or in shared memory (NVIDIA PTX).
+ * memory (OpenCL) or in shared memory (NVIDIA CUDA).
  */
 public interface ExecutionContext {
 
@@ -126,7 +126,7 @@ public interface ExecutionContext {
      * Method used to read a memory address by using the array and the index,
      * then add the value of val to it, and write the result back to the same address.
      * <p>
-     * PTX equivalent: atomicAdd(int* address, int val);
+     * CUDA equivalent: atomicAdd(int* address, int val);
      */
     void atomicAdd(IntArray array, int index, int val);
 
@@ -134,7 +134,7 @@ public interface ExecutionContext {
      * Method used to read a memory address by using the array and the index,
      * then add the value of val to it, and write the result back to the same address.
      * <p>
-     * PTX equivalent: atomicAdd(int* address, int val);
+     * CUDA equivalent: atomicAdd(int* address, int val);
      */
     void atomicAdd(int[] array, int index, int val);
 
@@ -142,7 +142,7 @@ public interface ExecutionContext {
      * Method used to read a memory address by using the array and the index,
      * then add the value of val to it, and write the result back to the same address.
      * <p>
-     * PTX equivalent: atomicAdd(long* address, long val);
+     * CUDA equivalent: atomicAdd(long* address, long val);
      */
     void atomicAdd(LongArray array, int index, long val);
 
@@ -150,7 +150,7 @@ public interface ExecutionContext {
      * Method used to read a memory address by using the array and the index,
      * then add the value of val to it, and write the result back to the same address.
      * <p>
-     * PTX equivalent: atomicAdd(float* address, float val);
+     * CUDA equivalent: atomicAdd(float* address, float val);
      */
     void atomicAdd(FloatArray array, int index, float val);
 
@@ -158,7 +158,7 @@ public interface ExecutionContext {
      * Method used to read a memory address by using the array and the index,
      * then add the value of val to it, and write the result back to the same address.
      * <p>
-     * PTX equivalent: atomicAdd(double* address, double val);
+     * CUDA equivalent: atomicAdd(double* address, double val);
      */
     void atomicAdd(DoubleArray array, int index, double val);
 }
