@@ -106,6 +106,31 @@ public final class Half2 implements TornadoVectorsInterface<ShortBuffer> {
         c.setY(HalfFloat.mult(a.getY(), b.getY()));
     }
 
+    public static Half2 fma(Half2 a, Half2 b, Half2 c) {
+        return new Half2(HalfFloat.add(HalfFloat.mult(a.getX(), b.getX()), c.getX()), HalfFloat.add(HalfFloat.mult(a.getY(), b.getY()), c.getY()));
+    }
+
+    /**
+     * Returns the first (low) lane of the vector converted to a 32-bit float.
+     */
+    public static float lowFloat(Half2 a) {
+        return a.getX().getFloat32();
+    }
+
+    /**
+     * Returns the second (high) lane of the vector converted to a 32-bit float.
+     */
+    public static float highFloat(Half2 a) {
+        return a.getY().getFloat32();
+    }
+
+    /**
+     * Builds a {@code Half2} from two 32-bit floats, converting each lane to half precision.
+     */
+    public static Half2 fromFloats(float x, float y) {
+        return new Half2(new HalfFloat(x), new HalfFloat(y));
+    }
+
     public static HalfFloat dot(Half2 a, Half2 b) {
         final Half2 m = mult(a, b);
         return HalfFloat.add(m.getX(), m.getY());

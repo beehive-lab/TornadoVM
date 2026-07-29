@@ -74,7 +74,12 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task12;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task13;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task14;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task15;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task16;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task17;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task18;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task19;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task2;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task20;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task3;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task4;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task5;
@@ -135,6 +140,13 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private static final String RESET = "\u001B[0m";
     private static final String RED = "\u001B[31m";
     private static final String WARNING_DEOPT_MESSAGE = RED + "WARNING: Code Bailout to Java sequential. Use --debug to see the reason" + RESET;
+    private static final String WARNING_APPLE_OPENCL_PROFILER_MESSAGE = RED
+            + "WARNING: Profiling the OpenCL backend on Apple's OpenCL platform. Apple's OpenCL driver is deprecated and "
+            + "does not provide reliable event-profiling timestamps: TOTAL_KERNEL_TIME, TOTAL_DISPATCH_KERNEL_TIME, and the "
+            + "copy timers can report values that are not physically possible on the underlying hardware. "
+            + "TOTAL_TASK_GRAPH_TIME is unaffected and remains a reliable end-to-end measurement. "
+            + "Prefer the Metal backend for absolute or cross-backend timing on Apple Silicon." + RESET;
+    private static boolean appleOpenCLProfilerWarningShown = false;
 
     private static final Pattern SIZE_PATTERN = Pattern.compile("(\\d+)(MB|mg|gb|GB)");
     private static final CompileInfo COMPILE_ONLY = new CompileInfo(true, false);
@@ -342,6 +354,31 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         TornadoOptions.TORNADO_PROFILER = true;
         if (profilerMode == ProfilerMode.SILENT) {
             TornadoOptions.TORNADO_PROFILER_LOG = true;
+        }
+    }
+
+    /**
+     * Apple's OpenCL implementation on macOS is deprecated and its event-profiling timestamps are not
+     * reliable (kernel/dispatch/copy timers can report values that are not physically possible on the
+     * underlying hardware). Warn the user once per JVM run so profiler-based conclusions on this
+     * platform are not taken at face value.
+     */
+    private void warnIfAppleOpenCLProfiler() {
+        if (appleOpenCLProfilerWarningShown) {
+            return;
+        }
+        try {
+            TornadoDevice device = executionContext.getDeviceOfFirstTask();
+            if (device == null || device.getTornadoVMBackend() != TornadoVMBackendType.OPENCL) {
+                return;
+            }
+            String platformName = device.getPlatformName();
+            if (platformName != null && platformName.toLowerCase().contains("apple")) {
+                appleOpenCLProfilerWarningShown = true;
+                System.out.println(WARNING_APPLE_OPENCL_PROFILER_MESSAGE);
+            }
+        } catch (Exception e) {
+            // Best-effort diagnostic only; never let it interfere with execution.
         }
     }
 
@@ -909,6 +946,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         if (!TornadoOptions.isProfilerEnabled()) {
             return;
         }
+
+        warnIfAppleOpenCLProfiler();
 
         if (!TornadoOptions.PROFILER_LOGS_ACCUMULATE()) {
             timeProfiler.dumpJson(new StringBuilder(), this.getId());
@@ -1746,6 +1785,44 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                         taskPackage.getTaskParameters()[10], taskPackage.getTaskParameters()[11], taskPackage.getTaskParameters()[12], taskPackage.getTaskParameters()[13], taskPackage
                                 .getTaskParameters()[14], taskPackage.getTaskParameters()[15]);
             }
+            case 16 -> {
+                @SuppressWarnings("rawtypes") Task16 task16 = (Task16) taskPackage.getTaskParameters()[0];
+                task16.apply(taskPackage.getTaskParameters()[1], taskPackage.getTaskParameters()[2], taskPackage.getTaskParameters()[3], taskPackage.getTaskParameters()[4], taskPackage
+                        .getTaskParameters()[5], taskPackage.getTaskParameters()[6], taskPackage.getTaskParameters()[7], taskPackage.getTaskParameters()[8], taskPackage.getTaskParameters()[9],
+                        taskPackage.getTaskParameters()[10], taskPackage.getTaskParameters()[11], taskPackage.getTaskParameters()[12], taskPackage.getTaskParameters()[13], taskPackage
+                                .getTaskParameters()[14], taskPackage.getTaskParameters()[15], taskPackage.getTaskParameters()[16]);
+            }
+            case 17 -> {
+                @SuppressWarnings("rawtypes") Task17 task17 = (Task17) taskPackage.getTaskParameters()[0];
+                task17.apply(taskPackage.getTaskParameters()[1], taskPackage.getTaskParameters()[2], taskPackage.getTaskParameters()[3], taskPackage.getTaskParameters()[4], taskPackage
+                        .getTaskParameters()[5], taskPackage.getTaskParameters()[6], taskPackage.getTaskParameters()[7], taskPackage.getTaskParameters()[8], taskPackage.getTaskParameters()[9],
+                        taskPackage.getTaskParameters()[10], taskPackage.getTaskParameters()[11], taskPackage.getTaskParameters()[12], taskPackage.getTaskParameters()[13], taskPackage
+                                .getTaskParameters()[14], taskPackage.getTaskParameters()[15], taskPackage.getTaskParameters()[16], taskPackage.getTaskParameters()[17]);
+            }
+            case 18 -> {
+                @SuppressWarnings("rawtypes") Task18 task18 = (Task18) taskPackage.getTaskParameters()[0];
+                task18.apply(taskPackage.getTaskParameters()[1], taskPackage.getTaskParameters()[2], taskPackage.getTaskParameters()[3], taskPackage.getTaskParameters()[4], taskPackage
+                        .getTaskParameters()[5], taskPackage.getTaskParameters()[6], taskPackage.getTaskParameters()[7], taskPackage.getTaskParameters()[8], taskPackage.getTaskParameters()[9],
+                        taskPackage.getTaskParameters()[10], taskPackage.getTaskParameters()[11], taskPackage.getTaskParameters()[12], taskPackage.getTaskParameters()[13], taskPackage
+                                .getTaskParameters()[14], taskPackage.getTaskParameters()[15], taskPackage.getTaskParameters()[16], taskPackage.getTaskParameters()[17], taskPackage
+                                        .getTaskParameters()[18]);
+            }
+            case 19 -> {
+                @SuppressWarnings("rawtypes") Task19 task19 = (Task19) taskPackage.getTaskParameters()[0];
+                task19.apply(taskPackage.getTaskParameters()[1], taskPackage.getTaskParameters()[2], taskPackage.getTaskParameters()[3], taskPackage.getTaskParameters()[4], taskPackage
+                        .getTaskParameters()[5], taskPackage.getTaskParameters()[6], taskPackage.getTaskParameters()[7], taskPackage.getTaskParameters()[8], taskPackage.getTaskParameters()[9],
+                        taskPackage.getTaskParameters()[10], taskPackage.getTaskParameters()[11], taskPackage.getTaskParameters()[12], taskPackage.getTaskParameters()[13], taskPackage
+                                .getTaskParameters()[14], taskPackage.getTaskParameters()[15], taskPackage.getTaskParameters()[16], taskPackage.getTaskParameters()[17], taskPackage
+                                        .getTaskParameters()[18], taskPackage.getTaskParameters()[19]);
+            }
+            case 20 -> {
+                @SuppressWarnings("rawtypes") Task20 task20 = (Task20) taskPackage.getTaskParameters()[0];
+                task20.apply(taskPackage.getTaskParameters()[1], taskPackage.getTaskParameters()[2], taskPackage.getTaskParameters()[3], taskPackage.getTaskParameters()[4], taskPackage
+                        .getTaskParameters()[5], taskPackage.getTaskParameters()[6], taskPackage.getTaskParameters()[7], taskPackage.getTaskParameters()[8], taskPackage.getTaskParameters()[9],
+                        taskPackage.getTaskParameters()[10], taskPackage.getTaskParameters()[11], taskPackage.getTaskParameters()[12], taskPackage.getTaskParameters()[13], taskPackage
+                                .getTaskParameters()[14], taskPackage.getTaskParameters()[15], taskPackage.getTaskParameters()[16], taskPackage.getTaskParameters()[17], taskPackage
+                                        .getTaskParameters()[18], taskPackage.getTaskParameters()[19], taskPackage.getTaskParameters()[20]);
+            }
             default -> throw new TornadoRuntimeException("Sequential Runner not supported yet. Number of parameters: " + type);
         }
     }
@@ -1783,6 +1860,18 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                     parameters[8], parameters[9], parameters[10], parameters[11], parameters[12], parameters[13], parameters[14]));
             case 15 -> addInner(TaskUtils.createTask(method, meta, id, (Task15) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
                     parameters[8], parameters[9], parameters[10], parameters[11], parameters[12], parameters[13], parameters[14], parameters[15]));
+            case 16 -> addInner(TaskUtils.createTask(method, meta, id, (Task16) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
+                    parameters[8], parameters[9], parameters[10], parameters[11], parameters[12], parameters[13], parameters[14], parameters[15], parameters[16]));
+            case 17 -> addInner(TaskUtils.createTask(method, meta, id, (Task17) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
+                    parameters[8], parameters[9], parameters[10], parameters[11], parameters[12], parameters[13], parameters[14], parameters[15], parameters[16], parameters[17]));
+            case 18 -> addInner(TaskUtils.createTask(method, meta, id, (Task18) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
+                    parameters[8], parameters[9], parameters[10], parameters[11], parameters[12], parameters[13], parameters[14], parameters[15], parameters[16], parameters[17], parameters[18]));
+            case 19 -> addInner(TaskUtils.createTask(method, meta, id, (Task19) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
+                    parameters[8], parameters[9], parameters[10], parameters[11], parameters[12], parameters[13], parameters[14], parameters[15], parameters[16], parameters[17], parameters[18],
+                    parameters[19]));
+            case 20 -> addInner(TaskUtils.createTask(method, meta, id, (Task20) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
+                    parameters[8], parameters[9], parameters[10], parameters[11], parameters[12], parameters[13], parameters[14], parameters[15], parameters[16], parameters[17], parameters[18],
+                    parameters[19], parameters[20]));
             default -> throw new TornadoRuntimeException("Task not supported yet. Type: " + type);
         }
     }

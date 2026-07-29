@@ -94,7 +94,6 @@ public abstract class TornadoTestBase {
         }
         if (deviceBackend == backend) {
             switch (backend) {
-                case PTX -> throw new TornadoVMPTXNotSupported(customBackendAssertionMessage != null ? customBackendAssertionMessage : "Test not supported for the PTX backend");
                 case OPENCL -> throw new TornadoVMOpenCLNotSupported(customBackendAssertionMessage != null ? customBackendAssertionMessage : "Test not supported for the OpenCL backend");
                 case METAL -> throw new TornadoVMMetalNotSupported(customBackendAssertionMessage != null ? customBackendAssertionMessage : "Test not supported for the Metal backend");
                 case CUDA -> throw new TornadoVMCUDANotSupported(customBackendAssertionMessage != null ? customBackendAssertionMessage : "Test not supported for the CUDA backend");

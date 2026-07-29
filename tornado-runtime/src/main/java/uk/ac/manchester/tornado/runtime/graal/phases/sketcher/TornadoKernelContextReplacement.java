@@ -49,7 +49,7 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
  * {@link uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier}.
  * The objective is to replace all the FieldNodes of the {@link KernelContext}
  * fields with FixedNodes that can be lowered to TornadoVM nodes for OpenCL
- * and PTX code emission.
+ * and CUDA code emission.
  */
 public class TornadoKernelContextReplacement extends BasePhase<TornadoSketchTierContext> {
     @Override

@@ -42,26 +42,25 @@ def detect_backends_from_sdk_path(sdk_path):
 
     For example:
     - tornadovm-2.2.1-dev-opencl-linux-amd64 → opencl
-    - tornadovm-2.2.1-dev-ptx-linux-amd64 → ptx
     - tornadovm-2.2.1-dev-cuda-linux-amd64 → cuda
-    - tornadovm-2.2.1-dev-full-linux-amd64 → opencl,ptx,cuda,metal
+    - tornadovm-2.2.1-dev-full-linux-amd64 → opencl,cuda
 
     Args:
         sdk_path (str): The absolute path to the SDK directory
 
     Returns:
-        str: Comma-separated backend string (e.g., "opencl-backend" or "opencl-backend,ptx-backend")
+        str: Comma-separated backend string (e.g., "opencl-backend" or "opencl-backend,cuda-backend")
     """
     # Get the SDK directory name (e.g., "tornadovm-2.2.1-dev-opencl")
     sdk_dir_name = os.path.basename(sdk_path)
 
     # Known backends
-    known_backends = ["opencl", "ptx", "cuda", "metal"]
+    known_backends = ["opencl", "cuda", "metal"]
     detected_backends = []
 
     # Check for "full" which means all backends
     if "-full-" in sdk_dir_name or sdk_dir_name.endswith("-full"):
-        detected_backends = ["opencl", "ptx", "cuda", "metal"]
+        detected_backends = ["opencl", "cuda"]
     else:
         # Check for individual backends in the directory name
         for backend in known_backends:
@@ -234,7 +233,7 @@ def generate_argfile_template(backend):
     The template contains ${TORNADOVM_HOME} placeholders that will be expanded at runtime.
 
     Args:
-        backend (str): Comma-separated string of backends (e.g., "opencl" or "opencl,ptx,cuda")
+        backend (str): Comma-separated string of backends (e.g., "opencl" or "opencl,cuda")
     """
     tornado_home = os.environ.get('TORNADOVM_HOME')
     scripts_dir = os.path.join(f"{tornado_home}", "bin")
@@ -332,7 +331,7 @@ def update_intellij_tests_config(backend_profiles):
     after each build.
 
     Args:
-        backend_profiles (str): Comma-separated string of backends (e.g., "opencl-backend,ptx-backend")
+        backend_profiles (str): Comma-separated string of backends (e.g., "opencl-backend,cuda-backend")
     """
     project_root = os.getcwd()
     tornado_home = os.environ.get("TORNADOVM_HOME")
@@ -435,7 +434,7 @@ def main():
     generate_setvars_files()
 
     # Generate argfile template and expand it
-    # Convert backend format: "opencl-backend,ptx-backend" -> "opencl,ptx"
+    # Convert backend format: "opencl-backend,cuda-backend" -> "opencl,cuda"
     backend_for_argfile = selected_backends_str.replace("-backend", "")
     generate_argfile_template(backend_for_argfile)
     expand_argfile_template()

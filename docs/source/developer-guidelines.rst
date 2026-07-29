@@ -47,7 +47,7 @@ The ``tornadovm-installer`` script downloads/builds ``OpenJDK``, ``CMake`` and `
    git clone https://github.com/beehive-lab/TornadoVM.git
    cd TornadoVM
    ./bin/tornadovm-installer
-   # Select the backend(s) to install: 1. opencl  2. ptx  3. metal  4. cuda
+   # Select the backend(s) to install: 1. opencl  2. metal  3. cuda
    # (you can select more than one, comma-separated, e.g. 1, 2, 3)
    source setvars.sh        # Linux / macOS
    # setvars.cmd             # Windows
@@ -59,7 +59,7 @@ The ``tornadovm-installer`` script downloads/builds ``OpenJDK``, ``CMake`` and `
 
      options:
        --jdk JDK             Specify a JDK to install (e.g., 'jdk21', 'graal-jdk-21'). Use --listJDKs to see all options.
-       --backend BACKEND     Select the backend(s) to install: { opencl, ptx, cuda, metal }
+       --backend BACKEND     Select the backend(s) to install: { opencl, cuda, metal }
        --listJDKs            List supported JDKs
        --polyglot            Enable Truffle Interoperability with GraalVM
        --mvn_single_threaded  Run Maven in single-threaded mode
@@ -82,7 +82,7 @@ If you already have a JDK, Maven and CMake on your ``PATH``, you can build direc
 
    git clone https://github.com/beehive-lab/TornadoVM.git
    cd TornadoVM
-   make BACKEND=opencl,ptx   # build only the backends you need { opencl, ptx, cuda, metal }
+   make BACKEND=opencl,cuda   # build only the backends you need { opencl, cuda, metal }
    source setvars.sh
 
 To rebuild with a different backend selection later:

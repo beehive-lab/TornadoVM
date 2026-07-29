@@ -23,6 +23,7 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 
 import jdk.vm.ci.meta.JavaKind;
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.Opcode;
@@ -356,6 +357,50 @@ public class CUDALIRStmt {
         }
     }
 
+    /**
+     * Emits a call to a cuda_fp16.h intrinsic of the form {@code result = __fn(arg0, arg1, ...);}
+     * over packed half2 / float operands.
+     */
+    @Opcode("HALF2_INTRINSIC")
+    public static class Half2IntrinsicStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<Half2IntrinsicStmt> TYPE = LIRInstructionClass.create(Half2IntrinsicStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value[] operands;
+
+        private final String function;
+
+        public Half2IntrinsicStmt(String function, Value result, Value... operands) {
+            super(TYPE);
+            this.function = function;
+            this.result = result;
+            this.operands = operands;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emit(function);
+            asm.emit("(");
+            for (int i = 0; i < operands.length; i++) {
+                if (i > 0) {
+                    asm.emit(", ");
+                }
+                asm.emitValue(crb, operands[i]);
+            }
+            asm.emit(")");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
     @Opcode("CONVERT_HALF")
     public static class ConvertHalfToFloatStmt extends AbstractInstruction {
 
@@ -382,6 +427,123 @@ public class CUDALIRStmt {
             asm.emit("__half2float(");
             asm.emitValue(crb, halfValue);
             asm.emit(")");
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
+    @Opcode("CONVERT_FP8_TO_FLOAT")
+    public static class ConvertFP8ToFloatStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<ConvertFP8ToFloatStmt> TYPE = LIRInstructionClass.create(ConvertFP8ToFloatStmt.class);
+
+        @Def
+        protected Value floatValue;
+        @Use
+        protected Value fp8Value;
+        private final boolean isE4M3;
+
+        public ConvertFP8ToFloatStmt(Value floatValue, Value fp8Value, boolean isE4M3) {
+            super(TYPE);
+            this.floatValue = floatValue;
+            this.fp8Value = fp8Value;
+            this.isE4M3 = isE4M3;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            // f = __half2float(__nv_cvt_fp8_to_halfraw((unsigned char) b, __NV_E4M3));
+            // The storage byte arrives as the backend's signed char kind; the cast to
+            // unsigned char matches cuda_fp8.h's __nv_fp8_storage_t.
+            asm.indent();
+            asm.emitValue(crb, floatValue);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emit("__half2float(__nv_cvt_fp8_to_halfraw((unsigned char) ");
+            asm.emitValue(crb, fp8Value);
+            asm.emit(isE4M3 ? ", __NV_E4M3))" : ", __NV_E5M2))");
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
+    @Opcode("CONVERT_BF16_TO_FLOAT")
+    public static class ConvertBF16ToFloatStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<ConvertBF16ToFloatStmt> TYPE = LIRInstructionClass.create(ConvertBF16ToFloatStmt.class);
+
+        @Def
+        protected Value floatValue;
+        @Use
+        protected Value bf16Bits;
+
+        public ConvertBF16ToFloatStmt(Value floatValue, Value bf16Bits) {
+            super(TYPE);
+            this.floatValue = floatValue;
+            this.bf16Bits = bf16Bits;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            // bf16 is the high half of the f32 bit pattern, so the decode is a bare shift
+            // and reinterpret. __int_as_float is a core CUDA builtin: no cuda_bf16.h, no
+            // toolkit version requirement (its helpers, e.g. __ushort_as_bfloat16, vary
+            // across 11.x header revisions).
+            // f = __int_as_float(((int) (unsigned short) s) << 16);
+            asm.indent();
+            asm.emitValue(crb, floatValue);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emit("__int_as_float(((int) (unsigned short) ");
+            asm.emitValue(crb, bf16Bits);
+            asm.emit(") << 16)");
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
+    @Opcode("CONVERT_FLOAT_TO_BF16")
+    public static class ConvertFloatToBF16Stmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<ConvertFloatToBF16Stmt> TYPE = LIRInstructionClass.create(ConvertFloatToBF16Stmt.class);
+
+        @Def
+        protected Value bf16Bits;
+        @Use
+        protected Value floatValue;
+
+        public ConvertFloatToBF16Stmt(Value bf16Bits, Value floatValue) {
+            super(TYPE);
+            this.bf16Bits = bf16Bits;
+            this.floatValue = floatValue;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            // bf16 is the high half of the f32 bit pattern. Encode = round-to-nearest-even of
+            // the discarded low 16 bits, then truncate. Header-free: __float_as_uint is a core
+            // CUDA builtin (no cuda_bf16.h). NaN is forced to a canonical quiet NaN (0x7FC0)
+            // since the additive rounding would otherwise perturb its payload.
+            // s = isnan(f) ? 0x7FC0 : (short)((u + 0x7FFF + ((u >> 16) & 1)) >> 16), u=__float_as_uint(f)
+            asm.indent();
+            asm.emitValue(crb, bf16Bits);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emit("(");
+            asm.emitValue(crb, floatValue);
+            asm.emit(" != ");
+            asm.emitValue(crb, floatValue);
+            asm.emit(") ? (short) 0x7FC0 : (short) ((__float_as_uint(");
+            asm.emitValue(crb, floatValue);
+            asm.emit(") + 0x7FFFU + ((__float_as_uint(");
+            asm.emitValue(crb, floatValue);
+            asm.emit(") >> 16) & 1U)) >> 16)");
             asm.delimiter();
             asm.eol();
         }
@@ -953,6 +1115,15 @@ public class CUDALIRStmt {
             asm.space();
             asm.assign();
             asm.space();
+            if (vectorKind.getElementKind() == CUDAKind.HALF && n == 2) {
+                // __half2 is only 4-byte aligned, so (unlike float4) the packed
+                // reinterpret load is safe on element-aligned buffers as long as
+                // the element index is even. Emit a single 32-bit load.
+                asm.emit("((__half2 *)(" + addr + "))[(" + idx + ")]");
+                asm.delimiter();
+                asm.eol();
+                return;
+            }
             StringBuilder sb = new StringBuilder();
             sb.append("make_").append(elem).append(n).append("(");
             for (int i = 0; i < n; i++) {
@@ -1560,14 +1731,32 @@ public class CUDALIRStmt {
             CUDAKind vectorKind = (CUDAKind) rhs.getPlatformKind();
             int n = vectorKind.getVectorLength();
             String elem = vectorKind.getElementKind().toString();
-            String idx = CUDAAssembler.getAbsoluteIndexFromValue(index);
 
             asm.beginStackPush();
             address.emit(crb);
             final String addr = asm.getLastOp();
             asm.emitValueWithFormat(crb, rhs);
             final String v = asm.getLastOp();
+            asm.emitValue(crb, index);
+            final String emittedIdx = asm.getLastOp();
             asm.endStackPush();
+
+            // The string-parsing fallback only understands constants; a runtime-variable
+            // index (packed __half2 local arrays) must be emitted as a proper value.
+            String idx = index instanceof ConstantValue ? CUDAAssembler.getAbsoluteIndexFromValue(index) : emittedIdx;
+
+            if (vectorKind.getElementKind() == CUDAKind.HALF && n == 2) {
+                // Packed 32-bit store; see the matching VectorLoadStmt comment on
+                // __half2 alignment.
+                asm.emit(String.format("((__half2 *)(%s))[(%s)]", addr, idx));
+                asm.space();
+                asm.assign();
+                asm.space();
+                asm.emit(v);
+                asm.delimiter();
+                asm.eol();
+                return;
+            }
 
             for (int i = 0; i < n; i++) {
                 if (i > 0) {
@@ -1868,24 +2057,47 @@ public class CUDALIRStmt {
 
     @Opcode("MMA_COMPUTE")
     public static class MMAComputeStmt extends AbstractInstruction {
+
+        /**
+         * Element type of the A/B operands fed to mma.sync. The tile shape alone no
+         * longer identifies it: m16n8k32 serves both s8 and the FP8 formats, and
+         * m16n8k16 serves both f16 and bf16. Only S8 accumulates in s32; every other
+         * operand kind accumulates in f32.
+         */
+        public enum MMAOperand {
+            F16(".row.col.f32.f16.f16.f32"),
+            S8(".row.col.s32.s8.s8.s32"),
+            E4M3(".row.col.f32.e4m3.e4m3.f32"),
+            E5M2(".row.col.f32.e5m2.e5m2.f32"),
+            BF16(".row.col.f32.bf16.bf16.f32");
+
+            final String suffix;
+
+            MMAOperand(String suffix) {
+                this.suffix = suffix;
+            }
+        }
+
         public static final LIRInstructionClass<MMAComputeStmt> TYPE =
                 LIRInstructionClass.create(MMAComputeStmt.class);
 
         @Def protected Value result;
         @Use protected Value fragA, fragB, fragC;
         private final MMAShape shape;
+        private final MMAOperand operand;
 
-        public MMAComputeStmt(Value result, Value a, Value b, Value c, MMAShape shape) {
+        public MMAComputeStmt(Value result, Value a, Value b, Value c, MMAShape shape, MMAOperand operand) {
             super(TYPE);
-            this.result = result; this.fragA = a; this.fragB = b; this.fragC = c; this.shape = shape;
+            this.result = result; this.fragA = a; this.fragB = b; this.fragC = c;
+            this.shape = shape; this.operand = operand;
         }
 
         @Override
         public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
-            boolean i8 = (shape == MMAShape.M16N8K32);
+            boolean i8 = (operand == MMAOperand.S8);
             String accType  = i8 ? "int"  : "float";
             String accCons  = i8 ? "r"    : "f";        // s32 -> "r", f32 -> "f"
-            String suffix   = i8 ? ".row.col.s32.s8.s8.s32" : ".row.col.f32.f16.f16.f32";
+            String suffix   = operand.suffix;
             String d = asm.getStringValue(crb, result);
             String a = asm.getStringValue(crb, fragA);
             String b = asm.getStringValue(crb, fragB);
@@ -2059,6 +2271,121 @@ public class CUDALIRStmt {
             asm.popIndent();
             asm.indent();
             asm.emit("}");
+            asm.eol();
+        }
+    }
+
+    /**
+     * Emits a 4-byte {@code cp.async.ca.shared.global} copy (Ampere+, sm_80): one
+     * packed b32 slot moves from a global Tornado array straight into a shared-memory
+     * int tile without a register round-trip. The source address is
+     * {@code srcArray + headerBytes + srcIndex * srcElemBytes}; the destination is
+     * {@code dstTile[dstIndex]}. Callers must follow the copies with
+     * {@link CpAsyncCommitGroupStmt} and {@link CpAsyncWaitGroupStmt} (plus the usual
+     * barrier) before reading the tile.
+     */
+    @Opcode("CP_ASYNC_COPY")
+    public static class CpAsyncCopyStmt extends AbstractInstruction {
+        public static final LIRInstructionClass<CpAsyncCopyStmt> TYPE =
+                LIRInstructionClass.create(CpAsyncCopyStmt.class);
+
+        @Use protected Value dstTile;
+        @Use protected Value dstIndex;
+        @Use protected Value srcArray;
+        @Use protected Value srcIndex;
+        private final int srcElemBytes;
+        private final int headerBytes;
+
+        public CpAsyncCopyStmt(Value dstTile, Value dstIndex, Value srcArray, Value srcIndex,
+                               int srcElemBytes, int headerBytes) {
+            super(TYPE);
+            this.dstTile = dstTile;
+            this.dstIndex = dstIndex;
+            this.srcArray = srcArray;
+            this.srcIndex = srcIndex;
+            this.srcElemBytes = srcElemBytes;
+            this.headerBytes = headerBytes;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            String tile = asm.getStringValue(crb, dstTile);
+            String dIdx = asm.getStringValue(crb, dstIndex);
+            String src  = asm.getStringValue(crb, srcArray);
+            String sIdx = asm.getStringValue(crb, srcIndex);
+
+            asm.indent();
+            asm.emit("{");
+            asm.eol();
+            asm.pushIndent();
+
+            // Shared-memory 32-bit address of &tile[dstIndex] via cvta.to.shared,
+            // mirroring the ldmatrix address computation.
+            asm.indent();
+            asm.emit("unsigned __smem");
+            asm.delimiter();
+            asm.eol();
+            asm.indent();
+            asm.emit("asm volatile(\"{ .reg .u64 u; cvta.to.shared.u64 u, %1; cvt.u32.u64 %0, u; }\" "
+                    + ": \"=r\"(__smem) : \"l\"((char *) " + tile + " + (((unsigned) " + dIdx + ") << 2)))");
+            asm.delimiter();
+            asm.eol();
+
+            // cp.async 4-byte copy from the global element address (past the array header).
+            asm.indent();
+            asm.emit("asm volatile(\"cp.async.ca.shared.global [%0], [%1], 4;\" :: \"r\"(__smem), "
+                    + "\"l\"((const char *) " + src + " + " + headerBytes + "u + ((long long) " + sIdx + ") * "
+                    + srcElemBytes + "))");
+            asm.delimiter();
+            asm.eol();
+
+            asm.popIndent();
+            asm.indent();
+            asm.emit("}");
+            asm.eol();
+        }
+    }
+
+    /** Emits {@code cp.async.commit_group}: closes the current batch of cp.async copies. */
+    @Opcode("CP_ASYNC_COMMIT_GROUP")
+    public static class CpAsyncCommitGroupStmt extends AbstractInstruction {
+        public static final LIRInstructionClass<CpAsyncCommitGroupStmt> TYPE =
+                LIRInstructionClass.create(CpAsyncCommitGroupStmt.class);
+
+        public CpAsyncCommitGroupStmt() {
+            super(TYPE);
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            asm.indent();
+            asm.emit("asm volatile(\"cp.async.commit_group;\")");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
+    /**
+     * Emits {@code cp.async.wait_group N}: blocks until at most N committed cp.async
+     * groups are still in flight (N = 0 waits for all of them).
+     */
+    @Opcode("CP_ASYNC_WAIT_GROUP")
+    public static class CpAsyncWaitGroupStmt extends AbstractInstruction {
+        public static final LIRInstructionClass<CpAsyncWaitGroupStmt> TYPE =
+                LIRInstructionClass.create(CpAsyncWaitGroupStmt.class);
+
+        private final int groups;
+
+        public CpAsyncWaitGroupStmt(int groups) {
+            super(TYPE);
+            this.groups = groups;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            asm.indent();
+            asm.emit("asm volatile(\"cp.async.wait_group " + groups + ";\")");
+            asm.delimiter();
             asm.eol();
         }
     }

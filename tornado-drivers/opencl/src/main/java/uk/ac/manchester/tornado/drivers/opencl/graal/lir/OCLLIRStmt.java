@@ -208,7 +208,8 @@ public class OCLLIRStmt {
             asm.assign();
             asm.space();
             asm.emit("convert_float((float) ");
-            asm.emitValue(crb, halfValue);
+            // halfValue may be a plain value or an inlined op such as a vector-lane select.
+            asm.emitValueOrOp(crb, halfValue);
             asm.emit(")");
             asm.delimiter();
             asm.eol();

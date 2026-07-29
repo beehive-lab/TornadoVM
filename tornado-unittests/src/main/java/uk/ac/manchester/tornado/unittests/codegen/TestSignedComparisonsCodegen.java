@@ -151,7 +151,6 @@ public class TestSignedComparisonsCodegen extends TornadoTestBase {
 
     @Test
     public void testSigned04() {
-        assertNotBackend(TornadoVMBackendType.PTX);
         int size = 8;
         IntArray testArr = new IntArray(size);
 

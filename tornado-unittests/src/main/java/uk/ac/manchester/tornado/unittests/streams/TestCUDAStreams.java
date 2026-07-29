@@ -39,7 +39,7 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
- * Functional correctness tests for the PTX backend's CUDA-stream support. This is the single
+ * Functional correctness tests for the CUDA backend's CUDA-stream support. This is the single
  * correctness suite for the feature; wall-clock benefit measurements live in
  * {@link TestStreamsPerformance}.
  *

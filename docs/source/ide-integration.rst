@@ -13,7 +13,7 @@ Change the IntelliJ maximum memory to 2 GB or more (follow `these instructions <
 For IntelliJ to pick up the required TornadoVM dependencies from the `pom.xml` file, go to **View > Tool Windows > Maven**, and select the following profiles:
 
 - **graal-jdk-21**
-- **ptx-backend**
+- **cuda-backend**
 - **opencl-backend**
 
 .. _ide_plugins:
@@ -162,7 +162,7 @@ To initialize IDE project files for building and running TornadoVM from IntelliJ
 .. code:: bash
 
    # Build TornadoVM first (with your desired backend)
-   $ make BACKEND=opencl   # or ptx, cuda, opencl,ptx, etc.
+   $ make BACKEND=opencl   # or cuda, opencl,cuda, etc.
 
    # Load the environment variables
    $ source setvars.sh     # Linux/macOS
@@ -195,15 +195,15 @@ To build TornadoVM for a different backend from IntelliJ, simply change the ``BA
 1. Go to **Run > Edit Configurations > Python > TornadoVM-Build**
 2. In the **Environment variables** section, modify the ``BACKEND`` value:
 
-   - Single backend: ``opencl``, ``ptx``, ``cuda``, or ``metal``
-   - Two backends: ``opencl,ptx`` (comma-separated)
-   - All backends (full): ``opencl,ptx,cuda,metal``
+   - Single backend: ``opencl`` or ``cuda``
+   - Two backends: ``opencl,cuda`` (comma-separated)
+   - All backends (full): ``opencl,cuda, metal``
 
 3. Click **Run TornadoVM-Build**
 
 The build script will automatically:
 
-- Invoke Maven with the correct profiles (e.g., ``-Pptx-backend``)
+- Invoke Maven with the correct profiles (e.g., ``-Pcuda-backend``)
 - Set the ``-Dtornado.backend`` property for correct SDK naming
 - Run all post-installation steps
 
@@ -257,7 +257,7 @@ The output will differ depending on the backends you've built. For example, if y
       -Dtornado.load.annotation.implementation=uk.ac.manchester.tornado.annotation.ASMClassVisitor -Dtornado.load.annotation.parallel=uk.ac.manchester.tornado.api.annotations.Parallel  -XX:+UseParallelGC
       @<path-to-TornadoVM-directory>/bin/sdk/etc/exportLists/common-exports
       @<path-to-TornadoVM-directory>/bin/sdk/etc/exportLists/opencl-exports
-      @<path-to-TornadoVM-directory>/bin/sdk/etc/exportLists/ptx-exports --add-modules ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.common,tornado.drivers.opencl,tornado.drivers.opencl,tornado.drivers.ptx
+      @<path-to-TornadoVM-directory>/bin/sdk/etc/exportLists/cuda-exports --add-modules ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.common,tornado.drivers.opencl,tornado.drivers.opencl,tornado.drivers.cuda
 
 Copy the flags starting from `-server` to the end.
 

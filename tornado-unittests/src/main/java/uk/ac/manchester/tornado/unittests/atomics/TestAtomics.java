@@ -254,7 +254,6 @@ public class TestAtomics extends TornadoTestBase {
 
     @Test
     public void testAtomic04() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         final int size = 32;
         IntArray a = new IntArray(size);
@@ -283,7 +282,6 @@ public class TestAtomics extends TornadoTestBase {
 
     @Test
     public void testAtomic04Get() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         final int size = 32;
         IntArray a = new IntArray(size);
@@ -321,7 +319,6 @@ public class TestAtomics extends TornadoTestBase {
      */
     @Test
     public void testAtomic05_precompiled() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.METAL);
         assertNotBackend(TornadoVMBackendType.CUDA);
 
@@ -367,7 +364,6 @@ public class TestAtomics extends TornadoTestBase {
 
     @Test
     public void testAtomic06() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         final int size = 2048;
         IntArray a = new IntArray(size);
@@ -397,7 +393,6 @@ public class TestAtomics extends TornadoTestBase {
 
     @Test
     public void testAtomic07() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         final int size = 32;
         IntArray a = new IntArray(size);
@@ -422,7 +417,6 @@ public class TestAtomics extends TornadoTestBase {
 
     @Test
     public void testAtomic08_decrementAndGet() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         final int size = 32;
         IntArray a = new IntArray(size);
@@ -460,7 +454,6 @@ public class TestAtomics extends TornadoTestBase {
 
     @Test
     public void testAtomic09() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         final int size = 32;
         IntArray a = new IntArray(size);
@@ -489,7 +482,6 @@ public class TestAtomics extends TornadoTestBase {
 
     @Test
     public void testAtomic10() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         final int size = 32;
         IntArray a = new IntArray(size);
@@ -518,7 +510,6 @@ public class TestAtomics extends TornadoTestBase {
 
     @Test
     public void testAtomic11() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         final int size = 32;
         IntArray a = new IntArray(size);
@@ -548,7 +539,6 @@ public class TestAtomics extends TornadoTestBase {
     @Test
     public void testAtomic12() throws TornadoExecutionPlanException {
         // Calling multiple atomics
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         final int size = 32;
         IntArray a = new IntArray(size);
@@ -583,7 +573,6 @@ public class TestAtomics extends TornadoTestBase {
     @Test
     public void testAtomic13_decrementAndGet() throws TornadoExecutionPlanException {
         // Calling multiple atomics
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         Random random = new Random();
         final int size = 32;
@@ -620,7 +609,6 @@ public class TestAtomics extends TornadoTestBase {
     @Test
     public void testAtomic13_getAndDecrement() throws TornadoExecutionPlanException {
         // Calling multiple atomics
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         Random random = new Random();
         final int size = 32;
@@ -657,7 +645,6 @@ public class TestAtomics extends TornadoTestBase {
     @Test
     public void testAtomic14() throws TornadoExecutionPlanException {
         // Calling multiple atomics
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         final int size = 32;
         IntArray a = new IntArray(size);
@@ -688,7 +675,6 @@ public class TestAtomics extends TornadoTestBase {
     @Test
     public void testAtomic15() throws TornadoExecutionPlanException {
         // Calling multiple atomics
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         final int size = 32;
         IntArray a = new IntArray(size);
@@ -716,7 +702,6 @@ public class TestAtomics extends TornadoTestBase {
     @Test
     public void testAtomic16() throws TornadoExecutionPlanException {
         // Calling multiple atomics
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         final int size = 32;
         IntArray a = new IntArray(size);
@@ -742,7 +727,6 @@ public class TestAtomics extends TornadoTestBase {
 
     @Test
     public void testAtomic17_getAndIncrement_kernel_api() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         Random random = new Random();
         final int size = 32;
@@ -778,7 +762,6 @@ public class TestAtomics extends TornadoTestBase {
 
     @Test
     public void testAtomic17_getAndIncrement_parallel_api() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         Random random = new Random();
         final int size = 32;
@@ -811,7 +794,6 @@ public class TestAtomics extends TornadoTestBase {
 
     @Test
     public void testAtomic17_incrementAndGet_kernel_api() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         Random random = new Random();
         final int size = 32;
@@ -847,7 +829,6 @@ public class TestAtomics extends TornadoTestBase {
 
     @Test
     public void testAtomic17_incrementAndGet_parallel_api() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         Random random = new Random();
         final int size = 32;

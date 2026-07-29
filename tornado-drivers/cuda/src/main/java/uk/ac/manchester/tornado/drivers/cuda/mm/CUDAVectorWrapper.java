@@ -42,6 +42,7 @@ import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.CharArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
@@ -347,7 +348,7 @@ public class CUDAVectorWrapper implements XPUBuffer {
             } else {
                 warn("cannot wrap field: array type=%s", type.getName());
             }
-        } else if (type == FloatArray.class || type == IntArray.class || type == DoubleArray.class || type == LongArray.class || type == ShortArray.class || type == CharArray.class || type == ByteArray.class || type == HalfFloatArray.class) {
+        } else if (type == FloatArray.class || type == IntArray.class || type == DoubleArray.class || type == LongArray.class || type == ShortArray.class || type == CharArray.class || type == ByteArray.class || type == HalfFloatArray.class || type == BFloat16Array.class) {
             return JavaKind.Object;
         } else {
             TornadoInternalError.shouldNotReachHere("The type should be an array, but found: " + type);

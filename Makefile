@@ -1,6 +1,6 @@
 all: build
 
-# Variable passed for the build process. List of backend/s to use { opencl, ptx, cuda, metal }. The default one is `opencl`.
+# Variable passed for the build process. List of backend/s to use { opencl, cuda, metal }. The default one is `opencl`.
 # make BACKEND=<comma_separated_backend_list>
 BACKEND ?= opencl
 
@@ -25,8 +25,6 @@ mvn-single-threaded-graal-jdk-21:
 mvn-single-threaded-polyglot:
 	bin/compile --jdk graal-jdk-21 --backend $(BACKEND) --mvn_single_threaded --polyglot
 
-ptx:
-	bin/compile --jdk jdk21 --backend ptx,opencl
 
 metal:
 	bin/compile --jdk jdk21 --backend metal,opencl
@@ -49,7 +47,7 @@ checkstyle:
 	./mvnw checkstyle:check
 
 clean:
-	./mvnw -Popencl-backend,ptx-backend,cuda-backend,metal-backend clean
+	./mvnw -Popencl-backend,cuda-backend,metal-backend clean
 
 example:
 	tornado --printKernel --debug -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt --params="8192"

@@ -6,14 +6,13 @@ TornadoVM
   :alt: TornadoVM logo
   :align: left
 
-TornadoVM is a GPU programming framework for Java (JDK 21+, including JDK 21 and JDK 25) that JIT-compiles Java bytecode at runtime to **NVIDIA PTX, NVIDIA CUDA C, OpenCL C, and Apple Metal (MSL)**.
+TornadoVM is a GPU programming framework for Java (JDK 21+, including JDK 21 and JDK 25) that JIT-compiles Java bytecode at runtime to **NVIDIA CUDA C, OpenCL C, and Apple Metal (MSL)**.
 It runs the same Java source on NVIDIA, AMD, Intel and Apple Silicon GPUs, integrated GPUs (Intel HD Graphics, Apple M1-M5, ARM Mali), FPGAs (Intel and Xilinx), and multi-core CPUs.
 TornadoVM is a plug-in to OpenJDK and other JDK distributions (GraalVM, Red Hat Mandrel, Amazon Corretto, Microsoft OpenJDK, SAP, Azul Zulu); it does not replace your JVM, it complements it.
 
 TornadoVM provides four backends, and developers choose which one/s to install and run:
   - **OpenCL C**: dispatched through an OpenCL runtime.
-  - **NVIDIA PTX**: dispatched through the NVIDIA driver API; emits PTX assembly directly.
-  - **NVIDIA CUDA C**: a separate backend, also dispatched through the NVIDIA driver API, that emits CUDA C and compiles it to PTX via NVRTC at runtime.
+  - **NVIDIA CUDA C**: dispatched through the NVIDIA driver API; emits CUDA C and compiles it to PTX via NVRTC at runtime.
   - **Apple Metal (MSL)**: dispatched on Apple Silicon GPUs.
 
 On NVIDIA hardware, TornadoVM also calls directly into **cuBLAS, cuFFT and cuDNN**, and exposes Tensor Core ``mma.sync`` intrinsics from Java — see the :ref:`hybrid API guide <hybrid-api>`.

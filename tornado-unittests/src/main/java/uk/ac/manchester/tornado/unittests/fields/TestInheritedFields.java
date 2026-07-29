@@ -1,6 +1,5 @@
 package uk.ac.manchester.tornado.unittests.fields;
 
-import org.junit.Before;
 import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -10,7 +9,6 @@ import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-import uk.ac.manchester.tornado.unittests.common.TornadoVMPTXNotSupported;
 
 import static org.junit.Assert.assertEquals;
 
@@ -50,20 +48,9 @@ public class TestInheritedFields extends TornadoTestBase {
         }
     }
 
-    /**
-     * Prevent test from running on PTX backends.
-     */
-    @Before
-    public void backendCheck() {
-        if (TornadoExecutionPlan.DEFAULT_DEVICE.getTornadoVMBackend() == TornadoVMBackendType.PTX) {
-            throw new TornadoVMPTXNotSupported("Test designed to run with multiple backends, including a PTX backend");
-        }
-    }
-
     @Test
     public void testIncrementPrimitiveB() {
         // only for opencl backend
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         final int N = 1000;
         PrimitiveB b = new PrimitiveB(N);
@@ -85,7 +72,6 @@ public class TestInheritedFields extends TornadoTestBase {
     @Test
     public void testIncrementPrimitiveAB() {
         // only for opencl backend
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         final int N = 1000;
         PrimitiveB b = new PrimitiveB(N);
@@ -108,7 +94,6 @@ public class TestInheritedFields extends TornadoTestBase {
     @Test
     public void testIncrementTornadoB() {
         // only for opencl backend
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         final int N = 1000;
         TornadoB b = new TornadoB(N);
@@ -130,7 +115,6 @@ public class TestInheritedFields extends TornadoTestBase {
     @Test
     public void testIncrementTornadoAB() {
         // only for opencl backend
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         final int N = 1000;
         TornadoB b = new TornadoB(N);

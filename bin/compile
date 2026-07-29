@@ -111,10 +111,10 @@ def should_handle_graal_jars(jdk):
 
 def maven_cleanup():
     mvn_cmd = get_mvn_command()
-    print("mvnw -Popencl-backend,ptx-backend clean")
+    print("mvnw -Popencl-backend,cuda-backend clean")
 
     subprocess.run(
-        [mvn_cmd, "-Popencl-backend,ptx-backend", "clean"],
+        [mvn_cmd, "-Popencl-backend,cuda-backend", "clean"],
         stdout=subprocess.PIPE, shell=is_win_or_bat()
     )
 
@@ -211,7 +211,7 @@ def build_tornadovm(args, backend_profiles):
         backend_list_sorted = sorted(backend_list)
 
         # If all backends, use "full"
-        if set(backend_list_sorted) == {"opencl", "ptx", "cuda", "metal"}:
+        if set(backend_list_sorted) == {"opencl", "cuda"}:
             backend_variant = "full"
         else:
             # Single backend or partial combination - use exact name(s)
@@ -380,7 +380,7 @@ def parse_args():
     parser.add_argument(
         "--jdk", help="JDK version (e.g., jdk21, graal-jdk-21)"
     )
-    parser.add_argument("--backend", help="e.g., opencl,ptx,cuda,metal")
+    parser.add_argument("--backend", help="e.g., opencl,cuda,metal")
     parser.add_argument(
         "--polyglot",
         action="store_true",

@@ -296,8 +296,8 @@ def runWithJMH(args):
 
 
 def runDefaultSizePerBenchmark(args):
-    if args.benchmark and args.benchmark not in allSizes:
-        print(f"Error: '{args.benchmark}' does not match a valid key in allSizes. Please provide a valid benchmark.")
+    if args.benchmark and args.benchmark not in __BENCHMARKS__:
+        print(f"Error: '{args.benchmark}' does not match a valid key in __BENCHMARKS__. Please provide a valid benchmark.")
         return
     printBenchmarks()
     jvm_options, tornado_options = composeAllOptions(args)
@@ -394,7 +394,7 @@ def parseArguments():
         action="store",
         dest="profiler",
         required=False,
-        help="Run Benchmarks with the OpenCL|PTX profiler",
+        help="Run Benchmarks with the OpenCL|CUDA profiler",
     )
     parser.add_argument(
         "--jmh", action="store_true", dest="jmh", default=False, help="Run with JMH"

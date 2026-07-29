@@ -78,7 +78,7 @@ TornadoVM Installer Tool. It will install all software dependencies except the G
 options:
   -h, --help            show this help message and exit
   --jdk JDK             Specify a JDK to install by its keyword (e.g., 'jdk21', 'graal-jdk-21'). Run with --listJDKs to view all available JDK keywords.
-  --backend BACKEND     Select the backend to install: { opencl, ptx, cuda, metal }
+  --backend BACKEND     Select the backend to install: { opencl, cuda, metal }
   --version             Print version
   --listJDKs            List supported JDKs
   --polyglot            Enable Truffle Interoperability with GraalVM
@@ -90,7 +90,6 @@ options:
 **NOTE** Select the desired backend:
 
 * `opencl`: Enables the OpenCL backend (requires OpenCL drivers)
-* `ptx`: Enables the PTX backend (requires NVIDIA CUDA drivers)
 * `cuda`: Enables the CUDA backend, which generates CUDA C and compiles it to PTX via NVRTC (requires the NVIDIA CUDA Toolkit, NVRTC and `libcuda`)
 * `metal`: Enables the Metal backend (macOS with Apple Silicon)
 
@@ -103,7 +102,7 @@ Example of installation:
 $ ./bin/tornadovm-installer --jdk jdk21 --backend opencl
 
 # It is also possible to combine different backends:
-$ ./bin/tornadovm-installer --jdk jdk21 --backend opencl,ptx,cuda
+$ ./bin/tornadovm-installer --jdk jdk21 --backend opencl,cuda
 ```
 
 - On Windows, run:
@@ -119,7 +118,7 @@ TornadoVM Installer Tool. It will install all software dependencies except the G
 options:
   -h, --help            show this help message and exit
   --jdk JDK             Specify a JDK to install by its keyword (e.g., 'jdk21', 'graal-jdk-21'). Run with --listJDKs to view all available JDK keywords.
-  --backend BACKEND     Select the backend to install: { opencl, ptx, cuda, metal }
+  --backend BACKEND     Select the backend to install: { opencl, cuda, metal }
   --version             Print version
   --listJDKs            List supported JDKs
   --polyglot            Enable Truffle Interoperability with GraalVM
@@ -135,7 +134,7 @@ Example of installation:
 $ python bin\tornadovm-installer --jdk jdk21 --backend opencl
 
 # It is also possible to combine different backends:
-$ python bin\tornadovm-installer --jdk jdk21 --backend opencl,ptx,cuda
+$ python bin\tornadovm-installer --jdk jdk21 --backend opencl,cuda
 ```
 
 More information are available in the [documentation page](https://tornadovm.readthedocs.io/en/latest/installation.html#b-manual-installation).

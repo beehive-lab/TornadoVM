@@ -69,7 +69,8 @@ public final class CuBlasLibraryProvider implements TornadoLibraryProvider {
             "cublasSgemm", CuBlasLibraryProvider::sgemm, //
             "cublasSgemmStridedBatched", CuBlasLibraryProvider::sgemmStridedBatched, //
             "cublasGemmExFP16", (handle, inv) -> gemmEx(handle, inv, CudaDataType.CUDA_R_16F, CudaDataType.CUDA_R_16F), //
-            "cublasGemmExFP16FP32", (handle, inv) -> gemmEx(handle, inv, CudaDataType.CUDA_R_16F, CudaDataType.CUDA_R_32F));
+            "cublasGemmExFP16FP32", (handle, inv) -> gemmEx(handle, inv, CudaDataType.CUDA_R_16F, CudaDataType.CUDA_R_32F), //
+            "cublasGemmExBF16", (handle, inv) -> gemmEx(handle, inv, CudaDataType.CUDA_R_16BF, CudaDataType.CUDA_R_16BF));
 
     /** cublasGemmAlgo_t CUBLAS_GEMM_DEFAULT: heuristic algorithm selection. */
     private static final int CUBLAS_GEMM_DEFAULT = -1;

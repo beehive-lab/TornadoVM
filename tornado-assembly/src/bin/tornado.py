@@ -61,11 +61,9 @@ __TORNADOVM_PROVIDERS__ = """\
 # ########################################################
 __COMMON_EXPORTS__ = "/etc/exportLists/common-exports"
 __OPENCL_EXPORTS__ = "/etc/exportLists/opencl-exports"
-__PTX_EXPORTS__ = "/etc/exportLists/ptx-exports"
 __METAL_EXPORTS__ = "/etc/exportLists/metal-exports"
 __CUDA_EXPORTS__ = "/etc/exportLists/cuda-exports"
 __TORNADOVM_ADD_MODULES__ = "--add-modules ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.common"
-__PTX_MODULE__ = "tornado.drivers.ptx"
 __OPENCL_MODULE__ = "tornado.drivers.opencl"
 __METAL_MODULE__ = "tornado.drivers.metal"
 __CUDA_MODULE__ = "tornado.drivers.cuda"
@@ -226,80 +224,6 @@ def validate_opencl_backend(sdk_path):
 
     return True
 
-def validate_ptx_backend(sdk_path):
-    """Validate PTX backend dependencies on Windows."""
-    if os.name != 'nt':
-        return True
-
-    ptx_dll = os.path.join(sdk_path, 'lib', 'tornado-ptx.dll')
-
-    if not os.path.exists(ptx_dll):
-        print(f"[WARNING] PTX backend configured but tornado-ptx.dll not found")
-        print(f"[INFO] Expected location: {ptx_dll}")
-        print()
-        return False
-
-    # Try to load the DLL
-    if not check_dll_loadable(ptx_dll):
-        print("[ERROR] Cannot load PTX JNI library")
-        print()
-        print(f"[INFO] Library location: {ptx_dll}")
-        print()
-
-        # Detect GPU to provide better guidance
-        gpus = get_gpu_info()
-        if gpus:
-            print("[INFO] Detected GPU(s):")
-            for gpu in gpus:
-                print(f"       - {gpu}")
-                if "NVIDIA" not in gpu.upper():
-                    print("         (This is not an NVIDIA GPU - PTX requires NVIDIA)")
-            print()
-
-        # Check for NVIDIA drivers
-        has_nvidia_driver = check_nvidia_driver()
-
-        print("[CAUSE] Missing NVIDIA CUDA Toolkit or drivers")
-        print("        The PTX backend requires:")
-        print("        - NVIDIA GPU")
-        print("        - NVIDIA drivers (usually pre-installed on Windows)")
-        print("        - CUDA Toolkit 10.0+ (Windows requires 12.0+)")
-        print("        - GPU driver must match or exceed CUDA Toolkit version")
-        print()
-
-        if not has_nvidia_driver:
-            print("[FIX] Install NVIDIA CUDA Toolkit and drivers")
-            print("      Download from: https://developer.nvidia.com/cuda-downloads")
-            print()
-            print("      Installation steps:")
-            print("      1. Verify you have an NVIDIA GPU (check detected GPUs above)")
-            print("      2. Download CUDA Toolkit 12.0+ for Windows")
-            print("      3. Run the installer (includes NVIDIA drivers)")
-            print("      4. Restart your system")
-            print("      5. Verify installation: nvidia-smi")
-            print("      6. Run tornado --devices again")
-        else:
-            print("[INFO] NVIDIA drivers detected (nvidia-smi available)")
-            print()
-            print("[FIX] Reinstall or update NVIDIA CUDA Toolkit")
-            print("      The tornado-ptx.dll requires complete CUDA Toolkit installation")
-            print()
-            print("      1. Download CUDA Toolkit 12.0+ for Windows")
-            print("         From: https://developer.nvidia.com/cuda-downloads")
-            print("      2. Run the installer and select 'Custom' installation")
-            print("      3. Ensure all CUDA components are selected")
-            print("      4. Restart your system")
-            print("      5. Verify with: nvidia-smi")
-            print("      6. Run tornado --devices again")
-
-        print()
-        print("[NOTE] PTX backend is NVIDIA-specific")
-        print("       For non-NVIDIA GPUs, use the OpenCL backend instead")
-        print()
-        sys.exit(1)
-
-    return True
-
 def validate_cuda_backend(sdk_path):
     """Validate CUDA backend dependencies on Windows."""
     if os.name != 'nt':
@@ -452,11 +376,9 @@ def validate_windows_dependencies(sdk_path):
                 if 'opencl-backend' in content:
                     validate_opencl_backend(sdk_path)
 
-                if 'ptx-backend' in content:
-                    validate_ptx_backend(sdk_path)
-
                 if 'cuda-backend' in content:
                     validate_cuda_backend(sdk_path)
+
 
         except (OSError, PermissionError, IOError):
             # Silently skip if we can't read the backend file
@@ -762,14 +684,14 @@ class TornadoVMRunnerTool():
         try:
             # Check if OpenCL backend is installed
             opencl_lib = os.path.join(self.sdk, 'lib', 'libtornado-opencl.so')
-            ptx_lib = os.path.join(self.sdk, 'lib', 'libtornado-ptx.so')
+            cuda_lib = os.path.join(self.sdk, 'lib', 'libtornado-cuda.so')
 
             # Find at least one native library to check
             lib_to_check = None
             if os.path.exists(opencl_lib):
                 lib_to_check = opencl_lib
-            elif os.path.exists(ptx_lib):
-                lib_to_check = ptx_lib
+            elif os.path.exists(cuda_lib):
+                lib_to_check = cuda_lib
 
             if not lib_to_check:
                 # No native libraries found, skip check
@@ -938,13 +860,13 @@ class TornadoVMRunnerTool():
 
             # Check native libraries for deployment target
             opencl_lib = os.path.join(self.sdk, 'lib', 'libtornado-opencl.dylib')
-            ptx_lib = os.path.join(self.sdk, 'lib', 'libtornado-ptx.dylib')
+            cuda_lib = os.path.join(self.sdk, 'lib', 'libtornado-cuda.dylib')
 
             lib_to_check = None
             if os.path.exists(opencl_lib):
                 lib_to_check = opencl_lib
-            elif os.path.exists(ptx_lib):
-                lib_to_check = ptx_lib
+            elif os.path.exists(cuda_lib):
+                lib_to_check = cuda_lib
 
             if not lib_to_check:
                 return
@@ -1305,14 +1227,12 @@ class TornadoVMRunnerTool():
 
         common = self.sdk + __COMMON_EXPORTS__
         opencl = self.sdk + __OPENCL_EXPORTS__
-        ptx = self.sdk + __PTX_EXPORTS__
         metal = self.sdk + __METAL_EXPORTS__
         cuda = self.sdk + __CUDA_EXPORTS__
 
         if (self.isTruffleCommand):
             common = self.truffleCompatibleExports(common)
             opencl = self.truffleCompatibleExports(opencl)
-            ptx = self.truffleCompatibleExports(ptx)
             metal = self.truffleCompatibleExports(metal)
             cuda = self.truffleCompatibleExports(cuda)
 
@@ -1323,9 +1243,6 @@ class TornadoVMRunnerTool():
             if ("opencl-backend" in self.listOfBackends):
                 javaFlags = javaFlags + opencl + " "
                 tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
-            if ("ptx-backend" in self.listOfBackends):
-                javaFlags = javaFlags + ptx + " "
-                tornadoAddModules = tornadoAddModules + "," + __PTX_MODULE__
             if ("metal-backend" in self.listOfBackends):
                 javaFlags = javaFlags + metal + " "
                 tornadoAddModules = tornadoAddModules + "," + __METAL_MODULE__
@@ -1337,9 +1254,6 @@ class TornadoVMRunnerTool():
             if ("opencl-backend" in self.listOfBackends):
                 javaFlags = javaFlags + "@" + opencl + " "
                 tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
-            if ("ptx-backend" in self.listOfBackends):
-                javaFlags = javaFlags + "@" + ptx + " "
-                tornadoAddModules = tornadoAddModules + "," + __PTX_MODULE__
             if ("metal-backend" in self.listOfBackends):
                 javaFlags = javaFlags + "@" + metal + " "
                 tornadoAddModules = tornadoAddModules + "," + __METAL_MODULE__
@@ -1472,7 +1386,7 @@ def parseArguments():
     parser.add_argument('--igvLowTier', action="store_true", dest="igvLowTier", default=False,
                         help="Debug Low Tier Compilation Graphs using Ideal Graph Visualizer (IGV)")
     parser.add_argument('--printKernel', '-pk', action="store_true", dest="printKernel", default=False,
-                        help="Print generated kernel (OpenCL, PTX or Metal)")
+                        help="Print generated kernel (OpenCL, CUDA or Metal)")
     parser.add_argument('--printBytecodes', '-pbc', action="store_true", dest="printBytecodes", default=False,
                         help="Print the generated TornadoVM bytecodes from the Task-Graphs")
     parser.add_argument('--enableProfiler', action="store", dest="enable_profiler", default=None,

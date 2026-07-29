@@ -15,8 +15,8 @@ on:
         description: 'Previous base version for the changelog (e.g. 4.0.0).'
         required: true
         type: string
-      dry_run:
-        description: 'Dry run both prepare workflows (no PRs created).'
+      draft_release_test:
+        description: 'Draft release (test): run the whole pipeline end-to-end (builds the SDKs for real) without opening PRs, creating tags/GitHub Releases, or publishing to Maven Central/SDKMAN.'
         required: false
         type: boolean
         default: false
@@ -48,7 +48,7 @@ jobs:
             --repo "${{ github.repository }}" \
             -f version="${{ inputs.version }}-jdk21" \
             -f previous_version="${{ inputs.previous_version }}-jdk21" \
-            -f dry_run="${{ inputs.dry_run }}"
+            -f draft_release_test="${{ inputs.draft_release_test }}"
           echo "Dispatched 1-prepare-release-jdk21.yml (version=${{ inputs.version }}-jdk21)."
 
       - name: Dispatch 1-prepare-release-jdk25
@@ -59,19 +59,30 @@ jobs:
             --repo "${{ github.repository }}" \
             -f version="${{ inputs.version }}-jdk25" \
             -f previous_version="${{ inputs.previous_version }}-jdk25" \
-            -f dry_run="${{ inputs.dry_run }}"
+            -f draft_release_test="${{ inputs.draft_release_test }}"
           echo "Dispatched 1-prepare-release-jdk25.yml (version=${{ inputs.version }}-jdk25)."
 
       - name: Summary
         run: |
           {
-            echo "## Release ${{ inputs.version }} dispatched"
+            if [ "${{ inputs.draft_release_test }}" = "true" ]; then
+              echo "## 🧪 Release ${{ inputs.version }} dispatched (DRAFT RELEASE — TEST)"
+            else
+              echo "## Release ${{ inputs.version }} dispatched"
+            fi
             echo ""
             echo "| Workflow | Version |"
             echo "|----------|---------|"
             echo "| [1-prepare-release-jdk21](https://github.com/${{ github.repository }}/actions/workflows/1-prepare-release-jdk21.yml) | ${{ inputs.version }}-jdk21 |"
             echo "| [1-prepare-release-jdk25](https://github.com/${{ github.repository }}/actions/workflows/1-prepare-release-jdk25.yml) | ${{ inputs.version }}-jdk25 |"
             echo ""
-            echo "Both prepare workflows now running in parallel. Each will open a PR for review."
-            echo "Merging both PRs continues the chain automatically (finalize → build → publish)."
+            if [ "${{ inputs.draft_release_test }}" = "true" ]; then
+              echo "Both prepare workflows now running in test mode: no PRs, no tags, no GitHub Releases,"
+              echo "no Maven Central/SDKMAN pushes. Each will dispatch finalize (test) automatically, which"
+              echo "dispatches build-release-sdks (test) automatically — the SDKs still get built for real,"
+              echo "nothing gets uploaded or published."
+            else
+              echo "Both prepare workflows now running in parallel. Each will open a PR for review."
+              echo "Merging both PRs continues the chain automatically (finalize → build → publish)."
+            fi
           } >> "$GITHUB_STEP_SUMMARY"

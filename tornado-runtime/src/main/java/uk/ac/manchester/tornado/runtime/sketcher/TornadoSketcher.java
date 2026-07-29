@@ -171,18 +171,28 @@ public class TornadoSketcher {
             // Compile all non-inlined call-targets into a single compilation-unit
             graph.getInvokes() //
                     .forEach(invoke -> { //
-                        if (OCLTokens.openCLTokens.contains(invoke.callTarget().targetMethod().getName())) {
-                            throw new TornadoRuntimeException("[ERROR] Java method name corresponds to an OpenCL Token. Change the Java method's name: " + invoke.callTarget().targetMethod()
-                                    .getName());
+                        ResolvedJavaMethod targetMethod = invoke.callTarget().targetMethod();
+                        if (OCLTokens.openCLTokens.contains(targetMethod.getName())) {
+                            throw new TornadoRuntimeException("[ERROR] Java method name corresponds to an OpenCL Token. Change the Java method's name: " + targetMethod.getName());
                         }
-                        SketchRequest newRequest = new SketchRequest(invoke.callTarget().targetMethod(), providers, graphBuilderSuite, sketchTier, backendIndex, deviceIndex);
+                        // Native / signature-polymorphic call-targets (e.g. MethodHandle.invokeBasic,
+                        // Throwable.fillInStackTrace) have no bytecode and cannot be sketched.
+                        if (!targetMethod.hasBytecodes()) {
+                            return;
+                        }
+                        SketchRequest newRequest = new SketchRequest(targetMethod, providers, graphBuilderSuite, sketchTier, backendIndex, deviceIndex);
                         buildSketch(newRequest);
                     });
 
             Access[] highTierAccesses = highTierContext.getAccesses();
             graph.getInvokes().forEach(invoke -> {
+                ResolvedJavaMethod targetMethod = invoke.callTarget().targetMethod();
+                // Skipped above (no bytecode), so there is no sketch to merge.
+                if (!targetMethod.hasBytecodes()) {
+                    return;
+                }
                 // Merge the accesses of the caller with the accesses of the callee
-                Sketch sketch = lookup(invoke.callTarget().targetMethod(), backendIndex, deviceIndex);
+                Sketch sketch = lookup(targetMethod, backendIndex, deviceIndex);
                 mergeAccesses(highTierAccesses, invoke.callTarget(), sketch.getArgumentsAccess());
             });
 

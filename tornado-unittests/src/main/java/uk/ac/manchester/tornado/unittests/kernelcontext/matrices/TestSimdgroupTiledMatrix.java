@@ -44,7 +44,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * staging 32x8 / 8x32 blocks of A and B in {@code threadgroup} memory and reusing them
  * across a 4x4 grid of register fragments.
  *
- * <p>Metal-only: simdgroup_matrix has no equivalent in the OpenCL or PTX
+ * <p>Metal-only: simdgroup_matrix has no equivalent in the OpenCL or CUDA
  * backends, so the tests are skipped there.
  *
  * <p>How to run:
@@ -113,9 +113,8 @@ public class TestSimdgroupTiledMatrix extends TornadoTestBase {
     }
 
     private void runAndCheck(int m, int n, int k) throws TornadoExecutionPlanException {
-        // simdgroup_matrix is Metal-only: no equivalent in OpenCL, PTX or CUDA.
+        // simdgroup_matrix is Metal-only: no equivalent in OpenCL or CUDA.
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.CUDA);
 
         FloatArray a = new FloatArray(m * k);

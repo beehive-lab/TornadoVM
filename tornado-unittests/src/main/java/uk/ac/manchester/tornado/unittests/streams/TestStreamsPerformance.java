@@ -38,7 +38,7 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
- * Demonstrates <b>how to enable</b> PTX intra-plan concurrency (CUDA streams) and <b>measures</b> its
+ * Demonstrates <b>how to enable</b> CUDA intra-plan concurrency (CUDA streams) and <b>measures</b> its
  * wall-clock effect on three deliberately different workloads.
  *
  * <h3>Usage (the one line that matters)</h3>

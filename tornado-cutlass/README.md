@@ -23,10 +23,20 @@ maps to CUTLASS directly.
 |---|---|---|
 | `Cutlass.cutlassSgemm(m,n,k,alpha,a,b,beta,c)` | FP32 SIMT GEMM | Correctness baseline, no shape constraints |
 | `Cutlass.cutlassHgemm(m,n,k,alpha,a,b,beta,d)` | FP16 tensor-core GEMM, FP32 accumulate | Requires `k,n` multiples of 4 |
+| `Cutlass.cutlassHgemmBatched(m,n,k,alpha,a,b,beta,c,batchCount)` | Strided-batched FP16 tensor-core GEMM | `batchCount` matrices packed contiguously; requires `k,n` multiples of 4 |
 | `Cutlass.cutlassGemmBiasRelu(m,n,k,a,b,bias,d)` | Fused `relu(A·B + bias)` | `bias` is a length-`n` row vector |
 | `Cutlass.cutlassGemmBiasGelu(m,n,k,a,b,bias,d)` | Fused `gelu(A·B + bias)` | `bias` is a length-`n` row vector |
+| `Cutlass.cutlassGemmBiasSilu(m,n,k,a,b,bias,d)` | Fused `silu(A·B + bias)` (swish; SwiGLU gate) | `bias` is a length-`n` row vector |
+| `Cutlass.cutlassGemmBiasSigmoid(m,n,k,a,b,bias,d)` | Fused `sigmoid(A·B + bias)` | `bias` is a length-`n` row vector |
+| `Cutlass.cutlassGemmBiasTanh(m,n,k,a,b,bias,d)` | Fused `tanh(A·B + bias)` | `bias` is a length-`n` row vector |
+| `Cutlass.cutlassGemmBiasHardSwish(m,n,k,a,b,bias,d)` | Fused `hardswish(A·B + bias)` | `bias` is a length-`n` row vector |
 
-FP32 uses `FloatArray`; the FP16 kernels use `HalfFloatArray`.
+FP32 uses `FloatArray`; the FP16 kernels use `HalfFloatArray`. The fused epilogues
+cover the activation functions CUTLASS ships as ready-made `LinearCombination*`
+output operators (ReLU, GELU, SiLU/swish, Sigmoid, Tanh, HardSwish), computing
+`act(A·B + bias)` in a single tensor-core kernel with no extra global-memory round
+trip. SiLU in particular is the gate activation of the SwiGLU feed-forward block
+used across the LLaMA/Qwen LLM families.
 
 ### Alignment / shape constraint
 
