@@ -801,6 +801,16 @@ public class TornadoVMInterpreter {
     private int executeDeAlloc(StringBuilder tornadoVMBytecodeList, final int objectIndex) {
         Object object = objects.get(objectIndex);
 
+        // Fast path for buffer reuse (the default): a locked buffer is never freed, so there is nothing
+        // to do here. Taking it early skips the batch bookkeeping and the synchronized device call, both
+        // of which are paid once per object per execution - dominant for plans made of many small graphs.
+        if (resolveObjectState(objectIndex).isLockedBuffer()) {
+            if (TornadoOptions.LOG_BYTECODES() && isNotObjectAtomic(object)) {
+                DebugInterpreter.logDeallocObject(object, interpreterDevice, tornadoVMBytecodeList, false);
+            }
+            return -1;
+        }
+
         if (!currentBatchNumberPerObject.isEmpty() && !currentBatchNumberPerObject.isEmpty()) {
             int currentBatchNumber = currentBatchNumberPerObject.get(object);
             int totalNumberOfBatches = totalEvenBatchesPerObject.get(object);
