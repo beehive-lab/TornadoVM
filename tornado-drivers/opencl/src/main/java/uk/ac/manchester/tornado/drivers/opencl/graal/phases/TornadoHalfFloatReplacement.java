@@ -114,6 +114,13 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
                 && localArray.getOCLKind() == OCLKind.HALF) {
             return input;
         }
+        // Half source is a packed-vector lane (e.g. Half2.highFloat == getY().getFloat32()): keep the
+        // lane. The generic input walk below would descend into the shared vector and return the first
+        // lane's read, so return a HALF-kind lane load carrying the original lane id instead.
+        if (input instanceof VectorLoadElementNode vectorLoadElement) {
+            VectorLoadElementNode halfLane = new VectorLoadElementNode(OCLKind.HALF, vectorLoadElement.getVector(), vectorLoadElement.getLaneId());
+            return input.graph().addOrUnique(halfLane);
+        }
         if (input instanceof PiNode || input instanceof IsNullNode) {
             nodesToBeDeleted.add(input);
         }

@@ -59,6 +59,11 @@ public class ASMClassVisitor extends ClassVisitor implements ASMClassVisitorProv
     public ParallelAnnotationProvider[] getParallelAnnotations(ResolvedJavaMethod method) {
         String methodClassFile = method.getDeclaringClass().getName().replaceFirst("L", "").replaceFirst(";", ".class");
         InputStream inputStream = ClassLoader.getSystemClassLoader().getResourceAsStream(methodClassFile);
+        if (inputStream == null) {
+            // Runtime-generated hidden classes (e.g. java/lang/invoke/LambdaForm$MH.0x...) have no
+            // loadable .class resource and carry no @Parallel/@Reduce annotations.
+            return new ParallelAnnotationProvider[0];
+        }
         try {
             ClassReader classReader = new ClassReader(inputStream);
             ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
