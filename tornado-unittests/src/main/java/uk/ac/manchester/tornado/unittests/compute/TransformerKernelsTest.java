@@ -1083,7 +1083,6 @@ public class TransformerKernelsTest extends TornadoTestBase {
 
     @Test
     public void testMatrixVectorGeneric() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         final int inputDim = 64;
         final int outputDim = 128;
         final int localWorkGroupSize = 32;
@@ -1121,7 +1120,6 @@ public class TransformerKernelsTest extends TornadoTestBase {
 
     @Test
     public void testMatrixVectorGenericWithResidual() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         final int inputDim = 64;
         final int outputDim = 128;
         final int localWorkGroupSize = 32;
@@ -1165,7 +1163,6 @@ public class TransformerKernelsTest extends TornadoTestBase {
 
     @Test
     public void testFusedFeedForwardWithSiLUAndGLUActivation() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         final int inputDim = 64;
         final int hiddenDim = 128;
         final int localWorkGroupSize = 32;

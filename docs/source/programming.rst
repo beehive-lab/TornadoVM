@@ -112,7 +112,7 @@ a) ``@Parallel`` for annotating parallel loops; and b) ``@Reduce`` for annotatin
 The following code snippet shows a full example to accelerate Matrix-Multiplication using TornadoVM and the loop-parallel API:
 The two outermost loops can be parallelizable because there are no data dependencies across different iterations.
 Therefore, we can annotate these two loops.
-Note that, since TornadoVM maps parallel loops to Parallel ND-Range for OpenCL, CUDA and SPIR-V, developers can benefit
+Note that, since TornadoVM maps parallel loops to Parallel ND-Range for OpenCL, CUDA and PTX, developers can benefit
 from 1D (annotating one parallel loop), 2D (annotating two consecutive parallel loops) and 3D (annotating 3 consecutive parallel loops) in their Java methods.
 
 
@@ -512,7 +512,7 @@ run on GPU and CPU.
 Creating reduction tasks
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-TornadoVM generates different OpenCL/SPIR-V code depending on the target device.
+TornadoVM generates different OpenCL/PTX code depending on the target device.
 Internally, if the target is a GPU, TornadoVM performs full and
 parallel reductions using the threads within the same OpenCL work-group.
 If the target is a CPU, TornadoVM performs full reductions within the

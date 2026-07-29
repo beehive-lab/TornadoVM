@@ -26,8 +26,8 @@ profiles, then runs post-installation steps.
 
 Usage:
     Set the BACKEND environment variable to the desired backend(s):
-    - Single backend: "opencl", "cuda", or "spirv"
-    - Multiple backends: "opencl,cuda" or "opencl,cuda,spirv"
+    - Single backend: "opencl" or "cuda"
+    - Multiple backends: "opencl,cuda"
 
     The script will:
     1. Invoke Maven with the correct profiles and -Dtornado.backend property
@@ -67,7 +67,7 @@ def compute_tornado_backend_variant(backends):
     Returns:
         str: The tornado.backend value (e.g., "opencl", "cuda", "opencl-cuda", "full")
     """
-    all_backends = {"opencl", "cuda", "spirv"}
+    all_backends = {"opencl", "cuda"}
     if set(backends) == all_backends:
         return "full"
 
@@ -155,14 +155,14 @@ def main():
         print("  BACKEND=opencl")
         print("  BACKEND=cuda")
         print("  BACKEND=opencl,cuda")
-        print("  BACKEND=opencl,cuda,spirv")
+        print("  BACKEND=opencl,cuda")
         sys.exit(1)
 
     # Parse backends (comma-separated)
     backends = [b.strip().lower() for b in backend_env.split(",")]
 
     # Validate backends
-    valid_backends = {"opencl", "cuda", "spirv", "metal"}
+    valid_backends = {"opencl", "cuda", "metal"}
     for backend in backends:
         if backend not in valid_backends:
             print(f"[ERROR] Invalid backend: {backend}")

@@ -123,7 +123,6 @@
                                 <arg>${user.dir}/graalJars</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/common-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/opencl-exports</arg>
-                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/spirv-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/metal-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/cuda-exports</arg>
                             </compilerArgs>
@@ -393,7 +392,6 @@
                                 <arg>${user.dir}/graalJars</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/common-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/opencl-exports</arg>
-                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/spirv-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/metal-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/cuda-exports</arg>
                             </compilerArgs>
@@ -445,7 +443,6 @@
                                 <arg>ALL-SYSTEM</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/common-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/opencl-exports</arg>
-                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/spirv-exports</arg>
                             </compilerArgs>
                         </configuration>
                     </plugin>

@@ -1,6 +1,6 @@
 all: build
 
-# Variable passed for the build process. List of backend/s to use { opencl, cuda, spirv, metal }. The default one is `opencl`.
+# Variable passed for the build process. List of backend/s to use { opencl, cuda, metal }. The default one is `opencl`.
 # nmake BACKENDS="<comma_separated_backend_list>"
 BACKEND = opencl
 
@@ -25,8 +25,6 @@ mvn-single-threaded-graal-jdk-21:
 mvn-single-threaded-polyglot:
 	python bin/compile --jdk graal-jdk-21 --backend $(BACKEND) --mvn_single_threaded --polyglot
 
-spirv:
-	python bin\compile --jdk graal-jdk-21 --backend spirv,opencl
 
 sdk:
 	python bin\compile --jdk jdk21 --sdk --backend $(BACKEND)
@@ -43,7 +41,7 @@ checkstyle:
 	.\mvnw checkstyle:check
 
 clean:
-	.\mvnw -Popencl-backend,cuda-backend,spirv-backend clean
+	.\mvnw -Popencl-backend,cuda-backend clean
 
 example:
 	%TORNADOVM_HOME%\bin\tornado.exe --printKernel --debug -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt --params="8192"
@@ -76,19 +74,6 @@ fast-tests-uncompressed:
 	%TORNADOVM_HOME%\bin\tornado-test.exe -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	%TORNADOVM_HOME%\bin\test-native.cmd
 
-tests-spirv-levelzero:
-	del /f tornado_unittests.log
-	%TORNADOVM_HOME%\bin\tornado.exe --jvm="-Dtornado.spirv.dispatcher=levelzero" uk.ac.manchester.tornado.drivers.TornadoDeviceQuery --params="verbose"
-	%TORNADOVM_HOME%\bin\tornado-test.exe --jvm="-Dtornado.spirv.dispatcher=levelzero" --verbose
-	%TORNADOVM_HOME%\bin\tornado-test.exe --jvm="-Dtornado.spirv.dispatcher=levelzero" -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
-	%TORNADOVM_HOME%\bin\test-native.cmd
-
-tests-spirv-opencl:
-	del /f tornado_unittests.log
-	%TORNADOVM_HOME%\bin\tornado.exe --jvm="-Dtornado.spirv.dispatcher=opencl" uk.ac.manchester.tornado.drivers.TornadoDeviceQuery --params="verbose"
-	%TORNADOVM_HOME%\bin\tornado-test.exe --jvm="-Dtornado.spirv.dispatcher=opencl" --verbose
-	%TORNADOVM_HOME%\bin\tornado-test.exe --jvm="-Dtornado.spirv.dispatcher=opencl" -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
-	%TORNADOVM_HOME%\bin\test-native.cmd
 
 test-slam:
 	%TORNADOVM_HOME%\bin\tornado-test.exe -V --fast uk.ac.manchester.tornado.unittests.slam.GraphicsTests

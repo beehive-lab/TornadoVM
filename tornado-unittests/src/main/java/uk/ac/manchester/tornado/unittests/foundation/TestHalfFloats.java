@@ -222,7 +222,6 @@ public class TestHalfFloats extends TornadoTestBase {
 
     @Test
     public void testMatrixVectorHalfFloatOptimized() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         Random random = new Random(42);
         int localWorkgroupSize = 64;

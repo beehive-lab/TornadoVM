@@ -32,14 +32,12 @@ import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanRead
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDADeviceInfo;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDADeviceType;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDALocalMemType;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class CUDADevice implements CUDATargetDevice {
 
@@ -78,11 +76,6 @@ public class CUDADevice implements CUDATargetDevice {
     private CUDADeviceContextInterface deviceContext;
     private int asyncEngineCount = INIT_VALUE;
     private int concurrentKernels = INIT_VALUE;
-    private float spirvVersion = SPIRV_VERSION_INIT;
-
-    private static final int SPIRV_VERSION_INIT = -1;
-    private static final int SPIRV_NOT_SUPPORTED = -2;
-    private static final float SPIRV_SUPPPORTED = TornadoOptions.SPIRV_VERSION_SUPPORTED;
 
     public CUDADevice(int index, long devicePointer) {
         this.index = index;
@@ -461,42 +454,6 @@ public class CUDADevice implements CUDATargetDevice {
     @Override
     public int deviceVersion() {
         return Integer.parseInt(getVersion().split(" ")[1].replace(".", "")) * 10;
-    }
-
-    @Override
-    public boolean isSPIRVSupported() {
-        if (spirvVersion == SPIRV_NOT_SUPPORTED) {
-            // We query the device properties and the current device does not support
-            // CUDADriver 1.2 or higher. 
-            return false;
-        } else if (spirvVersion > 0) {
-            // We query the device properties and the device supports at least SPIR-V 1.2.
-            return spirvVersion >= SPIRV_SUPPPORTED;
-        } else {
-            // Query the device properties and parse the version
-            queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_IL_VERSION.getValue());
-            String versionQuery = new String(buffer.array(), StandardCharsets.US_ASCII);
-            if (versionQuery.isEmpty()) {
-                return false;
-            }
-            String[] spirvVersions = versionQuery.trim().split(" ");
-            // We iterate through all supported versions and check there
-            // is support for SPIR-V >= 1.2
-            for (String version : spirvVersions) {
-                if (!version.isEmpty()) {
-                    String v = version.split("_")[1];
-                    try {
-                        spirvVersion = Float.parseFloat(v);
-                        return spirvVersion >= SPIRV_SUPPPORTED;
-                    } catch (NumberFormatException e) {
-                    }
-                }
-            }
-            // if all versions have been visited and none of them is >= 1.2
-            // then, we return false;
-            spirvVersion = SPIRV_NOT_SUPPORTED;
-            return false;
-        }
     }
 
     @Override

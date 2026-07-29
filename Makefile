@@ -1,6 +1,6 @@
 all: build
 
-# Variable passed for the build process. List of backend/s to use { opencl, cuda, spirv, metal }. The default one is `opencl`.
+# Variable passed for the build process. List of backend/s to use { opencl, cuda, metal }. The default one is `opencl`.
 # make BACKEND=<comma_separated_backend_list>
 BACKEND ?= opencl
 
@@ -25,8 +25,6 @@ mvn-single-threaded-graal-jdk-21:
 mvn-single-threaded-polyglot:
 	bin/compile --jdk graal-jdk-21 --backend $(BACKEND) --mvn_single_threaded --polyglot
 
-spirv:
-	bin/compile --jdk jdk21 --backend spirv,opencl
 
 metal:
 	bin/compile --jdk jdk21 --backend metal,opencl
@@ -49,7 +47,7 @@ checkstyle:
 	./mvnw checkstyle:check
 
 clean:
-	./mvnw -Popencl-backend,spirv-backend,cuda-backend,metal-backend clean
+	./mvnw -Popencl-backend,cuda-backend,metal-backend clean
 
 example:
 	tornado --printKernel --debug -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt --params="8192"
@@ -80,20 +78,6 @@ fast-tests-uncompressed:
 	tornado --devices
 	tornado-test --ea --verbose --quickPass --uncompressed
 	tornado-test --ea -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
-	test-native.sh
-
-tests-spirv-levelzero:
-	rm -f tornado_unittests.log
-	tornado --jvm="-Dtornado.spirv.dispatcher=levelzero" uk.ac.manchester.tornado.drivers.TornadoDeviceQuery --params="verbose"
-	tornado-test --jvm="-Dtornado.spirv.dispatcher=levelzero" --ea --verbose
-	tornado-test --jvm="-Dtornado.spirv.dispatcher=levelzero"--ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
-	test-native.sh
-
-tests-spirv-opencl:
-	rm -f tornado_unittests.log
-	tornado --jvm="-Dtornado.spirv.dispatcher=opencl" uk.ac.manchester.tornado.drivers.TornadoDeviceQuery --params="verbose"
-	tornado-test --jvm="-Dtornado.spirv.dispatcher=opencl" --ea --verbose
-	tornado-test --jvm="-Dtornado.spirv.dispatcher=opencl"--ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
 
 test-slam:

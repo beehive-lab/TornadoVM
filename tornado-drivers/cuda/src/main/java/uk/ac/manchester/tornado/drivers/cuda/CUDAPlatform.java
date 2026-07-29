@@ -127,12 +127,6 @@ public class CUDAPlatform implements TornadoPlatformInterface {
         return clGetPlatformInfo(oclPlatformPtr, CUDAPlatformInfo.CL_PLATFORM_VERSION.getValue());
     }
 
-    @Override
-    public boolean isSPIRVSupported() {
-        // This indicates that this platform has at least one device with support for SPIR-V.
-        return devices.stream().anyMatch(CUDATargetDevice::isSPIRVSupported);
-    }
-
     public String getName() {
         return clGetPlatformInfo(oclPlatformPtr, CUDAPlatformInfo.CL_PLATFORM_NAME.getValue());
     }

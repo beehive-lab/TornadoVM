@@ -36,8 +36,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
@@ -107,7 +105,6 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 public class OCLTornadoDevice implements TornadoXPUDevice {
 
     private static OCLBackendImpl driver = null;
-    private static final Pattern NAME_PATTERN = Pattern.compile("^OpenCL (\\d)\\.(\\d).*");
     private final OCLTargetDevice device;
     private final int deviceIndex;
     private final int platformIndex;
@@ -837,29 +834,6 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
     @Override
     public TornadoVMBackendType getTornadoVMBackend() {
         return TornadoVMBackendType.OPENCL;
-    }
-
-    @Override
-    public boolean isSPIRVSupported() {
-        // An OpenCL device supports SPIR-V if the version is >= 2.1
-        String version = device.getDeviceContext().getPlatformContext().getPlatform().getVersion();
-
-        if (version.contains("CUDA")) {
-            // Currently, the CUDA platform does not allow dispatching SPIR-V kernels
-            return false;
-        }
-
-        Matcher matcher = NAME_PATTERN.matcher(version);
-        int majorVersion = 0;
-        int minorVersion = 0;
-        if (matcher.find()) {
-            majorVersion = Integer.parseInt(matcher.group(1));
-            minorVersion = Integer.parseInt(matcher.group(2));
-        }
-        if (majorVersion > 2) {
-            return true;
-        }
-        return majorVersion == 2 && minorVersion >= 1;
     }
 
     @Override
