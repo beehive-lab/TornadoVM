@@ -7,6 +7,15 @@ BACKEND = opencl
 build jdk21:
 	python bin\compile --jdk jdk21 --backend $(BACKEND)
 
+rebuild-deps-jdk21:
+	python bin\compile --jdk jdk21 --rebuild --backend $(BACKEND)
+
+jdk27:
+	python bin\compile --jdk jdk27 --backend $(BACKEND)
+
+rebuild-deps-jdk27:
+	python bin\compile --jdk jdk27 --rebuild --backend $(BACKEND)
+
 rebuild-deps:
 	python bin\compile --jdk graal-jdk-21 --rebuild --backend $(BACKEND)
 
@@ -31,6 +40,9 @@ ptx:
 spirv:
 	python bin\compile --jdk graal-jdk-21 --backend spirv,ptx,opencl
 
+cuda:
+	python bin\compile --jdk jdk21 --backend cuda
+
 sdk:
 	python bin\compile --jdk jdk21 --sdk --backend $(BACKEND)
 
@@ -44,6 +56,17 @@ xilinx_emulation:
 
 checkstyle:
 	.\mvnw checkstyle:check
+
+# Pure-JVM (no-GPU) unit tests for the reflection JVMCI layer. Every JDK profile skips surefire,
+# so force it on here. Override the profile with JDK=jdk25|jdk26|jdk27 to run under another JDK.
+JDK = jdk21
+unit-tests:
+	.\mvnw -P$(JDK) -pl tornado-runtime test -DskipTests=false
+
+# Only the reflection JVMCI-layer suites (uk.ac.manchester.tornado.runtime.jvmci.reflection.*Test) —
+# the standalone metadata API. Same JDK override as unit-tests.
+test-reflection:
+	.\mvnw -P$(JDK) -pl tornado-runtime test -DskipTests=false -Dtest="uk.ac.manchester.tornado.runtime.jvmci.reflection.*Test"
 
 clean:
 	.\mvnw -Popencl-backend,ptx-backend,spirv-backend clean

@@ -21,8 +21,7 @@ Legend: `[x]` done · `[ ]` todo · `[~]` partial
 ---
 
 ## 1. Test coverage — `make fast-tests` on JDK 27
-The `jdk27` profile **skips surefire** (`skipTests`), so tests run via the launcher
-(`tornado-test`; user-added `make fast-tests-jdk27` target).
+The `jdk27` profile **skips surefire** (`skipTests`), so tests run via the launcher (`tornado-test`).
 
 > **KNOWN LIMITATION — WON'T FIX for this branch (decision 2026-07-19): `--ea` (assertions) aborts
 > 100% of tests at backend init on JDK 27.**
@@ -39,7 +38,7 @@ The `jdk27` profile **skips surefire** (`skipTests`), so tests run via the launc
 >
 > **Not a regression from the reflection work** — pure frozen-Graal-23.1.0 vs modern-JDK `Unsafe`
 > naming drift; would hit any project running Graal 23.1.0 on JDK 25+ with assertions.
-> **Mitigation in place:** `make fast-tests-jdk27` drops `--ea`; normal/production runs unaffected.
+> **Mitigation in place:** all Makefile test targets dropped `--ea`; normal/production runs unaffected.
 > **Cost of passing:** only assertion-enabled test runs are lost on JDK 25+ — deliberately accepted.
 > **Fix routes if ever needed:** (1) preferred — patch `StandardGraphBuilderPlugins` when
 > `build_graal_module.py` rebuilds the vendored `tornado-graal` jar (inject a class override that
@@ -192,9 +191,9 @@ bug; (b) `testPrivateVector*` = the CleanerFactory misfire above (was mis-labele
           buffer allocation, **not** codegen or object layout. NEXT: trace the actual device buffer bytes at
           `base+20` (the handle) and where the nested `*Array` buffer is allocated (`wrappedFields[].getBufferOffset()`)
           for one `Matrix2DFloat` kernel; compare JDK-21-reflection vs JDK-27.
-- [x] **`make fast-tests-jdk27` no longer passes `--ea`** (2026-07-05) — the target dropped `--ea` (see the
-      `--ea` BLOCKER note at the top of §1). The assertion-enabled suite is unusable on JDK 27 until Graal's
-      Unsafe-plugin registration is made `getReference`-aware; without `-ea` the suite runs normally.
+- [x] **`--ea` dropped from all Makefile test targets** (2026-07-29) — see the `--ea` BLOCKER note at the
+      top of §1. The assertion-enabled suite is unusable on JDK 27 until Graal's Unsafe-plugin registration
+      is made `getReference`-aware; without `-ea` the suite runs normally on every JDK.
 - [ ] **KernelContext local-memory family (~30 fails: `InvokeNode` "address origin unimplemented" + related
       Bailouts)** — root-caused 2026-07-05. `context.allocate{Int,Float,Double,Long,Byte,HalfFloat}LocalArray`
       survives as a direct `InvokeNode` (its `int[]` result used as an address base → `OCLAddressLowering`
@@ -424,7 +423,7 @@ then one `bin/compile --jdk jdk27 --backend metal,opencl` regenerated + staged +
       asm path — its profiles are backend-based, not JDK-based, so the jdk27 assembly resolves identically.
 - [x] Verify `make jdk27 BACKEND=opencl` end-to-end produces a working `bin/sdk` with no manual copies —
       clean-room verified above (`make jdk27` is a thin wrapper over the same `bin/compile` invocation).
-- [x] `Makefile` `fast-tests-jdk27` target — exists (Makefile line ~90; runs without `--ea`, see §1).
+- [x] `Makefile` test targets run without `--ea` (see §1).
 
 ## 6. Can the apporach of bypassing JVCI can be a standlone tool 
 - [ ] Can it be a standalone tool

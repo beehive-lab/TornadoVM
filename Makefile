@@ -77,22 +77,11 @@ example:
 tests:
 	rm -f tornado_unittests.log
 	tornado --devices
-	tornado-test --ea --verbose
-	tornado-test --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	tornado-test --verbose
+	tornado-test -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
 
 fast-tests:
-	rm -f tornado_unittests.log
-	tornado --devices
-	tornado-test --ea --verbose --quickPass
-	tornado-test --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
-	test-native.sh
-
-# NOTE: JDK 27 (JVMCI-free) omits --ea. Graal 23.1.0's StandardGraphBuilderPlugins.registerUnsafePlugins0
-# registers an invocation plugin for jdk.internal.misc.Unsafe.getObject (renamed getReference on JDK 27),
-# and the InvocationPlugins.checkResolvable ASSERTION aborts backend init before any kernel runs -> all
-# tests fail. Assertions off, the suite runs normally. See JDK27-CHECKLIST.md §1.
-fast-tests-jdk27:
 	rm -f tornado_unittests.log
 	tornado --devices
 	tornado-test --verbose --quickPass
@@ -102,29 +91,29 @@ fast-tests-jdk27:
 tests-uncompressed:
 	rm -f tornado_unittests.log
 	tornado --devices
-	tornado-test --ea --verbose --uncompressed
-	tornado-test --ea -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	tornado-test --verbose --uncompressed
+	tornado-test -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
 
 fast-tests-uncompressed:
 	rm -f tornado_unittests.log
 	tornado --devices
-	tornado-test --ea --verbose --quickPass --uncompressed
-	tornado-test --ea -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	tornado-test --verbose --quickPass --uncompressed
+	tornado-test -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
 
 tests-spirv-levelzero:
 	rm -f tornado_unittests.log
 	tornado --jvm="-Dtornado.spirv.dispatcher=levelzero" uk.ac.manchester.tornado.drivers.TornadoDeviceQuery --params="verbose"
-	tornado-test --jvm="-Dtornado.spirv.dispatcher=levelzero" --ea --verbose
-	tornado-test --jvm="-Dtornado.spirv.dispatcher=levelzero"--ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	tornado-test --jvm="-Dtornado.spirv.dispatcher=levelzero" --verbose
+	tornado-test --jvm="-Dtornado.spirv.dispatcher=levelzero" -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
 
 tests-spirv-opencl:
 	rm -f tornado_unittests.log
 	tornado --jvm="-Dtornado.spirv.dispatcher=opencl" uk.ac.manchester.tornado.drivers.TornadoDeviceQuery --params="verbose"
-	tornado-test --jvm="-Dtornado.spirv.dispatcher=opencl" --ea --verbose
-	tornado-test --jvm="-Dtornado.spirv.dispatcher=opencl"--ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	tornado-test --jvm="-Dtornado.spirv.dispatcher=opencl" --verbose
+	tornado-test --jvm="-Dtornado.spirv.dispatcher=opencl" -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
 
 test-slam:
