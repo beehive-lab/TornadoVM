@@ -96,7 +96,19 @@ def _neutral_cwd():
 
 
 def _mvn():
-    return shutil.which("mvn") or "mvn"
+    """argv prefix that invokes the repo's mvnw wrapper, falling back to `mvn` on PATH.
+
+    The wrapper is preferred so the build doesn't depend on a system Maven install; on
+    Windows a .cmd file isn't directly executable via CreateProcess, so it's launched
+    through `cmd /c`.
+    """
+    wrapper = os.path.join(REPO_ROOT, "mvnw.cmd" if os.name == "nt" else "mvnw")
+    if os.path.exists(wrapper):
+        return ["cmd", "/c", wrapper] if os.name == "nt" else [wrapper]
+    mvn = shutil.which("mvn")
+    if not mvn:
+        sys.exit("build_jvmci_module: no mvnw wrapper found at repo root and no `mvn` on PATH")
+    return [mvn]
 
 
 def build():
@@ -141,9 +153,9 @@ def build():
         shutil.copyfile(jar, shipped)
         print(f"  staged for assembly: {shipped}")
 
-        _run([_mvn(), "-q", "install:install-file", f"-Dfile={jar}",
-              f"-DgroupId={GROUP}", f"-DartifactId={ARTIFACT}", f"-Dversion={VERSION}",
-              "-Dpackaging=jar"], cwd=_neutral_cwd())
+        _run(_mvn() + ["-q", "install:install-file", f"-Dfile={jar}",
+             f"-DgroupId={GROUP}", f"-DartifactId={ARTIFACT}", f"-Dversion={VERSION}",
+             "-Dpackaging=jar"], cwd=_neutral_cwd())
         print(f"  installed {GROUP}:{ARTIFACT}:{VERSION} to the local Maven repository")
     finally:
         shutil.rmtree(work, ignore_errors=True)

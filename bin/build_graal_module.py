@@ -78,7 +78,19 @@ def _capture(cmd):
 
 
 def _mvn():
-    return shutil.which("mvn") or "mvn"
+    """argv prefix that invokes the repo's mvnw wrapper, falling back to `mvn` on PATH.
+
+    The wrapper is preferred so the build doesn't depend on a system Maven install; on
+    Windows a .cmd file isn't directly executable via CreateProcess, so it's launched
+    through `cmd /c`.
+    """
+    wrapper = os.path.join(REPO_ROOT, "mvnw.cmd" if os.name == "nt" else "mvnw")
+    if os.path.exists(wrapper):
+        return ["cmd", "/c", wrapper] if os.name == "nt" else [wrapper]
+    mvn = shutil.which("mvn")
+    if not mvn:
+        sys.exit("build_graal_module: no mvnw wrapper found at repo root and no `mvn` on PATH")
+    return [mvn]
 
 
 def _dep_jar(*rel):
@@ -97,9 +109,9 @@ def _module_path_deps():
 
 
 def _install_file(jar, group, artifact):
-    _run([_mvn(), "-q", "install:install-file",
-          f"-Dfile={jar}", f"-DgroupId={group}", f"-DartifactId={artifact}",
-          f"-Dversion={VERSION}", "-Dpackaging=jar"], cwd=_neutral_cwd())
+    _run(_mvn() + ["-q", "install:install-file",
+         f"-Dfile={jar}", f"-DgroupId={group}", f"-DartifactId={artifact}",
+         f"-Dversion={VERSION}", "-Dpackaging=jar"], cwd=_neutral_cwd())
 
 
 def _relocated_uses_clauses(compiler_jar):
@@ -136,7 +148,7 @@ def build():
 
     with tempfile.TemporaryDirectory() as work:
         # (1) shade: relocate classes + services
-        _run([_mvn(), "-q", "-o", "-f", RELOCATE_POM, "package"])
+        _run(_mvn() + ["-q", "-o", "-f", RELOCATE_POM, "package"])
         shaded = os.path.join(SCRIPT_DIR, "graal-relocate", "target", ARTIFACT)
         if not os.path.exists(shaded):
             sys.exit(f"build_graal_module: shade did not produce {shaded}")
