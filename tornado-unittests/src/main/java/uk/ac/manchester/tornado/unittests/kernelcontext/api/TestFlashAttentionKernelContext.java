@@ -273,7 +273,6 @@ public class TestFlashAttentionKernelContext extends TornadoTestBase {
 
     @Test
     public void testFlashAttention() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int nHeads = 4;
         final int headSize = 64;

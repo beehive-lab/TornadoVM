@@ -83,7 +83,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
  * bytecodes. Also, it functions as a memory manager for various devices,
  * including GPUs and multicore processors that adhere to any of the
  * supported programming models. Additionally, it features a Just-In-Time (JIT)
- * compiler that compiles Java bytecode to OpenCL, CUDA, and SPIR-V.
+ * compiler that compiles Java bytecode to OpenCL and CUDA.
  */
 public class TornadoVMInterpreter {
     private static final Event EMPTY_EVENT = new EmptyEvent();
@@ -1018,7 +1018,6 @@ public class TornadoVMInterpreter {
     private void updateMeta(TaskContextInterface meta) {
         meta.setPrintKernelFlag(graphExecutionContext.meta().isPrintKernelEnabled());
         meta.setCompilerFlags(TornadoVMBackendType.OPENCL, graphExecutionContext.meta().getCompilerFlags(TornadoVMBackendType.OPENCL));
-        meta.setCompilerFlags(TornadoVMBackendType.SPIRV, graphExecutionContext.meta().getCompilerFlags(TornadoVMBackendType.SPIRV));
     }
 
     private XPUExecutionFrame compileTaskFromBytecodeToBinary(final int callWrapperIndex, final int numArgs, final int eventId, final int taskIndex, final long batchThreads) {

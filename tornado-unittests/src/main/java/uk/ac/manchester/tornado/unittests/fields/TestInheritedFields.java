@@ -51,7 +51,6 @@ public class TestInheritedFields extends TornadoTestBase {
     @Test
     public void testIncrementPrimitiveB() {
         // only for opencl backend
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int N = 1000;
         PrimitiveB b = new PrimitiveB(N);
@@ -73,7 +72,6 @@ public class TestInheritedFields extends TornadoTestBase {
     @Test
     public void testIncrementPrimitiveAB() {
         // only for opencl backend
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int N = 1000;
         PrimitiveB b = new PrimitiveB(N);
@@ -96,7 +94,6 @@ public class TestInheritedFields extends TornadoTestBase {
     @Test
     public void testIncrementTornadoB() {
         // only for opencl backend
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int N = 1000;
         TornadoB b = new TornadoB(N);
@@ -118,7 +115,6 @@ public class TestInheritedFields extends TornadoTestBase {
     @Test
     public void testIncrementTornadoAB() {
         // only for opencl backend
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int N = 1000;
         TornadoB b = new TornadoB(N);

@@ -46,7 +46,7 @@ public class TestHalfFloatInlineWrite extends TornadoTestBase {
 
     /**
      * The inline {@code new HalfFloat(computedExpr)} fix is applied to the CUDA backend only; the
-     * OpenCL/PTX/Metal/SPIRV HalfFloat replacement phases share the pattern and are not fixed here,
+     * OpenCL/Metal HalfFloat replacement phases share the pattern and are not fixed here,
      * so skip them rather than trip the same code-generation error.
      */
     private void assumeCudaBackend() {
@@ -54,7 +54,7 @@ public class TestHalfFloatInlineWrite extends TornadoTestBase {
         if (backendType != TornadoVMBackendType.CUDA) {
             String message = "This HalfFloat inline-write fix targets the CUDA backend (default device is " + backendType + ")";
             switch (backendType) {
-                case OPENCL, SPIRV, METAL -> assertNotBackend(backendType, message);
+                case OPENCL, METAL -> assertNotBackend(backendType, message);
                 default -> throw new TornadoVMCUDANotSupported(message);
             }
         }
