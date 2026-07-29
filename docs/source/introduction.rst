@@ -10,7 +10,8 @@ Introduction to TornadoVM
 TornadoVM is a plug-in to OpenJDK and other JDK distributions (e.g., GraalVM, SapMachine, Temurin, Red Hat Mandrel, Amazon Corretto, Microsoft OpenJDK, Azul Zulu)
 that allows developers to automatically offload and run a subset of Java programs on heterogeneous hardware.
 TornadoVM targets devices compatible with OpenCL, CUDA, and Apple Metal, which include multi-core CPUs,
-dedicated GPUs, integrated GPUs, and multi-core CPUs from multiple vendors.
+dedicated GPUs, integrated GPUs, and multi-core CPUs from multiple vendors (FPGA support was removed
+after the 5.2.0 release; to run TornadoVM on FPGAs, use TornadoVM <= 5.2.0).
 
 .. image:: images/tornadovm-01.png
   :width: 800
