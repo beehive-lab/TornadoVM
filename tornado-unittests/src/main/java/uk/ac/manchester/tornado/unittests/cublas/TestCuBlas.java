@@ -69,7 +69,7 @@ public class TestCuBlas extends TornadoTestBase {
         if (backendType != TornadoVMBackendType.CUDA) {
             String message = "cuBLAS library tasks require the CUDA backend (default device is " + backendType + ")";
             switch (backendType) {
-                case OPENCL, PTX, SPIRV, METAL -> assertNotBackend(backendType, message);
+                case OPENCL, SPIRV, METAL -> assertNotBackend(backendType, message);
                 default -> throw new TornadoVMCUDANotSupported(message);
             }
         }

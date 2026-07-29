@@ -42,26 +42,26 @@ def detect_backends_from_sdk_path(sdk_path):
 
     For example:
     - tornadovm-2.2.1-dev-opencl-linux-amd64 → opencl
-    - tornadovm-2.2.1-dev-ptx-linux-amd64 → ptx
+    - tornadovm-2.2.1-dev-cuda-linux-amd64 → cuda
     - tornadovm-2.2.1-dev-spirv-linux-amd64 → spirv
-    - tornadovm-2.2.1-dev-full-linux-amd64 → opencl,ptx,spirv
+    - tornadovm-2.2.1-dev-full-linux-amd64 → opencl,cuda,spirv
 
     Args:
         sdk_path (str): The absolute path to the SDK directory
 
     Returns:
-        str: Comma-separated backend string (e.g., "opencl-backend" or "opencl-backend,ptx-backend")
+        str: Comma-separated backend string (e.g., "opencl-backend" or "opencl-backend,cuda-backend")
     """
     # Get the SDK directory name (e.g., "tornadovm-2.2.1-dev-opencl")
     sdk_dir_name = os.path.basename(sdk_path)
 
     # Known backends
-    known_backends = ["opencl", "ptx", "spirv"]
+    known_backends = ["opencl", "cuda", "spirv", "metal"]
     detected_backends = []
 
     # Check for "full" which means all backends
     if "-full-" in sdk_dir_name or sdk_dir_name.endswith("-full"):
-        detected_backends = ["opencl", "ptx", "spirv"]
+        detected_backends = ["opencl", "cuda", "spirv"]
     else:
         # Check for individual backends in the directory name
         for backend in known_backends:
@@ -237,7 +237,7 @@ def generate_argfile_template(backend):
     we automatically include OpenCL exports in the argfile.
 
     Args:
-        backend (str): Comma-separated string of backends (e.g., "opencl" or "opencl,ptx,spirv")
+        backend (str): Comma-separated string of backends (e.g., "opencl" or "opencl,cuda,spirv")
     """
     # If SPIRV is in the backend list, ensure OpenCL is also included for exports
     # SPIRV can run on the OpenCL runtime, so OpenCL module must be available
@@ -342,7 +342,7 @@ def update_intellij_tests_config(backend_profiles):
     after each build.
 
     Args:
-        backend_profiles (str): Comma-separated string of backends (e.g., "opencl-backend,ptx-backend")
+        backend_profiles (str): Comma-separated string of backends (e.g., "opencl-backend,cuda-backend")
     """
     project_root = os.getcwd()
     tornado_home = os.environ.get("TORNADOVM_HOME")
@@ -445,7 +445,7 @@ def main():
     generate_setvars_files()
 
     # Generate argfile template and expand it
-    # Convert backend format: "opencl-backend,ptx-backend" -> "opencl,ptx"
+    # Convert backend format: "opencl-backend,cuda-backend" -> "opencl,cuda"
     backend_for_argfile = selected_backends_str.replace("-backend", "")
     generate_argfile_template(backend_for_argfile)
     expand_argfile_template()

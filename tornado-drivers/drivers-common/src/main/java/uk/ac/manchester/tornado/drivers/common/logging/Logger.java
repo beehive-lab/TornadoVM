@@ -83,7 +83,6 @@ public class Logger {
     public enum BACKEND {
 
         OpenCL("OpenCL"), //
-        PTX("PTX"), //
         SPIRV("SPIRV"), //
         Metal("Metal"); //
 

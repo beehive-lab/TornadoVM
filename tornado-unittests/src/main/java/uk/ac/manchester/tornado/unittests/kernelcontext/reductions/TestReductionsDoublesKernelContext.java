@@ -109,7 +109,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         int groupID = context.groupIdx;
 
         // Allocate an array in local memory (using the OpenCL terminology), or shared
-        // memory with NVIDIA PTX.
+        // memory with NVIDIA CUDA.
         double[] localA = context.allocateDoubleLocalArray(256);
 
         // Copy data from global memory to local memory.
@@ -154,7 +154,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         int groupID = context.groupIdx;
 
         // Allocate an array in local memory (using the OpenCL terminology), or shared
-        // memory with NVIDIA PTX.
+        // memory with NVIDIA CUDA.
         double[] localA = context.allocateDoubleLocalArray(blockDim);
 
         // Copy data from global memory to local memory.

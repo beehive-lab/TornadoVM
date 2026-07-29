@@ -168,7 +168,6 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
         return currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IncAtomicNode") || //
                 currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.opencl.graal.nodes.DecAtomicNode") || //
                 currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomAddNodeTemplate") || //
-                currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.ptx.graal.nodes.AtomAddNodeTemplate") || //
                 currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.cuda.graal.nodes.IncAtomicNode") || //
                 currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.cuda.graal.nodes.DecAtomicNode") || //
                 currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GetAtomicNode") || //
@@ -177,7 +176,6 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.metal.graal.nodes.IncAtomicNode") || //
                 currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.metal.graal.nodes.DecAtomicNode") || //
                 currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.metal.graal.nodes.GetAtomicNode") || //
-                currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.ptx.graal.nodes.MMAStoreNode") ||
                 currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.metal.graal.nodes.AtomAddNodeTemplate");
     }
 

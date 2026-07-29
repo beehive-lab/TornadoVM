@@ -402,7 +402,7 @@ def parseArguments():
         action="store",
         dest="profiler",
         required=False,
-        help="Run Benchmarks with the OpenCL|PTX|SPIRV profiler",
+        help="Run Benchmarks with the OpenCL|CUDA|SPIRV profiler",
     )
     parser.add_argument(
         "--jmh", action="store_true", dest="jmh", default=False, help="Run with JMH"

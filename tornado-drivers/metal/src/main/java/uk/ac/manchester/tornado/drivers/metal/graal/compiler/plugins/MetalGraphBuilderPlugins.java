@@ -478,7 +478,7 @@ public class MetalGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                                  Receiver receiver, ValueNode initValue) {
-                unimplemented("MMA instructions only supported for the PTX backend.");
+                unimplemented("MMA instructions only supported for the CUDA backend.");
                 return false;
             }
         });
@@ -489,7 +489,7 @@ public class MetalGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                                  Receiver receiver, ValueNode tile, ValueNode wmmaK) {
-                unimplemented("MMA instructions only supported for the PTX backend.");
+                unimplemented("MMA instructions only supported for the CUDA backend.");
                 return false;
             }
         });
@@ -500,7 +500,7 @@ public class MetalGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                                  Receiver receiver, ValueNode tile, ValueNode wmmaK) {
-                unimplemented("MMA instructions only supported for the PTX backend.");
+                unimplemented("MMA instructions only supported for the CUDA backend.");
                 return false;
             }
         });
@@ -511,7 +511,7 @@ public class MetalGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                                  Receiver receiver, ValueNode tile, ValueNode wmmaK) {
-                unimplemented("MMA instructions only supported for the PTX backend.");
+                unimplemented("MMA instructions only supported for the CUDA backend.");
                 return false;
             }
         });
@@ -524,7 +524,7 @@ public class MetalGraphBuilderPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                                  Receiver receiver, ValueNode arr, ValueNode row, ValueNode col,
                                  ValueNode stride, ValueNode value, ValueNode byteOffset) {
-                unimplemented("MMA instructions only supported for the PTX backend.");
+                unimplemented("MMA instructions only supported for the CUDA backend.");
                 return false;
             }
         });
@@ -538,7 +538,7 @@ public class MetalGraphBuilderPlugins {
                                  Receiver receiver,
                                  ValueNode fragA, ValueNode fragB, ValueNode fragC,
                                  ValueNode shapeNode) {
-                unimplemented("MMA instructions only supported for the PTX backend.");
+                unimplemented("MMA instructions only supported for the CUDA backend.");
                 return false;
             }
         });
@@ -552,7 +552,7 @@ public class MetalGraphBuilderPlugins {
                                  Receiver receiver,
                                  ValueNode fragD, ValueNode target,
                                  ValueNode tileRow, ValueNode tileCol, ValueNode dimN) {
-                unimplemented("MMA instructions only supported for the PTX backend.");
+                unimplemented("MMA instructions only supported for the CUDA backend.");
                 return false;
             }
         });
@@ -562,7 +562,7 @@ public class MetalGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                                  Receiver receiver, ValueNode initValue) {
-                unimplemented("MMA instructions only supported for the PTX backend.");
+                unimplemented("MMA instructions only supported for the CUDA backend.");
                 return false;
             }
         });
@@ -573,7 +573,7 @@ public class MetalGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                                  Receiver receiver, ValueNode tile, ValueNode tileK) {
-                unimplemented("MMA instructions only supported for the PTX backend.");
+                unimplemented("MMA instructions only supported for the CUDA backend.");
                 return false;
             }
         });
@@ -584,7 +584,7 @@ public class MetalGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                                  Receiver receiver, ValueNode tile, ValueNode tileK) {
-                unimplemented("MMA instructions only supported for the PTX backend.");
+                unimplemented("MMA instructions only supported for the CUDA backend.");
                 return false;
             }
         });
@@ -598,7 +598,7 @@ public class MetalGraphBuilderPlugins {
                                  Receiver receiver,
                                  ValueNode fragA, ValueNode fragB, ValueNode fragC,
                                  ValueNode shapeNode) {
-                unimplemented("MMA instructions only supported for the PTX backend.");
+                unimplemented("MMA instructions only supported for the CUDA backend.");
                 return false;
             }
         });
@@ -612,7 +612,7 @@ public class MetalGraphBuilderPlugins {
                                  Receiver receiver,
                                  ValueNode fragD, ValueNode target,
                                  ValueNode tileRow, ValueNode tileCol, ValueNode dimN) {
-                unimplemented("MMA instructions only supported for the PTX backend.");
+                unimplemented("MMA instructions only supported for the CUDA backend.");
                 return false;
             }
         });
@@ -623,7 +623,7 @@ public class MetalGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                                  Receiver receiver, ValueNode tile, ValueNode wmmaK, ValueNode byteOffset) {
-                unimplemented("MMA instructions only supported for the PTX backend.");
+                unimplemented("MMA instructions only supported for the CUDA backend.");
                 return false;
             }
         });
@@ -634,7 +634,7 @@ public class MetalGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                                  Receiver receiver, ValueNode tile, ValueNode wmmaK, ValueNode byteOffset) {
-                unimplemented("MMA instructions only supported for the PTX backend.");
+                unimplemented("MMA instructions only supported for the CUDA backend.");
                 return false;
             }
         });
@@ -645,7 +645,7 @@ public class MetalGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                                  Receiver receiver, ValueNode tile, ValueNode wmmaK, ValueNode byteOffset) {
-                unimplemented("MMA instructions only supported for the PTX backend.");
+                unimplemented("MMA instructions only supported for the CUDA backend.");
                 return false;
             }
         });
@@ -769,7 +769,7 @@ public class MetalGraphBuilderPlugins {
         r.register(new InvocationPlugin("swizzleLoadFp16Stride32", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride) {
-                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                unimplemented("Swizzled local memory accesses are not supported on this backend.");
                 return false;
             }
         });
@@ -777,7 +777,7 @@ public class MetalGraphBuilderPlugins {
         r.register(new InvocationPlugin("swizzleStoreFp16Stride32", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class, HalfFloat.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode value) {
-                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                unimplemented("Swizzled local memory accesses are not supported on this backend.");
                 return false;
             }
         });
@@ -785,7 +785,7 @@ public class MetalGraphBuilderPlugins {
         r.register(new InvocationPlugin("swizzleLoadFp16Stride16", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride) {
-                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                unimplemented("Swizzled local memory accesses are not supported on this backend.");
                 return false;
             }
         });
@@ -793,7 +793,7 @@ public class MetalGraphBuilderPlugins {
         r.register(new InvocationPlugin("swizzleStoreFp16Stride16", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class, HalfFloat.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode value) {
-                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                unimplemented("Swizzled local memory accesses are not supported on this backend.");
                 return false;
             }
         });
@@ -803,7 +803,7 @@ public class MetalGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver,
                                  ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride) {
-                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                unimplemented("Swizzled local memory accesses are not supported on this backend.");
                 return false;
             }
         });
@@ -813,7 +813,7 @@ public class MetalGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver,
                                  ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode value) {
-                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                unimplemented("Swizzled local memory accesses are not supported on this backend.");
                 return false;
             }
         });

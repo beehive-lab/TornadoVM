@@ -26,8 +26,8 @@ profiles, then runs post-installation steps.
 
 Usage:
     Set the BACKEND environment variable to the desired backend(s):
-    - Single backend: "opencl", "ptx", or "spirv"
-    - Multiple backends: "opencl,ptx" or "opencl,ptx,spirv"
+    - Single backend: "opencl", "cuda", or "spirv"
+    - Multiple backends: "opencl,cuda" or "opencl,cuda,spirv"
 
     The script will:
     1. Invoke Maven with the correct profiles and -Dtornado.backend property
@@ -62,12 +62,12 @@ def compute_tornado_backend_variant(backends):
     Compute the tornado.backend property value from backend list.
 
     Args:
-        backends: List of backend names (e.g., ["opencl", "ptx"])
+        backends: List of backend names (e.g., ["opencl", "cuda"])
 
     Returns:
-        str: The tornado.backend value (e.g., "opencl", "ptx", "opencl-ptx", "full")
+        str: The tornado.backend value (e.g., "opencl", "cuda", "opencl-cuda", "full")
     """
-    all_backends = {"opencl", "ptx", "spirv"}
+    all_backends = {"opencl", "cuda", "spirv"}
     if set(backends) == all_backends:
         return "full"
 
@@ -80,7 +80,7 @@ def run_maven(backends):
     Run Maven with the specified backend profiles.
 
     Args:
-        backends: List of backend names (e.g., ["opencl", "ptx"])
+        backends: List of backend names (e.g., ["opencl", "cuda"])
 
     Returns:
         int: Maven return code
@@ -153,16 +153,16 @@ def main():
         print("Please set the BACKEND environment variable in your IntelliJ run configuration.")
         print("Examples:")
         print("  BACKEND=opencl")
-        print("  BACKEND=ptx")
-        print("  BACKEND=opencl,ptx")
-        print("  BACKEND=opencl,ptx,spirv")
+        print("  BACKEND=cuda")
+        print("  BACKEND=opencl,cuda")
+        print("  BACKEND=opencl,cuda,spirv")
         sys.exit(1)
 
     # Parse backends (comma-separated)
     backends = [b.strip().lower() for b in backend_env.split(",")]
 
     # Validate backends
-    valid_backends = {"opencl", "ptx", "spirv"}
+    valid_backends = {"opencl", "cuda", "spirv", "metal"}
     for backend in backends:
         if backend not in valid_backends:
             print(f"[ERROR] Invalid backend: {backend}")

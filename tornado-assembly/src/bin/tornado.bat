@@ -174,12 +174,12 @@ if exist "%TORNADOVM_HOME%\etc\tornado.backend" (
         )
     )
 
-    findstr "ptx-backend" "%TORNADOVM_HOME%\etc\tornado.backend" >nul 2>nul
+    findstr "cuda-backend" "%TORNADOVM_HOME%\etc\tornado.backend" >nul 2>nul
     if !errorlevel! equ 0 (
         REM Check for NVIDIA
         where nvidia-smi >nul 2>nul
         if !errorlevel! neq 0 (
-            echo [WARNING] PTX backend is configured but NVIDIA driver is not detected
+            echo [WARNING] CUDA backend is configured but NVIDIA driver is not detected
             echo.
             echo Install CUDA Toolkit from: https://developer.nvidia.com/cuda-downloads
             echo.
@@ -219,7 +219,7 @@ REM ########################################################
     REM Check if tornado native libraries exist
     set NATIVE_LIB_FOUND=0
     if exist "%TORNADOVM_HOME%\lib\tornado-opencl.dll" set NATIVE_LIB_FOUND=1
-    if exist "%TORNADOVM_HOME%\lib\tornado-ptx.dll" set NATIVE_LIB_FOUND=1
+    if exist "%TORNADOVM_HOME%\lib\tornado-cuda.dll" set NATIVE_LIB_FOUND=1
     if exist "%TORNADOVM_HOME%\lib\tornado-spirv.dll" set NATIVE_LIB_FOUND=1
 
     if !NATIVE_LIB_FOUND! equ 0 (

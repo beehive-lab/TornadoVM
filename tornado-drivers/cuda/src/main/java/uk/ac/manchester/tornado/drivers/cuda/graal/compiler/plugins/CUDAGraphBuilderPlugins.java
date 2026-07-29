@@ -910,7 +910,7 @@ public class CUDAGraphBuilderPlugins {
         r.register(new InvocationPlugin("swizzleLoadFp16Stride16", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride) {
-                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                unimplemented("Swizzled local memory accesses are not supported on this backend.");
                 return false;
             }
         });
@@ -918,7 +918,7 @@ public class CUDAGraphBuilderPlugins {
         r.register(new InvocationPlugin("swizzleStoreFp16Stride16", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class, HalfFloat.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode value) {
-                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                unimplemented("Swizzled local memory accesses are not supported on this backend.");
                 return false;
             }
         });
@@ -928,7 +928,7 @@ public class CUDAGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver,
                                  ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride) {
-                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                unimplemented("Swizzled local memory accesses are not supported on this backend.");
                 return false;
             }
         });
@@ -938,7 +938,7 @@ public class CUDAGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver,
                                  ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode value) {
-                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                unimplemented("Swizzled local memory accesses are not supported on this backend.");
                 return false;
             }
         });

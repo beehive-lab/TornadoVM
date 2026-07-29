@@ -712,15 +712,15 @@ public class MatrixMultiplicationMMA {
         return new int[] { 2048, 2048, 2048 };
     }
 
-    private static boolean isPTXorCUDABackend() {
+    private static boolean isCUDABackend() {
         int driverIndex = TornadoRuntimeProvider.getTornadoRuntime().getDefaultDevice().getBackendIndex();
         TornadoVMBackendType backend = TornadoRuntimeProvider.getTornadoRuntime().getBackendType(driverIndex);
-        return backend == TornadoVMBackendType.PTX || backend == TornadoVMBackendType.CUDA;
+        return backend == TornadoVMBackendType.CUDA;
     }
 
     public static void main(String[] args) {
-        if (!isPTXorCUDABackend()) {
-            System.out.println("MMA instructions are only supported for the PTX and CUDA backends.");
+        if (!isCUDABackend()) {
+            System.out.println("MMA instructions are only supported for the CUDA backend.");
             return;
         }
 

@@ -83,7 +83,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
  * bytecodes. Also, it functions as a memory manager for various devices,
  * including FPGAs, GPUs, and multicore processors that adhere to any of the
  * supported programming models. Additionally, it features a Just-In-Time (JIT)
- * compiler that compiles Java bytecode to OpenCL, PTX, and SPIR-V.
+ * compiler that compiles Java bytecode to OpenCL, CUDA, and SPIR-V.
  */
 public class TornadoVMInterpreter {
     private static final Event EMPTY_EVENT = new EmptyEvent();
@@ -329,8 +329,8 @@ public class TornadoVMInterpreter {
         // (H2D, D2H, LAUNCH, ALLOC, etc.). The immediately following ADD_DEPENDENCY
         // bytecode stores it into events[slot], building the wait-list that is passed
         // as waitList to the next dependent operation.
-        // In single-stream mode: a local PTXEventPool index.
-        // In multi-stream mode: a global PTXEventRegistry ID resolved via
+        // In single-stream mode: a local CUDAEventPool index.
+        // In multi-stream mode: a global event-registry ID resolved via
         // resolveAndWaitCrossStream into cuStreamWaitEvent calls on the target stream.
         // Initialised to -1; ADD_DEPENDENCY skips it when -1 (no-op or warmup).
         int lastEvent = -1;
@@ -1018,7 +1018,6 @@ public class TornadoVMInterpreter {
     private void updateMeta(TaskContextInterface meta) {
         meta.setPrintKernelFlag(graphExecutionContext.meta().isPrintKernelEnabled());
         meta.setCompilerFlags(TornadoVMBackendType.OPENCL, graphExecutionContext.meta().getCompilerFlags(TornadoVMBackendType.OPENCL));
-        meta.setCompilerFlags(TornadoVMBackendType.PTX, graphExecutionContext.meta().getCompilerFlags(TornadoVMBackendType.PTX));
         meta.setCompilerFlags(TornadoVMBackendType.SPIRV, graphExecutionContext.meta().getCompilerFlags(TornadoVMBackendType.SPIRV));
     }
 
@@ -1335,8 +1334,8 @@ public class TornadoVMInterpreter {
      * <p>Appends {@code lastEvent} to {@code events[eventId]}, which is the wait-list
      * later passed as {@code waitList} to the operation that holds dependency slot
      * {@code eventId}. In multi-stream mode the stored value is a global
-     * {@code PTXEventRegistry} ID; in single-stream mode it is a local
-     * {@code PTXEventPool} index. Skipped when {@code lastEvent == -1} (the preceding
+     * event-registry ID; in single-stream mode it is a local
+     * {@code CUDAEventPool} index. Skipped when {@code lastEvent == -1} (the preceding
      * operation produced no event) or when {@code useDependencies} is false.
      *
      * @param lastEvent event ID of the most recently executed bytecode operation
