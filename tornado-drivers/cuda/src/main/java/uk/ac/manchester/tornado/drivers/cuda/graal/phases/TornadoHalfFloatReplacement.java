@@ -85,6 +85,21 @@ import java.util.Optional;
 
 public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContext> {
 
+    /**
+     * Finds the {@link NewHalfFloatInstance} that the {@code CUDAHalfFloatPlugins} node plugin inserted at the
+     * {@code HalfFloat.<init>} call site for this allocation. It is not always the allocation's immediate fixed
+     * successor: a computed constructor argument (e.g. an array read, {@code new HalfFloat(a.get(i) * 2.0f)})
+     * emits its own fixed nodes between the {@code new} and the {@code <init>} it feeds, so this walks the
+     * straight-line fixed chain forward (bounded, since argument evaluation cannot branch) looking for it.
+     */
+    private static Node findSucceedingHalfFloatInstance(NewInstanceNode newInstanceNode) {
+        Node cursor = newInstanceNode.successors().isNotEmpty() ? newInstanceNode.successors().first() : null;
+        for (int hops = 0; cursor != null && !(cursor instanceof NewHalfFloatInstance) && !(cursor instanceof NewInstanceNode) && hops < 16; hops++) {
+            cursor = cursor.successors().isNotEmpty() ? cursor.successors().first() : null;
+        }
+        return cursor instanceof NewHalfFloatInstance ? cursor : null;
+    }
+
     private static void replaceFieldAccess(LoadFieldNode loadFieldNode) {
         // remove the FixGuardNode associated with the loading of the field
         if (loadFieldNode.predecessor() instanceof FixedGuardNode) {
@@ -439,8 +454,7 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
 
         for (NewInstanceNode newInstanceNode : graph.getNodes().filter(NewInstanceNode.class)) {
             if (newInstanceNode.instanceClass().getAnnotation(HalfType.class) != null) {
-                if (newInstanceNode.successors().first() instanceof NewHalfFloatInstance) {
-                    NewHalfFloatInstance newHalfFloatInstance = (NewHalfFloatInstance) newInstanceNode.successors().first();
+                if (findSucceedingHalfFloatInstance(newInstanceNode) instanceof NewHalfFloatInstance newHalfFloatInstance) {
                     ValueNode valueInput = getHalfFloatValue(newHalfFloatInstance.getValue(), graph);
                     newInstanceNode.replaceAtUsages(valueInput);
                     deleteFixed(newInstanceNode);
@@ -463,17 +477,26 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
                 // This casting is safe to do as it is already checked by the isWriteHalfFloat function
                 HalfFloatPlaceholder placeholder = (HalfFloatPlaceholder) javaWrite.value();
                 ValueNode writingValue;
-                if (javaWrite.predecessor() instanceof NewHalfFloatInstance) {
-                    // if a new HalfFloat instance is written
-                    NewHalfFloatInstance newHalfFloatInstance = (NewHalfFloatInstance) javaWrite.predecessor();
+                // A written HalfFloat that comes from `new HalfFloat(x)` shows up as a
+                // NewHalfFloatInstance, either as the write's control-flow predecessor (simple
+                // read argument) or, when the ctor argument is a computed expression that
+                // reorders the fixed nodes, only as the placeholder's data input. Handle both,
+                // and drop the instance unconditionally: leaving it (as happened when the
+                // NewInstanceNode was not adjacent) makes it reach LIR with
+                // "node is not LIRLowerable: NewHalfFloatInstance".
+                NewHalfFloatInstance newHalfFloatInstance = null;
+                if (javaWrite.predecessor() instanceof NewHalfFloatInstance predInstance) {
+                    newHalfFloatInstance = predInstance;
+                } else if (placeholder.getInput() instanceof NewHalfFloatInstance inputInstance) {
+                    newHalfFloatInstance = inputInstance;
+                }
+                if (newHalfFloatInstance != null) {
                     writingValue = newHalfFloatInstance.getValue();
-                    if (newHalfFloatInstance.predecessor() instanceof NewInstanceNode) {
-                        NewInstanceNode newInstanceNode = (NewInstanceNode) newHalfFloatInstance.predecessor();
-                        if (newInstanceNode.instanceClass().toString().contains("HalfFloat")) {
-                            deleteFixed(newInstanceNode);
-                            deleteFixed(newHalfFloatInstance);
-                        }
+                    if (newHalfFloatInstance.predecessor() instanceof NewInstanceNode newInstanceNode //
+                            && newInstanceNode.instanceClass().toString().contains("HalfFloat")) {
+                        deleteFixed(newInstanceNode);
                     }
+                    deleteFixed(newHalfFloatInstance);
                 } else {
                     // if the result of an operation or a stored value is written
                     writingValue = placeholder.getInput();
@@ -485,6 +508,16 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
                 graph.addWithoutUnique(writeHalfFloatNode);
                 replaceFixed(javaWrite, writeHalfFloatNode);
                 deleteFixed(javaWrite);
+            }
+        }
+
+        // A `new HalfFloat(computedExpr)` leaves the HalfFloat allocation (NewInstanceNode) in the
+        // fixed control flow when the computed argument breaks the adjacency the matching above
+        // relies on. Once its usages have been rewired it is a dead allocation that would otherwise
+        // lower as an (unsupported) on-device object allocation, so remove any leftover.
+        for (NewInstanceNode newInstanceNode : graph.getNodes().filter(NewInstanceNode.class)) {
+            if (newInstanceNode.instanceClass().getAnnotation(HalfType.class) != null && newInstanceNode.hasNoUsages()) {
+                deleteFixed(newInstanceNode);
             }
         }
 
@@ -504,6 +537,11 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
         // add after the loadindexedvector nodes the marker node to fix the offset of its read
 
         for (LoadIndexedVectorNode loadIndexedVectorNode : graph.getNodes().filter(LoadIndexedVectorNode.class)) {
+            // Local-memory arrays (e.g. packed __half2 tiles) have no object header, so the
+            // header-offset fix applied through VectorHalfRead must not be emitted for them.
+            if (loadIndexedVectorNode.array() instanceof LocalArrayNode) {
+                continue;
+            }
             if (loadIndexedVectorNode.getCUDAKind().isHalf()) {
                 VectorHalfRead vectorHalfRead;
                 if (loadIndexedVectorNode.index() instanceof ConstantNode constantNode) {
@@ -533,6 +571,22 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
                     }
                 }
             }
+        }
+
+        // A `new HalfFloat(...)` passed straight into an intrinsified sink (e.g.
+        // HalfFloatArray.set(int, HalfFloat), lowered directly to WriteHalfFloatNode by its
+        // InvocationPlugin) never has its NewHalfFloatInstance carrier referenced as a data input -
+        // the plugin captures the constructor argument value directly - so it is left as inert
+        // dead weight wired into the fixed control flow (predecessor/successor of real nodes) with
+        // no usages. None of the usage-driven replacement above touches it, and it would otherwise
+        // reach LIR with "node is not LIRLowerable: NewHalfFloatInstance". Any usages that do
+        // remain (should not normally happen once the above has run) are redirected to the raw
+        // value first, matching the write-context handling.
+        for (NewHalfFloatInstance leftover : graph.getNodes().filter(NewHalfFloatInstance.class).snapshot()) {
+            if (leftover.usages().isNotEmpty()) {
+                leftover.replaceAtUsages(leftover.getValue());
+            }
+            deleteFixed(leftover);
         }
 
         // Replace any remaining HalfFloatPlaceholder nodes in arithmetic contexts

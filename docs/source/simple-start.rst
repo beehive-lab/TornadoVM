@@ -7,9 +7,19 @@ Running Examples and Benchmarks
 Running TornadoVM Programs
 ------------------------------
 
-TornadoVM includes a tool for launching applications from the command-line:
+TornadoVM includes a tool for launching applications from the command-line. ``tornado`` is essentially an alias for the ``java`` command, combined with a set of runtime flags and module/classpath options that enable TornadoVM. In fact, you can run any TornadoVM program without the ``tornado`` launcher at all: generate an arg-file once with ``tornado --generate-argfile``, and then invoke ``java`` directly with it:
 
-.. code-block:: bash 
+.. code-block:: bash
+
+   $ java @$TORNADOVM_HOME/tornado-argfile -cp $TORNADOVM_HOME/share/java/tornado/tornado-examples-5.0.0-jdk21.jar uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
+
+This is equivalent to:
+
+.. code-block:: bash
+
+   $ tornado -cp $TORNADOVM_HOME/share/java/tornado/tornado-examples-5.0.0-jdk21.jar uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
+
+.. code-block:: bash
 
   $ tornado --help
   usage: tornado [-h] [--version] [-version] [--debug] [--threadInfo] [--igv] [--igvLowTier] [--printKernel] [--printBytecodes] [--enableProfiler ENABLE_PROFILER] [--dumpProfiler DUMP_PROFILER] [--printJavaFlags] [--devices] [--ea]
@@ -29,7 +39,7 @@ TornadoVM includes a tool for launching applications from the command-line:
     --threadInfo          Print thread deploy information per task on the accelerator
     --igv                 Debug Compilation Graphs using Ideal Graph Visualizer (IGV)
     --igvLowTier          Debug Low Tier Compilation Graphs using Ideal Graph Visualizer (IGV)
-    --printKernel, -pk    Print generated kernel (OpenCL, PTX or SPIR-V)
+    --printKernel, -pk    Print generated kernel (OpenCL, CUDA or SPIR-V)
     --printBytecodes, -pc
                           Print the generated TornadoVM bytecodes
     --enableProfiler ENABLE_PROFILER
@@ -81,9 +91,9 @@ Example output:
 .. code-block:: bash 
 
   Number of Tornado drivers: 2
-  Total number of PTX devices  : 1
+  Total number of CUDA devices  : 1
   Tornado device=0:0
-    PTX -- GeForce GTX 1650
+    CUDA -- GeForce GTX 1650
       Global Memory Size: 3.8 GB
       Local Memory Size: 48.0 KB
       Workgroup Dimensions: 3
@@ -218,7 +228,7 @@ To test just a method of a unittest class:
   $ tornado-test --verbose uk.ac.manchester.tornado.unittests.TestHello#testHello
 
 
-To see the OpenCL/PTX generated kernel for a unittest:
+To see the OpenCL/CUDA generated kernel for a unittest:
 
 
 .. code-block:: bash 

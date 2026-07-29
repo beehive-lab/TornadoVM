@@ -1,0 +1,72 @@
+name: 6 - Notify Site of Release [auto]
+
+# Fires after BOTH 5.1 (SDKMAN JDK21) and 5.2 (SDKMAN JDK25) have succeeded, so
+# the site only refreshes once a release is fully done — SDKs built, uploaded,
+# and installable via SDKMAN — not just as soon as the GitHub Release exists.
+#
+# 5.1 and 5.2 run once per JDK for the same release, back-to-back (dispatched
+# together by step 3, or both fired by `release: published` for their
+# respective tag). Whichever of the two completes first here checks whether
+# its sibling has *also* recently succeeded; if not, it exits cleanly and lets
+# the second completion do the actual dispatch — same "first exits, second
+# proceeds" pattern build-release-sdks.yml uses to wait for both Releases.
+
+on:
+  workflow_run:
+    workflows:
+      - "5.1 - Publish SDKMAN JDK21 [auto]"
+      - "5.2 - Publish SDKMAN JDK25 [auto]"
+    types: [completed]
+
+jobs:
+  notify:
+    name: Trigger tornadovm-site rebuild
+    if: |
+      github.repository == 'beehive-lab/TornadoVM' &&
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Check sibling JDK publish also succeeded
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TRIGGERED_BY: ${{ github.event.workflow_run.name }}
+          TRIGGERED_AT: ${{ github.event.workflow_run.created_at }}
+        run: |
+          set -euo pipefail
+
+          if [ "$TRIGGERED_BY" = "5.1 - Publish SDKMAN JDK21 [auto]" ]; then
+            SIBLING="5.2 - Publish SDKMAN JDK25 [auto]"
+          else
+            SIBLING="5.1 - Publish SDKMAN JDK21 [auto]"
+          fi
+
+          RUN_JSON=$(gh run list --repo "${{ github.repository }}" --workflow "$SIBLING" \
+            --limit 1 --json conclusion,createdAt)
+          CONCLUSION=$(echo "$RUN_JSON" | jq -r '.[0].conclusion // ""')
+          CREATED=$(echo "$RUN_JSON" | jq -r '.[0].createdAt // ""')
+
+          echo "Sibling: $SIBLING (conclusion=$CONCLUSION, createdAt=$CREATED)"
+
+          READY=false
+          if [ "$CONCLUSION" = "success" ] && [ -n "$CREATED" ]; then
+            DIFF=$(( $(date -d "$TRIGGERED_AT" +%s) - $(date -d "$CREATED" +%s) ))
+            DIFF=${DIFF#-}
+            # 5.1/5.2 are always dispatched together for the same release, so
+            # a genuine sibling success will land within minutes, not hours.
+            if [ "$DIFF" -le 3600 ]; then
+              READY=true
+            fi
+          fi
+          echo "ready=$READY" >> "$GITHUB_OUTPUT"
+
+      - name: Dispatch to beehive-lab/tornadovm-site
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.SITE_DISPATCH_TOKEN }}
+        run: |
+          gh api repos/beehive-lab/tornadovm-site/dispatches \
+            -f event_type=tornadovm-release

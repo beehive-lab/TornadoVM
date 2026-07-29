@@ -29,6 +29,7 @@ import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAInstalledCode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDACompilationResult;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAMemoryManager;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
@@ -85,6 +86,35 @@ public interface CUDADeviceContextInterface extends TornadoDeviceContext {
     CUDAProgram createProgramWithBinary(byte[] binary, long[] lengths);
 
     CUDAProgram createProgramWithIL(byte[] binary, long[] lengths);
+
+    /**
+     * Records, per execution plan, whether intra-plan concurrency (multi-queue issue) is enabled.
+     */
+    default void setIntraPlanConcurrency(long executionPlanId, boolean enabled) {
+        // no-op by default
+    }
+
+    /**
+     * Records whether large one-shot H2D uploads are routed through the pinned staging ring.
+     */
+    default void setStagedTransfers(boolean enabled) {
+        // no-op by default
+    }
+
+    /**
+     * Whether large one-shot H2D uploads are routed through the pinned staging ring.
+     */
+    default boolean isStagedTransfersEnabled() {
+        return TornadoOptions.ENABLE_STAGED_TRANSFERS;
+    }
+
+    /**
+     * Releases the pinned host block backing the staging ring. Called at device teardown, once every
+     * plan has been reset.
+     */
+    default void releaseStagedRing() {
+        // no-op by default
+    }
 
     /* ---- CUDA Graph (stream capture) support ---- */
 

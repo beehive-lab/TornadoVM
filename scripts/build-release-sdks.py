@@ -27,10 +27,10 @@ and cleans up — without touching the current working branch.
 
 SDKs built per platform:
   - macOS   : opencl, metal                    (JDK 21 and JDK 25, via sdkman Temurin)
-  - Linux   : opencl, ptx, spirv, cuda, full   (JDK 21 and JDK 25, via sdkman Temurin)
-  - Windows : opencl, ptx, spirv, cuda, full   (JDK 21 and JDK 25, --jdkXX-home required)
+  - Linux   : opencl, spirv, cuda, full        (JDK 21 and JDK 25, via sdkman Temurin)
+  - Windows : opencl, spirv, cuda              (JDK 21 and JDK 25, --jdkXX-home required)
 
-"full" means opencl+ptx+spirv+cuda combined into a single archive.
+"full" means opencl+spirv+cuda combined into a single archive.
 
 Usage:
   python3 scripts/build-release-sdks.py --version v4.0.0
@@ -182,7 +182,7 @@ def resolve_jdk_home(major_version, override):
 # Backends to build per platform.  Each entry becomes BACKEND=<value> in make.
 # On macOS/Linux the Makefile target is:  make sdk BACKEND=<value>
 # On Windows it is:  nmake /f Makefile.mak sdk BACKEND=<value>
-# opencl+ptx+spirv+cuda is labelled "full" automatically by bin/compile.
+# opencl+spirv+cuda is labelled "full" automatically by bin/compile.
 BUILDS = {
     "macos": [
         "opencl",
@@ -190,17 +190,14 @@ BUILDS = {
     ],
     "linux": [
         "opencl",
-        "ptx",
         "spirv",
         "cuda",
-        "opencl,ptx,spirv,cuda",
+        "opencl,spirv,cuda",
     ],
     "windows": [
         "opencl",
-        "ptx",
         "spirv",
         "cuda",
-        "opencl,ptx,spirv,cuda",
     ],
 }
 
@@ -283,6 +280,205 @@ def check_pyinstaller():
         )
         sys.exit(1)
     info("pyinstaller: found")
+
+
+def patch_worktree_fix_pyinstaller(worktree_path):
+    """
+    Patch runPyInstaller() in the worktree's config_utils.py so PyInstaller is
+    invoked without chdir'ing into <tornado_home>/bin first.
+
+    The tagged config_utils.py does:
+        path = os.path.join(tornadoSDKPath, "bin")
+        os.chdir(path)
+        ...
+        os.system("pyinstaller " + s + " --onefile")
+        ...
+        os.chdir(currentDirectory)
+
+    Since our release SDK build output paths contain a 'dist' segment
+    (dist/tornadovm-X.Y.Z-<backend>-windows-amd64/tornadovm-X.Y.Z-<backend>/bin),
+    PyInstaller's own safety check detects what looks like one of its previous
+    output trees and refuses to run:
+
+        ERROR: Do not run pyinstaller from <path>\\dist\\...\\bin.
+
+    This patch replaces the function body so PyInstaller runs from the
+    original working directory, with explicit --distpath/--workpath/--specpath
+    arguments, avoiding the chdir entirely.
+
+    The worktree is a throw-away detached checkout of a release tag, so
+    editing its config_utils.py here does not touch the repository or the
+    published tag itself.
+    """
+    config_utils_path = os.path.join(worktree_path, "bin", "config_utils.py")
+    if not os.path.isfile(config_utils_path):
+        warn("config_utils.py not found in worktree — cannot patch runPyInstaller.")
+        return
+
+    with open(config_utils_path, "r", encoding="utf-8") as f:
+        src = f.read()
+    original = src
+
+    # v5.1.0-jdk25 tag shape: chdir's into <sdk>/bin before invoking PyInstaller
+    # and chdir's back afterwards — the classic "run me from inside dist/"
+    # trigger.
+    old_func_pattern_chdir = re.compile(
+        r"def runPyInstaller\(currentDirectory, tornadoSDKPath\):.*?"
+        r"os\.chdir\(currentDirectory\)\n",
+        re.DOTALL,
+    )
+
+    # v5.1.0-jdk21 tag shape: already avoids the chdir and already passes
+    # explicit --distpath/--workpath/--specpath via os.system(), but never
+    # overrides the *process* cwd — so it still inherits the worktree root
+    # (created under the OS temp dir), which trips the same PyInstaller safety
+    # check for a different reason. This variant has no trailing
+    # os.chdir(...) and instead ends with the shutil.rmtree(work_dir, ...)
+    # cleanup line.
+    old_func_pattern_system = re.compile(
+        r"def runPyInstaller\(currentDirectory, tornadoSDKPath\):.*?"
+        r"shutil\.rmtree\(work_dir, ignore_errors=True\)\n",
+        re.DOTALL,
+    )
+
+    new_func = '''def runPyInstaller(currentDirectory, tornadoSDKPath):
+    import subprocess, tempfile
+
+    bin_dir = os.path.join(tornadoSDKPath, "bin")
+    work_dir = tempfile.mkdtemp(prefix="pyinstaller-build-")
+    repo_root = os.environ.get("TORNADO_BUILD_REPO_ROOT", currentDirectory)
+
+    scripts = ["tornado.py", "tornado-test", "tornado-benchmarks.py"]
+    failed = []
+    for s in scripts:
+        print("creating " + s + " binary ....  "),
+        script_path = os.path.join(bin_dir, s)
+        result = subprocess.run(
+            ["pyinstaller", script_path, "--onefile",
+             "--distpath", bin_dir, "--workpath", work_dir, "--specpath", work_dir],
+            cwd=repo_root,
+        )
+        if result.returncode != 0:
+            print(f"[ERROR] PyInstaller failed for {s} (exit code {result.returncode})")
+            failed.append(s)
+        else:
+            print("ok ")
+
+    shutil.rmtree(work_dir, ignore_errors=True)
+    if failed:
+        raise RuntimeError(f"PyInstaller failed for: {\', \'.join(failed)}")
+'''
+
+    src, n = old_func_pattern_chdir.subn(new_func, src)
+    if n == 0:
+        src, n = old_func_pattern_system.subn(new_func, src)
+
+    if n == 0:
+        warn(
+            "config_utils.py in the worktree did not match either known "
+            "runPyInstaller pattern — the tag layout may have changed; "
+            "nothing was patched."
+        )
+        return
+
+    with open(config_utils_path, "w", encoding="utf-8") as f:
+        f.write(src)
+    ok("Patched worktree config_utils.py to fix PyInstaller dist-path check.")
+
+
+def patch_worktree_fix_cutlass(worktree_path):
+    """
+    Patch tornado-drivers/cutlass-jni/src/main/cpp/CMakeLists.txt in the
+    worktree so its CUTLASS fetch uses git sparse-checkout instead of a plain
+    FetchContent git clone.
+
+    The tagged CMakeLists.txt does:
+        include(FetchContent)
+        FetchContent_Declare(cutlass GIT_REPOSITORY ... GIT_TAG v3.5.1 GIT_SHALLOW TRUE)
+        FetchContent_GetProperties(cutlass)
+        if(NOT cutlass_POPULATED)
+            FetchContent_Populate(cutlass)
+        endif()
+
+    This checks out CUTLASS's entire tree, including its docs/ folder —
+    thousands of Doxygen-generated HTML files with very long, template-mangled
+    names. On Windows, the combined path (worktree + build dir + docs/<long
+    name>.html) exceeds the 260-char MAX_PATH, and git's checkout of those
+    files fails ("unable to create file docs/...: Filename too long") even
+    with core.longpaths=true set — confirmed in CI, this git-for-windows
+    install doesn't fully honor that flag for the checkout inside git clone.
+
+    v5.1.0-jdk21 and v5.1.0-jdk25 are already-published, immutable release
+    tags, so the fix (landed on develop/ci branches) can't reach them by
+    editing the source tree directly — same reason runPyInstaller is patched
+    above instead of just fixed on the tag. This rewrites the fetch to use
+    git sparse-checkout (cone mode), pulling only include/ and
+    tools/util/include/ — the two subtrees the build actually uses — so
+    docs/ is never fetched at all, on any platform, and the worktree is a
+    throw-away detached checkout, so editing its CMakeLists.txt here does not
+    touch the repository or the published tag itself.
+    """
+    cmake_path = os.path.join(
+        worktree_path, "tornado-drivers", "cutlass-jni", "src", "main", "cpp", "CMakeLists.txt"
+    )
+    if not os.path.isfile(cmake_path):
+        warn("cutlass-jni/CMakeLists.txt not found in worktree — cannot patch CUTLASS fetch.")
+        return
+
+    with open(cmake_path, "r", encoding="utf-8") as f:
+        src = f.read()
+    original = src
+
+    old_fetch_pattern = re.compile(
+        r"include\(FetchContent\)\s*"
+        r"FetchContent_Declare\(\s*cutlass.*?\)\s*"
+        r"FetchContent_GetProperties\(cutlass\)\s*"
+        r"if\(NOT cutlass_POPULATED\)\s*"
+        r"FetchContent_Populate\(cutlass\)\s*"
+        r"endif\(\)\n",
+        re.DOTALL,
+    )
+
+    new_fetch = '''set(CUTLASS_SOURCE_DIR "${CMAKE_BINARY_DIR}/_deps/cutlass-src")
+if(NOT EXISTS "${CUTLASS_SOURCE_DIR}/include/cutlass/cutlass.h")
+    find_package(Git REQUIRED)
+    file(REMOVE_RECURSE "${CUTLASS_SOURCE_DIR}")
+    file(MAKE_DIRECTORY "${CUTLASS_SOURCE_DIR}")
+
+    macro(cutlass_git)
+        execute_process(
+            COMMAND ${GIT_EXECUTABLE} ${ARGN}
+            WORKING_DIRECTORY "${CUTLASS_SOURCE_DIR}"
+            RESULT_VARIABLE _cutlass_git_rc
+        )
+        if(NOT _cutlass_git_rc EQUAL 0)
+            message(FATAL_ERROR "CUTLASS sparse checkout failed: git ${ARGN}")
+        endif()
+    endmacro()
+
+    cutlass_git(init -q)
+    cutlass_git(remote add origin https://github.com/NVIDIA/cutlass.git)
+    cutlass_git(sparse-checkout init --cone)
+    cutlass_git(sparse-checkout set include tools/util/include)
+    cutlass_git(fetch --depth 1 origin v3.5.1)
+    cutlass_git(checkout FETCH_HEAD)
+endif()
+set(cutlass_SOURCE_DIR "${CUTLASS_SOURCE_DIR}")
+'''
+
+    src, n = old_fetch_pattern.subn(new_fetch, src)
+
+    if n == 0:
+        warn(
+            "cutlass-jni/CMakeLists.txt in the worktree did not match the "
+            "expected FetchContent pattern — the tag layout may have "
+            "changed; nothing was patched."
+        )
+        return
+
+    with open(cmake_path, "w", encoding="utf-8") as f:
+        f.write(src)
+    ok("Patched worktree cutlass-jni/CMakeLists.txt to sparse-checkout CUTLASS (avoids Windows MAX_PATH).")
 
 
 def patch_worktree_skip_executables(worktree_path):
@@ -370,7 +566,7 @@ def clean_graal_jars(worktree_path):
         info(f"Removed {removed} stale file(s) from graalJars/")
 
 
-def build_sdk(worktree_path, jdk_home, jdk_arg, backends, label):
+def build_sdk(worktree_path, jdk_home, jdk_arg, backends, label, repo_root):
     """
     Build a single SDK variant inside *worktree_path*.
 
@@ -386,6 +582,7 @@ def build_sdk(worktree_path, jdk_home, jdk_arg, backends, label):
 
     env = os.environ.copy()
     env["JAVA_HOME"] = jdk_home
+    env["TORNADO_BUILD_REPO_ROOT"] = repo_root
     # Prepend the build JDK's bin/ to PATH so that any script that runs `java`
     # (e.g. gen-tornado-argfile-template.py's is_graalvm() check) sees the
     # correct JDK rather than whatever is current in the shell.
@@ -712,17 +909,23 @@ def main():
         try:
             add_worktree(tag, worktree_path)
 
+            if current_platform == "windows" and not skip_win_exe:
+                patch_worktree_fix_pyinstaller(worktree_path)
+
+            if current_platform == "windows":
+                patch_worktree_fix_cutlass(worktree_path)
+
             if skip_win_exe:
                 patch_worktree_skip_executables(worktree_path)
 
             for backends in backends_for_platform:
-                # Label mirrors bin/compile naming: opencl,ptx,spirv,cuda → full
-                if set(backends.split(",")) == {"opencl", "ptx", "spirv", "cuda"}:
+                # Label mirrors bin/compile naming: opencl,spirv,cuda → full
+                if set(backends.split(",")) == {"opencl", "spirv", "cuda"}:
                     backend_label = "full"
                 else:
                     backend_label = backends
                 label = f"{tag}-{backend_label}"
-                success = build_sdk(worktree_path, jdk_home, jdk_arg, backends, label)
+                success = build_sdk(worktree_path, jdk_home, jdk_arg, backends, label, repo_root)
                 results.append((label, success))
 
                 if success:

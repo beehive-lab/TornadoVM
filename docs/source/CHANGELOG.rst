@@ -7,6 +7,137 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 
 CHANGELOG
 
+TornadoVM 5.2.0-jdk21
+---------------------
+23/07/26
+
+Improvements
+~~~~~~~~~~~~
+
+- `#962 <https://github.com/beehive-lab/TornadoVM/pull/962>`_: Packed half2 support for the CUDA backend
+- `#952 <https://github.com/beehive-lab/TornadoVM/pull/952>`_: [feat] CUDA backend: native FP8 conversion + FP8/BF16 tensor-core MMA and cp.async copies
+
+Other Changes
+~~~~~~~~~~~~
+
+- `#947 <https://github.com/beehive-lab/TornadoVM/pull/947>`_: Add tornado-fuzz: differential + sanitizer fuzz tester for the CUDA backend
+- `#967 <https://github.com/beehive-lab/TornadoVM/pull/967>`_: [cuda] BFloat16Array: first-class bfloat16 native array + JIT conversions + cuBLAS/CUTLASS bf16 GEMM
+- `#963 <https://github.com/beehive-lab/TornadoVM/pull/963>`_: [cuda] Saturate CUTLASS provider: SiLU/Sigmoid/Tanh/HardSwish epilogues + batched FP16 GEMM
+- `#969 <https://github.com/beehive-lab/TornadoVM/pull/969>`_: [cuda] Fix HalfFloat codegen for inline new HalfFloat(computedExpr) writes
+- `#958 <https://github.com/beehive-lab/TornadoVM/pull/958>`_: Extend TaskGraph task/libraryTask arity to 20 for hybrid API
+
+
+TornadoVM 5.1.0-jdk21
+---------------------
+17/07/26
+
+Improvements
+~~~~~~~~~~~~
+
+- `#929 <https://github.com/beehive-lab/TornadoVM/pull/929>`_: Add FP8 (E4M3/E5M2) support for the CUDA backend + fix NaN/Infinity float constants
+- `#928 <https://github.com/beehive-lab/TornadoVM/pull/928>`_: Add FP8 (E4M3/E5M2) support for the CUDA backend + fix NaN/Infinity float constants
+- `#934 <https://github.com/beehive-lab/TornadoVM/pull/934>`_: Auto-disable intra-plan concurrency on serial task graphs
+- `#937 <https://github.com/beehive-lab/TornadoVM/pull/937>`_: Stage large H2D transfers through a pinned host buffer ring
+- `#936 <https://github.com/beehive-lab/TornadoVM/pull/936>`_: Stage large H2D transfers through a pinned host buffer ring
+- `#935 <https://github.com/beehive-lab/TornadoVM/pull/935>`_: Auto-disable intra-plan concurrency on serial task graphs
+- `#919 <https://github.com/beehive-lab/TornadoVM/pull/919>`_: [cuda] NVTX instrumentation for library tasks + cuSPARSE hybrid provider (SpMV/SpMM)
+- `#912 <https://github.com/beehive-lab/TornadoVM/pull/912>`_: [cuda] CUTLASS hybrid-API provider: FP32/FP16 GEMM + fused bias/ReLU/GELU epilogues as library tasks
+
+Compatibility
+~~~~~~~~~~~~
+
+- `#938 <https://github.com/beehive-lab/TornadoVM/pull/938>`_: [docs] Revision of the documentation page for v5.0.0
+- `#925 <https://github.com/beehive-lab/TornadoVM/pull/925>`_: [ci] Fix release pipeline triggers, rename pipeline stages, skip redundant CI
+
+Bug Fixes
+~~~~~~~~~~~~
+
+- `#945 <https://github.com/beehive-lab/TornadoVM/pull/945>`_: [fix] Restore cutlass-jni build on GCC 15+ hosts (-Wtemplate-body)
+- `#932 <https://github.com/beehive-lab/TornadoVM/pull/932>`_: Fix vmDeps path to dispatch KernelContext/WorkerGrid kernels
+- `#933 <https://github.com/beehive-lab/TornadoVM/pull/933>`_: Fix vmDeps path to dispatch KernelContext/WorkerGrid kernels
+- `#910 <https://github.com/beehive-lab/TornadoVM/pull/910>`_: [cuda] Fix misleading NVRTC compilation errors: memoized FP16 header resolution + explanatory driver/toolkit diagnostics
+
+Other Changes
+~~~~~~~~~~~~
+
+- `#946 <https://github.com/beehive-lab/TornadoVM/pull/946>`_: [fix] Restore cutlass-jni build on GCC 15+ hosts (-Wtemplate-body)
+- `#921 <https://github.com/beehive-lab/TornadoVM/pull/921>`_: [fix] Windows support for the CUDA backend (build, runtime DLL resolution, correctness)
+- `#943 <https://github.com/beehive-lab/TornadoVM/pull/943>`_: Backport Cuda windows to jdk25
+- `#944 <https://github.com/beehive-lab/TornadoVM/pull/944>`_: Backport Docs to jdk25
+- `#927 <https://github.com/beehive-lab/TornadoVM/pull/927>`_: Backport Nvtx cusparse to jdk25
+- `#926 <https://github.com/beehive-lab/TornadoVM/pull/926>`_: Back port Hybrid cutlass to jdk25
+- `#916 <https://github.com/beehive-lab/TornadoVM/pull/916>`_: [docs] Complete hybrid API guide (HYBRID_API_GUIDE.md): all providers, examples, flags, custom-provider walkthrough
+- `#923 <https://github.com/beehive-lab/TornadoVM/pull/923>`_: [cleanup] remove deprecated files 
+- `#924 <https://github.com/beehive-lab/TornadoVM/pull/924>`_: [cleanup] remove deprecated files 
+- `#911 <https://github.com/beehive-lab/TornadoVM/pull/911>`_: [cuda] Fix misleading NVRTC compile-error logging and drop the cuda_fp16.h include dependency
+- `#915 <https://github.com/beehive-lab/TornadoVM/pull/915>`_: [docs] Complete hybrid API guide (HYBRID_API_GUIDE.md): all providers, examples, flags, custom-provider walkthrough
+
+
+TornadoVM 5.0.0-jdk21
+---------------------
+09/07/26
+
+Improvements
+~~~~~~~~~~~~
+
+- `#888 <https://github.com/beehive-lab/TornadoVM/pull/888>`_: [hybrid] Hybrid API: native library tasks with cuDNN provider
+- `#887 <https://github.com/beehive-lab/TornadoVM/pull/887>`_: [hybrid] Hybrid API: native library tasks with cuFFT provider
+- `#869 <https://github.com/beehive-lab/TornadoVM/pull/869>`_: [JDK25][PTX] Tensor Core MMA intrinsics for FP16 and INT8
+- `#850 <https://github.com/beehive-lab/TornadoVM/pull/850>`_: [Metal] Add hardware matrix units (\`simdgroup_float8x8\`) for fast gemms to M-silicon
+- `#867 <https://github.com/beehive-lab/TornadoVM/pull/867>`_: [PTX][CUDA] Tensor Core MMA intrinsics for FP16 and INT8
+- `#854 <https://github.com/beehive-lab/TornadoVM/pull/854>`_: [PTX] Add atan2 and asin math intrinsics and software atan implementation
+- `#843 <https://github.com/beehive-lab/TornadoVM/pull/843>`_: [jdk25] Add swizzled local memory accessors for FP16 and INT8 on the PTX backend
+- `#841 <https://github.com/beehive-lab/TornadoVM/pull/841>`_: Add swizzled local memory accessors for FP16 and INT8 on the PTX backend
+
+Compatibility
+~~~~~~~~~~~~
+
+- `#857 <https://github.com/beehive-lab/TornadoVM/pull/857>`_: [ci] Automate multi-platform SDK release pipeline (+ Ray-Tracer/Metal CI and launcher exit-code fix)
+
+Bug Fixes
+~~~~~~~~~~~~
+
+- `#903 <https://github.com/beehive-lab/TornadoVM/pull/903>`_: Fix for stride-16 swizzled FP16 shared-memory load and store that caused segfault in tests
+- `#874 <https://github.com/beehive-lab/TornadoVM/pull/874>`_: [hotfix] Multiple fixes after enabling CUDA backend into develop
+- `#886 <https://github.com/beehive-lab/TornadoVM/pull/886>`_: Fix batch processing with a remainder chunk under device buffer reuse
+- `#883 <https://github.com/beehive-lab/TornadoVM/pull/883>`_: Fix repeated execution of batched plans
+- `#882 <https://github.com/beehive-lab/TornadoVM/pull/882>`_: Fix repeated execution of batched plans
+- `#877 <https://github.com/beehive-lab/TornadoVM/pull/877>`_: [hotfix] Resolving unit-tests failure in CUDA backend
+- `#856 <https://github.com/beehive-lab/TornadoVM/pull/856>`_: [fix] Handle ObjectStamp compatibility for vector types in OpenCL, Metal and SPIRV backends
+- `#844 <https://github.com/beehive-lab/TornadoVM/pull/844>`_: [fix] NPE when calling HalfFloat.getFloat32() on a value read from a local HalfFloat[]
+- `#838 <https://github.com/beehive-lab/TornadoVM/pull/838>`_: [fix] Honour compile-time local work size in SPIR-V Level Zero launcher
+
+Other Changes
+~~~~~~~~~~~~
+
+- `#904 <https://github.com/beehive-lab/TornadoVM/pull/904>`_: Fix for stride-16 swizzled FP16 shared-memory load and store that caused segfault in tests
+- `#893 <https://github.com/beehive-lab/TornadoVM/pull/893>`_: Fix CUDA-backend build on develop (cuFFT broken merge + cudnn SDPA)
+- `#901 <https://github.com/beehive-lab/TornadoVM/pull/901>`_: Feat/update logo
+- `#897 <https://github.com/beehive-lab/TornadoVM/pull/897>`_: [JDK25] Support for CUDA streams for overlapping data transfers with TaskGraph execution
+- `#800 <https://github.com/beehive-lab/TornadoVM/pull/800>`_: [JDK21] Support for CUDA streams for overlapping data transfers with TaskGraph execution
+- `#902 <https://github.com/beehive-lab/TornadoVM/pull/902>`_: Feat/update logo
+- `#852 <https://github.com/beehive-lab/TornadoVM/pull/852>`_: Revise README to include latest TornadoVM updates
+- `#900 <https://github.com/beehive-lab/TornadoVM/pull/900>`_: Backport Cuda fixes to jdk25
+- `#892 <https://github.com/beehive-lab/TornadoVM/pull/892>`_: Fix batch processing with a remainder chunk under device buffer reuse
+- `#896 <https://github.com/beehive-lab/TornadoVM/pull/896>`_: Backport Readme to jdk25
+- `#898 <https://github.com/beehive-lab/TornadoVM/pull/898>`_: Backport Hybrid API to jdk25
+- `#879 <https://github.com/beehive-lab/TornadoVM/pull/879>`_: [hybrid] Hybrid API: native library tasks with cuBLAS/cuBLASLt provider
+- `#861 <https://github.com/beehive-lab/TornadoVM/pull/861>`_: [cuda] Add CUDA C backend via NVRTC to complement the PTX backend
+- `#885 <https://github.com/beehive-lab/TornadoVM/pull/885>`_: [OpenCL] Fix pointer-to-ulong conversions rejected by strict OpenCL compilers (Intel iGPUs)
+- `#891 <https://github.com/beehive-lab/TornadoVM/pull/891>`_: [hotfix][PTX] Align compileTask exception handling with other backends to preserve original exception on bailout-disabled path
+- `#890 <https://github.com/beehive-lab/TornadoVM/pull/890>`_: [hotfix][PTX] Align compileTask exception handling with other backends to preserve original exception on bailout-disabled path
+- `#881 <https://github.com/beehive-lab/TornadoVM/pull/881>`_: Port the CUDA backend (CUDA C / NVRTC) from develop to jdk25
+- `#884 <https://github.com/beehive-lab/TornadoVM/pull/884>`_: [OpenCL] Fix pointer-to-ulong conversions rejected by strict OpenCL compilers (Intel iGPUs)
+- `#848 <https://github.com/beehive-lab/TornadoVM/pull/848>`_:   Replace heuristic brace-placement with structured control-flow recovery (OpenCL + Metal)
+- `#849 <https://github.com/beehive-lab/TornadoVM/pull/849>`_: [jdk25] Replace CFG block visitors with structured control-flow recovery (OpenCL + Metal)
+- `#870 <https://github.com/beehive-lab/TornadoVM/pull/870>`_: Fix nested persisted-object list on task-graph reuse and empty consume
+- `#880 <https://github.com/beehive-lab/TornadoVM/pull/880>`_: Backport Persist obj to jdk25
+- `#876 <https://github.com/beehive-lab/TornadoVM/pull/876>`_: Metal mma tiled jdk25
+- `#866 <https://github.com/beehive-lab/TornadoVM/pull/866>`_: Update level-zero library version to v1.18.1
+- `#864 <https://github.com/beehive-lab/TornadoVM/pull/864>`_: Update level-zero library version to v1.18.1
+- `#834 <https://github.com/beehive-lab/TornadoVM/pull/834>`_: Release 4.0.1-jdk25
+
+
 TornadoVM 4.0.1-jdk21
 ---------------------
 29/04/26

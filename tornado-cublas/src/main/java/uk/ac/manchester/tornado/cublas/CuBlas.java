@@ -22,6 +22,7 @@ import java.util.Arrays;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.cublas.enums.CuBlasMathMode;
 
@@ -273,6 +274,32 @@ public final class CuBlas {
         return new LibraryTaskDescriptor() //
                 .withLibrary(LIBRARY_NAME) //
                 .withFunction("cublasGemmExFP16FP32") //
+                .withParameters(new Object[] { transa, transb, m, n, k, alpha, matrixA, lda, matrixB, ldb, beta, matrixC, ldc }) //
+                .withAccess(readOnlyExcept(13, 11, beta));
+    }
+
+    /**
+     * Mixed-precision matrix-matrix multiplication via {@code cublasGemmEx}:
+     * bfloat16 inputs and output, FP32 accumulation ({@code CUBLAS_COMPUTE_32F})
+     * on Tensor Cores. BF16 keeps FP32's exponent range (no {@code +-65504}
+     * overflow boundary), which is why LLM inference/training favours it over FP16.
+     */
+    public static LibraryTaskDescriptor cublasGemmExBF16(int transa, //
+            int transb, //
+            int m, //
+            int n, //
+            int k, //
+            float alpha, //
+            BFloat16Array matrixA, //
+            int lda, //
+            BFloat16Array matrixB, //
+            int ldb, //
+            float beta, //
+            BFloat16Array matrixC, //
+            int ldc) {
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cublasGemmExBF16") //
                 .withParameters(new Object[] { transa, transb, m, n, k, alpha, matrixA, lda, matrixB, ldb, beta, matrixC, ldc }) //
                 .withAccess(readOnlyExcept(13, 11, beta));
     }

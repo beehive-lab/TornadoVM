@@ -34,6 +34,7 @@ import tornado.graal.compiler.phases.common.AddressLoweringByNodePhase;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAArchitecture;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAArchitecture.CUDAMemoryBase;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDADecompressedReadFieldNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.FixedArrayCopyNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalArrayNode;
@@ -50,7 +51,8 @@ public class CUDAAddressLowering extends AddressLoweringByNodePhase.AddressLower
             memoryRegister = fixedArrayCopyNode.getMemoryRegister();
         } else if (base instanceof LocalArrayNode localArrayNode) {
             memoryRegister = localArrayNode.getMemoryRegister();
-        } else if (!((base instanceof TornadoAddressArithmeticNode) || (base instanceof ParameterNode) || (base instanceof ReadNode) || (base instanceof FloatingReadNode) || (base instanceof PiNode))) {
+        } else if (!((base instanceof TornadoAddressArithmeticNode) || (base instanceof ParameterNode) || (base instanceof ReadNode) || (base instanceof FloatingReadNode) || (base instanceof PiNode)
+                || (base instanceof CUDADecompressedReadFieldNode))) {
             TornadoInternalError.unimplemented("address origin unimplemented: %s", base.getClass().getName());
         }
 

@@ -65,7 +65,9 @@ public class ASMClassVisitor extends ClassVisitor implements ASMClassVisitorProv
         String methodClassFile = method.getDeclaringClass().getName().replaceFirst("L", "").replaceFirst(";", ".class");
         InputStream inputStream = ClassLoader.getSystemClassLoader().getResourceAsStream(methodClassFile);
         if (inputStream == null) {
-            // e.g. a JDK class whose resource is not visible; it carries no @Parallel kernel loops.
+            // e.g. a JDK class whose resource is not visible, or a runtime-generated hidden class
+            // (e.g. java/lang/invoke/LambdaForm$MH.0x...) with no loadable .class resource; either
+            // way it carries no @Parallel/@Reduce annotations.
             return new ParallelAnnotationProvider[0];
         }
         try {

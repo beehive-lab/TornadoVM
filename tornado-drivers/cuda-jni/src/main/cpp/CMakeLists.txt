@@ -1,4 +1,14 @@
-cmake_minimum_required (VERSION 3.6)
+cmake_minimum_required (VERSION 3.15)
+
+# Must be set before project() to affect CMAKE_MSVC_RUNTIME_LIBRARY below.
+# The old string(REPLACE "/MD" "/MT" CMAKE_CXX_FLAGS_RELEASE ...) approach is a
+# no-op with the Visual Studio generator: unlike Makefile/Ninja, it never puts
+# "/MD" as literal text in CMAKE_CXX_FLAGS_RELEASE (the runtime library is a
+# structured <RuntimeLibrary> vcxproj property instead), so tornado-cuda.dll
+# ended up dynamically linked against msvcp140.dll/vcruntime140.dll despite
+# the intent to statically link the CRT.
+cmake_policy(SET CMP0091 NEW)
+
 project (TornadoCUDA)
 
 find_package(JNI REQUIRED)
@@ -7,8 +17,7 @@ set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_VERBOSE_MAKEFILE on)
 
 if(MSVC)
-	string(REPLACE "/MDd" "/MTd" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
-	string(REPLACE "/MD" "/MT" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 	if(NOT CMAKE_CXX_COMPILER_ID STREQUAL Clang)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 	endif()

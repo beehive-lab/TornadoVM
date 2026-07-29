@@ -9,7 +9,7 @@ In addition, TornadoVM uses single-source property, in which the code to be acce
 
 Programming in TornadoVM involves the development of four parts:
 
-1. **Data Representation:** TornadoVM offers an API to efficiently allocate data off-heap. These data is automatically managed by the TornadoVM Runtime and the compiler. 
+1. **Data Representation:** TornadoVM offers a set of data types, built on top of the `Foreign Function & Memory API <https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/foreign/package-summary.html>`_ from Project Panama, to allocate data off-heap and to migrate data from on-heap to off-heap (and vice versa). These off-heap data types are automatically managed by the TornadoVM Runtime and the compiler.
 2. **Expressing parallelism within Java methods:** TornadoVM offers two APIs: one for loop parallelization using Java annotations; and a second one for low-level programming using a Kernel API.
    Developers can choose which one to use. The loop API is recommended for non-expert GPU/FPGA programmers.
    The kernel API is recommended for experts GPU programmers than want more control (access to GPU's local memory, barriers, etc.).
@@ -100,6 +100,8 @@ TornadoVM has two APIs to achieve this goal: one for loop parallelization using 
 Developers can choose which one to use. The loop API is recommended for non-expert GPU/FPGA programmers.
 
 
+.. _loop-parallel-api:
+
 Loop Parallel API
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -155,7 +157,7 @@ Examples can be found in the ``Grid``
 KernelContext Features
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The following table presents the available features that TornadoVM exposes in Java along with the respective OpenCL and CUDA PTX terminology.
+The following table presents the available features that TornadoVM exposes in Java along with the respective OpenCL and CUDA terminology.
 
 .. code:: java
 
@@ -163,7 +165,7 @@ The following table presents the available features that TornadoVM exposes in Ja
    kc = new KernelContext();
 
 +----------------------------------------------------+-------------------------------+------------------------------------+
-| TornadoVM KernelContext                            | OpenCL                        | PTX                                |
+| TornadoVM KernelContext                            | OpenCL                        | CUDA                               |
 +====================================================+===============================+====================================+
 | kc.globalIdx                                       | get_global_id(0)              | blockIdx \* blockDim.x + threadIdx |
 +----------------------------------------------------+-------------------------------+------------------------------------+
@@ -318,6 +320,8 @@ You can see more examples on `GitHub <https://github.com/beehive-lab/TornadoVM/t
 
 
 
+.. _task-graph-api:
+
 3. Selecting the methods to be accelerated using a Task-Graph API
 -----------------------------------------------------------------
 
@@ -400,6 +404,8 @@ Example:
 
    taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, output1, output2);
 
+
+.. _execution-plan:
 
 4. Execution Plans
 ------------------------------------------------
@@ -500,7 +506,7 @@ Example:
 The code is very similar to a Java sequential reduction but with ``@Reduce`` and ``@Parallel`` annotations.
 The ``@Reduce`` annotation is associated with a variable, in this case, with the ``result`` float
 array.
-Then, we annotate the loop with ``@Parallel``. The OpenCL/PTX JIT compilers generate OpenCL/PTX parallel version for this code that can
+Then, we annotate the loop with ``@Parallel``. The OpenCL/CUDA JIT compilers generate OpenCL/CUDA parallel version for this code that can
 run on GPU and CPU.
 
 Creating reduction tasks
@@ -513,7 +519,7 @@ If the target is a CPU, TornadoVM performs full reductions within the
 same thread-id. Besides, TornadoVM automatically resizes the output
 variables according to the number of work-groups and threads selected.
 
-For PTX code generation, TornadoVM will always perform full and parallel
+For CUDA code generation, TornadoVM will always perform full and parallel
 reductions using the threads within the same CUDA block.
 
 .. code:: java
@@ -600,12 +606,14 @@ The next example illustrates this case with the ``PI`` computation.
 
 .. _dynamic_reconfiguration:
 
-Dynamic Reconfiguration [Supported up to v1.1.1]
-------------------------------
-
+Dynamic Reconfiguration (Research Feature)
+-------------------------------------------
 
 The dynamic configuration in TornadoVM is the capability to migrate tasks at runtime from one device to another (e.g., from one GPU to another, or from one CPU to GPU, etc).
-The dynamic reconfiguration is not enabled by default, but it can be easily activated through the execution plan as follows:
+
+.. important::
+
+   Dynamic reconfiguration is **not** enabled automatically and is currently maintained as a research feature rather than a core runtime capability. It must be explicitly opted into through the execution plan API, as follows:
 
 
 .. code:: java

@@ -25,6 +25,10 @@ struct MetalHostTimingEvent {
     uint64_t queuedTimeNs; // nanoseconds before JNI array pin (dispatch overhead)
     uint64_t startTimeNs;  // nanoseconds immediately before memcpy
     uint64_t endTimeNs;    // nanoseconds immediately after memcpy
+    // For kernel events this holds a retained MTLCommandBuffer so execution
+    // (START/END) is read from the GPU timestamps GPUStartTime/GPUEndTime,
+    // which are reliable deltas. NULL for CPU-side transfer events.
+    void *commandBuffer;
 };
 
 static inline jlong makeTimingEventId(MetalHostTimingEvent *evt) {
@@ -1509,6 +1513,12 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_metalEnqueueNDRang
         MetalKernelWrapper *kw = (__bridge MetalKernelWrapper *)(void*)(uintptr_t)kernelId;
         if (!q || !kw || !kw.pipeline) return (jlong)-1;
 
+        // Host-side timing (nanoseconds). The deprecated MTLCommandBuffer
+        // GPUStartTime/kernelStartTime timestamps are unreliable on Apple Silicon
+        // and produced wildly inflated profiler metrics (see issue #905), so we
+        // measure dispatch and execution on the host, consistent with transfers.
+        uint64_t tQueued = machTimeToNanos(mach_absolute_time()); // before encoding (dispatch overhead)
+
         // Read global size
         jlong *gws = NULL;
         jlong *lws = NULL;
@@ -1609,9 +1619,16 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_metalEnqueueNDRang
         if (gws) env->ReleaseLongArrayElements(global_work_size, gws, 0);
         if (lws) env->ReleaseLongArrayElements(local_work_size, lws, 0);
 
-        // Retain command buffer and return as event id
+        // Return a tagged host-timing event. Kernel EXECUTION (START/END) is read
+        // from the command buffer's GPU timestamps (reliable deltas); DISPATCH
+        // (queued->start) is measured on the host, since the command buffer's
+        // kernelStartTime is unreliable on Apple Silicon and produced grossly
+        // inflated dispatch metrics (issue #905). The buffer already ran to
+        // completion, so no downstream wait needs it; it is retained for the
+        // timestamp reads and released in metalReleaseEvent.
         CFRetain((__bridge CFTypeRef)cb);
-        return (jlong)(uintptr_t)(__bridge void *)cb;
+        MetalHostTimingEvent *evt = new MetalHostTimingEvent{tQueued, 0, 0, (void *)(uintptr_t)(__bridge void *)cb};
+        return makeTimingEventId(evt);
     }
 }
 
@@ -1686,7 +1703,11 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalEvent_metalReleaseEvent
 //     fprintf(stderr, "JNI: metalReleaseEvent(0x%llx)\n", (unsigned long long)eventId);
     if (eventId == 0) return;
     if (isTimingEvent(eventId)) {
-        delete getTimingEvent(eventId);
+        MetalHostTimingEvent *evt = getTimingEvent(eventId);
+        if (evt->commandBuffer != NULL) {
+            CFRelease((__bridge CFTypeRef)(void*)(uintptr_t) evt->commandBuffer);
+        }
+        delete evt;
         return;
     }
     @autoreleasepool {
@@ -1752,24 +1773,50 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalEvent_metalGetEventProfilingInf
 
     if (eventId != 0 && len >= 8) {
         if (isTimingEvent(eventId)) {
-            // CPU-side transfer timing event
             MetalHostTimingEvent *evt = getTimingEvent(eventId);
             uint64_t t = 0;
-            switch ((long)param) {
-                case METAL_PROFILING_COMMAND_QUEUED:
-                    t = evt->queuedTimeNs;
-                    break;
-                case METAL_PROFILING_COMMAND_SUBMIT:
-                case METAL_PROFILING_COMMAND_START:
-                    t = evt->startTimeNs;
-                    break;
-                case METAL_PROFILING_COMMAND_END:
-                case METAL_PROFILING_COMMAND_COMPLETE:
-                    t = evt->endTimeNs;
-                    break;
-                default:
-                    t = 0;
-                    break;
+            if (evt->commandBuffer != NULL) {
+                // Kernel event: dispatch (queued->start) from the host clock,
+                // execution (start->end) from the GPU timestamps. GPUStartTime/
+                // GPUEndTime are seconds on the mach_absolute_time base, matching
+                // queuedTimeNs, so the resulting deltas are consistent.
+                @autoreleasepool {
+                    id<MTLCommandBuffer> cb = (__bridge id<MTLCommandBuffer>)(void*)(uintptr_t) evt->commandBuffer;
+                    switch ((long)param) {
+                        case METAL_PROFILING_COMMAND_QUEUED:
+                        case METAL_PROFILING_COMMAND_SUBMIT:
+                            t = evt->queuedTimeNs;
+                            break;
+                        case METAL_PROFILING_COMMAND_START:
+                            t = (uint64_t)(cb.GPUStartTime * 1.0e9);
+                            break;
+                        case METAL_PROFILING_COMMAND_END:
+                        case METAL_PROFILING_COMMAND_COMPLETE:
+                            t = (uint64_t)(cb.GPUEndTime * 1.0e9);
+                            break;
+                        default:
+                            t = 0;
+                            break;
+                    }
+                }
+            } else {
+                // CPU-side transfer timing event (host clock throughout).
+                switch ((long)param) {
+                    case METAL_PROFILING_COMMAND_QUEUED:
+                        t = evt->queuedTimeNs;
+                        break;
+                    case METAL_PROFILING_COMMAND_SUBMIT:
+                    case METAL_PROFILING_COMMAND_START:
+                        t = evt->startTimeNs;
+                        break;
+                    case METAL_PROFILING_COMMAND_END:
+                    case METAL_PROFILING_COMMAND_COMPLETE:
+                        t = evt->endTimeNs;
+                        break;
+                    default:
+                        t = 0;
+                        break;
+                }
             }
             int64_t ns = (int64_t)t;
             memcpy(buf, &ns, 8);
@@ -1822,6 +1869,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_metalEnqueueMarker
             jlong *evts = env->GetLongArrayElements(events, NULL);
             for (jsize i = 0; i < len; i++) {
                 if (evts[i] == 0) continue;
+                if (isTimingEvent(evts[i])) continue; // host timing event, work already done
                 // Only wait on valid command buffer pointers (from metalEnqueueNDRangeKernel)
                 id<MTLCommandBuffer> cb = (__bridge id<MTLCommandBuffer>)(void*)(uintptr_t) evts[i];
                 if (cb && [cb respondsToSelector:@selector(waitUntilCompleted)]) {
@@ -1848,6 +1896,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_metalEnqueueBarrie
             jlong *evts = env->GetLongArrayElements(events, NULL);
             for (jsize i = 0; i < len; i++) {
                 if (evts[i] == 0) continue;
+                if (isTimingEvent(evts[i])) continue; // host timing event, work already done
                 id<MTLCommandBuffer> cb = (__bridge id<MTLCommandBuffer>)(void*)(uintptr_t) evts[i];
                 if (cb && [cb respondsToSelector:@selector(waitUntilCompleted)]) {
                     [cb waitUntilCompleted];

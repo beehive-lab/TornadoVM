@@ -336,8 +336,13 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
             if (!reuseBatchBuffer(batchSize, accesses[i], bufferProvider, distinctAccesses)) {
                 logger.debug("Allocate object %s with access: %s", objects[i], accesses[i]);
                 allocatedSpace += allocate(objects[i], batchSize, states[i], accesses[i]);
+            } else if (batchSize != 0 && states[i].hasObjectBuffer()) {
+                // Reusing the object's existing buffer skips allocate(), which is what normally
+                // refreshes the sub-region size. Without this the buffer keeps the sub-region of the
+                // LAST chunk it held (e.g. a smaller remainder chunk from a previous execution), and
+                // subsequent transfers silently copy too few bytes.
+                states[i].getXPUBuffer().setSizeSubRegion(batchSize);
             }
-
         }
         return allocatedSpace;
     }

@@ -70,6 +70,16 @@
                   << std::endl;                                   \
     }
 
+// Variant without the unconditional ERROR print, for calls whose failure may
+// be handled by a retry; the caller is responsible for reporting terminal
+// failures (with the full NVRTC build log) itself.
+#define LOG_NVRTC_CALL(name, result)                              \
+    if (LOG_CUDA == 1) {                                          \
+        std::cout << "[TornadoVM-CUDA-NVRTC-JNI] Calling : "      \
+                  << name << " -> Status: " << result             \
+                  << std::endl;                                   \
+    }
+
 /*
  * One physical platform is modelled. The OpenCL clone enumerates one platform
  * (CUDA) and then asks it for its devices.
@@ -119,9 +129,15 @@ typedef struct cuda_kernel_s {
     std::vector<std::vector<char>> arg_data;
 } cuda_kernel_t;
 
-/* Opaque handle: maps the OpenCL cl_event long to a CUevent. */
+/* Opaque handle: maps the OpenCL cl_event long to a pair of CUevents.
+ * `event` is the completion event (used for wait/sync/query/dependency).
+ * `start` is an optional timestamp recorded BEFORE the operation so that
+ * cuEventElapsedTime(start, event) yields the operation's device time.
+ * `start` is nullptr for events that do not bracket a timed operation
+ * (e.g. markers/barriers), in which case the elapsed time is reported as 0. */
 typedef struct cuda_event_s {
     CUevent event;
+    CUevent start;
 } cuda_event_t;
 
 #endif // TORNADO_CUDA_JNI_H

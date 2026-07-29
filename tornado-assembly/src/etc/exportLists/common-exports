@@ -1,3 +1,4 @@
+--add-opens java.base/java.lang=tornado.runtime
 --add-exports jdk.internal.vm.ci/jdk.vm.ci.common=tornado.graal
 --add-exports jdk.internal.vm.ci/jdk.vm.ci.meta=tornado.runtime,tornado.annotation,tornado.drivers.common,tornado.graal
 --add-exports jdk.internal.vm.ci/jdk.vm.ci.code=tornado.runtime,tornado.drivers.common,tornado.graal

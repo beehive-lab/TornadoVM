@@ -37,8 +37,8 @@ import uk.ac.manchester.tornado.api.KernelContext;
  * localGroupSizeX, localGroupSizeY and localGroupSizeZ.
  *
  * During lowering, this node is replaced with a FloatingNode that corresponds
- * to a TornadoVM backend (OpenCL, PTX). That replacement is performed in
- * OCLLoweringProvider, or PTXLoweringProvider, and drives the
+ * to a TornadoVM backend (OpenCL, CUDA). That replacement is performed in
+ * OCLLoweringProvider, or CUDALoweringProvider, and drives the
  * {@link LocalGroupSizeFixedWithNextNode} to extend FixedWithNextNode in order
  * to be replaced by a FloatingNode.
  */

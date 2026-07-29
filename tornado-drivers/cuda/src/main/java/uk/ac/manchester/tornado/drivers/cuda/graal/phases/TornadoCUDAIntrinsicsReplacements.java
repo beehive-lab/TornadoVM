@@ -55,9 +55,14 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.enums.MMAShape;
+import uk.ac.manchester.tornado.api.types.vectors.Half2;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAArchitecture;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDALoweringProvider;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
+import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDACpAsyncCommitGroupNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDACpAsyncCopyNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDACpAsyncWaitGroupNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAComputeNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAFragmentNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadANode;
@@ -82,6 +87,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalThreadIDFixedNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDABarrierNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAPrintf;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 import uk.ac.manchester.tornado.runtime.jvmci.TornadoObjectConstant;
@@ -183,6 +189,9 @@ public class TornadoCUDAIntrinsicsReplacements extends BasePhase<TornadoHighTier
                 case "Direct#KernelContext.allocateHalfFloatLocalArray":
                     lowerHalfFloatLocalArrayAllocation(graph, invoke);
                     break;
+                case "Direct#KernelContext.allocateHalf2LocalArray":
+                    lowerHalf2LocalArrayAllocation(graph, invoke);
+                    break;
                 // Same reflection-path plugin-lookup miss: KernelContext.local/globalBarrier survives as a
                 // device-function call passing the KernelContext object. Intrinsify to the CUDA barrier so the
                 // context receiver is dropped.
@@ -216,8 +225,10 @@ public class TornadoCUDAIntrinsicsReplacements extends BasePhase<TornadoHighTier
                     lowerMMALoad(graph, invoke, MMALoadKind.B_INT8);
                     break;
                 case "Direct#KernelContext.mma":
+                    lowerMMACompute(graph, invoke, CUDALIRStmt.MMAComputeStmt.MMAOperand.F16);
+                    break;
                 case "Direct#KernelContext.mmaInt8":
-                    lowerMMACompute(graph, invoke);
+                    lowerMMACompute(graph, invoke, CUDALIRStmt.MMAComputeStmt.MMAOperand.S8);
                     break;
                 case "Direct#KernelContext.mmaStore":
                     lowerMMAStore(graph, invoke, JavaKind.Float, false);
@@ -227,6 +238,33 @@ public class TornadoCUDAIntrinsicsReplacements extends BasePhase<TornadoHighTier
                     break;
                 case "Direct#KernelContext.mmaStoreBSwizzled":
                     lowerMMAStoreBSwizzled(graph, invoke);
+                    break;
+                case "Direct#KernelContext.mmaBF16":
+                    lowerMMACompute(graph, invoke, CUDALIRStmt.MMAComputeStmt.MMAOperand.BF16);
+                    break;
+                case "Direct#KernelContext.mmaFP8E4M3":
+                    lowerMMACompute(graph, invoke, CUDALIRStmt.MMAComputeStmt.MMAOperand.E4M3);
+                    break;
+                case "Direct#KernelContext.mmaFP8E5M2":
+                    lowerMMACompute(graph, invoke, CUDALIRStmt.MMAComputeStmt.MMAOperand.E5M2);
+                    break;
+                // mmaLoadAFP8/mmaLoadBFP8 share the int8 tile layout, so they reuse the int8 load nodes -
+                // matching the InvocationPlugin registration in CUDAGraphBuilderPlugins.
+                case "Direct#KernelContext.mmaLoadAFP8":
+                    lowerMMALoad(graph, invoke, MMALoadKind.A_INT8);
+                    break;
+                case "Direct#KernelContext.mmaLoadBFP8":
+                    lowerMMALoad(graph, invoke, MMALoadKind.B_INT8);
+                    break;
+                // cp.async (Ampere+/sm_80) prefetch intrinsics: same reflection-path plugin-lookup miss.
+                case "Direct#KernelContext.asyncCopyToLocal":
+                    lowerCpAsyncCopy(graph, invoke);
+                    break;
+                case "Direct#KernelContext.asyncCopyCommit":
+                    graph.replaceFixed(invoke, graph.add(new CUDACpAsyncCommitGroupNode()));
+                    break;
+                case "Direct#KernelContext.asyncCopyWaitGroup":
+                    lowerCpAsyncWaitGroup(graph, invoke);
                     break;
                 case "Direct#KernelContext.swizzleLoadFp16Stride32":
                     lowerSwizzleLoad(graph, invoke);
@@ -295,6 +333,20 @@ public class TornadoCUDAIntrinsicsReplacements extends BasePhase<TornadoHighTier
         GraphUtil.unlinkFixedNode(invoke);
     }
 
+    /**
+     * Half2-packed variant of {@link #lowerLocalArrayAllocation}: {@code KernelContext.allocateHalf2LocalArray}
+     * returns {@code Half2[]}, so the {@link LocalArrayNode} is built with the {@code Half2} element type tagged
+     * {@link CUDAKind#HALF2}, matching the invocation plugin.
+     */
+    private void lowerHalf2LocalArrayAllocation(StructuredGraph graph, InvokeNode invoke) {
+        ValueNode size = invoke.callTarget().arguments().get(1);
+        ResolvedJavaType elementType = metaAccess.lookupJavaType(Half2.class);
+        LocalArrayNode localArrayNode = graph.addWithoutUnique(new LocalArrayNode(CUDAArchitecture.localSpace, elementType, size, CUDAKind.HALF2));
+        invoke.replaceAtUsages(localArrayNode);
+        invoke.clearInputs();
+        GraphUtil.unlinkFixedNode(invoke);
+    }
+
     private enum MMALoadKind {
         A, B, B_SWIZZLED, A_INT8, B_INT8
     }
@@ -333,10 +385,10 @@ public class TornadoCUDAIntrinsicsReplacements extends BasePhase<TornadoHighTier
      * Rewrite a surviving {@code KernelContext.mma(...)} / {@code mmaInt8(...)} invoke into a
      * {@link CUDAMMAComputeNode}. Arguments 1-3 are fragA/fragB/fragC; argument 4 is the {@link MMAShape} constant.
      */
-    private void lowerMMACompute(StructuredGraph graph, InvokeNode invoke) {
+    private void lowerMMACompute(StructuredGraph graph, InvokeNode invoke, CUDALIRStmt.MMAComputeStmt.MMAOperand operand) {
         NodeInputList<ValueNode> args = invoke.callTarget().arguments();
         MMAShape shape = resolveShape(args.get(4));
-        CUDAMMAComputeNode node = graph.add(new CUDAMMAComputeNode(args.get(1), args.get(2), args.get(3), shape));
+        CUDAMMAComputeNode node = graph.add(new CUDAMMAComputeNode(args.get(1), args.get(2), args.get(3), shape, operand));
         graph.replaceFixed(invoke, node);
     }
 
@@ -361,6 +413,46 @@ public class TornadoCUDAIntrinsicsReplacements extends BasePhase<TornadoHighTier
     private void lowerMMAStoreBSwizzled(StructuredGraph graph, InvokeNode invoke) {
         NodeInputList<ValueNode> args = invoke.callTarget().arguments();
         CUDAMMAStoreBSwizzledNode node = graph.add(new CUDAMMAStoreBSwizzledNode(args.get(1), args.get(2), args.get(3), args.get(4), args.get(5), args.get(6)));
+        graph.replaceFixed(invoke, node);
+    }
+
+    /**
+     * Rewrite a surviving {@code KernelContext.asyncCopyToLocal(int[], int, HalfFloatArray|FP8Array|ByteArray, int)}
+     * invoke into a {@link CUDACpAsyncCopyNode}, matching {@code registerCpAsyncCopy}. All three overloads share
+     * this case label (dispatch is by name only), so the source element kind is read back off the argument's
+     * stamp type, mirroring {@link #atomicElementKind}.
+     */
+    private void lowerCpAsyncCopy(StructuredGraph graph, InvokeNode invoke) {
+        NodeInputList<ValueNode> args = invoke.callTarget().arguments();
+        ValueNode dstTile = args.get(1);
+        ValueNode dstIndex = args.get(2);
+        ValueNode srcArray = args.get(3);
+        ValueNode srcIndex = args.get(4);
+        JavaKind elementKind = cpAsyncElementKind(srcArray);
+        int headerBytes = TornadoCoreRuntime.getVMConfig().getArrayBaseOffset(elementKind);
+        CUDACpAsyncCopyNode node = graph.add(new CUDACpAsyncCopyNode(dstTile, dstIndex, srcArray, srcIndex,
+                elementKind.getByteCount(), headerBytes));
+        graph.replaceFixed(invoke, node);
+    }
+
+    /** Element kind of the source array to {@code asyncCopyToLocal}: HalfFloatArray->Short, else Byte (FP8Array/ByteArray). */
+    private static JavaKind cpAsyncElementKind(ValueNode segment) {
+        Stamp stamp = GraphUtil.unproxify(segment).stamp(NodeView.DEFAULT);
+        String name = (stamp instanceof ObjectStamp objectStamp && objectStamp.type() != null) ? objectStamp.type().toJavaName() : "";
+        return name.contains("HalfFloatArray") ? JavaKind.Short : JavaKind.Byte;
+    }
+
+    /**
+     * Rewrite a surviving {@code KernelContext.asyncCopyWaitGroup(groups)} invoke into a
+     * {@link CUDACpAsyncWaitGroupNode}, matching the invocation plugin's constant-folding requirement.
+     */
+    private void lowerCpAsyncWaitGroup(StructuredGraph graph, InvokeNode invoke) {
+        ValueNode groupsNode = invoke.callTarget().arguments().get(1);
+        JavaConstant constant = GraphUtil.unproxify(groupsNode).asJavaConstant();
+        if (constant == null) {
+            throw new IllegalStateException("asyncCopyWaitGroup requires a compile-time constant group count");
+        }
+        CUDACpAsyncWaitGroupNode node = graph.add(new CUDACpAsyncWaitGroupNode(constant.asInt()));
         graph.replaceFixed(invoke, node);
     }
 

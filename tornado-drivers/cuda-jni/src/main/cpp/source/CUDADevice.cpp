@@ -58,6 +58,14 @@ extern "C" {
 #define CL_DEVICE_ENDIAN_LITTLE              0x1026
 #define CL_DEVICE_IL_VERSION                 0x105B
 
+/*
+ * TornadoVM-private info keys (not OpenCL): they map straight onto CUDA driver device
+ * attributes that have no cl_device_info equivalent, so the Java CUDADevice can gate
+ * intra-plan concurrency on the same hardware overlap capabilities as the PTX backend.
+ */
+#define TORNADO_DEVICE_ASYNC_ENGINE_COUNT    0x4100
+#define TORNADO_DEVICE_CONCURRENT_KERNELS    0x4101
+
 /* CL_DEVICE_TYPE_GPU == 1 << 2 (see cloned CUDADeviceType enum). */
 #define CL_DEVICE_TYPE_GPU 4L
 
@@ -218,9 +226,18 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDADevice_clG
         case CL_DEVICE_OPENCL_C_VERSION:
             put_string(buf, len, "CUDA C 1.0");
             break;
-        case CL_DEVICE_EXTENSIONS:
-            put_string(buf, len, "cl_khr_fp64");
+        case CL_DEVICE_EXTENSIONS: {
+            // FP16 arithmetic requires compute capability >= 5.3.
+            int major = 0, minor = 0;
+            cuDeviceGetAttribute(&major, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR, cuDevice);
+            cuDeviceGetAttribute(&minor, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR, cuDevice);
+            std::string extensions = "cl_khr_fp64";
+            if (major > 5 || (major == 5 && minor >= 3)) {
+                extensions += " cl_khr_fp16";
+            }
+            put_string(buf, len, extensions);
             break;
+        }
         case CL_DEVICE_DOUBLE_FP_CONFIG:
             put_long(buf, len, CL_FP_NONZERO); // all NVIDIA GPUs support fp64
             break;
@@ -233,6 +250,19 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDADevice_clG
         case CL_DEVICE_IL_VERSION:
             // No SPIR-V ingestion path for CUDA; report empty (Java treats as unsupported).
             put_string(buf, len, "");
+            break;
+        case TORNADO_DEVICE_ASYNC_ENGINE_COUNT:
+            // Number of async DMA copy engines: 0 = no copy/compute overlap, 1 = one direction,
+            // >= 2 = H2D and D2H can both overlap compute (and each other).
+            result = cuDeviceGetAttribute(&attr, CU_DEVICE_ATTRIBUTE_ASYNC_ENGINE_COUNT, cuDevice);
+            LOG_CUDA_AND_VALIDATE("cuDeviceGetAttribute(ASYNC_ENGINE_COUNT)", result);
+            put_int(buf, len, attr);
+            break;
+        case TORNADO_DEVICE_CONCURRENT_KERNELS:
+            // 1 if the device can execute multiple kernels from the same context concurrently.
+            result = cuDeviceGetAttribute(&attr, CU_DEVICE_ATTRIBUTE_CONCURRENT_KERNELS, cuDevice);
+            LOG_CUDA_AND_VALIDATE("cuDeviceGetAttribute(CONCURRENT_KERNELS)", result);
+            put_int(buf, len, attr);
             break;
         default:
             // Unknown / unsupported info key: leave buffer zeroed.

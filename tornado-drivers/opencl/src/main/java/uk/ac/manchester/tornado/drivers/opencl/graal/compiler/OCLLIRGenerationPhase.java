@@ -65,8 +65,6 @@ public class OCLLIRGenerationPhase extends LIRPhase<OCLLIRGenerationPhase.LIRGen
             emitBlock((OCLNodeLIRBuilder) nodeLirBuilder, lirGenRes, (HIRBlock) b, graph, blockMap, context.isKernel);
         }
         ((LIRGenerator) context.lirGen).beforeRegisterAllocation();
-
-        assert SSAUtil.verifySSAForm(lirGenRes.getLIR());
     }
 
     public static final class LIRGenerationContext {

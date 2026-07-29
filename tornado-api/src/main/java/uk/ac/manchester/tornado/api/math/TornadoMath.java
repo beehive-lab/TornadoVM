@@ -126,8 +126,8 @@ public class TornadoMath {
     }
 
     /**
-     * In PTX, the exp operation that accepts a double input is narrowed to f32,
-     * since the PTX instruction does not support f64 operands.
+     * On NVIDIA GPUs (CUDA backend), the exp operation that accepts a double input is narrowed to f32,
+     * since the underlying NVIDIA instruction does not support f64 operands.
      */
     public static double exp(double value) {
         return Math.exp(value);
@@ -371,8 +371,8 @@ public class TornadoMath {
     }
 
     /**
-     * In PTX, the log operation that accepts a double input is narrowed to f32,
-     * since the PTX instruction does not support f64 operands.
+     * On NVIDIA GPUs (CUDA backend), the log operation that accepts a double input is narrowed to f32,
+     * since the underlying NVIDIA instruction does not support f64 operands.
      */
     public static double log(double value) {
         return Math.log(value);
@@ -383,8 +383,8 @@ public class TornadoMath {
     }
 
     /**
-     * In PTX, the log2 operation that accepts a double input is narrowed to f32,
-     * since the PTX instruction does not support f64 operands.
+     * On NVIDIA GPUs (CUDA backend), the log2 operation that accepts a double input is narrowed to f32,
+     * since the underlying NVIDIA instruction does not support f64 operands.
      */
     public static double log2(double value) {
         return Math.log(value) / Math.log(2);
@@ -475,8 +475,8 @@ public class TornadoMath {
     }
 
     /**
-     * In PTX, the cos operation that accepts a double input is narrowed to f32,
-     * since the PTX instruction does not support f64 operands.
+     * On NVIDIA GPUs (CUDA backend), the cos operation that accepts a double input is narrowed to f32,
+     * since the underlying NVIDIA instruction does not support f64 operands.
      */
     public static double cos(double angle) {
         return Math.cos(angle);
@@ -487,8 +487,8 @@ public class TornadoMath {
     }
 
     /**
-     * In PTX, the sin operation that accepts a double input is narrowed to f32,
-     * since the PTX instruction does not support f64 operands.
+     * On NVIDIA GPUs (CUDA backend), the sin operation that accepts a double input is narrowed to f32,
+     * since the underlying NVIDIA instruction does not support f64 operands.
      */
     public static double sin(double angle) {
         return Math.sin(angle);
@@ -515,8 +515,8 @@ public class TornadoMath {
     }
 
     /**
-     * In PTX, the sinpi operation that accepts a double input is narrowed to f32,
-     * since the PTX sin instruction does not support f64 operands.
+     * On NVIDIA GPUs (CUDA backend), the sinpi operation that accepts a double input is narrowed to f32,
+     * since the underlying NVIDIA sin instruction does not support f64 operands.
      */
     public static double sinpi(double angle) {
         return Math.sin(angle * Math.PI);
@@ -527,8 +527,8 @@ public class TornadoMath {
     }
 
     /**
-     * In PTX, the cospi operation that accepts a double input is narrowed to f32,
-     * since the PTX cos instruction does not support f64 operands.
+     * On NVIDIA GPUs (CUDA backend), the cospi operation that accepts a double input is narrowed to f32,
+     * since the underlying NVIDIA cos instruction does not support f64 operands.
      */
     public static double cospi(double angle) {
         return Math.cos(angle * Math.PI);

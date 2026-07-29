@@ -135,20 +135,6 @@
             </includes>
         </fileSet>
         <fileSet>
-            <directory>../tornado-drivers/ptx-jni/target/windows-i386-release/cmake/Release</directory>
-            <outputDirectory>./lib/</outputDirectory>
-            <includes>
-                <include>*.dll</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>../tornado-drivers/ptx-jni/target/windows-amd64-release/cmake/Release</directory>
-            <outputDirectory>./lib/</outputDirectory>
-            <includes>
-                <include>*.dll</include>
-            </includes>
-        </fileSet>
-        <fileSet>
             <directory>src/examples</directory>
             <!-- Tornado full examples copied into examples directory -->
             <outputDirectory>examples</outputDirectory>
@@ -200,7 +186,6 @@
                 <include>io.github.beehive-lab:tornado-annotation</include>
                 <include>io.github.beehive-lab:tornado-matrices</include>
                 <include>io.github.beehive-lab:tornado-drivers-common</include>
-                <include>io.github.beehive-lab:tornado-drivers-ptx</include>
                 <include>io.github.beehive-lab:tornado-drivers-opencl</include>
                 <include>io.github.beehive-lab:tornado-drivers-spirv</include>
                 <include>io.github.beehive-lab:tornado-drivers-metal</include>
@@ -210,6 +195,8 @@
                 <include>io.github.beehive-lab:tornado-cublas</include>
                 <include>io.github.beehive-lab:tornado-cufft</include>
                 <include>io.github.beehive-lab:tornado-cudnn</include>
+                <include>io.github.beehive-lab:tornado-cusparse</include>
+                <include>io.github.beehive-lab:tornado-cutlass</include>
             </includes>
             <binaries>
                 <outputDirectory>share/java/tornado</outputDirectory>
@@ -232,12 +219,13 @@
             </unpackOptions>
             <includes>
                 <include>io.github.beehive-lab:tornado-drivers-metal-jni:jar:libs</include>
-                <include>io.github.beehive-lab:tornado-drivers-ptx-jni:jar:libs</include>
                 <include>io.github.beehive-lab:tornado-drivers-opencl-jni:jar:libs</include>
                 <include>io.github.beehive-lab:tornado-drivers-cuda-jni:jar:libs</include>
                 <include>io.github.beehive-lab:tornado-drivers-cublas-jni:jar:libs</include>
                 <include>io.github.beehive-lab:tornado-drivers-cufft-jni:jar:libs</include>
                 <include>io.github.beehive-lab:tornado-drivers-cudnn-jni:jar:libs</include>
+                <include>io.github.beehive-lab:tornado-drivers-cusparse-jni:jar:libs</include>
+                <include>io.github.beehive-lab:tornado-drivers-cutlass-jni:jar:libs</include>
             </includes>
         </dependencySet>
     </dependencySets>

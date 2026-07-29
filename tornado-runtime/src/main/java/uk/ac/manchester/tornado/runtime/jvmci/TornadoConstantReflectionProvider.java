@@ -20,6 +20,7 @@
  */
 package uk.ac.manchester.tornado.runtime.jvmci;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.Modifier;
@@ -30,6 +31,7 @@ import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.MemoryAccessProvider;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.MethodHandleAccessProvider;
@@ -78,7 +80,48 @@ public class TornadoConstantReflectionProvider implements ConstantReflectionProv
         if (field instanceof ReflectionResolvedJavaField reflectionField) {
             return readReflectionFieldValue(reflectionField, receiver);
         }
+        JavaConstant filtered = readFilteredFieldValue(field, receiver);
+        if (filtered != null) {
+            return filtered;
+        }
         return backing().readFieldValue(field, receiver);
+    }
+
+    /**
+     * Some JDK-internal fields (e.g. {@code System.security}) are hidden from
+     * {@code Class.getDeclaredField} by {@code jdk.internal.reflect.Reflection}'s field filter, so
+     * they resolve to a {@code ClassfileResolvedJavaField} (built straight from the classfile
+     * {@code field_info}) instead of a {@link ReflectionResolvedJavaField}. The filter only blocks
+     * the {@link Class} reflective-enumeration API; a {@link MethodHandles.Lookup} VarHandle looks
+     * the same field up directly by name, which is why this exists instead of {@code Field.get}
+     * (needs {@code --add-opens java.base/java.lang=tornado.runtime}, see common-exports).
+     * Returns {@code null} (not a failure) when the field cannot be resolved this way, so the
+     * caller can fall back to the (always-throwing) {@link #backing()}.
+     */
+    private JavaConstant readFilteredFieldValue(ResolvedJavaField field, JavaConstant receiver) {
+        Class<?> holder = mirrorOf(field.getDeclaringClass());
+        Class<?> fieldType = mirrorOf(field.getType());
+        if (holder == null || fieldType == null) {
+            return null;
+        }
+        try {
+            MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(holder, MethodHandles.lookup());
+            Object value;
+            if (Modifier.isStatic(field.getModifiers())) {
+                value = lookup.findStaticVarHandle(holder, field.getName(), fieldType).get();
+            } else if (receiver instanceof TornadoObjectConstant objectConstant) {
+                value = lookup.findVarHandle(holder, field.getName(), fieldType).get(objectConstant.getObject());
+            } else {
+                return null;
+            }
+            return fieldType.isPrimitive() ? JavaConstant.forBoxedPrimitive(value) : snippetReflection.forObject(value);
+        } catch (ReflectiveOperationException | IllegalArgumentException | SecurityException e) {
+            return null;
+        }
+    }
+
+    private static Class<?> mirrorOf(JavaType type) {
+        return type instanceof ReflectionResolvedJavaType reflectionType ? reflectionType.getMirror() : null;
     }
 
     private JavaConstant readReflectionFieldValue(ReflectionResolvedJavaField reflectionField, JavaConstant receiver) {

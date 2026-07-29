@@ -104,6 +104,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GroupIdNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalThreadSizeNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.ReadHalf2Node;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.ReadHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.WriteHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.calc.DivNode;
@@ -386,6 +387,22 @@ public class CUDALoweringProvider extends DefaultJavaLoweringProvider {
         return false;
     }
 
+    /**
+     * Packed-half2 counterpart of {@link #isLocalHalfArray}: a {@code Half2[]} local/shared array
+     * allocated via {@code KernelContext.allocateHalf2LocalArray}. Reads from it must go through
+     * {@link ReadHalf2Node} rather than the generic {@link ReadNode} path - see its javadoc.
+     */
+    private static boolean isLocalHalf2Array(ValueNode array) {
+        Node node = GraphUtil.unproxify(array);
+        if (node instanceof LocalArrayNode localArrayNode) {
+            return localArrayNode.getCUDAKind() == CUDAKind.HALF2;
+        }
+        if (node instanceof InvokeNode invoke && invoke.callTarget() != null && invoke.callTarget().targetName() != null) {
+            return invoke.callTarget().targetName().contains("allocateHalf2LocalArray");
+        }
+        return false;
+    }
+
     @Override
     public void lowerLoadIndexedNode(LoadIndexedNode loadIndexed, LoweringTool tool) {
         StructuredGraph graph = loadIndexed.graph();
@@ -401,6 +418,10 @@ public class CUDALoweringProvider extends DefaultJavaLoweringProvider {
             ReadHalfFloatNode localHalfFloatRead = graph.add(new ReadHalfFloatNode(address, loadIndexed.index()));
             loadIndexed.replaceAtUsages(localHalfFloatRead);
             graph.replaceFixed(loadIndexed, localHalfFloatRead);
+        } else if (isLocalHalf2Array(loadIndexed.array())) {
+            ReadHalf2Node localHalf2Read = graph.add(new ReadHalf2Node(address, loadIndexed.index()));
+            loadIndexed.replaceAtUsages(localHalf2Read);
+            graph.replaceFixed(loadIndexed, localHalf2Read);
         } else {
             ReadNode memoryRead;
             if (loadIndexed instanceof LoadIndexedVectorNode) {

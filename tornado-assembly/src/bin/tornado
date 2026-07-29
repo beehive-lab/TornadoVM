@@ -270,12 +270,12 @@ check_opencl_backend() {
     return $([ "$opencl_ok" = true ] && echo 0 || echo 1)
 }
 
-# Check PTX/CUDA dependencies
-check_ptx_backend() {
+# Check CUDA dependencies
+check_cuda_backend() {
     if ! command_exists nvidia-smi; then
         print_warning "NVIDIA driver is not installed"
         echo "" >&2
-        echo "The PTX backend requires NVIDIA CUDA Toolkit and drivers." >&2
+        echo "The CUDA backend requires NVIDIA CUDA Toolkit and drivers." >&2
         echo "" >&2
         echo -e "Visit: ${GREEN}https://developer.nvidia.com/cuda-downloads${NC}" >&2
         echo "" >&2
@@ -377,8 +377,8 @@ check_backend_dependencies() {
                     has_warnings=true
                 fi
                 ;;
-            *ptx*)
-                if ! check_ptx_backend; then
+            *cuda*)
+                if ! check_cuda_backend; then
                     has_warnings=true
                 fi
                 ;;

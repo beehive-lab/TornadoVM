@@ -37,6 +37,7 @@ import org.junit.runner.notification.Failure;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP16NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
+import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP8NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceMMANotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoNoOpenCLPlatformException;
 import uk.ac.manchester.tornado.unittests.common.SPIRVOptNotSupported;
@@ -45,7 +46,6 @@ import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupporte
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMMetalNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMOpenCLNotSupported;
-import uk.ac.manchester.tornado.unittests.common.TornadoVMPTXNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMSPIRVNotSupported;
 import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurationException;
 
@@ -55,7 +55,7 @@ public class TornadoHelper {
 
     // Exceptions that mean a test cannot run on the current configuration/device - it is NOT a failure.
     // Kept in sync with the per-method classification in the verbose runner below.
-    private static final List<Class<? extends Throwable>> UNSUPPORTED_EXCEPTIONS = List.of(UnsupportedConfigurationException.class, TornadoVMPTXNotSupported.class, TornadoNoOpenCLPlatformException.class,
+    private static final List<Class<? extends Throwable>> UNSUPPORTED_EXCEPTIONS = List.of(UnsupportedConfigurationException.class, TornadoNoOpenCLPlatformException.class,
             TornadoVMMultiDeviceNotSupported.class, TornadoVMOpenCLNotSupported.class, TornadoVMSPIRVNotSupported.class, TornadoVMMetalNotSupported.class, TornadoVMCUDANotSupported.class,
             TornadoDeviceFP64NotSupported.class, TornadoDeviceFP16NotSupported.class, TornadoDeviceMMANotSupported.class);
 
@@ -186,14 +186,6 @@ public class TornadoHelper {
                     continue;
                 }
 
-                if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof TornadoVMPTXNotSupported))) {
-                    message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [PTX CONFIGURATION UNSUPPORTED] " + ColorsTerminal.RESET + "\n");
-                    bufferConsole.append(message);
-                    bufferFile.append(message);
-                    notSupported++;
-                    continue;
-                }
-
                 if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof TornadoNoOpenCLPlatformException))) {
                     message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [OPENCL CONFIGURATION UNSUPPORTED] " + ColorsTerminal.RESET + "\n");
                     bufferConsole.append(message);
@@ -268,6 +260,14 @@ public class TornadoHelper {
 
                 if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof TornadoDeviceMMANotSupported))) {
                     message = String.format("%20s", " ................ " + ColorsTerminal.YELLOW + " [MMA UNSUPPORTED FOR CURRENT DEVICE] " + ColorsTerminal.RESET + "\n");
+                    bufferConsole.append(message);
+                    bufferFile.append(message);
+                    notSupported++;
+                    continue;
+                }
+
+                if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof TornadoDeviceFP8NotSupported))) {
+                    message = String.format("%20s", " ................ " + ColorsTerminal.YELLOW + " [FP8 UNSUPPORTED FOR CURRENT DEVICE] " + ColorsTerminal.RESET + "\n");
                     bufferConsole.append(message);
                     bufferFile.append(message);
                     notSupported++;

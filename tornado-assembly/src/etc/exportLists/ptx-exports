@@ -1,8 +1,0 @@
---add-opens java.base/java.lang=tornado.drivers.ptx
---add-exports jdk.internal.vm.ci/jdk.vm.ci.common=tornado.drivers.ptx
---add-exports jdk.internal.vm.ci/jdk.vm.ci.amd64=tornado.drivers.ptx
---add-exports jdk.internal.vm.ci/jdk.vm.ci.meta=tornado.drivers.ptx
---add-exports jdk.internal.vm.ci/jdk.vm.ci.code=tornado.drivers.ptx
---add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=tornado.drivers.ptx
---add-opens jdk.internal.vm.ci/jdk.vm.ci.hotspot=tornado.drivers.ptx
---add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot=tornado.drivers.ptx

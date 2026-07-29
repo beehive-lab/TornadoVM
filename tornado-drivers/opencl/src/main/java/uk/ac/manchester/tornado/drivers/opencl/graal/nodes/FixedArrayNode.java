@@ -34,6 +34,7 @@ import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryTemplate;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBinary;
@@ -78,6 +79,10 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable {
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
+        if (arrayTemplate == null || pointerTemplate == null) {
+            throw new TornadoBailoutRuntimeException("The OpenCL backend does not support on-device arrays of element type " + elementType.toJavaName() + " (OCLKind " + elementKind
+                    + "). Packed vector-element arrays such as Half2 local/private arrays are unsupported on OpenCL.");
+        }
         // generate declaration of private array
         final Value lengthValue = gen.operand(length);
         LIRKind lirKind = LIRKind.value(gen.getLIRGeneratorTool().target().arch.getWordKind());

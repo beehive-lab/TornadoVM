@@ -1,6 +1,6 @@
 all: build
 
-# Variable passed for the build process. List of backend/s to use { opencl, ptx, spirv }. The default one is `opencl`.
+# Variable passed for the build process. List of backend/s to use { opencl, cuda, spirv, metal }. The default one is `opencl`.
 # nmake BACKENDS="<comma_separated_backend_list>"
 BACKEND = opencl
 
@@ -34,11 +34,8 @@ mvn-single-threaded-graal-jdk-21:
 mvn-single-threaded-polyglot:
 	python bin/compile --jdk graal-jdk-21 --backend $(BACKEND) --mvn_single_threaded --polyglot
 
-ptx:
-	python bin\compile --jdk graal-jdk-21 --backend ptx,opencl
-
 spirv:
-	python bin\compile --jdk graal-jdk-21 --backend spirv,ptx,opencl
+	python bin\compile --jdk graal-jdk-21 --backend spirv,opencl
 
 cuda:
 	python bin\compile --jdk jdk21 --backend cuda
@@ -69,7 +66,7 @@ test-reflection:
 	.\mvnw -P$(JDK) -pl tornado-runtime test -DskipTests=false -Dtest="uk.ac.manchester.tornado.runtime.jvmci.reflection.*Test"
 
 clean:
-	.\mvnw -Popencl-backend,ptx-backend,spirv-backend clean
+	.\mvnw -Popencl-backend,cuda-backend,spirv-backend clean
 
 example:
 	%TORNADOVM_HOME%\bin\tornado.exe --printKernel --debug -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt --params="8192"
@@ -90,16 +87,16 @@ fast-tests:
 
 tests-uncompressed:
 	del /f tornado_unittests.log
-	python %TORNADOVM_HOME%\bin\tornado --devices
-	python %TORNADOVM_HOME%\bin\tornado-test --verbose --uncompressed
-	python %TORNADOVM_HOME%\bin\tornado-test -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	%TORNADOVM_HOME%\bin\tornado.exe --devices
+	%TORNADOVM_HOME%\bin\tornado-test.exe --verbose --uncompressed
+	%TORNADOVM_HOME%\bin\tornado-test.exe -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	%TORNADOVM_HOME%\bin\test-native.cmd
 
 fast-tests-uncompressed:
 	del /f tornado_unittests.log
-	python %TORNADOVM_HOME%\bin\tornado --devices
-	python %TORNADOVM_HOME%\bin\tornado-test --verbose --quickPass --uncompressed
-	python %TORNADOVM_HOME%\bin\tornado-test -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	%TORNADOVM_HOME%\bin\tornado.exe --devices
+	%TORNADOVM_HOME%\bin\tornado-test.exe --verbose --quickPass --uncompressed
+	%TORNADOVM_HOME%\bin\tornado-test.exe -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	%TORNADOVM_HOME%\bin\test-native.cmd
 
 tests-spirv-levelzero:

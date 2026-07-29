@@ -41,15 +41,9 @@ public class TornadoOptions {
     public static final String DEFAULT_OPENCL_COMPILER_FLAGS = getProperty("tornado.opencl.compiler.flags", "-cl-mad-enable -cl-fast-relaxed-math -w");
 
     /**
-     * Default PTX Compiler Flags.
+     * Default Metal Compiler Flags.
      */
     public static final String DEFAULT_METAL_COMPILER_FLAGS = getProperty("tornado.metal.compiler.flags", "");
-
-    /**
-     * Default PTX Compiler Flags. Make sure the flags are passed in the following format: <flag><space><flag value><another flag><space><another flag value> and so on.
-     * For example, CU_JIT_OPTIMIZATION_LEVEL 4 CU_JIT_TARGET 120
-     */
-    public static final String DEFAULT_PTX_COMPILER_FLAGS = getProperty("tornado.ptx.compiler.flags", "CU_JIT_OPTIMIZATION_LEVEL 4");
 
     /**
      * Default CUDA (NVRTC) Compiler Flags. Passed to NVRTC when compiling the generated CUDA C source.
@@ -89,7 +83,7 @@ public class TornadoOptions {
     public static final boolean THREAD_INFO = getBooleanValue("tornado.threadInfo", FALSE);
 
     /**
-     * Enable the runtime to dump the generated code (e.g., OpenCL, CUDA PTX or SPIR-V) from the TornadoVM JIT Compiler.
+     * Enable the runtime to dump the generated code (e.g., OpenCL, CUDA or SPIR-V) from the TornadoVM JIT Compiler.
      */
     public static final boolean PRINT_KERNEL_SOURCE = getBooleanValue("tornado.printKernel", FALSE);
 
@@ -98,11 +92,6 @@ public class TornadoOptions {
      * the rest of the backends.
      */
     public static final int METAL_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.metal.priority", "0"));
-    /**
-     * Priority of the PTX Backend. The higher the number, the more priority over
-     * the rest of the backends.
-     */
-    public static final int PTX_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.ptx.priority", "0"));
     /**
      * Priority of the CUDA Backend. The higher the number, the more priority over
      * the rest of the backends.
@@ -135,6 +124,41 @@ public class TornadoOptions {
      * Option to print TornadoVM Internal Bytecodes.
      */
     public static final boolean PRINT_BYTECODES = getBooleanValue("tornado.print.bytecodes", FALSE);
+
+    /**
+     * Experimental (CUDA backend): route large one-shot host-to-device transfers (e.g. FIRST_EXECUTION
+     * weight uploads) through a ring of pinned host staging buffers (the llama.cpp
+     * "ring of 4" pattern). Each chunk is memcpy'd into a pinned slot and uploaded with
+     * cuMemcpyHtoDAsync while the next chunk is being staged, overlapping the host-side copy
+     * (and the page-in it forces) with the PCIe DMA - and removing the need to
+     * cuMemHostRegister the whole source segment up front. Default off.
+     */
+    public static final boolean ENABLE_STAGED_TRANSFERS = getBooleanValue("tornado.staged.transfers", FALSE);
+
+    /**
+     * Chunk size in bytes for {@link #ENABLE_STAGED_TRANSFERS} (size of each pinned staging slot).
+     */
+    public static final long STAGED_TRANSFER_CHUNK_SIZE = Long.parseLong(getProperty("tornado.staged.chunk.size", Integer.toString(16 * 1024 * 1024)));
+
+    /**
+     * Number of pinned staging slots cycled by {@link #ENABLE_STAGED_TRANSFERS}. Depth 2 already
+     * overlaps staging with DMA; llama.cpp uses 4.
+     */
+    public static final int STAGED_TRANSFER_RING_DEPTH = Integer.parseInt(getProperty("tornado.staged.ring.depth", "4"));
+
+    /**
+     * Minimum transfer size in bytes for {@link #ENABLE_STAGED_TRANSFERS} to engage; smaller
+     * transfers keep the direct path (staging overhead would dominate).
+     */
+    public static final long STAGED_TRANSFER_MIN_SIZE = Long.parseLong(getProperty("tornado.staged.min.size", Integer.toString(16 * 1024 * 1024)));
+
+    /**
+     * Threads used to fill a pinned staging slot for {@link #ENABLE_STAGED_TRANSFERS}. A single
+     * thread's memcpy (~4-5 GB/s) is slower than the PCIe DMA it feeds, so the fill is split
+     * across threads. Default: half the available cores, capped at 8.
+     */
+    public static final int STAGED_TRANSFER_FILL_THREADS = Integer.parseInt(getProperty("tornado.staged.fill.threads", Integer.toString(Math.min(8, Math.max(1, Runtime.getRuntime()
+            .availableProcessors() / 2)))));
 
     /**
      * Option to dump TornadoVM Internal Bytecodes into a file.
@@ -184,10 +208,6 @@ public class TornadoOptions {
      */
     public static final boolean CIRCULAR_EVENTS = Boolean.parseBoolean(getProperty("tornado.circularevents", TRUE));
     /**
-     * Sets the array memory alignment for PTX devices. Default is 128 bytes.
-     */
-    public static final int PTX_ARRAY_ALIGNMENT = Integer.parseInt(getProperty("tornado.ptx.array.align", "128"));
-    /**
      * Sets the array memory alignment for OpenCL devices. Default is 128 bytes.
      */
     public static final int OPENCL_ARRAY_ALIGNMENT = Integer.parseInt(getProperty("tornado.opencl.array.align", "128"));
@@ -215,7 +235,7 @@ public class TornadoOptions {
     public static final boolean DUMP_LOW_TIER_WITH_IGV = getBooleanValue("tornado.debug.lowtier", FALSE);
     /**
      * In the case of a TornadoVM runtime, JIT compiler or driver failure (OpenCL,
-     * PTX or SPIRV), this option allows users to automatically execute the code
+     * CUDA or SPIRV), this option allows users to automatically execute the code
      * with plain Java if an exception occurs when compiling or running the parallel
      * code. This option is True by default.
      */
@@ -353,7 +373,7 @@ public class TornadoOptions {
     public static final long PANAMA_OBJECT_HEADER_SIZE = TornadoNativeArray.ARRAY_HEADER;
 
     /**
-     * Option to define the maximum number of internal events related to OpenCL/PTX/SPIR-V events to keep alive.
+     * Option to define the maximum number of internal events related to OpenCL/CUDA/SPIR-V events to keep alive.
      * This is application specific. In a large application, there are probably many events that need to keep alive
      * to perform the sync.
      */
@@ -468,7 +488,7 @@ public class TornadoOptions {
     /**
      * Enable VM Dependency Path. Disabled by default. This option is only for testing.
      */
-    public static final boolean VM_USE_DEPS = getBooleanValue("tornado.vm.deps", FALSE);
+    public static boolean VM_USE_DEPS = getBooleanValue("tornado.vm.deps", FALSE);
 
     /**
      * Enable OpenCL Profiling. Enabled by default.
