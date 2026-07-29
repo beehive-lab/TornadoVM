@@ -41,10 +41,6 @@ public abstract class OCLKernelScheduler {
     protected double min;
     protected double max;
 
-    public final String WARNING_FPGA_THREAD_LOCAL = "[TornadoVM OCL] Warning: TornadoVM changed the user-defined local size to: " + ((getDefaultLocalWorkGroup() != null)
-            ? Arrays.toString(getDefaultLocalWorkGroup())
-            : "null") + ".";
-
     public static final String WARNING_THREAD_LOCAL = "[TornadoVM OCL] Warning: TornadoVM changed the user-defined local size to null. Now, the OpenCL driver will select the best configuration.";
 
     protected OCLKernelScheduler(final OCLDeviceContext context) {
@@ -122,15 +118,9 @@ public abstract class OCLKernelScheduler {
             OCLGridInfo gridInfo = new OCLGridInfo(deviceContext, local);
             boolean checkedDimensions = gridInfo.checkGridDimensions();
             if (!checkedDimensions) {
-                if (deviceContext.isPlatformFPGA()) {
-                    System.out.println(WARNING_FPGA_THREAD_LOCAL);
-                    grid.setLocalWork(64, 1, 1);
-                    grid.setNumberOfWorkgroupsToNull();
-                } else {
-                    System.out.println(WARNING_THREAD_LOCAL);
-                    grid.setLocalWorkToNull();
-                    grid.setNumberOfWorkgroupsToNull();
-                }
+                System.out.println(WARNING_THREAD_LOCAL);
+                grid.setLocalWorkToNull();
+                grid.setNumberOfWorkgroupsToNull();
             }
         }
     }

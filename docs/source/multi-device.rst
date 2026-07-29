@@ -49,7 +49,7 @@ By running the following command you can obtain the list of the available device
             Device OpenCL C version: OpenCL C 3.0
 
       Tornado device=0:2
-        OPENCL --  [Intel(R) FPGA Emulation Platform for OpenCL(TM)] -- Intel(R) FPGA Emulation Device
+        OPENCL --  [Intel(R) OpenCL] -- Intel(R) Core(TM) CPU
             Global Memory Size: 62.5 GB
             Local Memory Size: 256.0 KB
             Workgroup Dimensions: 3

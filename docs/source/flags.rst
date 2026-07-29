@@ -103,21 +103,6 @@ Performance & Scheduling
    ``-Dtornado.scheduler.block=true``                                Partitions the iteration space into blocks (one per visible CPU core when running on CPUs) (default: false).
    ================================================================  ==============================================================================
 
-Precompiled and FPGA Options
-----------------------------
-
-**JVM Flags**
-
-.. table::
-   :align: left
-
-   ================================================  ============================================================
-   Flag                                              Description
-   ================================================  ============================================================
-   ``-Dtornado.precompiled.binary=PATH``             Path to precompiled kernel or FPGA bitstream.
-   ``-Dtornado.fpga.conf.file=FILE``                 Path to the FPGA configuration file (default: none).
-   ================================================  ============================================================
-
 Optimizations
 -------------
 

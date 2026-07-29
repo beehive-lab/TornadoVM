@@ -46,7 +46,6 @@ public interface MetalDeviceContextInterface extends TornadoDeviceContext {
 
     MetalInstalledCode installCode(long executionPlanId, TaskDataContext meta, String id, String entryPoint, byte[] code);
 
-    MetalInstalledCode installCode(long executionPlanId, String id, String entryPoint, byte[] code, boolean printKernel);
 
     boolean isKernelAvailable(long executionPlanId);
 

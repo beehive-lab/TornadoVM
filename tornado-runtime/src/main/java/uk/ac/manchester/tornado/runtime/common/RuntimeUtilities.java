@@ -25,13 +25,11 @@ package uk.ac.manchester.tornado.runtime.common;
 
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PRINT_SOURCE_DIRECTORY;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
@@ -39,7 +37,6 @@ import java.math.RoundingMode;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.List;
 
 import org.graalvm.compiler.graph.Node;
@@ -62,8 +59,6 @@ public final class RuntimeUtilities {
     public static final int ONE_MEGABYTE = 1 * 1024 * 1024;
     public static final int ONE_KILOBYTE = 1 * 1024;
 
-    public static final String FPGA_OUTPUT_FILENAME = "outputFPGA.log";
-    public static final String FPGA_ERROR_FILENAME = "errorFPGA.log";
     public static final String BYTECODES_FILENAME = "tornadovm_bytecodes.log";
 
     private RuntimeUtilities() {
@@ -400,49 +395,6 @@ public final class RuntimeUtilities {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
-    }
-
-    public static void systemCall(String[] command, boolean printStandardOutput, String loggingDirectory) throws IOException {
-        String stdOutput;
-        StringBuilder standardOutput = new StringBuilder();
-        StringBuilder errorOutput = new StringBuilder();
-        final String lineSeparator = System.lineSeparator();
-
-        TornadoLogger logger = new TornadoLogger();
-
-        try {
-            Process p = Runtime.getRuntime().exec(command);
-            p.waitFor();
-
-            BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-            standardOutput.append("Standard output:").append(lineSeparator);
-            String fullCommand = Arrays.toString(command);
-            standardOutput.append("Command: ").append(fullCommand).append(lineSeparator).append(lineSeparator);
-            while ((stdOutput = stdInput.readLine()) != null) {
-                standardOutput.append(stdOutput).append(lineSeparator);
-            }
-            standardOutput.append("--------------------------------------------------------------------\n");
-
-            errorOutput.append("Standard error (if any) of the command (").append(Arrays.toString(command)).append("):\n");
-            while ((stdOutput = stdError.readLine()) != null) {
-                errorOutput.append(stdOutput).append(lineSeparator);
-            }
-            errorOutput.append("--------------------------------------------------------------------\n");
-
-            if (printStandardOutput) {
-                System.out.println(standardOutput.toString());
-                System.out.println(errorOutput.toString());
-            }
-            writeStringToFile(loggingDirectory + FPGA_OUTPUT_FILENAME, standardOutput.toString(), true);
-            writeStringToFile(loggingDirectory + FPGA_ERROR_FILENAME, errorOutput.toString(), true);
-        } catch (IOException e) {
-            logger.error("Unable to make a native system call.", e);
-            throw new IOException(e);
-        } catch (Throwable t) {
-            logger.error("Unable to make a native system call.", t);
-            throw new TornadoRuntimeException(t.getMessage());
         }
     }
 

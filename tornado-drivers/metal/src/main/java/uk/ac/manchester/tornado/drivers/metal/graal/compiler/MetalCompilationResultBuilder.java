@@ -74,7 +74,6 @@ public class MetalCompilationResultBuilder extends CompilationResultBuilder {
     protected LIR lir;
     private int currentBlockIndex;
     private boolean isKernel;
-    private int loops = 0;
     private boolean isParallel;
     private TaskDataContext metaData;
     private long[] localGrid;
@@ -173,9 +172,6 @@ public class MetalCompilationResultBuilder extends CompilationResultBuilder {
         instructions.addAll(index - 1, moved);
     }
 
-    private static boolean isLoopDependencyNode(LIRInstruction op) {
-        return ((op instanceof MetalControlFlow.LoopInitOp || op instanceof MetalControlFlow.LoopConditionOp || op instanceof MetalControlFlow.LoopPostOp));
-    }
 
     private static void emitOp(CompilationResultBuilder crb, LIRInstruction op) {
         try {
@@ -198,9 +194,6 @@ public class MetalCompilationResultBuilder extends CompilationResultBuilder {
         return (MetalCompilationResult) compilationResult;
     }
 
-    public boolean shouldRemoveLoop() {
-        return false;
-    }
 
     public boolean isKernel() {
         return isKernel;
@@ -301,15 +294,6 @@ public class MetalCompilationResultBuilder extends CompilationResultBuilder {
                 continue;
             } else if (op instanceof MetalControlFlow.LoopBreakOp) {
                 breakInst = op;
-                continue;
-            } else if ((shouldRemoveLoop() && loops == 0) && isLoopDependencyNode(op)) {
-                /**
-                 * Apply the Loop Flattening optimization for FPGAs,
-                 * which omits the outermost for loop along with every data dependency associated with it.
-                 */
-                if (op instanceof MetalControlFlow.LoopPostOp) {
-                    loops++;
-                }
                 continue;
             }
             if (Options.PrintLIRWithAssembly.getValue(getOptions())) {

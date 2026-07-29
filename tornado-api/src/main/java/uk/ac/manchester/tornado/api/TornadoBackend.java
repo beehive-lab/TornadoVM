@@ -75,7 +75,7 @@ public interface TornadoBackend {
 
     /**
      * Returns the type of the default device. The device type could be CPU, GPU,
-     * CUSTOM, FPGA.
+     * CUSTOM.
      * 
      * @return {@link TornadoDeviceType}
      */

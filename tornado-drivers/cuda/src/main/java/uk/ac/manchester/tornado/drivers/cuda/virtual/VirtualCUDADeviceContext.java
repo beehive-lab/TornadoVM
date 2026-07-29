@@ -179,16 +179,6 @@ public class VirtualCUDADeviceContext implements CUDADeviceContextInterface {
     }
 
     @Override
-    public boolean isPlatformFPGA() {
-        return this.getDevice().getDeviceType() == CUDADeviceType.CL_DEVICE_TYPE_ACCELERATOR && (getPlatformContext().getPlatform().getName().toLowerCase().contains("fpga") || isPlatformXilinxFPGA());
-    }
-
-    @Override
-    public boolean isPlatformXilinxFPGA() {
-        return getPlatformContext().getPlatform().getName().toLowerCase().contains("xilinx");
-    }
-
-    @Override
     public boolean isFP64Supported() {
         return device.isDeviceDoubleFPSupported();
     }
@@ -215,11 +205,6 @@ public class VirtualCUDADeviceContext implements CUDADeviceContextInterface {
 
     @Override
     public CUDAInstalledCode installCode(long executionPlanId, TaskDataContext meta, String id, String entryPoint, byte[] code) {
-        return null;
-    }
-
-    @Override
-    public CUDAInstalledCode installCode(long executionPlanId, String id, String entryPoint, byte[] code, boolean printKernel) {
         return null;
     }
 

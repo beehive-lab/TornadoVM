@@ -272,7 +272,7 @@ public class TestAtomics extends TornadoTestBase {
             }
         }
 
-        // On GPUs and FPGAs, threads within the same work-group run in parallel.
+        // On GPUs, threads within the same work-group run in parallel.
         // Increments will be performed atomically when using TornadoAtomicInteger.
         // However, the order is not guaranteed. For this test, we need to check that
         // there are not repeated values in the output array.
@@ -300,7 +300,7 @@ public class TestAtomics extends TornadoTestBase {
             }
         }
 
-        // On GPUs and FPGAs, threads within the same work-group run in parallel.
+        // On GPUs, threads within the same work-group run in parallel.
         // Increments will be performed atomically when using TornadoAtomicInteger.
         // However, the order is not guaranteed. For this test, we need to check that
         // there are not repeated values in the output array.

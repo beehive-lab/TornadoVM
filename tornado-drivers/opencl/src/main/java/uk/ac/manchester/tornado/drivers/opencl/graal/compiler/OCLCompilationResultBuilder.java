@@ -74,7 +74,6 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     protected LIR lir;
     private int currentBlockIndex;
     private boolean isKernel;
-    private int loops = 0;
     private boolean isParallel;
     private TaskDataContext metaData;
     private long[] localGrid;
@@ -173,10 +172,6 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         instructions.addAll(index - 1, moved);
     }
 
-    private static boolean isLoopDependencyNode(LIRInstruction op) {
-        return ((op instanceof OCLControlFlow.LoopInitOp || op instanceof OCLControlFlow.LoopConditionOp || op instanceof OCLControlFlow.LoopPostOp));
-    }
-
     private static void emitOp(CompilationResultBuilder crb, LIRInstruction op) {
         try {
             trace("op: " + op);
@@ -196,10 +191,6 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
     public OCLCompilationResult getResult() {
         return (OCLCompilationResult) compilationResult;
-    }
-
-    public boolean shouldRemoveLoop() {
-        return (isParallel() && deviceContext.isPlatformFPGA());
     }
 
     public boolean isKernel() {
@@ -301,15 +292,6 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
                 continue;
             } else if (op instanceof OCLControlFlow.LoopBreakOp) {
                 breakInst = op;
-                continue;
-            } else if ((shouldRemoveLoop() && loops == 0) && isLoopDependencyNode(op)) {
-                /**
-                 * Apply the Loop Flattening optimization for FPGAs,
-                 * which omits the outermost for loop along with every data dependency associated with it.
-                 */
-                if (op instanceof OCLControlFlow.LoopPostOp) {
-                    loops++;
-                }
                 continue;
             }
             if (Options.PrintLIRWithAssembly.getValue(getOptions())) {

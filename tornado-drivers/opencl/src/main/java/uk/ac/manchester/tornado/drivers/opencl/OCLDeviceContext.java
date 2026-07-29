@@ -568,16 +568,6 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     }
 
     @Override
-    public boolean isPlatformFPGA() {
-        return this.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && (getPlatformContext().getPlatform().getName().toLowerCase().contains("fpga") || isPlatformXilinxFPGA());
-    }
-
-    @Override
-    public boolean isPlatformXilinxFPGA() {
-        return getPlatformContext().getPlatform().getName().toLowerCase().contains("xilinx");
-    }
-
-    @Override
     public boolean isFP64Supported() {
         return device.isDeviceDoubleFPSupported();
     }
@@ -636,12 +626,6 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
         entryPoint = checkKernelName(entryPoint);
         OCLCodeCache oclCodeCache = getOCLCodeCache(executionPlanId);
         return oclCodeCache.installSource(meta, id, entryPoint, code);
-    }
-
-    @Override
-    public OCLInstalledCode installCode(long executionPlanId, String id, String entryPoint, byte[] code, boolean printKernel) {
-        OCLCodeCache oclCodeCache = getOCLCodeCache(executionPlanId);
-        return oclCodeCache.installFPGASource(id, entryPoint, code, printKernel);
     }
 
     @Override

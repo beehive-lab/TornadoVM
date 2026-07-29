@@ -447,7 +447,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     /**
      * Reset the execution context for the current execution plan. The TornadoVM
      * runtime system will clean the code cache and all events associated with the
-     * current execution. It resets the internal GPU/FPGA/CPU execution context to
+     * current execution. It resets the internal GPU/CPU execution context to
      * its default values.
      *
      * @return {@link TornadoExecutionPlan}

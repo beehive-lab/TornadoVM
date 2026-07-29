@@ -66,7 +66,6 @@ import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis.REDUCE_OPERA
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils;
 import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils.BackendSelectionContainer;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 class ReduceTaskGraph {
 
@@ -138,7 +137,7 @@ class ReduceTaskGraph {
     }
 
     /**
-     * It computes the right local work group size for GPUs/FPGAs.
+     * It computes the right local work group size for GPUs.
      *
      * @param device
      *     Input device.
@@ -155,7 +154,7 @@ class ReduceTaskGraph {
         int maxBlockSize = (int) device.getDeviceMaxWorkgroupDimensions()[0];
 
         if (maxBlockSize <= 0) {
-            // Due to a bug on Xilinx platforms, this value can be -1. In that case, we
+            // On some platforms this value can be -1. In that case, we
             // setup the block size to the default value.
             return DEFAULT_GPU_WORK_GROUP;
         }
@@ -169,42 +168,6 @@ class ReduceTaskGraph {
             value--;
         }
         return value;
-    }
-
-    private static void inspectBinariesFPGA(String taskScheduleName, String graphName, String taskName, boolean sequential) {
-        String idTaskGraph = graphName + "." + taskName;
-        StringBuilder originalBinaries = TornadoOptions.FPGA_BINARIES;
-        if (originalBinaries != null) {
-            String[] binaries = originalBinaries.toString().split(",");
-            if (binaries.length == 1) {
-                binaries = MetaDataUtils.processPrecompiledBinariesFromFile(binaries[0]);
-                StringBuilder sb = new StringBuilder();
-                for (String binary : binaries) {
-                    sb.append(binary.replace(" ", "")).append(",");
-                }
-                sb = sb.deleteCharAt(sb.length() - 1);
-                originalBinaries = new StringBuilder(sb.toString());
-            }
-
-            for (int i = 0; i < binaries.length; i += 2) {
-                String givenTaskName = binaries[i + 1].split(".device")[0];
-                if (givenTaskName.equals(idTaskGraph)) {
-                    BackendSelectionContainer info = MetaDataUtils.resolveDriverDeviceIndexes(MetaDataUtils.getProperty(idTaskGraph + ".device"));
-                    int deviceNumber = info.deviceIndex();
-
-                    if (!sequential) {
-                        originalBinaries.append("," + binaries[i] + "," + taskScheduleName + "." + taskName + ".device=0:" + deviceNumber);
-                    } else {
-                        originalBinaries.append("," + binaries[i] + "," + taskScheduleName + "." + SEQUENTIAL_TASK_REDUCE_NAME + counterSeqName + ".device=0:" + deviceNumber);
-                    }
-                }
-            }
-            TornadoOptions.FPGA_BINARIES = originalBinaries;
-        }
-    }
-
-    private boolean isAheadOfTime() {
-        return TornadoOptions.FPGA_BINARIES != null;
     }
 
     private BackendSelectionContainer changeDriverAndDeviceIfNeeded(String taskScheduleName, String graphName, String taskName) {
@@ -286,7 +249,7 @@ class ReduceTaskGraph {
 
     /**
      * Returns true if the input size is not power of 2 and the target device is
-     * either the GPU or the FPGA.
+     * either the GPU or an accelerator.
      *
      * @param targetDeviceToRun
      *     index of the target device within the Tornado device list.
@@ -295,7 +258,7 @@ class ReduceTaskGraph {
     private boolean isTaskEligibleSplitHostAndDevice(final int targetDeviceToRun, final long elementsReductionLeftOver) {
         if (elementsReductionLeftOver > 0) {
             TornadoDeviceType deviceType = TornadoCoreRuntime.getTornadoRuntime().getBackend(0).getDevice(targetDeviceToRun).getDeviceType();
-            return (deviceType == TornadoDeviceType.GPU || deviceType == TornadoDeviceType.FPGA || deviceType == TornadoDeviceType.ACCELERATOR);
+            return (deviceType == TornadoDeviceType.GPU || deviceType == TornadoDeviceType.ACCELERATOR);
         }
         return false;
     }
@@ -362,19 +325,6 @@ class ReduceTaskGraph {
         }
     }
 
-    private boolean isDeviceAnAccelerator(final int deviceToRun) {
-        TornadoDeviceType deviceType = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getDevice(deviceToRun).getDeviceType();
-        return (deviceType == TornadoDeviceType.ACCELERATOR);
-    }
-
-    private void updateGlobalAndLocalDimensionsFPGA(final int deviceToRun, String taskScheduleReduceName, TaskPackage taskPackage, int inputSize) {
-        // Update GLOBAL and LOCAL workgroup size if device to run is the FPGA
-        if (isAheadOfTime() && isDeviceAnAccelerator(deviceToRun)) {
-            TornadoRuntimeProvider.setProperty(taskScheduleReduceName + "." + taskPackage.getId() + TaskDataContext.GLOBAL_WORKGROUP_SUFFIX, Integer.toString(inputSize));
-            TornadoRuntimeProvider.setProperty(taskScheduleReduceName + "." + taskPackage.getId() + TaskDataContext.LOCAL_WORKGROUP_SUFFIX, "64");
-        }
-    }
-
     private Object createHostArrayForHybridMode(Object originalReduceArray, TaskPackage taskPackage, int sizeTargetDevice) {
         hybridMode = true;
         if (hostHybridVariables == null) {
@@ -393,7 +343,7 @@ class ReduceTaskGraph {
      * final sequential reduction.
      * <p>
      * It also creates a new thread in the case the input size for the reduction is
-     * not power of two and the target device is either the FPGA or the GPU. In this
+     * not power of two and the target device is either an accelerator or the GPU. In this
      * case, the new thread will compile the host part with the corresponding
      * sub-range that does not fit into the power-of-two part.
      *
@@ -437,7 +387,6 @@ class ReduceTaskGraph {
                 backendToRun = selectionContainer.backendIndex();
                 deviceToRun = selectionContainer.deviceIndex();
             }
-            inspectBinariesFPGA(taskScheduleReduceName, graphName, taskPackage.getId(), false);
 
             if (tableReduce.containsKey(taskNumber)) {
 
@@ -456,8 +405,6 @@ class ReduceTaskGraph {
                     }
 
                     inputSize = metaReduceTasks.getInputSize(taskNumber);
-
-                    updateGlobalAndLocalDimensionsFPGA(deviceToRun, taskScheduleReduceName, taskPackage, inputSize);
 
                     // Analyse Input Size - if not power of 2 -> split host and device executions
                     boolean isInputPowerOfTwo = isPowerOfTwo(inputSize);
@@ -571,7 +518,6 @@ class ReduceTaskGraph {
                         final String newTaskSequentialName = SEQUENTIAL_TASK_REDUCE_NAME + counterSeqName.get();
                         String fullName = rewrittenTaskGraph.getTaskGraphName() + "." + newTaskSequentialName;
                         TornadoRuntimeProvider.setProperty(fullName + ".device", backendToRun + ":" + deviceToRun);
-                        inspectBinariesFPGA(taskScheduleReduceName, graphName, taskPackage.getId(), true);
 
                         switch (operation) {
                             case SUM -> ReduceFactory.handleAdd(newArray, rewrittenTaskGraph, sizeReduceArray, newTaskSequentialName);

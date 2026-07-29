@@ -98,10 +98,6 @@ public class TornadoOptions {
      */
     public static final int OPENCL_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.opencl.priority", "10"));
     /**
-     * Check if the FPGA emulation mode has been set.
-     */
-    public static final boolean FPGA_EMULATION = isFPGAEmulation();
-    /**
      * Option to set the device maximum memory usage. It is set to 4GB by default.
      */
     public static final long DEVICE_AVAILABLE_MEMORY = RuntimeUtilities.parseSize(System.getProperty("tornado.device.memory", "4GB"));
@@ -320,10 +316,6 @@ public class TornadoOptions {
 
     public static boolean TORNADO_PROFILER = false;
 
-    /**
-     * Option to load FPGA pre-compiled binaries.
-     */
-    public static StringBuilder FPGA_BINARIES = System.getProperty("tornado.precompiled.binary", null) != null ? new StringBuilder(System.getProperty("tornado.precompiled.binary", null)) : null;
     private static String PROFILER_LOG = "tornado.log.profiler";
     private static String PROFILER = "tornado.profiler";
 
@@ -463,12 +455,6 @@ public class TornadoOptions {
 
     private static float getFloatValue(String property, String defaultValue) {
         return Float.parseFloat(System.getProperty(property, defaultValue));
-    }
-
-    private static boolean isFPGAEmulation() {
-        String contextEmulatorIntelFPGA = System.getenv("CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA");
-        String contextEmulatorXilinxFPGA = System.getenv("XCL_EMULATION_MODE");
-        return (contextEmulatorIntelFPGA != null && (contextEmulatorIntelFPGA.equals("1"))) || (contextEmulatorXilinxFPGA != null && (contextEmulatorXilinxFPGA.equals("sw_emu")));
     }
 
     /**

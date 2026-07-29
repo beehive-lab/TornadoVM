@@ -20,7 +20,7 @@ Pre-requisites
 * Python >= 3.6
 * At least one of the following drivers/SDKs:
 
-  * OpenCL: GPUs and CPUs >= 2.1, FPGAs >= 1.0
+  * OpenCL: GPUs and CPUs >= 2.1
   * NVIDIA driver + CUDA Toolkit 10.0+ (12.0+ on Windows) for the **PTX** backend; CUDA Toolkit 13.0+ for the **CUDA** backend
   * Intel compute-runtime and/or GPU drivers (OpenCL)
 
@@ -31,9 +31,9 @@ Supported Platforms
    :header: "OS", "OpenCL Backend", "PTX Backend", "CUDA Backend", "Metal Backend"
    :widths: 22, 28, 12, 12, 13
 
-   "CentOS / Fedora / Ubuntu / Pop!_OS / Suse", "OpenCL for GPUs and CPUs >= 2.1, OpenCL for FPGAs >= 1.0", "CUDA 10.0+", "CUDA 13.0+", "Not supported"
+   "CentOS / Fedora / Ubuntu / Pop!_OS / Suse", "OpenCL for GPUs and CPUs >= 2.1, "CUDA 10.0+", "CUDA 13.0+", "Not supported"
    "Apple M1/M2/M3/M4/M5", "OpenCL for GPUs and CPUs >= 1.2", "Not supported", "Not supported", "macOS (Apple Silicon)"
-   "Windows 10/11 (native/WSL)", "OpenCL for GPUs and CPUs >= 2.1, FPGAs not tested", "CUDA 12.0+", "CUDA 13.0+", "Not supported"
+   "Windows 10/11 (native/WSL)", "OpenCL for GPUs and CPUs >= 2.1", "CUDA 12.0+", "CUDA 13.0+", "Not supported"
 
 For Intel-based macOS users, OpenCL support can be confirmed `here <https://support.apple.com/en-gb/HT202823>`_.
 

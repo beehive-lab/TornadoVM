@@ -46,8 +46,6 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.phases.InverseSquareRootPhase
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.CUDAFMAPhase;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.CUDAFP16SupportPhase;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.CUDAFP64SupportPhase;
-import uk.ac.manchester.tornado.drivers.cuda.graal.phases.CUDAFPGAPragmaPhase;
-import uk.ac.manchester.tornado.drivers.cuda.graal.phases.CUDAFPGAThreadScheduler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.CUDAFieldCoopsAccessPhase;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.TornadoAtomicsParametersPhase;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.TornadoAtomicsScheduling;
@@ -88,10 +86,6 @@ public class CUDALowTier extends TornadoLowTier {
 
         appendPhase(new DeadCodeEliminationPhase(DeadCodeEliminationPhase.Optionality.Required));
 
-        if (tornadoDeviceContext.isPlatformFPGA()) {
-            appendPhase(new CUDAFPGAPragmaPhase(tornadoDeviceContext));
-            appendPhase(new CUDAFPGAThreadScheduler());
-        }
 
         appendPhase(new TornadoHalfFloatVectorOffset());
 
