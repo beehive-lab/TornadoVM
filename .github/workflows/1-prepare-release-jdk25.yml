@@ -11,8 +11,8 @@ on:
         description: 'Previous JDK 25 version for changelog (e.g., 2.0.0-jdk25)'
         required: true
         type: string
-      dry_run:
-        description: 'Dry run - show changes without creating PR'
+      draft_release_test:
+        description: 'Draft release (test) - show changes without creating PR'
         required: false
         type: boolean
         default: false
@@ -28,6 +28,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      actions: write
     timeout-minutes: 15
     env:
       JAVA_HOME: /opt/jenkins/jdks/jdk-25.0.2
@@ -90,12 +91,19 @@ jobs:
           # Update version badge
           sed -i 's/version-[0-9]\+\.[0-9]\+\.[0-9]\+\(-jdk25\)\?-purple/version-${{ env.VERSION }}-purple/g' README.md
 
-          # Update "Latest Release" line with current date (DD/MM/YYYY format)
-          RELEASE_DATE=$(date +"%d/%m/%Y")
-          sed -i "s|\*\*Latest Release:\*\* TornadoVM [0-9]\+\.[0-9]\+\.[0-9]\+\(-jdk25\)\? - [0-9/]\+|**Latest Release:** TornadoVM ${{ env.VERSION }} - ${RELEASE_DATE}|" README.md
+          # Update the "Latest release" banner version number (top of README),
+          # keeping the hand-written highlight text after it untouched
+          BASE_VERSION="${VERSION%-jdk25}"
+          sed -i -E "s/(\*\*Latest [Rr]elease:\*\* TornadoVM )[0-9]+\.[0-9]+\.[0-9]+(-jdk25)?/\1${BASE_VERSION}/" README.md
 
           # Update Maven Central dependency versions (io.github.beehive-lab groupId)
           sed -i 's|<version>[0-9]\+\.[0-9]\+\.[0-9]\+\(-jdk25\)\?</version>|<version>${{ env.VERSION }}</version>|g' README.md
+
+          # Update SDKMAN! per-backend candidate versions (e.g. `4.0.1-jdk25-opencl`)
+          sed -i -E 's/`[0-9]+\.[0-9]+\.[0-9]+(-jdk25)?-(opencl|cuda|ptx|spirv|metal|full)`/`${{ env.VERSION }}-\2`/g' README.md
+
+          # Update the tornado-examples jar version in the "Run your first program" snippet
+          sed -i 's/tornado-examples-[0-9]\+\.[0-9]\+\.[0-9]\+\(-jdk25\)\?\.jar/tornado-examples-${{ env.VERSION }}.jar/g' README.md
 
           echo "✅ Updated README.md"
 
@@ -284,14 +292,14 @@ jobs:
           echo "3. \`deploy-maven-central-jdk25\` workflow deploys to Maven Central" >> $GITHUB_STEP_SUMMARY
 
       - name: Commit and push
-        if: ${{ inputs.dry_run == false }}
+        if: ${{ inputs.draft_release_test == false }}
         run: |
           git add -A
           git commit -m "Prepare release ${{ env.VERSION }}"
           git push origin release-jdk25/${{ env.VERSION }}
 
       - name: Create Pull Request
-        if: ${{ inputs.dry_run == false }}
+        if: ${{ inputs.draft_release_test == false }}
         uses: actions/github-script@v7
         with:
           script: |
@@ -355,10 +363,10 @@ jobs:
               console.log('Could not add label:', e.message);
             }
 
-      - name: Dry run output
-        if: ${{ inputs.dry_run == true }}
+      - name: Draft release (test) - output
+        if: ${{ inputs.draft_release_test == true }}
         run: |
-          echo "🏃 DRY RUN MODE"
+          echo "🏃 DRAFT RELEASE (TEST) MODE"
           echo ""
           echo "=== Files changed ==="
           git diff --stat
@@ -368,3 +376,24 @@ jobs:
           echo ""
           echo "=== Full diff ==="
           git diff
+
+      - name: Draft release (test) - continue pipeline
+        if: ${{ inputs.draft_release_test == true }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # No PR was opened (and won't be merged) in dry-run mode, so simulate
+          # the "PR merged" trigger by dispatching finalize directly with
+          # draft_release_test=true. That in turn dispatches build-release-sdks with
+          # draft_release_test=true, which still builds the SDKs for real but never
+          # uploads/un-drafts/publishes anything.
+          BASE_VERSION="${VERSION%-jdk25}"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE_VERSION"
+          NEXT_DEV="${MAJOR}.${MINOR}.$((PATCH + 1))-jdk25-dev"
+          echo "Dispatching 2-finalize-release-jdk25.yml with draft_release_test=true (version=${VERSION}, next_dev_version=${NEXT_DEV})..."
+          gh workflow run 2-finalize-release-jdk25.yml \
+            --repo "${{ github.repository }}" \
+            -f version="${VERSION}" \
+            -f next_dev_version="${NEXT_DEV}" \
+            -f draft_release_test=true
