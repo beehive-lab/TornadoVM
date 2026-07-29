@@ -107,6 +107,7 @@ public class TestSimdgroupMatrixPrimitives extends TornadoTestBase {
     public void testRegisterTiled() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.CUDA);
         int m = 32, n = 32, k = 32;
         FloatArray a = new FloatArray(m * k);
         FloatArray b = new FloatArray(k * n);
@@ -185,6 +186,7 @@ public class TestSimdgroupMatrixPrimitives extends TornadoTestBase {
     public void testTiledGemmViaPrimitives() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.CUDA);
         int m = 64, n = 64, k = 64;
         FloatArray a = new FloatArray(m * k);
         FloatArray b = new FloatArray(k * n);
@@ -230,6 +232,7 @@ public class TestSimdgroupMatrixPrimitives extends TornadoTestBase {
     private void runAndCheck(int m, int n, int k) throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.CUDA);
 
         FloatArray a = new FloatArray(m * k);
         FloatArray b = new FloatArray(k * n);

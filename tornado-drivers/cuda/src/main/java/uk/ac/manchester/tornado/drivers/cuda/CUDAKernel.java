@@ -60,6 +60,27 @@ public class CUDAKernel {
 
     native static void clGetKernelInfo(long kernelId, int info, byte[] buffer) throws CUDAException;
 
+    native static int cuOccupancyMaxPotentialBlockSize(long kernelId) throws CUDAException;
+
+    private int maxPotentialBlockSize = -1;
+
+    /**
+     * CUDA occupancy-suggested maximum threads per block for this kernel, accounting for its
+     * register and shared-memory usage (via {@code cuOccupancyMaxPotentialBlockSize}). Cached.
+     * Returns 0 if the query fails, in which case callers should fall back to their heuristic.
+     */
+    public int getMaxPotentialBlockSize() {
+        if (maxPotentialBlockSize < 0) {
+            try {
+                maxPotentialBlockSize = cuOccupancyMaxPotentialBlockSize(oclKernelID);
+            } catch (CUDAException e) {
+                logger.error(e.getMessage());
+                maxPotentialBlockSize = 0;
+            }
+        }
+        return maxPotentialBlockSize;
+    }
+
     public void setArg(int index, ByteBuffer buffer) {
         try {
             clSetKernelArg(oclKernelID, index, buffer.position(), buffer.array());

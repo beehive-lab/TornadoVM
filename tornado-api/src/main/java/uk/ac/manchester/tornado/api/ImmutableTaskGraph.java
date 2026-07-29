@@ -58,6 +58,22 @@ public class ImmutableTaskGraph {
         taskGraph.withCUDAGraph();
     }
 
+    void withIntraPlanConcurrency() {
+        taskGraph.withIntraPlanConcurrency();
+    }
+
+    void withoutIntraPlanConcurrency() {
+        taskGraph.withoutIntraPlanConcurrency();
+    }
+
+    void withStagedTransfers() {
+        taskGraph.withStagedTransfers();
+    }
+
+    void withoutStagedTransfers() {
+        taskGraph.withoutStagedTransfers();
+    }
+
     void withDevice(TornadoDevice device) {
         taskGraph.withDevice(device);
     }

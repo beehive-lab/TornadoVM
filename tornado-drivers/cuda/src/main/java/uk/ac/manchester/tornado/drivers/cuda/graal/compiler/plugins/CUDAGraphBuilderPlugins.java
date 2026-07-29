@@ -23,6 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.graal.compiler.plugins;
 
+import jdk.vm.ci.meta.ResolvedJavaField;
 import org.graalvm.compiler.core.common.memory.BarrierType;
 import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -45,6 +46,7 @@ import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
 import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
+import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
@@ -60,19 +62,35 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import org.graalvm.word.LocationIdentity;
 import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.enums.MMAShape;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
+import uk.ac.manchester.tornado.api.types.BFloat16;
+import uk.ac.manchester.tornado.api.types.FP8;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoMemorySegment;
+import uk.ac.manchester.tornado.api.types.vectors.Half2;
 import uk.ac.manchester.tornado.api.utils.QuantizationUtils;
+import uk.ac.manchester.tornado.drivers.cuda.CUDAProgram;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAArchitecture;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
+import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAUnary;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.AtomAddNodeTemplate;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAComputeNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAFragmentNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadAInt8Node;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadANode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadBInt8Node;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadBNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadBSwizzledNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAStoreBSwizzledNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAStoreNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAShuffleDownNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASimdBroadcastFirstNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASimdSumNode;
@@ -84,11 +102,19 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.DP4APackedNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.Dp4aNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDABarrierNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAConvertBF16ToFloat;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAConvertFloatToBF16;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAConvertFP8ToFloat;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDACpAsyncCommitGroupNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDACpAsyncCopyNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDACpAsyncWaitGroupNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAConvertHalfToFloat;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAFPBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAFPUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAIntBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAIntUnaryIntrinsicNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASwizzledLoadFP16Stride32Node;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASwizzledStoreFP16Stride32Node;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.PrintfNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.TornadoAtomicIntegerNode;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
@@ -123,6 +149,8 @@ public class CUDAGraphBuilderPlugins {
         }
 
         registerFP16ConversionPlugins(plugins);
+        registerFP8ConversionPlugins(plugins);
+        registerBF16ConversionPlugins(plugins);
         registerTornadoVMIntrinsicsPlugins(plugins);
 
         // Register Atomics
@@ -407,6 +435,21 @@ public class CUDAGraphBuilderPlugins {
         });
     }
 
+    private static void registerHalf2LocalArray(Registration r, JavaKind returnedJavaKind) {
+        r.register(new InvocationPlugin("allocateHalf2LocalArray", InvocationPlugin.Receiver.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                receiver.get(true);
+                MetaAccessProvider metaAccess = b.getMetaAccess();
+                ResolvedJavaType resolvedElementType = metaAccess.lookupJavaType(Half2.class);
+                LocalArrayNode localArrayNode = new LocalArrayNode(CUDAArchitecture.localSpace, resolvedElementType, size, CUDAKind.HALF2);
+                b.getGraph().addOrUnique(localArrayNode);
+                b.push(returnedJavaKind, localArrayNode);
+                return true;
+            }
+        });
+    }
+
     private static void localArraysPlugins(Registration r) {
         JavaKind returnedJavaKind = JavaKind.Object;
 
@@ -426,6 +469,8 @@ public class CUDAGraphBuilderPlugins {
 
         returnedJavaKind = JavaKind.fromJavaClass(short.class);
         registerHalfFloatLocalArray(r, returnedJavaKind);
+
+        registerHalf2LocalArray(r, JavaKind.Object);
     }
 
     private static void registerKernelContextPlugins(InvocationPlugins plugins) {
@@ -436,7 +481,380 @@ public class CUDAGraphBuilderPlugins {
         localArraysPlugins(r);
         registerAtomicAddOperation(r);
         registerSIMDPlugins(r);
+        registerMMAPlugins(r);
+        registerCpAsyncPlugins(r);
         registerSwizzledLocalAccessesPlugins(r);
+    }
+
+    /**
+     * cp.async (Ampere+/sm_80) asynchronous global-to-shared copies. Each copy plugin
+     * shares one node shape; only the source element size / header differ per array type.
+     */
+    private static void registerCpAsyncPlugins(Registration r) {
+        registerCpAsyncCopy(r, HalfFloatArray.class, JavaKind.Short);
+        registerCpAsyncCopy(r, uk.ac.manchester.tornado.api.types.arrays.FP8Array.class, JavaKind.Byte);
+        registerCpAsyncCopy(r, uk.ac.manchester.tornado.api.types.arrays.ByteArray.class, JavaKind.Byte);
+
+        r.register(new InvocationPlugin("asyncCopyCommit", InvocationPlugin.Receiver.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                receiver.get(true);
+                b.add(new CUDACpAsyncCommitGroupNode());
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("asyncCopyWaitGroup", InvocationPlugin.Receiver.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode groups) {
+                receiver.get(true);
+                JavaConstant constant = groups.asJavaConstant();
+                if (constant == null) {
+                    throw new IllegalStateException("asyncCopyWaitGroup requires a compile-time constant group count");
+                }
+                b.add(new CUDACpAsyncWaitGroupNode(constant.asInt()));
+                return true;
+            }
+        });
+    }
+
+    private static void registerCpAsyncCopy(Registration r, Class<?> arrayClass, JavaKind elementKind) {
+        r.register(new InvocationPlugin("asyncCopyToLocal",
+                InvocationPlugin.Receiver.class, int[].class, int.class, arrayClass, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver,
+                                 ValueNode dstTile, ValueNode dstIndex, ValueNode srcArray, ValueNode srcIndex) {
+                receiver.get(true);
+                int headerBytes = TornadoCoreRuntime.getVMConfig().getArrayBaseOffset(elementKind);
+                b.add(new CUDACpAsyncCopyNode(dstTile, dstIndex, srcArray, srcIndex,
+                        elementKind.getByteCount(), headerBytes));
+                return true;
+            }
+        });
+    }
+
+    private static void registerMMAPlugins(Registration r) {
+        // --- mmaFragment(float v) -> float[] ---
+        r.register(new InvocationPlugin("mmaFragment",
+                InvocationPlugin.Receiver.class, float.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode initValue) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDAMMAFragmentNode(initValue));
+                return true;
+            }
+        });
+
+        // --- mmaLoadA(int[] aTile, int wmmaK) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadA",
+                InvocationPlugin.Receiver.class, int[].class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode wmmaK) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDAMMALoadANode(tile, wmmaK));
+                return true;
+            }
+        });
+
+        // --- mmaLoadB(int[] bTile, int wmmaK) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadB",
+                InvocationPlugin.Receiver.class, int[].class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode wmmaK) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDAMMALoadBNode(tile, wmmaK));
+                return true;
+            }
+        });
+
+        // --- mmaLoadBSwizzled(HalfFloat[] bTile, int wmmaK) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadBSwizzled",
+                InvocationPlugin.Receiver.class, HalfFloat[].class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode wmmaK) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDAMMALoadBSwizzledNode(tile, wmmaK));
+                return true;
+            }
+        });
+
+        // --- mmaStoreBSwizzled(HalfFloat[] arr, int row, int col, int stride, HalfFloat value, int byteOffset) -> void ---
+        r.register(new InvocationPlugin("mmaStoreBSwizzled",
+                InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class,
+                int.class, HalfFloat.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode arr, ValueNode row, ValueNode col,
+                                 ValueNode stride, ValueNode value, ValueNode byteOffset) {
+                receiver.get(true);
+                b.add(new CUDAMMAStoreBSwizzledNode(arr, row, col, stride, value, byteOffset));
+                return true;
+            }
+        });
+
+        // --- mma(HalfFloat[] fragA, HalfFloat[] fragB, float[] fragC, MMAShape shape) -> float[] ---
+        r.register(new InvocationPlugin("mma",
+                InvocationPlugin.Receiver.class,
+                HalfFloat[].class, HalfFloat[].class, float[].class, MMAShape.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver,
+                                 ValueNode fragA, ValueNode fragB, ValueNode fragC,
+                                 ValueNode shapeNode) {
+                receiver.get(true);
+                MMAShape shape = resolveShape(b, shapeNode);
+                b.addPush(JavaKind.Object, new CUDAMMAComputeNode(fragA, fragB, fragC, shape,
+                        CUDALIRStmt.MMAComputeStmt.MMAOperand.F16));
+                return true;
+            }
+        });
+
+        // --- mmaStore(float[] fragD, FloatArray c, int tileRow, int tileCol, int dimN) -> void ---
+        r.register(new InvocationPlugin("mmaStore",
+                InvocationPlugin.Receiver.class,
+                float[].class, FloatArray.class, int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver,
+                                 ValueNode fragD, ValueNode target,
+                                 ValueNode tileRow, ValueNode tileCol, ValueNode dimN) {
+                receiver.get(true);
+                int headerElements = TornadoCoreRuntime.getVMConfig()
+                        .getArrayBaseOffset(JavaKind.Float) / JavaKind.Float.getByteCount();
+                b.add(new CUDAMMAStoreNode(fragD, target, tileRow, tileCol, dimN, headerElements));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("mmaFragmentInt",
+                InvocationPlugin.Receiver.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode initValue) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDAMMAFragmentNode(initValue, true));
+                return true;
+            }
+        });
+
+        // --- mmaLoadAInt8(int[], int) -> byte[] ---
+        r.register(new InvocationPlugin("mmaLoadAInt8",
+                InvocationPlugin.Receiver.class, int[].class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode tileK) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDAMMALoadAInt8Node(tile, tileK));
+                return true;
+            }
+        });
+
+        // --- mmaLoadBInt8(int[], int) -> byte[] ---
+        r.register(new InvocationPlugin("mmaLoadBInt8",
+                InvocationPlugin.Receiver.class, int[].class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode tileK) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDAMMALoadBInt8Node(tile, tileK));
+                return true;
+            }
+        });
+
+        // --- mmaInt8(byte[], byte[], int[], MMAShape) -> int[] ---
+        r.register(new InvocationPlugin("mmaInt8",
+                InvocationPlugin.Receiver.class,
+                byte[].class, byte[].class, int[].class, MMAShape.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver,
+                                 ValueNode fragA, ValueNode fragB, ValueNode fragC,
+                                 ValueNode shapeNode) {
+                receiver.get(true);
+                MMAShape shape = resolveShape(b, shapeNode);
+                b.addPush(JavaKind.Object, new CUDAMMAComputeNode(fragA, fragB, fragC, shape,
+                        CUDALIRStmt.MMAComputeStmt.MMAOperand.S8));
+                return true;
+            }
+        });
+
+        // --- mmaBF16(HalfFloat[], HalfFloat[], float[], MMAShape) -> float[] ---
+        // BF16 shares fp16's m16n8k16 fragment layout; the loads are the fp16 ones and
+        // only the mma.sync element type changes.
+        r.register(new InvocationPlugin("mmaBF16",
+                InvocationPlugin.Receiver.class,
+                HalfFloat[].class, HalfFloat[].class, float[].class, MMAShape.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver,
+                                 ValueNode fragA, ValueNode fragB, ValueNode fragC,
+                                 ValueNode shapeNode) {
+                receiver.get(true);
+                MMAShape shape = resolveShape(b, shapeNode);
+                b.addPush(JavaKind.Object, new CUDAMMAComputeNode(fragA, fragB, fragC, shape,
+                        CUDALIRStmt.MMAComputeStmt.MMAOperand.BF16));
+                return true;
+            }
+        });
+
+        // --- mmaFP8E4M3(byte[], byte[], float[], MMAShape) -> float[] ---
+        // --- mmaFP8E5M2(byte[], byte[], float[], MMAShape) -> float[] ---
+        // FP8 tensor-core MMA (m16n8k32, f32 accumulator). The A/B fragments are raw
+        // byte tuples with the same shared-memory tile layout as the int8 path, so the
+        // loads reuse the int8 load nodes; only the mma.sync element type differs.
+        registerMMAFP8Compute(r, "mmaFP8E4M3", CUDALIRStmt.MMAComputeStmt.MMAOperand.E4M3);
+        registerMMAFP8Compute(r, "mmaFP8E5M2", CUDALIRStmt.MMAComputeStmt.MMAOperand.E5M2);
+
+        // --- mmaLoadAFP8(int[], int) -> byte[] --- (same tile layout as int8: reuse its load node)
+        r.register(new InvocationPlugin("mmaLoadAFP8",
+                InvocationPlugin.Receiver.class, int[].class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode tileK) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDAMMALoadAInt8Node(tile, tileK));
+                return true;
+            }
+        });
+
+        // --- mmaLoadBFP8(int[], int) -> byte[] ---
+        r.register(new InvocationPlugin("mmaLoadBFP8",
+                InvocationPlugin.Receiver.class, int[].class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode tileK) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDAMMALoadBInt8Node(tile, tileK));
+                return true;
+            }
+        });
+
+        // --- mmaStoreInt(int[], IntArray, int, int, int) -> void ---
+        r.register(new InvocationPlugin("mmaStoreInt",
+                InvocationPlugin.Receiver.class,
+                int[].class, IntArray.class, int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver,
+                                 ValueNode fragD, ValueNode target,
+                                 ValueNode tileRow, ValueNode tileCol, ValueNode dimN) {
+                receiver.get(true);
+                int headerElements = TornadoCoreRuntime.getVMConfig()
+                        .getArrayBaseOffset(JavaKind.Int) / JavaKind.Int.getByteCount();
+                b.add(new CUDAMMAStoreNode(fragD, target, tileRow, tileCol, dimN, headerElements, true));
+                return true;
+            }
+        });
+
+        // --- mmaLoadA(int[], int, int) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadA",
+                InvocationPlugin.Receiver.class, int[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode wmmaK, ValueNode byteOffset) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDAMMALoadANode(tile, wmmaK, byteOffset));
+                return true;
+            }
+        });
+
+        // --- mmaLoadB(int[], int, int) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadB",
+                InvocationPlugin.Receiver.class, int[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode wmmaK, ValueNode byteOffset) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDAMMALoadBNode(tile, wmmaK, byteOffset));
+                return true;
+            }
+        });
+
+        // --- mmaLoadBSwizzled(HalfFloat[], int, int) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadBSwizzled",
+                InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode wmmaK, ValueNode byteOffset) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDAMMALoadBSwizzledNode(tile, wmmaK, byteOffset));
+                return true;
+            }
+        });
+
+    }
+
+    /** Registers one FP8 mma compute plugin ({@code (byte[], byte[], float[], MMAShape) -> float[]}). */
+    private static void registerMMAFP8Compute(Registration r, String methodName,
+                                              CUDALIRStmt.MMAComputeStmt.MMAOperand operand) {
+        r.register(new InvocationPlugin(methodName,
+                InvocationPlugin.Receiver.class,
+                byte[].class, byte[].class, float[].class, MMAShape.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver,
+                                 ValueNode fragA, ValueNode fragB, ValueNode fragC,
+                                 ValueNode shapeNode) {
+                receiver.get(true);
+                MMAShape shape = resolveShape(b, shapeNode);
+                b.addPush(JavaKind.Object, new CUDAMMAComputeNode(fragA, fragB, fragC, shape, operand));
+                return true;
+            }
+        });
+    }
+
+    /**
+     * Resolves an MMAShape enum ValueNode to its compile-time constant.
+     *
+     * Enum references in bytecode appear as getstatic loads (LoadFieldNode) that
+     * are only constant-folded in a later phase. We read the static field directly
+     * via ConstantReflectionProvider.
+     *
+     * We can't use SnippetReflection.asObject() because TornadoVM's implementation
+     * throws unimplemented(). Instead, we read the enum's ordinal field and index
+     * into MMAShape.values().
+     */
+    private static MMAShape resolveShape(GraphBuilderContext b, ValueNode shapeNode) {
+        JavaConstant constant = shapeNode.asJavaConstant();
+
+        // Enum constants usually reach the plugin as a LoadFieldNode — resolve
+        // the static-final field directly if it hasn't been folded yet.
+        if (constant == null && shapeNode instanceof LoadFieldNode) {
+            LoadFieldNode load = (LoadFieldNode) shapeNode;
+            if (load.field().isStatic()) {
+                constant = b.getConstantReflection().readFieldValue(load.field(), null);
+            }
+        }
+
+        if (constant == null || constant.isNull()) {
+            throw new IllegalStateException(
+                    "MMAShape argument to ctx.mma() must be a compile-time constant");
+        }
+
+        // Read the `ordinal` field inherited from java.lang.Enum to identify
+        // which MMAShape constant this is, then look it up in values().
+        ResolvedJavaType enumType = b.getMetaAccess().lookupJavaType(MMAShape.class);
+        ResolvedJavaField ordinalField = null;
+        for (ResolvedJavaField f : enumType.getInstanceFields(true)) {
+            if (f.getName().equals("ordinal")) {
+                ordinalField = f;
+                break;
+            }
+        }
+        if (ordinalField == null) {
+            throw new IllegalStateException("Cannot locate Enum.ordinal field on MMAShape");
+        }
+
+        JavaConstant ordinalConst = b.getConstantReflection().readFieldValue(ordinalField, constant);
+        if (ordinalConst == null) {
+            throw new IllegalStateException("Failed to read ordinal of MMAShape constant");
+        }
+
+        return MMAShape.values()[ordinalConst.asInt()];
     }
 
     private static void registerSIMDPlugins(Registration r) {
@@ -473,16 +891,19 @@ public class CUDAGraphBuilderPlugins {
         r.register(new InvocationPlugin("swizzleLoadFp16Stride32", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride) {
-                unimplemented("Swizzled local memory accesses are not supported on this backend.");
-                return false;
+                receiver.get(true);
+                b.addPush(JavaKind.Object,
+                        new CUDASwizzledLoadFP16Stride32Node(local_array, row, column, stride));
+                return true;
             }
         });
 
         r.register(new InvocationPlugin("swizzleStoreFp16Stride32", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class, HalfFloat.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode value) {
-                unimplemented("Swizzled local memory accesses are not supported on this backend.");
-                return false;
+                receiver.get(true);
+                b.add(new CUDASwizzledStoreFP16Stride32Node(local_array, row, column, stride, value));
+                return true;
             }
         });
 
@@ -532,6 +953,86 @@ public class CUDAGraphBuilderPlugins {
                 CUDAConvertHalfToFloat convertHalfToFloat = new CUDAConvertHalfToFloat(halfValue);
                 b.getGraph().addOrUnique(convertHalfToFloat);
                 b.push(JavaKind.Float, convertHalfToFloat);
+                return true;
+            }
+        });
+    }
+
+    /**
+     * Routes the in-kernel FP8 decoders to the native cuda_fp8.h conversion path.
+     *
+     * <p>{@code FP8.e4m3ToFloat}/{@code e5m2ToFloat} are written as pure arithmetic so
+     * they compile on any backend; on CUDA that software decode costs 2-10x more than a
+     * hardware convert. Intercepting the call here swaps in
+     * {@code __nv_cvt_fp8_to_halfraw} (hardware {@code cvt} on sm_89+, the header's own
+     * emulation below that) while other backends keep inlining the Java bytecode. Decode
+     * only: the hardware float-to-fp8 encoder rounds ties to even while the software
+     * encoder rounds half away from zero, so replacing the encoders would change results
+     * between host- and device-quantized data.
+     *
+     * <p>The interception is conditional on the toolkit: cuda_fp8.h only exists since
+     * CUDA 11.8, so each plugin first checks (once per process, via NVRTC) that the
+     * header actually compiles and otherwise declines, letting the graph builder inline
+     * the Java software decoder as on every other backend - an old or mismatched toolkit
+     * degrades FP8 decode performance, not correctness.
+     */
+    private static void registerFP8ConversionPlugins(InvocationPlugins plugins) {
+        Registration r = new Registration(plugins, FP8.class);
+
+        r.register(new InvocationPlugin("e4m3ToFloat", byte.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode fp8Byte) {
+                if (!CUDAProgram.isNativeFP8ConversionAvailable()) {
+                    return false; // no cuda_fp8.h on this toolkit: inline the Java software decoder
+                }
+                CUDAConvertFP8ToFloat convert = new CUDAConvertFP8ToFloat(fp8Byte, CUDAConvertFP8ToFloat.FP8Format.E4M3);
+                b.getGraph().addOrUnique(convert);
+                b.push(JavaKind.Float, convert);
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("e5m2ToFloat", byte.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode fp8Byte) {
+                if (!CUDAProgram.isNativeFP8ConversionAvailable()) {
+                    return false; // no cuda_fp8.h on this toolkit: inline the Java software decoder
+                }
+                CUDAConvertFP8ToFloat convert = new CUDAConvertFP8ToFloat(fp8Byte, CUDAConvertFP8ToFloat.FP8Format.E5M2);
+                b.getGraph().addOrUnique(convert);
+                b.push(JavaKind.Float, convert);
+                return true;
+            }
+        });
+    }
+
+    /**
+     * Routes the in-kernel bfloat16 decoder to a single-instruction bit reinterpretation:
+     * bf16 is the high half of the f32 pattern, so the decode is
+     * {@code __int_as_float(bits << 16)} - a core CUDA builtin, no header and no toolkit
+     * version requirement. Decode only, like the FP8 plugins: the hardware encoder rounds
+     * ties to even while {@code BFloat16.bf16FromFloat} rounds half away from zero, so the
+     * encoder stays software on every backend.
+     */
+    private static void registerBF16ConversionPlugins(InvocationPlugins plugins) {
+        Registration r = new Registration(plugins, BFloat16.class);
+
+        r.register(new InvocationPlugin("bf16ToFloat", short.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode bits) {
+                CUDAConvertBF16ToFloat convert = new CUDAConvertBF16ToFloat(bits);
+                b.getGraph().addOrUnique(convert);
+                b.push(JavaKind.Float, convert);
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("bf16FromFloat", float.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                CUDAConvertFloatToBF16 convert = new CUDAConvertFloatToBF16(value);
+                b.getGraph().addOrUnique(convert);
+                b.push(JavaKind.Short, convert);
                 return true;
             }
         });

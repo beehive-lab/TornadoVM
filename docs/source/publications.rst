@@ -47,6 +47,18 @@ If you are using Tornado 0.1 (Initial release), please use the following citatio
 
 Full list of publications
 ---------------------------------------------
+- Michail Papadimitriou, Maria Xekalaki, Orion Papadakis, Ruiqi Ye, Athanasios Stratikopoulos, Christos-Efthymios Kotselidis.
+  **Pulse: A Profiling and Visualization Infrastructure for Heterogeneous Managed Systems**.
+  MPLR 2026.
+  `Preprint <https://research.manchester.ac.uk/files/1843186657/PREPRINT_Pulse_A_Profiling_and_Visualization_Infrastructure_for_Heterogeneous_Managed_Systems.pdf>`_.
+- Michail Papadimitriou, Maria Xekalaki, Athanasios Stratikopoulos, Orion Papadakis, Juan Fumero Alfonso, Christos-Efthymios Kotselidis.
+  **TornadoViz: Visualizing Heterogeneous Execution Patterns in Modern Managed Runtime Systems**.
+  MPLR 2025.
+  `link <https://dl.acm.org/doi/epdf/10.1145/3759426.3760978>`__.
+- Athanasios Stratikopoulos, Tianyu Zuo, Umut Sarp Harbalioglu, Juan Fumero Alfonso, Michail Papadimitriou, Orion Papadakis, Maria Xekalaki, Christos-Efthymios Kotselidis.
+  **Dynamic and Static Code Analysis for Java Programs on Heterogeneous Hardware**.
+  MPLR 2025.
+  `link <https://dl.acm.org/doi/epdf/10.1145/3759426.3760984>`__.
 - Juan Fumero, György Rethy, Athanasios Stratikopoulos, Nikos Foutris, Christos Kotselidis.
   **Beehive SPIR-V Toolkit: A Composable and Functional API for Runtime SPIR-V Code Generation**
   VMIL'23, Collocated with SPLASH'#23. October 23, Cascais, Portugal.

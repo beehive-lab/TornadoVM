@@ -49,7 +49,7 @@ checkstyle:
 	./mvnw checkstyle:check
 
 clean:
-	./mvnw -Popencl-backend,cuda-backend,spirv-backend clean
+	./mvnw -Popencl-backend,spirv-backend,cuda-backend,metal-backend clean
 
 example:
 	tornado --printKernel --debug -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt --params="8192"

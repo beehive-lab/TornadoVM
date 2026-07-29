@@ -118,4 +118,29 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAKernel_clG
     env->ReleasePrimitiveArrayCritical(array, buf, 0);
 }
 
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAKernel
+ * Method:    cuOccupancyMaxPotentialBlockSize
+ * Signature: (J)I
+ *
+ * Returns the block size (threads/block) that maximises occupancy for this kernel,
+ * accounting for its register and shared-memory usage. Used by the scheduler to pick
+ * a launchable block for register-heavy kernels. Returns 0 on failure.
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAKernel_cuOccupancyMaxPotentialBlockSize
+        (JNIEnv *env, jclass clazz, jlong kernel_id) {
+    cuda_kernel_t *kernel = (cuda_kernel_t *) kernel_id;
+    if (kernel == nullptr) {
+        return 0;
+    }
+    int min_grid_size = 0;
+    int block_size = 0;
+    CUresult result = cuOccupancyMaxPotentialBlockSize(&min_grid_size, &block_size, kernel->function, 0, 0, 0);
+    LOG_CUDA_AND_VALIDATE("cuOccupancyMaxPotentialBlockSize", result);
+    if (result != CUDA_SUCCESS) {
+        return 0;
+    }
+    return block_size;
+}
+
 } // extern "C"

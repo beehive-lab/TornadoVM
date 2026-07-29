@@ -52,17 +52,20 @@ public class CUDAScheduler {
         }
     }
 
-    private static final int NVIDIA_MAJOR_VERSION_GENERIC_SCHEDULER = 550;
-    private static final int NVIDIA_MINOR_VERSION_GENERIC_SCHEDULER = 67;
+    // CL_DRIVER_VERSION on the CUDA backend reports the CUDA API version returned by
+    // cuDriverGetVersion() (e.g. "12.4" / "13.0"), NOT the NVIDIA display-driver version.
+    // The tiled NVIDIA scheduler caps 2D/3D block dimensions so register-heavy kernels stay
+    // within the per-block register file; the generic fallback can request 1024-thread blocks
+    // that fail to launch with CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES. Select the tiled scheduler
+    // for every CUDA version this NVRTC backend supports.
+    private static final int MIN_CUDA_MAJOR_FOR_TILED_SCHEDULER = 12;
 
     private static boolean isDriverVersionCompatible(CUDATargetDevice device) {
-        int majorVersion = Integer.parseInt(device.getDriverVersion().split("\\.")[0]);
-        int minorVersion = Integer.parseInt(device.getDriverVersion().split("\\.")[1]);
-
-        if (majorVersion == NVIDIA_MAJOR_VERSION_GENERIC_SCHEDULER && minorVersion >= NVIDIA_MINOR_VERSION_GENERIC_SCHEDULER) {
-            return true;
-        } else {
-            return majorVersion > NVIDIA_MAJOR_VERSION_GENERIC_SCHEDULER;
+        try {
+            int cudaMajorVersion = Integer.parseInt(device.getDriverVersion().split("\\.")[0]);
+            return cudaMajorVersion >= MIN_CUDA_MAJOR_FOR_TILED_SCHEDULER;
+        } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+            return false;
         }
     }
 

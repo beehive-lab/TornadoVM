@@ -1,4 +1,3 @@
-#include <cuda_fp16.h>
 extern "C" __global__ void add(long *_kernel_context, unsigned char *_constant_region, unsigned char *_local_region, int *_atomics, unsigned char *a, unsigned char *b, unsigned char *c)
 {
   int i_11, i_9, i_15, i_14, i_13, i_3, i_4;

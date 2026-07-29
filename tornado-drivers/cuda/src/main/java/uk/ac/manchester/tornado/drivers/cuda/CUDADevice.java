@@ -76,6 +76,8 @@ public class CUDADevice implements CUDATargetDevice {
     private CUDALocalMemType localMemoryType;
     private int deviceVendorID;
     private CUDADeviceContextInterface deviceContext;
+    private int asyncEngineCount = INIT_VALUE;
+    private int concurrentKernels = INIT_VALUE;
     private float spirvVersion = SPIRV_VERSION_INIT;
 
     private static final int SPIRV_VERSION_INIT = -1;
@@ -263,6 +265,20 @@ public class CUDADevice implements CUDATargetDevice {
             deviceExtensions = "unknown";
         }
         return deviceExtensions;
+    }
+
+    public int getComputeCapabilityMajor() { return getComputeCapability()[0]; }
+    public int getComputeCapabilityMinor() { return getComputeCapability()[1]; }
+
+    public int[] getComputeCapability() {
+        String v = getDeviceVersion();
+        if (v == null || !v.startsWith("CUDA ")) return new int[]{0, 0};
+        try {
+            String[] parts = v.substring(5).trim().split("\\.");
+            return new int[]{ Integer.parseInt(parts[0]), Integer.parseInt(parts[1]) };
+        } catch (Exception e) {
+            return new int[]{0, 0};
+        }
     }
 
     @Override
@@ -481,6 +497,24 @@ public class CUDADevice implements CUDATargetDevice {
             spirvVersion = SPIRV_NOT_SUPPORTED;
             return false;
         }
+    }
+
+    @Override
+    public int getAsyncEngineCount() {
+        if (asyncEngineCount == INIT_VALUE) {
+            queryOpenCLAPI(CUDADeviceInfo.TORNADO_DEVICE_ASYNC_ENGINE_COUNT.getValue());
+            asyncEngineCount = buffer.getInt();
+        }
+        return asyncEngineCount;
+    }
+
+    @Override
+    public boolean supportsConcurrentKernels() {
+        if (concurrentKernels == INIT_VALUE) {
+            queryOpenCLAPI(CUDADeviceInfo.TORNADO_DEVICE_CONCURRENT_KERNELS.getValue());
+            concurrentKernels = buffer.getInt();
+        }
+        return concurrentKernels != 0;
     }
 
     public int getWordSize() {

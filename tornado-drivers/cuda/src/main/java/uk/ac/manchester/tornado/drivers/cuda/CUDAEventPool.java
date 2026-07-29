@@ -116,21 +116,35 @@ public class CUDAEventPool {
     }
 
     public boolean serialiseEvents(int[] dependencies, CUDACommandQueue queue) {
+        return serialiseEvents(dependencies, queue, false);
+    }
+
+    /**
+     * Serialises the dependency wait list into {@link #waitEventsBuffer}. On an in-order queue the
+     * list is normally redundant (queue order implies it) and is skipped; {@code forceSerialisation}
+     * overrides that for plans running with intra-plan concurrency, where dependencies may have been
+     * recorded on a DIFFERENT queue and must be honoured with cross-stream event waits.
+     */
+    public boolean serialiseEvents(int[] dependencies, CUDACommandQueue queue, boolean forceSerialisation) {
         boolean outOfOrderQueue = (queue.getProperties() & CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE) == 1;
-        if (dependencies == null || dependencies.length == 0 || !outOfOrderQueue) {
+        if (dependencies == null || dependencies.length == 0 || (!outOfOrderQueue && !forceSerialisation)) {
             return false;
         }
 
-        Arrays.fill(waitEventsBuffer, 0);
-
         int index = 0;
         for (final int value : dependencies) {
-            if (value != -1) {
-                index++;
-                waitEventsBuffer[index] = events[value];
-                logger.debug("[%d] 0x%x - %s\n", index, events[value], descriptors[value].getNameDescription());
-
+            if (value == -1) {
+                continue;
             }
+            // An in-order queue already orders against its OWN prior work: a
+            // cuStreamWaitEvent on an event recorded on the same queue is a no-op
+            // that still costs an API call per dependency, so skip those.
+            if (!outOfOrderQueue && eventQueues[value] == queue) {
+                continue;
+            }
+            index++;
+            waitEventsBuffer[index] = events[value];
+            logger.debug("[%d] 0x%x - %s\n", index, events[value], descriptors[value].getNameDescription());
         }
         waitEventsBuffer[0] = index;
         return (index > 0);

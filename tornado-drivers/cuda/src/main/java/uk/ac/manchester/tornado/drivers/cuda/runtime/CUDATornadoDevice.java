@@ -59,6 +59,8 @@ import uk.ac.manchester.tornado.api.types.arrays.CharArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
+import uk.ac.manchester.tornado.api.types.arrays.FP8Array;
 import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
@@ -66,6 +68,7 @@ import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.cuda.CUDABackendImpl;
 import uk.ac.manchester.tornado.drivers.cuda.CUDACodeCache;
+import uk.ac.manchester.tornado.drivers.cuda.CUDACommandQueue;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.cuda.CUDATargetDevice;
@@ -91,6 +94,7 @@ import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAShortArrayWrapper;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAVectorWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
+import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
@@ -104,7 +108,7 @@ import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
-public class CUDATornadoDevice implements TornadoXPUDevice {
+public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamSupport {
 
     private static CUDABackendImpl driver = null;
     private static final Pattern NAME_PATTERN = Pattern.compile("^CUDADriver (\\d)\\.(\\d).*");
@@ -191,6 +195,9 @@ public class CUDATornadoDevice implements TornadoXPUDevice {
         Set<Long> ids = new HashSet<>(device.getDeviceContext().getRegisteredPlanIds());
         ids.forEach(id -> device.getDeviceContext().reset(id));
         ids.clear();
+        // Every plan is now reset, so the device-wide staging ring has no user left: release its
+        // pinned host block here rather than in the per-plan reset above.
+        device.getDeviceContext().releaseStagedRing();
         disableProfilerOptions();
     }
 
@@ -554,7 +561,13 @@ public class CUDATornadoDevice implements TornadoXPUDevice {
                 result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.CHAR.getSizeInBytes());
             } else if (object instanceof HalfFloatArray) {
                 result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.HALF.getSizeInBytes());
+            } else if (object instanceof BFloat16Array) {
+                result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.BF16.getSizeInBytes());
             } else if (object instanceof Int8Array) {
+                result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.CHAR.getSizeInBytes());
+            } else if (object instanceof FP8Array) {
+                // FP8 is one byte per element (CUDA-only storage type); the bytes are dequantized
+                // to float in-kernel via the FP8 codecs (no special code generation needed).
                 result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.CHAR.getSizeInBytes());
             } else {
                 result = new CUDAFieldBuffer(deviceContext, object, access);
@@ -594,8 +607,13 @@ public class CUDATornadoDevice implements TornadoXPUDevice {
             if (!reuseBatchBuffer(batchSize, accesses[i], bufferProvider, distinctAccesses, states[i])) {
                 logger.debug("Allocate object %s with access: %s", objects[i], accesses[i]);
                 allocatedSpace += allocate(objects[i], batchSize, states[i], accesses[i]);
+            } else if (batchSize != 0 && states[i].hasObjectBuffer()) {
+                // Reusing the object's existing buffer skips allocate(), which is what normally
+                // refreshes the sub-region size. Without this the buffer keeps the sub-region of the
+                // LAST chunk it held (e.g. a smaller remainder chunk from a previous execution), and
+                // subsequent transfers silently copy too few bytes.
+                states[i].getXPUBuffer().setSizeSubRegion(batchSize);
             }
-
         }
         return allocatedSpace;
     }
@@ -658,7 +676,7 @@ public class CUDATornadoDevice implements TornadoXPUDevice {
     public List<Integer> ensurePresent(long executionPlanId, Object object, DeviceBufferState state, int[] events, long batchSize, long offset) {
         if (!state.hasContent()) {
             state.setContents(true);
-            return state.getXPUBuffer().enqueueWrite(executionPlanId, object, batchSize, offset, events, events == null);
+            return state.getXPUBuffer().enqueueWrite(executionPlanId, object, batchSize, offset, events, events != null);
         }
         // return a NULL list
         return null;
@@ -667,13 +685,13 @@ public class CUDATornadoDevice implements TornadoXPUDevice {
     @Override
     public List<Integer> streamIn(long executionPlanId, Object object, long batchSize, long offset, DeviceBufferState state, int[] events) {
         state.setContents(true);
-        return state.getXPUBuffer().enqueueWrite(executionPlanId, object, batchSize, offset, events, events == null);
+        return state.getXPUBuffer().enqueueWrite(executionPlanId, object, batchSize, offset, events, events != null);
     }
 
     @Override
     public int streamOut(long executionPlanId, Object object, long offset, DeviceBufferState state, int[] events) {
         TornadoInternalError.guarantee(state.hasObjectBuffer(), "invalid variable");
-        int event = state.getXPUBuffer().enqueueRead(executionPlanId, object, offset, events, events == null);
+        int event = state.getXPUBuffer().enqueueRead(executionPlanId, object, offset, events, events != null);
         if (events != null) {
             return event;
         }
@@ -695,7 +713,7 @@ public class CUDATornadoDevice implements TornadoXPUDevice {
         } else {
             // Read for any other buffer that is not an atomic buffer
             TornadoInternalError.guarantee(state.hasObjectBuffer(), "invalid variable");
-            return state.getXPUBuffer().read(executionPlanId, object, hostOffset, partialCopySize, events, events == null);
+            return state.getXPUBuffer().read(executionPlanId, object, hostOffset, partialCopySize, events, events != null);
         }
     }
 
@@ -757,7 +775,22 @@ public class CUDATornadoDevice implements TornadoXPUDevice {
 
     @Override
     public String getDeviceName() {
-        return String.format("opencl-%d-%d", platformIndex, deviceIndex);
+        return String.format("cuda-%d-%d", platformIndex, deviceIndex);
+    }
+
+    @Override
+    public void setIntraPlanConcurrency(long executionPlanId, boolean enabled) {
+        getDeviceContext().setIntraPlanConcurrency(executionPlanId, enabled);
+    }
+
+    @Override
+    public void setStagedTransfers(boolean enabled) {
+        getDeviceContext().setStagedTransfers(enabled);
+    }
+
+    @Override
+    public boolean isIntraPlanConcurrencySupported() {
+        return true;
     }
 
     /* ---- CUDA Graph (stream capture) support ---- */
@@ -785,6 +818,26 @@ public class CUDATornadoDevice implements TornadoXPUDevice {
     @Override
     public void destroyExecutionGraph(long executionGraphHandle) {
         getDeviceContext().destroyExecutionGraph(executionGraphHandle);
+    }
+
+    @Override
+    public long getNativeStream(long executionPlanId) {
+        return getDeviceContext().getNativeStream(executionPlanId);
+    }
+
+    @Override
+    public long getNativeContext(long executionPlanId) {
+        return getDeviceContext().getNativeContext(executionPlanId);
+    }
+
+    @Override
+    public void nvtxRangePush(String name) {
+        CUDACommandQueue.nvtxRangePush(name);
+    }
+
+    @Override
+    public void nvtxRangePop() {
+        CUDACommandQueue.nvtxRangePop();
     }
 
     @Override

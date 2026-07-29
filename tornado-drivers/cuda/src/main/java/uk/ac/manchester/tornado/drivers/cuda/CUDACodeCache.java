@@ -610,7 +610,7 @@ public class CUDACodeCache {
             final String log = program.getBuildLog(deviceContext.getDeviceId());
             System.err.println("\n[ERROR] TornadoVM JIT Compiler - CUDADriver Build Error Log:\n\n" + log + "\n");
             dumpKernelSource(id, entryPoint, log, source);
-            throw new TornadoBailoutRuntimeException("Error during code compilation with the CUDADriver driver");
+            throw new TornadoBailoutRuntimeException("Error during code compilation with the CUDADriver driver:\n" + log);
         }
 
         CUDAKernel kernel = null;

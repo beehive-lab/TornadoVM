@@ -237,6 +237,97 @@ public class TestBatches extends TornadoTestBase {
 
     }
 
+    /**
+     * Repeated execution of a batched plan.
+     * The batch's remainder chunk uses a different thread-count than the full chunks,
+     * so re-executing the plan forces the interpreter to invalidate and recompile the kernel.
+     * This test executes the batched plan several times AND changes the input each iteration, so it also
+     * verifies the <em>recompiled</em> kernel keeps producing correct results across executions.
+     */
+    @Test
+    public void testBatchRepeatedExecution() throws TornadoExecutionPlanException {
+        long maxAllocMemory = checkMaxHeapAllocationOnDevice(64, MemoryUnit.MB);
+        int size = 64 * 1024 * 1024; // 256 MB float array
+        if ((long) size * 4 > maxAllocMemory) {
+            size = (int) ((maxAllocMemory / 4 / 2) * 0.9);
+        }
+        FloatArray arrayA = new FloatArray(size);
+        FloatArray arrayB = new FloatArray(size);
+
+        TaskGraph taskGraph = new TaskGraph("batchRepeat") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, arrayA) //
+                .task("t0", TestBatches::compute, arrayA, arrayB) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, arrayB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withBatch("40MB"); // 6 full chunks + a smaller remainder
+            // Several executions: >=2 exercises the invalidate/recompile path, >=3 the persisted-object
+            // bookkeeping. A different input each iteration checks the recompiled kernel stays correct.
+            for (int iteration = 0; iteration < 4; iteration++) {
+                float value = 3.0f + iteration;
+                arrayA.init(value);
+                executionPlan.execute();
+                for (int i = 0; i < arrayB.getSize(); i++) {
+                    assertEquals(value + 100, arrayB.get(i), 0.1f);
+                }
+            }
+        }
+    }
+
+    /**
+     * Batched execution with buffer reuse enabled ({@code tornado.reuse.device.buffers=true} - the
+     * runtime DEFAULT; the rest of this suite disables it in {@link #before()}). With reuse on, the
+     * buffers are locked, so the dealloc before the differently-sized remainder chunk is a no-op and
+     * the remainder chunk runs on the larger full-chunk buffer with only a sub-region in use. The
+     * batch H2D used to copy the full buffer size regardless, overrunning the host segment
+     * ({@code cuMemcpyHtoDAsync} returned {@code CUDA_ERROR_INVALID_VALUE}) - so ANY batched plan
+     * with a remainder chunk failed under default settings, even on its first execution. Repeats the
+     * execution to also cover the locked buffers being reused across executions (a reused buffer must
+     * not keep the previous execution's remainder sub-region, and the per-object chunk counters must
+     * reset so per-chunk DEALLOCs stay no-ops).
+     */
+    @Test
+    public void testBatchWithRemainderAndBufferReuse() throws TornadoExecutionPlanException {
+        String reuseProperty = System.getProperty("tornado.reuse.device.buffers");
+        System.setProperty("tornado.reuse.device.buffers", "True");
+        try {
+            long maxAllocMemory = checkMaxHeapAllocationOnDevice(64, MemoryUnit.MB);
+            int size = 64 * 1024 * 1024; // 256 MB float array
+            if ((long) size * 4 > maxAllocMemory) {
+                size = (int) ((maxAllocMemory / 4 / 2) * 0.9);
+            }
+            FloatArray arrayA = new FloatArray(size);
+            FloatArray arrayB = new FloatArray(size);
+
+            TaskGraph taskGraph = new TaskGraph("batchReuse") //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, arrayA) //
+                    .task("t0", TestBatches::compute, arrayA, arrayB) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, arrayB);
+
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+            try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+                executionPlan.withBatch("40MB"); // 6 full chunks + a smaller remainder
+                // A per-index (not uniform) input catches partial/short transfers, and a different input
+                // each iteration catches results left over from the previous execution.
+                for (int iteration = 0; iteration < 3; iteration++) {
+                    final int base = iteration;
+                    IntStream.range(0, arrayA.getSize()).parallel().forEach(idx -> arrayA.set(idx, idx % 7 + base));
+                    executionPlan.execute();
+                    for (int i = 0; i < arrayB.getSize(); i++) {
+                        assertEquals(arrayA.get(i) + 100, arrayB.get(i), 0.1f);
+                    }
+                }
+            }
+        } finally {
+            if (reuseProperty == null) {
+                System.clearProperty("tornado.reuse.device.buffers");
+            } else {
+                System.setProperty("tornado.reuse.device.buffers", reuseProperty);
+            }
+        }
+    }
+
     @Test
     public void test100MB() throws TornadoExecutionPlanException {
 
