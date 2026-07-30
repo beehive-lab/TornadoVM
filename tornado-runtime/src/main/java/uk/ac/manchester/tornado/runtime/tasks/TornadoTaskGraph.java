@@ -1732,9 +1732,18 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     }
 
-    private boolean isTaskNamePresent(String taskName) {
+    private boolean isTaskNamePresent(String qualifiedTaskName) {
+        // Compare in place instead of building "<graph>.<task>" for every task on every call.
+        final int prefixLength = taskGraphName.length();
+        if (qualifiedTaskName.length() <= prefixLength + 1 //
+                || qualifiedTaskName.charAt(prefixLength) != '.' //
+                || !qualifiedTaskName.startsWith(taskGraphName)) {
+            return false;
+        }
+        final int idLength = qualifiedTaskName.length() - prefixLength - 1;
         for (TaskPackage taskPackage : taskPackages) {
-            if (taskName.equals(taskGraphName + "." + taskPackage.getId())) {
+            final String id = taskPackage.getId();
+            if (id.length() == idLength && qualifiedTaskName.regionMatches(prefixLength + 1, id, 0, idLength)) {
                 return true;
             }
         }
