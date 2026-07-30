@@ -10,6 +10,18 @@ build jdk21:
 rebuild-deps-jdk21:
 	bin/compile --jdk jdk21 --rebuild --backend $(BACKEND)
 
+jdk25:
+	bin/compile --jdk jdk25 --backend $(BACKEND)
+
+rebuild-deps-jdk25:
+	bin/compile --jdk jdk25 --rebuild --backend $(BACKEND)
+
+jdk26:
+	bin/compile --jdk jdk26 --backend $(BACKEND)
+
+rebuild-deps-jdk26:
+	bin/compile --jdk jdk26 --rebuild --backend $(BACKEND)
+
 jdk27:
 	bin/compile --jdk jdk27 --backend $(BACKEND)
 
