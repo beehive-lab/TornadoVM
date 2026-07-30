@@ -113,9 +113,19 @@ public class TornadoOptions {
      */
     public static final boolean ENABLE_EXCEPTIONS = Boolean.parseBoolean(System.getProperty("tornado.exceptions", FALSE));
     /**
+     * Verbosity of the TornadoVM Internal Bytecode log: false|compact|full|trace|dot. The legacy
+     * boolean values are still accepted, with {@code True} meaning {@link BytecodeLogMode#FULL}.
+     */
+    public static final BytecodeLogMode BYTECODE_LOG_MODE = BytecodeLogMode.parse(getProperty("tornado.print.bytecodes", FALSE));
+    /**
      * Option to print TornadoVM Internal Bytecodes.
      */
-    public static final boolean PRINT_BYTECODES = getBooleanValue("tornado.print.bytecodes", FALSE);
+    public static final boolean PRINT_BYTECODES = BYTECODE_LOG_MODE != BytecodeLogMode.OFF;
+    /**
+     * Whether the bytecode log is coloured: auto (only when attached to a terminal and NO_COLOR is
+     * unset), always or never. Bytecodes dumped to a file are never coloured.
+     */
+    public static final String BYTECODE_LOG_COLOUR = getProperty("tornado.print.bytecodes.color", "auto");
 
     /**
      * Experimental (CUDA backend): route large one-shot host-to-device transfers (e.g. FIRST_EXECUTION

@@ -23,34 +23,31 @@
  */
 package uk.ac.manchester.tornado.runtime.interpreter;
 
-import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
-import uk.ac.manchester.tornado.runtime.common.ColoursTerminal;
-import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class InterpreterUtilities {
+
+    private static final boolean COLOUR_ENABLED = resolveColourPolicy();
 
     public InterpreterUtilities() {
     }
 
-    static String debugHighLightBC(String bc) {
-        return ColoursTerminal.RED + " " + bc + " " + ColoursTerminal.RESET;
-    }
-
-    static String debugHighLightNonExecBC(String bc) {
-        return ColoursTerminal.YELLOW + " " + bc + " " + ColoursTerminal.RESET;
-    }
-
-    static String debugHighLightHelper(String info) {
-        return ColoursTerminal.BLUE + info + " " + ColoursTerminal.RESET;
-    }
-
-    static String debugDeviceBC(TornadoXPUDevice device) {
-        TornadoVMBackendType tornadoVMBackend = device.getTornadoVMBackend();
-        if (tornadoVMBackend == TornadoVMBackendType.OPENCL) {
-            return ColoursTerminal.CYAN + " " + device + " " + ColoursTerminal.RESET;
-        } else if (tornadoVMBackend == TornadoVMBackendType.CUDA) {
-            return ColoursTerminal.GREEN + " " + device + " " + ColoursTerminal.RESET;
+    /**
+     * Resolves {@code tornado.print.bytecodes.color}. The default (auto) keeps the escape codes out of
+     * redirected output, which is where the log usually ends up when it is being read carefully.
+     */
+    private static boolean resolveColourPolicy() {
+        String policy = TornadoOptions.BYTECODE_LOG_COLOUR;
+        if ("always".equalsIgnoreCase(policy)) {
+            return true;
         }
-        return ColoursTerminal.YELLOW + " " + device + " " + ColoursTerminal.RESET;
+        if ("never".equalsIgnoreCase(policy)) {
+            return false;
+        }
+        return System.console() != null && System.getenv("NO_COLOR") == null;
+    }
+
+    static boolean isColourEnabled() {
+        return COLOUR_ENABLED;
     }
 }

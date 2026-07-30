@@ -38,7 +38,7 @@ __TORNADOVM_THREAD_INFO__ = " -Dtornado.threadInfo=True "
 __TORNADOVM_IGV__ = " -Dgraal.Dump=*:5 -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true "
 __TORNADOVM__IGV_LOW_TIER = " -Dgraal.Dump=*:1 -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true -Dtornado.debug.lowtier=True "
 __TORNADOVM_PRINT_KERNEL__ = " -Dtornado.printKernel=True "
-__TORNADOVM_PRINT_BC__ = " -Dtornado.print.bytecodes=True "
+__TORNADOVM_PRINT_BC__ = " -Dtornado.print.bytecodes="
 __TORNADOVM_DUMP_PROFILER__ = " -Dtornado.profiler=True -Dtornado.log.profiler=True -Dtornado.profiler.dump.dir="
 __TORNADOVM_ENABLE_PROFILER_SILENT__ = " -Dtornado.profiler=True -Dtornado.log.profiler=True "
 __TORNADOVM_ENABLE_PROFILER_CONSOLE__ = " -Dtornado.profiler=True "
@@ -1063,7 +1063,7 @@ class TornadoVMRunnerTool():
             tornadoFlags = tornadoFlags + __TORNADOVM__IGV_LOW_TIER
 
         if (args.printBytecodes):
-            tornadoFlags = tornadoFlags + __TORNADOVM_PRINT_BC__
+            tornadoFlags = tornadoFlags + __TORNADOVM_PRINT_BC__ + args.printBytecodes + " "
 
         if (args.dump_bytecodes_dir != None):
             tornadoFlags = tornadoFlags + __TORNADOVM_DUMP_BYTECODES_DIR__ + args.dump_bytecodes_dir + " "
@@ -1473,8 +1473,9 @@ def parseArguments():
                         help="Debug Low Tier Compilation Graphs using Ideal Graph Visualizer (IGV)")
     parser.add_argument('--printKernel', '-pk', action="store_true", dest="printKernel", default=False,
                         help="Print generated kernel (OpenCL, CUDA or Metal)")
-    parser.add_argument('--printBytecodes', '-pbc', action="store_true", dest="printBytecodes", default=False,
-                        help="Print the generated TornadoVM bytecodes from the Task-Graphs")
+    parser.add_argument('--printBytecodes', '-pbc', nargs='?', const="full", default=None, dest="printBytecodes",
+                        help="Print the generated TornadoVM bytecodes from the Task-Graphs. "
+                             "Optional verbosity: compact|full|trace|dot (default: full)")
     parser.add_argument('--enableProfiler', action="store", dest="enable_profiler", default=None,
                         help="Enable the profiler {silent|console}")
     parser.add_argument('--dumpProfiler', action="store", dest="dump_profiler", default=None,
