@@ -172,6 +172,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private List<Object> streamInObjects;
     private Map<TornadoTaskGraph, List<Object>> taskToPersistentObjectMap;
     private TornadoTaskGraphInterface lastExecutedTaskGraph;
+
+    /** The other task-graphs of the same execution plan, used to resolve named producers. */
+    private List<TornadoTaskGraphInterface> planTaskGraphs;
     private Set<Object> argumentsLookUp;
     private List<StreamingObject> inputModesObjects; // List of objects with its data transfer mode (IN)
     private List<StreamingObject> outputModeObjects; // List of objects with its data transfer mode (OUT)
@@ -543,6 +546,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
+    public void setPlanTaskGraphs(List<TornadoTaskGraphInterface> planTaskGraphs) {
+        this.planTaskGraphs = planTaskGraphs;
+    }
+
+    @Override
     public long getTotalBytesTransferred() {
         return getProfilerValue(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES) + getProfilerValue(TOTAL_COPY_OUT_SIZE_BYTES);
     }
@@ -619,15 +627,31 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     @Override
     public void updatePersistedObjectState() {
+        // Objects declared with consumeFromDevice(producerName, ...) are resolved against the named
+        // producer directly. Relying on the producer being the *previously executed* graph (the old
+        // behaviour) breaks for any plan that revisits graphs, e.g. an iterative solver that runs
+        // producer -> consumerA -> consumerA -> consumerB: by the time consumerB runs, the previously
+        // executed graph is consumerA and the aliasing was silently skipped, so the consumer read a
+        // separate (stale) device buffer.
+        boolean aliasedByName = aliasNamedProducers();
+
         if (this.lastExecutedTaskGraph == null) {
             //this indicates that this is the first task-graph executed
             return;
         }
 
         TornadoTaskGraph graphSrc = (TornadoTaskGraph) this.lastExecutedTaskGraph;
+        if (graphSrc == this) {
+            // re-executing the same graph: nothing to import
+            return;
+        }
         List<Object> objectsToSync = executionContext.getPersistedTaskToObjectsMap().get(graphSrc.taskGraphName);
 
         if (objectsToSync == null) {
+            if (aliasedByName) {
+                // every consumed object was already resolved through its named producer
+                return;
+            }
             // Empty consumeFromDevice (no explicit source task-graph name): the objects to
             // synchronise from the previously executed task-graph are exactly the ones marked
             // as consumed/on-device. The graph's own persisted *outputs* must NOT be included:
@@ -647,29 +671,82 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
 
         for (Object objectToSync : objectsToSync) {
-            Access objectAccessSrc = graphSrc.getObjectAccess(objectToSync);
-            LocalObjectState localStateSrc = graphSrc.executionContext.getLocalStateObject(objectToSync, objectAccessSrc);
-            DataObjectState dataObjectStateSrc = localStateSrc.getDataObjectState();
+            importDeviceBuffer(graphSrc, objectToSync);
+        }
+    }
 
-            // The device is the same for both task-graphs
-            TornadoXPUDevice device = graphSrc.meta().getXPUDevice();
-            XPUDeviceBufferState deviceStateSrc = dataObjectStateSrc.getDeviceBufferState(device);
-
-            Access objectAccessDest = Access.READ_WRITE;
-            LocalObjectState localStateDest = executionContext.getLocalStateObject(objectToSync, objectAccessDest);
-            if (localStateDest == null) {
+    /**
+     * Points this graph's device buffers at the buffers of the named producing graphs, for every
+     * object registered through {@code consumeFromDevice(producerName, ...)}.
+     *
+     * @return whether at least one object was resolved this way.
+     */
+    private boolean aliasNamedProducers() {
+        if (planTaskGraphs == null) {
+            return false;
+        }
+        boolean aliased = false;
+        for (Map.Entry<String, List<Object>> entry : executionContext.getPersistedTaskToObjectsMap().entrySet()) {
+            final String producerName = entry.getKey();
+            if (producerName == null || producerName.equals(taskGraphName)) {
                 continue;
             }
-            if (!graphSrc.meta().getXPUDevice().equals(executionContext.meta().getXPUDevice())) {
-                throw new TornadoRuntimeException("[ERROR] Object " + objectsToSync + " is not on the same device pesisted and consumed: " + graphSrc.meta()
-                        .getXPUDevice() + " " + " vs " + executionContext.meta().getXPUDevice());
+            TornadoTaskGraph producer = null;
+            for (TornadoTaskGraphInterface candidate : planTaskGraphs) {
+                if (candidate instanceof TornadoTaskGraph taskGraph && producerName.equals(taskGraph.taskGraphName)) {
+                    producer = taskGraph;
+                    break;
+                }
             }
-
-            DataObjectState dataObjectStateDest = localStateDest.getDataObjectState();
-            XPUDeviceBufferState deviceStateDest = dataObjectStateDest.getDeviceBufferState(device);
-
-            deviceStateDest.setXPUBuffer(deviceStateSrc.getXPUBuffer());
+            if (producer == null || producer == this) {
+                continue;
+            }
+            for (Object objectToSync : entry.getValue()) {
+                aliased |= importDeviceBuffer(producer, objectToSync);
+            }
         }
+        return aliased;
+    }
+
+    /**
+     * Makes {@code objectToSync} in this graph refer to the device buffer that {@code graphSrc}
+     * allocated for it. Returns false when the producer has no buffer yet (it has not run).
+     */
+    private boolean importDeviceBuffer(TornadoTaskGraph graphSrc, Object objectToSync) {
+        Access objectAccessSrc = graphSrc.getObjectAccess(objectToSync);
+        if (objectAccessSrc == null) {
+            return false;
+        }
+        LocalObjectState localStateSrc = graphSrc.executionContext.getLocalStateObject(objectToSync, objectAccessSrc);
+        if (localStateSrc == null) {
+            return false;
+        }
+        DataObjectState dataObjectStateSrc = localStateSrc.getDataObjectState();
+
+        // The device is the same for both task-graphs
+        TornadoXPUDevice device = graphSrc.meta().getXPUDevice();
+        XPUDeviceBufferState deviceStateSrc = dataObjectStateSrc.getDeviceBufferState(device);
+
+        Access objectAccessDest = Access.READ_WRITE;
+        LocalObjectState localStateDest = executionContext.getLocalStateObject(objectToSync, objectAccessDest);
+        if (localStateDest == null) {
+            return false;
+        }
+        if (!graphSrc.meta().getXPUDevice().equals(executionContext.meta().getXPUDevice())) {
+            throw new TornadoRuntimeException("[ERROR] Object " + objectToSync + " is not on the same device persisted and consumed: " + graphSrc.meta()
+                    .getXPUDevice() + " " + " vs " + executionContext.meta().getXPUDevice());
+        }
+
+        if (deviceStateSrc.getXPUBuffer() == null) {
+            // the producer has not executed yet, so there is no device buffer to alias
+            return false;
+        }
+
+        DataObjectState dataObjectStateDest = localStateDest.getDataObjectState();
+        XPUDeviceBufferState deviceStateDest = dataObjectStateDest.getDeviceBufferState(device);
+
+        deviceStateDest.setXPUBuffer(deviceStateSrc.getXPUBuffer());
+        return true;
     }
 
     @Override

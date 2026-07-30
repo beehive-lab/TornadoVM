@@ -1215,6 +1215,14 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.mapOnDeviceMemoryRegion(destArray, srcArray, offset, taskGraphSrc);
     }
 
+    void setPlanTaskGraphs(java.util.List<TornadoTaskGraphInterface> planTaskGraphs) {
+        taskGraphImpl.setPlanTaskGraphs(planTaskGraphs);
+    }
+
+    TornadoTaskGraphInterface getTaskGraphImplementation() {
+        return taskGraphImpl;
+    }
+
     void setLastExecutedTaskGraph(TornadoTaskGraphInterface lastExecutedTaskGraph) {
         taskGraphImpl.setLastExecutedTaskGraph(lastExecutedTaskGraph);
     }

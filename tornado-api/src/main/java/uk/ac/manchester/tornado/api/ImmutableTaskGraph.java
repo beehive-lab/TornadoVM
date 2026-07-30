@@ -242,6 +242,14 @@ public class ImmutableTaskGraph {
         taskGraph.mapOnDeviceMemoryRegion(destArray, srcArray, offset, taskGraphSrc.taskGraph.taskGraphImpl);
     }
 
+    void setPlanTaskGraphs(java.util.List<TornadoTaskGraphInterface> planTaskGraphs) {
+        taskGraph.setPlanTaskGraphs(planTaskGraphs);
+    }
+
+    TornadoTaskGraphInterface getTaskGraphImplementation() {
+        return taskGraph.getTaskGraphImplementation();
+    }
+
     void setLastExecutedTaskGraph(ImmutableTaskGraph lastExecutedTaskGraph) {
         taskGraph.setLastExecutedTaskGraph(lastExecutedTaskGraph.taskGraph.taskGraphImpl);
     }
