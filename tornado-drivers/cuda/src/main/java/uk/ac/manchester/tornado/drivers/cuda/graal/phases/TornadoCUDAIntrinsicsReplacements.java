@@ -78,6 +78,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASimdSumNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASwizzledLoadFP16Stride32Node;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASwizzledStoreFP16Stride32Node;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.AtomAddNodeTemplate;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAAtomicRmwNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GlobalThreadSizeNode;
@@ -279,6 +280,22 @@ public class TornadoCUDAIntrinsicsReplacements extends BasePhase<TornadoHighTier
                 case "Direct#KernelContext.atomicAdd":
                     lowerAtomicAdd(graph, invoke);
                     break;
+                // KernelContext.atomicCAS/atomicExchange/atomicMin/atomicMax: same reflection-path plugin-lookup
+                // miss as atomicAdd above. The call survives on a local (shared) array and its KernelContext
+                // default body reaches address lowering with an unhandled origin. Rewrite to the
+                // CUDAAtomicRmwNode the plugin would build.
+                case "Direct#KernelContext.atomicCAS":
+                    lowerAtomicRmw(graph, invoke, CUDALIRStmt.AtomicRmwStmt.Mode.CAS);
+                    break;
+                case "Direct#KernelContext.atomicExchange":
+                    lowerAtomicRmw(graph, invoke, CUDALIRStmt.AtomicRmwStmt.Mode.EXCHANGE);
+                    break;
+                case "Direct#KernelContext.atomicMin":
+                    lowerAtomicRmw(graph, invoke, CUDALIRStmt.AtomicRmwStmt.Mode.MIN);
+                    break;
+                case "Direct#KernelContext.atomicMax":
+                    lowerAtomicRmw(graph, invoke, CUDALIRStmt.AtomicRmwStmt.Mode.MAX);
+                    break;
                 // SIMD-group (warp-shuffle) reductions: their InvocationPlugins miss on the reflection path, so the
                 // call survives to a device function whose KernelContext default body is a no-op (returns the input
                 // unchanged) - producing a silently wrong reduction. Rewrite to the warp-shuffle nodes.
@@ -479,6 +496,23 @@ public class TornadoCUDAIntrinsicsReplacements extends BasePhase<TornadoHighTier
         OffsetAddressNode address = graph.addWithoutUnique(new OffsetAddressNode(segment, offset));
         AtomAddNodeTemplate atomicAdd = graph.add(new AtomAddNodeTemplate(address, inc, kind));
         graph.replaceFixed(invoke, atomicAdd);
+    }
+
+    /**
+     * Rewrite a surviving {@code KernelContext.atomicCAS(array, index, expected, value)} /
+     * {@code atomicExchange/atomicMin/atomicMax(array, index, value)} invoke into a {@link CUDAAtomicRmwNode},
+     * mirroring {@code registerAtomicRmwPlugins}. Argument 0 is the {@code KernelContext} receiver, 1 the local
+     * array, 2 the index; {@link CUDALIRStmt.AtomicRmwStmt.Mode#CAS} additionally has the expected value at 3,
+     * shifting value to 4 (else value is at 3).
+     */
+    private void lowerAtomicRmw(StructuredGraph graph, InvokeNode invoke, CUDALIRStmt.AtomicRmwStmt.Mode mode) {
+        NodeInputList<ValueNode> args = invoke.callTarget().arguments();
+        ValueNode array = args.get(1);
+        ValueNode index = args.get(2);
+        ValueNode expected = (mode == CUDALIRStmt.AtomicRmwStmt.Mode.CAS) ? args.get(3) : null;
+        ValueNode value = (mode == CUDALIRStmt.AtomicRmwStmt.Mode.CAS) ? args.get(4) : args.get(3);
+        CUDAAtomicRmwNode node = graph.add(new CUDAAtomicRmwNode(mode, array, index, expected, value));
+        graph.replaceFixed(invoke, node);
     }
 
     /**
