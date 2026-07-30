@@ -479,7 +479,6 @@
                                 <arg>jdk.internal.vm.ci=${user.dir}/graalJars/jvmci-21.0.2.jar</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/common-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/opencl-exports</arg>
-                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/ptx-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/metal-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/cuda-exports</arg>
                             </compilerArgs>
@@ -551,7 +550,6 @@
                                 <arg>jdk.internal.vm.ci=${user.dir}/graalJars/jvmci-21.0.2.jar</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/common-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/opencl-exports</arg>
-                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/ptx-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/metal-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/cuda-exports</arg>
                             </compilerArgs>
@@ -626,7 +624,6 @@
                                 <arg>--add-modules=jdk.incubator.vector</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/common-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/opencl-exports</arg>
-                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/ptx-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/metal-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/cuda-exports</arg>
                             </compilerArgs>
