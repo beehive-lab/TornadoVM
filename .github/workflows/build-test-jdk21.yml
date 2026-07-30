@@ -274,7 +274,7 @@ jobs:
           mvn clean install
           ./bin/tornadovm-ray-tracer regression
 
-      - name: Build & run KFusion-TornadoVM (check)
+      - name: Build & run KFusion-TornadoVM (console mode)
         timeout-minutes: 10
         run: |
           source $VENV_PATH/bin/activate
