@@ -693,7 +693,7 @@ public class TornadoVMInterpreter {
      * exactly like a list of -1 entries: no events to wait on.
      */
     private int[] waitListFor(int eventId) {
-        return (eventId >= 0 && eventId < events.length) ? waitListFor(eventId) : null;
+        return (eventId >= 0 && eventId < events.length) ? events[eventId] : null;
     }
 
     private int[] waitListForWrite(int eventId) {
