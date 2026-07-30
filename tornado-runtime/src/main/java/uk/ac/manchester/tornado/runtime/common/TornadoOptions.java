@@ -51,6 +51,17 @@ public class TornadoOptions {
     public static final String DEFAULT_CUDA_COMPILER_FLAGS = getProperty("tornado.cuda.compiler.flags", "");
 
     /**
+     * Persist compiled CUDA (NVRTC) module images on disk and reload them on the next run, so that a
+     * kernel is only handed to NVRTC once per (source, device, flags, toolkit). True by default.
+     */
+    public static final boolean CUDA_CODE_CACHE_ENABLE = getBooleanValue("tornado.cuda.codecache.enable", TRUE);
+
+    /**
+     * Directory used to store the on-disk CUDA module cache when {@link #CUDA_CODE_CACHE_ENABLE} is enabled.
+     */
+    public static final String CUDA_CODE_CACHE_DIR = getProperty("tornado.cuda.codecache.dir", "/var/cuda-codecache");
+
+    /**
      * Use internal timers for profiling in ns if enabled, in ms if disabled. Default is ns (enabled).
      */
     public static final boolean TIME_IN_NANOSECONDS = Boolean.parseBoolean(System.getProperty("tornado.ns.time", TRUE));

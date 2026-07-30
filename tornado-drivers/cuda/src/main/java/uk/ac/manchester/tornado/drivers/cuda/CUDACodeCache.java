@@ -49,6 +49,7 @@ import uk.ac.manchester.tornado.drivers.cuda.enums.CUDADeviceType;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class CUDACodeCache {
@@ -64,14 +65,6 @@ public class CUDACodeCache {
     private final String OPENCL_CACHE_DIR = getProperty("tornado.opencl.codecache.dir", "/var/opencl-codecache");
     private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-compiler");
     private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.log.dir", "/var/opencl-logs");
-
-    /**
-     * Persist compiled module images and reload them on the next run, so that a kernel is only handed to
-     * NVRTC once per (source, device, flags, toolkit). Without it every process pays full NVRTC
-     * compilation again, which dominates start-up for applications with many kernels.
-     */
-    private final boolean CUDA_CODE_CACHE_ENABLE = Boolean.parseBoolean(getProperty("tornado.cuda.codecache.enable", TRUE));
-    private final String CUDA_CODE_CACHE_DIR = getProperty("tornado.cuda.codecache.dir", "/var/cuda-codecache");
 
     private final ConcurrentHashMap<String, CUDAInstalledCode> cache;
     private final CUDADeviceContextInterface deviceContext;
@@ -109,7 +102,7 @@ public class CUDACodeCache {
     }
 
     private Path resolveModuleCacheDirectory() {
-        return resolveDirectory(CUDA_CODE_CACHE_DIR);
+        return resolveDirectory(TornadoOptions.CUDA_CODE_CACHE_DIR);
     }
 
     /**
@@ -240,7 +233,7 @@ public class CUDACodeCache {
         // Try the on-disk module cache first: a hit skips NVRTC entirely.
         Path moduleCacheFile = null;
         CUDAProgram program = null;
-        if (CUDA_CODE_CACHE_ENABLE && !isSPIRVBinary) {
+        if (TornadoOptions.CUDA_CODE_CACHE_ENABLE && !isSPIRVBinary) {
             final String key = moduleCacheKey(source, compilerFlags);
             if (key != null) {
                 moduleCacheFile = resolveModuleCacheDirectory().resolve(entryPoint + "-" + key + CUBIN_SUFFIX);

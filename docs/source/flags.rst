@@ -136,6 +136,8 @@ TornadoVM's **CUDA C** backend targets NVIDIA GPUs: it emits CUDA C, compiled to
    ================================================================  ==================================================================================================================
    ``-Dtornado.cuda.compiler.flags=FLAGS``                           Passes additional flags to NVRTC when compiling the generated CUDA C source (default: none).
    ``-Dtornado.cuda.host.pinning=false``                             Disables pinning host memory for faster host↔device transfers (default: true).
+   ``-Dtornado.cuda.codecache.enable=false``                         Disables the on-disk cache of compiled CUDA modules, so every run re-compiles kernels with NVRTC (default: true).
+   ``-Dtornado.cuda.codecache.dir=PATH``                             Sets the directory used to store the on-disk CUDA module cache (default: ``/var/cuda-codecache``).
    ================================================================  ==================================================================================================================
 
 .. note::
