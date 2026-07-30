@@ -147,6 +147,13 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     void setLastExecutedTaskGraph(TornadoTaskGraphInterface lastExecutedTaskGraph);
 
+    /**
+     * Registers the other task-graphs of the same execution plan, so that
+     * {@code consumeFromDevice(producerName, ...)} can resolve its named producer directly instead of
+     * relying on the producer being the previously executed graph.
+     */
+    void setPlanTaskGraphs(java.util.List<TornadoTaskGraphInterface> planTaskGraphs);
+
     boolean isGridRegistered();
 
     void withIntraPlanConcurrency();

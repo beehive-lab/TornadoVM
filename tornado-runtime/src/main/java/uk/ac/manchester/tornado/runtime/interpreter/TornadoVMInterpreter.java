@@ -692,6 +692,12 @@ public class TornadoVMInterpreter {
      *     The object to search for in the persistent tasks
      * @return true if the object is found in any persistent task, otherwise false
      */
+    /** Whether the object already has a device buffer in this interpreter's object state. */
+    private boolean hasDeviceBuffer(int arg) {
+        XPUDeviceBufferState state = resolveObjectState(arg);
+        return state != null && state.getXPUBuffer() != null;
+    }
+
     private boolean isPersistentObject(Object object) {
         if (graphExecutionContext == null || object == null) {
             return false;
@@ -708,11 +714,14 @@ public class TornadoVMInterpreter {
      * @return Information about objects to allocate including counts of persistent and non-persistent objects
      */
     private ObjectAllocationInfo countAndClassifyObjects(int[] args) {
-        // Count only persistent objects that are actually in the current args array
+        // Count only persistent objects that are actually in the current args array. An object that is
+        // persistent but has no device buffer yet (its producing task-graph has not executed - e.g. the
+        // first frames of a pipeline that raycasts only once a model exists) still has to be allocated
+        // here, otherwise the pre-allocated size lookup dereferences a null buffer.
         int persistentObjectsInArgs = 0;
         for (int arg : args) {
             Object dataObject = this.objects.get(arg);
-            if (isPersistentObject(dataObject)) {
+            if (isPersistentObject(dataObject) && hasDeviceBuffer(arg)) {
                 persistentObjectsInArgs++;
             }
         }
@@ -736,7 +745,7 @@ public class TornadoVMInterpreter {
 
         for (int arg : args) {
             Object dataObject = this.objects.get(arg);
-            if (!isPersistentObject(dataObject)) {
+            if (!isPersistentObject(dataObject) || !hasDeviceBuffer(arg)) {
                 objects[allocCounter] = this.objects.get(arg);
                 objectStates[allocCounter] = resolveObjectState(arg);
                 accesses[allocCounter] = this.objectAccesses.get(objects[allocCounter]);
