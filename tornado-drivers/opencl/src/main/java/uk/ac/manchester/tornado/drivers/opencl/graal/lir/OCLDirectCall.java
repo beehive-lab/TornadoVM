@@ -63,7 +63,10 @@ public class OCLDirectCall extends OCLLIROp {
         asm.emit(((OCLArchitecture) crb.target.arch).getCallingConvention());
         asm.emit(", ");
         for (Value param : parameters) {
-            asm.emit(asm.toString(param));
+            // A param may be a plain operand or an inlined op (e.g. a vector-lane select such as
+            // Half2.getX()/.getY() passed straight into a helper call); asm.toString() only knows
+            // plain operands, so route through emitValueOrOp to also handle inlined OCLLIROps.
+            asm.emitValueOrOp(crb, param);
             if (paramCounter < parameters.length - 1) {
                 asm.emit(", ");
             }
