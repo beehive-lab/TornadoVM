@@ -85,7 +85,8 @@ public class TornadoVMGraphCompiler {
         int graphId = nextGraphId.getAndIncrement();
         for (int i = 0; i < tornadoVMBytecodeResults.length; i++) {
 
-            TornadoVMBytecodeBuilder tornadoVMBytecodeBuilder = new TornadoVMBytecodeBuilder(isSingleContextCompilation);
+            TornadoVMBytecodeBuilder tornadoVMBytecodeBuilder = new TornadoVMBytecodeBuilder(isSingleContextCompilation, //
+                    TornadoVMBytecodeBuilder.estimateBytecodeSize(executionContext.getTaskCount(), executionContext.getObjects().size()));
 
             // Generate Context + BEGIN bytecode
             tornadoVMBytecodeBuilder.begin(1, 1, intermediateTornadoGraph.getNumberOfDependencies() + 1);

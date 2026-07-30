@@ -61,9 +61,33 @@ public class TornadoVMBytecodeBuilder {
      * TornadoVMBytecodeAssembler with the byte array.
      */
     public TornadoVMBytecodeBuilder(boolean isSingleContext) {
-        code = new byte[MAX_TORNADO_VM_BYTECODE_SIZE];
+        this(isSingleContext, MAX_TORNADO_VM_BYTECODE_SIZE);
+    }
+
+    /**
+     * Bytecode buffer sized for the graph being compiled rather than for a fixed default. A graph with
+     * many tasks (an unrolled iterative solver, for example) overflows the 4096-byte default, and the
+     * resulting failure is recoverable by default, so it surfaces as silently wrong results instead of
+     * an error.
+     *
+     * @param sizeInBytes
+     *     requested capacity; never smaller than {@code tornado.tvm.maxbytecodesize}, so an explicit
+     *     setting still wins.
+     */
+    public TornadoVMBytecodeBuilder(boolean isSingleContext, int sizeInBytes) {
+        code = new byte[Math.max(MAX_TORNADO_VM_BYTECODE_SIZE, sizeInBytes)];
         bitcodeASM = new TornadoVMBytecodeAssembler(code);
         this.isSingleContext = isSingleContext;
+    }
+
+    /**
+     * Capacity needed to emit a graph with the given number of tasks and objects. Every task emits a
+     * LAUNCH plus its dependency edges, and every object can emit ALLOC, a transfer and DEALLOC; the
+     * per-item budgets below are deliberately generous, because the cost of over-allocating is a few
+     * KiB while the cost of under-allocating is a wrong result.
+     */
+    public static int estimateBytecodeSize(int taskCount, int objectCount) {
+        return 1024 + (taskCount * 256) + (objectCount * 128);
     }
 
     public boolean isSingleContext() {
