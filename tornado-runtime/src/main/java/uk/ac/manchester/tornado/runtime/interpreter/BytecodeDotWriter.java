@@ -44,8 +44,8 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
  *
  * <p>
  * Tasks are clustered per task-graph while buffers are global nodes, so a buffer that two task-graphs
- * both touch — the {@code persistOnDevice} / {@code consumeFromDevice} case that the textual log cannot
- * show — appears as a single node with edges crossing the cluster boundary. Every execution of every
+ * both touch - the {@code persistOnDevice} / {@code consumeFromDevice} case that the textual log cannot
+ * show - appears as a single node with edges crossing the cluster boundary. Every execution of every
  * graph is merged into one file, which is rewritten after each execution so it is always valid:
  * </p>
  *
