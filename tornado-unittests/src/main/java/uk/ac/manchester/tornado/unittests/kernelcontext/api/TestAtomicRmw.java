@@ -149,10 +149,9 @@ public class TestAtomicRmw extends TornadoTestBase {
     }
 
     private void skipUnsupportedBackends() {
+        // These intrinsics are CUDA-only. SPIRV and PTX are no longer TornadoVMBackendType constants.
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
-        assertNotBackend(TornadoVMBackendType.PTX);
     }
 
     private static IntArray input() {
