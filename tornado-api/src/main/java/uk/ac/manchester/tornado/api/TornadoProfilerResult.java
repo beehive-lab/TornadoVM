@@ -17,6 +17,8 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import java.util.function.Supplier;
+
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.profiler.ProfilerInterface;
 
@@ -41,11 +43,12 @@ import uk.ac.manchester.tornado.api.profiler.ProfilerInterface;
 public class TornadoProfilerResult implements ProfilerInterface {
 
     private final TornadoExecutor executor;
+    private Supplier<String> traceExecutionPlanSupplier;
     private String traceExecutionPlan;
 
-    TornadoProfilerResult(TornadoExecutor executor, String traceExecutionPlan) {
+    TornadoProfilerResult(TornadoExecutor executor, Supplier<String> traceExecutionPlanSupplier) {
         this.executor = executor;
-        this.traceExecutionPlan = traceExecutionPlan;
+        this.traceExecutionPlanSupplier = traceExecutionPlanSupplier;
     }
 
     /**
@@ -228,6 +231,11 @@ public class TornadoProfilerResult implements ProfilerInterface {
     }
 
     public String getTraceExecutionPlan() {
+        // Built on demand: rendering the plan description costs a lot of string garbage and almost no
+        // caller ever asks for it.
+        if (traceExecutionPlan == null && traceExecutionPlanSupplier != null) {
+            traceExecutionPlan = traceExecutionPlanSupplier.get();
+        }
         return traceExecutionPlan;
     }
 
