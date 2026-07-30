@@ -32,6 +32,8 @@ import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.ENABLE_EXCE
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -237,7 +239,7 @@ public class MetalBackend extends XPUBackend<MetalProviders> implements FrameMap
             }
 
             if (!kindToVariable.containsKey(metalKind)) {
-                kindToVariable.put(metalKind, new HashSet<>());
+                kindToVariable.put(metalKind, new LinkedHashSet<>());
             }
 
             final Set<Variable> varList = kindToVariable.get(metalKind);
@@ -261,7 +263,10 @@ public class MetalBackend extends XPUBackend<MetalProviders> implements FrameMap
     }
 
     private void emitVariableDefs(MetalCompilationResultBuilder crb, MetalAssembler asm, LIR lir) {
-        Map<MetalKind, Set<Variable>> kindToVariable = new HashMap<>();
+        // LinkedHashMap/LinkedHashSet: the declaration order of temporaries must not depend on
+        // identity hash codes, which differ on every JVM run and made the generated kernel source
+        // (and therefore any on-disk code cache keyed by it) unstable across processes.
+        Map<MetalKind, Set<Variable>> kindToVariable = new LinkedHashMap<>();
         final int expectedVariables = lir.numVariables();
         final AtomicInteger variableCount = new AtomicInteger();
 

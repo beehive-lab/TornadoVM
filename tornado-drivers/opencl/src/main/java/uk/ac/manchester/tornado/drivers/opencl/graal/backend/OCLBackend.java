@@ -32,6 +32,8 @@ import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.ENABLE_EXCE
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -231,7 +233,7 @@ public class OCLBackend extends XPUBackend<OCLProviders> implements FrameMap.Ref
             }
 
             if (!kindToVariable.containsKey(oclKind)) {
-                kindToVariable.put(oclKind, new HashSet<>());
+                kindToVariable.put(oclKind, new LinkedHashSet<>());
             }
 
             final Set<Variable> varList = kindToVariable.get(oclKind);
@@ -240,7 +242,10 @@ public class OCLBackend extends XPUBackend<OCLProviders> implements FrameMap.Ref
     }
 
     private void emitVariableDefs(OCLCompilationResultBuilder crb, OCLAssembler asm, LIR lir) {
-        Map<OCLKind, Set<Variable>> kindToVariable = new HashMap<>();
+        // LinkedHashMap/LinkedHashSet: the declaration order of temporaries must not depend on
+        // identity hash codes, which differ on every JVM run and made the generated kernel source
+        // (and therefore any on-disk code cache keyed by it) unstable across processes.
+        Map<OCLKind, Set<Variable>> kindToVariable = new LinkedHashMap<>();
         final int expectedVariables = lir.numVariables();
         final AtomicInteger variableCount = new AtomicInteger();
 

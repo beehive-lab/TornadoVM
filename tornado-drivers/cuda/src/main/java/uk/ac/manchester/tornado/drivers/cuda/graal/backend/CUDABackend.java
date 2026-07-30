@@ -34,6 +34,7 @@ import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEV
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -235,7 +236,7 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
             }
 
             if (!kindToVariable.containsKey(oclKind)) {
-                kindToVariable.put(oclKind, new HashSet<>());
+                kindToVariable.put(oclKind, new LinkedHashSet<>());
             }
 
             final Set<Variable> varList = kindToVariable.get(oclKind);
@@ -244,7 +245,10 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
     }
 
     private void emitVariableDefs(CUDACompilationResultBuilder crb, CUDAAssembler asm, LIR lir) {
-        Map<CUDAKind, Set<Variable>> kindToVariable = new HashMap<>();
+        // LinkedHashMap/LinkedHashSet: the declaration order of temporaries must not depend on
+        // identity hash codes, which differ on every JVM run and made the generated kernel source
+        // (and therefore any on-disk code cache keyed by it) unstable across processes.
+        Map<CUDAKind, Set<Variable>> kindToVariable = new LinkedHashMap<>();
         Map<Variable, CUDAKind> fragmentPhis = new LinkedHashMap<>();
 
         final int expectedVariables = lir.numVariables();
