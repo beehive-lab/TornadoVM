@@ -35,6 +35,12 @@ public class DataObjectState implements ObjectState {
 
     private ConcurrentHashMap<TornadoXPUDevice, XPUDeviceBufferState> deviceStates;
 
+    /** Last returned pair, as one holder so readers always observe a consistent (device, state). */
+    private volatile CachedDeviceState cachedDeviceState;
+
+    private record CachedDeviceState(TornadoXPUDevice device, XPUDeviceBufferState state) {
+    }
+
     public DataObjectState() {
         deviceStates = new ConcurrentHashMap<>();
     }
@@ -44,10 +50,14 @@ public class DataObjectState implements ObjectState {
         if (!(device instanceof TornadoXPUDevice)) {
             throw new TornadoRuntimeException("[ERROR] Device not compatible: " + device.getClass());
         }
-        if (!deviceStates.containsKey(device)) {
-            deviceStates.put((TornadoXPUDevice) device, new XPUDeviceBufferState());
+        // Objects are almost always used on the same device twice in a row.
+        final CachedDeviceState cached = cachedDeviceState;
+        if (cached != null && cached.device() == device) {
+            return cached.state();
         }
-        return deviceStates.get(device);
+        final XPUDeviceBufferState deviceState = deviceStates.computeIfAbsent((TornadoXPUDevice) device, key -> new XPUDeviceBufferState());
+        cachedDeviceState = new CachedDeviceState((TornadoXPUDevice) device, deviceState);
+        return deviceState;
     }
 
     @Override
@@ -64,6 +74,7 @@ public class DataObjectState implements ObjectState {
     @Override
     public void clear() {
         deviceStates.clear();
+        cachedDeviceState = null;
     }
 
     @Override
