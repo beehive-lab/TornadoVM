@@ -152,17 +152,17 @@ public class TornadoVMInterpreter {
         this.bytecodeResult.getLong(); // Skips bytes not needed
 
         kernelStackFrame = graphExecutionContext.getKernelStackFrame();
-        events = new int[this.bytecodeResult.getInt()][MAX_EVENTS];
+        // Rows are allocated on first use: MAX_EVENTS defaults to 32768, so an eager matrix costs
+        // 131KB per dependency list even when a graph only ever fills a handful of entries.
+        events = new int[this.bytecodeResult.getInt()][];
         eventsIndexes = new int[events.length];
 
         localTaskList = graphExecutionContext.getTasksForDevice(interpreterDevice.getDeviceContext());
 
         installedCodes = new TornadoInstalledCode[localTaskList.size()];
 
-        for (int i = 0; i < events.length; i++) {
-            Arrays.fill(events[i], -1);
-            eventsIndexes[i] = 0;
-        }
+        // Wait-list rows are created on first use (already filled with -1) and eventsIndexes starts
+        // zeroed, so there is nothing to initialise here.
 
         logger.debug("created %d kernelStackFrame", kernelStackFrame.length);
         logger.debug("created %d event lists", events.length);
@@ -376,7 +376,7 @@ public class TornadoVMInterpreter {
                 final int eventId = bytecodeResult.getInt();
                 final long offset = bytecodeResult.getLong();
                 final long sizeBatch = bytecodeResult.getLong();
-                final int[] waitList = (useDependencies && eventId != -1) ? events[eventId] : null;
+                final int[] waitList = (useDependencies && eventId != -1) ? waitListFor(eventId) : null;
                 if (isWarmup) {
                     continue;
                 }
@@ -386,7 +386,7 @@ public class TornadoVMInterpreter {
                 final int eventId = bytecodeResult.getInt();
                 final long offset = bytecodeResult.getLong();
                 final long sizeBatch = bytecodeResult.getLong();
-                final int[] waitList = (useDependencies && eventId != -1) ? events[eventId] : null;
+                final int[] waitList = (useDependencies && eventId != -1) ? waitListFor(eventId) : null;
                 if (isWarmup) {
                     continue;
                 }
@@ -396,7 +396,7 @@ public class TornadoVMInterpreter {
                 final int eventId = bytecodeResult.getInt();
                 final long offset = bytecodeResult.getLong();
                 final long sizeBatch = bytecodeResult.getLong();
-                final int[] waitList = (useDependencies) ? events[eventId] : null;
+                final int[] waitList = (useDependencies) ? waitListFor(eventId) : null;
                 if (isWarmup) {
                     continue;
                 }
@@ -406,7 +406,7 @@ public class TornadoVMInterpreter {
                 final int eventId = bytecodeResult.getInt();
                 final long offset = bytecodeResult.getLong();
                 final long sizeBatch = bytecodeResult.getLong();
-                final int[] waitList = (useDependencies) ? events[eventId] : null;
+                final int[] waitList = (useDependencies) ? waitListFor(eventId) : null;
                 if (isWarmup) {
                     continue;
                 }
@@ -446,7 +446,7 @@ public class TornadoVMInterpreter {
                 lastEvent = executePersist(logBuilder, objectIndex, eventId);
             } else if (op == TornadoVMBytecodes.BARRIER.value()) {
                 final int eventId = bytecodeResult.getInt();
-                final int[] waitList = (useDependencies && eventId != -1) ? events[eventId] : null;
+                final int[] waitList = (useDependencies && eventId != -1) ? waitListFor(eventId) : null;
                 if (isWarmup) {
                     continue;
                 }
@@ -678,10 +678,33 @@ public class TornadoVMInterpreter {
     }
 
     private void initWaitEventList() {
+        // Clear whole rows, not just the prefix up to eventsIndexes: resetEventIndexes() rewinds an
+        // event list in the middle of an execution, so entries can live beyond the current index and a
+        // partial clear would leave stale event ids behind. Rows never used stay null and cost nothing.
         for (int[] waitList : events) {
-            Arrays.fill(waitList, -1);
+            if (waitList != null) {
+                Arrays.fill(waitList, -1);
+            }
         }
         Arrays.fill(eventsIndexes, 0);
+    }
+
+    /**
+     * Wait-list for a dependency list. A row that was never written stays null, which the drivers treat
+     * exactly like a list of -1 entries: no events to wait on.
+     */
+    private int[] waitListFor(int eventId) {
+        return (eventId >= 0 && eventId < events.length) ? waitListFor(eventId) : null;
+    }
+
+    private int[] waitListForWrite(int eventId) {
+        int[] waitList = events[eventId];
+        if (waitList == null) {
+            waitList = new int[MAX_EVENTS];
+            Arrays.fill(waitList, -1);
+            events[eventId] = waitList;
+        }
+        return waitList;
     }
 
     /**
@@ -696,7 +719,14 @@ public class TornadoVMInterpreter {
         if (graphExecutionContext == null || object == null) {
             return false;
         }
-        return graphExecutionContext.getPersistedTaskToObjectsMap().values().stream().filter(Objects::nonNull).anyMatch(taskObjects -> taskObjects.contains(object));
+        // Plain loops: this runs for every object of every ALLOC bytecode, and a stream pipeline per
+        // object allocated hundreds of MiB over a run.
+        for (List<Object> taskObjects : graphExecutionContext.getPersistedTaskToObjectsMap().values()) {
+            if (taskObjects != null && taskObjects.contains(object)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -1030,7 +1060,7 @@ public class TornadoVMInterpreter {
 
         boolean redeployOnDevice = graphExecutionContext.redeployOnDevice();
 
-        final int[] waitList = (useDependencies && eventId != -1) ? events[eventId] : null;
+        final int[] waitList = (useDependencies && eventId != -1) ? waitListFor(eventId) : null;
         final SchedulableTask task = taskExecutionContexts.get(taskIndex);
 
         if (task instanceof LibraryTask libraryTask) {
@@ -1346,8 +1376,9 @@ public class TornadoVMInterpreter {
             if (TornadoOptions.LOG_BYTECODES()) {
                 DebugInterpreter.logAddDependency(lastEvent, eventId, logBuilder);
             }
-            TornadoInternalError.guarantee(eventsIndexes[eventId] < events[eventId].length, "event list is too small");
-            events[eventId][eventsIndexes[eventId]] = lastEvent;
+            final int[] waitList = waitListForWrite(eventId);
+            TornadoInternalError.guarantee(eventsIndexes[eventId] < waitList.length, "event list is too small");
+            waitList[eventsIndexes[eventId]] = lastEvent;
             eventsIndexes[eventId]++;
         }
     }

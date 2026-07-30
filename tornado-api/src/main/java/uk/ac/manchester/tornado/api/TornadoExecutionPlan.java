@@ -182,7 +182,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      */
     public TornadoExecutionResult execute() {
         tornadoExecutor.execute(executionFrame);
-        TornadoProfilerResult profilerResult = new TornadoProfilerResult(tornadoExecutor, this.getTraceExecutionPlan());
+        TornadoProfilerResult profilerResult = new TornadoProfilerResult(tornadoExecutor, this::getTraceExecutionPlan);
         TornadoExecutionResult executionResult = new TornadoExecutionResult(profilerResult);
         planResults.add(executionResult);
         tornadoExecutor.updateLastExecutedTaskGraph();
