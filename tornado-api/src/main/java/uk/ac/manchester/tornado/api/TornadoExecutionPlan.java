@@ -447,7 +447,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     /**
      * Reset the execution context for the current execution plan. The TornadoVM
      * runtime system will clean the code cache and all events associated with the
-     * current execution. It resets the internal GPU/FPGA/CPU execution context to
+     * current execution. It resets the internal GPU/CPU execution context to
      * its default values.
      *
      * @return {@link TornadoExecutionPlan}
@@ -648,7 +648,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * may overlap, with cross-stream ordering preserved via device events derived from the
      * bytecode dependency DAG.
      * Currently realised on the CUDA backend with CUDA streams.
-     * A no-op for OPENCL, METAL and SPIRV backends.
+     * A no-op for OPENCL and METAL backends.
      * Default is off (single stream).
      *
      * @return {@link TornadoExecutionPlan}
@@ -678,7 +678,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * {@code -Dtornado.staged.min.size} bytes (default 16MB) are staged; every other buffer keeps
      * the default direct path, including host pinning.
      * Currently realised on the CUDA backend.
-     * A no-op for OPENCL, METAL and SPIRV backends.
+     * A no-op for OPENCL and METAL backends.
      * Default is off, and can also be enabled process-wide with
      * {@code -Dtornado.staged.transfers=true}.
      *

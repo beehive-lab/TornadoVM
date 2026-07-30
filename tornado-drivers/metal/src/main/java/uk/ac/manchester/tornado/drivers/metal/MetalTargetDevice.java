@@ -69,6 +69,4 @@ public interface MetalTargetDevice extends TornadoTargetDevice {
     void setDeviceContext(MetalDeviceContextInterface deviceContext);
 
     int deviceVersion();
-
-    boolean isSPIRVSupported();
 }

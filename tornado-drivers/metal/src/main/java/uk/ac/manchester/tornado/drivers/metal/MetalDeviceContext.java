@@ -559,16 +559,6 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
     }
 
     @Override
-    public boolean isPlatformFPGA() {
-        return false;
-    }
-
-    @Override
-    public boolean isPlatformXilinxFPGA() {
-        return getPlatformContext().getPlatform().getName().toLowerCase().contains("xilinx");
-    }
-
-    @Override
     public boolean isFP64Supported() {
         return device.isDeviceDoubleFPSupported();
     }
@@ -627,11 +617,6 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
         entryPoint = checkKernelName(entryPoint);
         MetalCodeCache metalCodeCache = getMetalCodeCache(executionPlanId);
         return metalCodeCache.installSource(meta, id, entryPoint, code);
-    }
-
-    @Override
-    public MetalInstalledCode installCode(long executionPlanId, String id, String entryPoint, byte[] code, boolean printKernel) {
-        throw new UnsupportedOperationException("FPGA source installation is not supported on the Metal backend");
     }
 
     @Override

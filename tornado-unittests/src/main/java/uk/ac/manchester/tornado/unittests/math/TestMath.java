@@ -921,7 +921,6 @@ public class TestMath extends TornadoTestBase {
     @Test
     public void testMathSignumFloatNaN() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 128;
         FloatArray a = new FloatArray(size);
@@ -979,7 +978,6 @@ public class TestMath extends TornadoTestBase {
     @Test
     public void testMathSignumDoubleNaN() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 128;
         DoubleArray a = new DoubleArray(size);

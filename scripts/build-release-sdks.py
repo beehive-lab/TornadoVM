@@ -27,10 +27,10 @@ and cleans up — without touching the current working branch.
 
 SDKs built per platform:
   - macOS   : opencl, metal                    (JDK 21 and JDK 25, via sdkman Temurin)
-  - Linux   : opencl, spirv, cuda, full        (JDK 21 and JDK 25, via sdkman Temurin)
-  - Windows : opencl, spirv, cuda              (JDK 21 and JDK 25, --jdkXX-home required)
+  - Linux   : opencl, cuda, full   (JDK 21 and JDK 25, via sdkman Temurin)
+  - Windows : opencl, cuda   (JDK 21 and JDK 25, --jdkXX-home required)
 
-"full" means opencl+spirv+cuda combined into a single archive.
+"full" means opencl+cuda combined into a single archive.
 
 Usage:
   python3 scripts/build-release-sdks.py --version v4.0.0
@@ -182,7 +182,7 @@ def resolve_jdk_home(major_version, override):
 # Backends to build per platform.  Each entry becomes BACKEND=<value> in make.
 # On macOS/Linux the Makefile target is:  make sdk BACKEND=<value>
 # On Windows it is:  nmake /f Makefile.mak sdk BACKEND=<value>
-# opencl+spirv+cuda is labelled "full" automatically by bin/compile.
+# opencl+cuda is labelled "full" automatically by bin/compile.
 BUILDS = {
     "macos": [
         "opencl",
@@ -190,13 +190,11 @@ BUILDS = {
     ],
     "linux": [
         "opencl",
-        "spirv",
         "cuda",
-        "opencl,spirv,cuda",
+        "opencl,cuda",
     ],
     "windows": [
         "opencl",
-        "spirv",
         "cuda",
     ],
 }
@@ -919,8 +917,8 @@ def main():
                 patch_worktree_skip_executables(worktree_path)
 
             for backends in backends_for_platform:
-                # Label mirrors bin/compile naming: opencl,spirv,cuda → full
-                if set(backends.split(",")) == {"opencl", "spirv", "cuda"}:
+                # Label mirrors bin/compile naming: opencl,cuda → full
+                if set(backends.split(",")) == {"opencl", "cuda"}:
                     backend_label = "full"
                 else:
                     backend_label = backends

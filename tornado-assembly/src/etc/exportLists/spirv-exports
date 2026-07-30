@@ -1,8 +1,0 @@
---add-opens java.base/java.lang=tornado.drivers.spirv
---add-exports jdk.internal.vm.ci/jdk.vm.ci.common=tornado.drivers.spirv
---add-exports jdk.internal.vm.ci/jdk.vm.ci.amd64=tornado.drivers.spirv
---add-exports jdk.internal.vm.ci/jdk.vm.ci.meta=tornado.drivers.spirv
---add-exports jdk.internal.vm.ci/jdk.vm.ci.code=tornado.drivers.spirv
---add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=tornado.drivers.spirv
---add-opens jdk.internal.vm.ci/jdk.vm.ci.hotspot=tornado.drivers.spirv
---add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot=tornado.drivers.spirv

@@ -121,11 +121,8 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt.ExprStmt;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDANullary;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAReturnSlot;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAUnary;
-import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.FPGAWorkGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalArrayNode;
-import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.IntelUnrollPragmaNode;
-import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.XilinxPipeliningPragmaNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.logic.LogicalAndNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.logic.LogicalEqualsNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.logic.LogicalNotNode;
@@ -512,7 +509,6 @@ public class CUDANodeLIRBuilder extends NodeLIRBuilder {
                 append(new CUDALIRStmt.AssignStmt(result, castPrivateArrayPointer(phi.firstValue(), value)));
             }
         }
-        emitCUDAFPGAPragmas(currentBlockDominator);
         append(new CUDAControlFlow.LoopInitOp());
         append(new CUDAControlFlow.LoopPostOp());
         label.clearIncomingValues();
@@ -573,8 +569,6 @@ public class CUDANodeLIRBuilder extends NodeLIRBuilder {
             emitShortCircuitOrNode(shortCircuitOrNode);
         } else if (node instanceof ConditionalNode conditionalNode) {
             emitConditionalNode(conditionalNode);
-        } else if (node instanceof IntelUnrollPragmaNode || node instanceof XilinxPipeliningPragmaNode || node instanceof FPGAWorkGroupSizeNode) {
-            // ignore emit-action
         } else {
             super.emitNode(node);
         }
@@ -713,15 +707,6 @@ public class CUDANodeLIRBuilder extends NodeLIRBuilder {
 
     private static boolean isKernelContextParameter(Local local) {
         return local.getType().toJavaName().equals("uk.ac.manchester.tornado.api.KernelContext");
-    }
-
-
-    private void emitCUDAFPGAPragmas(HIRBlock block) {
-        for (ValueNode tempDomBlockNode : block.getNodes()) {
-            if (tempDomBlockNode instanceof IntelUnrollPragmaNode || tempDomBlockNode instanceof XilinxPipeliningPragmaNode) {
-                super.emitNode(tempDomBlockNode);
-            }
-        }
     }
 
     private CUDALIRGenerator getGen() {

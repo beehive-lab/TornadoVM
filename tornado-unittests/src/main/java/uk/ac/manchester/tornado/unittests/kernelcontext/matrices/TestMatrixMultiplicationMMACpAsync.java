@@ -205,7 +205,6 @@ public class TestMatrixMultiplicationMMACpAsync extends TornadoTestBase {
 
     private void assumeCpAsyncSupported() {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
     }
 

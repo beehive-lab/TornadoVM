@@ -67,11 +67,9 @@ The build matrix depends on the detected platform:
 | macOS    | jdk21, jdk25 | `opencl` | `opencl` |
 | macOS    | jdk21, jdk25 | `metal` | `metal` |
 | Linux    | jdk21, jdk25 | `opencl` | `opencl` |
-| Linux    | jdk21, jdk25 | `spirv` | `spirv` |
 | Linux    | jdk21, jdk25 | `cuda` | `cuda` |
-| Linux    | jdk21, jdk25 | `opencl,spirv,cuda` | `full` |
+| Linux    | jdk21, jdk25 | `opencl,cuda` | `full` |
 | Windows  | jdk21, jdk25 | `opencl` | `opencl` |
-| Windows  | jdk21, jdk25 | `spirv` | `spirv` |
 | Windows  | jdk21, jdk25 | `cuda` | `cuda` |
 
 Each build calls `bin/compile --sdk` from the checked-out worktree, which

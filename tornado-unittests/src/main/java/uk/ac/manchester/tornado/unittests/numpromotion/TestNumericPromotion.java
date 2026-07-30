@@ -221,7 +221,6 @@ public class TestNumericPromotion extends TornadoTestBase {
 
     @Test
     public void testBitwiseNot() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         ByteArray result = new ByteArray(8);
         ByteArray input = ByteArray.fromElements((byte) 0, (byte) 0, (byte) 127, (byte) -127, (byte) 1, (byte) -1, (byte) 1, (byte) 1);

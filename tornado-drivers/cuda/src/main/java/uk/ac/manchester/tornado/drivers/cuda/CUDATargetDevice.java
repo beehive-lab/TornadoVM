@@ -62,8 +62,6 @@ public interface CUDATargetDevice extends TornadoTargetDevice {
 
     int deviceVersion();
 
-    boolean isSPIRVSupported();
-
     /**
      * Number of asynchronous DMA copy engines (CUDA {@code CU_DEVICE_ATTRIBUTE_ASYNC_ENGINE_COUNT}).
      * {@code 0} = copies cannot overlap compute; {@code 1} = one direction can overlap compute;

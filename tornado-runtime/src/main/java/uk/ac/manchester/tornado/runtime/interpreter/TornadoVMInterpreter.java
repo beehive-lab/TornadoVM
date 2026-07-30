@@ -81,9 +81,9 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 /**
  * TornadoVMInterpreter: serves as a bytecode interpreter for TornadoVM
  * bytecodes. Also, it functions as a memory manager for various devices,
- * including FPGAs, GPUs, and multicore processors that adhere to any of the
+ * including GPUs and multicore processors that adhere to any of the
  * supported programming models. Additionally, it features a Just-In-Time (JIT)
- * compiler that compiles Java bytecode to OpenCL, CUDA, and SPIR-V.
+ * compiler that compiles Java bytecode to OpenCL and CUDA.
  */
 public class TornadoVMInterpreter {
     private static final Event EMPTY_EVENT = new EmptyEvent();
@@ -1018,7 +1018,6 @@ public class TornadoVMInterpreter {
     private void updateMeta(TaskContextInterface meta) {
         meta.setPrintKernelFlag(graphExecutionContext.meta().isPrintKernelEnabled());
         meta.setCompilerFlags(TornadoVMBackendType.OPENCL, graphExecutionContext.meta().getCompilerFlags(TornadoVMBackendType.OPENCL));
-        meta.setCompilerFlags(TornadoVMBackendType.SPIRV, graphExecutionContext.meta().getCompilerFlags(TornadoVMBackendType.SPIRV));
     }
 
     private XPUExecutionFrame compileTaskFromBytecodeToBinary(final int callWrapperIndex, final int numArgs, final int eventId, final int taskIndex, final long batchThreads) {
@@ -1090,8 +1089,7 @@ public class TornadoVMInterpreter {
                 task.attachProfiler(timeProfiler);
                 if (taskIndex == (taskExecutionContexts.size() - 1)) {
                     // If it is the last task within the task-schedule or doUpdate is true -> we
-                    // force compilation. This is useful when compiling code for Xilinx/Altera
-                    // FPGAs, that has to be a single source.
+                    // force compilation.
                     task.forceCompilation();
                 }
 
@@ -1134,7 +1132,7 @@ public class TornadoVMInterpreter {
 
         if (installedCodes[globalToLocalTaskIndex(taskIndex)] == null) {
             // After warming-up, it is possible to get a null pointer in the task-cache due
-            // to lazy compilation for FPGAs. In tha case, we check again the code cache.
+            // to lazy compilation. In that case, we check again the code cache.
             installedCodes[globalToLocalTaskIndex(taskIndex)] = interpreterDevice.getCodeFromCache(graphExecutionContext.getExecutionPlanId(), task);
         }
 

@@ -24,7 +24,6 @@ public enum TornadoDeviceType {
     DEFAULT,
     CPU,
     GPU,
-    FPGA,
     ACCELERATOR,
     CUSTOM,
     ALL;

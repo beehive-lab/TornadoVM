@@ -31,7 +31,7 @@ Debugging and Logging
    =======================  ============================================================================
    ``--fullDebug``          Enables full debug mode (maps to ``-Dtornado.fullDebug=true``).
    ``--debug``              Enables basic debug output such as compilation status and device info.
-   ``--printKernel``        Prints generated OpenCL/CUDA/SPIR-V kernels.
+   ``--printKernel``        Prints generated OpenCL/CUDA kernels.
    ``--threadInfo``         Displays the number of threads used.
    ``--devices``            Lists available hardware devices.
    =======================  ============================================================================
@@ -45,7 +45,7 @@ Debugging and Logging
    Flag                                              Description
    ================================================  ============================================================================
    ``-Dtornado.fullDebug=true``                      Enables full debug output including bytecode and runtime internals.
-   ``-Dtornado.printKernel=true``                    Prints generated OpenCL/CUDA/SPIR-V kernels.
+   ``-Dtornado.printKernel=true``                    Prints generated OpenCL/CUDA kernels.
    ``-Dtornado.print.kernel.dir=FILENAME``           Saves generated kernels to the specified file.
    ``-Dtornado.threadInfo=true``                     Displays the number of threads used.
    ``-Dtornado.print.bytecodes=true``                Prints TornadoVM Internal Bytecodes to stdout.
@@ -97,26 +97,11 @@ Performance & Scheduling
    ``-Ds0.t0.local.workgroup.size=X,Y,Z``                            Sets custom local workgroup size.
    ``-Dtornado.concurrent.devices=true``                             Enables concurrent execution across devices (default: false).
    ``-Dtornado.backend=N`` / ``-Dtornado.device=N``                  Sets the default backend/device index used when none is explicitly selected (default: 0 for both).
-   ``-Dtornado.{opencl,cuda,spirv,metal}.priority=X``                Sets backend priority; higher wins when multiple backends can run a task (default: OpenCL=10, SPIR-V=11, CUDA=0, Metal=0).
+   ``-Dtornado.{opencl,cuda,metal}.priority=X``                      Sets backend priority; higher wins when multiple backends can run a task (default: OpenCL=10, CUDA=0, Metal=0).
    ``-Dtornado.reuse.device.buffers=false``                          Disables reusing device buffers across executions of the same task-graph (default: true).
    ``-Dtornado.deallocate.buffers=false``                            Disables freeing device resources when the execution plan closes (default: true).
    ``-Dtornado.scheduler.block=true``                                Partitions the iteration space into blocks (one per visible CPU core when running on CPUs) (default: false).
    ================================================================  ==============================================================================
-
-Precompiled and FPGA Options
-----------------------------
-
-**JVM Flags**
-
-.. table::
-   :align: left
-
-   ================================================  ============================================================
-   Flag                                              Description
-   ================================================  ============================================================
-   ``-Dtornado.precompiled.binary=PATH``             Path to precompiled kernel or FPGA bitstream.
-   ``-Dtornado.fpga.conf.file=FILE``                 Path to the FPGA configuration file (default: none).
-   ================================================  ============================================================
 
 Optimizations
 -------------
@@ -156,25 +141,6 @@ TornadoVM's **CUDA C** backend targets NVIDIA GPUs: it emits CUDA C, compiled to
 .. note::
 
    The CUDA C backend's code cache is controlled by properties that still carry the ``opencl`` prefix — inherited unchanged from the OpenCL backend's code cache implementation, and not (yet) renamed for CUDA. They apply to **both** backends: ``-Dtornado.opencl.codecache.enable=true``, ``-Dtornado.opencl.codecache.dump=true``, ``-Dtornado.opencl.source.dump=true``, ``-Dtornado.opencl.codecache.dir=PATH`` (default: ``/var/opencl-codecache``), ``-Dtornado.opencl.source.dir=PATH`` (default: ``/var/opencl-compiler``), ``-Dtornado.opencl.log.dir=PATH`` (default: ``/var/opencl-logs``).
-
-Level Zero (SPIR-V Specific)
-----------------------------
-
-**JVM Flags**
-
-.. table::
-   :align: left
-
-   ================================================================  ==================================================================================================================
-   Flag                                                              Description
-   ================================================================  ==================================================================================================================
-   ``-Dtornado.spirv.levelzero.alignment=64``                        Sets memory alignment (in bytes) for Level Zero buffers (default: 64).
-   ``-Dtornado.spirv.loadstore=false``                               Optimizes loads/stores, using fewer virtual registers (experimental - default: true).
-   ``-Dtornado.spirv.levelzero.memoryAlloc.shared=false``            Enables shared memory buffers for the Level Zero backend (default: false).
-   ``-Dtornado.spirv.levelzero.extended.memory=false``               Disables the extended memory allocation mode for the Level Zero backend (default: true).
-   ``-Dtornado.spirv.runtimes=opencl,levelzero``                     Sets the SPIR-V dispatch runtime(s); the first in the list is the default (default: ``opencl,levelzero``).
-   ``-Dtornado.spirv.version=1.2``                                   Sets the minimum SPIR-V version to target (default: 1.2).
-   ================================================================  ==================================================================================================================
 
 Metal Specific
 --------------

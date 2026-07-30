@@ -22,14 +22,10 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.TornadoRuntime;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.vectors.Double3;
 
@@ -76,12 +72,6 @@ public class TestCrossPointTriangles {
     }
 
     public static void main() throws TornadoExecutionPlanException {
-
-        TornadoRuntime runtime = TornadoRuntimeProvider.getTornadoRuntime();
-        TornadoVMBackendType backendType = runtime.getBackendType(0);
-        switch (backendType) {
-            case SPIRV -> throw new TornadoRuntimeException("Backend not supported");
-        }
 
         DoubleArray tris1 = new DoubleArray(9 * 256);
         Random random = new Random();

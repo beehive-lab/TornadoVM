@@ -121,11 +121,8 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.ExprStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLNullary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLReturnSlot;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FPGAWorkGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayCopyNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IntelUnrollPragmaNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.XilinxPipeliningPragmaNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.logic.LogicalAndNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.logic.LogicalEqualsNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.logic.LogicalNotNode;
@@ -501,7 +498,6 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                 append(new OCLLIRStmt.AssignStmt(result, operandForPhiMove(phi.firstValue())));
             }
         }
-        emitOCLFPGAPragmas(currentBlockDominator);
         append(new OCLControlFlow.LoopInitOp());
         append(new OCLControlFlow.LoopPostOp());
         label.clearIncomingValues();
@@ -561,8 +557,6 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             emitShortCircuitOrNode(shortCircuitOrNode);
         } else if (node instanceof ConditionalNode conditionalNode) {
             emitConditionalNode(conditionalNode);
-        } else if (node instanceof IntelUnrollPragmaNode || node instanceof XilinxPipeliningPragmaNode || node instanceof FPGAWorkGroupSizeNode) {
-            // ignore emit-action
         } else {
             super.emitNode(node);
         }
@@ -711,15 +705,6 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         }
         return false;
     }
-
-    private void emitOCLFPGAPragmas(HIRBlock block) {
-        for (ValueNode tempDomBlockNode : block.getNodes()) {
-            if (tempDomBlockNode instanceof IntelUnrollPragmaNode || tempDomBlockNode instanceof XilinxPipeliningPragmaNode) {
-                super.emitNode(tempDomBlockNode);
-            }
-        }
-    }
-
     private OCLLIRGenerator getGen() {
         return (OCLLIRGenerator) gen;
     }

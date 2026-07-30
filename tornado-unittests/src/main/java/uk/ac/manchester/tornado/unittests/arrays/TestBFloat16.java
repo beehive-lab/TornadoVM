@@ -54,7 +54,7 @@ public class TestBFloat16 extends TornadoTestBase {
         if (backendType != TornadoVMBackendType.CUDA) {
             String message = "BF16 device kernels require the CUDA backend (default device is " + backendType + ")";
             switch (backendType) {
-                case OPENCL, SPIRV, METAL -> assertNotBackend(backendType, message);
+                case OPENCL, METAL -> assertNotBackend(backendType, message);
                 default -> throw new TornadoVMCUDANotSupported(message);
             }
         }

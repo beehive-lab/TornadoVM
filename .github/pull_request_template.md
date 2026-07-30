@@ -31,11 +31,6 @@ $ make tests
 ## Pass unittests using the CUDA backend
 $ make BACKEND=cuda
 $ make tests
-
-## If the changes are also applicable to the SPIR-V backend: 
-## Pass unittests using the SPIRV backend
-$ make BACKEND=spirv
-$ make tests 
 ```
 
 Once all unit-tests pass, please fill the following template for the Pull Request:
@@ -58,7 +53,6 @@ Mark the backends affected by this PR.
 
 - [ ] OpenCL
 - [ ] CUDA
-- [ ] SPIRV
 - [ ] Metal
 
 #### OS tested
@@ -68,13 +62,6 @@ Mark the OS where this PR is tested.
 - [ ] Linux
 - [ ] OSx
 - [ ] Windows
-
-#### Did you check on FPGAs?
-
-If it is applicable, check your changes on FPGAs.
-
-- [ ] Yes
-- [ ] No
 
 #### How to test the new patch?
 

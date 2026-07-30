@@ -47,7 +47,6 @@ public class TestCompilerFlagsAPI extends TornadoTestBase {
 
     @Test
     public void testOpenCL() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         FloatArray data = new FloatArray(512);
         data.init(1.0f);
 
@@ -62,20 +61,4 @@ public class TestCompilerFlagsAPI extends TornadoTestBase {
 
     }
 
-    @Test
-    public void testSPIRV() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.OPENCL);
-        FloatArray data = new FloatArray(512);
-        data.init(1.0f);
-
-        TaskGraph taskGraph = new TaskGraph("init") //
-                .task("foo", TestCompilerFlagsAPI::foo, data) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
-
-        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
-            executionPlan.withCompilerFlags(TornadoVMBackendType.SPIRV, "-ze-opt-level 1") //
-                    .execute();
-        }
-
-    }
 }

@@ -37,7 +37,6 @@ import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
  * How to run?
  * </p>
  * <code>
- * $ # To run with level-zero and SPIR-V
  * $ tornado --jvm="-Dla.mv.device=0:0 -Dtornado.device.memory=24GB" -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixVector
  * </code>
  *

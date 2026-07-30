@@ -100,7 +100,7 @@ def get_export_list_paths(tornado_sdk):
     Get the paths to all export list files.
 
     Export lists contain --add-exports directives that expose internal JDK modules
-    to TornadoVM. Each backend (OpenCL, CUDA, SPIRV) requires specific module exports.
+    to TornadoVM. Each backend (OpenCL, CUDA) requires specific module exports.
 
     Args:
         tornado_sdk (str): Path to the TORNADOVM_HOME directory
@@ -112,7 +112,6 @@ def get_export_list_paths(tornado_sdk):
     return {
         "common": export_lists_dir / "common-exports",
         "opencl": export_lists_dir / "opencl-exports",
-        "spirv": export_lists_dir / "spirv-exports",
         "metal": export_lists_dir / "metal-exports",
         "cuda": export_lists_dir / "cuda-exports",
     }
@@ -229,7 +228,7 @@ def generate_argfile(backends, output_dir=None):
 def main():
     if len(sys.argv) < 2:
         print("Usage: gen-tornado-argfile-template.py <backends> [output_dir]")
-        print("Example: gen-tornado-argfile-template.py opencl,cuda,spirv")
+        print("Example: gen-tornado-argfile-template.py opencl,cuda")
         print("Example: gen-tornado-argfile-template.py opencl /path/to/output/dir")
         sys.exit(1)
 

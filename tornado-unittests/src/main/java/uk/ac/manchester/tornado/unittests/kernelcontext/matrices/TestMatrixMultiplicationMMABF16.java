@@ -293,7 +293,6 @@ public class TestMatrixMultiplicationMMABF16 extends TornadoTestBase {
 
     private void assumeBF16MMASupported() {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
     }
 

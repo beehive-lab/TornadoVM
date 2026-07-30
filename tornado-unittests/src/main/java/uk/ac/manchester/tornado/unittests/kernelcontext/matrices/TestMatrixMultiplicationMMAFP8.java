@@ -362,7 +362,6 @@ public class TestMatrixMultiplicationMMAFP8 extends TornadoTestBase {
 
     private void assumeFP8MMASupported() {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
     }
 

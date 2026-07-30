@@ -97,7 +97,6 @@ public class TestHello extends TornadoTestBase {
 
     @Test
     public void testHello() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestHello::printHello, 8);
@@ -111,8 +110,6 @@ public class TestHello extends TornadoTestBase {
 
     @Test
     public void testPrintIntArray() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
-
         int numElements = 16;
         IntArray a = new IntArray(numElements);
         a.set(0, 1);
@@ -131,8 +128,6 @@ public class TestHello extends TornadoTestBase {
 
     @Test
     public void testPrintIntArray2() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
-
         int numElements = 16;
         IntArray a = new IntArray(numElements);
         for (int i = 0; i < numElements; i++) {

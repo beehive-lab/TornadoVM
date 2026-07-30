@@ -64,11 +64,6 @@ public class VirtualCUDAPlatform implements TornadoPlatformInterface {
     }
 
     @Override
-    public boolean isSPIRVSupported() {
-        return true;
-    }
-
-    @Override
     public String toString() {
         return getClass().getName();
     }

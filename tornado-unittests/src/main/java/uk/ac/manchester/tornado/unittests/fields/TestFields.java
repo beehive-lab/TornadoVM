@@ -188,13 +188,6 @@ public class TestFields extends TornadoTestBase {
 
     @Test
     public void testSetField() throws TornadoExecutionPlanException {
-        // The reason this is not supported for SPIR-V is that the object fields are
-        // deserialized
-        // before flushing the command list. Check SPIRVObjectWrapper::deserialise and
-        // SPIRVTornadoDevice::flush.
-        assertNotBackend(TornadoVMBackendType.SPIRV);
-        
-
         B b = new B();
         final A a = new A(b);
 
@@ -216,14 +209,6 @@ public class TestFields extends TornadoTestBase {
 
     @Test
     public void testSetNestedField() throws TornadoExecutionPlanException {
-        // The reason this is not supported for SPIR-V is that the object fields are
-        // deserialized
-        // before flushing the command list. Check SPIRVObjectWrapper::deserialise and
-        // SPIRVTornadoDevice::flush.
-        assertNotBackend(TornadoVMBackendType.SPIRV);
-        
-
-
         B b = new B();
         final A a = new A(b);
 

@@ -133,7 +133,6 @@ public class TestHalf2Packed extends TornadoTestBase {
 
     @Test
     public void testPackedCopy() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         HalfFloatArray input = createSequenceArray(NUM_ELEMENTS, 0.5f);
         HalfFloatArray output = new HalfFloatArray(NUM_ELEMENTS);
 
@@ -154,7 +153,6 @@ public class TestHalf2Packed extends TornadoTestBase {
 
     @Test
     public void testPackedAdd() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         HalfFloatArray a = createSequenceArray(NUM_ELEMENTS, 0.25f);
         HalfFloatArray b = createSequenceArray(NUM_ELEMENTS, 0.5f);
         HalfFloatArray c = new HalfFloatArray(NUM_ELEMENTS);
@@ -176,7 +174,6 @@ public class TestHalf2Packed extends TornadoTestBase {
 
     @Test
     public void testPackedMult() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         HalfFloatArray a = createSequenceArray(NUM_ELEMENTS, 0.25f);
         HalfFloatArray b = createSequenceArray(NUM_ELEMENTS, 0.5f);
         HalfFloatArray c = new HalfFloatArray(NUM_ELEMENTS);
@@ -198,7 +195,6 @@ public class TestHalf2Packed extends TornadoTestBase {
 
     @Test
     public void testPackedFma() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         HalfFloatArray a = createSequenceArray(NUM_ELEMENTS, 0.25f);
         HalfFloatArray b = createSequenceArray(NUM_ELEMENTS, 0.5f);
         HalfFloatArray c = createSequenceArray(NUM_ELEMENTS, 0.125f);
@@ -222,8 +218,7 @@ public class TestHalf2Packed extends TornadoTestBase {
 
     @Test
     public void testDotRowsFloatAccumulate() throws TornadoExecutionPlanException {
-        // Packed half2 lane extraction is not supported on the SPIR-V and Metal backends.
-        assertNotBackend(TornadoVMBackendType.SPIRV);
+        // Packed half2 lane extraction is not supported on the Metal backend.
         assertNotBackend(TornadoVMBackendType.METAL);
         final int rowSize = 128;
         final int numRows = NUM_ELEMENTS / rowSize;
@@ -254,7 +249,6 @@ public class TestHalf2Packed extends TornadoTestBase {
     public void testLocalTileDot() throws TornadoExecutionPlanException {
         // Half2 local-memory arrays are unsupported on OpenCL (no half2 storage).
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
         final int numPairs = NUM_ELEMENTS / 2;
         HalfFloatArray a = createSequenceArray(NUM_ELEMENTS, 0.25f);
@@ -284,7 +278,6 @@ public class TestHalf2Packed extends TornadoTestBase {
 
     @Test
     public void testPackRotatedPairs() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         FloatArray input = new FloatArray(NUM_ELEMENTS);
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             input.set(i, (i % 64) * 0.125f);

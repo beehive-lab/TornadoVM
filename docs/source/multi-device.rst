@@ -16,7 +16,7 @@ TornadoVM executes on multiple devices in two modes:
 Prerequisites
 ----------------------------------------------
 
-Before using TornadoVM's multi-device execution, make sure that you have one of the supported backends (e.g., OpenCL, CUDA, and SPIRV) with at least 2 available devices.
+Before using TornadoVM's multi-device execution, make sure that you have one of the supported backends (e.g., OpenCL and CUDA) with at least 2 available devices.
 
 Ensuring that multiple devices are available
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -49,7 +49,7 @@ By running the following command you can obtain the list of the available device
             Device OpenCL C version: OpenCL C 3.0
 
       Tornado device=0:2
-        OPENCL --  [Intel(R) FPGA Emulation Platform for OpenCL(TM)] -- Intel(R) FPGA Emulation Device
+        OPENCL --  [Intel(R) OpenCL] -- Intel(R) Core(TM) CPU
             Global Memory Size: 62.5 GB
             Local Memory Size: 256.0 KB
             Workgroup Dimensions: 3
