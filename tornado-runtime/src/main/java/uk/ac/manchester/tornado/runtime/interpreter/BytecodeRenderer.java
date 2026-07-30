@@ -45,6 +45,8 @@ final class BytecodeRenderer {
     private static final int OP_WIDTH_FULL = 39;
     private static final int OP_WIDTH_COMPACT = 11;
     private static final int LABEL_WIDTH = 38;
+    /** Longest type label kept from a toString() before falling back to the simple class name. */
+    private static final int MAX_TYPE_LABEL = 30;
 
     private BytecodeRenderer() {
     }
@@ -79,8 +81,14 @@ final class BytecodeRenderer {
         if (asString.startsWith(object.getClass().getName() + "@")) {
             return simpleName + hash;
         }
-        // Types with a meaningful toString, e.g. "ImageFloat <320 x 240>" -> "ImageFloat<320x240>"
-        return asString.replace(" ", "") + hash;
+        // Types with a meaningful toString, e.g. "ImageFloat <320 x 240>" -> "ImageFloat<320x240>".
+        // Keep the first line only: MatrixFloat prints its whole contents, which would break the table.
+        int newLine = asString.indexOf('\n');
+        if (newLine >= 0) {
+            asString = asString.substring(0, newLine);
+        }
+        asString = asString.replace(" ", "").strip();
+        return (asString.length() > MAX_TYPE_LABEL || asString.isEmpty() ? simpleName : asString) + hash;
     }
 
     static String line(BytecodeLogEntry entry, BytecodeLogMode mode, boolean colour, int sequence, String indent) {

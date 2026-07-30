@@ -66,6 +66,7 @@ final class BytecodeLog {
     private int launches;
     private int skipped;
     private int hostToDevice;
+    private int hostToDeviceExecuted;
     private int deviceToHost;
     private int persisted;
     private long bytesToDevice;
@@ -121,7 +122,10 @@ final class BytecodeLog {
             default -> {
                 if (entry.op().startsWith("TRANSFER_HOST_TO_DEVICE")) {
                     hostToDevice++;
-                    bytesToDevice += entry.executed() ? entry.size() : 0;
+                    if (entry.executed()) {
+                        hostToDeviceExecuted++;
+                        bytesToDevice += entry.size();
+                    }
                 } else if (entry.op().startsWith("TRANSFER_DEVICE_TO_HOST")) {
                     deviceToHost++;
                     bytesToHost += entry.size();
@@ -138,9 +142,11 @@ final class BytecodeLog {
         if (!mode.isTextual()) {
             return;
         }
-        String summary = String.format("== END   graph '%s' | exec #%d | %d alloc | %d dealloc | %d launch | h2d %d (%s) | d2h %d (%s) | %d persist | %d skipped", //
+        // h2d is reported as executed/total: a TRANSFER_HOST_TO_DEVICE_ONCE whose buffer is already on
+        // the device is a no-op, and on a steady-state loop those are the majority.
+        String summary = String.format("== END   graph '%s' | exec #%d | %d alloc | %d dealloc | %d launch | h2d %d/%d (%s) | d2h %d (%s) | %d persist | %d skipped", //
                 graphName, execution, allocations, deallocations, launches, //
-                hostToDevice, RuntimeUtilities.humanReadableByteCount(bytesToDevice, false), //
+                hostToDeviceExecuted, hostToDevice, RuntimeUtilities.humanReadableByteCount(bytesToDevice, false), //
                 deviceToHost, RuntimeUtilities.humanReadableByteCount(bytesToHost, false), //
                 persisted, skipped);
         text.append(colour ? ColoursTerminal.BLUE + summary + ColoursTerminal.RESET : summary).append("\n");
