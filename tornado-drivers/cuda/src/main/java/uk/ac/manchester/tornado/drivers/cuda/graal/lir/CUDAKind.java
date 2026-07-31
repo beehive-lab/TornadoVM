@@ -526,9 +526,12 @@ public enum CUDAKind implements PlatformKind {
      *
      * <p>Scalars map to the native unsigned/signed types. Vectors of width 2/3/4
      * map to the CUDA built-in vector types ({@code float4}, {@code int2}, ...).
-     * Vector widths 8 and 16 have no CUDA built-in equivalent and are rejected
-     * with a bailout, so unsupported kernels fail honestly rather than emitting
-     * invalid code.
+     * CUDA has no built-in vector type wider than 4 lanes, so width 8 maps to a
+     * custom struct ({@code float8}, {@code __half8}, ...) defined by
+     * {@link uk.ac.manchester.tornado.drivers.cuda.graal.backend.CUDAPreamble}
+     * and conditionally injected by {@code CUDACompilationResultBuilder#finish}.
+     * Width 16 has no such struct yet and is rejected with a bailout, so
+     * unsupported kernels fail honestly rather than emitting invalid code.
      */
     public String getCUDATypeName() {
         if (!isVector()) {
@@ -537,17 +540,18 @@ public enum CUDAKind implements PlatformKind {
         int len = getVectorLength();
         CUDAKind element = getElementKind();
         if (element == HALF) {
-            // cuda_fp16.h provides only __half2; report wider half vectors as an FP16
-            // device limitation (unsupported) rather than a hard compiler bailout.
-            if (len == 2) {
-                return "__half2";
+            // cuda_fp16.h provides only __half2 as a built-in; __half8 is the custom
+            // struct + make_half8(...) constructor defined in CUDAPreamble.
+            if (len != 2 && len != 8) {
+                throw new uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP16NotSupported(
+                        "CUDA backend does not support half-precision vector type " + name() + "; only __half2 and __half8 are available.");
             }
-            throw new uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP16NotSupported(
-                    "CUDA backend does not support half-precision vector type " + name() + "; only __half2 is available.");
+            return (len == 2) ? "__half2" : "__half8";
         }
-        if (len != 2 && len != 3 && len != 4) {
+        boolean width8Supported = len == 8 && (element == SHORT || element == INT || element == FLOAT || element == CHAR || element == DOUBLE);
+        if (len != 2 && len != 3 && len != 4 && !width8Supported) {
             throw new uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException(
-                    "CUDA backend does not support vector width " + len + " (kind " + name() + "); only widths 2, 3 and 4 are supported.");
+                    "CUDA backend does not support vector width " + len + " (kind " + name() + "); only widths 2, 3, 4 and 8 (short/int/float/char/double/half element) are supported.");
         }
         return element.toString() + len;
     }
@@ -602,6 +606,39 @@ public enum CUDAKind implements PlatformKind {
 
     public boolean isVector() {
         return vectorLength > 1;
+    }
+
+    private static final String[] NATIVE_COMPONENTS = { "x", "y", "z", "w" };
+
+    /**
+     * Name of lane {@code lane} of a {@code vectorLength}-wide vector in generated
+     * CUDA C. Widths 2-4 use CUDA's built-in {@code .x/.y/.z/.w} vector fields;
+     * width 8 uses the {@code .s0..s7} fields of the custom struct types defined by
+     * {@link uk.ac.manchester.tornado.drivers.cuda.graal.backend.CUDAPreamble}
+     * (mirroring OpenCL's {@code .sN} swizzle, since CUDA has no built-in vector
+     * type wider than 4 lanes). Shared by every width-8-aware emission site
+     * (component load/store, componentwise arithmetic) so they agree on naming.
+     */
+    public static String vectorComponentName(int lane, int vectorLength) {
+        if (vectorLength <= 4) {
+            return NATIVE_COMPONENTS[lane];
+        }
+        return "s" + lane;
+    }
+
+    /**
+     * Name of the {@code make_<elementName><length>(...)} constructor function for
+     * a vector of this element kind and length (e.g. {@code make_float8},
+     * {@code make_half2}). {@link CUDAKind#toString()} renders the HALF element
+     * kind as {@code "__half"} (the real CUDA scalar type name), but the
+     * constructor naming convention already established for width 2-4
+     * ({@code make_half2}, {@code make_half4} in {@link CUDAAssembler.CUDAOp2}) -
+     * and matched by width 8's {@code make_half8} in {@link CUDAAssembler.CUDAOp8}
+     * - uses the single-underscore "half", so that substitution is applied here too.
+     */
+    public static String makeConstructorName(CUDAKind elementKind, int length) {
+        String elementName = (elementKind == HALF) ? "half" : elementKind.toString();
+        return "make_" + elementName + length;
     }
 
     public boolean isPrimitive() {

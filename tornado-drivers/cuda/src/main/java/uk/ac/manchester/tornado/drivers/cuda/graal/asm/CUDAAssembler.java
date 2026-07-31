@@ -1275,13 +1275,16 @@ public final class CUDAAssembler extends Assembler {
     public static class CUDAOp8 extends CUDAOp4 {
         // @formatter:off
 
-        public static final CUDAOp8 VMOV_SHORT8 = new CUDAOp8("(short8)");
-        public static final CUDAOp8 VMOV_INT8 = new CUDAOp8("(int8)");
-        public static final CUDAOp8 VMOV_FLOAT8 = new CUDAOp8("(float8)");
-        public static final CUDAOp8 VMOV_BYTE8 = new CUDAOp8("(char8)");
-        public static final CUDAOp8 VMOV_DOUBLE8 = new CUDAOp8("(double8)");
+        // CUDA has no built-in width-8 vector type; these name the make_<type>8(...)
+        // constructor functions CUDAPreamble defines for the custom struct types
+        // (mirroring the real CUDA-provided make_<type>N for widths 2/3/4).
+        public static final CUDAOp8 VMOV_SHORT8 = new CUDAOp8("make_short8");
+        public static final CUDAOp8 VMOV_INT8 = new CUDAOp8("make_int8");
+        public static final CUDAOp8 VMOV_FLOAT8 = new CUDAOp8("make_float8");
+        public static final CUDAOp8 VMOV_BYTE8 = new CUDAOp8("make_char8");
+        public static final CUDAOp8 VMOV_DOUBLE8 = new CUDAOp8("make_double8");
 
-        public static final CUDAOp8 VMOV_HALF8 = new CUDAOp8("(half8)");
+        public static final CUDAOp8 VMOV_HALF8 = new CUDAOp8("make_half8");
 
         // @formatter:on
 
@@ -1290,7 +1293,25 @@ public final class CUDAAssembler extends Assembler {
         }
 
         public void emit(CUDACompilationResultBuilder crb, Value s0, Value s1, Value s2, Value s3, Value s4, Value s5, Value s6, Value s7) {
-            throw new uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException("CUDA backend does not support width-8 vector types.");
+            final CUDAAssembler asm = crb.getAssembler();
+            emitOpcode(asm);
+            asm.emit("(");
+            asm.emitValue(crb, s0);
+            asm.emit(", ");
+            asm.emitValue(crb, s1);
+            asm.emit(", ");
+            asm.emitValue(crb, s2);
+            asm.emit(", ");
+            asm.emitValue(crb, s3);
+            asm.emit(", ");
+            asm.emitValue(crb, s4);
+            asm.emit(", ");
+            asm.emitValue(crb, s5);
+            asm.emit(", ");
+            asm.emitValue(crb, s6);
+            asm.emit(", ");
+            asm.emitValue(crb, s7);
+            asm.emit(")");
         }
     }
 

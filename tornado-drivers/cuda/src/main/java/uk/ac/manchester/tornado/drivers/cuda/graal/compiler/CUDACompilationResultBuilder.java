@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.graalvm.collections.EconomicMap;
@@ -250,6 +251,18 @@ public class CUDACompilationResultBuilder extends CompilationResultBuilder {
         // every spelling (__half, half2 vectors, __float2half / __half2float). See
         // CUDAPreamble for why the header is not emitted unconditionally.
         String source = new String(code);
+        // Width-8 vector structs (float8, int8, ...): CUDA has no built-in vector type
+        // wider than 4 lanes, so CUDAKind#getCUDATypeName() maps these to a custom
+        // struct + make_<type>8(...) constructor that must be declared before first
+        // use. Prepended first (before the fp8/fp16 checks below) so that, in the
+        // final source, it lands AFTER the fp16 include - __half8 depends on the
+        // __half type cuda_fp16.h defines.
+        for (Map.Entry<String, String> entry : CUDAPreamble.WIDTH8_PREAMBLES.entrySet()) {
+            String structName = entry.getKey();
+            if (containsIdentifier(source, structName) && !source.contains("struct " + structName)) {
+                source = entry.getValue() + source;
+            }
+        }
         // cuda_fp8.h before the fp16 check: the fp8 include is emitted together with the
         // fp16 one (its conversions produce __half values), and both prepends keep the
         // fp16 include first because cuda_fp8.h builds on cuda_fp16.h types.
@@ -262,6 +275,32 @@ public class CUDACompilationResultBuilder extends CompilationResultBuilder {
         code = source.getBytes();
 
         compilationResult.setTargetCode(code, code.length);
+    }
+
+    /**
+     * Whether {@code source} references {@code identifier} as a whole word, not as
+     * a substring of a longer identifier (e.g. {@code "int8"} must not match inside
+     * {@code "uint8"} or {@code "point8"}).
+     */
+    private static boolean containsIdentifier(String source, String identifier) {
+        int from = 0;
+        while (true) {
+            int idx = source.indexOf(identifier, from);
+            if (idx < 0) {
+                return false;
+            }
+            boolean boundaryBefore = idx == 0 || !isIdentifierChar(source.charAt(idx - 1));
+            int afterIdx = idx + identifier.length();
+            boolean boundaryAfter = afterIdx >= source.length() || !isIdentifierChar(source.charAt(afterIdx));
+            if (boundaryBefore && boundaryAfter) {
+                return true;
+            }
+            from = idx + 1;
+        }
+    }
+
+    private static boolean isIdentifierChar(char c) {
+        return Character.isLetterOrDigit(c) || c == '_';
     }
 
     void emitLoopBlock(HIRBlock block) {

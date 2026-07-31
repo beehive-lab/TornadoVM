@@ -1195,7 +1195,7 @@ public class CUDALIRStmt {
                 return;
             }
             StringBuilder sb = new StringBuilder();
-            sb.append("make_").append(elem).append(n).append("(");
+            sb.append(CUDAKind.makeConstructorName(vectorKind.getElementKind(), n)).append("(");
             for (int i = 0; i < n; i++) {
                 if (i > 0) {
                     sb.append(", ");
@@ -1790,8 +1790,6 @@ public class CUDALIRStmt {
             this.index = index;
         }
 
-        private static final String[] COMPONENTS = { "x", "y", "z", "w" };
-
         @Override
         public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
             // OpenCL vstoreN(v, i, p) stores N (unaligned) elements at p[i*N]. As with
@@ -1836,7 +1834,7 @@ public class CUDALIRStmt {
                 asm.space();
                 asm.assign();
                 asm.space();
-                asm.emit(String.format("(%s).%s", v, COMPONENTS[i]));
+                asm.emit(String.format("(%s).%s", v, CUDAKind.vectorComponentName(i, n)));
                 asm.delimiter();
                 asm.eol();
             }

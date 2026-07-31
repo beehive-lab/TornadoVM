@@ -23,6 +23,9 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.graal.backend;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 /**
  * CUDA C preamble prepended to compiled kernels that need it.
  *
@@ -60,5 +63,59 @@ public final class CUDAPreamble {
      */
     public static final String FP8_PREAMBLE =
         "#include <cuda_fp8.h>\n";
+    // @formatter:on
+
+    /**
+     * Struct + {@code make_<type>8(...)} constructor definitions for the width-8
+     * vector kinds. CUDA has no built-in vector type wider than 4 lanes (unlike
+     * OpenCL, which natively supports width 8/16), so {@link
+     * uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind#getCUDATypeName()}
+     * maps width-8 kinds to one of these instead. Fields are named {@code s0..s7}
+     * to match the lane names TornadoVM's CUDA codegen already emits for width-8
+     * component access/store (mirroring OpenCL's {@code .sN} swizzle and the
+     * {@code getS0()..getS7()} accessors on the Java-side vector types).
+     *
+     * <p>Each entry is only prepended when the generated kernel source actually
+     * references that struct name, with the same source-scan gating as PREAMBLE /
+     * FP8_PREAMBLE (see {@code CUDACompilationResultBuilder#finish}). The struct
+     * itself never needs a specific memory alignment: TornadoVM's CUDA backend
+     * never reinterpret-casts a pointer to a vector struct type (that would fault
+     * on element-aligned buffers - see the alignment comments on
+     * {@code CUDALIRStmt.VectorLoadStmt}/{@code VectorStoreStmt}); it only ever
+     * appears as a register-resident value built and torn down componentwise.
+     */
+    // @formatter:off
+    public static final Map<String, String> WIDTH8_PREAMBLES = buildWidth8Preambles();
+
+    private static Map<String, String> buildWidth8Preambles() {
+        Map<String, String> map = new LinkedHashMap<>();
+        map.put("short8", struct8("short8", "short", "make_short8"));
+        map.put("int8", struct8("int8", "int", "make_int8"));
+        map.put("float8", struct8("float8", "float", "make_float8"));
+        map.put("char8", struct8("char8", "char", "make_char8"));
+        map.put("double8", struct8("double8", "double", "make_double8"));
+        // __half8 depends on the __half type from cuda_fp16.h (PREAMBLE), which
+        // CUDACompilationResultBuilder#finish is ordered to inject first. Constructor
+        // is "make_half8" (not "make___half8") to match the existing make_half2/
+        // make_half4 naming convention used for the other half-vector widths.
+        map.put("__half8", struct8("__half8", "__half", "make_half8"));
+        return map;
+    }
+
+    private static String struct8(String structName, String elementType, String ctorName) {
+        StringBuilder params = new StringBuilder();
+        StringBuilder assigns = new StringBuilder();
+        for (int i = 0; i < 8; i++) {
+            if (i > 0) {
+                params.append(", ");
+            }
+            params.append(elementType).append(" s").append(i);
+            assigns.append("r.s").append(i).append("=s").append(i).append(";");
+        }
+        return "struct " + structName + " { " + elementType + " s0,s1,s2,s3,s4,s5,s6,s7; };\n"
+                + "static __device__ __forceinline__ " + structName + " " + ctorName + "(" + params + ") {\n"
+                + "    " + structName + " r; " + assigns + " return r;\n"
+                + "}\n";
+    }
     // @formatter:on
 }

@@ -68,18 +68,20 @@ public class CUDAVectorElementSelect extends CUDALIROp {
         }
     }
 
-    // CUDA built-in vector types expose components as .x/.y/.z/.w (width <= 4).
-    private static final String[] CUDA_COMPONENTS = { "x", "y", "z", "w" };
-
     @Override
     public void emit(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
         asm.emitValueOrOp(crb, vector);
         int idx = Integer.parseInt(CUDAAssembler.getAbsoluteIndexFromValue(selection));
-        if (idx < 0 || idx > 3) {
+        // The lane index alone doesn't say whether this vector uses CUDA's built-in
+        // .x/.y/.z/.w fields (width <= 4) or the custom struct's .s0..s7 fields
+        // (width 8, from CUDAPreamble) - both are indexed 0-3 for their first four
+        // lanes, so the vector's own width decides which naming applies.
+        int vectorLength = (vector.getPlatformKind() instanceof CUDAKind) ? ((CUDAKind) vector.getPlatformKind()).getVectorLength() : -1;
+        if (vectorLength <= 0 || (vectorLength > 4 && vectorLength != 8) || idx < 0 || idx >= vectorLength) {
             throw new uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException(
-                    "CUDA backend supports vector component access only for widths 2-4 (index " + idx + ").");
+                    "CUDA backend supports vector component access only for widths 2-4 and 8 (index " + idx + ", vector width " + vectorLength + ").");
         }
-        asm.emitSymbol("." + CUDA_COMPONENTS[idx]);
+        asm.emitSymbol("." + CUDAKind.vectorComponentName(idx, vectorLength));
     }
 
     @Override

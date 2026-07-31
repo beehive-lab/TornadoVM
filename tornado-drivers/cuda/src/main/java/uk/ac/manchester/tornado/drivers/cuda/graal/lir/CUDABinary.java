@@ -79,8 +79,9 @@ public class CUDABinary {
 
         // CUDA built-in vector types (float2/3/4, int2/3/4, ...) have NO overloaded
         // arithmetic operators, so vector add/sub/mul/div must be emitted
-        // componentwise via the make_<type>N(...) constructor.
-        private static final String[] COMPONENTS = { "x", "y", "z", "w" };
+        // componentwise via the make_<type>N(...) constructor. Width 8 uses the
+        // custom struct types from CUDAPreamble the same way - see
+        // CUDAKind#vectorComponentName for the .x/.y/.z/.w vs .s0..s7 naming split.
 
         public Expr(CUDABinaryOp opcode, LIRKind lirKind, Value x, Value y) {
             super(opcode, lirKind, x, y);
@@ -97,7 +98,7 @@ public class CUDABinary {
             }
 
             int length = resultKind.getVectorLength();
-            if (length < 2 || length > 4) {
+            if (length < 2 || (length > 4 && length != 8)) {
                 throw new uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException(
                         "CUDA backend does not support arithmetic on vector width " + length + ".");
             }
@@ -133,12 +134,12 @@ public class CUDABinary {
             }
 
             StringBuilder sb = new StringBuilder();
-            sb.append("make_").append(resultKind.getElementKind().toString()).append(length).append("(");
+            sb.append(CUDAKind.makeConstructorName(resultKind.getElementKind(), length)).append("(");
             for (int i = 0; i < length; i++) {
                 if (i > 0) {
                     sb.append(", ");
                 }
-                String c = COMPONENTS[i];
+                String c = CUDAKind.vectorComponentName(i, length);
                 String xc = xIsVector ? ("(" + xs + ")." + c) : ("(" + xs + ")");
                 String yc = yIsVector ? ("(" + ys + ")." + c) : ("(" + ys + ")");
                 sb.append(xc).append(" ").append(op).append(" ").append(yc);
