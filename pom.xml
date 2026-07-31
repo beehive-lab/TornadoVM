@@ -5,7 +5,7 @@
 
     <groupId>io.github.beehive-lab</groupId>
     <artifactId>tornado</artifactId>
-    <version>5.2.1-jdk21-dev</version>
+    <version>${revision}</version>
     <packaging>pom</packaging>
     <name>tornado</name>
     <url>https://github.com/beehive-lab/tornadovm</url>
@@ -44,6 +44,13 @@
     </distributionManagement>
 
     <properties>
+        <!-- CI-friendly version: the literal default (jdk21) - each jdkNN profile below overrides
+             this property so `${project.version}` (and everything derived from it - the SDK
+             directory/archive name, tornado.release's version= field, Maven Central coordinates)
+             correctly reflects the JDK actually being built, with no committed-file mutation
+             needed at build time. Flattened to a concrete version by flatten-maven-plugin below
+             before install/deploy, since only THIS reactor's own POM parsing understands ${revision}. -->
+        <revision>5.2.1-jdk21-dev</revision>
         <tornado.version>${project.version}</tornado.version>
         <tornado.backend>opencl</tornado.backend>
         <graalvm.version>23.1.0</graalvm.version>
@@ -349,6 +356,7 @@
                 <activeByDefault>false</activeByDefault>
             </activation>
             <properties>
+                <revision>5.2.1-jdk21-dev</revision>
                 <!-- Runtime module access for pure-JVM unit tests (mirrors this profile's compilerArgs). -->
                 <tornado.test.argLine>--enable-preview --add-modules=jdk.incubator.vector --add-modules=jdk.internal.vm.ci --add-exports jdk.internal.vm.ci/jdk.vm.ci.meta=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.code=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.common=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=ALL-UNNAMED</tornado.test.argLine>
             </properties>
@@ -436,6 +444,7 @@
                 <activeByDefault>false</activeByDefault>
             </activation>
             <properties>
+                <revision>5.2.1-jdk25-dev</revision>
                 <!-- Runtime module access for pure-JVM unit tests (mirrors this profile's compilerArgs). -->
                 <tornado.test.argLine>--add-modules=jdk.incubator.vector --add-modules=jdk.internal.vm.ci --patch-module jdk.internal.vm.ci=${user.dir}/graalJars/jvmci-21.0.2.jar --add-exports jdk.internal.vm.ci/jdk.vm.ci.meta=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.code=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.common=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=ALL-UNNAMED</tornado.test.argLine>
             </properties>
@@ -499,6 +508,7 @@
                 <activeByDefault>false</activeByDefault>
             </activation>
             <properties>
+                <revision>5.2.1-jdk26-dev</revision>
                 <!-- Runtime module access for pure-JVM unit tests (mirrors this profile's compilerArgs). -->
                 <tornado.test.argLine>--add-modules=jdk.incubator.vector --add-modules=jdk.internal.vm.ci --patch-module jdk.internal.vm.ci=${user.dir}/graalJars/jvmci-21.0.2.jar --add-exports jdk.internal.vm.ci/jdk.vm.ci.meta=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.code=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.common=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=ALL-UNNAMED</tornado.test.argLine>
             </properties>
@@ -572,6 +582,7 @@
                 <activeByDefault>false</activeByDefault>
             </activation>
             <properties>
+                <revision>5.2.1-jdk27-dev</revision>
                 <!-- Runtime module access for pure-JVM unit tests. JVMCI is supplied by the vendored
                      tornado.jvmci application module (below), so no patch-module is needed here. -->
                 <tornado.test.argLine>--add-modules=jdk.incubator.vector</tornado.test.argLine>
@@ -715,6 +726,37 @@
     <build>
         <finalName>${project.artifactId}-${project.version}-${buildNumber}</finalName>
         <plugins>
+            <!-- CI-friendly versions: <revision> in <properties> above (default jdk21, overridden per
+                 jdkNN profile) lets every jdk21/25/26/27 profile drive `${project.version}` without
+                 ever mutating a committed pom.xml. This plugin resolves ${revision} into the concrete
+                 version in the POM that actually gets installed/deployed (mvn's own in-reactor
+                 resolution already understands ${revision} for module-to-module dependency wiring;
+                 this is only needed for the *published* .pom file consumers see).
+                 resolveCiFriendliesOnly leaves everything else in the POM untouched. -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+                <version>1.6.0</version>
+                <configuration>
+                    <flattenMode>resolveCiFriendliesOnly</flattenMode>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>flatten</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>flatten</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>flatten.clean</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-scm-plugin</artifactId>
