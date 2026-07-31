@@ -1,5 +1,6 @@
 .idea/
 .unittestingStatus
+.flattened-pom.xml
 .build/*.xml
 beehive-spirv-toolkit/
 **/__pycache__/
