@@ -19,6 +19,7 @@
 
 import argparse
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -60,6 +61,53 @@ def is_win_or_bat():
     else:
         isWinCmdOrBat = False
     return isWinCmdOrBat
+
+
+_JDK_VERSION_TOKEN_RE = re.compile(r"-jdk\d+(?=-|$)")
+
+
+def read_root_pom_version():
+    """
+    Read the <version> of the root pom.xml (its first top-level <version>
+    tag, i.e. the project's own version).
+    """
+    with open("pom.xml", "r", encoding="utf-8") as f:
+        content = f.read()
+    match = re.search(r"<version>([^<]+)</version>", content)
+    return match.group(1) if match else None
+
+
+def compute_sdk_version(base_version, jdk):
+    """
+    Return *base_version* with any existing -jdkNN token replaced by -<jdk>
+    (e.g. "5.2.1-jdk21-dev" + jdk="jdk27" -> "5.2.1-jdk27-dev"), so a --sdk
+    build's directory name, archive name, and tornado.release all correctly
+    identify the JDK it was actually built with, instead of whatever the
+    committed pom.xml version happens to say (which is a single static string
+    shared by every --jdk profile). Returns base_version unchanged if it
+    carries no jdkNN token, or if *jdk* isn't a plain jdkNN profile (e.g.
+    graal-jdk-21) — nothing meaningful to substitute in that case.
+    """
+    if not re.fullmatch(r"jdk\d+", jdk):
+        return base_version
+    if _JDK_VERSION_TOKEN_RE.search(base_version):
+        return _JDK_VERSION_TOKEN_RE.sub(f"-{jdk}", base_version, count=1)
+    return base_version
+
+
+def set_maven_version(version):
+    """
+    Set every module's Maven version to *version* via the versions-maven-plugin,
+    without generating .versionsBackup files (the caller is responsible for
+    setting it back afterward, e.g. in a try/finally, to keep the working tree
+    clean once the build finishes).
+    """
+    mvn_cmd = get_mvn_command()
+    subprocess.run(
+        [mvn_cmd, "versions:set", f"-DnewVersion={version}", "-DgenerateBackupPoms=false"],
+        check=True,
+        shell=is_win_or_bat(),
+    )
 
 
 def check_java_version():
@@ -624,11 +672,31 @@ def main():
     if "opencl" in args.backend:
         clone_opencl_headers()
 
-    mvn_build_result = build_tornadovm(args, backend_profiles)
+    # --sdk builds produce a shippable, identifiable artifact (SDK directory name,
+    # archive filename, tornado.release's `version=` field) — all derived from the
+    # same committed pom.xml <version>, which is one static string shared by every
+    # --jdk profile. Retarget it to this build's actual JDK for the duration of
+    # this build only, then always set it back so the working tree stays clean.
+    bumped_version = None
+    if args.sdk:
+        base_version = read_root_pom_version()
+        if base_version:
+            sdk_version = compute_sdk_version(base_version, args.jdk)
+            if sdk_version != base_version:
+                print(f"[INFO] --sdk build: setting Maven version to {sdk_version} for this build only (jdk={args.jdk})")
+                set_maven_version(sdk_version)
+                bumped_version = base_version
 
-    post_installation_actions(
-        backend_profiles, mvn_build_result, args, graal_jars_status
-    )
+    try:
+        mvn_build_result = build_tornadovm(args, backend_profiles)
+
+        post_installation_actions(
+            backend_profiles, mvn_build_result, args, graal_jars_status
+        )
+    finally:
+        if bumped_version:
+            print(f"[INFO] Restoring Maven version to {bumped_version}")
+            set_maven_version(bumped_version)
 
 
 if __name__ == "__main__":
