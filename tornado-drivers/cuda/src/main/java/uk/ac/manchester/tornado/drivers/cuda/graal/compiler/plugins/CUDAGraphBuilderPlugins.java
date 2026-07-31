@@ -536,7 +536,10 @@ public class CUDAGraphBuilderPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver,
                                  ValueNode dstTile, ValueNode dstIndex, ValueNode srcArray, ValueNode srcIndex) {
                 receiver.get(true);
-                int headerBytes = TornadoCoreRuntime.getVMConfig().getArrayBaseOffset(elementKind);
+                // Panama native array data begins after PANAMA_OBJECT_HEADER_SIZE (16) bytes - not the JVM
+                // array-base offset that getVMConfig().getArrayBaseOffset returns (12 under compact object
+                // headers), which would read every source element 4 bytes early.
+                int headerBytes = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
                 b.add(new CUDACpAsyncCopyNode(dstTile, dstIndex, srcArray, srcIndex,
                         elementKind.getByteCount(), headerBytes));
                 return true;

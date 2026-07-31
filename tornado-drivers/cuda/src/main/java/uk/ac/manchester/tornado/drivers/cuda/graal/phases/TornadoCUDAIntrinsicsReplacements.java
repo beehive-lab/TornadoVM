@@ -88,7 +88,6 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalThreadIDFixedNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDABarrierNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAPrintf;
-import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 import uk.ac.manchester.tornado.runtime.jvmci.TornadoObjectConstant;
@@ -446,7 +445,10 @@ public class TornadoCUDAIntrinsicsReplacements extends BasePhase<TornadoHighTier
         ValueNode srcArray = args.get(3);
         ValueNode srcIndex = args.get(4);
         JavaKind elementKind = cpAsyncElementKind(srcArray);
-        int headerBytes = TornadoCoreRuntime.getVMConfig().getArrayBaseOffset(elementKind);
+        // Panama native array data begins after PANAMA_OBJECT_HEADER_SIZE (16) bytes - not the JVM array-base
+        // offset that getVMConfig().getArrayBaseOffset returns on the reflection path (12), which would read
+        // every source element 4 bytes early.
+        int headerBytes = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
         CUDACpAsyncCopyNode node = graph.add(new CUDACpAsyncCopyNode(dstTile, dstIndex, srcArray, srcIndex,
                 elementKind.getByteCount(), headerBytes));
         graph.replaceFixed(invoke, node);
