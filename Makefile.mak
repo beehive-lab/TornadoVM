@@ -4,6 +4,12 @@ all: build
 # nmake BACKENDS="<comma_separated_backend_list>"
 BACKEND = opencl
 
+# JDK used by the `sdk`, `unit-tests`, and `test-reflection` targets { jdk21, jdk25, jdk26, jdk27 }.
+# Default is `jdk21` to preserve historical bare `nmake sdk`/`nmake unit-tests` behavior.
+# nmake sdk JDK=<jdk21|jdk25|jdk26|jdk27> BACKEND=<comma_separated_backend_list>
+# Prefer the sdk-jdkNN targets below over `nmake sdk JDK=...` when building a specific JDK's SDK.
+JDK = jdk21
+
 build jdk21:
 	python bin\compile --jdk jdk21 --backend $(BACKEND)
 
@@ -51,14 +57,26 @@ cuda:
 	python bin\compile --jdk jdk21 --backend cuda
 
 sdk:
+	python bin\compile --jdk $(JDK) --sdk --backend $(BACKEND)
+
+sdk-jdk21:
 	python bin\compile --jdk jdk21 --sdk --backend $(BACKEND)
+
+sdk-jdk25:
+	python bin\compile --jdk jdk25 --sdk --backend $(BACKEND)
+
+sdk-jdk26:
+	python bin\compile --jdk jdk26 --sdk --backend $(BACKEND)
+
+sdk-jdk27:
+	python bin\compile --jdk jdk27 --sdk --backend $(BACKEND)
 
 checkstyle:
 	.\mvnw checkstyle:check
 
 # Pure-JVM (no-GPU) unit tests for the reflection JVMCI layer. Every JDK profile skips surefire,
-# so force it on here. Override the profile with JDK=jdk25|jdk26|jdk27 to run under another JDK.
-JDK = jdk21
+# so force it on here. Override the profile with JDK=jdk25|jdk26|jdk27 to run under another JDK
+# (JDK is declared once, near BACKEND, at the top of this file).
 unit-tests:
 	.\mvnw -P$(JDK) -pl tornado-runtime test -DskipTests=false
 
