@@ -1,9 +1,9 @@
 name: 3 - Build Release SDKs [auto]
 
 # Triggered via workflow_dispatch only:
-#   - dispatched programmatically by 2-finalize-release-jdkXX.yml right after it
-#     pushes each v<version>-jdkXX tag and creates the (draft) Release — this is
-#     an explicit `gh workflow run` call, not an implicit push/release event,
+#   - dispatched programmatically by 2-finalize-release.yml right after it
+#     pushes the v<version> tag and creates the (draft) Release — this is an
+#     explicit `gh workflow run` call, not an implicit push/release event,
 #     because GITHUB_TOKEN-authored pushes/API calls don't trigger downstream
 #     event-based workflow runs (push, release, etc). workflow_run is exempt
 #     from that restriction but waits for the *entire* finalize workflow
@@ -11,33 +11,18 @@ name: 3 - Build Release SDKs [auto]
 #     explicitly instead to fire as soon as the tag/Release exist.
 #   - or manually, for smoke tests / recovery.
 #
-# Either way, the workflow only proceeds once BOTH the v<version>-jdk21 and
-# v<version>-jdk25 (draft) Releases exist. The dispatch from whichever finalize
-# completes first exits cleanly in preflight; the second dispatch actually
-# builds and uploads.
-#
-# Both jdk21 and jdk25 finalize dispatch this workflow independently, so a
-# given version is always dispatched twice. concurrency.group below is scoped
-# per-version, so with cancel-in-progress: false, GitHub itself strictly
-# serializes the two: the second dispatch's Preflight job doesn't even start
-# until the first one's entire run (all platform jobs, cleanup, everything)
-# has finished — no window where both could be mid-build at once, regardless
-# of runner queueing/scheduling delays. Once the second one finally gets its
-# turn, Preflight's "already built" marker check (a build-lock-<version_tag>
-# / draft-test-built-<version_tag> git tag, created only once a run fully
-# succeeds — never on failure, so a genuine retry isn't blocked) tells it the
-# first dispatch already handled this version, and it exits cleanly instead
-# of rebuilding.
-#
-# After all archives are uploaded, the two draft Releases are un-drafted and
-# publish-archives-to-sdkman-jdkXX.yml is dispatched explicitly (same reasoning
-# as above — un-drafting via GITHUB_TOKEN won't reliably fire `release: published`).
+# One release, one tag, one dispatch: unlike the old per-JDK-branch pipeline
+# (which had two independent finalize workflows racing to dispatch this file
+# for the same version, needing a marker-tag dedup dance), there is now only
+# one finalize workflow and one caller, so Preflight only needs to check that
+# the single v<version> draft Release exists — no dual-gate, no "first exits,
+# second proceeds" logic.
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Base release version without v prefix or -jdkXX suffix (e.g. 4.0.1).'
+        description: 'Release version without the v prefix (e.g. 4.0.1).'
         required: true
         type: string
         default: '4.0.1'
@@ -57,7 +42,7 @@ on:
         type: boolean
         default: true
       upload_to_release:
-        description: 'Upload built archives to the v<version>-jdk21 / v<version>-jdk25 GitHub Releases (must already exist).'
+        description: 'Upload built archives to the v<version> GitHub Release (must already exist).'
         required: false
         type: boolean
         default: true
@@ -68,17 +53,16 @@ on:
         default: false
 
 concurrency:
-  # Scoped per-version (not a single global group) so unrelated versions
-  # don't needlessly queue behind each other, but the two dispatches for the
-  # *same* version (one from jdk21 finalize, one from jdk25 finalize) are
-  # strictly serialized instead of racing.
+  # Scoped per-version so unrelated versions don't needlessly queue behind
+  # each other; guards against an accidental manual double-dispatch of the
+  # same version racing itself.
   group: build-release-sdks-${{ github.event.inputs.version }}
   cancel-in-progress: false
 
 jobs:
   preflight:
     if: github.repository == 'beehive-lab/TornadoVM'
-    name: Preflight (derive version, gate on Releases)
+    name: Preflight (derive version, gate on Release)
     runs-on: [self-hosted, Linux, x64]
     permissions:
       # Draft releases are only visible to tokens with push (write) access —
@@ -123,7 +107,7 @@ jobs:
           echo "draft_release_test=${{ inputs.draft_release_test }}" >> "$GITHUB_OUTPUT"
           echo "Derived: version=$VERSION include_macos=$INCLUDE_MACOS include_linux=$INCLUDE_LINUX include_windows=$INCLUDE_WIN upload=$UPLOAD"
 
-      - name: Gate on both Releases existing / already built
+      - name: Gate on Release existing / already built
         id: gate
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -144,19 +128,10 @@ jobs:
           fi
           echo "marker_tag=$MARKER_TAG" >> "$GITHUB_OUTPUT"
 
-          # Both jdk21 and jdk25 finalize dispatch this workflow
-          # independently, so a given version is always dispatched twice.
-          # concurrency.group (top of file) is scoped per-version, so the
-          # second dispatch's Preflight doesn't even start until the first
-          # dispatch's entire run has finished — no window where both could
-          # be mid-build simultaneously. But that alone isn't enough: once
-          # the second dispatch's Preflight finally runs, it would otherwise
-          # pass the same checks the first one did (both Releases now exist
-          # for real runs; nothing to check at all for draft runs) and
-          # rebuild everything from scratch. MARKER_TAG is created (see the
-          # mark-version-built job below) only once a run fully succeeds, so
-          # checking for it here catches that case regardless of how long
-          # the second dispatch was queued.
+          # A retry (manual re-dispatch) should not rebuild a version that
+          # already succeeded. MARKER_TAG is created (see mark-version-built
+          # below) only once a run fully succeeds, so checking for it here
+          # catches that case.
           if [ -n "$MARKER_TAG" ] && git ls-remote --exit-code --tags origin "refs/tags/$MARKER_TAG" >/dev/null 2>&1; then
             echo "$MARKER_TAG already exists — this version was already built successfully. Skipping."
             PROCEED="false"
@@ -164,32 +139,30 @@ jobs:
             PROCEED="true"
             if [ "${{ steps.derive.outputs.upload_to_release }}" = "true" ]; then
               # `gh release view`/the "get release by tag" API never returns
-              # draft releases, and both jdk21/jdk25 Releases are created as
-              # drafts by finalize — so list all releases (which does
-              # include drafts) instead of looking each one up by tag.
+              # draft releases, and the Release is created as a draft by
+              # finalize — so list all releases (which does include drafts)
+              # instead of looking it up by tag.
               existing_tags=$(gh api "repos/${{ github.repository }}/releases" --paginate -q '.[].tag_name')
-              for jdk in jdk21 jdk25; do
-                tag="${{ steps.derive.outputs.version_tag }}-$jdk"
-                if grep -qx "$tag" <<< "$existing_tags"; then
-                  echo "Release $tag exists."
-                else
-                  echo "Release $tag does not exist yet."
-                  PROCEED="false"
-                fi
-              done
+              tag="${{ steps.derive.outputs.version_tag }}"
+              if grep -qx "$tag" <<< "$existing_tags"; then
+                echo "Release $tag exists."
+              else
+                echo "Release $tag does not exist yet."
+                PROCEED="false"
+              fi
             fi
           fi
           echo "proceed=$PROCEED" >> "$GITHUB_OUTPUT"
           if [ "$PROCEED" = "false" ]; then
             echo ""
-            echo "Skipping build: either already built (see above), or both v${{ steps.derive.outputs.version }}-jdk21 and v${{ steps.derive.outputs.version }}-jdk25 Releases must exist first."
+            echo "Skipping build: either already built (see above), or v${{ steps.derive.outputs.version }} Release must exist first."
             echo "The next finalize completion will trigger another run."
           fi
 
   build-macos:
     needs: preflight
     if: needs.preflight.outputs.proceed == 'true' && needs.preflight.outputs.include_macos == 'true'
-    name: macOS arm64 (jdk21+jdk25 × opencl+metal)
+    name: macOS arm64 (jdk21+jdk25+jdk26+jdk27 × opencl+metal)
     runs-on: [self-hosted, macOS, arm64]
     timeout-minutes: 120
     permissions:
@@ -199,6 +172,9 @@ jobs:
       VERSION_TAG: ${{ needs.preflight.outputs.version_tag }}
       JDK21_HOME: /opt/jenkins/jdks/jdk-21.0.11+10/Contents/Home
       JDK25_HOME: /opt/jenkins/jdks/jdk-25.0.2/Contents/Home
+      # TODO: placeholders — provision real JDK 26/27 installs on this runner and update these paths.
+      JDK26_HOME: /opt/jenkins/jdks/jdk-26.x.x/Contents/Home
+      JDK27_HOME: /opt/jenkins/jdks/jdk-27.x.x/Contents/Home
       RELEASE_ARCHIVES_DIR: /opt/release-archives
       PLATFORM_DIR: macos-arm64
       VENV_PATH: /Users/beehiveUser/venv-build-sdks
@@ -239,12 +215,14 @@ jobs:
             --version "$VERSION_TAG" \
             --output-dir "$RELEASE_ARCHIVES_DIR" \
             --jdk21-home "$JDK21_HOME" \
-            --jdk25-home "$JDK25_HOME"
+            --jdk25-home "$JDK25_HOME" \
+            --jdk26-home "$JDK26_HOME" \
+            --jdk27-home "$JDK27_HOME"
 
       - name: List produced archives
         run: ls -lh "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR/"
 
-      - name: Upload archives to matching Releases
+      - name: Upload archives to Release
         if: needs.preflight.outputs.upload_to_release == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -254,16 +232,8 @@ jobs:
           src_dir="$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR"
           while IFS= read -r archive; do
             fname=$(basename "$archive")
-            case "$fname" in
-              *jdk21*) tag="$VERSION_TAG-jdk21" ;;
-              *jdk25*) tag="$VERSION_TAG-jdk25" ;;
-              *)
-                echo "::warning::Skipping $fname — filename does not contain jdk21 or jdk25"
-                continue
-                ;;
-            esac
-            echo "→ $fname  →  release $tag"
-            gh release upload "$tag" "$archive" --clobber --repo "${{ github.repository }}"
+            echo "→ $fname  →  release $VERSION_TAG"
+            gh release upload "$VERSION_TAG" "$archive" --clobber --repo "${{ github.repository }}"
             uploaded=$((uploaded + 1))
           done < <(find "$src_dir" -type f \( -name '*.zip' -o -name '*.tar.gz' \) | sort)
           echo "Uploaded $uploaded archive(s) from macOS arm64."
@@ -277,7 +247,7 @@ jobs:
   build-linux:
     needs: preflight
     if: needs.preflight.outputs.proceed == 'true' && needs.preflight.outputs.include_linux == 'true'
-    name: Linux x64 (jdk21+jdk25 × opencl+cuda+full)
+    name: Linux x64 (jdk21+jdk25+jdk26+jdk27 × opencl+cuda+full)
     runs-on: [self-hosted, Linux, x64, sdk-builder]
     timeout-minutes: 240
     permissions:
@@ -287,6 +257,9 @@ jobs:
       VERSION_TAG: ${{ needs.preflight.outputs.version_tag }}
       JDK21_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
       JDK25_HOME: /opt/jenkins/jdks/jdk-25.0.2
+      # TODO: placeholders — provision real JDK 26/27 installs on this runner and update these paths.
+      JDK26_HOME: /opt/jenkins/jdks/jdk-26.x.x
+      JDK27_HOME: /opt/jenkins/jdks/jdk-27.x.x
       RELEASE_ARCHIVES_DIR: /opt/release-archives
       PLATFORM_DIR: linux-amd64
       VENV_PATH: ${{ github.workspace }}/venv-build-sdks
@@ -323,12 +296,14 @@ jobs:
             --version "$VERSION_TAG" \
             --output-dir "$RELEASE_ARCHIVES_DIR" \
             --jdk21-home "$JDK21_HOME" \
-            --jdk25-home "$JDK25_HOME"
+            --jdk25-home "$JDK25_HOME" \
+            --jdk26-home "$JDK26_HOME" \
+            --jdk27-home "$JDK27_HOME"
 
       - name: List produced archives
         run: ls -lh "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR/"
 
-      - name: Upload archives to matching Releases
+      - name: Upload archives to Release
         if: needs.preflight.outputs.upload_to_release == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -338,16 +313,8 @@ jobs:
           src_dir="$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR"
           while IFS= read -r archive; do
             fname=$(basename "$archive")
-            case "$fname" in
-              *jdk21*) tag="$VERSION_TAG-jdk21" ;;
-              *jdk25*) tag="$VERSION_TAG-jdk25" ;;
-              *)
-                echo "::warning::Skipping $fname — filename does not contain jdk21 or jdk25"
-                continue
-                ;;
-            esac
-            echo "→ $fname  →  release $tag"
-            gh release upload "$tag" "$archive" --clobber --repo "${{ github.repository }}"
+            echo "→ $fname  →  release $VERSION_TAG"
+            gh release upload "$VERSION_TAG" "$archive" --clobber --repo "${{ github.repository }}"
             uploaded=$((uploaded + 1))
           done < <(find "$src_dir" -type f \( -name '*.zip' -o -name '*.tar.gz' \) | sort)
           echo "Uploaded $uploaded archive(s) from Linux x64."
@@ -361,7 +328,7 @@ jobs:
   build-windows:
     needs: preflight
     if: needs.preflight.outputs.proceed == 'true' && needs.preflight.outputs.include_windows == 'true'
-    name: Windows x64 (jdk21+jdk25 × opencl+cuda)
+    name: Windows x64 (jdk21+jdk25+jdk26+jdk27 × opencl+cuda)
     runs-on: [self-hosted, Windows, x64]
     timeout-minutes: 240
     permissions:
@@ -371,6 +338,9 @@ jobs:
       VERSION_TAG: ${{ needs.preflight.outputs.version_tag }}
       JDK21_HOME: 'C:\jdks\jdk21'
       JDK25_HOME: 'C:\jdks\jdk25'
+      # TODO: placeholders — provision real JDK 26/27 installs on this runner and update these paths.
+      JDK26_HOME: 'C:\jdks\jdk26'
+      JDK27_HOME: 'C:\jdks\jdk27'
       RELEASE_ARCHIVES_DIR: 'C:\release-archives'
       PLATFORM_DIR: windows-amd64
       VENV_PATH: '${{ github.workspace }}\venv-build-sdks'
@@ -413,7 +383,7 @@ jobs:
           & "$env:VENV_PATH\Scripts\pip.exe" install requests tqdm urllib3 wget packaging streamlit psutil pyinstaller
           # Put the venv's Scripts\ first on PATH so `python`, `pip3`, and
           # `pyinstaller` all resolve here for every later step (including the
-          # nested `python bin\compile` invocations inside each worktree) —
+          # nested `python bin\compile` invocations inside the worktree) —
           # matching the Linux/macOS jobs, which already do this. Without it,
           # bin/compile's dependency self-heal (install_python_modules.py) and
           # the PyInstaller .exe wrapper build fall back to whatever bare
@@ -430,13 +400,15 @@ jobs:
             --version %VERSION_TAG% ^
             --output-dir "%RELEASE_ARCHIVES_DIR%" ^
             --jdk21-home "%JDK21_HOME%" ^
-            --jdk25-home "%JDK25_HOME%"
+            --jdk25-home "%JDK25_HOME%" ^
+            --jdk26-home "%JDK26_HOME%" ^
+            --jdk27-home "%JDK27_HOME%"
 
       - name: List produced archives
         shell: cmd
         run: dir "%RELEASE_ARCHIVES_DIR%\%VERSION_TAG%\%PLATFORM_DIR%"
 
-      - name: Upload archives to matching Releases
+      - name: Upload archives to Release
         if: needs.preflight.outputs.upload_to_release == 'true'
         shell: powershell
         env:
@@ -445,18 +417,9 @@ jobs:
           $srcDir = Join-Path $env:RELEASE_ARCHIVES_DIR (Join-Path $env:VERSION_TAG $env:PLATFORM_DIR)
           $uploaded = 0
           Get-ChildItem -Path $srcDir -Include *.zip,*.tar.gz -File -Recurse | Sort-Object Name | ForEach-Object {
-            $fname = $_.Name
-            if ($fname -match 'jdk21') {
-              $tag = "$env:VERSION_TAG-jdk21"
-            } elseif ($fname -match 'jdk25') {
-              $tag = "$env:VERSION_TAG-jdk25"
-            } else {
-              Write-Host "::warning::Skipping $fname - filename does not contain jdk21 or jdk25"
-              return
-            }
-            Write-Host "-> $fname  ->  release $tag"
-            gh release upload $tag $_.FullName --clobber --repo "${{ github.repository }}"
-            if ($LASTEXITCODE -ne 0) { throw "gh release upload failed for $fname" }
+            Write-Host "-> $($_.Name)  ->  release $env:VERSION_TAG"
+            gh release upload $env:VERSION_TAG $_.FullName --clobber --repo "${{ github.repository }}"
+            if ($LASTEXITCODE -ne 0) { throw "gh release upload failed for $($_.Name)" }
             $uploaded++
           }
           Write-Host "Uploaded $uploaded archive(s) from Windows x64."
@@ -472,7 +435,7 @@ jobs:
           }
 
   publish-releases:
-    name: Un-draft Releases and dispatch SDKMAN publish
+    name: Un-draft Release and dispatch SDKMAN publish
     needs: [preflight, build-macos, build-linux, build-windows]
     if: |
       always() &&
@@ -487,17 +450,15 @@ jobs:
       actions: write
     timeout-minutes: 10
     steps:
-      - name: Un-draft both Releases
+      - name: Un-draft the Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          for jdk in jdk21 jdk25; do
-            tag="${{ needs.preflight.outputs.version_tag }}-$jdk"
-            echo "Publishing $tag (un-drafting)..."
-            gh release edit "$tag" --draft=false --repo "${{ github.repository }}"
-          done
-          echo "Both Releases are now public."
+          tag="${{ needs.preflight.outputs.version_tag }}"
+          echo "Publishing $tag (un-drafting)..."
+          gh release edit "$tag" --draft=false --repo "${{ github.repository }}"
+          echo "Release is now public."
 
       - name: Summary
         run: |
@@ -506,10 +467,9 @@ jobs:
             echo ""
             echo "| Release | Status |"
             echo "|---------|--------|"
-            echo "| [v${{ needs.preflight.outputs.version }}-jdk21](https://github.com/${{ github.repository }}/releases/tag/v${{ needs.preflight.outputs.version }}-jdk21) | Published |"
-            echo "| [v${{ needs.preflight.outputs.version }}-jdk25](https://github.com/${{ github.repository }}/releases/tag/v${{ needs.preflight.outputs.version }}-jdk25) | Published |"
+            echo "| [${{ needs.preflight.outputs.version_tag }}](https://github.com/${{ github.repository }}/releases/tag/${{ needs.preflight.outputs.version_tag }}) | Published |"
             echo ""
-            echo "Downstream: \`deploy-maven-central-jdkXX\` dispatched explicitly by mark-version-built below; \`publish-archives-to-sdkman-jdkXX\` follows once both jdk21/jdk25 Maven Central deploys succeed."
+            echo "Downstream: \`deploy-maven-central.yml\` dispatched explicitly by mark-version-built below (one run, jdk21+jdk25+jdk26+jdk27 matrix); \`publish-archives-to-sdkman.yml\` follows once that deploy succeeds."
           } >> "$GITHUB_STEP_SUMMARY"
 
   mark-version-built:
@@ -562,16 +522,14 @@ jobs:
         run: |
           set -euo pipefail
           # Runs for both real and draft_release_test builds (this job's own
-          # condition already covers both) — deploy-maven-central-jdkXX.yml
-          # itself skips the actual `mvn deploy` push when draft_release_test
-          # is true, so a test run still exercises checkout/setup/GPG import
-          # for real without publishing anything.
-          for jdk in jdk21 jdk25; do
-            tag="${{ needs.preflight.outputs.version_tag }}-$jdk"
-            echo "Dispatching deploy-maven-central-$jdk.yml for $tag (draft_release_test=${{ needs.preflight.outputs.draft_release_test }})..."
-            gh workflow run "deploy-maven-central-$jdk.yml" \
-              --repo "${{ github.repository }}" \
-              -f tag="$tag" \
-              -f draft_release_test="${{ needs.preflight.outputs.draft_release_test }}"
-          done
-          echo "Dispatched Maven Central deploy for both jdk21 and jdk25."
+          # condition already covers both) — deploy-maven-central.yml itself
+          # skips the actual `mvn deploy` push when draft_release_test is
+          # true, so a test run still exercises checkout/setup/GPG import for
+          # real without publishing anything.
+          tag="${{ needs.preflight.outputs.version_tag }}"
+          echo "Dispatching deploy-maven-central.yml for $tag (draft_release_test=${{ needs.preflight.outputs.draft_release_test }})..."
+          gh workflow run deploy-maven-central.yml \
+            --repo "${{ github.repository }}" \
+            -f tag="$tag" \
+            -f draft_release_test="${{ needs.preflight.outputs.draft_release_test }}"
+          echo "Dispatched Maven Central deploy (single run, jdk21+jdk25+jdk26+jdk27 matrix)."

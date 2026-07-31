@@ -1,4 +1,10 @@
-name: Build & Test [JDK 21]
+name: Build & Test
+
+# Unified across JDK 21/25/26/27 and OpenCL/CUDA/Metal — one branch, one Makefile,
+# only the --jdk/--backend arguments change (bin/compile --jdk <jdk> --backend <backend>,
+# via `make <jdk> BACKEND=<backend>`). Replaces the old build-test-jdk21.yml /
+# build-test-jdk25.yml pair, which each lived on a permanently-diverged branch
+# (develop vs jdk25) and hardcoded a single --jdk value.
 
 on:
   pull_request:
@@ -18,14 +24,16 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4            # Updated from v3
+        uses: actions/checkout@v4
 
       - name: Run Checkstyle
         run: |
           export PATH=$JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH
           ./mvnw checkstyle:check
 
-  # OpenCL first
+  # OpenCL first (all 4 JDKs). CUDA (below) needs this whole job, so it never starts
+  # until every OpenCL leg is done — preserves the "serialize OpenCL before CUDA,
+  # they share one GPU runner" rule from the old per-JDK files.
   build-opencl:
     if: |
       github.repository == 'beehive-lab/TornadoVM' &&
@@ -33,17 +41,45 @@ jobs:
     runs-on: [self-hosted, Linux, x64]
     needs: code-quality
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        jdk: [jdk21, jdk25, jdk26, jdk27]
     env:
-      JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
       CMAKE_ROOT: /opt/jenkins/cmake-3.25.2-linux-x86_64
       MAVEN_HOME: /opt/maven
-      GRAAL_JARS: /opt/graalJars
       TORNADO_ROOT: ${{ github.workspace }}
       TORNADOVM_HOME: ${{ github.workspace }}/bin/sdk
-      VENV_PATH: ${{ github.workspace }}/venv-opencl
+      VENV_PATH: ${{ github.workspace }}/venv-opencl-${{ matrix.jdk }}
       JAVAFX_SDK: /opt/jenkins/javafx-sdk-21.0.11
     steps:
       - uses: actions/checkout@v4
+
+      - name: Resolve JDK environment
+        run: |
+          case "${{ matrix.jdk }}" in
+            jdk21)
+              echo "JAVA_HOME=/opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3" >> "$GITHUB_ENV"
+              echo "GRAAL_JARS=/opt/graalJars" >> "$GITHUB_ENV"
+              ;;
+            jdk25)
+              echo "JAVA_HOME=/opt/jenkins/jdks/jdk-25.0.2" >> "$GITHUB_ENV"
+              echo "GRAAL_JARS=/opt/graal25Jars" >> "$GITHUB_ENV"
+              ;;
+            jdk26)
+              # TODO: placeholder — provision a real JDK 26 install + GraalVM-jars cache
+              # on the self-hosted Linux runner(s) and update this path.
+              echo "JAVA_HOME=/opt/jenkins/jdks/jdk-26.x.x" >> "$GITHUB_ENV"
+              echo "GRAAL_JARS=/opt/graal26Jars" >> "$GITHUB_ENV"
+              ;;
+            jdk27)
+              # TODO: placeholder — provision a real JDK 27 install + GraalVM-jars cache
+              # on the self-hosted Linux runner(s) and update this path.
+              echo "JAVA_HOME=/opt/jenkins/jdks/jdk-27.x.x" >> "$GITHUB_ENV"
+              echo "GRAAL_JARS=/opt/graal27Jars" >> "$GITHUB_ENV"
+              ;;
+          esac
+
       - name: Setup environment
         run: |
           echo "$JAVA_HOME/bin" >> $GITHUB_PATH
@@ -54,13 +90,13 @@ jobs:
         run: |
           python3 -m venv $VENV_PATH
           source $VENV_PATH/bin/activate
-          pip install --upgrade pip tqdm psutil   # Combined
+          pip install --upgrade pip tqdm psutil
 
       - name: Build TornadoVM (opencl)
         run: |
           mkdir -p graalJars && cp $GRAAL_JARS/* graalJars/
           source $VENV_PATH/bin/activate
-          make jdk21 BACKEND=opencl
+          make ${{ matrix.jdk }} BACKEND=opencl
 
       - name: Run opencl fast unit tests
         run: |
@@ -85,10 +121,9 @@ jobs:
   #
   # NOTE: The CUDA backend requires an NVIDIA GPU plus the CUDA Toolkit (NVRTC + libcuda) at runtime.
   # Standard GitHub-hosted runners have NO NVIDIA GPU/CUDA, so the kernel-execution tests below can
-  # only run on a self-hosted CUDA runner (the same [self-hosted, Linux, x64] runner that the OpenCL job
-  # uses). If this workflow is ever ported to GitHub-hosted runners, this job must be reduced to a
-  # build-only job (e.g. `./mvnw -Pjdk21,cuda-backend -pl tornado-drivers/cuda,tornado-drivers/cuda-jni -am compile`)
-  # and the "Run cuda fast unit tests" step removed, since GPU execution would fail there.
+  # only run on a self-hosted CUDA runner (the same [self-hosted, Linux, x64] runner that the OpenCL
+  # job uses). If this workflow is ever ported to GitHub-hosted runners, this job must be reduced to a
+  # build-only job and the "Run cuda fast unit tests" step removed, since GPU execution would fail there.
   #
   # IMPORTANT: build the CUDA backend ON ITS OWN (BACKEND=cuda, not cuda,opencl). With both backends
   # installed the unit tests can silently run on the OpenCL device and report false positives. A
@@ -98,18 +133,46 @@ jobs:
       github.repository == 'beehive-lab/TornadoVM' &&
       !(github.event_name == 'push' && contains(github.event.head_commit.message, 'from beehive-lab/release/'))
     runs-on: [self-hosted, Linux, x64]
-    needs: build-opencl                      # Serialize after OpenCL (shares the NVIDIA GPU runner)
+    needs: build-opencl                      # Serialize after ALL OpenCL legs (shares the NVIDIA GPU runner)
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        jdk: [jdk21, jdk25, jdk26, jdk27]
     env:
-      JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
       CMAKE_ROOT: /opt/jenkins/cmake-3.25.2-linux-x86_64
       MAVEN_HOME: /opt/maven
-      GRAAL_JARS: /opt/graalJars
       TORNADO_ROOT: ${{ github.workspace }}
       TORNADOVM_HOME: ${{ github.workspace }}/bin/sdk
-      VENV_PATH: ${{ github.workspace }}/venv-cuda
+      VENV_PATH: ${{ github.workspace }}/venv-cuda-${{ matrix.jdk }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Resolve JDK environment
+        run: |
+          case "${{ matrix.jdk }}" in
+            jdk21)
+              echo "JAVA_HOME=/opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3" >> "$GITHUB_ENV"
+              echo "GRAAL_JARS=/opt/graalJars" >> "$GITHUB_ENV"
+              ;;
+            jdk25)
+              echo "JAVA_HOME=/opt/jenkins/jdks/jdk-25.0.2" >> "$GITHUB_ENV"
+              echo "GRAAL_JARS=/opt/graal25Jars" >> "$GITHUB_ENV"
+              ;;
+            jdk26)
+              # TODO: placeholder — provision a real JDK 26 install + GraalVM-jars cache
+              # on the self-hosted Linux runner(s) and update this path.
+              echo "JAVA_HOME=/opt/jenkins/jdks/jdk-26.x.x" >> "$GITHUB_ENV"
+              echo "GRAAL_JARS=/opt/graal26Jars" >> "$GITHUB_ENV"
+              ;;
+            jdk27)
+              # TODO: placeholder — provision a real JDK 27 install + GraalVM-jars cache
+              # on the self-hosted Linux runner(s) and update this path.
+              echo "JAVA_HOME=/opt/jenkins/jdks/jdk-27.x.x" >> "$GITHUB_ENV"
+              echo "GRAAL_JARS=/opt/graal27Jars" >> "$GITHUB_ENV"
+              ;;
+          esac
+
       - name: Setup environment
         run: |
           echo "$JAVA_HOME/bin" >> $GITHUB_PATH
@@ -126,7 +189,7 @@ jobs:
         run: |
           mkdir -p graalJars && cp $GRAAL_JARS/* graalJars/
           source $VENV_PATH/bin/activate
-          make jdk21 BACKEND=cuda
+          make ${{ matrix.jdk }} BACKEND=cuda
 
       - name: Run cuda fast unit tests
         run: |
@@ -143,17 +206,44 @@ jobs:
     runs-on: [self-hosted, macOS, arm64]
     needs: code-quality
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        jdk: [jdk21, jdk25, jdk26, jdk27]
     env:
-      JAVA_HOME: /opt/jenkins/jdks/graalvm-community-openjdk-21.0.1+12.1/Contents/Home
       TORNADO_ROOT: ${{ github.workspace }}
       TORNADOVM_HOME: ${{ github.workspace }}/bin/sdk
-      VENV_PATH: ${{ github.workspace }}/venv-opencl
+      VENV_PATH: ${{ github.workspace }}/venv-opencl-${{ matrix.jdk }}
       CMAKE_ROOT: /opt/homebrew/bin/cmake
       MAVEN_HOME: /opt/homebrew/bin/mvn
-      GRAAL_JARS: /opt/graalJars
       JAVAFX_SDK: /opt/jenkins/javafx-sdk-21.0.11
     steps:
       - uses: actions/checkout@v4
+
+      - name: Resolve JDK environment
+        run: |
+          case "${{ matrix.jdk }}" in
+            jdk21)
+              echo "JAVA_HOME=/opt/jenkins/jdks/graalvm-community-openjdk-21.0.1+12.1/Contents/Home" >> "$GITHUB_ENV"
+              echo "GRAAL_JARS=/opt/graalJars" >> "$GITHUB_ENV"
+              ;;
+            jdk25)
+              echo "JAVA_HOME=/opt/jenkins/jdks/jdk-25.0.2.jdk/Contents/Home" >> "$GITHUB_ENV"
+              echo "GRAAL_JARS=/opt/graal25Jars" >> "$GITHUB_ENV"
+              ;;
+            jdk26)
+              # TODO: placeholder — provision a real JDK 26 install + GraalVM-jars cache
+              # on the self-hosted macOS runner(s) and update this path.
+              echo "JAVA_HOME=/opt/jenkins/jdks/jdk-26.x.x.jdk/Contents/Home" >> "$GITHUB_ENV"
+              echo "GRAAL_JARS=/opt/graal26Jars" >> "$GITHUB_ENV"
+              ;;
+            jdk27)
+              # TODO: placeholder — provision a real JDK 27 install + GraalVM-jars cache
+              # on the self-hosted macOS runner(s) and update this path.
+              echo "JAVA_HOME=/opt/jenkins/jdks/jdk-27.x.x.jdk/Contents/Home" >> "$GITHUB_ENV"
+              echo "GRAAL_JARS=/opt/graal27Jars" >> "$GITHUB_ENV"
+              ;;
+          esac
 
       - name: Setup environment
         run: |
@@ -171,7 +261,7 @@ jobs:
         run: |
           mkdir -p graalJars && cp $GRAAL_JARS/* graalJars/
           source $VENV_PATH/bin/activate
-          make jdk21 BACKEND=opencl
+          make ${{ matrix.jdk }} BACKEND=opencl
 
       - name: Run opencl fast unit tests
         run: |
@@ -191,6 +281,7 @@ jobs:
           export TORNADO_RAY_TRACER_ROOT="$PWD"
           mvn clean install
           ./bin/tornadovm-ray-tracer regression
+
   build-macOs-metal:
     if: |
       github.repository == 'beehive-lab/TornadoVM' &&
@@ -198,17 +289,44 @@ jobs:
     runs-on: [self-hosted, macOS, arm64]
     needs: code-quality
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        jdk: [jdk21, jdk25, jdk26, jdk27]
     env:
-      JAVA_HOME: /opt/jenkins/jdks/graalvm-community-openjdk-21.0.1+12.1/Contents/Home
       TORNADO_ROOT: ${{ github.workspace }}
       TORNADOVM_HOME: ${{ github.workspace }}/bin/sdk
-      VENV_PATH: ${{ github.workspace }}/venv-opencl
+      VENV_PATH: ${{ github.workspace }}/venv-metal-${{ matrix.jdk }}
       CMAKE_ROOT: /opt/homebrew/bin/cmake
       MAVEN_HOME: /opt/homebrew/bin/mvn
-      GRAAL_JARS: /opt/graalJars
       JAVAFX_SDK: /opt/jenkins/javafx-sdk-21.0.11
     steps:
       - uses: actions/checkout@v4
+
+      - name: Resolve JDK environment
+        run: |
+          case "${{ matrix.jdk }}" in
+            jdk21)
+              echo "JAVA_HOME=/opt/jenkins/jdks/graalvm-community-openjdk-21.0.1+12.1/Contents/Home" >> "$GITHUB_ENV"
+              echo "GRAAL_JARS=/opt/graalJars" >> "$GITHUB_ENV"
+              ;;
+            jdk25)
+              echo "JAVA_HOME=/opt/jenkins/jdks/jdk-25.0.2.jdk/Contents/Home" >> "$GITHUB_ENV"
+              echo "GRAAL_JARS=/opt/graal25Jars" >> "$GITHUB_ENV"
+              ;;
+            jdk26)
+              # TODO: placeholder — provision a real JDK 26 install + GraalVM-jars cache
+              # on the self-hosted macOS runner(s) and update this path.
+              echo "JAVA_HOME=/opt/jenkins/jdks/jdk-26.x.x.jdk/Contents/Home" >> "$GITHUB_ENV"
+              echo "GRAAL_JARS=/opt/graal26Jars" >> "$GITHUB_ENV"
+              ;;
+            jdk27)
+              # TODO: placeholder — provision a real JDK 27 install + GraalVM-jars cache
+              # on the self-hosted macOS runner(s) and update this path.
+              echo "JAVA_HOME=/opt/jenkins/jdks/jdk-27.x.x.jdk/Contents/Home" >> "$GITHUB_ENV"
+              echo "GRAAL_JARS=/opt/graal27Jars" >> "$GITHUB_ENV"
+              ;;
+          esac
 
       - name: Setup environment
         run: |
@@ -226,7 +344,7 @@ jobs:
         run: |
           mkdir -p graalJars && cp $GRAAL_JARS/* graalJars/
           source $VENV_PATH/bin/activate
-          make jdk21 BACKEND=metal
+          make ${{ matrix.jdk }} BACKEND=metal
 
       - name: Run metal fast unit tests
         run: |

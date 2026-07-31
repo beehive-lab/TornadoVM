@@ -19,10 +19,12 @@ Via SDKMAN!:
    # e.g.:
    sdk install tornadovm 5.0.0-jdk21-cuda
    sdk install tornadovm 5.0.0-jdk25-metal
+   sdk install tornadovm 5.0.0-jdk26-opencl
+   sdk install tornadovm 5.0.0-jdk27-opencl
 
-To install a specific JDK and/or backend combination, pass the candidate version as ``<version>-<jdk-version>-<backend>`` (e.g. ``opencl``, ``cuda``, ``metal``, or ``full`` for all backends). Run ``sdk list tornadovm`` to see all available combinations.
+To install a specific JDK and/or backend combination, pass the candidate version as ``<version>-<jdk-version>-<backend>`` (``<jdk-version>`` is one of ``jdk21``, ``jdk25``, ``jdk26``, ``jdk27``; ``<backend>`` is ``opencl``, ``cuda``, ``metal``, or ``full`` for all backends). Run ``sdk list tornadovm`` to see all available combinations.
 
-The TornadoVM API is also published on Maven Central, so you can add it directly to an existing Java project without installing the SDK at all. The artifact version's suffix must match the JDK you run on: ``-jdk21`` for JDK 21, ``-jdk25`` for JDK 25.
+The TornadoVM API is also published on Maven Central, so you can add it directly to an existing Java project without installing the SDK at all. The artifact version's suffix must match the JDK you run on: ``-jdk21``, ``-jdk25``, ``-jdk26``, or ``-jdk27``.
 
 .. code-block:: xml
 

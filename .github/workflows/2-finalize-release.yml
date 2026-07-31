@@ -1,4 +1,4 @@
-name: 2.1 - Finalize Release JDK21 [auto]
+name: 2 - Finalize Release [auto]
 
 on:
   pull_request:
@@ -7,11 +7,11 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version to tag (e.g., 4.0.1-jdk21)'
+        description: 'Release version to tag (e.g., 4.0.1)'
         required: true
         type: string
       next_dev_version:
-        description: 'Next development version (e.g., 4.0.2-jdk21-dev)'
+        description: 'Next development version (e.g., 4.0.2-dev)'
         required: true
         type: string
       draft_release_test:
@@ -82,13 +82,13 @@ jobs:
               skip_next { skip_next=0; next }
               found && /^TornadoVM [0-9]+\.[0-9]+\.[0-9]+/ { exit }
               found { print }
-            ' "$CHANGELOG_FILE" > /tmp/release_notes_jdk21.rst
+            ' "$CHANGELOG_FILE" > /tmp/release_notes.rst
 
             # Convert RST to Markdown for GitHub Release rendering:
             #   `#NNN <url>`_                        -> #NNN  (GitHub auto-links issue refs)
             #   text + ===/---/~~~ underline pair    -> #/##/### text
             #   orphan underline lines               -> dropped
-            sed -E 's|`(#[0-9]+) <[^>]+>`_|\1|g' /tmp/release_notes_jdk21.rst | awk '
+            sed -E 's|`(#[0-9]+) <[^>]+>`_|\1|g' /tmp/release_notes.rst | awk '
               { lines[NR] = $0 }
               END {
                 i = 1
@@ -102,28 +102,31 @@ jobs:
                   else                                       { print cur; i += 1 }
                 }
               }
-            ' > /tmp/release_notes_jdk21.md
+            ' > /tmp/release_notes.md
 
             echo "Found changelog section for ${VERSION}"
           else
-            echo "See CHANGELOG.rst for details." > /tmp/release_notes_jdk21.md
+            echo "See CHANGELOG.rst for details." > /tmp/release_notes.md
           fi
 
           # Append "How to use TornadoVM SDK" appendix.
           # Heredoc is quoted so backticks, $(pwd), %PATH% etc. stay literal;
-          # @@VERSION@@ is substituted afterwards via sed.
-          cat >> /tmp/release_notes_jdk21.md <<'EOF'
+          # @@VERSION@@ is substituted afterwards via sed. Archives are
+          # JDK-qualified (see build-release-sdks.py); jdk21/opencl is shown
+          # as the example — swap jdk21 for jdk25/jdk26/jdk27, and opencl for
+          # cuda/metal/full, for the other combinations on this Release.
+          cat >> /tmp/release_notes.md <<'EOF'
 
           ## How to use TornadoVM SDK
 
-          To use the TornadoVM SDK, ensure that the environment variable `JAVA_HOME` points to a valid JDK 21 installation. After that, select the appropriate sdk distribution for your target architecture and the accelerator backends you intend to use.
+          Select the archive matching your JDK (21, 25, 26, or 27) and target accelerator backend (opencl, cuda, metal, or full) from this Release's assets. Ensure `JAVA_HOME` points to a matching JDK installation before running. The example below uses jdk21 + opencl for Linux/macOS/Windows — swap `jdk21-opencl` for e.g. `jdk26-cuda` or `jdk27-metal` as needed.
 
           ### Linux Systems
 
           ```bash
-          wget https://github.com/beehive-lab/TornadoVM/releases/download/v@@VERSION@@/tornadovm-@@VERSION@@-opencl-linux-amd64.zip
-          unzip tornadovm-@@VERSION@@-opencl-linux-amd64.zip
-          export TORNADOVM_HOME="$(pwd)/tornadovm-@@VERSION@@-opencl"
+          wget https://github.com/beehive-lab/TornadoVM/releases/download/v@@VERSION@@/tornadovm-@@VERSION@@-jdk21-opencl-linux-amd64.zip
+          unzip tornadovm-@@VERSION@@-jdk21-opencl-linux-amd64.zip
+          export TORNADOVM_HOME="$(pwd)/tornadovm-@@VERSION@@-jdk21-opencl"
           export PATH=$TORNADOVM_HOME/bin:$PATH
           tornado --devices
           tornado --version
@@ -132,9 +135,9 @@ jobs:
           ### macOS Systems
 
           ```bash
-          wget https://github.com/beehive-lab/TornadoVM/releases/download/v@@VERSION@@/tornadovm-@@VERSION@@-opencl-mac-aarch64.zip
-          unzip tornadovm-@@VERSION@@-opencl-mac-aarch64.zip
-          export TORNADOVM_HOME="$(pwd)/tornadovm-@@VERSION@@-opencl"
+          wget https://github.com/beehive-lab/TornadoVM/releases/download/v@@VERSION@@/tornadovm-@@VERSION@@-jdk21-opencl-mac-aarch64.zip
+          unzip tornadovm-@@VERSION@@-jdk21-opencl-mac-aarch64.zip
+          export TORNADOVM_HOME="$(pwd)/tornadovm-@@VERSION@@-jdk21-opencl"
           export PATH=$TORNADOVM_HOME/bin:$PATH
           tornado --devices
           tornado --version
@@ -143,16 +146,16 @@ jobs:
           ### Windows (10+) Systems
 
           ```bash
-          curl -L -o tornadovm-@@VERSION@@-opencl-windows-amd64.zip https://github.com/beehive-lab/TornadoVM/releases/download/v@@VERSION@@/tornadovm-@@VERSION@@-opencl-windows-amd64.zip
-          tar -xf tornadovm-@@VERSION@@-opencl-windows-amd64.zip
-          set TORNADOVM_HOME=%cd%\tornadovm-@@VERSION@@-opencl
+          curl -L -o tornadovm-@@VERSION@@-jdk21-opencl-windows-amd64.zip https://github.com/beehive-lab/TornadoVM/releases/download/v@@VERSION@@/tornadovm-@@VERSION@@-jdk21-opencl-windows-amd64.zip
+          tar -xf tornadovm-@@VERSION@@-jdk21-opencl-windows-amd64.zip
+          set TORNADOVM_HOME=%cd%\tornadovm-@@VERSION@@-jdk21-opencl
           set PATH=%TORNADOVM_HOME%\bin;%PATH%
           tornado --devices
           tornado --version
           ```
           EOF
 
-          sed -i "s|@@VERSION@@|${VERSION}|g" /tmp/release_notes_jdk21.md
+          sed -i "s|@@VERSION@@|${VERSION}|g" /tmp/release_notes.md
 
       - name: Create GitHub Release
         if: ${{ inputs.draft_release_test != true }}
@@ -164,7 +167,7 @@ jobs:
 
             let releaseNotes;
             try {
-              releaseNotes = fs.readFileSync('/tmp/release_notes_jdk21.md', 'utf8').trim();
+              releaseNotes = fs.readFileSync('/tmp/release_notes.md', 'utf8').trim();
               if (!releaseNotes) {
                 releaseNotes = `Release ${version}\n\nSee CHANGELOG.rst for details.`;
               }
@@ -189,7 +192,7 @@ jobs:
         run: |
           echo "DRAFT RELEASE (TEST): would create draft GitHub Release v${{ steps.get_version.outputs.version }} here (skipped)."
           echo "Generated release notes (not published):"
-          cat /tmp/release_notes_jdk21.md
+          cat /tmp/release_notes.md
 
       - name: Dispatch Build Release SDKs
         env:
@@ -197,12 +200,11 @@ jobs:
         run: |
           set -euo pipefail
           VERSION="${{ steps.get_version.outputs.version }}"
-          BASE_VERSION="${VERSION%-jdk21}"
           DRY_RUN="${{ inputs.draft_release_test == true }}"
-          echo "Dispatching build-release-sdks.yml for version=$BASE_VERSION (draft_release_test=$DRY_RUN)..."
+          echo "Dispatching build-release-sdks.yml for version=$VERSION (draft_release_test=$DRY_RUN)..."
           gh workflow run build-release-sdks.yml \
             --repo "${{ github.repository }}" \
-            -f version="$BASE_VERSION" \
+            -f version="$VERSION" \
             -f draft_release_test="$DRY_RUN"
 
   update-develop:
@@ -246,10 +248,8 @@ jobs:
             echo "next_version=${{ inputs.next_dev_version }}" >> $GITHUB_OUTPUT
           else
             VERSION="${{ needs.create-release-tag.outputs.version }}"
-            # Strip -jdk21 suffix, increment patch, re-add suffix + -dev
-            BASE_VERSION="${VERSION%-jdk21}"
-            IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE_VERSION"
-            echo "next_version=${MAJOR}.${MINOR}.$((PATCH + 1))-jdk21-dev" >> $GITHUB_OUTPUT
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+            echo "next_version=${MAJOR}.${MINOR}.$((PATCH + 1))-dev" >> $GITHUB_OUTPUT
           fi
 
       - name: Bump to next dev version
@@ -295,7 +295,8 @@ jobs:
             echo "| GitHub Release | ✅ Created |" >> $GITHUB_STEP_SUMMARY
             echo "| Develop bumped | ✅ ${{ steps.next_version.outputs.next_version }} |" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### Remaining manual steps:" >> $GITHUB_STEP_SUMMARY
-            echo "1. Run **deploy-maven-central** workflow" >> $GITHUB_STEP_SUMMARY
-            echo "2. Announce release" >> $GITHUB_STEP_SUMMARY
+            echo "### Automatic next steps:" >> $GITHUB_STEP_SUMMARY
+            echo "1. build-release-sdks.yml builds jdk21+jdk25+jdk26+jdk27 SDKs and uploads them to this Release" >> $GITHUB_STEP_SUMMARY
+            echo "2. deploy-maven-central.yml deploys tornado-api/tornado-runtime/tornado-matrices (one deploy per JDK)" >> $GITHUB_STEP_SUMMARY
+            echo "3. publish-archives-to-sdkman.yml publishes every SDK variant to SDKMAN" >> $GITHUB_STEP_SUMMARY
           fi
