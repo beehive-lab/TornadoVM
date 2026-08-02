@@ -216,6 +216,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.functional.TestLambdas"),
     TestEntry("uk.ac.manchester.tornado.unittests.flatmap.TestFlatMap"),
     TestEntry("uk.ac.manchester.tornado.unittests.logic.TestLogic"),
+    TestEntry("uk.ac.manchester.tornado.unittests.logic.TestEnumInKernel"),
     TestEntry("uk.ac.manchester.tornado.unittests.fields.TestFields"),
     TestEntry("uk.ac.manchester.tornado.unittests.fields.TestInheritedFields"),
     TestEntry("uk.ac.manchester.tornado.unittests.profiler.TestProfiler"),
