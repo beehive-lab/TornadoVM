@@ -181,6 +181,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestWorkEfficientScan"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestWarpShuffleScan"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestHistogramHalfFloat"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionOptimizationLadder"),
     TestEntry("uk.ac.manchester.tornado.unittests.instances.TestInstances"),
     TestEntry("uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestAPI"),
