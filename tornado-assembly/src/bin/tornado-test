@@ -242,6 +242,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.fails.BitOpsUnsupportedFail"),
     TestEntry("uk.ac.manchester.tornado.unittests.parameters.ParameterTests"),
     TestEntry("uk.ac.manchester.tornado.unittests.codegen.CodeGenTest"),
+    TestEntry("uk.ac.manchester.tornado.unittests.codegen.TestDeepInliningChain"),
     TestEntry("uk.ac.manchester.tornado.unittests.codegen.TestShortCircuits"),
     TestEntry("uk.ac.manchester.tornado.unittests.codegen.TestSignedComparisonsCodegen"),
     TestEntry("uk.ac.manchester.tornado.unittests.atomics.TestAtomics"),
