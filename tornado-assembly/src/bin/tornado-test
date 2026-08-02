@@ -143,6 +143,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestJaggedArrays"),
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestFloats"),
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestHalfFloats"),
+    TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestHalfFloatDotProduct"),
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestHalf2Packed"),
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestDoubles"),
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestInts"),
