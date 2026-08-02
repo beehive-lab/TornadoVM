@@ -442,6 +442,70 @@ public class OCLGraphBuilderPlugins {
         registerMMAPlugins(r);
         registerSwizzledLocalAccessesPlugins(r);
         registerUnsupportedSimdgroupMatrixPlugins(r);
+        registerUnsupportedSimdPlugins(r);
+        registerUnsupportedAtomicRmwPlugins(r);
+    }
+
+    /**
+     * The SIMD-group reductions ({@link uk.ac.manchester.tornado.api.KernelContext} {@code simdSum},
+     * {@code simdShuffleDown}, {@code simdBroadcastFirst}) have no OpenCL 1.2 equivalent. Their
+     * {@code KernelContext} bodies return the input unchanged, so without a rejection here a kernel using
+     * them would compile and silently compute a wrong result.
+     */
+    private static void registerUnsupportedSimdPlugins(Registration r) {
+        final String message = "SIMD-group reductions (KernelContext.simdSum/simdShuffleDown/simdBroadcastFirst) are only supported on the CUDA and Metal backends.";
+        r.register(new InvocationPlugin("simdSum", Receiver.class, float.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        r.register(new InvocationPlugin("simdShuffleDown", Receiver.class, float.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val, ValueNode delta) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        r.register(new InvocationPlugin("simdBroadcastFirst", Receiver.class, float.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+    }
+
+    /**
+     * The read-modify-write atomics ({@link uk.ac.manchester.tornado.api.KernelContext} {@code atomicCAS},
+     * {@code atomicExchange}, {@code atomicMin}, {@code atomicMax}) are not intrinsified on this backend.
+     * Their {@code KernelContext} bodies apply the operation non-atomically, which is only correct for a
+     * single thread, so reject them instead of silently racing.
+     */
+    private static void registerUnsupportedAtomicRmwPlugins(Registration r) {
+        final String message = "Atomic read-modify-write operations (KernelContext.atomicCAS/atomicExchange/atomicMin/atomicMax) are only supported on the CUDA backend.";
+        r.register(new InvocationPlugin("atomicCAS", Receiver.class, int[].class, int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index, ValueNode expected, ValueNode value) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        for (String name : new String[] { "atomicExchange", "atomicMin", "atomicMax" }) {
+            r.register(new InvocationPlugin(name, Receiver.class, int[].class, int.class, int.class) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index, ValueNode value) {
+                    receiver.get(true);
+                    unimplemented(message);
+                    return false;
+                }
+            });
+        }
     }
 
     /**

@@ -469,6 +469,35 @@ public class MetalGraphBuilderPlugins {
         registerSIMDPlugins(r);
         registerMMAPlugins(r);
         registerSwizzledLocalAccessesPlugins(r);
+        registerUnsupportedAtomicRmwPlugins(r);
+    }
+
+    /**
+     * The read-modify-write atomics ({@link uk.ac.manchester.tornado.api.KernelContext} {@code atomicCAS},
+     * {@code atomicExchange}, {@code atomicMin}, {@code atomicMax}) are not intrinsified on this backend.
+     * Their {@code KernelContext} bodies apply the operation non-atomically, which is only correct for a
+     * single thread, so reject them instead of silently racing.
+     */
+    private static void registerUnsupportedAtomicRmwPlugins(Registration r) {
+        final String message = "Atomic read-modify-write operations (KernelContext.atomicCAS/atomicExchange/atomicMin/atomicMax) are only supported on the CUDA backend.";
+        r.register(new InvocationPlugin("atomicCAS", Receiver.class, int[].class, int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index, ValueNode expected, ValueNode value) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        for (String name : new String[] { "atomicExchange", "atomicMin", "atomicMax" }) {
+            r.register(new InvocationPlugin(name, Receiver.class, int[].class, int.class, int.class) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index, ValueNode value) {
+                    receiver.get(true);
+                    unimplemented(message);
+                    return false;
+                }
+            });
+        }
     }
 
     private static void registerMMAPlugins(Registration r) {
