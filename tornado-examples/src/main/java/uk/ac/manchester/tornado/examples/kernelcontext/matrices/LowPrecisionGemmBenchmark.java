@@ -33,6 +33,8 @@ import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 /**
  * Low-precision GEMM benchmark: the same {@code C[M,N] = A[M,K] * B[K,N]} computed six ways, all
@@ -51,10 +53,23 @@ import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
  * <li><b>fp16 MMA + CUDA Graphs</b> -- same kernel, executed under {@code withCUDAGraph()} so the
  * launch sequence is captured once and replayed. Isolates per-launch CPU overhead from kernel
  * time; the win grows as kernels get shorter and more numerous.</li>
+ * <li><b>int8 MMA</b> -- {@code mmaLoadAInt8}/{@code mmaLoadBInt8}/{@code mmaInt8} on
+ * {@code M16N8K32}, s32 accumulate. Twice the K-depth per instruction of the fp16 shape, since
+ * twice as many 8-bit operands fit the same fragment registers. Integer GEMM is exact, so its
+ * reported error is a true correctness check, not a rounding measurement.</li>
  * <li><b>FP8 E4M3 MMA</b> -- {@code M16N8K32}. Requires compute capability &gt;= 8.9 (Ada/Hopper);
  * on older hardware TornadoVM raises {@code TornadoDeviceFP8NotSupported} and this stage reports
  * as skipped rather than failing.</li>
  * </ol>
+ *
+ * <p>
+ * On multi-streaming: TornadoVM's CUDA backend already runs transfers and compute on separate,
+ * NVTX-labelled CUDA streams (DEFAULT / H2D / COMPUTE / D2H, see {@code CUDACommandQueue}), but
+ * that pipeline is managed internally -- there is no user-facing stream API on
+ * {@code TornadoExecutionPlan} to schedule work onto explicit streams. {@code withConcurrentDevices()}
+ * is about multi-DEVICE execution, not multi-stream within one GPU. The closest user-visible
+ * control over that pipeline is the {@link DataTransferMode} on each argument, whose cost this
+ * benchmark quantifies below.
  *
  * <p>
  * Every stage runs a warm-up execution first and reports STEADY-STATE time separately from the
@@ -77,11 +92,18 @@ import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
  *
  * <pre>
  *   kernel                 device time    vs fp32
- *   gemmFp32Tiled            1336 us       1.00x
- *   gemmFp16MMA               773 us       1.73x
- *   gemmBf16MMA               767 us       1.74x
- *   gemmFp16MMACpAsync        327 us       4.08x
+ *   gemmFp32Tiled            1334 us       1.00x
+ *   gemmBf16MMA               771 us       1.73x
+ *   gemmFp16MMA               757 us       1.76x
+ *   gemmInt8MMA               446 us       2.99x
+ *   gemmFp16MMACpAsync        327 us       4.09x
  * </pre>
+ *
+ * <p>
+ * int8 lands between the 16-bit formats and the cp.async-pipelined fp16 kernel, which is the
+ * expected shape: it halves the operand bytes AND doubles the K-depth per instruction
+ * ({@code M16N8K32} vs {@code M16N8K16}), but still stages its tiles through the same
+ * synchronous global-to-shared path that {@code cp.async} avoids.
  *
  * <p>
  * {@code nsys stats --report cuda_gpu_kern_sum} independently agrees on the three kernels it
@@ -128,7 +150,7 @@ public class LowPrecisionGemmBenchmark {
     private static final int WMMA_M = 16;
     private static final int WMMA_N = 16;
     private static final int WMMA_K = 16;
-    private static final int WMMA_K_FP8 = 32;
+    private static final int WMMA_K_INT8 = 32;
     private static final int WARP_SIZE = 32;
 
     private static final int M = 1024;
@@ -337,6 +359,71 @@ public class LowPrecisionGemmBenchmark {
     }
 
     // ------------------------------------------------------------------
+    // 6. int8 MMA -- s8 operands, s32 accumulate (M16N8K32)
+    // ------------------------------------------------------------------
+    public static void gemmInt8MMA(KernelContext ctx, Int8Array a, Int8Array b, IntArray c, int dimN, int dimK) {
+        int warpId = ctx.groupIdx;
+        int lane = ctx.localIdx;
+
+        int numTilesN = dimN / WMMA_N;
+        int tileRow = (warpId / numTilesN) * WMMA_M;
+        int tileCol = (warpId % numTilesN) * WMMA_N;
+
+        int[] aTile = ctx.allocateIntLocalArray(WMMA_M * WMMA_K_INT8 / 4);
+        int[] bTile0 = ctx.allocateIntLocalArray(64);
+        int[] bTile1 = ctx.allocateIntLocalArray(64);
+
+        int[] fragC0 = ctx.mmaFragmentInt(0);
+        int[] fragC1 = ctx.mmaFragmentInt(0);
+
+        for (int kBase = 0; kBase < dimK; kBase += WMMA_K_INT8) {
+            for (int idx = lane; idx < (WMMA_M * WMMA_K_INT8) / 4; idx += WARP_SIZE) {
+                int elemBase = idx * 4;
+                int r = elemBase / WMMA_K_INT8;
+                int kk = elemBase % WMMA_K_INT8;
+                int base = (tileRow + r) * dimK + kBase + kk;
+                int packed = (a.get(base) & 0xFF) //
+                        | ((a.get(base + 1) & 0xFF) << 8) //
+                        | ((a.get(base + 2) & 0xFF) << 16) //
+                        | ((a.get(base + 3) & 0xFF) << 24);
+                aTile[r * (WMMA_K_INT8 / 4) + kk / 4] = packed;
+            }
+
+            // Each int packs 2 K-values x 2 J-values for the 8-bit fragment layout.
+            for (int idx = lane; idx < 64; idx += WARP_SIZE) {
+                int kRow = idx / 4;
+                int jPair = idx % 4;
+                int jBase = jPair * 2;
+                int kPair = 2 * kRow;
+
+                int bL0 = b.get((kBase + kPair) * dimN + tileCol + jBase) & 0xFF;
+                int bL1 = b.get((kBase + kPair + 1) * dimN + tileCol + jBase) & 0xFF;
+                int bL2 = b.get((kBase + kPair) * dimN + tileCol + jBase + 1) & 0xFF;
+                int bL3 = b.get((kBase + kPair + 1) * dimN + tileCol + jBase + 1) & 0xFF;
+                bTile0[kRow * 4 + jPair] = bL0 | (bL1 << 8) | (bL2 << 16) | (bL3 << 24);
+
+                int bR0 = b.get((kBase + kPair) * dimN + tileCol + 8 + jBase) & 0xFF;
+                int bR1 = b.get((kBase + kPair + 1) * dimN + tileCol + 8 + jBase) & 0xFF;
+                int bR2 = b.get((kBase + kPair) * dimN + tileCol + 8 + jBase + 1) & 0xFF;
+                int bR3 = b.get((kBase + kPair + 1) * dimN + tileCol + 8 + jBase + 1) & 0xFF;
+                bTile1[kRow * 4 + jPair] = bR0 | (bR1 << 8) | (bR2 << 16) | (bR3 << 24);
+            }
+            ctx.localBarrier();
+
+            byte[] fragA = ctx.mmaLoadAInt8(aTile, WMMA_K_INT8);
+            byte[] fragB0 = ctx.mmaLoadBInt8(bTile0, WMMA_K_INT8);
+            fragC0 = ctx.mmaInt8(fragA, fragB0, fragC0, MMAShape.M16N8K32);
+            byte[] fragB1 = ctx.mmaLoadBInt8(bTile1, WMMA_K_INT8);
+            fragC1 = ctx.mmaInt8(fragA, fragB1, fragC1, MMAShape.M16N8K32);
+
+            ctx.localBarrier();
+        }
+
+        ctx.mmaStoreInt(fragC0, c, tileRow, tileCol, dimN);
+        ctx.mmaStoreInt(fragC1, c, tileRow, tileCol + 8, dimN);
+    }
+
+    // ------------------------------------------------------------------
     // Host-side helpers
     // ------------------------------------------------------------------
 
@@ -355,6 +442,21 @@ public class LowPrecisionGemmBenchmark {
         for (int i = 0; i < sampleRows; i++) {
             for (int j = 0; j < N; j += 97) { // stride to keep the check cheap
                 float expected = 0.0f;
+                for (int k = 0; k < K; k++) {
+                    expected += refA[i * K + k] * refB[k * N + j];
+                }
+                worst = Math.max(worst, Math.abs(expected - got.get(i * N + j)));
+            }
+        }
+        return worst;
+    }
+
+    /** Exact integer reference for the int8 stage -- any nonzero result is a genuine bug. */
+    private static float maxErrorInt(IntArray got, byte[] refA, byte[] refB) {
+        int worst = 0;
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < N; j += 97) {
+                int expected = 0;
                 for (int k = 0; k < K; k++) {
                     expected += refA[i * K + k] * refB[k * N + j];
                 }
@@ -514,7 +616,40 @@ public class LowPrecisionGemmBenchmark {
         }
         report("fp16 MMA + CUDA Graph", graphTimes[1], graphTimes[0], maxError(cGraph, refA, refB, 2));
 
-        // ---- 6. FP8 E4M3 MMA (needs compute capability >= 8.9) ----------------------
+        // ---- 6. int8 MMA (s8 in, s32 accumulate) ------------------------------------
+        // Small integer operands so the s32 accumulator cannot overflow: worst case is
+        // K * 7 * 7 = 1024 * 49, far inside int range. Integer GEMM is EXACT, so any nonzero
+        // error here is a real bug, not a rounding artifact.
+        Random intRng = new Random(37);
+        byte[] refA8 = new byte[M * K];
+        byte[] refB8 = new byte[K * N];
+        Int8Array a8 = new Int8Array(M * K);
+        Int8Array b8 = new Int8Array(K * N);
+        IntArray c8 = new IntArray(M * N);
+        for (int i = 0; i < M * K; i++) {
+            refA8[i] = (byte) (intRng.nextInt(15) - 7);
+            a8.set(i, refA8[i]);
+        }
+        for (int i = 0; i < K * N; i++) {
+            refB8[i] = (byte) (intRng.nextInt(15) - 7);
+            b8.set(i, refB8[i]);
+        }
+
+        WorkerGrid1D int8Worker = new WorkerGrid1D(mmaGlobalSize);
+        int8Worker.setLocalWork(WARP_SIZE, 1, 1);
+        GridScheduler int8Grid = new GridScheduler("int8.gemm", int8Worker);
+        TaskGraph int8Graph = new TaskGraph("int8") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a8, b8) //
+                .task("gemm", LowPrecisionGemmBenchmark::gemmInt8MMA, context, a8, b8, c8, N, K) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c8);
+
+        long[] int8Times;
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(int8Graph.snapshot())) {
+            int8Times = timePlan(plan, int8Grid);
+        }
+        report("int8 MMA (tensor core)", int8Times[1], int8Times[0], maxErrorInt(c8, refA8, refB8));
+
+        // ---- 7. FP8 E4M3 MMA (needs compute capability >= 8.9) ----------------------
         // Two failure modes depending on the bailout flag -- see FP8GemmStage#run. With
         // -Dtornado.recover.bailout=False an exception propagates; with the default (what a
         // plain `tornado` run uses) it silently falls back to sequential host Java, which
@@ -531,13 +666,15 @@ public class LowPrecisionGemmBenchmark {
         System.out.println("NOTE: these are END-TO-END times -- each execution copies the 4MB result back to");
         System.out.println("      the host, which is identical work for every stage and compresses the ratios.");
         System.out.println("      For kernel-only time, re-run with:  tornado --enableProfiler console ...");
-        System.out.println("      (on an RTX 3070 the kernels are 1.73x/1.74x/4.08x vs fp32, not the numbers below)");
+        System.out.println("      (on an RTX 3070 the kernels are 1.76x fp16 / 1.73x bf16 / 2.99x int8 / 4.09x");
+        System.out.println("       cp.async vs fp32 -- not the compressed numbers below)");
         System.out.println();
         System.out.println("Speedups vs fp32 tiled baseline (end-to-end, transfer-dominated):");
         System.out.printf("  fp16 MMA              %.2fx%n", (double) fp32Times[1] / fp16Times[1]);
         System.out.printf("  bf16 MMA              %.2fx%n", (double) fp32Times[1] / bf16Times[1]);
         System.out.printf("  fp16 MMA + cp.async   %.2fx%n", (double) fp32Times[1] / asyncTimes[1]);
         System.out.printf("  fp16 MMA + CUDA Graph %.2fx%n", (double) fp32Times[1] / graphTimes[1]);
+        System.out.printf("  int8 MMA              %.2fx%n", (double) fp32Times[1] / int8Times[1]);
         System.out.println();
         System.out.printf("CUDA Graph vs plain fp16 MMA (launch-overhead effect): %.2fx%n", (double) fp16Times[1] / graphTimes[1]);
     }

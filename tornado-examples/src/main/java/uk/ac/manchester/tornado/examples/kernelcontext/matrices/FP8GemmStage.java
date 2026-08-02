@@ -65,8 +65,8 @@ public final class FP8GemmStage {
         int tileCol = (warpId % numTilesN) * WMMA_N;
 
         int[] aTile = ctx.allocateIntLocalArray(WMMA_M * WMMA_K / 4);
-        int[] bTile0 = ctx.allocateIntLocalArray(WMMA_K * 8 / 4);
-        int[] bTile1 = ctx.allocateIntLocalArray(WMMA_K * 8 / 4);
+        int[] bTile0 = ctx.allocateIntLocalArray(64);
+        int[] bTile1 = ctx.allocateIntLocalArray(64);
 
         float[] fragC0 = ctx.mmaFragment(0.0f);
         float[] fragC1 = ctx.mmaFragment(0.0f);
@@ -84,24 +84,28 @@ public final class FP8GemmStage {
                 aTile[r * (WMMA_K / 4) + kk / 4] = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
             }
 
-            for (int idx = lane; idx < (WMMA_K * 8) / 4; idx += WARP_SIZE) {
-                int kRow = idx / 2;
-                int jQuad = idx % 2;
-                int jBase = jQuad * 4;
+            // B panels: an int packs 2 K-values x 2 J-values (NOT 4 consecutive J-values). This
+            // is the layout the validated int8 M16N8K32 path uses -- FP8 shares the shape and the
+            // 8-bit fragment tiling, so it shares the layout. Worth stating explicitly because
+            // this stage cannot be validated on pre-Ada hardware, so it is derived from the
+            // proven int8 kernel rather than from a passing FP8 run.
+            for (int idx = lane; idx < 64; idx += WARP_SIZE) {
+                int kRow = idx / 4;
+                int jPair = idx % 4;
+                int jBase = jPair * 2;
+                int kPair = 2 * kRow;
 
-                int gL = (kBase + kRow) * dimN + tileCol + jBase;
-                int l0 = b.get(gL) & 0xFF;
-                int l1 = b.get(gL + 1) & 0xFF;
-                int l2 = b.get(gL + 2) & 0xFF;
-                int l3 = b.get(gL + 3) & 0xFF;
-                bTile0[kRow * 2 + jQuad] = l0 | (l1 << 8) | (l2 << 16) | (l3 << 24);
+                int bL0 = b.get((kBase + kPair) * dimN + tileCol + jBase) & 0xFF;
+                int bL1 = b.get((kBase + kPair + 1) * dimN + tileCol + jBase) & 0xFF;
+                int bL2 = b.get((kBase + kPair) * dimN + tileCol + jBase + 1) & 0xFF;
+                int bL3 = b.get((kBase + kPair + 1) * dimN + tileCol + jBase + 1) & 0xFF;
+                bTile0[kRow * 4 + jPair] = bL0 | (bL1 << 8) | (bL2 << 16) | (bL3 << 24);
 
-                int gR = (kBase + kRow) * dimN + tileCol + 8 + jBase;
-                int r0 = b.get(gR) & 0xFF;
-                int r1 = b.get(gR + 1) & 0xFF;
-                int r2 = b.get(gR + 2) & 0xFF;
-                int r3 = b.get(gR + 3) & 0xFF;
-                bTile1[kRow * 2 + jQuad] = r0 | (r1 << 8) | (r2 << 16) | (r3 << 24);
+                int bR0 = b.get((kBase + kPair) * dimN + tileCol + 8 + jBase) & 0xFF;
+                int bR1 = b.get((kBase + kPair + 1) * dimN + tileCol + 8 + jBase) & 0xFF;
+                int bR2 = b.get((kBase + kPair) * dimN + tileCol + 8 + jBase + 1) & 0xFF;
+                int bR3 = b.get((kBase + kPair + 1) * dimN + tileCol + 8 + jBase + 1) & 0xFF;
+                bTile1[kRow * 4 + jPair] = bR0 | (bR1 << 8) | (bR2 << 16) | (bR3 << 24);
             }
             ctx.localBarrier();
 
