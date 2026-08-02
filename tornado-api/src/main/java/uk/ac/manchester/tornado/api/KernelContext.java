@@ -251,6 +251,13 @@ public class KernelContext implements ExecutionContext {
      * <p>
      * Metal equivalent: {@code simd_shuffle_down(val, delta)}<br>
      * CUDA equivalent: {@code shfl.sync.down.b32 dest, val, delta, 31, 0xFFFFFFFF}
+     * <p>
+     * Note this only has a {@code float} overload (no {@code int}/{@code double}), and it only
+     * pulls from a HIGHER lane index -- there is no {@code shfl_up} equivalent. A conventional
+     * left-to-right prefix scan therefore isn't directly expressible; what IS directly expressible
+     * is a suffix scan (repeated {@code simdShuffleDown} at strides 1,2,4,... folds each lane with
+     * higher lanes), see {@code kernelcontext.reductions.TestWarpShuffleScan} for a worked example
+     * composing this into a full block-wide scan via one shared-memory cross-warp pass.
      */
     public float simdShuffleDown(float val, int delta) {
         return val;
@@ -276,6 +283,11 @@ public class KernelContext implements ExecutionContext {
      * once.
      * <p>
      * CUDA equivalent: {@code atomicCAS(&array[index], expected, value)}
+     * <p>
+     * Unlike {@link #atomicAdd(IntArray, int, int)}, there is currently no overload of this method
+     * for a global (off-heap {@code IntArray}) target -- only the local/shared-memory {@code int[]}
+     * form exists. If you need a compare-and-swap on a global array, there is no KernelContext
+     * primitive for that today.
      *
      * @param array
      *     local (shared) array to update
@@ -299,6 +311,9 @@ public class KernelContext implements ExecutionContext {
      * Atomically stores {@code value} into {@code array[index]} and returns the previous value.
      * <p>
      * CUDA equivalent: {@code atomicExch(&array[index], value)}
+     * <p>
+     * Unlike {@link #atomicAdd(IntArray, int, int)}, there is currently no global-array
+     * ({@code IntArray}) overload of this method -- local/shared memory only.
      *
      * @param array
      *     local (shared) array to update
@@ -319,6 +334,9 @@ public class KernelContext implements ExecutionContext {
      * previous value. One instruction instead of a compare-and-swap loop.
      * <p>
      * CUDA equivalent: {@code atomicMin(&array[index], value)}
+     * <p>
+     * Unlike {@link #atomicAdd(IntArray, int, int)}, there is currently no global-array
+     * ({@code IntArray}) overload of this method -- local/shared memory only.
      *
      * @param array
      *     local (shared) array to update
@@ -341,6 +359,9 @@ public class KernelContext implements ExecutionContext {
      * previous value.
      * <p>
      * CUDA equivalent: {@code atomicMax(&array[index], value)}
+     * <p>
+     * Unlike {@link #atomicAdd(IntArray, int, int)}, there is currently no global-array
+     * ({@code IntArray}) overload of this method -- local/shared memory only.
      *
      * @param array
      *     local (shared) array to update
@@ -486,6 +507,15 @@ public class KernelContext implements ExecutionContext {
      * then add the value of val to it, and write the result back to the same address.
      * <p>
      * CUDA equivalent: atomicAdd(int* address, int val);
+     * <p>
+     * <b>Known CUDA-backend issue:</b> when {@code index} is a runtime-computed (non-constant)
+     * value -- e.g. a data-dependent bucket for a local-memory histogram -- the generated CUDA C
+     * has been observed to silently drop the index and always update {@code array[0]} instead
+     * (confirmed via {@code tornado-test --printKernel}: the byte offset for the index is computed
+     * but never applied to the {@code atomicAdd} call). Every known-good example in this codebase
+     * only ever calls this overload with a literal {@code 0} index. If you need a per-bucket local
+     * histogram, accumulate into a <em>global</em> array with {@link #atomicAdd(IntArray, int, int)}
+     * instead (confirmed correct with a dynamic index) rather than this local-array overload.
      */
     @Override
     public void atomicAdd(int[] array, int index, int val) {
