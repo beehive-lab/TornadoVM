@@ -56,6 +56,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.MultHalfNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAConvertFloatToHalf;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAConvertHalfToFloat;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASwizzledLoadFP16Stride32Node;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.ReadHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.SubHalfNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.WriteHalfFloatNode;
@@ -113,6 +114,12 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
         if (input instanceof LoadIndexedNode loadIndexed //
                 && loadIndexed.array() instanceof LocalArrayNode localArray //
                 && localArray.getCUDAKind() == CUDAKind.HALF) {
+            return input;
+        }
+        // A swizzled fp16 load produces a HALF-kind value directly, so it is a half-source in the
+        // same way a ReadHalfFloatNode is. Without this case, calling getFloat32() on a value read
+        // through swizzleLoadFp16Stride32 nulls out the convert node's input.
+        if (input instanceof CUDASwizzledLoadFP16Stride32Node) {
             return input;
         }
         if (input instanceof PiNode || input instanceof IsNullNode) {
