@@ -80,6 +80,7 @@ import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoMemorySegment;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Float;
 import uk.ac.manchester.tornado.api.types.vectors.Half2;
 import uk.ac.manchester.tornado.api.utils.QuantizationUtils;
 import uk.ac.manchester.tornado.drivers.cuda.CUDAProgram;
@@ -495,6 +496,57 @@ public class CUDAGraphBuilderPlugins {
         registerMMAPlugins(r);
         registerCpAsyncPlugins(r);
         registerSwizzledLocalAccessesPlugins(r);
+        registerUnsupportedSimdgroupMatrixPlugins(r);
+    }
+
+    /**
+     * The {@code simdgroup_float8x8} matrix-unit intrinsics ({@link KernelContext} {@code simdgroupMatrix*},
+     * and {@code matrixMultiply8x8} which is written in terms of them) are Metal-only. They cannot be
+     * intrinsified on this backend, so reject them at graph-build time with a clear message instead of
+     * failing later when the JVM-fallback object allocations are lowered.
+     */
+    private static void registerUnsupportedSimdgroupMatrixPlugins(Registration r) {
+        final String message = "simdgroup_float8x8 matrix operations (KernelContext.simdgroupMatrix*) are only supported on the Metal backend. Use the mma* Tensor Core operations instead.";
+        r.register(new InvocationPlugin("simdgroupMatrixZero", Receiver.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        r.register(new InvocationPlugin("simdgroupMatrixLoad", Receiver.class, FloatArray.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode base, ValueNode stride) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        r.register(new InvocationPlugin("simdgroupMatrixLoad", Receiver.class, float[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode base, ValueNode stride) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        r.register(new InvocationPlugin("simdgroupMatrixMultiplyAccumulate", Receiver.class, Matrix8x8Float.class, Matrix8x8Float.class, Matrix8x8Float.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode bMat, ValueNode c) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        r.register(new InvocationPlugin("simdgroupMatrixStore", Receiver.class, Matrix8x8Float.class, FloatArray.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode matrix, ValueNode array, ValueNode base, ValueNode stride) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
     }
 
     /**
@@ -903,15 +955,20 @@ public class CUDAGraphBuilderPlugins {
         });
     }
 
+    private static final String ATOMIC_RMW_LOCAL_ONLY = "Atomic read-modify-write operations (KernelContext.atomicCAS/atomicExchange/atomicMin/atomicMax) are supported on local (shared) arrays only. "
+            + "Allocate the array with KernelContext.allocateIntLocalArray(int).";
+
     /**
      * Read-modify-write atomics over a local (shared) int array. Without these the KernelContext defaults
-     * apply the operation non-atomically, which is only correct for a single thread.
+     * apply the operation non-atomically, which is only correct for a single thread. A global array is
+     * rejected rather than left to the default, which would race silently.
      */
     private static void registerAtomicRmwPlugins(Registration r) {
         r.register(new InvocationPlugin("atomicCAS", InvocationPlugin.Receiver.class, int[].class, int.class, int.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index, ValueNode expected, ValueNode value) {
                 if (!isLocalArray(array)) {
+                    unimplemented(ATOMIC_RMW_LOCAL_ONLY);
                     return false;
                 }
                 receiver.get(true);
@@ -928,7 +985,7 @@ public class CUDAGraphBuilderPlugins {
     /**
      * Whether {@code array} is a local (shared) array declared inside the kernel. Only those are addressable
      * as {@code &name[index]}; a global array parameter arrives as a raw address held in an integer, so the
-     * same emission would not compile. Global arrays keep their existing lowering.
+     * same emission would not compile. Global arrays are rejected with {@link #ATOMIC_RMW_LOCAL_ONLY}.
      */
     private static boolean isLocalArray(ValueNode array) {
         return GraphUtil.unproxify(array) instanceof LocalArrayNode;
@@ -939,6 +996,7 @@ public class CUDAGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index, ValueNode value) {
                 if (!isLocalArray(array)) {
+                    unimplemented(ATOMIC_RMW_LOCAL_ONLY);
                     return false;
                 }
                 receiver.get(true);

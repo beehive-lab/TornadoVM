@@ -38,6 +38,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.meta.OCLMemorySpace;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLBarrierNode.OCLMemFenceFlags;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 
 public class OCLUnary {
 
@@ -136,11 +137,55 @@ public class OCLUnary {
             asm.emitSymbol(OCLAssemblerConstants.MULT);
             asm.emitSymbol(OCLAssemblerConstants.CLOSE_PARENTHESIS);
             asm.space();
-            address.emit(crb, asm);
+            if (address.getIndex() != null) {
+                // Local/private-memory addresses keep base and index separate (see
+                // OCLAddressNode#setMemoryAccess) instead of folding the offset into the base via
+                // pointer arithmetic as the global path does. The index from
+                // OCLGraphBuilderPlugins#computeAddress is `(userIndex + panamaHeader) *
+                // elementByteSize` -- a byte offset -- so it must be applied with byte-pointer
+                // arithmetic, not a C array subscript, which would rescale it by sizeof(element).
+                // The header term is correct for private memory but not for local: a __local
+                // array has no Panama segment header, so it is subtracted back out here, where
+                // the base's memory region is known. Without any of this the index is dropped
+                // entirely and every dynamically-indexed local atomic lands on element 0.
+                asm.emitSymbol(OCLAssemblerConstants.OPEN_PARENTHESIS);
+                asm.emitSymbol(OCLAssemblerConstants.OPEN_PARENTHESIS);
+                asm.emitSymbol(OCLAssemblerConstants.VOLATILE);
+                asm.space();
+                asm.emitSymbol(address.getBase().getMemorySpace().name());
+                asm.space();
+                asm.emit("char");
+                asm.space();
+                asm.emitSymbol(OCLAssemblerConstants.MULT);
+                asm.emitSymbol(OCLAssemblerConstants.CLOSE_PARENTHESIS);
+                asm.space();
+                address.emit(crb, asm);
+                asm.space();
+                asm.emitSymbol(OCLAssemblerConstants.ADD);
+                asm.space();
+                if (isLocalMemory()) {
+                    asm.emitSymbol(OCLAssemblerConstants.OPEN_PARENTHESIS);
+                    asm.emitValue(crb, address.getIndex());
+                    asm.space();
+                    asm.emitSymbol(OCLAssemblerConstants.SUB);
+                    asm.space();
+                    asm.emit(Integer.toString(TornadoCoreRuntime.getVMConfig().getArrayBaseOffset(((OCLKind) destLirKind.getPlatformKind()).asJavaKind())));
+                    asm.emitSymbol(OCLAssemblerConstants.CLOSE_PARENTHESIS);
+                } else {
+                    asm.emitValue(crb, address.getIndex());
+                }
+                asm.emitSymbol(OCLAssemblerConstants.CLOSE_PARENTHESIS);
+            } else {
+                address.emit(crb, asm);
+            }
             asm.emitSymbol(OCLAssemblerConstants.EXPR_DELIMITER);
             asm.space();
             asm.emitValue(crb, inc);
             asm.emitSymbol(OCLAssemblerConstants.CLOSE_PARENTHESIS);
+        }
+
+        private boolean isLocalMemory() {
+            return address.getBase() != null && OCLAssemblerConstants.LOCAL_REGION_NAME.equals(address.getBase().getName());
         }
     }
 

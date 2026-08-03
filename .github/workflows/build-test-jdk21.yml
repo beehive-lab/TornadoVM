@@ -81,6 +81,19 @@ jobs:
           mvn clean install
           ./bin/tornadovm-ray-tracer regression
 
+      - name: Build & run KFusion-TornadoVM (check)
+        timeout-minutes: 10
+        run: |
+          source $VENV_PATH/bin/activate
+          source setvars.sh
+          rm -rf kfusion-tornadovm
+          git clone --depth 1 --branch master https://github.com/beehive-lab/kfusion-tornadovm.git
+          cd kfusion-tornadovm
+          export KFUSION_ROOT="${PWD}"
+          export PATH="${PATH}:${KFUSION_ROOT}/bin"
+          mvn clean install
+          ./scripts/run.sh
+
   # CUDA backend (generates CUDA C, compiled to PTX via NVRTC, executed through the CUDA Driver API).
   #
   # NOTE: The CUDA backend requires an NVIDIA GPU plus the CUDA Toolkit (NVRTC + libcuda) at runtime.
@@ -191,6 +204,20 @@ jobs:
           export TORNADO_RAY_TRACER_ROOT="$PWD"
           mvn clean install
           ./bin/tornadovm-ray-tracer regression
+
+      - name: Build & run KFusion-TornadoVM (check)
+        timeout-minutes: 10
+        run: |
+          source $VENV_PATH/bin/activate
+          source setvars.sh
+          rm -rf kfusion-tornadovm
+          git clone --depth 1 --branch master https://github.com/beehive-lab/kfusion-tornadovm.git
+          cd kfusion-tornadovm
+          export KFUSION_ROOT="${PWD}"
+          export PATH="${PATH}:${KFUSION_ROOT}/bin"
+          mvn clean install
+          ./scripts/run.sh
+
   build-macOs-metal:
     if: |
       github.repository == 'beehive-lab/TornadoVM' &&
@@ -246,3 +273,17 @@ jobs:
           export TORNADO_RAY_TRACER_ROOT="$PWD"
           mvn clean install
           ./bin/tornadovm-ray-tracer regression
+
+      - name: Build & run KFusion-TornadoVM (console mode)
+        timeout-minutes: 10
+        run: |
+          source $VENV_PATH/bin/activate
+          source setvars.sh
+          rm -rf kfusion-tornadovm
+          git clone --depth 1 --branch master https://github.com/beehive-lab/kfusion-tornadovm.git
+          cd kfusion-tornadovm
+          export KFUSION_ROOT="${PWD}"
+          export PATH="${PATH}:${KFUSION_ROOT}/bin"
+          mvn clean install
+          ./scripts/run.sh
+
