@@ -19,6 +19,7 @@ package uk.ac.manchester.tornado.cublas.provider;
 
 import java.util.Map;
 
+import uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.cublas.CuBlas;
 import uk.ac.manchester.tornado.cublas.CuBlasOptions;
@@ -98,6 +99,18 @@ public final class CuBlasLibraryProvider implements TornadoLibraryProvider {
         return new CuBlasContext(handle);
     }
 
+    /**
+     * Pre-allocates the workspace requested through the descriptor's tuning options.
+     * cudaMalloc is not legal inside a CUDA-graph capture region, so the allocation
+     * has to happen here rather than on the first {@link #dispatch}.
+     */
+    @Override
+    public void prepare(LibraryTaskDescriptor descriptor, LibraryContext context) {
+        if (descriptor.getTuning() instanceof CuBlasOptions options && options.getWorkspaceBytes() > 0) {
+            ensureWorkspace((CuBlasContext) context, options.getWorkspaceBytes());
+        }
+    }
+
     @Override
     public void dispatch(String functionName, LibraryInvocation invocation) {
         CuBlasCall call = FUNCTIONS.get(functionName);
@@ -125,23 +138,33 @@ public final class CuBlasLibraryProvider implements TornadoLibraryProvider {
         if (options == null) {
             return;
         }
-        if (options.getWorkspaceBytes() > context.workspaceBytes) {
-            if (context.workspacePtr != 0) {
-                CuBlasNativeLib.freeDeviceMemory(context.workspacePtr);
-                context.workspacePtr = 0;
-                context.workspaceBytes = 0;
-            }
-            long ptr = CuBlasNativeLib.allocateDeviceMemory(options.getWorkspaceBytes());
-            if (ptr == 0) {
-                throw new TornadoRuntimeException("[ERROR] Unable to allocate cuBLAS workspace of " + options.getWorkspaceBytes() + " bytes");
-            }
-            context.workspacePtr = ptr;
-            context.workspaceBytes = options.getWorkspaceBytes();
-            CuBlasNativeLib.checkStatus(CuBlasNativeLib.cublasSetWorkspace(context.handle, context.workspacePtr, context.workspaceBytes), "cublasSetWorkspace");
-        }
+        ensureWorkspace(context, options.getWorkspaceBytes());
         if (options.getMathMode() != CuBlasMathMode.CUBLAS_DEFAULT_MATH) {
             CuBlasNativeLib.checkStatus(CuBlasNativeLib.cublasSetMathMode(context.handle, options.getMathMode().value()), "cublasSetMathMode");
         }
+    }
+
+    /**
+     * Grow-only device workspace bound to the handle. A no-op once the context
+     * already holds at least {@code bytes}, which is what keeps {@link #dispatch}
+     * allocation-free after {@link #prepare} has run.
+     */
+    private void ensureWorkspace(CuBlasContext context, long bytes) {
+        if (bytes <= context.workspaceBytes) {
+            return;
+        }
+        if (context.workspacePtr != 0) {
+            CuBlasNativeLib.freeDeviceMemory(context.workspacePtr);
+            context.workspacePtr = 0;
+            context.workspaceBytes = 0;
+        }
+        long ptr = CuBlasNativeLib.allocateDeviceMemory(bytes);
+        if (ptr == 0) {
+            throw new TornadoRuntimeException("[ERROR] Unable to allocate cuBLAS workspace of " + bytes + " bytes");
+        }
+        context.workspacePtr = ptr;
+        context.workspaceBytes = bytes;
+        CuBlasNativeLib.checkStatus(CuBlasNativeLib.cublasSetWorkspace(context.handle, context.workspacePtr, context.workspaceBytes), "cublasSetWorkspace");
     }
 
     private void resetOptions(CuBlasContext context, CuBlasOptions options) {

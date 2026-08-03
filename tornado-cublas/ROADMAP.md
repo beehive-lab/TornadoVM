@@ -171,7 +171,7 @@ transitively loads `libcublasLt`). Exercises everything the SPI reserved:
 | # | Item | Notes | Status |
 |---|---|---|---|
 | G1 | 64-bit interface (`cublas*_64`) | TornadoVM segments can exceed INT_MAX elements; switch to `_64` entry points wholesale (int64 dims) rather than dual-binding | [ ] |
-| G2 | Graph-capture guard surfaced to providers | `LibraryInvocation.isCapturing()` so providers can reject capture-unsafe options (C6 AUTOTUNE, E-b host pointer mode) with a clear error instead of a corrupted capture | [ ] |
+| G2 | Graph-capture guard surfaced to providers | `LibraryInvocation.isCapturing()` ships; cuSPARSE uses it to refuse a workspace growth during capture, and the cuBLAS workspace is now pre-allocated in `prepare()`. Remaining users: C6 AUTOTUNE, E-b host pointer mode | [x] |
 | G3 | Multi-device | One context per device already; needs TornadoVM-level multi-device task graphs. `cublasXt` is **not** the path (host-pointer API conflicts with device-buffer model) | [-] |
 | G4 | Legacy cuBLAS API / emulation modes (`CUBLAS_EMULATE_*`) | Env-var driven, work without binding changes; document only | [-] |
 | G5 | tornado-test harness integration | `uk.ac.manchester.tornado.unittests.cublas.TestCuBlas` (10 JUnit tests, registered in `tornado-test`); skips via JUnit assumption when the default device is not CUDA or libtornado-cublas is missing. main()-runners kept as documented examples | [x] |
