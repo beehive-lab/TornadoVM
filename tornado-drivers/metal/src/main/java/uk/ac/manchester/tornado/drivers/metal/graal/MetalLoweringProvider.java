@@ -401,7 +401,9 @@ public class MetalLoweringProvider extends DefaultJavaLoweringProvider {
         JavaKind elementKind = storeIndexed.elementKind();
         ValueNode value = storeIndexed.value();
         ValueNode array = storeIndexed.array();
-        AddressNode address = createArrayAddress(graph, array, elementKind, storeIndexed.index());
+        // Native (Panama) arrays start data at the fixed ARRAY_HEADER (see createArrayAccess) — not the JVM's
+        // compact-header-dependent Java-array base offset — so pass ARRAY_HEADER explicitly. Mirrors OCLLoweringProvider.
+        AddressNode address = createArrayAddress(graph, array, (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE, elementKind, storeIndexed.index());
         AbstractWriteNode memoryWrite = createMemWriteNode(elementKind, value, array, address, graph, storeIndexed);
         memoryWrite.setStateAfter(storeIndexed.stateAfter());
         graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
@@ -609,7 +611,12 @@ public class MetalLoweringProvider extends DefaultJavaLoweringProvider {
         if (isLocalIDNode(loadIndexed) || isPrivateIDNode(loadIndexed)) {
             address = createArrayLocalAddress(graph, loadIndexed.array(), loadIndexed.index());
         } else {
-            address = createArrayAddress(graph, loadIndexed.array(), elementKind, loadIndexed.index());
+            // Native (Panama) arrays start their data at the fixed ARRAY_HEADER, not at the JVM's Java-array
+            // base offset (metaAccess.getArrayBaseOffset), which is object-header-layout dependent and returns
+            // 12 for float[]/int[] under JDK 27 compact object headers -> misaligns vector (vload/vstore)
+            // access by one element. Use the explicit-base overload with ARRAY_HEADER (JDK-neutral). Mirrors
+            // OCLLoweringProvider.
+            address = createArrayAddress(graph, loadIndexed.array(), (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE, elementKind, loadIndexed.index());
         }
         return address;
     }
