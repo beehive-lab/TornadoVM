@@ -50,17 +50,17 @@ jobs:
         run: |
           source $VENV_PATH/bin/activate
           source setvars.sh
-          tornado-test --ea --verbose --jvm="-Dtornado.unittests.device=1:0" -qp
+          tornado-test --ea --verbose --jvm="-Dtornado.unittests.device=0:0" -qp
       - name: Run fast unit-tests for OpenCL on Integrated Graphics
         run: |
           source $VENV_PATH/bin/activate
           source setvars.sh
-          tornado-test --ea --verbose --jvm="-Dtornado.unittests.device=1:1" -qp
+          tornado-test --ea --verbose --jvm="-Dtornado.unittests.device=0:1" -qp
       - name: Run fast unit-tests for CUDA on NVIDIA GPU
         run: |
           source $VENV_PATH/bin/activate
           source setvars.sh
-          tornado-test --ea --verbose --jvm="-Dtornado.unittests.device=2:0" -qp
+          tornado-test --ea --verbose --jvm="-Dtornado.unittests.device=1:0" -qp
       - name: Run polyglot tests with OpenCL runtime
         run: |
           source $VENV_PATH/bin/activate
@@ -72,20 +72,20 @@ jobs:
         run: |
           source $VENV_PATH/bin/activate
           source setvars.sh
-          tornado --jvm="-Ds0.t0.device=1:0" --printKernel --truffle python $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.py
-          tornado --jvm="-Ds0.t0.device=1:0" --printKernel --truffle js     $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.js
-          tornado --jvm="-Ds0.t0.device=1:0" --printKernel --truffle ruby   $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.rb
+          tornado --jvm="-Ds0.t0.device=0:0" --printKernel --truffle python $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.py
+          tornado --jvm="-Ds0.t0.device=0:0" --printKernel --truffle js     $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.js
+          tornado --jvm="-Ds0.t0.device=0:0" --printKernel --truffle ruby   $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.rb
       - name: Run polyglot tests for OpenCL on Integrated Graphics
         run: |
           source $VENV_PATH/bin/activate
           source setvars.sh
-          tornado --jvm="-Ds0.t0.device=1:1" --printKernel --truffle python $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.py
-          tornado --jvm="-Ds0.t0.device=1:1" --printKernel --truffle js     $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.js
-          tornado --jvm="-Ds0.t0.device=1:1" --printKernel --truffle ruby   $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.rb
+          tornado --jvm="-Ds0.t0.device=0:1" --printKernel --truffle python $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.py
+          tornado --jvm="-Ds0.t0.device=0:1" --printKernel --truffle js     $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.js
+          tornado --jvm="-Ds0.t0.device=0:1" --printKernel --truffle ruby   $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.rb
       - name: Run polyglot tests for CUDA on NVIDIA GPU
         run: |
           source $VENV_PATH/bin/activate
           source setvars.sh
-          tornado --jvm="-Ds0.t0.device=2:0" --printKernel --truffle python $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.py
-          tornado --jvm="-Ds0.t0.device=2:0" --printKernel --truffle js     $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.js
-          tornado --jvm="-Ds0.t0.device=2:0" --printKernel --truffle ruby   $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.rb
+          tornado --jvm="-Ds0.t0.device=1:0" --printKernel --truffle python $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.py
+          tornado --jvm="-Ds0.t0.device=1:0" --printKernel --truffle js     $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.js
+          tornado --jvm="-Ds0.t0.device=1:0" --printKernel --truffle ruby   $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.rb
