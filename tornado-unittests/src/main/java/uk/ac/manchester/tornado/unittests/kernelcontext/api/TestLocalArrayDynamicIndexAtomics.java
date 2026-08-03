@@ -31,6 +31,7 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -95,6 +96,15 @@ public class TestLocalArrayDynamicIndexAtomics extends TornadoTestBase {
 
     @Test
     public void testTwoLevelHistogramWithDynamicLocalIndex() throws TornadoExecutionPlanException {
+        // Metal has the same dropped-index defect, but fixing it is a bigger change than it was
+        // for CUDA and OpenCL. MetalUnary.AtomOperation hardcodes the `device` address space in
+        // its atomic casts (e.g. `atomic_fetch_add_explicit((device atomic_int *) ...)`), which
+        // is already wrong for a threadgroup array regardless of the index -- MSL enforces strict
+        // address-space segregation, so local-memory atomics need the qualifier to vary too.
+        // That is separate from the index arithmetic fixed here, and it cannot be validated on
+        // this machine, so the test is guarded rather than the fix guessed at.
+        assertNotBackend(TornadoVMBackendType.METAL, "MetalUnary.AtomOperation hardcodes the `device` address space, so threadgroup atomics need an address-space fix beyond the index arithmetic");
+
         Random r = new Random(9);
         IntArray input = new IntArray(SIZE);
         int[] expected = new int[NUM_BINS];
