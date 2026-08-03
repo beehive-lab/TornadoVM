@@ -29,6 +29,7 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
@@ -93,6 +94,13 @@ public class TestGlobalAtomics extends TornadoTestBase {
 
     @Test
     public void testGlobalAtomicAddFloatAcrossGrid() throws TornadoExecutionPlanException {
+        // OpenCL's atom_add has no floating-point overload, so the OpenCL backend rejects this at
+        // sketch time with "In OpenCL, the atom_add function does not support floating point
+        // operations" (see OCLGraphBuilderPlugins#registerUnsupportedAtomicAddPlugin). The
+        // int-based sibling test above runs on every backend. CUDA has a native
+        // atomicAdd(float*, float); Metal emulates it with a CAS-loop helper.
+        assertNotBackend(TornadoVMBackendType.OPENCL, "OpenCL's atom_add has no floating-point overload");
+
         FloatArray accumulator = new FloatArray(1);
         accumulator.init(0.0f);
         KernelContext context = new KernelContext();

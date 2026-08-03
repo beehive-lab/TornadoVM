@@ -28,9 +28,11 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.FP8Array;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
 
 /**
  * Every existing FP8 test in the suite ({@code TestMatrixMultiplicationMMAFP8}) exercises
@@ -56,8 +58,26 @@ public class TestFP8ElementwiseCopy extends TornadoTestBase {
         }
     }
 
+    /**
+     * FP8 is a CUDA-only storage type: {@link FP8Array} is registered only in the CUDA device
+     * dispatch, so on other backends the runtime falls back to a reflective path over the memory
+     * segment and fails with "module java.base does not opens jdk.internal.foreign". Mirrors
+     * {@code TestFP8#assumeCudaBackend}, the existing convention for FP8 device tests.
+     */
+    private void assumeCudaBackend() {
+        TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
+        if (backendType != TornadoVMBackendType.CUDA) {
+            String message = "FP8 device kernels require the CUDA backend (default device is " + backendType + ")";
+            switch (backendType) {
+                case OPENCL, METAL -> assertNotBackend(backendType, message);
+                default -> throw new TornadoVMCUDANotSupported(message);
+            }
+        }
+    }
+
     @Test
     public void testFP8ElementwiseCopyOutsideMMA() throws TornadoExecutionPlanException {
+        assumeCudaBackend();
         final int size = 64;
         FP8Array in = new FP8Array(size);
         FP8Array out = new FP8Array(size);
