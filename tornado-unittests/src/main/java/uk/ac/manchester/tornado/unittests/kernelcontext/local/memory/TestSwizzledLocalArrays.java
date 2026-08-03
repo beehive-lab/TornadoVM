@@ -175,7 +175,6 @@ public class TestSwizzledLocalArrays extends TornadoTestBase {
     public void testSwizzleLoadStoreFp16Stride32() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.METAL);
-        assertNotBackend(TornadoVMBackendType.CUDA);
         // Tile geometry: 16 rows × 16 fp16 cols = 256 elements per work-group.
         // Stride 32 bytes = 16 fp16 cols, which matches FP16_STRIDE_32 policy.
         final int rowsPerTile = 16;
@@ -296,7 +295,6 @@ public class TestSwizzledLocalArrays extends TornadoTestBase {
     public void testSwizzleLoadConvertToFloat() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.METAL);
-        assertNotBackend(TornadoVMBackendType.CUDA);
 
         final int rowsPerTile = 16;
         final int colsPerTile = 16;
