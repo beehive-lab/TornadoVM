@@ -158,9 +158,9 @@ Scope and roadmap
 
 Implemented today, via the same provider SPI: **cuBLAS** and **cuBLASLt**
 (dense linear algebra, fused-epilogue GEMM), **cuFFT** (FFTs), **cuDNN**
-(deep-learning primitives, including fused FP16 flash attention), **CUTLASS**
-(open-template FP32/FP16 GEMM with fused epilogues), and **cuTENSOR** (tensor
-contractions / einsum). Each is a Java module pair (a ``tornado-<lib>`` API
+(deep-learning primitives, including fused FP16 flash attention), **cuSPARSE**
+(CSR SpMV/SpMM), and **CUTLASS** (open-template FP32/FP16/BF16 GEMM with fused
+epilogues). Each is a Java module pair (a ``tornado-<lib>`` API
 module plus a native ``*-jni`` module) with per-(plan, device) contexts for
 cached descriptors and plans. The native ``*-jni`` module for each library
 builds only under the ``cuda-backend`` Maven profile, and is
@@ -175,8 +175,12 @@ read; the binding marks it ``READ_WRITE`` automatically (include it in
 :code:`transferToDevice` if its initial values come from the host). Batch
 processing (:code:`withBatch`) is not supported for library tasks.
 
-Header-only device libraries (CUB, CUTLASS/CuTe) plug into the CUDA-C
-backend's NVRTC compilation rather than the library-task path.
+A cuTENSOR provider (tensor contractions / einsum) exists on branch
+``hybrid-cutensor`` but is not part of this build.
+
+Header-only device libraries (CUB, CUTLASS/CuTe) would plug into the CUDA-C
+backend's NVRTC compilation rather than the library-task path. No CUB
+integration ships today.
 
 Note that cuBLAS assumes column-major storage: for row-major TornadoVM arrays
 pass the transpose operation (SGEMV) or swap operands (SGEMM), as in the
@@ -187,7 +191,7 @@ See also
 
 `HYBRID_API_GUIDE.md <https://github.com/beehive-lab/TornadoVM/blob/master/HYBRID_API_GUIDE.md>`__
 (repository root) is a complete, example-driven guide to every provider
-(cuBLAS, cuBLASLt, cuFFT, cuDNN, CUTLASS, cuTENSOR): factory tables, code
+(cuBLAS, cuBLASLt, cuFFT, cuDNN, cuSPARSE, CUTLASS): factory tables, code
 snippets, composition patterns, CUDA-Graph usage, build/install
 requirements, CLI flags, a "write your own provider" walkthrough, and a
 troubleshooting table.
