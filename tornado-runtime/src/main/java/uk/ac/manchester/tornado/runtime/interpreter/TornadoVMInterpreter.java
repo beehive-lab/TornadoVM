@@ -1352,7 +1352,7 @@ public class TornadoVMInterpreter {
         }
         try {
             provider.dispatch(descriptor.getFunctionName(), new LibraryInvocation(callArgs, devicePointers, isReference, interpreterDevice, graphExecutionContext.getExecutionPlanId(), libraryContext,
-                    descriptor.getTuning()));
+                    descriptor.getTuning(), insideCaptureRegion));
         } finally {
             if (nvtxDevice != null) {
                 nvtxDevice.nvtxRangePop();

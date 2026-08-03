@@ -175,18 +175,58 @@ The following table presents the available features that TornadoVM exposes in Ja
 +----------------------------------------------------+-------------------------------+------------------------------------+
 | kc.getLocalGroupSize()                             | get_local_size()              | blockDim                           |
 +----------------------------------------------------+-------------------------------+------------------------------------+
-| kc.localBarrier()                                  | barrier(CLK_LOCAL_MEM_FENCE)  | barrier.sync                       |
+| kc.localBarrier()                                  | barrier(CLK_LOCAL_MEM_FENCE)  | \__syncthreads()                   |
 +----------------------------------------------------+-------------------------------+------------------------------------+
-| kc.globalBarrier()                                 | barrier(CLK_GLOBAL_MEM_FENCE) | barrier.sync                       |
+| kc.globalBarrier()                                 | barrier(CLK_GLOBAL_MEM_FENCE) | \__syncthreads()                   |
 +----------------------------------------------------+-------------------------------+------------------------------------+
-| int[] array = kc.allocateIntLocalArray(size)       | \__local int array[size]      | .shared .s32 array[size]           |
+| int[] array = kc.allocateIntLocalArray(size)       | \__local int array[size]      | \__shared__ int array[size]        |
 +----------------------------------------------------+-------------------------------+------------------------------------+
-| float[] array = kc.allocateFloatLocalArray(size)   | \__local float array[size]    | .shared .s32 array[size]           |
+| float[] array = kc.allocateFloatLocalArray(size)   | \__local float array[size]    | \__shared__ float array[size]      |
 +----------------------------------------------------+-------------------------------+------------------------------------+
-| long[] array = kc.allocateLongLocalArray(size)     | \__local long array[size]     | .shared .s64 array[size]           |
+| long[] array = kc.allocateLongLocalArray(size)     | \__local long array[size]     | \__shared__ long array[size]       |
 +----------------------------------------------------+-------------------------------+------------------------------------+
-| double[] array = kc.allocateDoubleLocalArray(size) | \__local double array[size]   | .shared .s64 array[size]           |
+| double[] array = kc.allocateDoubleLocalArray(size) | \__local double array[size]   | \__shared__ double array[size]     |
 +----------------------------------------------------+-------------------------------+------------------------------------+
+
+Both barriers synchronise a work-group (a CUDA block), not the whole grid.
+``__syncthreads()`` already makes a block's prior global and shared memory
+accesses visible to the rest of the block, so it is the correct mapping for
+``globalBarrier()`` as well.
+
+Backend support for the advanced operations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Not every ``KernelContext`` operation exists on every backend. An operation a
+backend cannot honour is rejected while the task graph is compiled, with a
+message naming the operation — it is never silently replaced by its Java
+fallback, which would run without complaint and produce a wrong result.
+
++-----------------------------------------------------------------+------------+--------+-------+
+| Operation                                                       | CUDA       | OpenCL | Metal |
++=================================================================+============+========+=======+
+| ``atomicAdd`` (IntArray, int[], LongArray)                      | yes        | yes    | yes   |
++-----------------------------------------------------------------+------------+--------+-------+
+| ``atomicAdd`` (FloatArray, DoubleArray)                         | yes        | no     | yes   |
++-----------------------------------------------------------------+------------+--------+-------+
+| ``atomicCAS``, ``atomicExchange``, ``atomicMin``, ``atomicMax`` | local only | no     | no    |
++-----------------------------------------------------------------+------------+--------+-------+
+| ``simdSum``, ``simdShuffleDown``, ``simdBroadcastFirst``        | yes        | no     | yes   |
++-----------------------------------------------------------------+------------+--------+-------+
+| ``allocateHalf2LocalArray``                                     | yes        | no     | no    |
++-----------------------------------------------------------------+------------+--------+-------+
+| ``mma*`` Tensor Core ops (FP16/BF16/INT8/FP8)                   | yes        | no     | no    |
++-----------------------------------------------------------------+------------+--------+-------+
+| ``asyncCopyToLocal`` and friends (``cp.async``, Ampere+)        | yes        | no     | no    |
++-----------------------------------------------------------------+------------+--------+-------+
+| ``swizzleLoadFp16Stride32``, ``swizzleStoreFp16Stride32``       | yes        | no     | no    |
++-----------------------------------------------------------------+------------+--------+-------+
+| ``swizzle*Fp16Stride16``, ``swizzle*Int8``                      | no         | no     | no    |
++-----------------------------------------------------------------+------------+--------+-------+
+| ``simdgroupMatrix*``, ``matrixMultiply8x8``                     | no         | no     | yes   |
++-----------------------------------------------------------------+------------+--------+-------+
+
+``local only`` means the operation is supported when the array was allocated
+with ``KernelContext.allocateIntLocalArray(int)``; a global array is rejected.
 
 Example
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

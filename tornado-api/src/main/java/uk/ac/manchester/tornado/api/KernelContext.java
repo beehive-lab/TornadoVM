@@ -126,7 +126,7 @@ public class KernelContext implements ExecutionContext {
      * <p>
      * OpenCL equivalent: barrier(CLK_LOCAL_MEM_FENCE);
      * <p>
-     * CUDA equivalent: barrier.sync;
+     * CUDA equivalent: __syncthreads();
      */
     @Override
     public void localBarrier() {
@@ -136,9 +136,12 @@ public class KernelContext implements ExecutionContext {
      * Method used as a barrier to synchronize the order of memory operations to the
      * global memory.
      * <p>
+     * The scope is the work-group (a CUDA block), not the whole grid.
+     * <p>
      * OpenCL equivalent: barrier(CLK_GLOBAL_MEM_FENCE);
      * <p>
-     * CUDA equivalent: barrier.sync;
+     * CUDA equivalent: __syncthreads(), which already makes the block's prior global and shared
+     * accesses visible to the rest of the block.
      */
     @Override
     public void globalBarrier() {
