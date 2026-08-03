@@ -31,6 +31,7 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
+import uk.ac.manchester.tornado.api.types.arrays.CharArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
@@ -94,6 +95,20 @@ public class Types extends TornadoTestBase {
     private static void i2d(IntArray input, DoubleArray output) {
         for (@Parallel int i = 0; i < input.getSize(); i++) {
             output.set(i, input.get(i));
+        }
+    }
+
+    // char is unsigned 16-bit: widening to int must NOT sign-extend, unlike byte/short.
+    private static void c2i(CharArray input, IntArray output) {
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            output.set(i, input.get(i));
+        }
+    }
+
+    private static void charArithmetic(CharArray a, CharArray b, CharArray output) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            char sum = (char) (a.get(i) + b.get(i));
+            output.set(i, sum);
         }
     }
 
@@ -326,6 +341,62 @@ public class Types extends TornadoTestBase {
         i2d(input, seq);
         for (int i = 0; i < seq.getSize(); i++) {
             assertEquals(seq.get(i), output.get(i), 0.001f);
+        }
+    }
+
+    @Test
+    public void testCharToInt() throws TornadoExecutionPlanException {
+        int size = 512;
+        CharArray input = new CharArray(size);
+        IntArray output = new IntArray(size);
+        IntArray seq = new IntArray(size);
+
+        Random r = new Random(System.nanoTime());
+        IntStream.range(0, input.getSize()).forEach(x -> input.set(x, (char) r.nextInt(Character.MAX_VALUE + 1)));
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .task("t0", Types::c2i, input, output) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        c2i(input, seq);
+        for (int i = 0; i < seq.getSize(); i++) {
+            assertEquals(seq.get(i), output.get(i));
+        }
+    }
+
+    @Test
+    public void testCharArithmetic() throws TornadoExecutionPlanException {
+        int size = 512;
+        CharArray a = new CharArray(size);
+        CharArray b = new CharArray(size);
+        CharArray output = new CharArray(size);
+        CharArray seq = new CharArray(size);
+
+        Random r = new Random(System.nanoTime());
+        IntStream.range(0, size).forEach(x -> {
+            a.set(x, (char) r.nextInt(Character.MAX_VALUE + 1));
+            b.set(x, (char) r.nextInt(Character.MAX_VALUE + 1));
+        });
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .task("t0", Types::charArithmetic, a, b, output) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        charArithmetic(a, b, seq);
+        for (int i = 0; i < seq.getSize(); i++) {
+            assertEquals(seq.get(i), output.get(i));
         }
     }
 }
