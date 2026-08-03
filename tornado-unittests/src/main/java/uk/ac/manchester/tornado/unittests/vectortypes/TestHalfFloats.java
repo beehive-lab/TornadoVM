@@ -927,6 +927,57 @@ public class TestHalfFloats extends TornadoTestBase {
         }
     }
 
+    // Fused multi-step chain (mul -> add -> sub -> div), distinct from the single-op tests above:
+    // exercises accumulating half-float rounding across several dependent operations in one kernel.
+    public static void halfFloatArithmeticChain(HalfFloatArray a, HalfFloatArray b, HalfFloatArray c, HalfFloatArray d, HalfFloatArray results) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            HalfFloat multiplied = HalfFloat.mult(a.get(i), b.get(i));
+            HalfFloat added = HalfFloat.add(multiplied, c.get(i));
+            HalfFloat subtracted = HalfFloat.sub(added, d.get(i));
+            HalfFloat divided = HalfFloat.div(subtracted, b.get(i));
+            results.set(i, divided);
+        }
+    }
+
+    @Test
+    public void testHalfFloatArithmeticChain() throws TornadoExecutionPlanException {
+        final int size = 64;
+        HalfFloatArray a = new HalfFloatArray(size);
+        HalfFloatArray b = new HalfFloatArray(size);
+        HalfFloatArray c = new HalfFloatArray(size);
+        HalfFloatArray d = new HalfFloatArray(size);
+        HalfFloatArray output = new HalfFloatArray(size);
+        HalfFloatArray sequential = new HalfFloatArray(size);
+
+        Random r = new Random(11);
+        for (int i = 0; i < size; i++) {
+            a.set(i, new HalfFloat(1.0f + r.nextFloat()));
+            b.set(i, new HalfFloat(0.5f + r.nextFloat())); // kept away from zero -- it's the divisor
+            c.set(i, new HalfFloat(1.0f + r.nextFloat()));
+            d.set(i, new HalfFloat(r.nextFloat()));
+        }
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b, c, d) //
+                .task("t0", TestHalfFloats::halfFloatArithmeticChain, a, b, c, d, output) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        halfFloatArithmeticChain(a, b, c, d, sequential);
+        // Wider tolerance than DELTA: the device path rounds to fp16 in native hardware ops after
+        // each step while the host path emulates in float32 and rounds once per HalfFloat.xxx()
+        // call -- both correct, but they can diverge by ~1 ULP of half-float precision (~0.003 at
+        // this magnitude) per step, compounding across 4 chained operations.
+        final double chainDelta = 0.05;
+        for (int i = 0; i < size; i++) {
+            assertEquals(sequential.get(i).getFloat32(), output.get(i).getFloat32(), chainDelta);
+        }
+    }
+
     @Test(timeout = 1000) //timeout of 1sec
     public void testAllocationIssue() {
         int size = 8192 * 4096;
