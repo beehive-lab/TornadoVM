@@ -53,6 +53,9 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
  * <li><b>fp16 MMA + CUDA Graphs</b> -- same kernel, executed under {@code withCUDAGraph()} so the
  * launch sequence is captured once and replayed. Isolates per-launch CPU overhead from kernel
  * time; the win grows as kernels get shorter and more numerous.</li>
+ * <li><b>fp16 MMA + XOR swizzle</b> -- {@code swizzleStoreFp16Stride32} + {@code mmaLoadBSwizzled},
+ * scattering B across shared-memory banks. See the measured results: on this layout it is a
+ * wash, and the reason is worth knowing.</li>
  * <li><b>int8 MMA</b> -- {@code mmaLoadAInt8}/{@code mmaLoadBInt8}/{@code mmaInt8} on
  * {@code M16N8K32}, s32 accumulate. Twice the K-depth per instruction of the fp16 shape, since
  * twice as many 8-bit operands fit the same fragment registers. Integer GEMM is exact, so its
@@ -92,11 +95,12 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
  *
  * <pre>
  *   kernel                 device time    vs fp32
- *   gemmFp32Tiled            1334 us       1.00x
- *   gemmBf16MMA               771 us       1.73x
- *   gemmFp16MMA               757 us       1.76x
- *   gemmInt8MMA               446 us       2.99x
- *   gemmFp16MMACpAsync        327 us       4.09x
+ *   gemmFp32Tiled            1336 us       1.00x
+ *   gemmBf16MMA               772 us       1.73x
+ *   gemmFp16MMASwizzled       764 us       1.75x
+ *   gemmFp16MMA               761 us       1.76x
+ *   gemmInt8MMA               449 us       2.98x
+ *   gemmFp16MMACpAsync        329 us       4.06x
  * </pre>
  *
  * <p>
@@ -104,6 +108,16 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
  * expected shape: it halves the operand bytes AND doubles the K-depth per instruction
  * ({@code M16N8K32} vs {@code M16N8K16}), but still stages its tiles through the same
  * synchronous global-to-shared path that {@code cp.async} avoids.
+ *
+ * <p>
+ * The XOR-swizzled stage is a deliberate NEGATIVE result, kept because it is informative: it is
+ * indistinguishable from plain fp16 MMA here (764 vs 761 us, inside run-to-run noise). Swizzling
+ * pays off when the shared-memory layout would otherwise make a warp's {@code ldmatrix} reads
+ * collide on the same bank -- but this benchmark's plain path already stores B int-packed (two
+ * fp16 per 32-bit word), which sidesteps most of that conflict on its own. The swizzled variant
+ * instead keeps B as native fp16 elements and uses the XOR swizzle to undo the conflicts that
+ * layout would reintroduce, so the two roughly cancel. Reach for {@code swizzleStoreFp16Stride32}
+ * when your tile layout actually conflicts, not as a reflexive optimisation.
  *
  * <p>
  * {@code nsys stats --report cuda_gpu_kern_sum} independently agrees on the three kernels it
@@ -424,6 +438,62 @@ public class LowPrecisionGemmBenchmark {
     }
 
     // ------------------------------------------------------------------
+    // 7. fp16 MMA with XOR-swizzled shared tiles (bank-conflict avoidance)
+    // ------------------------------------------------------------------
+    public static void gemmFp16MMASwizzled(KernelContext ctx, HalfFloatArray a, HalfFloatArray b, FloatArray c, int dimN, int dimK) {
+        int warpId = ctx.groupIdx;
+        int lane = ctx.localIdx;
+
+        int numTilesN = dimN / WMMA_N;
+        int tileRow = (warpId / numTilesN) * WMMA_M;
+        int tileCol = (warpId % numTilesN) * WMMA_N;
+
+        int[] aTile = ctx.allocateIntLocalArray(WMMA_M * WMMA_K / 2);
+        // B tiles stay NATIVE fp16 here (not int-packed) so the swizzle helpers can address
+        // individual elements: 8 rows x 16 cols per panel.
+        HalfFloat[] bTile0 = ctx.allocateHalfFloatLocalArray(8 * 16);
+        HalfFloat[] bTile1 = ctx.allocateHalfFloatLocalArray(8 * 16);
+
+        float[] fragC0 = ctx.mmaFragment(0.0f);
+        float[] fragC1 = ctx.mmaFragment(0.0f);
+
+        for (int kBase = 0; kBase < dimK; kBase += WMMA_K) {
+            for (int idx = lane; idx < (WMMA_M * WMMA_K) / 2; idx += WARP_SIZE) {
+                int elemBase = idx * 2;
+                int r = elemBase / WMMA_K;
+                int kk = elemBase % WMMA_K;
+                int globalBase = (tileRow + r) * dimK + kBase + kk;
+                int lo = a.get(globalBase).getHalfFloatValue() & 0xFFFF;
+                int hi = a.get(globalBase + 1).getHalfFloatValue() & 0xFFFF;
+                aTile[r * (WMMA_K / 2) + kk / 2] = lo | (hi << 16);
+            }
+
+            // Scatter B through the XOR swizzle so that the subsequent ldmatrix reads hit
+            // distinct shared-memory banks instead of serialising on the same bank.
+            for (int idx = lane; idx < 128; idx += WARP_SIZE) {
+                int kRow = idx / 8;
+                int j = idx % 8;
+                HalfFloat valL = b.get((kBase + kRow) * dimN + tileCol + j);
+                HalfFloat valR = b.get((kBase + kRow) * dimN + tileCol + 8 + j);
+                ctx.swizzleStoreFp16Stride32(bTile0, kRow, j, 8, valL);
+                ctx.swizzleStoreFp16Stride32(bTile1, kRow, j, 8, valR);
+            }
+            ctx.localBarrier();
+
+            HalfFloat[] fragA = ctx.mmaLoadA(aTile, WMMA_K);
+            HalfFloat[] fragB0 = ctx.mmaLoadBSwizzled(bTile0, WMMA_K);
+            fragC0 = ctx.mma(fragA, fragB0, fragC0, MMAShape.M16N8K16);
+            HalfFloat[] fragB1 = ctx.mmaLoadBSwizzled(bTile1, WMMA_K);
+            fragC1 = ctx.mma(fragA, fragB1, fragC1, MMAShape.M16N8K16);
+
+            ctx.localBarrier();
+        }
+
+        ctx.mmaStore(fragC0, c, tileRow, tileCol, dimN);
+        ctx.mmaStore(fragC1, c, tileRow, tileCol + 8, dimN);
+    }
+
+    // ------------------------------------------------------------------
     // Host-side helpers
     // ------------------------------------------------------------------
 
@@ -649,7 +719,23 @@ public class LowPrecisionGemmBenchmark {
         }
         report("int8 MMA (tensor core)", int8Times[1], int8Times[0], maxErrorInt(c8, refA8, refB8));
 
-        // ---- 7. FP8 E4M3 MMA (needs compute capability >= 8.9) ----------------------
+        // ---- 7. fp16 MMA with XOR-swizzled shared tiles ------------------------------
+        FloatArray cSwizzled = new FloatArray(M * N);
+        WorkerGrid1D swizzleWorker = new WorkerGrid1D(mmaGlobalSize);
+        swizzleWorker.setLocalWork(WARP_SIZE, 1, 1);
+        GridScheduler swizzleGrid = new GridScheduler("swizzle.gemm", swizzleWorker);
+        TaskGraph swizzleGraph = new TaskGraph("swizzle") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a16, b16) //
+                .task("gemm", LowPrecisionGemmBenchmark::gemmFp16MMASwizzled, context, a16, b16, cSwizzled, N, K) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, cSwizzled);
+
+        long[] swizzleTimes;
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(swizzleGraph.snapshot())) {
+            swizzleTimes = timePlan(plan, swizzleGrid);
+        }
+        report("fp16 MMA + swizzle", swizzleTimes[1], swizzleTimes[0], maxError(cSwizzled, refA, refB, 2));
+
+        // ---- 8. FP8 E4M3 MMA (needs compute capability >= 8.9) ----------------------
         // Two failure modes depending on the bailout flag -- see FP8GemmStage#run. With
         // -Dtornado.recover.bailout=False an exception propagates; with the default (what a
         // plain `tornado` run uses) it silently falls back to sequential host Java, which
@@ -675,6 +761,7 @@ public class LowPrecisionGemmBenchmark {
         System.out.printf("  fp16 MMA + cp.async   %.2fx%n", (double) fp32Times[1] / asyncTimes[1]);
         System.out.printf("  fp16 MMA + CUDA Graph %.2fx%n", (double) fp32Times[1] / graphTimes[1]);
         System.out.printf("  int8 MMA              %.2fx%n", (double) fp32Times[1] / int8Times[1]);
+        System.out.printf("  fp16 MMA + swizzle    %.2fx%n", (double) fp32Times[1] / swizzleTimes[1]);
         System.out.println();
         System.out.printf("CUDA Graph vs plain fp16 MMA (launch-overhead effect): %.2fx%n", (double) fp16Times[1] / graphTimes[1]);
     }
