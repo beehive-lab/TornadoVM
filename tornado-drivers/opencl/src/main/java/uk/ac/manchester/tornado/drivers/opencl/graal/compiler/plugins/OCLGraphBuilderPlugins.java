@@ -100,7 +100,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsic
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.PrintfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerNode;
-import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 import java.util.function.Supplier;
@@ -278,19 +277,13 @@ public class OCLGraphBuilderPlugins {
     }
 
     private static void registerAtomicAddOperation(Registration r) {
-        // Accessing the vmConfig during initialization was causing a NullPointerException.
-        // By using Suppliers, the getVMConfig() is only invoked at compile time, when the Supplier's get() is invoked in the plugins.
-        Supplier<Integer> intHeaderSupplier = () -> {
-            var vmConfig = TornadoCoreRuntime.getVMConfig();
-            int headerSize = vmConfig.getArrayBaseOffset(JavaKind.Int);
-            return headerSize / JavaKind.Int.getByteCount(); // 16/4=4 or 24/4=6
-        };
-
-        Supplier<Integer> longHeaderSupplier = () -> {
-            var vmConfig = TornadoCoreRuntime.getVMConfig();
-            int headerSize = vmConfig.getArrayBaseOffset(JavaKind.Long);
-            return headerSize / JavaKind.Long.getByteCount(); // 16/8=2 or 24/8=3
-        };
+        // The header offset must match the fixed device-buffer convention (PANAMA_OBJECT_HEADER_SIZE)
+        // used by OCLArrayWrapper (host side) and OCLLoweringProvider's indexed-array addressing (kernel
+        // side) - not a live vmConfig.getArrayBaseOffset() query, which varies with the host JDK's object
+        // header layout (12 vs 16 under JDK 27 compact headers) and desyncs from both of those fixed 16s,
+        // shifting atomicAdd's target address by one element.
+        Supplier<Integer> intHeaderSupplier = () -> (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE / JavaKind.Int.getByteCount(); // 16/4=4
+        Supplier<Integer> longHeaderSupplier = () -> (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE / JavaKind.Long.getByteCount(); // 16/8=2
         registerAtomicAddPlugin(r, "atomicAdd", IntArray.class, OCLKind.UINT, intHeaderSupplier);
         registerAtomicAddPlugin(r, "atomicAdd", int[].class, OCLKind.UINT, intHeaderSupplier);
         registerAtomicAddPlugin(r, "atomicAdd", LongArray.class, OCLKind.ULONG, longHeaderSupplier);
