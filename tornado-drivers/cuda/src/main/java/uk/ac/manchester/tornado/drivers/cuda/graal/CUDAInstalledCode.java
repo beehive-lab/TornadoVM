@@ -226,9 +226,16 @@ public class CUDAInstalledCode extends InstalledCode implements TornadoInstalled
         if (deviceContext.deferKernelContextWriteIfCapturing(executionPlanId, kernelArgs)) {
             waitEvents = events;
         } else {
-            internalEvents[0] = kernelArgs.enqueueWrite(executionPlanId, events);
-            waitEvents = internalEvents;
-            updateProfilerKernelContextWrite(executionPlanId, internalEvents[0], meta, kernelArgs);
+            int kernelContextWriteEventId = kernelArgs.enqueueWrite(executionPlanId, events);
+            if (kernelContextWriteEventId == -1) {
+                // The frame was already on the device unchanged, so there is no write event to
+                // chain the launch onto: keep the caller's dependencies instead of dropping them.
+                waitEvents = events;
+            } else {
+                internalEvents[0] = kernelContextWriteEventId;
+                waitEvents = internalEvents;
+                updateProfilerKernelContextWrite(executionPlanId, kernelContextWriteEventId, meta, kernelArgs);
+            }
         }
 
         int task;
@@ -314,7 +321,9 @@ public class CUDAInstalledCode extends InstalledCode implements TornadoInstalled
         setKernelArgs(oclKernelStackFrame, atomicSpace, meta);
         if (!deviceContext.deferKernelContextWriteIfCapturing(executionPlanId, oclKernelStackFrame)) {
             int kernelContextWriteEventId = oclKernelStackFrame.enqueueWrite(executionPlanId);
-            updateProfilerKernelContextWrite(executionPlanId, kernelContextWriteEventId, meta, oclKernelStackFrame);
+            if (kernelContextWriteEventId != -1) {
+                updateProfilerKernelContextWrite(executionPlanId, kernelContextWriteEventId, meta, oclKernelStackFrame);
+            }
         }
 
         if (meta == null) {
