@@ -88,6 +88,7 @@ static jlong record_event(cuda_queue_t *queue) {
     LOG_CUDA_AND_VALIDATE("cuEventCreate", result);
     result = cuEventRecord(ev->event, queue->stream);
     LOG_CUDA_AND_VALIDATE("cuEventRecord", result);
+    queue->pending = true;
     return (jlong) ev;
 }
 
@@ -107,9 +108,24 @@ static void wait_events(JNIEnv *env, cuda_queue_t *queue, jlongArray array) {
         cuda_event_t *ev = (cuda_event_t *) raw[i + 1];
         if (ev != nullptr) {
             cuStreamWaitEvent(queue->stream, ev->event, 0);
+            queue->pending = true;
         }
     }
     env->ReleasePrimitiveArrayCritical(array, raw, JNI_ABORT);
+}
+
+/*
+ * Drains the stream, unless nothing has been enqueued since it was last drained - in which
+ * case the stream is empty by construction and cuStreamSynchronize would only cost a driver
+ * round trip. Never called while capturing: a sync invalidates the capture.
+ */
+static void sync_stream(cuda_queue_t *queue) {
+    if (!queue->pending) {
+        return;
+    }
+    CUresult result = cuStreamSynchronize(queue->stream);
+    LOG_CUDA_AND_VALIDATE("cuStreamSynchronize", result);
+    queue->pending = false;
 }
 
 /*
@@ -163,6 +179,7 @@ static jlong end_event(cuda_event_t *ev, cuda_queue_t *queue) {
     LOG_CUDA_AND_VALIDATE("cuEventCreate(end)", result);
     result = cuEventRecord(ev->event, queue->stream);
     LOG_CUDA_AND_VALIDATE("cuEventRecord(end)", result);
+    queue->pending = true;
     return (jlong) ev;
 }
 
@@ -217,8 +234,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQue
     if (queue == nullptr) {
         return;
     }
-    CUresult result = cuStreamSynchronize(queue->stream);
-    LOG_CUDA_AND_VALIDATE("cuStreamSynchronize", result);
+    sync_stream(queue);
 }
 
 /*
@@ -232,8 +248,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQue
     if (queue == nullptr) {
         return;
     }
-    CUresult result = cuStreamSynchronize(queue->stream);
-    LOG_CUDA_AND_VALIDATE("cuStreamSynchronize", result);
+    sync_stream(queue);
 }
 
 /*
@@ -349,10 +364,14 @@ static jlong transfer_to_device(JNIEnv *env, cuda_queue_t *queue, void *host_bas
             (size_t) num_bytes,
             queue->stream);
     LOG_CUDA_AND_VALIDATE("cuMemcpyHtoDAsync", result);
+    // Record the completion event BEFORE draining, so a sync leaves the stream genuinely
+    // empty: recording afterwards would re-arm `pending` and force the next flush to
+    // synchronise an otherwise idle stream.
+    jlong handle = end_event(ev, queue);
     if (sync_after && !stream_is_capturing(queue)) {
-        cuStreamSynchronize(queue->stream);
+        sync_stream(queue);
     }
-    return end_event(ev, queue);
+    return handle;
 }
 
 static jlong transfer_to_host(JNIEnv *env, cuda_queue_t *queue, void *host_base,
@@ -373,10 +392,14 @@ static jlong transfer_to_host(JNIEnv *env, cuda_queue_t *queue, void *host_base,
             (size_t) num_bytes,
             queue->stream);
     LOG_CUDA_AND_VALIDATE("cuMemcpyDtoHAsync", result);
+    // Record the completion event BEFORE draining, so a sync leaves the stream genuinely
+    // empty: recording afterwards would re-arm `pending` and force the next flush to
+    // synchronise an otherwise idle stream.
+    jlong handle = end_event(ev, queue);
     if (sync_after && !stream_is_capturing(queue)) {
-        cuStreamSynchronize(queue->stream);
+        sync_stream(queue);
     }
-    return end_event(ev, queue);
+    return handle;
 }
 
 /* ---- writeArrayToDevice overloads (byte/char/short/int/long/float/double) ---- */

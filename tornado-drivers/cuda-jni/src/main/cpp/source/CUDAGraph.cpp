@@ -179,6 +179,8 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
     cuCtxSetCurrent(queue->context);
     CUresult result = cuGraphLaunch(graphExec, queue->stream);
     LOG_CUDA_AND_VALIDATE("cuGraphLaunch", result);
+    // A replayed graph is stream work like any other: the next flush/finish must drain it.
+    queue->pending = true;
     return (jlong) result;
 }
 

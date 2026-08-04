@@ -105,6 +105,11 @@ typedef struct cuda_queue_s {
     CUcontext context;
     CUdevice device;
     long properties;
+    /* Whether anything has been enqueued since the stream was last drained. A task-graph
+     * execution ends with a blocking read-back, then a flush and a finish, so two of the
+     * three cuStreamSynchronize calls per execution are issued against an already-empty
+     * stream; this flag turns those into no-ops. */
+    bool pending;
 } cuda_queue_t;
 
 /* Opaque handle: maps the OpenCL cl_program long. Source is CUDA C compiled by NVRTC. */

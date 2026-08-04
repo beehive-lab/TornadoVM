@@ -80,6 +80,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAContext_c
     queue->context = ctx->context;
     queue->device = ctx->device;
     queue->properties = (long) properties;
+    queue->pending = false;
     result = cuStreamCreate(&queue->stream, CU_STREAM_NON_BLOCKING);
     LOG_CUDA_AND_VALIDATE("cuStreamCreate", result);
     if (result != CUDA_SUCCESS) {
