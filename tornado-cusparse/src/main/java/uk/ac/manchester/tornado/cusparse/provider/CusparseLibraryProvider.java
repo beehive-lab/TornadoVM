@@ -33,7 +33,8 @@ import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
  * buffer size depends on the sparse structure (only known once the operand
  * device pointers are resolved at dispatch), {@link #prepare} pre-allocates a
  * default workspace so the small SpMV/SpMM buffers do not trigger an allocation
- * inside a CUDA-graph capture region.
+ * inside a CUDA-graph capture region. A shape that needs more than that is
+ * rejected while capturing rather than allocated, which the driver would refuse.
  */
 public final class CusparseLibraryProvider implements TornadoLibraryProvider {
 
@@ -49,8 +50,15 @@ public final class CusparseLibraryProvider implements TornadoLibraryProvider {
             this.handle = handle;
         }
 
-        private void growWorkspace(long required) {
+        private void growWorkspace(long required, boolean capturing) {
             if (required > workspaceBytes) {
+                if (capturing) {
+                    // cudaMalloc is not legal inside a stream capture region: it would
+                    // abort the capture with a cryptic driver error. Fail here instead,
+                    // naming the size the workspace would have to be pre-sized to.
+                    throw new TornadoRuntimeException("[ERROR] cuSPARSE needs a " + required + " byte workspace but only " + workspaceBytes
+                            + " bytes were pre-allocated, and the workspace cannot grow while capturing a CUDA graph. Run this task graph once without CUDA graphs, or reduce the problem size.");
+                }
                 if (workspacePtr != 0) {
                     CusparseNativeLib.freeDeviceMemory(workspacePtr);
                     workspacePtr = 0;
@@ -93,7 +101,7 @@ public final class CusparseLibraryProvider implements TornadoLibraryProvider {
         // The exact buffer size needs the operand device pointers (resolved only
         // at dispatch), so pre-allocate a default workspace here to keep dispatch
         // allocation-free and CUDA-graph-capture-safe for the common small cases.
-        ((CusparseContext) context).growWorkspace(DEFAULT_WORKSPACE_BYTES);
+        ((CusparseContext) context).growWorkspace(DEFAULT_WORKSPACE_BYTES, false);
     }
 
     @Override
@@ -121,7 +129,7 @@ public final class CusparseLibraryProvider implements TornadoLibraryProvider {
         if (needed < 0) {
             throw new TornadoRuntimeException("[ERROR] cusparseSpMV_bufferSize failed");
         }
-        context.growWorkspace(needed);
+        context.growWorkspace(needed, invocation.isCapturing());
         return CusparseNativeLib.spmv(context.handle, rows, cols, nnz, dRow, dCol, dVal, dX, dY, 1.0f, 0.0f, context.workspacePtr);
     }
 
@@ -140,7 +148,7 @@ public final class CusparseLibraryProvider implements TornadoLibraryProvider {
         if (needed < 0) {
             throw new TornadoRuntimeException("[ERROR] cusparseSpMM_bufferSize failed");
         }
-        context.growWorkspace(needed);
+        context.growWorkspace(needed, invocation.isCapturing());
         return CusparseNativeLib.spmm(context.handle, rows, k, n, nnz, dRow, dCol, dVal, dB, dC, 1.0f, 0.0f, context.workspacePtr);
     }
 

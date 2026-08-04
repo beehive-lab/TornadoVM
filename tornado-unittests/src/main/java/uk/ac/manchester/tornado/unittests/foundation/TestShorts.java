@@ -39,6 +39,24 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  */
 public class TestShorts extends TornadoTestBase {
 
+    public static void vectorSubShortCompute(ShortArray a, ShortArray b, ShortArray c) {
+        for (int i = 0; i < c.getSize(); i++) {
+            a.set(i, (short) (b.get(i) - c.get(i)));
+        }
+    }
+
+    public static void vectorMulShortCompute(ShortArray a, ShortArray b, ShortArray c) {
+        for (int i = 0; i < c.getSize(); i++) {
+            a.set(i, (short) (b.get(i) * c.get(i)));
+        }
+    }
+
+    public static void vectorDivShortCompute(ShortArray a, ShortArray b, ShortArray c) {
+        for (int i = 0; i < c.getSize(); i++) {
+            a.set(i, (short) (b.get(i) / c.get(i)));
+        }
+    }
+
     @Test
     public void testShortAdd() throws TornadoExecutionPlanException {
         final int numElements = 256;
@@ -55,6 +73,90 @@ public class TestShorts extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, b, c) //
                 .task("t0", TestKernels::vectorSumShortCompute, a, b, c) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        for (int i = 0; i < numElements; i++) {
+            assertEquals(expectedResult.get(i), a.get(i));
+        }
+    }
+
+    @Test
+    public void testShortSub() throws TornadoExecutionPlanException {
+        final int numElements = 256;
+        ShortArray a = new ShortArray(numElements);
+        ShortArray b = new ShortArray(numElements);
+        ShortArray c = new ShortArray(numElements);
+
+        b.init((short) 10);
+        c.init((short) 3);
+
+        ShortArray expectedResult = new ShortArray(numElements);
+        expectedResult.init((short) 7);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, b, c) //
+                .task("t0", TestShorts::vectorSubShortCompute, a, b, c) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        for (int i = 0; i < numElements; i++) {
+            assertEquals(expectedResult.get(i), a.get(i));
+        }
+    }
+
+    @Test
+    public void testShortMul() throws TornadoExecutionPlanException {
+        final int numElements = 256;
+        ShortArray a = new ShortArray(numElements);
+        ShortArray b = new ShortArray(numElements);
+        ShortArray c = new ShortArray(numElements);
+
+        b.init((short) 5);
+        c.init((short) 3);
+
+        ShortArray expectedResult = new ShortArray(numElements);
+        expectedResult.init((short) 15);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, b, c) //
+                .task("t0", TestShorts::vectorMulShortCompute, a, b, c) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        for (int i = 0; i < numElements; i++) {
+            assertEquals(expectedResult.get(i), a.get(i));
+        }
+    }
+
+    @Test
+    public void testShortDiv() throws TornadoExecutionPlanException {
+        final int numElements = 256;
+        ShortArray a = new ShortArray(numElements);
+        ShortArray b = new ShortArray(numElements);
+        ShortArray c = new ShortArray(numElements);
+
+        b.init((short) 20);
+        c.init((short) 4);
+
+        ShortArray expectedResult = new ShortArray(numElements);
+        expectedResult.init((short) 5);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, b, c) //
+                .task("t0", TestShorts::vectorDivShortCompute, a, b, c) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();

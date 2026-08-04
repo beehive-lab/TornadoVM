@@ -40,8 +40,9 @@ public final class LibraryInvocation {
     private final long executionPlanId;
     private final LibraryContext context;
     private final Object tuning;
+    private final boolean capturing;
 
-    public LibraryInvocation(Object[] javaArgs, long[] devicePointers, boolean[] isReference, TornadoXPUDevice device, long executionPlanId, LibraryContext context, Object tuning) {
+    public LibraryInvocation(Object[] javaArgs, long[] devicePointers, boolean[] isReference, TornadoXPUDevice device, long executionPlanId, LibraryContext context, Object tuning, boolean capturing) {
         this.javaArgs = javaArgs;
         this.devicePointers = devicePointers;
         this.isReference = isReference;
@@ -49,6 +50,7 @@ public final class LibraryInvocation {
         this.executionPlanId = executionPlanId;
         this.context = context;
         this.tuning = tuning;
+        this.capturing = capturing;
     }
 
     public int getNumArgs() {
@@ -94,5 +96,16 @@ public final class LibraryInvocation {
      */
     public Object getTuning() {
         return tuning;
+    }
+
+    /**
+     * Whether this call is being recorded into a CUDA graph rather than executed
+     * immediately. Device allocations, host synchronisation and stream queries are
+     * not capture-safe, so a provider that would need one must reject the call
+     * instead of performing it. Sizing work of that kind belongs in
+     * {@link TornadoLibraryProvider#prepare}, which runs before the capture starts.
+     */
+    public boolean isCapturing() {
+        return capturing;
     }
 }

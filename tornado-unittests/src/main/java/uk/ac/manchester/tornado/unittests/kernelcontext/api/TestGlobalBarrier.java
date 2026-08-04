@@ -1,24 +1,18 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework:
- * https://github.com/beehive-lab/tornadovm
- *
  * Copyright (c) 2026, APT Group, Department of Computer Science,
- * School of Engineering, The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * The University of Manchester.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.api;
@@ -28,24 +22,32 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
- * {@link KernelContext#globalBarrier()} - a work-group barrier that also orders the group's global
- * memory accesses ({@code barrier(CLK_GLOBAL_MEM_FENCE)} on OpenCL, {@code __syncthreads()} on CUDA,
- * which already makes prior global and shared accesses visible across the block).
+ * {@link KernelContext#globalBarrier()} had zero coverage anywhere in the suite -- every
+ * local-memory/barrier/atomic test in {@code kernelcontext/} uses {@code localBarrier()} only.
+ *
+ * <p>The barrier synchronises the work-group and orders that group's <em>global</em> memory accesses
+ * ({@code barrier(CLK_GLOBAL_MEM_FENCE)} on OpenCL, {@code __syncthreads()} on CUDA). Only the
+ * global-memory ordering is guaranteed across backends: CUDA's {@code __syncthreads()} additionally
+ * makes prior shared-memory accesses visible block-wide, but that is a CUDA-specific strengthening
+ * and is not implied by the OpenCL lowering. {@code testGlobalBarrierOrdersSharedArrayAccess} relies
+ * on that stronger guarantee and so is CUDA-only; the global-memory tests are not.
  *
  * <p>The scope is the work-group, not the whole grid: nothing here assumes ordering between blocks.
  *
- * <p>How to run:
+ * <p>How to run?
  *
  * <pre>
  * tornado-test -V uk.ac.manchester.tornado.unittests.kernelcontext.api.TestGlobalBarrier
@@ -53,13 +55,31 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  */
 public class TestGlobalBarrier extends TornadoTestBase {
 
-    private static final int THREADS = 64;
+    private static final int THREADS = 256;
     private static final int BLOCKS = 4;
     private static final int SIZE = THREADS * BLOCKS;
 
     /**
+     * Mirrors {@code TestAtomicRmw#blockMaxKernel} but synchronises with {@code globalBarrier()}
+     * instead, to confirm it still correctly orders the shared-array load/atomic/read-back sequence.
+     */
+    private static void blockMaxWithGlobalBarrier(KernelContext ctx, IntArray in, IntArray out) {
+        int[] shared = ctx.allocateIntLocalArray(1);
+        if (ctx.localIdx == 0) {
+            shared[0] = Integer.MIN_VALUE;
+        }
+        ctx.globalBarrier();
+        ctx.atomicMax(shared, 0, in.get(ctx.globalIdx));
+        ctx.globalBarrier();
+        if (ctx.localIdx == 0) {
+            out.set(ctx.groupIdx, shared[0]);
+        }
+    }
+
+    /**
      * Every thread writes one global element, then thread 0 of each block reads back the whole block's
-     * writes. Without the barrier the reads may observe stale values.
+     * writes. Without the barrier the reads may observe stale values. This is the case the barrier's
+     * cross-backend contract actually covers, so it is not restricted to CUDA.
      */
     public static void globalFenceKernel(KernelContext ctx, IntArray scratch, IntArray out) {
         scratch.set(ctx.globalIdx, ctx.globalIdx);
@@ -101,6 +121,41 @@ public class TestGlobalBarrier extends TornadoTestBase {
         WorkerGrid worker = new WorkerGrid1D(SIZE);
         worker.setLocalWork(THREADS, 1, 1);
         return new GridScheduler("barrier." + taskId, worker);
+    }
+
+    @Test
+    public void testGlobalBarrierOrdersSharedArrayAccess() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
+        IntArray in = new IntArray(SIZE);
+        for (int i = 0; i < SIZE; i++) {
+            in.set(i, (i * 7919) % 10007);
+        }
+        IntArray out = new IntArray(BLOCKS);
+
+        KernelContext context = new KernelContext();
+        WorkerGrid worker = new WorkerGrid1D(SIZE);
+        worker.setLocalWork(THREADS, 1, 1);
+        GridScheduler grid = new GridScheduler("s0.t0", worker);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, in) //
+                .task("t0", TestGlobalBarrier::blockMaxWithGlobalBarrier, context, in, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(grid).execute();
+        }
+
+        for (int block = 0; block < BLOCKS; block++) {
+            int expected = Integer.MIN_VALUE;
+            for (int lane = 0; lane < THREADS; lane++) {
+                expected = Math.max(expected, in.get(block * THREADS + lane));
+            }
+            assertEquals(expected, out.get(block));
+        }
     }
 
     @Test
