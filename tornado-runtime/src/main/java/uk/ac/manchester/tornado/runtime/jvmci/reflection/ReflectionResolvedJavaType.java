@@ -357,7 +357,21 @@ public final class ReflectionResolvedJavaType implements ResolvedJavaType {
 
     @Override
     public AssumptionResult<ResolvedJavaMethod> findUniqueConcreteMethod(ResolvedJavaMethod method) {
-        // Conservative: no unique-concrete-method assumption. null == unknown.
+        // Closed kernel world, same stance as resolveMethod below: virtual overrides are not part
+        // of the kernel programming model, so the declared implementation is the unique concrete
+        // target. This restores the parse-time devirtualization HotSpot CHA provided on the JVMCI
+        // path: BytecodeParser.appendInvoke only calls tryInvocationPlugin (and so only consults
+        // InvocationPlugins) for invokes MethodCallTargetNode.findSpecialCallTarget already turned
+        // Direct - a virtual/interface invoke stays non-Direct, and its InvocationPlugin (e.g. every
+        // KernelContext intrinsic) is silently skipped, unless findUniqueConcreteMethod resolves it
+        // here first. Each backend's LoweringProvider already forces every surviving call target
+        // into a TornadoDirectCallTargetNode using the exact same declared-method answer at lowering
+        // time (see e.g. OCLLoweringProvider's TornadoDirectCallTargetNode construction) - this just
+        // gives that same answer during parsing, while InvocationPlugins can still intercept it.
+        ResolvedJavaMethod resolved = resolveMethod(method, this);
+        if (resolved != null && !resolved.isAbstract()) {
+            return new AssumptionResult<>(resolved);
+        }
         return null;
     }
 
