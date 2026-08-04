@@ -27,12 +27,14 @@ import static uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus.COMPLETE
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VM_USE_DEPS;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -105,6 +107,26 @@ public class TornadoVMInterpreter {
     private final List<SchedulableTask> localTaskList;
     private final TornadoExecutionContext graphExecutionContext;
     private final TornadoVMBytecodeResult bytecodeResult;
+
+    /**
+     * Device timings the profiler still has to read out of their events. Reading a timestamp
+     * means waiting for the event, so doing it inline after each transfer serialises the host
+     * against the device for the whole run - with the profiler on, a short task graph slows
+     * down several times over. The samples are instead harvested once the run has drained its
+     * stream, where every event is already complete and the read costs nothing.
+     */
+    private record DeferredProfilerSample(int eventIndex, Consumer<Event> harvest) {
+    }
+
+    private final List<DeferredProfilerSample> deferredProfilerSamples = new ArrayList<>();
+
+    /**
+     * Harvest early once this many samples are outstanding: event slots are recycled by the
+     * backend event pool, so a very long run must not hold references to slots that have since
+     * been reused.
+     */
+    private static final int MAX_DEFERRED_PROFILER_SAMPLES = 256;
+
     private TornadoProfiler timeProfiler;
     private double totalTime;
     private long invocations;
@@ -513,6 +535,7 @@ public class TornadoVMInterpreter {
             if (TornadoOptions.USE_VM_FLUSH) {
                 interpreterDevice.flush(graphExecutionContext.getExecutionPlanId());
             }
+            harvestProfilerSamples();
         }
 
         final long t1 = System.nanoTime();
@@ -912,16 +935,17 @@ public class TornadoVMInterpreter {
         }
 
         if (TornadoOptions.isProfilerEnabled() && !insideCaptureRegion && allEvents != null) {
+            final long transferredBytes = objectState.getXPUBuffer().size();
             for (Integer e : allEvents) {
-                Event event = interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), e);
-                event.waitForEvents(graphExecutionContext.getExecutionPlanId());
-                long copyInTimer = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
-                copyInTimer += event.getElapsedTime();
-                timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
-                timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getXPUBuffer().size());
-                long dispatchValue = timeProfiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
-                dispatchValue += event.getDriverDispatchTime();
-                timeProfiler.setTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME, dispatchValue);
+                deferProfilerSample(e, event -> {
+                    long copyInTimer = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
+                    copyInTimer += event.getElapsedTime();
+                    timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
+                    timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, transferredBytes);
+                    long dispatchValue = timeProfiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
+                    dispatchValue += event.getDriverDispatchTime();
+                    timeProfiler.setTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME, dispatchValue);
+                });
             }
         }
 
@@ -951,18 +975,19 @@ public class TornadoVMInterpreter {
         }
 
         if (TornadoOptions.isProfilerEnabled() && !insideCaptureRegion && allEvents != null) {
+            final long transferredBytes = objectState.getXPUBuffer().size();
             for (Integer e : allEvents) {
-                Event event = interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), e);
-                event.waitForEvents(graphExecutionContext.getExecutionPlanId());
-                long copyInTimer = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
-                copyInTimer += event.getElapsedTime();
-                timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
+                deferProfilerSample(e, event -> {
+                    long copyInTimer = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
+                    copyInTimer += event.getElapsedTime();
+                    timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
 
-                timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getXPUBuffer().size());
+                    timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, transferredBytes);
 
-                long dispatchValue = timeProfiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
-                dispatchValue += event.getDriverDispatchTime();
-                timeProfiler.setTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME, dispatchValue);
+                    long dispatchValue = timeProfiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
+                    dispatchValue += event.getDriverDispatchTime();
+                    timeProfiler.setTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME, dispatchValue);
+                });
             }
         }
 
@@ -992,17 +1017,18 @@ public class TornadoVMInterpreter {
         resetEventIndexes(eventId);
 
         if (TornadoOptions.isProfilerEnabled() && !insideCaptureRegion && readEvent != -1) {
-            Event event = interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), readEvent);
-            event.waitForEvents(graphExecutionContext.getExecutionPlanId());
-            long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
-            value += event.getElapsedTime();
-            timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME, value);
+            final long transferredBytes = objectState.getXPUBuffer().size();
+            deferProfilerSample(readEvent, event -> {
+                long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
+                value += event.getElapsedTime();
+                timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME, value);
 
-            timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_OUT_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getXPUBuffer().size());
+                timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_OUT_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, transferredBytes);
 
-            long dispatchValue = timeProfiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
-            dispatchValue += event.getDriverDispatchTime();
-            timeProfiler.setTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME, dispatchValue);
+                long dispatchValue = timeProfiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
+                dispatchValue += event.getDriverDispatchTime();
+                timeProfiler.setTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME, dispatchValue);
+            });
         }
         return readEvent;
     }
@@ -1024,17 +1050,18 @@ public class TornadoVMInterpreter {
         final int readEvent = interpreterDevice.streamOutBlocking(graphExecutionContext.getExecutionPlanId(), object, offset, objectState, eventWaitList);
 
         if (TornadoOptions.isProfilerEnabled() && !insideCaptureRegion && readEvent != -1) {
-            Event event = interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), readEvent);
-            event.waitForEvents(graphExecutionContext.getExecutionPlanId());
-            long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
-            value += event.getElapsedTime();
-            timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME, value);
+            final long transferredBytes = objectState.getXPUBuffer().size();
+            deferProfilerSample(readEvent, event -> {
+                long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
+                value += event.getElapsedTime();
+                timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME, value);
 
-            timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_OUT_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getXPUBuffer().size());
+                timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_OUT_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, transferredBytes);
 
-            long dispatchValue = timeProfiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
-            dispatchValue += event.getDriverDispatchTime();
-            timeProfiler.setTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME, dispatchValue);
+                long dispatchValue = timeProfiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
+                dispatchValue += event.getDriverDispatchTime();
+                timeProfiler.setTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME, dispatchValue);
+            });
         }
         resetEventIndexes(eventId);
     }
@@ -1243,11 +1270,11 @@ public class TornadoVMInterpreter {
             List<Integer> allEvents = bufferAtomics.enqueueWrite(graphExecutionContext.getExecutionPlanId(), null, 0, 0, null, false);
             if (TornadoOptions.isProfilerEnabled() && !insideCaptureRegion) {
                 for (Integer e : allEvents) {
-                    Event event = interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), e);
-                    event.waitForEvents(graphExecutionContext.getExecutionPlanId());
-                    long value = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
-                    value += event.getElapsedTime();
-                    timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, value);
+                    deferProfilerSample(e, event -> {
+                        long value = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
+                        value += event.getElapsedTime();
+                        timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, value);
+                    });
                 }
             }
             if (TornadoOptions.LOG_BYTECODES()) {
@@ -1434,6 +1461,26 @@ public class TornadoVMInterpreter {
 
     private boolean isNotObjectAtomic(Object object) {
         return !(object instanceof AtomicInteger);
+    }
+
+    private void deferProfilerSample(int eventIndex, Consumer<Event> harvest) {
+        deferredProfilerSamples.add(new DeferredProfilerSample(eventIndex, harvest));
+        if (deferredProfilerSamples.size() >= MAX_DEFERRED_PROFILER_SAMPLES) {
+            harvestProfilerSamples();
+        }
+    }
+
+    private void harvestProfilerSamples() {
+        if (deferredProfilerSamples.isEmpty()) {
+            return;
+        }
+        final long executionPlanId = graphExecutionContext.getExecutionPlanId();
+        for (DeferredProfilerSample sample : deferredProfilerSamples) {
+            Event event = interpreterDevice.resolveEvent(executionPlanId, sample.eventIndex());
+            event.waitForEvents(executionPlanId);
+            sample.harvest().accept(event);
+        }
+        deferredProfilerSamples.clear();
     }
 
     private void resetEventIndexes(int eventList) {

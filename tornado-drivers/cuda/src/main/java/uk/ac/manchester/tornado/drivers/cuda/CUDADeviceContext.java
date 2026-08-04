@@ -203,6 +203,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
         // host against up to 7 queues per execution.
         joinRoleQueues(executionPlanId, commandQueue);
         commandQueue.finish();
+        harvestDeferredProfilerReads();
     }
 
     @Override
@@ -941,6 +942,39 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     public void flush(long executionPlanId) {
         CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
         commandQueue.flush();
+        harvestDeferredProfilerReads();
+    }
+
+    /**
+     * Profiler read-outs postponed until the stream has been drained. Reading a device
+     * timestamp waits for its event, so doing it inline after each launch pins the host to
+     * the device for the whole run; the reads are batched here and run once the work is
+     * known complete, where they cost nothing.
+     */
+    private final List<Runnable> deferredProfilerReads = Collections.synchronizedList(new ArrayList<>());
+
+    /** Bound on outstanding reads, so a long run cannot outlive the backing event slots. */
+    private static final int MAX_DEFERRED_PROFILER_READS = 256;
+
+    public void deferProfilerRead(Runnable read) {
+        deferredProfilerReads.add(read);
+        if (deferredProfilerReads.size() >= MAX_DEFERRED_PROFILER_READS) {
+            harvestDeferredProfilerReads();
+        }
+    }
+
+    public void harvestDeferredProfilerReads() {
+        if (deferredProfilerReads.isEmpty()) {
+            return;
+        }
+        List<Runnable> pending;
+        synchronized (deferredProfilerReads) {
+            pending = new ArrayList<>(deferredProfilerReads);
+            deferredProfilerReads.clear();
+        }
+        for (Runnable read : pending) {
+            read.run();
+        }
     }
 
     @Override
