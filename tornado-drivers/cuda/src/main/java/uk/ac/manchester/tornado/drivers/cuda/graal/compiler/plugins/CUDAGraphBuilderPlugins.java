@@ -127,7 +127,6 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASwizzledLoadFP16Str
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASwizzledStoreFP16Stride32Node;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.PrintfNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.TornadoAtomicIntegerNode;
-import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 import java.lang.reflect.Field;
@@ -308,30 +307,15 @@ public class CUDAGraphBuilderPlugins {
     }
 
     private static void registerAtomicAddOperation(Registration r) {
-        // Accessing the vmConfig during initialization was causing a NullPointerException.
-        // By using Suppliers, the getVMConfig() is only invoked at compile time, when the Supplier's get() is invoked in the plugins.
-        Supplier<Integer> intHeaderSupplier = () -> {
-            var vmConfig = TornadoCoreRuntime.getVMConfig();
-            int headerSize = vmConfig.getArrayBaseOffset(JavaKind.Int);
-            return headerSize / JavaKind.Int.getByteCount(); // 16/4=4 or 24/4=6
-        };
-
-        Supplier<Integer> longHeaderSupplier = () -> {
-            var vmConfig = TornadoCoreRuntime.getVMConfig();
-            int headerSize = vmConfig.getArrayBaseOffset(JavaKind.Long);
-            return headerSize / JavaKind.Long.getByteCount(); // 16/8=2 or 24/8=3
-        };
-        Supplier<Integer> floatHeaderSupplier = () -> {
-            var vmConfig = TornadoCoreRuntime.getVMConfig();
-            int headerSize = vmConfig.getArrayBaseOffset(JavaKind.Float);
-            return headerSize / JavaKind.Float.getByteCount();
-        };
-
-        Supplier<Integer> doubleHeaderSupplier = () -> {
-            var vmConfig = TornadoCoreRuntime.getVMConfig();
-            int headerSize = vmConfig.getArrayBaseOffset(JavaKind.Double);
-            return headerSize / JavaKind.Double.getByteCount();
-        };
+        // The header offset must match the fixed device-buffer convention (PANAMA_OBJECT_HEADER_SIZE)
+        // used elsewhere in this file (see registerCpAsyncCopy) and by the host-side array wrappers -
+        // not a live vmConfig.getArrayBaseOffset() query, which varies with the host JDK's object header
+        // layout (12 vs 16 under JDK 27 compact headers) and desyncs from that fixed 16, shifting
+        // atomicAdd's target address by one element.
+        Supplier<Integer> intHeaderSupplier = () -> (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE / JavaKind.Int.getByteCount(); // 16/4=4
+        Supplier<Integer> longHeaderSupplier = () -> (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE / JavaKind.Long.getByteCount(); // 16/8=2
+        Supplier<Integer> floatHeaderSupplier = () -> (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE / JavaKind.Float.getByteCount(); // 16/4=4
+        Supplier<Integer> doubleHeaderSupplier = () -> (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE / JavaKind.Double.getByteCount(); // 16/8=2
 
         registerAtomicAddPlugin(r, "atomicAdd", IntArray.class, CUDAKind.UINT, intHeaderSupplier);
         registerAtomicAddPlugin(r, "atomicAdd", int[].class, CUDAKind.UINT, intHeaderSupplier);
@@ -689,8 +673,7 @@ public class CUDAGraphBuilderPlugins {
                                  ValueNode fragD, ValueNode target,
                                  ValueNode tileRow, ValueNode tileCol, ValueNode dimN) {
                 receiver.get(true);
-                int headerElements = TornadoCoreRuntime.getVMConfig()
-                        .getArrayBaseOffset(JavaKind.Float) / JavaKind.Float.getByteCount();
+                int headerElements = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE / JavaKind.Float.getByteCount();
                 b.add(new CUDAMMAStoreNode(fragD, target, tileRow, tileCol, dimN, headerElements));
                 return true;
             }
@@ -809,8 +792,7 @@ public class CUDAGraphBuilderPlugins {
                                  ValueNode fragD, ValueNode target,
                                  ValueNode tileRow, ValueNode tileCol, ValueNode dimN) {
                 receiver.get(true);
-                int headerElements = TornadoCoreRuntime.getVMConfig()
-                        .getArrayBaseOffset(JavaKind.Int) / JavaKind.Int.getByteCount();
+                int headerElements = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE / JavaKind.Int.getByteCount();
                 b.add(new CUDAMMAStoreNode(fragD, target, tileRow, tileCol, dimN, headerElements, true));
                 return true;
             }
