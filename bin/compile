@@ -19,6 +19,7 @@
 
 import argparse
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -91,6 +92,60 @@ def check_java_version():
     )
 
     return java_version_output
+
+
+def _parse_major_version(java_version_output):
+    """Extract the JDK feature/major version number from `java -version` output,
+    e.g. 'openjdk version "21.0.2" ...' -> 21, 'openjdk version "27-ea" ...' -> 27."""
+    match = re.search(r'version "(\d+)', java_version_output)
+    return int(match.group(1)) if match else None
+
+
+def _parse_expected_version(jdk):
+    """Extract the target major version from a --jdk value, e.g. 'jdk21' -> 21,
+    'graal-jdk-21' -> 21."""
+    match = re.search(r'(\d+)$', jdk) if jdk else None
+    return int(match.group(1)) if match else None
+
+
+def verify_jdk_matches_java_home(jdk):
+    """
+    Fail fast if JAVA_HOME's actual JDK does not match the requested --jdk profile.
+
+    The jdkNN Maven profile (e.g. -Pjdk21) only selects compiler flags and
+    dependencies -- it does not switch the javac/jar toolchain, which is always
+    whatever JAVA_HOME points at. Since jdk.vm.ci.* (JVMCI) internals are not a
+    stable API and can differ even between JDK feature releases that both still
+    ship JVMCI (e.g. jdk.vm.ci.code.Architecture's constructor changed between
+    JDK 21 and JDK 25), building --jdk jdk21 under a JDK 25 JAVA_HOME silently
+    produces an SDK that links against the wrong JVMCI shape at runtime instead
+    of failing at build time. Catch that here instead.
+    """
+    expected = _parse_expected_version(jdk)
+    if expected is None:
+        return
+
+    print(f"Checking JAVA_HOME matches --jdk {jdk} ......... ", end='')
+    java_version_output = check_java_version()
+    actual = _parse_major_version(java_version_output)
+    if actual is None:
+        print("[SKIPPED] (could not parse JDK version from `java -version`)")
+        return
+
+    if actual != expected:
+        print("[ERROR]")
+        java_home = os.environ.get("JAVA_HOME")
+        print(
+            f"\n\t--jdk {jdk} requires a JDK {expected} JAVA_HOME, but JAVA_HOME is "
+            f"JDK {actual}:\n\t  {java_home}\n\n"
+            f"\tThe --jdk flag only selects Maven compiler flags/dependencies -- it does\n"
+            f"\tNOT switch the build toolchain, which always comes from JAVA_HOME. A\n"
+            f"\tmismatch here compiles against one JVMCI shape and links against another\n"
+            f"\tat runtime, which fails late with a confusing NoSuchMethodError instead.\n\n"
+            f"\tSuggestion: export JAVA_HOME=<path-to-jdk-{expected}> before building.\n"
+        )
+        sys.exit(-1)
+    print("[OK]")
 
 
 def pull_graal_jars_if_needed(graal_jars_status, jdk):
@@ -612,6 +667,8 @@ def package_sdk_archives():
 
 def main():
     args = parse_args()
+
+    verify_jdk_matches_java_home(args.jdk)
 
     graal_jars_status = should_handle_graal_jars(args.jdk)
 
