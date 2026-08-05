@@ -4,8 +4,8 @@ all: build
 # make BACKEND=<comma_separated_backend_list>
 BACKEND ?= opencl
 
-# JDK used by the `sdk`, `unit-tests`, and `test-reflection` targets { jdk21, jdk25, jdk26, jdk27 }.
-# Default is `jdk21` to preserve historical bare `make sdk`/`make unit-tests` behavior.
+# JDK used by the `sdk`, `test-reflection`, and `test-reflection-only` targets { jdk21, jdk25, jdk26, jdk27 }.
+# Default is `jdk21` to preserve historical bare `make sdk`/`make test-reflection` behavior.
 # make sdk JDK=<jdk21|jdk25|jdk26|jdk27> BACKEND=<comma_separated_backend_list>
 # Prefer the sdk-jdkNN targets below over `make sdk JDK=...` when building a specific JDK's SDK.
 JDK ?= jdk21
@@ -75,15 +75,20 @@ checkstyle:
 	./mvnw checkstyle:check
 
 # Pure-JVM (no-GPU) unit tests for the reflection JVMCI layer. Every JDK profile skips surefire,
-# so force it on here. Override the profile with JDK=jdk25|jdk26|jdk27 to run under another JDK
-# (JDK is declared once, near BACKEND, at the top of this file).
-unit-tests:
-	./mvnw -P$(JDK) -pl tornado-runtime test -DskipTests=false
+# so force it on here. `clean` + `-am` rebuilds tornado-api and tornado-runtime together in the
+# same reactor so stale class files from a previously-used JDK profile (source/target release
+# differs per profile, e.g. jdk21 compiles at 21, jdk25/26/27 at 22) never leak into the test
+# classpath — this target is then safe to run right after a different JDK profile's build, with
+# no manual `mvn clean` in between. Override the profile with JDK=jdk25|jdk26|jdk27 to run under
+# another JDK (JDK is declared once, near BACKEND, at the top of this file).
+test-reflection:
+	./mvnw -P$(JDK) -pl tornado-api,tornado-runtime -am clean test -DskipTests=false
 
 # Only the reflection JVMCI-layer suites (uk.ac.manchester.tornado.runtime.jvmci.reflection.*Test) —
-# the standalone metadata API. Same JDK override as unit-tests.
-test-reflection:
-	./mvnw -P$(JDK) -pl tornado-runtime test -DskipTests=false -Dtest="uk.ac.manchester.tornado.runtime.jvmci.reflection.*Test"
+# the standalone metadata API, a subset of what test-reflection runs. Same JDK override and
+# clean+-am rationale as test-reflection.
+test-reflection-only:
+	./mvnw -P$(JDK) -pl tornado-api,tornado-runtime -am clean test -DskipTests=false -Dtest="uk.ac.manchester.tornado.runtime.jvmci.reflection.*Test"
 
 clean:
 	./mvnw -Popencl-backend,cuda-backend,metal-backend clean
