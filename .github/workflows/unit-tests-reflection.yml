@@ -1,9 +1,17 @@
-name: Unit Tests (no-GPU) [JDK 21]
+name: Reflection API Unit Tests (no-GPU) [JDK 21/25/26/27]
 
 # Pure-JVM unit tests for the reflection JVMCI layer (tornado-runtime/src/test). These need no GPU,
 # so they run on a standard GitHub-hosted runner - the first no-GPU CI stage for TornadoVM. The full
 # build is still required first so the modular dependencies (tornado-api, tornado.graal, ...) are on
 # the module path for the reflection tests; the tests themselves touch no device.
+#
+# Matrixed across every JDK profile the project supports building on, because each one gives the
+# reflection layer a genuinely different jdk.internal.vm.ci to sit on top of:
+#   jdk21        - native platform module, unmodified
+#   jdk25/jdk26  - native module, patched at compile+runtime with the frozen graalJars/jvmci-21.0.2.jar
+#   jdk27        - JVMCI removed from the platform entirely; supplied as the vendored tornado.jvmci
+#                  application module (bin/build_jvmci_module.py)
+# A regression specific to one of those shapes would stay green here forever if only jdk21 ran.
 
 on:
   push:
@@ -16,26 +24,38 @@ jobs:
   reflection-unit-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        jdk:
+          - profile: jdk21
+            setup_java_version: '21'
+          - profile: jdk25
+            setup_java_version: '25'
+          - profile: jdk26
+            setup_java_version: '26'
+          - profile: jdk27
+            setup_java_version: '27-ea'
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Set up JDK (${{ matrix.jdk.profile }})
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: ${{ matrix.jdk.setup_java_version }}
 
       - name: Install native build dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake ocl-icd-opencl-dev opencl-headers python3-venv
 
-      - name: Build TornadoVM (opencl, jdk21)
+      - name: Build TornadoVM (opencl, ${{ matrix.jdk.profile }})
         run: |
           python3 -m venv venv
           source venv/bin/activate
           pip install --upgrade pip tqdm psutil
-          make jdk21 BACKEND=opencl
+          make ${{ matrix.jdk.profile }} BACKEND=opencl
 
-      - name: Run reflection unit tests
-        run: make unit-tests JDK=jdk21
+      - name: Run reflection unit tests (${{ matrix.jdk.profile }})
+        run: make test-reflection JDK=${{ matrix.jdk.profile }}

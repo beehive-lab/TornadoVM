@@ -144,8 +144,23 @@ public class TornadoConstantReflectionProvider implements ConstantReflectionProv
             }
         }
 
-        // Instance fields still need the receiver object; bridge to the host
-        // provider by resolving the reflective field to a host ResolvedJavaField.
+        // Instance fields: when the receiver is a JDK-neutral object constant (e.g. an enum
+        // instance being constant-folded during canonicalization), read the field reflectively
+        // from the wrapped object - same pattern as the static path above.
+        if (receiver instanceof TornadoObjectConstant objectConstant) {
+            try {
+                javaField.setAccessible(true);
+                Object value = javaField.get(objectConstant.getObject());
+                if (kind == JavaKind.Object) {
+                    return snippetReflection.forObject(value);
+                }
+                return JavaConstant.forBoxedPrimitive(value);
+            } catch (ReflectiveOperationException | InaccessibleObjectException e) {
+                return null;
+            }
+        }
+
+        // Any other receiver constant would need the host provider; fail clearly.
         ResolvedJavaField hostField = hostMetaAccess().lookupJavaField(javaField);
         return backing().readFieldValue(hostField, receiver);
     }

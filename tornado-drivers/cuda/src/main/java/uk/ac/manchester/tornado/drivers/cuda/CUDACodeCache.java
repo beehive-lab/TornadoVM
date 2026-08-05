@@ -32,9 +32,14 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
@@ -49,6 +54,8 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 public class CUDACodeCache {
 
     private static final String FALSE = "False";
+    private static final String TRUE = "True";
+    private static final String CUBIN_SUFFIX = ".cubin";
     private static final int SPIRV_MAGIC_NUMBER = 119734787;
     private static final String OPENCL_SOURCE_SUFFIX = ".cl";
     private final boolean OPENCL_CACHE_ENABLE = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.enable", FALSE));
@@ -57,6 +64,14 @@ public class CUDACodeCache {
     private final String OPENCL_CACHE_DIR = getProperty("tornado.opencl.codecache.dir", "/var/opencl-codecache");
     private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-compiler");
     private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.log.dir", "/var/opencl-logs");
+
+    /**
+     * Persist compiled module images and reload them on the next run, so that a kernel is only handed to
+     * NVRTC once per (source, device, flags, toolkit). Without it every process pays full NVRTC
+     * compilation again, which dominates start-up for applications with many kernels.
+     */
+    private final boolean CUDA_CODE_CACHE_ENABLE = Boolean.parseBoolean(getProperty("tornado.cuda.codecache.enable", TRUE));
+    private final String CUDA_CODE_CACHE_DIR = getProperty("tornado.cuda.codecache.dir", "/var/cuda-codecache");
 
     private final ConcurrentHashMap<String, CUDAInstalledCode> cache;
     private final CUDADeviceContextInterface deviceContext;
@@ -91,6 +106,74 @@ public class CUDACodeCache {
 
     private Path resolveCacheDirectory() {
         return resolveDirectory(OPENCL_CACHE_DIR);
+    }
+
+    private Path resolveModuleCacheDirectory() {
+        return resolveDirectory(CUDA_CODE_CACHE_DIR);
+    }
+
+    /**
+     * Identity of everything that can change the compiled image: the kernel source, the device, its
+     * driver, and the compiler flags. A cubin is architecture-specific, so a cache hit on a different
+     * GPU or after a toolkit upgrade must be impossible.
+     */
+    private String moduleCacheKey(byte[] source, String compilerFlags) {
+        try {
+            final MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            digest.update(source);
+            final CUDATargetDevice device = deviceContext.getDevice();
+            final StringBuilder identity = new StringBuilder();
+            identity.append(device.getDeviceName()).append('|') //
+                    .append(device.getVersion()).append('|') //
+                    .append(device.getDriverVersion()).append('|') //
+                    .append(CUDAProgram.getNvrtcVersion()).append('|') //
+                    .append(compilerFlags == null ? "" : compilerFlags);
+            digest.update(identity.toString().getBytes(StandardCharsets.UTF_8));
+            final byte[] hash = digest.digest();
+            final StringBuilder hex = new StringBuilder(32);
+            for (int i = 0; i < 16; i++) {
+                hex.append(String.format("%02x", hash[i]));
+            }
+            return hex.toString();
+        } catch (NoSuchAlgorithmException e) {
+            return null;
+        }
+    }
+
+    private CUDAProgram loadCachedModule(Path cacheFile, String entryPoint) {
+        try {
+            final byte[] image = Files.readAllBytes(cacheFile);
+            if (image.length == 0) {
+                return null;
+            }
+            logger.info("loading cached module for %s from %s", entryPoint, cacheFile);
+            return deviceContext.createProgramWithBinary(image, new long[] { image.length });
+        } catch (IOException | RuntimeException e) {
+            // A stale or unreadable entry must never be fatal: fall back to compiling from source.
+            logger.warn("unable to load cached module for %s (%s), recompiling", entryPoint, e.getMessage());
+            return null;
+        }
+    }
+
+    private void storeCachedModule(Path cacheFile, CUDAProgram program, String entryPoint) {
+        final byte[] image = program.getModuleImage();
+        if (image == null || image.length == 0) {
+            return;
+        }
+        try {
+            // Write to a unique temporary file and move it into place, so that concurrent processes
+            // never observe a partially written module.
+            final Path temporary = Files.createTempFile(cacheFile.getParent(), cacheFile.getFileName().toString(), ".tmp");
+            Files.write(temporary, image);
+            try {
+                Files.move(temporary, cacheFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(temporary, cacheFile, StandardCopyOption.REPLACE_EXISTING);
+            }
+            logger.info("cached module for %s in %s", entryPoint, cacheFile);
+        } catch (IOException e) {
+            logger.warn("unable to cache module for %s: %s", entryPoint, e.getMessage());
+        }
     }
 
     private Path resolveSourceDirectory() {
@@ -152,11 +235,28 @@ public class CUDACodeCache {
         logger.info("Installing code for %s into code cache", entryPoint);
 
         boolean isSPIRVBinary = isInputSourceSPIRVBinary(source);
-        final CUDAProgram program;
-        if (isSPIRVBinary) {
-            program = deviceContext.createProgramWithIL(source, new long[] { source.length });
-        } else {
-            program = deviceContext.createProgramWithSource(source, new long[] { source.length });
+        final String compilerFlags = meta.getCompilerFlags(TornadoVMBackendType.CUDA);
+
+        // Try the on-disk module cache first: a hit skips NVRTC entirely.
+        Path moduleCacheFile = null;
+        CUDAProgram program = null;
+        if (CUDA_CODE_CACHE_ENABLE && !isSPIRVBinary) {
+            final String key = moduleCacheKey(source, compilerFlags);
+            if (key != null) {
+                moduleCacheFile = resolveModuleCacheDirectory().resolve(entryPoint + "-" + key + CUBIN_SUFFIX);
+                if (Files.exists(moduleCacheFile)) {
+                    program = loadCachedModule(moduleCacheFile, entryPoint);
+                }
+            }
+        }
+
+        final boolean loadedFromCache = program != null;
+        if (program == null) {
+            if (isSPIRVBinary) {
+                program = deviceContext.createProgramWithIL(source, new long[] { source.length });
+            } else {
+                program = deviceContext.createProgramWithSource(source, new long[] { source.length });
+            }
         }
 
         if (OPENCL_DUMP_SOURCE) {
@@ -176,8 +276,8 @@ public class CUDACodeCache {
         if (meta.isPrintKernelEnabled()) {
             RuntimeUtilities.dumpKernel(source);
         }
-        logger.debug("\tOpenCL compiler flags = %s", meta.getCompilerFlags(TornadoVMBackendType.CUDA));
-        program.build(meta.getCompilerFlags(TornadoVMBackendType.CUDA));
+        logger.debug("\tOpenCL compiler flags = %s", compilerFlags);
+        program.build(compilerFlags);
         final CUDABuildStatus status = program.getStatus(deviceContext.getDeviceId());
         logger.debug("\tOpenCL compilation status = %s", status.toString());
 
@@ -192,6 +292,10 @@ public class CUDACodeCache {
         if (status == CL_BUILD_SUCCESS) {
             kernel = program.clCreateKernel(entryPoint);
             kernelAvailable = true;
+        }
+
+        if (status == CL_BUILD_SUCCESS && !loadedFromCache && moduleCacheFile != null) {
+            storeCachedModule(moduleCacheFile, program, entryPoint);
         }
 
         final CUDAInstalledCode code = new CUDAInstalledCode(entryPoint, source, (CUDADeviceContext) deviceContext, program, kernel, isSPIRVBinary);

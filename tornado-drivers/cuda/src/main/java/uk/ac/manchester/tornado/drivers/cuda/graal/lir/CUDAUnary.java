@@ -38,6 +38,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDACompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.cuda.graal.meta.CUDAMemorySpace;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDABarrierNode.CUDAMemFenceFlags;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class CUDAUnary {
 
@@ -139,7 +140,52 @@ public class CUDAUnary {
             asm.emitSymbol(CUDAAssemblerConstants.MULT);
             asm.emitSymbol(CUDAAssemblerConstants.CLOSE_PARENTHESIS);
             asm.space();
-            address.emit(crb, asm);
+            if (address.getIndex() != null) {
+                // Local/private-memory addresses carry the index separately instead of folding
+                // it into the base value via pointer arithmetic (unlike the global-memory path,
+                // where CUDAAddressNode#setMemoryAccess already bakes the offset into the base
+                // via emitAdd before this point). The index here (from
+                // CUDAGraphBuilderPlugins#computeAddress) is `(userIndex + panamaHeader) *
+                // elementByteSize` -- a byte offset that assumes an off-heap Panama array header.
+                // That's correct for PRIVATE-memory int[] (still header-relative in this backend)
+                // but WRONG for LOCAL/shared int[] (KernelContext.allocateIntLocalArray): a plain
+                // `__shared__` C array has no such header, so the baked-in header bytes must be
+                // subtracted back out for local memory specifically, or the atomic lands on the
+                // wrong element (confirmed empirically: header present -> silently wrong index;
+                // header removed at the plugin level -> breaks the private-memory case instead,
+                // since that one genuinely needs it -- the two memory spaces are not
+                // distinguishable at plugin-registration time, only here where the base's memory
+                // region is known).
+                // The result must be applied via byte-pointer arithmetic, `(char*) base +
+                // byteOffset`, NOT as a C array subscript `base[byteOffset]`: `[]`
+                // auto-multiplies by sizeof(element), which would scale an already-byte-scaled
+                // offset a second time.
+                asm.emitSymbol(CUDAAssemblerConstants.OPEN_PARENTHESIS);
+                asm.emit("(char *) ");
+                address.emit(crb, asm);
+                asm.space();
+                asm.emitSymbol(CUDAAssemblerConstants.ADD);
+                asm.space();
+                if (isLocalMemory()) {
+                    // The amount subtracted must match the fixed PANAMA_OBJECT_HEADER_SIZE that
+                    // CUDAGraphBuilderPlugins#computeAddress actually added - not a live
+                    // vmConfig.getArrayBaseOffset() query, which varies with the host JDK's object
+                    // header layout (12 vs 16 under JDK 27 compact headers) and would under/over
+                    // -subtract, shifting the local atomic's target by one element.
+                    asm.emitSymbol(CUDAAssemblerConstants.OPEN_PARENTHESIS);
+                    asm.emitValue(crb, address.getIndex());
+                    asm.space();
+                    asm.emitSymbol(CUDAAssemblerConstants.SUB);
+                    asm.space();
+                    asm.emit(Long.toString(TornadoOptions.PANAMA_OBJECT_HEADER_SIZE));
+                    asm.emitSymbol(CUDAAssemblerConstants.CLOSE_PARENTHESIS);
+                } else {
+                    asm.emitValue(crb, address.getIndex());
+                }
+                asm.emitSymbol(CUDAAssemblerConstants.CLOSE_PARENTHESIS);
+            } else {
+                address.emit(crb, asm);
+            }
             asm.emitSymbol(CUDAAssemblerConstants.EXPR_DELIMITER);
             asm.space();
             if (is64BitInt) {
@@ -150,6 +196,10 @@ public class CUDAUnary {
                 asm.emitValue(crb, inc);
             }
             asm.emitSymbol(CUDAAssemblerConstants.CLOSE_PARENTHESIS);
+        }
+
+        private boolean isLocalMemory() {
+            return address.getBase() != null && CUDAAssemblerConstants.LOCAL_REGION_NAME.equals(address.getBase().getName());
         }
     }
 

@@ -32,6 +32,7 @@ import tornado.graal.compiler.nodes.graphbuilderconf.NodePlugin;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAConvertHalfToFloat;
 import uk.ac.manchester.tornado.runtime.graal.nodes.AddHalfFloatNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.DivHalfFloatNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.HalfFloatPlaceholder;
@@ -111,9 +112,33 @@ public class CUDAHalfFloatPlugins {
         r.register(new InvocationPlugin("getHalfFloatValue", InvocationPlugin.Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
-                HalfFloatPlaceholder placeholder = new HalfFloatPlaceholder(receiver.get(true));
+                // get(false): skip the null-check path (receiver.get(true) -> GraphBuilderContext
+                // .nullCheckedValue() -> PiNode.create()/canonical() -> AbstractObjectStamp.improveWith()/
+                // join()). That path assumes the receiver carries a real AbstractObjectStamp, but receivers
+                // produced by e.g. ByteArray.getHalfFloat() carry the synthetic HalfFloatStamp (pushed as
+                // JavaKind.Object since the declared type is HalfFloat), so the join's internal cast throws
+                // a ClassCastException. These synthetic half-value nodes can never be null, so the null
+                // check buys nothing and get(false) (plain unwrap, no PiNode) is safe here.
+                HalfFloatPlaceholder placeholder = new HalfFloatPlaceholder(receiver.get(false));
                 b.getGraph().addOrUnique(placeholder);
                 b.push(JavaKind.Short, placeholder);
+                return true;
+            }
+        });
+
+        // Without this, the sketcher tries to inline HalfFloat.getFloat32()'s real bytecode against
+        // the receiver, hitting the same object-vs-HalfFloatStamp mismatch described above (either via
+        // the generic inliner's stamp join, or - once intercepted here - via receiver.get(true)'s
+        // null-check path, hence get(false) below). Intercepting the call directly - mirroring
+        // getHalfFloatValue above - avoids inlining into that mismatch altogether.
+        r.register(new InvocationPlugin("getFloat32", InvocationPlugin.Receiver.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                HalfFloatPlaceholder placeholder = new HalfFloatPlaceholder(receiver.get(false));
+                b.getGraph().addOrUnique(placeholder);
+                CUDAConvertHalfToFloat convertHalfToFloat = new CUDAConvertHalfToFloat(placeholder);
+                b.getGraph().addOrUnique(convertHalfToFloat);
+                b.push(JavaKind.Float, convertHalfToFloat);
                 return true;
             }
         });

@@ -100,7 +100,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsic
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.PrintfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerNode;
-import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 import java.util.function.Supplier;
@@ -278,19 +277,13 @@ public class OCLGraphBuilderPlugins {
     }
 
     private static void registerAtomicAddOperation(Registration r) {
-        // Accessing the vmConfig during initialization was causing a NullPointerException.
-        // By using Suppliers, the getVMConfig() is only invoked at compile time, when the Supplier's get() is invoked in the plugins.
-        Supplier<Integer> intHeaderSupplier = () -> {
-            var vmConfig = TornadoCoreRuntime.getVMConfig();
-            int headerSize = vmConfig.getArrayBaseOffset(JavaKind.Int);
-            return headerSize / JavaKind.Int.getByteCount(); // 16/4=4 or 24/4=6
-        };
-
-        Supplier<Integer> longHeaderSupplier = () -> {
-            var vmConfig = TornadoCoreRuntime.getVMConfig();
-            int headerSize = vmConfig.getArrayBaseOffset(JavaKind.Long);
-            return headerSize / JavaKind.Long.getByteCount(); // 16/8=2 or 24/8=3
-        };
+        // The header offset must match the fixed device-buffer convention (PANAMA_OBJECT_HEADER_SIZE)
+        // used by OCLArrayWrapper (host side) and OCLLoweringProvider's indexed-array addressing (kernel
+        // side) - not a live vmConfig.getArrayBaseOffset() query, which varies with the host JDK's object
+        // header layout (12 vs 16 under JDK 27 compact headers) and desyncs from both of those fixed 16s,
+        // shifting atomicAdd's target address by one element.
+        Supplier<Integer> intHeaderSupplier = () -> (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE / JavaKind.Int.getByteCount(); // 16/4=4
+        Supplier<Integer> longHeaderSupplier = () -> (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE / JavaKind.Long.getByteCount(); // 16/8=2
         registerAtomicAddPlugin(r, "atomicAdd", IntArray.class, OCLKind.UINT, intHeaderSupplier);
         registerAtomicAddPlugin(r, "atomicAdd", int[].class, OCLKind.UINT, intHeaderSupplier);
         registerAtomicAddPlugin(r, "atomicAdd", LongArray.class, OCLKind.ULONG, longHeaderSupplier);
@@ -452,6 +445,70 @@ public class OCLGraphBuilderPlugins {
         registerMMAPlugins(r);
         registerSwizzledLocalAccessesPlugins(r);
         registerUnsupportedSimdgroupMatrixPlugins(r);
+        registerUnsupportedSimdPlugins(r);
+        registerUnsupportedAtomicRmwPlugins(r);
+    }
+
+    /**
+     * The SIMD-group reductions ({@link uk.ac.manchester.tornado.api.KernelContext} {@code simdSum},
+     * {@code simdShuffleDown}, {@code simdBroadcastFirst}) have no OpenCL 1.2 equivalent. Their
+     * {@code KernelContext} bodies return the input unchanged, so without a rejection here a kernel using
+     * them would compile and silently compute a wrong result.
+     */
+    private static void registerUnsupportedSimdPlugins(Registration r) {
+        final String message = "SIMD-group reductions (KernelContext.simdSum/simdShuffleDown/simdBroadcastFirst) are only supported on the CUDA and Metal backends.";
+        r.register(new InvocationPlugin("simdSum", Receiver.class, float.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        r.register(new InvocationPlugin("simdShuffleDown", Receiver.class, float.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val, ValueNode delta) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        r.register(new InvocationPlugin("simdBroadcastFirst", Receiver.class, float.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+    }
+
+    /**
+     * The read-modify-write atomics ({@link uk.ac.manchester.tornado.api.KernelContext} {@code atomicCAS},
+     * {@code atomicExchange}, {@code atomicMin}, {@code atomicMax}) are not intrinsified on this backend.
+     * Their {@code KernelContext} bodies apply the operation non-atomically, which is only correct for a
+     * single thread, so reject them instead of silently racing.
+     */
+    private static void registerUnsupportedAtomicRmwPlugins(Registration r) {
+        final String message = "Atomic read-modify-write operations (KernelContext.atomicCAS/atomicExchange/atomicMin/atomicMax) are only supported on the CUDA backend.";
+        r.register(new InvocationPlugin("atomicCAS", Receiver.class, int[].class, int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index, ValueNode expected, ValueNode value) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        for (String name : new String[] { "atomicExchange", "atomicMin", "atomicMax" }) {
+            r.register(new InvocationPlugin(name, Receiver.class, int[].class, int.class, int.class) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index, ValueNode value) {
+                    receiver.get(true);
+                    unimplemented(message);
+                    return false;
+                }
+            });
+        }
     }
 
     /**

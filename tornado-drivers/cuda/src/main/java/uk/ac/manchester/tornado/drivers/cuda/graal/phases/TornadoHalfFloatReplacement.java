@@ -593,13 +593,28 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
         // (e.g. getHalfFloatValue() used in bit-packing: lo = a.get(i).getHalfFloatValue() & 0xFFFF).
         // These were not consumed by the write-context handler above.
         for (HalfFloatPlaceholder placeholder : graph.getNodes().filter(HalfFloatPlaceholder.class).snapshot()) {
-            if (!placeholder.isDeleted()) {
-                CUDAConvertHalfBitsToIntNode bitsNode =
-                        new CUDAConvertHalfBitsToIntNode(placeholder.getInput());
-                graph.addWithoutUnique(bitsNode);
-                placeholder.replaceAtUsages(bitsNode);
-                placeholder.safeDelete();
+            if (placeholder.isDeleted()) {
+                continue;
             }
+            // A CUDAConvertHalfToFloat usage (from CUDAHalfFloatPlugins#getFloat32, which never goes
+            // through a LoadFieldNode and so is never seen by the replaceFieldAccess/identifyFieldReplacement
+            // path above) needs the placeholder's real underlying half value - e.g. the ReadHalfFloatNode
+            // that ByteArray.getHalfFloat() already produces - so __half2float() decodes actual half bits.
+            // Reinterpreting it as CUDAConvertHalfBitsToIntNode instead (the branch below) hands
+            // __half2float() a plain int, which CUDA's __half(int) ctor treats as a numeric value rather
+            // than raw bits, silently turning e.g. half 1.0 (bit pattern 0x3C00) into 15360.0f.
+            for (CUDAConvertHalfToFloat convert : placeholder.usages().filter(CUDAConvertHalfToFloat.class).snapshot()) {
+                convert.replaceFirstInput(placeholder, placeholder.getInput());
+            }
+            if (placeholder.hasNoUsages()) {
+                placeholder.safeDelete();
+                continue;
+            }
+            CUDAConvertHalfBitsToIntNode bitsNode =
+                    new CUDAConvertHalfBitsToIntNode(placeholder.getInput());
+            graph.addWithoutUnique(bitsNode);
+            placeholder.replaceAtUsages(bitsNode);
+            placeholder.safeDelete();
         }
 
     }

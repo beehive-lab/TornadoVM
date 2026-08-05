@@ -205,6 +205,33 @@ public class CUDAProgram {
         return result;
     }
 
+    /**
+     * Returns the compiled module image (cubin, or PTX when the toolkit cannot emit cubin for this
+     * device) for the device this program was built for, or null when no image is available.
+     */
+    public byte[] getModuleImage() {
+        // A CUDA program holds exactly one module image, for the device it was built for. (Note that
+        // the device-matching loop in dumpBinaries() cannot work here: the driver does not implement
+        // CL_PROGRAM_DEVICES, so getDevices() returns zeros.)
+        final long[] sizes = getBinarySizes();
+        if (sizes.length == 0 || sizes[0] <= 0) {
+            return null;
+        }
+
+        try {
+            final int size = (int) sizes[0];
+            final ByteBuffer binary = ByteBuffer.allocateDirect(size);
+            getBinaries(programPointer, getNumDevices(), binary);
+            final byte[] image = new byte[size];
+            binary.position(0);
+            binary.get(image);
+            return image;
+        } catch (CUDAException e) {
+            logger.error("unable to retrieve module image: %s", e.getMessage());
+            return null;
+        }
+    }
+
     public void dumpBinaries(String filenamePrefix) {
 
         final long[] devices = getDevices();
