@@ -140,4 +140,33 @@ typedef struct cuda_event_s {
     CUevent start;
 } cuda_event_t;
 
+/*
+ * Raises CUDAException on the Java side for a failed driver call, and returns whether it
+ * did so. The Java command-queue wrappers already catch CUDAException and convert it into
+ * a TornadoBailoutRuntimeException; without this, a failing call is only printed and the
+ * caller carries on with buffers the device never wrote.
+ *
+ * Must NOT be called while a GetPrimitiveArrayCritical region is held: ThrowNew allocates.
+ */
+static inline bool tornado_throw_cuda_exception(JNIEnv *env, const char *call, CUresult result) {
+    if (result == CUDA_SUCCESS) {
+        return false;
+    }
+    const char *errorName = nullptr;
+    const char *errorText = nullptr;
+    cuGetErrorName(result, &errorName);
+    cuGetErrorString(result, &errorText);
+
+    std::string message = std::string(call) + " failed: " + (errorName != nullptr ? errorName : "UNKNOWN") + " (" + std::to_string((int) result) + ")";
+    if (errorText != nullptr) {
+        message += " - ";
+        message += errorText;
+    }
+    jclass exceptionClass = env->FindClass("uk/ac/manchester/tornado/drivers/cuda/exceptions/CUDAException");
+    if (exceptionClass != nullptr) {
+        env->ThrowNew(exceptionClass, message.c_str());
+    }
+    return true;
+}
+
 #endif // TORNADO_CUDA_JNI_H

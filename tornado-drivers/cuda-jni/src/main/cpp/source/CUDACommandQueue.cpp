@@ -219,6 +219,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQue
     }
     CUresult result = cuStreamSynchronize(queue->stream);
     LOG_CUDA_AND_VALIDATE("cuStreamSynchronize", result);
+    tornado_throw_cuda_exception(env, "cuStreamSynchronize", result);
 }
 
 /*
@@ -234,6 +235,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQue
     }
     CUresult result = cuStreamSynchronize(queue->stream);
     LOG_CUDA_AND_VALIDATE("cuStreamSynchronize", result);
+    tornado_throw_cuda_exception(env, "cuStreamSynchronize", result);
 }
 
 /*
@@ -313,8 +315,13 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
             params.empty() ? nullptr : params.data(),
             nullptr);
     LOG_CUDA_AND_VALIDATE("cuLaunchKernel", result);
-
-    return end_event(ev, queue);
+    jlong launchEvent = end_event(ev, queue);
+    // A failed launch leaves the kernel's outputs untouched. Surfacing it as CUDAException
+    // makes the Java wrapper bail out instead of returning stale buffers as a valid result.
+    if (tornado_throw_cuda_exception(env, "cuLaunchKernel", result)) {
+        return 0;
+    }
+    return launchEvent;
 }
 
 /*
@@ -333,7 +340,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
  */
 static jlong transfer_to_device(JNIEnv *env, cuda_queue_t *queue, void *host_base,
                                 jlong host_offset, jlong device_offset, jlong num_bytes, jlong device_ptr,
-                                jlongArray events, bool sync_after) {
+                                jlongArray events, bool sync_after, CUresult *failure) {
     if (queue == nullptr) {
         return 0;
     }
@@ -349,15 +356,22 @@ static jlong transfer_to_device(JNIEnv *env, cuda_queue_t *queue, void *host_bas
             (size_t) num_bytes,
             queue->stream);
     LOG_CUDA_AND_VALIDATE("cuMemcpyHtoDAsync", result);
+    if (result != CUDA_SUCCESS) {
+        *failure = result;
+    }
     if (sync_after && !stream_is_capturing(queue)) {
-        cuStreamSynchronize(queue->stream);
+        CUresult sync = cuStreamSynchronize(queue->stream);
+        LOG_CUDA_AND_VALIDATE("cuStreamSynchronize", sync);
+        if (sync != CUDA_SUCCESS && *failure == CUDA_SUCCESS) {
+            *failure = sync;
+        }
     }
     return end_event(ev, queue);
 }
 
 static jlong transfer_to_host(JNIEnv *env, cuda_queue_t *queue, void *host_base,
                               jlong host_offset, jlong device_offset, jlong num_bytes, jlong device_ptr,
-                              jlongArray events, bool sync_after) {
+                              jlongArray events, bool sync_after, CUresult *failure) {
     if (queue == nullptr) {
         return 0;
     }
@@ -373,8 +387,15 @@ static jlong transfer_to_host(JNIEnv *env, cuda_queue_t *queue, void *host_base,
             (size_t) num_bytes,
             queue->stream);
     LOG_CUDA_AND_VALIDATE("cuMemcpyDtoHAsync", result);
+    if (result != CUDA_SUCCESS) {
+        *failure = result;
+    }
     if (sync_after && !stream_is_capturing(queue)) {
-        cuStreamSynchronize(queue->stream);
+        CUresult sync = cuStreamSynchronize(queue->stream);
+        LOG_CUDA_AND_VALIDATE("cuStreamSynchronize", sync);
+        if (sync != CUDA_SUCCESS && *failure == CUDA_SUCCESS) {
+            *failure = sync;
+        }
     }
     return end_event(ev, queue);
 }
@@ -386,9 +407,11 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
         (JNIEnv *env, jclass clazz, jlong queue_id, JARRTYPE host_array, jlong host_offset, jboolean blocking,  \
          jlong offset, jlong num_bytes, jlong device_ptr, jlongArray events) {                                  \
     cuda_queue_t *queue = (cuda_queue_t *) queue_id;                                                            \
+    CUresult failure = CUDA_SUCCESS;                                                                            \
     void *host = env->GetPrimitiveArrayCritical((jarray) host_array, NULL);                                     \
-    jlong ev = transfer_to_device(env, queue, host, host_offset, offset, num_bytes, device_ptr, events, true); \
+    jlong ev = transfer_to_device(env, queue, host, host_offset, offset, num_bytes, device_ptr, events, true, &failure); \
     env->ReleasePrimitiveArrayCritical((jarray) host_array, host, JNI_ABORT);                                   \
+    tornado_throw_cuda_exception(env, "cuMemcpyHtoDAsync", failure);                                            \
     return ev;                                                                                                  \
 }
 
@@ -407,7 +430,10 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
         (JNIEnv *env, jclass clazz, jlong queue_id, jlong host_pointer, jlong host_offset, jboolean blocking,
          jlong offset, jlong num_bytes, jlong device_ptr, jlongArray events) {
     cuda_queue_t *queue = (cuda_queue_t *) queue_id;
-    return transfer_to_device(env, queue, (void *) host_pointer, host_offset, offset, num_bytes, device_ptr, events, blocking);
+    CUresult failure = CUDA_SUCCESS;
+    jlong ev = transfer_to_device(env, queue, (void *) host_pointer, host_offset, offset, num_bytes, device_ptr, events, blocking, &failure);
+    tornado_throw_cuda_exception(env, "cuMemcpyHtoDAsync", failure);
+    return ev;
 }
 
 /* ---- readArrayFromDevice overloads ---- */
@@ -417,9 +443,11 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
         (JNIEnv *env, jclass clazz, jlong queue_id, JARRTYPE host_array, jlong host_offset, jboolean blocking,   \
          jlong offset, jlong num_bytes, jlong device_ptr, jlongArray events) {                                   \
     cuda_queue_t *queue = (cuda_queue_t *) queue_id;                                                             \
+    CUresult failure = CUDA_SUCCESS;                                                                             \
     void *host = env->GetPrimitiveArrayCritical((jarray) host_array, NULL);                                      \
-    jlong ev = transfer_to_host(env, queue, host, host_offset, offset, num_bytes, device_ptr, events, true);    \
+    jlong ev = transfer_to_host(env, queue, host, host_offset, offset, num_bytes, device_ptr, events, true, &failure); \
     env->ReleasePrimitiveArrayCritical((jarray) host_array, host, 0);                                            \
+    tornado_throw_cuda_exception(env, "cuMemcpyDtoHAsync", failure);                                             \
     return ev;                                                                                                   \
 }
 
@@ -438,7 +466,10 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
         (JNIEnv *env, jclass clazz, jlong queue_id, jlong host_pointer, jlong host_offset, jboolean blocking,
          jlong offset, jlong num_bytes, jlong device_ptr, jlongArray events) {
     cuda_queue_t *queue = (cuda_queue_t *) queue_id;
-    return transfer_to_host(env, queue, (void *) host_pointer, host_offset, offset, num_bytes, device_ptr, events, blocking);
+    CUresult failure = CUDA_SUCCESS;
+    jlong ev = transfer_to_host(env, queue, (void *) host_pointer, host_offset, offset, num_bytes, device_ptr, events, blocking, &failure);
+    tornado_throw_cuda_exception(env, "cuMemcpyDtoHAsync", failure);
+    return ev;
 }
 
 /*
