@@ -46,9 +46,15 @@ public class TornadoOptions {
     public static final String DEFAULT_METAL_COMPILER_FLAGS = getProperty("tornado.metal.compiler.flags", "");
 
     /**
-     * Default CUDA (NVRTC) Compiler Flags. Passed to NVRTC when compiling the generated CUDA C source.
+     * Named NVRTC option bundle for the CUDA backend: default|fast|debug|repro.
      */
-    public static final String DEFAULT_CUDA_COMPILER_FLAGS = getProperty("tornado.cuda.compiler.flags", "");
+    public static final CudaCompileProfile CUDA_COMPILE_PROFILE = CudaCompileProfile.parse(getProperty("tornado.cuda.compile.profile", "default"));
+
+    /**
+     * Default CUDA (NVRTC) Compiler Flags. Passed to NVRTC when compiling the generated CUDA C source.
+     * The profile's flags come first so that anything set explicitly here wins.
+     */
+    public static final String DEFAULT_CUDA_COMPILER_FLAGS = (CUDA_COMPILE_PROFILE.getFlags() + " " + getProperty("tornado.cuda.compiler.flags", "")).trim();
 
     /**
      * Use internal timers for profiling in ns if enabled, in ms if disabled. Default is ns (enabled).

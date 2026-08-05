@@ -23,6 +23,7 @@
 #include <jni.h>
 #include <string>
 #include <vector>
+#include <sstream>
 #include <cstdlib>
 #include <fstream>
 #include <unordered_map>
@@ -131,7 +132,19 @@ static void capture_nvrtc_log(nvrtcProgram prog, cuda_program_t *program) {
  * Compiles the stored CUDA C source to a cubin using NVRTC, targeting the
  * compute capability of the program's device, then loads it as a CUmodule.
  */
-static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
+// Splits a whitespace-separated option string, e.g. from tornado.cuda.compiler.flags or
+// withCompilerFlags(CUDA, ...), into individual NVRTC arguments.
+static std::vector<std::string> split_options(const std::string &options) {
+    std::vector<std::string> result;
+    std::istringstream stream(options);
+    std::string token;
+    while (stream >> token) {
+        result.push_back(token);
+    }
+    return result;
+}
+
+static void compile_with_nvrtc(cuda_program_t *program, CUdevice device, const std::vector<std::string> &userOptions) {
     // Hoisted to function scope so the module-load failure branch can explain an
     // NVRTC/GPU-arch mismatch. Defaults suit the pre-built-binary path below,
     // which loads a cubin directly (no PTX-JIT fallback).
@@ -292,6 +305,10 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
         for (const std::string &opt : includeOpts) {
             options.push_back(opt.c_str());
         }
+        // User options last so they can override the defaults above.
+        for (const std::string &opt : userOptions) {
+            options.push_back(opt.c_str());
+        }
         // A failure here may be recovered by the missing-header probe below,
         // so don't print an ERROR for it; terminal failures are reported after
         // the probe with the full NVRTC build log.
@@ -321,6 +338,9 @@ static void compile_with_nvrtc(cuda_program_t *program, CUdevice device) {
                 options.clear();
                 options.push_back(arch.c_str());
                 for (const std::string &opt : includeOpts) {
+                    options.push_back(opt.c_str());
+                }
+                for (const std::string &opt : userOptions) {
                     options.push_back(opt.c_str());
                 }
                 nv = nvrtcCompileProgram(prog, (int) options.size(), options.data());
@@ -505,7 +525,15 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAProgram_cl
             device = dev->device;
         }
     }
-    compile_with_nvrtc(program, device);
+    std::vector<std::string> userOptions;
+    if (options != nullptr) {
+        const char *optionText = env->GetStringUTFChars(options, nullptr);
+        if (optionText != nullptr) {
+            userOptions = split_options(optionText);
+            env->ReleaseStringUTFChars(options, optionText);
+        }
+    }
+    compile_with_nvrtc(program, device, userOptions);
 }
 
 /*
