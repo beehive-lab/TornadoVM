@@ -513,6 +513,26 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
                 }
             }
         }
+
+        // Replace any remaining HalfFloatPlaceholder nodes left dangling after the passes above.
+        // An OCLConvertHalfToFloat usage (from OCLHalfFloatPlugins#getFloat32, which never goes
+        // through a LoadFieldNode and so is never seen by the replaceFieldAccess/identifyFieldReplacement
+        // path above) needs the placeholder's real underlying half value - e.g. the ReadHalfFloatNode
+        // that ByteArray.getHalfFloat() already produces - so the OpenCL __half2float() equivalent
+        // decodes actual half bits. Left unhandled, the placeholder itself would reach LIR with
+        // "node is not LIRLowerable: HalfFloatPlaceholder", since it exists purely as a graph-building
+        // marker (see CUDA's TornadoHalfFloatReplacement for the mirrored fix).
+        for (HalfFloatPlaceholder placeholder : graph.getNodes().filter(HalfFloatPlaceholder.class).snapshot()) {
+            if (placeholder.isDeleted()) {
+                continue;
+            }
+            for (OCLConvertHalfToFloat convert : placeholder.usages().filter(OCLConvertHalfToFloat.class).snapshot()) {
+                convert.replaceFirstInput(placeholder, placeholder.getInput());
+            }
+            if (placeholder.hasNoUsages()) {
+                placeholder.safeDelete();
+            }
+        }
     }
 
 }
