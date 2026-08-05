@@ -23,6 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.graal.compiler.plugins;
 
+import tornado.graal.compiler.nodes.NodeView;
 import tornado.graal.compiler.nodes.ValueNode;
 import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderContext;
@@ -32,6 +33,7 @@ import tornado.graal.compiler.nodes.graphbuilderconf.NodePlugin;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
+import uk.ac.manchester.tornado.drivers.cuda.graal.HalfFloatStamp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAConvertHalfToFloat;
 import uk.ac.manchester.tornado.runtime.graal.nodes.AddHalfFloatNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.DivHalfFloatNode;
@@ -119,7 +121,22 @@ public class CUDAHalfFloatPlugins {
                 // JavaKind.Object since the declared type is HalfFloat), so the join's internal cast throws
                 // a ClassCastException. These synthetic half-value nodes can never be null, so the null
                 // check buys nothing and get(false) (plain unwrap, no PiNode) is safe here.
-                HalfFloatPlaceholder placeholder = new HalfFloatPlaceholder(receiver.get(false));
+                //
+                // Only intercept when the receiver actually carries that synthetic stamp. Receivers with
+                // a real stamp (e.g. Half2.getX()/getY(), which return an already-properly-typed HalfFloat
+                // field) don't have this problem, and forcing them through this synthetic path instead of
+                // normal inlining changes the surrounding graph shape enough to risk tripping the unguarded
+                // FixedGuardNode casts in TornadoHalfFloatFixedGuardElimination/TornadoHalfFloatReplacement
+                // if Graal's canonicalizer simplifies a nearby guard into a ValueAnchorNode (confirmed to
+                // happen on the OpenCL backend for this exact receiver shape; mirrored here defensively
+                // since the same unguarded casts exist in this backend's half-float machinery too).
+                // Falling through (return false) lets the default bytecode-inlining path handle those
+                // untouched, exactly as before this plugin intercepted getFloat32 at all.
+                ValueNode receiverValue = receiver.get(false);
+                if (!(receiverValue.stamp(NodeView.DEFAULT) instanceof HalfFloatStamp)) {
+                    return false;
+                }
+                HalfFloatPlaceholder placeholder = new HalfFloatPlaceholder(receiverValue);
                 b.getGraph().addOrUnique(placeholder);
                 b.push(JavaKind.Short, placeholder);
                 return true;
@@ -130,11 +147,16 @@ public class CUDAHalfFloatPlugins {
         // the receiver, hitting the same object-vs-HalfFloatStamp mismatch described above (either via
         // the generic inliner's stamp join, or - once intercepted here - via receiver.get(true)'s
         // null-check path, hence get(false) below). Intercepting the call directly - mirroring
-        // getHalfFloatValue above - avoids inlining into that mismatch altogether.
+        // getHalfFloatValue above - avoids inlining into that mismatch altogether. Same HalfFloatStamp
+        // scoping as getHalfFloatValue above, for the same reason.
         r.register(new InvocationPlugin("getFloat32", InvocationPlugin.Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
-                HalfFloatPlaceholder placeholder = new HalfFloatPlaceholder(receiver.get(false));
+                ValueNode receiverValue = receiver.get(false);
+                if (!(receiverValue.stamp(NodeView.DEFAULT) instanceof HalfFloatStamp)) {
+                    return false;
+                }
+                HalfFloatPlaceholder placeholder = new HalfFloatPlaceholder(receiverValue);
                 b.getGraph().addOrUnique(placeholder);
                 CUDAConvertHalfToFloat convertHalfToFloat = new CUDAConvertHalfToFloat(placeholder);
                 b.getGraph().addOrUnique(convertHalfToFloat);
