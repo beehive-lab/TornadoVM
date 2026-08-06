@@ -23,6 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.metal.graal.compiler.plugins;
 
+import tornado.graal.compiler.nodes.NodeView;
 import tornado.graal.compiler.nodes.ValueNode;
 import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderContext;
@@ -33,6 +34,8 @@ import tornado.graal.compiler.nodes.graphbuilderconf.NodePlugin;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
+import uk.ac.manchester.tornado.drivers.metal.graal.HalfFloatStamp;
+import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalConvertHalfToFloat;
 import uk.ac.manchester.tornado.runtime.graal.nodes.AddHalfFloatNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.DivHalfFloatNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.MultHalfFloatNode;
@@ -105,9 +108,51 @@ public class MetalHalfFloatPlugins {
         r.register(new InvocationPlugin("getHalfFloatValue", InvocationPlugin.Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
-                HalfFloatPlaceholder placeholder = new HalfFloatPlaceholder(receiver.get(true));
+                // get(false): skip the null-check path (receiver.get(true) -> GraphBuilderContext
+                // .nullCheckedValue() -> PiNode.create()/canonical() -> AbstractObjectStamp.improveWith()/
+                // join()). That path assumes the receiver carries a real AbstractObjectStamp, but receivers
+                // produced by e.g. ByteArray.getHalfFloat() carry the synthetic HalfFloatStamp (pushed as
+                // JavaKind.Object since the declared type is HalfFloat), so the join's internal cast throws
+                // a ClassCastException. These synthetic half-value nodes can never be null, so the null
+                // check buys nothing and get(false) (plain unwrap, no PiNode) is safe here.
+                //
+                // Only intercept when the receiver actually carries that synthetic stamp. Receivers with
+                // a real stamp (e.g. Half2.getX()/getY(), which return an already-properly-typed HalfFloat
+                // field) don't have this problem, and forcing them through this synthetic path instead of
+                // normal inlining changes the surrounding graph shape enough to trip an unrelated
+                // FixedGuardNode/ValueAnchorNode canonicalization bug elsewhere in the sketcher. Falling
+                // through (return false) lets the default bytecode-inlining path handle those untouched.
+                // Mirrors OCLHalfFloatPlugins.
+                ValueNode receiverValue = receiver.get(false);
+                if (!(receiverValue.stamp(NodeView.DEFAULT) instanceof HalfFloatStamp)) {
+                    return false;
+                }
+                HalfFloatPlaceholder placeholder = new HalfFloatPlaceholder(receiverValue);
                 b.getGraph().addOrUnique(placeholder);
                 b.push(JavaKind.Short, placeholder);
+                return true;
+            }
+        });
+
+        // Without this, the sketcher tries to inline HalfFloat.getFloat32()'s real bytecode against
+        // the receiver, hitting the same object-vs-HalfFloatStamp mismatch described above. Intercepting
+        // the call directly - mirroring getHalfFloatValue above - avoids inlining into that mismatch
+        // altogether. Same HalfFloatStamp scoping as getHalfFloatValue above, for the same reason.
+        // TornadoHalfFloatReplacement's existing leftover-placeholder cleanup already rewires any
+        // remaining HalfFloatPlaceholder input to the real half value, so MetalConvertHalfToFloat needs
+        // no extra handling there (unlike OpenCL, which needed that cleanup extended).
+        r.register(new InvocationPlugin("getFloat32", InvocationPlugin.Receiver.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                ValueNode receiverValue = receiver.get(false);
+                if (!(receiverValue.stamp(NodeView.DEFAULT) instanceof HalfFloatStamp)) {
+                    return false;
+                }
+                HalfFloatPlaceholder placeholder = new HalfFloatPlaceholder(receiverValue);
+                b.getGraph().addOrUnique(placeholder);
+                MetalConvertHalfToFloat convertHalfToFloat = new MetalConvertHalfToFloat(placeholder);
+                b.getGraph().addOrUnique(convertHalfToFloat);
+                b.push(JavaKind.Float, convertHalfToFloat);
                 return true;
             }
         });
