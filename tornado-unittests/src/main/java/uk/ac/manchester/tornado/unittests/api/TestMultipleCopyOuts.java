@@ -31,6 +31,7 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -53,6 +54,14 @@ public class TestMultipleCopyOuts extends TornadoTestBase {
     public static void scale(FloatArray input, FloatArray output, float alpha) {
         for (@Parallel int i = 0; i < input.getSize(); i++) {
             output.set(i, alpha * input.get(i));
+        }
+    }
+
+    public static void scaleMatrix(Matrix2DFloat input, Matrix2DFloat output, float alpha) {
+        for (@Parallel int i = 0; i < input.getNumRows(); i++) {
+            for (@Parallel int j = 0; j < input.getNumColumns(); j++) {
+                output.set(i, j, alpha * input.get(i, j));
+            }
         }
     }
 
@@ -220,6 +229,42 @@ public class TestMultipleCopyOuts extends TornadoTestBase {
                 for (int i = 0; i < batchedSize; i++) {
                     assertEquals(2.0f * iteration, output.get(i), 0.001f);
                 }
+            }
+        }
+    }
+
+    /**
+     * Two matrix outputs: the first one is a non-terminal copy-out, so it goes through the
+     * asynchronous read while the second stays blocking. Matrices use a different buffer wrapper
+     * from the flat arrays the other tests cover.
+     */
+    @Test
+    public void testTwoMatrixOutputs() throws TornadoExecutionPlanException {
+        final int n = 64;
+        Matrix2DFloat input = new Matrix2DFloat(n, n);
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                input.set(i, j, i + j);
+            }
+        }
+        Matrix2DFloat outA = new Matrix2DFloat(n, n);
+        Matrix2DFloat outB = new Matrix2DFloat(n, n);
+
+        TaskGraph taskGraph = new TaskGraph("matrixOut") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .task("a", TestMultipleCopyOuts::scaleMatrix, input, outA, 2.0f) //
+                .task("b", TestMultipleCopyOuts::scaleMatrix, input, outB, 3.0f) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outA, outB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                assertEquals(2.0f * (i + j), outA.get(i, j), 0.001f);
+                assertEquals(3.0f * (i + j), outB.get(i, j), 0.001f);
             }
         }
     }

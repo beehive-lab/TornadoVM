@@ -994,7 +994,8 @@ public class TornadoVMInterpreter {
         // host wait for no benefit, so this takes the asynchronous read whenever the blocking
         // variant is not doing something extra: it also covers atomics, under-demand partial
         // copies and batch chunks, none of which enqueueRead supports.
-        final boolean canReadAsync = !objectState.isAtomicRegionPresent() //
+        final boolean canReadAsync = objectState.getXPUBuffer().supportsAsyncRead() //
+                && !objectState.isAtomicRegionPresent() //
                 && objectState.getPartialCopySize() == 0 //
                 && sizeBatch <= 0;
 
