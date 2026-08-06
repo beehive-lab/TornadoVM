@@ -25,6 +25,8 @@ package uk.ac.manchester.tornado.drivers.metal.graal.compiler.plugins;
 
 import tornado.graal.compiler.nodes.NodeView;
 import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.ValuePhiNode;
+import tornado.graal.compiler.nodes.ValueProxyNode;
 import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugin;
@@ -47,6 +49,29 @@ public class MetalHalfFloatPlugins {
 
     public static void registerPlugins(final GraphBuilderConfiguration.Plugins ps, final InvocationPlugins plugins) {
         registerHalfFloatInit(ps, plugins);
+    }
+
+    /**
+     * True for getHalfFloatValue()/getFloat32() receivers that TornadoHalfFloatReplacement will
+     * strip down to a raw half value, so the call MUST be intercepted here rather than inlined:
+     * either the receiver already carries the synthetic {@link HalfFloatStamp} (e.g. the value
+     * ByteArray.getHalfFloat() pushes), or it is an object-typed node the replacement phase
+     * rewrites to a HalfFloatStamp value later - a loop-carried HalfFloat accumulator phi (looked
+     * through its loop-exit proxy) or a HalfFloat arithmetic node. Falling through to bytecode
+     * inlining for these materializes a LoadField(halfFloatValue) plus null-check PiNode over what
+     * later becomes a HalfFloatStamp value, which no later pass repairs: the PiNode's retained
+     * AbstractObjectStamp crashes CanonicalizerPhase joining the two stamp families, and the field
+     * read reaches codegen as a bogus half + field-offset dereference of a half register.
+     * Genuinely well-typed object receivers (e.g. Half2's getX()/getY() field loads) still return
+     * false so normal inlining handles them - see the scoping note in the plugins below.
+     */
+    private static boolean isSyntheticHalfReceiver(ValueNode receiverValue) {
+        if (receiverValue.stamp(NodeView.DEFAULT) instanceof HalfFloatStamp) {
+            return true;
+        }
+        ValueNode unproxified = receiverValue instanceof ValueProxyNode proxy ? proxy.value() : receiverValue;
+        return unproxified instanceof ValuePhiNode || unproxified instanceof AddHalfFloatNode || unproxified instanceof SubHalfFloatNode || unproxified instanceof MultHalfFloatNode
+                || unproxified instanceof DivHalfFloatNode;
     }
 
     private static void registerHalfFloatInit(GraphBuilderConfiguration.Plugins ps, InvocationPlugins plugins) {
@@ -124,7 +149,7 @@ public class MetalHalfFloatPlugins {
                 // through (return false) lets the default bytecode-inlining path handle those untouched.
                 // Mirrors OCLHalfFloatPlugins.
                 ValueNode receiverValue = receiver.get(false);
-                if (!(receiverValue.stamp(NodeView.DEFAULT) instanceof HalfFloatStamp)) {
+                if (!isSyntheticHalfReceiver(receiverValue)) {
                     return false;
                 }
                 HalfFloatPlaceholder placeholder = new HalfFloatPlaceholder(receiverValue);
@@ -145,7 +170,7 @@ public class MetalHalfFloatPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
                 ValueNode receiverValue = receiver.get(false);
-                if (!(receiverValue.stamp(NodeView.DEFAULT) instanceof HalfFloatStamp)) {
+                if (!isSyntheticHalfReceiver(receiverValue)) {
                     return false;
                 }
                 HalfFloatPlaceholder placeholder = new HalfFloatPlaceholder(receiverValue);
