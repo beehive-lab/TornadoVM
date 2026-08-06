@@ -118,6 +118,10 @@ public class TornadoVMInterpreter {
     private boolean insideCaptureRegion = false;
     private boolean executionGraphEnabled = true;
 
+    /** Executions that returned with their copy-outs still in flight. */
+    private int deferredExecutionsInFlight = 0;
+
+
     private TornadoLogger logger = new TornadoLogger(this.getClass());
 
     /**
@@ -295,6 +299,14 @@ public class TornadoVMInterpreter {
 
     private Event execute(boolean isWarmup) {
         isWarmup = isWarmup || VIRTUAL_DEVICE_ENABLED;
+
+        // A previous execution may have left its copy-outs in flight. Waiting for them here is only
+        // necessary when the ordering that makes pipelining safe does not hold, or when too many
+        // executions are already outstanding.
+        if (deferredExecutionsInFlight >= TornadoOptions.MAX_DEFERRED_EXECUTIONS_IN_FLIGHT || isIntraPlanConcurrencyActive()) {
+            awaitDeferredOutputs();
+        }
+
         interpreterDevice.enableThreadSharing();
 
         // Push the per-plan intra-plan-concurrency setting to the backend before issuing any
@@ -510,7 +522,12 @@ public class TornadoVMInterpreter {
                 barrier = interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), event);
             }
 
-            if (TornadoOptions.USE_VM_FLUSH) {
+            if (deferOutputs()) {
+                // Leave the copy-outs in flight. flush() would drain the stream, which is the
+                // wait this option exists to avoid; the marker above is not needed either,
+                // because awaitDeferredOutputs() synchronises the whole queue.
+                deferredExecutionsInFlight++;
+            } else if (TornadoOptions.USE_VM_FLUSH) {
                 interpreterDevice.flush(graphExecutionContext.getExecutionPlanId());
             }
         }
@@ -674,6 +691,27 @@ public class TornadoVMInterpreter {
                 executionGraphHandles.get(graphId));
 
         return event;
+    }
+
+    /**
+     * Whether this execution may return before its copy-outs have landed. The profiler reads
+     * device timestamps at the end of the run, which needs a drained stream, so it keeps the
+     * synchronous tail.
+     */
+    private boolean deferOutputs() {
+        return graphExecutionContext.isDeferredOutputsEnabled() && !TornadoOptions.isProfilerEnabled();
+    }
+
+    /**
+     * Blocks until the copy-outs of the previous execution have landed in their host buffers.
+     * A no-op unless an execution actually left work in flight, so every observation point can
+     * call it unconditionally.
+     */
+    public void awaitDeferredOutputs() {
+        if (deferredExecutionsInFlight > 0) {
+            deferredExecutionsInFlight = 0;
+            interpreterDevice.sync(graphExecutionContext.getExecutionPlanId());
+        }
     }
 
     private void initWaitEventList() {
