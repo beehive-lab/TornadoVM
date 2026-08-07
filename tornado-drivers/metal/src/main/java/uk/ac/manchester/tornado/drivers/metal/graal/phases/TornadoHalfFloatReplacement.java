@@ -80,6 +80,22 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
 public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContext> {
 
+    /**
+     * Finds the {@link NewHalfFloatInstance} that the node plugin inserted at the {@code HalfFloat.<init>}
+     * call site for this allocation. It is not always the allocation's immediate fixed successor: a computed
+     * constructor argument (e.g. an array read, {@code new HalfFloat(a.get(i))}) emits its own fixed nodes
+     * between the {@code new} and the {@code <init>} it feeds, so this walks the straight-line fixed chain
+     * forward (bounded, since argument evaluation cannot branch) looking for it. Mirrors CUDA's
+     * TornadoHalfFloatReplacement.
+     */
+    private static Node findSucceedingHalfFloatInstance(NewInstanceNode newInstanceNode) {
+        Node cursor = newInstanceNode.successors().isNotEmpty() ? newInstanceNode.successors().first() : null;
+        for (int hops = 0; cursor != null && !(cursor instanceof NewHalfFloatInstance) && !(cursor instanceof NewInstanceNode) && hops < 16; hops++) {
+            cursor = cursor.successors().isNotEmpty() ? cursor.successors().first() : null;
+        }
+        return cursor instanceof NewHalfFloatInstance ? cursor : null;
+    }
+
     @Override
     public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
         return ALWAYS_APPLICABLE;
@@ -123,8 +139,7 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
 
         for (NewInstanceNode newInstanceNode : graph.getNodes().filter(NewInstanceNode.class)) {
             if (newInstanceNode.instanceClass().getAnnotation(HalfType.class) != null) {
-                if (newInstanceNode.successors().first() instanceof NewHalfFloatInstance) {
-                    NewHalfFloatInstance newHalfFloatInstance = (NewHalfFloatInstance) newInstanceNode.successors().first();
+                if (findSucceedingHalfFloatInstance(newInstanceNode) instanceof NewHalfFloatInstance newHalfFloatInstance) {
                     ValueNode valueInput = getHalfFloatValue(newHalfFloatInstance.getValue(), graph);
                     newInstanceNode.replaceAtUsages(valueInput);
                     deleteFixed(newInstanceNode);
