@@ -37,6 +37,7 @@ import uk.ac.manchester.tornado.drivers.metal.graal.MetalArchitecture.MetalMemor
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.FixedArrayCopyNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.LocalArrayNode;
+import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalDecompressedReadFieldNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.calc.TornadoAddressArithmeticNode;
 
 public class MetalAddressLowering extends AddressLoweringByNodePhase.AddressLowering {
@@ -50,7 +51,13 @@ public class MetalAddressLowering extends AddressLoweringByNodePhase.AddressLowe
             memoryRegister = fixedArrayCopyNode.getMemoryRegister();
         } else if (base instanceof LocalArrayNode localArrayNode) {
             memoryRegister = localArrayNode.getMemoryRegister();
-        } else if (!((base instanceof TornadoAddressArithmeticNode) || (base instanceof ParameterNode) || (base instanceof ReadNode) || (base instanceof FloatingReadNode) || (base instanceof PiNode))) {
+        } else if (!((base instanceof TornadoAddressArithmeticNode) || (base instanceof ParameterNode) || (base instanceof ReadNode) || (base instanceof FloatingReadNode) || (base instanceof PiNode)
+                // A MetalDecompressedReadFieldNode yields the absolute device address of the referenced
+                // object (its generate() adds the owning object's buffer base to the decompressed offset),
+                // so it is a valid base for a further address computation - e.g. writing a scalar HalfFloat
+                // into VectorHalf.storage (a HalfFloatArray field), where the WriteHalfFloatNode's
+                // OffsetAddressNode uses the decompressed storage reference directly as its base.
+                || (base instanceof MetalDecompressedReadFieldNode))) {
             TornadoInternalError.unimplemented("address origin unimplemented: %s", base.getClass().getName());
         }
 

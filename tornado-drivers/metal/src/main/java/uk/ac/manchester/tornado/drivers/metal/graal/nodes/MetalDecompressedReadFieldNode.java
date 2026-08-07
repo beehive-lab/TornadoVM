@@ -90,7 +90,7 @@ public class MetalDecompressedReadFieldNode extends FixedWithNextNode implements
         Variable compressedPointer = tool.newVariable(LIRKind.value(MetalKind.UINT));
         tool.append(new MetalLIRStmt.CastCompressedStmt(compressedPointer, fieldAddress));
         Variable decompressedPointer = tool.newVariable(LIRKind.value(MetalKind.ULONG));
-        tool.append(new MetalLIRStmt.DecompressPointerStmt(decompressedPointer, compressedPointer));
+        tool.append(new MetalLIRStmt.DecompressPointerStmt(decompressedPointer, base, compressedPointer));
         gen.setResult(this, decompressedPointer);
     }
 }

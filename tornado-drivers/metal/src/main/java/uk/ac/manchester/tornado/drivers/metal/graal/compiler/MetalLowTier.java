@@ -45,6 +45,7 @@ import uk.ac.manchester.tornado.drivers.metal.graal.phases.InverseSquareRootPhas
 import uk.ac.manchester.tornado.drivers.metal.graal.phases.MetalFMAPhase;
 import uk.ac.manchester.tornado.drivers.metal.graal.phases.MetalFP16SupportPhase;
 import uk.ac.manchester.tornado.drivers.metal.graal.phases.MetalFP64SupportPhase;
+import uk.ac.manchester.tornado.drivers.metal.graal.phases.MetalFieldCoopsAccessPhase;
 import uk.ac.manchester.tornado.drivers.metal.graal.phases.TornadoAtomicsParametersPhase;
 import uk.ac.manchester.tornado.drivers.metal.graal.phases.TornadoAtomicsScheduling;
 import uk.ac.manchester.tornado.drivers.metal.graal.phases.TornadoFixedArrayCopyPhase;
@@ -99,6 +100,8 @@ public class MetalLowTier extends TornadoLowTier {
         appendPhase(new TornadoAtomicsParametersPhase());
 
         appendPhase(new TornadoAtomicsScheduling());
+
+        appendPhase(new MetalFieldCoopsAccessPhase());
 
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS));
 
