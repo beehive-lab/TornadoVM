@@ -10,6 +10,7 @@ TornadoVM JIT-compiles Java bytecode to GPU code (OpenCL C, CUDA/NVRTC, Apple Me
 **Backend scope:** this skill covers **OpenCL, CUDA, and Metal** only. **PTX and SPIRV are out of scope** (both are slated for removal in the 6.0.0 roadmap). Never suggest `make BACKEND=ptx` or `make BACKEND=spirv`.
 
 For backend internals (where codegen lives, how to add a node/intrinsic), see `references/codegen-map.md`.
+For profiling and optimisation work on the runtime, see the `tornadovm-perf-campaign` skill.
 
 ## Build
 
