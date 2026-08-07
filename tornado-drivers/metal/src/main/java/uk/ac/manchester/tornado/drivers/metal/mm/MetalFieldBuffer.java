@@ -255,10 +255,11 @@ public class MetalFieldBuffer implements XPUBuffer {
             }
         } else if (wrappedFields[index] != null) {
             if (areCoopsEnabled) {
-                // Compressed oops must be relative to the flat buffer base (offset 0),
-                // since the kernel always decompresses using ul_0 (the root object's buffer pointer).
-                long relativeOffset = wrappedFields[index].getBufferOffset();
+                // calculate the relative offset
+                long relativeOffset = wrappedFields[index].getBufferOffset() - this.bufferOffset;
+                // Compress it by dividing by 8
                 int compressedOffset = (int) (relativeOffset / 8);
+                // Write compressed value
                 buffer.putInt(compressedOffset);
             } else {
                 buffer.putLong(wrappedFields[index].getBufferOffset());
