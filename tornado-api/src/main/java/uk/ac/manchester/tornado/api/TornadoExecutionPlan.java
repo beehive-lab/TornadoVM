@@ -660,6 +660,24 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         return this;
     }
 
+    /**
+     * Uploads the current host contents of the given objects to the device, without running the
+     * plan. Use it to refresh one input between executions, or to place an input before the first
+     * one, when running the plan is not what you want.
+     *
+     * <p>Each object is uploaded by the task-graphs of this plan that take it as a parameter;
+     * graphs that do not know it ignore it. The data is on the device when the call returns. An
+     * object that has no device buffer yet gets one, so this works before the plan has ever run.
+     *
+     * @param objects
+     *     Host objects to upload.
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan transferToDevice(Object... objects) {
+        tornadoExecutor.transferDataToDevice(executionFrame, objects);
+        return this;
+    }
+
     public TornadoExecutionPlan withCUDAGraph() {
         //TODO: include a check to verify that the BACKEND is CUDA
         tornadoExecutor.withCUDAGraph();

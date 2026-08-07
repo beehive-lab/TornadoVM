@@ -209,4 +209,110 @@ public class TestOnDemandCopyIn extends TornadoTestBase {
             assertEquals(9.0f, output.get(i), 0.001f);
         }
     }
+
+    /**
+     * Updating one object: the new host contents are on the device without the plan running, so
+     * the next execution sees them even though the object is declared {@code FIRST_EXECUTION} and
+     * would otherwise never be uploaded again.
+     */
+    @Test
+    public void testTransferSingleObject() throws TornadoExecutionPlanException {
+        FloatArray weights = new FloatArray(SIZE);
+        weights.init(2.0f);
+        FloatArray input = new FloatArray(SIZE);
+        input.init(3.0f);
+        FloatArray output = new FloatArray(SIZE);
+
+        ImmutableTaskGraph immutableTaskGraph = buildGraph("copyInSingle", weights, input, output).snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+            for (int i = 0; i < SIZE; i++) {
+                assertEquals(6.0f, output.get(i), 0.001f);
+            }
+
+            // FIRST_EXECUTION: without the explicit upload this change would never reach the device.
+            weights.init(10.0f);
+            executionPlan.transferToDevice(weights);
+            executionPlan.execute();
+
+            for (int i = 0; i < SIZE; i++) {
+                assertEquals(30.0f, output.get(i), 0.001f);
+            }
+        }
+    }
+
+    /** Uploading one object before the plan has ever run allocates for it on the way. */
+    @Test
+    public void testTransferSingleObjectBeforeFirstExecution() throws TornadoExecutionPlanException {
+        FloatArray weights = new FloatArray(SIZE);
+        weights.init(4.0f);
+        FloatArray input = new FloatArray(SIZE);
+        input.init(2.0f);
+        FloatArray output = new FloatArray(SIZE);
+
+        ImmutableTaskGraph immutableTaskGraph = buildGraph("copyInSingleUpfront", weights, input, output).snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.transferToDevice(weights);
+            executionPlan.execute();
+        }
+
+        for (int i = 0; i < SIZE; i++) {
+            assertEquals(8.0f, output.get(i), 0.001f);
+        }
+    }
+
+    /** Several objects in one call, and objects a graph does not know are ignored. */
+    @Test
+    public void testTransferSeveralObjectsAndUnknownOnes() throws TornadoExecutionPlanException {
+        FloatArray weights = new FloatArray(SIZE);
+        weights.init(2.0f);
+        FloatArray input = new FloatArray(SIZE);
+        input.init(3.0f);
+        FloatArray output = new FloatArray(SIZE);
+        FloatArray strangerToThisPlan = new FloatArray(SIZE);
+
+        ImmutableTaskGraph immutableTaskGraph = buildGraph("copyInSeveral", weights, input, output).snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+
+            weights.init(3.0f);
+            input.init(5.0f);
+            executionPlan.transferToDevice(weights, input, strangerToThisPlan);
+            executionPlan.execute();
+        }
+
+        for (int i = 0; i < SIZE; i++) {
+            assertEquals(15.0f, output.get(i), 0.001f);
+        }
+    }
+
+    /** The targeted upload reaches every task-graph of the plan that takes the object. */
+    @Test
+    public void testTransferSingleObjectSharedByTwoGraphs() throws TornadoExecutionPlanException {
+        FloatArray weightsA = new FloatArray(SIZE);
+        weightsA.init(2.0f);
+        FloatArray weightsB = new FloatArray(SIZE);
+        weightsB.init(3.0f);
+        FloatArray sharedInput = new FloatArray(SIZE);
+        sharedInput.init(1.0f);
+        FloatArray outputA = new FloatArray(SIZE);
+        FloatArray outputB = new FloatArray(SIZE);
+
+        ImmutableTaskGraph first = buildGraph("copyInShared0", weightsA, sharedInput, outputA).snapshot();
+        ImmutableTaskGraph second = buildGraph("copyInShared1", weightsB, sharedInput, outputB).snapshot();
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(first, second)) {
+            executionPlan.execute();
+
+            weightsA.init(4.0f);
+            weightsB.init(5.0f);
+            executionPlan.transferToDevice(weightsA, weightsB);
+            executionPlan.execute();
+        }
+
+        for (int i = 0; i < SIZE; i++) {
+            assertEquals(4.0f, outputA.get(i), 0.001f);
+            assertEquals(5.0f, outputB.get(i), 0.001f);
+        }
+    }
 }

@@ -1038,8 +1038,40 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         runAllTasksJavaSequential();
     }
 
+    /**
+     * Uploads the current host contents of the given objects, without running anything. Objects
+     * this task-graph does not know are left to the other graphs of the plan.
+     */
     @Override
-    public void transferDataToDevice(ExecutorFrame executionPackage) {
+    public void transferDataToDevice(ExecutorFrame executionPackage, Object... objects) {
+        prepareForDataTransfers(executionPackage);
+
+        final TornadoXPUDevice device = meta().getXPUDevice();
+        boolean uploaded = false;
+        for (Object object : objects) {
+            if (object == null || !argumentsLookUp.contains(object)) {
+                continue;
+            }
+            final Access access = getObjectAccess(object);
+            final LocalObjectState localState = executionContext.getLocalStateObject(object, access);
+            final XPUDeviceBufferState deviceState = localState.getDataObjectState().getDeviceBufferState(device);
+            if (!deviceState.hasObjectBuffer()) {
+                // The plan may not have run yet, in which case nothing has allocated for this object.
+                device.allocateObjects(new Object[] { object }, 0L, new XPUDeviceBufferState[] { deviceState }, new Access[] { access });
+                if (TornadoOptions.isReusedBuffersEnabled()) {
+                    deviceState.setLockBuffer(true);
+                }
+            }
+            device.streamIn(executionPlanId, object, 0L, 0L, deviceState, null);
+            uploaded = true;
+        }
+
+        if (uploaded) {
+            device.sync(executionPlanId);
+        }
+    }
+
+    private void prepareForDataTransfers(ExecutorFrame executionPackage) {
         setupProfiler();
         getDevice().getDeviceContext().setResetToFalse();
         timeProfiler.clean();
@@ -1047,6 +1079,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         compileComputeGraphToTornadoVMBytecode();
         executionPlanId = executionPackage.getExecutionPlanId();
         executionContext.setExecutionPlanId(executionPlanId);
+    }
+
+    @Override
+    public void transferDataToDevice(ExecutorFrame executionPackage) {
+        prepareForDataTransfers(executionPackage);
         vm.transferDataToDevice();
     }
 

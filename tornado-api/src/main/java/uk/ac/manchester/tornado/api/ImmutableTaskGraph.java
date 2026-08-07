@@ -158,6 +158,10 @@ public class ImmutableTaskGraph {
         taskGraph.transferDataToDevice(executionPackage);
     }
 
+    void transferDataToDevice(ExecutorFrame executionPackage, Object... objects) {
+        taskGraph.transferDataToDevice(executionPackage, objects);
+    }
+
     void dumpProfiles() {
         taskGraph.dumpProfiles();
     }

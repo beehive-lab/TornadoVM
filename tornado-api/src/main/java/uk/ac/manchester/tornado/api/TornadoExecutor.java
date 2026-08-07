@@ -160,6 +160,10 @@ class TornadoExecutor {
         immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.transferDataToDevice(executionPackage));
     }
 
+    void transferDataToDevice(ExecutorFrame executionPackage, Object... objects) {
+        immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.transferDataToDevice(executionPackage, objects));
+    }
+
     boolean isFinished() {
         boolean result = true;
         for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
