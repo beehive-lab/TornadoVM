@@ -62,7 +62,9 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_natives_Nativ
             (CUdeviceptr) (destDevicePtr + headerBytes),
             (CUdeviceptr) (srcDevicePtr + (offset * sizeDataType) + headerBytes),
             (size_t) payloadBytes);
-    LOG_CUDA_AND_VALIDATE("cuMemcpyDtoD", result);
+    if (tornado_report_cuda_failure(env, "cuMemcpyDtoD", result)) {
+        return (jlong) result;
+    }
     return destDevicePtr;
 }
 

@@ -169,4 +169,49 @@ static inline bool tornado_throw_cuda_exception(JNIEnv *env, const char *call, C
     return true;
 }
 
+/*
+ * Checked driver calls. LOG_CUDA_AND_VALIDATE only prints, which is how a failed call used to
+ * reach Java as a normal return with buffers the device never wrote. These log and then raise
+ * CUDAException, so the failure arrives where the caller can see it.
+ *
+ * Use the plain form in a void JNI method and the _RET form elsewhere, passing the value the
+ * method must return once the exception is pending (the return value is ignored by the JVM, but
+ * the C++ signature still needs one).
+ *
+ * Neither may be used while a GetPrimitiveArrayCritical region is held: ThrowNew allocates.
+ * Cleanup paths (destroy, free, unregister, unload) deliberately keep LOG_CUDA_AND_VALIDATE:
+ * they run while unwinding, often with an exception already pending, and failing them louder
+ * helps nobody.
+ */
+/*
+ * Logs a failed driver call and raises CUDAException, returning whether it did. Use it where the
+ * JNI signature has no status to hand back — a discarded CUresult is how a failure becomes a wrong
+ * answer instead of an error.
+ *
+ * Calls that already return their CUresult to Java (the CUDA-graph family, createBuffer,
+ * cuMemHostRegister) keep doing that: one route per call, never two. Cleanup paths (destroy, free,
+ * unregister, unload) and device enumeration keep LOG_CUDA_AND_VALIDATE deliberately - the first
+ * run while unwinding, the second must degrade to "no devices" rather than abort discovery.
+ */
+static inline bool tornado_report_cuda_failure(JNIEnv *env, const char *call, CUresult result) {
+    LOG_CUDA_AND_VALIDATE(call, result);
+    return tornado_throw_cuda_exception(env, call, result);
+}
+
+#define TORNADO_CHECK_CUDA(env, name, result)                     \
+    do {                                                          \
+        LOG_CUDA_AND_VALIDATE(name, result);                      \
+        if (tornado_throw_cuda_exception(env, name, (CUresult) (result))) { \
+            return;                                               \
+        }                                                         \
+    } while (0)
+
+#define TORNADO_CHECK_CUDA_RET(env, name, result, retval)         \
+    do {                                                          \
+        LOG_CUDA_AND_VALIDATE(name, result);                      \
+        if (tornado_throw_cuda_exception(env, name, (CUresult) (result))) { \
+            return retval;                                        \
+        }                                                         \
+    } while (0)
+
 #endif // TORNADO_CUDA_JNI_H

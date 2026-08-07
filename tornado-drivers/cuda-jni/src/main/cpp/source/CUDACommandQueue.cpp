@@ -81,13 +81,20 @@ static bool stream_is_capturing(cuda_queue_t *queue) {
  */
 static unsigned int event_flags();
 
-static jlong record_event(cuda_queue_t *queue) {
+static jlong record_event(JNIEnv *env, cuda_queue_t *queue) {
     cuda_event_t *ev = new cuda_event_t();
     ev->start = nullptr;
     CUresult result = cuEventCreate(&ev->event, event_flags());
-    LOG_CUDA_AND_VALIDATE("cuEventCreate", result);
+    if (tornado_report_cuda_failure(env, "cuEventCreate", result)) {
+        delete ev;
+        return 0;
+    }
     result = cuEventRecord(ev->event, queue->stream);
-    LOG_CUDA_AND_VALIDATE("cuEventRecord", result);
+    if (tornado_report_cuda_failure(env, "cuEventRecord", result)) {
+        cuEventDestroy(ev->event);
+        delete ev;
+        return 0;
+    }
     return (jlong) ev;
 }
 
@@ -140,15 +147,21 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQue
  * timestamp on the stream to be paired with end_event() after the operation
  * (cuEventElapsedTime(start, event) then yields the device time of the operation).
  */
-static cuda_event_t *begin_event(cuda_queue_t *queue) {
+static cuda_event_t *begin_event(JNIEnv *env, cuda_queue_t *queue) {
     cuda_event_t *ev = new cuda_event_t();
     ev->event = nullptr;
     ev->start = nullptr;
     if (tornado_timing_enabled) {
         CUresult result = cuEventCreate(&ev->start, CU_EVENT_DEFAULT);
-        LOG_CUDA_AND_VALIDATE("cuEventCreate(start)", result);
+        if (tornado_report_cuda_failure(env, "cuEventCreate(start)", result)) {
+            ev->start = nullptr;
+            return ev;
+        }
         result = cuEventRecord(ev->start, queue->stream);
-        LOG_CUDA_AND_VALIDATE("cuEventRecord(start)", result);
+        if (tornado_report_cuda_failure(env, "cuEventRecord(start)", result)) {
+            cuEventDestroy(ev->start);
+            ev->start = nullptr;
+        }
     }
     return ev;
 }
@@ -158,11 +171,19 @@ static cuda_event_t *begin_event(cuda_queue_t *queue) {
  * and returns the boxed handle. This event doubles as the operation's dependency
  * handle (cuStreamWaitEvent / status queries), so it is always created.
  */
-static jlong end_event(cuda_event_t *ev, cuda_queue_t *queue) {
+static jlong end_event(JNIEnv *env, cuda_event_t *ev, cuda_queue_t *queue) {
     CUresult result = cuEventCreate(&ev->event, event_flags());
-    LOG_CUDA_AND_VALIDATE("cuEventCreate(end)", result);
+    if (tornado_report_cuda_failure(env, "cuEventCreate(end)", result)) {
+        ev->event = nullptr;
+        delete ev;
+        return 0;
+    }
     result = cuEventRecord(ev->event, queue->stream);
-    LOG_CUDA_AND_VALIDATE("cuEventRecord(end)", result);
+    if (tornado_report_cuda_failure(env, "cuEventRecord(end)", result)) {
+        cuEventDestroy(ev->event);
+        delete ev;
+        return 0;
+    }
     return (jlong) ev;
 }
 
@@ -305,7 +326,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
     NvtxRange _nvtx(kernel->name.c_str());
     cuCtxSetCurrent(queue->context);
     wait_events(env, queue, events);
-    cuda_event_t *ev = begin_event(queue);
+    cuda_event_t *ev = begin_event(env, queue);
     CUresult result = cuLaunchKernel(
             kernel->function,
             grid[0], grid[1], grid[2],
@@ -315,7 +336,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
             params.empty() ? nullptr : params.data(),
             nullptr);
     LOG_CUDA_AND_VALIDATE("cuLaunchKernel", result);
-    jlong launchEvent = end_event(ev, queue);
+    jlong launchEvent = end_event(env, ev, queue);
     // A failed launch leaves the kernel's outputs untouched. Surfacing it as CUDAException
     // makes the Java wrapper bail out instead of returning stale buffers as a valid result.
     if (tornado_throw_cuda_exception(env, "cuLaunchKernel", result)) {
@@ -349,7 +370,7 @@ static jlong transfer_to_device(JNIEnv *env, cuda_queue_t *queue, void *host_bas
     NvtxRange _nvtx(nvtxLabel);
     cuCtxSetCurrent(queue->context);
     wait_events(env, queue, events);
-    cuda_event_t *ev = begin_event(queue);
+    cuda_event_t *ev = begin_event(env, queue);
     CUresult result = cuMemcpyHtoDAsync(
             (CUdeviceptr) (device_ptr + device_offset),
             (const void *) ((char *) host_base + host_offset),
@@ -366,7 +387,7 @@ static jlong transfer_to_device(JNIEnv *env, cuda_queue_t *queue, void *host_bas
             *failure = sync;
         }
     }
-    return end_event(ev, queue);
+    return end_event(env, ev, queue);
 }
 
 static jlong transfer_to_host(JNIEnv *env, cuda_queue_t *queue, void *host_base,
@@ -380,7 +401,7 @@ static jlong transfer_to_host(JNIEnv *env, cuda_queue_t *queue, void *host_base,
     NvtxRange _nvtx(nvtxLabel);
     cuCtxSetCurrent(queue->context);
     wait_events(env, queue, events);
-    cuda_event_t *ev = begin_event(queue);
+    cuda_event_t *ev = begin_event(env, queue);
     CUresult result = cuMemcpyDtoHAsync(
             (void *) ((char *) host_base + host_offset),
             (CUdeviceptr) (device_ptr + device_offset),
@@ -397,7 +418,7 @@ static jlong transfer_to_host(JNIEnv *env, cuda_queue_t *queue, void *host_base,
             *failure = sync;
         }
     }
-    return end_event(ev, queue);
+    return end_event(env, ev, queue);
 }
 
 /* ---- writeArrayToDevice overloads (byte/char/short/int/long/float/double) ---- */
@@ -551,7 +572,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
     if (queue == nullptr) {
         return 0;
     }
-    return record_event(queue);
+    return record_event(env, queue);
 }
 
 /*
@@ -567,7 +588,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
     }
     // Honour the wait list, then place a marker event.
     Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQueue_clEnqueueWaitForEvents(env, clazz, queue_id, array);
-    return record_event(queue);
+    return record_event(env, queue);
 }
 
 /*
