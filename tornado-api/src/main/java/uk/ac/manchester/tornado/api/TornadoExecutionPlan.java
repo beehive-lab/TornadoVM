@@ -636,6 +636,30 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         return new WithWarmUpIterations(this, iterations);
     }
 
+    /**
+     * Uploads this plan's inputs to the device without running it: buffers are allocated and every
+     * declared copy-in is performed, while the tasks themselves are skipped. The data is on the
+     * device when the call returns.
+     *
+     * <p>This is the copy-in counterpart of
+     * {@link TornadoExecutionResult#transferToHost(Object...)}. It exists for plans whose inputs
+     * are large and stable - model weights, lookup tables, a mesh - where the first execution
+     * would otherwise pay the whole upload, and where the alternative today is to run the plan once
+     * on dummy data purely to make the transfer happen.
+     *
+     * <p>Applies to every task-graph of the plan. Objects declared
+     * {@link uk.ac.manchester.tornado.api.enums.DataTransferMode#FIRST_EXECUTION} are uploaded once
+     * and will not be re-uploaded by the first real execution; objects declared
+     * {@code EVERY_EXECUTION} are uploaded here as well and again on each execution, as their mode
+     * says.
+     *
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan transferToDevice() {
+        tornadoExecutor.transferDataToDevice(executionFrame);
+        return this;
+    }
+
     public TornadoExecutionPlan withCUDAGraph() {
         //TODO: include a check to verify that the BACKEND is CUDA
         tornadoExecutor.withCUDAGraph();

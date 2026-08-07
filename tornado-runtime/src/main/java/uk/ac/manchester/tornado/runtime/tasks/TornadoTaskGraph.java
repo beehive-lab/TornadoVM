@@ -1039,6 +1039,18 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
+    public void transferDataToDevice(ExecutorFrame executionPackage) {
+        setupProfiler();
+        getDevice().getDeviceContext().setResetToFalse();
+        timeProfiler.clean();
+
+        compileComputeGraphToTornadoVMBytecode();
+        executionPlanId = executionPackage.getExecutionPlanId();
+        executionContext.setExecutionPlanId(executionPlanId);
+        vm.transferDataToDevice();
+    }
+
+    @Override
     public void scheduleInner() {
         compileComputeGraphToTornadoVMBytecode();
 

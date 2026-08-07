@@ -1104,6 +1104,10 @@ public class TaskGraph implements TaskGraphInterface {
         return taskGraphImpl.isFinished();
     }
 
+    void transferDataToDevice(ExecutorFrame executionPackage) {
+        taskGraphImpl.transferDataToDevice(executionPackage);
+    }
+
     public Set<Object> getArgumentsLookup() {
         return taskGraphImpl.getArgumentsLookup();
     }

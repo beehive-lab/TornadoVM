@@ -181,6 +181,14 @@ public class TornadoVM {
         Arrays.stream(tornadoVMInterpreters).forEach(action::accept);
     }
 
+    /**
+     * Allocates the plan's buffers and uploads its inputs on every interpreter, without running
+     * any task.
+     */
+    public void transferDataToDevice() {
+        executeActionOnInterpreters(TornadoVMInterpreter::transferDataToDevice);
+    }
+
     public void dumpProfiles() {
         executeActionOnInterpreters(TornadoVMInterpreter::dumpProfiles);
     }
