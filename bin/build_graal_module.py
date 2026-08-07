@@ -143,12 +143,18 @@ def build():
     compiler_jar = _dep_jar(f"compiler-{VERSION}.jar")
     print(f"build_graal_module: relocating Graal {VERSION} -> module {MODULE_NAME}")
 
-    # Make the raw compiler jar resolvable for the offline shade build.
+    # Publish the raw compiler jar to the local repo so the shade build can depend on it
+    # (it is not on Maven Central under this coordinate). A release version present in the
+    # local repo resolves without any remote lookup, so this needs no offline flag.
     _install_file(compiler_jar, "org.graalvm.compiler", "compiler")
 
     with tempfile.TemporaryDirectory() as work:
-        # (1) shade: relocate classes + services
-        _run(_mvn() + ["-q", "-o", "-f", RELOCATE_POM, "package"])
+        # (1) shade: relocate classes + services.
+        # Deliberately NOT run with -o: this is the first Maven build in a clean checkout,
+        # so on CI the local repo is empty and offline mode cannot resolve even the default
+        # lifecycle plugins (process-resources binds maven-resources-plugin, which is what
+        # broke the runners). Online resolution still hits the local repo first.
+        _run(_mvn() + ["-q", "-f", RELOCATE_POM, "package"])
         shaded = os.path.join(SCRIPT_DIR, "graal-relocate", "target", ARTIFACT)
         if not os.path.exists(shaded):
             sys.exit(f"build_graal_module: shade did not produce {shaded}")

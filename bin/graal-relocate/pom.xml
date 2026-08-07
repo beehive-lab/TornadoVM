@@ -33,12 +33,13 @@
 
     <build>
         <plugins>
-            <!-- Pin the default-lifecycle plugins that the reactor also pins to non-default versions.
-                 The CI runner builds Maven offline (-o); its cache only holds the versions the reactor
-                 fetched, so the unversioned jar-packaging defaults for these two (compiler 3.1, jar 2.4)
-                 are absent and fail the graal-relocate step (and thus every build). Plugins the reactor
-                 leaves unversioned (resources, surefire) resolve to the same cached CI defaults, so they
-                 are deliberately not pinned here. -->
+            <!-- Pin the default-lifecycle plugins to the same versions the reactor pins, so a CI run
+                 downloads one set of plugin jars instead of two. This is an efficiency measure only.
+                 It is NOT a correctness guarantee: this POM is built before the reactor, so on a clean
+                 runner nothing is cached yet and every plugin it needs — including the ones left
+                 unpinned here (resources, surefire) — must be downloadable. That is why the shade build
+                 in bin/build_graal_module.py must not run with -o; pinning alone cannot make an offline
+                 build resolvable from an empty local repository. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
