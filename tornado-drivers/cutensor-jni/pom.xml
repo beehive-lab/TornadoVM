@@ -6,10 +6,10 @@
     <parent>
         <groupId>io.github.beehive-lab</groupId>
         <artifactId>tornado-drivers</artifactId>
-        <version>5.2.1-jdk21-dev</version>
+        <version>5.1.1-jdk21-dev</version>
     </parent>
-    <artifactId>tornado-drivers-cusparse-jni</artifactId>
-    <name>tornado-drivers-cusparse-jni</name>
+    <artifactId>tornado-drivers-cutensor-jni</artifactId>
+    <name>tornado-drivers-cutensor-jni</name>
     <build>
 
         <directory>${basedir}/target/${platform}-${build.type}</directory>
@@ -80,26 +80,11 @@
                             <outputDirectory>${project.build.outputDirectory}</outputDirectory>
                             <resources>
                                 <resource>
-                                    <directory>${project.build.directory}/cmake</directory>
-                                    <includes>
-                                        <include>*.so</include>
-                                        <include>*.dylib</include>
-                                    </includes>
-                                </resource>
-                                <resource>
                                     <directory>${project.build.directory}/cmake/build</directory>
                                     <includes>
                                         <!-- linux -->
                                         <include>*.so</include>
                                         <!-- mac -->
-                                        <include>*.dylib</include>
-                                    </includes>
-                                </resource>
-                                <resource>
-                                    <!-- linux/mac: the Makefile generator places the library directly in cmake/ -->
-                                    <directory>${project.build.directory}/cmake</directory>
-                                    <includes>
-                                        <include>*.so</include>
                                         <include>*.dylib</include>
                                     </includes>
                                 </resource>
@@ -136,7 +121,7 @@
                                 <include>**/*.dylib</include>
                                 <include>**/*.dll</include>
                             </includes>
-                            <classesDirectory>${basedir}/target/${platform}-${build.type}/classes</classesDirectory>
+                            <classesDirectory>${basedir}/target/${platform}-${build.type}/cmake</classesDirectory>
                             <outputDirectory>${basedir}/target</outputDirectory>
                         </configuration>
                     </execution>
