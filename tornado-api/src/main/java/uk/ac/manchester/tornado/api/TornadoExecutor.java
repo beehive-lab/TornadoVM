@@ -147,13 +147,23 @@ class TornadoExecutor {
     }
 
     void transferToHost(Object... objects) {
-        immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.transferToHost(objects));
+        allTaskGraphs().forEach(immutableTaskGraph -> immutableTaskGraph.transferToHost(objects));
     }
 
     void partialTransferToHost(DataRange dataRange) {
         // At this point we compute the offsets and the total size in bytes.
         dataRange.materialize();
-        immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.transferToHost(dataRange.getArray(), dataRange.getOffset(), dataRange.getPartialSize()));
+        allTaskGraphs().forEach(immutableTaskGraph -> immutableTaskGraph.transferToHost(dataRange.getArray(), dataRange.getOffset(), dataRange.getPartialSize()));
+    }
+
+    /**
+     * Every task-graph of the plan, including the ones a {@code withGraph(i)} has currently
+     * selected away. A transfer names an object, not a graph: the graph that owns the object is
+     * not necessarily the one selected to run next, and asking the selected graph alone makes the
+     * transfer a silent no-op.
+     */
+    private List<ImmutableTaskGraph> allTaskGraphs() {
+        return subgraphList != null ? subgraphList : immutableTaskGraphList;
     }
 
     boolean isFinished() {
