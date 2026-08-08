@@ -88,8 +88,8 @@ public class TornadoVMInterpreter {
     private static final Event EMPTY_EVENT = new EmptyEvent();
 
     private static final int MAX_EVENTS = TornadoOptions.MAX_EVENTS;
-    private final boolean useDependencies;
-    private final boolean useNativeInterpreter;
+    private boolean useDependencies;
+    private boolean useNativeInterpreter;
 
     private final HashMap<Object, Access> objectAccesses;
     private final List<Object> objects;
@@ -144,10 +144,7 @@ public class TornadoVMInterpreter {
         // NOTE: useDependencies is (re)computed at the start of execute() rather than latched here,
         // because plan-level withIntraPlanConcurrency() is applied after this interpreter is built.
         useDependencies = VM_USE_DEPS || isIntraPlanConcurrencyActive();
-        // The native loop does not model the event dependency lists, and the Java handlers
-        // index into them before their warm-up early-exit, so it is only equivalent when
-        // dependency tracking is off.
-        useNativeInterpreter = TornadoOptions.INTERPRETER_NATIVE && !useDependencies && NativeBytecodeInterpreter.isAvailable();
+        useNativeInterpreter = resolveUseNativeInterpreter();
         totalTime = 0;
         invocations = 0;
 
@@ -280,6 +277,15 @@ public class TornadoVMInterpreter {
         finishedWarmup = true;
     }
 
+    /**
+     * The native loop does not model the event dependency lists, and the Java handlers index into
+     * them before their warm-up early-exit, so it is only equivalent when dependency tracking is
+     * off.
+     */
+    private boolean resolveUseNativeInterpreter() {
+        return TornadoOptions.INTERPRETER_NATIVE && !useDependencies && NativeBytecodeInterpreter.isAvailable();
+    }
+
     private boolean isMemoryLimitEnabled() {
         return graphExecutionContext.isMemoryLimited();
     }
@@ -314,6 +320,10 @@ public class TornadoVMInterpreter {
         // applied after this interpreter is built, so latching it at construction misses it and the
         // dependency DAG (waitList -> cross-stream events) would never engage for concurrent plans.
         useDependencies = VM_USE_DEPS || isIntraPlanConcurrencyActive();
+        // Follows useDependencies for the same reason: it is derived from it, so latching it at
+        // construction would leave the native loop enabled for a plan that turned dependencies on
+        // afterwards.
+        useNativeInterpreter = resolveUseNativeInterpreter();
 
         // Batched plans: reset the per-object chunk counters so every execution behaves like the
         // first (per-chunk DEALLOCs stay no-ops until the last even chunk). Without this reset the
