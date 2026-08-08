@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -102,6 +103,8 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     void addPrebuiltTask(TaskPackage taskPackage);
 
+    void addLibraryTask(String id, LibraryTaskDescriptor libraryTaskDescriptor);
+
     String getTaskGraphName();
 
     void useDefaultThreadScheduler(boolean use);
@@ -144,5 +147,20 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     void setLastExecutedTaskGraph(TornadoTaskGraphInterface lastExecutedTaskGraph);
 
+    /**
+     * Registers the other task-graphs of the same execution plan, so that
+     * {@code consumeFromDevice(producerName, ...)} can resolve its named producer directly instead of
+     * relying on the producer being the previously executed graph.
+     */
+    void setPlanTaskGraphs(java.util.List<TornadoTaskGraphInterface> planTaskGraphs);
+
     boolean isGridRegistered();
+
+    void withIntraPlanConcurrency();
+
+    void withoutIntraPlanConcurrency();
+
+    void withStagedTransfers();
+
+    void withoutStagedTransfers();
 }

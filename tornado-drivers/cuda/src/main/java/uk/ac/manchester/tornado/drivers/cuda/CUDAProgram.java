@@ -75,6 +75,45 @@ public class CUDAProgram {
 
     static native void getBinaries(long programId, long numDevices, ByteBuffer buffer) throws CUDAException;
 
+    static native boolean nvrtcCanCompileHeader(String headerName);
+
+    static native int nvrtcVersion();
+
+    private static Boolean nativeFP8ConversionAvailable;
+
+    private static Integer nvrtcVersionCached;
+
+    /**
+     * NVRTC version as {@code major * 1000 + minor} (CUDA 12.4 gives 12004), or {@code -1} when the
+     * query fails. Queried once per process.
+     *
+     * <p>This gates features whose PTX encoding needs a minimum PTX ISA version: NVRTC stamps the
+     * PTX it emits with its own {@code .version}, so an instruction introduced in a later ISA
+     * cannot be expressed by an older toolkit, however capable the GPU is. FP8 {@code mma.sync}
+     * (PTX ISA 8.4 / CUDA 12.4) is the motivating case - on an older toolkit ptxas rejects it with
+     * "Feature 'mma with FP8 floating point type' requires PTX ISA .version 8.4 or later".</p>
+     */
+    public static synchronized int getNvrtcVersion() {
+        if (nvrtcVersionCached == null) {
+            nvrtcVersionCached = nvrtcVersion();
+        }
+        return nvrtcVersionCached;
+    }
+
+    /**
+     * Whether this NVRTC/toolkit pair can compile kernels that include {@code cuda_fp8.h}
+     * (absent before CUDA 11.8). Probed once per process: the FP8 conversion plugins consult
+     * this to choose between emitting the native {@code __nv_cvt} intrinsics and inlining the
+     * Java software decoder, so an old or mismatched toolkit degrades FP8 decode performance,
+     * not correctness.
+     */
+    public static synchronized boolean isNativeFP8ConversionAvailable() {
+        if (nativeFP8ConversionAvailable == null) {
+            nativeFP8ConversionAvailable = nvrtcCanCompileHeader("cuda_fp8.h");
+        }
+        return nativeFP8ConversionAvailable;
+    }
+
     public CUDABuildStatus getStatus(long deviceId) {
         CUDABuildStatus result;
         buffer.clear();
@@ -164,6 +203,33 @@ public class CUDAProgram {
             throw new TornadoBailoutRuntimeException(e.getMessage());
         }
         return result;
+    }
+
+    /**
+     * Returns the compiled module image (cubin, or PTX when the toolkit cannot emit cubin for this
+     * device) for the device this program was built for, or null when no image is available.
+     */
+    public byte[] getModuleImage() {
+        // A CUDA program holds exactly one module image, for the device it was built for. (Note that
+        // the device-matching loop in dumpBinaries() cannot work here: the driver does not implement
+        // CL_PROGRAM_DEVICES, so getDevices() returns zeros.)
+        final long[] sizes = getBinarySizes();
+        if (sizes.length == 0 || sizes[0] <= 0) {
+            return null;
+        }
+
+        try {
+            final int size = (int) sizes[0];
+            final ByteBuffer binary = ByteBuffer.allocateDirect(size);
+            getBinaries(programPointer, getNumDevices(), binary);
+            final byte[] image = new byte[size];
+            binary.position(0);
+            binary.get(image);
+            return image;
+        } catch (CUDAException e) {
+            logger.error("unable to retrieve module image: %s", e.getMessage());
+            return null;
+        }
     }
 
     public void dumpBinaries(String filenamePrefix) {

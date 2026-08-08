@@ -199,6 +199,55 @@ public class TestLoopConditions extends TornadoTestBase {
         }
     }
 
+    // Single-thread kernels (no @Parallel loop) covering do-while and labeled break/continue,
+    // neither of which fits the canonical countable-for-loop shape the auto-parallelizer expects.
+
+    public static void doWhileLoop(IntArray a, IntArray out) {
+        int i = 0;
+        int sum = 0;
+        do {
+            sum += a.get(i);
+            i++;
+        } while (i < a.getSize());
+        out.set(0, sum);
+    }
+
+    public static void doWhileLoopWithCondition(IntArray a, IntArray out) {
+        int i = 0;
+        int sum = 0;
+        do {
+            sum += a.get(i);
+            i++;
+        } while (i < a.getSize() && sum < 1000);
+        out.set(0, sum);
+    }
+
+    public static void labeledBreakOuterLoop(IntArray a, IntArray out) {
+        int found = -1;
+        outer: for (int i = 0; i < a.getSize(); i++) {
+            for (int j = 0; j < a.getSize(); j++) {
+                if (i != j && a.get(i) == a.get(j)) {
+                    found = i * 1000 + j;
+                    break outer;
+                }
+            }
+        }
+        out.set(0, found);
+    }
+
+    public static void labeledContinueOuterLoop(IntArray a, IntArray out) {
+        int count = 0;
+        outer: for (int i = 0; i < a.getSize(); i++) {
+            for (int j = 0; j < a.getSize(); j++) {
+                if (a.get(j) < 0) {
+                    continue outer;
+                }
+                count++;
+            }
+        }
+        out.set(0, count);
+    }
+
     public static Matrix2DDouble matrix2DDoubleInit(int X, int Y) {
         double[][] a = new double[X][Y];
         Random r = new Random();
@@ -572,6 +621,94 @@ public class TestLoopConditions extends TornadoTestBase {
                 assertEquals(matrixSerial.get(i, j), matrixC.get(i, j), 0.01);
             }
         }
+    }
+    @Test
+    public void testDoWhileLoop() throws TornadoExecutionPlanException {
+        final int size = 32;
+        IntArray a = new IntArray(size);
+        IntStream.range(0, size).forEach(i -> a.set(i, i + 1));
+        IntArray out = new IntArray(1);
+        IntArray expected = new IntArray(1);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestLoopConditions::doWhileLoop, a, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        doWhileLoop(a, expected);
+        assertEquals(expected.get(0), out.get(0));
+    }
+
+    @Test
+    public void testDoWhileLoopWithCondition() throws TornadoExecutionPlanException {
+        final int size = 64;
+        IntArray a = new IntArray(size);
+        IntStream.range(0, size).forEach(i -> a.set(i, 50));
+        IntArray out = new IntArray(1);
+        IntArray expected = new IntArray(1);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestLoopConditions::doWhileLoopWithCondition, a, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        doWhileLoopWithCondition(a, expected);
+        assertEquals(expected.get(0), out.get(0));
+    }
+
+    @Test
+    public void testLabeledBreakOuterLoop() throws TornadoExecutionPlanException {
+        final int size = 16;
+        IntArray a = new IntArray(size);
+        IntStream.range(0, size).forEach(i -> a.set(i, i));
+        a.set(10, a.get(3)); // plant a duplicate so the labeled break has something to find
+        IntArray out = new IntArray(1);
+        IntArray expected = new IntArray(1);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestLoopConditions::labeledBreakOuterLoop, a, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        labeledBreakOuterLoop(a, expected);
+        assertEquals(expected.get(0), out.get(0));
+    }
+
+    @Test
+    public void testLabeledContinueOuterLoop() throws TornadoExecutionPlanException {
+        final int size = 16;
+        IntArray a = new IntArray(size);
+        IntStream.range(0, size).forEach(i -> a.set(i, (i % 4 == 0) ? -1 : i));
+        IntArray out = new IntArray(1);
+        IntArray expected = new IntArray(1);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestLoopConditions::labeledContinueOuterLoop, a, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        labeledContinueOuterLoop(a, expected);
+        assertEquals(expected.get(0), out.get(0));
     }
     // CHECKSTYLE:ON
 

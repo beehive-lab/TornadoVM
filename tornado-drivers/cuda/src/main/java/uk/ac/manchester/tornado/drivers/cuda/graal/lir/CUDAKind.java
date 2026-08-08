@@ -105,6 +105,9 @@ public enum CUDAKind implements PlatformKind {
     LONG(8, java.lang.Long.TYPE),
     ULONG(8, null),
     HALF(2, java.lang.Short.TYPE),
+    BF16(2, java.lang.Short.TYPE),
+    FP8_E4M3(1, null),
+    FP8_E5M2(1, null),
     FLOAT(4, java.lang.Float.TYPE),
     DOUBLE(8, java.lang.Double.TYPE),
     CHAR2(2, null, CHAR),
@@ -192,6 +195,13 @@ public enum CUDAKind implements PlatformKind {
     DOUBLE16(16, Double16.TYPE, DOUBLE),
     FLOAT16(16, Float16.TYPE, FLOAT),
     HALF16(16, Half16.TYPE, HALF),
+    // --- MMA fragment kinds (per-lane register tuples for mma.sync) ---
+    MMA_FRAG_A_F16(4, null, UINT),     // A:   4 × b32 = 8 × f16  (row-major 16×16 slice)
+    MMA_FRAG_B_F16(2, null, UINT),     // B:   2 × b32 = 4 × f16  (col-major 16×8 slice)
+    MMA_FRAG_ACC_F32(4, null, FLOAT),  // C/D: 4 × f32            (row-major 16×8 slice)
+    MMA_FRAG_ACC_S32(4, null, INT),    // C/D: 4 × s32
+    MMA_FRAG_A_S8(4, null, UINT),      // A:   4 × b32 = 16 × s8  (row-major 16×32 slice)
+    MMA_FRAG_B_S8(2, null, UINT),      // B:   2 × b32 = 8 × s8   (col-major 32×8 slice)
 
     ILLEGAL(0, null),
     INTEGER_ATOMIC_JAVA(4, java.util.concurrent.atomic.AtomicInteger.class);
@@ -283,6 +293,10 @@ public enum CUDAKind implements PlatformKind {
     }
 
     public static CUDAAssembler.CUDABinaryTemplate resolveTemplateType(JavaKind type, CUDAKind kind) {
+        if (kind == CUDAKind.HALF2) {
+            // Packed half2 local arrays are element-typed __half2, regardless of the Java-side type.
+            return CUDAAssembler.CUDABinaryTemplate.NEW_LOCAL_HALF2_ARRAY;
+        }
         if (type == JavaKind.Int) {
             return CUDAAssembler.CUDABinaryTemplate.NEW_LOCAL_INT_ARRAY;
         } else if (type == JavaKind.Double) {
@@ -486,11 +500,22 @@ public enum CUDAKind implements PlatformKind {
             return "unsigned short";
         } else if (this == CUDAKind.UINT) {
             return "unsigned int";
+        } else if (this == CUDAKind.LONG) {
+            // "long" is only 4 bytes under Windows' LLP64 model (vs. 8 on Linux/LP64),
+            // but this kind is documented and used throughout as an 8-byte quantity
+            // (pointer-sized arithmetic, decompression, spill slots). "long long" is
+            // guaranteed 8 bytes on both data models.
+            return "long long";
         } else if (this == CUDAKind.ULONG) {
-            return "unsigned long";
+            return "unsigned long long";
         } else if (this == CUDAKind.HALF) {
             // cuda_fp16.h half-precision scalar type.
             return "__half";
+        } else if (this == CUDAKind.FP8_E4M3) {
+            // cuda_fp8.h 8-bit float scalar types (storage byte + native converts).
+            return "__nv_fp8_e4m3";
+        } else if (this == CUDAKind.FP8_E5M2) {
+            return "__nv_fp8_e5m2";
         } else {
             return name().toLowerCase();
         }
@@ -510,15 +535,19 @@ public enum CUDAKind implements PlatformKind {
             return toString();
         }
         int len = getVectorLength();
+        CUDAKind element = getElementKind();
+        if (element == HALF) {
+            // cuda_fp16.h provides only __half2; report wider half vectors as an FP16
+            // device limitation (unsupported) rather than a hard compiler bailout.
+            if (len == 2) {
+                return "__half2";
+            }
+            throw new uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP16NotSupported(
+                    "CUDA backend does not support half-precision vector type " + name() + "; only __half2 is available.");
+        }
         if (len != 2 && len != 3 && len != 4) {
             throw new uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException(
                     "CUDA backend does not support vector width " + len + " (kind " + name() + "); only widths 2, 3 and 4 are supported.");
-        }
-        CUDAKind element = getElementKind();
-        if (element == HALF) {
-            // CUDA cuda_fp16.h only provides __half2 (no half3/half4 built-ins).
-            throw new uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException(
-                    "CUDA backend does not support half-precision vector type " + name() + ".");
         }
         return element.toString() + len;
     }
@@ -577,6 +606,12 @@ public enum CUDAKind implements PlatformKind {
 
     public boolean isPrimitive() {
         return (vectorLength == 1 && kind != CUDAKind.ILLEGAL);
+    }
+
+    public boolean isMMAFragment() {
+        return this == MMA_FRAG_A_F16  || this == MMA_FRAG_B_F16
+                || this == MMA_FRAG_ACC_F32 || this == MMA_FRAG_ACC_S32
+                || this == MMA_FRAG_A_S8    || this == MMA_FRAG_B_S8;
     }
 
     public JavaConstant getDefaultValue() {

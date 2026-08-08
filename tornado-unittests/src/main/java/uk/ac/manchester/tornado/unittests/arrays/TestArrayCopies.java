@@ -126,7 +126,6 @@ public class TestArrayCopies extends TornadoTestBase {
 
     @Test
     public void testPrivateArrayCopyInt() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int numElements = 16;
 
@@ -159,7 +158,6 @@ public class TestArrayCopies extends TornadoTestBase {
 
     @Test
     public void testPrivateArrayCopyFloat() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int numElements = 16;
 
@@ -192,7 +190,6 @@ public class TestArrayCopies extends TornadoTestBase {
 
     @Test
     public void testPrivateArrayCopyDouble() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int numElements = 16;
 
@@ -225,7 +222,6 @@ public class TestArrayCopies extends TornadoTestBase {
 
     @Test
     public void testPrivateArrayCopyLong() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int numElements = 16;
 
@@ -258,7 +254,6 @@ public class TestArrayCopies extends TornadoTestBase {
 
     @Test
     public void testPrivateArrayCopyIntNoCondition() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int numElements = 16;
 

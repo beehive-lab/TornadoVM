@@ -62,15 +62,17 @@ __TORNADOVM_PROVIDERS__ = """\
 # ########################################################
 __COMMON_EXPORTS__ = "/etc/exportLists/common-exports"
 __OPENCL_EXPORTS__ = "/etc/exportLists/opencl-exports"
-__PTX_EXPORTS__ = "/etc/exportLists/ptx-exports"
-__SPIRV_EXPORTS__ = "/etc/exportLists/spirv-exports"
 __METAL_EXPORTS__ = "/etc/exportLists/metal-exports"
 __CUDA_EXPORTS__ = "/etc/exportLists/cuda-exports"
 __TORNADOVM_ADD_MODULES__ = "--add-modules ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.common"
-__PTX_MODULE__ = "tornado.drivers.ptx"
 __OPENCL_MODULE__ = "tornado.drivers.opencl"
 __METAL_MODULE__ = "tornado.drivers.metal"
 __CUDA_MODULE__ = "tornado.drivers.cuda"
+__CUBLAS_MODULE__ = "tornado.cublas"
+__CUFFT_MODULE__ = "tornado.cufft"
+__CUDNN_MODULE__ = "tornado.cudnn"
+__CUSPARSE_MODULE__ = "tornado.cusparse"
+__CUTLASS_MODULE__ = "tornado.cutlass"
 
 # ########################################################
 # JAVA FLAGS
@@ -114,8 +116,13 @@ def check_dll_loadable(dll_path):
     if os.name != 'nt':
         return True
     try:
-        # Try to load the DLL using ctypes
-        ctypes.WinDLL(dll_path)
+        # winmode=0 restores the standard LoadLibraryExW search order (which
+        # consults PATH), matching how java.exe actually resolves the JNI
+        # library's dependencies at runtime. ctypes.WinDLL's default winmode
+        # (Python >= 3.8) is more restrictive and does not reliably search
+        # PATH, which produced false "cannot load" negatives here even when
+        # the DLL and all its dependencies were perfectly resolvable.
+        ctypes.WinDLL(dll_path, winmode=0)
         return True
     except OSError:
         return False
@@ -174,8 +181,7 @@ def validate_opencl_backend(sdk_path):
         has_nvidia_driver = check_nvidia_driver()
 
         print("[CAUSE] Missing OpenCL drivers or dependencies")
-        print("        The OpenCL backend requires OpenCL 2.1+ drivers for GPUs/CPUs")
-        print("        or OpenCL 1.0+ for FPGAs.")
+        print("        The OpenCL backend requires OpenCL 2.1+ drivers for GPUs/CPUs.")
         print()
 
         # Check system OpenCL.dll (safe read-only operation)
@@ -218,182 +224,143 @@ def validate_opencl_backend(sdk_path):
 
     return True
 
-def validate_ptx_backend(sdk_path):
-    """Validate PTX backend dependencies on Windows."""
+def validate_cuda_backend(sdk_path):
+    """Validate CUDA backend dependencies on Windows."""
     if os.name != 'nt':
         return True
 
-    ptx_dll = os.path.join(sdk_path, 'lib', 'tornado-ptx.dll')
+    cuda_dll = os.path.join(sdk_path, 'lib', 'tornado-cuda.dll')
 
-    if not os.path.exists(ptx_dll):
-        print(f"[WARNING] PTX backend configured but tornado-ptx.dll not found")
-        print(f"[INFO] Expected location: {ptx_dll}")
+    if not os.path.exists(cuda_dll):
+        print(f"[WARNING] CUDA backend configured but tornado-cuda.dll not found")
+        print(f"[INFO] Expected location: {cuda_dll}")
         print()
         return False
 
-    # Try to load the DLL
-    if not check_dll_loadable(ptx_dll):
-        print("[ERROR] Cannot load PTX JNI library")
+    if not check_dll_loadable(cuda_dll):
+        print("[ERROR] Cannot load CUDA JNI library")
         print()
-        print(f"[INFO] Library location: {ptx_dll}")
+        print(f"[INFO] Library location: {cuda_dll}")
         print()
 
-        # Detect GPU to provide better guidance
         gpus = get_gpu_info()
         if gpus:
             print("[INFO] Detected GPU(s):")
             for gpu in gpus:
                 print(f"       - {gpu}")
                 if "NVIDIA" not in gpu.upper():
-                    print("         (This is not an NVIDIA GPU - PTX requires NVIDIA)")
+                    print("         (This is not an NVIDIA GPU - CUDA requires NVIDIA)")
             print()
 
-        # Check for NVIDIA drivers
         has_nvidia_driver = check_nvidia_driver()
 
-        print("[CAUSE] Missing NVIDIA CUDA Toolkit or drivers")
-        print("        The PTX backend requires:")
-        print("        - NVIDIA GPU")
-        print("        - NVIDIA drivers (usually pre-installed on Windows)")
-        print("        - CUDA Toolkit 10.0+ (Windows requires 12.0+)")
-        print("        - GPU driver must match or exceed CUDA Toolkit version")
-        print()
+        # add_cuda_toolkit_to_path() already ran (see validate_windows_dependencies)
+        # and put every existing %CUDA_PATH%\bin / %CUDA_PATH%\bin\x64 on PATH,
+        # so a load failure here is diagnosed from *why* that did or didn't
+        # help, rather than assuming the Toolkit itself is missing --
+        # tornado-cuda.dll existing (checked above) plus a load failure almost
+        # always means a dependent runtime DLL (nvrtc64_*.dll, cudart64_*.dll,
+        # ...) couldn't be resolved, which is a different problem than "no
+        # Toolkit installed".
+        cuda_path = os.environ.get('CUDA_PATH')
+        cuda_bin_dirs = get_cuda_bin_dirs()
 
-        if not has_nvidia_driver:
-            print("[FIX] Install NVIDIA CUDA Toolkit and drivers")
+        if cuda_bin_dirs:
+            print("[CAUSE] tornado-cuda.dll exists and the following are on PATH:")
+            for d in cuda_bin_dirs:
+                print(f"          {d}")
+            print("        but the DLL still failed to load. This usually means a")
+            print("        dependent runtime DLL (nvrtc64_*.dll, cudart64_*.dll, ...) is")
+            print("        missing or version-mismatched, or a required Visual C++")
+            print("        Redistributable is not installed.")
+            print()
+            print("[FIX] Verify these exist and match your installed Toolkit version:")
+            for d in cuda_bin_dirs:
+                print(f"        dir {d}\\nvrtc64_*.dll")
+                print(f"        dir {d}\\cudart64_*.dll")
+            print("      Also ensure the latest Microsoft Visual C++ Redistributable (x64):")
+            print("        https://aka.ms/vs/17/release/vc_redist.x64.exe")
+            print()
+        elif cuda_path:
+            print(f"[CAUSE] CUDA_PATH is set to '{cuda_path}' but neither")
+            print(f"        '{os.path.join(cuda_path, 'bin')}' nor")
+            print(f"        '{os.path.join(cuda_path, 'bin', 'x64')}' exists.")
+            print("        The CUDA Toolkit installation looks incomplete or corrupted.")
+            print()
+            print("[FIX] Reinstall NVIDIA CUDA Toolkit 12.0+")
             print("      Download from: https://developer.nvidia.com/cuda-downloads")
             print()
-            print("      Installation steps:")
-            print("      1. Verify you have an NVIDIA GPU (check detected GPUs above)")
-            print("      2. Download CUDA Toolkit 12.0+ for Windows")
-            print("      3. Run the installer (includes NVIDIA drivers)")
-            print("      4. Restart your system")
-            print("      5. Verify installation: nvidia-smi")
-            print("      6. Run tornado --devices again")
         else:
-            print("[INFO] NVIDIA drivers detected (nvidia-smi available)")
+            print("[CAUSE] CUDA_PATH environment variable is not set")
+            print("        tornado-cuda.dll depends on CUDA Toolkit runtime DLLs")
+            print("        (nvrtc64_*.dll, cudart64_*.dll, ...) that live under")
+            print("        %CUDA_PATH%\\bin or %CUDA_PATH%\\bin\\x64, so without it")
+            print("        they cannot be located.")
             print()
-            print("[FIX] Reinstall or update NVIDIA CUDA Toolkit")
-            print("      The tornado-ptx.dll requires complete CUDA Toolkit installation")
+            if not has_nvidia_driver:
+                print("[FIX] Install NVIDIA CUDA Toolkit and drivers")
+                print("      Download from: https://developer.nvidia.com/cuda-downloads")
+            else:
+                print("[INFO] NVIDIA drivers detected (nvidia-smi available)")
+                print("[FIX] Install NVIDIA CUDA Toolkit 12.0+ (drivers alone are not enough)")
+                print("      Download from: https://developer.nvidia.com/cuda-downloads")
             print()
-            print("      1. Download CUDA Toolkit 12.0+ for Windows")
-            print("         From: https://developer.nvidia.com/cuda-downloads")
-            print("      2. Run the installer and select 'Custom' installation")
-            print("      3. Ensure all CUDA components are selected")
-            print("      4. Restart your system")
-            print("      5. Verify with: nvidia-smi")
-            print("      6. Run tornado --devices again")
 
-        print()
-        print("[NOTE] PTX backend is NVIDIA-specific")
-        print("       For non-NVIDIA GPUs, use OpenCL or SPIR-V backends instead")
+        print("[NOTE] CUDA backend is NVIDIA-specific")
+        print("       For non-NVIDIA GPUs, use the OpenCL backend instead")
         print()
         sys.exit(1)
 
     return True
 
-def validate_spirv_backend(sdk_path):
-    """Validate SPIR-V backend dependencies on Windows."""
+def get_cuda_bin_dirs():
+    """Return the CUDA Toolkit bin directories that may hold runtime DLLs.
+
+    Toolkit layout has varied across releases: older toolkits put 64-bit
+    runtime DLLs (nvrtc64_*.dll, cudart64_*.dll, ...) directly under
+    %CUDA_PATH%\\bin, while CUDA 13.x nests them one level deeper under
+    %CUDA_PATH%\\bin\\x64 (mirroring the long-standing lib\\x64 split for
+    import libraries). Both are checked, most-specific first, and only
+    directories that actually exist are returned.
+    """
     if os.name != 'nt':
-        return True
+        return []
+    cuda_path = os.environ.get('CUDA_PATH')
+    if not cuda_path:
+        return []
+    candidates = [os.path.join(cuda_path, 'bin', 'x64'), os.path.join(cuda_path, 'bin')]
+    return [d for d in candidates if os.path.isdir(d)]
 
-    # SPIR-V can run through OpenCL or Level Zero runtimes
-    opencl_dll = os.path.join(sdk_path, 'lib', 'tornado-opencl.dll')
-    levelzero_dll = os.path.join(sdk_path, 'lib', 'tornado-levelzero.dll')
+def add_cuda_toolkit_to_path():
+    """Prepend the CUDA Toolkit's bin directories to PATH.
 
-    has_opencl = os.path.exists(opencl_dll)
-    has_levelzero = os.path.exists(levelzero_dll)
-
-    if not has_opencl and not has_levelzero:
-        print(f"[WARNING] SPIR-V backend configured but no compatible runtime found")
-        print(f"[INFO] SPIR-V requires either:")
-        print(f"       - tornado-opencl.dll at: {opencl_dll}")
-        print(f"       - tornado-levelzero.dll at: {levelzero_dll}")
-        print()
-        return False
-
-    # Try to load at least one of the DLLs
-    opencl_loadable = has_opencl and check_dll_loadable(opencl_dll)
-    levelzero_loadable = has_levelzero and check_dll_loadable(levelzero_dll)
-
-    if not opencl_loadable and not levelzero_loadable:
-        print("[ERROR] Cannot load SPIR-V runtime libraries")
-        print()
-        if has_opencl:
-            print(f"[INFO] Found but failed to load: {opencl_dll}")
-        if has_levelzero:
-            print(f"[INFO] Found but failed to load: {levelzero_dll}")
-        print()
-
-        # Detect GPU to provide better guidance
-        gpus = get_gpu_info()
-        if gpus:
-            print("[INFO] Detected GPU(s):")
-            for gpu in gpus:
-                print(f"       - {gpu}")
-            print()
-
-        print("[CAUSE] Missing Level Zero loader or Intel Compute Runtime")
-        print("        The SPIR-V backend requires:")
-        print("        - Intel Level Zero 1.2+ (recommended for Intel GPUs)")
-        print("        - Intel Compute Runtime (for OpenCL support)")
-        print("        - Supports Intel HD Graphics (integrated) and Intel ARC GPUs")
-        print()
-
-        # Check if ze_loader.dll exists in System32
-        system_root = os.environ.get('SystemRoot', 'C:\\Windows')
-        ze_loader = os.path.join(system_root, 'System32', 'ze_loader.dll')
-
-        try:
-            if os.path.exists(ze_loader):
-                print(f"[INFO] Level Zero loader found at: {ze_loader}")
-                print("       But additional dependencies may be missing")
-            else:
-                print("[INFO] Level Zero loader (ze_loader.dll) not found in System32")
-                print("       Level Zero runtime is not installed")
-        except Exception:
-            pass
-        print()
-
-        # Check system OpenCL.dll
-        system_opencl = os.path.join(system_root, 'System32', 'OpenCL.dll')
-        try:
-            if os.path.exists(system_opencl):
-                print(f"[INFO] System OpenCL.dll found at: {system_opencl}")
-            else:
-                print("[INFO] System OpenCL.dll not found")
-                print("       Intel Compute Runtime is likely not installed")
-        except Exception:
-            pass
-        print()
-
-        print("[FIX] Install Intel GPU drivers and runtime:")
-        print()
-        print("      Option 1: Install Intel Graphics drivers (recommended)")
-        print("      1. Download Intel Graphics drivers from:")
-        print("         https://www.intel.com/content/www/us/en/download-center/home.html")
-        print("      2. Run the installer")
-        print("      3. Restart your system")
-        print("      4. Run tornado --devices again")
-        print()
-        print("      Option 2: Install Intel Compute Runtime")
-        print("      1. Download from: https://github.com/intel/compute-runtime/releases")
-        print("      2. Install both Level Zero (1.2+) and OpenCL packages")
-        print("      3. Restart your system")
-        print("      4. Run tornado --devices again")
-        print()
-        print("[NOTE] SPIR-V backend works best with Intel GPUs")
-        print("       For NVIDIA GPUs, use PTX backend instead")
-        print("       For AMD GPUs, use OpenCL backend instead")
-        print()
-        sys.exit(1)
-
-    return True
+    tornado-cuda.dll (and tornado-cublas.dll/tornado-cufft.dll/tornado-cudnn.dll)
+    depend on CUDA Toolkit runtime DLLs that live under %CUDA_PATH%\\bin or
+    %CUDA_PATH%\\bin\\x64 (see get_cuda_bin_dirs), not next to the tornado-*.dll
+    themselves. The CUDA installer normally adds these to the system PATH, but
+    a shell that predates the install (or never picked up the machine-wide
+    PATH change, unlike e.g. a VS Developer Command Prompt that re-derives its
+    own PATH) will not have them, causing LoadLibrary to fail with "module not
+    found" even though tornado-cuda.dll itself is present and the Toolkit is
+    correctly installed.
+    """
+    if os.name != 'nt':
+        return
+    current_path = os.environ.get('PATH', '')
+    existing = [p.lower() for p in current_path.split(os.pathsep)]
+    new_dirs = [d for d in get_cuda_bin_dirs() if d.lower() not in existing]
+    if new_dirs:
+        os.environ['PATH'] = os.pathsep.join(new_dirs) + os.pathsep + current_path
 
 def validate_windows_dependencies(sdk_path):
     """Run all Windows-specific dependency checks."""
     if os.name != 'nt':
         return
+
+    # Make sure CUDA Toolkit runtime DLLs are resolvable before any DLL-load
+    # check or java launch below, regardless of whether this shell sourced the
+    # CUDA installer's PATH changes.
+    add_cuda_toolkit_to_path()
 
     # Validate TORNADOVM_HOME path format
     validate_tornadovm_home_path(sdk_path)
@@ -409,11 +376,9 @@ def validate_windows_dependencies(sdk_path):
                 if 'opencl-backend' in content:
                     validate_opencl_backend(sdk_path)
 
-                if 'ptx-backend' in content:
-                    validate_ptx_backend(sdk_path)
+                if 'cuda-backend' in content:
+                    validate_cuda_backend(sdk_path)
 
-                if 'spirv-backend' in content:
-                    validate_spirv_backend(sdk_path)
 
         except (OSError, PermissionError, IOError):
             # Silently skip if we can't read the backend file
@@ -719,17 +684,14 @@ class TornadoVMRunnerTool():
         try:
             # Check if OpenCL backend is installed
             opencl_lib = os.path.join(self.sdk, 'lib', 'libtornado-opencl.so')
-            spirv_lib = os.path.join(self.sdk, 'lib', 'libtornado-levelzero.so')
-            ptx_lib = os.path.join(self.sdk, 'lib', 'libtornado-ptx.so')
+            cuda_lib = os.path.join(self.sdk, 'lib', 'libtornado-cuda.so')
 
             # Find at least one native library to check
             lib_to_check = None
             if os.path.exists(opencl_lib):
                 lib_to_check = opencl_lib
-            elif os.path.exists(spirv_lib):
-                lib_to_check = spirv_lib
-            elif os.path.exists(ptx_lib):
-                lib_to_check = ptx_lib
+            elif os.path.exists(cuda_lib):
+                lib_to_check = cuda_lib
 
             if not lib_to_check:
                 # No native libraries found, skip check
@@ -898,16 +860,13 @@ class TornadoVMRunnerTool():
 
             # Check native libraries for deployment target
             opencl_lib = os.path.join(self.sdk, 'lib', 'libtornado-opencl.dylib')
-            spirv_lib = os.path.join(self.sdk, 'lib', 'libtornado-levelzero.dylib')
-            ptx_lib = os.path.join(self.sdk, 'lib', 'libtornado-ptx.dylib')
+            cuda_lib = os.path.join(self.sdk, 'lib', 'libtornado-cuda.dylib')
 
             lib_to_check = None
             if os.path.exists(opencl_lib):
                 lib_to_check = opencl_lib
-            elif os.path.exists(spirv_lib):
-                lib_to_check = spirv_lib
-            elif os.path.exists(ptx_lib):
-                lib_to_check = ptx_lib
+            elif os.path.exists(cuda_lib):
+                lib_to_check = cuda_lib
 
             if not lib_to_check:
                 return
@@ -1271,16 +1230,12 @@ class TornadoVMRunnerTool():
 
         common = self.sdk + __COMMON_EXPORTS__
         opencl = self.sdk + __OPENCL_EXPORTS__
-        ptx = self.sdk + __PTX_EXPORTS__
-        spirv = self.sdk + __SPIRV_EXPORTS__
         metal = self.sdk + __METAL_EXPORTS__
         cuda = self.sdk + __CUDA_EXPORTS__
 
         if (self.isTruffleCommand):
             common = self.truffleCompatibleExports(common)
             opencl = self.truffleCompatibleExports(opencl)
-            ptx = self.truffleCompatibleExports(ptx)
-            spirv = self.truffleCompatibleExports(spirv)
             metal = self.truffleCompatibleExports(metal)
             cuda = self.truffleCompatibleExports(cuda)
 
@@ -1291,35 +1246,23 @@ class TornadoVMRunnerTool():
             if ("opencl-backend" in self.listOfBackends):
                 javaFlags = javaFlags + opencl + " "
                 tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
-            if ("spirv-backend" in self.listOfBackends):
-                javaFlags = javaFlags + opencl + " " + spirv + " "
-                tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
-            if ("ptx-backend" in self.listOfBackends):
-                javaFlags = javaFlags + ptx + " "
-                tornadoAddModules = tornadoAddModules + "," + __PTX_MODULE__
             if ("metal-backend" in self.listOfBackends):
                 javaFlags = javaFlags + metal + " "
                 tornadoAddModules = tornadoAddModules + "," + __METAL_MODULE__
             if ("cuda-backend" in self.listOfBackends):
                 javaFlags = javaFlags + cuda + " "
-                tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__
+                tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__ + "," + __CUBLAS_MODULE__ + "," + __CUFFT_MODULE__ + "," + __CUDNN_MODULE__ + "," + __CUSPARSE_MODULE__ + "," + __CUTLASS_MODULE__
         else:
             javaFlags = javaFlags + " @" + common + " "
             if ("opencl-backend" in self.listOfBackends):
                 javaFlags = javaFlags + "@" + opencl + " "
                 tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
-            if ("spirv-backend" in self.listOfBackends):
-                javaFlags = javaFlags + "@" + opencl + " @" + spirv + " "
-                tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
-            if ("ptx-backend" in self.listOfBackends):
-                javaFlags = javaFlags + "@" + ptx + " "
-                tornadoAddModules = tornadoAddModules + "," + __PTX_MODULE__
             if ("metal-backend" in self.listOfBackends):
                 javaFlags = javaFlags + "@" + metal + " "
                 tornadoAddModules = tornadoAddModules + "," + __METAL_MODULE__
             if ("cuda-backend" in self.listOfBackends):
                 javaFlags = javaFlags + "@" + cuda + " "
-                tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__
+                tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__ + "," + __CUBLAS_MODULE__ + "," + __CUFFT_MODULE__ + "," + __CUDNN_MODULE__ + "," + __CUSPARSE_MODULE__ + "," + __CUTLASS_MODULE__
 
         javaFlags = javaFlags + tornadoAddModules + " "
 
@@ -1341,8 +1284,16 @@ class TornadoVMRunnerTool():
             executionFlags = javaFlags
 
         if os.name == 'nt':
-            # Properly quote the command path if it contains spaces
-            return '"' + self.cmd + '" ' + executionFlags
+            # -Dstdout.encoding=UTF-8 (see the generated argfile) makes the JVM
+            # write correct UTF-8 bytes, but os.system() below runs this command
+            # through cmd.exe, which decodes child-process output using the
+            # console's own active code page - normally a legacy OEM page (437/
+            # 850), not UTF-8. Without switching the console to code page 65001
+            # first, those UTF-8 bytes get misread back as the wrong single-byte
+            # characters (e.g. the checkmark in "Validation PASSED" renders as
+            # mojibake instead of a '?' substitution or the correct glyph).
+            # Properly quote the command path if it contains spaces.
+            return 'chcp 65001 >nul && "' + self.cmd + '" ' + executionFlags
         else:
             return self.cmd + " " + executionFlags
 
@@ -1411,6 +1362,13 @@ class TornadoVMRunnerTool():
             command = javaFlags + " " + str(args.application) + " " + params
         ## Execute the command
         status = os.system(command)
+        ## os.system() returns a wait-status, not a plain exit code: on POSIX the exit code
+        ## sits in the high byte, so a JVM exit of 1 becomes 256 and sys.exit() truncates it
+        ## to 0, masking failures from CI. Decode it back to the real exit code / signal.
+        if os.name == 'posix':
+            if os.WIFSIGNALED(status):
+                sys.exit(128 + os.WTERMSIG(status))
+            status = os.WEXITSTATUS(status)
         sys.exit(status)
 
 
@@ -1431,7 +1389,7 @@ def parseArguments():
     parser.add_argument('--igvLowTier', action="store_true", dest="igvLowTier", default=False,
                         help="Debug Low Tier Compilation Graphs using Ideal Graph Visualizer (IGV)")
     parser.add_argument('--printKernel', '-pk', action="store_true", dest="printKernel", default=False,
-                        help="Print generated kernel (OpenCL, PTX or SPIR-V)")
+                        help="Print generated kernel (OpenCL, CUDA or Metal)")
     parser.add_argument('--printBytecodes', '-pbc', action="store_true", dest="printBytecodes", default=False,
                         help="Print the generated TornadoVM bytecodes from the Task-Graphs")
     parser.add_argument('--enableProfiler', action="store", dest="enable_profiler", default=None,

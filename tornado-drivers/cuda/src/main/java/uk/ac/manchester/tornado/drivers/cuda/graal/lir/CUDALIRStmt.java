@@ -22,6 +22,8 @@
 package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 
 import jdk.vm.ci.meta.JavaKind;
+import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.Opcode;
@@ -29,10 +31,13 @@ import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.api.enums.MMAShape;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler.CUDABinaryIntrinsic;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler.CUDATernaryIntrinsic;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDACompilationResultBuilder;
+import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
+import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIROp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAUnary.MemoryAccess;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAUnary.CUDAAddressCast;
 import uk.ac.manchester.tornado.drivers.cuda.graal.meta.CUDAMemorySpace;
@@ -90,6 +95,36 @@ public class CUDALIRStmt {
 
         @Override
         public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            // Fragment-carrying phi copy: when RHS is an MMA fragment kind, LHS is
+            // either a fragment (naturally) or a Variable that was retyped to a
+            // C array by CUDABackend.emitVariableDefs (loop-carried phi case).
+            // Either way, the C-level type of both sides is `T[N]`, so a whole-array
+            // assignment is illegal in C, expand into N per-lane element copies.
+            CUDAKind rhsKind = fragmentKindOf(rhs);
+            if (rhsKind != null) {
+                int lanes = rhsKind.getVectorLength();
+                for (int i = 0; i < lanes; i++) {
+                    asm.indent();
+                    asm.emitValue(crb, lhs);
+                    asm.emit("[%d]", i);
+                    asm.space();
+                    asm.assign();
+                    asm.space();
+                    if (rhs instanceof CUDALIROp) {
+                        // Extremely unlikely to occur for MMA fragment RHS in practice,
+                        // but preserved for symmetry with the scalar path below.
+                        ((CUDALIROp) rhs).emit(crb, asm);
+                    } else {
+                        asm.emitValue(crb, rhs);
+                        asm.emit("[%d]", i);
+                    }
+                    asm.delimiter();
+                    asm.eol();
+                }
+                return;
+            }
+
+            // Scalar path.
             asm.indent();
             asm.emitValue(crb, lhs);
             asm.space();
@@ -102,6 +137,22 @@ public class CUDALIRStmt {
             }
             asm.delimiter();
             asm.eol();
+        }
+
+        /**
+         * Returns the fragment CUDAKind carried by {@code v}, or null if {@code v}
+         * isn't a Variable/AllocatableValue with an MMA fragment PlatformKind.
+         */
+        private static CUDAKind fragmentKindOf(Value v) {
+            if (v == null || !(v.getValueKind() instanceof LIRKind)) {
+                return null;
+            }
+            Object pk = ((LIRKind) v.getValueKind()).getPlatformKind();
+            if (!(pk instanceof CUDAKind)) {
+                return null;
+            }
+            CUDAKind k = (CUDAKind) pk;
+            return k.isMMAFragment() ? k : null;
         }
 
         public AllocatableValue getResult() {
@@ -306,6 +357,50 @@ public class CUDALIRStmt {
         }
     }
 
+    /**
+     * Emits a call to a cuda_fp16.h intrinsic of the form {@code result = __fn(arg0, arg1, ...);}
+     * over packed half2 / float operands.
+     */
+    @Opcode("HALF2_INTRINSIC")
+    public static class Half2IntrinsicStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<Half2IntrinsicStmt> TYPE = LIRInstructionClass.create(Half2IntrinsicStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value[] operands;
+
+        private final String function;
+
+        public Half2IntrinsicStmt(String function, Value result, Value... operands) {
+            super(TYPE);
+            this.function = function;
+            this.result = result;
+            this.operands = operands;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emit(function);
+            asm.emit("(");
+            for (int i = 0; i < operands.length; i++) {
+                if (i > 0) {
+                    asm.emit(", ");
+                }
+                asm.emitValue(crb, operands[i]);
+            }
+            asm.emit(")");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
     @Opcode("CONVERT_HALF")
     public static class ConvertHalfToFloatStmt extends AbstractInstruction {
 
@@ -332,6 +427,123 @@ public class CUDALIRStmt {
             asm.emit("__half2float(");
             asm.emitValue(crb, halfValue);
             asm.emit(")");
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
+    @Opcode("CONVERT_FP8_TO_FLOAT")
+    public static class ConvertFP8ToFloatStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<ConvertFP8ToFloatStmt> TYPE = LIRInstructionClass.create(ConvertFP8ToFloatStmt.class);
+
+        @Def
+        protected Value floatValue;
+        @Use
+        protected Value fp8Value;
+        private final boolean isE4M3;
+
+        public ConvertFP8ToFloatStmt(Value floatValue, Value fp8Value, boolean isE4M3) {
+            super(TYPE);
+            this.floatValue = floatValue;
+            this.fp8Value = fp8Value;
+            this.isE4M3 = isE4M3;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            // f = __half2float(__nv_cvt_fp8_to_halfraw((unsigned char) b, __NV_E4M3));
+            // The storage byte arrives as the backend's signed char kind; the cast to
+            // unsigned char matches cuda_fp8.h's __nv_fp8_storage_t.
+            asm.indent();
+            asm.emitValue(crb, floatValue);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emit("__half2float(__nv_cvt_fp8_to_halfraw((unsigned char) ");
+            asm.emitValue(crb, fp8Value);
+            asm.emit(isE4M3 ? ", __NV_E4M3))" : ", __NV_E5M2))");
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
+    @Opcode("CONVERT_BF16_TO_FLOAT")
+    public static class ConvertBF16ToFloatStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<ConvertBF16ToFloatStmt> TYPE = LIRInstructionClass.create(ConvertBF16ToFloatStmt.class);
+
+        @Def
+        protected Value floatValue;
+        @Use
+        protected Value bf16Bits;
+
+        public ConvertBF16ToFloatStmt(Value floatValue, Value bf16Bits) {
+            super(TYPE);
+            this.floatValue = floatValue;
+            this.bf16Bits = bf16Bits;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            // bf16 is the high half of the f32 bit pattern, so the decode is a bare shift
+            // and reinterpret. __int_as_float is a core CUDA builtin: no cuda_bf16.h, no
+            // toolkit version requirement (its helpers, e.g. __ushort_as_bfloat16, vary
+            // across 11.x header revisions).
+            // f = __int_as_float(((int) (unsigned short) s) << 16);
+            asm.indent();
+            asm.emitValue(crb, floatValue);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emit("__int_as_float(((int) (unsigned short) ");
+            asm.emitValue(crb, bf16Bits);
+            asm.emit(") << 16)");
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
+    @Opcode("CONVERT_FLOAT_TO_BF16")
+    public static class ConvertFloatToBF16Stmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<ConvertFloatToBF16Stmt> TYPE = LIRInstructionClass.create(ConvertFloatToBF16Stmt.class);
+
+        @Def
+        protected Value bf16Bits;
+        @Use
+        protected Value floatValue;
+
+        public ConvertFloatToBF16Stmt(Value bf16Bits, Value floatValue) {
+            super(TYPE);
+            this.bf16Bits = bf16Bits;
+            this.floatValue = floatValue;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            // bf16 is the high half of the f32 bit pattern. Encode = round-to-nearest-even of
+            // the discarded low 16 bits, then truncate. Header-free: __float_as_uint is a core
+            // CUDA builtin (no cuda_bf16.h). NaN is forced to a canonical quiet NaN (0x7FC0)
+            // since the additive rounding would otherwise perturb its payload.
+            // s = isnan(f) ? 0x7FC0 : (short)((u + 0x7FFF + ((u >> 16) & 1)) >> 16), u=__float_as_uint(f)
+            asm.indent();
+            asm.emitValue(crb, bf16Bits);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emit("(");
+            asm.emitValue(crb, floatValue);
+            asm.emit(" != ");
+            asm.emitValue(crb, floatValue);
+            asm.emit(") ? (short) 0x7FC0 : (short) ((__float_as_uint(");
+            asm.emitValue(crb, floatValue);
+            asm.emit(") + 0x7FFFU + ((__float_as_uint(");
+            asm.emitValue(crb, floatValue);
+            asm.emit(") >> 16) & 1U)) >> 16)");
             asm.delimiter();
             asm.eol();
         }
@@ -660,6 +872,139 @@ public class CUDALIRStmt {
     }
 
     @Opcode("SHUFFLE_SYNC")
+    /**
+     * Warp vote: {@code __any_sync} / {@code __all_sync} / {@code __ballot_sync}. All three take the
+     * full member mask and a per-lane predicate; the first two yield a boolean (the intrinsic returns
+     * non-zero, so the result is compared against 0), the third a lane mask.
+     */
+    public static class WarpVoteStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<WarpVoteStmt> TYPE = LIRInstructionClass.create(WarpVoteStmt.class);
+
+        public enum Mode {
+            ANY("__any_sync", true),
+            ALL("__all_sync", true),
+            BALLOT("__ballot_sync", false);
+
+            private final String intrinsic;
+            private final boolean booleanResult;
+
+            Mode(String intrinsic, boolean booleanResult) {
+                this.intrinsic = intrinsic;
+                this.booleanResult = booleanResult;
+            }
+        }
+
+        // All active lanes participate (CUDA 9+ requires an explicit member mask).
+        private static final String FULL_MASK = "0xffffffff";
+
+        private final Mode mode;
+        @Def
+        protected Value result;
+        @Use
+        protected Value predicate;
+
+        public WarpVoteStmt(Mode mode, Value result, Value predicate) {
+            super(TYPE);
+            this.mode = mode;
+            this.result = result;
+            this.predicate = predicate;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.space();
+            asm.assign();
+            asm.space();
+            if (mode.booleanResult) {
+                asm.emit("(");
+            }
+            asm.emit(mode.intrinsic);
+            asm.emit("(");
+            asm.emit(FULL_MASK);
+            asm.emit(", ");
+            asm.emitValue(crb, predicate);
+            asm.emit(")");
+            if (mode.booleanResult) {
+                asm.emit(" != 0)");
+            }
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
+    /**
+     * Read-modify-write atomic on one element of a local (shared) array:
+     * {@code atomicCAS} / {@code atomicExch} / {@code atomicMin} / {@code atomicMax}. All four return the
+     * element's previous value.
+     */
+    public static class AtomicRmwStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<AtomicRmwStmt> TYPE = LIRInstructionClass.create(AtomicRmwStmt.class);
+
+        public enum Mode {
+            CAS("atomicCAS", true),
+            EXCHANGE("atomicExch", false),
+            MIN("atomicMin", false),
+            MAX("atomicMax", false);
+
+            private final String intrinsic;
+            private final boolean comparing;
+
+            Mode(String intrinsic, boolean comparing) {
+                this.intrinsic = intrinsic;
+                this.comparing = comparing;
+            }
+        }
+
+        private final Mode mode;
+        @Def
+        protected Value result;
+        @Use
+        protected Value array;
+        @Use
+        protected Value index;
+        @Use({ OperandFlag.REG, OperandFlag.ILLEGAL })
+        protected Value expected;
+        @Use
+        protected Value value;
+
+        public AtomicRmwStmt(Mode mode, Value result, Value array, Value index, Value expected, Value value) {
+            super(TYPE);
+            this.mode = mode;
+            this.result = result;
+            this.array = array;
+            this.index = index;
+            this.expected = (expected == null) ? Value.ILLEGAL : expected;
+            this.value = value;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emit(mode.intrinsic);
+            asm.emit("(&");
+            asm.emitValue(crb, array);
+            asm.emit("[");
+            asm.emitValue(crb, index);
+            asm.emit("], ");
+            if (mode.comparing) {
+                asm.emitValue(crb, expected);
+                asm.emit(", ");
+            }
+            asm.emitValue(crb, value);
+            asm.emit(")");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
     public static class ShuffleSyncStmt extends AbstractInstruction {
 
         public static final LIRInstructionClass<ShuffleSyncStmt> TYPE = LIRInstructionClass.create(ShuffleSyncStmt.class);
@@ -903,6 +1248,15 @@ public class CUDALIRStmt {
             asm.space();
             asm.assign();
             asm.space();
+            if (vectorKind.getElementKind() == CUDAKind.HALF && n == 2) {
+                // __half2 is only 4-byte aligned, so (unlike float4) the packed
+                // reinterpret load is safe on element-aligned buffers as long as
+                // the element index is even. Emit a single 32-bit load.
+                asm.emit("((__half2 *)(" + addr + "))[(" + idx + ")]");
+                asm.delimiter();
+                asm.eol();
+                return;
+            }
             StringBuilder sb = new StringBuilder();
             sb.append("make_").append(elem).append(n).append("(");
             for (int i = 0; i < n; i++) {
@@ -1510,14 +1864,32 @@ public class CUDALIRStmt {
             CUDAKind vectorKind = (CUDAKind) rhs.getPlatformKind();
             int n = vectorKind.getVectorLength();
             String elem = vectorKind.getElementKind().toString();
-            String idx = CUDAAssembler.getAbsoluteIndexFromValue(index);
 
             asm.beginStackPush();
             address.emit(crb);
             final String addr = asm.getLastOp();
             asm.emitValueWithFormat(crb, rhs);
             final String v = asm.getLastOp();
+            asm.emitValue(crb, index);
+            final String emittedIdx = asm.getLastOp();
             asm.endStackPush();
+
+            // The string-parsing fallback only understands constants; a runtime-variable
+            // index (packed __half2 local arrays) must be emitted as a proper value.
+            String idx = index instanceof ConstantValue ? CUDAAssembler.getAbsoluteIndexFromValue(index) : emittedIdx;
+
+            if (vectorKind.getElementKind() == CUDAKind.HALF && n == 2) {
+                // Packed 32-bit store; see the matching VectorLoadStmt comment on
+                // __half2 alignment.
+                asm.emit(String.format("((__half2 *)(%s))[(%s)]", addr, idx));
+                asm.space();
+                asm.assign();
+                asm.space();
+                asm.emit(v);
+                asm.delimiter();
+                asm.eol();
+                return;
+            }
 
             for (int i = 0; i < n; i++) {
                 if (i > 0) {
@@ -1636,4 +2008,614 @@ public class CUDALIRStmt {
 
         }
     }
+
+    private static void frag(CUDACompilationResultBuilder crb, CUDAAssembler asm, Value f, int i) {
+        asm.emitValue(crb, f);   // emits the variable's C name
+        asm.emit("[" + i + "]");
+    }
+
+    @Opcode("MMA_FRAGMENT")
+    public static class MMAFragmentStmt extends AbstractInstruction {
+        public static final LIRInstructionClass<MMAFragmentStmt> TYPE =
+                LIRInstructionClass.create(MMAFragmentStmt.class);
+
+        @Def protected Value result;
+        @Use protected Value initValue;
+        private final int fragmentSize;
+        private final boolean isInt8;
+
+        public MMAFragmentStmt(Value result, Value initValue, int fragmentSize, boolean isInt8) {
+            super(TYPE);
+            this.result = result; this.initValue = initValue;
+            this.fragmentSize = fragmentSize; this.isInt8 = isInt8;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            String cType = isInt8 ? "int" : "float";
+            // float result[4];
+            asm.indent();
+            asm.emit(cType + " ");
+            asm.emitValue(crb, result);
+            asm.emit("[" + fragmentSize + "]");
+            asm.delimiter();
+            asm.eol();
+            // result[i] = init;
+            for (int i = 0; i < fragmentSize; i++) {
+                asm.indent();
+                frag(crb, asm, result, i);
+                asm.emit(" = ");
+                asm.emitValue(crb, initValue);
+                asm.delimiter();
+                asm.eol();
+            }
+        }
+    }
+
+    @Opcode("LDMATRIX")
+    public static class LdmatrixStmt extends AbstractInstruction {
+
+        public enum Variant {
+            X4(4, false, false),                          // A: row-major
+            X2_TRANS(2, true, false),                     // B: transposed (col-major)
+            X2_TRANS_SWIZZLE_FP16_STRIDE32(2, true, true);// B: + XOR swizzle
+            final int numRegs; final boolean trans; final boolean swizzle;
+            Variant(int n, boolean t, boolean s) { numRegs = n; trans = t; swizzle = s; }
+        }
+
+        public static final LIRInstructionClass<LdmatrixStmt> TYPE =
+                LIRInstructionClass.create(LdmatrixStmt.class);
+
+        @Def protected Value result;
+        @Use protected Value tile;
+        @Use({OperandFlag.REG, OperandFlag.ILLEGAL}) protected Value byteOffset;
+        private final Variant variant;
+        private final int rowStride;
+
+        public LdmatrixStmt(Variant v, Value result, Value tile, int rowStride, Value byteOffset) {
+            super(TYPE);
+            this.variant = v; this.result = result; this.tile = tile;
+            this.rowStride = rowStride;
+            this.byteOffset = (byteOffset == null) ? Value.ILLEGAL : byteOffset;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            int n = variant.numRegs;
+            int strideShift = Integer.numberOfTrailingZeros(rowStride);
+            String frag = asm.getStringValue(crb, result);   // base name once
+            String tileName = asm.getStringValue(crb, tile);
+
+            // unsigned frag[4];
+            asm.indent();
+            asm.emit("unsigned " + frag + "[" + n + "]");
+            asm.delimiter();
+            asm.eol();
+
+            // Per-lane byte offset, computed in C (mirrors the PTX address arithmetic).
+            // Use a unique block so the temporaries don't collide across statements.
+            asm.indent();
+            asm.emit("{");
+            asm.eol();
+            asm.pushIndent();
+            asm.indent();
+            asm.emit("unsigned __lane = threadIdx.x & 31u");
+            asm.delimiter();
+            asm.eol();
+            asm.indent();
+            asm.emit("unsigned __rit  = __lane & 7u");
+            asm.delimiter();
+            asm.eol();
+            asm.indent();
+            asm.emit("unsigned __grp  = __lane >> 3");
+            asm.delimiter();
+            asm.eol();
+            asm.indent();
+            asm.emit("unsigned __bo");
+            asm.delimiter();
+            asm.eol();
+
+            if (variant == Variant.X4) {
+                // rowOff = (grp&1)<<3 ; colOff = (grp>>1)<<4 ; row = rowOff+rit
+                asm.indent();
+                asm.emit("unsigned __row = ((__grp & 1u) << 3) + __rit");
+                asm.delimiter();
+                asm.eol();
+                asm.indent();
+                asm.emit("unsigned __col = (__grp >> 1) << 4");
+                asm.delimiter();
+                asm.eol();
+                asm.indent();
+                asm.emit("__bo = (__row << " + strideShift + ") + __col");
+                asm.delimiter();
+                asm.eol();
+            } else {
+                // colOff = (grp&1)<<7 ; bo = rit*stride + colOff
+                asm.indent();
+                asm.emit("unsigned __col = (__grp & 1u) << 7");
+                asm.delimiter();
+                asm.eol();
+                asm.indent();
+                asm.emit("__bo = (__rit << " + strideShift + ") + __col");
+                asm.delimiter();
+                asm.eol();
+            }
+            if (variant.swizzle) {
+                // bo ^= ((bo >> 7) & 0b111) << 4   (matches swizzleStoreFp16Stride32: S=7,M=7,T=4)
+                asm.indent();
+                asm.emit("__bo ^= (((__bo >> 7) & 7u) << 4)");
+                asm.delimiter();
+                asm.eol();
+            }
+            if (byteOffset != null && !byteOffset.equals(Value.ILLEGAL)) {
+                asm.indent();
+                asm.emit("__bo += ");
+                asm.emitValue(crb, byteOffset);
+                asm.delimiter();
+                asm.eol();
+            }
+
+            // smem address (shared state space, 32-bit) via explicit cvta.to.shared.
+            asm.indent();
+            asm.emit("unsigned __smem");
+            asm.delimiter();
+            asm.eol();
+            asm.indent();
+            asm.emit("asm volatile(\"{ .reg .u64 u; cvta.to.shared.u64 u, %1; cvt.u32.u64 %0, u; }\" "
+                    + ": \"=r\"(__smem) : \"l\"((const char *) " + tileName + " + __bo))");
+            asm.delimiter();
+            asm.eol();
+
+            String mnem = (variant == Variant.X4)
+                    ? "ldmatrix.sync.aligned.m8n8.x4.shared.b16"
+                    : "ldmatrix.sync.aligned.m8n8.x2.trans.shared.b16";
+            asm.indent();
+            StringBuilder ph = new StringBuilder();
+            for (int i = 0; i < n; i++) { if (i > 0) ph.append(","); ph.append("%").append(i); }
+            asm.emit("asm volatile(\"" + mnem + " {" + ph + "}, [%" + n + "];\" : ");
+            for (int i = 0; i < n; i++) {
+                if (i > 0) asm.emit(", ");
+                asm.emit("\"=r\"(" + frag + "[" + i + "])");
+            }
+            asm.emit(" : \"r\"(__smem))");
+            asm.delimiter();
+            asm.eol();
+
+            asm.popIndent();
+            asm.indent();
+            asm.emit("}");
+            asm.eol();
+        }
+    }
+
+    @Opcode("MMA_COMPUTE")
+    public static class MMAComputeStmt extends AbstractInstruction {
+
+        /**
+         * Element type of the A/B operands fed to mma.sync. The tile shape alone no
+         * longer identifies it: m16n8k32 serves both s8 and the FP8 formats, and
+         * m16n8k16 serves both f16 and bf16. Only S8 accumulates in s32; every other
+         * operand kind accumulates in f32.
+         */
+        public enum MMAOperand {
+            F16(".row.col.f32.f16.f16.f32"),
+            S8(".row.col.s32.s8.s8.s32"),
+            E4M3(".row.col.f32.e4m3.e4m3.f32"),
+            E5M2(".row.col.f32.e5m2.e5m2.f32"),
+            BF16(".row.col.f32.bf16.bf16.f32");
+
+            final String suffix;
+
+            MMAOperand(String suffix) {
+                this.suffix = suffix;
+            }
+        }
+
+        public static final LIRInstructionClass<MMAComputeStmt> TYPE =
+                LIRInstructionClass.create(MMAComputeStmt.class);
+
+        @Def protected Value result;
+        @Use protected Value fragA, fragB, fragC;
+        private final MMAShape shape;
+        private final MMAOperand operand;
+
+        public MMAComputeStmt(Value result, Value a, Value b, Value c, MMAShape shape, MMAOperand operand) {
+            super(TYPE);
+            this.result = result; this.fragA = a; this.fragB = b; this.fragC = c;
+            this.shape = shape; this.operand = operand;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            boolean i8 = (operand == MMAOperand.S8);
+            String accType  = i8 ? "int"  : "float";
+            String accCons  = i8 ? "r"    : "f";        // s32 -> "r", f32 -> "f"
+            String suffix   = operand.suffix;
+            String d = asm.getStringValue(crb, result);
+            String a = asm.getStringValue(crb, fragA);
+            String b = asm.getStringValue(crb, fragB);
+            String c = asm.getStringValue(crb, fragC);
+
+            // accType result[4];
+            asm.indent();
+            asm.emit(accType + " " + d + "[4]");
+            asm.delimiter();
+            asm.eol();
+
+            // asm volatile("mma.sync.aligned.<shape>.<suffix> {d0..d3},{a0..a3},{b0,b1},{c0..c3};"
+            //              : "=<acc>"(d[0..3]) : "r"(a0..3),"r"(b0,1),"<acc>"(c0..3));
+            asm.indent();
+            asm.emit("asm volatile(\"mma.sync.aligned." + shape.getPtxName() + suffix
+                    + " {%0,%1,%2,%3}, {%4,%5,%6,%7}, {%8,%9}, {%10,%11,%12,%13};\" : ");
+            for (int i = 0; i < 4; i++) {
+                if (i > 0) asm.emit(", ");
+                asm.emit("\"=" + accCons + "\"(" + d + "[" + i + "])");
+            }
+            asm.emit(" : ");
+            for (int i = 0; i < 4; i++) asm.emit((i > 0 ? ", " : "") + "\"r\"(" + a + "[" + i + "])");
+            for (int i = 0; i < 2; i++) asm.emit(", \"r\"(" + b + "[" + i + "])");
+            for (int i = 0; i < 4; i++) asm.emit(", \"" + accCons + "\"(" + c + "[" + i + "])");
+            asm.emit(")");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
+    @Opcode("MMA_STORE")
+    public static class MMAStoreStmt extends AbstractInstruction {
+        public static final LIRInstructionClass<MMAStoreStmt> TYPE =
+                LIRInstructionClass.create(MMAStoreStmt.class);
+
+        @Use protected Value fragD, target, tileRow, tileCol, dimN;
+        private final int headerElements;
+        private final boolean isInt8;
+
+        public MMAStoreStmt(Value fragD, Value target, Value tileRow, Value tileCol,
+                            Value dimN, int headerElements, boolean isInt8) {
+            super(TYPE);
+            this.fragD = fragD; this.target = target; this.tileRow = tileRow;
+            this.tileCol = tileCol; this.dimN = dimN;
+            this.headerElements = headerElements; this.isInt8 = isInt8;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            String cType = isInt8 ? "int" : "float";
+            int elemSize = 4;                    // both int32 and float32
+            int headerBytes = headerElements * elemSize;
+            String d   = asm.getStringValue(crb, fragD);
+            String out = asm.getStringValue(crb, target);
+            String row = asm.getStringValue(crb, tileRow);
+            String col = asm.getStringValue(crb, tileCol);
+            String ld  = asm.getStringValue(crb, dimN);
+
+            asm.indent();
+            asm.emit("{");
+            asm.eol();
+            asm.pushIndent();
+            asm.indent();
+            asm.emit("unsigned __lane = threadIdx.x & 31u");
+            asm.delimiter();
+            asm.eol();
+            for (int i = 0; i < 4; i++) {
+                int rowSel = (i < 2) ? 0 : 8;
+                int colSel = i % 2;
+                asm.indent();
+                asm.emit("unsigned __rit" + i + " = (__lane >> 2)" + (rowSel != 0 ? " + 8u" : ""));
+                asm.delimiter(); asm.eol();
+                asm.indent();
+                asm.emit("unsigned __cit" + i + " = ((__lane & 3u) << 1)" + (colSel != 0 ? " + 1u" : ""));
+                asm.delimiter(); asm.eol();
+                // Element index — no header here; header is on the byte pointer below.
+                asm.indent();
+                asm.emit("unsigned __idx" + i + " = (" + row + " + __rit" + i + ") * " + ld
+                        + " + (" + col + " + __cit" + i + ")");
+                asm.delimiter(); asm.eol();
+                // ((cType *) ((char *) out + headerBytes))[__idx] = d[i];
+                asm.indent();
+                asm.emit("((" + cType + " *) ((char *) " + out + " + " + headerBytes + "u))[__idx" + i
+                        + "] = " + d + "[" + i + "]");
+                asm.delimiter();
+                asm.eol();
+            }
+            asm.popIndent();
+            asm.indent();
+            asm.emit("}");
+            asm.eol();
+        }
+    }
+
+    @Opcode("SWIZZLED_STORE_FP16_STRIDE_32")
+    public static class SwizzledStoreFP16Stride32Stmt extends AbstractInstruction {
+        public static final LIRInstructionClass<SwizzledStoreFP16Stride32Stmt> TYPE =
+                LIRInstructionClass.create(SwizzledStoreFP16Stride32Stmt.class);
+
+        @Use protected Value localArray;
+        @Use protected Value row;
+        @Use protected Value column;
+        @Use protected Value stride;
+        @Use protected Value value;
+        @Use({OperandFlag.REG, OperandFlag.ILLEGAL}) protected Value byteOffset;
+
+        /** Single-warp / no sub-tile offset. */
+        public SwizzledStoreFP16Stride32Stmt(Value localArray, Value row, Value column,
+                                             Value stride, Value value) {
+            this(localArray, row, column, stride, value, Value.ILLEGAL);
+        }
+
+        /** Offset-aware: {@code byteOffset} selects the sub-tile region (in bytes). */
+        public SwizzledStoreFP16Stride32Stmt(Value localArray, Value row, Value column,
+                                             Value stride, Value value, Value byteOffset) {
+            super(TYPE);
+            this.localArray = localArray;
+            this.row = row;
+            this.column = column;
+            this.stride = stride;
+            this.value = value;
+            this.byteOffset = (byteOffset == null) ? Value.ILLEGAL : byteOffset;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            //   lin     = row * stride + column          (logical element index)
+            //   byteOff = lin << 1                        (fp16 = 2 bytes)
+            //   byteOff ^= (((byteOff >> 7) & 0b111) << 4)    (apply swizzle)
+            //   [byteOff += byteOffset]                   (sub-tile base, in bytes)
+            //   tile[byteOff >> 1] = value                (st.shared.b16 equivalent)
+            String arr = asm.getStringValue(crb, localArray);
+
+            asm.indent();
+            asm.emit("{");
+            asm.eol();
+            asm.pushIndent();
+
+            asm.indent();
+            asm.emit("unsigned __lin = ");
+            asm.emitValue(crb, row);
+            asm.emit(" * ");
+            asm.emitValue(crb, stride);
+            asm.emit(" + ");
+            asm.emitValue(crb, column);
+            asm.delimiter(); asm.eol();
+
+            asm.indent();
+            asm.emit("unsigned __bo = __lin << 1");
+            asm.delimiter();
+            asm.eol();
+            asm.indent();
+            asm.emit("__bo ^= (((__bo >> 7) & 7u) << 4)");
+            asm.delimiter();
+            asm.eol();
+
+            if (byteOffset != null && !byteOffset.equals(Value.ILLEGAL)) {
+                asm.indent();
+                asm.emit("__bo += ");
+                asm.emitValue(crb, byteOffset);
+                asm.delimiter(); asm.eol();
+            }
+
+            // half element write into shared memory (local arrays carry no header).
+            asm.indent();
+            asm.emit("((half *) " + arr + ")[__bo >> 1] = ");
+            asm.emitValue(crb, value);
+            asm.delimiter();
+            asm.eol();
+
+            asm.popIndent();
+            asm.indent();
+            asm.emit("}");
+            asm.eol();
+        }
+    }
+
+    /**
+     * Emits a 4-byte {@code cp.async.ca.shared.global} copy (Ampere+, sm_80): one
+     * packed b32 slot moves from a global Tornado array straight into a shared-memory
+     * int tile without a register round-trip. The source address is
+     * {@code srcArray + headerBytes + srcIndex * srcElemBytes}; the destination is
+     * {@code dstTile[dstIndex]}. Callers must follow the copies with
+     * {@link CpAsyncCommitGroupStmt} and {@link CpAsyncWaitGroupStmt} (plus the usual
+     * barrier) before reading the tile.
+     */
+    @Opcode("CP_ASYNC_COPY")
+    public static class CpAsyncCopyStmt extends AbstractInstruction {
+        public static final LIRInstructionClass<CpAsyncCopyStmt> TYPE =
+                LIRInstructionClass.create(CpAsyncCopyStmt.class);
+
+        @Use protected Value dstTile;
+        @Use protected Value dstIndex;
+        @Use protected Value srcArray;
+        @Use protected Value srcIndex;
+        private final int srcElemBytes;
+        private final int headerBytes;
+
+        public CpAsyncCopyStmt(Value dstTile, Value dstIndex, Value srcArray, Value srcIndex,
+                               int srcElemBytes, int headerBytes) {
+            super(TYPE);
+            this.dstTile = dstTile;
+            this.dstIndex = dstIndex;
+            this.srcArray = srcArray;
+            this.srcIndex = srcIndex;
+            this.srcElemBytes = srcElemBytes;
+            this.headerBytes = headerBytes;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            String tile = asm.getStringValue(crb, dstTile);
+            String dIdx = asm.getStringValue(crb, dstIndex);
+            String src  = asm.getStringValue(crb, srcArray);
+            String sIdx = asm.getStringValue(crb, srcIndex);
+
+            asm.indent();
+            asm.emit("{");
+            asm.eol();
+            asm.pushIndent();
+
+            // Shared-memory 32-bit address of &tile[dstIndex] via cvta.to.shared,
+            // mirroring the ldmatrix address computation.
+            asm.indent();
+            asm.emit("unsigned __smem");
+            asm.delimiter();
+            asm.eol();
+            asm.indent();
+            asm.emit("asm volatile(\"{ .reg .u64 u; cvta.to.shared.u64 u, %1; cvt.u32.u64 %0, u; }\" "
+                    + ": \"=r\"(__smem) : \"l\"((char *) " + tile + " + (((unsigned) " + dIdx + ") << 2)))");
+            asm.delimiter();
+            asm.eol();
+
+            // cp.async 4-byte copy from the global element address (past the array header).
+            asm.indent();
+            asm.emit("asm volatile(\"cp.async.ca.shared.global [%0], [%1], 4;\" :: \"r\"(__smem), "
+                    + "\"l\"((const char *) " + src + " + " + headerBytes + "u + ((long long) " + sIdx + ") * "
+                    + srcElemBytes + "))");
+            asm.delimiter();
+            asm.eol();
+
+            asm.popIndent();
+            asm.indent();
+            asm.emit("}");
+            asm.eol();
+        }
+    }
+
+    /** Emits {@code cp.async.commit_group}: closes the current batch of cp.async copies. */
+    @Opcode("CP_ASYNC_COMMIT_GROUP")
+    public static class CpAsyncCommitGroupStmt extends AbstractInstruction {
+        public static final LIRInstructionClass<CpAsyncCommitGroupStmt> TYPE =
+                LIRInstructionClass.create(CpAsyncCommitGroupStmt.class);
+
+        public CpAsyncCommitGroupStmt() {
+            super(TYPE);
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            asm.indent();
+            asm.emit("asm volatile(\"cp.async.commit_group;\")");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
+    /**
+     * Emits {@code cp.async.wait_group N}: blocks until at most N committed cp.async
+     * groups are still in flight (N = 0 waits for all of them).
+     */
+    @Opcode("CP_ASYNC_WAIT_GROUP")
+    public static class CpAsyncWaitGroupStmt extends AbstractInstruction {
+        public static final LIRInstructionClass<CpAsyncWaitGroupStmt> TYPE =
+                LIRInstructionClass.create(CpAsyncWaitGroupStmt.class);
+
+        private final int groups;
+
+        public CpAsyncWaitGroupStmt(int groups) {
+            super(TYPE);
+            this.groups = groups;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            asm.indent();
+            asm.emit("asm volatile(\"cp.async.wait_group " + groups + ";\")");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
+    @Opcode("HALF_BITS_TO_INT")
+    public static class HalfBitsToIntStmt extends AbstractInstruction {
+        public static final LIRInstructionClass<HalfBitsToIntStmt> TYPE =
+                LIRInstructionClass.create(HalfBitsToIntStmt.class);
+
+        @Def protected Value result;
+        @Use protected Value halfValue;
+
+        public HalfBitsToIntStmt(Value result, Value halfValue) {
+            super(TYPE);
+            this.result = result;
+            this.halfValue = halfValue;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            // u32_result = (unsigned) __half_as_ushort(half_value);
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.emit(" = (unsigned) __half_as_ushort(");
+            asm.emitValue(crb, halfValue);
+            asm.emit(")");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
+    @Opcode("SWIZZLED_LOAD_FP16_STRIDE_32")
+    public static class SwizzledLoadFP16Stride32Stmt extends AbstractInstruction {
+        public static final LIRInstructionClass<SwizzledLoadFP16Stride32Stmt> TYPE =
+                LIRInstructionClass.create(SwizzledLoadFP16Stride32Stmt.class);
+
+        @Def protected Value result;
+        @Use protected Value localArray;
+        @Use protected Value row;
+        @Use protected Value column;
+        @Use protected Value stride;
+
+        public SwizzledLoadFP16Stride32Stmt(Value result, Value localArray, Value row,
+                                            Value column, Value stride) {
+            super(TYPE);
+            this.result = result;
+            this.localArray = localArray;
+            this.row = row;
+            this.column = column;
+            this.stride = stride;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            //   lin     = row * stride + column
+            //   byteOff = lin << 1
+            //   byteOff ^= (((byteOff >> 7) & 0b111) << 4)
+            //   result = ((half *) tile)[byteOff >> 1]
+            String arr = asm.getStringValue(crb, localArray);
+
+            asm.indent();
+            asm.emit("{");
+            asm.eol();
+            asm.pushIndent();
+
+            asm.indent();
+            asm.emit("unsigned __lin = ");
+            asm.emitValue(crb, row);
+            asm.emit(" * ");
+            asm.emitValue(crb, stride);
+            asm.emit(" + ");
+            asm.emitValue(crb, column);
+            asm.delimiter();
+            asm.eol();
+
+            asm.indent();
+            asm.emit("unsigned __bo = __lin << 1");
+            asm.delimiter();
+            asm.eol();
+
+            asm.indent();
+            asm.emit("__bo ^= (((__bo >> 7) & 7u) << 4)");
+            asm.delimiter();
+            asm.eol();
+
+            // result = ((half *) tile)[byteOff >> 1]
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.emit(" = ((half *) " + arr + ")[__bo >> 1]");
+            asm.delimiter();
+            asm.eol();
+
+            asm.popIndent();
+            asm.indent();
+            asm.emit("}");
+            asm.eol();
+        }
+    }
+
 }

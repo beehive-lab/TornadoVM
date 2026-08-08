@@ -58,6 +58,22 @@ public class ImmutableTaskGraph {
         taskGraph.withCUDAGraph();
     }
 
+    void withIntraPlanConcurrency() {
+        taskGraph.withIntraPlanConcurrency();
+    }
+
+    void withoutIntraPlanConcurrency() {
+        taskGraph.withoutIntraPlanConcurrency();
+    }
+
+    void withStagedTransfers() {
+        taskGraph.withStagedTransfers();
+    }
+
+    void withoutStagedTransfers() {
+        taskGraph.withoutStagedTransfers();
+    }
+
     void withDevice(TornadoDevice device) {
         taskGraph.withDevice(device);
     }
@@ -224,6 +240,14 @@ public class ImmutableTaskGraph {
 
     void mapOnDeviceMemoryRegion(Object destArray, Object srcArray, long offset, ImmutableTaskGraph taskGraphSrc) {
         taskGraph.mapOnDeviceMemoryRegion(destArray, srcArray, offset, taskGraphSrc.taskGraph.taskGraphImpl);
+    }
+
+    void setPlanTaskGraphs(java.util.List<TornadoTaskGraphInterface> planTaskGraphs) {
+        taskGraph.setPlanTaskGraphs(planTaskGraphs);
+    }
+
+    TornadoTaskGraphInterface getTaskGraphImplementation() {
+        return taskGraph.getTaskGraphImplementation();
     }
 
     void setLastExecutedTaskGraph(ImmutableTaskGraph lastExecutedTaskGraph) {

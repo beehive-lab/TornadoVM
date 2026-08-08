@@ -247,9 +247,6 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
         return atomicsBuffer;
     }
 
-    private boolean isMetalPreLoadBinary(long executionPlanId, MetalDeviceContextInterface deviceContext, String deviceInfo) {
-        return false;
-    }
 
     private TornadoInstalledCode compileTask(long executionPlanId, SchedulableTask task) {
         final MetalDeviceContextInterface deviceContext = getDeviceContext();
@@ -345,20 +342,6 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
         return task.getTaskName();
     }
 
-    private TornadoInstalledCode loadPreCompiledBinaryForTask(long executionPlanId, SchedulableTask task) {
-        throw new UnsupportedOperationException("Pre-compiled binary loading for FPGA is not supported on the Metal backend");
-    }
-
-    private String getFullTaskIdDevice(SchedulableTask task) {
-        TaskContextInterface meta = task.meta();
-        if (meta instanceof TaskDataContext) {
-            TaskDataContext metaData = (TaskDataContext) task.meta();
-            return task.getId() + ".device=" + metaData.getBackendIndex() + ":" + metaData.getDeviceIndex();
-        } else {
-            throw new RuntimeException("[ERROR] TaskMetadata expected");
-        }
-    }
-
     @Override
     public boolean isFullJITMode(long executionPlanId, SchedulableTask task) {
         return false;
@@ -423,22 +406,13 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
         return TornadoAtomicIntegerNode.globalAtomicsParameters.containsKey(task.meta().getCompiledResolvedJavaMethod());
     }
 
-    private boolean isJITTask(long executionPlanId, SchedulableTask task) {
-        final MetalDeviceContextInterface deviceContext = getDeviceContext();
-        final String deviceFullName = getFullTaskIdDevice(task);
-        return !isMetalPreLoadBinary(executionPlanId, deviceContext, deviceFullName);
-    }
-
     private static TornadoDeviceFP64NotSupported unsupportedMetalFP64() {
         return new TornadoDeviceFP64NotSupported("Metal backend does not support FP64 (double/double arrays)");
     }
 
     @Override
     public TornadoInstalledCode installCode(long executionPlanId, SchedulableTask task) {
-        if (isJITTask(executionPlanId, task)) {
-            return compileJavaToAccelerator(executionPlanId, task);
-        }
-        return loadPreCompiledBinaryForTask(executionPlanId, task);
+        return compileJavaToAccelerator(executionPlanId, task);
     }
 
     private XPUBuffer createArrayWrapper(Class<?> type, MetalDeviceContext device, long batchSize, Access access) {
@@ -562,8 +536,13 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
             if (!reuseBatchBuffer(batchSize, accesses[i], bufferProvider, distinctAccesses, states[i])) {
                 logger.debug("Allocate object %s with access: %s", objects[i], accesses[i]);
                 allocatedSpace += allocate(objects[i], batchSize, states[i], accesses[i]);
+            } else if (batchSize != 0 && states[i].hasObjectBuffer()) {
+                // Reusing the object's existing buffer skips allocate(), which is what normally
+                // refreshes the sub-region size. Without this the buffer keeps the sub-region of the
+                // LAST chunk it held (e.g. a smaller remainder chunk from a previous execution), and
+                // subsequent transfers silently copy too few bytes.
+                states[i].getXPUBuffer().setSizeSubRegion(batchSize);
             }
-
         }
         return allocatedSpace;
     }
@@ -795,11 +774,6 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
     @Override
     public TornadoVMBackendType getTornadoVMBackend() {
         return TornadoVMBackendType.METAL;
-    }
-
-    @Override
-    public boolean isSPIRVSupported() {
-        return false;
     }
 
     @Override

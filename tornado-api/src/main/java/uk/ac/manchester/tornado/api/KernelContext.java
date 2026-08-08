@@ -17,12 +17,17 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import uk.ac.manchester.tornado.api.enums.MMAShape;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FP8Array;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Float;
+import uk.ac.manchester.tornado.api.types.vectors.Half2;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -43,7 +48,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * frameworks (e.g. OpenCL, CUDA) to the developers, such as thread-id, access
  * to local/shared memory and barriers.</li>
  * <li>{@link KernelContext} provides a Java API that is transparently
- * translated to both OpenCL and PTX by the TornadoVM JIT compiler. The main
+ * translated to both OpenCL and CUDA by the TornadoVM JIT compiler. The main
  * difference with the {@link TaskGraph} API is that the tasks within a
  * {@link TaskGraph} that use {@link KernelContext} must be
  * {@link GridScheduler}.</li>
@@ -57,7 +62,7 @@ public class KernelContext implements ExecutionContext {
      * <p>
      * OpenCL equivalent: get_global_id(0);
      * <p>
-     * PTX equivalent: blockIdx.x * blockDim.x + threadIdx.x
+     * CUDA equivalent: blockIdx.x * blockDim.x + threadIdx.x
      */
     public final Integer globalIdx = 0;
 
@@ -66,7 +71,7 @@ public class KernelContext implements ExecutionContext {
      * <p>
      * OpenCL equivalent: get_global_id(1);
      * <p>
-     * PTX equivalent: blockIdx.y * blockDim.y + threadIdx.y
+     * CUDA equivalent: blockIdx.y * blockDim.y + threadIdx.y
      */
     public final Integer globalIdy = 0;
 
@@ -75,7 +80,7 @@ public class KernelContext implements ExecutionContext {
      * <p>
      * OpenCL equivalent: get_global_id(2);
      * <p>
-     * PTX equivalent: blockIdx.z * blockDim.z + threadIdx.z
+     * CUDA equivalent: blockIdx.z * blockDim.z + threadIdx.z
      */
     public final Integer globalIdz = 0;
     public final Integer groupIdx = 0;
@@ -91,7 +96,7 @@ public class KernelContext implements ExecutionContext {
      * <p>
      * OpenCL equivalent: get_global_size();
      * <p>
-     * PTX equivalent: gridDim * blockDim
+     * CUDA equivalent: gridDim * blockDim
      */
     public final Integer globalGroupSizeX = 0;
     public final Integer globalGroupSizeY = 0;
@@ -102,7 +107,7 @@ public class KernelContext implements ExecutionContext {
      * <p>
      * OpenCL equivalent: get_local_size();
      * <p>
-     * PTX equivalent: blockDim
+     * CUDA equivalent: blockDim
      */
     public final Integer localGroupSizeX = 0;
     public final Integer localGroupSizeY = 0;
@@ -117,11 +122,11 @@ public class KernelContext implements ExecutionContext {
 
     /**
      * Method used as a barrier to synchronize the order of memory operations to the
-     * local memory (known as shared memory in PTX).
+     * local memory (known as shared memory in CUDA).
      * <p>
      * OpenCL equivalent: barrier(CLK_LOCAL_MEM_FENCE);
      * <p>
-     * PTX equivalent: barrier.sync;
+     * CUDA equivalent: __syncthreads();
      */
     @Override
     public void localBarrier() {
@@ -131,9 +136,12 @@ public class KernelContext implements ExecutionContext {
      * Method used as a barrier to synchronize the order of memory operations to the
      * global memory.
      * <p>
+     * The scope is the work-group (a CUDA block), not the whole grid.
+     * <p>
      * OpenCL equivalent: barrier(CLK_GLOBAL_MEM_FENCE);
      * <p>
-     * PTX equivalent: barrier.sync;
+     * CUDA equivalent: __syncthreads(), which already makes the block's prior global and shared
+     * accesses visible to the rest of the block.
      */
     @Override
     public void globalBarrier() {
@@ -141,7 +149,7 @@ public class KernelContext implements ExecutionContext {
 
     /**
      * It allocates a single dimensional array in local memory (known as shared
-     * memory in PTX).
+     * memory in CUDA).
      *
      * @param size
      *     the size of the array
@@ -154,7 +162,7 @@ public class KernelContext implements ExecutionContext {
 
     /**
      * It allocates a single dimensional array in local memory (known as shared
-     * memory in PTX).
+     * memory in CUDA).
      *
      * @param size
      *     the size of the array
@@ -167,7 +175,7 @@ public class KernelContext implements ExecutionContext {
 
     /**
      * It allocates a single dimensional array in local memory (known as shared
-     * memory in PTX).
+     * memory in CUDA).
      *
      * @param size
      *     the size of the array
@@ -179,8 +187,22 @@ public class KernelContext implements ExecutionContext {
     }
 
     /**
+     * It allocates a single dimensional array of packed {@link Half2} pairs in
+     * local memory (known as shared memory in PTX). On backends with packed
+     * half2 support each element maps to a single 32-bit {@code __half2}.
+     *
+     * @param size
+     *     the size of the array, in {@link Half2} elements
+     * @return Half2[]: reference to the Half2 array
+     */
+    @Override
+    public Half2[] allocateHalf2LocalArray(int size) {
+        return new Half2[size];
+    }
+
+    /**
      * It allocates a single dimensional array in local memory (known as shared
-     * memory in PTX).
+     * memory in CUDA).
      *
      * @param size
      *     the size of the array
@@ -193,7 +215,7 @@ public class KernelContext implements ExecutionContext {
 
     /**
      * It allocates a single dimensional array in local memory (known as shared
-     * memory in PTX).
+     * memory in CUDA).
      *
      * @param size
      *     the size of the array
@@ -206,7 +228,7 @@ public class KernelContext implements ExecutionContext {
 
     /**
      * It allocates a single dimensional array in local memory (known as shared
-     * memory in PTX).
+     * memory in CUDA).
      *
      * @param size
      *     the size of the array
@@ -221,7 +243,7 @@ public class KernelContext implements ExecutionContext {
      * Returns the sum of {@code val} across all active SIMD lanes.
      * <p>
      * Metal equivalent: {@code simd_sum(val)}<br>
-     * PTX equivalent: butterfly reduction with {@code shfl.sync.down.b32}
+     * CUDA equivalent: butterfly reduction with {@code shfl.sync.down.b32}
      */
     public float simdSum(float val) {
         return val;
@@ -231,7 +253,14 @@ public class KernelContext implements ExecutionContext {
      * Returns the value held by the thread {@code delta} lanes ahead in the SIMD group.
      * <p>
      * Metal equivalent: {@code simd_shuffle_down(val, delta)}<br>
-     * PTX equivalent: {@code shfl.sync.down.b32 dest, val, delta, 31, 0xFFFFFFFF}
+     * CUDA equivalent: {@code shfl.sync.down.b32 dest, val, delta, 31, 0xFFFFFFFF}
+     * <p>
+     * Note this only has a {@code float} overload (no {@code int}/{@code double}), and it only
+     * pulls from a HIGHER lane index -- there is no {@code shfl_up} equivalent. A conventional
+     * left-to-right prefix scan therefore isn't directly expressible; what IS directly expressible
+     * is a suffix scan (repeated {@code simdShuffleDown} at strides 1,2,4,... folds each lane with
+     * higher lanes), see {@code kernelcontext.reductions.TestWarpShuffleScan} for a worked example
+     * composing this into a full block-wide scan via one shared-memory cross-warp pass.
      */
     public float simdShuffleDown(float val, int delta) {
         return val;
@@ -241,10 +270,164 @@ public class KernelContext implements ExecutionContext {
      * Broadcasts the value from lane 0 to all active SIMD lanes.
      * <p>
      * Metal equivalent: {@code simd_broadcast_first(val)}<br>
-     * PTX equivalent: {@code shfl.sync.idx.b32 dest, val, 0, 31, 0xFFFFFFFF}
+     * CUDA equivalent: {@code shfl.sync.idx.b32 dest, val, 0, 31, 0xFFFFFFFF}
      */
     public float simdBroadcastFirst(float val) {
         return val;
+    }
+
+    /**
+     * Atomic compare-and-swap on {@code array[index]}: if the element equals {@code expected} it is
+     * replaced with {@code value}. Returns the element's value before the call, so success is
+     * {@code atomicCAS(a, i, expected, v) == expected}.
+     * <p>
+     * The building block for anything atomics-with-add cannot express: locks, lock-free update loops
+     * ({@code do { old = a[i]; } while (atomicCAS(a, i, old, f(old)) != old);}), and claiming a slot exactly
+     * once.
+     * <p>
+     * CUDA equivalent: {@code atomicCAS(&array[index], expected, value)}
+     * <p>
+     * Unlike {@link #atomicAdd(IntArray, int, int)}, there is currently no overload of this method
+     * for a global (off-heap {@code IntArray}) target -- only the local/shared-memory {@code int[]}
+     * form exists. If you need a compare-and-swap on a global array, there is no KernelContext
+     * primitive for that today.
+     *
+     * @param array
+     *     local (shared) array to update
+     * @param index
+     *     element index
+     * @param expected
+     *     value the element must currently hold for the swap to happen
+     * @param value
+     *     value to store when the comparison succeeds
+     * @return the element's previous value
+     */
+    public int atomicCAS(int[] array, int index, int expected, int value) {
+        int previous = array[index];
+        if (previous == expected) {
+            array[index] = value;
+        }
+        return previous;
+    }
+
+    /**
+     * Atomically stores {@code value} into {@code array[index]} and returns the previous value.
+     * <p>
+     * CUDA equivalent: {@code atomicExch(&array[index], value)}
+     * <p>
+     * Unlike {@link #atomicAdd(IntArray, int, int)}, there is currently no global-array
+     * ({@code IntArray}) overload of this method -- local/shared memory only.
+     *
+     * @param array
+     *     local (shared) array to update
+     * @param index
+     *     element index
+     * @param value
+     *     value to store
+     * @return the element's previous value
+     */
+    public int atomicExchange(int[] array, int index, int value) {
+        int previous = array[index];
+        array[index] = value;
+        return previous;
+    }
+
+    /**
+     * Atomically replaces {@code array[index]} with the smaller of it and {@code value}, returning the
+     * previous value. One instruction instead of a compare-and-swap loop.
+     * <p>
+     * CUDA equivalent: {@code atomicMin(&array[index], value)}
+     * <p>
+     * Unlike {@link #atomicAdd(IntArray, int, int)}, there is currently no global-array
+     * ({@code IntArray}) overload of this method -- local/shared memory only.
+     *
+     * @param array
+     *     local (shared) array to update
+     * @param index
+     *     element index
+     * @param value
+     *     candidate minimum
+     * @return the element's previous value
+     */
+    public int atomicMin(int[] array, int index, int value) {
+        int previous = array[index];
+        if (value < previous) {
+            array[index] = value;
+        }
+        return previous;
+    }
+
+    /**
+     * Atomically replaces {@code array[index]} with the larger of it and {@code value}, returning the
+     * previous value.
+     * <p>
+     * CUDA equivalent: {@code atomicMax(&array[index], value)}
+     * <p>
+     * Unlike {@link #atomicAdd(IntArray, int, int)}, there is currently no global-array
+     * ({@code IntArray}) overload of this method -- local/shared memory only.
+     *
+     * @param array
+     *     local (shared) array to update
+     * @param index
+     *     element index
+     * @param value
+     *     candidate maximum
+     * @return the element's previous value
+     */
+    public int atomicMax(int[] array, int index, int value) {
+        int previous = array[index];
+        if (value > previous) {
+            array[index] = value;
+        }
+        return previous;
+    }
+
+    /**
+     * Returns whether {@code predicate} holds for at least one active lane of the SIMD group.
+     * <p>
+     * Warp/SIMD-group vote. Useful to skip work that no lane in the group needs, without a
+     * shared-memory round trip: every lane gets the same answer.
+     * <p>
+     * CUDA equivalent: {@code __any_sync(0xffffffff, predicate)}
+     *
+     * @param predicate
+     *     per-lane condition
+     * @return true when any active lane passes {@code predicate}
+     */
+    public boolean simdAny(boolean predicate) {
+        return predicate;
+    }
+
+    /**
+     * Returns whether {@code predicate} holds for every active lane of the SIMD group.
+     * <p>
+     * CUDA equivalent: {@code __all_sync(0xffffffff, predicate)}
+     *
+     * @param predicate
+     *     per-lane condition
+     * @return true when all active lanes pass {@code predicate}
+     */
+    public boolean simdAll(boolean predicate) {
+        return predicate;
+    }
+
+    /**
+     * Returns a bit mask with one bit per lane of the SIMD group, set where {@code predicate} holds.
+     * Bit {@code i} corresponds to lane {@code i}, so on a 32-lane warp the result covers bits 0-31.
+     * <p>
+     * This is the building block for warp-aggregated atomics and stream compaction:
+     * {@code Integer.bitCount(simdBallot(p))} counts the lanes that pass without any atomic, and
+     * {@code Integer.bitCount(simdBallot(p) & ((1 << laneId) - 1))} gives each lane its rank among
+     * them, so one lane can reserve space for the whole group with a single atomic.
+     * <p>
+     * CUDA equivalent: {@code __ballot_sync(0xffffffff, predicate)}
+     *
+     * @param predicate
+     *     per-lane condition
+     * @return lane mask of the lanes that pass {@code predicate}
+     */
+    public int simdBallot(boolean predicate) {
+        return predicate ? 1 : 0;
     }
 
     /**
@@ -361,7 +544,7 @@ public class KernelContext implements ExecutionContext {
      * Method used to read a memory address by using the array and the index,
      * then add the value of val to it, and write the result back to the same address.
      * <p>
-     * PTX equivalent: atomicAdd(int* address, int val);
+     * CUDA equivalent: atomicAdd(int* address, int val);
      */
     @Override
     public void atomicAdd(IntArray array, int index, int val) {
@@ -374,7 +557,16 @@ public class KernelContext implements ExecutionContext {
      * Method used to read a memory address by using the array and the index,
      * then add the value of val to it, and write the result back to the same address.
      * <p>
-     * PTX equivalent: atomicAdd(int* address, int val);
+     * CUDA equivalent: atomicAdd(int* address, int val);
+     * <p>
+     * <b>Known CUDA-backend issue:</b> when {@code index} is a runtime-computed (non-constant)
+     * value -- e.g. a data-dependent bucket for a local-memory histogram -- the generated CUDA C
+     * has been observed to silently drop the index and always update {@code array[0]} instead
+     * (confirmed via {@code tornado-test --printKernel}: the byte offset for the index is computed
+     * but never applied to the {@code atomicAdd} call). Every known-good example in this codebase
+     * only ever calls this overload with a literal {@code 0} index. If you need a per-bucket local
+     * histogram, accumulate into a <em>global</em> array with {@link #atomicAdd(IntArray, int, int)}
+     * instead (confirmed correct with a dynamic index) rather than this local-array overload.
      */
     @Override
     public void atomicAdd(int[] array, int index, int val) {
@@ -387,7 +579,7 @@ public class KernelContext implements ExecutionContext {
      * Method used to read a memory address by using the array and the index,
      * then add the value of val to it, and write the result back to the same address.
      * <p>
-     * PTX equivalent: atomicAdd(long* address, long val);
+     * CUDA equivalent: atomicAdd(long* address, long val);
      */
     @Override
     public void atomicAdd(LongArray array, int index, long val) {
@@ -400,7 +592,7 @@ public class KernelContext implements ExecutionContext {
      * Method used to read a memory address by using the array and the index,
      * then add the value of val to it, and write the result back to the same address.
      * <p>
-     * PTX equivalent: atomicAdd(float* address, float val);
+     * CUDA equivalent: atomicAdd(float* address, float val);
      */
     @Override
     public void atomicAdd(FloatArray array, int index, float val) {
@@ -410,7 +602,7 @@ public class KernelContext implements ExecutionContext {
      * Method used to read a memory address by using the array and the index,
      * then add the value of val to it, and write the result back to the same address.
      * <p>
-     * PTX equivalent: atomicAdd(double* address, double val);
+     * CUDA equivalent: atomicAdd(double* address, double val);
      */
     @Override
     public void atomicAdd(DoubleArray array, int index, double val) {
@@ -450,7 +642,7 @@ public class KernelContext implements ExecutionContext {
      * intended for staging matrix tiles for future MMA support. It is, however, a general
      * bank-conflict-free layout usable by any kernel with the same access shape.
      *
-     * <p><b>Note:</b> Currently lowered on the PTX backend only.
+     * <p><b>Note:</b> Currently lowered on the CUDA backend only.
      *
      * @param arr    the shared-memory tile, addressed in logical element coordinates
      * @param row    the row index within the tile
@@ -473,7 +665,7 @@ public class KernelContext implements ExecutionContext {
      * {@link #swizzleLoadFp16Stride32} for the full derivation of the constants
      * (7 = source bits, 0b111 = mask, 4 = 16-byte target boundary).
      *
-     * <p><b>Note:</b> Currently lowered on the PTX backend only.
+     * <p><b>Note:</b> Currently lowered on the CUDA backend only.
      *
      * @param arr    the shared-memory tile, addressed in logical element coordinates
      * @param row    the row index within the tile
@@ -516,7 +708,7 @@ public class KernelContext implements ExecutionContext {
      * for the halved row stride, but have not yet been validated against a live consumer,
      * treat as provisional.
      *
-     * <p><b>Note:</b> Currently lowered on the PTX backend only.
+     * <p><b>Note:</b> Currently lowered on the CUDA backend only.
      *
      * @param arr    the shared-memory tile, addressed in logical element coordinates
      * @param row    the row index within the tile
@@ -538,7 +730,7 @@ public class KernelContext implements ExecutionContext {
      * {@link #swizzleLoadFp16Stride16} for the constant derivation (6 = source bits,
      * 0b111 = mask, 3 = 8-byte target boundary) and the validation caveat.
      *
-     * <p><b>Note:</b> Currently lowered on the PTX backend only.
+     * <p><b>Note:</b> Currently lowered on the CUDA backend only.
      *
      * @param arr    the shared-memory tile, addressed in logical element coordinates
      * @param row    the row index within the tile
@@ -581,7 +773,7 @@ public class KernelContext implements ExecutionContext {
      * tiles for future MMA support, but is a general bank-conflict-free layout usable by
      * any kernel with the same access shape.
      *
-     * <p><b>Note:</b> Currently lowered on the PTX backend only.
+     * <p><b>Note:</b> Currently lowered on the CUDA backend only.
      *
      * @param arr    the shared-memory tile, addressed in logical element coordinates
      * @param row    the row index within the tile
@@ -603,7 +795,7 @@ public class KernelContext implements ExecutionContext {
      * index is the byte offset directly. See {@link #swizzleLoadInt8} for the constant
      * derivation and the dual-stride (32 / 16) usage.
      *
-     * <p><b>Note:</b> Currently lowered on the PTX backend only.
+     * <p><b>Note:</b> Currently lowered on the CUDA backend only.
      *
      * @param arr    the shared-memory tile, addressed in logical element coordinates
      * @param row    the row index within the tile
@@ -615,6 +807,285 @@ public class KernelContext implements ExecutionContext {
         int byteOffset = row * stride + col;
         int swizzledByte = byteOffset ^ (((byteOffset >> 7) & 0b111) << 4);
         arr[swizzledByte] = v;
+    }
+
+    /**
+     * Declares a C/D accumulator fragment for MMA operations.
+     * Lowered by the CUDA backend to register allocation.
+     *
+     * PTX equivalent: mov.f32 rd0..rd3, v  (register-backed accumulator fragment)
+     */
+    public float[] mmaFragment(float v) {
+        // CPU fallback: return a 4-element accumulator fragment initialised to v.
+        // On GPU this is replaced by an MMAFragmentNode by the plugin.
+        return new float[]{ v, v, v, v };
+    }
+
+    public HalfFloat[] mmaLoadA(int[] aTile, int wmmaK) {
+        // CPU fallback: return an 8-element fragment.
+        // On GPU this is replaced by an MMALoadANode by the plugin.
+        return new HalfFloat[8];
+    }
+
+    public HalfFloat[] mmaLoadB(int[] bTile, int wmmaK) {
+        // CPU fallback: return a 4-element fragment.
+        // On GPU this is replaced by an MMALoadBNode by the plugin.
+        return new HalfFloat[4];
+    }
+
+    /**
+     * Loads the B fragment for mma.sync from a swizzled shared-memory tile
+     * populated using {@link #swizzleStoreFp16Stride32(HalfFloat[], int, int, int, HalfFloat)}.
+     *
+     * Each lane receives its 4 owned f16 elements as per PTX ISA m16n8k16 layout.
+     * The address computation includes the matching swizzle XOR so no bank
+     * conflicts occur during the ldmatrix read.
+     *
+     * PTX equivalent: ldmatrix.sync.aligned.m8n8.x2.trans.shared.b16 with
+     * per-lane addresses XOR-permuted by the FP16 stride-32 swizzle.
+     */
+    public HalfFloat[] mmaLoadBSwizzled(HalfFloat[] bTile, int wmmaK) {
+        // CPU fallback: return a 4-element fragment.
+        // On GPU this is replaced by an MMALoadBSwizzledNode by the plugin.
+        return new HalfFloat[4];
+    }
+
+    /**
+     * Warp-collective matrix multiply-accumulate: D = A * B + C.
+     *
+     * PTX equivalent:
+     *   mma.sync.aligned.{shape}.row.col.f32.f16.f16.f32
+     *       {rd0..rd3}, {ra0..ra3}, {rb0..rb1}, {rc0..rc3}
+     */
+    public float[] mma(HalfFloat[] fragA, HalfFloat[] fragB, float[] fragC, MMAShape mmaShape) {
+        // CPU fallback: return the accumulator unchanged.
+        // On GPU this is replaced by an MMAComputeNode by the plugin.
+        return fragC;
+    }
+
+    /**
+     * Stores the D fragment to a global output matrix.
+     *
+     * PTX equivalent: st.global.f32 [addr], rd0..rd3  (x4 per lane)
+     */
+    public void mmaStore(float[] fragD, FloatArray c, int tileRow, int tileCol, int dimN) {
+        // CPU fallback: no-op (matches other GPU-only constructs like localBarrier).
+        // On GPU this is replaced by an MMAStoreNode by the plugin.
+    }
+
+    /**
+     * Warp-collective bfloat16 matrix multiply-accumulate: D = A * B + C.
+     *
+     * <p>BF16 shares fp16's m16n8k16 tile shape and per-lane fragment layout, so the
+     * A/B fragments are loaded with the same {@link #mmaLoadA(int[], int)} /
+     * {@link #mmaLoadB(int[], int)} calls from int tiles packed with raw bf16 bit
+     * pairs ({@code lo | (hi << 16)}); only the mma.sync element type differs. The
+     * {@code HalfFloat[]} fragment handles are opaque register tuples - the bits are
+     * interpreted as bf16 by this call, never decoded as fp16.
+     *
+     * PTX equivalent:
+     *   mma.sync.aligned.m16n8k16.row.col.f32.bf16.bf16.f32
+     *
+     * <p><b>Note:</b> CUDA backend only, compute capability 8.0+ (same floor as the
+     * fp16/int8 MMA ops).
+     */
+    public float[] mmaBF16(HalfFloat[] fragA, HalfFloat[] fragB, float[] fragC, MMAShape mmaShape) {
+        return fragC; // CPU fallback: accumulator unchanged
+    }
+
+    /**
+     * Allocates a 4xs32 accumulator fragment for int8 MMA, initialised to the given value.
+     */
+    public int[] mmaFragmentInt(int initValue) {
+        return new int[4];
+    }
+
+    /**
+     * Loads an A fragment (16x32 int8 tile) for mma.sync.m16n8k32.
+     */
+    public byte[] mmaLoadAInt8(int[] aTile, int tileK) {
+        return new byte[16];
+    }
+
+    /**
+     * Loads a B fragment (32x8 int8 tile, col-major) for mma.sync.m16n8k32.
+     */
+    public byte[] mmaLoadBInt8(int[] bTile, int tileK) {
+        return new byte[8];
+    }
+
+    /**
+     * Warp-collective int8 MMA: D = A*B + C.
+     */
+    public int[] mmaInt8(byte[] fragA, byte[] fragB, int[] fragC, MMAShape shape) {
+        return new int[4];
+    }
+
+    /**
+     * Stores the int32 accumulator fragment to global memory.
+     */
+    public void mmaStoreInt(int[] fragD, IntArray out, int row, int col, int stride) {
+        // no-op placeholder
+    }
+
+    /**
+     * Loads an A fragment (16x32 FP8 tile) for FP8 tensor-core MMA (m16n8k32).
+     *
+     * <p>The shared-memory tile holds raw FP8 storage bytes packed four per int,
+     * exactly like the int8 tile layout of {@link #mmaLoadAInt8(int[], int)} - the
+     * load is format-agnostic; the FP8 interpretation happens in
+     * {@link #mmaFP8E4M3}/{@link #mmaFP8E5M2}.
+     *
+     * <p><b>Note:</b> CUDA backend only; FP8 MMA requires compute capability 8.9+
+     * (Ada/Hopper).
+     */
+    public byte[] mmaLoadAFP8(int[] aTile, int tileK) {
+        return new byte[16]; // CPU fallback
+    }
+
+    /**
+     * Loads a B fragment (32x8 FP8 tile, col-major) for FP8 tensor-core MMA
+     * (m16n8k32). See {@link #mmaLoadAFP8(int[], int)} for layout notes.
+     */
+    public byte[] mmaLoadBFP8(int[] bTile, int tileK) {
+        return new byte[8]; // CPU fallback
+    }
+
+    /**
+     * Warp-collective FP8 (OCP E4M3) MMA: D = A*B + C with an f32 accumulator.
+     *
+     * PTX equivalent:
+     *   mma.sync.aligned.m16n8k32.row.col.f32.e4m3.e4m3.f32
+     *
+     * <p><b>Note:</b> CUDA backend only, compute capability 8.9+ (Ada/Hopper);
+     * on older devices the compiler raises TornadoDeviceMMANotSupported.
+     */
+    public float[] mmaFP8E4M3(byte[] fragA, byte[] fragB, float[] fragC, MMAShape shape) {
+        return fragC; // CPU fallback: accumulator unchanged
+    }
+
+    /**
+     * Warp-collective FP8 (OCP E5M2) MMA: D = A*B + C with an f32 accumulator.
+     * See {@link #mmaFP8E4M3} for shape and gating notes.
+     */
+    public float[] mmaFP8E5M2(byte[] fragA, byte[] fragB, float[] fragC, MMAShape shape) {
+        return fragC; // CPU fallback: accumulator unchanged
+    }
+
+    /**
+     * MMA A-operand load from a shared-memory tile with a byte-offset base.
+     *
+     * <p>Variant of {@link #mmaLoadA(int[], int)} that advances the base address
+     * by {@code byteOffset} bytes before computing per-lane addresses. Use this
+     * when multiple warps share a single A-tile in shared memory and each warp
+     * needs to read from a different M-row sub-region.
+     *
+     * <p>The offset is in bytes (not rows). For the canonical layout with 16 fp16
+     * (= 32 bytes) per row, warp m reading from row band (m * 16) passes
+     * {@code byteOffset = m * 16 * 32}.
+     *
+     * @param aTile      shared-memory A-tile (int-packed)
+     * @param wmmaK      K dimension of the MMA instruction (16 for fp16 m16n8k16)
+     * @param byteOffset base byte offset into aTile
+     * @return per-lane A fragment
+     */
+    public HalfFloat[] mmaLoadA(int[] aTile, int wmmaK, int byteOffset) {
+        return new HalfFloat[4]; // CPU fallback
+    }
+
+    /**
+     * MMA B-operand load from a shared-memory tile with a byte-offset base.
+     * See {@link #mmaLoadA(int[], int, int)} for offset semantics.
+     */
+    public HalfFloat[] mmaLoadB(int[] bTile, int wmmaK, int byteOffset) {
+        return new HalfFloat[4]; // CPU fallback
+    }
+
+    /**
+     * MMA B-operand load from a swizzled shared-memory tile with a byte-offset base.
+     * See {@link #mmaLoadA(int[], int, int)} for offset semantics.
+     *
+     * <p>The byteOffset is added to the swizzled tile base; the per-lane XOR
+     * permutation is still applied as in {@link #mmaLoadBSwizzled(HalfFloat[], int)}.
+     */
+    public HalfFloat[] mmaLoadBSwizzled(HalfFloat[] bTile, int wmmaK, int byteOffset) {
+        return new HalfFloat[4]; // CPU fallback
+    }
+
+    /**
+     * Asynchronous 4-byte global-to-shared copy (CUDA {@code cp.async}, Ampere+/sm_80):
+     * copies two adjacent fp16 elements ({@code src[srcIndex]}, {@code src[srcIndex+1]})
+     * into {@code dstTile[dstIndex]} as one packed b32, bypassing the register file.
+     *
+     * <p>The packed layout matches the cooperative-load idiom
+     * {@code lo | (hi << 16)} used by the MMA GEMM kernels (little-endian), so an
+     * existing synchronous tile load can be replaced element-for-element.
+     *
+     * <p>The copy is asynchronous: issue all copies for a tile, then call
+     * {@link #asyncCopyCommit()} once and {@link #asyncCopyWaitGroup(int)} (with 0)
+     * before the barrier that publishes the tile.
+     *
+     * <p>On non-CUDA backends the Java fallback performs the copy synchronously.
+     */
+    public void asyncCopyToLocal(int[] dstTile, int dstIndex, HalfFloatArray src, int srcIndex) {
+        int lo = src.get(srcIndex).getHalfFloatValue() & 0xFFFF;
+        int hi = src.get(srcIndex + 1).getHalfFloatValue() & 0xFFFF;
+        dstTile[dstIndex] = lo | (hi << 16);
+    }
+
+    /**
+     * Asynchronous 4-byte global-to-shared copy of four adjacent FP8 storage bytes
+     * into one packed b32 tile slot. See {@link #asyncCopyToLocal(int[], int, HalfFloatArray, int)}
+     * for the synchronization contract.
+     */
+    public void asyncCopyToLocal(int[] dstTile, int dstIndex, FP8Array src, int srcIndex) {
+        int b0 = src.get(srcIndex) & 0xFF;
+        int b1 = src.get(srcIndex + 1) & 0xFF;
+        int b2 = src.get(srcIndex + 2) & 0xFF;
+        int b3 = src.get(srcIndex + 3) & 0xFF;
+        dstTile[dstIndex] = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
+    }
+
+    /**
+     * Asynchronous 4-byte global-to-shared copy of four adjacent bytes into one packed
+     * b32 tile slot. See {@link #asyncCopyToLocal(int[], int, HalfFloatArray, int)}
+     * for the synchronization contract.
+     */
+    public void asyncCopyToLocal(int[] dstTile, int dstIndex, ByteArray src, int srcIndex) {
+        int b0 = src.get(srcIndex) & 0xFF;
+        int b1 = src.get(srcIndex + 1) & 0xFF;
+        int b2 = src.get(srcIndex + 2) & 0xFF;
+        int b3 = src.get(srcIndex + 3) & 0xFF;
+        dstTile[dstIndex] = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
+    }
+
+    /**
+     * Commits the cp.async copies issued since the last commit as one group
+     * (CUDA {@code cp.async.commit_group}). No-op on other backends, where
+     * {@link #asyncCopyToLocal(int[], int, HalfFloatArray, int)} copies synchronously.
+     */
+    public void asyncCopyCommit() {
+        // CPU fallback: no-op; the async copies are synchronous off-GPU.
+    }
+
+    /**
+     * Waits until at most {@code groups} committed cp.async groups are still in flight
+     * (CUDA {@code cp.async.wait_group N}; 0 waits for all). Must be a compile-time
+     * constant. No-op on other backends.
+     */
+    public void asyncCopyWaitGroup(int groups) {
+        // CPU fallback: no-op.
+    }
+
+    /**
+     * Swizzled fp16 store (stride-32) into a sub-tile at byte offset {@code byteOffset}.
+     * The swizzle permutation is computed on the LOCAL (row, col); the byteOffset
+     * places the result into the target sub-tile region. Symmetric with
+     * {@link #mmaLoadBSwizzled(HalfFloat[], int, int)}.
+     */
+    public void mmaStoreBSwizzled(HalfFloat[] arr, int row, int col, int stride,
+                                         HalfFloat value, int byteOffset) {
+        // CPU fallback: no-op (swizzle layout only matters on GPU).
     }
 
 }

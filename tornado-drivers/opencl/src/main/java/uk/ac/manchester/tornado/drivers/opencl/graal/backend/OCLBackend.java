@@ -32,6 +32,8 @@ import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.ENABLE_EXCE
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -97,7 +99,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLNodeLIRBuilder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLNodeMatchRules;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLReferenceMapBuilder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FPGAWorkGroupSizeNode;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.OCLTokens;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -122,10 +123,6 @@ public class OCLBackend extends XPUBackend<OCLProviders> implements FrameMap.Ref
         this.codeCache = codeCache;
         this.deviceContext = deviceContext;
         architecture = (OCLArchitecture) target.arch;
-    }
-
-    public static boolean isDeviceAnFPGAAccelerator(OCLDeviceContextInterface deviceContext) {
-        return deviceContext.isPlatformFPGA();
     }
 
     @Override
@@ -231,7 +228,7 @@ public class OCLBackend extends XPUBackend<OCLProviders> implements FrameMap.Ref
             }
 
             if (!kindToVariable.containsKey(oclKind)) {
-                kindToVariable.put(oclKind, new HashSet<>());
+                kindToVariable.put(oclKind, new LinkedHashSet<>());
             }
 
             final Set<Variable> varList = kindToVariable.get(oclKind);
@@ -240,7 +237,10 @@ public class OCLBackend extends XPUBackend<OCLProviders> implements FrameMap.Ref
     }
 
     private void emitVariableDefs(OCLCompilationResultBuilder crb, OCLAssembler asm, LIR lir) {
-        Map<OCLKind, Set<Variable>> kindToVariable = new HashMap<>();
+        // LinkedHashMap/LinkedHashSet: the declaration order of temporaries must not depend on
+        // identity hash codes, which differ on every JVM run and made the generated kernel source
+        // (and therefore any on-disk code cache keyed by it) unstable across processes.
+        Map<OCLKind, Set<Variable>> kindToVariable = new LinkedHashMap<>();
         final int expectedVariables = lir.numVariables();
         final AtomicInteger variableCount = new AtomicInteger();
 
@@ -302,15 +302,6 @@ public class OCLBackend extends XPUBackend<OCLProviders> implements FrameMap.Ref
              * starting at address 0x0. (I assume that this is an interesting case that
              * leads to a few issues.) Iris Pro is the only culprit at the moment.
              */
-            final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
-            if (cfg.getStartBlock().getEndNode().predecessor() instanceof FPGAWorkGroupSizeNode) {
-                FPGAWorkGroupSizeNode fpgaNode = (FPGAWorkGroupSizeNode) (cfg.getStartBlock().getEndNode().predecessor());
-                String attribute = fpgaNode.createThreadAttribute();
-
-                asm.emitSymbol(attribute);
-                asm.emitLine("");
-            }
-
             asm.emit("%s void %s(%s", OCLAssemblerConstants.KERNEL_MODIFIER, methodName, architecture.getABI());
             emitMethodParameters(asm, method, incomingArguments, true);
             asm.emitLine(")");

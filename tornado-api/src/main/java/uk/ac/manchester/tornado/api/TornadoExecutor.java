@@ -43,10 +43,41 @@ class TornadoExecutor {
     TornadoExecutor(ImmutableTaskGraph... immutableTaskGraphs) {
         immutableTaskGraphList = new ArrayList<>();
         Collections.addAll(immutableTaskGraphList, immutableTaskGraphs);
+        registerPlanTaskGraphs();
+    }
+
+    /**
+     * Lets every task-graph of this plan see its siblings, so that consumeFromDevice(producerName,
+     * ...) can resolve the producing graph by name regardless of the execution order.
+     */
+    private void registerPlanTaskGraphs() {
+        List<TornadoTaskGraphInterface> planGraphs = new ArrayList<>();
+        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
+            planGraphs.add(immutableTaskGraph.getTaskGraphImplementation());
+        }
+        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
+            immutableTaskGraph.setPlanTaskGraphs(planGraphs);
+        }
     }
 
     public void withCUDAGraph() {
         immutableTaskGraphList.forEach(ImmutableTaskGraph::withCUDAGraph);
+    }
+
+    public void withIntraPlanConcurrency() {
+        immutableTaskGraphList.forEach(ImmutableTaskGraph::withIntraPlanConcurrency);
+    }
+
+    public void withoutIntraPlanConcurrency() {
+        immutableTaskGraphList.forEach(ImmutableTaskGraph::withoutIntraPlanConcurrency);
+    }
+
+    public void withStagedTransfers() {
+        immutableTaskGraphList.forEach(ImmutableTaskGraph::withStagedTransfers);
+    }
+
+    public void withoutStagedTransfers() {
+        immutableTaskGraphList.forEach(ImmutableTaskGraph::withoutStagedTransfers);
     }
 
     void execute(ExecutorFrame executionPackage) {

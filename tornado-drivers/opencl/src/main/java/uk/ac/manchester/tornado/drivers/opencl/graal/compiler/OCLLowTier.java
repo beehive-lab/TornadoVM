@@ -45,8 +45,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.phases.InverseSquareRootPha
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFMAPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFP16SupportPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFP64SupportPhase;
-import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFPGAPragmaPhase;
-import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFPGAThreadScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFieldCoopsAccessPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoAtomicsParametersPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoAtomicsScheduling;
@@ -84,11 +82,6 @@ public class OCLLowTier extends TornadoLowTier {
         appendPhase(new AddressLoweringByNodePhase(addressLowering));
 
         appendPhase(new DeadCodeEliminationPhase(DeadCodeEliminationPhase.Optionality.Required));
-
-        if (tornadoDeviceContext.isPlatformFPGA()) {
-            appendPhase(new OCLFPGAPragmaPhase(tornadoDeviceContext));
-            appendPhase(new OCLFPGAThreadScheduler());
-        }
 
         appendPhase(new TornadoHalfFloatVectorOffset());
 

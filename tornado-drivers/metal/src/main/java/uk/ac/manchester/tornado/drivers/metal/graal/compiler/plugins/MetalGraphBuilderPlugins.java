@@ -81,12 +81,16 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.RawConstant;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.enums.MMAShape;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FP8Array;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Float;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
@@ -463,14 +467,338 @@ public class MetalGraphBuilderPlugins {
         localArraysPlugins(r);
         registerAtomicAddOperation(r);
         registerSIMDPlugins(r);
+        registerMMAPlugins(r);
         registerSwizzledLocalAccessesPlugins(r);
+        registerUnsupportedAtomicRmwPlugins(r);
+    }
+
+    /**
+     * The read-modify-write atomics ({@link uk.ac.manchester.tornado.api.KernelContext} {@code atomicCAS},
+     * {@code atomicExchange}, {@code atomicMin}, {@code atomicMax}) are not intrinsified on this backend.
+     * Their {@code KernelContext} bodies apply the operation non-atomically, which is only correct for a
+     * single thread, so reject them instead of silently racing.
+     */
+    private static void registerUnsupportedAtomicRmwPlugins(Registration r) {
+        final String message = "Atomic read-modify-write operations (KernelContext.atomicCAS/atomicExchange/atomicMin/atomicMax) are only supported on the CUDA backend.";
+        r.register(new InvocationPlugin("atomicCAS", Receiver.class, int[].class, int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index, ValueNode expected, ValueNode value) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        for (String name : new String[] { "atomicExchange", "atomicMin", "atomicMax" }) {
+            r.register(new InvocationPlugin(name, Receiver.class, int[].class, int.class, int.class) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index, ValueNode value) {
+                    receiver.get(true);
+                    unimplemented(message);
+                    return false;
+                }
+            });
+        }
+    }
+
+    private static void registerMMAPlugins(Registration r) {
+        // --- mmaFragment(float v) -> float[] ---
+        r.register(new InvocationPlugin("mmaFragment",
+                InvocationPlugin.Receiver.class, float.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode initValue) {
+                unimplemented("MMA instructions only supported for the CUDA backend.");
+                return false;
+            }
+        });
+
+        // --- mmaLoadA(int[] aTile, int wmmaK) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadA",
+                InvocationPlugin.Receiver.class, int[].class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode wmmaK) {
+                unimplemented("MMA instructions only supported for the CUDA backend.");
+                return false;
+            }
+        });
+
+        // --- mmaLoadB(int[] bTile, int wmmaK) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadB",
+                InvocationPlugin.Receiver.class, int[].class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode wmmaK) {
+                unimplemented("MMA instructions only supported for the CUDA backend.");
+                return false;
+            }
+        });
+
+        // --- mmaLoadBSwizzled(HalfFloat[] bTile, int wmmaK) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadBSwizzled",
+                InvocationPlugin.Receiver.class, HalfFloat[].class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode wmmaK) {
+                unimplemented("MMA instructions only supported for the CUDA backend.");
+                return false;
+            }
+        });
+
+        // --- mmaStoreBSwizzled(HalfFloat[] arr, int row, int col, int stride, HalfFloat value, int byteOffset) -> void ---
+        r.register(new InvocationPlugin("mmaStoreBSwizzled",
+                InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class,
+                int.class, HalfFloat.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode arr, ValueNode row, ValueNode col,
+                                 ValueNode stride, ValueNode value, ValueNode byteOffset) {
+                unimplemented("MMA instructions only supported for the CUDA backend.");
+                return false;
+            }
+        });
+
+        // --- mma(HalfFloat[] fragA, HalfFloat[] fragB, float[] fragC, MMAShape shape) -> float[] ---
+        r.register(new InvocationPlugin("mma",
+                InvocationPlugin.Receiver.class,
+                HalfFloat[].class, HalfFloat[].class, float[].class, MMAShape.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver,
+                                 ValueNode fragA, ValueNode fragB, ValueNode fragC,
+                                 ValueNode shapeNode) {
+                unimplemented("MMA instructions only supported for the CUDA backend.");
+                return false;
+            }
+        });
+
+        // --- mmaStore(float[] fragD, FloatArray c, int tileRow, int tileCol, int dimN) -> void ---
+        r.register(new InvocationPlugin("mmaStore",
+                InvocationPlugin.Receiver.class,
+                float[].class, FloatArray.class, int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver,
+                                 ValueNode fragD, ValueNode target,
+                                 ValueNode tileRow, ValueNode tileCol, ValueNode dimN) {
+                unimplemented("MMA instructions only supported for the CUDA backend.");
+                return false;
+            }
+        });
+
+        r.register(new InvocationPlugin("mmaFragmentInt",
+                InvocationPlugin.Receiver.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode initValue) {
+                unimplemented("MMA instructions only supported for the CUDA backend.");
+                return false;
+            }
+        });
+
+        // --- mmaLoadAInt8(int[], int) -> byte[] ---
+        r.register(new InvocationPlugin("mmaLoadAInt8",
+                InvocationPlugin.Receiver.class, int[].class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode tileK) {
+                unimplemented("MMA instructions only supported for the CUDA backend.");
+                return false;
+            }
+        });
+
+        // --- mmaLoadBInt8(int[], int) -> byte[] ---
+        r.register(new InvocationPlugin("mmaLoadBInt8",
+                InvocationPlugin.Receiver.class, int[].class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode tileK) {
+                unimplemented("MMA instructions only supported for the CUDA backend.");
+                return false;
+            }
+        });
+
+        // --- mmaInt8(byte[], byte[], int[], MMAShape) -> int[] ---
+        r.register(new InvocationPlugin("mmaInt8",
+                InvocationPlugin.Receiver.class,
+                byte[].class, byte[].class, int[].class, MMAShape.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver,
+                                 ValueNode fragA, ValueNode fragB, ValueNode fragC,
+                                 ValueNode shapeNode) {
+                unimplemented("MMA instructions only supported for the CUDA backend.");
+                return false;
+            }
+        });
+
+        // --- mmaStoreInt(int[], IntArray, int, int, int) -> void ---
+        r.register(new InvocationPlugin("mmaStoreInt",
+                InvocationPlugin.Receiver.class,
+                int[].class, IntArray.class, int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver,
+                                 ValueNode fragD, ValueNode target,
+                                 ValueNode tileRow, ValueNode tileCol, ValueNode dimN) {
+                unimplemented("MMA instructions only supported for the CUDA backend.");
+                return false;
+            }
+        });
+
+        // --- mmaLoadA(int[], int, int) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadA",
+                InvocationPlugin.Receiver.class, int[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode wmmaK, ValueNode byteOffset) {
+                unimplemented("MMA instructions only supported for the CUDA backend.");
+                return false;
+            }
+        });
+
+        // --- mmaLoadB(int[], int, int) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadB",
+                InvocationPlugin.Receiver.class, int[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode wmmaK, ValueNode byteOffset) {
+                unimplemented("MMA instructions only supported for the CUDA backend.");
+                return false;
+            }
+        });
+
+        // --- mmaLoadBSwizzled(HalfFloat[], int, int) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadBSwizzled",
+                InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode wmmaK, ValueNode byteOffset) {
+                unimplemented("MMA instructions only supported for the CUDA backend.");
+                return false;
+            }
+        });
+
+
+        // --- CUDA-only extensions: FP8/BF16 tensor-core MMA and cp.async copies. The
+        // stubs make a kernel using them fail with a clear diagnostic instead of
+        // inlining the Java fallback bodies and silently computing wrong results. ---
+
+        // --- mmaLoadAFP8(int[], int) -> byte[] ---
+        r.register(new InvocationPlugin("mmaLoadAFP8",
+                InvocationPlugin.Receiver.class, int[].class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode tileK) {
+                unimplemented("FP8 MMA instructions only supported for the CUDA backend.");
+                return false;
+            }
+        });
+
+        // --- mmaLoadBFP8(int[], int) -> byte[] ---
+        r.register(new InvocationPlugin("mmaLoadBFP8",
+                InvocationPlugin.Receiver.class, int[].class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode tileK) {
+                unimplemented("FP8 MMA instructions only supported for the CUDA backend.");
+                return false;
+            }
+        });
+
+        // --- mmaFP8E4M3(byte[], byte[], float[], MMAShape) -> float[] ---
+        r.register(new InvocationPlugin("mmaFP8E4M3",
+                InvocationPlugin.Receiver.class, byte[].class, byte[].class, float[].class, MMAShape.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode fragA, ValueNode fragB, ValueNode fragC, ValueNode shape) {
+                unimplemented("FP8 MMA instructions only supported for the CUDA backend.");
+                return false;
+            }
+        });
+
+        // --- mmaFP8E5M2(byte[], byte[], float[], MMAShape) -> float[] ---
+        r.register(new InvocationPlugin("mmaFP8E5M2",
+                InvocationPlugin.Receiver.class, byte[].class, byte[].class, float[].class, MMAShape.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode fragA, ValueNode fragB, ValueNode fragC, ValueNode shape) {
+                unimplemented("FP8 MMA instructions only supported for the CUDA backend.");
+                return false;
+            }
+        });
+
+        // --- mmaBF16(HalfFloat[], HalfFloat[], float[], MMAShape) -> float[] ---
+        r.register(new InvocationPlugin("mmaBF16",
+                InvocationPlugin.Receiver.class, HalfFloat[].class, HalfFloat[].class, float[].class, MMAShape.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode fragA, ValueNode fragB, ValueNode fragC, ValueNode shape) {
+                unimplemented("BF16 MMA instructions only supported for the CUDA backend.");
+                return false;
+            }
+        });
+
+        // --- asyncCopyToLocal(int[], int, HalfFloatArray, int) ---
+        r.register(new InvocationPlugin("asyncCopyToLocal",
+                InvocationPlugin.Receiver.class, int[].class, int.class, HalfFloatArray.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode dstTile, ValueNode dstIndex, ValueNode src, ValueNode srcIndex) {
+                unimplemented("cp.async copies only supported for the CUDA backend.");
+                return false;
+            }
+        });
+
+        // --- asyncCopyToLocal(int[], int, FP8Array, int) ---
+        r.register(new InvocationPlugin("asyncCopyToLocal",
+                InvocationPlugin.Receiver.class, int[].class, int.class, FP8Array.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode dstTile, ValueNode dstIndex, ValueNode src, ValueNode srcIndex) {
+                unimplemented("cp.async copies only supported for the CUDA backend.");
+                return false;
+            }
+        });
+
+        // --- asyncCopyToLocal(int[], int, ByteArray, int) ---
+        r.register(new InvocationPlugin("asyncCopyToLocal",
+                InvocationPlugin.Receiver.class, int[].class, int.class, ByteArray.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode dstTile, ValueNode dstIndex, ValueNode src, ValueNode srcIndex) {
+                unimplemented("cp.async copies only supported for the CUDA backend.");
+                return false;
+            }
+        });
+
+        // --- asyncCopyCommit() ---
+        r.register(new InvocationPlugin("asyncCopyCommit", InvocationPlugin.Receiver.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                unimplemented("cp.async copies only supported for the CUDA backend.");
+                return false;
+            }
+        });
+
+        // --- asyncCopyWaitGroup(int) ---
+        r.register(new InvocationPlugin("asyncCopyWaitGroup",
+                InvocationPlugin.Receiver.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode groups) {
+                unimplemented("cp.async copies only supported for the CUDA backend.");
+                return false;
+            }
+        });
+
     }
 
     private static void registerSwizzledLocalAccessesPlugins(Registration r) {
         r.register(new InvocationPlugin("swizzleLoadFp16Stride32", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride) {
-                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                unimplemented("Swizzled local memory accesses are not supported on this backend.");
                 return false;
             }
         });
@@ -478,7 +806,7 @@ public class MetalGraphBuilderPlugins {
         r.register(new InvocationPlugin("swizzleStoreFp16Stride32", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class, HalfFloat.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode value) {
-                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                unimplemented("Swizzled local memory accesses are not supported on this backend.");
                 return false;
             }
         });
@@ -486,7 +814,7 @@ public class MetalGraphBuilderPlugins {
         r.register(new InvocationPlugin("swizzleLoadFp16Stride16", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride) {
-                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                unimplemented("Swizzled local memory accesses are not supported on this backend.");
                 return false;
             }
         });
@@ -494,7 +822,7 @@ public class MetalGraphBuilderPlugins {
         r.register(new InvocationPlugin("swizzleStoreFp16Stride16", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class, HalfFloat.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode value) {
-                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                unimplemented("Swizzled local memory accesses are not supported on this backend.");
                 return false;
             }
         });
@@ -504,7 +832,7 @@ public class MetalGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver,
                                  ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride) {
-                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                unimplemented("Swizzled local memory accesses are not supported on this backend.");
                 return false;
             }
         });
@@ -514,7 +842,7 @@ public class MetalGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver,
                                  ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode value) {
-                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                unimplemented("Swizzled local memory accesses are not supported on this backend.");
                 return false;
             }
         });

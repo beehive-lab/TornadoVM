@@ -73,12 +73,12 @@ TornadoVM can be installed automatically with the [installation script](https://
 $ ./bin/tornadovm-installer --help
 usage: tornadovm-installer [-h] [--jdk JDK] [--backend BACKEND] [--version] [--listJDKs] [--polyglot] [--mvn_single_threaded] [--auto-deps]
 
-TornadoVM Installer Tool. It will install all software dependencies except the GPU/FPGA drivers
+TornadoVM Installer Tool. It will install all software dependencies except the GPU drivers
 
 options:
   -h, --help            show this help message and exit
   --jdk JDK             Specify a JDK to install by its keyword (e.g., 'jdk21', 'graal-jdk-21'). Run with --listJDKs to view all available JDK keywords.
-  --backend BACKEND     Select the backend to install: { opencl, ptx, spirv }
+  --backend BACKEND     Select the backend to install: { opencl, cuda, metal }
   --version             Print version
   --listJDKs            List supported JDKs
   --polyglot            Enable Truffle Interoperability with GraalVM
@@ -90,9 +90,7 @@ options:
 **NOTE** Select the desired backend:
 
 * `opencl`: Enables the OpenCL backend (requires OpenCL drivers)
-* `ptx`: Enables the PTX backend (requires NVIDIA CUDA drivers)
 * `cuda`: Enables the CUDA backend, which generates CUDA C and compiles it to PTX via NVRTC (requires the NVIDIA CUDA Toolkit, NVRTC and `libcuda`)
-* `spirv`: Enables the SPIRV backend (requires Intel Level Zero drivers)
 * `metal`: Enables the Metal backend (macOS with Apple Silicon)
 
 > **Tip:** The CUDA backend can also be built directly with `make BACKEND=cuda`. Build it on its own (not together with OpenCL): with both backends installed, the unit tests may silently run on the OpenCL device and report false positives. See the [CUDA backend documentation](https://tornadovm.readthedocs.io/en/latest/cuda-backend.html) for the supported / in-progress feature status.
@@ -104,7 +102,7 @@ Example of installation:
 $ ./bin/tornadovm-installer --jdk jdk21 --backend opencl
 
 # It is also possible to combine different backends:
-$ ./bin/tornadovm-installer --jdk jdk21 --backend opencl,spirv,ptx
+$ ./bin/tornadovm-installer --jdk jdk21 --backend opencl,cuda
 ```
 
 - On Windows, run:
@@ -115,12 +113,12 @@ python -m venv .venv
 python bin\tornadovm-installer --help
 usage: tornadovm-installer [-h] [--jdk JDK] [--backend BACKEND] [--version] [--listJDKs] [--polyglot] [--mvn_single_threaded] [--auto-deps]
 
-TornadoVM Installer Tool. It will install all software dependencies except the GPU/FPGA drivers
+TornadoVM Installer Tool. It will install all software dependencies except the GPU drivers
 
 options:
   -h, --help            show this help message and exit
   --jdk JDK             Specify a JDK to install by its keyword (e.g., 'jdk21', 'graal-jdk-21'). Run with --listJDKs to view all available JDK keywords.
-  --backend BACKEND     Select the backend to install: { opencl, ptx, spirv }
+  --backend BACKEND     Select the backend to install: { opencl, cuda, metal }
   --version             Print version
   --listJDKs            List supported JDKs
   --polyglot            Enable Truffle Interoperability with GraalVM
@@ -136,7 +134,7 @@ Example of installation:
 $ python bin\tornadovm-installer --jdk jdk21 --backend opencl
 
 # It is also possible to combine different backends:
-$ python bin\tornadovm-installer --jdk jdk21 --backend opencl,spirv,ptx
+$ python bin\tornadovm-installer --jdk jdk21 --backend opencl,cuda
 ```
 
 More information are available in the [documentation page](https://tornadovm.readthedocs.io/en/latest/installation.html#b-manual-installation).

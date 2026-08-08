@@ -119,9 +119,8 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.ExprStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLNullary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLReturnSlot;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FPGAWorkGroupSizeNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IntelUnrollPragmaNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.XilinxPipeliningPragmaNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayCopyNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.logic.LogicalAndNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.logic.LogicalEqualsNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.logic.LogicalNotNode;
@@ -494,10 +493,9 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                 setResult(phi, value);
             } else {
                 final AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
-                append(new OCLLIRStmt.AssignStmt(result, value));
+                append(new OCLLIRStmt.AssignStmt(result, operandForPhiMove(phi.firstValue())));
             }
         }
-        emitOCLFPGAPragmas(currentBlockDominator);
         append(new OCLControlFlow.LoopInitOp());
         append(new OCLControlFlow.LoopPostOp());
         label.clearIncomingValues();
@@ -515,7 +513,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             Value src = operand(phi.valueAt(loopEnd));
 
             if (!dest.equals(src)) {
-                append(new OCLLIRStmt.AssignStmt(dest, src));
+                append(new OCLLIRStmt.AssignStmt(dest, operandForPhiMove(phi.valueAt(loopEnd))));
             }
         }
     }
@@ -536,13 +534,12 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                 Value src = operand(value);
 
                 if (!dest.equals(src)) {
-                    append(new OCLLIRStmt.AssignStmt(dest, src));
+                    append(new OCLLIRStmt.AssignStmt(dest, operandForPhiMove(value)));
                 }
             } else if (loopExitMerge) {
                 AllocatableValue dest = gen.asAllocatable(operandForPhi(phi));
-                Value src = operand(phi.valueAt(1));
 
-                append(new OCLLIRStmt.AssignStmt(dest, src));
+                append(new OCLLIRStmt.AssignStmt(dest, operandForPhiMove(phi.valueAt(1))));
             }
         }
     }
@@ -558,8 +555,6 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             emitShortCircuitOrNode(shortCircuitOrNode);
         } else if (node instanceof ConditionalNode conditionalNode) {
             emitConditionalNode(conditionalNode);
-        } else if (node instanceof IntelUnrollPragmaNode || node instanceof XilinxPipeliningPragmaNode || node instanceof FPGAWorkGroupSizeNode) {
-            // ignore emit-action
         } else {
             super.emitNode(node);
         }
@@ -669,14 +664,6 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         }
     }
 
-    private void emitOCLFPGAPragmas(HIRBlock block) {
-        for (ValueNode tempDomBlockNode : block.getNodes()) {
-            if (tempDomBlockNode instanceof IntelUnrollPragmaNode || tempDomBlockNode instanceof XilinxPipeliningPragmaNode) {
-                super.emitNode(tempDomBlockNode);
-            }
-        }
-    }
-
     private OCLLIRGenerator getGen() {
         return (OCLLIRGenerator) gen;
     }
@@ -776,10 +763,25 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                 if (((!phi.isLoopPhi()) && (phi.singleValueOrThis() == phi)) || (value instanceof PhiNode && !((PhiNode) value).isLoopPhi())) {
 
                     final AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
-                    append(new OCLLIRStmt.AssignStmt(result, operand(value)));
+                    append(new OCLLIRStmt.AssignStmt(result, operandForPhiMove(value)));
                 }
             }
         }
+    }
+
+    /**
+     * Phi variables are integer-typed (ulong), but the operand of a
+     * {@link FixedArrayNode} or {@link FixedArrayCopyNode} is a private-memory
+     * pointer. OpenCL C does not allow implicit pointer-to-integer conversion
+     * (strict compilers such as Intel's reject it), so an explicit cast is
+     * required for these phi moves.
+     */
+    private Value operandForPhiMove(final ValueNode value) {
+        final Value operand = operand(value);
+        if (value instanceof FixedArrayNode || value instanceof FixedArrayCopyNode) {
+            return new OCLUnary.Expr(OCLUnaryOp.CAST_TO_ULONG, LIRKind.value(gen.target().arch.getWordKind()), operand);
+        }
+        return operand;
     }
 
     private boolean blockContainsIfNode(HIRBlock block) {

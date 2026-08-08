@@ -201,7 +201,12 @@ public abstract class MetalArrayWrapper<T> implements XPUBuffer {
         } else {
             headerEvent = buildArrayHeaderBatch(batchSize).enqueueWrite(executionPlanId, (useDeps) ? events : null);
         }
-        final int returnEvent = enqueueWriteArrayData(executionPlanId, toBuffer(), arrayHeaderSize + bufferOffset, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+        // Batch mode: honour the sub-region size like read() does - a reused (locked) buffer can be
+        // larger than the current chunk (e.g. a full-chunk buffer serving the smaller remainder chunk),
+        // and copying its full bufferSize would overrun the host array. Non-batch copies keep using
+        // bufferSize (a sub-region may be set on them by the lazy partial sync, which is read-only).
+        final long numBytes = (batchSize > 0 && getSizeSubRegionSize() > 0) ? getSizeSubRegionSize() : (bufferSize - arrayHeaderSize);
+        final int returnEvent = enqueueWriteArrayData(executionPlanId, toBuffer(), arrayHeaderSize + bufferOffset, numBytes, array, hostOffset, (useDeps) ? events : null);
 
         listEvents.add(headerEvent);
         listEvents.add(returnEvent);

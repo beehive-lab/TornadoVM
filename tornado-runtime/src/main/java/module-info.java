@@ -1,4 +1,5 @@
 import uk.ac.manchester.tornado.runtime.TornadoBackendProvider;
+import uk.ac.manchester.tornado.runtime.library.spi.TornadoLibraryProvider;
 
 open module tornado.runtime {
     requires java.logging;
@@ -28,6 +29,8 @@ open module tornado.runtime {
     exports uk.ac.manchester.tornado.runtime.graal.phases;
     exports uk.ac.manchester.tornado.runtime.graph;
     exports uk.ac.manchester.tornado.runtime.graph.nodes;
+    exports uk.ac.manchester.tornado.runtime.library;
+    exports uk.ac.manchester.tornado.runtime.library.spi;
     exports uk.ac.manchester.tornado.runtime.profiler;
     exports uk.ac.manchester.tornado.runtime.sketcher;
     exports uk.ac.manchester.tornado.runtime.tasks;
@@ -37,4 +40,5 @@ open module tornado.runtime {
     exports uk.ac.manchester.tornado.runtime.graal.nodes.interfaces;
 
     uses TornadoBackendProvider;
+    uses TornadoLibraryProvider;
 }

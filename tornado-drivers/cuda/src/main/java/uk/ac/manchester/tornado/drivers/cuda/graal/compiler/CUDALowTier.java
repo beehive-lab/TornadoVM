@@ -40,13 +40,12 @@ import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.analysis.TornadoFeatureExtraction;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.loops.TornadoLoopCanonicalization;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.utils.DumpLowTierGraph;
+import uk.ac.manchester.tornado.drivers.cuda.graal.phases.CUDATensorCoreSupportPhase;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.InfinityReplacementPhase;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.InverseSquareRootPhase;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.CUDAFMAPhase;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.CUDAFP16SupportPhase;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.CUDAFP64SupportPhase;
-import uk.ac.manchester.tornado.drivers.cuda.graal.phases.CUDAFPGAPragmaPhase;
-import uk.ac.manchester.tornado.drivers.cuda.graal.phases.CUDAFPGAThreadScheduler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.CUDAFieldCoopsAccessPhase;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.TornadoAtomicsParametersPhase;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.TornadoAtomicsScheduling;
@@ -62,6 +61,8 @@ public class CUDALowTier extends TornadoLowTier {
     public CUDALowTier(OptionValues options, TornadoDeviceContext tornadoDeviceContext, AddressLowering addressLowering) {
         this.tornadoDeviceContext = tornadoDeviceContext;
         CanonicalizerPhase canonicalizer = getCannonicalizer(options);
+
+        appendPhase(new CUDATensorCoreSupportPhase(tornadoDeviceContext));
 
         appendPhase(new CUDAFP64SupportPhase(tornadoDeviceContext));
 
@@ -85,10 +86,6 @@ public class CUDALowTier extends TornadoLowTier {
 
         appendPhase(new DeadCodeEliminationPhase(DeadCodeEliminationPhase.Optionality.Required));
 
-        if (tornadoDeviceContext.isPlatformFPGA()) {
-            appendPhase(new CUDAFPGAPragmaPhase(tornadoDeviceContext));
-            appendPhase(new CUDAFPGAThreadScheduler());
-        }
 
         appendPhase(new TornadoHalfFloatVectorOffset());
 

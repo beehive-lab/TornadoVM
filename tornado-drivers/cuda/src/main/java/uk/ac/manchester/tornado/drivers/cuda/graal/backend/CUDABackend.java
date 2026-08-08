@@ -33,12 +33,15 @@ import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEV
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
+import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRInstruction;
@@ -67,6 +70,7 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Local;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
@@ -97,7 +101,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDANodeLIRBuilder;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDANodeMatchRules;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDAReferenceMapBuilder;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
-import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.FPGAWorkGroupSizeNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.CUDATokens;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -122,10 +126,6 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
         this.codeCache = codeCache;
         this.deviceContext = deviceContext;
         architecture = (CUDAArchitecture) target.arch;
-    }
-
-    public static boolean isDeviceAnFPGAAccelerator(CUDADeviceContextInterface deviceContext) {
-        return deviceContext.isPlatformFPGA();
     }
 
     @Override
@@ -231,7 +231,7 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
             }
 
             if (!kindToVariable.containsKey(oclKind)) {
-                kindToVariable.put(oclKind, new HashSet<>());
+                kindToVariable.put(oclKind, new LinkedHashSet<>());
             }
 
             final Set<Variable> varList = kindToVariable.get(oclKind);
@@ -240,17 +240,38 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
     }
 
     private void emitVariableDefs(CUDACompilationResultBuilder crb, CUDAAssembler asm, LIR lir) {
-        Map<CUDAKind, Set<Variable>> kindToVariable = new HashMap<>();
+        // LinkedHashMap/LinkedHashSet: the declaration order of temporaries must not depend on
+        // identity hash codes, which differ on every JVM run and made the generated kernel source
+        // (and therefore any on-disk code cache keyed by it) unstable across processes.
+        Map<CUDAKind, Set<Variable>> kindToVariable = new LinkedHashMap<>();
+        Map<Variable, CUDAKind> fragmentPhis = new LinkedHashMap<>();
+
         final int expectedVariables = lir.numVariables();
         final AtomicInteger variableCount = new AtomicInteger();
 
         for (int b : lir.linearScanOrder()) {
             for (LIRInstruction lirInstruction : lir.getLIRforBlock(lir.getBlockById(b))) {
+                if (lirInstruction instanceof CUDALIRStmt.AssignStmt) {
+                    CUDALIRStmt.AssignStmt assign = (CUDALIRStmt.AssignStmt) lirInstruction;
+                    Value rhs = assign.getExpr();
+                    AllocatableValue lhs = assign.getResult();
+                    CUDAKind rhsKind = platformKindOf(rhs);
+                    if (rhsKind != null && rhsKind.isMMAFragment() && lhs instanceof Variable) {
+                        CUDAKind lhsKind = platformKindOf(lhs);
+                        if (lhsKind == null || !lhsKind.isMMAFragment()) {
+                            fragmentPhis.putIfAbsent((Variable) lhs, rhsKind);
+                        }
+                    }
+                }
 
                 lirInstruction.forEachOutput((instruction, value, mode, flags) -> {
                     if (value instanceof Variable) {
                         Variable variable = (Variable) value;
                         if (variable.toString() != null) {
+                            CUDAKind kind = platformKindOf(variable);
+                            if (kind != null && kind.isMMAFragment()) {
+                                return value;
+                            }
                             addVariableDef(kindToVariable, variable);
                             variableCount.incrementAndGet();
                         }
@@ -263,9 +284,14 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
         Logger.traceCodeGen(Logger.BACKEND.OpenCL, "found %d variable, expected (%d)", variableCount.get(), expectedVariables);
 
         for (CUDAKind type : kindToVariable.keySet()) {
+            Set<Variable> vars = kindToVariable.get(type);
+            vars.removeAll(fragmentPhis.keySet());
+            if (vars.isEmpty()) {
+                continue;
+            }
             asm.indent();
             asm.emit("%s ", type.getCUDATypeName());
-            for (Variable var : kindToVariable.get(type)) {
+            for (Variable var : vars) {
                 asm.emitValue(crb, var);
                 asm.emit(", ");
             }
@@ -273,6 +299,52 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
             asm.eol();
         }
 
+        // Emit fragment-phi variables as C arrays of the fragment's element type.
+        // e.g. "float ul_52[4];" for MMA_FRAG_ACC_F32.
+        for (Map.Entry<Variable, CUDAKind> entry : fragmentPhis.entrySet()) {
+            Variable frag = entry.getKey();
+            CUDAKind fragKind = entry.getValue();
+            asm.indent();
+            asm.emit("%s ", fragmentElementCType(fragKind));
+            asm.emitValue(crb, frag);
+            asm.emit("[%d];", fragKind.getVectorLength());
+            asm.eol();
+        }
+    }
+
+    /**
+     * Extracts the CUDAKind from a Value's ValueKind, or null if the Value doesn't
+     * carry a CUDAKind (constants, illegal, etc.).
+     */
+    private static CUDAKind platformKindOf(Value v) {
+        if (v == null) return null;
+        if (!(v.getValueKind() instanceof LIRKind)) return null;
+        Object pk = ((LIRKind) v.getValueKind()).getPlatformKind();
+        return (pk instanceof CUDAKind) ? (CUDAKind) pk : null;
+    }
+
+    /**
+     * Element C type for an MMA fragment kind. Fragment lanes are:
+     *   MMA_FRAG_ACC_F32 → float
+     *   MMA_FRAG_ACC_S32 → int
+     *   MMA_FRAG_A_F16 / B_F16 / A_S8 / B_S8 → unsigned int (packed b32)
+     * Matches the CUDA C types used by the MMA inline-PTX asm constraints
+     * ("=f" for f32, "=r" for b32).
+     */
+    private static String fragmentElementCType(CUDAKind fragKind) {
+        switch (fragKind) {
+            case MMA_FRAG_ACC_F32:
+                return "float";
+            case MMA_FRAG_ACC_S32:
+                return "int";
+            case MMA_FRAG_A_F16:
+            case MMA_FRAG_B_F16:
+            case MMA_FRAG_A_S8:
+            case MMA_FRAG_B_S8:
+                return "unsigned int";
+            default:
+                throw shouldNotReachHere("not an MMA fragment kind: " + fragKind);
+        }
     }
 
     private void emitDebugKernelArgs(CUDAAssembler asm, ResolvedJavaMethod method) {
@@ -295,9 +367,10 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
         final CallingConvention incomingArguments = CodeUtil.getCallingConvention(codeCache, HotSpotCallingConventionType.JavaCallee, method);
 
         if (crb.isKernel()) {
-            // Emit the CUDA C preamble (cuda_fp16.h include) once at the top of the
-            // kernel, before the kernel signature.
-            asm.emit(CUDAPreamble.PREAMBLE);
+            // cuda_fp16.h is injected once, after code emission, when the generated
+            // kernel actually references __half / half2 / __float2half constructs
+            // (see CUDACompilationResultBuilder#finish). It is not emitted here because
+            // half usage is not always visible from the LIR operands at this point.
 
             /*
              * BUG There is a bug on some CUDADriver devices which requires us to insert an
@@ -306,14 +379,6 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
              * starting at address 0x0. (I assume that this is an interesting case that
              * leads to a few issues.) Iris Pro is the only culprit at the moment.
              */
-            final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
-            if (cfg.getStartBlock().getEndNode().predecessor() instanceof FPGAWorkGroupSizeNode) {
-                FPGAWorkGroupSizeNode fpgaNode = (FPGAWorkGroupSizeNode) (cfg.getStartBlock().getEndNode().predecessor());
-                String attribute = fpgaNode.createThreadAttribute();
-
-                asm.emitSymbol(attribute);
-                asm.emitLine("");
-            }
 
             asm.emit("%s void %s(%s", CUDAAssemblerConstants.KERNEL_MODIFIER, methodName, architecture.getABI());
             emitMethodParameters(asm, method, incomingArguments, true);

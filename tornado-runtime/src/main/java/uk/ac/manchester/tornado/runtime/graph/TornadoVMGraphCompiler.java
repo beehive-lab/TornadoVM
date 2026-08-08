@@ -74,12 +74,19 @@ public class TornadoVMGraphCompiler {
 
         intermediateTornadoGraph.analyzeDependencies();
 
+        // A non-batched graph whose tasks form a pure dependency chain has no kernel-level
+        // concurrency to exploit: the interpreter runs it single-stream even under intra-plan
+        // concurrency. Batched graphs are never marked serial: the batch pipeline overlaps
+        // CHUNKS of the same task across a buffer ring, which needs the role streams.
+        final boolean serialTaskGraph = executionContext.getBatchSize() == TornadoExecutionContext.INIT_VALUE && intermediateTornadoGraph.isTaskChain();
+
         new TornadoLogger().debug("Compiling bytecodes...");
 
         int graphId = nextGraphId.getAndIncrement();
         for (int i = 0; i < tornadoVMBytecodeResults.length; i++) {
 
-            TornadoVMBytecodeBuilder tornadoVMBytecodeBuilder = new TornadoVMBytecodeBuilder(isSingleContextCompilation);
+            TornadoVMBytecodeBuilder tornadoVMBytecodeBuilder = new TornadoVMBytecodeBuilder(isSingleContextCompilation, //
+                    TornadoVMBytecodeBuilder.estimateBytecodeSize(executionContext.getTaskCount(), executionContext.getObjects().size()));
 
             // Generate Context + BEGIN bytecode
             tornadoVMBytecodeBuilder.begin(1, 1, intermediateTornadoGraph.getNumberOfDependencies() + 1);
@@ -146,7 +153,7 @@ public class TornadoVMGraphCompiler {
             // Generate END bytecode
             tornadoVMBytecodeBuilder.end();
 
-            tornadoVMBytecodeResults[i] = new TornadoVMBytecodeResult(tornadoVMBytecodeBuilder.getCode(), tornadoVMBytecodeBuilder.getCodeSize());
+            tornadoVMBytecodeResults[i] = new TornadoVMBytecodeResult(tornadoVMBytecodeBuilder.getCode(), tornadoVMBytecodeBuilder.getCodeSize(), serialTaskGraph);
 
         }
 

@@ -65,6 +65,20 @@ public class TestZeroExtend {
         }
     }
 
+    // 2's-complement wraparound (distinct from the zero-extension masking above): adding 1 to
+    // MAX_VALUE must silently wrap to MIN_VALUE, not throw/saturate.
+    public static void intOverflowAdd(IntArray a, IntArray result, int size) {
+        for(@Parallel int i = 0; i < size; i++) {
+            result.set(i, a.get(i) + 1);
+        }
+    }
+
+    public static void longOverflowAdd(LongArray a, LongArray result, int size) {
+        for(@Parallel int i = 0; i < size; i++) {
+            result.set(i, a.get(i) + 1L);
+        }
+    }
+
     @Test
     public void testByte() throws TornadoExecutionPlanException {
         Random r = new Random();
@@ -159,6 +173,60 @@ public class TestZeroExtend {
             narrowInt(a, expected, size);
         }
 
+        for (int i = 0; i < expected.getSize(); i++) {
+            assertEquals(expected.get(i), result.get(i));
+        }
+    }
+
+    @Test
+    public void testIntOverflowWraparound() throws TornadoExecutionPlanException {
+        int size = 64;
+        IntArray a = new IntArray(size);
+        a.init(0);
+        a.set(0, Integer.MAX_VALUE);
+
+        IntArray expected = new IntArray(size);
+        IntArray result = new IntArray(size);
+
+        TaskGraph graph = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, result)
+                .task("t0", TestZeroExtend::intOverflowAdd, a, result, size)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
+        try(TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+            intOverflowAdd(a, expected, size);
+        }
+
+        assertEquals(Integer.MIN_VALUE, result.get(0));
+        for (int i = 0; i < expected.getSize(); i++) {
+            assertEquals(expected.get(i), result.get(i));
+        }
+    }
+
+    @Test
+    public void testLongOverflowWraparound() throws TornadoExecutionPlanException {
+        int size = 64;
+        LongArray a = new LongArray(size);
+        a.init(0L);
+        a.set(0, Long.MAX_VALUE);
+
+        LongArray expected = new LongArray(size);
+        LongArray result = new LongArray(size);
+
+        TaskGraph graph = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, result)
+                .task("t0", TestZeroExtend::longOverflowAdd, a, result, size)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
+        try(TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+            longOverflowAdd(a, expected, size);
+        }
+
+        assertEquals(Long.MIN_VALUE, result.get(0));
         for (int i = 0; i < expected.getSize(); i++) {
             assertEquals(expected.get(i), result.get(i));
         }

@@ -315,7 +315,6 @@ public class TestMath extends TornadoTestBase {
 
     @Test
     public void testMathAtan() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         final int size = 128;
         DoubleArray data = new DoubleArray(size);
@@ -804,7 +803,6 @@ public class TestMath extends TornadoTestBase {
 
     @Test
     public void testMathATan2() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         final int size = 128;
         DoubleArray a = new DoubleArray(size);
@@ -837,7 +835,6 @@ public class TestMath extends TornadoTestBase {
 
     @Test
     public void testMathAcos() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         final int size = 128;
         DoubleArray a = new DoubleArray(size);
@@ -867,7 +864,6 @@ public class TestMath extends TornadoTestBase {
 
     @Test
     public void testMathASin() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.PTX);
 
         final int size = 128;
         DoubleArray a = new DoubleArray(size);
@@ -925,7 +921,6 @@ public class TestMath extends TornadoTestBase {
     @Test
     public void testMathSignumFloatNaN() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 128;
         FloatArray a = new FloatArray(size);
@@ -983,7 +978,6 @@ public class TestMath extends TornadoTestBase {
     @Test
     public void testMathSignumDoubleNaN() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 128;
         DoubleArray a = new DoubleArray(size);
@@ -1034,6 +1028,275 @@ public class TestMath extends TornadoTestBase {
         testCeil(seq);
         for (int i = 0; i < size; i++) {
             assertEquals(data.get(i), seq.get(i), 0.01f);
+        }
+    }
+
+    public static void isPositiveInfinityFloat(FloatArray a, IntArray out) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            out.set(i, (a.get(i) == Float.POSITIVE_INFINITY) ? 1 : 0);
+        }
+    }
+
+    public static void isNegativeInfinityFloat(FloatArray a, IntArray out) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            out.set(i, (a.get(i) == Float.NEGATIVE_INFINITY) ? 1 : 0);
+        }
+    }
+
+    public static void isInfiniteFloat(FloatArray a, IntArray out) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            out.set(i, Float.isInfinite(a.get(i)) ? 1 : 0);
+        }
+    }
+
+    public static void isNaNFloat(FloatArray a, IntArray out) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            out.set(i, Float.isNaN(a.get(i)) ? 1 : 0);
+        }
+    }
+
+    public static void isPositiveInfinityDouble(DoubleArray a, IntArray out) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            out.set(i, (a.get(i) == Double.POSITIVE_INFINITY) ? 1 : 0);
+        }
+    }
+
+    public static void isNegativeInfinityDouble(DoubleArray a, IntArray out) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            out.set(i, (a.get(i) == Double.NEGATIVE_INFINITY) ? 1 : 0);
+        }
+    }
+
+    // Sign-of-zero: 1.0f / -0.0f must be -Infinity, distinct from 1.0f / 0.0f == +Infinity;
+    // both sides of `-0.0f == 0.0f` are true per IEEE-754, so only the division reveals the sign bit.
+    public static void negativeZeroFloat(FloatArray zeros, IntArray out) {
+        for (@Parallel int i = 0; i < zeros.getSize(); i++) {
+            float negativeZero = zeros.get(i) * -1.0f;
+            float v = 1.0f / negativeZero;
+            out.set(i, (v == Float.NEGATIVE_INFINITY) ? 1 : 0);
+        }
+    }
+
+    public static void negativeZeroDouble(DoubleArray zeros, IntArray out) {
+        for (@Parallel int i = 0; i < zeros.getSize(); i++) {
+            double negativeZero = zeros.get(i) * -1.0;
+            double v = 1.0 / negativeZero;
+            out.set(i, (v == Double.NEGATIVE_INFINITY) ? 1 : 0);
+        }
+    }
+
+    @Test
+    public void testFloatPositiveInfinity() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        final int size = 64;
+        FloatArray a = new FloatArray(size);
+        a.init(Float.POSITIVE_INFINITY);
+        IntArray out = new IntArray(size);
+        IntArray expected = new IntArray(size);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestMath::isPositiveInfinityFloat, a, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        isPositiveInfinityFloat(a, expected);
+        for (int i = 0; i < size; i++) {
+            assertEquals(1, out.get(i));
+            assertEquals(expected.get(i), out.get(i));
+        }
+    }
+
+    @Test
+    public void testFloatNegativeInfinity() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        final int size = 64;
+        FloatArray a = new FloatArray(size);
+        a.init(Float.NEGATIVE_INFINITY);
+        IntArray out = new IntArray(size);
+        IntArray expected = new IntArray(size);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestMath::isNegativeInfinityFloat, a, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        isNegativeInfinityFloat(a, expected);
+        for (int i = 0; i < size; i++) {
+            assertEquals(1, out.get(i));
+            assertEquals(expected.get(i), out.get(i));
+        }
+    }
+
+    @Test
+    public void testFloatIsInfinite() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        final int size = 4;
+        FloatArray a = FloatArray.fromElements(Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY, 1.0f, -1.0f);
+        IntArray out = new IntArray(size);
+        IntArray expected = new IntArray(size);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestMath::isInfiniteFloat, a, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        isInfiniteFloat(a, expected);
+        for (int i = 0; i < size; i++) {
+            assertEquals(expected.get(i), out.get(i));
+        }
+        assertEquals(1, out.get(0));
+        assertEquals(1, out.get(1));
+        assertEquals(0, out.get(2));
+        assertEquals(0, out.get(3));
+    }
+
+    @Test
+    public void testFloatIsNaN() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        // Float.isNaN is not registered as an InvocationPlugin on any backend, so it lowers to
+        // its Java bytecode form, `v != v`. MSL compiles with fast-math enabled by default, which
+        // permits assuming no NaNs are present, and the self-comparison folds to a constant
+        // false -- so isNaN reports 0 for NaN input. Not a codegen bug: it is the documented
+        // consequence of fast-math, and it would need either an isnan intrinsic registered for
+        // the Metal backend or fast-math disabled, both of which are behaviour changes well
+        // outside a test-coverage change.
+        //
+        // Only this test is affected. Float.isInfinite is a magnitude comparison and survives
+        // fast-math, and testMathSignumFloatNaN passes because the Metal preamble routes signum
+        // through a signum_f shim that calls the real MSL isnan intrinsic.
+        assertNotBackend(TornadoVMBackendType.METAL, "Float.isNaN lowers to `v != v`, which MSL's default fast-math folds to false");
+        final int size = 3;
+        FloatArray a = FloatArray.fromElements(Float.NaN, 1.0f, -1.0f);
+        IntArray out = new IntArray(size);
+        IntArray expected = new IntArray(size);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestMath::isNaNFloat, a, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        isNaNFloat(a, expected);
+        for (int i = 0; i < size; i++) {
+            assertEquals(expected.get(i), out.get(i));
+        }
+        assertEquals(1, out.get(0));
+        assertEquals(0, out.get(1));
+        assertEquals(0, out.get(2));
+    }
+
+    @Test
+    public void testDoublePositiveInfinity() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        final int size = 64;
+        DoubleArray a = new DoubleArray(size);
+        a.init(Double.POSITIVE_INFINITY);
+        IntArray out = new IntArray(size);
+        IntArray expected = new IntArray(size);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestMath::isPositiveInfinityDouble, a, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        isPositiveInfinityDouble(a, expected);
+        for (int i = 0; i < size; i++) {
+            assertEquals(1, out.get(i));
+            assertEquals(expected.get(i), out.get(i));
+        }
+    }
+
+    @Test
+    public void testDoubleNegativeInfinity() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        final int size = 64;
+        DoubleArray a = new DoubleArray(size);
+        a.init(Double.NEGATIVE_INFINITY);
+        IntArray out = new IntArray(size);
+        IntArray expected = new IntArray(size);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestMath::isNegativeInfinityDouble, a, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        isNegativeInfinityDouble(a, expected);
+        for (int i = 0; i < size; i++) {
+            assertEquals(1, out.get(i));
+            assertEquals(expected.get(i), out.get(i));
+        }
+    }
+
+    @Test
+    public void testNegativeZeroFloat() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        final int size = 64;
+        FloatArray zeros = new FloatArray(size);
+        zeros.init(0.0f);
+        IntArray out = new IntArray(size);
+        IntArray expected = new IntArray(size);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, zeros) //
+                .task("t0", TestMath::negativeZeroFloat, zeros, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        negativeZeroFloat(zeros, expected);
+        for (int i = 0; i < size; i++) {
+            assertEquals(1, out.get(i));
+            assertEquals(expected.get(i), out.get(i));
+        }
+    }
+
+    @Test
+    public void testNegativeZeroDouble() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        final int size = 64;
+        DoubleArray zeros = new DoubleArray(size);
+        zeros.init(0.0);
+        IntArray out = new IntArray(size);
+        IntArray expected = new IntArray(size);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, zeros) //
+                .task("t0", TestMath::negativeZeroDouble, zeros, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        negativeZeroDouble(zeros, expected);
+        for (int i = 0; i < size; i++) {
+            assertEquals(1, out.get(i));
+            assertEquals(expected.get(i), out.get(i));
         }
     }
 

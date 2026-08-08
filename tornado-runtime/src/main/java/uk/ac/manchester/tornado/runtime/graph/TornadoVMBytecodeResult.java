@@ -40,6 +40,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 public class TornadoVMBytecodeResult {
     private final byte[] bytecode;
     private final ByteBuffer buffer;
+    private final boolean serialTaskGraph;
 
     /**
      * Constructs a new TornadoVMBytecodeResult object with the given bytecode and
@@ -49,11 +50,26 @@ public class TornadoVMBytecodeResult {
      *            the bytecode as a byte array
      * @param size
      *            the size of the bytecode
+     * @param serialTaskGraph
+     *            whether this (non-batched) graph's tasks form a dependency chain (max width 1),
+     *            in which case intra-plan concurrency cannot overlap anything for this graph;
+     *            always {@code false} for batched graphs
      */
-    TornadoVMBytecodeResult(byte[] bytecode, int size) {
+    TornadoVMBytecodeResult(byte[] bytecode, int size, boolean serialTaskGraph) {
         this.bytecode = bytecode;
+        this.serialTaskGraph = serialTaskGraph;
         this.buffer = setupBytecodeBuffer(bytecode, size);
         TornadoInternalError.guarantee(buffer.get() == TornadoVMBytecodes.INIT.value(), "invalid code");
+    }
+
+    /**
+     * Whether this graph's tasks form a dependency chain (no two tasks are independent);
+     * always {@code false} for batched graphs. The interpreter runs such graphs single-stream
+     * even when the plan requested intra-plan concurrency, avoiding pure cross-stream event
+     * overhead.
+     */
+    public boolean isSerialTaskGraph() {
+        return serialTaskGraph;
     }
 
     /**

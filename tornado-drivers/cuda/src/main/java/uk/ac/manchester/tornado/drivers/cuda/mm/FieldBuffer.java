@@ -26,6 +26,7 @@ package uk.ac.manchester.tornado.drivers.cuda.mm;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEBUG;
 
 import java.lang.reflect.Field;
+import java.util.Collections;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
@@ -48,14 +49,16 @@ public class FieldBuffer {
             logger.trace("fieldBuffer: enqueueRead* - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
         }
         // TODO: Offset 0
-        return (useDeps) ? objectBuffer.enqueueRead(executionPlanId, getFieldValue(ref), 0, (useDeps) ? events : null, useDeps) : -1;
+        final int event = objectBuffer.enqueueRead(executionPlanId, getFieldValue(ref), 0, (useDeps) ? events : null, useDeps);
+        return useDeps ? event : -1;
     }
 
     public List<Integer> enqueueWrite(long executionPlanId, final Object ref, final int[] events, boolean useDeps) {
         if (DEBUG) {
             logger.trace("fieldBuffer: enqueueWrite* - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
         }
-        return (useDeps) ? objectBuffer.enqueueWrite(executionPlanId, getFieldValue(ref), 0, 0, (useDeps) ? events : null, useDeps) : null;
+        List<Integer> fieldEvents = objectBuffer.enqueueWrite(executionPlanId, getFieldValue(ref), 0, 0, (useDeps) ? events : null, useDeps);
+        return fieldEvents == null ? Collections.emptyList() : fieldEvents;
     }
 
     private Object getFieldValue(final Object container) {

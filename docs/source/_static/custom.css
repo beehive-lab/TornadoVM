@@ -1,0 +1,126 @@
+/* TornadoVM brand palette, overriding the default sphinx_rtd_theme blue */
+:root {
+  --tvm-purple: #8A7CA8;    /* Primary */
+  --tvm-plum: #514066;      /* Primary (dark) */
+  --tvm-lavender: #D9CEDE;  /* Secondary */
+  --tvm-gray: #E6E5E7;      /* Secondary */
+  --tvm-black: #17151A;
+  --tvm-white: #FFFFFF;
+}
+
+/* Sidebar search box + mobile top bar (default: RTD blue) */
+.wy-side-nav-search, .wy-nav-top {
+  background: var(--tvm-plum);
+}
+.wy-side-nav-search input[type=text] {
+  border-color: var(--tvm-purple);
+}
+.wy-side-nav-search > a, .wy-side-nav-search .wy-dropdown > a,
+.wy-side-nav-search > div.version {
+  color: var(--tvm-white);
+}
+
+/* Sidebar menu (dark panel) captions and links */
+.wy-nav-side {
+  background: var(--tvm-black);
+}
+.wy-menu-vertical header, .wy-menu-vertical p.caption {
+  color: var(--tvm-purple);
+  /* Theme default is white-space:nowrap + fixed 32px height, which pushes
+     long captions past the sidebar's edge instead of wrapping them. */
+  white-space: normal;
+  height: auto;
+  line-height: 1.3;
+  padding: 10px 1.618em 6px;
+  word-wrap: break-word;
+}
+.wy-menu-vertical a {
+  color: var(--tvm-gray);
+}
+.wy-menu-vertical a:hover {
+  background-color: var(--tvm-lavender);
+  color: var(--tvm-black);
+}
+.wy-menu-vertical li.current {
+  background: var(--tvm-white);
+}
+.wy-menu-vertical li.current a,
+.wy-menu-vertical li.current a:hover {
+  color: var(--tvm-black);
+  background: var(--tvm-white);
+  border-color: var(--tvm-gray);
+}
+.wy-menu-vertical li.toctree-l1.current > a {
+  border-top-color: var(--tvm-purple);
+  border-bottom-color: var(--tvm-purple);
+}
+.wy-menu-vertical li.on a, .wy-menu-vertical li.current > a {
+  background: var(--tvm-lavender);
+  color: var(--tvm-black);
+}
+.wy-menu-vertical li.toctree-l2.current li.toctree-l3 > a,
+.wy-menu-vertical li.toctree-l3.current li.toctree-l4 > a {
+  background: var(--tvm-white);
+}
+
+/* Body text links: bright purple + underline so links are unmistakably clickable */
+.rst-content a, .rst-content a:visited,
+.wy-nav-content a, .wy-nav-content a:visited {
+  color: var(--tvm-purple);
+  text-decoration: underline;
+  text-decoration-color: var(--tvm-purple);
+}
+.rst-content a:hover, .wy-nav-content a:hover {
+  color: var(--tvm-plum);
+  text-decoration-color: var(--tvm-plum);
+}
+.rst-content a code, .rst-content a tt,
+.wy-nav-content a code, .wy-nav-content a tt {
+  color: inherit;
+}
+
+/* Admonitions (note/important/etc.) */
+.rst-content .admonition-title, .wy-alert-title,
+.rst-content .wy-alert-title {
+  background: var(--tvm-purple) !important;
+}
+.rst-content .note, .rst-content .wy-alert-info,
+.wy-alert.wy-alert-info {
+  background: var(--tvm-lavender);
+}
+.rst-content .important, .rst-content .wy-alert-warning,
+.wy-alert.wy-alert-warning {
+  background: var(--tvm-gray);
+}
+.rst-content .important .admonition-title,
+.rst-content .wy-alert-warning .admonition-title,
+.wy-alert.wy-alert-warning .wy-alert-title {
+  background: var(--tvm-plum) !important;
+}
+
+/* Buttons (prev/next footer navigation) */
+.btn-neutral {
+  background-color: var(--tvm-gray) !important;
+  color: var(--tvm-black) !important;
+}
+.rst-footer-buttons .btn, .btn.btn-neutral:visited {
+  color: var(--tvm-black) !important;
+}
+
+/* Search result highlighting */
+.highlighted {
+  background-color: var(--tvm-lavender);
+}
+
+/* Table header accents */
+.rst-content table.docutils thead, .wy-table-bordered-all thead {
+  background: var(--tvm-lavender);
+}
+
+/* Version / RTD flyout accent */
+.rst-versions {
+  background: var(--tvm-black);
+}
+.rst-versions .rst-current-version {
+  background: var(--tvm-plum);
+}

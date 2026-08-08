@@ -36,20 +36,18 @@ import org.junit.runner.notification.Failure;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP16NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
+import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP8NotSupported;
+import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceMMANotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoNoOpenCLPlatformException;
-import uk.ac.manchester.tornado.unittests.common.SPIRVOptNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMMetalNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMOpenCLNotSupported;
-import uk.ac.manchester.tornado.unittests.common.TornadoVMPTXNotSupported;
-import uk.ac.manchester.tornado.unittests.common.TornadoVMSPIRVNotSupported;
 import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurationException;
 
 public class TornadoHelper {
 
-    public static final boolean OPTIMIZE_LOAD_STORE_SPIRV = Boolean.parseBoolean(System.getProperty("tornado.spirv.loadstore", "False"));
 
     private static void printResult(Result result) {
         System.out.printf("Test ran: %s, Failed: %s%n", result.getRunCount(), result.getFailureCount());
@@ -87,7 +85,6 @@ public class TornadoHelper {
         Method[] methods = klass.getMethods();
         ArrayList<Method> methodsToTest = new ArrayList<>();
         HashSet<Method> unsupportedMethods = new HashSet<>();
-        HashSet<Method> spirvNotSupportedMethods = new HashSet<>();
         for (Method m : methods) {
             Annotation[] annotations = m.getAnnotations();
             boolean testEnabled = false;
@@ -106,7 +103,7 @@ public class TornadoHelper {
                 methodsToTest.add(m);
             }
         }
-        return new TestSuiteCollection(methodsToTest, unsupportedMethods, spirvNotSupportedMethods);
+        return new TestSuiteCollection(methodsToTest, unsupportedMethods);
     }
 
     static void runTestVerbose(String klassName, String methodName) throws ClassNotFoundException {
@@ -170,14 +167,6 @@ public class TornadoHelper {
                     continue;
                 }
 
-                if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof TornadoVMPTXNotSupported))) {
-                    message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [PTX CONFIGURATION UNSUPPORTED] " + ColorsTerminal.RESET + "\n");
-                    bufferConsole.append(message);
-                    bufferFile.append(message);
-                    notSupported++;
-                    continue;
-                }
-
                 if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof TornadoNoOpenCLPlatformException))) {
                     message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [OPENCL CONFIGURATION UNSUPPORTED] " + ColorsTerminal.RESET + "\n");
                     bufferConsole.append(message);
@@ -202,14 +191,6 @@ public class TornadoHelper {
                     continue;
                 }
 
-                if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof TornadoVMSPIRVNotSupported))) {
-                    message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [SPIRV CONFIGURATION UNSUPPORTED] " + ColorsTerminal.RESET + "\n");
-                    bufferConsole.append(message);
-                    bufferFile.append(message);
-                    notSupported++;
-                    continue;
-                }
-
                 if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof TornadoVMMetalNotSupported))) {
                     message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [METAL CONFIGURATION UNSUPPORTED] " + ColorsTerminal.RESET + "\n");
                     bufferConsole.append(message);
@@ -226,14 +207,6 @@ public class TornadoHelper {
                     continue;
                 }
 
-                if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof SPIRVOptNotSupported)) && OPTIMIZE_LOAD_STORE_SPIRV) {
-                    message = String.format("%20s", " ................ " + ColorsTerminal.RED + " [SPIRV OPTIMIZATION NOT SUPPORTED] " + ColorsTerminal.RESET + "\n");
-                    bufferConsole.append(message);
-                    bufferFile.append(message);
-                    failedCounter++;
-                    continue;
-                }
-
                 if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof TornadoDeviceFP64NotSupported))) {
                     message = String.format("%20s", " ................ " + ColorsTerminal.YELLOW + " [FP64 UNSUPPORTED FOR CURRENT DEVICE] " + ColorsTerminal.RESET + "\n");
                     bufferConsole.append(message);
@@ -244,6 +217,22 @@ public class TornadoHelper {
 
                 if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof TornadoDeviceFP16NotSupported))) {
                     message = String.format("%20s", " ................ " + ColorsTerminal.YELLOW + " [FP16 UNSUPPORTED FOR CURRENT DEVICE] " + ColorsTerminal.RESET + "\n");
+                    bufferConsole.append(message);
+                    bufferFile.append(message);
+                    notSupported++;
+                    continue;
+                }
+
+                if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof TornadoDeviceMMANotSupported))) {
+                    message = String.format("%20s", " ................ " + ColorsTerminal.YELLOW + " [MMA UNSUPPORTED FOR CURRENT DEVICE] " + ColorsTerminal.RESET + "\n");
+                    bufferConsole.append(message);
+                    bufferFile.append(message);
+                    notSupported++;
+                    continue;
+                }
+
+                if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof TornadoDeviceFP8NotSupported))) {
+                    message = String.format("%20s", " ................ " + ColorsTerminal.YELLOW + " [FP8 UNSUPPORTED FOR CURRENT DEVICE] " + ColorsTerminal.RESET + "\n");
                     bufferConsole.append(message);
                     bufferFile.append(message);
                     notSupported++;
@@ -292,7 +281,7 @@ public class TornadoHelper {
         ArrayList<Method> methodsToTest;
         HashSet<Method> unsupportedMethods;
 
-        TestSuiteCollection(ArrayList<Method> methodsToTest, HashSet<Method> unsupportedMethods, HashSet<Method> spirvUnsupportedMethods) {
+        TestSuiteCollection(ArrayList<Method> methodsToTest, HashSet<Method> unsupportedMethods) {
             this.methodsToTest = methodsToTest;
             this.unsupportedMethods = unsupportedMethods;
         }
