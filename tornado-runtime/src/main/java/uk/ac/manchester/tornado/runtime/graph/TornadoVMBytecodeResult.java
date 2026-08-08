@@ -100,6 +100,15 @@ public class TornadoVMBytecodeResult {
     }
 
     /**
+     * Retrieves the next byte from the bytecode buffer without consuming it.
+     *
+     * @return the next byte in the bytecode buffer
+     */
+    public byte peek() {
+        return buffer.get(buffer.position());
+    }
+
+    /**
      * Marks the current position in the bytecode buffer.
      *
      * @return the bytecode buffer with the current position marked
@@ -140,6 +149,16 @@ public class TornadoVMBytecodeResult {
 
     public void position(int newPosition) {
         buffer.position(newPosition);
+    }
+
+    /**
+     * Returns the number of valid bytes in the bytecode buffer, which may be smaller than
+     * the length of the array returned by {@link #getBytecode()}.
+     *
+     * @return the limit of the bytecode buffer
+     */
+    public int limit() {
+        return buffer.limit();
     }
 
 }

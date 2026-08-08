@@ -471,6 +471,13 @@ public class TornadoOptions {
     public static final boolean VM_USE_DEPS = getBooleanValue("tornado.vm.deps", FALSE);
 
     /**
+     * Run the TornadoVM bytecode loop natively instead of in Java, falling back to the Java
+     * interpreter for every bytecode that is not implemented natively yet. Disabled by
+     * default. This option is experimental.
+     */
+    public static final boolean INTERPRETER_NATIVE = getBooleanValue("tornado.interpreter.native", FALSE);
+
+    /**
      * Enable OpenCL Profiling. Enabled by default.
      */
     public static final boolean ENABLE_OPENCL_PROFILING = getBooleanValue("tornado.opencl.profiling.enable", TRUE);

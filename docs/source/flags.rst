@@ -85,6 +85,17 @@ Profiling
 Performance & Scheduling
 ------------------------
 
+**CLI Flags**
+
+.. table::
+   :align: left
+
+   =======================  ============================================================================
+   Flag                     Description
+   =======================  ============================================================================
+   ``--nativeInterpreter``  Runs the TornadoVM bytecode loop natively (experimental).
+   =======================  ============================================================================
+
 **JVM Flags**
 
 .. table::
@@ -98,6 +109,7 @@ Performance & Scheduling
    ``-Ds0.t0.local.workgroup.size=X,Y,Z``                            Sets custom local workgroup size.
    ``-Dtornado.concurrent.devices=true``                             Enables concurrent execution across devices (default: false).
    ``-Dtornado.{ptx,opencl}.priority=X``                             Sets driver priority (default: PTX=1, OpenCL=0).
+   ``-Dtornado.interpreter.native=true``                             Runs the bytecode loop natively where implemented (default: false).
    ================================================================  ==============================================================================
 
 Precompiled and FPGA Options

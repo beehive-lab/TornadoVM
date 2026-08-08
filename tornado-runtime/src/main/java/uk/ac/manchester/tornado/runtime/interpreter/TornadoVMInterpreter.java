@@ -82,6 +82,7 @@ public class TornadoVMInterpreter {
 
     private static final int MAX_EVENTS = TornadoOptions.MAX_EVENTS;
     private final boolean useDependencies;
+    private final boolean useNativeInterpreter;
 
     private final HashMap<Object, Access> objectAccesses;
     private final List<Object> objects;
@@ -134,6 +135,10 @@ public class TornadoVMInterpreter {
         this.interpreterDevice = device;
 
         useDependencies = VM_USE_DEPS;
+        // The native loop does not model the event dependency lists, and the Java handlers
+        // index into them before their warm-up early-exit, so it is only equivalent when
+        // dependency tracking is off.
+        useNativeInterpreter = TornadoOptions.INTERPRETER_NATIVE && !useDependencies && NativeBytecodeInterpreter.isAvailable();
         totalTime = 0;
         invocations = 0;
 
@@ -286,6 +291,9 @@ public class TornadoVMInterpreter {
         }
 
         while (bytecodeResult.hasRemaining()) {
+            if (useNativeInterpreter && NativeBytecodeInterpreter.isPorted(bytecodeResult.peek()) && !advanceWithNativeInterpreter(logBuilder, isWarmup)) {
+                break;
+            }
             final byte op = bytecodeResult.get();
             if (op == TornadoVMBytecodes.ALLOC.value()) {
                 final long sizeBatch = bytecodeResult.getLong();
@@ -480,6 +488,37 @@ public class TornadoVMInterpreter {
         }
 
         return barrier;
+    }
+
+    /**
+     * It runs the native bytecode loop from the current position, leaving the cursor on the
+     * first bytecode that the native loop does not implement.
+     *
+     * <p>
+     * The native loop only ever moves the cursor over bytecodes it fully handled, so the
+     * position it reports back is always a bytecode boundary. Anything it does not implement
+     * is left untouched for the Java interpreter below to decode and execute as usual.
+     *
+     * @param logBuilder
+     *     the bytecode log being built, or null when logging is disabled.
+     * @param isWarmup
+     *     whether this is a warm-up pass.
+     * @return true when the Java interpreter must execute the bytecode now under the cursor,
+     *     false when the native loop consumed the remainder of the bytecode stream.
+     */
+    private boolean advanceWithNativeInterpreter(StringBuilder logBuilder, boolean isWarmup) {
+        final int flags = isWarmup ? NativeBytecodeInterpreter.FLAG_WARMUP : 0;
+        final long result = NativeBytecodeInterpreter.execute(bytecodeResult.getBytecode(), bytecodeResult.position(), bytecodeResult.limit(), flags);
+        bytecodeResult.position(NativeBytecodeInterpreter.positionOf(result));
+
+        final int status = NativeBytecodeInterpreter.statusOf(result);
+        if (status == NativeBytecodeInterpreter.STATUS_END) {
+            if (!isWarmup && TornadoOptions.LOG_BYTECODES()) {
+                logBuilder.append("bc: ").append(InterpreterUtilities.debugHighLightBC("END\n")).append("\n");
+            }
+            return false;
+        }
+        return status != NativeBytecodeInterpreter.STATUS_EOF;
     }
 
     private void preCompileLaunchesInCaptureRegion() {
