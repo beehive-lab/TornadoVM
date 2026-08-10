@@ -98,8 +98,19 @@ public class TaskUtils {
      * removed HotSpot JVMCI reflection helpers.
      */
     private static Method resolveViaSerializedLambda(Object task) {
+        Method writeReplace;
         try {
-            Method writeReplace = task.getClass().getDeclaredMethod("writeReplace");
+            writeReplace = task.getClass().getDeclaredMethod("writeReplace");
+        } catch (NoSuchMethodException e) {
+            // javac emits writeReplace() only when the lambda's functional interface is Serializable
+            // at COMPILE time, so its absence means the application was compiled against a tornado-api
+            // predating Serializable TaskN. There is no runtime fallback: the implementation method the
+            // lambda targets is recorded nowhere else reachable, and the lambda proxy is a hidden class
+            // with no readable classfile. Report the cause rather than the symptom.
+            throw new TornadoInternalError("Kernel entry %s has no writeReplace(): this task lambda was compiled against a tornado-api release whose "
+                    + "TornadoFunctions.TaskN interfaces were not Serializable. Recompile the application against this TornadoVM's tornado-api.", task.getClass().getName());
+        }
+        try {
             writeReplace.setAccessible(true);
             Object replacement = writeReplace.invoke(task);
             if (!(replacement instanceof SerializedLambda serializedLambda)) {

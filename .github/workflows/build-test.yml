@@ -108,6 +108,26 @@ jobs:
           tornado --devices
           make fast-tests
 
+      - name: Resolve built TornadoVM version
+        run: |
+          # The two sample apps below pin a RELEASED tornado-api in their own poms (ray tracer:
+          # 5.0.0-jdk21 / 5.0.0-jdk25, kfusion: 5.2.0-jdk21). In those releases the
+          # TornadoFunctions.TaskN interfaces are NOT Serializable, and kernel entries are now
+          # resolved through the compiler-generated writeReplace()/SerializedLambda. javac only
+          # emits writeReplace when the functional interface is Serializable AT COMPILE TIME, so an
+          # app jar built against the old API fails at run time with "Unable to resolve kernel entry
+          # via SerializedLambda ... NoSuchMethodException: ...writeReplace()", no matter which
+          # runtime it is launched on. Both poms read the coordinate from a tornadovm.version
+          # property, so build them against the API this job just installed into ~/.m2 rather than
+          # against the released one. -N keeps the lookup to the root pom; the jdkNN profile is what
+          # selects the matching <revision> (5.2.1-jdkNN-dev).
+          VERSION=$(./mvnw -q -N -P${{ matrix.jdk }} help:evaluate -Dexpression=project.version -DforceStdout)
+          # Guard: an empty value would otherwise reach mvn as -Dtornadovm.version= and fail the
+          # sample-app builds with an unreadable "artifact not found" for the empty coordinate.
+          [ -n "$VERSION" ] || { echo "::error::could not resolve the built TornadoVM version"; exit 1; }
+          echo "Building the sample apps against tornado-api $VERSION"
+          echo "TORNADO_VERSION=$VERSION" >> "$GITHUB_ENV"
+
       - name: Build & run TornadoVM-Ray-Tracer (regression)
         timeout-minutes: 10
         run: |
@@ -117,7 +137,7 @@ jobs:
           git clone --depth 1 --branch master https://github.com/beehive-lab/TornadoVM-Ray-Tracer.git
           cd TornadoVM-Ray-Tracer
           export TORNADO_RAY_TRACER_ROOT="$PWD"
-          mvn clean install
+          mvn clean install -Dtornadovm.version="$TORNADO_VERSION"
           ./bin/tornadovm-ray-tracer regression
 
       - name: Build & run KFusion-TornadoVM (check)
@@ -130,7 +150,7 @@ jobs:
           cd kfusion-tornadovm
           export KFUSION_ROOT="${PWD}"
           export PATH="${PATH}:${KFUSION_ROOT}/bin"
-          mvn clean install
+          mvn clean install -Dtornadovm.version="$TORNADO_VERSION"
           ./scripts/run.sh
 
   # CUDA backend (generates CUDA C, compiled to PTX via NVRTC, executed through the CUDA Driver API).
@@ -292,6 +312,26 @@ jobs:
           tornado --devices
           make fast-tests
 
+      - name: Resolve built TornadoVM version
+        run: |
+          # The two sample apps below pin a RELEASED tornado-api in their own poms (ray tracer:
+          # 5.0.0-jdk21 / 5.0.0-jdk25, kfusion: 5.2.0-jdk21). In those releases the
+          # TornadoFunctions.TaskN interfaces are NOT Serializable, and kernel entries are now
+          # resolved through the compiler-generated writeReplace()/SerializedLambda. javac only
+          # emits writeReplace when the functional interface is Serializable AT COMPILE TIME, so an
+          # app jar built against the old API fails at run time with "Unable to resolve kernel entry
+          # via SerializedLambda ... NoSuchMethodException: ...writeReplace()", no matter which
+          # runtime it is launched on. Both poms read the coordinate from a tornadovm.version
+          # property, so build them against the API this job just installed into ~/.m2 rather than
+          # against the released one. -N keeps the lookup to the root pom; the jdkNN profile is what
+          # selects the matching <revision> (5.2.1-jdkNN-dev).
+          VERSION=$(./mvnw -q -N -P${{ matrix.jdk }} help:evaluate -Dexpression=project.version -DforceStdout)
+          # Guard: an empty value would otherwise reach mvn as -Dtornadovm.version= and fail the
+          # sample-app builds with an unreadable "artifact not found" for the empty coordinate.
+          [ -n "$VERSION" ] || { echo "::error::could not resolve the built TornadoVM version"; exit 1; }
+          echo "Building the sample apps against tornado-api $VERSION"
+          echo "TORNADO_VERSION=$VERSION" >> "$GITHUB_ENV"
+
       - name: Build & run TornadoVM-Ray-Tracer (regression)
         timeout-minutes: 10
         run: |
@@ -301,7 +341,7 @@ jobs:
           git clone --depth 1 --branch master https://github.com/beehive-lab/TornadoVM-Ray-Tracer.git
           cd TornadoVM-Ray-Tracer
           export TORNADO_RAY_TRACER_ROOT="$PWD"
-          mvn clean install
+          mvn clean install -Dtornadovm.version="$TORNADO_VERSION"
           ./bin/tornadovm-ray-tracer regression
 
       - name: Build & run KFusion-TornadoVM (check)
@@ -314,7 +354,7 @@ jobs:
           cd kfusion-tornadovm
           export KFUSION_ROOT="${PWD}"
           export PATH="${PATH}:${KFUSION_ROOT}/bin"
-          mvn clean install
+          mvn clean install -Dtornadovm.version="$TORNADO_VERSION"
           ./scripts/run.sh
 
   build-macOs-metal:
@@ -391,6 +431,26 @@ jobs:
           tornado --devices
           make fast-tests
 
+      - name: Resolve built TornadoVM version
+        run: |
+          # The two sample apps below pin a RELEASED tornado-api in their own poms (ray tracer:
+          # 5.0.0-jdk21 / 5.0.0-jdk25, kfusion: 5.2.0-jdk21). In those releases the
+          # TornadoFunctions.TaskN interfaces are NOT Serializable, and kernel entries are now
+          # resolved through the compiler-generated writeReplace()/SerializedLambda. javac only
+          # emits writeReplace when the functional interface is Serializable AT COMPILE TIME, so an
+          # app jar built against the old API fails at run time with "Unable to resolve kernel entry
+          # via SerializedLambda ... NoSuchMethodException: ...writeReplace()", no matter which
+          # runtime it is launched on. Both poms read the coordinate from a tornadovm.version
+          # property, so build them against the API this job just installed into ~/.m2 rather than
+          # against the released one. -N keeps the lookup to the root pom; the jdkNN profile is what
+          # selects the matching <revision> (5.2.1-jdkNN-dev).
+          VERSION=$(./mvnw -q -N -P${{ matrix.jdk }} help:evaluate -Dexpression=project.version -DforceStdout)
+          # Guard: an empty value would otherwise reach mvn as -Dtornadovm.version= and fail the
+          # sample-app builds with an unreadable "artifact not found" for the empty coordinate.
+          [ -n "$VERSION" ] || { echo "::error::could not resolve the built TornadoVM version"; exit 1; }
+          echo "Building the sample apps against tornado-api $VERSION"
+          echo "TORNADO_VERSION=$VERSION" >> "$GITHUB_ENV"
+
       - name: Build & run TornadoVM-Ray-Tracer (regression)
         timeout-minutes: 10
         run: |
@@ -400,7 +460,7 @@ jobs:
           git clone --depth 1 --branch master https://github.com/beehive-lab/TornadoVM-Ray-Tracer.git
           cd TornadoVM-Ray-Tracer
           export TORNADO_RAY_TRACER_ROOT="$PWD"
-          mvn clean install
+          mvn clean install -Dtornadovm.version="$TORNADO_VERSION"
           ./bin/tornadovm-ray-tracer regression
 
       - name: Build & run KFusion-TornadoVM (console mode)
@@ -413,6 +473,6 @@ jobs:
           cd kfusion-tornadovm
           export KFUSION_ROOT="${PWD}"
           export PATH="${PATH}:${KFUSION_ROOT}/bin"
-          mvn clean install
+          mvn clean install -Dtornadovm.version="$TORNADO_VERSION"
           ./scripts/run.sh
 
