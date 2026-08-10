@@ -1077,19 +1077,29 @@ class TornadoVMRunnerTool():
             # module of the same name would cause a "two versions of module" resolution error).
             if (self.jvmci_absent):
                 tornadoFlags = tornadoFlags + os.pathsep + self.sdk + "/share/java/jvmci"
+            # The caller's --module-path EXTENDS the module path built above, so it has to be
+            # appended while the flag string still ends in the module path itself -- i.e. before
+            # any further flag is emitted. It also carries whatever extra JVM options the caller
+            # packed into the same argument (the TornadoVM-Ray-Tracer launcher passes its whole
+            # JFLAGS this way), so nothing may be glued onto its tail either; that is why the
+            # jdk22-26 block below is emitted after it rather than before. Appending it after
+            # --patch-module instead handed the caller's entries to the patch: on jdk22-26 the
+            # caller's modules then never reached the module path at all (FindException for
+            # whatever it was adding, e.g. javafx.graphics), while jdk21 and jdk27+ were fine
+            # because on those the string still ended in the module path.
+            if (args.module_path != None):
+                tornadoFlags = tornadoFlags + ":" + args.module_path
+
             # On JDK 22-26 the platform module stays on the module path (resolved via
             # -XX:+EnableJVMCI); we overlay the frozen JDK-21 classes with --patch-module so the
             # loaded jdk.vm.ci.* matches what the reflection providers were compiled against. The
             # patched-in JDK-21 jdk.vm.ci.services.Services.checkJVMCIEnabled() reads the saved
             # property jdk.internal.vm.ci.enabled, so set it explicitly (HotSpot's own +EnableJVMCI
             # bookkeeping is not visible to the overlaid classes).
-            elif (self.jvmci_patched):
+            if (self.jvmci_patched):
                 tornadoFlags = tornadoFlags + " -Djdk.internal.vm.ci.enabled=true --patch-module jdk.internal.vm.ci=" + self.sdk + "/share/java/jvmci/jvmci-21.0.2.jar"
 
-        if (args.module_path != None):
-            tornadoFlags = tornadoFlags + ":" + args.module_path + " "
-        else:
-            tornadoFlags = tornadoFlags + " "
+        tornadoFlags = tornadoFlags + " "
 
         # If the execution will take place through truffle, adapt the flags
         if (self.isTruffleCommand):
