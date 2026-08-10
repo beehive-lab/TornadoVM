@@ -123,6 +123,20 @@ def main(jdk=None):
 
     logger.info("Download complete.")
 
+    # Build and stage the vendored jvmci module for JDKs whose build patches or replaces
+    # jdk.internal.vm.ci (jdk25/26 patch-module it; jdk27 has no platform jvmci at all).
+    # build_jvmci_module stages graalJars/jvmci-<ver>.jar (shipped by the assembly to
+    # share/java/jvmci) and installs tornado.jvmci:jvmci to the local Maven repository.
+    #
+    # This MUST run before the Graal-relocation step below: on jdk27 the platform has no
+    # jdk.internal.vm.ci module at all, so build_graal_module's jdeps/javac calls can only
+    # resolve it from this vendored jar (staged here) rather than via --add-modules against
+    # the running JDK's own system modules.
+    if jdk in ("jdk25", "jdk26", "jdk27"):
+        logger.info(f"Building/staging vendored {CYAN}jdk.internal.vm.ci{RESET} module for {jdk}...")
+        import build_jvmci_module
+        build_jvmci_module.build()
+
     # Relocate the Graal compiler off the jdk.* namespace into the vendored module
     # `tornado.graal` so it can live on the regular --module-path (no upgrade-module-path).
     # This replaces compiler-<ver>.jar with tornado-graal-<ver>.jar and installs the
@@ -133,16 +147,7 @@ def main(jdk=None):
     else:
         logger.info(f"Relocating Graal into the {CYAN}tornado.graal{RESET} module...")
         import build_graal_module
-        build_graal_module.build()
-
-    # Build and stage the vendored jvmci module for JDKs whose build patches or replaces
-    # jdk.internal.vm.ci (jdk25/26 patch-module it; jdk27 has no platform jvmci at all).
-    # build_jvmci_module stages graalJars/jvmci-<ver>.jar (shipped by the assembly to
-    # share/java/jvmci) and installs tornado.jvmci:jvmci to the local Maven repository.
-    if jdk in ("jdk25", "jdk26", "jdk27"):
-        logger.info(f"Building/staging vendored {CYAN}jdk.internal.vm.ci{RESET} module for {jdk}...")
-        import build_jvmci_module
-        build_jvmci_module.build()
+        build_graal_module.build(jdk=jdk)
 
 
 if __name__ == "__main__":

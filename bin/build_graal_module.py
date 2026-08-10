@@ -100,12 +100,22 @@ def _dep_jar(*rel):
     return p
 
 
-def _module_path_deps():
-    return os.pathsep.join([
+def _module_path_deps(jdk=None):
+    deps = [
         _dep_jar(f"word-{VERSION}.jar"),
         _dep_jar(f"collections-{VERSION}.jar"),
         _dep_jar(f"truffle-compiler-{VERSION}.jar"),
-    ])
+    ]
+    if jdk == "jdk27":
+        # JDK 27 dropped jdk.internal.vm.ci from the platform entirely, so the jdeps/javac
+        # calls below can't resolve it via --add-modules against the running JDK's system
+        # modules. pull_graal_jars.py stages the vendored replacement (built by
+        # build_jvmci_module) before calling us, precisely so it's available here. jdk21/25/26
+        # still ship the platform module, so it's deliberately left off their module path --
+        # adding it there would clash with the same-named system module.
+        import build_jvmci_module
+        deps.append(_dep_jar(f"{build_jvmci_module.ARTIFACT}-{build_jvmci_module.VERSION}.jar"))
+    return os.pathsep.join(deps)
 
 
 def _install_file(jar, group, artifact):
@@ -138,7 +148,7 @@ def _build_module_info(generated_mi, compiler_jar):
     return text
 
 
-def build():
+def build(jdk=None):
     java = _java_home()
     compiler_jar = _dep_jar(f"compiler-{VERSION}.jar")
     print(f"build_graal_module: relocating Graal {VERSION} -> module {MODULE_NAME}")
@@ -161,7 +171,7 @@ def build():
         staged = os.path.join(work, ARTIFACT)
         shutil.copy(shaded, staged)
 
-        deps = _module_path_deps()
+        deps = _module_path_deps(jdk)
 
         # (2) jdeps generate module-info from the relocated services
         mi_root = os.path.join(work, "modout")
