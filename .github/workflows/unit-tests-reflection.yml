@@ -30,12 +30,23 @@ jobs:
         jdk:
           - profile: jdk21
             setup_java_version: '21'
+          # jdk25/26/27 also install JDK 21 alongside the target JDK: build_jvmci_module.py
+          # (invoked by pull_graal_jars for these profiles) needs a JDK 21 runtime image to
+          # source the frozen jdk.vm.ci.* SPI from. Listing 21 first and the target version
+          # last matters -- actions/setup-java points JAVA_HOME at the *last* JDK installed,
+          # and bin/compile's --jdk check requires JAVA_HOME to be the target JDK.
           - profile: jdk25
-            setup_java_version: '25'
+            setup_java_version: |
+              21
+              25
           - profile: jdk26
-            setup_java_version: '26'
+            setup_java_version: |
+              21
+              26
           - profile: jdk27
-            setup_java_version: '27-ea'
+            setup_java_version: |
+              21
+              27-ea
     steps:
       - uses: actions/checkout@v4
 
@@ -44,6 +55,10 @@ jobs:
         with:
           distribution: temurin
           java-version: ${{ matrix.jdk.setup_java_version }}
+
+      - name: Point JVMCI_SOURCE_JDK at the co-installed JDK 21 (jdk25/26/27 only)
+        if: matrix.jdk.profile != 'jdk21'
+        run: echo "JVMCI_SOURCE_JDK=$JAVA_HOME_21_X64" >> "$GITHUB_ENV"
 
       - name: Install native build dependencies
         run: |
