@@ -66,10 +66,27 @@
                                     <include>org.graalvm.compiler:compiler</include>
                                 </includes>
                             </artifactSet>
+                            <!-- Every org.graalvm.* package the compiler jar carries must move off the
+                                 jdk.internal.vm.compiler namespace, not just org.graalvm.compiler. A JDK
+                                 that bundles Graal (GraalVM CE 21, which the macOS CI runners use) already
+                                 owns graphio/util/util.json in its built-in jdk.internal.vm.compiler module,
+                                 so leaving them here makes tornado.graal a split package and every launch
+                                 dies with "LayerInstantiationException: Package org.graalvm.graphio in both
+                                 module tornado.graal and module jdk.internal.vm.compiler". org.graalvm.word
+                                 and org.graalvm.collections need no relocation: they ship as their own
+                                 same-named modules, which a bundled platform copy simply shadows. -->
                             <relocations>
                                 <relocation>
                                     <pattern>org.graalvm.compiler</pattern>
                                     <shadedPattern>tornado.graal.compiler</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.graalvm.graphio</pattern>
+                                    <shadedPattern>tornado.graal.graphio</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.graalvm.util</pattern>
+                                    <shadedPattern>tornado.graal.util</shadedPattern>
                                 </relocation>
                             </relocations>
                             <filters>

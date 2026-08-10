@@ -173,10 +173,19 @@ def build(jdk=None):
 
         deps = _module_path_deps(jdk)
 
-        # (2) jdeps generate module-info from the relocated services
+        # (2) jdeps generate module-info from the relocated services.
+        # --ignore-missing-deps is required from jdk25 on: those JDKs still ship a platform
+        # jdk.internal.vm.ci, but it is a LATER jvmci than the JDK-21 SPI Graal 23.1.0 was
+        # compiled against (jdk.vm.ci.code.RegisterArray, jdk.vm.ci.common.NativeImageReinitialize
+        # and jdk.vm.ci.hotspot.HotSpotJVMCICompilerFactory are all gone), so jdeps reports the
+        # dangling references as missing deps and exits 1. Those types sit exclusively on Graal's
+        # HotSpot-JIT paths, which TornadoVM never enters, and ignoring them changes nothing about
+        # the descriptor: the module-info generated here on jdk25 is byte-identical to the jdk21
+        # one, and the flag is a no-op on jdk21/jdk27 (jdk27 resolves the vendored JDK-21 jvmci
+        # staged on the module path above, so nothing is missing there in the first place).
         mi_root = os.path.join(work, "modout")
         os.makedirs(mi_root, exist_ok=True)
-        _run([_tool("jdeps"), "--generate-module-info", mi_root,
+        _run([_tool("jdeps"), "--ignore-missing-deps", "--generate-module-info", mi_root,
               "--module-path", deps, "--add-modules", "jdk.internal.vm.ci", staged])
         mi_java = os.path.join(mi_root, MODULE_NAME, "module-info.java")
 
