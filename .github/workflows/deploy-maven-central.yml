@@ -64,23 +64,26 @@ jobs:
           case "${{ matrix.jdk }}" in
             jdk21)
               echo "JAVA_HOME=/opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3" >> "$GITHUB_ENV"
-              echo "GRAAL_JARS=/opt/graalJars" >> "$GITHUB_ENV"
+              echo "GRAAL_JARS=/opt/graalJarsNoJvmci" >> "$GITHUB_ENV"
               ;;
             jdk25)
               echo "JAVA_HOME=/opt/jenkins/jdks/jdk-25.0.2" >> "$GITHUB_ENV"
-              echo "GRAAL_JARS=/opt/graal25Jars" >> "$GITHUB_ENV"
+              echo "GRAAL_JARS=/opt/graalJarsNoJvmci" >> "$GITHUB_ENV"
+              echo "JVMCI_SOURCE_JDK=/opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3" >> "$GITHUB_ENV"
               ;;
             jdk26)
               # TODO: placeholder — provision a real JDK 26 install + GraalVM-jars cache
               # on the self-hosted Linux runner(s) and update this path.
               echo "JAVA_HOME=/opt/jenkins/jdks/jdk-26.x.x" >> "$GITHUB_ENV"
-              echo "GRAAL_JARS=/opt/graal26Jars" >> "$GITHUB_ENV"
+              echo "GRAAL_JARS=/opt/graalJarsNoJvmci" >> "$GITHUB_ENV"
+              echo "JVMCI_SOURCE_JDK=/opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3" >> "$GITHUB_ENV"
               ;;
             jdk27)
               # TODO: placeholder — provision a real JDK 27 install + GraalVM-jars cache
               # on the self-hosted Linux runner(s) and update this path.
               echo "JAVA_HOME=/opt/jenkins/jdks/jdk-27.x.x" >> "$GITHUB_ENV"
-              echo "GRAAL_JARS=/opt/graal27Jars" >> "$GITHUB_ENV"
+              echo "GRAAL_JARS=/opt/graalJarsNoJvmci" >> "$GITHUB_ENV"
+              echo "JVMCI_SOURCE_JDK=/opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3" >> "$GITHUB_ENV"
               ;;
           esac
 
