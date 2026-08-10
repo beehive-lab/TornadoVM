@@ -161,8 +161,23 @@ def pull_graal_jars_if_needed(graal_jars_status, jdk):
 
 
 def should_handle_graal_jars(jdk):
-    java_version_output = check_java_version()
-    return jdk in ("jdk21", "jdk25", "jdk26", "jdk27") and "GraalVM" not in java_version_output
+    """
+    Whether this build has to stage the vendored Graal jars.
+
+    True for every jdkNN profile, including on a GraalVM JAVA_HOME. This used to also
+    require that JAVA_HOME was NOT GraalVM, back when Graal came from the JDK itself
+    (jdk.internal.vm.compiler on --upgrade-module-path) and pulling graalJars would have
+    been redundant. The jdkNN profiles no longer work that way: Graal is always vendored
+    as the relocated `tornado.graal` application module and every TornadoVM module
+    `requires transitive tornado.graal`, so the module has to be built whatever the JDK
+    is. Skipping it on GraalVM left the reactor with no tornado.graal at all -- or, on a
+    machine where another JDK's build had already installed one, with that JDK's
+    module-info, failing as "module not found: tornado.graal".
+
+    The `graal-jdk-21` (polyglot) profile, which does take Graal from the JDK, is
+    excluded by the profile list rather than by inspecting JAVA_HOME.
+    """
+    return jdk in ("jdk21", "jdk25", "jdk26", "jdk27")
 
 
 def maven_cleanup():
