@@ -19,6 +19,9 @@
 
 import logging
 import os
+import subprocess
+import zipfile
+
 import requests
 from requests.adapters import HTTPAdapter
 from tqdm import tqdm
@@ -109,6 +112,48 @@ def download_jar_if_not_exists(jar_url, target_dir):
                 progress_bar.update(len(data))
 
 
+def unusable_relocated_jar_reason(jar_path):
+    """
+    Check whether an already-staged tornado-graal jar can be reused by THIS build.
+
+    Unlike the raw Graal jars above, the relocated module is a per-JDK build artifact
+    rather than a portable download: its module-info is compiled by whichever JDK builds
+    it. A jar seeded from a shared cache, or left over from a build under a different JDK,
+    can therefore be present and still be wrong here, and both failure modes surface long
+    after this point -- the Maven build succeeds (it compiles against the copy in the local
+    repository) and only the first `tornado` launch dies. So validate the two invariants
+    the module has to satisfy:
+
+      1. The build JDK must be able to read the module descriptor. A module-info compiled
+         by a newer JDK fails with InvalidModuleDescriptorException "Unsupported
+         major.minor version" while the boot layer is being created.
+      2. The relocation must be complete. Any surviving org.graalvm.* package splits with
+         a JDK-bundled jdk.internal.vm.compiler (GraalVM JDKs ship one) and kills the boot
+         layer with LayerInstantiationException.
+
+    Returns a human-readable reason to rebuild, or None if the jar is good to reuse.
+    """
+    java_home = os.environ.get("JAVA_HOME")
+    if not java_home:
+        return "JAVA_HOME is not set"
+
+    probe = subprocess.run([os.path.join(java_home, "bin", "jar"), "--describe-module", "--file", jar_path],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
+    if probe.returncode != 0:
+        # First stderr line carries the exception; the rest is a stack trace.
+        detail = next((ln.strip() for ln in probe.stderr.splitlines() if ln.strip()), "unreadable module descriptor")
+        return f"not readable by the build JDK ({detail})"
+
+    with zipfile.ZipFile(jar_path) as staged:
+        unrelocated = sorted({os.path.dirname(name).replace("/", ".")
+                              for name in staged.namelist()
+                              if name.startswith("org/graalvm/") and name.endswith(".class")})
+    if unrelocated:
+        return f"still carries un-relocated packages ({', '.join(unrelocated[:3])}...)"
+
+    return None
+
+
 def main(jdk=None):
     """
     Main function to download GraalVM JAR files.
@@ -142,9 +187,12 @@ def main(jdk=None):
     # This replaces compiler-<ver>.jar with tornado-graal-<ver>.jar and installs the
     # latter to the local Maven repo for the reactor to compile against.
     relocated = os.path.join(TARGET_DIR, f"tornado-graal-{VERSION}.jar")
-    if os.path.exists(relocated):
+    reason = unusable_relocated_jar_reason(relocated) if os.path.exists(relocated) else None
+    if os.path.exists(relocated) and reason is None:
         logger.info(f"Graal module {CYAN}tornado.graal{RESET} already relocated; skipping.")
     else:
+        if reason:
+            logger.info(f"Discarding the staged {CYAN}tornado.graal{RESET} module: {reason}")
         logger.info(f"Relocating Graal into the {CYAN}tornado.graal{RESET} module...")
         import build_graal_module
         build_graal_module.build(jdk=jdk)
