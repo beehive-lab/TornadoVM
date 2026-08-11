@@ -49,6 +49,20 @@ RELOCATE_POM = os.path.join(SCRIPT_DIR, "graal-relocate", "pom.xml")
 DROPPED_PROVIDES_SERVICE = "jdk.vm.ci.services.JVMCIServiceLocator"
 ORPHAN_SERVICES_FILE = f"META-INF/services/{DROPPED_PROVIDES_SERVICE}"
 
+# Lowest JDK each profile's SDK has to run on. The module descriptor compiled below must be
+# emitted at this release and no higher: a module-info carries the class-file version of the
+# JDK that compiled it, and the JVM reads descriptors under the ordinary backward-compatibility
+# rule, so one built by (say) JDK 27 is unreadable on anything older -- the SDK silently ends up
+# pinned to its own build host ("InvalidModuleDescriptorException: Unsupported major.minor
+# version 71.0"). Everything else in the jar is Graal 23.1.0's own bytecode, which is already
+# old enough to load anywhere.
+DEFAULT_RELEASE = 22
+JDK_FLOOR = {"jdk21": 21}
+
+
+def _release_for(jdk):
+    return JDK_FLOOR.get(jdk, DEFAULT_RELEASE)
+
 
 def _java_home():
     jh = os.environ.get("JAVA_HOME")
@@ -100,19 +114,32 @@ def _dep_jar(*rel):
     return p
 
 
+def _build_jdk_has_jvmci():
+    """Whether the JDK running this build still ships the jdk.internal.vm.ci platform module.
+
+    Asked of the build JDK rather than derived from the target profile: which JDKs the SDK
+    RUNS on is a property of the artifact, while where jdeps/javac find jdk.vm.ci.* while
+    producing it is a property of the machine doing the building. Those are independent once
+    a profile targets a floor (jdk22plus) instead of one exact release, and conflating them
+    means a build host newer than the target cannot resolve the module at all.
+    """
+    out = _capture([_tool("java"), "--list-modules"])
+    return any(line.startswith("jdk.internal.vm.ci@") for line in out.splitlines())
+
+
 def _module_path_deps(jdk=None):
     deps = [
         _dep_jar(f"word-{VERSION}.jar"),
         _dep_jar(f"collections-{VERSION}.jar"),
         _dep_jar(f"truffle-compiler-{VERSION}.jar"),
     ]
-    if jdk == "jdk27":
-        # JDK 27 dropped jdk.internal.vm.ci from the platform entirely, so the jdeps/javac
-        # calls below can't resolve it via --add-modules against the running JDK's system
-        # modules. pull_graal_jars.py stages the vendored replacement (built by
-        # build_jvmci_module) before calling us, precisely so it's available here. jdk21/25/26
-        # still ship the platform module, so it's deliberately left off their module path --
-        # adding it there would clash with the same-named system module.
+    if not _build_jdk_has_jvmci():
+        # JDK 27 dropped jdk.internal.vm.ci from the platform entirely, so the jdeps/javac calls
+        # below cannot resolve it via --add-modules against the system modules. pull_graal_jars.py
+        # stages the vendored replacement (built by build_jvmci_module) before calling us,
+        # precisely so it is available here. On a build JDK that still ships the platform module
+        # it is deliberately left off the module path -- a same-named module there is shadowed by
+        # the system one anyway, and listing both is just noise.
         import build_jvmci_module
         deps.append(_dep_jar(f"{build_jvmci_module.ARTIFACT}-{build_jvmci_module.VERSION}.jar"))
     return os.pathsep.join(deps)
@@ -194,8 +221,11 @@ def build(jdk=None):
         with open(mi_java, "w") as f:
             f.write(mi_text)
 
-        # (5) compile module-info against the relocated classes, inject, drop orphan service
-        _run([_tool("javac"),
+        # (5) compile module-info against the relocated classes, inject, drop orphan service.
+        # -source/-target pins the descriptor class-file version to the SDK floor so the jar stays
+        # readable on every JDK the SDK supports, not just the one that happened to build it.
+        _run([_tool("javac"), "-source", str(_release_for(jdk)), "-target", str(_release_for(jdk)),
+              "-Xlint:-options",
               "--module-path", deps, "--add-modules", "jdk.internal.vm.ci",
               "--patch-module", f"{MODULE_NAME}={staged}",
               "-d", os.path.join(mi_root, MODULE_NAME), mi_java])

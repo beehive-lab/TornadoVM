@@ -180,7 +180,7 @@ def main(jdk=None):
     if jdk in ("jdk25", "jdk26", "jdk27"):
         logger.info(f"Building/staging vendored {CYAN}jdk.internal.vm.ci{RESET} module for {jdk}...")
         import build_jvmci_module
-        build_jvmci_module.build()
+        build_jvmci_module.build(jdk=jdk)
 
     # Relocate the Graal compiler off the jdk.* namespace into the vendored module
     # `tornado.graal` so it can live on the regular --module-path (no upgrade-module-path).

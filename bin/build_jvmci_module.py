@@ -48,6 +48,16 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.dirname(SCRIPT_DIR)
 GRAAL_JARS_DIR = os.path.join(REPO_ROOT, "graalJars")
 
+# Lowest JDK the SDK being built has to run on; the generated module-info is emitted at this
+# release so the jar stays readable on every supported JDK rather than only on the build host.
+DEFAULT_RELEASE = 22
+JDK_FLOOR = {"jdk21": 21}
+
+
+def _release_for(jdk):
+    return JDK_FLOOR.get(jdk, DEFAULT_RELEASE)
+
+
 JVMCI_PACKAGES = [
     "jdk.vm.ci.aarch64", "jdk.vm.ci.amd64", "jdk.vm.ci.code", "jdk.vm.ci.code.site",
     "jdk.vm.ci.code.stack", "jdk.vm.ci.common", "jdk.vm.ci.hotspot",
@@ -111,7 +121,7 @@ def _mvn():
     return [mvn]
 
 
-def build():
+def build(jdk=None):
     src = _source_jdk()
     work = tempfile.mkdtemp(prefix="tornado-jvmci-")
     try:
@@ -138,7 +148,13 @@ def build():
                 f"{exports}\n"
                 "}\n"
             )
-        _run([_tool("javac"), "-d", classes, "--patch-module", f"{MODULE_NAME}={classes}",
+        # -source/-target pins the descriptor to the SDK floor. The jdk/vm/ci/** classes come from a
+        # JDK 21 image (class-file 65) and load anywhere, but a module-info compiled by the build
+        # JDK would carry that JDK's class-file version and make the jar unreadable on every older
+        # JDK the SDK is supposed to support.
+        _run([_tool("javac"), "-source", str(_release_for(jdk)), "-target", str(_release_for(jdk)),
+              "-Xlint:-options",
+              "-d", classes, "--patch-module", f"{MODULE_NAME}={classes}",
               os.path.join(misrc, "module-info.java")])
 
         jar = os.path.join(work, f"{ARTIFACT}-{VERSION}.jar")
