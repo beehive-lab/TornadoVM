@@ -96,8 +96,6 @@ __JAVA_BASE_OPTIONS_NO_JVMCI__ = ("-server -XX:+UnlockExperimentalVMOptions "
                                   "--add-exports java.base/jdk.internal.vm=jdk.internal.vm.ci "
                                   "--add-exports java.base/jdk.internal.vm.annotation=jdk.internal.vm.ci "
                                   "--add-exports java.base/jdk.internal.reflect=jdk.internal.vm.ci ")
-__TRUFFLE_BASE_OPTIONS__ = "--jvm --polyglot --vm.XX:+UnlockExperimentalVMOptions --vm.XX:+EnableJVMCI --enable-preview "
-
 # We do not satisfy the Graal compiler assertions because we only support a subset of the Java specification.
 # This allows us to have the GraalIR in states which normally would be illegal.
 __GRAAL_ENABLE_ASSERTIONS__ = " -ea -da:org.graalvm.compiler... "
@@ -437,34 +435,7 @@ class TornadoVMRunnerTool():
             print("Please ensure the JAVA_HOME environment variable is set correctly")
             sys.exit(0)
 
-        env_vars = {
-            "GRAALPY_HOME": "graalpy",
-            "GRAALJS_HOME": "js",
-            "GRAALNODEJS_HOME": "node",
-            "TRUFFLERUBY_HOME": "truffleruby"
-        }
-
-        self.setTruffleVars(env_vars)
-
-        self.commands = {
-            "java": os.path.join(self.java_home, "bin", "java"),
-            "python": self.graalpy,
-            "js": self.js,
-            "node": self.node,
-            "ruby": self.truffleruby
-        }
-
-        self.isTruffleCommand = args.truffle_language != None
-
-        if (self.isTruffleCommand):
-            if (args.truffle_language in self.commands) and (self.commands[args.truffle_language] != None):
-                self.cmd = self.commands[args.truffle_language]
-            else:
-                print(
-                    "Support for " + args.truffle_language + " not provided yet. Please run --truffle with one of the following options: python|ruby|js|node, and ensure that the (GRAALPY_HOME, TRUFFLERUBY_HOME, GRAALJS_HOME, GRAALNODEJS_HOME) environment variables are set correctly.")
-                sys.exit(0)
-        else:
-            self.cmd = self.commands["java"]
+        self.cmd = os.path.join(self.java_home, "bin", "java")
 
         self.java_version, self.isGraalVM = self.getJavaVersion()
         # JVMCI was removed from OpenJDK entirely in JDK 27 (openjdk/jdk#30834): no
@@ -497,29 +468,22 @@ class TornadoVMRunnerTool():
         if (self.platform == 'darwin'):
             self.checkMacOSCompatibility()
 
-    def setTruffleVars(self, env_vars):
-        for var, attr in env_vars.items():
-            if var in os.environ:
-                setattr(self, attr, os.environ[var] + f"/bin/{attr} ")
-            else:
-                setattr(self, attr, None)
-
     def getJavaVersion(self):
         try:
             if os.name == 'nt':
                 # Use list format to avoid issues with paths containing spaces
-                versionCommand = subprocess.Popen([self.commands["java"], "-version"],
+                versionCommand = subprocess.Popen([self.cmd, "-version"],
                                                   stdout=subprocess.PIPE,
                                                   stderr=subprocess.PIPE)
             else:
-                versionCommand = subprocess.Popen(shlex.split(self.commands["java"] + " -version"), stdout=subprocess.PIPE,
+                versionCommand = subprocess.Popen(shlex.split(self.cmd + " -version"), stdout=subprocess.PIPE,
                                                   stderr=subprocess.PIPE)
             stdout, stderr = versionCommand.communicate()
         except FileNotFoundError:
             print("[ERROR] Cannot find Java.")
             print(f"[ERROR] Please ensure JAVA_HOME is set correctly and that Java is accessible.")
             print(f"[ERROR] Current JAVA_HOME: {self.java_home}")
-            print(f"[ERROR] Looking for Java at: {self.commands['java']}")
+            print(f"[ERROR] Looking for Java at: {self.cmd}")
             if os.name == 'nt':
                 print("[ERROR] On Windows, ensure %JAVA_HOME%\\bin is in your PATH.")
             sys.exit(1)
@@ -1101,10 +1065,6 @@ class TornadoVMRunnerTool():
 
         tornadoFlags = tornadoFlags + " "
 
-        # If the execution will take place through truffle, adapt the flags
-        if (self.isTruffleCommand):
-            tornadoFlags = self.truffleCompatibleFlags(tornadoFlags)
-
         return tornadoFlags
 
     def printVersion(self):
@@ -1253,19 +1213,13 @@ class TornadoVMRunnerTool():
 
     def buildJavaCommand(self, args):
         tornadoFlags = self.buildTornadoVMOptions(args)
-        if (self.isTruffleCommand):
-            tornadoAddModules = __TORNADOVM_ADD_MODULES__.replace("--", "--vm.-").replace(" ",
-                                                                                          "=") + ",tornado.examples"
-        else:
-            tornadoAddModules = __TORNADOVM_ADD_MODULES__
+        tornadoAddModules = __TORNADOVM_ADD_MODULES__
 
         javaFlags = ""
         if (args.enableAssertions):
             javaFlags = javaFlags + __GRAAL_ENABLE_ASSERTIONS__
 
-        if (self.isTruffleCommand):
-            javaFlags = javaFlags + " " + __TRUFFLE_BASE_OPTIONS__
-        elif (self.jvmci_absent):
+        if (self.jvmci_absent):
             javaFlags = javaFlags + " " + __JAVA_BASE_OPTIONS_NO_JVMCI__
         else:
             javaFlags = javaFlags + " " + __JAVA_BASE_OPTIONS__
@@ -1284,36 +1238,16 @@ class TornadoVMRunnerTool():
         metal = self.sdk + __METAL_EXPORTS__
         cuda = self.sdk + __CUDA_EXPORTS__
 
-        if (self.isTruffleCommand):
-            common = self.truffleCompatibleExports(common)
-            opencl = self.truffleCompatibleExports(opencl)
-            metal = self.truffleCompatibleExports(metal)
-            cuda = self.truffleCompatibleExports(cuda)
-
-        # For Truffle, exports are already expanded inline (no @ prefix needed)
-        # For Java, use @ to read from file
-        if (self.isTruffleCommand):
-            javaFlags = javaFlags + " " + common + " "
-            if ("opencl-backend" in self.listOfBackends):
-                javaFlags = javaFlags + opencl + " "
-                tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
-            if ("metal-backend" in self.listOfBackends):
-                javaFlags = javaFlags + metal + " "
-                tornadoAddModules = tornadoAddModules + "," + __METAL_MODULE__
-            if ("cuda-backend" in self.listOfBackends):
-                javaFlags = javaFlags + cuda + " "
-                tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__ + "," + __CUBLAS_MODULE__ + "," + __CUFFT_MODULE__ + "," + __CUDNN_MODULE__ + "," + __CUSPARSE_MODULE__ + "," + __CUTLASS_MODULE__
-        else:
-            javaFlags = javaFlags + " @" + common + " "
-            if ("opencl-backend" in self.listOfBackends):
-                javaFlags = javaFlags + "@" + opencl + " "
-                tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
-            if ("metal-backend" in self.listOfBackends):
-                javaFlags = javaFlags + "@" + metal + " "
-                tornadoAddModules = tornadoAddModules + "," + __METAL_MODULE__
-            if ("cuda-backend" in self.listOfBackends):
-                javaFlags = javaFlags + "@" + cuda + " "
-                tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__ + "," + __CUBLAS_MODULE__ + "," + __CUFFT_MODULE__ + "," + __CUDNN_MODULE__ + "," + __CUSPARSE_MODULE__ + "," + __CUTLASS_MODULE__
+        javaFlags = javaFlags + " @" + common + " "
+        if ("opencl-backend" in self.listOfBackends):
+            javaFlags = javaFlags + "@" + opencl + " "
+            tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
+        if ("metal-backend" in self.listOfBackends):
+            javaFlags = javaFlags + "@" + metal + " "
+            tornadoAddModules = tornadoAddModules + "," + __METAL_MODULE__
+        if ("cuda-backend" in self.listOfBackends):
+            javaFlags = javaFlags + "@" + cuda + " "
+            tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__ + "," + __CUBLAS_MODULE__ + "," + __CUFFT_MODULE__ + "," + __CUDNN_MODULE__ + "," + __CUSPARSE_MODULE__ + "," + __CUTLASS_MODULE__
 
         javaFlags = javaFlags + tornadoAddModules + " "
 
@@ -1329,10 +1263,7 @@ class TornadoVMRunnerTool():
             except:
                 javaFlags = javaFlags + " "
 
-        if (self.isTruffleCommand):
-            executionFlags = self.truffleCompatibleFlags(javaFlags)
-        else:
-            executionFlags = javaFlags
+        executionFlags = javaFlags
 
         if os.name == 'nt':
             # -Dstdout.encoding=UTF-8 (see the generated argfile) makes the JVM
@@ -1347,32 +1278,6 @@ class TornadoVMRunnerTool():
             return 'chcp 65001 >nul && "' + self.cmd + '" ' + executionFlags
         else:
             return self.cmd + " " + executionFlags
-
-    def truffleCompatibleExports(self, exportFile):
-        data = Path(exportFile).read_text()
-        # ignore the header of the file
-        data = re.sub(r'(?m)^\#.*\n?', "", data)
-        # make exports compatible with truffle
-        data = data.replace('--add', '--vm.-add').replace(' ', '=').replace('\n', ' ')
-        return data
-
-    def truffleCompatibleFlags(self, javaFlags):
-        flags = javaFlags.split()
-        truffleFlags = ""
-        for flag in flags:
-            if (flag.startswith("--vm") or flag == "--jvm" or flag == "--polyglot"):
-                truffleFlags = truffleFlags + flag + " "
-            elif (flag.startswith("-D")):
-                truffleFlags = truffleFlags + flag.replace("-D", "--vm.D") + " "
-            elif (flag.startswith("--module")):
-                truffleFlags = truffleFlags + "--vm.-module-path="
-            elif (flag.startswith("--")):
-                truffleFlags = truffleFlags + flag.replace("--", "--vm.-") + " "
-            elif (flag.startswith("-")):
-                truffleFlags = truffleFlags + flag.replace("-", "--vm.") + " "
-            elif (flag != "@"):
-                truffleFlags = truffleFlags + flag + " "
-        return truffleFlags
 
     def executeCommand(self, args):
         javaFlags = self.buildJavaCommand(args)
@@ -1468,8 +1373,6 @@ def parseArguments():
     parser.add_argument('--params', action="store", dest="application_parameters", default=None,
                         help="Command-line parameters for the host-application. Example: --params=\"param1 param2...\"")
     parser.add_argument("application", nargs="?")
-    parser.add_argument("--truffle", action="store", dest="truffle_language", default=None,
-                        help="Enable Truffle languages through TornadoVM. Example: --truffle python|r|js")
     parser.add_argument('--dumpBC', action="store", dest="dump_bytecodes_dir", default=None,
                         help="Dump the TornadoVM bytecodes to a directory")
     parser.add_argument('--generate-argfile', action="store_true", dest="generate_argfile", default=False,
