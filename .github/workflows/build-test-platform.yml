@@ -41,6 +41,10 @@ env:
 
 jobs:
   build:
+    # Explicit name: the default would splice in the runner labels (self-hosted, Linux, x64),
+    # repeating what the caller's job prefix already says. Those labels belong in runs-on, not
+    # in the run's UI.
+    name: build ${{ matrix.backend }} / ${{ matrix.sdk }}
     timeout-minutes: 40
     strategy:
       fail-fast: false
@@ -115,6 +119,7 @@ jobs:
   # machine with a concurrency group rather than by chaining `needs`.
   # ---------------------------------------------------------------------------------------
   test:
+    name: test ${{ matrix.backend }} / ${{ matrix.sdk }} on ${{ matrix.jdk }}
     needs: build
     timeout-minutes: 60
     strategy:
