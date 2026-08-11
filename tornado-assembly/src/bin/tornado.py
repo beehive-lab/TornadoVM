@@ -517,20 +517,38 @@ class TornadoVMRunnerTool():
         """(floor, preview) for THIS SDK, as recorded by bin/compile in etc/tornado.jdk.
 
         Which JDKs an SDK accepts is a property of how it was compiled, not of the launcher, so
-        it travels with the SDK. Older SDKs predate the file; they were all jdk21 builds, so that
-        is the fallback.
+        it travels with the SDK rather than being hardcoded here.
         """
-        floor, preview = 21, True
-        try:
-            with open(self.sdk + "/etc/tornado.jdk", "r") as f:
-                for line in f.read().splitlines():
-                    if line.startswith("tornado.jdk.floor="):
-                        floor = int(line.split("=", 1)[1].strip())
-                    elif line.startswith("tornado.jdk.preview="):
-                        preview = line.split("=", 1)[1].strip().lower() == "true"
-        except (IOError, OSError, ValueError):
-            pass
-        return floor, preview
+        contract = os.path.join(self.sdk, "etc", "tornado.jdk")
+        if os.path.isfile(contract):
+            floor, preview = 21, True
+            try:
+                with open(contract, "r") as f:
+                    for line in f.read().splitlines():
+                        if line.startswith("tornado.jdk.floor="):
+                            floor = int(line.split("=", 1)[1].strip())
+                        elif line.startswith("tornado.jdk.preview="):
+                            preview = line.split("=", 1)[1].strip().lower() == "true"
+                return floor, preview
+            except (IOError, OSError, ValueError):
+                pass
+
+        # No contract to read. Do NOT just assume the oldest shape: a stale or mistyped
+        # TORNADOVM_HOME is far likelier than a genuinely old SDK, and guessing turns that into a
+        # confident "runs on JDK 21 only", which points at the SDK when the env var is at fault.
+        jars = os.path.join(self.sdk, "share", "java", "tornado")
+        if not os.path.isdir(jars):
+            print("[ERROR] TORNADOVM_HOME does not look like a TornadoVM SDK:")
+            print("            " + self.sdk)
+            print("        (no share/java/tornado inside it). If you have just rebuilt, run:")
+            print("            source setvars.sh")
+            sys.exit(0)
+
+        # A real SDK that predates etc/tornado.jdk: infer from the artifact version it ships.
+        for name in sorted(os.listdir(jars)):
+            if name.startswith("tornado-api-"):
+                return (22, False) if "jdk22plus" in name else (21, True)
+        return 21, True
 
     def checkCompatibilityWithTornadoVM(self):
         # TornadoVM runs on arbitrary modern JDKs because Graal (tornado.graal) and, on JDK 27+,
