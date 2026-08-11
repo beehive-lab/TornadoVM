@@ -77,7 +77,11 @@ __CUTLASS_MODULE__ = "tornado.cutlass"
 # JAVA FLAGS
 # ########################################################
 __JAVA_GC__ = "-XX:+UseParallelGC "
-__JAVA_BASE_OPTIONS__ = "-server -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI --enable-preview "
+__JAVA_BASE_OPTIONS__ = "-server -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI "
+# Only an SDK compiled with enable-preview needs it at run time (the jdk21 profiles: FFM was a
+# preview API before JDK 22). Appending it unconditionally would switch preview APIs on JVM-wide
+# for SDKs that contain no preview class files at all.
+__JAVA_PREVIEW_OPTION__ = "--enable-preview "
 # JDK 27+ removed JVMCI: -XX:+EnableJVMCI is an unrecognized (fatal) option and Panama is
 # final so --enable-preview is unnecessary. TornadoVM sources all metadata via the reflection
 # providers (the only path) against the vendored jdk.internal.vm.ci module.
@@ -448,6 +452,7 @@ class TornadoVMRunnerTool():
         # with the frozen JDK-21 jvmci classes so the runtime SPI matches the compiled code
         # (uniform vendoring; mirrors the compile-time --patch-module in the jdk25/jdk26 profiles).
         self.jvmci_patched = 22 <= self.java_version <= 26
+        self.sdk_jdk_floor, self.sdk_jdk_preview = self.readSDKJDKContract()
         self.checkCompatibilityWithTornadoVM()
         self.platform = sys.platform
         self.listOfBackends = self.getInstalledBackends(False)
@@ -508,11 +513,40 @@ class TornadoVMRunnerTool():
             print(f"[DEBUG] Java version output was: {stderr.decode('utf-8', errors='ignore')}")
             sys.exit(0)
 
+    def readSDKJDKContract(self):
+        """(floor, preview) for THIS SDK, as recorded by bin/compile in etc/tornado.jdk.
+
+        Which JDKs an SDK accepts is a property of how it was compiled, not of the launcher, so
+        it travels with the SDK. Older SDKs predate the file; they were all jdk21 builds, so that
+        is the fallback.
+        """
+        floor, preview = 21, True
+        try:
+            with open(self.sdk + "/etc/tornado.jdk", "r") as f:
+                for line in f.read().splitlines():
+                    if line.startswith("tornado.jdk.floor="):
+                        floor = int(line.split("=", 1)[1].strip())
+                    elif line.startswith("tornado.jdk.preview="):
+                        preview = line.split("=", 1)[1].strip().lower() == "true"
+        except (IOError, OSError, ValueError):
+            pass
+        return floor, preview
+
     def checkCompatibilityWithTornadoVM(self):
-        # TornadoVM now runs on arbitrary modern JDKs because Graal (tornado.graal) and,
-        # on JDK 27+, JVMCI (jdk.internal.vm.ci) are vendored as application modules.
-        if (self.java_version < 21):
-            print("TornadoVM requires JDK 21 or newer")
+        # TornadoVM runs on arbitrary modern JDKs because Graal (tornado.graal) and, on JDK 27+,
+        # JVMCI (jdk.internal.vm.ci) are vendored as application modules. How far that reaches
+        # depends on the SDK: a preview-compiled one is pinned to a single release, everything
+        # else is good from its floor upwards.
+        if (self.sdk_jdk_preview):
+            if (self.java_version != self.sdk_jdk_floor):
+                print("This TornadoVM SDK was built for JDK " + str(self.sdk_jdk_floor)
+                      + " with preview features enabled, so it runs on JDK " + str(self.sdk_jdk_floor)
+                      + " only (found JDK " + str(self.java_version) + ").")
+                print("Use the jdk22plus SDK for JDK 22 and newer.")
+                sys.exit(0)
+        elif (self.java_version < self.sdk_jdk_floor):
+            print("This TornadoVM SDK requires JDK " + str(self.sdk_jdk_floor)
+                  + " or newer (found JDK " + str(self.java_version) + ").")
             sys.exit(0)
 
     def checkOpenCLDriversWindows(self):
@@ -1223,6 +1257,8 @@ class TornadoVMRunnerTool():
             javaFlags = javaFlags + " " + __JAVA_BASE_OPTIONS_NO_JVMCI__
         else:
             javaFlags = javaFlags + " " + __JAVA_BASE_OPTIONS__
+            if (self.sdk_jdk_preview):
+                javaFlags = javaFlags + __JAVA_PREVIEW_OPTION__
 
         javaFlags = javaFlags + tornadoFlags + __TORNADOVM_PROVIDERS__ + " "
 

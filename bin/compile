@@ -105,6 +105,27 @@ def _parse_major_version(java_version_output):
 # version or any later one, because the artifact is built to run on all of them.
 FLOOR_PROFILES = {"jdk22plus": 22}
 
+# What each profile's SDK requires of the JDK that RUNS it, recorded into the SDK so bin/tornado
+# can enforce it and choose its flags instead of hardcoding one answer for every SDK.
+#   floor   lowest JDK the class files load on
+#   preview compiled with enable-preview, which pins the artifact to EXACTLY that release: a
+#           preview class file is accepted only by the JDK whose major version it carries, so
+#           these SDKs are not forward compatible however new the runtime is.
+SDK_JDK_CONTRACT = {
+    "jdk21": (21, True),
+    "graal-jdk-21": (21, True),
+    "jdk22plus": (22, False),
+}
+
+
+def write_sdk_jdk_contract(jdk):
+    """Record the runtime JDK contract where the assembly will pick it up (etc/tornado.jdk)."""
+    floor, preview = SDK_JDK_CONTRACT.get(jdk, (21, True))
+    path = os.path.join("tornado-assembly", "src", "etc", "tornado.jdk")
+    with open(path, "w") as f:
+        f.write(f"tornado.jdk.floor={floor}\n")
+        f.write(f"tornado.jdk.preview={'true' if preview else 'false'}\n")
+
 
 def _parse_expected_version(jdk):
     """Extract the target major version from a --jdk value, e.g. 'jdk21' -> 21,
@@ -275,6 +296,10 @@ def build_tornadovm(args, backend_profiles):
         backend_template_path = os.path.join("tornado-assembly", "src", "etc", "tornado.backend")
         with open(backend_template_path, "w") as backend_file:
             backend_file.write(f"tornado.backends={backend_profiles}\n")
+
+        # Same idea for the JDK contract: bin/tornado reads it to decide the minimum (or exact)
+        # runtime JDK and whether the enable-preview flag is required.
+        write_sdk_jdk_contract(args.jdk)
 
         process = [mvn_cmd]
         # Only override threading if single-threaded mode explicitly requested

@@ -64,6 +64,7 @@
             </includes>
             <excludes>
                 <exclude>tornado.backend</exclude>
+                <exclude>tornado.jdk</exclude>
             </excludes>
             <filtered>true</filtered>
             <lineEnding>unix</lineEnding>
@@ -75,6 +76,7 @@
             <outputDirectory>etc</outputDirectory>
             <includes>
                 <include>tornado.backend</include>
+                <include>tornado.jdk</include>
             </includes>
             <filtered>false</filtered>
             <lineEnding>unix</lineEnding>
