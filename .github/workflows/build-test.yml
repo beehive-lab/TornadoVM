@@ -1,87 +1,146 @@
 name: Build & Test
 
-# Unified across JDK 21/25/26/27 and OpenCL/CUDA/Metal — one branch, one Makefile,
-# only the --jdk/--backend arguments change (bin/compile --jdk <jdk> --backend <backend>,
-# via `make <jdk> BACKEND=<backend>`). Replaces the old build-test-jdk21.yml /
-# build-test-jdk25.yml pair, which each lived on a permanently-diverged branch
-# (develop vs jdk25) and hardcoded a single --jdk value.
+# Build once per backend, then run that ONE artifact on every supported JDK.
+#
+# This replaces the old "build+test per (backend, JDK)" matrix. That shape could never prove
+# what we now claim -- that an SDK built once runs on any JDK from its floor upwards -- because
+# every leg rebuilt under the JDK it then tested on, so it only ever verified "built on N, runs
+# on N". Here the build jobs publish an SDK artifact and the test jobs consume it unchanged.
+#
+# Two SDKs exist, and they are not interchangeable:
+#   jdk21      compiled with enable-preview (FFM was a preview API before 22), which pins the
+#              class files to JDK 21 exactly. Tested on 21 only.
+#   jdk22plus  compiled at release 22 with no preview. One artifact for 22, 23, 24, 25, 26, 27
+#              and later; the build JDK is an implementation detail and is pinned below.
+# Each SDK records its own contract in etc/tornado.jdk, and bin/tornado enforces it.
 
 on:
   pull_request:
     branches: [develop]
     types: [opened, synchronize, reopened]
   workflow_dispatch:
+    inputs:
+      full_jdk_sweep:
+        description: "Run the jdk22plus SDK on every JDK (22-27) instead of just the floor and the newest"
+        type: boolean
+        default: true
+  schedule:
+    # Nightly full sweep: the GPU runners are shared and serialise, so PRs test the two
+    # extremes and the scheduled run covers the JDKs in between.
+    - cron: "0 2 * * *"
+
+env:
+  # Build JDK for the jdk22plus SDK. Any JDK >= 22 produces an identical artifact (the vendored
+  # module descriptors are pinned to the floor), so this is pinned purely for reproducibility.
+  JDK22PLUS_BUILD_JAVA_HOME_LINUX: /opt/jenkins/jdks/jdk-25.0.2
+  JDK22PLUS_BUILD_JAVA_HOME_MACOS: /opt/jenkins/jdks/jdk-25.0.2.jdk/Contents/Home
+  JDK21_BUILD_JAVA_HOME_LINUX: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
+  JDK21_BUILD_JAVA_HOME_MACOS: /opt/jenkins/jdks/graalvm-community-openjdk-21.0.1+12.1/Contents/Home
+  # A JDK 21 image is required to source the frozen jdk.vm.ci.* classes from, whatever the build JDK is.
+  JVMCI_SOURCE_JDK_LINUX: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
+  JVMCI_SOURCE_JDK_MACOS: /opt/jenkins/jdks/jdk-21.0.11+10/Contents/Home
+  GRAAL_JARS: /opt/graalJarsNoJvmci
 
 jobs:
   code-quality:
-    if: |
-      github.repository == 'beehive-lab/TornadoVM' &&
-      !(github.event_name == 'push' && contains(github.event.head_commit.message, 'from beehive-lab/release/'))
+    if: github.repository == 'beehive-lab/TornadoVM'
     runs-on: [self-hosted, Linux, x64]
     env:
       JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
       MAVEN_HOME: /opt/maven
     timeout-minutes: 5
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
       - name: Run Checkstyle
         run: |
           export PATH=$JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH
           ./mvnw checkstyle:check
 
-  # OpenCL first (all 4 JDKs). CUDA (below) needs this whole job, so it never starts
-  # until every OpenCL leg is done — preserves the "serialize OpenCL before CUDA,
-  # they share one GPU runner" rule from the old per-JDK files.
-  build-opencl:
-    if: |
-      github.repository == 'beehive-lab/TornadoVM' &&
-      !(github.event_name == 'push' && contains(github.event.head_commit.message, 'from beehive-lab/release/'))
+  # Both matrices are computed here rather than written inline, because they are not a plain
+  # cross product: the jdk21 SDK is paired with JDK 21 alone, while the jdk22plus SDK fans out
+  # across every JDK from the floor up. A full sweep is 6 legs per backend and the runners
+  # serialise on one GPU each, so pull requests get the two ends of the supported range (the
+  # class-file floor and the JVMCI-absent extreme) and the nightly run gets everything.
+  plan:
+    if: github.repository == 'beehive-lab/TornadoVM'
     runs-on: [self-hosted, Linux, x64]
-    needs: code-quality
-    timeout-minutes: 30
+    timeout-minutes: 2
+    outputs:
+      build: ${{ steps.matrices.outputs.build }}
+      test: ${{ steps.matrices.outputs.test }}
+    steps:
+      - id: matrices
+        env:
+          FULL_SWEEP: ${{ inputs.full_jdk_sweep }}
+        run: |
+          python3 - <<'EOF' >> "$GITHUB_OUTPUT"
+          import json, os
+
+          targets = [
+              ("linux", "opencl", ["self-hosted", "Linux", "x64"]),
+              ("linux", "cuda",   ["self-hosted", "Linux", "x64"]),
+              ("macos", "opencl", ["self-hosted", "macOS", "arm64"]),
+              ("macos", "metal",  ["self-hosted", "macOS", "arm64"]),
+          ]
+          # A manual dispatch decides for itself; otherwise pull requests get the two ends of
+          # the supported range and everything else (nightly) gets the full sweep.
+          sweep = os.environ.get("FULL_SWEEP", "")
+          full = (sweep == "true") if sweep in ("true", "false") \
+                 else os.environ["GITHUB_EVENT_NAME"] != "pull_request"
+          jdk22plus_runtimes = ["jdk22", "jdk23", "jdk24", "jdk25", "jdk26", "jdk27"] if full \
+                               else ["jdk22", "jdk27"]
+
+          build, test = [], []
+          for platform, backend, runner in targets:
+              for sdk in ("jdk21", "jdk22plus"):
+                  build.append(dict(platform=platform, backend=backend, runner=runner, sdk=sdk))
+              # jdk21 SDK: preview-compiled, so JDK 21 and nothing else.
+              test.append(dict(platform=platform, backend=backend, runner=runner,
+                               sdk="jdk21", jdk="jdk21"))
+              for jdk in jdk22plus_runtimes:
+                  test.append(dict(platform=platform, backend=backend, runner=runner,
+                                   sdk="jdk22plus", jdk=jdk))
+
+          print("build=" + json.dumps({"include": build}))
+          print("test=" + json.dumps({"include": test}))
+          EOF
+
+  # ---------------------------------------------------------------------------------------
+  # BUILD: one job per (platform, backend, SDK). No GPU needed, so these may run in parallel.
+  # ---------------------------------------------------------------------------------------
+  build:
+    if: github.repository == 'beehive-lab/TornadoVM'
+    needs: [code-quality, plan]
+    timeout-minutes: 40
     strategy:
       fail-fast: false
-      matrix:
-        jdk: [jdk21, jdk25, jdk26, jdk27]
+      matrix: ${{ fromJSON(needs.plan.outputs.build) }}
+    runs-on: ${{ matrix.runner }}
     env:
-      CMAKE_ROOT: /opt/jenkins/cmake-3.25.2-linux-x86_64
-      MAVEN_HOME: /opt/maven
       TORNADO_ROOT: ${{ github.workspace }}
       TORNADOVM_HOME: ${{ github.workspace }}/bin/sdk
-      VENV_PATH: ${{ github.workspace }}/venv-opencl-${{ matrix.jdk }}
+      VENV_PATH: ${{ github.workspace }}/venv-${{ matrix.backend }}-${{ matrix.sdk }}
       JAVAFX_SDK: /opt/jenkins/javafx-sdk-21.0.11
     steps:
       - uses: actions/checkout@v4
 
-      - name: Resolve JDK environment
+      - name: Resolve build environment
         run: |
-          case "${{ matrix.jdk }}" in
-            jdk21)
-              echo "JAVA_HOME=/opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3" >> "$GITHUB_ENV"
-              echo "GRAAL_JARS=/opt/graalJarsNoJvmci" >> "$GITHUB_ENV"
-              ;;
-            jdk25)
-              echo "JAVA_HOME=/opt/jenkins/jdks/jdk-25.0.2" >> "$GITHUB_ENV"
-              echo "GRAAL_JARS=/opt/graalJarsNoJvmci" >> "$GITHUB_ENV"
-              echo "JVMCI_SOURCE_JDK=/opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3" >> "$GITHUB_ENV"
-              ;;
-            jdk26)
-              # TODO: placeholder — provision a real JDK 26 install + GraalVM-jars cache
-              # on the self-hosted Linux runner(s) and update this path.
-              echo "JAVA_HOME=/opt/jenkins/jdks/jdk-26.x.x" >> "$GITHUB_ENV"
-              echo "GRAAL_JARS=/opt/graalJarsNoJvmci" >> "$GITHUB_ENV"
-              echo "JVMCI_SOURCE_JDK=/opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3" >> "$GITHUB_ENV"
-              ;;
-            jdk27)
-              # TODO: placeholder — provision a real JDK 27 install + GraalVM-jars cache
-              # on the self-hosted Linux runner(s) and update this path.
-              echo "JAVA_HOME=/opt/jenkins/jdks/jdk-27.x.x" >> "$GITHUB_ENV"
-              echo "GRAAL_JARS=/opt/graalJarsNoJvmci" >> "$GITHUB_ENV"
-              echo "JVMCI_SOURCE_JDK=/opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3" >> "$GITHUB_ENV"
-              ;;
-          esac
+          if [ "${{ matrix.platform }}" = "linux" ]; then
+            echo "CMAKE_ROOT=/opt/jenkins/cmake-3.25.2-linux-x86_64" >> "$GITHUB_ENV"
+            echo "MAVEN_HOME=/opt/maven" >> "$GITHUB_ENV"
+            echo "JVMCI_SOURCE_JDK=$JVMCI_SOURCE_JDK_LINUX" >> "$GITHUB_ENV"
+            [ "${{ matrix.sdk }}" = "jdk21" ] \
+              && echo "JAVA_HOME=$JDK21_BUILD_JAVA_HOME_LINUX" >> "$GITHUB_ENV" \
+              || echo "JAVA_HOME=$JDK22PLUS_BUILD_JAVA_HOME_LINUX" >> "$GITHUB_ENV"
+          else
+            echo "CMAKE_ROOT=/opt/homebrew/bin/cmake" >> "$GITHUB_ENV"
+            echo "MAVEN_HOME=/opt/homebrew/bin/mvn" >> "$GITHUB_ENV"
+            echo "JVMCI_SOURCE_JDK=$JVMCI_SOURCE_JDK_MACOS" >> "$GITHUB_ENV"
+            [ "${{ matrix.sdk }}" = "jdk21" ] \
+              && echo "JAVA_HOME=$JDK21_BUILD_JAVA_HOME_MACOS" >> "$GITHUB_ENV" \
+              || echo "JAVA_HOME=$JDK22PLUS_BUILD_JAVA_HOME_MACOS" >> "$GITHUB_ENV"
+          fi
 
       - name: Setup environment
         run: |
@@ -95,44 +154,134 @@ jobs:
           source $VENV_PATH/bin/activate
           pip install --upgrade pip tqdm psutil
 
-      - name: Build TornadoVM (opencl)
+      - name: Build TornadoVM (${{ matrix.sdk }}, ${{ matrix.backend }})
         run: |
-          mkdir -p graalJars && cp $GRAAL_JARS/* graalJars/
+          # Only the raw upstream jars are cached. The relocated tornado.graal module is a build
+          # product whose descriptor is pinned to the SDK floor, so it is rebuilt here rather than
+          # taken from the cache; bin/pull_graal_jars validates and discards a stale one anyway.
+          mkdir -p graalJars && [ -d "$GRAAL_JARS" ] && cp "$GRAAL_JARS"/* graalJars/ || true
+          rm -f graalJars/tornado-graal-*.jar
           source $VENV_PATH/bin/activate
-          make ${{ matrix.jdk }} BACKEND=opencl
+          make ${{ matrix.sdk }} BACKEND=${{ matrix.backend }}
 
-      - name: Run opencl fast unit tests
+      - name: Stage the SDK for the test jobs
+        run: |
+          SDK=$(ls -d dist/*/*/ | head -1)
+          echo "Staging $SDK"
+          cat "$SDK/etc/tornado.jdk"
+          # setvars.sh is NOT shipped: it pins JAVA_HOME to the build JDK, which would silently
+          # make every test leg run on that JDK instead of its own. Test jobs set TORNADOVM_HOME.
+          tar -czf sdk.tgz -C "$(dirname "${SDK%/}")" "$(basename "${SDK%/}")"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sdk-${{ matrix.platform }}-${{ matrix.backend }}-${{ matrix.sdk }}
+          path: sdk.tgz
+          retention-days: 3
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------------------
+  # TEST: the SAME artifact, run on each JDK. These need the GPU, so they are serialised per
+  # machine with a concurrency group rather than by chaining `needs`.
+  # ---------------------------------------------------------------------------------------
+  test:
+    if: github.repository == 'beehive-lab/TornadoVM'
+    needs: [build, plan]
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.test) }}
+    runs-on: ${{ matrix.runner }}
+    # Deliberately NO `concurrency:` group here. These legs share one GPU per machine and must
+    # not overlap, but a concurrency group is not a queue: GitHub keeps a single pending job per
+    # group and cancels any other, which would silently drop most of this matrix. Serialisation
+    # comes from the runner instead -- one runner process per machine means one job at a time.
+    # If a machine is ever given several runner processes, serialise with a distinct label.
+    env:
+      VENV_PATH: ${{ github.workspace }}/venv-test-${{ matrix.backend }}-${{ matrix.jdk }}
+      JAVAFX_SDK: /opt/jenkins/javafx-sdk-21.0.11
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve runtime JDK (${{ matrix.jdk }})
+        run: |
+          # Discovered rather than hardcoded: this job only needs a JDK to RUN on, nothing is
+          # compiled against it, and the exact patch level is irrelevant. Searching and then
+          # verifying with `java -version` means a JDK upgrade (26.0.1 -> 26.0.2) needs no
+          # workflow edit, and a loose glob cannot silently select the wrong feature release.
+          FEATURE="${{ matrix.jdk }}"; FEATURE="${FEATURE#jdk}"
+          if [ "${{ matrix.platform }}" = "linux" ]; then
+            echo "MAVEN_HOME=/opt/maven" >> "$GITHUB_ENV"
+          else
+            echo "MAVEN_HOME=/opt/homebrew/bin/mvn" >> "$GITHUB_ENV"
+          fi
+          ROOT=/opt/jenkins/jdks
+          CANDIDATES="$(ls -d $ROOT/*$FEATURE*/Contents/Home $ROOT/*/*$FEATURE*/Contents/Home \
+                              $ROOT/*$FEATURE* $ROOT/*/*$FEATURE* 2>/dev/null || true)"
+          FOUND=""
+          for c in $CANDIDATES; do
+            c="${c%/}"
+            [ -x "$c/bin/java" ] || continue
+            V="$("$c/bin/java" -version 2>&1 | head -1 | sed -n 's/.*version "\([0-9][0-9]*\).*/\1/p')"
+            if [ "$V" = "$FEATURE" ]; then FOUND="$c"; break; fi
+          done
+          if [ -z "$FOUND" ]; then
+            echo "::error::no JDK $FEATURE found under $ROOT"
+            echo "searched:"; echo "$CANDIDATES" | sed 's/^/  /'
+            exit 1
+          fi
+          echo "Resolved JDK $FEATURE -> $FOUND"
+          echo "JAVA_HOME=$FOUND" >> "$GITHUB_ENV"
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: sdk-${{ matrix.platform }}-${{ matrix.backend }}-${{ matrix.sdk }}
+
+      - name: Unpack the SDK and point the environment at it
+        run: |
+          mkdir -p sdk && tar -xzf sdk.tgz -C sdk
+          SDK="$(ls -d $PWD/sdk/*/)"
+          echo "TORNADOVM_HOME=${SDK%/}" >> "$GITHUB_ENV"
+          echo "${SDK%/}/bin" >> "$GITHUB_PATH"
+          echo "$JAVA_HOME/bin" >> "$GITHUB_PATH"
+          echo "$MAVEN_HOME/bin" >> "$GITHUB_PATH"
+          # NOTE: deliberately no `source setvars.sh` anywhere in this job. That file hardcodes
+          # the BUILD JDK into JAVA_HOME, so sourcing it would make every leg of this matrix run
+          # on the same JDK and quietly test nothing.
+          echo "--- SDK contract:"; cat "${SDK%/}/etc/tornado.jdk"
+
+      - name: Setup Python venv
+        run: |
+          python3 -m venv $VENV_PATH
+          source $VENV_PATH/bin/activate
+          pip install --upgrade pip tqdm psutil
+
+      - name: Show the JDK actually under test
+        run: |
+          java -version
+          tornado --devices
+
+      - name: Run ${{ matrix.backend }} fast unit tests
         run: |
           source $VENV_PATH/bin/activate
-          source setvars.sh
-          tornado --devices
           make fast-tests
 
-      - name: Resolve built TornadoVM version
+      - name: Resolve the SDK's artifact version
         run: |
-          # The two sample apps below pin a RELEASED tornado-api in their own poms (ray tracer:
-          # 5.0.0-jdk21 / 5.0.0-jdk25, kfusion: 5.2.0-jdk21). In those releases the
-          # TornadoFunctions.TaskN interfaces are NOT Serializable, and kernel entries are now
-          # resolved through the compiler-generated writeReplace()/SerializedLambda. javac only
-          # emits writeReplace when the functional interface is Serializable AT COMPILE TIME, so an
-          # app jar built against the old API fails at run time with "Unable to resolve kernel entry
-          # via SerializedLambda ... NoSuchMethodException: ...writeReplace()", no matter which
-          # runtime it is launched on. Both poms read the coordinate from a tornadovm.version
-          # property, so build them against the API this job just installed into ~/.m2 rather than
-          # against the released one. -N keeps the lookup to the root pom; the jdkNN profile is what
-          # selects the matching <revision> (5.2.1-jdkNN-dev).
-          VERSION=$(./mvnw -q -N -P${{ matrix.jdk }} help:evaluate -Dexpression=project.version -DforceStdout)
-          # Guard: an empty value would otherwise reach mvn as -Dtornadovm.version= and fail the
-          # sample-app builds with an unreadable "artifact not found" for the empty coordinate.
-          [ -n "$VERSION" ] || { echo "::error::could not resolve the built TornadoVM version"; exit 1; }
+          # The sample apps take their TornadoVM coordinate from a tornadovm.version property.
+          # Build them against the API this SDK ships, not the released one: kernel entries are
+          # resolved through the compiler-generated writeReplace()/SerializedLambda, which javac
+          # only emits when TornadoFunctions.TaskN was Serializable at the application's COMPILE
+          # time, so a jar built against an older API fails at run time whatever it runs on.
+          VERSION=$(ls "$TORNADOVM_HOME/share/java/tornado" | sed -n 's/^tornado-api-\(.*\)\.jar$/\1/p' | head -1)
+          [ -n "$VERSION" ] || { echo "::error::could not resolve the SDK's tornado-api version"; exit 1; }
           echo "Building the sample apps against tornado-api $VERSION"
           echo "TORNADO_VERSION=$VERSION" >> "$GITHUB_ENV"
 
       - name: Build & run TornadoVM-Ray-Tracer (regression)
-        timeout-minutes: 10
+        timeout-minutes: 15
         run: |
           source $VENV_PATH/bin/activate
-          source setvars.sh
           rm -rf TornadoVM-Ray-Tracer
           git clone --depth 1 --branch master https://github.com/beehive-lab/TornadoVM-Ray-Tracer.git
           cd TornadoVM-Ray-Tracer
@@ -140,11 +289,10 @@ jobs:
           mvn clean install -Dtornadovm.version="$TORNADO_VERSION"
           ./bin/tornadovm-ray-tracer regression
 
-      - name: Build & run KFusion-TornadoVM (check)
-        timeout-minutes: 10
+      - name: Build & run KFusion-TornadoVM
+        timeout-minutes: 15
         run: |
           source $VENV_PATH/bin/activate
-          source setvars.sh
           rm -rf kfusion-tornadovm
           git clone --depth 1 --branch master https://github.com/beehive-lab/kfusion-tornadovm.git
           cd kfusion-tornadovm
@@ -152,327 +300,3 @@ jobs:
           export PATH="${PATH}:${KFUSION_ROOT}/bin"
           mvn clean install -Dtornadovm.version="$TORNADO_VERSION"
           ./scripts/run.sh
-
-  # CUDA backend (generates CUDA C, compiled to PTX via NVRTC, executed through the CUDA Driver API).
-  #
-  # NOTE: The CUDA backend requires an NVIDIA GPU plus the CUDA Toolkit (NVRTC + libcuda) at runtime.
-  # Standard GitHub-hosted runners have NO NVIDIA GPU/CUDA, so the kernel-execution tests below can
-  # only run on a self-hosted CUDA runner (the same [self-hosted, Linux, x64] runner that the OpenCL
-  # job uses). If this workflow is ever ported to GitHub-hosted runners, this job must be reduced to a
-  # build-only job and the "Run cuda fast unit tests" step removed, since GPU execution would fail there.
-  #
-  # IMPORTANT: build the CUDA backend ON ITS OWN (BACKEND=cuda, not cuda,opencl). With both backends
-  # installed the unit tests can silently run on the OpenCL device and report false positives. A
-  # CUDA-only build exposes a single backend (Tornado device 0:0), so the results are unambiguous.
-  build-cuda:
-    if: |
-      github.repository == 'beehive-lab/TornadoVM' &&
-      !(github.event_name == 'push' && contains(github.event.head_commit.message, 'from beehive-lab/release/'))
-    runs-on: [self-hosted, Linux, x64]
-    needs: build-opencl                      # Serialize after ALL OpenCL legs (shares the NVIDIA GPU runner)
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        jdk: [jdk21, jdk25, jdk26, jdk27]
-    env:
-      CMAKE_ROOT: /opt/jenkins/cmake-3.25.2-linux-x86_64
-      MAVEN_HOME: /opt/maven
-      TORNADO_ROOT: ${{ github.workspace }}
-      TORNADOVM_HOME: ${{ github.workspace }}/bin/sdk
-      VENV_PATH: ${{ github.workspace }}/venv-cuda-${{ matrix.jdk }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Resolve JDK environment
-        run: |
-          case "${{ matrix.jdk }}" in
-            jdk21)
-              echo "JAVA_HOME=/opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3" >> "$GITHUB_ENV"
-              echo "GRAAL_JARS=/opt/graalJarsNoJvmci" >> "$GITHUB_ENV"
-              ;;
-            jdk25)
-              echo "JAVA_HOME=/opt/jenkins/jdks/jdk-25.0.2" >> "$GITHUB_ENV"
-              echo "GRAAL_JARS=/opt/graalJarsNoJvmci" >> "$GITHUB_ENV"
-              echo "JVMCI_SOURCE_JDK=/opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3" >> "$GITHUB_ENV"
-              ;;
-            jdk26)
-              # TODO: placeholder — provision a real JDK 26 install + GraalVM-jars cache
-              # on the self-hosted Linux runner(s) and update this path.
-              echo "JAVA_HOME=/opt/jenkins/jdks/jdk-26.x.x" >> "$GITHUB_ENV"
-              echo "GRAAL_JARS=/opt/graalJarsNoJvmci" >> "$GITHUB_ENV"
-              echo "JVMCI_SOURCE_JDK=/opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3" >> "$GITHUB_ENV"
-              ;;
-            jdk27)
-              # TODO: placeholder — provision a real JDK 27 install + GraalVM-jars cache
-              # on the self-hosted Linux runner(s) and update this path.
-              echo "JAVA_HOME=/opt/jenkins/jdks/jdk-27.x.x" >> "$GITHUB_ENV"
-              echo "GRAAL_JARS=/opt/graalJarsNoJvmci" >> "$GITHUB_ENV"
-              echo "JVMCI_SOURCE_JDK=/opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3" >> "$GITHUB_ENV"
-              ;;
-          esac
-
-      - name: Setup environment
-        run: |
-          echo "$JAVA_HOME/bin" >> $GITHUB_PATH
-          echo "$MAVEN_HOME/bin" >> $GITHUB_PATH
-          echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
-
-      - name: Setup Python venv
-        run: |
-          python3 -m venv $VENV_PATH
-          source $VENV_PATH/bin/activate
-          pip install --upgrade pip tqdm psutil
-
-      - name: Build TornadoVM (cuda)
-        run: |
-          mkdir -p graalJars && cp $GRAAL_JARS/* graalJars/
-          source $VENV_PATH/bin/activate
-          make ${{ matrix.jdk }} BACKEND=cuda
-
-      - name: Run cuda fast unit tests
-        run: |
-          source $VENV_PATH/bin/activate
-          source setvars.sh
-          tornado --devices
-          # CUDA-only build => single backend, default device 0:0 (the NVIDIA GPU).
-          make fast-tests
-
-  build-macOs-opencl:
-    if: |
-      github.repository == 'beehive-lab/TornadoVM' &&
-      !(github.event_name == 'push' && contains(github.event.head_commit.message, 'from beehive-lab/release/'))
-    runs-on: [self-hosted, macOS, arm64]
-    needs: code-quality
-    timeout-minutes: 45
-    strategy:
-      fail-fast: false
-      matrix:
-        jdk: [jdk21, jdk25, jdk26, jdk27]
-    env:
-      TORNADO_ROOT: ${{ github.workspace }}
-      TORNADOVM_HOME: ${{ github.workspace }}/bin/sdk
-      VENV_PATH: ${{ github.workspace }}/venv-opencl-${{ matrix.jdk }}
-      CMAKE_ROOT: /opt/homebrew/bin/cmake
-      MAVEN_HOME: /opt/homebrew/bin/mvn
-      JAVAFX_SDK: /opt/jenkins/javafx-sdk-21.0.11
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Resolve JDK environment
-        run: |
-          case "${{ matrix.jdk }}" in
-            jdk21)
-              echo "JAVA_HOME=/opt/jenkins/jdks/graalvm-community-openjdk-21.0.1+12.1/Contents/Home" >> "$GITHUB_ENV"
-              echo "GRAAL_JARS=/opt/graalJarsNoJvmci" >> "$GITHUB_ENV"
-              ;;
-            jdk25)
-              echo "JAVA_HOME=/opt/jenkins/jdks/jdk-25.0.2.jdk/Contents/Home" >> "$GITHUB_ENV"
-              echo "GRAAL_JARS=/opt/graalJarsNoJvmci" >> "$GITHUB_ENV"
-              echo "JVMCI_SOURCE_JDK=/opt/jenkins/jdks/jdk-21.0.11+10/Contents/Home" >> "$GITHUB_ENV"
-              ;;
-            jdk26)
-              # TODO: placeholder — provision a real JDK 26 install + GraalVM-jars cache
-              # on the self-hosted macOS runner(s) and update this path.
-              echo "JAVA_HOME=/opt/jenkins/jdks/jdk-26.x.x.jdk/Contents/Home" >> "$GITHUB_ENV"
-              echo "GRAAL_JARS=/opt/graalJarsNoJvmci" >> "$GITHUB_ENV"
-              echo "JVMCI_SOURCE_JDK=/opt/jenkins/jdks/jdk-21.0.11+10/Contents/Home" >> "$GITHUB_ENV"
-              ;;
-            jdk27)
-              # TODO: placeholder — provision a real JDK 27 install + GraalVM-jars cache
-              # on the self-hosted macOS runner(s) and update this path.
-              echo "JAVA_HOME=/opt/jenkins/jdks/jdk-27.x.x.jdk/Contents/Home" >> "$GITHUB_ENV"
-              echo "GRAAL_JARS=/opt/graalJarsNoJvmci" >> "$GITHUB_ENV"
-              echo "JVMCI_SOURCE_JDK=/opt/jenkins/jdks/jdk-21.0.11+10/Contents/Home" >> "$GITHUB_ENV"
-              ;;
-          esac
-
-      - name: Setup environment
-        run: |
-          echo "$JAVA_HOME/bin" >> $GITHUB_PATH
-          echo "$MAVEN_HOME/bin" >> $GITHUB_PATH
-          echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
-
-      - name: Setup Python venv
-        run: |
-          python3 -m venv $VENV_PATH
-          source $VENV_PATH/bin/activate
-          pip install --upgrade pip tqdm psutil
-
-      - name: Build TornadoVM (opencl)
-        run: |
-          mkdir -p graalJars && cp $GRAAL_JARS/* graalJars/
-          source $VENV_PATH/bin/activate
-          make ${{ matrix.jdk }} BACKEND=opencl
-
-      - name: Run opencl fast unit tests
-        run: |
-          source $VENV_PATH/bin/activate
-          source setvars.sh
-          tornado --devices
-          make fast-tests
-
-      - name: Resolve built TornadoVM version
-        run: |
-          # The two sample apps below pin a RELEASED tornado-api in their own poms (ray tracer:
-          # 5.0.0-jdk21 / 5.0.0-jdk25, kfusion: 5.2.0-jdk21). In those releases the
-          # TornadoFunctions.TaskN interfaces are NOT Serializable, and kernel entries are now
-          # resolved through the compiler-generated writeReplace()/SerializedLambda. javac only
-          # emits writeReplace when the functional interface is Serializable AT COMPILE TIME, so an
-          # app jar built against the old API fails at run time with "Unable to resolve kernel entry
-          # via SerializedLambda ... NoSuchMethodException: ...writeReplace()", no matter which
-          # runtime it is launched on. Both poms read the coordinate from a tornadovm.version
-          # property, so build them against the API this job just installed into ~/.m2 rather than
-          # against the released one. -N keeps the lookup to the root pom; the jdkNN profile is what
-          # selects the matching <revision> (5.2.1-jdkNN-dev).
-          VERSION=$(./mvnw -q -N -P${{ matrix.jdk }} help:evaluate -Dexpression=project.version -DforceStdout)
-          # Guard: an empty value would otherwise reach mvn as -Dtornadovm.version= and fail the
-          # sample-app builds with an unreadable "artifact not found" for the empty coordinate.
-          [ -n "$VERSION" ] || { echo "::error::could not resolve the built TornadoVM version"; exit 1; }
-          echo "Building the sample apps against tornado-api $VERSION"
-          echo "TORNADO_VERSION=$VERSION" >> "$GITHUB_ENV"
-
-      - name: Build & run TornadoVM-Ray-Tracer (regression)
-        timeout-minutes: 10
-        run: |
-          source $VENV_PATH/bin/activate
-          source setvars.sh
-          rm -rf TornadoVM-Ray-Tracer
-          git clone --depth 1 --branch master https://github.com/beehive-lab/TornadoVM-Ray-Tracer.git
-          cd TornadoVM-Ray-Tracer
-          export TORNADO_RAY_TRACER_ROOT="$PWD"
-          mvn clean install -Dtornadovm.version="$TORNADO_VERSION"
-          ./bin/tornadovm-ray-tracer regression
-
-      - name: Build & run KFusion-TornadoVM (check)
-        timeout-minutes: 10
-        run: |
-          source $VENV_PATH/bin/activate
-          source setvars.sh
-          rm -rf kfusion-tornadovm
-          git clone --depth 1 --branch master https://github.com/beehive-lab/kfusion-tornadovm.git
-          cd kfusion-tornadovm
-          export KFUSION_ROOT="${PWD}"
-          export PATH="${PATH}:${KFUSION_ROOT}/bin"
-          mvn clean install -Dtornadovm.version="$TORNADO_VERSION"
-          ./scripts/run.sh
-
-  build-macOs-metal:
-    if: |
-      github.repository == 'beehive-lab/TornadoVM' &&
-      !(github.event_name == 'push' && contains(github.event.head_commit.message, 'from beehive-lab/release/'))
-    runs-on: [self-hosted, macOS, arm64]
-    needs: code-quality
-    timeout-minutes: 45
-    strategy:
-      fail-fast: false
-      matrix:
-        jdk: [jdk21, jdk25, jdk26, jdk27]
-    env:
-      TORNADO_ROOT: ${{ github.workspace }}
-      TORNADOVM_HOME: ${{ github.workspace }}/bin/sdk
-      VENV_PATH: ${{ github.workspace }}/venv-metal-${{ matrix.jdk }}
-      CMAKE_ROOT: /opt/homebrew/bin/cmake
-      MAVEN_HOME: /opt/homebrew/bin/mvn
-      JAVAFX_SDK: /opt/jenkins/javafx-sdk-21.0.11
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Resolve JDK environment
-        run: |
-          case "${{ matrix.jdk }}" in
-            jdk21)
-              echo "JAVA_HOME=/opt/jenkins/jdks/graalvm-community-openjdk-21.0.1+12.1/Contents/Home" >> "$GITHUB_ENV"
-              echo "GRAAL_JARS=/opt/graalJarsNoJvmci" >> "$GITHUB_ENV"
-              ;;
-            jdk25)
-              echo "JAVA_HOME=/opt/jenkins/jdks/jdk-25.0.2.jdk/Contents/Home" >> "$GITHUB_ENV"
-              echo "GRAAL_JARS=/opt/graalJarsNoJvmci" >> "$GITHUB_ENV"
-              echo "JVMCI_SOURCE_JDK=/opt/jenkins/jdks/jdk-21.0.11+10/Contents/Home" >> "$GITHUB_ENV"
-              ;;
-            jdk26)
-              # TODO: placeholder — provision a real JDK 26 install + GraalVM-jars cache
-              # on the self-hosted macOS runner(s) and update this path.
-              echo "JAVA_HOME=/opt/jenkins/jdks/jdk-26.x.x.jdk/Contents/Home" >> "$GITHUB_ENV"
-              echo "GRAAL_JARS=/opt/graalJarsNoJvmci" >> "$GITHUB_ENV"
-              echo "JVMCI_SOURCE_JDK=/opt/jenkins/jdks/jdk-21.0.11+10/Contents/Home" >> "$GITHUB_ENV"
-              ;;
-            jdk27)
-              # TODO: placeholder — provision a real JDK 27 install + GraalVM-jars cache
-              # on the self-hosted macOS runner(s) and update this path.
-              echo "JAVA_HOME=/opt/jenkins/jdks/jdk-27.x.x.jdk/Contents/Home" >> "$GITHUB_ENV"
-              echo "GRAAL_JARS=/opt/graalJarsNoJvmci" >> "$GITHUB_ENV"
-              echo "JVMCI_SOURCE_JDK=/opt/jenkins/jdks/jdk-21.0.11+10/Contents/Home" >> "$GITHUB_ENV"
-              ;;
-          esac
-
-      - name: Setup environment
-        run: |
-          echo "$JAVA_HOME/bin" >> $GITHUB_PATH
-          echo "$MAVEN_HOME/bin" >> $GITHUB_PATH
-          echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
-
-      - name: Setup Python venv
-        run: |
-          python3 -m venv $VENV_PATH
-          source $VENV_PATH/bin/activate
-          pip install --upgrade pip tqdm psutil
-
-      - name: Build TornadoVM (metal)
-        run: |
-          mkdir -p graalJars && cp $GRAAL_JARS/* graalJars/
-          source $VENV_PATH/bin/activate
-          make ${{ matrix.jdk }} BACKEND=metal
-
-      - name: Run metal fast unit tests
-        run: |
-          source $VENV_PATH/bin/activate
-          source setvars.sh
-          tornado --devices
-          make fast-tests
-
-      - name: Resolve built TornadoVM version
-        run: |
-          # The two sample apps below pin a RELEASED tornado-api in their own poms (ray tracer:
-          # 5.0.0-jdk21 / 5.0.0-jdk25, kfusion: 5.2.0-jdk21). In those releases the
-          # TornadoFunctions.TaskN interfaces are NOT Serializable, and kernel entries are now
-          # resolved through the compiler-generated writeReplace()/SerializedLambda. javac only
-          # emits writeReplace when the functional interface is Serializable AT COMPILE TIME, so an
-          # app jar built against the old API fails at run time with "Unable to resolve kernel entry
-          # via SerializedLambda ... NoSuchMethodException: ...writeReplace()", no matter which
-          # runtime it is launched on. Both poms read the coordinate from a tornadovm.version
-          # property, so build them against the API this job just installed into ~/.m2 rather than
-          # against the released one. -N keeps the lookup to the root pom; the jdkNN profile is what
-          # selects the matching <revision> (5.2.1-jdkNN-dev).
-          VERSION=$(./mvnw -q -N -P${{ matrix.jdk }} help:evaluate -Dexpression=project.version -DforceStdout)
-          # Guard: an empty value would otherwise reach mvn as -Dtornadovm.version= and fail the
-          # sample-app builds with an unreadable "artifact not found" for the empty coordinate.
-          [ -n "$VERSION" ] || { echo "::error::could not resolve the built TornadoVM version"; exit 1; }
-          echo "Building the sample apps against tornado-api $VERSION"
-          echo "TORNADO_VERSION=$VERSION" >> "$GITHUB_ENV"
-
-      - name: Build & run TornadoVM-Ray-Tracer (regression)
-        timeout-minutes: 10
-        run: |
-          source $VENV_PATH/bin/activate
-          source setvars.sh
-          rm -rf TornadoVM-Ray-Tracer
-          git clone --depth 1 --branch master https://github.com/beehive-lab/TornadoVM-Ray-Tracer.git
-          cd TornadoVM-Ray-Tracer
-          export TORNADO_RAY_TRACER_ROOT="$PWD"
-          mvn clean install -Dtornadovm.version="$TORNADO_VERSION"
-          ./bin/tornadovm-ray-tracer regression
-
-      - name: Build & run KFusion-TornadoVM (console mode)
-        timeout-minutes: 10
-        run: |
-          source $VENV_PATH/bin/activate
-          source setvars.sh
-          rm -rf kfusion-tornadovm
-          git clone --depth 1 --branch master https://github.com/beehive-lab/kfusion-tornadovm.git
-          cd kfusion-tornadovm
-          export KFUSION_ROOT="${PWD}"
-          export PATH="${PATH}:${KFUSION_ROOT}/bin"
-          mvn clean install -Dtornadovm.version="$TORNADO_VERSION"
-          ./scripts/run.sh
-
