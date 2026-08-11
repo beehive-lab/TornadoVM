@@ -1,17 +1,22 @@
-name: Reflection API Unit Tests (no-GPU) [JDK 21/25/26/27]
+name: Reflection API Unit Tests (no-GPU) [JDK 21, 22-27]
 
 # Pure-JVM unit tests for the reflection JVMCI layer (tornado-runtime/src/test). These need no GPU,
-# so they run on a standard GitHub-hosted runner - the first no-GPU CI stage for TornadoVM. The full
+# so they run on standard GitHub-hosted runners - the first no-GPU CI stage for TornadoVM. The full
 # build is still required first so the modular dependencies (tornado-api, tornado.graal, ...) are on
 # the module path for the reflection tests; the tests themselves touch no device.
 #
-# Matrixed across every JDK profile the project supports building on, because each one gives the
-# reflection layer a genuinely different jdk.internal.vm.ci to sit on top of:
-#   jdk21        - native platform module, unmodified
-#   jdk25/jdk26  - native module, patched at compile+runtime with the frozen graalJars/jvmci-21.0.2.jar
-#   jdk27        - JVMCI removed from the platform entirely; supplied as the vendored tornado.jvmci
-#                  application module (bin/build_jvmci_module.py)
-# A regression specific to one of those shapes would stay green here forever if only jdk21 ran.
+# These are surefire tests, compiled and run by Maven rather than launched from a packaged SDK, so
+# unlike build-test.yml this workflow cannot reuse one artifact across JDKs. What it does instead is
+# the complementary half of the same claim: build-test.yml proves one ARTIFACT runs on every JDK,
+# and this proves the jdk22plus profile BUILDS on every JDK. The matrix axis is therefore the host
+# JDK, not the profile -- there is only one profile above 21 now.
+#
+# Each host still gives the reflection layer a different jdk.internal.vm.ci to sit on:
+#   JDK 21     native platform module, unmodified (the separate, preview-compiled jdk21 SDK)
+#   JDK 22-26  native module, patched at run time with the frozen graalJars/jvmci-21.0.2.jar
+#   JDK 27     JVMCI removed from the platform entirely; supplied as the vendored tornado.jvmci
+#              application module (bin/build_jvmci_module.py)
+# A regression specific to one of those shapes would stay green forever if only one JDK ran.
 
 on:
   push:
@@ -27,37 +32,54 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        jdk:
+        include:
+          # The preview-compiled SDK: JDK 21 only, and it needs no co-installed JDK because the
+          # platform still ships the jvmci shape it targets.
           - profile: jdk21
             setup_java_version: '21'
-          # jdk25/26/27 also install JDK 21 alongside the target JDK: build_jvmci_module.py
-          # (invoked by pull_graal_jars for these profiles) needs a JDK 21 runtime image to
-          # source the frozen jdk.vm.ci.* SPI from. Listing 21 first and the target version
-          # last matters -- actions/setup-java points JAVA_HOME at the *last* JDK installed,
-          # and bin/compile's --jdk check requires JAVA_HOME to be the target JDK.
-          - profile: jdk25
+          # One profile, every host JDK from the floor up. Each also installs JDK 21 alongside the
+          # host: build_jvmci_module.py (invoked by pull_graal_jars) needs a JDK 21 runtime image to
+          # source the frozen jdk.vm.ci.* SPI from, whatever the build JDK is. Listing 21 first and
+          # the host last matters -- actions/setup-java points JAVA_HOME at the LAST JDK installed,
+          # and bin/compile checks JAVA_HOME against the profile's floor.
+          - profile: jdk22plus
+            setup_java_version: |
+              21
+              22
+          - profile: jdk22plus
+            setup_java_version: |
+              21
+              23
+          - profile: jdk22plus
+            setup_java_version: |
+              21
+              24
+          - profile: jdk22plus
             setup_java_version: |
               21
               25
-          - profile: jdk26
+          - profile: jdk22plus
             setup_java_version: |
               21
               26
-          - profile: jdk27
+          - profile: jdk22plus
             setup_java_version: |
               21
               27-ea
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up JDK (${{ matrix.jdk.profile }})
+      - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: ${{ matrix.jdk.setup_java_version }}
+          java-version: ${{ matrix.setup_java_version }}
 
-      - name: Point JVMCI_SOURCE_JDK at the co-installed JDK 21 (jdk25/26/27 only)
-        if: matrix.jdk.profile != 'jdk21'
+      - name: Report the host JDK under test
+        run: java -version
+
+      - name: Point JVMCI_SOURCE_JDK at the co-installed JDK 21 (jdk22plus only)
+        if: matrix.profile != 'jdk21'
         run: echo "JVMCI_SOURCE_JDK=$JAVA_HOME_21_X64" >> "$GITHUB_ENV"
 
       - name: Install native build dependencies
@@ -65,12 +87,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y cmake ocl-icd-opencl-dev opencl-headers python3-venv
 
-      - name: Build TornadoVM (opencl, ${{ matrix.jdk.profile }})
+      - name: Build TornadoVM (opencl, ${{ matrix.profile }})
         run: |
           python3 -m venv venv
           source venv/bin/activate
           pip install --upgrade pip tqdm psutil
-          make ${{ matrix.jdk.profile }} BACKEND=opencl
+          make ${{ matrix.profile }} BACKEND=opencl
 
-      - name: Run reflection unit tests (${{ matrix.jdk.profile }})
-        run: make test-reflection JDK=${{ matrix.jdk.profile }}
+      - name: Show the SDK's declared JDK contract
+        run: cat "$(ls -d dist/*/*/)etc/tornado.jdk"
+
+      - name: Run reflection unit tests (${{ matrix.profile }})
+        run: make test-reflection JDK=${{ matrix.profile }}
