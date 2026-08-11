@@ -174,8 +174,8 @@ def should_handle_graal_jars(jdk):
     machine where another JDK's build had already installed one, with that JDK's
     module-info, failing as "module not found: tornado.graal".
 
-    The `graal-jdk-21` (polyglot) profile, which does take Graal from the JDK, is
-    excluded by the profile list rather than by inspecting JAVA_HOME.
+    The `graal-jdk-21` profile, which does take Graal from the JDK, is excluded
+    by the profile list rather than by inspecting JAVA_HOME.
     """
     return jdk in ("jdk21", "jdk25", "jdk26", "jdk27")
 
@@ -251,7 +251,7 @@ def build_tornadovm(args, backend_profiles):
     Builds TornadoVM with the specified JDK and backend options.
 
     Args:
-        args (object): The arguments passed by the user. The JDK version as well as other options (e.g., if polyglot is used).
+        args (object): The arguments passed by the user. The JDK version as well as other options.
         backend_profiles (str): The processed backend options.
 
     Returns:
@@ -272,10 +272,7 @@ def build_tornadovm(args, backend_profiles):
         if args.mavenSingleThreaded:
             process.append("-T1")
 
-        if args.polyglot:
-            process.append(f"-P{args.jdk},{backend_profiles},graalvm-polyglot")
-        else:
-            process.append(f"-P{args.jdk},{backend_profiles}")
+        process.append(f"-P{args.jdk},{backend_profiles}")
 
         # Determine backend variant for SDKMAN-compliant archive naming
         backend_list = args.backend.split(",")
@@ -452,13 +449,6 @@ def parse_args():
         "--jdk", help="JDK version (e.g., jdk21, graal-jdk-21)"
     )
     parser.add_argument("--backend", help="e.g., opencl,cuda,metal")
-    parser.add_argument(
-        "--polyglot",
-        action="store_true",
-        dest="polyglot",
-        default=False,
-        help="To enable interoperability with Truffle Programming Languages."
-    )
     parser.add_argument(
         "--mvn_single_threaded",
         action="store_true",

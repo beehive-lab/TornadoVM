@@ -122,7 +122,6 @@ class InstallationConfig:
     download_jdk: bool = False
     download_cmake: bool = False
     backends: List[str] = None
-    polyglot: bool = False
     maven_single_threaded: bool = False
     java_home: Optional[str] = None
     auto_deps: bool = False
@@ -379,12 +378,9 @@ class BuildManager:
         # Common prefix for single-threaded Maven runs
         prefix = "mvn-single-threaded-" if config.maven_single_threaded else ""
 
-        # Decide the suffix make target and polyglot option.
+        # Decide the suffix make target.
         if config.jdk_keyword and "graal" in config.jdk_keyword.lower():
-            if config.polyglot:
-                suffix = "polyglot"
-            else:
-                suffix = "graal-jdk-21"
+            suffix = "graal-jdk-21"
         else:
             suffix = "jdk21"
 
@@ -531,10 +527,7 @@ class TornadoInstaller:
         else:
             config.download_jdk, config.jdk_keyword = self._handle_jdk_selection()
 
-        # Validate polyglot requirements
         config.auto_deps = args.autoDependencies
-        if args.polyglot:
-            config = self._validate_polyglot_config(config)
 
         # Check CMake dependency
         # Note: Maven is not checked because the build system uses Maven wrapper (mvnw)
@@ -546,7 +539,6 @@ class TornadoInstaller:
 
         # Set other options
         config.backends = self.ui.select_backends(args)
-        config.polyglot = args.polyglot
         config.maven_single_threaded = args.mavenSingleThreaded
 
         return config
@@ -578,43 +570,6 @@ class TornadoInstaller:
             self.console.print("[ERROR] Invalid choice. Exiting.", style="bold red")
             sys.exit(1)
 
-    def _validate_polyglot_config(self, config: InstallationConfig) -> InstallationConfig:
-        """Validate and adjust configuration for polyglot support."""
-        if not config.jdk_keyword or "graal" not in config.jdk_keyword.lower():
-            if config.auto_deps:
-                self.console.print("[WARNING] Polyglot requires GraalVM. You have enabled auto-deps, thus the script will download and use the GraalVM JDK.", style="yellow")
-                config.jdk_keyword = "graal-jdk-21"
-                config.download_jdk = True
-            else:
-                self.console.print("[ERROR] Polyglot requires GraalVM. Please select the GraalVM JDK.", style="bold red")
-                self.console.print("You have two options to proceed:", style="yellow")
-                self.console.print("[1] Use an already installed GraalVM JDK by setting JAVA_HOME.", style="green")
-                self.console.print("[2] Let the installer automatically download and configure a compatible GraalVM JDK distribution.", style="green")
-                self.console.print("    Upon successful build, the installer will also generate an environment setup script", style="green")
-                self.console.print("    that configures JAVA_HOME and other necessary variables for future use.\n", style="green")
-
-                try:
-                    choice = int(input("Enter the number of your choice (1 or 2): ").strip())
-                    if choice == 1:
-                        self.console.print("👉 You selected option [1].", style="bold")
-                        self.console.print("Now you should either:", style="yellow")
-                        self.console.print("- export JAVA_HOME manually in your terminal", style="yellow")
-                        self.console.print("- OR set it permanently in your shell profile (e.g. ~/.bashrc, ~/.zshrc, or ~/.profile)", style="yellow")
-                        self.console.print("\nExample:", style="dim")
-                        self.console.print("export JAVA_HOME=/path/to/your/jdk", style="green")
-                        self.console.print("\nOnce JAVA_HOME is set correctly, re-run this installer.", style="yellow")
-                        sys.exit(0)
-                    elif choice == 2:
-                        config.jdk_keyword = "graal-jdk-21"
-                        config.download_jdk = True
-                    else:
-                        raise ValueError("Invalid choice")
-                except ValueError:
-                    self.console.print("[ERROR] Invalid choice. Exiting.", style="bold red")
-                    sys.exit(1)
-
-        return config
-
 def parseArguments():
     parser = argparse.ArgumentParser(description="TornadoVM Installer Tool.  It will install all software dependencies except the GPU drivers")
     parser.add_argument("--jdk", action="store", dest="jdk", default=None,
@@ -625,8 +580,6 @@ def parseArguments():
     parser.add_argument("--backend", action="store", dest="backend", default=None, help="Select the backend to install: { opencl, cuda, metal }")
     parser.add_argument("--version", action="store_true", dest="version", default=False, help="Print version")
     parser.add_argument("--listJDKs", action="store_true", dest="listJDKs", default=False, help="List supported JDKs")
-    parser.add_argument("--polyglot", action="store_true", dest="polyglot", default=None,
-                        help="Enable Truffle Interoperability with GraalVM")
     parser.add_argument("--mvn_single_threaded", action="store_true", dest="mavenSingleThreaded", default=None,
                         help="Run Maven in single-threaded mode")
     parser.add_argument("--auto-deps", action="store_true", dest="autoDependencies", help="Automatic download and use any missing dependencies")

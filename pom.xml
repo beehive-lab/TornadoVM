@@ -694,36 +694,6 @@
                 </plugins>
             </build>
         </profile>
-
-        <profile>
-            <id>graalvm-polyglot</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>org.graalvm.polyglot</groupId>
-                    <artifactId>python</artifactId>
-                    <version>${graalvm.version}</version>
-                    <scope>runtime</scope>
-                    <type>pom</type>
-                </dependency>
-                <dependency>
-                    <groupId>org.graalvm.polyglot</groupId>
-                    <artifactId>js</artifactId>
-                    <version>${graalvm.version}</version>
-                    <scope>runtime</scope>
-                    <type>pom</type>
-                </dependency>
-                <dependency>
-                    <groupId>org.graalvm.polyglot</groupId>
-                    <artifactId>ruby</artifactId>
-                    <version>${graalvm.version}</version>
-                    <scope>runtime</scope>
-                    <type>pom</type>
-                </dependency>
-            </dependencies>
-        </profile>
     </profiles>
     <build>
         <finalName>${project.artifactId}-${project.version}-${buildNumber}</finalName>
@@ -896,11 +866,6 @@
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
             <version>2.25.4</version>
-        </dependency>
-        <dependency>
-            <groupId>org.graalvm.polyglot</groupId>
-            <artifactId>polyglot</artifactId>
-            <version>${graalvm.version}</version>
         </dependency>
         <dependency>
             <groupId>org.graalvm.sdk</groupId>

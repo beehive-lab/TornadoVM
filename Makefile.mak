@@ -40,17 +40,11 @@ rebuild-deps:
 graal-jdk-21:
 	python bin\compile --jdk graal-jdk-21 --backend $(BACKEND)
 
-polyglot:
-	python bin\compile --jdk graal-jdk-21 --backend $(BACKEND) --polyglot
-
 mvn-single-threaded-jdk21:
 	python bin/compile --jdk jdk21 --backend $(BACKEND) --mvn_single_threaded
 
 mvn-single-threaded-graal-jdk-21:
 	python bin/compile --jdk graal-jdk-21 --backend $(BACKEND) --mvn_single_threaded
-
-mvn-single-threaded-polyglot:
-	python bin/compile --jdk graal-jdk-21 --backend $(BACKEND) --mvn_single_threaded --polyglot
 
 
 cuda:
