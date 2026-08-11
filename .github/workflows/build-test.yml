@@ -87,8 +87,16 @@ jobs:
           sweep = os.environ.get("FULL_SWEEP", "")
           full = (sweep == "true") if sweep in ("true", "false") \
                  else os.environ["GITHUB_EVENT_NAME"] != "pull_request"
+          # PR subset is 25 and 27, not 22 and 27, on purpose and temporarily: the sample apps'
+          # poms activate their legacy profile on <jdk>[21,25)</jdk>, so on JDK 22, 23 and 24 they
+          # compile at release 21 WITH enable-preview and javac refuses ("invalid source release 21
+          # with --enable-preview"). That is a defect in those apps, not here, and it makes a 22 leg
+          # permanently red until they are fixed. 25 and 27 keep the two shapes that matter on a
+          # pull request -- platform jvmci patched at run time, and jvmci absent entirely -- and the
+          # nightly sweep still covers 22-24 so the app fix shows up the moment it lands. Restore
+          # "jdk22" as the low end once the sample apps handle it.
           jdk22plus_runtimes = ["jdk22", "jdk23", "jdk24", "jdk25", "jdk26", "jdk27"] if full \
-                               else ["jdk22", "jdk27"]
+                               else ["jdk25", "jdk27"]
 
           build, test = [], []
           for platform, backend, runner in targets:

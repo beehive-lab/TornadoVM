@@ -1169,6 +1169,24 @@ class TornadoVMRunnerTool():
                 # Silently fail - this is not critical for tornado operation
                 pass
 
+    def regenerateArgfileTemplate(self):
+        """Re-run gen-tornado-argfile-template.py so the template matches this JDK.
+
+        Best effort: if the generator is missing or fails, fall back to whatever template the
+        SDK already ships rather than blocking the caller.
+        """
+        gen = os.path.join(self.sdk, "bin", "gen-tornado-argfile-template.py")
+        if not os.path.exists(gen):
+            return
+        backends = ",".join(b.replace("-backend", "") for b in self.listOfBackends)
+        python_cmd = "python" if os.name == "nt" else "python3"
+        try:
+            subprocess.run([python_cmd, gen, backends], cwd=os.path.join(self.sdk, "bin"),
+                           check=True, capture_output=True, text=True)
+        except (subprocess.CalledProcessError, OSError) as e:
+            print(f"[WARNING] Could not regenerate the argfile template for this JDK ({e});"
+                  f" reusing the one shipped with the SDK")
+
     def generateArgfile(self):
         """
         Regenerate tornado-argfile in SDK directory.
@@ -1177,6 +1195,16 @@ class TornadoVMRunnerTool():
         """
         template_file = os.path.join(self.sdk, "tornado-argfile.template")
         output_file = os.path.join(self.sdk, "tornado-argfile")
+
+        # Rebuild the template against the JDK running RIGHT NOW rather than reusing the one the
+        # build left behind. The flags it holds are JDK-specific -- -XX:+EnableJVMCI and the jvmci
+        # --patch-module on 22-26, the vendored jvmci module-path entry on 27+ -- while the SDK
+        # itself is not: one jdk22plus SDK serves every JDK from 22 up. Expanding a template
+        # produced under the build JDK therefore hands a JDK-26-shaped command line to a JDK 27
+        # JVM, which rejects it outright ("Unrecognized VM option 'EnableJVMCI'"). Callers already
+        # expect this: kfusion's run.sh regenerates before every launch precisely so the flags
+        # match its JAVA_HOME.
+        self.regenerateArgfileTemplate()
 
         if not os.path.exists(template_file):
             print(f"[ERROR] Argfile is not found in TORNADOVM_HOME")
