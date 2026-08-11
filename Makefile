@@ -4,11 +4,15 @@ all: build
 # make BACKEND=<comma_separated_backend_list>
 BACKEND ?= opencl
 
-# JDK used by the `sdk`, `test-reflection`, and `test-reflection-only` targets { jdk21, jdk25, jdk26, jdk27 }.
+# JDK profile used by the `sdk`, `test-reflection`, and `test-reflection-only` targets { jdk21, jdk22plus }.
 # Default is `jdk21` to preserve historical bare `make sdk`/`make test-reflection` behavior.
-# make sdk JDK=<jdk21|jdk25|jdk26|jdk27> BACKEND=<comma_separated_backend_list>
+# make sdk JDK=<jdk21|jdk22plus> BACKEND=<comma_separated_backend_list>
 # Prefer the sdk-jdkNN targets below over `make sdk JDK=...` when building a specific JDK's SDK.
 JDK ?= jdk21
+
+# jdk25/jdk26/jdk27 no longer exist as Maven profiles: one jdk22plus profile serves every JDK
+# from 22 up. Map the legacy names onto it so `JDK=jdk25` and CI callers keep working.
+JDK_PROFILE = $(if $(filter jdk21 graal-jdk-21,$(JDK)),$(JDK),jdk22plus)
 
 build jdk21:
 	bin/compile --jdk jdk21 --backend $(BACKEND)
@@ -16,23 +20,13 @@ build jdk21:
 rebuild-deps-jdk21:
 	bin/compile --jdk jdk21 --rebuild --backend $(BACKEND)
 
-jdk25:
-	bin/compile --jdk jdk25 --backend $(BACKEND)
+# One SDK for every JDK from 22 up. jdk25/jdk26/jdk27 are kept as aliases so existing
+# scripts and muscle memory keep working; they all produce the same artifact.
+jdk22plus jdk25 jdk26 jdk27:
+	bin/compile --jdk jdk22plus --backend $(BACKEND)
 
-rebuild-deps-jdk25:
-	bin/compile --jdk jdk25 --rebuild --backend $(BACKEND)
-
-jdk26:
-	bin/compile --jdk jdk26 --backend $(BACKEND)
-
-rebuild-deps-jdk26:
-	bin/compile --jdk jdk26 --rebuild --backend $(BACKEND)
-
-jdk27:
-	bin/compile --jdk jdk27 --backend $(BACKEND)
-
-rebuild-deps-jdk27:
-	bin/compile --jdk jdk27 --rebuild --backend $(BACKEND)
+rebuild-deps-jdk22plus rebuild-deps-jdk25 rebuild-deps-jdk26 rebuild-deps-jdk27:
+	bin/compile --jdk jdk22plus --rebuild --backend $(BACKEND)
 
 graal-jdk-21:
 	bin/compile --jdk graal-jdk-21 --backend $(BACKEND)
@@ -51,19 +45,13 @@ cuda:
 	bin/compile --jdk jdk21 --backend cuda
 
 sdk:
-	bin/compile --jdk $(JDK) --sdk --backend $(BACKEND)
+	bin/compile --jdk $(JDK_PROFILE) --sdk --backend $(BACKEND)
 
 sdk-jdk21:
 	bin/compile --jdk jdk21 --sdk --backend $(BACKEND)
 
-sdk-jdk25:
-	bin/compile --jdk jdk25 --sdk --backend $(BACKEND)
-
-sdk-jdk26:
-	bin/compile --jdk jdk26 --sdk --backend $(BACKEND)
-
-sdk-jdk27:
-	bin/compile --jdk jdk27 --sdk --backend $(BACKEND)
+sdk-jdk22plus sdk-jdk25 sdk-jdk26 sdk-jdk27:
+	bin/compile --jdk jdk22plus --sdk --backend $(BACKEND)
 
 checkstyle:
 	./mvnw checkstyle:check
@@ -71,18 +59,18 @@ checkstyle:
 # Pure-JVM (no-GPU) unit tests for the reflection JVMCI layer. Every JDK profile skips surefire,
 # so force it on here. `clean` + `-am` rebuilds tornado-api and tornado-runtime together in the
 # same reactor so stale class files from a previously-used JDK profile (source/target release
-# differs per profile, e.g. jdk21 compiles at 21, jdk25/26/27 at 22) never leak into the test
+# differs per profile, e.g. jdk21 compiles at 21, jdk22plus at 22) never leak into the test
 # classpath — this target is then safe to run right after a different JDK profile's build, with
-# no manual `mvn clean` in between. Override the profile with JDK=jdk25|jdk26|jdk27 to run under
+# no manual `mvn clean` in between. Override the profile with JDK=jdk22plus to run under
 # another JDK (JDK is declared once, near BACKEND, at the top of this file).
 test-reflection:
-	./mvnw -P$(JDK) -pl tornado-api,tornado-runtime -am clean test -DskipTests=false
+	./mvnw -P$(JDK_PROFILE) -pl tornado-api,tornado-runtime -am clean test -DskipTests=false
 
 # Only the reflection JVMCI-layer suites (uk.ac.manchester.tornado.runtime.jvmci.reflection.*Test) —
 # the standalone metadata API, a subset of what test-reflection runs. Same JDK override and
 # clean+-am rationale as test-reflection.
 test-reflection-only:
-	./mvnw -P$(JDK) -pl tornado-api,tornado-runtime -am clean test -DskipTests=false -Dtest="uk.ac.manchester.tornado.runtime.jvmci.reflection.*Test"
+	./mvnw -P$(JDK_PROFILE) -pl tornado-api,tornado-runtime -am clean test -DskipTests=false -Dtest="uk.ac.manchester.tornado.runtime.jvmci.reflection.*Test"
 
 clean:
 	./mvnw -Popencl-backend,cuda-backend,metal-backend clean

@@ -177,7 +177,7 @@ def main(jdk=None):
     # jdk.internal.vm.ci module at all, so build_graal_module's jdeps/javac calls can only
     # resolve it from this vendored jar (staged here) rather than via --add-modules against
     # the running JDK's own system modules.
-    if jdk in ("jdk25", "jdk26", "jdk27"):
+    if jdk is not None and jdk != "jdk21":
         logger.info(f"Building/staging vendored {CYAN}jdk.internal.vm.ci{RESET} module for {jdk}...")
         import build_jvmci_module
         build_jvmci_module.build(jdk=jdk)

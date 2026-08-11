@@ -101,9 +101,16 @@ def _parse_major_version(java_version_output):
     return int(match.group(1)) if match else None
 
 
+# Profiles whose SDK targets a FLOOR rather than one exact release: JAVA_HOME may be that
+# version or any later one, because the artifact is built to run on all of them.
+FLOOR_PROFILES = {"jdk22plus": 22}
+
+
 def _parse_expected_version(jdk):
     """Extract the target major version from a --jdk value, e.g. 'jdk21' -> 21,
-    'graal-jdk-21' -> 21."""
+    'graal-jdk-21' -> 21, 'jdk22plus' -> 22."""
+    if jdk in FLOOR_PROFILES:
+        return FLOOR_PROFILES[jdk]
     match = re.search(r'(\d+)$', jdk) if jdk else None
     return int(match.group(1)) if match else None
 
@@ -132,11 +139,14 @@ def verify_jdk_matches_java_home(jdk):
         print("[SKIPPED] (could not parse JDK version from `java -version`)")
         return
 
-    if actual != expected:
+    # A floor profile accepts anything at or above its floor; an exact profile does not.
+    ok = actual >= expected if jdk in FLOOR_PROFILES else actual == expected
+    if not ok:
         print("[ERROR]")
         java_home = os.environ.get("JAVA_HOME")
+        wanted = f"JDK {expected} or newer" if jdk in FLOOR_PROFILES else f"JDK {expected}"
         print(
-            f"\n\t--jdk {jdk} requires a JDK {expected} JAVA_HOME, but JAVA_HOME is "
+            f"\n\t--jdk {jdk} requires a {wanted} JAVA_HOME, but JAVA_HOME is "
             f"JDK {actual}:\n\t  {java_home}\n\n"
             f"\tThe --jdk flag only selects Maven compiler flags/dependencies -- it does\n"
             f"\tNOT switch the build toolchain, which always comes from JAVA_HOME. A\n"
@@ -177,7 +187,7 @@ def should_handle_graal_jars(jdk):
     The `graal-jdk-21` profile, which does take Graal from the JDK, is excluded
     by the profile list rather than by inspecting JAVA_HOME.
     """
-    return jdk in ("jdk21", "jdk25", "jdk26", "jdk27")
+    return jdk in ("jdk21", "jdk22plus")
 
 
 def maven_cleanup():
@@ -446,7 +456,7 @@ def parse_args():
     """
     parser = argparse.ArgumentParser(description="Tool to compile TornadoVM")
     parser.add_argument(
-        "--jdk", help="JDK version (e.g., jdk21, graal-jdk-21)"
+        "--jdk", help="JDK profile (jdk21, jdk22plus, graal-jdk-21)"
     )
     parser.add_argument("--backend", help="e.g., opencl,cuda,metal")
     parser.add_argument(
