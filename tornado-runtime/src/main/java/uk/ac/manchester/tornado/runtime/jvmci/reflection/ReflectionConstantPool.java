@@ -224,6 +224,15 @@ final class ReflectionConstantPool implements ConstantPool {
         };
     }
 
+    // Intentionally not annotated @Override: some JDK 21 JVMCI vendors (e.g. GraalVM 21.0.12+)
+    // added this overload to ConstantPool, others (e.g. Temurin 21.0.11) didn't. Without @Override
+    // this satisfies the interface where the method exists and is an inert extra method where it
+    // doesn't, so the same source compiles against either. This CP always resolves eagerly via
+    // reflection - there's no lazy/unresolved form - so the resolve flag has nothing to toggle.
+    public Object lookupConstant(int cpi, boolean resolve) {
+        return lookupConstant(cpi);
+    }
+
     @Override
     public Signature lookupSignature(int cpi) {
         throw ReflectionUniverse.todo("ConstantPool.lookupSignature");
