@@ -41,10 +41,12 @@ env:
 
 jobs:
   build:
-    # Explicit name: the default would splice in the runner labels (self-hosted, Linux, x64),
-    # repeating what the caller's job prefix already says. Those labels belong in runs-on, not
-    # in the run's UI.
-    name: build ${{ matrix.backend }} / ${{ matrix.sdk }}
+    # Explicit name. The default splices in every matrix value including the runner labels
+    # (self-hosted, Linux, x64), which repeats the platform the caller's prefix already gives and
+    # surfaces scheduling detail that belongs in runs-on. Naming the two things that actually
+    # distinguish a job -- which SDK, and for a test which JDK it runs on -- means the run can be
+    # read without opening this file.
+    name: build-${{ matrix.sdk }}-${{ matrix.backend }}
     timeout-minutes: 40
     strategy:
       fail-fast: false
@@ -119,7 +121,7 @@ jobs:
   # machine with a concurrency group rather than by chaining `needs`.
   # ---------------------------------------------------------------------------------------
   test:
-    name: test ${{ matrix.backend }} / ${{ matrix.sdk }} on ${{ matrix.jdk }}
+    name: test-${{ matrix.sdk }}-on-${{ matrix.jdk }}-${{ matrix.backend }}
     needs: build
     timeout-minutes: 60
     strategy:
