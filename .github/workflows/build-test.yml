@@ -14,10 +14,25 @@ name: Build & Test
 #              and later; the build JDK is an implementation detail and is pinned below.
 # Each SDK records its own contract in etc/tornado.jdk, and bin/tornado enforces it.
 
+# Scope of the JDK matrix per event (see the plan job):
+#   pull request            floor and newest only, because the GPU runners serialise
+#   push to develop         same subset: a merge is not a reason to occupy both machines for an
+#                           hour, and the nightly covers the rest a few hours later
+#   + ci-full-jdk-sweep     label on the PR -> every JDK, for the run before you merge
+#   schedule (nightly)      every JDK
+#   workflow_dispatch       every JDK unless full_jdk_sweep is set to false
 on:
   pull_request:
     branches: [develop]
-    types: [opened, synchronize, reopened]
+    # `labeled` is here so adding ci-full-jdk-sweep starts a run immediately. Re-running an
+    # existing run would not do: a re-run replays the original event payload, which predates the
+    # label. Runs triggered by any OTHER label are skipped by the job guard below, so this costs
+    # nothing when someone tags a PR "documentation".
+    types: [opened, synchronize, reopened, labeled]
+  push:
+    # Merges into develop are verified, but with the same subset a pull request gets: the full
+    # sweep is reserved for the nightly and for explicit requests.
+    branches: [develop]
   workflow_dispatch:
     inputs:
       full_jdk_sweep:
@@ -25,13 +40,14 @@ on:
         type: boolean
         default: true
   schedule:
-    # Nightly full sweep: the GPU runners are shared and serialise, so PRs test the two
-    # extremes and the scheduled run covers the JDKs in between.
     - cron: "0 2 * * *"
 
 jobs:
   code-quality:
-    if: github.repository == 'beehive-lab/TornadoVM'
+    if: >-
+      github.repository == 'beehive-lab/TornadoVM' &&
+      (github.event.action != 'labeled' ||
+       contains(github.event.pull_request.labels.*.name, 'ci-full-jdk-sweep'))
     runs-on: [self-hosted, Linux, x64]
     env:
       JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
@@ -50,7 +66,10 @@ jobs:
   # serialise on one GPU each, so pull requests get the two ends of the supported range (the
   # class-file floor and the JVMCI-absent extreme) and the nightly run gets everything.
   plan:
-    if: github.repository == 'beehive-lab/TornadoVM'
+    if: >-
+      github.repository == 'beehive-lab/TornadoVM' &&
+      (github.event.action != 'labeled' ||
+       contains(github.event.pull_request.labels.*.name, 'ci-full-jdk-sweep'))
     runs-on: [self-hosted, Linux, x64]
     timeout-minutes: 2
     outputs:
@@ -62,6 +81,7 @@ jobs:
       - id: matrices
         env:
           FULL_SWEEP: ${{ inputs.full_jdk_sweep }}
+          PR_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
         run: |
           python3 - <<'EOF' >> "$GITHUB_OUTPUT"
           import json, os
@@ -89,11 +109,25 @@ jobs:
               ("macos", "opencl", ["self-hosted", "macOS", "arm64"]),
               ("macos", "metal",  ["self-hosted", "macOS", "arm64"]),
           ]
-          # A manual dispatch decides for itself; otherwise pull requests get the two ends of
-          # the supported range and everything else (nightly) gets the full sweep.
+          # The full sweep is opt-in or scheduled, never automatic: a manual dispatch decides for
+          # itself, the nightly always takes it, and a pull request can ask for it by carrying the
+          # ci-full-jdk-sweep label -- which is how to get full coverage on the run before a merge.
+          # Everything else, including merges into develop, runs the subset; 28 legs across two
+          # serialising GPU machines is roughly an hour each, too much to spend on every merge.
+          # PR_LABELS is the JSON literal "null" on every non-pull-request event, so normalise to
+          # a list before testing membership.
+          try:
+              labels = json.loads(os.environ.get("PR_LABELS") or "[]")
+          except ValueError:
+              labels = []
+          if not isinstance(labels, list):
+              labels = []
           sweep = os.environ.get("FULL_SWEEP", "")
-          full = (sweep == "true") if sweep in ("true", "false") \
-                 else os.environ["GITHUB_EVENT_NAME"] != "pull_request"
+          if sweep in ("true", "false"):
+              full = sweep == "true"
+          else:
+              full = (os.environ["GITHUB_EVENT_NAME"] in ("schedule", "workflow_dispatch")
+                      or "ci-full-jdk-sweep" in labels)
           # PR subset is 25 and 27, not 22 and 27, on purpose and temporarily: the sample apps'
           # poms activate their legacy profile on <jdk>[21,25)</jdk>, so on JDK 22, 23 and 24 they
           # compile at release 21 WITH enable-preview and javac refuses ("invalid source release 21
