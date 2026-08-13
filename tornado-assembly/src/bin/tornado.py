@@ -1087,7 +1087,7 @@ class TornadoVMRunnerTool():
         if (self.java_version == 8):
             tornadoFlags = tornadoFlags + " -Djava.ext.dirs=" + self.sdk + "/share/java/tornado "
         else:
-            tornadoFlags = tornadoFlags + " --module-path ." + os.pathsep + self.sdk + "/share/java/tornado" + os.pathsep + self.sdk + "/share/java/graalJars"
+            tornadoFlags = tornadoFlags + " --module-path ." + os.pathsep + self.sdk + "/share/java/tornado"
             # On JDK 27+ the platform no longer ships jdk.internal.vm.ci; add the vendored
             # same-named module. It must NOT be on the module-path on JDK <=26 (the platform
             # module of the same name would cause a "two versions of module" resolution error).
@@ -1114,6 +1114,22 @@ class TornadoVMRunnerTool():
             # bookkeeping is not visible to the overlaid classes).
             if (self.jvmci_patched):
                 tornadoFlags = tornadoFlags + " -Djdk.internal.vm.ci.enabled=true --patch-module jdk.internal.vm.ci=" + self.sdk + "/share/java/jvmci/jvmci-21.0.2.jar"
+
+            # share/java/graalJars vendors GraalVM's foundational-API jars (word, collections,
+            # truffle-compiler, ...) under their ORIGINAL org.graalvm.* module names - unlike
+            # tornado.graal's compiler internals, these are not relocated, because they are
+            # TornadoVM's only supported way to get them under a non-GraalVM JDK. That is exactly
+            # the problem under a GraalVM-branded JAVA_HOME: the platform already ships a module
+            # of the same name (e.g. org.graalvm.word, resolvable from jrt:/org.graalvm.word).
+            # JPMS resolves same-named system modules before ever consulting --module-path, so a
+            # plain --module-path entry here is silently ignored in favor of the platform's
+            # version - and if that version is missing a class TornadoVM needs (observed:
+            # org.graalvm.word.impl.WordBoxFactory, on GraalVM 22+), it fails with
+            # NoClassDefFoundError at first use instead of a build-time or startup error.
+            # --upgrade-module-path is the JPMS-sanctioned way to supply a replacement for a
+            # module that already exists in the boot layer; under a non-GraalVM JDK, where no
+            # module of these names exists at all, it behaves exactly like --module-path.
+            tornadoFlags = tornadoFlags + " --upgrade-module-path " + self.sdk + "/share/java/graalJars"
 
         tornadoFlags = tornadoFlags + " "
 
@@ -1308,10 +1324,13 @@ class TornadoVMRunnerTool():
 
         javaFlags = javaFlags + tornadoFlags + __TORNADOVM_PROVIDERS__ + " "
 
-        # Graal is vendored as the relocated tornado.graal module in share/java/graalJars,
-        # which is on the regular --module-path (see above). No --upgrade-module-path is
-        # needed, and this applies on any JVM (GraalVM's built-in Graal uses the
-        # org.graalvm.compiler.* names TornadoVM no longer references).
+        # tornado.graal (TornadoVM's relocated compiler internals) is on the regular
+        # --module-path (see above) and needs no special handling: it is a unique module name,
+        # never shadowed by anything a JDK ships. The rest of share/java/graalJars - GraalVM's
+        # foundational-API jars (word, collections, truffle-compiler, ...) - keeps its original
+        # org.graalvm.* module names rather than being relocated, so on a GraalVM-branded JAVA_HOME
+        # those DO collide with the platform's own same-named modules; that half goes on
+        # --upgrade-module-path instead (see above).
 
         javaFlags = javaFlags + __JAVA_GC__
 

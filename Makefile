@@ -53,7 +53,7 @@ sdk:
 sdk-jdk21:
 	bin/compile --jdk jdk21 --sdk --backend $(BACKEND)
 
-sdk-jdk22plus sdk-jdk25 sdk-jdk26 sdk-jdk27:
+sdk-jdk22plus:
 	bin/compile --jdk jdk22plus --sdk --backend $(BACKEND)
 
 checkstyle:
