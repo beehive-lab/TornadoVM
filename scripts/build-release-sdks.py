@@ -693,7 +693,7 @@ def collect_archives(worktree_path, output_dir, jdk_arg):
 # SDK validation
 # ---------------------------------------------------------------------------
 
-def validate_sdk(archive_path, jdk_home, skip_windows_executables=False):
+def validate_sdk(archive_path, jdk_home, skip_windows_executables=False, test_hybrid_api=False):
     """
     Extract a .zip SDK archive to a temporary directory and run three smoke tests:
 
@@ -705,7 +705,22 @@ def validate_sdk(archive_path, jdk_home, skip_windows_executables=False):
     placeholders.  This function expands them against the extraction directory
     before invoking java.
 
-    Returns True if all three checks pass, False otherwise.
+    If test_hybrid_api is True (pass this only for cuda/full-backend archives),
+    three more checks run via tornado-test: TestCuBlas, TestCuDnn, TestCuFft
+    (the hybrid library-task API — cuBLAS, cuDNN, cuFFT called from Java). Each
+    of these self-skips as [UNSUPPORTED] rather than failing when the default
+    device isn't CUDA or the native library (e.g. libtornado-cublas) isn't
+    loadable — TornadoHelper counts TornadoVMCUDANotSupported separately from
+    real failures. Their pass/fail is NOT read from the subprocess return code:
+    `tornado-test -V <FQCN>` always exits 0 regardless of outcome (see
+    _passed_by_tornado_test_summary below for why) - it is read from the JVM's
+    own "Test ran: N, Failed: M, Unsupported: K" summary line instead. So this
+    is safe to run even on a validation host without the NVIDIA math libraries
+    installed: it degrades to confirming "doesn't crash" there rather than
+    "hybrid API actually works" — a real exercise of the code path needs a
+    host that also has cuBLAS/cuDNN/cuFFT provisioned, not just a CUDA GPU.
+
+    Returns True if all checks pass (or safely self-skip), False otherwise.
     """
     basename = os.path.basename(archive_path)
     info(f"Validating: {basename}")
@@ -780,29 +795,77 @@ def validate_sdk(archive_path, jdk_home, skip_windows_executables=False):
             os.chmod(tornado_script, 0o755)
             tornado_cmd = [tornado_script]
 
+        # Same resolution as tornado_cmd above, for the hybrid-API checks below.
+        tornado_test_cmd = None
+        if test_hybrid_api:
+            if os.name == "nt":
+                if not skip_windows_executables:
+                    tornado_test_exe = os.path.join(tornado_home, "bin", "tornado-test.exe")
+                    if os.path.isfile(tornado_test_exe):
+                        tornado_test_cmd = [tornado_test_exe]
+                    else:
+                        error(f"  tornado-test.exe not found in {basename} — cannot run hybrid API checks.")
+                        return False
+            else:
+                tornado_test_script = os.path.join(tornado_home, "bin", "tornado-test")
+                os.chmod(tornado_test_script, 0o755)
+                tornado_test_cmd = [tornado_test_script]
+
+        def _passed_by_returncode(result):
+            return result.returncode == 0
+
+        def _passed_by_tornado_test_summary(result):
+            """`tornado-test -V <FQCN>` (single test class) takes a different code path
+            from a whole-suite run: runSingleCommand (tornado-assembly/src/bin/tornado-test)
+            prints the subprocess's raw output and returns without ever calling
+            processStats or touching __TEST_NOT_PASSED__, and never inspects the
+            subprocess's own return code either - so the wrapper's process exit code is
+            always 0 here, pass or fail. (main()'s sys.exit(1) is gated solely on
+            __TEST_NOT_PASSED__, which only runTestTheWorld's path ever sets.) The JVM
+            side still prints an authoritative "Test ran: N, Failed: M, Unsupported: K"
+            summary even for a single class in verbose mode (TornadoHelper.printResult) -
+            parse that instead of trusting the process exit code.
+            """
+            output = result.stdout + result.stderr
+            match = re.search(r"Failed:\s*(\d+)", output)
+            if not match:
+                return False  # crashed, or produced no recognizable output, before finishing
+            return int(match.group(1)) == 0
+
         checks = []
         if tornado_cmd is not None:
-            checks.append(([*tornado_cmd, "--devices"], "tornado --devices"))
-            checks.append(([*tornado_cmd, "--version"],  "tornado --version"))
+            checks.append(([*tornado_cmd, "--devices"], "tornado --devices", _passed_by_returncode))
+            checks.append(([*tornado_cmd, "--version"],  "tornado --version", _passed_by_returncode))
         checks.append(
             (
                 [java_cmd, f"@{argfile_path}", "-cp", examples_jar,
                  "uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor"],
                 "MatrixVectorRowMajor",
+                _passed_by_returncode,
             )
         )
+        if tornado_test_cmd is not None:
+            for test_class in (
+                "uk.ac.manchester.tornado.unittests.cublas.TestCuBlas",
+                "uk.ac.manchester.tornado.unittests.cudnn.TestCuDnn",
+                "uk.ac.manchester.tornado.unittests.cufft.TestCuFft",
+            ):
+                checks.append(
+                    ([*tornado_test_cmd, "-V", test_class], f"hybrid-api {test_class.rsplit('.', 1)[-1]}",
+                     _passed_by_tornado_test_summary)
+                )
 
         passed = True
-        for cmd, name in checks:
+        for cmd, name, is_passed in checks:
             result = subprocess.run(cmd, env=env, capture_output=True, text=True)
-            if result.returncode != 0:
+            if is_passed(result):
+                ok(f"  [{name}] passed")
+            else:
                 error(f"  [{name}] FAILED")
                 output = (result.stdout + result.stderr).strip()
                 if output:
                     print(output[-1500:])
                 passed = False
-            else:
-                ok(f"  [{name}] passed")
 
         return passed
 
@@ -1006,7 +1069,18 @@ def main():
         if not jdk_home:
             warn(f"Cannot determine JDK for {basename} — skipping validation")
             continue
-        success = validate_sdk(archive, jdk_home, skip_windows_executables=skip_win_exe)
+        # Archive names embed the backend as a hyphen-delimited component set by
+        # bin/compile (tornadovm-<version>-<jdk>-<backend>-<platform>...): "cuda"
+        # for a CUDA-only build, "full" for the combined opencl+cuda build (never
+        # "opencl-cuda" — see bin/compile's backend_variant logic). Either means
+        # this archive can carry the hybrid API checks.
+        name_parts = basename.split("-")
+        is_cuda_capable = "cuda" in name_parts or "full" in name_parts
+        success = validate_sdk(
+            archive, jdk_home,
+            skip_windows_executables=skip_win_exe,
+            test_hybrid_api=is_cuda_capable,
+        )
         val_results.append((basename, success))
 
     # ------------------------------------------------------------------
