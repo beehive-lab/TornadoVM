@@ -34,6 +34,9 @@ graal-jdk-21:
 mvn-single-threaded-jdk21:
 	bin/compile --jdk jdk21 --backend $(BACKEND) --mvn_single_threaded
 
+mvn-single-threaded-jdk22plus:
+	bin/compile --jdk jdk22plus --backend $(BACKEND) --mvn_single_threaded
+
 mvn-single-threaded-graal-jdk-21:
 	bin/compile --jdk graal-jdk-21 --backend $(BACKEND) --mvn_single_threaded
 

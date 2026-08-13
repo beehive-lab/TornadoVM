@@ -41,6 +41,7 @@ jdk_keyword = None
 import argparse
 import os
 import platform
+import re
 import sys
 import tarfile
 import zipfile
@@ -52,7 +53,7 @@ from typing import Dict, List, Optional, Tuple, Union
 from abc import ABC, abstractmethod
 import install_python_modules as tornadoReq
 tornadoReq.check_python_dependencies()
-import wget
+import requests
 import config_utils as cutils
 import installer_config as config
 import update_paths as updp
@@ -62,17 +63,38 @@ import textwrap
 # Configuration
 __DIRECTORY_DEPENDENCIES__ = (Path("etc") / "dependencies").resolve()
 __VERSION__ = "v5.2.0-jdk21"
-__SUPPORTED_JDKS__ = [
-    config.__JDK21__,
-    config.__GRAALVM21__,
-    config.__CORRETTO21__,
-    config.__MICROSOFT21__,
-    config.__MANDREL21__,
-    config.__ZULU21__,
-    config.__TEMURIN21__,
-    config.__SAPMACHINE21__,
-    config.__LIBERICA21__,
+
+# Vendor keyword prefix (matches the __<PREFIX><version>__ constants in installer_config.py) and
+# display name, in menu order. Versions where a vendor has no build (e.g. graal-jdk-26,
+# microsoft-jdk-22) simply have no matching constant in installer_config.py and are skipped below.
+__JDK_VENDORS__ = [
+    ("JDK", "OpenJDK (Oracle OpenJDK)"),
+    ("GRAALVM", "GraalVM"),
+    ("CORRETTO", "Amazon Corretto"),
+    ("MICROSOFT", "Microsoft Build of OpenJDK"),
+    ("MANDREL", "Mandrel (GraalVM Native Image distribution)"),
+    ("ZULU", "Azul Zulu"),
+    ("TEMURIN", "Eclipse Temurin"),
+    ("SAPMACHINE", "SapMachine"),
+    ("LIBERICA", "BellSoft Liberica"),
 ]
+__JDK_VERSIONS__ = [21, 22, 23, 24, 25, 26]
+
+def _build_supported_jdks() -> Tuple[List[str], List[str]]:
+    """Builds the flat, numbered (keyword, description) lists shown in the JDK menu, by looking up
+    which __<PREFIX><version>__ constants installer_config.py actually defines."""
+    keys: List[str] = []
+    descriptions: List[str] = []
+    for version in __JDK_VERSIONS__:
+        for prefix, display in __JDK_VENDORS__:
+            keyword = getattr(config, f"__{prefix}{version}__", None)
+            if keyword is None:
+                continue
+            keys.append(keyword)
+            descriptions.append(f"Install TornadoVM with {display}, JDK {version}")
+    return keys, descriptions
+
+__SUPPORTED_JDKS__, __SUPPORTED_JDK_DESCRIPTIONS__ = _build_supported_jdks()
 __SUPPORTED_BACKENDS__ = ["opencl", "metal", "cuda"]
 
 # Custom Exceptions
@@ -110,7 +132,6 @@ class SystemInfo:
         arch_mapping = {
             "x86_64": "x86_64", "amd64": "x86_64",
             "arm64": "arm64", "aarch64": "arm64",
-            "riscv64": "riscv64"
         }
         arch = arch_mapping.get(platform.machine().lower(), platform.machine().lower())
         return cls(platform_name, arch, os.name == 'nt')
@@ -156,20 +177,54 @@ class Downloader(ABC):
         pass
 
     def _download_file(self, url: str, destination: Path) -> None:
-        """Download a file from URL to destination."""
+        """Download a file from URL to destination, streaming through a `.part` temp file with an
+        explicit timeout.
+
+        Previously this used the `wget` PyPI package (not GNU wget), which has no timeout and is
+        known to hang indefinitely on redirect chains that don't send a Content-Length - exactly
+        what GitHub release assets do, redirecting to a signed release-assets.githubusercontent.com
+        URL. That left the process alive but doing nothing, with no partial file and no error, so
+        there was nothing to Ctrl-C into and no sign anything was wrong. requests with a read
+        timeout fails loudly instead. The temp-file rename also means a failed/interrupted download
+        never leaves a truncated file behind for a later retry's `destination.exists()` check to
+        wrongly treat as complete.
+        """
         if destination.exists():
             return
 
+        self.console.print(f"[INFO] Downloading {url}", style="green")
+        tmp_path = destination.with_name(destination.name + ".part")
         try:
-            wget.download(url, str(destination))
-        except Exception as e:
+            with requests.get(url, stream=True, timeout=(10, 30)) as r:
+                r.raise_for_status()
+                total = int(r.headers.get("content-length", 0))
+                downloaded = 0
+                next_report = total // 10 if total else None
+                with open(tmp_path, "wb") as f:
+                    for chunk in r.iter_content(chunk_size=1 << 20):
+                        if not chunk:
+                            continue
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        if next_report is not None and downloaded >= next_report:
+                            self.console.print(
+                                f"  ... {downloaded * 100 // total}% ({downloaded // (1 << 20)} MiB / {total // (1 << 20)} MiB)",
+                                style="cyan",
+                            )
+                            next_report += total // 10
             try:
-                import urllib3
-                r = urllib3.PoolManager().request('GET', url)
-                with open(destination, 'wb') as f:
-                    f.write(r.data)
-            except Exception as fallback_error:
-                raise DownloadError(f"Failed to download {url}: {e}, fallback: {fallback_error}")
+                tmp_path.rename(destination)
+            except FileNotFoundError:
+                # Observed in practice: a fully-written, correctly-sized .part file can still
+                # raise ENOENT out of rename() on macOS (Spotlight/mdworker briefly touching a
+                # just-completed large file is the leading suspect). If the destination is there
+                # anyway, the rename actually succeeded despite the exception - don't discard a
+                # good download over it.
+                if not destination.exists():
+                    raise
+        except Exception as e:
+            tmp_path.unlink(missing_ok=True)
+            raise DownloadError(f"Failed to download {url}: {e}")
 
     def _extract_archive(self, archive_path: Path, extract_to: Path) -> str:
         """Extract archive and return the top-level directory name."""
@@ -204,8 +259,6 @@ class CMakeDownloader(Downloader):
     def download(self, dependencies_dir: Path) -> str:
         url = config.CMAKE.get(self.system_info.platform, {}).get(self.system_info.architecture)
         if not url:
-            if self.system_info.architecture == "riscv64":
-                return ""
             raise ConfigurationError(
                 f"CMake not configured for {self.system_info.platform}/{self.system_info.architecture}"
             )
@@ -235,8 +288,13 @@ class JDKDownloader(Downloader):
         self._download_file(url, archive_path)
         tld = self._extract_archive(archive_path, dependencies_dir)
 
+        # Every macOS JDK tarball wraps its contents in a Contents/Home bundle directory except
+        # Liberica, whose top-level dir *is* the JDK home (e.g. jdk-21.0.5.jdk/bin/... directly) -
+        # confirmed by inspecting the actual archives, not just going by vendor reputation. Zulu
+        # was previously excluded here too, which was wrong: its tarball has Contents/Home like
+        # everyone else, so that exclusion built a java_home path that never existed on disk.
         suffix = Path("Contents") / "Home" if (
-                self.system_info.platform == config.__APPLE__ and "zulu" not in jdk_keyword.lower() and "liberica" not in jdk_keyword.lower()
+                self.system_info.platform == config.__APPLE__ and "liberica" not in jdk_keyword.lower()
         ) else Path()
 
         java_home = Path(dependencies_dir) / tld / suffix
@@ -377,14 +435,29 @@ class BuildManager:
     def _determine_make_options(self, config: InstallationConfig) -> Tuple[str, str]:
         # Common prefix for single-threaded Maven runs
         prefix = "mvn-single-threaded-" if config.maven_single_threaded else ""
-
-        # Decide the suffix make target.
-        if config.jdk_keyword and "graal" in config.jdk_keyword.lower():
-            suffix = "graal-jdk-21"
-        else:
-            suffix = "jdk21"
+        suffix = self._resolve_make_target(config.jdk_keyword)
 
         return f"{prefix}{suffix}"
+
+    def _resolve_make_target(self, jdk_keyword: Optional[str]) -> str:
+        """Maps a JDK keyword - either a JAVA_HOME-detected profile like 'jdk25'/'graal-jdk-21',
+        or a vendor download keyword like 'temurin-jdk-25'/'corretto-jdk-22' - onto one of the
+        three targets the Makefile/bin/compile actually understand: 'jdk21', 'graal-jdk-21', or
+        'jdk22plus' (one profile that covers every JDK from 22 up, GraalVM included - see the
+        Makefile's jdk22plus comment). Getting this wrong builds against one JVMCI shape and
+        links against another at runtime instead of failing at build time."""
+        if not jdk_keyword:
+            return "jdk21"
+
+        version_match = re.search(r'(\d+)$', jdk_keyword)
+        major = int(version_match.group(1)) if version_match else 21
+        is_graal = "graal" in jdk_keyword.lower()
+
+        if major == 21:
+            return "graal-jdk-21" if is_graal else "jdk21"
+        # graal-jdk-21 is the only profile that takes Graal from the JDK itself; every JDK 22+
+        # build - GraalVM included - vendors its own Graal jars via jdk22plus instead.
+        return "jdk22plus"
 
     def _get_backend_option(self, backends: List[str]) -> str:
         """Get backend option string."""
@@ -463,15 +536,19 @@ class SystemValidator:
         return Path(java_home) / "bin" / "java"
 
     def _match_jdk_version(self, output: str) -> Optional[str]:
-        """Match JDK version output to supported JDK profiles."""
-        output_lower = output.lower()
+        """Match `java -version` output to a supported JDK build profile. TornadoVM's floor is
+        JDK 21, not any specific feature version, so anything 21 or newer is accepted rather than
+        only the exact versions installer_config.py happens to have download URLs for - JAVA_HOME
+        already points at a working JDK here, nothing needs to be downloaded."""
+        version_match = re.search(r'version\s+"(\d+)', output)
+        if not version_match:
+            return None
 
-        if "21" in output and "graalvm" in output_lower:
-            return "graal-jdk-21"
-        elif "21" in output:
-            return "jdk21"
+        major = int(version_match.group(1))
+        if major < 21:
+            return None
 
-        return None
+        return f"graal-jdk-{major}" if "graalvm" in output.lower() else f"jdk{major}"
 
 class TornadoInstaller:
     def __init__(self):
@@ -600,17 +677,32 @@ class UserInterface:
             if selected_jdk in __SUPPORTED_JDKS__:
                 return True, selected_jdk
             else:
-                self.console.print(f"[ERROR] Unsupported JDK key '{selected_jdk}'. Supported options are: {', '.join(__SUPPORTED_JDKS__.keys())}", style="bold red")
+                self.console.print(f"[ERROR] Unsupported JDK key '{selected_jdk}'. Supported options are: {', '.join(__SUPPORTED_JDKS__)}", style="bold red")
                 sys.exit(1)
+
+    def _available_jdks(self) -> Tuple[List[str], List[str]]:
+        """Filters the full (keyword, description) lists down to the JDKs that actually have a
+        download URL for this machine's platform/architecture, so the interactive menu never
+        offers a choice that JDKDownloader would immediately reject."""
+        platform_key = self.system_info.platform
+        arch_key = self.system_info.architecture
+        keys, descriptions = [], []
+        for keyword, desc in zip(__SUPPORTED_JDKS__, __SUPPORTED_JDK_DESCRIPTIONS__):
+            url = config.JDK.get(keyword, {}).get(platform_key, {}).get(arch_key)
+            if url:
+                keys.append(keyword)
+                descriptions.append(desc)
+        return keys, descriptions
 
     def select_jdk(self) -> Tuple[bool, str]:
         """Let user select a JDK from the menu."""
+        keys, _ = self._available_jdks()
         self._list_supported_jdks()
 
         try:
-            choice = int(input("Enter the number of your choice (1-9): ").strip())
-            if 1 <= choice <= len(__SUPPORTED_JDKS__):
-                return True, __SUPPORTED_JDKS__[choice - 1]
+            choice = int(input(f"Enter the number of your choice (1-{len(keys)}): ").strip())
+            if 1 <= choice <= len(keys):
+                return True, keys[choice - 1]
             else:
                 raise ValueError("Invalid choice")
         except ValueError:
@@ -696,23 +788,14 @@ class UserInterface:
         return True
 
     def _list_supported_jdks(self) -> None:
-        descriptions = [
-            "Install TornadoVM with OpenJDK 21 (Oracle OpenJDK)",
-            "Install TornadoVM with GraalVM and JDK 21 (GraalVM 23.1.0)",
-            "Install TornadoVM with Mandrel and JDK 21 (GraalVM 23.1.0)",
-            "Install TornadoVM with Corretto JDK 21",
-            "Install TornadoVM with Microsoft JDK 21",
-            "Install TornadoVM with Azul Zulu JDK 21",
-            "Install TornadoVM with Eclipse Temurin JDK 21",
-            "Install TornadoVM with SapMachine OpenJDK 21",
-            "Install TornadoVM with Liberica OpenJDK 21 (Only option for RISC-V 64)"
-        ]
-
         self.console.print(f"List of supported JDKs for TornadoVM {__VERSION__}", style="green")
 
         numbered = not getattr(args, "listJDKs", False)
+        # The interactive numbered menu only offers JDKs installable on this machine; --listJDKs
+        # is the discovery/scripting path and intentionally shows the full catalog.
+        keys, descriptions = self._available_jdks() if numbered else (__SUPPORTED_JDKS__, __SUPPORTED_JDK_DESCRIPTIONS__)
 
-        for idx, (jdk, desc) in enumerate(zip(__SUPPORTED_JDKS__, descriptions), start=1):
+        for idx, (jdk, desc) in enumerate(zip(keys, descriptions), start=1):
             prefix = f"[{idx}] " if numbered else ""
             self.console.print(f"  {prefix}{jdk:<18} : {desc}", style="green")
 
