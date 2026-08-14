@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.graal.asm;
 
-import org.graalvm.compiler.core.common.LIRKind;
+import tornado.graal.compiler.core.common.LIRKind;
 
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDACompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIROp;

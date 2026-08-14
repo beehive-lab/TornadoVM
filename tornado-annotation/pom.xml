@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.beehive-lab</groupId>
         <artifactId>tornado</artifactId>
-        <version>5.2.1-jdk21-dev</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>tornado-annotation</artifactId>
@@ -21,7 +21,11 @@
         <dependency>
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm</artifactId>
-            <version>9.5</version>
+            <!-- 9.7 accepts class-file versions up to v67 (Java 23); 9.5 capped at v65 (Java 21)
+                 and rejected the release-22 (v66) kernel classes emitted for JDK 27+.
+                 ASMClassVisitor.MAX_SUPPORTED_MAJOR is Opcodes.V23 to match this release: change
+                 both together, and note it caps what ASM can PARSE, not the JDKs TornadoVM runs on. -->
+            <version>9.7</version>
         </dependency>
     </dependencies>
 

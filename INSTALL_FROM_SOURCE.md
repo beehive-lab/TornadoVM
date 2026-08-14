@@ -71,7 +71,7 @@ TornadoVM can be installed automatically with the [installation script](https://
 
 ```bash
 $ ./bin/tornadovm-installer --help
-usage: tornadovm-installer [-h] [--jdk JDK] [--backend BACKEND] [--version] [--listJDKs] [--polyglot] [--mvn_single_threaded] [--auto-deps]
+usage: tornadovm-installer [-h] [--jdk JDK] [--backend BACKEND] [--version] [--listJDKs] [--mvn_single_threaded] [--auto-deps]
 
 TornadoVM Installer Tool. It will install all software dependencies except the GPU drivers
 
@@ -81,7 +81,6 @@ options:
   --backend BACKEND     Select the backend to install: { opencl, cuda, metal }
   --version             Print version
   --listJDKs            List supported JDKs
-  --polyglot            Enable Truffle Interoperability with GraalVM
   --mvn_single_threaded
                         Run Maven in single-threaded mode
   --auto-deps           Automatic download and use any missing dependencies
@@ -111,7 +110,7 @@ python -m venv .venv
 .venv\Scripts\activate.bat
 .\bin\windowsMicrosoftStudioTools2022.cmd
 python bin\tornadovm-installer --help
-usage: tornadovm-installer [-h] [--jdk JDK] [--backend BACKEND] [--version] [--listJDKs] [--polyglot] [--mvn_single_threaded] [--auto-deps]
+usage: tornadovm-installer [-h] [--jdk JDK] [--backend BACKEND] [--version] [--listJDKs] [--mvn_single_threaded] [--auto-deps]
 
 TornadoVM Installer Tool. It will install all software dependencies except the GPU drivers
 
@@ -121,7 +120,6 @@ options:
   --backend BACKEND     Select the backend to install: { opencl, cuda, metal }
   --version             Print version
   --listJDKs            List supported JDKs
-  --polyglot            Enable Truffle Interoperability with GraalVM
   --mvn_single_threaded
                         Run Maven in single-threaded mode
   --auto-deps           Automatic download and use any missing dependencies

@@ -1,0 +1,182 @@
+name: Build & Test
+
+# Build once per backend, then run that ONE artifact on every supported JDK.
+#
+# This replaces the old "build+test per (backend, JDK)" matrix. That shape could never prove
+# what we now claim -- that an SDK built once runs on any JDK from its floor upwards -- because
+# every leg rebuilt under the JDK it then tested on, so it only ever verified "built on N, runs
+# on N". Here the build jobs publish an SDK artifact and the test jobs consume it unchanged.
+#
+# Two SDKs exist, and they are not interchangeable:
+#   jdk21      compiled with enable-preview (FFM was a preview API before 22), which pins the
+#              class files to JDK 21 exactly. Tested on 21 only.
+#   jdk22plus  compiled at release 22 with no preview. One artifact for 22, 23, 24, 25, 26, 27
+#              and later; the build JDK is an implementation detail and is pinned below.
+# Each SDK records its own contract in etc/tornado.jdk, and bin/tornado enforces it.
+
+# Scope of the JDK matrix per event (see the plan job):
+#   pull request            floor and newest only, because the GPU runners serialise
+#   push to develop         same subset: a merge is not a reason to occupy both machines for an
+#                           hour, and the nightly covers the rest a few hours later
+#   + ci-full-jdk-sweep     label on the PR -> every JDK, for the run before you merge
+#   schedule (nightly)      every JDK
+#   workflow_dispatch       every JDK unless full_jdk_sweep is set to false
+on:
+  pull_request:
+    branches: [develop]
+    # `labeled` is here so adding ci-full-jdk-sweep starts a run immediately. Re-running an
+    # existing run would not do: a re-run replays the original event payload, which predates the
+    # label. Runs triggered by any OTHER label are skipped by the job guard below, so this costs
+    # nothing when someone tags a PR "documentation".
+    types: [opened, synchronize, reopened, labeled]
+  push:
+    # Merges into develop are verified, but with the same subset a pull request gets: the full
+    # sweep is reserved for the nightly and for explicit requests.
+    branches: [develop]
+  workflow_dispatch:
+    inputs:
+      full_jdk_sweep:
+        description: "Run the jdk22plus SDK on every JDK (22-27) instead of just the floor and the newest"
+        type: boolean
+        default: true
+  schedule:
+    - cron: "0 2 * * *"
+
+jobs:
+  code-quality:
+    if: >-
+      github.repository == 'beehive-lab/TornadoVM' &&
+      (github.event.action != 'labeled' ||
+       contains(github.event.pull_request.labels.*.name, 'ci-full-jdk-sweep'))
+    runs-on: [self-hosted, Linux, x64]
+    env:
+      JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
+      MAVEN_HOME: /opt/maven
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Checkstyle
+        run: |
+          export PATH=$JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH
+          ./mvnw checkstyle:check
+
+  # Both matrices are computed here rather than written inline, because they are not a plain
+  # cross product: the jdk21 SDK is paired with JDK 21 alone, while the jdk22plus SDK fans out
+  # across every JDK from the floor up. A full sweep is 6 legs per backend and the runners
+  # serialise on one GPU each, so pull requests get the two ends of the supported range (the
+  # class-file floor and the JVMCI-absent extreme) and the nightly run gets everything.
+  plan:
+    if: >-
+      github.repository == 'beehive-lab/TornadoVM' &&
+      (github.event.action != 'labeled' ||
+       contains(github.event.pull_request.labels.*.name, 'ci-full-jdk-sweep'))
+    runs-on: [self-hosted, Linux, x64]
+    timeout-minutes: 2
+    outputs:
+      build_linux: ${{ steps.matrices.outputs.build_linux }}
+      test_linux: ${{ steps.matrices.outputs.test_linux }}
+      build_macos: ${{ steps.matrices.outputs.build_macos }}
+      test_macos: ${{ steps.matrices.outputs.test_macos }}
+    steps:
+      - id: matrices
+        env:
+          FULL_SWEEP: ${{ inputs.full_jdk_sweep }}
+          PR_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        run: |
+          python3 - <<'EOF' >> "$GITHUB_OUTPUT"
+          import json, os
+
+          # The CUDA legs are pinned to one machine, and both the build and the test of a chain
+          # take their runner from the same entry here, so they cannot land on different boxes.
+          # libtornado-cuda.so records the nvrtc SONAME of whatever toolkit built it
+          # (libnvrtc.so.11.5 vs libnvrtc.so.12), so a CUDA SDK built on one runner fails to load
+          # on a runner with a different toolkit: "CUDADriver JNI Library not found", and every
+          # test then fails at runtime init. That only became reachable once build and test became
+          # separate jobs.
+          #
+          # The label used is sdk-builder, carried today only by the runner named cyclone, which is
+          # also the box with the newer toolkit (12.0 vs thunder's 11.5, too old for CUTLASS). NOTE
+          # that this is a ROLE label rather than a machine one: the pin holds only while exactly
+          # one runner carries it, and would silently stop co-locating if a second sdk-builder were
+          # added. A machine-unique label would state the intent directly.
+          #
+          # OpenCL and Metal need no pin -- they link the stable libOpenCL.so.1 ICD soname --
+          # though it does mean an OpenCL leg may land on either Linux box, so its pass counts
+          # vary with the GPU it happens to get.
+          targets = [
+              ("linux", "opencl", ["self-hosted", "Linux", "x64"]),
+              ("linux", "cuda",   ["self-hosted", "Linux", "x64", "sdk-builder"]),
+              ("macos", "opencl", ["self-hosted", "macOS", "arm64"]),
+              ("macos", "metal",  ["self-hosted", "macOS", "arm64"]),
+          ]
+          # The full sweep is opt-in or scheduled, never automatic: a manual dispatch decides for
+          # itself, the nightly always takes it, and a pull request can ask for it by carrying the
+          # ci-full-jdk-sweep label -- which is how to get full coverage on the run before a merge.
+          # Everything else, including merges into develop, runs the subset; 28 legs across two
+          # serialising GPU machines is roughly an hour each, too much to spend on every merge.
+          # PR_LABELS is the JSON literal "null" on every non-pull-request event, so normalise to
+          # a list before testing membership.
+          try:
+              labels = json.loads(os.environ.get("PR_LABELS") or "[]")
+          except ValueError:
+              labels = []
+          if not isinstance(labels, list):
+              labels = []
+          sweep = os.environ.get("FULL_SWEEP", "")
+          if sweep in ("true", "false"):
+              full = sweep == "true"
+          else:
+              full = (os.environ["GITHUB_EVENT_NAME"] in ("schedule", "workflow_dispatch")
+                      or "ci-full-jdk-sweep" in labels)
+          # PR subset is 25 and 27, not 22 and 27, on purpose and temporarily: the sample apps'
+          # poms activate their legacy profile on <jdk>[21,25)</jdk>, so on JDK 22, 23 and 24 they
+          # compile at release 21 WITH enable-preview and javac refuses ("invalid source release 21
+          # with --enable-preview"). That is a defect in those apps, not here, and it makes a 22 leg
+          # permanently red until they are fixed. 25 and 27 keep the two shapes that matter on a
+          # pull request -- platform jvmci patched at run time, and jvmci absent entirely -- and the
+          # nightly sweep still covers 22-24 so the app fix shows up the moment it lands. Restore
+          # "jdk22" as the low end once the sample apps handle it.
+          jdk22plus_runtimes = ["jdk22", "jdk23", "jdk24", "jdk25", "jdk26", "jdk27"] if full \
+                               else ["jdk25", "jdk27"]
+
+          # Emitted per platform so each one's tests can start behind its own builds only.
+          build = {"linux": [], "macos": []}
+          test = {"linux": [], "macos": []}
+          for platform, backend, runner in targets:
+              for sdk in ("jdk21", "jdk22plus"):
+                  build[platform].append(dict(platform=platform, backend=backend,
+                                              runner=runner, sdk=sdk))
+              # jdk21 SDK: preview-compiled, so JDK 21 and nothing else.
+              test[platform].append(dict(platform=platform, backend=backend, runner=runner,
+                                         sdk="jdk21", jdk="jdk21"))
+              for jdk in jdk22plus_runtimes:
+                  test[platform].append(dict(platform=platform, backend=backend, runner=runner,
+                                             sdk="jdk22plus", jdk=jdk))
+
+          for platform in ("linux", "macos"):
+              print(f"build_{platform}=" + json.dumps({"include": build[platform]}))
+              print(f"test_{platform}=" + json.dumps({"include": test[platform]}))
+          EOF
+
+  # ---------------------------------------------------------------------------------------
+  # BUILD: one job per (platform, backend, SDK). No GPU needed, so these may run in parallel.
+  # ---------------------------------------------------------------------------------------
+  # One chain per platform. They run concurrently, and each platform's tests begin as soon as that
+  # platform's builds are done rather than waiting for the other machine.
+  linux:
+    if: github.repository == 'beehive-lab/TornadoVM'
+    needs: [code-quality, plan]
+    uses: ./.github/workflows/build-test-platform.yml
+    with:
+      platform: linux
+      build_matrix: ${{ needs.plan.outputs.build_linux }}
+      test_matrix: ${{ needs.plan.outputs.test_linux }}
+
+  macos:
+    if: github.repository == 'beehive-lab/TornadoVM'
+    needs: [code-quality, plan]
+    uses: ./.github/workflows/build-test-platform.yml
+    with:
+      platform: macos
+      build_matrix: ${{ needs.plan.outputs.build_macos }}
+      test_matrix: ${{ needs.plan.outputs.test_macos }}

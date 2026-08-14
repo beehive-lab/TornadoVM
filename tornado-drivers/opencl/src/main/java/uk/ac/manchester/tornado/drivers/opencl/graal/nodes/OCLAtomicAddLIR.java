@@ -23,17 +23,17 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.type.Stamp;
-import org.graalvm.compiler.graph.Node.Input;
-import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.FixedNode;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.memory.address.AddressNode;
-import org.graalvm.compiler.nodes.spi.LIRLowerable;
-import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import tornado.graal.compiler.core.common.LIRKind;
+import tornado.graal.compiler.core.common.type.Stamp;
+import tornado.graal.compiler.graph.Node.Input;
+import tornado.graal.compiler.graph.NodeClass;
+import tornado.graal.compiler.lir.Variable;
+import tornado.graal.compiler.nodeinfo.NodeInfo;
+import tornado.graal.compiler.nodes.FixedNode;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.memory.address.AddressNode;
+import tornado.graal.compiler.nodes.spi.LIRLowerable;
+import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 
 @NodeInfo(shortName = "atomic_add")
 public class OCLAtomicAddLIR extends FixedNode implements LIRLowerable {

@@ -68,7 +68,12 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
         this.access = access;
 
         arrayLengthOffset = getVMConfig().arrayOopDescLengthOffset();
-        arrayHeaderSize = getVMConfig().getArrayBaseOffset(kind);
+        // Match the device-side array base offset used by OCLLoweringProvider indexed access, which under
+        // JDK 27 compact object headers uses the fixed ARRAY_HEADER (PANAMA_OBJECT_HEADER_SIZE) rather than
+        // the JVM's compact-header-dependent Java-array base offset (12 vs 16 for int[]/float[]). Using
+        // getArrayBaseOffset here left the host buffer header (12) out of step with the kernel (16), so raw
+        // Java array element access was shifted by one element and outputs came back unwritten (0).
+        arrayHeaderSize = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
         logger = new TornadoLogger(this.getClass());
     }
 
