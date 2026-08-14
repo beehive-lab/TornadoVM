@@ -10,7 +10,9 @@ name: 4 - Deploy Maven Central [auto]
 #
 # tornado-api/tornado-runtime/tornado-matrices are portable pure-Java modules
 # (no JDK-native backend code), but are still deployed once PER JDK PROFILE
-# under 4 distinct Maven Central coordinates (X.Y.Z-jdk21/-jdk25/-jdk26/-jdk27),
+# under 2 distinct Maven Central coordinates (X.Y.Z-jdk21/-jdk22plus) — the
+# jdk21 and jdk22plus Maven profiles are the only ones left (see bin/compile's
+# SDK_JDK_CONTRACT); jdk22plus covers every JDK from 22 up in one coordinate —
 # matching the existing "pin a specific JDK line" convention — see the `jdk`
 # matrix below. Each leg does an ephemeral `versions:set` (never committed)
 # right before `mvn deploy`, since the single release tag's committed pom.xml
@@ -45,7 +47,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        jdk: [jdk21, jdk25, jdk26, jdk27]
+        jdk: [jdk21, jdk22plus]
     env:
       MAVEN_HOME: /opt/maven
     steps:
@@ -66,22 +68,12 @@ jobs:
               echo "JAVA_HOME=/opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3" >> "$GITHUB_ENV"
               echo "GRAAL_JARS=/opt/graalJarsNoJvmci" >> "$GITHUB_ENV"
               ;;
-            jdk25)
+            jdk22plus)
+              # jdk22plus floors at JDK 22 and is deployed once for every JDK from 22 up — any
+              # JDK >= 22 here builds an identical artifact (pom.xml's --release 22), so this is
+              # pinned to 25 purely to match the build JDK used elsewhere (build-release-sdks.yml,
+              # build-test-platform.yml), not a requirement.
               echo "JAVA_HOME=/opt/jenkins/jdks/jdk-25.0.2" >> "$GITHUB_ENV"
-              echo "GRAAL_JARS=/opt/graalJarsNoJvmci" >> "$GITHUB_ENV"
-              echo "JVMCI_SOURCE_JDK=/opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3" >> "$GITHUB_ENV"
-              ;;
-            jdk26)
-              # TODO: placeholder — provision a real JDK 26 install + GraalVM-jars cache
-              # on the self-hosted Linux runner(s) and update this path.
-              echo "JAVA_HOME=/opt/jenkins/jdks/jdk-26.x.x" >> "$GITHUB_ENV"
-              echo "GRAAL_JARS=/opt/graalJarsNoJvmci" >> "$GITHUB_ENV"
-              echo "JVMCI_SOURCE_JDK=/opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3" >> "$GITHUB_ENV"
-              ;;
-            jdk27)
-              # TODO: placeholder — provision a real JDK 27 install + GraalVM-jars cache
-              # on the self-hosted Linux runner(s) and update this path.
-              echo "JAVA_HOME=/opt/jenkins/jdks/jdk-27.x.x" >> "$GITHUB_ENV"
               echo "GRAAL_JARS=/opt/graalJarsNoJvmci" >> "$GITHUB_ENV"
               echo "JVMCI_SOURCE_JDK=/opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3" >> "$GITHUB_ENV"
               ;;
@@ -188,8 +180,9 @@ jobs:
           else
             PUBLISH="true"
           fi
-          echo "All 4 JDK Maven Central deploys succeeded. Dispatching publish-archives-to-sdkman.yml for $TAG (publish=$PUBLISH)..."
+          echo "Both JDK Maven Central deploys succeeded. Dispatching publish-archives-to-sdkman.yml for $TAG (publish=$PUBLISH, draft_release_test=${{ inputs.draft_release_test }})..."
           gh workflow run publish-archives-to-sdkman.yml \
             --repo "${{ github.repository }}" \
             -f tag="$TAG" \
-            -f publish="$PUBLISH"
+            -f publish="$PUBLISH" \
+            -f draft_release_test="${{ inputs.draft_release_test }}"

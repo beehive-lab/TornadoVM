@@ -28,6 +28,17 @@ on:
         description: "Actually publish to SDKMAN (true/false)"
         required: true
         default: "false"
+      draft_release_test:
+        description: >-
+          Draft release (test): the dispatching tag was never actually
+          released (no GitHub Release, no uploaded archives), so skip even
+          verifying the asset URL — it is expected to 404. Only set by
+          deploy-maven-central.yml's automatic dispatch; leave false for a
+          real manual dry run against an existing tag/Release, which should
+          still verify the asset (just not publish it).
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   publish-to-sdkman:
@@ -61,68 +72,24 @@ jobs:
             platform: LINUX_64
             variant: cuda-linux-amd64
 
-          # ---- jdk25 ----
-          - jdk: jdk25
+          # ---- jdk22plus (one SDK, covers every JDK from 22 up) ----
+          - jdk: jdk22plus
             sdk_suffix: full
             platform: LINUX_64
             variant: full-linux-amd64
-          - jdk: jdk25
+          - jdk: jdk22plus
             sdk_suffix: opencl
             platform: LINUX_64
             variant: opencl-linux-amd64
-          - jdk: jdk25
+          - jdk: jdk22plus
             sdk_suffix: opencl
             platform: MAC_ARM64
             variant: opencl-mac-aarch64
-          - jdk: jdk25
+          - jdk: jdk22plus
             sdk_suffix: metal
             platform: MAC_ARM64
             variant: metal-mac-aarch64
-          - jdk: jdk25
-            sdk_suffix: cuda
-            platform: LINUX_64
-            variant: cuda-linux-amd64
-
-          # ---- jdk26 ----
-          - jdk: jdk26
-            sdk_suffix: full
-            platform: LINUX_64
-            variant: full-linux-amd64
-          - jdk: jdk26
-            sdk_suffix: opencl
-            platform: LINUX_64
-            variant: opencl-linux-amd64
-          - jdk: jdk26
-            sdk_suffix: opencl
-            platform: MAC_ARM64
-            variant: opencl-mac-aarch64
-          - jdk: jdk26
-            sdk_suffix: metal
-            platform: MAC_ARM64
-            variant: metal-mac-aarch64
-          - jdk: jdk26
-            sdk_suffix: cuda
-            platform: LINUX_64
-            variant: cuda-linux-amd64
-
-          # ---- jdk27 ----
-          - jdk: jdk27
-            sdk_suffix: full
-            platform: LINUX_64
-            variant: full-linux-amd64
-          - jdk: jdk27
-            sdk_suffix: opencl
-            platform: LINUX_64
-            variant: opencl-linux-amd64
-          - jdk: jdk27
-            sdk_suffix: opencl
-            platform: MAC_ARM64
-            variant: opencl-mac-aarch64
-          - jdk: jdk27
-            sdk_suffix: metal
-            platform: MAC_ARM64
-            variant: metal-mac-aarch64
-          - jdk: jdk27
+          - jdk: jdk22plus
             sdk_suffix: cuda
             platform: LINUX_64
             variant: cuda-linux-amd64
@@ -152,6 +119,17 @@ jobs:
           echo "  URL:            ${URL}"
 
       - name: Verify asset exists on the Release
+        # Deliberately gated on draft_release_test, NOT on publish: a plain
+        # manual dry run (publish=false against a real, already-uploaded tag)
+        # should still verify the asset — that's the whole point of a dry
+        # run. draft_release_test is the narrower case where no Release/tag
+        # was ever created at all (2-finalize-release.yml skips both, and
+        # build-release-sdks.yml never uploads anything), so the asset
+        # genuinely cannot exist and the curl check below would always 404.
+        # event_name is checked first (matching the TAG derivation above)
+        # since inputs is only populated for workflow_dispatch/workflow_call —
+        # this never touches inputs.draft_release_test on a `release` event.
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.draft_release_test == true) }}
         run: |
           set -euo pipefail
           if ! curl -fsSL -I "${{ steps.vars.outputs.url }}" > /dev/null; then
