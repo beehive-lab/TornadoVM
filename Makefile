@@ -4,11 +4,18 @@ all: build
 # make BACKEND=<comma_separated_backend_list>
 BACKEND ?= opencl
 
-# JDK profile used by the `sdk`, `test-reflection`, and `test-reflection-only` targets { jdk21, jdk22plus }.
-# Default is `jdk21` to preserve historical bare `make sdk`/`make test-reflection` behavior.
-# make sdk JDK=<jdk21|jdk22plus> BACKEND=<comma_separated_backend_list>
-# Prefer the sdk-jdkNN targets below over `make sdk JDK=...` when building a specific JDK's SDK.
-JDK ?= jdk21
+# JDK profile used by the `sdk`, `test-reflection` and `test-reflection-only` targets
+# { jdk21, jdk22plus }, derived from JAVA_HOME rather than hardcoded.
+#
+# It has to be derived: bin/compile checks that JAVA_HOME matches the requested profile, so a fixed
+# default of jdk21 can only ever fail once JAVA_HOME is a newer JDK -- and it fails confusingly,
+# because the goal that failed (`sdk`) is not the profile the user named. `make jdk22plus sdk` is
+# two independent goals, and the second one does not inherit the first one's profile.
+#
+# Override explicitly with:  make sdk JDK=<jdk21|jdk22plus> BACKEND=<backends>
+# or use the sdk-jdkNN targets below, which pin the profile and ignore this variable.
+JDK ?= $(shell v=$$("$${JAVA_HOME:-/nonexistent}/bin/java" -version 2>&1 | sed -n 's/.*version "\([0-9][0-9]*\).*/\1/p' | head -1); \
+               if [ "$$v" = "21" ] || [ -z "$$v" ]; then echo jdk21; else echo jdk22plus; fi)
 
 # jdk25/jdk26/jdk27 no longer exist as Maven profiles: one jdk22plus profile serves every JDK
 # from 22 up. Map the legacy names onto it so `JDK=jdk25` and CI callers keep working.
