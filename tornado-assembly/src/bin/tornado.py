@@ -1324,13 +1324,25 @@ class TornadoVMRunnerTool():
 
         javaFlags = javaFlags + tornadoFlags + __TORNADOVM_PROVIDERS__ + " "
 
-        # tornado.graal (TornadoVM's relocated compiler internals) is on the regular
-        # --module-path (see above) and needs no special handling: it is a unique module name,
-        # never shadowed by anything a JDK ships. The rest of share/java/graalJars - GraalVM's
-        # foundational-API jars (word, collections, truffle-compiler, ...) - keeps its original
-        # org.graalvm.* module names rather than being relocated, so on a GraalVM-branded JAVA_HOME
-        # those DO collide with the platform's own same-named modules; that half goes on
-        # --upgrade-module-path instead (see above).
+        # share/java/graalJars goes on --upgrade-module-path as a WHOLE (see above), and that
+        # includes tornado-graal-<ver>.jar. The directory holds two kinds of module:
+        #
+        #   org.graalvm.word / .collections / .truffle.compiler   original names, not relocated
+        #   tornado.graal                                          TornadoVM's relocated compiler
+        #
+        # Only the first kind NEEDS the upgrade path: under a GraalVM-branded JAVA_HOME the platform
+        # ships modules of those names, and JPMS resolves a same-named system module before ever
+        # consulting --module-path, so a plain --module-path entry is silently ignored in favour of
+        # the platform's copy. tornado.graal has a unique name and would resolve from either path.
+        #
+        # It stays on the upgrade path anyway because the two are shipped in one directory and
+        # splitting them buys nothing: a module on --upgrade-module-path is added to the boot layer
+        # whether or not it shadows a platform module. Do NOT narrow this entry to the org.graalvm.*
+        # jars on the assumption that tornado.graal is carried by --module-path -- it is not on any
+        # other path, and dropping it fails at boot layer creation with
+        # "FindException: Module tornado.graal not found, required by tornado.runtime".
+        # Verified end to end: jdk22plus SDK on JDK 25/26/27 and jdk21 SDK on JDK 21 all compile and
+        # execute kernels with graalJars reachable only from --upgrade-module-path.
 
         javaFlags = javaFlags + __JAVA_GC__
 
