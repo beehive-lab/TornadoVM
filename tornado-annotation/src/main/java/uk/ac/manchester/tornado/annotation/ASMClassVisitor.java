@@ -55,10 +55,15 @@ public class ASMClassVisitor extends ClassVisitor implements ASMClassVisitorProv
         return null;
     }
 
-    // ASM's ClassReader only knows class-file versions up to the ASM release it ships with (asm 9.7 = Java 23,
-    // major 67); a newer JDK class on the class path (e.g. java.lang.Float is v71 on JDK 27) makes it throw.
-    // @Parallel-annotation extraction is class-file-version independent, so cap the major version for the read.
-    private static final int MAX_SUPPORTED_MAJOR = 67;
+    // ASM's ClassReader only knows class-file versions up to the ASM release it ships with; a newer JDK class
+    // on the class path (e.g. java.lang.Float is v71 on JDK 27) makes it throw. @Parallel-annotation extraction
+    // is class-file-version independent, so cap the major version for the read.
+    //
+    // NOTE: this is the ASM parser's ceiling, NOT the highest JDK TornadoVM supports -- raising it past what the
+    // bundled ASM understands is exactly what makes ClassReader throw. It is deliberately expressed as the
+    // Opcodes constant rather than the literal 67 so it stays tied to the asm version in tornado-annotation/pom.xml:
+    // dropping below that asm release stops compiling here instead of failing at run time.
+    private static final int MAX_SUPPORTED_MAJOR = Opcodes.V23;
 
     @Override
     public ParallelAnnotationProvider[] getParallelAnnotations(ResolvedJavaMethod method) {
