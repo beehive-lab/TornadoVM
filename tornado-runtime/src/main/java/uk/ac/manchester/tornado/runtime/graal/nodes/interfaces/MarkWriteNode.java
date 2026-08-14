@@ -23,8 +23,10 @@
 package uk.ac.manchester.tornado.runtime.graal.nodes.interfaces;
 
 /**
- * This interface is used for accessing the OCL Write array node type outside
- * the scope of opencl-driver package.
+ * Backend-neutral marker for a node that writes to an array parameter, so that
+ * the backend-independent sketch-tier phases ({@code TornadoDataflowAnalysis},
+ * {@code TornadoFeatureExtraction}) can recognise a write without depending on
+ * any driver package. Implemented by the OpenCL, CUDA and Metal write nodes.
  */
-public interface MarkOCLWriteNode {
+public interface MarkWriteNode {
 }
