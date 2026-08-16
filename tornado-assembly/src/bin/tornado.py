@@ -1321,7 +1321,7 @@ class TornadoVMRunnerTool():
             params += args.param15 + " "
         return params
 
-    def buildJavaCommand(self, args):
+    def buildJavaCommand(self, args, raw=False):
         tornadoFlags = self.buildTornadoVMOptions(args)
         tornadoAddModules = __TORNADOVM_ADD_MODULES__
 
@@ -1402,6 +1402,19 @@ class TornadoVMRunnerTool():
             # characters (e.g. the checkmark in "Validation PASSED" renders as
             # mojibake instead of a '?' substitution or the correct glyph).
             # Properly quote the command path if it contains spaces.
+            # raw=True skips the chcp/quoting wrapper: --printJavaFlags (and any other
+            # caller that wants a plain "<java> <flags...>" listing rather than an
+            # os.system()-ready shell command) needs self.cmd's bare "...\\bin\\java"
+            # token so consumers that strip the leading java binary by checking
+            # flags[0].endswith("java"/"java.exe") - e.g.
+            # gen-tornado-argfile-template.py's get_tornado_flags() - actually match it.
+            # Otherwise the printed string starts with "chcp 65001 >nul && \"<path>\"
+            # <flags>", and since "chcp" isn't stripped, it ends up as the first token
+            # of the generated tornado-argfile - which `java @argfile` then treats as
+            # the main class name (ClassNotFoundException: chcp) once it hits it before
+            # any following -cp/main-class arguments on the actual command line.
+            if raw:
+                return self.cmd + " " + executionFlags
             return 'chcp 65001 >nul && "' + self.cmd + '" ' + executionFlags
         else:
             return self.cmd + " " + executionFlags
@@ -1415,7 +1428,7 @@ class TornadoVMRunnerTool():
             sys.exit(0)
 
         if (args.printFlags):
-            print(javaFlags)
+            print(self.buildJavaCommand(args, raw=True))
             sys.exit(0)
 
         if (args.generate_argfile):
