@@ -348,7 +348,7 @@ public class CUDANodeLIRBuilder extends NodeLIRBuilder {
             // symmetrically for y. The previous code always used the plain value for both legs, which is
             // only correct when xNegated and yNegated are both true (exactly the case B && C canonicalizes
             // to); it silently miscompiled deeper nestings, e.g. A || (B && C && D), where the intermediate
-            // node has one negated and one non-negated leg. See OQ-17 / .work/prs/02.md.
+            // node has one negated and one non-negated leg. See OQ-17.
             final Value x = shortCircuitOrNode.isXNegated() ? operandOrConjunction(shortCircuitOrNode.getX()) : negatedOperand(shortCircuitOrNode.getX());
             final Value y = shortCircuitOrNode.isYNegated() ? operandOrConjunction(shortCircuitOrNode.getY()) : negatedOperand(shortCircuitOrNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(CUDABinaryOp.LOGICAL_AND, boolLirKind, x, y);
@@ -368,7 +368,7 @@ public class CUDANodeLIRBuilder extends NodeLIRBuilder {
         // caches exactly one Value per node, and this method computes NOT(node)'s value under node's own
         // identity. A later plain-value lookup of the same node (e.g. operandOrConjunction() reused from a
         // second, enclosing negation of a ShortCircuitOrNode whose leg this node is) would silently read
-        // back the negated value instead of recomputing the plain one. See OQ-17 / .work/prs/02.md.
+        // back the negated value instead of recomputing the plain one. See OQ-17.
         return (CUDALIROp) result;
     }
 
@@ -423,8 +423,7 @@ public class CUDANodeLIRBuilder extends NodeLIRBuilder {
             // it silently miscompiled a leg whenever a caller (e.g. emitIf, which calls emitLogicNode
             // directly rather than through the operandOrConjunction cache) recomputed this node on demand
             // instead of reusing the correctly-negated value emitShortCircuitOrNode already cached for it.
-            // Mirrors the same fix in emitNegatedLogicNode's ShortCircuitOrNode branch. See OQ-17 /
-            // .work/prs/02.md.
+            // Mirrors the same fix in emitNegatedLogicNode's ShortCircuitOrNode branch. See OQ-17.
             final Value x = shortCircuitOrNode.isXNegated() ? negatedOperand(shortCircuitOrNode.getX()) : operandOrConjunction(shortCircuitOrNode.getX());
             final Value y = shortCircuitOrNode.isYNegated() ? negatedOperand(shortCircuitOrNode.getY()) : operandOrConjunction(shortCircuitOrNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(CUDABinaryOp.LOGICAL_OR, boolLirKind, x, y);
