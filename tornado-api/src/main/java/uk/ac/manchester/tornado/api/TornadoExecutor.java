@@ -84,6 +84,35 @@ class TornadoExecutor {
         immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.execute(executionPackage));
     }
 
+    /**
+     * Issues every task graph of the plan and completes {@code onAllCompleted} once the last one has
+     * finished on the device. Graphs are issued in order, as {@link #execute} does; only the terminal
+     * wait is replaced by a notification.
+     *
+     * <p>Returns false as soon as one graph cannot be armed. The work of that graph has still been
+     * issued, so the caller must fall back to waiting rather than assume nothing happened.
+     */
+    boolean executeAsync(ExecutorFrame executionPackage, Runnable onAllCompleted) {
+        final int graphs = immutableTaskGraphList.size();
+        final java.util.concurrent.atomic.AtomicInteger remaining = new java.util.concurrent.atomic.AtomicInteger(graphs);
+        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
+            boolean armed = immutableTaskGraph.executeAsync(executionPackage, () -> {
+                if (remaining.decrementAndGet() == 0) {
+                    onAllCompleted.run();
+                }
+            });
+            if (!armed) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** Blocking wait for every task graph of the plan; the fallback when a plan cannot be armed. */
+    void waitOnExecution() {
+        immutableTaskGraphList.forEach(ImmutableTaskGraph::waitOnExecution);
+    }
+
     boolean withGridScheduler(GridScheduler gridScheduler) {
         boolean checkGridRegistered = false;
         for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {

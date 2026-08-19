@@ -149,6 +149,24 @@ public interface TornadoDevice {
 
     void sync(long executionPlanId);
 
+    /**
+     * Arranges for {@code action} to run once the device has finished every operation this execution
+     * plan has issued so far, without the calling thread waiting for it. The action runs on a runtime
+     * thread, never on the caller's and never on a driver thread.
+     *
+     * <p>Backends without a completion-notification mechanism return false, and the caller is expected
+     * to fall back to {@link #sync(long)} on a thread of its own.
+     *
+     * @param executionPlanId
+     *     the execution plan whose work should be waited for
+     * @param action
+     *     what to run on completion
+     * @return true when the notification was armed, false when the backend cannot do it
+     */
+    default boolean enqueueCompletionCallback(long executionPlanId, Runnable action) {
+        return false;
+    }
+
     void flush(long executionPlanId);
 
     void clean();

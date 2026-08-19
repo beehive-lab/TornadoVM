@@ -142,7 +142,7 @@ public class TornadoVMInterpreter {
 
         // NOTE: useDependencies is (re)computed at the start of execute() rather than latched here,
         // because plan-level withIntraPlanConcurrency() is applied after this interpreter is built.
-        useDependencies = VM_USE_DEPS || isIntraPlanConcurrencyActive();
+        useDependencies = VM_USE_DEPS || isIntraPlanConcurrencyActive() || graphExecutionContext.isAsyncCompletion();
         totalTime = 0;
         invocations = 0;
 
@@ -300,6 +300,7 @@ public class TornadoVMInterpreter {
         // Push the per-plan intra-plan-concurrency setting to the backend before issuing any
         // bytecode, so transfer/launch routing (single- vs multi-stream) is decided per plan.
         interpreterDevice.setIntraPlanConcurrency(graphExecutionContext.getExecutionPlanId(), isIntraPlanConcurrencyActive());
+        interpreterDevice.setAsyncCompletion(graphExecutionContext.getExecutionPlanId(), graphExecutionContext.isAsyncCompletion());
 
         // Push the staged-transfer setting before the plan's ALLOCs: it also decides whether a
         // staged buffer skips the whole-segment host pin, which is settled at allocation time.
@@ -308,7 +309,7 @@ public class TornadoVMInterpreter {
         // Recompute here (not just in the constructor): plan-level withIntraPlanConcurrency() is
         // applied after this interpreter is built, so latching it at construction misses it and the
         // dependency DAG (waitList -> cross-stream events) would never engage for concurrent plans.
-        useDependencies = VM_USE_DEPS || isIntraPlanConcurrencyActive();
+        useDependencies = VM_USE_DEPS || isIntraPlanConcurrencyActive() || graphExecutionContext.isAsyncCompletion();
 
         // Batched plans: reset the per-object chunk counters so every execution behaves like the
         // first (per-chunk DEALLOCs stay no-ops until the last even chunk). Without this reset the
@@ -510,7 +511,10 @@ public class TornadoVMInterpreter {
                 barrier = interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), event);
             }
 
-            if (TornadoOptions.USE_VM_FLUSH) {
+            // The flush is a stream synchronise on the CUDA backend, so under async completion it would
+            // park the very thread executeAsync() promises to release. Completion is reported by the
+            // callback armed after issue instead.
+            if (TornadoOptions.USE_VM_FLUSH && !graphExecutionContext.isAsyncCompletion()) {
                 interpreterDevice.flush(graphExecutionContext.getExecutionPlanId());
             }
         }

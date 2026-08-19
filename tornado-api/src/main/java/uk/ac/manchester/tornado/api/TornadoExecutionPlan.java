@@ -190,6 +190,52 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     }
 
     /**
+     * Issues this execution plan and returns immediately, handing back a future that completes once the
+     * device has finished the plan's work. Unlike {@link #execute()}, the calling thread is not parked
+     * waiting for the GPU: it is free to prepare the next batch of work, run unrelated CPU work, or
+     * submit to another device.
+     *
+     * <p>The device signals completion itself (on the CUDA backend, through a host callback placed
+     * behind the plan's work), so no thread is spent waiting on either side. This is not
+     * {@code CompletableFuture.supplyAsync(plan::execute)} - that would move the blocking wait to a pool
+     * thread rather than remove it.
+     *
+     * <p><b>The data is only valid once the future completes.</b> The plan's device-to-host copies have
+     * been issued, not finished, when this method returns, so reading the host buffers before joining
+     * the future reads whatever was there before. Join first, then read:
+     *
+     * <pre>
+     * CompletableFuture&lt;TornadoExecutionResult&gt; pending = plan.executeAsync();
+     * prepareNextInput();          // overlaps with the GPU
+     * pending.join();              // buffers are valid from here on
+     * </pre>
+     *
+     * <p>Backends that cannot notify on completion (everything except CUDA today), plans spread over
+     * several devices, and plans capturing into a CUDA graph fall back transparently: the work is issued,
+     * then waited for on a runtime thread, and the future completes after that. Semantics are identical
+     * in both cases; only the "no thread is blocked" property is lost.
+     *
+     * @return a future carrying the same {@link TornadoExecutionResult} that {@link #execute()} returns
+     */
+    public java.util.concurrent.CompletableFuture<TornadoExecutionResult> executeAsync() {
+        TornadoProfilerResult profilerResult = new TornadoProfilerResult(tornadoExecutor, this.getTraceExecutionPlan());
+        TornadoExecutionResult executionResult = new TornadoExecutionResult(profilerResult);
+        planResults.add(executionResult);
+        java.util.concurrent.CompletableFuture<TornadoExecutionResult> future = new java.util.concurrent.CompletableFuture<>();
+        boolean armed = tornadoExecutor.executeAsync(executionFrame, () -> future.complete(executionResult));
+        if (!armed) {
+            // The work is already issued; wait for it off the caller's thread so the contract still
+            // holds, then complete.
+            java.util.concurrent.CompletableFuture.runAsync(() -> {
+                tornadoExecutor.waitOnExecution();
+                future.complete(executionResult);
+            });
+        }
+        tornadoExecutor.updateLastExecutedTaskGraph();
+        return future;
+    }
+
+    /**
      * Select a graph from the {@link TornadoExecutionPlan} to execute.
      * This method allows developers to select a specific graph from the
      * execution plan to launch. Developers can choose which graph from

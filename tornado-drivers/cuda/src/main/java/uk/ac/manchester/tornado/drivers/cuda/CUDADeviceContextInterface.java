@@ -92,6 +92,19 @@ public interface CUDADeviceContextInterface extends TornadoDeviceContext {
         // no-op by default
     }
 
+    /** Records whether this plan is issued asynchronously, so copy-out does not block the issuer. */
+    default void setAsyncCompletion(long executionPlanId, boolean enabled) {
+        // no-op by default
+    }
+
+    /**
+     * Arms a host callback that runs once the device has finished this plan's issued work. Returns false
+     * when the device context cannot notify.
+     */
+    default boolean enqueueCompletionCallback(long executionPlanId, Runnable action) {
+        return false;
+    }
+
     /**
      * Records whether large one-shot H2D uploads are routed through the pinned staging ring.
      */

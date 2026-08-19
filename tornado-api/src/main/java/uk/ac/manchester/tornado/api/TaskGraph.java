@@ -1048,6 +1048,24 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.execute(executionPackage).waitOn();
     }
 
+    /**
+     * Issues the work and arms {@code onCompletion} instead of waiting for it. Returns false when the
+     * backend cannot notify, in which case nothing was armed and the work has still been issued - the
+     * caller must then wait for it itself.
+     */
+    boolean executeAsync(ExecutorFrame executionPackage, Runnable onCompletion) {
+        taskGraphImpl.setAsyncCompletion(true);
+        try {
+            return taskGraphImpl.execute(executionPackage).armCompletionCallback(onCompletion);
+        } finally {
+            taskGraphImpl.setAsyncCompletion(false);
+        }
+    }
+
+    void waitOnExecution() {
+        taskGraphImpl.waitOn();
+    }
+
     void withPreCompilation(ExecutorFrame executionPackage) {
         taskGraphImpl.withPreCompilation(executionPackage);
     }

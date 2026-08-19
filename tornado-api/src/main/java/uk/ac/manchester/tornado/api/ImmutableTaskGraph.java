@@ -50,6 +50,14 @@ public class ImmutableTaskGraph {
         this.taskGraph.execute(executionPackage);
     }
 
+    boolean executeAsync(ExecutorFrame executionPackage, Runnable onCompletion) {
+        return this.taskGraph.executeAsync(executionPackage, onCompletion);
+    }
+
+    void waitOnExecution() {
+        this.taskGraph.waitOnExecution();
+    }
+
     void withPreCompilation(ExecutorFrame executionPackage) {
         taskGraph.withPreCompilation(executionPackage);
     }
