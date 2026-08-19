@@ -307,7 +307,15 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     @Override
     public boolean isFinished() {
+        awaitDeferredOutputs();
         return this.isFinished;
+    }
+
+    @Override
+    public void awaitDeferredOutputs() {
+        if (vm != null) {
+            vm.awaitDeferredOutputs();
+        }
     }
 
     @Override
@@ -1091,6 +1099,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     @Override
     public void waitOn() {
+        if (executionContext.isDeferredOutputsEnabled() && !TornadoOptions.isProfilerEnabled()) {
+            // The execution keeps its copy-outs in flight; awaitDeferredOutputs() does this wait
+            // when something can observe the output buffers.
+            return;
+        }
         if ((TornadoOptions.VM_USE_DEPS || executionContext.isIntraPlanConcurrencyEnabled()) && event != null) {
             event.waitOn();
         } else {
@@ -1355,6 +1368,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             return;
         }
 
+        awaitDeferredOutputs();
         vm.destroyExecutionGraphs();
         LibraryRegistry.destroyContexts(executionPlanId);
         freeIOObjects();
@@ -1470,6 +1484,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         if (vm == null) {
             return;
         }
+
+        awaitDeferredOutputs();
 
         List<Event> events = new ArrayList<>();
         for (Object object : objects) {
@@ -1985,6 +2001,17 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     @Override
     public void withCUDAGraph() {
         executionContext.setExecutionGraphEnabled(true);
+    }
+
+    @Override
+    public void withDeferredOutputs() {
+        executionContext.setDeferredOutputsEnabled(true);
+    }
+
+    @Override
+    public void withoutDeferredOutputs() {
+        awaitDeferredOutputs();
+        executionContext.setDeferredOutputsEnabled(false);
     }
 
     @Override

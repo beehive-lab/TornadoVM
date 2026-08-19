@@ -34,7 +34,9 @@ import uk.ac.manchester.tornado.api.plan.types.OffProfiler;
 import uk.ac.manchester.tornado.api.plan.types.OffThreadInfo;
 import uk.ac.manchester.tornado.api.plan.types.WithAllGraphs;
 import uk.ac.manchester.tornado.api.plan.types.WithBatch;
+import uk.ac.manchester.tornado.api.plan.types.OffDeferredOutputs;
 import uk.ac.manchester.tornado.api.plan.types.WithCUDAGraph;
+import uk.ac.manchester.tornado.api.plan.types.WithDeferredOutputs;
 import uk.ac.manchester.tornado.api.plan.types.WithClearProfiles;
 import uk.ac.manchester.tornado.api.plan.types.WithCompilerFlags;
 import uk.ac.manchester.tornado.api.plan.types.WithConcurrentDevices;
@@ -634,6 +636,40 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         }
         tornadoExecutor.withWarmUpIterations(iterations, executionFrame);
         return new WithWarmUpIterations(this, iterations);
+    }
+
+    /**
+     * Lets an execution return before its outputs have been copied back: the copy-outs stay in
+     * flight and the host only waits when the results are observed.
+     *
+     * <p><b>The output buffers are undefined until the execution has been awaited.</b> Reach the
+     * data through the {@link TornadoExecutionResult} that {@link #execute()} returns -
+     * {@link TornadoExecutionResult#await()}, {@link TornadoExecutionResult#transferToHost(Object...)}
+     * or {@link TornadoExecutionResult#isReady()} - not by reading the arrays directly after
+     * {@code execute()}. The runtime also awaits implicitly before the next execution of this plan
+     * and before its device memory is freed, so results are never silently lost; they are only
+     * unavailable earlier than the await.
+     *
+     * <p>The point of the option is the window in between: host work placed between
+     * {@code execute()} and {@code await()} overlaps with the read-back. With nothing to overlap it
+     * is a no-op. Ignored while the profiler is enabled, which needs the drained stream.
+     *
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan withDeferredOutputs() {
+        tornadoExecutor.withDeferredOutputs();
+        return new WithDeferredOutputs(this);
+    }
+
+    /**
+     * Restores the default: an execution waits for its outputs before returning. Awaits any
+     * execution that is still in flight.
+     *
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan withoutDeferredOutputs() {
+        tornadoExecutor.withoutDeferredOutputs();
+        return new OffDeferredOutputs(this);
     }
 
     public TornadoExecutionPlan withCUDAGraph() {

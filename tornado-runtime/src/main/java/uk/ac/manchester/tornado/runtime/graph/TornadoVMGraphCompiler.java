@@ -141,8 +141,9 @@ public class TornadoVMGraphCompiler {
                         graph, intermediateTornadoGraph);
             }
 
-            // Last operation -> perform synchronisation
-            if (!useCUDAGraphs) {
+            // Last operation -> perform synchronisation. Deferred outputs skip it entirely: the
+            // wait moves out of the execution and into whoever observes the results.
+            if (!useCUDAGraphs && !executionContext.isDeferredOutputsEnabled()) {
                 if (TornadoOptions.ENABLE_STREAM_OUT_BLOCKING) {
                     synchronizeOperationLastByteCode(tornadoVMBytecodeBuilder, intermediateTornadoGraph.getNumberOfDependencies());
                 } else {

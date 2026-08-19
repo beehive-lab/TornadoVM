@@ -96,6 +96,7 @@ public class TornadoExecutionContext {
     private long executionPlanId;  // This is set at runtime. Thus, no need to clone this value.
     private long currentDeviceMemoryUsage;
     private boolean isExecutionGraphEnabled;
+    private boolean isDeferredOutputsEnabled;
     private boolean isIntraPlanConcurrencyEnabled;
     private boolean isStagedTransfersEnabled;
 
@@ -122,6 +123,7 @@ public class TornadoExecutionContext {
         this.profiler = null;
         this.isDataDependencyDetected = isDataDependencyInTaskGraph();
         this.isExecutionGraphEnabled = false;
+        this.isDeferredOutputsEnabled = false;
         this.isIntraPlanConcurrencyEnabled = false;
         // Defaults to the -Dtornado.staged.transfers property, so the plan-level API overrides it
         // rather than replacing it.
@@ -694,6 +696,7 @@ public class TornadoExecutionContext {
         newExecutionContext.executionPlanMemoryLimit = this.executionPlanMemoryLimit;
 
         newExecutionContext.isExecutionGraphEnabled = this.isExecutionGraphEnabled;
+        newExecutionContext.isDeferredOutputsEnabled = this.isDeferredOutputsEnabled;
         newExecutionContext.isIntraPlanConcurrencyEnabled = this.isIntraPlanConcurrencyEnabled;
         newExecutionContext.isStagedTransfersEnabled = this.isStagedTransfersEnabled;
 
@@ -727,6 +730,18 @@ public class TornadoExecutionContext {
 
     public void setExecutionGraphEnabled(boolean enabled) {
         this.isExecutionGraphEnabled = enabled;
+    }
+
+    /**
+     * Whether this plan keeps its copy-outs in flight after an execution, so that the wait
+     * happens when the results are observed rather than inside execute().
+     */
+    public void setDeferredOutputsEnabled(boolean enabled) {
+        this.isDeferredOutputsEnabled = enabled;
+    }
+
+    public boolean isDeferredOutputsEnabled() {
+        return this.isDeferredOutputsEnabled;
     }
 
     public boolean isExecutionGraphEnabled() {

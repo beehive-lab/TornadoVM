@@ -1104,6 +1104,18 @@ public class TaskGraph implements TaskGraphInterface {
         return taskGraphImpl.isFinished();
     }
 
+    void awaitDeferredOutputs() {
+        taskGraphImpl.awaitDeferredOutputs();
+    }
+
+    void withDeferredOutputs() {
+        taskGraphImpl.withDeferredOutputs();
+    }
+
+    void withoutDeferredOutputs() {
+        taskGraphImpl.withoutDeferredOutputs();
+    }
+
     public Set<Object> getArgumentsLookup() {
         return taskGraphImpl.getArgumentsLookup();
     }
