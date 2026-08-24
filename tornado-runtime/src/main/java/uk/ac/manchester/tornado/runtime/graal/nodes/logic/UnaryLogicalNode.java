@@ -21,16 +21,16 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.nodes.logic;
 
-import org.graalvm.compiler.graph.IterableNodeType;
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
-import org.graalvm.compiler.nodeinfo.InputType;
-import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.LogicNode;
-import org.graalvm.compiler.nodes.spi.Canonicalizable;
-import org.graalvm.compiler.nodes.spi.CanonicalizerTool;
-import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import tornado.graal.compiler.graph.IterableNodeType;
+import tornado.graal.compiler.graph.Node;
+import tornado.graal.compiler.graph.NodeClass;
+import tornado.graal.compiler.lir.gen.LIRGeneratorTool;
+import tornado.graal.compiler.nodeinfo.InputType;
+import tornado.graal.compiler.nodeinfo.NodeInfo;
+import tornado.graal.compiler.nodes.LogicNode;
+import tornado.graal.compiler.nodes.spi.Canonicalizable;
+import tornado.graal.compiler.nodes.spi.CanonicalizerTool;
+import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.LogicalCompareNode;

@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.runtime;
 
-import static org.graalvm.compiler.debug.GraalError.guarantee;
+import static tornado.graal.compiler.debug.GraalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
 import java.lang.reflect.Method;
@@ -37,20 +37,17 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.StreamSupport;
 
 import org.graalvm.collections.EconomicMap;
-import org.graalvm.compiler.core.common.GraalOptions;
-import org.graalvm.compiler.debug.DebugContext;
-import org.graalvm.compiler.hotspot.HotSpotGraalOptionValues;
-import org.graalvm.compiler.lir.constopt.ConstantLoadOptimization;
-import org.graalvm.compiler.lir.phases.PostAllocationOptimizationStage;
-import org.graalvm.compiler.options.OptionKey;
-import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
+import tornado.graal.compiler.core.common.GraalOptions;
+import tornado.graal.compiler.debug.DebugContext;
+import tornado.graal.compiler.hotspot.HotSpotGraalOptionValues;
+import tornado.graal.compiler.lir.constopt.ConstantLoadOptimization;
+import tornado.graal.compiler.lir.phases.PostAllocationOptimizationStage;
+import tornado.graal.compiler.options.OptionKey;
+import tornado.graal.compiler.options.OptionValues;
+import tornado.graal.compiler.printer.GraalDebugHandlersFactory;
 
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.runtime.JVMCI;
-import jdk.vm.ci.runtime.JVMCIBackend;
 import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoRuntime;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
@@ -58,6 +55,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoBackendNotFound;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.UpsMeterReader;
+import uk.ac.manchester.tornado.runtime.jvmci.TornadoMetaAccessProvider;
 import uk.ac.manchester.tornado.runtime.common.enums.TornadoBackends;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
 
@@ -84,9 +82,8 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
     private static DebugContext debugContext = null;
     private static OptionValues options;
 
-    private final JVMCIBackend vmBackend;
-    private final HotSpotJVMCIRuntime vmRuntime;
     private final TornadoVMConfigAccess vmConfig;
+    private final MetaAccessProvider metaAccess;
     private final TornadoAcceleratorBackend[] tornadoVMBackends;
     private int backendCount;
 
@@ -95,12 +92,11 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
         initOptions();
         guarantee(!GraalOptions.OmitHotExceptionStacktrace.getValue(options), "error");
 
-        if (!(JVMCI.getRuntime() instanceof HotSpotJVMCIRuntime)) {
-            shouldNotReachHere("Unsupported JVMCIRuntime: ", JVMCI.getRuntime().getClass().getName());
-        }
-        vmRuntime = (HotSpotJVMCIRuntime) JVMCI.getRuntime();
-        vmBackend = vmRuntime.getHostJVMCIBackend();
-        vmConfig = new TornadoVMConfigAccess(vmRuntime.getConfigStore(), vmBackend.getMetaAccess());
+        // TornadoVM sources all type/constant metadata from the reflection + Unsafe providers
+        // on every JDK: there is no dependency on a HotSpot JVMCI runtime or host backend
+        // (JVMCI was removed from OpenJDK in JDK 27, openjdk/jdk#30834).
+        vmConfig = new TornadoVMConfigAccess();
+        metaAccess = new TornadoMetaAccessProvider();
         tornadoVMBackends = loadBackends();
     }
 
@@ -119,14 +115,6 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
 
     public static ExecutorService getTornadoExecutor() {
         return EXECUTOR;
-    }
-
-    public static JVMCIBackend getVMBackend() {
-        return runtime.vmBackend;
-    }
-
-    public static HotSpotJVMCIRuntime getVMRuntime() {
-        return runtime.vmRuntime;
     }
 
     public static TornadoVMConfigAccess getVMConfig() {
@@ -161,7 +149,7 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
             if (TornadoOptions.FULL_DEBUG) {
                 System.out.println("[INFO] TornadoVM Loading Backend: " + provider.getName());
             }
-            TornadoAcceleratorBackend backend = provider.createBackend(options, vmRuntime, vmConfig);
+            TornadoAcceleratorBackend backend = provider.createBackend(options, vmConfig);
             if (backend != null) {
                 tornadoAcceleratorBackends[index] = backend;
                 index++;
@@ -197,7 +185,8 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
     }
 
     public MetaAccessProvider getMetaAccess() {
-        return vmBackend.getMetaAccess();
+        // Kernel entry-method resolution goes through the reflection seam (reflection ConstantPool).
+        return metaAccess;
     }
 
     public ResolvedJavaMethod resolveMethod(final Method method) {

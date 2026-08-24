@@ -21,22 +21,22 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases.sketcher;
 
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FixedGuardNode;
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.ParameterNode;
-import org.graalvm.compiler.nodes.PiNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.calc.IsNullNode;
-import org.graalvm.compiler.nodes.calc.PointerEqualsNode;
-import org.graalvm.compiler.nodes.extended.JavaReadNode;
-import org.graalvm.compiler.nodes.extended.JavaWriteNode;
-import org.graalvm.compiler.nodes.extended.LoadHubNode;
-import org.graalvm.compiler.nodes.java.InstanceOfNode;
-import org.graalvm.compiler.nodes.java.LoadFieldNode;
-import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
-import org.graalvm.compiler.phases.BasePhase;
+import tornado.graal.compiler.graph.Node;
+import tornado.graal.compiler.nodes.ConstantNode;
+import tornado.graal.compiler.nodes.FixedGuardNode;
+import tornado.graal.compiler.nodes.GraphState;
+import tornado.graal.compiler.nodes.ParameterNode;
+import tornado.graal.compiler.nodes.PiNode;
+import tornado.graal.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.nodes.calc.IsNullNode;
+import tornado.graal.compiler.nodes.calc.PointerEqualsNode;
+import tornado.graal.compiler.nodes.extended.JavaReadNode;
+import tornado.graal.compiler.nodes.extended.JavaWriteNode;
+import tornado.graal.compiler.nodes.extended.LoadHubNode;
+import tornado.graal.compiler.nodes.java.InstanceOfNode;
+import tornado.graal.compiler.nodes.java.LoadFieldNode;
+import tornado.graal.compiler.nodes.memory.address.OffsetAddressNode;
+import tornado.graal.compiler.phases.BasePhase;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -137,9 +137,10 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
             node.replaceAtPredecessor(successor);
             predecessor.replaceFirstSuccessor(node, successor);
 
-            for (Node us : node.usages()) {
-                node.removeUsage(us);
-            }
+            // Detach any remaining usages (e.g. a PiNode still holding this node as its guard edge) by
+            // nulling the referrers' edges. Using removeUsage alone only trims this node's usage list and
+            // leaves the referrer pointing at the deleted node, which later crashes StructuredGraph.copy.
+            node.replaceAtUsages(null);
             node.clearInputs();
             node.safeDelete();
         }
@@ -150,17 +151,44 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
         return ALWAYS_APPLICABLE;
     }
 
+    /**
+     * Restricts the elimination to the {@code segment} field of a genuine TornadoVM native array
+     * (a type annotated with {@link SegmentElementSize}, e.g. {@code IntArray}/{@code FloatArray}).
+     * Matching only on the {@code toString().contains("segment")} name fired wrongly on Panama-internal
+     * segment fields introduced when a native array is allocated locally/privately inside a kernel
+     * (e.g. {@code testPrivateVector*}), where {@code successors().first()} is a {@code CleanerFactory.commonCleaner}
+     * load rather than the array's {@code baseIndex} field.
+     */
+    private static boolean isNativeArraySegmentField(LoadFieldNode loadFieldSegment) {
+        return loadFieldSegment.field().getDeclaringClass().getAnnotation(SegmentElementSize.class) != null;
+    }
+
+    /**
+     * The successor of the {@code segment} load is only the array's {@code baseIndex} field in the
+     * ordinary (array-parameter) graph. For a locally/privately allocated native array the inlined
+     * Panama allocation interleaves other fixed nodes, so {@code successors().first()} can be an
+     * unrelated {@link LoadFieldNode} (observed: {@code jdk.internal.ref.CleanerFactory.commonCleaner}).
+     * Only rewrite it as the base-index constant when it really is a native array's {@code baseIndex}.
+     */
+    private static boolean isNativeArrayBaseIndexField(LoadFieldNode baseIndexNode) {
+        return "baseIndex".equals(baseIndexNode.field().getName()) && baseIndexNode.field().getDeclaringClass().getAnnotation(SegmentElementSize.class) != null;
+    }
+
     private int getElementKindSize(LoadFieldNode baseIndexNode) {
         int kindElement = 0;
-        Annotation[] declaredAnnotations = baseIndexNode.field().getDeclaringClass().getDeclaredAnnotations();
+        var declaringClass = baseIndexNode.field().getDeclaringClass();
+        Annotation[] declaredAnnotations = declaringClass.getDeclaredAnnotations();
         if (declaredAnnotations.length == 0) {
-            throw new TornadoRuntimeException("Annotation is missing");
+            throw new TornadoRuntimeException("@SegmentElementSize annotation is missing on " + declaringClass.toJavaName() + " (field " + baseIndexNode.field().getName() + ")");
         } else {
             for (Annotation annotation : declaredAnnotations) {
                 if (annotation instanceof SegmentElementSize panamaElementSize) {
                     kindElement = panamaElementSize.size();
                 }
             }
+        }
+        if (kindElement == 0) {
+            throw new TornadoRuntimeException("@SegmentElementSize annotation is missing on " + declaringClass.toJavaName() + " (field " + baseIndexNode.field().getName() + ")");
         }
         return kindElement;
     }
@@ -169,10 +197,10 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
     protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
 
         for (LoadFieldNode loadFieldSegment : graph.getNodes().filter(LoadFieldNode.class)) {
-            if (loadFieldSegment.toString().contains("segment")) {
+            if (loadFieldSegment.toString().contains("segment") && isNativeArraySegmentField(loadFieldSegment)) {
 
                 // Remove the loadField#baseIndex and replace it with a Constant value
-                if (loadFieldSegment.successors().first() instanceof LoadFieldNode baseIndexNode) {
+                if (loadFieldSegment.successors().first() instanceof LoadFieldNode baseIndexNode && isNativeArrayBaseIndexField(baseIndexNode)) {
                     var elementKindSize = getElementKindSize(baseIndexNode);
                     var panamaObjectHeaderSize = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
                     var baseIndexPosition = panamaObjectHeaderSize / elementKindSize;
@@ -184,7 +212,7 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
                 // Remove FixedGuard nodes with its PI Node
                 if (loadFieldSegment.successors().filter(FixedGuardNode.class).isNotEmpty()) {
                     FixedGuardNode fixedGuardNode = loadFieldSegment.successors().filter(FixedGuardNode.class).first();
-                    if (fixedGuardNode.successors().first() instanceof LoadFieldNode baseIndexNode) {
+                    if (fixedGuardNode.successors().first() instanceof LoadFieldNode baseIndexNode && isNativeArrayBaseIndexField(baseIndexNode)) {
                         var elementKindSize = getElementKindSize(baseIndexNode);
                         var panamaObjectHeaderSize = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
                         var baseIndexPosition = panamaObjectHeaderSize / elementKindSize;
