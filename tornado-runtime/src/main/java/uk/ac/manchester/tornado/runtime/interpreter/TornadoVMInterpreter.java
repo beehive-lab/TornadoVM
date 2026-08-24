@@ -97,6 +97,12 @@ public class TornadoVMInterpreter {
     private final KernelStackFrame[] kernelStackFrame;
     private final int[][] events;
     private final int[] eventsIndexes;
+    /**
+     * Number of leading entries of each wait-list row that have been written since the row was
+     * last cleared. Everything past this mark is still -1, so only the prefix has to be cleared
+     * between executions.
+     */
+    private final int[] eventsWrittenPrefix;
     private final TornadoXPUDevice interpreterDevice;
     private final TornadoInstalledCode[] installedCodes;
 
@@ -155,6 +161,7 @@ public class TornadoVMInterpreter {
         // 131KB per dependency list even when a graph only ever fills a handful of entries.
         events = new int[this.bytecodeResult.getInt()][];
         eventsIndexes = new int[events.length];
+        eventsWrittenPrefix = new int[events.length];
 
         localTaskList = graphExecutionContext.getTasksForDevice(interpreterDevice.getDeviceContext());
 
@@ -677,12 +684,17 @@ public class TornadoVMInterpreter {
     }
 
     private void initWaitEventList() {
-        // Clear whole rows, not just the prefix up to eventsIndexes: resetEventIndexes() rewinds an
-        // event list in the middle of an execution, so entries can live beyond the current index and a
-        // partial clear would leave stale event ids behind. Rows never used stay null and cost nothing.
-        for (int[] waitList : events) {
-            if (waitList != null) {
-                Arrays.fill(waitList, -1);
+        // Clearing whole rows is not an option performance-wise: a row is MAX_EVENTS entries (32768 by
+        // default) and this runs at the top of every execute(), so per-token workloads spend most of
+        // their host time here. eventsIndexes cannot bound the clear either, because resetEventIndexes()
+        // rewinds an event list in the middle of an execution and entries can live beyond the current
+        // index. eventsWrittenPrefix is that bound: it is the high-water mark of every write since the
+        // last clear, and everything past it is still -1. Rows never used stay null and cost nothing.
+        for (int i = 0; i < events.length; i++) {
+            final int writtenPrefix = eventsWrittenPrefix[i];
+            if (writtenPrefix > 0) {
+                Arrays.fill(events[i], 0, writtenPrefix, -1);
+                eventsWrittenPrefix[i] = 0;
             }
         }
         Arrays.fill(eventsIndexes, 0);
@@ -1393,9 +1405,13 @@ public class TornadoVMInterpreter {
                 DebugInterpreter.logAddDependency(lastEvent, eventId, logBuilder);
             }
             final int[] waitList = waitListForWrite(eventId);
-            TornadoInternalError.guarantee(eventsIndexes[eventId] < waitList.length, "event list is too small");
-            waitList[eventsIndexes[eventId]] = lastEvent;
-            eventsIndexes[eventId]++;
+            final int index = eventsIndexes[eventId];
+            TornadoInternalError.guarantee(index < waitList.length, "event list is too small");
+            waitList[index] = lastEvent;
+            eventsIndexes[eventId] = index + 1;
+            if (index >= eventsWrittenPrefix[eventId]) {
+                eventsWrittenPrefix[eventId] = index + 1;
+            }
         }
     }
 
