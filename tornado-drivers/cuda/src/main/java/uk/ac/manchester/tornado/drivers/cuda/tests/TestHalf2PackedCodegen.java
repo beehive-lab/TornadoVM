@@ -25,7 +25,7 @@ package uk.ac.manchester.tornado.drivers.cuda.tests;
 
 import java.lang.reflect.Method;
 
-import org.graalvm.compiler.phases.util.Providers;
+import tornado.graal.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.KernelContext;

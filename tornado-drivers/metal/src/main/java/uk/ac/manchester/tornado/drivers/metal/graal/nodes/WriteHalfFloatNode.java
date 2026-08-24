@@ -23,15 +23,15 @@
  */
 package uk.ac.manchester.tornado.drivers.metal.graal.nodes;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
-import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.FixedWithNextNode;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.memory.address.AddressNode;
-import org.graalvm.compiler.nodes.spi.LIRLowerable;
-import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import tornado.graal.compiler.core.common.LIRKind;
+import tornado.graal.compiler.graph.NodeClass;
+import tornado.graal.compiler.lir.gen.LIRGeneratorTool;
+import tornado.graal.compiler.nodeinfo.NodeInfo;
+import tornado.graal.compiler.nodes.FixedWithNextNode;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.memory.address.AddressNode;
+import tornado.graal.compiler.nodes.spi.LIRLowerable;
+import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.metal.graal.HalfFloatStamp;
@@ -39,9 +39,13 @@ import uk.ac.manchester.tornado.drivers.metal.graal.MetalArchitecture;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalKind;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalLIRStmt;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalUnary;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkWriteNode;
 
 @NodeInfo
-public class WriteHalfFloatNode extends FixedWithNextNode implements LIRLowerable {
+// MarkWriteNode is the backend-neutral "this node writes an array parameter" marker the sketch-tier
+// TornadoDataflowAnalysis scans for. Without it a HalfFloatArray written only through this node is classified
+// read-only and never copied back to the host (result reads as 0). OpenCL/CUDA mark their write nodes the same way.
+public class WriteHalfFloatNode extends FixedWithNextNode implements LIRLowerable, MarkWriteNode {
 
     public static final NodeClass<WriteHalfFloatNode> TYPE = NodeClass.create(WriteHalfFloatNode.class);
 

@@ -37,9 +37,9 @@ List of compatible JDKs
 
 TornadoVM currently supports:
 
--  JDK 21 (e.g. OpenJDK 21, Red Hat Mandrel 21, Amazon Corretto 21, Azul Zulu JDK 21).
--  JDK 25.
--  GraalVM (JDK 21), for polyglot interoperability (see :ref:`truffle-languages`).
+-  JDK 21 (e.g. OpenJDK 21, Red Hat Mandrel 21, Amazon Corretto 21, Azul Zulu JDK 21), via the ``jdk21`` build profile.
+-  JDK 22 and newer, including JDK 27, via the single ``jdk22plus`` build profile. TornadoVM no longer depends on JVMCI, so this SDK is built once and runs on any JDK from 22 upwards rather than being tied to one release.
+-  GraalVM (JDK 21), as an alternative JDK 21 distribution (the ``graal-jdk-21`` build profile).
 
 Windows
 ~~~~~~~~~~
@@ -60,11 +60,9 @@ Usage
 4. Which programming languages does TornadoVM support?
 ------------------------------------------------------
 
-TornadoVM primarily supports Java. However, with the integration with GraalVM you can call your TornadoVM-compatible Java code through other
-programming languages supported by GraalVM's polyglot runtime (e.g., Python, R, Ruby, Javascript, Node.js, etc).
-
-`Here <https://github.com/beehive-lab/TornadoVM/tree/master/tornado-examples/src/main/java/uk/ac/manchester/tornado/examples/polyglot>`__
-you can find examples of how to use TornadoVM with GraalVM Polyglot.
+TornadoVM primarily supports Java (Polyglot support was removed after the 5.2.0 release; to call
+TornadoVM-compatible Java code from other programming languages via GraalVM's polyglot runtime,
+e.g. Python, R, Ruby, Javascript, Node.js, use TornadoVM <= 5.2.0).
 
 5. Is TornadoVM a Domain Specific Language (DSL)?
 --------------------------------------------------------------

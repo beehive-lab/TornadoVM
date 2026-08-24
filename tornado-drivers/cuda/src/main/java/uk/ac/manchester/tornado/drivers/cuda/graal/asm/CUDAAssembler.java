@@ -32,15 +32,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.graalvm.compiler.asm.AbstractAddress;
-import org.graalvm.compiler.asm.Assembler;
-import org.graalvm.compiler.asm.Label;
-import org.graalvm.compiler.lir.ConstantValue;
-import org.graalvm.compiler.lir.Variable;
+import tornado.graal.compiler.asm.AbstractAddress;
+import tornado.graal.compiler.asm.Assembler;
+import tornado.graal.compiler.asm.Label;
+import tornado.graal.compiler.lir.ConstantValue;
+import tornado.graal.compiler.lir.Variable;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.TargetDescription;
-import jdk.vm.ci.hotspot.HotSpotObjectConstant;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
@@ -51,6 +50,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIROp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDANullary;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAReturnSlot;
+import uk.ac.manchester.tornado.runtime.jvmci.TornadoObjectConstant;
 
 public final class CUDAAssembler extends Assembler {
 
@@ -366,7 +366,7 @@ public final class CUDAAssembler extends Assembler {
         JavaConstant javaConstant = cv.getJavaConstant();
         Constant constant = cv.getConstant();
         CUDAKind oclKind = (CUDAKind) cv.getPlatformKind();
-        if (oclKind == CUDAKind.HALF && !(constant instanceof HotSpotObjectConstant)) {
+        if (oclKind == CUDAKind.HALF && !(constant instanceof TornadoObjectConstant)) {
             // A __half (cuda_fp16.h) constant cannot be written as a bare numeric
             // literal: such a literal is a float/double and would either make the
             // overloaded __half operators ambiguous or silently pick the wrong type.
@@ -404,12 +404,10 @@ public final class CUDAAssembler extends Assembler {
             if (oclKind.isVector()) {
                 result = String.format("(%s)(%s)", oclKind.name(), result);
             }
-        } else if (constant instanceof HotSpotObjectConstant) {
-            HotSpotObjectConstant objConst = (HotSpotObjectConstant) constant;
-            // TODO should this be replaced with isInternedString()?
-            if (objConst.getJavaKind().isObject() && objConst.getType().getName().compareToIgnoreCase("Ljava/lang/String;") == 0) {
-                result = encodeString(objConst.toValueString());
-            }
+        } else if (constant instanceof TornadoObjectConstant tornadoObjConst && tornadoObjConst.getObject() instanceof String stringLiteral) {
+            // A String constant (e.g. a printf format) is a TornadoObjectConstant; escape it as a C
+            // string literal instead of falling through to toValueString()+addLiteralSuffix.
+            result = encodeString(stringLiteral);
         } else {
             result = constant.toValueString();
             result = addLiteralSuffix(oclKind, result);
@@ -451,6 +449,19 @@ public final class CUDAAssembler extends Assembler {
     public void emitValueWithFormat(CUDACompilationResultBuilder crb, Value value) {
         if (value instanceof CUDAReturnSlot) {
             ((CUDAReturnSlot) value).emit(crb, this);
+        } else if (value instanceof ConstantValue) {
+            // convertValueFromGraalFormat()/getAbsoluteIndexFromValue() assume a
+            // Variable whose toString() looks like "v10|DOUBLE"; a ConstantValue's
+            // toString() doesn't match that shape (no '[' or '|'), which throws
+            // a StringIndexOutOfBoundsException below. toString(Value) already
+            // special-cases ConstantValue this same way - mirror it here.
+            emit(formatConstant((ConstantValue) value));
+        } else if (value instanceof CUDANullary.Parameter) {
+            // Same reasoning as ConstantValue above: a CUDANullary.Parameter's
+            // toString() is just its parameter name (e.g. "value"), not the
+            // "vNN|KIND" shape getAbsoluteIndexFromValue() expects. toString(Value)
+            // already special-cases this too - mirror it here.
+            emit(value.toString());
         } else {
             emit(CUDAAssembler.convertValueFromGraalFormat(value));
         }

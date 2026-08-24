@@ -23,8 +23,8 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.Opcode;
+import tornado.graal.compiler.core.common.LIRKind;
+import tornado.graal.compiler.lir.Opcode;
 
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler.CUDANullaryIntrinsic;

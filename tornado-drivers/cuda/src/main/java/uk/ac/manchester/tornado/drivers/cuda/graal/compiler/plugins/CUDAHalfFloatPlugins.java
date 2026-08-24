@@ -23,15 +23,20 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.graal.compiler.plugins;
 
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
-import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
+import tornado.graal.compiler.nodes.NodeView;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.ValuePhiNode;
+import tornado.graal.compiler.nodes.ValueProxyNode;
+import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
+import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderContext;
+import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugin;
+import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import tornado.graal.compiler.nodes.graphbuilderconf.NodePlugin;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
+import uk.ac.manchester.tornado.drivers.cuda.graal.HalfFloatStamp;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAConvertHalfToFloat;
 import uk.ac.manchester.tornado.runtime.graal.nodes.AddHalfFloatNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.DivHalfFloatNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.HalfFloatPlaceholder;
@@ -43,6 +48,29 @@ public class CUDAHalfFloatPlugins {
 
     public static void registerPlugins(final GraphBuilderConfiguration.Plugins ps, final InvocationPlugins plugins) {
         registerHalfFloatInit(ps, plugins);
+    }
+
+    /**
+     * True for getHalfFloatValue()/getFloat32() receivers that TornadoHalfFloatReplacement will
+     * strip down to a raw half value, so the call MUST be intercepted here rather than inlined:
+     * either the receiver already carries the synthetic {@link HalfFloatStamp} (e.g. the value
+     * ByteArray.getHalfFloat() pushes), or it is an object-typed node the replacement phase
+     * rewrites to a HalfFloatStamp value later - a loop-carried HalfFloat accumulator phi (looked
+     * through its loop-exit proxy) or a HalfFloat arithmetic node. Falling through to bytecode
+     * inlining for these materializes a LoadField(halfFloatValue) plus null-check PiNode over what
+     * later becomes a HalfFloatStamp value, which no later pass repairs: the PiNode's retained
+     * AbstractObjectStamp crashes CanonicalizerPhase joining the two stamp families, and the field
+     * read reaches codegen as a bogus *(short *)(half + 8) dereference of a half register.
+     * Genuinely well-typed object receivers (e.g. Half2's getX()/getY() field loads) still return
+     * false so normal inlining handles them - see the scoping note in the plugins below.
+     */
+    private static boolean isSyntheticHalfReceiver(ValueNode receiverValue) {
+        if (receiverValue.stamp(NodeView.DEFAULT) instanceof HalfFloatStamp) {
+            return true;
+        }
+        ValueNode unproxified = receiverValue instanceof ValueProxyNode proxy ? proxy.value() : receiverValue;
+        return unproxified instanceof ValuePhiNode || unproxified instanceof AddHalfFloatNode || unproxified instanceof SubHalfFloatNode || unproxified instanceof MultHalfFloatNode
+                || unproxified instanceof DivHalfFloatNode;
     }
 
     private static void registerHalfFloatInit(GraphBuilderConfiguration.Plugins ps, InvocationPlugins plugins) {
@@ -111,9 +139,58 @@ public class CUDAHalfFloatPlugins {
         r.register(new InvocationPlugin("getHalfFloatValue", InvocationPlugin.Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
-                HalfFloatPlaceholder placeholder = new HalfFloatPlaceholder(receiver.get(true));
+                // get(false): skip the null-check path (receiver.get(true) -> GraphBuilderContext
+                // .nullCheckedValue() -> PiNode.create()/canonical() -> AbstractObjectStamp.improveWith()/
+                // join()). That path assumes the receiver carries a real AbstractObjectStamp, but receivers
+                // produced by e.g. ByteArray.getHalfFloat() carry the synthetic HalfFloatStamp (pushed as
+                // JavaKind.Object since the declared type is HalfFloat), so the join's internal cast throws
+                // a ClassCastException. These synthetic half-value nodes can never be null, so the null
+                // check buys nothing and get(false) (plain unwrap, no PiNode) is safe here.
+                //
+                // Only intercept when the receiver actually carries that synthetic stamp. Receivers with
+                // a real stamp (e.g. Half2.getX()/getY(), which return an already-properly-typed HalfFloat
+                // field) don't have this problem, and forcing them through this synthetic path instead of
+                // normal inlining changes the surrounding graph shape enough to risk tripping the unguarded
+                // FixedGuardNode casts in TornadoHalfFloatFixedGuardElimination/TornadoHalfFloatReplacement
+                // if Graal's canonicalizer simplifies a nearby guard into a ValueAnchorNode (confirmed to
+                // happen on the OpenCL backend for this exact receiver shape; mirrored here defensively
+                // since the same unguarded casts exist in this backend's half-float machinery too).
+                // Falling through (return false) lets the default bytecode-inlining path handle those
+                // untouched, exactly as before this plugin intercepted getFloat32 at all.
+                //
+                // Besides HalfFloatStamp receivers, isSyntheticHalfReceiver also intercepts HalfFloat
+                // accumulator phis and arithmetic nodes: those are object-stamped at parse time (the
+                // replacement phase only half-ifies them later), but inlining against them is just as
+                // broken as against a HalfFloatStamp receiver - see the helper's javadoc.
+                ValueNode receiverValue = receiver.get(false);
+                if (!isSyntheticHalfReceiver(receiverValue)) {
+                    return false;
+                }
+                HalfFloatPlaceholder placeholder = new HalfFloatPlaceholder(receiverValue);
                 b.getGraph().addOrUnique(placeholder);
                 b.push(JavaKind.Short, placeholder);
+                return true;
+            }
+        });
+
+        // Without this, the sketcher tries to inline HalfFloat.getFloat32()'s real bytecode against
+        // the receiver, hitting the same object-vs-HalfFloatStamp mismatch described above (either via
+        // the generic inliner's stamp join, or - once intercepted here - via receiver.get(true)'s
+        // null-check path, hence get(false) below). Intercepting the call directly - mirroring
+        // getHalfFloatValue above - avoids inlining into that mismatch altogether. Same HalfFloatStamp
+        // scoping as getHalfFloatValue above, for the same reason.
+        r.register(new InvocationPlugin("getFloat32", InvocationPlugin.Receiver.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                ValueNode receiverValue = receiver.get(false);
+                if (!isSyntheticHalfReceiver(receiverValue)) {
+                    return false;
+                }
+                HalfFloatPlaceholder placeholder = new HalfFloatPlaceholder(receiverValue);
+                b.getGraph().addOrUnique(placeholder);
+                CUDAConvertHalfToFloat convertHalfToFloat = new CUDAConvertHalfToFloat(placeholder);
+                b.getGraph().addOrUnique(convertHalfToFloat);
+                b.push(JavaKind.Float, convertHalfToFloat);
                 return true;
             }
         });
