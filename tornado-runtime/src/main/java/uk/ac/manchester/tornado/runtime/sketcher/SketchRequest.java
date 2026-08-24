@@ -22,9 +22,9 @@
  */
 package uk.ac.manchester.tornado.runtime.sketcher;
 
-import org.graalvm.compiler.phases.PhaseSuite;
-import org.graalvm.compiler.phases.tiers.HighTierContext;
-import org.graalvm.compiler.phases.util.Providers;
+import tornado.graal.compiler.phases.PhaseSuite;
+import tornado.graal.compiler.phases.tiers.HighTierContext;
+import tornado.graal.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier;

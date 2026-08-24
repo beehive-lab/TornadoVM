@@ -23,12 +23,12 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.nodes.logic;
 
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryOp.LOGICAL_AND;
 
-import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
-import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.LogicNode;
+import tornado.graal.compiler.core.common.type.StampFactory;
+import tornado.graal.compiler.graph.NodeClass;
+import tornado.graal.compiler.lir.Variable;
+import tornado.graal.compiler.lir.gen.LIRGeneratorTool;
+import tornado.graal.compiler.nodeinfo.NodeInfo;
+import tornado.graal.compiler.nodes.LogicNode;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;

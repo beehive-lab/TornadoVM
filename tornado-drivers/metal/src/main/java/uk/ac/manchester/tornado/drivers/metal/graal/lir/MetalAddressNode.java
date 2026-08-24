@@ -23,15 +23,15 @@
  */
 package uk.ac.manchester.tornado.drivers.metal.graal.lir;
 
-import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.NodeView;
-import org.graalvm.compiler.nodes.ParameterNode;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.memory.address.AddressNode;
-import org.graalvm.compiler.nodes.spi.LIRLowerable;
-import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import tornado.graal.compiler.graph.NodeClass;
+import tornado.graal.compiler.lir.Variable;
+import tornado.graal.compiler.nodeinfo.NodeInfo;
+import tornado.graal.compiler.nodes.NodeView;
+import tornado.graal.compiler.nodes.ParameterNode;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.memory.address.AddressNode;
+import tornado.graal.compiler.nodes.spi.LIRLowerable;
+import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.metal.graal.MetalArchitecture.MetalMemoryBase;

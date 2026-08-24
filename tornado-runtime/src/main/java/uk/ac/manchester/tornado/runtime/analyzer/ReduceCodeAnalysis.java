@@ -32,30 +32,31 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
-import org.graalvm.compiler.graph.Graph;
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.graph.iterators.NodeIterable;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.EndNode;
-import org.graalvm.compiler.nodes.FixedNode;
-import org.graalvm.compiler.nodes.IfNode;
-import org.graalvm.compiler.nodes.InvokeNode;
-import org.graalvm.compiler.nodes.LogicNode;
-import org.graalvm.compiler.nodes.LoopBeginNode;
-import org.graalvm.compiler.nodes.MergeNode;
-import org.graalvm.compiler.nodes.ParameterNode;
-import org.graalvm.compiler.nodes.PhiNode;
-import org.graalvm.compiler.nodes.StartNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.AddNode;
-import org.graalvm.compiler.nodes.calc.BinaryArithmeticNode;
-import org.graalvm.compiler.nodes.calc.BinaryNode;
-import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
-import org.graalvm.compiler.nodes.calc.MulNode;
-import org.graalvm.compiler.nodes.java.ArrayLengthNode;
-import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
-import org.graalvm.compiler.nodes.java.StoreIndexedNode;
+import tornado.graal.compiler.graph.Graph;
+import tornado.graal.compiler.graph.Node;
+import tornado.graal.compiler.graph.iterators.NodeIterable;
+import tornado.graal.compiler.nodes.ConstantNode;
+import tornado.graal.compiler.nodes.EndNode;
+import tornado.graal.compiler.nodes.FixedNode;
+import tornado.graal.compiler.nodes.IfNode;
+import tornado.graal.compiler.nodes.Invoke;
+import tornado.graal.compiler.nodes.InvokeNode;
+import tornado.graal.compiler.nodes.LogicNode;
+import tornado.graal.compiler.nodes.LoopBeginNode;
+import tornado.graal.compiler.nodes.MergeNode;
+import tornado.graal.compiler.nodes.ParameterNode;
+import tornado.graal.compiler.nodes.PhiNode;
+import tornado.graal.compiler.nodes.StartNode;
+import tornado.graal.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.calc.AddNode;
+import tornado.graal.compiler.nodes.calc.BinaryArithmeticNode;
+import tornado.graal.compiler.nodes.calc.BinaryNode;
+import tornado.graal.compiler.nodes.calc.IntegerLessThanNode;
+import tornado.graal.compiler.nodes.calc.MulNode;
+import tornado.graal.compiler.nodes.java.ArrayLengthNode;
+import tornado.graal.compiler.nodes.java.MethodCallTargetNode;
+import tornado.graal.compiler.nodes.java.StoreIndexedNode;
 
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.common.PrebuiltTaskPackage;
@@ -102,7 +103,7 @@ public class ReduceCodeAnalysis {
                 operations.add(REDUCE_OPERATION.SUM);
             } else if (operation instanceof MulNode) {
                 operations.add(REDUCE_OPERATION.MUL);
-            } else if (operation instanceof InvokeNode invoke) {
+            } else if (operation instanceof Invoke invoke) {
                 if (invoke.callTarget().targetName().equals("Math.max")) {
                     operations.add(REDUCE_OPERATION.MAX);
                 } else if (invoke.callTarget().targetName().equals("Math.min")) {
@@ -199,19 +200,18 @@ public class ReduceCodeAnalysis {
                     if (store.value() instanceof BinaryNode || store.value() instanceof BinaryArithmeticNode) {
                         ValueNode value = store.value();
                         reduceOperation.add(value);
-                    } else if (store.value() instanceof InvokeNode) {
-                        InvokeNode invoke = (InvokeNode) store.value();
+                    } else if (store.value() instanceof Invoke invoke) {
                         if (invoke.callTarget().targetName().startsWith("Math")) {
-                            reduceOperation.add(invoke);
+                            reduceOperation.add((ValueNode) invoke);
                         }
                     }
                 } else if (node instanceof WriteAtomicNode write) {
                     if (write.value() instanceof BinaryNode || write.value() instanceof BinaryArithmeticNode) {
                         ValueNode value = write.value();
                         reduceOperation.add(value);
-                    } else if (write.value() instanceof InvokeNode invoke) {
+                    } else if (write.value() instanceof Invoke invoke) {
                         if (invoke.callTarget().targetName().startsWith("Math")) {
-                            reduceOperation.add(invoke);
+                            reduceOperation.add((ValueNode) invoke);
                         }
                     }
                 }
@@ -274,7 +274,7 @@ public class ReduceCodeAnalysis {
                 break;
             } else if (aux instanceof LoopBeginNode) {
                 loopBegin = (LoopBeginNode) aux;
-            } else if (aux instanceof InvokeNode invokeNode) {
+            } else if (aux instanceof Invoke invokeNode) {
                 if (invokeNode.getTargetMethod().getName().equals("getSize")) {
                     ValueNode valueNode = invokeNode.callTarget().arguments().first();
                     loopBoundNode = valueNode;
@@ -340,13 +340,15 @@ public class ReduceCodeAnalysis {
         for (Node node : parameterNode.usages()) {
             if (node instanceof MethodCallTargetNode methodCallTargetNode) {
                 Node aux = methodCallTargetNode.usages().first();
-                if (!(aux instanceof InvokeNode panamaStoreNode)) {
+                // On the JVMCI-absent (reflection) high-level graph, TornadoVM native-array accessors are
+                // InvokeWithExceptionNode (with an exception edge), not InvokeNode; both implement Invoke.
+                if (!(aux instanceof Invoke panamaStoreNode)) {
                     continue;
                 }
                 if (!panamaStoreNode.getTargetMethod().getName().equals("set")) {
                     continue;
                 }
-                obtainLoopBoundForPanamaRegions(aux, loopBound);
+                obtainLoopBoundForPanamaRegions((Node) panamaStoreNode, loopBound);
             } else if (node instanceof StoreIndexedNode) {
                 obtainLoopBoundForOnHeapArrays(node, loopBound);
             }

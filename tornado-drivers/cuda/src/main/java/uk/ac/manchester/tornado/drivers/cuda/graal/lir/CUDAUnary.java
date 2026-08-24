@@ -23,9 +23,9 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.LIRInstruction.Use;
-import org.graalvm.compiler.lir.Opcode;
+import tornado.graal.compiler.core.common.LIRKind;
+import tornado.graal.compiler.lir.LIRInstruction.Use;
+import tornado.graal.compiler.lir.Opcode;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
@@ -38,7 +38,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDACompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.cuda.graal.meta.CUDAMemorySpace;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDABarrierNode.CUDAMemFenceFlags;
-import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class CUDAUnary {
 
@@ -167,12 +167,17 @@ public class CUDAUnary {
                 asm.emitSymbol(CUDAAssemblerConstants.ADD);
                 asm.space();
                 if (isLocalMemory()) {
+                    // The amount subtracted must match the fixed PANAMA_OBJECT_HEADER_SIZE that
+                    // CUDAGraphBuilderPlugins#computeAddress actually added - not a live
+                    // vmConfig.getArrayBaseOffset() query, which varies with the host JDK's object
+                    // header layout (12 vs 16 under JDK 27 compact headers) and would under/over
+                    // -subtract, shifting the local atomic's target by one element.
                     asm.emitSymbol(CUDAAssemblerConstants.OPEN_PARENTHESIS);
                     asm.emitValue(crb, address.getIndex());
                     asm.space();
                     asm.emitSymbol(CUDAAssemblerConstants.SUB);
                     asm.space();
-                    asm.emit(Integer.toString(TornadoCoreRuntime.getVMConfig().getArrayBaseOffset(kind.asJavaKind())));
+                    asm.emit(Long.toString(TornadoOptions.PANAMA_OBJECT_HEADER_SIZE));
                     asm.emitSymbol(CUDAAssemblerConstants.CLOSE_PARENTHESIS);
                 } else {
                     asm.emitValue(crb, address.getIndex());
@@ -426,6 +431,10 @@ public class CUDAUnary {
 
         CUDAMemorySpace getMemorySpace() {
             return base.getMemorySpace();
+        }
+
+        public CUDAKind getElementKind() {
+            return getCUDAPlatformKind();
         }
 
     }

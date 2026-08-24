@@ -1,8 +1,9 @@
 import uk.ac.manchester.tornado.runtime.TornadoBackendProvider;
 
 module tornado.drivers.opencl {
+    requires jdk.unsupported;
     requires transitive jdk.internal.vm.ci;
-    requires transitive jdk.internal.vm.compiler;
+    requires transitive tornado.graal;
     requires transitive org.graalvm.collections;
     requires transitive org.graalvm.word;
     requires transitive tornado.api;

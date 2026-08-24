@@ -24,14 +24,14 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.Value;
-import org.graalvm.compiler.lir.LIRInstructionClass;
-import org.graalvm.compiler.lir.LabelRef;
-import org.graalvm.compiler.lir.StandardOp.BlockEndOp;
+import tornado.graal.compiler.lir.LIRInstructionClass;
+import tornado.graal.compiler.lir.LabelRef;
+import tornado.graal.compiler.lir.StandardOp.BlockEndOp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDACompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt.AbstractInstruction;
 
-import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.CONST;
+import static tornado.graal.compiler.lir.LIRInstruction.OperandFlag.CONST;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssemblerConstants.BREAK;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssemblerConstants.CASE;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssemblerConstants.CLOSE_PARENTHESIS;
@@ -146,7 +146,7 @@ public class CUDAControlFlow {
     }
 
     /**
-     * This instruction can generate different code depending on whether or not there are additional {@link org.graalvm.compiler.lir.LIRInstruction}s between the loop condition and the
+     * This instruction can generate different code depending on whether or not there are additional {@link tornado.graal.compiler.lir.LIRInstruction}s between the loop condition and the
      * {@link LoopPostOp}, respectively the {@link LoopInitOp}.
      */
     public static class LoopConditionOp extends AbstractInstruction {

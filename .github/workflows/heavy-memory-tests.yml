@@ -17,7 +17,7 @@ jobs:
       JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
       MAVEN_HOME: /opt/maven
       CMAKE_ROOT: /opt/jenkins/cmake-3.25.2-linux-x86_64
-      GRAAL_JARS: /opt/graalJars
+      GRAAL_JARS: /opt/graalJarsNoJvmci
       TORNADO_ROOT: ${{ github.workspace }}
       TORNADOVM_HOME: ${{ github.workspace }}/bin/sdk
       VENV_PATH: ${{ github.workspace }}/venv-opencl
