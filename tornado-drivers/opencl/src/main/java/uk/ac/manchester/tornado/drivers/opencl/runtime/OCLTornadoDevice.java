@@ -625,7 +625,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
         } else {
             // Read for any other buffer that is not an atomic buffer
             TornadoInternalError.guarantee(state.hasObjectBuffer(), "invalid variable");
-            return state.getXPUBuffer().read(executionPlanId, object, hostOffset, partialCopySize, events, events == null);
+            return state.getXPUBuffer().read(executionPlanId, object, hostOffset, partialCopySize, events, events != null);
         }
     }
 
