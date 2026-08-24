@@ -343,8 +343,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             final Value value = operand(isNullNode.getValue());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_NE, boolLirKind, value, new ConstantValue(intLirKind, PrimitiveConstant.NULL_POINTER));
         } else if (node instanceof ShortCircuitOrNode shortCircuitOrNode) {
-            final Value x = operandOrConjunction(shortCircuitOrNode.getX());
-            final Value y = operandOrConjunction(shortCircuitOrNode.getY());
+            final Value x = shortCircuitOrNode.isXNegated() ? operandOrConjunction(shortCircuitOrNode.getX()) : negatedOperand(shortCircuitOrNode.getX());
+            final Value y = shortCircuitOrNode.isYNegated() ? operandOrConjunction(shortCircuitOrNode.getY()) : negatedOperand(shortCircuitOrNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.LOGICAL_AND, boolLirKind, x, y);
         } else if (node instanceof IntegerTestNode testNode) {
             final Value x = operand(testNode.getX());
@@ -353,7 +353,6 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         } else {
             throw new TornadoRuntimeException(String.format("logic node (class=%s)", node.getClass().getName()));
         }
-        setResult(node, result);
         return (OCLLIROp) result;
     }
 
@@ -403,8 +402,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             final Value value = operand(isNullNode.getValue());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_EQ, boolLirKind, value, new ConstantValue(intLirKind, PrimitiveConstant.NULL_POINTER));
         } else if (node instanceof ShortCircuitOrNode shortCircuitOrNode) {
-            final Value x = operandOrConjunction(shortCircuitOrNode.getX());
-            final Value y = operandOrConjunction(shortCircuitOrNode.getY());
+            final Value x = shortCircuitOrNode.isXNegated() ? negatedOperand(shortCircuitOrNode.getX()) : operandOrConjunction(shortCircuitOrNode.getX());
+            final Value y = shortCircuitOrNode.isYNegated() ? negatedOperand(shortCircuitOrNode.getY()) : operandOrConjunction(shortCircuitOrNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.LOGICAL_OR, boolLirKind, x, y);
         } else if (node instanceof IntegerTestNode integerTestNode) {
             final Value x = operand(integerTestNode.getX());
@@ -415,6 +414,15 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         }
         setResult(node, result);
         return (OCLLIROp) result;
+    }
+
+    private Value negatedOperand(ValueNode value) {
+        if (value instanceof LogicNode) {
+            return emitNegatedLogicNode((LogicNode) value);
+        } else {
+            shouldNotReachHere();
+        }
+        return null;
     }
 
     private Value operandOrConjunction(ValueNode value) {
