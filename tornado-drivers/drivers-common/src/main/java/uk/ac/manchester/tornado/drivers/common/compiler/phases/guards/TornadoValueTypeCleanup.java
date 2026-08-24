@@ -23,14 +23,14 @@ package uk.ac.manchester.tornado.drivers.common.compiler.phases.guards;
 
 import java.util.Optional;
 
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.graph.iterators.NodePredicate;
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.java.NewInstanceNode;
-import org.graalvm.compiler.nodes.util.GraphUtil;
-import org.graalvm.compiler.nodes.virtual.VirtualInstanceNode;
-import org.graalvm.compiler.phases.BasePhase;
+import tornado.graal.compiler.graph.Node;
+import tornado.graal.compiler.graph.iterators.NodePredicate;
+import tornado.graal.compiler.nodes.GraphState;
+import tornado.graal.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.nodes.java.NewInstanceNode;
+import tornado.graal.compiler.nodes.util.GraphUtil;
+import tornado.graal.compiler.nodes.virtual.VirtualInstanceNode;
+import tornado.graal.compiler.phases.BasePhase;
 
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 

@@ -23,15 +23,15 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.nodes;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
+import static tornado.graal.compiler.nodeinfo.NodeCycles.CYCLES_2;
 
-import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
-import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.MulNode;
-import org.graalvm.compiler.nodes.spi.CanonicalizerTool;
-import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import tornado.graal.compiler.graph.NodeClass;
+import tornado.graal.compiler.lir.gen.ArithmeticLIRGeneratorTool;
+import tornado.graal.compiler.nodeinfo.NodeInfo;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.calc.MulNode;
+import tornado.graal.compiler.nodes.spi.CanonicalizerTool;
+import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.Value;
 

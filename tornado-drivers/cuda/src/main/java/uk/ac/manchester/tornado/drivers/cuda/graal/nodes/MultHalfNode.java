@@ -22,14 +22,14 @@
 package uk.ac.manchester.tornado.drivers.cuda.graal.nodes;
 
 import jdk.vm.ci.meta.Value;
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
-import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.spi.LIRLowerable;
-import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import tornado.graal.compiler.core.common.LIRKind;
+import tornado.graal.compiler.graph.NodeClass;
+import tornado.graal.compiler.lir.Variable;
+import tornado.graal.compiler.lir.gen.LIRGeneratorTool;
+import tornado.graal.compiler.nodeinfo.NodeInfo;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.spi.LIRLowerable;
+import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 import uk.ac.manchester.tornado.drivers.cuda.graal.HalfFloatStamp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt;
