@@ -57,6 +57,10 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     void withCUDAGraph();
 
+    void withDeferredOutputs();
+
+    void withoutDeferredOutputs();
+
     void withMemoryLimit(String memoryLimit);
 
     void withoutMemoryLimit();
@@ -110,6 +114,12 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
     void useDefaultThreadScheduler(boolean use);
 
     boolean isFinished();
+
+    /**
+     * Blocks until the copy-outs of the last execution have landed in their host buffers. A
+     * no-op unless {@code tornado.deferred.outputs} left an execution's reads in flight.
+     */
+    void awaitDeferredOutputs();
 
     Set<Object> getArgumentsLookup();
 

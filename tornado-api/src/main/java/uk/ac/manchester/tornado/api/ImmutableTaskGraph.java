@@ -154,6 +154,18 @@ public class ImmutableTaskGraph {
         return taskGraph.isFinished();
     }
 
+    void awaitDeferredOutputs() {
+        taskGraph.awaitDeferredOutputs();
+    }
+
+    void withDeferredOutputs() {
+        taskGraph.withDeferredOutputs();
+    }
+
+    void withoutDeferredOutputs() {
+        taskGraph.withoutDeferredOutputs();
+    }
+
     void dumpProfiles() {
         taskGraph.dumpProfiles();
     }

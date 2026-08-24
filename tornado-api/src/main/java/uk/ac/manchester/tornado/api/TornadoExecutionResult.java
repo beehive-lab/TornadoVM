@@ -44,6 +44,8 @@ public class TornadoExecutionResult {
      * @since 0.15.0
      */
     public TornadoProfilerResult getProfilerResult() {
+        // Timers cover the whole execution, so they are only complete once it is.
+        tornadoProfilerResult.getExecutor().awaitDeferredOutputs();
         return tornadoProfilerResult;
     }
 
@@ -81,6 +83,24 @@ public class TornadoExecutionResult {
      */
     public TornadoExecutionResult transferToHost(DataRange dataRange) {
         tornadoProfilerResult.getExecutor().partialTransferToHost(dataRange);
+        return this;
+    }
+
+    /**
+     * Blocks until the outputs of the execution that produced this result are in their host
+     * buffers.
+     *
+     * <p>Only meaningful with {@code -Dtornado.deferred.outputs=True}, where an execution
+     * returns with its copy-outs still in flight and the host buffers are undefined until this
+     * method returns. Without that option an execution has already waited before returning and
+     * this is a no-op. The runtime also awaits implicitly at the next execution of the same
+     * plan, at {@link #transferToHost(Object...)}, at {@link #isReady()} and when the plan's
+     * device memory is freed, so this is only needed to read the outputs earlier than that.
+     *
+     * @return {@link TornadoExecutionResult}
+     */
+    public TornadoExecutionResult await() {
+        tornadoProfilerResult.getExecutor().awaitDeferredOutputs();
         return this;
     }
 

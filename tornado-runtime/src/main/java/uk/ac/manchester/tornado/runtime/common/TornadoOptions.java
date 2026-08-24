@@ -295,6 +295,16 @@ public class TornadoOptions {
     public static final boolean ENABLE_STREAM_OUT_BLOCKING = getBooleanValue("tornado.enable.streamOut.blocking", TRUE);
 
     /**
+     * How many executions of a plan with deferred outputs may be outstanding before the next one
+     * waits for the oldest. Consecutive executions do not have to be serialised against each other
+     * on a single in-order queue, so allowing a few in flight lets the host run ahead of the
+     * device; the bound stops it running ahead without limit. Defaults to 4, which is where the
+     * measured gain flattens out.
+     */
+    public static final int MAX_DEFERRED_EXECUTIONS_IN_FLIGHT = getIntValue("tornado.deferred.outputs.maxInFlight", "4");
+
+
+    /**
      * Option to run concurrently on multiple device in single or multi-backend
      * configuration. False by default.
      */

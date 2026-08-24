@@ -603,7 +603,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
     @Override
     public int streamOut(long executionPlanId, Object object, long offset, DeviceBufferState state, int[] events) {
         TornadoInternalError.guarantee(state.hasObjectBuffer(), "invalid variable");
-        int event = state.getXPUBuffer().enqueueRead(executionPlanId, object, offset, events, events == null);
+        int event = state.getXPUBuffer().enqueueRead(executionPlanId, object, offset, events, events != null);
         if (events != null) {
             return event;
         }

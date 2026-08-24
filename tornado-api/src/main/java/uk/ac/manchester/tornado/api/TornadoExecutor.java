@@ -156,6 +156,18 @@ class TornadoExecutor {
         immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.transferToHost(dataRange.getArray(), dataRange.getOffset(), dataRange.getPartialSize()));
     }
 
+    void awaitDeferredOutputs() {
+        immutableTaskGraphList.forEach(ImmutableTaskGraph::awaitDeferredOutputs);
+    }
+
+    void withDeferredOutputs() {
+        immutableTaskGraphList.forEach(ImmutableTaskGraph::withDeferredOutputs);
+    }
+
+    void withoutDeferredOutputs() {
+        immutableTaskGraphList.forEach(ImmutableTaskGraph::withoutDeferredOutputs);
+    }
+
     boolean isFinished() {
         boolean result = true;
         for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {

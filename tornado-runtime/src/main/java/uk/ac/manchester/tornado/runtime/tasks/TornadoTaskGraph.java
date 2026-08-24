@@ -307,7 +307,15 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     @Override
     public boolean isFinished() {
+        awaitDeferredOutputs();
         return this.isFinished;
+    }
+
+    @Override
+    public void awaitDeferredOutputs() {
+        if (vm != null) {
+            vm.awaitDeferredOutputs();
+        }
     }
 
     @Override
@@ -1091,6 +1099,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     @Override
     public void waitOn() {
+        if (executionContext.isDeferredOutputsEnabled() && !TornadoOptions.isProfilerEnabled()) {
+            // The execution keeps its copy-outs in flight; awaitDeferredOutputs() does this wait
+            // when something can observe the output buffers.
+            return;
+        }
         if ((TornadoOptions.VM_USE_DEPS || executionContext.isIntraPlanConcurrencyEnabled()) && event != null) {
             event.waitOn();
         } else {
@@ -1355,6 +1368,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             return;
         }
 
+        awaitDeferredOutputs();
         vm.destroyExecutionGraphs();
         LibraryRegistry.destroyContexts(executionPlanId);
         freeIOObjects();
@@ -1410,6 +1424,42 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             return device.resolveEvent(executionPlanId, device.streamOutBlocking(executionPlanId, object, offset, deviceState, null));
         }
         return null;
+    }
+
+    /**
+     * Whether an on-demand copy-out of this object can be issued asynchronously, so that a
+     * transfer of several objects costs one host wait instead of one per object.
+     *
+     * <p>The blocking read does more than wait: it also covers atomics and under-demand partial
+     * copies, and batched plans read the object chunk by chunk. Those keep the blocking path, as do
+     * buffers whose asynchronous read is not equivalent to their blocking one (field buffers, for
+     * instance - see {@code XPUBuffer.supportsAsyncRead}), and profiled runs, which time each
+     * copy-out through its own event.
+     */
+    private boolean canEnqueueSyncAsync(XPUDeviceBufferState deviceState) {
+        return deviceState.getXPUBuffer().supportsAsyncRead() //
+                && !TornadoOptions.isProfilerEnabled() //
+                && batchSizeBytes == TornadoExecutionContext.INIT_VALUE //
+                && !deviceState.isAtomicRegionPresent() //
+                && deviceState.getPartialCopySize() == 0;
+    }
+
+    /**
+     * Issues the copy-out of one object without waiting for it. Returns {@code true} when a read
+     * was enqueued, in which case the caller owes a device synchronisation before the host may
+     * read the object.
+     */
+    private boolean enqueueSyncObject(Object object) {
+        Access objectAccess = getObjectAccess(object);
+        final LocalObjectState localState = executionContext.getLocalStateObject(object, objectAccess);
+        final DataObjectState dataObjectState = localState.getDataObjectState();
+        final TornadoXPUDevice device = meta().getXPUDevice();
+        final XPUDeviceBufferState deviceState = dataObjectState.getDeviceBufferState(device);
+        if (!deviceState.isLockedBuffer() || !canEnqueueSyncAsync(deviceState)) {
+            return false;
+        }
+        device.streamOut(executionPlanId, object, 0, deviceState, null);
+        return true;
     }
 
     private Event syncObjectInnerLazy(Object object, long hostOffset, long bufferSize) {
@@ -1471,7 +1521,10 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             return;
         }
 
+        awaitDeferredOutputs();
+
         List<Event> events = new ArrayList<>();
+        boolean pendingAsyncReads = false;
         for (Object object : objects) {
             if (DEBUG) {
                 if (copyUnderDemand(object)) {
@@ -1481,10 +1534,19 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             // Check if it is an argument captured by the scope (not in the parameter list).
             if (!argumentsLookUp.contains(object)) {
                 syncField(object);
+            } else if (enqueueSyncObject(object)) {
+                // Read issued, not waited for: the objects requested in one call are independent,
+                // so they are all put on the queue first and waited for once, below.
+                pendingAsyncReads = true;
+                events.add(null);
             } else {
                 Event eventParameter = syncParameter(object);
                 events.add(eventParameter);
             }
+        }
+
+        if (pendingAsyncReads) {
+            meta().getXPUDevice().sync(executionPlanId);
         }
 
         if (TornadoOptions.isProfilerEnabled()) {
@@ -1985,6 +2047,17 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     @Override
     public void withCUDAGraph() {
         executionContext.setExecutionGraphEnabled(true);
+    }
+
+    @Override
+    public void withDeferredOutputs() {
+        executionContext.setDeferredOutputsEnabled(true);
+    }
+
+    @Override
+    public void withoutDeferredOutputs() {
+        awaitDeferredOutputs();
+        executionContext.setDeferredOutputsEnabled(false);
     }
 
     @Override

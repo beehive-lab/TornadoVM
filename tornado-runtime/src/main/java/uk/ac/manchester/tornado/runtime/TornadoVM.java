@@ -197,6 +197,14 @@ public class TornadoVM {
         executeActionOnInterpreters(TornadoVMInterpreter::destroyExecutionGraphs);
     }
 
+    /**
+     * Blocks until the copy-outs of the last execution have landed in their host buffers. A
+     * no-op unless {@code tornado.deferred.outputs} left an execution's reads in flight.
+     */
+    public void awaitDeferredOutputs() {
+        executeActionOnInterpreters(TornadoVMInterpreter::awaitDeferredOutputs);
+    }
+
     public void printTimes() {
         executeActionOnInterpreters(TornadoVMInterpreter::printTimes);
     }
