@@ -76,17 +76,22 @@ public abstract class CUDAKernelScheduler {
                         : -1);
             }
 
-            Event tornadoKernelEvent = deviceContext.resolveEvent(executionPlanId, taskEvent);
-            tornadoKernelEvent.waitForEvents(executionPlanId);
-            long timer = meta.getProfiler().getTimer(ProfilerType.TOTAL_KERNEL_TIME);
-            // Register globalTime
-            meta.getProfiler().setTimer(ProfilerType.TOTAL_KERNEL_TIME, timer + tornadoKernelEvent.getElapsedTime());
-            // Register the time for the task
-            meta.getProfiler().setTaskTimer(ProfilerType.TASK_KERNEL_TIME, meta.getId(), tornadoKernelEvent.getElapsedTime());
-            // Register the dispatch time of the kernel
-            long dispatchValue = meta.getProfiler().getTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME);
-            dispatchValue += tornadoKernelEvent.getDriverDispatchTime();
-            meta.getProfiler().setTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME, dispatchValue);
+            // Read the kernel timestamps once the stream has been drained: waiting on the event
+            // here would block the host until this kernel finished, before the next one is even
+            // enqueued.
+            deviceContext.deferProfilerRead(() -> {
+                Event tornadoKernelEvent = deviceContext.resolveEvent(executionPlanId, taskEvent);
+                tornadoKernelEvent.waitForEvents(executionPlanId);
+                long timer = meta.getProfiler().getTimer(ProfilerType.TOTAL_KERNEL_TIME);
+                // Register globalTime
+                meta.getProfiler().setTimer(ProfilerType.TOTAL_KERNEL_TIME, timer + tornadoKernelEvent.getElapsedTime());
+                // Register the time for the task
+                meta.getProfiler().setTaskTimer(ProfilerType.TASK_KERNEL_TIME, meta.getId(), tornadoKernelEvent.getElapsedTime());
+                // Register the dispatch time of the kernel
+                long dispatchValue = meta.getProfiler().getTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME);
+                dispatchValue += tornadoKernelEvent.getDriverDispatchTime();
+                meta.getProfiler().setTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME, dispatchValue);
+            });
         }
     }
 

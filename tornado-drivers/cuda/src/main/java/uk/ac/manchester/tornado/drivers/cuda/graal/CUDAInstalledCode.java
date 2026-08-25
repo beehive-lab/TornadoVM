@@ -272,17 +272,20 @@ public class CUDAInstalledCode extends InstalledCode implements TornadoInstalled
         // Skipped while capturing into a CUDA graph: waiting on a capture-recorded event is
         // illegal and invalidates the capture.
         if (TornadoOptions.isProfilerEnabled() && !deviceContext.isStreamCapturing(executionPlanId)) {
-            Event tornadoKernelEvent = deviceContext.resolveEvent(executionPlanId, task);
-            tornadoKernelEvent.waitForEvents(executionPlanId);
-            long timer = meta.getProfiler().getTimer(ProfilerType.TOTAL_KERNEL_TIME);
-            // Register globalTime
-            meta.getProfiler().setTimer(ProfilerType.TOTAL_KERNEL_TIME, timer + tornadoKernelEvent.getElapsedTime());
-            // Register the time for the task
-            meta.getProfiler().setTaskTimer(ProfilerType.TASK_KERNEL_TIME, meta.getId(), tornadoKernelEvent.getElapsedTime());
-            // Register the dispatch time of the kernel
-            long dispatchValue = meta.getProfiler().getTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME);
-            dispatchValue += tornadoKernelEvent.getDriverDispatchTime();
-            meta.getProfiler().setTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME, dispatchValue);
+            final int kernelEvent = task;
+            deviceContext.deferProfilerRead(() -> {
+                Event tornadoKernelEvent = deviceContext.resolveEvent(executionPlanId, kernelEvent);
+                tornadoKernelEvent.waitForEvents(executionPlanId);
+                long timer = meta.getProfiler().getTimer(ProfilerType.TOTAL_KERNEL_TIME);
+                // Register globalTime
+                meta.getProfiler().setTimer(ProfilerType.TOTAL_KERNEL_TIME, timer + tornadoKernelEvent.getElapsedTime());
+                // Register the time for the task
+                meta.getProfiler().setTaskTimer(ProfilerType.TASK_KERNEL_TIME, meta.getId(), tornadoKernelEvent.getElapsedTime());
+                // Register the dispatch time of the kernel
+                long dispatchValue = meta.getProfiler().getTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME);
+                dispatchValue += tornadoKernelEvent.getDriverDispatchTime();
+                meta.getProfiler().setTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME, dispatchValue);
+            });
         }
         return task;
     }
@@ -327,16 +330,19 @@ public class CUDAInstalledCode extends InstalledCode implements TornadoInstalled
     private void updateProfilerKernelContextWrite(long executionPlanId, int kernelContextWriteEventId, TaskDataContext meta, CUDAKernelStackFrame callWrapper) {
         if (TornadoOptions.isProfilerEnabled()) {
             TornadoProfiler profiler = meta.getProfiler();
-            Event event = deviceContext.resolveEvent(executionPlanId, kernelContextWriteEventId);
-            event.waitForEvents(executionPlanId);
-            long copyInTimer = meta.getProfiler().getTimer(ProfilerType.COPY_IN_TIME);
-            copyInTimer += event.getElapsedTime();
-            profiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
-            profiler.addValueToMetric(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES, meta.getId(), callWrapper.getSize());
+            final long frameBytes = callWrapper.getSize();
+            deviceContext.deferProfilerRead(() -> {
+                Event event = deviceContext.resolveEvent(executionPlanId, kernelContextWriteEventId);
+                event.waitForEvents(executionPlanId);
+                long copyInTimer = profiler.getTimer(ProfilerType.COPY_IN_TIME);
+                copyInTimer += event.getElapsedTime();
+                profiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
+                profiler.addValueToMetric(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES, meta.getId(), frameBytes);
 
-            long dispatchValue = profiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
-            dispatchValue += event.getDriverDispatchTime();
-            profiler.setTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME, dispatchValue);
+                long dispatchValue = profiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
+                dispatchValue += event.getDriverDispatchTime();
+                profiler.setTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME, dispatchValue);
+            });
         }
     }
 
