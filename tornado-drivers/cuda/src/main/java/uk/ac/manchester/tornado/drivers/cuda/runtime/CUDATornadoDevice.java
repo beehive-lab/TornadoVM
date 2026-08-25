@@ -529,7 +529,13 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
     }
 
     private boolean reuseBatchBuffer(long batchSize, Access access, TornadoBufferProvider bufferProvider, HashMap<Access, Integer> distinctAccesses, DeviceBufferState state) {
-        if (batchSize != 0) {
+        // A state with no buffer of its own has nothing to reuse: reuseBufferForBatchProcessing()
+        // answers the global question "is a buffer of this size and access already in use", which is
+        // true as soon as any other object of the same access type holds one. Treating that as "this
+        // object may reuse its buffer" leaves the object unallocated, and the LAUNCH that follows
+        // dereferences a null device buffer - which is what a batched graph with more than one
+        // output used to do on its second chunk.
+        if (batchSize != 0 && state.hasObjectBuffer()) {
             int numberOfBuffersForAccessType = distinctAccesses.get(access);
             // if there is a buffer available in the used-list with the same access type, reuse it
             if (bufferProvider.reuseBufferForBatchProcessing(batchSize, access, numberOfBuffersForAccessType)) {
