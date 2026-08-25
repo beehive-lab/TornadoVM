@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -64,6 +65,7 @@ import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
+import uk.ac.manchester.tornado.api.memory.NativeArrayLayouts;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.metal.MetalBackendImpl;
 import uk.ac.manchester.tornado.drivers.metal.MetalCodeCache;
@@ -480,26 +482,15 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
                 result = new MetalVectorWrapper(deviceContext, object, batchSize, access);
             } else if (object instanceof MemorySegment) {
                 result = new MetalMemorySegmentWrapper(deviceContext, batchSize, access, 0);
-            } else if (object instanceof IntArray) {
-                result = new MetalMemorySegmentWrapper(deviceContext, batchSize, access, MetalKind.INT.getSizeInBytes());
-            } else if (object instanceof FloatArray) {
-                result = new MetalMemorySegmentWrapper(deviceContext, batchSize, access, MetalKind.FLOAT.getSizeInBytes());
-            } else if (object instanceof DoubleArray) {
-                throw unsupportedMetalFP64();
-            } else if (object instanceof LongArray) {
-                result = new MetalMemorySegmentWrapper(deviceContext, batchSize, access, MetalKind.LONG.getSizeInBytes());
-            } else if (object instanceof ShortArray) {
-                result = new MetalMemorySegmentWrapper(deviceContext, batchSize, access, MetalKind.SHORT.getSizeInBytes());
-            } else if (object instanceof ByteArray) {
-                result = new MetalMemorySegmentWrapper(deviceContext, batchSize, access, MetalKind.CHAR.getSizeInBytes());
-            } else if (object instanceof CharArray) {
-                result = new MetalMemorySegmentWrapper(deviceContext, batchSize, access, MetalKind.CHAR.getSizeInBytes());
-            } else if (object instanceof HalfFloatArray) {
-                result = new MetalMemorySegmentWrapper(deviceContext, batchSize, access, MetalKind.HALF.getSizeInBytes());
-            } else if (object instanceof Int8Array) {
-                result = new MetalMemorySegmentWrapper(deviceContext, batchSize, access, MetalKind.CHAR.getSizeInBytes());
             } else {
-                result = new MetalFieldBuffer(deviceContext, object, access);
+                // Native array types share one layout table (NativeArrayLayouts); anything not in it
+                // is an ordinary object graph and goes to the field buffer.
+                OptionalInt elementSize = NativeArrayLayouts.elementSizeOf(object);
+                if (elementSize.isPresent()) {
+                    result = new MetalMemorySegmentWrapper(deviceContext, batchSize, access, elementSize.getAsInt());
+                } else {
+                    result = new MetalFieldBuffer(deviceContext, object, access);
+                }
             }
         }
 

@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -63,6 +64,7 @@ import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
+import uk.ac.manchester.tornado.api.memory.NativeArrayLayouts;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.cuda.CUDABackendImpl;
 import uk.ac.manchester.tornado.drivers.cuda.CUDACodeCache;
@@ -470,32 +472,15 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
                 result = new CUDAVectorWrapper(deviceContext, object, batchSize, access);
             } else if (object instanceof MemorySegment) {
                 result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, 0);
-            } else if (object instanceof IntArray) {
-                result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.INT.getSizeInBytes());
-            } else if (object instanceof FloatArray) {
-                result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.FLOAT.getSizeInBytes());
-            } else if (object instanceof DoubleArray) {
-                result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.DOUBLE.getSizeInBytes());
-            } else if (object instanceof LongArray) {
-                result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.LONG.getSizeInBytes());
-            } else if (object instanceof ShortArray) {
-                result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.SHORT.getSizeInBytes());
-            } else if (object instanceof ByteArray) {
-                result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.CHAR.getSizeInBytes());
-            } else if (object instanceof CharArray) {
-                result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.CHAR.getSizeInBytes());
-            } else if (object instanceof HalfFloatArray) {
-                result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.HALF.getSizeInBytes());
-            } else if (object instanceof BFloat16Array) {
-                result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.BF16.getSizeInBytes());
-            } else if (object instanceof Int8Array) {
-                result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.CHAR.getSizeInBytes());
-            } else if (object instanceof FP8Array) {
-                // FP8 is one byte per element (CUDA-only storage type); the bytes are dequantized
-                // to float in-kernel via the FP8 codecs (no special code generation needed).
-                result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.CHAR.getSizeInBytes());
             } else {
-                result = new CUDAFieldBuffer(deviceContext, object, access);
+                // Native array types share one layout table (NativeArrayLayouts); anything not in it
+                // is an ordinary object graph and goes to the field buffer.
+                OptionalInt elementSize = NativeArrayLayouts.elementSizeOf(object);
+                if (elementSize.isPresent()) {
+                    result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, elementSize.getAsInt());
+                } else {
+                    result = new CUDAFieldBuffer(deviceContext, object, access);
+                }
             }
         }
 

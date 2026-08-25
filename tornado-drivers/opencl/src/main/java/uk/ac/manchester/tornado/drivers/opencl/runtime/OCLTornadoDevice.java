@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -61,6 +62,7 @@ import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
+import uk.ac.manchester.tornado.api.memory.NativeArrayLayouts;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.opencl.OCLBackendImpl;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
@@ -463,26 +465,15 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
                 result = new OCLVectorWrapper(deviceContext, object, batchSize, access);
             } else if (object instanceof MemorySegment) {
                 result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access, 0);
-            } else if (object instanceof IntArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access, OCLKind.INT.getSizeInBytes());
-            } else if (object instanceof FloatArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access, OCLKind.FLOAT.getSizeInBytes());
-            } else if (object instanceof DoubleArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access, OCLKind.DOUBLE.getSizeInBytes());
-            } else if (object instanceof LongArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access, OCLKind.LONG.getSizeInBytes());
-            } else if (object instanceof ShortArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access, OCLKind.SHORT.getSizeInBytes());
-            } else if (object instanceof ByteArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access, OCLKind.CHAR.getSizeInBytes());
-            } else if (object instanceof CharArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access, OCLKind.CHAR.getSizeInBytes());
-            } else if (object instanceof HalfFloatArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access, OCLKind.HALF.getSizeInBytes());
-            } else if (object instanceof Int8Array) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access, OCLKind.CHAR.getSizeInBytes());
             } else {
-                result = new OCLFieldBuffer(deviceContext, object, access);
+                // Native array types share one layout table (NativeArrayLayouts); anything not in it
+                // is an ordinary object graph and goes to the field buffer.
+                OptionalInt elementSize = NativeArrayLayouts.elementSizeOf(object);
+                if (elementSize.isPresent()) {
+                    result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access, elementSize.getAsInt());
+                } else {
+                    result = new OCLFieldBuffer(deviceContext, object, access);
+                }
             }
         }
 
