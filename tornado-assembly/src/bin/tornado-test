@@ -189,6 +189,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestInitDataTypes"),
     TestEntry("uk.ac.manchester.tornado.unittests.memory.TestMemoryLimit"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestIO"),
+    TestEntry("uk.ac.manchester.tornado.unittests.api.TestNativeArrayLayouts"),
     TestEntry("uk.ac.manchester.tornado.unittests.executor.TestExecutor"),
     TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGrid"),
     TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGridScheduler"),
@@ -208,6 +209,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestLocalArrayDynamicIndexAtomics"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestAsyncCopyToLocal"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestFlashAttentionKernelContext"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestWarpVote"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestHalfFloatLocalArray"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.local.memory.TestSwizzledLocalArrays"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext"),
@@ -352,7 +354,6 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 
     ## Precision errors
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testNBodyBigNoWorker",
-    "uk.ac.manchester.tornado.unittests.compute.MMwithBytes#testMatrixMultiplicationWithBytes",
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testEuler",
     "uk.ac.manchester.tornado.unittests.codegen.CodeGenTest#test02",
     "uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats#testComputePi",

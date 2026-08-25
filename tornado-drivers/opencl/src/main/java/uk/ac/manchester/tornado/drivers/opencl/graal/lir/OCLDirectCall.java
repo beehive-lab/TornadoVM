@@ -23,11 +23,11 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.LIRFrameState;
-import org.graalvm.compiler.lir.LIRInstruction.Def;
-import org.graalvm.compiler.lir.LIRInstruction.Use;
-import org.graalvm.compiler.nodes.DirectCallTargetNode;
+import tornado.graal.compiler.core.common.LIRKind;
+import tornado.graal.compiler.lir.LIRFrameState;
+import tornado.graal.compiler.lir.LIRInstruction.Def;
+import tornado.graal.compiler.lir.LIRInstruction.Use;
+import tornado.graal.compiler.nodes.DirectCallTargetNode;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
@@ -63,7 +63,10 @@ public class OCLDirectCall extends OCLLIROp {
         asm.emit(((OCLArchitecture) crb.target.arch).getCallingConvention());
         asm.emit(", ");
         for (Value param : parameters) {
-            asm.emit(asm.toString(param));
+            // A param may be a plain operand or an inlined op (e.g. a vector-lane select such as
+            // Half2.getX()/.getY() passed straight into a helper call); asm.toString() only knows
+            // plain operands, so route through emitValueOrOp to also handle inlined OCLLIROps.
+            asm.emitValueOrOp(crb, param);
             if (paramCounter < parameters.length - 1) {
                 asm.emit(", ");
             }

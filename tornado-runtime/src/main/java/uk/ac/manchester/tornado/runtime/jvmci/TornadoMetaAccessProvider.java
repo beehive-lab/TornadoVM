@@ -1,0 +1,210 @@
+/*
+ * Copyright (c) 2026, APT Group, Department of Computer Science,
+ * The University of Manchester. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ */
+package uk.ac.manchester.tornado.runtime.jvmci;
+
+import java.lang.reflect.Executable;
+import java.lang.reflect.Field;
+
+import sun.misc.Unsafe;
+
+import jdk.vm.ci.meta.DeoptimizationAction;
+import jdk.vm.ci.meta.DeoptimizationReason;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaField;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.Signature;
+import jdk.vm.ci.meta.SpeculationLog;
+import jdk.vm.ci.meta.SpeculationLog.Speculation;
+import uk.ac.manchester.tornado.runtime.jvmci.reflection.ReflectionUniverse;
+
+/**
+ * TornadoVM-owned {@link MetaAccessProvider}. It is the seam through which
+ * TornadoVM feeds Java type/metadata information into its Graal-based GPU
+ * compilation pipeline, without the rest of the code being coupled to the
+ * concrete HotSpot JVMCI implementation ({@code HotSpotMetaAccessProvider}).
+ *
+ * <p>
+ * In this first (delegating) form, every query is forwarded to a backing
+ * {@link MetaAccessProvider} obtained from the running VM. This decouples the
+ * backend factories from the concrete {@code HotSpot*} types (Phase 3) while
+ * leaving behaviour identical. Subsequent phases replace individual delegated
+ * queries with a reflection + ASM + {@code Unsafe} implementation so TornadoVM
+ * can keep working even if a future JDK removes JVMCI entirely (Phase 4).
+ */
+public class TornadoMetaAccessProvider implements MetaAccessProvider {
+
+    private static final Unsafe UNSAFE = initUnsafe();
+
+    private final ReflectionUniverse reflectionUniverse;
+
+    public TornadoMetaAccessProvider() {
+        this.reflectionUniverse = new ReflectionUniverse();
+    }
+
+    private static Unsafe initUnsafe() {
+        try {
+            Field f = Unsafe.class.getDeclaredField("theUnsafe");
+            f.setAccessible(true);
+            return (Unsafe) f.get(null);
+        } catch (ReflectiveOperationException e) {
+            throw new InternalError("Unable to obtain sun.misc.Unsafe for JDK-neutral object layout", e);
+        }
+    }
+
+    /**
+     * Maps a primitive/reference {@link JavaKind} to the corresponding array
+     * class, so array layout can be queried from {@link Unsafe} instead of the
+     * HotSpot JVMCI implementation.
+     */
+    private static Class<?> arrayClassFor(JavaKind kind) {
+        return switch (kind) {
+            case Boolean -> boolean[].class;
+            case Byte -> byte[].class;
+            case Short -> short[].class;
+            case Char -> char[].class;
+            case Int -> int[].class;
+            case Long -> long[].class;
+            case Float -> float[].class;
+            case Double -> double[].class;
+            case Object -> Object[].class;
+            default -> null;
+        };
+    }
+
+    /**
+     * Access the host provider, or fail clearly on a JVMCI-absent JDK (JDK 27+) where there
+     * is no HotSpot backing provider. Methods still routed here have not yet been ported to
+     * the reflection/{@code Unsafe} implementation; the stack trace identifies the caller.
+     */
+    private static MetaAccessProvider backing() {
+        String caller = Thread.currentThread().getStackTrace()[2].getMethodName();
+        throw new UnsupportedOperationException("MetaAccessProvider." + caller + "() is not implemented on the reflection metadata provider");
+    }
+
+    @Override
+    public ResolvedJavaType lookupJavaType(Class<?> clazz) {
+        return reflectionUniverse.lookupType(clazz);
+    }
+
+    @Override
+    public ResolvedJavaType[] lookupJavaTypes(Class<?>[] classes) {
+        return backing().lookupJavaTypes(classes);
+    }
+
+    @Override
+    public ResolvedJavaMethod lookupJavaMethod(Executable reflectionMethod) {
+        return reflectionUniverse.lookupMethod(reflectionMethod);
+    }
+
+    @Override
+    public ResolvedJavaField lookupJavaField(Field reflectionField) {
+        return reflectionUniverse.lookupField(reflectionField);
+    }
+
+    @Override
+    public ResolvedJavaType lookupJavaType(JavaConstant constant) {
+        if (constant == null || constant.isNull() || constant.getJavaKind() != JavaKind.Object) {
+            return null;
+        }
+        if (constant instanceof TornadoObjectConstant objectConstant) {
+            Object object = objectConstant.getObject();
+            return object == null ? null : reflectionUniverse.lookupType(object.getClass());
+        }
+        return null;
+    }
+
+    @Override
+    public long getMemorySize(JavaConstant constant) {
+        return backing().getMemorySize(constant);
+    }
+
+    @Override
+    public Signature parseMethodDescriptor(String methodDescriptor) {
+        return backing().parseMethodDescriptor(methodDescriptor);
+    }
+
+    @Override
+    public JavaConstant encodeDeoptActionAndReason(DeoptimizationAction action, DeoptimizationReason reason, int debugId) {
+        // GPU-only path: TornadoVM lowers for the GPU where deoptimization never happens, so the
+        // encoded action/reason is inert (the guards carrying it are eliminated before code generation).
+        // Return a deterministic non-null constant packing the ordinals, mirroring HotSpot's
+        // ~(reason | action | debugId) layout, instead of delegating to the absent HotSpot provider.
+        int encoded = ~((reason.ordinal() << 3) | action.ordinal() | (debugId << 8));
+        return JavaConstant.forInt(encoded);
+    }
+
+    @Override
+    public JavaConstant encodeSpeculation(Speculation speculation) {
+        // GPU-only path: the GPU never deoptimizes, so speculations are inert. Return the
+        // no-speculation encoding (0) instead of delegating to the absent HotSpot provider.
+        return JavaConstant.forLong(0);
+    }
+
+    @Override
+    public Speculation decodeSpeculation(JavaConstant constant, SpeculationLog speculationLog) {
+        return backing().decodeSpeculation(constant, speculationLog);
+    }
+
+    @Override
+    public DeoptimizationReason decodeDeoptReason(JavaConstant constant) {
+        return backing().decodeDeoptReason(constant);
+    }
+
+    @Override
+    public DeoptimizationAction decodeDeoptAction(JavaConstant constant) {
+        return backing().decodeDeoptAction(constant);
+    }
+
+    @Override
+    public int decodeDebugId(JavaConstant constant) {
+        return backing().decodeDebugId(constant);
+    }
+
+    /**
+     * JDK-neutral array base offset sourced from {@link Unsafe} rather than the
+     * HotSpot JVMCI implementation. The value is the VM's real array-data offset,
+     * identical to what {@code HotSpotMetaAccessProvider} reports.
+     */
+    @Override
+    public int getArrayBaseOffset(JavaKind elementKind) {
+        Class<?> arrayClass = arrayClassFor(elementKind);
+        if (arrayClass == null) {
+            return backing().getArrayBaseOffset(elementKind);
+        }
+        return UNSAFE.arrayBaseOffset(arrayClass);
+    }
+
+    /**
+     * JDK-neutral array index scale sourced from {@link Unsafe} rather than the
+     * HotSpot JVMCI implementation.
+     */
+    @Override
+    public int getArrayIndexScale(JavaKind elementKind) {
+        Class<?> arrayClass = arrayClassFor(elementKind);
+        if (arrayClass == null) {
+            return backing().getArrayIndexScale(elementKind);
+        }
+        return UNSAFE.arrayIndexScale(arrayClass);
+    }
+}

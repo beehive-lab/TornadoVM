@@ -19,6 +19,7 @@
 
 import argparse
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -93,20 +94,121 @@ def check_java_version():
     return java_version_output
 
 
-def pull_graal_jars_if_needed(graal_jars_status):
+def _parse_major_version(java_version_output):
+    """Extract the JDK feature/major version number from `java -version` output,
+    e.g. 'openjdk version "21.0.2" ...' -> 21, 'openjdk version "27-ea" ...' -> 27."""
+    match = re.search(r'version "(\d+)', java_version_output)
+    return int(match.group(1)) if match else None
+
+
+# Profiles whose SDK targets a FLOOR rather than one exact release: JAVA_HOME may be that
+# version or any later one, because the artifact is built to run on all of them.
+FLOOR_PROFILES = {"jdk22plus": 22}
+
+# What each profile's SDK requires of the JDK that RUNS it, recorded into the SDK so bin/tornado
+# can enforce it and choose its flags instead of hardcoding one answer for every SDK.
+#   floor   lowest JDK the class files load on
+#   preview compiled with enable-preview, which pins the artifact to EXACTLY that release: a
+#           preview class file is accepted only by the JDK whose major version it carries, so
+#           these SDKs are not forward compatible however new the runtime is.
+SDK_JDK_CONTRACT = {
+    "jdk21": (21, True),
+    "graal-jdk-21": (21, True),
+    "jdk22plus": (22, False),
+}
+
+
+def write_sdk_jdk_contract(jdk):
+    """Record the runtime JDK contract where the assembly will pick it up (etc/tornado.jdk)."""
+    floor, preview = SDK_JDK_CONTRACT.get(jdk, (21, True))
+    path = os.path.join("tornado-assembly", "src", "etc", "tornado.jdk")
+    with open(path, "w") as f:
+        f.write(f"tornado.jdk.floor={floor}\n")
+        f.write(f"tornado.jdk.preview={'true' if preview else 'false'}\n")
+
+
+def _parse_expected_version(jdk):
+    """Extract the target major version from a --jdk value, e.g. 'jdk21' -> 21,
+    'graal-jdk-21' -> 21, 'jdk22plus' -> 22."""
+    if jdk in FLOOR_PROFILES:
+        return FLOOR_PROFILES[jdk]
+    match = re.search(r'(\d+)$', jdk) if jdk else None
+    return int(match.group(1)) if match else None
+
+
+def verify_jdk_matches_java_home(jdk):
+    """
+    Fail fast if JAVA_HOME's actual JDK does not match the requested --jdk profile.
+
+    The jdkNN Maven profile (e.g. -Pjdk21) only selects compiler flags and
+    dependencies -- it does not switch the javac/jar toolchain, which is always
+    whatever JAVA_HOME points at. Since jdk.vm.ci.* (JVMCI) internals are not a
+    stable API and can differ even between JDK feature releases that both still
+    ship JVMCI (e.g. jdk.vm.ci.code.Architecture's constructor changed between
+    JDK 21 and JDK 25), building --jdk jdk21 under a JDK 25 JAVA_HOME silently
+    produces an SDK that links against the wrong JVMCI shape at runtime instead
+    of failing at build time. Catch that here instead.
+    """
+    expected = _parse_expected_version(jdk)
+    if expected is None:
+        return
+
+    print(f"Checking JAVA_HOME matches --jdk {jdk} ......... ", end='')
+    java_version_output = check_java_version()
+    actual = _parse_major_version(java_version_output)
+    if actual is None:
+        print("[SKIPPED] (could not parse JDK version from `java -version`)")
+        return
+
+    # A floor profile accepts anything at or above its floor; an exact profile does not.
+    ok = actual >= expected if jdk in FLOOR_PROFILES else actual == expected
+    if not ok:
+        print("[ERROR]")
+        java_home = os.environ.get("JAVA_HOME")
+        wanted = f"JDK {expected} or newer" if jdk in FLOOR_PROFILES else f"JDK {expected}"
+        print(
+            f"\n\t--jdk {jdk} requires a {wanted} JAVA_HOME, but JAVA_HOME is "
+            f"JDK {actual}:\n\t  {java_home}\n\n"
+            f"\tThe --jdk flag only selects Maven compiler flags/dependencies -- it does\n"
+            f"\tNOT switch the build toolchain, which always comes from JAVA_HOME. A\n"
+            f"\tmismatch here compiles against one JVMCI shape and links against another\n"
+            f"\tat runtime, which fails late with a confusing NoSuchMethodError instead.\n\n"
+            f"\tSuggestion: export JAVA_HOME=<path-to-jdk-{expected}> before building.\n"
+        )
+        sys.exit(-1)
+    print("[OK]")
+
+
+def pull_graal_jars_if_needed(graal_jars_status, jdk):
     """
     Pulls GraalVM jars if the specified JDK version does not contain the binaries.
 
     Args:
+        graal_jars_status (bool): Whether to pull GraalVM jars.
         jdk (str): The JDK version.
     """
     if graal_jars_status:
-        pull_graal_jars.main()
+        pull_graal_jars.main(jdk=jdk)
 
 
 def should_handle_graal_jars(jdk):
-    java_version_output = check_java_version()
-    return jdk == "jdk21" and "GraalVM" not in java_version_output
+    """
+    Whether this build has to stage the vendored Graal jars.
+
+    True for every jdkNN profile, including on a GraalVM JAVA_HOME. This used to also
+    require that JAVA_HOME was NOT GraalVM, back when Graal came from the JDK itself
+    (jdk.internal.vm.compiler on --upgrade-module-path) and pulling graalJars would have
+    been redundant. The jdkNN profiles no longer work that way: Graal is always vendored
+    as the relocated `tornado.graal` application module and every TornadoVM module
+    `requires transitive tornado.graal`, so the module has to be built whatever the JDK
+    is. Skipping it on GraalVM left the reactor with no tornado.graal at all -- or, on a
+    machine where another JDK's build had already installed one, with that JDK's
+    module-info, failing as "module not found: tornado.graal".
+
+    The `graal-jdk-21` profile, which does take Graal from the JDK, is excluded
+    by the profile list rather than by inspecting JAVA_HOME.
+    """
+    return jdk in ("jdk21", "jdk22plus")
 
 
 def maven_cleanup():
@@ -180,7 +282,7 @@ def build_tornadovm(args, backend_profiles):
     Builds TornadoVM with the specified JDK and backend options.
 
     Args:
-        args (object): The arguments passed by the user. The JDK version as well as other options (e.g., if polyglot is used).
+        args (object): The arguments passed by the user. The JDK version as well as other options.
         backend_profiles (str): The processed backend options.
 
     Returns:
@@ -195,16 +297,17 @@ def build_tornadovm(args, backend_profiles):
         with open(backend_template_path, "w") as backend_file:
             backend_file.write(f"tornado.backends={backend_profiles}\n")
 
+        # Same idea for the JDK contract: bin/tornado reads it to decide the minimum (or exact)
+        # runtime JDK and whether the enable-preview flag is required.
+        write_sdk_jdk_contract(args.jdk)
+
         process = [mvn_cmd]
         # Only override threading if single-threaded mode explicitly requested
         # Default parallel build (-T1.5C) is configured in .mvn/maven.config
         if args.mavenSingleThreaded:
             process.append("-T1")
 
-        if args.polyglot:
-            process.append(f"-P{args.jdk},{backend_profiles},graalvm-polyglot")
-        else:
-            process.append(f"-P{args.jdk},{backend_profiles}")
+        process.append(f"-P{args.jdk},{backend_profiles}")
 
         # Determine backend variant for SDKMAN-compliant archive naming
         backend_list = args.backend.split(",")
@@ -378,16 +481,9 @@ def parse_args():
     """
     parser = argparse.ArgumentParser(description="Tool to compile TornadoVM")
     parser.add_argument(
-        "--jdk", help="JDK version (e.g., jdk21, graal-jdk-21)"
+        "--jdk", help="JDK profile (jdk21, jdk22plus, graal-jdk-21)"
     )
     parser.add_argument("--backend", help="e.g., opencl,cuda,metal")
-    parser.add_argument(
-        "--polyglot",
-        action="store_true",
-        dest="polyglot",
-        default=False,
-        help="To enable interoperability with Truffle Programming Languages."
-    )
     parser.add_argument(
         "--mvn_single_threaded",
         action="store_true",
@@ -612,11 +708,13 @@ def package_sdk_archives():
 def main():
     args = parse_args()
 
+    verify_jdk_matches_java_home(args.jdk)
+
     graal_jars_status = should_handle_graal_jars(args.jdk)
 
     maven_cleanup()
 
-    pull_graal_jars_if_needed(graal_jars_status)
+    pull_graal_jars_if_needed(graal_jars_status, args.jdk)
 
     backend_profiles = process_backends_as_mvn_profiles(args.backend)
 

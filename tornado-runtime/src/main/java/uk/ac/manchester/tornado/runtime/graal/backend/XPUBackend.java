@@ -21,17 +21,17 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.backend;
 
-import org.graalvm.compiler.core.common.CompilationIdentifier;
-import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
-import org.graalvm.compiler.core.target.Backend;
-import org.graalvm.compiler.lir.LIR;
-import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
-import org.graalvm.compiler.lir.framemap.FrameMapBuilder;
-import org.graalvm.compiler.lir.gen.LIRGenerationResult;
-import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
-import org.graalvm.compiler.phases.util.Providers;
+import tornado.graal.compiler.core.common.CompilationIdentifier;
+import tornado.graal.compiler.core.common.alloc.RegisterAllocationConfig;
+import tornado.graal.compiler.core.target.Backend;
+import tornado.graal.compiler.lir.LIR;
+import tornado.graal.compiler.lir.asm.CompilationResultBuilder;
+import tornado.graal.compiler.lir.framemap.FrameMapBuilder;
+import tornado.graal.compiler.lir.gen.LIRGenerationResult;
+import tornado.graal.compiler.lir.gen.LIRGeneratorTool;
+import tornado.graal.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
+import tornado.graal.compiler.phases.util.Providers;
 
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.meta.ResolvedJavaMethod;

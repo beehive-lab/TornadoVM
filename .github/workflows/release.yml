@@ -1,22 +1,23 @@
 name: 0 - Release Orchestrator [manual]
 
-# Single entry point that dispatches both 1-prepare-release-jdkXX workflows in
-# parallel. Once the two release PRs they create are reviewed and merged, the
-# rest of the chain (finalize → build SDKs → publish) runs automatically.
+# Single entry point that dispatches 1-prepare-release.yml. Once the release
+# PR it creates is reviewed and merged, the rest of the chain (finalize →
+# build SDKs for jdk21+jdk25+jdk26+jdk27 → deploy → publish) runs
+# automatically.
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Base release version without -jdkXX suffix (e.g. 4.0.1).'
+        description: 'Release version (e.g. 4.0.1).'
         required: true
         type: string
       previous_version:
-        description: 'Previous base version for the changelog (e.g. 4.0.0).'
+        description: 'Previous version for the changelog (e.g. 4.0.0).'
         required: true
         type: string
       draft_release_test:
-        description: 'Draft release (test): run the whole pipeline end-to-end (builds the SDKs for real) without opening PRs, creating tags/GitHub Releases, or publishing to Maven Central/SDKMAN.'
+        description: 'Draft release (test): run the whole pipeline end-to-end (builds the SDKs for real) without opening a PR, creating a tag/GitHub Release, or publishing to Maven Central/SDKMAN.'
         required: false
         type: boolean
         default: false
@@ -40,27 +41,16 @@ jobs:
             exit 1
           fi
 
-      - name: Dispatch 1-prepare-release-jdk21
+      - name: Dispatch 1-prepare-release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh workflow run 1-prepare-release-jdk21.yml \
+          gh workflow run 1-prepare-release.yml \
             --repo "${{ github.repository }}" \
-            -f version="${{ inputs.version }}-jdk21" \
-            -f previous_version="${{ inputs.previous_version }}-jdk21" \
+            -f version="${{ inputs.version }}" \
+            -f previous_version="${{ inputs.previous_version }}" \
             -f draft_release_test="${{ inputs.draft_release_test }}"
-          echo "Dispatched 1-prepare-release-jdk21.yml (version=${{ inputs.version }}-jdk21)."
-
-      - name: Dispatch 1-prepare-release-jdk25
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh workflow run 1-prepare-release-jdk25.yml \
-            --repo "${{ github.repository }}" \
-            -f version="${{ inputs.version }}-jdk25" \
-            -f previous_version="${{ inputs.previous_version }}-jdk25" \
-            -f draft_release_test="${{ inputs.draft_release_test }}"
-          echo "Dispatched 1-prepare-release-jdk25.yml (version=${{ inputs.version }}-jdk25)."
+          echo "Dispatched 1-prepare-release.yml (version=${{ inputs.version }})."
 
       - name: Summary
         run: |
@@ -73,16 +63,15 @@ jobs:
             echo ""
             echo "| Workflow | Version |"
             echo "|----------|---------|"
-            echo "| [1-prepare-release-jdk21](https://github.com/${{ github.repository }}/actions/workflows/1-prepare-release-jdk21.yml) | ${{ inputs.version }}-jdk21 |"
-            echo "| [1-prepare-release-jdk25](https://github.com/${{ github.repository }}/actions/workflows/1-prepare-release-jdk25.yml) | ${{ inputs.version }}-jdk25 |"
+            echo "| [1-prepare-release](https://github.com/${{ github.repository }}/actions/workflows/1-prepare-release.yml) | ${{ inputs.version }} |"
             echo ""
             if [ "${{ inputs.draft_release_test }}" = "true" ]; then
-              echo "Both prepare workflows now running in test mode: no PRs, no tags, no GitHub Releases,"
-              echo "no Maven Central/SDKMAN pushes. Each will dispatch finalize (test) automatically, which"
-              echo "dispatches build-release-sdks (test) automatically — the SDKs still get built for real,"
-              echo "nothing gets uploaded or published."
+              echo "Prepare workflow now running in test mode: no PR, no tag, no GitHub Release,"
+              echo "no Maven Central/SDKMAN pushes. It will dispatch finalize (test) automatically, which"
+              echo "dispatches build-release-sdks (test) automatically — the SDKs still get built for real"
+              echo "(all of jdk21/25/26/27), nothing gets uploaded or published."
             else
-              echo "Both prepare workflows now running in parallel. Each will open a PR for review."
-              echo "Merging both PRs continues the chain automatically (finalize → build → publish)."
+              echo "Prepare workflow now running. It will open a PR for review."
+              echo "Merging the PR continues the chain automatically (finalize → build → deploy → publish)."
             fi
           } >> "$GITHUB_STEP_SUMMARY"

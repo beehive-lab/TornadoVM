@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -64,6 +65,7 @@ import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
+import uk.ac.manchester.tornado.api.memory.NativeArrayLayouts;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.metal.MetalBackendImpl;
 import uk.ac.manchester.tornado.drivers.metal.MetalCodeCache;
@@ -480,26 +482,15 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
                 result = new MetalVectorWrapper(deviceContext, object, batchSize, access);
             } else if (object instanceof MemorySegment) {
                 result = new MetalMemorySegmentWrapper(deviceContext, batchSize, access, 0);
-            } else if (object instanceof IntArray) {
-                result = new MetalMemorySegmentWrapper(deviceContext, batchSize, access, MetalKind.INT.getSizeInBytes());
-            } else if (object instanceof FloatArray) {
-                result = new MetalMemorySegmentWrapper(deviceContext, batchSize, access, MetalKind.FLOAT.getSizeInBytes());
-            } else if (object instanceof DoubleArray) {
-                throw unsupportedMetalFP64();
-            } else if (object instanceof LongArray) {
-                result = new MetalMemorySegmentWrapper(deviceContext, batchSize, access, MetalKind.LONG.getSizeInBytes());
-            } else if (object instanceof ShortArray) {
-                result = new MetalMemorySegmentWrapper(deviceContext, batchSize, access, MetalKind.SHORT.getSizeInBytes());
-            } else if (object instanceof ByteArray) {
-                result = new MetalMemorySegmentWrapper(deviceContext, batchSize, access, MetalKind.CHAR.getSizeInBytes());
-            } else if (object instanceof CharArray) {
-                result = new MetalMemorySegmentWrapper(deviceContext, batchSize, access, MetalKind.CHAR.getSizeInBytes());
-            } else if (object instanceof HalfFloatArray) {
-                result = new MetalMemorySegmentWrapper(deviceContext, batchSize, access, MetalKind.HALF.getSizeInBytes());
-            } else if (object instanceof Int8Array) {
-                result = new MetalMemorySegmentWrapper(deviceContext, batchSize, access, MetalKind.CHAR.getSizeInBytes());
             } else {
-                result = new MetalFieldBuffer(deviceContext, object, access);
+                // Native array types share one layout table (NativeArrayLayouts); anything not in it
+                // is an ordinary object graph and goes to the field buffer.
+                OptionalInt elementSize = NativeArrayLayouts.elementSizeOf(object);
+                if (elementSize.isPresent()) {
+                    result = new MetalMemorySegmentWrapper(deviceContext, batchSize, access, elementSize.getAsInt());
+                } else {
+                    result = new MetalFieldBuffer(deviceContext, object, access);
+                }
             }
         }
 
@@ -548,7 +539,13 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
     }
 
     private boolean reuseBatchBuffer(long batchSize, Access access, TornadoBufferProvider bufferProvider, HashMap<Access, Integer> distinctAccesses, DeviceBufferState state) {
-        if (batchSize != 0) {
+        // A state with no buffer of its own has nothing to reuse: reuseBufferForBatchProcessing()
+        // answers the global question "is a buffer of this size and access already in use", which is
+        // true as soon as any other object of the same access type holds one. Treating that as "this
+        // object may reuse its buffer" leaves the object unallocated, and the LAUNCH that follows
+        // dereferences a null device buffer - which is what a batched graph with more than one
+        // output used to do on its second chunk.
+        if (batchSize != 0 && state.hasObjectBuffer()) {
             int numberOfBuffersForAccessType = distinctAccesses.get(access);
             // if there is a buffer available in the used-list with the same access type, reuse it
             if (bufferProvider.reuseBufferForBatchProcessing(batchSize, access, numberOfBuffersForAccessType)) {

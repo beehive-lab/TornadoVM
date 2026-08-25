@@ -225,10 +225,37 @@ public enum TornadoVMBytecodes {
 
     CUDA_GRAPH_DESTROY((byte) 30);
 
+    /** Opcode-indexed lookup, so dispatch is a table read rather than a chain of comparisons. */
+    private static final TornadoVMBytecodes[] BY_VALUE = buildLookup();
+
     final byte value;
 
     TornadoVMBytecodes(byte value) {
         this.value = value;
+    }
+
+    private static TornadoVMBytecodes[] buildLookup() {
+        int max = 0;
+        for (TornadoVMBytecodes bytecode : values()) {
+            max = Math.max(max, bytecode.value);
+        }
+        TornadoVMBytecodes[] lookup = new TornadoVMBytecodes[max + 1];
+        for (TornadoVMBytecodes bytecode : values()) {
+            lookup[bytecode.value] = bytecode;
+        }
+        return lookup;
+    }
+
+    /**
+     * The bytecode with this opcode, or {@code null} when the byte is not an opcode - which means
+     * the stream is being read out of step and the caller should report it rather than guess.
+     *
+     * @param value
+     *     Raw opcode byte read from the bytecode stream.
+     * @return the matching bytecode, or {@code null}.
+     */
+    public static TornadoVMBytecodes fromValue(byte value) {
+        return (value >= 0 && value < BY_VALUE.length) ? BY_VALUE[value] : null;
     }
 
     public byte value() {

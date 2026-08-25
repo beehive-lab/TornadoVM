@@ -22,12 +22,12 @@
 package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 
 import jdk.vm.ci.meta.JavaKind;
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.ConstantValue;
-import org.graalvm.compiler.lir.LIRInstruction;
-import org.graalvm.compiler.lir.LIRInstructionClass;
-import org.graalvm.compiler.lir.Opcode;
-import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
+import tornado.graal.compiler.core.common.LIRKind;
+import tornado.graal.compiler.lir.ConstantValue;
+import tornado.graal.compiler.lir.LIRInstruction;
+import tornado.graal.compiler.lir.LIRInstructionClass;
+import tornado.graal.compiler.lir.Opcode;
+import tornado.graal.compiler.lir.asm.CompilationResultBuilder;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
@@ -873,6 +873,69 @@ public class CUDALIRStmt {
 
     @Opcode("SHUFFLE_SYNC")
     /**
+     * Warp vote: {@code __any_sync} / {@code __all_sync} / {@code __ballot_sync}. All three take the
+     * full member mask and a per-lane predicate; the first two yield a boolean (the intrinsic returns
+     * non-zero, so the result is compared against 0), the third a lane mask.
+     */
+    public static class WarpVoteStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<WarpVoteStmt> TYPE = LIRInstructionClass.create(WarpVoteStmt.class);
+
+        public enum Mode {
+            ANY("__any_sync", true),
+            ALL("__all_sync", true),
+            BALLOT("__ballot_sync", false);
+
+            private final String intrinsic;
+            private final boolean booleanResult;
+
+            Mode(String intrinsic, boolean booleanResult) {
+                this.intrinsic = intrinsic;
+                this.booleanResult = booleanResult;
+            }
+        }
+
+        // All active lanes participate (CUDA 9+ requires an explicit member mask).
+        private static final String FULL_MASK = "0xffffffff";
+
+        private final Mode mode;
+        @Def
+        protected Value result;
+        @Use
+        protected Value predicate;
+
+        public WarpVoteStmt(Mode mode, Value result, Value predicate) {
+            super(TYPE);
+            this.mode = mode;
+            this.result = result;
+            this.predicate = predicate;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.space();
+            asm.assign();
+            asm.space();
+            if (mode.booleanResult) {
+                asm.emit("(");
+            }
+            asm.emit(mode.intrinsic);
+            asm.emit("(");
+            asm.emit(FULL_MASK);
+            asm.emit(", ");
+            asm.emitValue(crb, predicate);
+            asm.emit(")");
+            if (mode.booleanResult) {
+                asm.emit(" != 0)");
+            }
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
+    /**
      * Read-modify-write atomic on one element of a local (shared) array:
      * {@code atomicCAS} / {@code atomicExch} / {@code atomicMin} / {@code atomicMax}. All four return the
      * element's previous value.
@@ -1275,9 +1338,22 @@ public class CUDALIRStmt {
             asm.space();
             asm.assign();
             asm.space();
-            asm.emitValueOrOp(crb, rhs);
+            emitStoreRhs(crb, asm);
             asm.delimiter();
             asm.eol();
+        }
+
+        /**
+         * Emit the stored value, wrapping a float/double in {@code __float2half(...)} when the store
+         * target is a {@code __half} slot (cuda_fp16.h has no implicit float-to-__half assignment, so a
+         * bare numeric would be stored incorrectly and read back as 0).
+         */
+        private void emitStoreRhs(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            if (cast.getElementKind() == CUDAKind.HALF) {
+                asm.emitHalfOperand(crb, rhs);
+            } else {
+                asm.emitValueOrOp(crb, rhs);
+            }
         }
 
         /**
@@ -1302,7 +1378,7 @@ public class CUDALIRStmt {
             asm.space();
             asm.assign();
             asm.space();
-            asm.emitValueOrOp(crb, rhs);
+            emitStoreRhs(crb, asm);
             asm.delimiter();
             asm.eol();
         }

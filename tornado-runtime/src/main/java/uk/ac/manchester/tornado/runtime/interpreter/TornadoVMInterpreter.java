@@ -97,6 +97,12 @@ public class TornadoVMInterpreter {
     private final KernelStackFrame[] kernelStackFrame;
     private final int[][] events;
     private final int[] eventsIndexes;
+    /**
+     * Number of leading entries of each wait-list row that have been written since the row was
+     * last cleared. Everything past this mark is still -1, so only the prefix has to be cleared
+     * between executions.
+     */
+    private final int[] eventsWrittenPrefix;
     private final TornadoXPUDevice interpreterDevice;
     private final TornadoInstalledCode[] installedCodes;
 
@@ -155,6 +161,7 @@ public class TornadoVMInterpreter {
         // 131KB per dependency list even when a graph only ever fills a handful of entries.
         events = new int[this.bytecodeResult.getInt()][];
         eventsIndexes = new int[events.length];
+        eventsWrittenPrefix = new int[events.length];
 
         localTaskList = graphExecutionContext.getTasksForDevice(interpreterDevice.getDeviceContext());
 
@@ -342,164 +349,35 @@ public class TornadoVMInterpreter {
                     " Running in thread: ")).append(Thread.currentThread().getName()).append("\n");
         }
 
-        while (bytecodeResult.hasRemaining()) {
+        bytecodeLoop: while (bytecodeResult.hasRemaining()) {
             final byte op = bytecodeResult.get();
-            if (op == TornadoVMBytecodes.ALLOC.value()) {
-                final long sizeBatch = bytecodeResult.getLong();
-                final int argSize = bytecodeResult.getInt();
-                final int[] args = new int[argSize];
-                for (int i = 0; i < argSize; i++) {
-                    args[i] = bytecodeResult.getInt();
-                }
-                if (isWarmup || !executionGraphHandles.isEmpty()) {
-                    continue;
-                }
-                lastEvent = executeAlloc(logBuilder, args, sizeBatch);
-            } else if (op == TornadoVMBytecodes.DEALLOC.value()) {
-                final int objectIndex = bytecodeResult.getInt();
-                if (isWarmup) {
-                    continue;
-                }
-                if (!executionGraphHandles.isEmpty()) {
-                    if (TornadoOptions.LOG_BYTECODES()) {
-                        Object object = objects.get(objectIndex);
-                        logBuilder.append("bc: ").append(InterpreterUtilities.debugHighLightNonExecBC(
-                                        "DEALLOC")).append(" [SKIPPED - execution graph active] ")
-                                .append(object).append("\n");
-                    }
-                    continue;
-                }
-                lastEvent = executeDeAlloc(logBuilder, objectIndex);
-            } else if (op == TornadoVMBytecodes.TRANSFER_HOST_TO_DEVICE_ONCE.value()) {
-                final int objectIndex = bytecodeResult.getInt();
-                final int eventId = bytecodeResult.getInt();
-                final long offset = bytecodeResult.getLong();
-                final long sizeBatch = bytecodeResult.getLong();
-                final int[] waitList = (useDependencies && eventId != -1) ? waitListFor(eventId) : null;
-                if (isWarmup) {
-                    continue;
-                }
-                lastEvent = transferHostToDeviceOnce(logBuilder, objectIndex, offset, eventId, sizeBatch, waitList);
-            } else if (op == TornadoVMBytecodes.TRANSFER_HOST_TO_DEVICE_ALWAYS.value()) {
-                final int objectIndex = bytecodeResult.getInt();
-                final int eventId = bytecodeResult.getInt();
-                final long offset = bytecodeResult.getLong();
-                final long sizeBatch = bytecodeResult.getLong();
-                final int[] waitList = (useDependencies && eventId != -1) ? waitListFor(eventId) : null;
-                if (isWarmup) {
-                    continue;
-                }
-                lastEvent = transferHostToDeviceAlways(logBuilder, objectIndex, offset, eventId, sizeBatch, waitList);
-            } else if (op == TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS.value()) {
-                final int objectIndex = bytecodeResult.getInt();
-                final int eventId = bytecodeResult.getInt();
-                final long offset = bytecodeResult.getLong();
-                final long sizeBatch = bytecodeResult.getLong();
-                final int[] waitList = (useDependencies) ? waitListFor(eventId) : null;
-                if (isWarmup) {
-                    continue;
-                }
-                lastEvent = transferDeviceToHost(logBuilder, objectIndex, offset, eventId, sizeBatch, waitList);
-            } else if (op == TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS_BLOCKING.value()) {
-                final int objectIndex = bytecodeResult.getInt();
-                final int eventId = bytecodeResult.getInt();
-                final long offset = bytecodeResult.getLong();
-                final long sizeBatch = bytecodeResult.getLong();
-                final int[] waitList = (useDependencies) ? waitListFor(eventId) : null;
-                if (isWarmup) {
-                    continue;
-                }
-                transferDeviceToHostBlocking(logBuilder, objectIndex, offset, eventId, sizeBatch, waitList);
-            } else if (op == TornadoVMBytecodes.LAUNCH.value()) {
-                final int callWrapperIndex = bytecodeResult.getInt();
-                final int taskIndex = bytecodeResult.getInt();
-                final int numArgs = bytecodeResult.getInt();
-                final int eventId = bytecodeResult.getInt();
-                final long offset = bytecodeResult.getLong();
-                final long batchThreads = bytecodeResult.getLong();
-                XPUExecutionFrame executionFrame = compileTaskFromBytecodeToBinary(callWrapperIndex, numArgs, eventId, taskIndex, batchThreads);
-                if (isWarmup) {
-                    popArgumentsFromCall(numArgs);
-                    continue;
-                }
-                lastEvent = executeLaunch(logBuilder, numArgs, eventId, taskIndex, batchThreads, offset, executionFrame);
-            } else if (op == TornadoVMBytecodes.ADD_DEPENDENCY.value()) {
-                final int eventList = bytecodeResult.getInt();
-                if (isWarmup) {
-                    continue;
-                }
-                executeDependency(logBuilder, lastEvent, eventList);
-            } else if (op == TornadoVMBytecodes.ON_DEVICE.value()) {
-                final int objectIndex = bytecodeResult.getInt();
-                final int eventId = bytecodeResult.getInt();
-                if (isWarmup) {
-                    continue;
-                }
-                lastEvent = executeOnDevice(logBuilder, objectIndex, eventId);
-            } else if (op == TornadoVMBytecodes.PERSIST.value()) {
-                final int objectIndex = bytecodeResult.getInt();
-                final int eventId = bytecodeResult.getInt();
-                if (isWarmup) {
-                    continue;
-                }
-                lastEvent = executePersist(logBuilder, objectIndex, eventId);
-            } else if (op == TornadoVMBytecodes.BARRIER.value()) {
-                final int eventId = bytecodeResult.getInt();
-                final int[] waitList = (useDependencies && eventId != -1) ? waitListFor(eventId) : null;
-                if (isWarmup) {
-                    continue;
-                }
-                lastEvent = executeBarrier(logBuilder, eventId, waitList);
-            } else if (op == TornadoVMBytecodes.CUDA_GRAPH_LAUNCH.value()) {
-                final int graphId = bytecodeResult.getInt();
-                if (isWarmup) {
-                    continue;
-                }
-                if (executionGraphHandles.containsKey(graphId)) {
-                    lastEvent = executeGraphLaunch(logBuilder, graphId);
-                }
-            } else if (op == TornadoVMBytecodes.CUDA_GRAPH_BEGIN_CAPTURE.value()) {
-                final int graphId = bytecodeResult.getInt();
-                if (isWarmup) {
-                    continue;
-                }
-                if (executionGraphHandles.containsKey(graphId)) {
-                    // Graph already captured: skip entire capture region
-                    skipToAfterEndCapture(graphId);
-                } else {
-                    // First execution: force all lazy allocations, then capture
-                    preCompileLaunchesInCaptureRegion();
-                    executeGraphBeginCapture(logBuilder, graphId);
-                    insideCaptureRegion = true;
-                }
-
-            } else if (op == TornadoVMBytecodes.CUDA_GRAPH_END_CAPTURE.value()) {
-                final int graphId = bytecodeResult.getInt();
-                if (isWarmup) {
-                    continue;
-                }
-                insideCaptureRegion = false;
-                executeGraphEndCapture(logBuilder, graphId);
-            } else if (op == TornadoVMBytecodes.CUDA_GRAPH_DESTROY.value()) {
-                final int graphId = bytecodeResult.getInt();
-                if (isWarmup) {
-                    continue;
-                }
-                Long handle = executionGraphHandles.remove(graphId);
-                if (handle != null) {
-                    interpreterDevice.destroyExecutionGraph(handle);
-                    if (TornadoOptions.LOG_BYTECODES()) {
-                        logBuilder.append("bc: ").append(InterpreterUtilities.debugHighLightBC(
-                                "EXECUTION_GRAPH_DESTROY")).append(" graphId=").append(graphId).append("\n");
-                    }
-                }
-            } else if (op == TornadoVMBytecodes.END.value()) {
-                if (!isWarmup && TornadoOptions.LOG_BYTECODES()) {
-                    logBuilder.append("bc: ").append(InterpreterUtilities.debugHighLightBC("END\n")).append("\n");
-                }
-                break;
-            } else {
+            final TornadoVMBytecodes bytecode = TornadoVMBytecodes.fromValue(op);
+            if (bytecode == null) {
                 throwErrorInterpreter(op);
+            }
+            switch (bytecode) {
+                case ALLOC -> lastEvent = handleAlloc(logBuilder, lastEvent, isWarmup);
+                case DEALLOC -> lastEvent = handleDealloc(logBuilder, lastEvent, isWarmup);
+                case TRANSFER_HOST_TO_DEVICE_ONCE -> lastEvent = handleTransferHostToDeviceOnce(logBuilder, lastEvent, isWarmup);
+                case TRANSFER_HOST_TO_DEVICE_ALWAYS -> lastEvent = handleTransferHostToDeviceAlways(logBuilder, lastEvent, isWarmup);
+                case TRANSFER_DEVICE_TO_HOST_ALWAYS -> lastEvent = handleTransferDeviceToHostAlways(logBuilder, lastEvent, isWarmup);
+                case TRANSFER_DEVICE_TO_HOST_ALWAYS_BLOCKING -> lastEvent = handleTransferDeviceToHostAlwaysBlocking(logBuilder, lastEvent, isWarmup);
+                case LAUNCH -> lastEvent = handleLaunch(logBuilder, lastEvent, isWarmup);
+                case ADD_DEPENDENCY -> lastEvent = handleAddDependency(logBuilder, lastEvent, isWarmup);
+                case ON_DEVICE -> lastEvent = handleOnDevice(logBuilder, lastEvent, isWarmup);
+                case PERSIST -> lastEvent = handlePersist(logBuilder, lastEvent, isWarmup);
+                case BARRIER -> lastEvent = handleBarrier(logBuilder, lastEvent, isWarmup);
+                case CUDA_GRAPH_LAUNCH -> lastEvent = handleCudaGraphLaunch(logBuilder, lastEvent, isWarmup);
+                case CUDA_GRAPH_BEGIN_CAPTURE -> lastEvent = handleCudaGraphBeginCapture(logBuilder, lastEvent, isWarmup);
+                case CUDA_GRAPH_END_CAPTURE -> lastEvent = handleCudaGraphEndCapture(logBuilder, lastEvent, isWarmup);
+                case CUDA_GRAPH_DESTROY -> lastEvent = handleCudaGraphDestroy(logBuilder, lastEvent, isWarmup);
+                case END -> {
+                    if (!isWarmup && TornadoOptions.LOG_BYTECODES()) {
+                        logBuilder.append("bc: ").append(InterpreterUtilities.debugHighLightBC("END\n")).append("\n");
+                    }
+                    break bytecodeLoop;
+                }
+                default -> throwErrorInterpreter(op);
             }
         }
 
@@ -676,13 +554,209 @@ public class TornadoVMInterpreter {
         return event;
     }
 
+    // One method per bytecode. The dispatch used to be a 24-arm if/else chain inside a 245-line
+    // execute(): every arm decoded its own operands and repeated the skip conditions, so adding an
+    // execution mode meant editing every one of them. The operand decoding stays inside each
+    // handler - it has to, the reads are positional - but the dispatch is now a switch over the
+    // opcode enum and each behaviour is a named method.
+
+    private int handleAlloc(StringBuilder logBuilder, int lastEvent, boolean isWarmup) {
+            final long sizeBatch = bytecodeResult.getLong();
+            final int argSize = bytecodeResult.getInt();
+            final int[] args = new int[argSize];
+            for (int i = 0; i < argSize; i++) {
+                args[i] = bytecodeResult.getInt();
+            }
+            if (isWarmup || !executionGraphHandles.isEmpty()) {
+                return lastEvent;
+            }
+            return executeAlloc(logBuilder, args, sizeBatch);
+    }
+
+    private int handleDealloc(StringBuilder logBuilder, int lastEvent, boolean isWarmup) {
+            final int objectIndex = bytecodeResult.getInt();
+            if (isWarmup) {
+                return lastEvent;
+            }
+            if (!executionGraphHandles.isEmpty()) {
+                if (TornadoOptions.LOG_BYTECODES()) {
+                    Object object = objects.get(objectIndex);
+                    logBuilder.append("bc: ").append(InterpreterUtilities.debugHighLightNonExecBC(
+                                    "DEALLOC")).append(" [SKIPPED - execution graph active] ")
+                            .append(object).append("\n");
+                }
+                return lastEvent;
+            }
+            return executeDeAlloc(logBuilder, objectIndex);
+    }
+
+    private int handleTransferHostToDeviceOnce(StringBuilder logBuilder, int lastEvent, boolean isWarmup) {
+            final int objectIndex = bytecodeResult.getInt();
+            final int eventId = bytecodeResult.getInt();
+            final long offset = bytecodeResult.getLong();
+            final long sizeBatch = bytecodeResult.getLong();
+            final int[] waitList = (useDependencies && eventId != -1) ? waitListFor(eventId) : null;
+            if (isWarmup) {
+                return lastEvent;
+            }
+            return transferHostToDeviceOnce(logBuilder, objectIndex, offset, eventId, sizeBatch, waitList);
+    }
+
+    private int handleTransferHostToDeviceAlways(StringBuilder logBuilder, int lastEvent, boolean isWarmup) {
+            final int objectIndex = bytecodeResult.getInt();
+            final int eventId = bytecodeResult.getInt();
+            final long offset = bytecodeResult.getLong();
+            final long sizeBatch = bytecodeResult.getLong();
+            final int[] waitList = (useDependencies && eventId != -1) ? waitListFor(eventId) : null;
+            if (isWarmup) {
+                return lastEvent;
+            }
+            return transferHostToDeviceAlways(logBuilder, objectIndex, offset, eventId, sizeBatch, waitList);
+    }
+
+    private int handleTransferDeviceToHostAlways(StringBuilder logBuilder, int lastEvent, boolean isWarmup) {
+            final int objectIndex = bytecodeResult.getInt();
+            final int eventId = bytecodeResult.getInt();
+            final long offset = bytecodeResult.getLong();
+            final long sizeBatch = bytecodeResult.getLong();
+            final int[] waitList = (useDependencies) ? waitListFor(eventId) : null;
+            if (isWarmup) {
+                return lastEvent;
+            }
+            return transferDeviceToHost(logBuilder, objectIndex, offset, eventId, sizeBatch, waitList);
+    }
+
+    private int handleTransferDeviceToHostAlwaysBlocking(StringBuilder logBuilder, int lastEvent, boolean isWarmup) {
+            final int objectIndex = bytecodeResult.getInt();
+            final int eventId = bytecodeResult.getInt();
+            final long offset = bytecodeResult.getLong();
+            final long sizeBatch = bytecodeResult.getLong();
+            final int[] waitList = (useDependencies) ? waitListFor(eventId) : null;
+            if (isWarmup) {
+                return lastEvent;
+            }
+            transferDeviceToHostBlocking(logBuilder, objectIndex, offset, eventId, sizeBatch, waitList);
+        return lastEvent;
+    }
+
+    private int handleLaunch(StringBuilder logBuilder, int lastEvent, boolean isWarmup) {
+            final int callWrapperIndex = bytecodeResult.getInt();
+            final int taskIndex = bytecodeResult.getInt();
+            final int numArgs = bytecodeResult.getInt();
+            final int eventId = bytecodeResult.getInt();
+            final long offset = bytecodeResult.getLong();
+            final long batchThreads = bytecodeResult.getLong();
+            XPUExecutionFrame executionFrame = compileTaskFromBytecodeToBinary(callWrapperIndex, numArgs, eventId, taskIndex, batchThreads);
+            if (isWarmup) {
+                popArgumentsFromCall(numArgs);
+                return lastEvent;
+            }
+            return executeLaunch(logBuilder, numArgs, eventId, taskIndex, batchThreads, offset, executionFrame);
+    }
+
+    private int handleAddDependency(StringBuilder logBuilder, int lastEvent, boolean isWarmup) {
+            final int eventList = bytecodeResult.getInt();
+            if (isWarmup) {
+                return lastEvent;
+            }
+            executeDependency(logBuilder, lastEvent, eventList);
+        return lastEvent;
+    }
+
+    private int handleOnDevice(StringBuilder logBuilder, int lastEvent, boolean isWarmup) {
+            final int objectIndex = bytecodeResult.getInt();
+            final int eventId = bytecodeResult.getInt();
+            if (isWarmup) {
+                return lastEvent;
+            }
+            return executeOnDevice(logBuilder, objectIndex, eventId);
+    }
+
+    private int handlePersist(StringBuilder logBuilder, int lastEvent, boolean isWarmup) {
+            final int objectIndex = bytecodeResult.getInt();
+            final int eventId = bytecodeResult.getInt();
+            if (isWarmup) {
+                return lastEvent;
+            }
+            return executePersist(logBuilder, objectIndex, eventId);
+    }
+
+    private int handleBarrier(StringBuilder logBuilder, int lastEvent, boolean isWarmup) {
+            final int eventId = bytecodeResult.getInt();
+            final int[] waitList = (useDependencies && eventId != -1) ? waitListFor(eventId) : null;
+            if (isWarmup) {
+                return lastEvent;
+            }
+            return executeBarrier(logBuilder, eventId, waitList);
+    }
+
+    private int handleCudaGraphLaunch(StringBuilder logBuilder, int lastEvent, boolean isWarmup) {
+            final int graphId = bytecodeResult.getInt();
+            if (isWarmup) {
+                return lastEvent;
+            }
+            if (executionGraphHandles.containsKey(graphId)) {
+                return executeGraphLaunch(logBuilder, graphId);
+            }
+        return lastEvent;
+    }
+
+    private int handleCudaGraphBeginCapture(StringBuilder logBuilder, int lastEvent, boolean isWarmup) {
+            final int graphId = bytecodeResult.getInt();
+            if (isWarmup) {
+                return lastEvent;
+            }
+            if (executionGraphHandles.containsKey(graphId)) {
+                // Graph already captured: skip entire capture region
+                skipToAfterEndCapture(graphId);
+            } else {
+                // First execution: force all lazy allocations, then capture
+                preCompileLaunchesInCaptureRegion();
+                executeGraphBeginCapture(logBuilder, graphId);
+                insideCaptureRegion = true;
+            }
+
+        return lastEvent;
+    }
+
+    private int handleCudaGraphEndCapture(StringBuilder logBuilder, int lastEvent, boolean isWarmup) {
+            final int graphId = bytecodeResult.getInt();
+            if (isWarmup) {
+                return lastEvent;
+            }
+            insideCaptureRegion = false;
+            executeGraphEndCapture(logBuilder, graphId);
+        return lastEvent;
+    }
+
+    private int handleCudaGraphDestroy(StringBuilder logBuilder, int lastEvent, boolean isWarmup) {
+            final int graphId = bytecodeResult.getInt();
+            if (isWarmup) {
+                return lastEvent;
+            }
+            Long handle = executionGraphHandles.remove(graphId);
+            if (handle != null) {
+                interpreterDevice.destroyExecutionGraph(handle);
+                if (TornadoOptions.LOG_BYTECODES()) {
+                    logBuilder.append("bc: ").append(InterpreterUtilities.debugHighLightBC(
+                            "EXECUTION_GRAPH_DESTROY")).append(" graphId=").append(graphId).append("\n");
+                }
+            }
+        return lastEvent;
+    }
+
     private void initWaitEventList() {
-        // Clear whole rows, not just the prefix up to eventsIndexes: resetEventIndexes() rewinds an
-        // event list in the middle of an execution, so entries can live beyond the current index and a
-        // partial clear would leave stale event ids behind. Rows never used stay null and cost nothing.
-        for (int[] waitList : events) {
-            if (waitList != null) {
-                Arrays.fill(waitList, -1);
+        // Clearing whole rows is not an option performance-wise: a row is MAX_EVENTS entries (32768 by
+        // default) and this runs at the top of every execute(), so per-token workloads spend most of
+        // their host time here. eventsIndexes cannot bound the clear either, because resetEventIndexes()
+        // rewinds an event list in the middle of an execution and entries can live beyond the current
+        // index. eventsWrittenPrefix is that bound: it is the high-water mark of every write since the
+        // last clear, and everything past it is still -1. Rows never used stay null and cost nothing.
+        for (int i = 0; i < events.length; i++) {
+            final int writtenPrefix = eventsWrittenPrefix[i];
+            if (writtenPrefix > 0) {
+                Arrays.fill(events[i], 0, writtenPrefix, -1);
+                eventsWrittenPrefix[i] = 0;
             }
         }
         Arrays.fill(eventsIndexes, 0);
@@ -1393,9 +1467,13 @@ public class TornadoVMInterpreter {
                 DebugInterpreter.logAddDependency(lastEvent, eventId, logBuilder);
             }
             final int[] waitList = waitListForWrite(eventId);
-            TornadoInternalError.guarantee(eventsIndexes[eventId] < waitList.length, "event list is too small");
-            waitList[eventsIndexes[eventId]] = lastEvent;
-            eventsIndexes[eventId]++;
+            final int index = eventsIndexes[eventId];
+            TornadoInternalError.guarantee(index < waitList.length, "event list is too small");
+            waitList[index] = lastEvent;
+            eventsIndexes[eventId] = index + 1;
+            if (index >= eventsWrittenPrefix[eventId]) {
+                eventsWrittenPrefix[eventId] = index + 1;
+            }
         }
     }
 

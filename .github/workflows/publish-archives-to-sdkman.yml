@@ -1,0 +1,211 @@
+name: 5 - Publish SDKMAN [auto]
+
+# Points SDKMAN at assets already sitting on the GitHub Release uploaded by
+# build-release-sdks.yml — this workflow builds nothing itself, so its
+# constructed download URL must exactly match a real uploaded filename.
+# That filename is produced in exactly one place (scripts/build-release-sdks.py's
+# _set_jdk_in_name rename fixup):
+#
+#   tornadovm-<version>-<jdk>-<backend_label>-<platform_dir>.zip
+#     e.g. tornadovm-4.0.1-jdk21-opencl-linux-amd64.zip
+#
+# and re-derived here as `tornadovm-<version>-<jdk>-<variant>.zip` (variant
+# already equals <backend_label>-<platform_dir>). A "Verify asset exists"
+# step checks this before calling the SDKMAN action, since otherwise a
+# mismatch anywhere in the naming chain would fail silently (SDKMAN would
+# just record a 404 URL).
+
+on:
+  release:
+    types: [ published ]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "GitHub release tag (e.g. v4.0.1)"
+        required: true
+        default: "v4.0.1"
+      publish:
+        description: "Actually publish to SDKMAN (true/false)"
+        required: true
+        default: "false"
+      draft_release_test:
+        description: >-
+          Draft release (test): the dispatching tag was never actually
+          released (no GitHub Release, no uploaded archives), so skip even
+          verifying the asset URL — it is expected to 404. Only set by
+          deploy-maven-central.yml's automatic dispatch; leave false for a
+          real manual dry run against an existing tag/Release, which should
+          still verify the asset (just not publish it).
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  publish-to-sdkman:
+    if: github.repository == 'beehive-lab/TornadoVM'
+    name: Publish TornadoVM ${{ matrix.jdk }} / ${{ matrix.sdk_suffix }} / ${{ matrix.platform }} to SDKMAN
+    runs-on: [ self-hosted, Linux, x64 ]
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # ---- jdk21 ----
+          - jdk: jdk21
+            sdk_suffix: full
+            platform: LINUX_64
+            variant: full-linux-amd64
+          - jdk: jdk21
+            sdk_suffix: opencl
+            platform: LINUX_64
+            variant: opencl-linux-amd64
+          - jdk: jdk21
+            sdk_suffix: opencl
+            platform: MAC_ARM64
+            variant: opencl-mac-aarch64
+          - jdk: jdk21
+            sdk_suffix: metal
+            platform: MAC_ARM64
+            variant: metal-mac-aarch64
+          - jdk: jdk21
+            sdk_suffix: cuda
+            platform: LINUX_64
+            variant: cuda-linux-amd64
+
+          # ---- jdk22plus (one SDK, covers every JDK from 22 up) ----
+          - jdk: jdk22plus
+            sdk_suffix: full
+            platform: LINUX_64
+            variant: full-linux-amd64
+          - jdk: jdk22plus
+            sdk_suffix: opencl
+            platform: LINUX_64
+            variant: opencl-linux-amd64
+          - jdk: jdk22plus
+            sdk_suffix: opencl
+            platform: MAC_ARM64
+            variant: opencl-mac-aarch64
+          - jdk: jdk22plus
+            sdk_suffix: metal
+            platform: MAC_ARM64
+            variant: metal-mac-aarch64
+          - jdk: jdk22plus
+            sdk_suffix: cuda
+            platform: LINUX_64
+            variant: cuda-linux-amd64
+
+    steps:
+      - name: Derive versions and URLs
+        id: vars
+        shell: bash
+        env:
+          TAG: ${{ github.event_name == 'release' && github.event.release.tag_name || inputs.tag }}
+        run: |
+          set -euo pipefail
+
+          VERSION="${TAG#v}"
+          SDKMAN_VERSION="${VERSION}-${{ matrix.jdk }}-${{ matrix.sdk_suffix }}"
+          ASSET="tornadovm-${VERSION}-${{ matrix.jdk }}-${{ matrix.variant }}.zip"
+          URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${ASSET}"
+
+          echo "sdkman_version=${SDKMAN_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "url=${URL}" >> "$GITHUB_OUTPUT"
+
+          echo "Publishing:"
+          echo "  TAG:            ${TAG}"
+          echo "  SDKMAN version: ${SDKMAN_VERSION}"
+          echo "  Platform:       ${{ matrix.platform }}"
+          echo "  Asset:          ${ASSET}"
+          echo "  URL:            ${URL}"
+
+      - name: Verify asset exists on the Release
+        # Deliberately gated on draft_release_test, NOT on publish: a plain
+        # manual dry run (publish=false against a real, already-uploaded tag)
+        # should still verify the asset — that's the whole point of a dry
+        # run. draft_release_test is the narrower case where no Release/tag
+        # was ever created at all (2-finalize-release.yml skips both, and
+        # build-release-sdks.yml never uploads anything), so the asset
+        # genuinely cannot exist and the curl check below would always 404.
+        # event_name is checked first (matching the TAG derivation above)
+        # since inputs is only populated for workflow_dispatch/workflow_call —
+        # this never touches inputs.draft_release_test on a `release` event.
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.draft_release_test == true) }}
+        run: |
+          set -euo pipefail
+          if ! curl -fsSL -I "${{ steps.vars.outputs.url }}" > /dev/null; then
+            echo "::error::Asset not found at ${{ steps.vars.outputs.url }} — the archive-naming contract between scripts/build-release-sdks.py and this workflow has drifted, or build-release-sdks.yml hasn't uploaded it yet."
+            exit 1
+          fi
+          echo "Asset confirmed present."
+
+      - name: Release to SDKMAN!
+        if: ${{ github.event_name == 'release' || inputs.publish == 'true' }}
+        uses: sdkman/sdkman-release-action@v0.2.0
+        with:
+          consumer-key: ${{ secrets.SDKMAN_CONSUMER_KEY }}
+          consumer-token: ${{ secrets.SDKMAN_CONSUMER_TOKEN }}
+          candidate: tornadovm
+          version: ${{ steps.vars.outputs.sdkman_version }}
+          platform: ${{ matrix.platform }}
+          url: ${{ steps.vars.outputs.url }}
+
+  set-sdkman-default:
+    name: Set TornadoVM default version on SDKMAN
+    runs-on: [ self-hosted, Linux, x64 ]
+    needs: publish-to-sdkman
+
+    # jdk21 + opencl remains the SDKMAN default, matching the pre-unification
+    # convention (this job has no matrix of its own — it runs once, after every
+    # publish-to-sdkman leg finishes, and always targets the jdk21-opencl
+    # coordinate directly below, independent of which matrix leg ran last).
+    if: >
+      github.repository == 'beehive-lab/TornadoVM' &&
+      (
+        (github.event_name == 'release') ||
+        (github.event_name == 'workflow_dispatch' && inputs.publish == 'true')
+      )
+
+    steps:
+      - name: Derive default version
+        id: vars
+        shell: bash
+        env:
+          TAG: ${{ github.event_name == 'release' && github.event.release.tag_name || inputs.tag }}
+        run: |
+          set -euo pipefail
+
+          VERSION="${TAG#v}"
+          DEFAULT_VERSION="${VERSION}-jdk21-opencl"
+
+          echo "default_version=${DEFAULT_VERSION}" >> "$GITHUB_OUTPUT"
+
+          echo "Setting SDKMAN default:"
+          echo "  TAG:     ${TAG}"
+          echo "  Version: ${DEFAULT_VERSION}"
+
+      - name: Set SDKMAN default version
+        shell: bash
+        env:
+          SDKMAN_CONSUMER_KEY: ${{ secrets.SDKMAN_CONSUMER_KEY }}
+          SDKMAN_CONSUMER_TOKEN: ${{ secrets.SDKMAN_CONSUMER_TOKEN }}
+          DEFAULT_VERSION: ${{ steps.vars.outputs.default_version }}
+        run: |
+          set -euo pipefail
+
+          SDKMAN_ENDPOINT="https://vendors.sdkman.io/default"
+          CANDIDATE="tornadovm"
+
+          echo "Calling SDKMAN Vendor API…"
+
+          curl -fsSL -X PUT \
+            -H "Consumer-Key: ${SDKMAN_CONSUMER_KEY}" \
+            -H "Consumer-Token: ${SDKMAN_CONSUMER_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -H "Accept: application/json" \
+            -d "{
+              \"candidate\": \"${CANDIDATE}\",
+              \"version\": \"${DEFAULT_VERSION}\"
+            }" \
+            "${SDKMAN_ENDPOINT}"
+
+          echo "✅ SDKMAN default version set to ${DEFAULT_VERSION}"

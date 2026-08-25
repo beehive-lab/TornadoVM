@@ -5,7 +5,7 @@
 
     <groupId>io.github.beehive-lab</groupId>
     <artifactId>tornado</artifactId>
-    <version>5.2.1-jdk21-dev</version>
+    <version>${revision}</version>
     <packaging>pom</packaging>
     <name>tornado</name>
     <url>https://github.com/beehive-lab/tornadovm</url>
@@ -44,6 +44,13 @@
     </distributionManagement>
 
     <properties>
+        <!-- CI-friendly version: the literal default (jdk21) - each jdkNN profile below overrides
+             this property so `${project.version}` (and everything derived from it - the SDK
+             directory/archive name, tornado.release's version= field, Maven Central coordinates)
+             correctly reflects the JDK actually being built, with no committed-file mutation
+             needed at build time. Flattened to a concrete version by flatten-maven-plugin below
+             before install/deploy, since only THIS reactor's own POM parsing understands ${revision}. -->
+        <revision>5.2.1-jdk21-dev</revision>
         <tornado.version>${project.version}</tornado.version>
         <tornado.backend>opencl</tornado.backend>
         <graalvm.version>23.1.0</graalvm.version>
@@ -53,6 +60,11 @@
         <jmh.version>1.29</jmh.version>
         <tornadojmhjar.name>jmhbenchmarks</tornadojmhjar.name>
         <checkstyle.config.location>tornado-assembly/src/etc/checkstyle.xml</checkstyle.config.location>
+        <!-- Tests are skipped by default (GPU unit tests need a device); override with -DskipTests=false
+             to run the pure-JVM tornado-runtime unit tests. -->
+        <skipTests>true</skipTests>
+        <!-- Default: no extra JVM args; each jdkNN profile overrides with its module-access argLine. -->
+        <tornado.test.argLine></tornado.test.argLine>
     </properties>
 
     <profiles>
@@ -119,8 +131,6 @@
                                 <arg>--add-modules</arg>
                                 <arg>ALL-SYSTEM</arg>
                                 <arg>--add-modules=jdk.incubator.vector</arg>
-                                <arg>--upgrade-module-path</arg>
-                                <arg>${user.dir}/graalJars</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/common-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/opencl-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/metal-exports</arg>
@@ -345,13 +355,25 @@
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
+            <properties>
+                <revision>5.2.1-jdk21-dev</revision>
+                <!-- Runtime module access for pure-JVM unit tests (mirrors this profile's compilerArgs). -->
+                <tornado.test.argLine>--enable-preview --add-modules=jdk.incubator.vector --add-modules=jdk.internal.vm.ci --add-exports jdk.internal.vm.ci/jdk.vm.ci.meta=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.code=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.common=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=ALL-UNNAMED</tornado.test.argLine>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <skipTests>true</skipTests>
+                            <skipTests>${skipTests}</skipTests>
+                            <!-- Pure-JVM unit tests need JVMCI package access. Run on the classpath
+                                 (useModulePath=false) so surefire does not ASM-parse the vendored jvmci jar's
+                                 module-info (its JDK-27 class version breaks Maven's bundled parser); the argLine
+                                 exports the jvmci packages to ALL-UNNAMED. Skipped by default; run with:
+                                 mvn -Pjdk21 -pl tornado-runtime test -DskipTests=false -->
+                            <useModulePath>false</useModulePath>
+                            <argLine>${tornado.test.argLine}</argLine>
                         </configuration>
                     </plugin>
                     <plugin>
@@ -388,8 +410,6 @@
                                 <arg>--add-modules</arg>
                                 <arg>ALL-SYSTEM</arg>
                                 <arg>--add-modules=jdk.incubator.vector</arg>
-                                <arg>--upgrade-module-path</arg>
-                                <arg>${user.dir}/graalJars</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/common-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/opencl-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/metal-exports</arg>
@@ -412,6 +432,108 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <profile>
+            <!-- Single target profile for every JDK from 22 upwards. FFM/Panama is final from 22,
+                 so nothing here needs the enable-preview flag and the emitted class files are
+                 portable: one SDK built once runs on 22, 23, 24, 25, 26, 27 and later. Replaces the
+                 old jdk25/jdk26/jdk27 profiles, which differed only in the revision string and in
+                 where javac found jdk.vm.ci.*.
+
+                 Two settings do that work together:
+
+                 "release" rather than "source"+"target". source/target still links against the
+                 build JDK's platform classes, so a build on a newer JDK can bind an API absent on
+                 22 and fail at run time; the release flag uses the JDK 22 signatures and rejects it
+                 at compile time, which is what makes the floor a real guarantee. 22 is also the
+                 ceiling imposed by frozen Graal 23.1.0, whose Classfile reader rejects class-file
+                 versions newer than it knows.
+
+                 The vendored jvmci dependency, unconditionally. The release flag hides every
+                 JDK-internal module, so the platform jdk.internal.vm.ci is invisible to javac even
+                 on the JDKs that still ship it, and the vendored JDK-21 module on the module path
+                 supplies jdk.vm.ci.* on every build JDK alike. That is why no patch-module argument
+                 and no build-JDK-specific profile are needed here: the compile is now identical
+                 whether it runs on 22 or on 27. (At RUN time the platform module does still exist
+                 on 22-26, which is what bin/tornado patches; that is a separate concern.) -->
+            <id>jdk22plus</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <revision>5.2.1-jdk22plus-dev</revision>
+                <!-- Runtime module access for the opt-in pure-JVM unit tests, which run under the
+                     BUILD JDK; specialised below when that JDK still ships the platform module. -->
+                <tornado.test.argLine>--add-modules=jdk.incubator.vector</tornado.test.argLine>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>tornado.jvmci</groupId>
+                    <artifactId>jvmci</artifactId>
+                    <version>21.0.2</version>
+                    <scope>provided</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <skipTests>${skipTests}</skipTests>
+                            <!-- Pure-JVM unit tests need JVMCI package access. Run on the classpath
+                                 (useModulePath=false) so surefire does not ASM-parse the vendored jvmci
+                                 jar's module-info; the argLine exports the jvmci packages to
+                                 ALL-UNNAMED. Skipped by default; run with:
+                                 mvn -Pjdk22plus -pl tornado-runtime test -DskipTests=false -->
+                            <useModulePath>false</useModulePath>
+                            <argLine>${tornado.test.argLine}</argLine>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <version>3.11.0</version>
+                        <configuration>
+                            <forceJavacCompilerUse>true</forceJavacCompilerUse>
+                            <release>22</release>
+                            <showDeprecation>true</showDeprecation>
+                            <annotationProcessorPaths>
+                                <path>
+                                    <groupId>org.openjdk.jmh</groupId>
+                                    <artifactId>jmh-generator-annprocess</artifactId>
+                                    <version>${jmh.version}</version>
+                                </path>
+                            </annotationProcessorPaths>
+                            <compilerArgs>
+                                <arg>--add-modules</arg>
+                                <arg>ALL-SYSTEM</arg>
+                                <arg>--add-modules=jdk.incubator.vector</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/common-exports</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/opencl-exports</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/metal-exports</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/cuda-exports</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <!-- Selected by the BUILD JDK, never named by hand, and it affects only the opt-in
+                 surefire tests (skipped by default), which run on this same JDK. On 22-26 the
+                 platform still ships jdk.internal.vm.ci with interfaces drifted from the JDK-21
+                 shape, so overlay the frozen classes at run time. On 27+ there is nothing to patch.
+                 Declared after jdk22plus so its property wins. -->
+            <id>jvmci-test-args-from-platform</id>
+            <activation>
+                <jdk>[22,27)</jdk>
+            </activation>
+            <properties>
+                <tornado.test.argLine>--add-modules=jdk.incubator.vector --add-modules=jdk.internal.vm.ci --patch-module jdk.internal.vm.ci=${user.dir}/graalJars/jvmci-21.0.2.jar --add-exports jdk.internal.vm.ci/jdk.vm.ci.meta=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.code=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.common=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=ALL-UNNAMED</tornado.test.argLine>
+            </properties>
         </profile>
 
         <profile>
@@ -443,6 +565,8 @@
                                 <arg>ALL-SYSTEM</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/common-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/opencl-exports</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/metal-exports</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/cuda-exports</arg>
                             </compilerArgs>
                         </configuration>
                     </plugin>
@@ -462,40 +586,41 @@
                 </plugins>
             </build>
         </profile>
-
-        <profile>
-            <id>graalvm-polyglot</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>org.graalvm.polyglot</groupId>
-                    <artifactId>python</artifactId>
-                    <version>${graalvm.version}</version>
-                    <scope>runtime</scope>
-                    <type>pom</type>
-                </dependency>
-                <dependency>
-                    <groupId>org.graalvm.polyglot</groupId>
-                    <artifactId>js</artifactId>
-                    <version>${graalvm.version}</version>
-                    <scope>runtime</scope>
-                    <type>pom</type>
-                </dependency>
-                <dependency>
-                    <groupId>org.graalvm.polyglot</groupId>
-                    <artifactId>ruby</artifactId>
-                    <version>${graalvm.version}</version>
-                    <scope>runtime</scope>
-                    <type>pom</type>
-                </dependency>
-            </dependencies>
-        </profile>
     </profiles>
     <build>
         <finalName>${project.artifactId}-${project.version}-${buildNumber}</finalName>
         <plugins>
+            <!-- CI-friendly versions: <revision> in <properties> above (default jdk21, overridden per
+                 jdkNN profile) lets every jdk21/25/26/27 profile drive `${project.version}` without
+                 ever mutating a committed pom.xml. This plugin resolves ${revision} into the concrete
+                 version in the POM that actually gets installed/deployed (mvn's own in-reactor
+                 resolution already understands ${revision} for module-to-module dependency wiring;
+                 this is only needed for the *published* .pom file consumers see).
+                 resolveCiFriendliesOnly leaves everything else in the POM untouched. -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+                <version>1.6.0</version>
+                <configuration>
+                    <flattenMode>resolveCiFriendliesOnly</flattenMode>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>flatten</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>flatten</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>flatten.clean</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-scm-plugin</artifactId>
@@ -635,11 +760,6 @@
             <version>2.25.4</version>
         </dependency>
         <dependency>
-            <groupId>org.graalvm.polyglot</groupId>
-            <artifactId>polyglot</artifactId>
-            <version>${graalvm.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.graalvm.sdk</groupId>
             <artifactId>word</artifactId>
             <version>${graalvm.version}</version>
@@ -649,10 +769,20 @@
             <artifactId>collections</artifactId>
             <version>${graalvm.version}</version>
         </dependency>
+        <dependency>
+            <!-- Required transitively by the vendored tornado.graal module; formerly
+                 supplied via the upgrade-module-path graalJars mechanism. -->
+            <groupId>org.graalvm.truffle</groupId>
+            <artifactId>truffle-compiler</artifactId>
+            <version>${graalvm.version}</version>
+        </dependency>
 
         <dependency>
-            <groupId>org.graalvm.compiler</groupId>
-            <artifactId>compiler</artifactId>
+            <!-- Frozen Graal 23.1.0 relocated (org.graalvm.compiler.* to
+                 tornado.graal.compiler.*) into the vendored module tornado.graal by
+                 bin/build_graal_module.py, so it lives on the regular module-path. -->
+            <groupId>tornado.graal</groupId>
+            <artifactId>tornado-graal</artifactId>
             <version>23.1.0</version>
             <scope>provided</scope>
         </dependency>

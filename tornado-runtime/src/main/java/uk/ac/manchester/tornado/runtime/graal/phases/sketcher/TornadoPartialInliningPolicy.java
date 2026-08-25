@@ -23,15 +23,15 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases.sketcher;
 
-import static org.graalvm.compiler.core.common.GraalOptions.MaximumDesiredSize;
-import static org.graalvm.compiler.core.common.GraalOptions.MaximumInliningSize;
+import static tornado.graal.compiler.core.common.GraalOptions.MaximumDesiredSize;
+import static tornado.graal.compiler.core.common.GraalOptions.MaximumInliningSize;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.spi.Replacements;
-import org.graalvm.compiler.phases.common.inlining.InliningUtil;
-import org.graalvm.compiler.phases.common.inlining.info.InlineInfo;
-import org.graalvm.compiler.phases.common.inlining.walker.MethodInvocation;
+import tornado.graal.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.nodes.spi.Replacements;
+import tornado.graal.compiler.phases.common.inlining.InliningUtil;
+import tornado.graal.compiler.phases.common.inlining.info.InlineInfo;
+import tornado.graal.compiler.phases.common.inlining.walker.MethodInvocation;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoInliningException;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoInliningPolicy;
