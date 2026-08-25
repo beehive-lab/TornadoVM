@@ -251,4 +251,10 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
         return sizeOfType;
     }
 
+
+    @Override
+    public boolean supportsAsyncRead() {
+        // enqueueRead and read copy the same region for a whole-segment transfer.
+        return true;
+    }
 }

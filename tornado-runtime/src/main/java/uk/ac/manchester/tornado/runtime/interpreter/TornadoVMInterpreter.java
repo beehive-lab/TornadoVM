@@ -1061,7 +1061,21 @@ public class TornadoVMInterpreter {
             DebugInterpreter.logTransferToHostAlways(object, interpreterDevice, sizeObject, sizeBatch, offset, eventId, logBuilder);
         }
 
-        int readEvent = interpreterDevice.streamOutBlocking(graphExecutionContext.getExecutionPlanId(), object, offset, objectState, eventWaitList);
+        // TRANSFER_DEVICE_TO_HOST_ALWAYS is the non-terminal copy-out: the graph compiler patches
+        // only the last one into TRANSFER_DEVICE_TO_HOST_ALWAYS_BLOCKING, which - together with the
+        // sync in TornadoTaskGraph.waitOn() - is what makes the outputs visible when execute()
+        // returns. Reading synchronously here as well makes every intermediate copy-out its own
+        // host wait for no benefit, so this takes the asynchronous read whenever the blocking
+        // variant is not doing something extra: it also covers atomics, under-demand partial
+        // copies and batch chunks, none of which enqueueRead supports.
+        final boolean canReadAsync = objectState.getXPUBuffer().supportsAsyncRead() //
+                && !objectState.isAtomicRegionPresent() //
+                && objectState.getPartialCopySize() == 0 //
+                && sizeBatch <= 0;
+
+        int readEvent = canReadAsync
+                ? interpreterDevice.streamOut(graphExecutionContext.getExecutionPlanId(), object, offset, objectState, eventWaitList)
+                : interpreterDevice.streamOutBlocking(graphExecutionContext.getExecutionPlanId(), object, offset, objectState, eventWaitList);
 
         resetEventIndexes(eventId);
 
