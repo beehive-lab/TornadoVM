@@ -21,16 +21,16 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases.sketcher;
 
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.FrameState;
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValuePhiNode;
-import org.graalvm.compiler.nodes.extended.JavaReadNode;
-import org.graalvm.compiler.nodes.extended.JavaWriteNode;
-import org.graalvm.compiler.nodes.java.LoadIndexedNode;
-import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
-import org.graalvm.compiler.phases.BasePhase;
+import tornado.graal.compiler.graph.Node;
+import tornado.graal.compiler.nodes.FrameState;
+import tornado.graal.compiler.nodes.GraphState;
+import tornado.graal.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.nodes.ValuePhiNode;
+import tornado.graal.compiler.nodes.extended.JavaReadNode;
+import tornado.graal.compiler.nodes.extended.JavaWriteNode;
+import tornado.graal.compiler.nodes.java.LoadIndexedNode;
+import tornado.graal.compiler.nodes.memory.address.OffsetAddressNode;
+import tornado.graal.compiler.phases.BasePhase;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
 
 import java.util.HashSet;

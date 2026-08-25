@@ -25,12 +25,12 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.compiler;
 
-import org.graalvm.compiler.lir.phases.LIRPhaseSuite;
-import org.graalvm.compiler.lir.phases.PostAllocationOptimizationPhase.PostAllocationOptimizationContext;
-import org.graalvm.compiler.lir.phases.PreAllocationOptimizationPhase.PreAllocationOptimizationContext;
-import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.common.AddressLoweringByNodePhase;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
+import tornado.graal.compiler.lir.phases.LIRPhaseSuite;
+import tornado.graal.compiler.lir.phases.PostAllocationOptimizationPhase.PostAllocationOptimizationContext;
+import tornado.graal.compiler.lir.phases.PreAllocationOptimizationPhase.PreAllocationOptimizationContext;
+import tornado.graal.compiler.options.OptionValues;
+import tornado.graal.compiler.phases.common.AddressLoweringByNodePhase;
+import tornado.graal.compiler.phases.common.CanonicalizerPhase;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;

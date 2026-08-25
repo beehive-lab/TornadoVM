@@ -5,10 +5,9 @@
 
 ## Write Java. Run on GPUs. Fast.
 
-TornadoVM is a GPU programming framework for Java that works with JDK 21+ (currently JDK 21 and JDK 25). It JIT-compiles Java bytecode into **NVIDIA CUDA, OpenCL C, and Apple Metal (MSL)** at runtime, so your existing Java code runs on **NVIDIA GPUs (via CUDA)**, AMD, Intel, and Apple Silicon GPUs, integrated GPUs, and multi-core CPUs. On NVIDIA hardware it goes further: beyond generating PTX, TornadoVM now calls straight into the **NVIDIA library ecosystem — cuBLAS, cuFFT, cuDNN — and exposes Tensor Core `mma.sync` instructions from pure Java**. No CUDA C. No JNI bindings to maintain. No native toolchain in your application.
+TornadoVM is a GPU programming framework for Java that works with JDK 21+ (currently JDK 21, JDK 25, JDK 26, and JDK 27). It JIT-compiles Java bytecode into **NVIDIA CUDA, OpenCL C, and Apple Metal (MSL)** at runtime, so your existing Java code runs on **NVIDIA GPUs (via CUDA)**, AMD, Intel, and Apple Silicon GPUs, integrated GPUs, and multi-core CPUs. On NVIDIA hardware it goes further: beyond generating CUDA, TornadoVM now calls straight into the **NVIDIA library ecosystem — cuBLAS, cuFFT, cuDNN — and exposes Tensor Core `mma.sync` instructions from pure Java**. No CUDA C. No JNI bindings to maintain. No native toolchain in your application.
 
-[![Build & Test JDK 21](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk21.yml/badge.svg)](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk21.yml)
-[![Build & Test JDK 25](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk25.yml/badge.svg?branch=jdk25)](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk25.yml)
+[![Build & Test](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test.yml/badge.svg)](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test.yml)
 [![Tornado API](https://img.shields.io/maven-central/v/io.github.beehive-lab/tornado-api?logo=apache-maven&color=blue&label=Tornado%20API)](https://central.sonatype.com/artifact/io.github.beehive-lab/tornado-api)
 [![Install with SDKMAN!](https://img.shields.io/badge/Install%20with-SDKMAN!-2c7a7b?logo=sdkman&logoColor=white)](https://sdkman.io/sdks/tornadovm/)
 [![Docs](https://img.shields.io/badge/docs-readthedocs-blue)](https://tornadovm.readthedocs.io/en/latest/)
@@ -180,7 +179,7 @@ TornadoVM is used to accelerate machine learning and deep learning, computer vis
 sdk install tornadovm
 ```
 
-Pick a backend-specific build if you prefer a smaller install:
+Pick a backend-specific build if you prefer a smaller install. Candidate versions are per-JDK (swap `jdk21` below for `jdk25`, `jdk26`, or `jdk27` to install a build for that JDK line):
 
 | Backend | SDKMAN! version | Targets |
 |---|---|---|
@@ -216,6 +215,8 @@ More examples — NBody, DFT, KMeans, matrix kernels, reductions: [tornado-examp
 ---
 
 ## 📦 Use TornadoVM in your project
+
+Maven Central coordinates are per-JDK — pin the `-jdk21`/`-jdk25`/`-jdk26`/`-jdk27` version matching the JDK you build with:
 
 ```xml
 <dependencies>

@@ -6,10 +6,15 @@
     <parent>
         <groupId>io.github.beehive-lab</groupId>
         <artifactId>tornado-drivers</artifactId>
-        <version>5.2.1-jdk21-dev</version>
+        <version>${revision}</version>
     </parent>
     <artifactId>tornado-drivers-metal-jni</artifactId>
     <name>tornado-drivers-metal-jni</name>
+    <properties>
+        <!-- cpp-only JNI module (no Java sources). Skip maven-compiler-plugin, which otherwise NPEs with
+             getPathElements() null under the jdk25/jdk26 profiles' patch-module compilerArgs (mvn-compiler 3.11.0). -->
+        <maven.main.skip>true</maven.main.skip>
+    </properties>
     <build>
 
         <directory>${basedir}/target/${platform}-${build.type}</directory>

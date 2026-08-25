@@ -55,19 +55,18 @@ The ``tornadovm-installer`` script downloads/builds ``OpenJDK``, ``CMake`` and `
 .. code-block:: bash
 
    $ ./bin/tornadovm-installer --help
-     usage: tornadovm-installer [-h] [--jdk JDK] [--backend BACKEND] [--version] [--listJDKs] [--polyglot] [--mvn_single_threaded] [--auto-deps]
+     usage: tornadovm-installer [-h] [--jdk JDK] [--backend BACKEND] [--version] [--listJDKs] [--mvn_single_threaded] [--auto-deps]
 
      options:
        --jdk JDK             Specify a JDK to install (e.g., 'jdk21', 'graal-jdk-21'). Use --listJDKs to see all options.
        --backend BACKEND     Select the backend(s) to install: { opencl, cuda, metal }
        --listJDKs            List supported JDKs
-       --polyglot            Enable Truffle Interoperability with GraalVM
        --mvn_single_threaded  Run Maven in single-threaded mode
        --auto-deps           Automatically download any missing dependencies
 
 .. _installation_graalvm:
 
-To build with GraalVM instead of stock OpenJDK (needed for :ref:`truffle-languages`), pass a Graal JDK keyword:
+To build with GraalVM instead of stock OpenJDK, pass a Graal JDK keyword:
 
 .. code-block:: bash
 

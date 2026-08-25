@@ -58,7 +58,6 @@ Beyond JIT-compiling Java bytecode to each backend, TornadoVM's runtime provides
 
    programming
    offheap-types
-   truffle-languages
    unsupported
 
 .. toctree::

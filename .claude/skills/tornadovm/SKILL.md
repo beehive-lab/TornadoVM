@@ -10,6 +10,7 @@ TornadoVM JIT-compiles Java bytecode to GPU code (OpenCL C, CUDA/NVRTC, Apple Me
 **Backend scope:** this skill covers **OpenCL, CUDA, and Metal** only. **PTX and SPIRV are out of scope** (both are slated for removal in the 6.0.0 roadmap). Never suggest `make BACKEND=ptx` or `make BACKEND=spirv`.
 
 For backend internals (where codegen lives, how to add a node/intrinsic), see `references/codegen-map.md`.
+For profiling and optimisation work on the runtime, see the `tornadovm-perf-campaign` skill.
 
 ## Build
 
@@ -23,7 +24,7 @@ make BACKEND=opencl,cuda          # comma-separated list; values in scope: openc
 Convenience targets: `make cuda` (= `--backend cuda`), `make metal` (= `metal,opencl`). Default `BACKEND` is `opencl`.
 
 - **Incremental build ≈ 3 min.** Only a clean rebuild (Graal-jar pull + full recompile) is long — don't assume every build is slow.
-- Under the hood `make` calls `bin/compile --jdk jdk21 --backend <list>`. Useful flags: `--rebuild` (rebuild deps), `--sdk`, `--polyglot`, `--mvn_single_threaded`.
+- Under the hood `make` calls `bin/compile --jdk jdk21 --backend <list>`. Useful flags: `--rebuild` (rebuild deps), `--sdk`, `--mvn_single_threaded`.
 - The built SDK lands in `dist/tornadovm-<version>-jdk21-dev-<variant>-<os>-<arch>/...`; `TORNADOVM_HOME` and the `bin/tornado*` launchers point into it.
 
 ### Build gotchas

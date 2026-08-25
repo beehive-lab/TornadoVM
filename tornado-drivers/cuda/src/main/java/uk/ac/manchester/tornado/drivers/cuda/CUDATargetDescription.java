@@ -23,7 +23,7 @@ package uk.ac.manchester.tornado.drivers.cuda;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
-import org.graalvm.compiler.core.common.LIRKind;
+import tornado.graal.compiler.core.common.LIRKind;
 
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.TargetDescription;

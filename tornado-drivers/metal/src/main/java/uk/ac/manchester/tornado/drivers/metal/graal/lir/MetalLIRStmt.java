@@ -23,10 +23,10 @@
  */
 package uk.ac.manchester.tornado.drivers.metal.graal.lir;
 
-import org.graalvm.compiler.lir.LIRInstruction;
-import org.graalvm.compiler.lir.LIRInstructionClass;
-import org.graalvm.compiler.lir.Opcode;
-import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
+import tornado.graal.compiler.lir.LIRInstruction;
+import tornado.graal.compiler.lir.LIRInstructionClass;
+import tornado.graal.compiler.lir.Opcode;
+import tornado.graal.compiler.lir.asm.CompilationResultBuilder;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
@@ -1304,30 +1304,43 @@ public class MetalLIRStmt {
         @Def
         protected Value decompressed;
         @Use
+        protected Value base;
+        @Use
         protected Value compressed;
 
-        public DecompressPointerStmt(Value decompressed, Value compressed) {
+        public DecompressPointerStmt(Value decompressed, Value base, Value compressed) {
             super(TYPE);
             this.decompressed = decompressed;
+            this.base = base;
             this.compressed = compressed;
         }
 
         @Override
         public void emitCode(MetalCompilationResultBuilder crb, MetalAssembler asm) {
-            // decompresses a 4-byte compressed OOP into a 64-bit relative offset
-            // The kernel will then compute: base + decompressed to get the absolute address
-            // ulong_var = ((ulong) uint_var) << 3;
+            // decompresses a 4-byte compressed OOP into a 64-bit absolute address, adding the base in
+            // the same statement (mirrors OCLLIRStmt.DecompressPointerStmt, including the outer paren
+            // wrapping the whole shift - << binds looser than + in C, so without it
+            // "((ulong)base) + ((ulong)compressed) << 3" would shift the sum instead of the cast
+            // value). Unlike OpenCL C, `base` (a tornado_ptr_t = device uchar*) needs an explicit
+            // (ulong) cast here: Metal Shading Language rejects the implicit pointer-to-integer
+            // conversion OpenCL C tolerates when a pointer + int expression is assigned to a ulong
+            // ("incompatible pointer to integer conversion" - confirmed empirically).
+            // ulong_var = ((ulong) base_ptr) + ((ulong) uint_var << 3);
             asm.indent();
             asm.emitValue(crb, decompressed);
             asm.space();
             asm.assign();
             asm.space();
-            asm.emit("((ulong)");
-            asm.space();
-            asm.emitValue(crb, compressed);
+            asm.emit("((ulong) ");
+            asm.emitValue(crb, base);
             asm.emit(")");
             asm.space();
-            asm.emit("<< 3");
+            asm.emit("+");
+            asm.space();
+            asm.emit("((ulong) ");
+            asm.emitValue(crb, compressed);
+            asm.space();
+            asm.emit("<< 3)");
             asm.delimiter();
             asm.eol();
         }
