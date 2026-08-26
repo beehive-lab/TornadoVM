@@ -33,7 +33,7 @@ import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
-import uk.ac.manchester.tornado.api.WorkerGrid1D;
+import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
@@ -51,28 +51,23 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * <p>How to run:
  *
  * <pre>
- * tornado-test --ea -V uk.ac.manchester.tornado.unittests.kernelcontext.api.TestLaunchFailureReporting
+ * tornado-test -V uk.ac.manchester.tornado.unittests.kernelcontext.api.TestLaunchFailureReporting
  * </pre>
  */
 public class TestLaunchFailureReporting extends TornadoTestBase {
 
     private static final int SIZE = 256;
-    /**
-     * 16384 floats = 64 KB of shared memory. Local arrays are emitted as static {@code __shared__}, which
-     * the hardware caps at 48 KB per block, so the driver rejects the launch. (Reaching the 100 KB an
-     * sm_89 GPU has available needs dynamic shared memory, which the backend does not emit yet - when it
-     * does, this becomes a functional test instead of a failure-reporting one.)
-     */
-    private static final int OVERSIZED_LOCAL_FLOATS = 16384;
 
-    private static void oversizedLocalKernel(KernelContext ctx, FloatArray in, FloatArray out) {
-        float[] tile = ctx.allocateFloatLocalArray(OVERSIZED_LOCAL_FLOATS);
-        int localIdx = ctx.localIdx;
-        for (int i = localIdx; i < OVERSIZED_LOCAL_FLOATS; i += SIZE) {
-            tile[i] = in.get(i % in.getSize());
-        }
-        ctx.localBarrier();
-        out.set(ctx.globalIdx, tile[localIdx]);
+    /**
+     * Blocks per grid in Y. Every CUDA compute capability caps {@code gridDim.y} at 65535, so a launch
+     * asking for more is rejected with {@code CUDA_ERROR_INVALID_VALUE} on any NVIDIA GPU, whatever its
+     * shared memory, register file or driver version. The kernel itself compiles and loads normally -
+     * only the launch fails, which is exactly the path under test.
+     */
+    private static final int EXCESSIVE_GRID_Y = 100_000_000;
+
+    private static void fill(KernelContext ctx, FloatArray out) {
+        out.set(ctx.globalIdx, 1.0f);
     }
 
     @Test
@@ -80,19 +75,17 @@ public class TestLaunchFailureReporting extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.METAL);
 
-        FloatArray in = new FloatArray(SIZE);
         FloatArray out = new FloatArray(SIZE);
-        in.init(1.0f);
         out.init(-1.0f);
 
         KernelContext context = new KernelContext();
-        WorkerGrid worker = new WorkerGrid1D(SIZE);
-        worker.setLocalWork(SIZE, 1, 1);
+        // Local work of 1 in Y turns the Y extent straight into that many blocks.
+        WorkerGrid worker = new WorkerGrid2D(SIZE, EXCESSIVE_GRID_Y);
+        worker.setLocalWork(64, 1, 1);
         GridScheduler grid = new GridScheduler("badLaunch.t0", worker);
 
         TaskGraph taskGraph = new TaskGraph("badLaunch") //
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, in) //
-                .task("t0", TestLaunchFailureReporting::oversizedLocalKernel, context, in, out) //
+                .task("t0", TestLaunchFailureReporting::fill, context, out) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
