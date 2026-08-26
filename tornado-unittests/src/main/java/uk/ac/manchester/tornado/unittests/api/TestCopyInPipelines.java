@@ -21,11 +21,16 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -67,6 +72,16 @@ public class TestCopyInPipelines extends TornadoTestBase {
         for (@Parallel int i = 0; i < input.getSize(); i++) {
             output.set(i, input.get(i));
         }
+    }
+
+    public static void copyWithContext(KernelContext context, FloatArray input, FloatArray output) {
+        int index = context.globalIdx;
+        output.set(index, input.get(index));
+    }
+
+    public static void scaleInPlaceWithContext(KernelContext context, FloatArray state, FloatArray weights) {
+        int index = context.globalIdx;
+        state.set(index, state.get(index) * weights.get(index));
     }
 
     /**
@@ -299,6 +314,124 @@ public class TestCopyInPipelines extends TornadoTestBase {
                 for (int i = 0; i < SIZE; i++) {
                     assertEquals(iteration, output.get(i), 0.001f);
                 }
+            }
+        }
+    }
+
+    /**
+     * A persist/consume pipeline under CUDA graphs. The producer's result stays on the device
+     * between the two captured graphs, and the producer's weights are placed by
+     * {@code transferToDevice()} rather than by a warm-up run - so the transfers-only pass runs
+     * over bytecode that contains the capture and launch operations, and the capture that follows
+     * has to see the uploaded data.
+     */
+    @Test
+    public void testPersistConsumePipelineUnderCudaGraphs() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+
+        FloatArray weights = new FloatArray(SIZE);
+        weights.init(2.0f);
+        FloatArray input = new FloatArray(SIZE);
+        input.init(1.0f);
+        FloatArray intermediate = new FloatArray(SIZE);
+        FloatArray output = new FloatArray(SIZE);
+
+        TaskGraph producer = new TaskGraph("graphProducer") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, weights) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .task("produce", TestCopyInPipelines::scale, input, intermediate, 1.0f) //
+                .task("weight", TestCopyInPipelines::scaleInPlace, intermediate, weights) //
+                .persistOnDevice(intermediate);
+
+        TaskGraph consumer = new TaskGraph("graphConsumer") //
+                .consumeFromDevice("graphProducer", intermediate) //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, output) //
+                .task("consume", TestCopyInPipelines::copy, intermediate, output) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(producer.snapshot(), consumer.snapshot())) {
+            plan.withCUDAGraph();
+            plan.transferToDevice();
+
+            // Iteration 0 captures both graphs, the rest replay them.
+            for (int iteration = 0; iteration < 4; iteration++) {
+                input.init(1.0f + iteration);
+                plan.withGraph(0).execute();
+                plan.withGraph(1).execute();
+                for (int i = 0; i < SIZE; i++) {
+                    assertEquals("iteration " + iteration, 2.0f * (1.0f + iteration), output.get(i), 0.001f);
+                }
+            }
+
+            // The weights are FIRST_EXECUTION and the graphs are already captured: only an
+            // explicit upload can change what the replay computes.
+            weights.init(5.0f);
+            plan.transferToDevice(weights);
+
+            plan.withGraph(0).execute();
+            plan.withGraph(1).execute();
+            for (int i = 0; i < SIZE; i++) {
+                assertEquals(5.0f * 4.0f, output.get(i), 0.001f);
+            }
+        }
+    }
+
+    /**
+     * The same pipeline written with {@link KernelContext} kernels and a {@link GridScheduler},
+     * captured as CUDA graphs, with the weights placed by an explicit upload and swapped mid-run.
+     */
+    @Test
+    public void testPersistConsumePipelineUnderCudaGraphsWithKernelContext() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+
+        FloatArray weights = new FloatArray(SIZE);
+        weights.init(2.0f);
+        FloatArray input = new FloatArray(SIZE);
+        input.init(1.0f);
+        FloatArray intermediate = new FloatArray(SIZE);
+        FloatArray output = new FloatArray(SIZE);
+
+        KernelContext producerContext = new KernelContext();
+        KernelContext consumerContext = new KernelContext();
+
+        TaskGraph producer = new TaskGraph("ctxProducer") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, weights) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .task("produce", TestCopyInPipelines::copyWithContext, producerContext, input, intermediate) //
+                .task("weight", TestCopyInPipelines::scaleInPlaceWithContext, producerContext, intermediate, weights) //
+                .persistOnDevice(intermediate);
+
+        TaskGraph consumer = new TaskGraph("ctxConsumer") //
+                .consumeFromDevice("ctxProducer", intermediate) //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, output) //
+                .task("consume", TestCopyInPipelines::copyWithContext, consumerContext, intermediate, output) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        WorkerGrid workerGrid = new WorkerGrid1D(SIZE);
+        GridScheduler gridScheduler = new GridScheduler("ctxProducer.produce", workerGrid);
+        gridScheduler.addWorkerGrid("ctxProducer.weight", workerGrid);
+        gridScheduler.addWorkerGrid("ctxConsumer.consume", workerGrid);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(producer.snapshot(), consumer.snapshot())) {
+            plan.withCUDAGraph().withGridScheduler(gridScheduler);
+            plan.transferToDevice();
+
+            for (int iteration = 0; iteration < 4; iteration++) {
+                input.init(1.0f + iteration);
+                plan.withGraph(0).execute();
+                plan.withGraph(1).execute();
+                for (int i = 0; i < SIZE; i++) {
+                    assertEquals("iteration " + iteration, 2.0f * (1.0f + iteration), output.get(i), 0.001f);
+                }
+            }
+
+            weights.init(5.0f);
+            plan.transferToDevice(weights);
+
+            plan.withGraph(0).execute();
+            plan.withGraph(1).execute();
+            for (int i = 0; i < SIZE; i++) {
+                assertEquals(5.0f * 4.0f, output.get(i), 0.001f);
             }
         }
     }

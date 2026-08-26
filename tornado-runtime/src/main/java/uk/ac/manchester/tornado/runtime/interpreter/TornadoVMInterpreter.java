@@ -532,6 +532,7 @@ public class TornadoVMInterpreter {
             bytecodeResult.getInt();
             bytecodeResult.getInt();
         } else if (op == TornadoVMBytecodes.CUDA_GRAPH_BEGIN_CAPTURE.value()
+                || op == TornadoVMBytecodes.CUDA_GRAPH_END_CAPTURE.value()
                 || op == TornadoVMBytecodes.CUDA_GRAPH_LAUNCH.value()
                 || op == TornadoVMBytecodes.CUDA_GRAPH_DESTROY.value()) {
             bytecodeResult.getInt();  // graphId

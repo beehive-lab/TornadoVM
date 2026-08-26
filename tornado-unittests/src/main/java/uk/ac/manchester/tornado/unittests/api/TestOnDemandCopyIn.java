@@ -21,11 +21,16 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -50,6 +55,11 @@ public class TestOnDemandCopyIn extends TornadoTestBase {
         for (@Parallel int i = 0; i < input.getSize(); i++) {
             output.set(i, weights.get(i) * input.get(i));
         }
+    }
+
+    public static void weightedCopyWithContext(KernelContext context, FloatArray weights, FloatArray input, FloatArray output) {
+        int index = context.globalIdx;
+        output.set(index, weights.get(index) * input.get(index));
     }
 
     private static TaskGraph buildGraph(String name, FloatArray weights, FloatArray input, FloatArray output) {
@@ -313,6 +323,113 @@ public class TestOnDemandCopyIn extends TornadoTestBase {
         for (int i = 0; i < SIZE; i++) {
             assertEquals(4.0f, outputA.get(i), 0.001f);
             assertEquals(5.0f, outputB.get(i), 0.001f);
+        }
+    }
+
+    /**
+     * A transfers-only pass over a plan that uses CUDA graphs. The pass skips the capture and
+     * launch bytecodes, but it still has to consume their operands: the reads are positional, so
+     * getting one wrong leaves a {@code graphId} in the stream and the rest of the bytecode is
+     * decoded from the wrong offset. The plan must still capture and replay correctly afterwards.
+     */
+    @Test
+    public void testTransferToDeviceOnACudaGraphPlan() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+
+        FloatArray weights = new FloatArray(SIZE);
+        weights.init(2.0f);
+        FloatArray input = new FloatArray(SIZE);
+        input.init(3.0f);
+        FloatArray output = new FloatArray(SIZE);
+
+        ImmutableTaskGraph immutableTaskGraph = buildGraph("copyInCudaGraph", weights, input, output).snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withCUDAGraph();
+            executionPlan.transferToDevice();
+
+            // Iteration 0 captures, the rest replay; the upload must not have disturbed either.
+            for (int iteration = 0; iteration < 4; iteration++) {
+                input.init(3.0f + iteration);
+                executionPlan.execute();
+                for (int i = 0; i < SIZE; i++) {
+                    assertEquals("iteration " + iteration, 2.0f * (3.0f + iteration), output.get(i), 0.001f);
+                }
+            }
+        }
+    }
+
+    /**
+     * The same, with the kernel written against {@link KernelContext} and driven by a
+     * {@link GridScheduler}. A KernelContext task carries no {@code @Parallel} loop, so the grid
+     * comes from the plan rather than from the bytecode - the transfers-only pass must leave that
+     * path alone as well.
+     */
+    @Test
+    public void testTransferToDeviceOnACudaGraphPlanWithKernelContext() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+
+        FloatArray weights = new FloatArray(SIZE);
+        weights.init(2.0f);
+        FloatArray input = new FloatArray(SIZE);
+        input.init(3.0f);
+        FloatArray output = new FloatArray(SIZE);
+
+        KernelContext context = new KernelContext();
+        TaskGraph taskGraph = new TaskGraph("copyInCudaGraphContext") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, weights) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .task("t", TestOnDemandCopyIn::weightedCopyWithContext, context, weights, input, output) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        WorkerGrid workerGrid = new WorkerGrid1D(SIZE);
+        GridScheduler gridScheduler = new GridScheduler("copyInCudaGraphContext.t", workerGrid);
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            executionPlan.withCUDAGraph().withGridScheduler(gridScheduler);
+            executionPlan.transferToDevice();
+
+            for (int iteration = 0; iteration < 4; iteration++) {
+                input.init(3.0f + iteration);
+                executionPlan.execute();
+                for (int i = 0; i < SIZE; i++) {
+                    assertEquals("iteration " + iteration, 2.0f * (3.0f + iteration), output.get(i), 0.001f);
+                }
+            }
+        }
+    }
+
+    /**
+     * A targeted upload into a captured plan. The weights are {@code FIRST_EXECUTION}, so once the
+     * graph is captured nothing would ever refresh them: the upload has to reach the buffer the
+     * captured graph reads from, not a new one.
+     */
+    @Test
+    public void testTargetedUploadIntoACapturedCudaGraph() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+
+        FloatArray weights = new FloatArray(SIZE);
+        weights.init(2.0f);
+        FloatArray input = new FloatArray(SIZE);
+        input.init(3.0f);
+        FloatArray output = new FloatArray(SIZE);
+
+        ImmutableTaskGraph immutableTaskGraph = buildGraph("copyInCudaGraphTargeted", weights, input, output).snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withCUDAGraph();
+
+            // Captures on the first execution.
+            executionPlan.execute();
+            for (int i = 0; i < SIZE; i++) {
+                assertEquals(6.0f, output.get(i), 0.001f);
+            }
+
+            // Replays, with new weights placed into the buffer the captured graph reads.
+            weights.init(5.0f);
+            executionPlan.transferToDevice(weights);
+            executionPlan.execute();
+            for (int i = 0; i < SIZE; i++) {
+                assertEquals(15.0f, output.get(i), 0.001f);
+            }
         }
     }
 }
