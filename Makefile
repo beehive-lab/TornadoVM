@@ -4,6 +4,26 @@ all: build
 # make BACKEND=<comma_separated_backend_list>
 BACKEND ?= opencl
 
+# Reject backends that are not supported, mirroring the check the installer performs on --backend
+# (__SUPPORTED_BACKENDS__ in bin/tornadovm-installer). Without this an unsupported name is handed
+# to bin/compile, becomes a non-existent Maven profile, and fails much later and far less clearly.
+COMMA := ,
+EMPTY :=
+SPACE := $(EMPTY) $(EMPTY)
+SUPPORTED_BACKENDS := opencl cuda metal
+BACKEND_LIST := $(strip $(subst $(COMMA),$(SPACE),$(BACKEND)))
+UNSUPPORTED_BACKENDS := $(filter-out $(SUPPORTED_BACKENDS),$(BACKEND_LIST))
+
+# `make BACKEND=` sets the variable to an empty value, so `?=` above does not restore the default:
+# without this it would build nothing and only fail deep inside Maven.
+ifeq ($(BACKEND_LIST),)
+$(error [ERROR] No backend specified in BACKEND. Provide one of the supported backends: $(subst $(SPACE),$(COMMA)$(SPACE),$(SUPPORTED_BACKENDS)) -- e.g. make BACKEND=opencl or make BACKEND=opencl$(COMMA)cuda)
+endif
+
+ifneq ($(UNSUPPORTED_BACKENDS),)
+$(error [ERROR] Unsupported backends specified in BACKEND: $(subst $(SPACE),$(COMMA)$(SPACE),$(UNSUPPORTED_BACKENDS)). Supported backends: $(subst $(SPACE),$(COMMA)$(SPACE),$(SUPPORTED_BACKENDS)))
+endif
+
 # JDK profile used by the `sdk`, `test-reflection` and `test-reflection-only` targets
 # { jdk21, jdk22plus }, derived from JAVA_HOME rather than hardcoded.
 #
