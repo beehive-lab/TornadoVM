@@ -428,5 +428,5 @@ then one `bin/compile --jdk jdk27 --backend metal,opencl` regenerated + staged +
 ## 6. Can the apporach of bypassing JVCI can be a standlone tool 
 - [ ] Can it be a standalone tool
 - [ ] if yes find usages 
-- [ ] use seperate repo
+- [ ] use separate repo
 
