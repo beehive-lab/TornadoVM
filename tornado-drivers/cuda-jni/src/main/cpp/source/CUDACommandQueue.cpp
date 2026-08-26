@@ -81,13 +81,23 @@ static bool stream_is_capturing(cuda_queue_t *queue) {
  */
 static unsigned int event_flags();
 
-static jlong record_event(cuda_queue_t *queue) {
+static jlong record_event(JNIEnv *env, cuda_queue_t *queue) {
     cuda_event_t *ev = new cuda_event_t();
     ev->start = nullptr;
+    ev->event = nullptr;
     CUresult result = cuEventCreate(&ev->event, event_flags());
-    LOG_CUDA_AND_VALIDATE("cuEventCreate", result);
+    if (result != CUDA_SUCCESS) {
+        ev->event = nullptr;
+    }
+    if (tornado_report_cuda_failure(env, "cuEventCreate", result)) {
+        tornado_discard_event((jlong) ev);
+        return 0;
+    }
     result = cuEventRecord(ev->event, queue->stream);
-    LOG_CUDA_AND_VALIDATE("cuEventRecord", result);
+    if (tornado_report_cuda_failure(env, "cuEventRecord", result)) {
+        tornado_discard_event((jlong) ev);
+        return 0;
+    }
     return (jlong) ev;
 }
 
@@ -140,15 +150,21 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQue
  * timestamp on the stream to be paired with end_event() after the operation
  * (cuEventElapsedTime(start, event) then yields the device time of the operation).
  */
-static cuda_event_t *begin_event(cuda_queue_t *queue) {
+static cuda_event_t *begin_event(JNIEnv *env, cuda_queue_t *queue) {
     cuda_event_t *ev = new cuda_event_t();
     ev->event = nullptr;
     ev->start = nullptr;
     if (tornado_timing_enabled) {
         CUresult result = cuEventCreate(&ev->start, CU_EVENT_DEFAULT);
-        LOG_CUDA_AND_VALIDATE("cuEventCreate(start)", result);
+        if (tornado_report_cuda_failure(env, "cuEventCreate(start)", result)) {
+            ev->start = nullptr;
+            return ev;
+        }
         result = cuEventRecord(ev->start, queue->stream);
-        LOG_CUDA_AND_VALIDATE("cuEventRecord(start)", result);
+        if (tornado_report_cuda_failure(env, "cuEventRecord(start)", result)) {
+            cuEventDestroy(ev->start);
+            ev->start = nullptr;
+        }
     }
     return ev;
 }
@@ -158,11 +174,22 @@ static cuda_event_t *begin_event(cuda_queue_t *queue) {
  * and returns the boxed handle. This event doubles as the operation's dependency
  * handle (cuStreamWaitEvent / status queries), so it is always created.
  */
-static jlong end_event(cuda_event_t *ev, cuda_queue_t *queue) {
+static jlong end_event(JNIEnv *env, cuda_event_t *ev, cuda_queue_t *queue) {
     CUresult result = cuEventCreate(&ev->event, event_flags());
-    LOG_CUDA_AND_VALIDATE("cuEventCreate(end)", result);
+    if (result != CUDA_SUCCESS) {
+        ev->event = nullptr;
+    }
+    // Discarding, not deleting: the start event recorded by begin_event is on this handle too,
+    // and it has to go back to the driver with it.
+    if (tornado_report_cuda_failure(env, "cuEventCreate(end)", result)) {
+        tornado_discard_event((jlong) ev);
+        return 0;
+    }
     result = cuEventRecord(ev->event, queue->stream);
-    LOG_CUDA_AND_VALIDATE("cuEventRecord(end)", result);
+    if (tornado_report_cuda_failure(env, "cuEventRecord(end)", result)) {
+        tornado_discard_event((jlong) ev);
+        return 0;
+    }
     return (jlong) ev;
 }
 
@@ -219,6 +246,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQue
     }
     CUresult result = cuStreamSynchronize(queue->stream);
     LOG_CUDA_AND_VALIDATE("cuStreamSynchronize", result);
+    tornado_throw_cuda_exception(env, "cuStreamSynchronize", result);
 }
 
 /*
@@ -234,6 +262,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQue
     }
     CUresult result = cuStreamSynchronize(queue->stream);
     LOG_CUDA_AND_VALIDATE("cuStreamSynchronize", result);
+    tornado_throw_cuda_exception(env, "cuStreamSynchronize", result);
 }
 
 /*
@@ -303,7 +332,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
     NvtxRange _nvtx(kernel->name.c_str());
     cuCtxSetCurrent(queue->context);
     wait_events(env, queue, events);
-    cuda_event_t *ev = begin_event(queue);
+    cuda_event_t *ev = begin_event(env, queue);
     CUresult result = cuLaunchKernel(
             kernel->function,
             grid[0], grid[1], grid[2],
@@ -313,8 +342,14 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
             params.empty() ? nullptr : params.data(),
             nullptr);
     LOG_CUDA_AND_VALIDATE("cuLaunchKernel", result);
-
-    return end_event(ev, queue);
+    jlong launchEvent = end_event(env, ev, queue);
+    // A failed launch leaves the kernel's outputs untouched. Surfacing it as CUDAException
+    // makes the Java wrapper bail out instead of returning stale buffers as a valid result.
+    if (tornado_throw_cuda_exception(env, "cuLaunchKernel", result)) {
+        tornado_discard_event(launchEvent);
+        return 0;
+    }
+    return launchEvent;
 }
 
 /*
@@ -333,7 +368,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
  */
 static jlong transfer_to_device(JNIEnv *env, cuda_queue_t *queue, void *host_base,
                                 jlong host_offset, jlong device_offset, jlong num_bytes, jlong device_ptr,
-                                jlongArray events, bool sync_after) {
+                                jlongArray events, bool sync_after, CUresult *failure) {
     if (queue == nullptr) {
         return 0;
     }
@@ -342,22 +377,29 @@ static jlong transfer_to_device(JNIEnv *env, cuda_queue_t *queue, void *host_bas
     NvtxRange _nvtx(nvtxLabel);
     cuCtxSetCurrent(queue->context);
     wait_events(env, queue, events);
-    cuda_event_t *ev = begin_event(queue);
+    cuda_event_t *ev = begin_event(env, queue);
     CUresult result = cuMemcpyHtoDAsync(
             (CUdeviceptr) (device_ptr + device_offset),
             (const void *) ((char *) host_base + host_offset),
             (size_t) num_bytes,
             queue->stream);
     LOG_CUDA_AND_VALIDATE("cuMemcpyHtoDAsync", result);
-    if (sync_after && !stream_is_capturing(queue)) {
-        cuStreamSynchronize(queue->stream);
+    if (result != CUDA_SUCCESS) {
+        *failure = result;
     }
-    return end_event(ev, queue);
+    if (sync_after && !stream_is_capturing(queue)) {
+        CUresult sync = cuStreamSynchronize(queue->stream);
+        LOG_CUDA_AND_VALIDATE("cuStreamSynchronize", sync);
+        if (sync != CUDA_SUCCESS && *failure == CUDA_SUCCESS) {
+            *failure = sync;
+        }
+    }
+    return end_event(env, ev, queue);
 }
 
 static jlong transfer_to_host(JNIEnv *env, cuda_queue_t *queue, void *host_base,
                               jlong host_offset, jlong device_offset, jlong num_bytes, jlong device_ptr,
-                              jlongArray events, bool sync_after) {
+                              jlongArray events, bool sync_after, CUresult *failure) {
     if (queue == nullptr) {
         return 0;
     }
@@ -366,17 +408,24 @@ static jlong transfer_to_host(JNIEnv *env, cuda_queue_t *queue, void *host_base,
     NvtxRange _nvtx(nvtxLabel);
     cuCtxSetCurrent(queue->context);
     wait_events(env, queue, events);
-    cuda_event_t *ev = begin_event(queue);
+    cuda_event_t *ev = begin_event(env, queue);
     CUresult result = cuMemcpyDtoHAsync(
             (void *) ((char *) host_base + host_offset),
             (CUdeviceptr) (device_ptr + device_offset),
             (size_t) num_bytes,
             queue->stream);
     LOG_CUDA_AND_VALIDATE("cuMemcpyDtoHAsync", result);
-    if (sync_after && !stream_is_capturing(queue)) {
-        cuStreamSynchronize(queue->stream);
+    if (result != CUDA_SUCCESS) {
+        *failure = result;
     }
-    return end_event(ev, queue);
+    if (sync_after && !stream_is_capturing(queue)) {
+        CUresult sync = cuStreamSynchronize(queue->stream);
+        LOG_CUDA_AND_VALIDATE("cuStreamSynchronize", sync);
+        if (sync != CUDA_SUCCESS && *failure == CUDA_SUCCESS) {
+            *failure = sync;
+        }
+    }
+    return end_event(env, ev, queue);
 }
 
 /* ---- writeArrayToDevice overloads (byte/char/short/int/long/float/double) ---- */
@@ -386,9 +435,14 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
         (JNIEnv *env, jclass clazz, jlong queue_id, JARRTYPE host_array, jlong host_offset, jboolean blocking,  \
          jlong offset, jlong num_bytes, jlong device_ptr, jlongArray events) {                                  \
     cuda_queue_t *queue = (cuda_queue_t *) queue_id;                                                            \
+    CUresult failure = CUDA_SUCCESS;                                                                            \
     void *host = env->GetPrimitiveArrayCritical((jarray) host_array, NULL);                                     \
-    jlong ev = transfer_to_device(env, queue, host, host_offset, offset, num_bytes, device_ptr, events, true); \
+    jlong ev = transfer_to_device(env, queue, host, host_offset, offset, num_bytes, device_ptr, events, true, &failure); \
     env->ReleasePrimitiveArrayCritical((jarray) host_array, host, JNI_ABORT);                                   \
+    if (tornado_throw_cuda_exception(env, "cuMemcpyHtoDAsync", failure)) {                                      \
+        tornado_discard_event(ev);                                                                              \
+        return 0;                                                                                               \
+    }                                                                                                           \
     return ev;                                                                                                  \
 }
 
@@ -407,7 +461,13 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
         (JNIEnv *env, jclass clazz, jlong queue_id, jlong host_pointer, jlong host_offset, jboolean blocking,
          jlong offset, jlong num_bytes, jlong device_ptr, jlongArray events) {
     cuda_queue_t *queue = (cuda_queue_t *) queue_id;
-    return transfer_to_device(env, queue, (void *) host_pointer, host_offset, offset, num_bytes, device_ptr, events, blocking);
+    CUresult failure = CUDA_SUCCESS;
+    jlong ev = transfer_to_device(env, queue, (void *) host_pointer, host_offset, offset, num_bytes, device_ptr, events, blocking, &failure);
+    if (tornado_throw_cuda_exception(env, "cuMemcpyHtoDAsync", failure)) {
+        tornado_discard_event(ev);
+        return 0;
+    }
+    return ev;
 }
 
 /* ---- readArrayFromDevice overloads ---- */
@@ -417,9 +477,14 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
         (JNIEnv *env, jclass clazz, jlong queue_id, JARRTYPE host_array, jlong host_offset, jboolean blocking,   \
          jlong offset, jlong num_bytes, jlong device_ptr, jlongArray events) {                                   \
     cuda_queue_t *queue = (cuda_queue_t *) queue_id;                                                             \
+    CUresult failure = CUDA_SUCCESS;                                                                             \
     void *host = env->GetPrimitiveArrayCritical((jarray) host_array, NULL);                                      \
-    jlong ev = transfer_to_host(env, queue, host, host_offset, offset, num_bytes, device_ptr, events, true);    \
+    jlong ev = transfer_to_host(env, queue, host, host_offset, offset, num_bytes, device_ptr, events, true, &failure); \
     env->ReleasePrimitiveArrayCritical((jarray) host_array, host, 0);                                            \
+    if (tornado_throw_cuda_exception(env, "cuMemcpyDtoHAsync", failure)) {                                       \
+        tornado_discard_event(ev);                                                                               \
+        return 0;                                                                                                \
+    }                                                                                                            \
     return ev;                                                                                                   \
 }
 
@@ -438,7 +503,13 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
         (JNIEnv *env, jclass clazz, jlong queue_id, jlong host_pointer, jlong host_offset, jboolean blocking,
          jlong offset, jlong num_bytes, jlong device_ptr, jlongArray events) {
     cuda_queue_t *queue = (cuda_queue_t *) queue_id;
-    return transfer_to_host(env, queue, (void *) host_pointer, host_offset, offset, num_bytes, device_ptr, events, blocking);
+    CUresult failure = CUDA_SUCCESS;
+    jlong ev = transfer_to_host(env, queue, (void *) host_pointer, host_offset, offset, num_bytes, device_ptr, events, blocking, &failure);
+    if (tornado_throw_cuda_exception(env, "cuMemcpyDtoHAsync", failure)) {
+        tornado_discard_event(ev);
+        return 0;
+    }
+    return ev;
 }
 
 /*
@@ -520,7 +591,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
     if (queue == nullptr) {
         return 0;
     }
-    return record_event(queue);
+    return record_event(env, queue);
 }
 
 /*
@@ -536,7 +607,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
     }
     // Honour the wait list, then place a marker event.
     Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQueue_clEnqueueWaitForEvents(env, clazz, queue_id, array);
-    return record_event(queue);
+    return record_event(env, queue);
 }
 
 /*

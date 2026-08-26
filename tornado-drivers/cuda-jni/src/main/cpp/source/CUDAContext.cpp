@@ -74,7 +74,9 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAContext_c
         return 0;
     }
     CUresult result = cuCtxSetCurrent(ctx->context);
-    LOG_CUDA_AND_VALIDATE("cuCtxSetCurrent", result);
+    if (tornado_report_cuda_failure(env, "cuCtxSetCurrent", result)) {
+        return 0;
+    }
 
     cuda_queue_t *queue = new cuda_queue_t();
     queue->context = ctx->context;

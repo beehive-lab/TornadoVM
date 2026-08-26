@@ -145,6 +145,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAEvent_clWa
     /* Minimum plausible heap address: reject null and small integers (e.g. a
      * stale count word) that can never be a valid cuda_event_t* pointer. */
     const uintptr_t MIN_VALID_PTR = 0x10000;
+    CUresult failure = CUDA_SUCCESS;
     for (jsize i = 0; i < len; i++) {
         uintptr_t value = (uintptr_t) raw[i];
         if (value < MIN_VALID_PTR) {
@@ -155,9 +156,17 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAEvent_clWa
         }
         cuda_event_t *ev = (cuda_event_t *) value;
         CUresult result = cuEventSynchronize(ev->event);
-        LOG_CUDA_AND_VALIDATE("cuEventSynchronize", result);
+        if (result != CUDA_SUCCESS) {
+            // Report after the critical region: ThrowNew allocates, which a
+            // GetPrimitiveArrayCritical region must not do.
+            failure = result;
+            break;
+        }
     }
     env->ReleasePrimitiveArrayCritical(array, raw, JNI_ABORT);
+
+    // A failed wait means the caller is about to read a buffer the device may still be writing.
+    tornado_report_cuda_failure(env, "cuEventSynchronize", failure);
 }
 
 /*

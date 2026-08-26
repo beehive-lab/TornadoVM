@@ -140,4 +140,106 @@ typedef struct cuda_event_s {
     CUevent start;
 } cuda_event_t;
 
+/*
+ * Raises CUDAException on the Java side for a failed driver call, and returns whether it
+ * did so. The Java command-queue wrappers already catch CUDAException and convert it into
+ * a TornadoBailoutRuntimeException; without this, a failing call is only printed and the
+ * caller carries on with buffers the device never wrote.
+ *
+ * Must NOT be called while a GetPrimitiveArrayCritical region is held: ThrowNew allocates.
+ */
+static inline bool tornado_throw_cuda_exception(JNIEnv *env, const char *call, CUresult result) {
+    // An exception already pending is the first failure of the operation, and it is the useful
+    // one; ThrowNew on top of it is undefined. Report that the caller must unwind either way.
+    if (env->ExceptionCheck() == JNI_TRUE) {
+        return true;
+    }
+    if (result == CUDA_SUCCESS) {
+        return false;
+    }
+    const char *errorName = nullptr;
+    const char *errorText = nullptr;
+    cuGetErrorName(result, &errorName);
+    cuGetErrorString(result, &errorText);
+
+    std::string message = std::string(call) + " failed: " + (errorName != nullptr ? errorName : "UNKNOWN") + " (" + std::to_string((int) result) + ")";
+    if (errorText != nullptr) {
+        message += " - ";
+        message += errorText;
+    }
+    jclass exceptionClass = env->FindClass("uk/ac/manchester/tornado/drivers/cuda/exceptions/CUDAException");
+    if (exceptionClass != nullptr) {
+        env->ThrowNew(exceptionClass, message.c_str());
+        env->DeleteLocalRef(exceptionClass);
+    }
+    // Callers use the answer to decide whether to abandon their result, so report what actually
+    // happened rather than what was attempted: a failed FindClass/ThrowNew must not make a caller
+    // return an empty handle with no exception to explain it.
+    return env->ExceptionCheck() == JNI_TRUE;
+}
+
+/*
+ * Destroys a boxed event whose handle is about to be dropped. A JNI method that returns with an
+ * exception pending has its return value discarded by the JVM, so an event handed back on that path
+ * never reaches the Java side that would release it - the CUevents behind it would leak.
+ */
+static inline void tornado_discard_event(jlong event_handle) {
+    cuda_event_t *ev = (cuda_event_t *) event_handle;
+    if (ev == nullptr) {
+        return;
+    }
+    if (ev->start != nullptr) {
+        cuEventDestroy(ev->start);
+    }
+    if (ev->event != nullptr) {
+        cuEventDestroy(ev->event);
+    }
+    delete ev;
+}
+
+/*
+ * Checked driver calls. LOG_CUDA_AND_VALIDATE only prints, which is how a failed call used to
+ * reach Java as a normal return with buffers the device never wrote. These log and then raise
+ * CUDAException, so the failure arrives where the caller can see it.
+ *
+ * Use the plain form in a void JNI method and the _RET form elsewhere, passing the value the
+ * method must return once the exception is pending (the return value is ignored by the JVM, but
+ * the C++ signature still needs one).
+ *
+ * Neither may be used while a GetPrimitiveArrayCritical region is held: ThrowNew allocates.
+ * Cleanup paths (destroy, free, unregister, unload) deliberately keep LOG_CUDA_AND_VALIDATE:
+ * they run while unwinding, often with an exception already pending, and failing them louder
+ * helps nobody.
+ */
+/*
+ * Logs a failed driver call and raises CUDAException, returning whether it did. Use it where the
+ * JNI signature has no status to hand back — a discarded CUresult is how a failure becomes a wrong
+ * answer instead of an error.
+ *
+ * Calls that already return their CUresult to Java (the CUDA-graph family, createBuffer,
+ * cuMemHostRegister) keep doing that: one route per call, never two. Cleanup paths (destroy, free,
+ * unregister, unload) and device enumeration keep LOG_CUDA_AND_VALIDATE deliberately - the first
+ * run while unwinding, the second must degrade to "no devices" rather than abort discovery.
+ */
+static inline bool tornado_report_cuda_failure(JNIEnv *env, const char *call, CUresult result) {
+    LOG_CUDA_AND_VALIDATE(call, result);
+    return tornado_throw_cuda_exception(env, call, result);
+}
+
+#define TORNADO_CHECK_CUDA(env, name, result)                     \
+    do {                                                          \
+        LOG_CUDA_AND_VALIDATE(name, result);                      \
+        if (tornado_throw_cuda_exception(env, name, (CUresult) (result))) { \
+            return;                                               \
+        }                                                         \
+    } while (0)
+
+#define TORNADO_CHECK_CUDA_RET(env, name, result, retval)         \
+    do {                                                          \
+        LOG_CUDA_AND_VALIDATE(name, result);                      \
+        if (tornado_throw_cuda_exception(env, name, (CUresult) (result))) { \
+            return retval;                                        \
+        }                                                         \
+    } while (0)
+
 #endif // TORNADO_CUDA_JNI_H
