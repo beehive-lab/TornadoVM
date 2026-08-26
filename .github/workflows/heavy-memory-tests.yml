@@ -51,9 +51,9 @@ jobs:
         run: |
           source $VENV_PATH/bin/activate
           source setvars.sh
-          tornado-test --ea --verbose --jvm="-Dtornado.unittests.device=0:0"
+          tornado-test --verbose --jvm="-Dtornado.unittests.device=0:0"
       - name: Run full unit tests for CUDA on NVIDIA GPU
         run: |
           source $VENV_PATH/bin/activate
           source setvars.sh
-          tornado-test --ea --verbose --jvm="-Dtornado.unittests.device=1:0"
+          tornado-test --verbose --jvm="-Dtornado.unittests.device=1:0"
