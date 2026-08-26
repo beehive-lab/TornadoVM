@@ -149,6 +149,11 @@ typedef struct cuda_event_s {
  * Must NOT be called while a GetPrimitiveArrayCritical region is held: ThrowNew allocates.
  */
 static inline bool tornado_throw_cuda_exception(JNIEnv *env, const char *call, CUresult result) {
+    // An exception already pending is the first failure of the operation, and it is the useful
+    // one; ThrowNew on top of it is undefined. Report that the caller must unwind either way.
+    if (env->ExceptionCheck() == JNI_TRUE) {
+        return true;
+    }
     if (result == CUDA_SUCCESS) {
         return false;
     }
@@ -165,8 +170,31 @@ static inline bool tornado_throw_cuda_exception(JNIEnv *env, const char *call, C
     jclass exceptionClass = env->FindClass("uk/ac/manchester/tornado/drivers/cuda/exceptions/CUDAException");
     if (exceptionClass != nullptr) {
         env->ThrowNew(exceptionClass, message.c_str());
+        env->DeleteLocalRef(exceptionClass);
     }
-    return true;
+    // Callers use the answer to decide whether to abandon their result, so report what actually
+    // happened rather than what was attempted: a failed FindClass/ThrowNew must not make a caller
+    // return an empty handle with no exception to explain it.
+    return env->ExceptionCheck() == JNI_TRUE;
+}
+
+/*
+ * Destroys a boxed event whose handle is about to be dropped. A JNI method that returns with an
+ * exception pending has its return value discarded by the JVM, so an event handed back on that path
+ * never reaches the Java side that would release it - the CUevents behind it would leak.
+ */
+static inline void tornado_discard_event(jlong event_handle) {
+    cuda_event_t *ev = (cuda_event_t *) event_handle;
+    if (ev == nullptr) {
+        return;
+    }
+    if (ev->start != nullptr) {
+        cuEventDestroy(ev->start);
+    }
+    if (ev->event != nullptr) {
+        cuEventDestroy(ev->event);
+    }
+    delete ev;
 }
 
 /*

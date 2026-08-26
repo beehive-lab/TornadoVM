@@ -84,15 +84,18 @@ static unsigned int event_flags();
 static jlong record_event(JNIEnv *env, cuda_queue_t *queue) {
     cuda_event_t *ev = new cuda_event_t();
     ev->start = nullptr;
+    ev->event = nullptr;
     CUresult result = cuEventCreate(&ev->event, event_flags());
+    if (result != CUDA_SUCCESS) {
+        ev->event = nullptr;
+    }
     if (tornado_report_cuda_failure(env, "cuEventCreate", result)) {
-        delete ev;
+        tornado_discard_event((jlong) ev);
         return 0;
     }
     result = cuEventRecord(ev->event, queue->stream);
     if (tornado_report_cuda_failure(env, "cuEventRecord", result)) {
-        cuEventDestroy(ev->event);
-        delete ev;
+        tornado_discard_event((jlong) ev);
         return 0;
     }
     return (jlong) ev;
@@ -173,15 +176,18 @@ static cuda_event_t *begin_event(JNIEnv *env, cuda_queue_t *queue) {
  */
 static jlong end_event(JNIEnv *env, cuda_event_t *ev, cuda_queue_t *queue) {
     CUresult result = cuEventCreate(&ev->event, event_flags());
-    if (tornado_report_cuda_failure(env, "cuEventCreate(end)", result)) {
+    if (result != CUDA_SUCCESS) {
         ev->event = nullptr;
-        delete ev;
+    }
+    // Discarding, not deleting: the start event recorded by begin_event is on this handle too,
+    // and it has to go back to the driver with it.
+    if (tornado_report_cuda_failure(env, "cuEventCreate(end)", result)) {
+        tornado_discard_event((jlong) ev);
         return 0;
     }
     result = cuEventRecord(ev->event, queue->stream);
     if (tornado_report_cuda_failure(env, "cuEventRecord(end)", result)) {
-        cuEventDestroy(ev->event);
-        delete ev;
+        tornado_discard_event((jlong) ev);
         return 0;
     }
     return (jlong) ev;
@@ -340,6 +346,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
     // A failed launch leaves the kernel's outputs untouched. Surfacing it as CUDAException
     // makes the Java wrapper bail out instead of returning stale buffers as a valid result.
     if (tornado_throw_cuda_exception(env, "cuLaunchKernel", result)) {
+        tornado_discard_event(launchEvent);
         return 0;
     }
     return launchEvent;
@@ -432,7 +439,10 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
     void *host = env->GetPrimitiveArrayCritical((jarray) host_array, NULL);                                     \
     jlong ev = transfer_to_device(env, queue, host, host_offset, offset, num_bytes, device_ptr, events, true, &failure); \
     env->ReleasePrimitiveArrayCritical((jarray) host_array, host, JNI_ABORT);                                   \
-    tornado_throw_cuda_exception(env, "cuMemcpyHtoDAsync", failure);                                            \
+    if (tornado_throw_cuda_exception(env, "cuMemcpyHtoDAsync", failure)) {                                      \
+        tornado_discard_event(ev);                                                                              \
+        return 0;                                                                                               \
+    }                                                                                                           \
     return ev;                                                                                                  \
 }
 
@@ -453,7 +463,10 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
     cuda_queue_t *queue = (cuda_queue_t *) queue_id;
     CUresult failure = CUDA_SUCCESS;
     jlong ev = transfer_to_device(env, queue, (void *) host_pointer, host_offset, offset, num_bytes, device_ptr, events, blocking, &failure);
-    tornado_throw_cuda_exception(env, "cuMemcpyHtoDAsync", failure);
+    if (tornado_throw_cuda_exception(env, "cuMemcpyHtoDAsync", failure)) {
+        tornado_discard_event(ev);
+        return 0;
+    }
     return ev;
 }
 
@@ -468,7 +481,10 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
     void *host = env->GetPrimitiveArrayCritical((jarray) host_array, NULL);                                      \
     jlong ev = transfer_to_host(env, queue, host, host_offset, offset, num_bytes, device_ptr, events, true, &failure); \
     env->ReleasePrimitiveArrayCritical((jarray) host_array, host, 0);                                            \
-    tornado_throw_cuda_exception(env, "cuMemcpyDtoHAsync", failure);                                             \
+    if (tornado_throw_cuda_exception(env, "cuMemcpyDtoHAsync", failure)) {                                       \
+        tornado_discard_event(ev);                                                                               \
+        return 0;                                                                                                \
+    }                                                                                                            \
     return ev;                                                                                                   \
 }
 
@@ -489,7 +505,10 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDACommandQu
     cuda_queue_t *queue = (cuda_queue_t *) queue_id;
     CUresult failure = CUDA_SUCCESS;
     jlong ev = transfer_to_host(env, queue, (void *) host_pointer, host_offset, offset, num_bytes, device_ptr, events, blocking, &failure);
-    tornado_throw_cuda_exception(env, "cuMemcpyDtoHAsync", failure);
+    if (tornado_throw_cuda_exception(env, "cuMemcpyDtoHAsync", failure)) {
+        tornado_discard_event(ev);
+        return 0;
+    }
     return ev;
 }
 
