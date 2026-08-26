@@ -1044,6 +1044,13 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
      */
     @Override
     public void transferDataToDevice(ExecutorFrame executionPackage, Object... objects) {
+        // A plan of many task-graphs asks every one of them to upload, and most of them do not
+        // know the object. Answering that question first keeps the whole preparation - profiler,
+        // bytecode check, device reset - off the graphs with nothing to do, which is what makes a
+        // targeted upload cheap enough to sit in a per-iteration loop.
+        if (!ownsAnyOf(objects)) {
+            return;
+        }
         prepareForDataTransfers(executionPackage);
 
         final TornadoXPUDevice device = meta().getXPUDevice();
@@ -1069,6 +1076,15 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         if (uploaded) {
             device.sync(executionPlanId);
         }
+    }
+
+    private boolean ownsAnyOf(Object... objects) {
+        for (Object object : objects) {
+            if (object != null && argumentsLookUp.contains(object)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void prepareForDataTransfers(ExecutorFrame executionPackage) {
