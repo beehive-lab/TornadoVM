@@ -1038,6 +1038,71 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         runAllTasksJavaSequential();
     }
 
+    /**
+     * Uploads the current host contents of the given objects, without running anything. Objects
+     * this task-graph does not know are left to the other graphs of the plan.
+     */
+    @Override
+    public void transferDataToDevice(ExecutorFrame executionPackage, Object... objects) {
+        // A plan of many task-graphs asks every one of them to upload, and most of them do not
+        // know the object. Answering that question first keeps the whole preparation - profiler,
+        // bytecode check, device reset - off the graphs with nothing to do, which is what makes a
+        // targeted upload cheap enough to sit in a per-iteration loop.
+        if (!ownsAnyOf(objects)) {
+            return;
+        }
+        prepareForDataTransfers(executionPackage);
+
+        final TornadoXPUDevice device = meta().getXPUDevice();
+        boolean uploaded = false;
+        for (Object object : objects) {
+            if (object == null || !argumentsLookUp.contains(object)) {
+                continue;
+            }
+            final Access access = getObjectAccess(object);
+            final LocalObjectState localState = executionContext.getLocalStateObject(object, access);
+            final XPUDeviceBufferState deviceState = localState.getDataObjectState().getDeviceBufferState(device);
+            if (!deviceState.hasObjectBuffer()) {
+                // The plan may not have run yet, in which case nothing has allocated for this object.
+                device.allocateObjects(new Object[] { object }, 0L, new XPUDeviceBufferState[] { deviceState }, new Access[] { access });
+                if (TornadoOptions.isReusedBuffersEnabled()) {
+                    deviceState.setLockBuffer(true);
+                }
+            }
+            device.streamIn(executionPlanId, object, 0L, 0L, deviceState, null);
+            uploaded = true;
+        }
+
+        if (uploaded) {
+            device.sync(executionPlanId);
+        }
+    }
+
+    private boolean ownsAnyOf(Object... objects) {
+        for (Object object : objects) {
+            if (object != null && argumentsLookUp.contains(object)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void prepareForDataTransfers(ExecutorFrame executionPackage) {
+        setupProfiler();
+        getDevice().getDeviceContext().setResetToFalse();
+        timeProfiler.clean();
+
+        compileComputeGraphToTornadoVMBytecode();
+        executionPlanId = executionPackage.getExecutionPlanId();
+        executionContext.setExecutionPlanId(executionPlanId);
+    }
+
+    @Override
+    public void transferDataToDevice(ExecutorFrame executionPackage) {
+        prepareForDataTransfers(executionPackage);
+        vm.transferDataToDevice();
+    }
+
     @Override
     public void scheduleInner() {
         compileComputeGraphToTornadoVMBytecode();

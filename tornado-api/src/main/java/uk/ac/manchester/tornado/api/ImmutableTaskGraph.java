@@ -154,6 +154,14 @@ public class ImmutableTaskGraph {
         return taskGraph.isFinished();
     }
 
+    void transferDataToDevice(ExecutorFrame executionPackage) {
+        taskGraph.transferDataToDevice(executionPackage);
+    }
+
+    void transferDataToDevice(ExecutorFrame executionPackage, Object... objects) {
+        taskGraph.transferDataToDevice(executionPackage, objects);
+    }
+
     void dumpProfiles() {
         taskGraph.dumpProfiles();
     }

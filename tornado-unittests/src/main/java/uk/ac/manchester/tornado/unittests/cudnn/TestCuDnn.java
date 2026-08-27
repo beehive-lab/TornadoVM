@@ -447,4 +447,71 @@ public class TestCuDnn extends TornadoTestBase {
             }
         }
     }
+
+    /**
+     * A cuDNN library task fed by an input placed on the device with an explicit upload, then
+     * refreshed between executions. The input is declared {@code FIRST_EXECUTION}, so the second
+     * result can only differ if the upload actually reached the device.
+     */
+    @Test
+    public void testReluWithAdHocInputUpload() throws TornadoExecutionPlanException {
+        final int size = 4096;
+        FloatArray input = randomArray(size);
+        FloatArray output = new FloatArray(size);
+
+        TaskGraph taskGraph = new TaskGraph("reluUpload") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
+                .libraryTask("relu", CuDnn::cudnnRelu, input, output, size) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.transferToDevice(input);
+            plan.execute();
+            for (int i = 0; i < size; i++) {
+                assertEquals(Math.max(0.0f, input.get(i)), output.get(i), 0.001f);
+            }
+
+            for (int i = 0; i < size; i++) {
+                input.set(i, -input.get(i));
+            }
+            plan.transferToDevice(input);
+            plan.execute();
+            for (int i = 0; i < size; i++) {
+                assertEquals(Math.max(0.0f, input.get(i)), output.get(i), 0.001f);
+            }
+        }
+    }
+
+    /**
+     * Two cuDNN library tasks in a pipeline that hands its intermediate over on the device, with
+     * the plan's inputs uploaded before anything runs.
+     */
+    @Test
+    public void testReluThenTanhPipelineWithUpFrontUpload() throws TornadoExecutionPlanException {
+        final int size = 4096;
+        FloatArray input = randomArray(size);
+        FloatArray intermediate = new FloatArray(size);
+        FloatArray output = new FloatArray(size);
+
+        TaskGraph producer = new TaskGraph("dnnProducer") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
+                .libraryTask("relu", CuDnn::cudnnRelu, input, intermediate, size) //
+                .persistOnDevice(intermediate);
+
+        TaskGraph consumer = new TaskGraph("dnnConsumer") //
+                .consumeFromDevice("dnnProducer", intermediate) //
+                .libraryTask("tanh", CuDnn::cudnnTanh, intermediate, output, size) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(producer.snapshot(), consumer.snapshot())) {
+            plan.transferToDevice();
+            plan.withGraph(0).execute();
+            plan.withGraph(1).execute();
+        }
+
+        for (int i = 0; i < size; i++) {
+            float expected = (float) Math.tanh(Math.max(0.0f, input.get(i)));
+            assertEquals(expected, output.get(i), 0.001f);
+        }
+    }
 }
