@@ -73,10 +73,6 @@ final class BytecodeLog {
     private long bytesToDevice;
     private long bytesToHost;
 
-    BytecodeLog(BytecodeLogMode mode, String graphName, long execution, TornadoXPUDevice device) {
-        this(mode, graphName, execution, device, false);
-    }
-
     /**
      * @param transfersOnly
      *     true when the interpreter is walking the bytecode for its data transfers only, as
