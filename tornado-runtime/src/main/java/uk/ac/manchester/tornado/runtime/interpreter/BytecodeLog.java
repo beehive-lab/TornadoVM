@@ -58,6 +58,7 @@ final class BytecodeLog {
     private final String deviceId;
     private final StringBuilder text = new StringBuilder(4096);
     private final List<BytecodeLogEntry> entries;
+    private final boolean transfersOnly;
 
     private String indent = "";
     private int sequence;
@@ -73,6 +74,16 @@ final class BytecodeLog {
     private long bytesToHost;
 
     BytecodeLog(BytecodeLogMode mode, String graphName, long execution, TornadoXPUDevice device) {
+        this(mode, graphName, execution, device, false);
+    }
+
+    /**
+     * @param transfersOnly
+     *     true when the interpreter is walking the bytecode for its data transfers only, as
+     *     {@code TornadoExecutionPlan.transferToDevice()} does. Without saying so, such a pass reads
+     *     as an execution that mysteriously ran no kernels.
+     */
+    BytecodeLog(BytecodeLogMode mode, String graphName, long execution, TornadoXPUDevice device, boolean transfersOnly) {
         this.mode = mode;
         this.colour = InterpreterUtilities.isColourEnabled();
         this.graphName = graphName;
@@ -80,9 +91,11 @@ final class BytecodeLog {
         this.threadName = Thread.currentThread().getName();
         this.deviceId = deviceIdFor(device);
         this.entries = mode == BytecodeLogMode.DOT ? new ArrayList<>() : null;
+        this.transfersOnly = transfersOnly;
 
         if (mode.isTextual()) {
-            String header = String.format("== graph '%s' | exec #%d | %s=%s | thread %s", graphName, execution, deviceId, String.valueOf(device).trim(), threadName);
+            String header = String.format("== graph '%s' | exec #%d | %s=%s | thread %s%s", graphName, execution, deviceId, String.valueOf(device).trim(), threadName,
+                    transfersOnly ? " | transfers-only (no task runs)" : "");
             text.append(colour ? ColoursTerminal.BLUE + header + ColoursTerminal.RESET : header).append("\n");
         }
     }
@@ -144,11 +157,11 @@ final class BytecodeLog {
         }
         // h2d is reported as executed/total: a TRANSFER_HOST_TO_DEVICE_ONCE whose buffer is already on
         // the device is a no-op, and on a steady-state loop those are the majority.
-        String summary = String.format("== END   graph '%s' | exec #%d | %d alloc | %d dealloc | %d launch | h2d %d/%d (%s) | d2h %d (%s) | %d persist | %d skipped", //
+        String summary = String.format("== END   graph '%s' | exec #%d | %d alloc | %d dealloc | %d launch | h2d %d/%d (%s) | d2h %d (%s) | %d persist | %d skipped%s", //
                 graphName, execution, allocations, deallocations, launches, //
                 hostToDeviceExecuted, hostToDevice, RuntimeUtilities.humanReadableByteCount(bytesToDevice, false), //
                 deviceToHost, RuntimeUtilities.humanReadableByteCount(bytesToHost, false), //
-                persisted, skipped);
+                persisted, skipped, transfersOnly ? " | transfers-only" : "");
         text.append(colour ? ColoursTerminal.BLUE + summary + ColoursTerminal.RESET : summary).append("\n");
     }
 

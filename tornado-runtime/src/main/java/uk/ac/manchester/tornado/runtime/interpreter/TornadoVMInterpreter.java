@@ -361,7 +361,7 @@ public class TornadoVMInterpreter {
 
         BytecodeLog logBuilder = null;
         if (TornadoOptions.LOG_BYTECODES() && !isWarmup) {
-            logBuilder = new BytecodeLog(TornadoOptions.BYTECODE_LOG_MODE, graphExecutionContext.getId(), ++logExecutionCounter, interpreterDevice);
+            logBuilder = new BytecodeLog(TornadoOptions.BYTECODE_LOG_MODE, graphExecutionContext.getId(), ++logExecutionCounter, interpreterDevice, transfersOnly);
         }
 
         bytecodeLoop: while (bytecodeResult.hasRemaining()) {
@@ -371,6 +371,9 @@ public class TornadoVMInterpreter {
                 throwErrorInterpreter(op);
             }
             if (transfersOnly && SKIPPED_IN_TRANSFERS_ONLY.contains(bytecode)) {
+                if (logBuilder != null) {
+                    logBuilder.addSkipped(BytecodeLogEntry.control(bytecode.name(), "transfers-only pass"));
+                }
                 skipBytecodeOperands(op);
                 continue;
             }
@@ -584,7 +587,15 @@ public class TornadoVMInterpreter {
             for (int i = 0; i < argSize; i++) {
                 args[i] = bytecodeResult.getInt();
             }
-            if (isWarmup || !executionGraphHandles.isEmpty()) {
+            if (isWarmup) {
+                return lastEvent;
+            }
+            if (!executionGraphHandles.isEmpty()) {
+                if (TornadoOptions.LOG_BYTECODES()) {
+                    for (int arg : args) {
+                        DebugInterpreter.logAllocSkipped(objects.get(arg), logBuilder);
+                    }
+                }
                 return lastEvent;
             }
             return executeAlloc(logBuilder, args, sizeBatch);

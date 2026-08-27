@@ -46,6 +46,15 @@ class DebugInterpreter {
         log.add(BytecodeLogEntry.of("DEALLOC", object, 0, 0).withStatus(materializeDealloc, materializeDealloc ? "Freed" : "Persisted"));
     }
 
+    /**
+     * An allocation the interpreter skipped because an execution (CUDA) graph already owns the
+     * buffers. Logged for the same reason the matching deallocation is: a bytecode that silently
+     * does nothing is what makes a log hard to trust.
+     */
+    static void logAllocSkipped(Object object, BytecodeLog log) {
+        log.addSkipped(BytecodeLogEntry.of("ALLOC", object, 0, 0).withStatus(false, "Skipped: execution graph active"));
+    }
+
     /** A deallocation the interpreter skipped because an execution (CUDA) graph still owns the buffer. */
     static void logDeallocSkipped(Object object, BytecodeLog log) {
         log.addSkipped(BytecodeLogEntry.of("DEALLOC", object, 0, 0).withStatus(false, "Skipped: execution graph active"));
