@@ -62,6 +62,16 @@ public class TestOnDemandCopyIn extends TornadoTestBase {
         output.set(index, weights.get(index) * input.get(index));
     }
 
+    /**
+     * CUDA graphs are a CUDA-backend feature. On every other backend these tests report the
+     * configuration as unsupported rather than failing - a JUnit Assume would be counted as a PASS
+     * by the test runner, so the typed *NotSupported exceptions are what the guard has to raise.
+     */
+    private void requireCudaGraphs() {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.METAL);
+    }
+
     private static TaskGraph buildGraph(String name, FloatArray weights, FloatArray input, FloatArray output) {
         return new TaskGraph(name) //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, weights) //
@@ -334,7 +344,7 @@ public class TestOnDemandCopyIn extends TornadoTestBase {
      */
     @Test
     public void testTransferToDeviceOnACudaGraphPlan() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.OPENCL);
+        requireCudaGraphs();
 
         FloatArray weights = new FloatArray(SIZE);
         weights.init(2.0f);
@@ -366,7 +376,7 @@ public class TestOnDemandCopyIn extends TornadoTestBase {
      */
     @Test
     public void testTransferToDeviceOnACudaGraphPlanWithKernelContext() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.OPENCL);
+        requireCudaGraphs();
 
         FloatArray weights = new FloatArray(SIZE);
         weights.init(2.0f);
@@ -405,7 +415,7 @@ public class TestOnDemandCopyIn extends TornadoTestBase {
      */
     @Test
     public void testTargetedUploadIntoACapturedCudaGraph() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.OPENCL);
+        requireCudaGraphs();
 
         FloatArray weights = new FloatArray(SIZE);
         weights.init(2.0f);
