@@ -451,7 +451,7 @@ __PRINT_EXECUTION_TIMER__ = "-Dtornado.debug.executionTime=True "
 __GC__ = "-Xmx6g "
 __BASE_OPTIONS__ = "-Dtornado.recover.bailout=False "
 __VERBOSE_OPTION__ = "-Dtornado.unittests.verbose="
-__TORNADOVM_PRINT_BC__ = "-Dtornado.print.bytecodes=True "
+__TORNADOVM_PRINT_BC__ = "-Dtornado.print.bytecodes="
 __TORNADOVM_ENABLE_PROFILER_SILENT__ = " -Dtornado.profiler=True -Dtornado.log.profiler=True "
 __TORNADOVM_ENABLE_PROFILER_CONSOLE__ = " -Dtornado.profiler=True "
 # ################################################################################################################
@@ -524,7 +524,7 @@ def composeAllOptions(args):
         options = options + __PRINT_EXECUTION_TIMER__
 
     if (args.printBytecodes):
-        options = options + __TORNADOVM_PRINT_BC__
+        options = options + __TORNADOVM_PRINT_BC__ + args.printBytecodes + " "
 
     if (args.jvmFlags != None):
         options = options + args.jvmFlags
@@ -812,6 +812,26 @@ def runTestTheWorldWithJunit(args):
             os.system(command)
 
 
+__BYTECODE_LOG_MODES__ = ("compact", "full", "trace", "dot", "true", "false")
+
+
+def normalizeBytecodeFlag(argv):
+    """Make the optional value of --printBytecodes explicit.
+
+    The flag takes an optional verbosity, and argparse's nargs='?' would otherwise consume whatever
+    follows it - so `--printBytecodes some.Test.Class` silently swallowed the positional and ran
+    everything. Inserting the default here keeps the bare flag working without that ambiguity.
+    """
+    normalized = []
+    for index, argument in enumerate(argv):
+        normalized.append(argument)
+        if argument in ("--printBytecodes", "-pbc"):
+            following = argv[index + 1] if index + 1 < len(argv) else None
+            if following is None or following.startswith("-") or following.lower() not in __BYTECODE_LOG_MODES__:
+                normalized.append("full")
+    return normalized
+
+
 def parseArguments():
     """ Parse command line arguments """
     parser = argparse.ArgumentParser(description='Tool to execute tests in Tornado')
@@ -832,8 +852,8 @@ def parseArguments():
     parser.add_argument('--igv', action="store_true", dest="igv", default=False, help="Dump GraalIR into IGV")
     parser.add_argument('--igvLowTier', action="store_true", dest="dumpIGVLastTier", default=False,
                         help="Dump OpenCL Low-TIER GraalIR into IGV")
-    parser.add_argument('--printBytecodes', "-pbc", action="store_true", dest="printBytecodes", default=False,
-                        help="Print TornadoVM internal bytecodes")
+    parser.add_argument('--printBytecodes', "-pbc", nargs='?', const="full", default=None, dest="printBytecodes",
+                        help="Print TornadoVM internal bytecodes. Optional verbosity: compact|full|trace|dot (default: full)")
     parser.add_argument('--debug', "-d", action="store_true", dest="debugTornado", default=False,
                         help="Enable the Debug mode in Tornado")
     parser.add_argument('--fullDebug', action="store_true", dest="fullDebug", default=False,
@@ -851,7 +871,7 @@ def parseArguments():
                         help="Enable the profiler {silent|console}")
     parser.add_argument("--monitorClass", action="store", dest="monitorClass", default=None,
                         help="Monitor class to monitor the JVM process. Options: outOfMemoryMonitor")
-    args = parser.parse_args()
+    args = parser.parse_args(normalizeBytecodeFlag(sys.argv[1:]))
     return args
 
 

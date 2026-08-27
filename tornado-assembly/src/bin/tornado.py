@@ -1455,6 +1455,26 @@ class TornadoVMRunnerTool():
         sys.exit(status)
 
 
+__BYTECODE_LOG_MODES__ = ("compact", "full", "trace", "dot", "true", "false")
+
+
+def normalizeBytecodeFlag(argv):
+    """Make the optional value of --printBytecodes explicit.
+
+    The flag takes an optional verbosity, and argparse's nargs='?' would otherwise consume whatever
+    follows it - so `--printBytecodes some.Test.Class` silently swallowed the positional and ran
+    everything. Inserting the default here keeps the bare flag working without that ambiguity.
+    """
+    normalized = []
+    for index, argument in enumerate(argv):
+        normalized.append(argument)
+        if argument in ("--printBytecodes", "-pbc"):
+            following = argv[index + 1] if index + 1 < len(argv) else None
+            if following is None or following.startswith("-") or following.lower() not in __BYTECODE_LOG_MODES__:
+                normalized.append("full")
+    return normalized
+
+
 def parseArguments():
     """ Parse command line arguments """
     parser = argparse.ArgumentParser(
@@ -1525,7 +1545,7 @@ def parseArguments():
         parser.print_help()
         sys.exit(0)
 
-    args = parser.parse_args()
+    args = parser.parse_args(normalizeBytecodeFlag(sys.argv[1:]))
     return args
 
 
