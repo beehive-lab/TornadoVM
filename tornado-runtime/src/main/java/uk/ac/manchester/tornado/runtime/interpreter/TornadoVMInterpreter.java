@@ -1108,14 +1108,20 @@ public class TornadoVMInterpreter {
 
         resetEventIndexes(eventId);
 
+        if (TornadoOptions.isProfilerEnabled() && !insideCaptureRegion) {
+            // The size is known whether or not the copy produced an event to time: a copy-out
+            // issued without dependency tracking returns -1 (XPUBuffer.read ends in
+            // `useDeps ? returnEvent : -1`), which used to skip this accounting entirely and left
+            // getTotalBytesCopyOut() reporting 0 for transfers that demonstrably happened.
+            timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_OUT_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getXPUBuffer().size());
+        }
+
         if (TornadoOptions.isProfilerEnabled() && !insideCaptureRegion && readEvent != -1) {
             Event event = interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), readEvent);
             event.waitForEvents(graphExecutionContext.getExecutionPlanId());
             long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
             value += event.getElapsedTime();
             timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME, value);
-
-            timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_OUT_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getXPUBuffer().size());
 
             long dispatchValue = timeProfiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
             dispatchValue += event.getDriverDispatchTime();
@@ -1140,14 +1146,20 @@ public class TornadoVMInterpreter {
         }
         final int readEvent = interpreterDevice.streamOutBlocking(graphExecutionContext.getExecutionPlanId(), object, offset, objectState, eventWaitList);
 
+        if (TornadoOptions.isProfilerEnabled() && !insideCaptureRegion) {
+            // The size is known whether or not the copy produced an event to time: a copy-out
+            // issued without dependency tracking returns -1 (XPUBuffer.read ends in
+            // `useDeps ? returnEvent : -1`), which used to skip this accounting entirely and left
+            // getTotalBytesCopyOut() reporting 0 for transfers that demonstrably happened.
+            timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_OUT_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getXPUBuffer().size());
+        }
+
         if (TornadoOptions.isProfilerEnabled() && !insideCaptureRegion && readEvent != -1) {
             Event event = interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), readEvent);
             event.waitForEvents(graphExecutionContext.getExecutionPlanId());
             long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
             value += event.getElapsedTime();
             timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME, value);
-
-            timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_OUT_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getXPUBuffer().size());
 
             long dispatchValue = timeProfiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
             dispatchValue += event.getDriverDispatchTime();
