@@ -44,7 +44,16 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public final class CUDAHandles {
 
-    private static final AtomicLong NEXT_HANDLE = new AtomicLong(1);
+    /**
+     * Handles start well above zero for two reasons. The Java layer already treats {@code 0} as "no
+     * handle", and the event wait list is passed in two different layouts -- a plain list of
+     * handles, and one prefixed with an element count -- so a small integer reaching
+     * {@link #resolve} has to be recognisable as a count word rather than resolving to whatever
+     * object happens to have been registered first. No wait list is anywhere near this long.
+     */
+    private static final long FIRST_HANDLE = 0x1000_0000L;
+
+    private static final AtomicLong NEXT_HANDLE = new AtomicLong(FIRST_HANDLE);
 
     private static final ConcurrentHashMap<Long, Object> OBJECTS = new ConcurrentHashMap<>();
 

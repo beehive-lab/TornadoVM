@@ -25,15 +25,24 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoNoOpenCLPlatformException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDACommandQueueProperties;
 import uk.ac.manchester.tornado.drivers.cuda.exceptions.CUDAException;
+import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDADriverAPI;
+import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDAHandles;
+import uk.ac.manchester.tornado.drivers.cuda.ffm.FFMSupport;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAPinnedMemoryRegistry;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
@@ -65,37 +74,190 @@ public class CUDAContext implements CUDAContextInterface {
         return pinnedMemoryRegistry;
     }
 
-    native void clReleaseContext(long id) throws CUDAException;
+    /** {@code CUstream_flags}: the stream does not synchronise with the NULL stream. */
+    private static final int CU_STREAM_NON_BLOCKING = 0x1;
+    /** {@code CU_MEMHOSTREGISTER_PORTABLE}: keep the pin valid across every CUDA context. */
+    private static final int CU_MEMHOSTREGISTER_PORTABLE = 0x01;
+    private static final int CUDA_ERROR_INVALID_VALUE = 1;
+    private static final int CUDA_ERROR_INVALID_CONTEXT = 201;
 
-    native void clGetContextInfo(long id, int info, byte[] buffer) throws CUDAException;
+    /**
+     * The arena backing each off-heap host allocation, keyed by its address, so that
+     * {@link #freeOffHeapMemory(long)} can release exactly the region it was handed.
+     */
+    private static final Map<Long, Arena> OFF_HEAP_ARENAS = new ConcurrentHashMap<>();
 
-    public native long clCreateCommandQueue(long contextId, long deviceId, long properties) throws CUDAException;
+    void clReleaseContext(long id) throws CUDAException {
+        CUDAHandles.Context context = (CUDAHandles.Context) CUDAHandles.release(id);
+        if (context == null) {
+            return;
+        }
+        CUDADriverAPI.cuCtxDestroy(context.context());
+    }
 
-    public native long allocateOffHeapMemory(long size, long alignment);
+    void clGetContextInfo(long id, int info, byte[] buffer) throws CUDAException {
+        // Context info is only used for debugging logs on the Java side; zero-fill.
+        Arrays.fill(buffer, (byte) 0);
+    }
 
-    public native void freeOffHeapMemory(long address);
+    /** Maps to a {@code CUstream} pinned to the device's context. */
+    public long clCreateCommandQueue(long contextId, long deviceId, long properties) throws CUDAException {
+        CUDAHandles.Context context = CUDAHandles.resolve(contextId, CUDAHandles.Context.class);
+        if (context == null) {
+            return 0;
+        }
+        int result = CUDADriverAPI.cuCtxSetCurrent(context.context());
+        if (result != CUDADriverAPI.CUDA_SUCCESS) {
+            throw new CUDAException(CUDADriverAPI.describe("cuCtxSetCurrent", result));
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment stream = FFMSupport.allocatePointer(arena);
+            result = CUDADriverAPI.cuStreamCreate(stream, CU_STREAM_NON_BLOCKING);
+            if (result != CUDADriverAPI.CUDA_SUCCESS) {
+                throw new CUDAException(CUDADriverAPI.describe("cuStreamCreate", result));
+            }
+            long streamPointer = stream.get(FFMSupport.C_POINTER, 0).address();
+            return CUDAHandles.register(new CUDAHandles.Queue(streamPointer, context.context(), context.device(), properties));
+        }
+    }
 
-    public native ByteBuffer asByteBuffer(long address, long size);
+    /**
+     * Allocates zeroed, aligned off-heap host memory. The arena is remembered so the region can be
+     * released again; it is shared rather than confined because the address outlives this call and
+     * is read and written from whichever thread the runtime later stages a transfer on.
+     */
+    public long allocateOffHeapMemory(long size, long alignment) {
+        Arena arena = Arena.ofShared();
+        try {
+            MemorySegment segment = arena.allocate(size, alignment);
+            long address = segment.address();
+            OFF_HEAP_ARENAS.put(address, arena);
+            return address;
+        } catch (RuntimeException e) {
+            arena.close();
+            System.out.printf("CUDA off-heap memory allocation of %d bytes failed: %s%n", size, e.getMessage());
+            return 0;
+        }
+    }
 
-    // creates an empty buffer on the device
-    native CUDABufferResult createBuffer(long contextId, long flags, long size, long hostPointer) throws CUDAException;
+    public void freeOffHeapMemory(long address) {
+        Arena arena = OFF_HEAP_ARENAS.remove(address);
+        if (arena != null) {
+            arena.close();
+        }
+    }
 
-    // zero-initialises a device buffer (cuMemsetD8 to 0)
-    native int memSetZero(long contextId, long devicePointer, long bytes);
+    public ByteBuffer asByteBuffer(long address, long size) {
+        return FFMSupport.asSegment(address, size).asByteBuffer();
+    }
 
-    native long createSubBuffer(long buffer, long flags, int createType, byte[] createInfo) throws CUDAException;
+    /**
+     * Allocates device memory. The returned {@code CUdeviceptr} is the "buffer" the Java side
+     * stores and later passes to read/write/launch.
+     */
+    CUDABufferResult createBuffer(long contextId, long flags, long size, long hostPointer) throws CUDAException {
+        CUDAHandles.Context context = CUDAHandles.resolve(contextId, CUDAHandles.Context.class);
+        if (context == null) {
+            return new CUDABufferResult(0L, hostPointer, CUDA_ERROR_INVALID_CONTEXT);
+        }
+        CUDADriverAPI.cuCtxSetCurrent(context.context());
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment devicePointer = FFMSupport.allocateLong(arena);
+            // cuMemAlloc's status is returned rather than thrown: the caller distinguishes
+            // out-of-memory from other failures and raises TornadoOutOfMemoryException itself.
+            int result = CUDADriverAPI.cuMemAlloc(devicePointer, size);
+            return new CUDABufferResult(devicePointer.get(FFMSupport.C_LONG, 0), hostPointer, result);
+        }
+    }
 
-    native void clReleaseMemObject(long memId) throws CUDAException;
+    /**
+     * Zero-initialises a device buffer. {@code cuMemAlloc} returns uninitialised device memory and
+     * TornadoVM reuses pooled device buffers across executions, so a write-only output the kernel
+     * never writes (an early-returning kernel, say) would otherwise read back stale data. This is
+     * the synchronous variant, so the zeroing is complete before the buffer is used by a subsequent
+     * host-to-device copy or kernel launch.
+     */
+    int memSetZero(long contextId, long devicePointer, long bytes) {
+        CUDAHandles.Context context = CUDAHandles.resolve(contextId, CUDAHandles.Context.class);
+        if (context == null || devicePointer == 0 || bytes <= 0) {
+            return CUDA_ERROR_INVALID_VALUE;
+        }
+        CUDADriverAPI.cuCtxSetCurrent(context.context());
+        return CUDADriverAPI.cuMemsetD8(devicePointer, (byte) 0, bytes);
+    }
 
-    native long clCreateProgramWithSource(long contextId, byte[] data, long[] lengths) throws CUDAException;
+    /** CUDA has no sub-buffer concept; the parent buffer stands in for one. */
+    long createSubBuffer(long buffer, long flags, int createType, byte[] createInfo) throws CUDAException {
+        return buffer;
+    }
 
-    native long clCreateProgramWithBinary(long contextId, long deviceId, byte[] data, long[] lengths) throws CUDAException;
+    void clReleaseMemObject(long memId) throws CUDAException {
+        if (memId == 0) {
+            return;
+        }
+        // Transfers are asynchronous: drain outstanding work before releasing device memory,
+        // otherwise the free races an in-flight copy or kernel that still uses this allocation.
+        // Frees only happen on eviction and teardown, so the heavy context synchronise is fine here.
+        CUDADriverAPI.cuCtxSynchronize();
+        CUDADriverAPI.cuMemFree(memId);
+    }
 
-    native long clCreateProgramWithIL(long contextId, byte[] spirvBinaryCode, long[] lengths) throws CUDAException;
+    /**
+     * Stashes the generated CUDA C source; NVRTC compilation happens later in
+     * {@code clBuildProgram}, mirroring the OpenCL two-step create-then-build.
+     */
+    long clCreateProgramWithSource(long contextId, byte[] data, long[] lengths) throws CUDAException {
+        CUDAHandles.Context context = CUDAHandles.resolve(contextId, CUDAHandles.Context.class);
+        String source = new String(data, StandardCharsets.UTF_8);
+        return CUDAHandles.register(new CUDAHandles.Program(context == null ? 0 : context.context(), source, null));
+    }
 
-    private static native int cuMemHostRegister(long contextId, long hostPointer, long numBytes);
+    /** Accepts a pre-compiled module image (cubin or PTX) as the "binary" and skips NVRTC. */
+    long clCreateProgramWithBinary(long contextId, long deviceId, byte[] data, long[] lengths) throws CUDAException {
+        CUDAHandles.Context context = CUDAHandles.resolve(contextId, CUDAHandles.Context.class);
+        CUDAHandles.Program program = new CUDAHandles.Program(context == null ? 0 : context.context(), "", data);
+        program.buildStatus = CUDAHandles.Program.BUILD_SUCCESS; // ready to load; clBuildProgram loads the module
+        return CUDAHandles.register(program);
+    }
 
-    private static native int cuMemHostUnregister(long contextId, long hostPointer);
+    /**
+     * CUDA has no SPIR-V ingestion path; {@code -1} makes the Java side raise
+     * TornadoNoOpenCLPlatformException, matching the OpenCL &lt; 2.1 behaviour.
+     */
+    long clCreateProgramWithIL(long contextId, byte[] spirvBinaryCode, long[] lengths) throws CUDAException {
+        return -1;
+    }
+
+    /**
+     * Registers an existing off-heap host buffer as pinned (page-locked) memory. After
+     * registration, the async copies DMA directly to and from this address instead of going through
+     * CUDA's internal staging copy, which is what allows true host-device overlap without blocking
+     * the calling thread.
+     */
+    private static int cuMemHostRegister(long contextId, long hostPointer, long numBytes) {
+        CUDAHandles.Context context = CUDAHandles.resolve(contextId, CUDAHandles.Context.class);
+        if (context == null) {
+            return -1;
+        }
+        CUDADriverAPI.cuCtxSetCurrent(context.context());
+        return CUDADriverAPI.cuMemHostRegister(hostPointer, numBytes, CU_MEMHOSTREGISTER_PORTABLE);
+    }
+
+    /**
+     * Unregisters host memory previously registered with {@link #cuMemHostRegister}. The context is
+     * synchronised first so no async DMA can still be reading or writing the region when the pin is
+     * dropped: unregistering under an in-flight copy is the data hazard, since the transfer would
+     * keep using the page-locked mapping while the driver tears it down.
+     */
+    private static int cuMemHostUnregister(long contextId, long hostPointer) {
+        CUDAHandles.Context context = CUDAHandles.resolve(contextId, CUDAHandles.Context.class);
+        if (context == null) {
+            return -1;
+        }
+        CUDADriverAPI.cuCtxSetCurrent(context.context());
+        CUDADriverAPI.cuCtxSynchronize();
+        return CUDADriverAPI.cuMemHostUnregister(hostPointer);
+    }
 
     /** Raw {@code CUresult} for "this host range is already page-locked" (see registry policy). */
     public static final int CUDA_ERROR_HOST_MEMORY_ALREADY_REGISTERED = 712;
@@ -304,9 +466,6 @@ public class CUDAContext implements CUDAContextInterface {
         private final long address;
         private final int result;
 
-        /**
-         * Objects of this type are created in Native Code from the JNI-CUDADriver layer of TornadoVM.
-         */
         public CUDABufferResult(long oclBuffer, long address, int result) {
             this.oclBuffer = oclBuffer;
             this.address = address;
