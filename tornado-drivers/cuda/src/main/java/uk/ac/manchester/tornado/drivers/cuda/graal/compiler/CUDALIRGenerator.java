@@ -278,14 +278,36 @@ public class CUDALIRGenerator extends LIRGenerator {
         append(new CUDAControlFlow.SwitchOp(key, strategy.getKeyConstants(), keyTargets, defaultTarget));
     }
 
+    /**
+     * Graal picks this lowering over {@link #emitStrategySwitch} once the keys are dense enough to
+     * be worth a jump table. A jump table is a machine-code notion, though, and this backend emits
+     * C source, so the right output is the same {@code switch} statement in either case - what to
+     * do with it is the C compiler's decision.
+     *
+     * <p>
+     * Emitting nothing here is not an option: the case labels come from
+     * {@code CUDAStructuredControlFlow}, which reads them off the {@code IntegerSwitchNode} in the
+     * HIR, so without this the kernel gets case labels with no enclosing switch. NVRTC rejects it
+     * and TornadoVM falls back to running the method on the host - which silently yields wrong
+     * results whenever the data it reads is device-resident.
+     * </p>
+     */
     @Override
     protected void emitRangeTableSwitch(int lowKey, LabelRef defaultTarget, LabelRef[] targets, AllocatableValue key) {
-
+        JavaConstant[] keyConstants = new JavaConstant[targets.length];
+        for (int i = 0; i < targets.length; i++) {
+            keyConstants[i] = JavaConstant.forInt(lowKey + i);
+        }
+        append(new CUDAControlFlow.SwitchOp(key, keyConstants, targets, defaultTarget));
     }
 
+    /**
+     * As {@link #emitRangeTableSwitch}: the hashed form exists to index a table, which a C
+     * {@code switch} on the original value expresses directly. The hash itself is unused.
+     */
     @Override
     protected void emitHashTableSwitch(JavaConstant[] keys, LabelRef defaultTarget, LabelRef[] targets, AllocatableValue value, Value hash) {
-
+        append(new CUDAControlFlow.SwitchOp(value, keys, targets, defaultTarget));
     }
 
     @Override
