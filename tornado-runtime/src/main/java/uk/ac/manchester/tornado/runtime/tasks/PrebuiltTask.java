@@ -131,8 +131,14 @@ public class PrebuiltTask implements SchedulableTask {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof CompilableTask other) {
-            return getId().equals(other.getId());
+        // This used to test `obj instanceof CompilableTask`, so a PrebuiltTask was not equal to
+        // itself. List.indexOf then never found one, and the interpreter's global-to-local task
+        // index fell back to slot 0 - handing the prebuilt task whichever code was installed for
+        // the first task of the graph.
+        if (obj instanceof PrebuiltTask other) {
+            return getId().equals(other.getId()) //
+                    && Objects.equals(entryPoint, other.entryPoint) //
+                    && Objects.equals(filename, other.filename);
         }
         return false;
     }
