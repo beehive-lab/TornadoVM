@@ -64,11 +64,13 @@ import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.memory.NativeArrayLayouts;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.cuda.CUDABackendImpl;
 import uk.ac.manchester.tornado.drivers.cuda.CUDACodeCache;
 import uk.ac.manchester.tornado.drivers.cuda.CUDACommandQueue;
+import uk.ac.manchester.tornado.drivers.cuda.CUDACompiledKernel;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.cuda.CUDATargetDevice;
@@ -267,11 +269,41 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
         try {
             CUDAProviders providers = (CUDAProviders) getBackend().getProviders();
             TornadoProfiler profiler = task.getProfiler();
+
+            // The front end depends only on the sketch, the device and the task's compilation
+            // shape, none of which are tied to an execution plan. Reuse its result when an
+            // earlier plan on this device already produced it, so a new plan pays only the
+            // install step below.
+            //
+            // This deliberately does not consult shouldCompile(). The interpreter calls
+            // forceCompilation() unconditionally for the last task of every graph, so honouring
+            // it would disable this cache for any single-task graph. The states that genuinely
+            // invalidate generated code - a change of batch threads, and a batch that consumes
+            // the thread id - are both a function of the batch configuration, which
+            // compilationCacheKey() includes; updateBatchThreads() has already run by the time
+            // this executes, so the key reflects the batch about to be compiled.
+            final String compilationKey = TornadoOptions.SHARE_COMPILATION_ACROSS_PLANS ? compilationCacheKey(executable, resolvedMethod) : null;
+            CUDACompiledKernel compiledKernel = compilationKey != null ? deviceContext.getCompiledKernel(compilationKey) : null;
             profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
-            final CUDACompilationResult result = CUDACompiler.compileSketchForDevice(sketch, executable, providers, getBackend(), executable.getProfiler());
+            if (compiledKernel == null) {
+                final CUDACompilationResult result = CUDACompiler.compileSketchForDevice(sketch, executable, providers, getBackend(), executable.getProfiler());
+                compiledKernel = new CUDACompiledKernel(result.getId(), result.getName(), result.getTargetCode(), result.getMethods(), taskMeta.getDomain());
+                if (compilationKey != null) {
+                    deviceContext.putCompiledKernel(compilationKey, compiledKernel);
+                }
+            } else {
+                // A cache hit still has to leave the task's metadata in the state a fresh
+                // compilation would have left it in: the compiled graph, and the parallel
+                // domain that shape analysis would have derived. Without the domain the task is
+                // launched with no iteration space at all.
+                taskMeta.setCompiledGraph(resolvedMethod);
+                if (taskMeta.getDomain() == null) {
+                    taskMeta.setDomain(compiledKernel.domain());
+                }
+            }
 
             // Update atomics buffer for inner methods that are not inlined
-            ResolvedJavaMethod[] methods = result.getMethods();
+            ResolvedJavaMethod[] methods = compiledKernel.methods();
             if (methods.length > 1) {
                 HashMap<Integer, Integer> mapping;
                 for (ResolvedJavaMethod m : methods) {
@@ -289,8 +321,9 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
             profiler.sum(ProfilerType.TOTAL_GRAAL_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId()));
 
             profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
-            // Compile the code
-            CUDAInstalledCode installedCode = deviceContext.installCode(executionPlanId, result);
+            // Compile the code. The metadata of the task being compiled now is used, never the
+            // metadata of whichever task first populated the cache entry.
+            CUDAInstalledCode installedCode = deviceContext.installCode(executionPlanId, taskMeta, compiledKernel.id(), compiledKernel.entryPoint(), compiledKernel.targetCode());
             profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
             profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
 
@@ -304,6 +337,73 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
                 throw e;
             }
         }
+    }
+
+    /**
+     * Key identifying one front-end compilation result. It covers everything
+     * {@code CUDACompiler.compileSketchForDevice} reads that can change the generated source:
+     * the method, the backend and device it was sketched for, the task's batch configuration,
+     * and the shape of its arguments.
+     *
+     * <p>
+     * Argument <em>shape</em> matters and is included: shape analysis folds concrete loop
+     * bounds into the parallel domain, so a kernel compiled for an array of one length must not
+     * be reused for another. Array lengths and scalar values are therefore part of the key,
+     * while the contents of arrays are not - installed code is already reused across executions
+     * whose array contents differ.
+     * </p>
+     *
+     * <p>
+     * Returns {@code null} when any argument's shape cannot be characterised exactly, in which
+     * case the task is compiled as before rather than cached. Wrapper types such as images,
+     * matrices and vector types carry their own dimensions, and those dimensions reach the
+     * parallel domain; rather than enumerate them here and risk two differently shaped values
+     * sharing a key, anything outside the set below opts out.
+     * </p>
+     */
+    private static String compilationCacheKey(CompilableTask task, ResolvedJavaMethod resolvedMethod) {
+        final TaskDataContext meta = task.meta();
+        final StringBuilder key = new StringBuilder(task.getId()).append('|') //
+                .append(resolvedMethod.format("%H.%n(%p)")).append('|') //
+                .append(meta.getBackendIndex()).append(':').append(meta.getDeviceIndex()).append('|') //
+                .append(meta.getNumThreads()).append('|') //
+                .append(task.getBatchThreads()).append(':').append(task.getBatchNumber()).append(':').append(task.getBatchSize()).append('|');
+        for (Object argument : task.getArguments()) {
+            if (!appendArgumentShape(key, argument)) {
+                return null;
+            }
+            key.append(',');
+        }
+        return key.toString();
+    }
+
+    /**
+     * Appends the part of {@code argument} that can change generated code: its type, plus its
+     * length for arrays or its value for scalars (a scalar can end up as a loop bound, and so
+     * as the extent of the parallel domain).
+     *
+     * @return {@code false} if this argument's shape cannot be characterised, meaning the task
+     *     must not be served from the compilation cache.
+     */
+    private static boolean appendArgumentShape(StringBuilder key, Object argument) {
+        if (argument == null) {
+            key.append("null");
+            return true;
+        }
+        key.append(argument.getClass().getName());
+        if (argument instanceof TornadoNativeArray nativeArray) {
+            key.append('[').append(nativeArray.getSize()).append(']');
+            return true;
+        }
+        if (argument.getClass().isArray()) {
+            key.append('[').append(java.lang.reflect.Array.getLength(argument)).append(']');
+            return true;
+        }
+        if (argument instanceof Number || argument instanceof Character || argument instanceof Boolean) {
+            key.append('=').append(argument);
+            return true;
+        }
+        return false;
     }
 
     private TornadoInstalledCode compilePreBuiltTask(long executionPlanId, SchedulableTask task) {
