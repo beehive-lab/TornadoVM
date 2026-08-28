@@ -32,7 +32,6 @@ import static uk.ac.manchester.tornado.drivers.cuda.enums.CUDAProfilingInfo.CL_P
 import static uk.ac.manchester.tornado.drivers.cuda.enums.CUDAProfilingInfo.CL_PROFILING_COMMAND_SUBMIT;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.ENABLE_OPENCL_PROFILING;
 
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
