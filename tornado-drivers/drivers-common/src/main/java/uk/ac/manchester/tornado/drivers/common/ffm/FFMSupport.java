@@ -119,6 +119,24 @@ public final class FFMSupport {
         return symbol == null ? null : LINKER.downcallHandle(symbol, descriptor);
     }
 
+    /**
+     * Builds an upcall stub, so that native code can call back into Java.
+     *
+     * <p>
+     * Like the library lookup and the downcall handles, this is a restricted method, and native
+     * access is granted per module. Routing every restricted call through this class is what keeps
+     * that grant to a single module: a backend that built its own stub would need its own grant, and
+     * would fail at run time until someone remembered to add it.
+     *
+     * @param arena
+     *     the lifetime of the stub. A callback the native side keeps -- an OpenCL context error
+     *     callback, say -- must outlive every call that might reach it, so it belongs in
+     *     {@link #GLOBAL}.
+     */
+    public static MemorySegment upcallStub(MethodHandle target, FunctionDescriptor descriptor, Arena arena) {
+        return LINKER.upcallStub(target, descriptor, arena);
+    }
+
     /** Allocates a NUL-terminated copy of {@code value}. */
     public static MemorySegment allocateCString(SegmentAllocator allocator, String value) {
         byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
@@ -231,6 +249,47 @@ public final class FFMSupport {
         MemorySegment segment = allocateArray(allocator, C_LONG, Math.max(values.length, 1));
         MemorySegment.copy(values, 0, segment, C_LONG, 0, values.length);
         return segment;
+    }
+
+    /**
+     * A reusable per-thread native buffer, for the places where bytes have to cross between the
+     * Java heap and a downcall.
+     *
+     * <p>
+     * A downcall cannot address the Java heap, so an array argument or an info query answered into a
+     * {@code byte[]} has to go through native memory. Allocating that memory per call would put an
+     * allocation on paths that run per transfer and per event; a buffer that is per-thread and
+     * grows to fit is reused instead, leaving one copy and no allocation.
+     *
+     * <p>
+     * Each call site holds its own instance, because a single buffer cannot serve two purposes at
+     * once. Within one instance, a caller must be done with the segment before asking for another:
+     * every use here reads or writes it and returns before the next call.
+     */
+    public static final class Staging {
+
+        private final ThreadLocal<Slot> slots = ThreadLocal.withInitial(Slot::new);
+
+        private static final class Slot {
+            private Arena arena;
+            private MemorySegment segment;
+        }
+
+        /** A zeroed segment of at least {@code byteSize} bytes, owned by the calling thread. */
+        public MemorySegment forBytes(long byteSize) {
+            Slot slot = slots.get();
+            if (slot.segment == null || slot.segment.byteSize() < byteSize) {
+                if (slot.arena != null) {
+                    slot.arena.close();
+                }
+                // Confined to the creating thread, which is the thread this slot belongs to.
+                slot.arena = Arena.ofConfined();
+                slot.segment = slot.arena.allocate(Math.max(byteSize, 1), 8);
+            }
+            MemorySegment segment = slot.segment.asSlice(0, byteSize);
+            segment.fill((byte) 0);
+            return segment;
+        }
     }
 
     /** Turns a raw address into a segment of the given size that can be read and written. */

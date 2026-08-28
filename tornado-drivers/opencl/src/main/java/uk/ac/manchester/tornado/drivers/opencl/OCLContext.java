@@ -25,14 +25,21 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoNoOpenCLPlatformException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.drivers.common.ffm.FFMSupport;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueProperties;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
+import uk.ac.manchester.tornado.drivers.opencl.ffm.OpenCLAPI;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -55,30 +62,145 @@ public class OCLContext implements OCLContextInterface {
         this.logger = new TornadoLogger(this.getClass());
     }
 
-    native void clReleaseContext(long id) throws OCLException;
+    /**
+     * The arena backing each off-heap host allocation, keyed by its address, so that
+     * {@link #freeOffHeapMemory(long)} can release exactly the region it was handed.
+     */
+    private static final Map<Long, Arena> OFF_HEAP_ARENAS = new ConcurrentHashMap<>();
 
-    native void clGetContextInfo(long id, int info, byte[] buffer) throws OCLException;
+    /** Reusable per-thread native buffer the driver answers info queries into. */
+    private static final FFMSupport.Staging INFO_STAGING = new FFMSupport.Staging();
 
-    public native long clCreateCommandQueue(long contextId, long deviceId, long properties) throws OCLException;
+    void clReleaseContext(long id) throws OCLException {
+        OpenCLAPI.clReleaseContext(id);
+    }
 
-    native long allocateOffHeapMemory(long size, long alignment);
+    void clGetContextInfo(long id, int info, byte[] buffer) throws OCLException {
+        Arrays.fill(buffer, (byte) 0);
+        MemorySegment value = INFO_STAGING.forBytes(buffer.length);
+        if (OpenCLAPI.clGetContextInfo(id, info, buffer.length, value, MemorySegment.NULL) != OpenCLAPI.CL_SUCCESS) {
+            return;
+        }
+        MemorySegment.copy(value, FFMSupport.C_CHAR, 0, buffer, 0, buffer.length);
+    }
 
-    native void freeOffHeapMemory(long address);
+    public long clCreateCommandQueue(long contextId, long deviceId, long properties) throws OCLException {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment status = FFMSupport.allocateInt(arena);
+            long queue = OpenCLAPI.clCreateCommandQueue(contextId, deviceId, properties, status);
+            int result = status.get(FFMSupport.C_INT, 0);
+            if (result != OpenCLAPI.CL_SUCCESS) {
+                throw new OCLException("clCreateCommandQueue failed: CL error " + result);
+            }
+            return queue;
+        }
+    }
 
-    native ByteBuffer asByteBuffer(long address, long size);
+    /**
+     * Allocates zeroed, aligned off-heap host memory. The arena is remembered so the region can be
+     * released again; it is shared rather than confined because the address outlives this call.
+     *
+     * <p>
+     * The JNI version also wrote an ascending index pattern over the region after zeroing it.
+     * Nothing read it back, and the CUDA clone of this code dropped it, so the region is simply
+     * left zeroed here.
+     */
+    long allocateOffHeapMemory(long size, long alignment) {
+        Arena arena = Arena.ofShared();
+        try {
+            MemorySegment segment = arena.allocate(size, alignment);
+            long address = segment.address();
+            OFF_HEAP_ARENAS.put(address, arena);
+            return address;
+        } catch (RuntimeException e) {
+            arena.close();
+            System.out.printf("OpenCL off-heap memory allocation of %d bytes failed: %s%n", size, e.getMessage());
+            return 0;
+        }
+    }
+
+    void freeOffHeapMemory(long address) {
+        Arena arena = OFF_HEAP_ARENAS.remove(address);
+        if (arena != null) {
+            arena.close();
+        }
+    }
+
+    ByteBuffer asByteBuffer(long address, long size) {
+        return FFMSupport.asSegment(address, size).asByteBuffer();
+    }
 
     // creates an empty buffer on the device
-    native OCLBufferResult createBuffer(long contextId, long flags, long size, long hostPointer) throws OCLException;
+    OCLBufferResult createBuffer(long contextId, long flags, long size, long hostPointer) throws OCLException {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment status = FFMSupport.allocateInt(arena);
+            long buffer = OpenCLAPI.clCreateBuffer(contextId, flags, size, hostPointer, status);
+            // The status is handed back rather than thrown: the caller distinguishes out-of-memory
+            // from other failures itself.
+            return new OCLBufferResult(buffer, hostPointer, status.get(FFMSupport.C_INT, 0));
+        }
+    }
 
-    native long createSubBuffer(long buffer, long flags, int createType, byte[] createInfo) throws OCLException;
+    long createSubBuffer(long buffer, long flags, int createType, byte[] createInfo) throws OCLException {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment info = arena.allocate(Math.max(createInfo.length, 1), 8);
+            MemorySegment.copy(createInfo, 0, info, FFMSupport.C_CHAR, 0, createInfo.length);
+            MemorySegment status = FFMSupport.allocateInt(arena);
+            return OpenCLAPI.clCreateSubBuffer(buffer, flags, createType, info, status);
+        }
+    }
 
-    native void clReleaseMemObject(long memId) throws OCLException;
+    void clReleaseMemObject(long memId) throws OCLException {
+        OpenCLAPI.clReleaseMemObject(memId);
+    }
 
-    native long clCreateProgramWithSource(long contextId, byte[] data, long[] lengths) throws OCLException;
+    long clCreateProgramWithSource(long contextId, byte[] data, long[] lengths) throws OCLException {
+        try (Arena arena = Arena.ofConfined()) {
+            // One source string, whose length is given explicitly, so the bytes need no terminator.
+            MemorySegment source = arena.allocate(Math.max(data.length, 1), 1);
+            MemorySegment.copy(data, 0, source, FFMSupport.C_CHAR, 0, data.length);
+            MemorySegment strings = FFMSupport.allocateArray(arena, FFMSupport.C_POINTER, 1);
+            strings.set(FFMSupport.C_POINTER, 0, source);
+            MemorySegment sizes = FFMSupport.allocateLongArray(arena, lengths);
+            MemorySegment status = FFMSupport.allocateInt(arena);
+            return OpenCLAPI.clCreateProgramWithSource(contextId, lengths.length, strings, sizes, status);
+        }
+    }
 
-    native long clCreateProgramWithBinary(long contextId, long deviceId, byte[] data, long[] lengths) throws OCLException;
+    long clCreateProgramWithBinary(long contextId, long deviceId, byte[] data, long[] lengths) throws OCLException {
+        if (lengths.length != 1) {
+            System.out.println("[TornadoVM-OpenCL] loading multiple binaries is not supported");
+            return 0;
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment binary = arena.allocate(Math.max(data.length, 1), 1);
+            MemorySegment.copy(data, 0, binary, FFMSupport.C_CHAR, 0, data.length);
+            MemorySegment binaries = FFMSupport.allocateArray(arena, FFMSupport.C_POINTER, 1);
+            binaries.set(FFMSupport.C_POINTER, 0, binary);
+            MemorySegment devices = FFMSupport.allocateArray(arena, FFMSupport.C_POINTER, 1);
+            devices.set(FFMSupport.C_POINTER, 0, MemorySegment.ofAddress(deviceId));
+            MemorySegment sizes = FFMSupport.allocateLongArray(arena, lengths);
+            MemorySegment binaryStatus = FFMSupport.allocateInt(arena);
+            MemorySegment status = FFMSupport.allocateInt(arena);
+            return OpenCLAPI.clCreateProgramWithBinary(contextId, 1, devices, sizes, binaries, binaryStatus, status);
+        }
+    }
 
-    native long clCreateProgramWithIL(long contextId, byte[] spirvBinaryCode, long[] lengths) throws OCLException;
+    /**
+     * SPIR-V ingestion needs OpenCL 2.1. {@code -1} makes the Java side treat the platform as unable
+     * to take IL, matching the OpenCL &lt; 2.1 behaviour.
+     */
+    long clCreateProgramWithIL(long contextId, byte[] spirvBinaryCode, long[] lengths) throws OCLException {
+        if (!OpenCLAPI.hasCreateProgramWithIL()) {
+            return -1;
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment il = arena.allocate(Math.max(spirvBinaryCode.length, 1), 8);
+            MemorySegment.copy(spirvBinaryCode, 0, il, FFMSupport.C_CHAR, 0, spirvBinaryCode.length);
+            MemorySegment status = FFMSupport.allocateInt(arena);
+            return OpenCLAPI.clCreateProgramWithIL(contextId, il, lengths[0], status);
+        }
+    }
 
     public int getNumDevices() {
         return devices.size();

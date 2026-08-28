@@ -30,13 +30,16 @@ import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanRead
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableFreq;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
+import uk.ac.manchester.tornado.drivers.common.ffm.FFMSupport;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceInfo;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLLocalMemType;
+import uk.ac.manchester.tornado.drivers.opencl.ffm.OpenCLAPI;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 
 public class OCLDevice implements OCLTargetDevice {
@@ -138,7 +141,17 @@ public class OCLDevice implements OCLTargetDevice {
         getDeviceVendorId();
     }
 
-    static native void clGetDeviceInfo(long id, int info, byte[] buffer);
+    /** Reusable per-thread native buffer the driver answers info queries into. */
+    private static final FFMSupport.Staging INFO_STAGING = new FFMSupport.Staging();
+
+    static void clGetDeviceInfo(long id, int info, byte[] buffer) {
+        Arrays.fill(buffer, (byte) 0);
+        MemorySegment value = INFO_STAGING.forBytes(buffer.length);
+        if (OpenCLAPI.clGetDeviceInfo(id, info, buffer.length, value, MemorySegment.NULL) != OpenCLAPI.CL_SUCCESS) {
+            return;
+        }
+        MemorySegment.copy(value, FFMSupport.C_CHAR, 0, buffer, 0, buffer.length);
+    }
 
     public long getDevicePointer() {
         return devicePtr;

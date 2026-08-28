@@ -25,12 +25,15 @@ package uk.ac.manchester.tornado.drivers.opencl;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
+import uk.ac.manchester.tornado.drivers.common.ffm.FFMSupport;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLKernelInfo;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
+import uk.ac.manchester.tornado.drivers.opencl.ffm.OpenCLAPI;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class OCLKernel {
@@ -52,13 +55,49 @@ public class OCLKernel {
 
     }
 
-    native static void clReleaseKernel(long kernelId) throws OCLException;
+    /** Reusable per-thread native buffers for the argument value and for info queries. */
+    private static final FFMSupport.Staging ARG_STAGING = new FFMSupport.Staging();
 
-    native static void clSetKernelArg(long kernelId, int index, long size, byte[] buffer) throws OCLException;
+    private static final FFMSupport.Staging INFO_STAGING = new FFMSupport.Staging();
 
-    native static void clSetKernelArgRef(long kernelId, int index, long buffer) throws OCLException;
+    static void clReleaseKernel(long kernelId) throws OCLException {
+        OpenCLAPI.clReleaseKernel(kernelId);
+    }
 
-    native static void clGetKernelInfo(long kernelId, int info, byte[] buffer) throws OCLException;
+    /**
+     * Sets an argument. A null {@code buffer} means a {@code __local} argument of the given size,
+     * which OpenCL expresses as a null value pointer.
+     */
+    static void clSetKernelArg(long kernelId, int index, long size, byte[] buffer) throws OCLException {
+        MemorySegment value = MemorySegment.NULL;
+        if (buffer != null) {
+            value = ARG_STAGING.forBytes(buffer.length);
+            MemorySegment.copy(buffer, 0, value, FFMSupport.C_CHAR, 0, buffer.length);
+        }
+        OpenCLAPI.clSetKernelArg(kernelId, index, size, value);
+    }
+
+    /**
+     * Sets a {@code cl_mem} argument by value.
+     *
+     * <p>
+     * The JNI build declared this but never implemented it, so {@link #setArgRef} threw
+     * {@code UnsatisfiedLinkError} if it was ever reached. It has a working implementation here.
+     */
+    static void clSetKernelArgRef(long kernelId, int index, long buffer) throws OCLException {
+        MemorySegment value = ARG_STAGING.forBytes(Long.BYTES);
+        value.set(FFMSupport.C_LONG, 0, buffer);
+        OpenCLAPI.clSetKernelArg(kernelId, index, Long.BYTES, value);
+    }
+
+    static void clGetKernelInfo(long kernelId, int info, byte[] buffer) throws OCLException {
+        Arrays.fill(buffer, (byte) 0);
+        MemorySegment value = INFO_STAGING.forBytes(buffer.length);
+        if (OpenCLAPI.clGetKernelInfo(kernelId, info, buffer.length, value, MemorySegment.NULL) != OpenCLAPI.CL_SUCCESS) {
+            return;
+        }
+        MemorySegment.copy(value, FFMSupport.C_CHAR, 0, buffer, 0, buffer.length);
+    }
 
     public void setArg(int index, ByteBuffer buffer) {
         try {

@@ -25,6 +25,8 @@ package uk.ac.manchester.tornado.drivers.opencl;
 
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,6 +35,8 @@ import java.util.List;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.drivers.common.ffm.FFMSupport;
+import uk.ac.manchester.tornado.drivers.opencl.ffm.OpenCLAPI;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualDeviceDescriptor;
@@ -83,11 +87,45 @@ public class OpenCL {
         }
     }
 
-    static native boolean registerCallback();
+    /**
+     * The OpenCL clone calls this to install an error callback. The per-context callback is
+     * installed by {@link OCLPlatform#clCreateContext} instead, so there is nothing to do here
+     * beyond reporting that an ICD loader was found.
+     */
+    static boolean registerCallback() {
+        return OpenCLAPI.isAvailable();
+    }
 
-    static native int clGetPlatformCount();
+    static int clGetPlatformCount() {
+        if (!OpenCLAPI.isAvailable()) {
+            return 0;
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment count = FFMSupport.allocateInt(arena);
+            if (OpenCLAPI.clGetPlatformIDs(0, MemorySegment.NULL, count) != OpenCLAPI.CL_SUCCESS) {
+                return 0;
+            }
+            return count.get(FFMSupport.C_INT, 0);
+        }
+    }
 
-    static native int clGetPlatformIDs(long[] platformIds);
+    static int clGetPlatformIDs(long[] platformIds) {
+        if (platformIds.length == 0) {
+            return 0;
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment platforms = FFMSupport.allocateArray(arena, FFMSupport.C_POINTER, platformIds.length);
+            MemorySegment count = FFMSupport.allocateInt(arena);
+            if (OpenCLAPI.clGetPlatformIDs(platformIds.length, platforms, count) != OpenCLAPI.CL_SUCCESS) {
+                return 0;
+            }
+            int numPlatforms = Math.min(count.get(FFMSupport.C_INT, 0), platformIds.length);
+            for (int i = 0; i < numPlatforms; i++) {
+                platformIds[i] = platforms.get(FFMSupport.C_POINTER, i * FFMSupport.C_POINTER.byteSize()).address();
+            }
+            return numPlatforms;
+        }
+    }
 
     public static void cleanup() {
         if (initialised) {

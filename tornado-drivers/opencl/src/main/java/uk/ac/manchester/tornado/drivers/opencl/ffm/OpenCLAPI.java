@@ -30,6 +30,8 @@ import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 
 import uk.ac.manchester.tornado.drivers.common.ffm.FFMSupport;
 
@@ -59,6 +61,8 @@ public final class OpenCLAPI {
     /** {@code CL_TRUE} / {@code CL_FALSE}, the {@code cl_bool} values. */
     public static final int CL_TRUE = 1;
     public static final int CL_FALSE = 0;
+    /** {@code CL_CONTEXT_PLATFORM}, the context property naming the platform to create on. */
+    public static final long CL_CONTEXT_PLATFORM = 0x1084L;
 
     private static final SymbolLookup LIBOPENCL = FFMSupport.loadLibrary("libOpenCL.so.1", "libOpenCL.so", "OpenCL.dll", "/System/Library/Frameworks/OpenCL.framework/OpenCL", "libOpenCL.dylib");
 
@@ -102,6 +106,7 @@ public final class OpenCLAPI {
     private static final MethodHandle CL_ENQUEUE_MARKER_WITH_WAIT_LIST;
     private static final MethodHandle CL_ENQUEUE_BARRIER_WITH_WAIT_LIST;
 
+    private static final MethodHandle CL_ENQUEUE_WAIT_FOR_EVENTS;
     private static final MethodHandle CL_WAIT_FOR_EVENTS;
     private static final MethodHandle CL_GET_EVENT_INFO;
     private static final MethodHandle CL_GET_EVENT_PROFILING_INFO;
@@ -142,6 +147,7 @@ public final class OpenCLAPI {
             CL_ENQUEUE_UNMAP_MEM_OBJECT = null;
             CL_ENQUEUE_MARKER_WITH_WAIT_LIST = null;
             CL_ENQUEUE_BARRIER_WITH_WAIT_LIST = null;
+            CL_ENQUEUE_WAIT_FOR_EVENTS = null;
             CL_WAIT_FOR_EVENTS = null;
             CL_GET_EVENT_INFO = null;
             CL_GET_EVENT_PROFILING_INFO = null;
@@ -193,6 +199,10 @@ public final class OpenCLAPI {
             CL_ENQUEUE_MARKER_WITH_WAIT_LIST = downcall(LIBOPENCL, FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_POINTER, C_POINTER), "clEnqueueMarkerWithWaitList");
             CL_ENQUEUE_BARRIER_WITH_WAIT_LIST = downcall(LIBOPENCL, FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_POINTER, C_POINTER), "clEnqueueBarrierWithWaitList");
 
+            // OpenCL 1.1, removed from the 1.2 headers but still exported by most ICDs. When it is
+            // missing the caller places a barrier on the same wait list instead, which orders the
+            // queue the same way.
+            CL_ENQUEUE_WAIT_FOR_EVENTS = downcall(LIBOPENCL, FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_POINTER), "clEnqueueWaitForEvents");
             CL_WAIT_FOR_EVENTS = downcall(LIBOPENCL, FunctionDescriptor.of(C_INT, C_INT, C_POINTER), "clWaitForEvents");
             CL_GET_EVENT_INFO = downcall(LIBOPENCL, FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_LONG, C_POINTER, C_POINTER), "clGetEventInfo");
             CL_GET_EVENT_PROFILING_INFO = downcall(LIBOPENCL, FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_LONG, C_POINTER, C_POINTER), "clGetEventProfilingInfo");
@@ -211,6 +221,42 @@ public final class OpenCLAPI {
     /** SPIR-V ingestion needs OpenCL 2.1; 1.2 ICDs do not export it. */
     public static boolean hasCreateProgramWithIL() {
         return CL_CREATE_PROGRAM_WITH_IL != null;
+    }
+
+    /**
+     * The context error callback, held for the life of the VM because OpenCL keeps the pointer for
+     * as long as the context lives. Asynchronous OpenCL errors -- the ones that surface after the
+     * call that caused them has already returned -- arrive here and nowhere else, so without it
+     * they are silently lost.
+     */
+    private static final class ContextNotify {
+
+        private static final MemorySegment STUB = createStub();
+
+        private static MemorySegment createStub() {
+            try {
+                MethodHandle handle = MethodHandles.lookup().findStatic(ContextNotify.class, "onError",
+                        MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class, long.class, MemorySegment.class));
+                return FFMSupport.upcallStub(handle, FunctionDescriptor.ofVoid(C_POINTER, C_POINTER, C_LONG, C_POINTER), FFMSupport.GLOBAL);
+            } catch (ReflectiveOperationException e) {
+                throw new ExceptionInInitializerError(e);
+            }
+        }
+
+        private static void onError(MemorySegment errorInfo, MemorySegment privateInfo, long privateInfoSize, MemorySegment userData) {
+            // An exception thrown out of an upcall crashes the caller, which here is the OpenCL
+            // driver reporting a problem; report and return instead.
+            try {
+                System.out.println("[TornadoVM-OpenCL] asynchronous error: " + FFMSupport.readCString(errorInfo));
+            } catch (RuntimeException e) {
+                System.out.println("[TornadoVM-OpenCL] asynchronous error (details unavailable)");
+            }
+        }
+    }
+
+    /** The {@code pfn_notify} callback to hand to {@code clCreateContext}. */
+    public static MemorySegment contextNotifyCallback() {
+        return ContextNotify.STUB;
     }
 
     private static RuntimeException rethrow(Throwable t) {
@@ -497,6 +543,19 @@ public final class OpenCLAPI {
     public static int clEnqueueBarrierWithWaitList(long queue, int numEventsInWaitList, MemorySegment eventWaitList, MemorySegment event) {
         try {
             return (int) CL_ENQUEUE_BARRIER_WITH_WAIT_LIST.invokeExact(queue, numEventsInWaitList, eventWaitList, event);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    /** Whether the deprecated OpenCL 1.1 {@code clEnqueueWaitForEvents} is exported. */
+    public static boolean hasEnqueueWaitForEvents() {
+        return CL_ENQUEUE_WAIT_FOR_EVENTS != null;
+    }
+
+    public static int clEnqueueWaitForEvents(long queue, int numEvents, MemorySegment events) {
+        try {
+            return (int) CL_ENQUEUE_WAIT_FOR_EVENTS.invokeExact(queue, numEvents, events);
         } catch (Throwable t) {
             throw rethrow(t);
         }

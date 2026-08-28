@@ -23,14 +23,18 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.nio.LongBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.drivers.common.ffm.FFMSupport;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLPlatformInfo;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
+import uk.ac.manchester.tornado.drivers.opencl.ffm.OpenCLAPI;
 
 public class OCLPlatform implements TornadoPlatformInterface {
 
@@ -85,13 +89,69 @@ public class OCLPlatform implements TornadoPlatformInterface {
         return this.getVendor().toLowerCase().startsWith(vendor.getVendorName().toLowerCase());
     }
 
-    native String clGetPlatformInfo(long id, int info);
+    /** Longest platform info string the query buffer makes room for. */
+    private static final int MAX_INFO_BYTES = 1024;
 
-    native int clGetDeviceCount(long id, long type);
+    String clGetPlatformInfo(long id, int info) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment value = arena.allocate(MAX_INFO_BYTES, 1);
+            value.fill((byte) 0);
+            if (OpenCLAPI.clGetPlatformInfo(id, info, MAX_INFO_BYTES, value, MemorySegment.NULL) != OpenCLAPI.CL_SUCCESS) {
+                return "";
+            }
+            return FFMSupport.readCString(value, MAX_INFO_BYTES);
+        }
+    }
 
-    native int clGetDeviceIDs(long id, long type, long[] devices);
+    int clGetDeviceCount(long id, long type) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment count = FFMSupport.allocateInt(arena);
+            if (OpenCLAPI.clGetDeviceIDs(id, type, 0, MemorySegment.NULL, count) != OpenCLAPI.CL_SUCCESS) {
+                return 0;
+            }
+            return count.get(FFMSupport.C_INT, 0);
+        }
+    }
 
-    native long clCreateContext(long platform, long[] devices) throws OCLException;
+    int clGetDeviceIDs(long id, long type, long[] devices) {
+        if (devices.length == 0) {
+            return 0;
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment deviceIds = FFMSupport.allocateArray(arena, FFMSupport.C_POINTER, devices.length);
+            MemorySegment count = FFMSupport.allocateInt(arena);
+            if (OpenCLAPI.clGetDeviceIDs(id, type, devices.length, deviceIds, count) != OpenCLAPI.CL_SUCCESS) {
+                return 0;
+            }
+            int numDevices = Math.min(count.get(FFMSupport.C_INT, 0), devices.length);
+            for (int i = 0; i < numDevices; i++) {
+                devices[i] = deviceIds.get(FFMSupport.C_POINTER, i * FFMSupport.C_POINTER.byteSize()).address();
+            }
+            return numDevices;
+        }
+    }
+
+    long clCreateContext(long platform, long[] devices) throws OCLException {
+        try (Arena arena = Arena.ofConfined()) {
+            // { CL_CONTEXT_PLATFORM, platform, 0 }
+            MemorySegment properties = FFMSupport.allocateArray(arena, FFMSupport.C_LONG, 3);
+            properties.set(FFMSupport.C_LONG, 0, OpenCLAPI.CL_CONTEXT_PLATFORM);
+            properties.set(FFMSupport.C_LONG, FFMSupport.C_LONG.byteSize(), platform);
+            properties.set(FFMSupport.C_LONG, 2 * FFMSupport.C_LONG.byteSize(), 0L);
+
+            MemorySegment deviceIds = FFMSupport.allocateArray(arena, FFMSupport.C_POINTER, Math.max(devices.length, 1));
+            for (int i = 0; i < devices.length; i++) {
+                deviceIds.set(FFMSupport.C_POINTER, i * FFMSupport.C_POINTER.byteSize(), MemorySegment.ofAddress(devices[i]));
+            }
+            MemorySegment status = FFMSupport.allocateInt(arena);
+            long context = OpenCLAPI.clCreateContext(properties, devices.length, deviceIds, OpenCLAPI.contextNotifyCallback(), MemorySegment.NULL, status);
+            int result = status.get(FFMSupport.C_INT, 0);
+            if (result != OpenCLAPI.CL_SUCCESS) {
+                throw new OCLException("clCreateContext failed: CL error " + result);
+            }
+            return context;
+        }
+    }
 
     public List<OCLTargetDevice> getDevices() {
         return devices;

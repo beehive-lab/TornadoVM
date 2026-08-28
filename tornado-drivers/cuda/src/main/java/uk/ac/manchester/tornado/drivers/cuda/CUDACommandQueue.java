@@ -558,31 +558,14 @@ public class CUDACommandQueue extends CommandQueue {
      * transfers, which is what the runtime's own segment-backed arrays use, never come through
      * here.
      */
-    private static final ThreadLocal<Staging> STAGING = ThreadLocal.withInitial(Staging::new);
-
-    private static final class Staging {
-
-        private Arena arena;
-        private MemorySegment segment;
-
-        MemorySegment forBytes(long numBytes) {
-            if (segment == null || segment.byteSize() < numBytes) {
-                if (arena != null) {
-                    arena.close();
-                }
-                arena = Arena.ofConfined();
-                segment = arena.allocate(numBytes, Long.BYTES);
-            }
-            return segment;
-        }
-    }
+    private static final FFMSupport.Staging STAGING = new FFMSupport.Staging();
 
     private static long writeArray(long queueId, Object array, ValueLayout layout, int elementOffset, int elementCount, long offset, long bytes, long ptr, long[] events) throws CUDAException {
         CUDAHandles.Queue queue = CUDAHandles.resolve(queueId, CUDAHandles.Queue.class);
         if (queue == null) {
             return 0;
         }
-        MemorySegment staging = STAGING.get().forBytes(bytes);
+        MemorySegment staging = STAGING.forBytes(bytes);
         MemorySegment.copy(array, elementOffset, staging, layout, 0, elementCount);
         return transferToDevice(queue, staging.address(), 0, offset, bytes, ptr, events, true);
     }
@@ -592,7 +575,7 @@ public class CUDACommandQueue extends CommandQueue {
         if (queue == null) {
             return 0;
         }
-        MemorySegment staging = STAGING.get().forBytes(bytes);
+        MemorySegment staging = STAGING.forBytes(bytes);
         long event = transferToHost(queue, staging.address(), 0, offset, bytes, ptr, events, true);
         MemorySegment.copy(staging, layout, 0, array, elementOffset, elementCount);
         return event;
