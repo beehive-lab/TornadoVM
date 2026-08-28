@@ -15,6 +15,7 @@ open module tornado.runtime {
     requires java.management;
 
     exports uk.ac.manchester.tornado.runtime;
+    exports uk.ac.manchester.tornado.runtime.ffm;
     exports uk.ac.manchester.tornado.runtime.analyzer;
     exports uk.ac.manchester.tornado.runtime.common;
     exports uk.ac.manchester.tornado.runtime.common.enums;

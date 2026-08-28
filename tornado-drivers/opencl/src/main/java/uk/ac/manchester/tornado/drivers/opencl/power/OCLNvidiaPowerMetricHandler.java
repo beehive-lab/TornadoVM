@@ -26,7 +26,7 @@ package uk.ac.manchester.tornado.drivers.opencl.power;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
-import uk.ac.manchester.tornado.drivers.common.ffm.FFMSupport;
+import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 import uk.ac.manchester.tornado.drivers.common.ffm.NVMLAPI;
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;

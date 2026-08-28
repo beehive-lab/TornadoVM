@@ -19,7 +19,7 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-package uk.ac.manchester.tornado.drivers.common.ffm;
+package uk.ac.manchester.tornado.runtime.ffm;
 
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.Arena;
@@ -34,7 +34,7 @@ import java.lang.invoke.MethodHandle;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Shared plumbing for the backends' Panama (java.lang.foreign) bindings, which replace the
+ * Shared plumbing for the Panama (java.lang.foreign) bindings, which replace the
  * hand-written JNI libraries each backend used to ship.
  *
  * <p>

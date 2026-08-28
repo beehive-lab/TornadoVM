@@ -69,7 +69,7 @@ __OPENCL_MODULE__ = "tornado.drivers.opencl"
 __METAL_MODULE__ = "tornado.drivers.metal"
 __CUDA_MODULE__ = "tornado.drivers.cuda"
 __ENABLE_NATIVE_ACCESS__ = "--enable-native-access="
-__DRIVERS_COMMON_MODULE__ = "tornado.drivers.common"
+__FFM_MODULE__ = "tornado.runtime"
 __CUBLAS_MODULE__ = "tornado.cublas"
 __CUFFT_MODULE__ = "tornado.cufft"
 __CUDNN_MODULE__ = "tornado.cudnn"
@@ -1320,11 +1320,11 @@ class TornadoVMRunnerTool():
         cuda = self.sdk + __CUDA_EXPORTS__
 
         javaFlags = javaFlags + " @" + common + " "
-        # The backends reach their driver libraries through java.lang.foreign rather than a JNI
-        # library of their own, and every one of those lookups goes through
-        # tornado.drivers.common. Those are restricted methods, so without this the lookup fails
-        # outright (JDK 21) or warns on every run.
-        javaFlags = javaFlags + __ENABLE_NATIVE_ACCESS__ + __DRIVERS_COMMON_MODULE__ + " "
+        # The backends and the library-task providers reach their native libraries through
+        # java.lang.foreign rather than a JNI library of their own, and every one of those lookups
+        # goes through tornado.runtime. Those are restricted methods, so without this the lookup
+        # fails outright (JDK 21) or warns on every run.
+        javaFlags = javaFlags + __ENABLE_NATIVE_ACCESS__ + __FFM_MODULE__ + " "
         if ("opencl-backend" in self.listOfBackends):
             javaFlags = javaFlags + "@" + opencl + " "
             tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__

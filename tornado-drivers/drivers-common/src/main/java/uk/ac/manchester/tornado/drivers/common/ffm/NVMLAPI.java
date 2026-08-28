@@ -21,10 +21,10 @@
  */
 package uk.ac.manchester.tornado.drivers.common.ffm;
 
-import static uk.ac.manchester.tornado.drivers.common.ffm.FFMSupport.C_INT;
-import static uk.ac.manchester.tornado.drivers.common.ffm.FFMSupport.C_LONG;
-import static uk.ac.manchester.tornado.drivers.common.ffm.FFMSupport.C_POINTER;
-import static uk.ac.manchester.tornado.drivers.common.ffm.FFMSupport.downcall;
+import static uk.ac.manchester.tornado.runtime.ffm.FFMSupport.C_INT;
+import static uk.ac.manchester.tornado.runtime.ffm.FFMSupport.C_LONG;
+import static uk.ac.manchester.tornado.runtime.ffm.FFMSupport.C_POINTER;
+import static uk.ac.manchester.tornado.runtime.ffm.FFMSupport.downcall;
 
 import java.io.File;
 import java.lang.foreign.FunctionDescriptor;
@@ -33,6 +33,8 @@ import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
 import java.util.List;
+
+import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 
 /**
  * Panama bindings for the NVIDIA Management Library, which is where the profiler's power readings

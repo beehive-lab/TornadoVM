@@ -39,7 +39,7 @@ import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
-import uk.ac.manchester.tornado.drivers.common.ffm.FFMSupport;
+import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandExecutionStatus;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;

@@ -21,10 +21,10 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.ffm;
 
-import static uk.ac.manchester.tornado.drivers.common.ffm.FFMSupport.C_INT;
-import static uk.ac.manchester.tornado.drivers.common.ffm.FFMSupport.C_LONG;
-import static uk.ac.manchester.tornado.drivers.common.ffm.FFMSupport.C_POINTER;
-import static uk.ac.manchester.tornado.drivers.common.ffm.FFMSupport.downcall;
+import static uk.ac.manchester.tornado.runtime.ffm.FFMSupport.C_INT;
+import static uk.ac.manchester.tornado.runtime.ffm.FFMSupport.C_LONG;
+import static uk.ac.manchester.tornado.runtime.ffm.FFMSupport.C_POINTER;
+import static uk.ac.manchester.tornado.runtime.ffm.FFMSupport.downcall;
 
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
@@ -33,7 +33,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
-import uk.ac.manchester.tornado.drivers.common.ffm.FFMSupport;
+import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 
 /**
  * Panama bindings for the OpenCL entry points the backend uses, replacing the hand-written
