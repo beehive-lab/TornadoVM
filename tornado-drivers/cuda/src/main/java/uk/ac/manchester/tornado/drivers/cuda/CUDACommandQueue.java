@@ -32,6 +32,8 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import jdk.vm.ci.meta.JavaKind;
 
 import uk.ac.manchester.tornado.api.common.Event;
@@ -203,14 +205,12 @@ public class CUDACommandQueue extends CommandQueue {
     }
 
     private static long createEvent(int flags, String call) throws CUDAException {
-        try (Arena arena = Arena.ofConfined()) {
-            MemorySegment event = FFMSupport.allocatePointer(arena);
-            int result = CUDADriverAPI.cuEventCreate(event, flags);
-            if (result != CUDADriverAPI.CUDA_SUCCESS) {
-                throw new CUDAException(CUDADriverAPI.describe(call, result));
-            }
-            return event.get(FFMSupport.C_POINTER, 0).address();
+        MemorySegment event = FFMSupport.scratchPointer();
+        int result = CUDADriverAPI.cuEventCreate(event, flags);
+        if (result != CUDADriverAPI.CUDA_SUCCESS) {
+            throw new CUDAException(CUDADriverAPI.describe(call, result));
         }
+        return event.get(FFMSupport.C_POINTER, 0).address();
     }
 
     /**
@@ -296,17 +296,42 @@ public class CUDACommandQueue extends CommandQueue {
      * skip their post-copy synchronise while it is.
      */
     private static boolean isCapturing(CUDAHandles.Queue queue) {
-        try (Arena arena = Arena.ofConfined()) {
-            MemorySegment status = FFMSupport.allocateInt(arena);
-            if (CUDADriverAPI.cuStreamIsCapturing(queue.stream(), status) != CUDADriverAPI.CUDA_SUCCESS) {
-                return false;
-            }
-            return status.get(FFMSupport.C_INT, 0) == CUDADriverAPI.CU_STREAM_CAPTURE_STATUS_ACTIVE;
+        MemorySegment status = FFMSupport.scratchInt();
+        if (CUDADriverAPI.cuStreamIsCapturing(queue.stream(), status) != CUDADriverAPI.CUDA_SUCCESS) {
+            return false;
         }
+        return status.get(FFMSupport.C_INT, 0) == CUDADriverAPI.CU_STREAM_CAPTURE_STATUS_ACTIVE;
     }
 
-    /** Formats "H2D 24.0 MB" / "D2H 24 B" so individual copies are identifiable on the timeline. */
-    private static String transferLabel(String direction, long numBytes) {
+    /**
+     * Formats "H2D 24.0 MB" / "D2H 24 B" so individual copies are identifiable on the timeline.
+     *
+     * <p>
+     * A plan moves the same buffers on every iteration, so the same handful of labels is wanted
+     * over and over; they are formatted once and remembered. The cost of formatting one lands
+     * between the copy and its end event, and therefore inside the device time the profiler
+     * reports, which is what makes it worth avoiding on the repeat. The cache is capped so an
+     * unusual workload with many distinct sizes formats afresh rather than growing without limit.
+     */
+    private static final int LABEL_CACHE_LIMIT = 512;
+
+    private static final Map<Long, String> WRITE_LABELS = new ConcurrentHashMap<>();
+
+    private static final Map<Long, String> READ_LABELS = new ConcurrentHashMap<>();
+
+    private static String transferLabel(Map<Long, String> cache, String direction, long numBytes) {
+        String label = cache.get(numBytes);
+        if (label != null) {
+            return label;
+        }
+        label = formatTransferLabel(direction, numBytes);
+        if (cache.size() < LABEL_CACHE_LIMIT) {
+            cache.put(numBytes, label);
+        }
+        return label;
+    }
+
+    private static String formatTransferLabel(String direction, long numBytes) {
         if (numBytes >= 1048576) {
             return String.format("%s %.1f MB", direction, numBytes / 1048576.0);
         } else if (numBytes >= 1024) {
@@ -426,7 +451,7 @@ public class CUDACommandQueue extends CommandQueue {
      */
     private static long transferToDevice(CUDAHandles.Queue queue, long hostPointer, long hostOffset, long deviceOffset, long numBytes, long devicePointer, long[] events, boolean syncAfter)
             throws CUDAException {
-        NVTXAPI.rangePush(transferLabel("H2D", numBytes));
+        NVTXAPI.rangePush(transferLabel(WRITE_LABELS, "H2D", numBytes));
         try {
             CUDADriverAPI.cuCtxSetCurrent(queue.context());
             waitEvents(queue, events);
@@ -447,7 +472,7 @@ public class CUDACommandQueue extends CommandQueue {
     /** Device-to-host counterpart of {@link #transferToDevice}. */
     private static long transferToHost(CUDAHandles.Queue queue, long hostPointer, long hostOffset, long deviceOffset, long numBytes, long devicePointer, long[] events, boolean syncAfter)
             throws CUDAException {
-        NVTXAPI.rangePush(transferLabel("D2H", numBytes));
+        NVTXAPI.rangePush(transferLabel(READ_LABELS, "D2H", numBytes));
         try {
             CUDADriverAPI.cuCtxSetCurrent(queue.context());
             waitEvents(queue, events);

@@ -155,13 +155,11 @@ public class CUDAEvent implements Event {
         if (CUDADriverAPI.cuEventSynchronize(event.event()) != CUDADriverAPI.CUDA_SUCCESS) {
             return 0;
         }
-        try (Arena arena = Arena.ofConfined()) {
-            MemorySegment milliseconds = arena.allocate(Float.BYTES, Float.BYTES);
-            if (CUDADriverAPI.cuEventElapsedTime(milliseconds, event.start(), event.event()) != CUDADriverAPI.CUDA_SUCCESS) {
-                return 0;
-            }
-            return (long) (milliseconds.get(FFMSupport.C_FLOAT, 0) * 1.0e6f);
+        MemorySegment milliseconds = FFMSupport.scratchFloat();
+        if (CUDADriverAPI.cuEventElapsedTime(milliseconds, event.start(), event.event()) != CUDADriverAPI.CUDA_SUCCESS) {
+            return 0;
         }
+        return (long) (milliseconds.get(FFMSupport.C_FLOAT, 0) * 1.0e6f);
     }
 
     private long readEventTime(CUDAProfilingInfo eventType) {

@@ -156,6 +156,49 @@ public final class FFMSupport {
         return allocator.allocate(layout.byteSize() * count, layout.byteAlignment());
     }
 
+    /**
+     * A small per-thread scratch buffer for the single-word out-parameters the driver writes.
+     *
+     * <p>
+     * Every event created, every capture-status query and every stream created on a transfer needs
+     * somewhere for the driver to write one word. Opening an arena for each of those puts three
+     * allocations on the issue path of every transfer, and the cost lands inside the device
+     * timestamps the profiler reports, because the end event cannot be recorded until the host has
+     * finished doing it. The slots below are distinct, so two nested uses do not collide, and the
+     * arena is automatic: it goes away with the thread.
+     */
+    private static final int SCRATCH_BYTES = 32;
+
+    private static final ThreadLocal<MemorySegment> SCRATCH = ThreadLocal.withInitial(() -> Arena.ofAuto().allocate(SCRATCH_BYTES, 8));
+
+    /** Scratch slot for a pointer or {@code size_t} out-parameter, zeroed. */
+    public static MemorySegment scratchPointer() {
+        MemorySegment slot = SCRATCH.get().asSlice(0, C_POINTER.byteSize());
+        slot.set(C_POINTER, 0, MemorySegment.NULL);
+        return slot;
+    }
+
+    /** Scratch slot for a {@code long} out-parameter, distinct from {@link #scratchPointer()}. */
+    public static MemorySegment scratchLong() {
+        MemorySegment slot = SCRATCH.get().asSlice(8, C_LONG.byteSize());
+        slot.set(C_LONG, 0, 0L);
+        return slot;
+    }
+
+    /** Scratch slot for an {@code int} out-parameter, distinct from the two above. */
+    public static MemorySegment scratchInt() {
+        MemorySegment slot = SCRATCH.get().asSlice(16, C_INT.byteSize());
+        slot.set(C_INT, 0, 0);
+        return slot;
+    }
+
+    /** Scratch slot for a {@code float} out-parameter, distinct from the three above. */
+    public static MemorySegment scratchFloat() {
+        MemorySegment slot = SCRATCH.get().asSlice(24, C_FLOAT.byteSize());
+        slot.set(C_FLOAT, 0, 0.0f);
+        return slot;
+    }
+
     /** Allocates a single pointer-sized out-parameter, zeroed. */
     public static MemorySegment allocatePointer(SegmentAllocator allocator) {
         MemorySegment segment = allocator.allocate(C_POINTER.byteSize(), C_POINTER.byteAlignment());
