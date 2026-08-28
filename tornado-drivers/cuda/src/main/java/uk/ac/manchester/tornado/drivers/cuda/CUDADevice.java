@@ -42,7 +42,7 @@ import uk.ac.manchester.tornado.drivers.cuda.enums.CUDADeviceType;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDALocalMemType;
 import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDADriverAPI;
 import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDAHandles;
-import uk.ac.manchester.tornado.drivers.cuda.ffm.FFMSupport;
+import uk.ac.manchester.tornado.drivers.common.ffm.FFMSupport;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 
 public class CUDADevice implements CUDATargetDevice {

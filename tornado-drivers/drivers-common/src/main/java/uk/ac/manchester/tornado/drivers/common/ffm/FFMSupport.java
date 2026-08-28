@@ -19,7 +19,7 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-package uk.ac.manchester.tornado.drivers.cuda.ffm;
+package uk.ac.manchester.tornado.drivers.common.ffm;
 
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.Arena;
@@ -34,8 +34,8 @@ import java.lang.invoke.MethodHandle;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Shared plumbing for the CUDA backend's Panama (java.lang.foreign) bindings, which replace the
- * hand-written {@code libtornado-cuda} JNI library.
+ * Shared plumbing for the backends' Panama (java.lang.foreign) bindings, which replace the
+ * hand-written JNI libraries each backend used to ship.
  *
  * <p>
  * The source of this class has to compile twice: once under {@code -source 21 --enable-preview},
@@ -70,13 +70,19 @@ public final class FFMSupport {
      * a driver installation is guaranteed to ship; the unversioned name only exists when the
      * development package is installed.
      *
+     * <p>
+     * An {@link IllegalCallerException} is deliberately not caught: that means this module is
+     * missing from {@code --enable-native-access}, which is a launcher misconfiguration and not an
+     * absent library. Swallowing it would report "no such library" for a library that is right
+     * there, which is a much harder thing to diagnose than the exception itself.
+     *
      * @return the lookup, or {@code null} if none of the candidates could be loaded.
      */
     public static SymbolLookup loadLibrary(String... sonames) {
         for (String soname : sonames) {
             try {
                 return SymbolLookup.libraryLookup(soname, GLOBAL);
-            } catch (IllegalArgumentException | IllegalCallerException e) {
+            } catch (IllegalArgumentException e) {
                 // Not present under this name; fall through to the next candidate.
             }
         }

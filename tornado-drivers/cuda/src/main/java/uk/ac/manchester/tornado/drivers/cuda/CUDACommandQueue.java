@@ -43,7 +43,7 @@ import uk.ac.manchester.tornado.drivers.common.CommandQueue;
 import uk.ac.manchester.tornado.drivers.cuda.exceptions.CUDAException;
 import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDADriverAPI;
 import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDAHandles;
-import uk.ac.manchester.tornado.drivers.cuda.ffm.FFMSupport;
+import uk.ac.manchester.tornado.drivers.common.ffm.FFMSupport;
 import uk.ac.manchester.tornado.drivers.cuda.ffm.NVTXAPI;
 import uk.ac.manchester.tornado.drivers.cuda.natives.NativeCommandQueue;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;

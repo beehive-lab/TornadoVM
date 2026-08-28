@@ -16,4 +16,5 @@ open module tornado.drivers.common {
     exports uk.ac.manchester.tornado.drivers.common.compiler.phases.analysis;
     exports uk.ac.manchester.tornado.drivers.common.utils;
     exports uk.ac.manchester.tornado.drivers.common.power;
+    exports uk.ac.manchester.tornado.drivers.common.ffm;
 }

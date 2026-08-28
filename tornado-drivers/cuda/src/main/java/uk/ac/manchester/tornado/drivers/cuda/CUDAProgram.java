@@ -49,7 +49,7 @@ import uk.ac.manchester.tornado.drivers.cuda.exceptions.CUDAException;
 import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDACompiler;
 import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDADriverAPI;
 import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDAHandles;
-import uk.ac.manchester.tornado.drivers.cuda.ffm.FFMSupport;
+import uk.ac.manchester.tornado.drivers.common.ffm.FFMSupport;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class CUDAProgram {

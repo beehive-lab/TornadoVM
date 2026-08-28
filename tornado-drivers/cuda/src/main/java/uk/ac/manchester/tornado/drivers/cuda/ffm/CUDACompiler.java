@@ -21,6 +21,7 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.ffm;
 
+import uk.ac.manchester.tornado.drivers.common.ffm.FFMSupport;
 import java.io.File;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;

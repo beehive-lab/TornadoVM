@@ -35,7 +35,7 @@ import uk.ac.manchester.tornado.drivers.cuda.enums.CUDAPlatformInfo;
 import uk.ac.manchester.tornado.drivers.cuda.exceptions.CUDAException;
 import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDADriverAPI;
 import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDAHandles;
-import uk.ac.manchester.tornado.drivers.cuda.ffm.FFMSupport;
+import uk.ac.manchester.tornado.drivers.common.ffm.FFMSupport;
 
 public class CUDAPlatform implements TornadoPlatformInterface {
 

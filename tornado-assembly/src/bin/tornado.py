@@ -69,6 +69,7 @@ __OPENCL_MODULE__ = "tornado.drivers.opencl"
 __METAL_MODULE__ = "tornado.drivers.metal"
 __CUDA_MODULE__ = "tornado.drivers.cuda"
 __ENABLE_NATIVE_ACCESS__ = "--enable-native-access="
+__DRIVERS_COMMON_MODULE__ = "tornado.drivers.common"
 __CUBLAS_MODULE__ = "tornado.cublas"
 __CUFFT_MODULE__ = "tornado.cufft"
 __CUDNN_MODULE__ = "tornado.cudnn"
@@ -1344,6 +1345,11 @@ class TornadoVMRunnerTool():
         cuda = self.sdk + __CUDA_EXPORTS__
 
         javaFlags = javaFlags + " @" + common + " "
+        # The backends reach their driver libraries through java.lang.foreign rather than a JNI
+        # library of their own, and every one of those lookups goes through
+        # tornado.drivers.common. Those are restricted methods, so without this the lookup fails
+        # outright (JDK 21) or warns on every run.
+        javaFlags = javaFlags + __ENABLE_NATIVE_ACCESS__ + __DRIVERS_COMMON_MODULE__ + " "
         if ("opencl-backend" in self.listOfBackends):
             javaFlags = javaFlags + "@" + opencl + " "
             tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
@@ -1353,10 +1359,6 @@ class TornadoVMRunnerTool():
         if ("cuda-backend" in self.listOfBackends):
             javaFlags = javaFlags + "@" + cuda + " "
             tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__ + "," + __CUBLAS_MODULE__ + "," + __CUFFT_MODULE__ + "," + __CUDNN_MODULE__ + "," + __CUSPARSE_MODULE__ + "," + __CUTLASS_MODULE__
-            # The CUDA backend calls libcuda, NVRTC and NVTX through java.lang.foreign rather than a
-            # JNI library of its own. Those are restricted methods, so without this the module gets
-            # a one-off "restricted method called" warning on every run.
-            javaFlags = javaFlags + __ENABLE_NATIVE_ACCESS__ + __CUDA_MODULE__ + " "
 
         javaFlags = javaFlags + tornadoAddModules + " "
 

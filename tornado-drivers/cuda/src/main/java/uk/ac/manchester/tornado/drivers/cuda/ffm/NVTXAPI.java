@@ -21,10 +21,11 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.ffm;
 
-import static uk.ac.manchester.tornado.drivers.cuda.ffm.FFMSupport.C_INT;
-import static uk.ac.manchester.tornado.drivers.cuda.ffm.FFMSupport.C_LONG;
-import static uk.ac.manchester.tornado.drivers.cuda.ffm.FFMSupport.C_POINTER;
-import static uk.ac.manchester.tornado.drivers.cuda.ffm.FFMSupport.downcall;
+import uk.ac.manchester.tornado.drivers.common.ffm.FFMSupport;
+import static uk.ac.manchester.tornado.drivers.common.ffm.FFMSupport.C_INT;
+import static uk.ac.manchester.tornado.drivers.common.ffm.FFMSupport.C_LONG;
+import static uk.ac.manchester.tornado.drivers.common.ffm.FFMSupport.C_POINTER;
+import static uk.ac.manchester.tornado.drivers.common.ffm.FFMSupport.downcall;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
