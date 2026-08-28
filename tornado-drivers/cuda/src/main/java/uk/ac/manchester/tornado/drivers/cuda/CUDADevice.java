@@ -30,19 +30,29 @@ import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanRead
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableFreq;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDADeviceInfo;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDADeviceType;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDALocalMemType;
+import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDADriverAPI;
+import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDAHandles;
+import uk.ac.manchester.tornado.drivers.cuda.ffm.FFMSupport;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 
 public class CUDADevice implements CUDATargetDevice {
 
     private static final int INIT_VALUE = -1;
     private static final int MAX_BUFFER_SIZE = 8192;
+    private static final int DEVICE_NAME_BYTES = 256;
+    private static final int NVIDIA_PCI_VENDOR_ID = 0x10DE;
+    /** CL_FP_FMA, used only as a non-zero "supported" marker for the fp-config queries. */
+    private static final long CL_FP_NONZERO = 0x20L;
 
     private final long devicePtr;
     private final int index;
@@ -140,7 +150,157 @@ public class CUDADevice implements CUDATargetDevice {
         getDeviceVendorId();
     }
 
-    static native void clGetDeviceInfo(long id, int info, byte[] buffer);
+    /**
+     * Answers the OpenCL-style {@code cl_device_info} queries the Java layer makes by mapping each
+     * one onto the CUDA driver attribute that carries the same meaning, and writing the result into
+     * {@code buffer} in the little-endian binary layout the callers parse back out.
+     *
+     * <p>
+     * A failing attribute query leaves its zero default rather than throwing: device enumeration
+     * must degrade to a device that reports nothing rather than abort discovery altogether.
+     */
+    static void clGetDeviceInfo(long id, int info, byte[] buffer) {
+        Arrays.fill(buffer, (byte) 0);
+        CUDAHandles.Device boxed = CUDAHandles.resolve(id, CUDAHandles.Device.class);
+        if (boxed == null) {
+            return;
+        }
+        int device = boxed.device();
+        ByteBuffer out = ByteBuffer.wrap(buffer).order(CUDADriver.BYTE_ORDER);
+
+        if (info == CUDADeviceInfo.CL_DEVICE_TYPE.getValue()) {
+            putLong(out, CUDADeviceType.CL_DEVICE_TYPE_GPU.getValue());
+        } else if (info == CUDADeviceInfo.CL_DEVICE_VENDOR_ID.getValue()) {
+            putInt(out, NVIDIA_PCI_VENDOR_ID);
+        } else if (info == CUDADeviceInfo.CL_DEVICE_MAX_COMPUTE_UNITS.getValue()) {
+            putInt(out, attribute(device, CUDADriverAPI.CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT));
+        } else if (info == CUDADeviceInfo.CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS.getValue()) {
+            putInt(out, 3);
+        } else if (info == CUDADeviceInfo.CL_DEVICE_MAX_WORK_GROUP_SIZE.getValue()) {
+            putInt(out, attribute(device, CUDADriverAPI.CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK));
+        } else if (info == CUDADeviceInfo.CL_DEVICE_MAX_WORK_ITEM_SIZES.getValue()) {
+            if (buffer.length >= 3 * Long.BYTES) {
+                out.putLong(attribute(device, CUDADriverAPI.CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X));
+                out.putLong(attribute(device, CUDADriverAPI.CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y));
+                out.putLong(attribute(device, CUDADriverAPI.CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Z));
+            }
+        } else if (info == CUDADeviceInfo.CL_DEVICE_MAX_CLOCK_FREQUENCY.getValue()) {
+            putInt(out, attribute(device, CUDADriverAPI.CU_DEVICE_ATTRIBUTE_CLOCK_RATE) / 1000); // kHz -> MHz
+        } else if (info == CUDADeviceInfo.CL_DEVICE_ADDRESS_BITS.getValue()) {
+            putInt(out, 64);
+        } else if (info == CUDADeviceInfo.CL_DEVICE_MAX_MEM_ALLOC_SIZE.getValue() || info == CUDADeviceInfo.CL_DEVICE_GLOBAL_MEM_SIZE.getValue()) {
+            putLong(out, totalMemory(device));
+        } else if (info == CUDADeviceInfo.CL_DEVICE_MEM_BASE_ADDR_ALIGN.getValue()) {
+            putInt(out, 4096 * 8); // textureAlignment in bits, generous default
+        } else if (info == CUDADeviceInfo.CL_DEVICE_SINGLE_FP_CONFIG.getValue() || info == CUDADeviceInfo.CL_DEVICE_DOUBLE_FP_CONFIG.getValue()) {
+            // Only ever read as a non-zero "supported" marker; every NVIDIA GPU supports both.
+            putLong(out, CL_FP_NONZERO);
+        } else if (info == CUDADeviceInfo.CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE.getValue()) {
+            putLong(out, attribute(device, CUDADriverAPI.CU_DEVICE_ATTRIBUTE_TOTAL_CONSTANT_MEMORY));
+        } else if (info == CUDADeviceInfo.CL_DEVICE_LOCAL_MEM_TYPE.getValue()) {
+            putInt(out, (int) CUDALocalMemType.CL_LOCAL.getValue());
+        } else if (info == CUDADeviceInfo.CL_DEVICE_LOCAL_MEM_SIZE.getValue()) {
+            putLong(out, attribute(device, CUDADriverAPI.CU_DEVICE_ATTRIBUTE_MAX_SHARED_MEMORY_PER_BLOCK));
+        } else if (info == CUDADeviceInfo.CL_DEVICE_AVAILABLE.getValue()) {
+            buffer[0] = 1;
+        } else if (info == CUDADeviceInfo.CL_DEVICE_NAME.getValue()) {
+            putString(buffer, deviceName(device));
+        } else if (info == CUDADeviceInfo.CL_DEVICE_VENDOR.getValue()) {
+            putString(buffer, "NVIDIA Corporation");
+        } else if (info == CUDADeviceInfo.CL_DRIVER_VERSION.getValue()) {
+            putString(buffer, driverVersion());
+        } else if (info == CUDADeviceInfo.CL_DEVICE_PROFILE.getValue()) {
+            putString(buffer, "FULL_PROFILE");
+        } else if (info == CUDADeviceInfo.CL_DEVICE_VERSION.getValue()) {
+            // Reported as the compute capability so the Java parser (split(" ")[1] -> "X.Y") yields
+            // the SM version.
+            putString(buffer, "CUDA " + attribute(device, CUDADriverAPI.CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR) + "." + attribute(device,
+                    CUDADriverAPI.CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR));
+        } else if (info == CUDADeviceInfo.CL_DEVICE_OPENCL_C_VERSION.getValue()) {
+            putString(buffer, "CUDA C 1.0");
+        } else if (info == CUDADeviceInfo.CL_DEVICE_EXTENSIONS.getValue()) {
+            // FP16 arithmetic requires compute capability >= 5.3.
+            int major = attribute(device, CUDADriverAPI.CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR);
+            int minor = attribute(device, CUDADriverAPI.CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR);
+            putString(buffer, major > 5 || (major == 5 && minor >= 3) ? "cl_khr_fp64 cl_khr_fp16" : "cl_khr_fp64");
+        } else if (info == CUDADeviceInfo.CL_DEVICE_HOST_UNIFIED_MEMORY.getValue()) {
+            putInt(out, 0);
+        } else if (info == CUDADeviceInfo.CL_DEVICE_ENDIAN_LITTLE.getValue()) {
+            putInt(out, 1);
+        } else if (info == CUDADeviceInfo.CL_DEVICE_IL_VERSION.getValue()) {
+            // No SPIR-V ingestion path for CUDA; report empty (Java treats it as unsupported).
+            putString(buffer, "");
+        } else if (info == CUDADeviceInfo.TORNADO_DEVICE_ASYNC_ENGINE_COUNT.getValue()) {
+            // Number of async DMA copy engines: 0 = no copy/compute overlap, 1 = one direction,
+            // >= 2 = H2D and D2H can both overlap compute (and each other).
+            putInt(out, attribute(device, CUDADriverAPI.CU_DEVICE_ATTRIBUTE_ASYNC_ENGINE_COUNT));
+        } else if (info == CUDADeviceInfo.TORNADO_DEVICE_CONCURRENT_KERNELS.getValue()) {
+            // 1 if the device can execute multiple kernels from the same context concurrently.
+            putInt(out, attribute(device, CUDADriverAPI.CU_DEVICE_ATTRIBUTE_CONCURRENT_KERNELS));
+        }
+        // Unknown / unsupported info key: leave the buffer zeroed.
+    }
+
+    private static int attribute(int device, int attribute) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment value = FFMSupport.allocateInt(arena);
+            if (CUDADriverAPI.cuDeviceGetAttribute(value, attribute, device) != CUDADriverAPI.CUDA_SUCCESS) {
+                return 0;
+            }
+            return value.get(FFMSupport.C_INT, 0);
+        }
+    }
+
+    private static long totalMemory(int device) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment bytes = FFMSupport.allocateLong(arena);
+            if (CUDADriverAPI.cuDeviceTotalMem(bytes, device) != CUDADriverAPI.CUDA_SUCCESS) {
+                return 0;
+            }
+            return bytes.get(FFMSupport.C_LONG, 0);
+        }
+    }
+
+    private static String deviceName(int device) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment name = arena.allocate(DEVICE_NAME_BYTES, 1);
+            if (CUDADriverAPI.cuDeviceGetName(name, DEVICE_NAME_BYTES, device) != CUDADriverAPI.CUDA_SUCCESS) {
+                return "";
+            }
+            return FFMSupport.readCString(name, DEVICE_NAME_BYTES);
+        }
+    }
+
+    private static String driverVersion() {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment version = FFMSupport.allocateInt(arena);
+            if (CUDADriverAPI.cuDriverGetVersion(version) != CUDADriverAPI.CUDA_SUCCESS) {
+                return "0.0";
+            }
+            int driverVersion = version.get(FFMSupport.C_INT, 0);
+            return (driverVersion / 1000) + "." + ((driverVersion % 1000) / 10);
+        }
+    }
+
+    private static void putInt(ByteBuffer out, int value) {
+        if (out.remaining() >= Integer.BYTES) {
+            out.putInt(value);
+        }
+    }
+
+    private static void putLong(ByteBuffer out, long value) {
+        if (out.remaining() >= Long.BYTES) {
+            out.putLong(value);
+        }
+    }
+
+    /** Writes a NUL-terminated string; the Java readers substring up to the first NUL. */
+    private static void putString(byte[] buffer, String value) {
+        byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
+        int length = Math.min(bytes.length, buffer.length - 1);
+        System.arraycopy(bytes, 0, buffer, 0, length);
+        buffer[length] = 0;
+    }
 
     public long getDevicePointer() {
         return devicePtr;

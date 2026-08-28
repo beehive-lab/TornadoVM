@@ -25,6 +25,8 @@ package uk.ac.manchester.tornado.drivers.cuda;
 
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,6 +35,8 @@ import java.util.List;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDADriverAPI;
+import uk.ac.manchester.tornado.drivers.cuda.ffm.FFMSupport;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAInstalledCode;
 import uk.ac.manchester.tornado.drivers.cuda.runtime.CUDATornadoDevice;
 import uk.ac.manchester.tornado.drivers.cuda.virtual.VirtualDeviceDescriptor;
@@ -46,7 +50,11 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class CUDADriver {
 
-    public static final String CUDA_JNI_LIBRARY = "tornado-cuda";
+    /**
+     * CUDA exposes a single (driver) platform, addressed by this fixed handle: the OpenCL clone
+     * enumerates one platform and then asks it for its devices.
+     */
+    public static final long CUDA_PLATFORM_HANDLE = 0x1L;
 
     private static boolean initialised = false;
 
@@ -63,12 +71,11 @@ public class CUDADriver {
         if (VIRTUAL_DEVICE_ENABLED) {
             initializeVirtualPlatform();
         } else {
-            // Initialize physical platform
-            try {
-                // Loading JNI CUDADriver library
-                System.loadLibrary(CUDADriver.CUDA_JNI_LIBRARY);
-            } catch (final UnsatisfiedLinkError e) {
-                throw new TornadoRuntimeException("[ERROR] CUDADriver JNI Library not found");
+            // Initialize physical platform. The backend talks to libcuda and NVRTC directly through
+            // java.lang.foreign, so there is no TornadoVM native library to load here; what has to be
+            // present is the NVIDIA driver itself.
+            if (!CUDADriverAPI.isAvailable()) {
+                throw new TornadoRuntimeException("[ERROR] CUDA driver library (libcuda) not found");
             }
 
             try {
@@ -85,11 +92,34 @@ public class CUDADriver {
         }
     }
 
-    static native boolean registerCallback();
+    /**
+     * Initialises the CUDA Driver API. The OpenCL clone calls this to install an error callback;
+     * CUDA has no such callback, so this is where {@code cuInit} runs instead.
+     */
+    static boolean registerCallback() {
+        return CUDADriverAPI.isAvailable() && CUDADriverAPI.cuInit(0) == CUDADriverAPI.CUDA_SUCCESS;
+    }
 
-    static native int clGetPlatformCount();
+    static int clGetPlatformCount() {
+        if (!registerCallback()) {
+            return 0;
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment count = FFMSupport.allocateInt(arena);
+            if (CUDADriverAPI.cuDeviceGetCount(count) != CUDADriverAPI.CUDA_SUCCESS) {
+                return 0;
+            }
+            return count.get(FFMSupport.C_INT, 0) > 0 ? 1 : 0;
+        }
+    }
 
-    static native int clGetPlatformIDs(long[] platformIds);
+    static int clGetPlatformIDs(long[] platformIds) {
+        if (platformIds.length == 0) {
+            return 0;
+        }
+        platformIds[0] = CUDA_PLATFORM_HANDLE;
+        return 1;
+    }
 
     public static void cleanup() {
         if (initialised) {

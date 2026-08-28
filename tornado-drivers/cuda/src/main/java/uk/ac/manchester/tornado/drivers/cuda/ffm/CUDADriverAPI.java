@@ -62,6 +62,30 @@ public final class CUDADriverAPI {
     /** CUctx_flags: yield the CPU while waiting for the GPU. */
     public static final int CU_CTX_SCHED_YIELD = 0x02;
 
+    /** CUdevice_attribute values the backend queries. */
+    public static final int CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK = 1;
+    public static final int CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X = 2;
+    public static final int CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y = 3;
+    public static final int CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Z = 4;
+    public static final int CU_DEVICE_ATTRIBUTE_MAX_SHARED_MEMORY_PER_BLOCK = 8;
+    public static final int CU_DEVICE_ATTRIBUTE_TOTAL_CONSTANT_MEMORY = 9;
+    public static final int CU_DEVICE_ATTRIBUTE_WARP_SIZE = 10;
+    public static final int CU_DEVICE_ATTRIBUTE_CLOCK_RATE = 13;
+    public static final int CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT = 16;
+    public static final int CU_DEVICE_ATTRIBUTE_CONCURRENT_KERNELS = 31;
+    public static final int CU_DEVICE_ATTRIBUTE_ASYNC_ENGINE_COUNT = 40;
+    public static final int CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR = 75;
+    public static final int CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR = 76;
+
+    /** CUjit_option values used to capture the driver's JIT diagnostics on a module load. */
+    public static final int CU_JIT_ERROR_LOG_BUFFER = 5;
+    public static final int CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES = 6;
+
+    /** CUstreamCaptureStatus / CUstreamCaptureMode values used by the CUDA-graph path. */
+    public static final int CU_STREAM_CAPTURE_STATUS_NONE = 0;
+    public static final int CU_STREAM_CAPTURE_STATUS_ACTIVE = 1;
+    public static final int CU_STREAM_CAPTURE_MODE_GLOBAL = 0;
+
     private static final SymbolLookup LIBCUDA = FFMSupport.loadLibrary("libcuda.so.1", "libcuda.so", "nvcuda.dll", "libcuda.dylib");
 
     private static final MethodHandle CU_INIT;
@@ -622,6 +646,19 @@ public final class CUDADriverAPI {
             String name = FFMSupport.readCString(out.get(C_POINTER, 0));
             return name == null ? Integer.toString(result) : name;
         }
+    }
+
+    /**
+     * The message a failed driver call is reported with: the call that failed, the
+     * {@code CUDA_ERROR_*} name and numeric CUresult, and the driver's own description of it.
+     */
+    public static String describe(String call, int result) {
+        StringBuilder message = new StringBuilder(call).append(" failed: ").append(errorName(result)).append(" (").append(result).append(")");
+        String text = errorString(result);
+        if (text != null) {
+            message.append(" - ").append(text);
+        }
+        return message.toString();
     }
 
     /** The human-readable description for a CUresult, or {@code null} when the driver has none. */
