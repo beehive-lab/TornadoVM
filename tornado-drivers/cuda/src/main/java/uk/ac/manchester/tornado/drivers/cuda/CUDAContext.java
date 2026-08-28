@@ -117,7 +117,9 @@ public class CUDAContext implements CUDAContextInterface {
                 throw new CUDAException(CUDADriverAPI.describe("cuStreamCreate", result));
             }
             long streamPointer = stream.get(FFMSupport.C_POINTER, 0).address();
-            return CUDAHandles.register(new CUDAHandles.Queue(streamPointer, context.context(), context.device(), properties));
+            long handle = CUDAHandles.register(new CUDAHandles.Queue(streamPointer, context.context(), context.device(), properties));
+            CUDACommandQueue.warmUpIssuePath(handle);
+            return handle;
         }
     }
 

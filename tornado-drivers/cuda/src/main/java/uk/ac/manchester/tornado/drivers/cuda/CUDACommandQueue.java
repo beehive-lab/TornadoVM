@@ -173,6 +173,54 @@ public class CUDACommandQueue extends CommandQueue {
         return timingEnabled ? CU_EVENT_DEFAULT : CU_EVENT_DISABLE_TIMING;
     }
 
+    /**
+     * How many times the issue path is exercised when a queue is created. The first calls through a
+     * downcall handle are the expensive ones -- the handle is linked and the surrounding Java is
+     * still interpreted -- and a few repetitions are enough to get past that.
+     */
+    private static final int WARM_UP_ITERATIONS = 256;
+
+    /** Size of the throwaway buffer the warm-up copies; small enough that the copy itself is free. */
+    private static final int WARM_UP_BYTES = 256;
+
+    /**
+     * Runs the transfer issue path a few times on a throwaway buffer, so the work of linking the
+     * downcall handles happens here rather than inside the first transfer of the first plan.
+     *
+     * <p>
+     * Without this the first few copies measure several times their steady-state cost. The device
+     * timestamps the profiler reports bracket the host work that issues the copy -- the end event
+     * cannot be recorded until the host gets to it -- so warm-up on the issue path shows up as
+     * device time and skews the first execution's transfer numbers. Failures are ignored: this is
+     * an optimisation, and anything genuinely wrong with the queue will be reported by the real
+     * work that follows.
+     */
+    static void warmUpIssuePath(long queueId) {
+        CUDAHandles.Queue queue = CUDAHandles.resolve(queueId, CUDAHandles.Queue.class);
+        if (queue == null) {
+            return;
+        }
+        long devicePointer = 0;
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment host = arena.allocate(WARM_UP_BYTES, Long.BYTES);
+            MemorySegment allocation = FFMSupport.allocateLong(arena);
+            if (CUDADriverAPI.cuMemAlloc(allocation, WARM_UP_BYTES) != CUDADriverAPI.CUDA_SUCCESS) {
+                return;
+            }
+            devicePointer = allocation.get(FFMSupport.C_LONG, 0);
+            for (int i = 0; i < WARM_UP_ITERATIONS; i++) {
+                discardEvent(transferToDevice(queue, host.address(), 0, 0, WARM_UP_BYTES, devicePointer, null, true));
+                discardEvent(transferToHost(queue, host.address(), 0, 0, WARM_UP_BYTES, devicePointer, null, true));
+            }
+        } catch (CUDAException | RuntimeException e) {
+            // An optimisation only; the real work that follows will report anything genuinely wrong.
+        } finally {
+            if (devicePointer != 0) {
+                CUDADriverAPI.cuMemFree(devicePointer);
+            }
+        }
+    }
+
     static void clGetCommandQueueInfo(long queueId, int info, byte[] buffer) throws CUDAException {
         Arrays.fill(buffer, (byte) 0);
         CUDAHandles.Queue queue = CUDAHandles.resolve(queueId, CUDAHandles.Queue.class);
