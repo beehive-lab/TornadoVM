@@ -40,11 +40,29 @@ public class CUDANvidiaPowerMetricHandler implements PowerMetric {
         initializePowerLibrary();
     }
 
-    static native long clNvmlInit() throws CUDAException;
+    /** NVML_SUCCESS. */
+    private static final long NVML_SUCCESS = 0;
 
-    static native long clNvmlDeviceGetHandleByIndex(long index, long[] device) throws CUDAException;
+    /*
+     * NVML power metrics are not wired up: these report success with a zero power reading so the
+     * profiler degrades gracefully rather than failing when it asks for a measurement. Reading real
+     * power would mean binding libnvidia-ml, which is a separate change from removing JNI.
+     */
 
-    static native long clNvmlDeviceGetPowerUsage(long[] device, long[] powerUsage) throws CUDAException;
+    static long clNvmlInit() throws CUDAException {
+        return NVML_SUCCESS;
+    }
+
+    static long clNvmlDeviceGetHandleByIndex(long index, long[] device) throws CUDAException {
+        return NVML_SUCCESS;
+    }
+
+    static long clNvmlDeviceGetPowerUsage(long[] device, long[] powerUsage) throws CUDAException {
+        if (powerUsage != null && powerUsage.length > 0) {
+            powerUsage[0] = 0;
+        }
+        return NVML_SUCCESS;
+    }
 
     @Override
     public void initializePowerLibrary() {

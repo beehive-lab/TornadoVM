@@ -58,6 +58,8 @@ public final class CUDADriverAPI {
     public static final int CUDA_SUCCESS = 0;
     /** CUresult returned by cuEventQuery for an event that has not completed yet. */
     public static final int CUDA_ERROR_NOT_READY = 600;
+    /** CUresult reported for an entry point this driver does not export. */
+    public static final int CUDA_ERROR_NOT_SUPPORTED = 801;
 
     /** CUctx_flags: yield the CPU while waiting for the GPU. */
     public static final int CU_CTX_SCHED_YIELD = 0x02;
@@ -573,6 +575,9 @@ public final class CUDADriverAPI {
     }
 
     public static int cuStreamBeginCapture(long stream, int mode) {
+        if (CU_STREAM_BEGIN_CAPTURE == null) {
+            return CUDA_ERROR_NOT_SUPPORTED;
+        }
         try {
             return (int) CU_STREAM_BEGIN_CAPTURE.invokeExact(stream, mode);
         } catch (Throwable t) {
@@ -581,6 +586,9 @@ public final class CUDADriverAPI {
     }
 
     public static int cuStreamEndCapture(long stream, MemorySegment graph) {
+        if (CU_STREAM_END_CAPTURE == null) {
+            return CUDA_ERROR_NOT_SUPPORTED;
+        }
         try {
             return (int) CU_STREAM_END_CAPTURE.invokeExact(stream, graph);
         } catch (Throwable t) {
@@ -589,6 +597,9 @@ public final class CUDADriverAPI {
     }
 
     public static int cuStreamIsCapturing(long stream, MemorySegment captureStatus) {
+        if (CU_STREAM_IS_CAPTURING == null) {
+            return CUDA_ERROR_NOT_SUPPORTED;
+        }
         try {
             return (int) CU_STREAM_IS_CAPTURING.invokeExact(stream, captureStatus);
         } catch (Throwable t) {
@@ -597,6 +608,9 @@ public final class CUDADriverAPI {
     }
 
     public static int cuGraphInstantiateWithFlags(MemorySegment graphExec, long graph, long flags) {
+        if (CU_GRAPH_INSTANTIATE == null) {
+            return CUDA_ERROR_NOT_SUPPORTED;
+        }
         try {
             return (int) CU_GRAPH_INSTANTIATE.invokeExact(graphExec, graph, flags);
         } catch (Throwable t) {
@@ -605,6 +619,9 @@ public final class CUDADriverAPI {
     }
 
     public static int cuGraphExecUpdate(long graphExec, long graph, MemorySegment resultInfo) {
+        if (CU_GRAPH_EXEC_UPDATE == null) {
+            return CUDA_ERROR_NOT_SUPPORTED;
+        }
         try {
             return (int) CU_GRAPH_EXEC_UPDATE.invokeExact(graphExec, graph, resultInfo);
         } catch (Throwable t) {
@@ -613,6 +630,9 @@ public final class CUDADriverAPI {
     }
 
     public static int cuGraphLaunch(long graphExec, long stream) {
+        if (CU_GRAPH_LAUNCH == null) {
+            return CUDA_ERROR_NOT_SUPPORTED;
+        }
         try {
             return (int) CU_GRAPH_LAUNCH.invokeExact(graphExec, stream);
         } catch (Throwable t) {
@@ -621,6 +641,9 @@ public final class CUDADriverAPI {
     }
 
     public static int cuGraphExecDestroy(long graphExec) {
+        if (CU_GRAPH_EXEC_DESTROY == null) {
+            return CUDA_ERROR_NOT_SUPPORTED;
+        }
         try {
             return (int) CU_GRAPH_EXEC_DESTROY.invokeExact(graphExec);
         } catch (Throwable t) {
@@ -629,6 +652,9 @@ public final class CUDADriverAPI {
     }
 
     public static int cuGraphDestroy(long graph) {
+        if (CU_GRAPH_DESTROY == null) {
+            return CUDA_ERROR_NOT_SUPPORTED;
+        }
         try {
             return (int) CU_GRAPH_DESTROY.invokeExact(graph);
         } catch (Throwable t) {
