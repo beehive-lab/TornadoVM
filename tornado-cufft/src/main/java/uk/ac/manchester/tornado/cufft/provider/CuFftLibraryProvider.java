@@ -79,6 +79,21 @@ public final class CuFftLibraryProvider implements TornadoLibraryProvider {
         }
     }
 
+
+    /**
+     * Whether cuFFT can actually be reached on this host. The provider no longer ships a JNI library
+     * of its own, so "is the library there" is a question about the CUDA Toolkit rather than about
+     * TornadoVM's own artifacts; tests and callers ask it here instead of probing for a .so.
+     */
+    public static boolean isAvailable() {
+        try {
+            CuFftNativeLib.load();
+            return true;
+        } catch (RuntimeException e) {
+            return false;
+        }
+    }
+
     @Override
     public String libraryName() {
         return CuFft.LIBRARY_NAME;

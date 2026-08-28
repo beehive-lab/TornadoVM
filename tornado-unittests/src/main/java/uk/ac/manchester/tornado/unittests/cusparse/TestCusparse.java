@@ -36,6 +36,7 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.cusparse.Cusparse;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+import uk.ac.manchester.tornado.cusparse.provider.CusparseLibraryProvider;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
 
 /**
@@ -60,10 +61,8 @@ public class TestCusparse extends TornadoTestBase {
                 default -> throw new TornadoVMCUDANotSupported(message);
             }
         }
-        try {
-            System.loadLibrary("tornado-cusparse");
-        } catch (UnsatisfiedLinkError e) {
-            throw new TornadoVMCUDANotSupported("libtornado-cusparse is not available: " + e.getMessage());
+        if (!CusparseLibraryProvider.isAvailable()) {
+            throw new TornadoVMCUDANotSupported("cuSPARSE is not available on this host");
         }
     }
 
