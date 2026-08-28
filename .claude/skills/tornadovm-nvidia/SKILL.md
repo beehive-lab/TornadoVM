@@ -5,7 +5,7 @@ description: NVIDIA-specific TornadoVM workflows on the CUDA backend — profile
 
 # TornadoVM on NVIDIA (CUDA backend)
 
-All of this targets the **CUDA-C backend**: build with `make BACKEND=cuda` (which also builds the `*-jni` library modules under the `cuda-backend` Maven profile), then `source setvars.sh`. Repo-root refs: `HYBRID_API_GUIDE.md`, `NVIDIA_ROADMAP.md`, and `docs/source/hybrid-api.rst`.
+All of this targets the **CUDA-C backend**: build with `make BACKEND=cuda` (which also builds the `*-jni` library modules under the `cuda-backend` Maven profile), then `source setvars.sh`. Repo-root refs: `HYBRID_API_GUIDE.md` and `docs/source/hybrid-api.rst`.
 
 ## 1. Profiling with Nsight Systems (nsys)
 
