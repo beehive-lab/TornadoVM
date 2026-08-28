@@ -107,6 +107,11 @@
                 </dependency>
                 <dependency>
                     <groupId>${project.groupId}</groupId>
+                    <artifactId>tornado-curand</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
                     <artifactId>tornado-cufft</artifactId>
                     <version>${project.version}</version>
                 </dependency>
