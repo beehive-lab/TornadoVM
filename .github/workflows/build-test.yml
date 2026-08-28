@@ -88,11 +88,11 @@ jobs:
 
           # The CUDA legs are pinned to one machine, and both the build and the test of a chain
           # take their runner from the same entry here, so they cannot land on different boxes.
-          # libtornado-cuda.so records the nvrtc SONAME of whatever toolkit built it
-          # (libnvrtc.so.11.5 vs libnvrtc.so.12), so a CUDA SDK built on one runner fails to load
-          # on a runner with a different toolkit: "CUDADriver JNI Library not found", and every
-          # test then fails at runtime init. That only became reachable once build and test became
-          # separate jobs.
+          # The CUDA backend itself no longer constrains this: it reaches libcuda and NVRTC through
+          # java.lang.foreign and resolves the NVRTC soname at run time, so its class files are
+          # toolkit-independent. What still is: the library-task modules (cublas/cufft/cudnn/
+          # cusparse/cutlass) are JNI and link the toolkit that built them, so a SDK built against
+          # one toolkit will not load them on a runner with another.
           #
           # The label used is sdk-builder, carried today only by the runner named cyclone, which is
           # also the box with the newer toolkit (12.0 vs thunder's 11.5, too old for CUTLASS). NOTE
