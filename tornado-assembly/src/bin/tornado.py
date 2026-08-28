@@ -172,79 +172,54 @@ def check_nvidia_driver():
     return shutil.which('nvidia-smi') is not None
 
 def validate_opencl_backend(sdk_path):
-    """Validate OpenCL backend dependencies on Windows."""
+    """Validate OpenCL backend dependencies on Windows.
+
+    The OpenCL backend has no JNI library of its own: it calls the ICD loader through
+    java.lang.foreign. So what has to be resolvable at run time is OpenCL.dll itself, which the GPU
+    driver installs, not a TornadoVM DLL.
+    """
     if os.name != 'nt':
         return True
 
-    opencl_dll = os.path.join(sdk_path, 'lib', 'tornado-opencl.dll')
+    system_opencl = os.path.join(os.environ.get('SystemRoot', 'C:\\Windows'), 'System32', 'OpenCL.dll')
+    try:
+        if os.path.exists(system_opencl):
+            return True
+    except Exception:
+        # Silently skip if we cannot check (permission issues); assume it is there.
+        return True
 
-    if not os.path.exists(opencl_dll):
-        print(f"[WARNING] OpenCL backend configured but tornado-opencl.dll not found")
-        print(f"[INFO] Expected location: {opencl_dll}")
-        print()
-        return False
+    print("[ERROR] Cannot find OpenCL.dll, the ICD loader the OpenCL backend talks to")
+    print()
 
-    # Try to load the DLL
-    if not check_dll_loadable(opencl_dll):
-        print("[ERROR] Cannot load OpenCL JNI library")
-        print()
-        print(f"[INFO] Library location: {opencl_dll}")
-        print()
-
-        # Detect GPU to provide better guidance
-        gpus = get_gpu_info()
-        if gpus:
-            print("[INFO] Detected GPU(s):")
-            for gpu in gpus:
-                print(f"       - {gpu}")
-            print()
-
-        # Check for NVIDIA drivers
-        has_nvidia_driver = check_nvidia_driver()
-
-        print("[CAUSE] Missing OpenCL drivers or dependencies")
-        print("        The OpenCL backend requires OpenCL 2.1+ drivers for GPUs/CPUs.")
+    gpus = get_gpu_info()
+    if gpus:
+        print("[INFO] Detected GPU(s):")
+        for gpu in gpus:
+            print(f"       - {gpu}")
         print()
 
-        # Check system OpenCL.dll (safe read-only operation)
-        system_opencl = os.path.join(os.environ.get('SystemRoot', 'C:\\Windows'), 'System32', 'OpenCL.dll')
-        try:
-            if os.path.exists(system_opencl):
-                print(f"[INFO] System OpenCL.dll found at: {system_opencl}")
-                print("       But tornado-opencl.dll cannot load due to missing dependencies")
-            else:
-                print("[INFO] System OpenCL.dll not found in Windows\\System32")
-                print("       OpenCL drivers are not installed")
-        except Exception:
-            # Silently skip if we can't check (permission issues)
-            pass
-        print()
+    has_nvidia_driver = check_nvidia_driver()
 
-        print("[FIX] Install appropriate GPU drivers based on your hardware:")
-        print()
-        print("      For NVIDIA GPUs:")
-        print("      - GPU driver must match or exceed CUDA Toolkit version")
-        print("      - Download NVIDIA drivers (usually pre-installed on Windows)")
-        print("      - Install CUDA Toolkit 10.0+ (Windows requires 12.0+)")
-        print("      - Download from: https://developer.nvidia.com/cuda-downloads")
-        print()
-        print("      For Intel GPUs:")
-        print("      - Install Intel Graphics drivers with OpenCL support")
-        print("      - Download from: https://www.intel.com/content/www/us/en/download-center/home.html")
-        print("      - Or install Intel Compute Runtime")
-        print("      - Download from: https://github.com/intel/compute-runtime/releases")
-        print()
-        print("      For AMD GPUs:")
-        print("      - Install AMD drivers with OpenCL 2.1+ support")
-        print("      - Download from AMD website")
-        print()
-        print("      After installation:")
-        print("      1. Restart your terminal/IDE")
-        print("      2. Run tornado --devices to verify installation")
-        print()
-        sys.exit(1)
-
-    return True
+    print("[CAUSE] OpenCL drivers are not installed")
+    print(f"        Expected the ICD loader at: {system_opencl}")
+    print("        The OpenCL backend requires OpenCL 2.1+ drivers for GPUs/CPUs.")
+    print()
+    print("[FIX] Install appropriate GPU drivers based on your hardware:")
+    print()
+    print("      For NVIDIA GPUs:")
+    print("      - GPU driver must match or exceed CUDA Toolkit version")
+    print("      - Download NVIDIA drivers (usually pre-installed on Windows)")
+    print("      - Download from: https://developer.nvidia.com/cuda-downloads")
+    print()
+    print("      For Intel GPUs:")
+    print("      - Install Intel Graphics drivers with OpenCL support")
+    print("      - Download from: https://www.intel.com/content/www/us/en/download-center/home.html")
+    print()
+    if has_nvidia_driver:
+        print("[INFO] NVIDIA drivers detected (nvidia-smi available)")
+    print()
+    sys.exit(1)
 
 def validate_cuda_backend(sdk_path):
     """Validate CUDA backend dependencies on Windows.

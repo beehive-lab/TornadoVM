@@ -45,9 +45,13 @@ public class NativeCommandQueue {
      * TornadoVM segment header.
      *
      * <p>
-     * The offsets mirror the JNI version exactly, including its mixed units: {@code offset} and
-     * {@code headerSize} index the mapped regions as {@code float} elements, while
-     * {@code sizeDest} and {@code headerSize} are subtracted as bytes to give the element count.
+     * {@code offset} and {@code headerSize} are both counts of elements, not bytes: the caller
+     * passes {@code ARRAY_HEADER / sizeof(int)}. The JNI version this replaces mixed the two units,
+     * subtracting the element count {@code headerSize} from the byte count {@code sizeDest} to size
+     * the copy, which made every copy run past the end of the destination mapping -- three floats
+     * for a 16-byte header. Nothing caught it, because C does not bounds-check a mapped pointer.
+     * Here the payload is measured in bytes throughout, and the copy is clamped to what both
+     * mappings actually hold.
      */
     public static long mapOnDeviceMemoryNDRegion(long commandQueuePtr, long destDevicePtr, long srcDevicePtr, long offset, int sizeDataType, long headerSize, long sizeSource, long sizeDest) {
         try (Arena arena = Arena.ofConfined()) {
@@ -57,11 +61,13 @@ public class NativeCommandQueue {
             if (source == 0 || destination == 0) {
                 return destDevicePtr;
             }
-            int elements = (int) ((sizeDest - headerSize) / sizeDataType);
-            if (elements > 0) {
-                MemorySegment from = FFMSupport.asSegment(source, sizeSource).asSlice((offset + headerSize) * Float.BYTES, (long) elements * Float.BYTES);
-                MemorySegment to = FFMSupport.asSegment(destination, sizeDest).asSlice(headerSize * Float.BYTES, (long) elements * Float.BYTES);
-                MemorySegment.copy(from, 0, to, 0, (long) elements * Float.BYTES);
+            long headerBytes = headerSize * sizeDataType;
+            long sourceOffset = offset * sizeDataType + headerBytes;
+            long payloadBytes = Math.min(sizeDest - headerBytes, sizeSource - sourceOffset);
+            if (payloadBytes > 0) {
+                MemorySegment from = FFMSupport.asSegment(source, sizeSource).asSlice(sourceOffset, payloadBytes);
+                MemorySegment to = FFMSupport.asSegment(destination, sizeDest).asSlice(headerBytes, payloadBytes);
+                MemorySegment.copy(from, 0, to, 0, payloadBytes);
             }
             OpenCLAPI.clEnqueueUnmapMemObject(commandQueuePtr, destDevicePtr, destination, 0, MemorySegment.NULL, MemorySegment.NULL);
             return destDevicePtr;

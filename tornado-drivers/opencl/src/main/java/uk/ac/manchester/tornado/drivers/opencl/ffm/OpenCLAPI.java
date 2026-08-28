@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.drivers.common.ffm.FFMSupport;
 
 /**
  * Panama bindings for the OpenCL entry points the backend uses, replacing the hand-written
- * {@code libtornado-opencl} JNI library.
+ * {@code libtornado-opencl} JNI library that used to sit between the Java layer and the ICD.
  *
  * <p>
  * Unlike the CUDA backend, whose JNI layer had to emulate OpenCL semantics on top of the CUDA

@@ -50,8 +50,6 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class OpenCL {
 
-    public static final String OPENCL_JNI_LIBRARY = "tornado-opencl";
-
     private static boolean initialised = false;
 
     private static final List<TornadoPlatformInterface> platforms = new ArrayList<>();
@@ -65,12 +63,11 @@ public class OpenCL {
         if (VIRTUAL_DEVICE_ENABLED) {
             initializeVirtualPlatform();
         } else {
-            // Initialize physical platform
-            try {
-                // Loading JNI OpenCL library
-                System.loadLibrary(OpenCL.OPENCL_JNI_LIBRARY);
-            } catch (final UnsatisfiedLinkError e) {
-                throw new TornadoRuntimeException("[ERROR] OpenCL JNI Library not found");
+            // Initialize physical platform. The backend talks to the OpenCL ICD loader directly
+            // through java.lang.foreign, so there is no TornadoVM native library to load here; what
+            // has to be present is an OpenCL installable client driver.
+            if (!OpenCLAPI.isAvailable()) {
+                throw new TornadoRuntimeException("[ERROR] OpenCL ICD loader (libOpenCL) not found");
             }
 
             try {
