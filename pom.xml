@@ -800,6 +800,7 @@
         <module>tornado-api</module>
         <module>tornado-annotation</module>
         <module>tornado-cublas</module>
+        <module>tornado-curand</module>
         <module>tornado-cufft</module>
         <module>tornado-cudnn</module>
         <module>tornado-cusparse</module>
