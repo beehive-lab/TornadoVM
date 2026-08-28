@@ -160,10 +160,6 @@ public class CUDACommandQueue extends CommandQueue {
     private static final int CU_EVENT_DEFAULT = 0x0;
     private static final int CU_EVENT_DISABLE_TIMING = 0x2;
 
-    /** OpenCL {@code cl_command_queue_info} values (see CUDACommandQueueInfo). */
-    private static final int CL_QUEUE_CONTEXT = 0x1090;
-    private static final int CL_QUEUE_DEVICE = 0x1091;
-
     /** Default block size when the caller supplies no local work size. */
     private static final int DEFAULT_BLOCK_SIZE = 256;
 
@@ -182,9 +178,9 @@ public class CUDACommandQueue extends CommandQueue {
             return;
         }
         long value = 0;
-        if (info == CL_QUEUE_CONTEXT) {
+        if (info == CL_QUEUE_CONTEXT.getValue()) {
             value = queue.context();
-        } else if (info == CL_QUEUE_DEVICE) {
+        } else if (info == CL_QUEUE_DEVICE.getValue()) {
             value = queue.device();
         }
         ByteBuffer.wrap(buffer).order(CUDADriver.BYTE_ORDER).putLong(value);

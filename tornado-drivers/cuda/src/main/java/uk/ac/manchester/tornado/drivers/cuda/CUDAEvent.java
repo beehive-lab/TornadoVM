@@ -79,23 +79,17 @@ public class CUDAEvent implements Event {
         this.oclEventID = eventId;
     }
 
-    /** OpenCL {@code CL_EVENT_COMMAND_EXECUTION_STATUS}. */
-    private static final int CL_EVENT_COMMAND_EXECUTION_STATUS = 0x11D3;
-    /** OpenCL {@code CL_COMPLETE} / {@code CL_RUNNING} (see CUDACommandExecutionStatus). */
-    private static final int CL_COMPLETE = 0;
-    private static final int CL_RUNNING = 1;
-
     static void clGetEventInfo(long eventId, int param, byte[] buffer) throws CUDAException {
         Arrays.fill(buffer, (byte) 0);
-        if (param != CL_EVENT_COMMAND_EXECUTION_STATUS || buffer.length < Integer.BYTES) {
+        if (param != CL_EVENT_COMMAND_EXECUTION_STATUS.getValue() || buffer.length < Integer.BYTES) {
             return;
         }
         CUDAHandles.Event event = CUDAHandles.resolve(eventId, CUDAHandles.Event.class);
-        int status = CL_COMPLETE;
+        CUDACommandExecutionStatus executionStatus = CL_COMPLETE;
         if (event != null) {
-            status = CUDADriverAPI.cuEventQuery(event.event()) == CUDADriverAPI.CUDA_SUCCESS ? CL_COMPLETE : CL_RUNNING;
+            executionStatus = CUDADriverAPI.cuEventQuery(event.event()) == CUDADriverAPI.CUDA_SUCCESS ? CL_COMPLETE : CUDACommandExecutionStatus.CL_RUNNING;
         }
-        ByteBuffer.wrap(buffer).order(CUDADriver.BYTE_ORDER).putInt(status);
+        ByteBuffer.wrap(buffer).order(CUDADriver.BYTE_ORDER).putInt(executionStatus.getValue());
     }
 
     /**
