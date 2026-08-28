@@ -122,8 +122,8 @@ final class CuBlasLtNativeLib {
             PREFERENCE_SET_ATTRIBUTE = FFMSupport.downcall(LIBCUBLASLT, FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_POINTER, C_LONG), "cublasLtMatmulPreferenceSetAttribute");
             ALGO_GET_HEURISTIC = FFMSupport.downcall(LIBCUBLASLT,
                     FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_INT, C_POINTER, C_POINTER), "cublasLtMatmulAlgoGetHeuristic");
-            MATMUL = FFMSupport.downcall(LIBCUBLASLT,
-                    FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_POINTER, C_LONG, C_LONG, C_LONG, C_LONG, C_POINTER, C_LONG, C_LONG, C_LONG, C_LONG, C_POINTER, C_LONG, C_LONG, C_LONG), "cublasLtMatmul");
+            MATMUL = FFMSupport.downcall(LIBCUBLASLT, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_POINTER, C_LONG, C_LONG, C_LONG, C_LONG, C_POINTER, C_LONG, C_LONG, C_LONG, C_LONG, C_POINTER,
+                    C_LONG, C_LONG, C_LONG), "cublasLtMatmul");
         }
     }
 
