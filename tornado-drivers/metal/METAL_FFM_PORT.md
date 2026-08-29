@@ -1,16 +1,19 @@
 # Metal backend: JNI to FFM
 
-Handoff notes for finishing the Metal backend's move off JNI onto `java.lang.foreign`. The
-foundation is written and compiles; none of it has been run, because it was written on a Linux
-box. This document says what exists, what is left, and where the traps are.
+The Metal backend has moved off JNI onto `java.lang.foreign`. The Objective-C runtime bridge
+(`ObjCRuntime`), the Metal message-send layer (`MetalAPI`) and the stateful backend operations
+(`MetalObjects`) replace `metal-jni`, which is deleted. The backend has been built and run on Apple
+silicon (M3 Pro): `tornado-test --quickPass` on the Metal device matches the JNI implementation
+class-for-class, the only differences being pre-existing Metal-backend failures (the same 2-D and
+KernelContext-local-memory cases fail on both) and environment-specific tests. This document keeps
+the design and the traps for anyone touching the bridge; the rules below still hold.
 
 ## Where this fits
 
 PR [#1058](https://github.com/beehive-lab/TornadoVM/pull/1058) removed the JNI libraries from the
 OpenCL and CUDA backends and from the cuBLAS, cuBLASLt, cuFFT, cuSPARSE and cuDNN library-task
-providers. Metal is the last backend still on JNI. Nothing in this branch changes the Metal
-backend's behaviour: `metal-jni` is untouched and still in the build, and the two new classes are
-additive and currently unreferenced, so Metal cannot regress from this work until it is wired up.
+providers. Metal was the last backend on JNI, and is now ported too: `metal-jni` is deleted, the
+backend classes call `MetalObjects`/`MetalAPI`, and a Metal SDK ships no native library of its own.
 
 ## Why Metal is different from the other backends
 
@@ -29,7 +32,7 @@ That is a supported, well-trodden technique, but it has rules that the C-library
 
 ## What exists
 
-Both under `uk.ac.manchester.tornado.drivers.metal.ffm`:
+All three under `uk.ac.manchester.tornado.drivers.metal.ffm`:
 
 ### `ObjCRuntime`
 
@@ -47,6 +50,19 @@ The runtime layer, and the part worth reading carefully.
 One method per message send the backend needs, each paired with the signature that send must be
 made through: device discovery and properties, command queues, buffers, MSL compilation, pipeline
 state, encoders, dispatch, blit copies, GPU timestamps.
+
+### `MetalObjects`
+
+The stateful half. The JNI shim boxed a compiled library, a pipeline with its pending arguments, and
+a host-timing record in Objective-C wrapper objects and handed back their addresses; those have no C
+ABI to call, so here they are Java records in registries, and the `long` handles the backend passes
+around for programs, kernels and events are registry keys rather than raw pointers (real Metal
+objects -- devices, queues, buffers, libraries, pipelines, command buffers -- stay raw pointers).
+This is also where the former native methods live: device enumeration, buffer creation, MSL compile,
+kernel creation with argument reflection, dispatch, the shared-memory transfers, and the event
+timing/profiling queries. The backend classes (`Metal`, `MetalPlatform`, `MetalDevice`,
+`MetalContext`, `MetalCommandQueue`, `MetalProgram`, `MetalKernel`, `MetalEvent`, `NativeCommandQueue`)
+delegate to it in place of their old `native` methods.
 
 ## The rules
 
@@ -89,21 +105,25 @@ ones returning a struct or a float. On x86_64 the ABI splits these:
 there is one place to change if an Intel Mac ever matters. The `double`-returning path
 (`GPUStartTime` / `GPUEndTime`) is arm64-correct and would need `_fpret` on x86_64.
 
-## What is left
+## What was done
 
-1. **Verify the foundation.** Smallest useful probe, before touching the backend:
-   `MTLCreateSystemDefaultDevice()` → `MetalAPI.deviceName(device)`. If that prints your GPU's
-   name, class lookup, selector interning, message sending and `NSString` conversion all work.
-2. **Port the backend classes**, mirroring what was done for OpenCL in this same branch — the
-   OpenCL commits are the closest model, since the Metal Java layer was cloned from it:
-   `Metal`, `MetalPlatform`, `MetalDevice`, `MetalContext`, `MetalCommandQueue`, `MetalProgram`,
-   `MetalKernel`, `MetalEvent`.
-3. **Delete `metal-jni`**: remove the module from `tornado-drivers/pom.xml` and its dependency from
-   `tornado-assembly/pom.xml`, drop `System.loadLibrary` from `Metal.java`, and retarget the
-   `tornado.py` diagnostics the way the OpenCL and CUDA ones were.
-4. **Check parity**: build a same-commit `develop` SDK, run `tornado-test --quickPass` on both, and
-   compare ran/failed/unsupported plus the failing class list. That is how the other two backends
-   were signed off, and the numbers are in the PR description.
+1. **Verified the foundation** with the smallest probe: `MTLCreateSystemDefaultDevice()` →
+   `MetalAPI.deviceName(device)` prints the GPU name, so class lookup, selector interning, message
+   sending and `NSString` conversion all work.
+2. **Ported the backend classes** — `Metal`, `MetalPlatform`, `MetalDevice`, `MetalContext`,
+   `MetalCommandQueue`, `MetalProgram`, `MetalKernel`, `MetalEvent`, `NativeCommandQueue` — to
+   delegate to `MetalObjects` in place of their `native` methods.
+3. **Deleted `metal-jni`**: dropped the module from `tornado-drivers/pom.xml` and its dependency from
+   `tornado-assembly/pom.xml`, and removed the `System.loadLibrary` path from `Metal.java`. The
+   `tornado.py` diagnostics and `metal-exports` were already in the FFM shape (native access is
+   granted to `tornado.runtime`, through which every restricted call funnels), so they needed no
+   change.
+4. **Checked parity**: built a same-commit JNI SDK and this one and ran `tornado-test --quickPass` on
+   the Metal device against both. They match class-for-class; the failures that remain
+   (`TestMatrixMultiplicationKernelContext` 2-D, `ComputeTests` Mandelbrot/Julia, the
+   `TransformerKernelsTest` reduction) fail identically on the JNI build and are pre-existing
+   Metal-backend issues, while `TestDevices`/`TestConcurrentBackends` want an NVIDIA/CPU/multi-device
+   setup this Mac does not have.
 
 ## Known gaps in `MetalAPI`
 

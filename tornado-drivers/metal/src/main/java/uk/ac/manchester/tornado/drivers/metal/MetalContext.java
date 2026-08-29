@@ -23,7 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.metal;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,6 +30,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoNoMetalPlatformException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalCommandQueueProperties;
 import uk.ac.manchester.tornado.drivers.metal.exceptions.MetalException;
+import uk.ac.manchester.tornado.drivers.metal.ffm.MetalObjects;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -53,36 +53,49 @@ public class MetalContext implements MetalContextInterface {
         this.logger = new TornadoLogger(this.getClass());
     }
 
-    native void metalReleaseContext(long id) throws MetalException;
+    void metalReleaseContext(long id) throws MetalException {
+        MetalObjects.releaseContext(id);
+    }
 
-    native void metalGetContextInfo(long id, int info, byte[] buffer) throws MetalException;
+    void metalGetContextInfo(long id, int info, byte[] buffer) throws MetalException {
+        MetalObjects.contextInfo(id, info, buffer);
+    }
 
-    public native long metalCreateCommandQueue(long deviceId, int maxInFlight) throws MetalException;
-    public native long metalReleaseCommandQueue(long queue_id) throws MetalException;
+    public long metalCreateCommandQueue(long deviceId, int maxInFlight) throws MetalException {
+        return MetalObjects.createCommandQueue(deviceId, maxInFlight);
+    }
 
-    native long allocateOffHeapMemory(long size, long alignment);
-
-    native void freeOffHeapMemory(long address);
-
-    native ByteBuffer asByteBuffer(long address, long size);
+    public long metalReleaseCommandQueue(long queue_id) throws MetalException {
+        MetalObjects.releaseCommandQueue(queue_id);
+        return 0;
+    }
 
     // creates an empty buffer on the device
-    public native MetalBufferResult createBuffer(long contextId, long flags, long size, long hostPointer) throws MetalException;
+    public MetalBufferResult createBuffer(long contextId, long flags, long size, long hostPointer) throws MetalException {
+        long[] result = MetalObjects.createBuffer(contextId, size);
+        return new MetalBufferResult(result[0], result[1], (int) result[2]);
+    }
 
-    native long createSubBuffer(long buffer, long flags, int createType, byte[] createInfo) throws MetalException;
-
-    native void metalReleaseMemObject(long memId) throws MetalException;
+    void metalReleaseMemObject(long memId) throws MetalException {
+        MetalObjects.releaseMemObject(memId);
+    }
 
     /**
      * @param compileFlags
      *     bitmask of MSL compile options forwarded to {@code MTLCompileOptions}.
      *     Bit 0 ({@link #METAL_COMPILE_FAST_MATH}) enables fast/relaxed math.
      */
-    native long metalCreateProgramWithSource(long contextId, byte[] data, long[] lengths, int compileFlags) throws MetalException;
+    long metalCreateProgramWithSource(long contextId, byte[] data, long[] lengths, int compileFlags) throws MetalException {
+        return MetalObjects.createProgramWithSource(contextId, data, compileFlags);
+    }
 
-    native long metalCreateProgramWithBinary(long contextId, long deviceId, byte[] data, long[] lengths) throws MetalException;
+    long metalCreateProgramWithBinary(long contextId, long deviceId, byte[] data, long[] lengths) throws MetalException {
+        return MetalObjects.createProgramWithBinary(contextId, data);
+    }
 
-    native long metalCreateProgramWithIL(long contextId, byte[] spirvBinaryCode, long[] lengths) throws MetalException;
+    long metalCreateProgramWithIL(long contextId, byte[] spirvBinaryCode, long[] lengths) throws MetalException {
+        return -1;
+    }
 
     public int getNumDevices() {
         return devices.size();
@@ -133,7 +146,7 @@ public class MetalContext implements MetalContextInterface {
         createCommandQueue(index, properties);
     }
 
-    /** Bit 0: compile MSL with fast/relaxed math (MTLMathModeFast). Mirrored in objc_metal_jni.mm. */
+    /** Bit 0: compile MSL with fast/relaxed math (MTLMathModeFast). Mirrored in {@link MetalObjects}. */
     private static final int METAL_COMPILE_FAST_MATH = 1;
 
     public MetalProgram createProgramWithSource(byte[] source, long[] lengths, MetalDeviceContext deviceContext) {

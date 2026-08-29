@@ -27,6 +27,7 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guara
 import static uk.ac.manchester.tornado.drivers.metal.enums.MetalCommandQueueInfo.METAL_QUEUE_CONTEXT;
 import static uk.ac.manchester.tornado.drivers.metal.enums.MetalCommandQueueInfo.METAL_QUEUE_DEVICE;
 
+import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 
 import jdk.vm.ci.meta.JavaKind;
@@ -35,6 +36,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.drivers.common.CommandQueue;
 import uk.ac.manchester.tornado.drivers.metal.exceptions.MetalException;
+import uk.ac.manchester.tornado.drivers.metal.ffm.MetalObjects;
 import uk.ac.manchester.tornado.drivers.metal.natives.NativeCommandQueue;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
@@ -66,9 +68,13 @@ public class MetalCommandQueue extends CommandQueue {
         return commandQueuePtr;
     }
 
-    static native void metalReleaseCommandQueue(long queueId) throws MetalException;
+    static void metalReleaseCommandQueue(long queueId) throws MetalException {
+        MetalObjects.releaseCommandQueue(queueId);
+    }
 
-    static native void metalGetCommandQueueInfo(long queueId, int info, byte[] buffer) throws MetalException;
+    static void metalGetCommandQueueInfo(long queueId, int info, byte[] buffer) throws MetalException {
+        MetalObjects.queueInfo(queueId, info, buffer);
+    }
 
     /**
      * Dispatch an Metal kernel via a JNI call.
@@ -91,52 +97,98 @@ public class MetalCommandQueue extends CommandQueue {
      * @throws MetalException
      *     Metal Exception
      */
-    static native long metalEnqueueNDRangeKernel(long queueId, long kernelId, int dim, long[] global_work_offset, long[] global_work_size, long[] local_work_size, long[] events) throws MetalException;
+    static long metalEnqueueNDRangeKernel(long queueId, long kernelId, int dim, long[] global_work_offset, long[] global_work_size, long[] local_work_size, long[] events) throws MetalException {
+        return MetalObjects.enqueueNDRangeKernel(queueId, kernelId, global_work_size, local_work_size);
+    }
 
-    static native long writeArrayToDevice(long queueId, byte[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException;
+    static long writeArrayToDevice(long queueId, byte[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException {
+        return MetalObjects.writeArray(ptr, buffer, ValueLayout.JAVA_BYTE, (int) hostOffset, (int) bytes, offset, bytes);
+    }
 
-    static native long writeArrayToDevice(long queueId, char[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException;
+    static long writeArrayToDevice(long queueId, char[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException {
+        return MetalObjects.writeArray(ptr, buffer, ValueLayout.JAVA_CHAR, (int) (hostOffset / Character.BYTES), (int) (bytes / Character.BYTES), offset, bytes);
+    }
 
-    static native long writeArrayToDevice(long queueId, short[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException;
+    static long writeArrayToDevice(long queueId, short[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException {
+        return MetalObjects.writeArray(ptr, buffer, ValueLayout.JAVA_SHORT, (int) (hostOffset / Short.BYTES), (int) (bytes / Short.BYTES), offset, bytes);
+    }
 
-    static native long writeArrayToDevice(long queueId, int[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException;
+    static long writeArrayToDevice(long queueId, int[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException {
+        return MetalObjects.writeArray(ptr, buffer, ValueLayout.JAVA_INT, (int) (hostOffset / Integer.BYTES), (int) (bytes / Integer.BYTES), offset, bytes);
+    }
 
-    static native long writeArrayToDevice(long queueId, long[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException;
+    static long writeArrayToDevice(long queueId, long[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException {
+        return MetalObjects.writeArray(ptr, buffer, ValueLayout.JAVA_LONG, (int) (hostOffset / Long.BYTES), (int) (bytes / Long.BYTES), offset, bytes);
+    }
 
-    static native long writeArrayToDevice(long queueId, float[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException;
+    static long writeArrayToDevice(long queueId, float[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException {
+        return MetalObjects.writeArray(ptr, buffer, ValueLayout.JAVA_FLOAT, (int) (hostOffset / Float.BYTES), (int) (bytes / Float.BYTES), offset, bytes);
+    }
 
-    static native long writeArrayToDevice(long queueId, double[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException;
+    static long writeArrayToDevice(long queueId, double[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException {
+        return MetalObjects.writeArray(ptr, buffer, ValueLayout.JAVA_DOUBLE, (int) (hostOffset / Double.BYTES), (int) (bytes / Double.BYTES), offset, bytes);
+    }
 
-    native static long writeArrayToDevice(long queueId, long hostPointer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException;
+    static long writeArrayToDevice(long queueId, long hostPointer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException {
+        return MetalObjects.writeSegment(ptr, hostPointer, hostOffset, offset, bytes);
+    }
 
-    static native long readArrayFromDevice(long queueId, byte[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException;
+    static long readArrayFromDevice(long queueId, byte[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException {
+        return MetalObjects.readArray(ptr, buffer, ValueLayout.JAVA_BYTE, (int) hostOffset, (int) bytes, offset, bytes);
+    }
 
-    static native long readArrayFromDevice(long queueId, char[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException;
+    static long readArrayFromDevice(long queueId, char[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException {
+        return MetalObjects.readArray(ptr, buffer, ValueLayout.JAVA_CHAR, (int) (hostOffset / Character.BYTES), (int) (bytes / Character.BYTES), offset, bytes);
+    }
 
-    static native long readArrayFromDevice(long queueId, short[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException;
+    static long readArrayFromDevice(long queueId, short[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException {
+        return MetalObjects.readArray(ptr, buffer, ValueLayout.JAVA_SHORT, (int) (hostOffset / Short.BYTES), (int) (bytes / Short.BYTES), offset, bytes);
+    }
 
-    static native long readArrayFromDevice(long queueId, int[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException;
+    static long readArrayFromDevice(long queueId, int[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException {
+        return MetalObjects.readArray(ptr, buffer, ValueLayout.JAVA_INT, (int) (hostOffset / Integer.BYTES), (int) (bytes / Integer.BYTES), offset, bytes);
+    }
 
-    static native long readArrayFromDevice(long queueId, long[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException;
+    static long readArrayFromDevice(long queueId, long[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException {
+        return MetalObjects.readArray(ptr, buffer, ValueLayout.JAVA_LONG, (int) (hostOffset / Long.BYTES), (int) (bytes / Long.BYTES), offset, bytes);
+    }
 
-    static native long readArrayFromDevice(long queueId, float[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException;
+    static long readArrayFromDevice(long queueId, float[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException {
+        return MetalObjects.readArray(ptr, buffer, ValueLayout.JAVA_FLOAT, (int) (hostOffset / Float.BYTES), (int) (bytes / Float.BYTES), offset, bytes);
+    }
 
-    static native long readArrayFromDevice(long queueId, double[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException;
+    static long readArrayFromDevice(long queueId, double[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException {
+        return MetalObjects.readArray(ptr, buffer, ValueLayout.JAVA_DOUBLE, (int) (hostOffset / Double.BYTES), (int) (bytes / Double.BYTES), offset, bytes);
+    }
 
-    static native long readArrayFromDeviceOffHeap(long queueId, long hostPointer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException;
+    static long readArrayFromDeviceOffHeap(long queueId, long hostPointer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException {
+        return MetalObjects.readSegment(ptr, hostPointer, hostOffset, offset, bytes);
+    }
 
-    static native void metalEnqueueWaitForEvents(long queueId, long[] events) throws MetalException;
+    static void metalEnqueueWaitForEvents(long queueId, long[] events) throws MetalException {
+        MetalObjects.waitForEventList(events);
+    }
 
     /*
      * for Metal 1.2 implementations
      */
-    static native long metalEnqueueMarkerWithWaitList(long queueId, long[] events) throws MetalException;
+    static long metalEnqueueMarkerWithWaitList(long queueId, long[] events) throws MetalException {
+        MetalObjects.waitForEventList(events);
+        return 0;
+    }
 
-    static native long metalEnqueueBarrierWithWaitList(long queueId, long[] events) throws MetalException;
+    static long metalEnqueueBarrierWithWaitList(long queueId, long[] events) throws MetalException {
+        MetalObjects.waitForEventList(events);
+        return 0;
+    }
 
-    static native void metalFlush(long queueId) throws MetalException;
+    static void metalFlush(long queueId) throws MetalException {
+        MetalObjects.flush(queueId);
+    }
 
-    static native void metalFinish(long queueId) throws MetalException;
+    static void metalFinish(long queueId) throws MetalException {
+        MetalObjects.finish(queueId);
+    }
 
     public void flushEvents() {
         try {

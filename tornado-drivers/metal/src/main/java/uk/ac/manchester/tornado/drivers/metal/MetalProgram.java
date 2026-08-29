@@ -40,6 +40,7 @@ import java.util.List;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalBuildStatus;
 import uk.ac.manchester.tornado.drivers.metal.exceptions.MetalException;
+import uk.ac.manchester.tornado.drivers.metal.ffm.MetalObjects;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class MetalProgram {
@@ -61,17 +62,29 @@ public class MetalProgram {
         this.logger = new TornadoLogger(this.getClass());
     }
 
-    static native void metalReleaseProgram(long programId) throws MetalException;
+    static void metalReleaseProgram(long programId) throws MetalException {
+        MetalObjects.releaseProgram(programId);
+    }
 
-    static native void metalBuildProgram(long programId, long[] devices, String options) throws MetalException;
+    static void metalBuildProgram(long programId, long[] devices, String options) throws MetalException {
+        // The MSL library was already compiled at creation; there is no separate build step.
+    }
 
-    static native void metalGetProgramInfo(long programId, int param, byte[] buffer) throws MetalException;
+    static void metalGetProgramInfo(long programId, int param, byte[] buffer) throws MetalException {
+        MetalObjects.programInfo(programId, param, buffer);
+    }
 
-    static native void metalGetProgramBuildInfo(long programId, long deviceId, int param, byte[] buffer) throws MetalException;
+    static void metalGetProgramBuildInfo(long programId, long deviceId, int param, byte[] buffer) throws MetalException {
+        MetalObjects.programBuildInfo(programId, param, buffer);
+    }
 
-    static native long metalCreateKernel(long programId, String name) throws MetalException;
+    static long metalCreateKernel(long programId, String name) throws MetalException {
+        return MetalObjects.createKernel(programId, name);
+    }
 
-    static native void getBinaries(long programId, long numDevices, ByteBuffer buffer) throws MetalException;
+    static void getBinaries(long programId, long numDevices, ByteBuffer buffer) throws MetalException {
+        // MTLLibrary does not expose its compiled binary through this path.
+    }
 
     public MetalBuildStatus getStatus(long deviceId) {
         MetalBuildStatus result;

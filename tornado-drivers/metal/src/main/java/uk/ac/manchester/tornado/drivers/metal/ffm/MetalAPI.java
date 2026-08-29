@@ -40,13 +40,12 @@ import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
  * signature has to be spelled out per selector rather than shared.
  *
  * <p>
- * <b>Status: written without a Mac to run it on.</b> The shapes come from the Metal headers and
- * from the {@code objc_metal_jni.mm} shim this replaces, and the Java compiles, but nothing here
- * has been executed. Treat the signatures as the reviewable claim and verify them on device. The
- * places most likely to need adjusting are called out in comments; the ones to check first are the
- * completion-handler block in {@code addCompletedHandler:} (not covered here at all -- see the note
- * on {@link #commandBufferWaitUntilCompleted}), and the {@code MTLSize} by-value arguments to
- * {@code dispatchThreadgroups:threadsPerThreadgroup:}.
+ * The shapes come from the Metal headers and from the {@code objc_metal_jni.mm} shim this replaces.
+ * The backend runs on these sends on Apple silicon; the completion-handler block of
+ * {@code addCompletedHandler:} is intentionally not covered (the synchronous
+ * {@link #waitUntilCompleted} the backend uses is enough -- see the note there), and the
+ * {@code MTLSize} by-value arguments to {@code dispatchThreads:threadsPerThreadgroup:} are the one
+ * argument-passing case worth re-reading if this is ever ported to an Intel Mac.
  */
 public final class MetalAPI {
 
@@ -54,6 +53,9 @@ public final class MetalAPI {
     public static final long MTL_RESOURCE_STORAGE_MODE_SHARED = 0L;
     /** {@code MTLResourceStorageModePrivate}, GPU-only, needing a blit to reach. */
     public static final long MTL_RESOURCE_STORAGE_MODE_PRIVATE = 2L << 4;
+
+    /** {@code MTLPipelineOptionArgumentInfo}, the reflection bit for pipeline creation. */
+    public static final long MTL_PIPELINE_OPTION_ARGUMENT_INFO = 1L;
 
     private static final MethodHandle MTL_CREATE_SYSTEM_DEFAULT_DEVICE;
     private static final MethodHandle MTL_COPY_ALL_DEVICES;
@@ -227,6 +229,20 @@ public final class MetalAPI {
         }
     }
 
+    /**
+     * {@code -[MTLDevice newLibraryWithData:error:]}, building a library from a compiled
+     * {@code .metallib}. {@code data} is a {@code dispatch_data_t}; {@code error} takes the address
+     * of an {@code NSError *}. Owned by the caller.
+     */
+    public static long newLibraryWithData(long device, long data, MemorySegment error) {
+        try {
+            MethodHandle handle = ObjCRuntime.msgSend(FunctionDescriptor.of(C_LONG, C_LONG, C_LONG, C_LONG, C_POINTER));
+            return (long) handle.invokeExact(device, ObjCRuntime.sel("newLibraryWithData:error:"), data, error);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
     /** {@code -[MTLLibrary newFunctionWithName:]}. Owned by the caller. */
     public static long newFunctionWithName(long library, long nameNSString) {
         return ObjCRuntime.send(library, "newFunctionWithName:", nameNSString);
@@ -242,9 +258,71 @@ public final class MetalAPI {
         }
     }
 
+    /**
+     * {@code -[MTLDevice newComputePipelineStateWithFunction:options:reflection:error:]}: the
+     * reflection-carrying overload. {@code reflection} takes the address of a
+     * {@code MTLComputePipelineReflection *} out-slot and {@code error} the address of an
+     * {@code NSError *}; the pipeline is owned by the caller.
+     */
+    public static long newComputePipelineStateWithFunctionReflection(long device, long function, long options, MemorySegment reflection, MemorySegment error) {
+        try {
+            MethodHandle handle = ObjCRuntime.msgSend(FunctionDescriptor.of(C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_POINTER, C_POINTER));
+            return (long) handle.invokeExact(device, ObjCRuntime.sel("newComputePipelineStateWithFunction:options:reflection:error:"), function, options, reflection, error);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    /** {@code -[MTLComputePipelineState threadExecutionWidth]}, the SIMD width used as a default group size. */
+    public static long pipelineThreadExecutionWidth(long pipeline) {
+        return ObjCRuntime.send(pipeline, "threadExecutionWidth");
+    }
+
+    /** {@code -[MTLComputePipelineState maxTotalThreadsPerThreadgroup]}, the group-size ceiling. */
+    public static long pipelineMaxTotalThreadsPerThreadgroup(long pipeline) {
+        return ObjCRuntime.send(pipeline, "maxTotalThreadsPerThreadgroup");
+    }
+
+    /* ---- Reflection (MTLComputePipelineReflection / MTLArgument) ---- */
+
+    /** {@code -[MTLComputePipelineReflection arguments]}: an {@code NSArray<MTLArgument *>}, not owned. */
+    public static long reflectionArguments(long reflection) {
+        return ObjCRuntime.send(reflection, "arguments");
+    }
+
+    /** {@code -[MTLArgument name]} as a Java string. */
+    public static String argumentName(long argument) {
+        return ObjCRuntime.toJavaString(ObjCRuntime.send(argument, "name"));
+    }
+
+    /** {@code -[MTLArgument index]}. */
+    public static long argumentIndex(long argument) {
+        return ObjCRuntime.send(argument, "index");
+    }
+
+    /** {@code -[MTLArgument type]}, an {@code MTLArgumentType} (buffer 0, threadgroupMemory 1, texture 2, sampler 3). */
+    public static long argumentType(long argument) {
+        return ObjCRuntime.send(argument, "type");
+    }
+
+    /** {@code -[MTLArgument access]}, an {@code MTLArgumentAccess} (readOnly 0, readWrite 1, writeOnly 2). */
+    public static long argumentAccess(long argument) {
+        return ObjCRuntime.send(argument, "access");
+    }
+
+    /** {@code -[MTLArgument arrayLength]}. */
+    public static long argumentArrayLength(long argument) {
+        return ObjCRuntime.send(argument, "arrayLength");
+    }
+
     /** {@code -[NSError localizedDescription]} as a Java string, for the compile-failure path. */
     public static String errorDescription(long error) {
         return ObjCRuntime.toJavaString(ObjCRuntime.send(error, "localizedDescription"));
+    }
+
+    /** {@code -[MTLCommandQueue device]}, the queue's owning {@code MTLDevice}. */
+    public static long queueDevice(long queue) {
+        return ObjCRuntime.send(queue, "device");
     }
 
     /* ---- Encoding and dispatch ---- */
@@ -312,6 +390,22 @@ public final class MetalAPI {
         try {
             MethodHandle handle = ObjCRuntime.msgSend(FunctionDescriptor.ofVoid(C_LONG, C_LONG, ObjCRuntime.MTL_SIZE, ObjCRuntime.MTL_SIZE));
             handle.invokeExact(encoder, ObjCRuntime.sel("dispatchThreadgroups:threadsPerThreadgroup:"), threadgroupsPerGrid, threadsPerThreadgroup);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    /**
+     * {@code -[MTLComputeCommandEncoder dispatchThreads:threadsPerThreadgroup:]}, the non-uniform
+     * dispatch the JNI shim used: Metal derives the threadgroup grid from the total thread count,
+     * so a global size that is not a multiple of the threadgroup size is handled without a manual
+     * ceiling division. Both arguments are {@code MTLSize} by value; see
+     * {@link #dispatchThreadgroups} for the layout convention.
+     */
+    public static void dispatchThreads(long encoder, MemorySegment threadsPerGrid, MemorySegment threadsPerThreadgroup) {
+        try {
+            MethodHandle handle = ObjCRuntime.msgSend(FunctionDescriptor.ofVoid(C_LONG, C_LONG, ObjCRuntime.MTL_SIZE, ObjCRuntime.MTL_SIZE));
+            handle.invokeExact(encoder, ObjCRuntime.sel("dispatchThreads:threadsPerThreadgroup:"), threadsPerGrid, threadsPerThreadgroup);
         } catch (Throwable t) {
             throw rethrow(t);
         }

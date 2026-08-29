@@ -86,12 +86,6 @@
                     <artifactId>tornado-drivers-metal</artifactId>
                     <version>${project.version}</version>
                 </dependency>
-                <dependency>
-                    <groupId>${project.groupId}</groupId>
-                    <artifactId>tornado-drivers-metal-jni</artifactId>
-                    <version>${project.version}</version>
-                    <classifier>libs</classifier>
-                </dependency>
             </dependencies>
         </profile>
 

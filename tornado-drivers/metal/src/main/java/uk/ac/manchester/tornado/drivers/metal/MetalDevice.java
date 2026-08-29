@@ -32,6 +32,7 @@ import java.nio.ByteOrder;
 
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalDeviceType;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalLocalMemType;
+import uk.ac.manchester.tornado.drivers.metal.ffm.MetalObjects;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 
@@ -136,11 +137,21 @@ public class MetalDevice implements MetalTargetDevice {
         getDeviceVendorId();
     }
 
-    static native void metalGetDeviceInfo(long id, int info, byte[] buffer);
-    static native String mtGetDeviceName(long id);
-    static native long mtGetDeviceGlobalMemorySize(long id);
-    static native long mtGetDeviceLocalMemorySize(long id);
-    static native int mtHasUnifiedMemory(long id);
+    static String mtGetDeviceName(long id) {
+        return MetalObjects.deviceName(id);
+    }
+
+    static long mtGetDeviceGlobalMemorySize(long id) {
+        return MetalObjects.deviceGlobalMemorySize(id);
+    }
+
+    static long mtGetDeviceLocalMemorySize(long id) {
+        return MetalObjects.deviceLocalMemorySize(id);
+    }
+
+    static int mtHasUnifiedMemory(long id) {
+        return MetalObjects.hasUnifiedMemory(id);
+    }
 
     public long getDevicePointer() {
         return devicePtr;
