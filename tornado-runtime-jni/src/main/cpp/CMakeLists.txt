@@ -47,6 +47,8 @@ include_directories(
 	)
 
 add_library(tornado-runtime SHARED
+	source/tornado_decoder.cpp
+	source/tornado_state.cpp
 	source/tornado_interpreter.cpp
 	source/TornadoNativeBytecodeInterpreter.cpp
 )
