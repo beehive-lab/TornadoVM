@@ -17,14 +17,15 @@ call (and vice-versa) with **no extra copies and no manual memory management**.
 
 1. [Quick start](#1-quick-start)
 2. [Core concepts](#2-core-concepts)
-3. [Provider catalog](#3-provider-catalog) — cuBLAS · cuBLASLt · cuFFT · cuDNN · cuSPARSE · CUTLASS
+3. [Provider catalog](#3-provider-catalog) — cuBLAS · cuBLASLt · cuFFT · cuDNN · CUTLASS · cuSPARSE
 4. [Composition patterns](#4-composition-patterns)
 5. [CUDA Graphs](#5-cuda-graphs)
-6. [Profiling](#6-profiling)
-7. [Build, install & flags](#7-build-install--flags)
-8. [Write your own provider](#8-write-your-own-provider)
-9. [Reference: layout, data types, alignment](#9-reference-layout-data-types-alignment)
-10. [Troubleshooting](#10-troubleshooting)
+6. [Execution-plan controls](#6-execution-plan-controls)
+7. [Profiling](#7-profiling)
+8. [Build, install & flags](#8-build-install--flags)
+9. [Write your own provider](#9-write-your-own-provider)
+10. [Reference: layout, data types, alignment](#10-reference-layout-data-types-alignment)
+11. [Troubleshooting](#11-troubleshooting)
 
 ---
 
@@ -134,7 +135,9 @@ Factories (`uk.ac.manchester.tornado.cublas.CuBlas`):
 | `cublasSgemv(op, m, n, alpha, A, lda, x, incx, beta, y, incy)` | `y = alpha·op(A)·x + beta·y` |
 | `cublasSgemm(opA, opB, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc)` | `C = alpha·op(A)·op(B) + beta·C` |
 | `cublasSgemmTF32(...)` | SGEMM using TF32 tensor cores |
-| `cublasGemmExFP16(...)` | FP16 inputs, tensor-core GEMM |
+| `cublasGemmExFP16(...)` | FP16 inputs and output, tensor-core GEMM |
+| `cublasGemmExFP16FP32(...)` | FP16 inputs, **FP32 output** — keeps accumulation precision at the boundary |
+| `cublasGemmExBF16(...)` | BF16 inputs and output (`BFloat16Array`), tensor-core GEMM |
 | `cublasSgemmStridedBatched(...)` | batched SGEMM |
 
 ```java
@@ -224,15 +227,21 @@ new TaskGraph("cnn")
 
 ### 3.5 CUTLASS — open-template GEMM (`nvidia/cutlass`)
 
-FP32 SIMT and FP16 tensor-core GEMM plus **fused GEMM + bias + ReLU/GELU**
-epilogues. **Row-major** (`C = alpha·A·B + beta·C`) — no cuBLAS transpose dance.
+FP32 SIMT, FP16 and BF16 tensor-core GEMM (single and batched) plus **fused
+GEMM + bias + activation** epilogues. **Row-major** (`C = alpha·A·B + beta·C`) — no cuBLAS transpose dance.
 
 | Factory | Operation |
 |---|---|
 | `cutlassSgemm(m, n, k, alpha, A, B, beta, C)` | FP32 SIMT GEMM |
 | `cutlassHgemm(m, n, k, alpha, A, B, beta, D)` | FP16 tensor-core GEMM, FP32 accumulate |
+| `cutlassHgemmBatched(m, n, k, alpha, A, B, beta, C, batchCount)` | batched FP16 tensor-core GEMM |
+| `cutlassBgemm(m, n, k, alpha, A, B, beta, C)` | BF16 tensor-core GEMM (`BFloat16Array`) |
 | `cutlassGemmBiasRelu(m, n, k, A, B, bias, D)` | fused `relu(A·B + bias)` |
 | `cutlassGemmBiasGelu(m, n, k, A, B, bias, D)` | fused `gelu(A·B + bias)` |
+| `cutlassGemmBiasSilu(m, n, k, A, B, bias, D)` | fused `silu(A·B + bias)` |
+| `cutlassGemmBiasSigmoid(m, n, k, A, B, bias, D)` | fused `sigmoid(A·B + bias)` |
+| `cutlassGemmBiasTanh(m, n, k, A, B, bias, D)` | fused `tanh(A·B + bias)` |
+| `cutlassGemmBiasHardSwish(m, n, k, A, B, bias, D)` | fused `hardswish(A·B + bias)` |
 
 ```java
 // A two-layer FFN block: relu(x·W1+b1) then gelu(h·W2+b2), two fused CUTLASS tasks
@@ -247,6 +256,8 @@ new TaskGraph("ffn")
 24-byte header), so the FP16 kernels use 4-half vector loads and require
 **`k` and `n` to be multiples of 4** — the factory rejects other shapes with a
 clear message. FP32 SIMT has no constraint.
+
+The fused-epilogue factories take `HalfFloatArray` operands.
 
 `BenchmarkCutlassGemm` (RTX 4090, 1024): FP16 tensor-core **39 TFLOP/s = 7.7×**
 the tiled `KernelContext` kernel; fused epilogue **1.28×** the unfused path.
@@ -352,7 +363,47 @@ Per-call profiler timing is disabled while capturing.
 
 ---
 
-## 6. Profiling
+## 6. Execution-plan controls
+
+Beyond `withCUDAGraph()`, a few `TornadoExecutionPlan` options matter
+specifically when native library calls and JIT kernels share a plan.
+
+| Option | What it does | Backends |
+|---|---|---|
+| `withPreCompilation()` | JIT every task graph up front. For hybrid plans this also runs each provider's `prepare()`, so native contexts, plans and workspaces exist before the first execution — the same reason it is a prerequisite for graph capture | all |
+| `withIntraPlanConcurrency()` | Routes DAG-independent work (H2D, kernels, D2H) to separate role streams so it can overlap, with ordering preserved through device events derived from the bytecode dependency DAG. Off by default | CUDA; no-op on OpenCL/Metal |
+| `withStagedTransfers()` | Stages non-batched read-only transfers through pinned host memory instead of the direct path | CUDA; no-op on OpenCL/Metal |
+| `withMemoryLimit("8GB")` | Caps device memory for the plan. Worth setting explicitly when library workspaces sit alongside large operands | all |
+| `withWarmUpIterations(n)` | Runs the whole plan `n` times first — transfers, compilation and execution — before the measured run | all |
+| `withProfiler(ProfilerMode.CONSOLE)` | Same data as `--enableProfiler`, switched on programmatically | all |
+
+### 6.1 Placing large, stable inputs once
+
+`TornadoExecutionPlan.transferToDevice(Object...)` uploads the current host
+contents of specific objects **without running the plan**. It is aimed at inputs
+that are large and do not change — model weights, a lookup table, a mesh —
+where the alternative is to let the first execution pay the whole upload, or to
+run the plan once on dummy data purely to make the transfer happen:
+
+```java
+try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+    plan.withPreCompilation()
+        .transferToDevice(weights);   // on the device when the call returns
+
+    for (int i = 0; i < iterations; i++) {
+        plan.execute();               // only the per-iteration inputs move
+    }
+}
+```
+
+Each object is uploaded by the task graphs of this plan that take it as a
+parameter; graphs that do not know it ignore it. An object with no device buffer
+yet gets one, so this works before the plan has ever run. Objects declared
+`FIRST_EXECUTION` are not uploaded again by the first real execution.
+
+---
+
+## 7. Profiling
 
 ```bash
 tornado --enableProfiler console -m <module>/<MainClass>
@@ -370,9 +421,9 @@ nsys stats --report cuda_gpu_trace run.nsys-rep   # library kernels + JIT kernel
 
 ---
 
-## 7. Build, install & flags
+## 8. Build, install & flags
 
-### 7.1 Build
+### 8.1 Build
 
 ```bash
 make BACKEND=cuda        # activates the cuda-backend Maven profile
@@ -388,7 +439,7 @@ The launcher adds the provider modules to `--add-modules` automatically when the
 CUDA backend is present:
 `tornado.cublas, tornado.cufft, tornado.cudnn, tornado.cusparse, tornado.cutlass`.
 
-### 7.2 Per-library install requirements
+### 8.2 Per-library install requirements
 
 | Provider | Extra dependency | How to get it |
 |---|---|---|
@@ -402,7 +453,7 @@ The CUTLASS kernel arch defaults to
 `sm_80` SASS + `compute_80` PTX (runs on all Ampere/Ada, JITs for Hopper);
 override with `CUDA_ARCH=<cc>` (e.g. `CUDA_ARCH=89`).
 
-### 7.3 Useful CLI flags
+### 8.3 Useful CLI flags
 
 | Flag | Effect |
 |---|---|
@@ -423,7 +474,7 @@ tornado-test -V uk.ac.manchester.tornado.unittests.cutlass.TestCutlass
 
 ---
 
-## 8. Write your own provider
+## 9. Write your own provider
 
 Adding a library needs **no core-runtime changes** — it is a module pair
 discovered via `java.util.ServiceLoader`. Four steps (mirror `tornado-cudnn`):
@@ -507,7 +558,7 @@ Key SPI types (in `tornado-runtime/.../runtime/library/spi/`):
 
 ---
 
-## 9. Reference: layout, data types, alignment
+## 10. Reference: layout, data types, alignment
 
 - **Layout.** CUTLASS and cuSPARSE are **row-major** (match TornadoVM arrays
   directly). **cuBLAS is column-major** — pass the transpose op or swap operands.
@@ -523,11 +574,11 @@ Key SPI types (in `tornado-runtime/.../runtime/library/spi/`):
 
 ---
 
-## 10. Troubleshooting
+## 11. Troubleshooting
 
 | Symptom | Cause & fix |
 |---|---|
-| Test reports `UNSUPPORTED` | Default device is not CUDA, or the native `.so` / vendor library is missing. Build `make BACKEND=cuda`; install the library (§7.2). |
+| Test reports `UNSUPPORTED` | Default device is not CUDA, or the native `.so` / vendor library is missing. Build `make BACKEND=cuda`; install the library (§8.2). |
 | `UnsatisfiedLinkError: libtornado-<x>` | Native module was skipped at build time (library not found). Set the corresponding `*_ROOT` and rebuild. |
 | CUTLASS FP16 rejects a shape | `k` or `n` not a multiple of 4 (8-byte alignment). Pad, or use `cutlassSgemm` (FP32, unconstrained). |
 | Wrong result from cuBLAS | Column-major mismatch — transpose (SGEMV) or swap operands (SGEMM). |
@@ -538,7 +589,7 @@ Key SPI types (in `tornado-runtime/.../runtime/library/spi/`):
 ## See also
 
 - `docs/source/hybrid-api.rst` — architecture reference (SPI internals).
-- Per-provider READMEs: `tornado-cublas/`, `tornado-cudnn/`, `tornado-cutlass/`,
-  `tornado-cusparse/`.
+- Per-provider READMEs: `tornado-cublas/`, `tornado-cufft/`, `tornado-cudnn/`,
+  `tornado-cutlass/`, `tornado-cusparse/`.
 - Unit tests double as worked examples:
   `tornado-unittests/.../unittests/{cublas,cufft,cudnn,cusparse,cutlass}/`.
