@@ -53,6 +53,7 @@
                 <module>cuda</module>
                 <module>cuda-jni</module>
                 <module>cublas-jni</module>
+                <module>curand-jni</module>
                 <module>cufft-jni</module>
                 <module>cudnn-jni</module>
                 <module>cusparse-jni</module>
