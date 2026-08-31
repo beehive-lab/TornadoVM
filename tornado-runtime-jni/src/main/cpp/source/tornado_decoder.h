@@ -47,6 +47,21 @@
  */
 enum { TORNADO_DECODE_ERROR = -1 };
 
+/*
+ * Little-endian readers. Counterparts of ByteBuffer.getInt() / getLong() in the Java
+ * bytecode buffer. Also used to unpack the 8-byte payload of a packed constant.
+ */
+static inline int32_t tornado_read_i32(const uint8_t *bytes, int32_t position) {
+    const uint8_t *p = bytes + position;
+    return (int32_t) ((uint32_t) p[0] | ((uint32_t) p[1] << 8) | ((uint32_t) p[2] << 16) | ((uint32_t) p[3] << 24));
+}
+
+static inline int64_t tornado_read_i64(const uint8_t *bytes, int32_t position) {
+    const uint8_t *p = bytes + position;
+    return (int64_t) ((uint64_t) p[0] | ((uint64_t) p[1] << 8) | ((uint64_t) p[2] << 16) | ((uint64_t) p[3] << 24) | ((uint64_t) p[4] << 32) | ((uint64_t) p[5] << 40) | ((uint64_t) p[6] << 48)
+            | ((uint64_t) p[7] << 56));
+}
+
 /* INIT: written once at the beginning of the buffer. */
 struct TornadoInitOperands {
     int32_t numContexts;

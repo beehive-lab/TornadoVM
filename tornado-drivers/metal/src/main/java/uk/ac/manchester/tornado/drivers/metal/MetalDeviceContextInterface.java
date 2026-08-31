@@ -85,4 +85,8 @@ public interface MetalDeviceContextInterface extends TornadoDeviceContext {
 
     MetalProgram createProgramWithIL(byte[] binary, long[] lengths);
 
+    long getNativeStream(long executionPlanId);
+
+    long getNativeContext(long executionPlanId);
+
 }

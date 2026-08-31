@@ -30,13 +30,20 @@ static inline int64_t pack(int32_t status, int32_t position) {
     return ((int64_t) status << 32) | ((int64_t) (uint32_t) position);
 }
 
-int64_t tornado_interpret(const uint8_t *code, int32_t position, int32_t limit, int32_t flags) {
-    /*
-     * No case reads `flags` yet. Will read after each bytecode is ported to cpp.
-     */
-    (void) flags;
+int64_t tornado_interpret(const TornadoInterpreterContext *ctx) {
+    if (ctx == nullptr || ctx->code == nullptr) {
+        return pack(TORNADO_STATUS_EOF, 0);
+    }
 
-    int32_t pc = position;
+    /*
+     * Tables and device handles are accepted but unused until the bytecodes that
+     * read them are ported. flags is unread for the same reason.
+     */
+    (void) ctx->flags;
+
+    const uint8_t *code = ctx->code;
+    const int32_t limit = ctx->limit;
+    int32_t pc = ctx->position;
 
     while (pc < limit) {
         switch (static_cast<TornadoBytecode>(code[pc])) {
@@ -46,7 +53,6 @@ int64_t tornado_interpret(const uint8_t *code, int32_t position, int32_t limit, 
                 /*
                  * Not implemented here. Leave the cursor on the opcode so that the Java
                  * interpreter decodes and executes it exactly as it would have on its own.
-                 *
                  */
                 return pack(TORNADO_STATUS_BAIL, pc);
         }

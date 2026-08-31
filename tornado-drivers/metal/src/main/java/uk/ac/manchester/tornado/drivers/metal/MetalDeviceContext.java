@@ -124,6 +124,16 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
     }
 
     @Override
+    public long getNativeStream(long executionPlanId) {
+        return getCommandQueue(executionPlanId).getCommandQueuePtr();
+    }
+
+    @Override
+    public long getNativeContext(long executionPlanId) {
+        return context.getContextId();
+    }
+
+    @Override
     public MetalMemoryManager getMemoryManager() {
         return memoryManager;
     }

@@ -119,6 +119,18 @@ public class TornadoVMInterpreter {
     private boolean insideCaptureRegion = false;
     private boolean executionGraphEnabled = true;
 
+    /*
+     * Tables passed into the native bytecode loop. Kernel/program handles stay
+     * 0 until a backend-agnostic getter exists
+     */
+    private long[] nativeBufferHandles;
+    private long[] nativeBufferOffsets;
+    private long[] nativeBufferSizes;
+    private long[] nativeHostPointers;
+    private long[] nativeKernelHandles;
+    private long[] nativeProgramHandles;
+    private byte[] nativeConstants;
+
     private TornadoLogger logger = new TornadoLogger(this.getClass());
 
     /**
@@ -574,8 +586,21 @@ public class TornadoVMInterpreter {
      *     false when the native loop consumed the remainder of the bytecode stream.
      */
     private boolean advanceWithNativeInterpreter(StringBuilder logBuilder, boolean isWarmup) {
+        refreshNativeStateTables();
         final int flags = isWarmup ? NativeBytecodeInterpreter.FLAG_WARMUP : 0;
-        final long result = NativeBytecodeInterpreter.execute(bytecodeResult.getBytecode(), bytecodeResult.position(), bytecodeResult.limit(), flags);
+        final long executionPlanId = graphExecutionContext.getExecutionPlanId();
+        long commandQueue = 0L;
+        long deviceContextHandle = 0L;
+        if (interpreterDevice instanceof TornadoNativeStreamSupport streams) {
+            commandQueue = streams.getNativeStream(executionPlanId);
+            deviceContextHandle = streams.getNativeContext(executionPlanId);
+        }
+        final int backend = interpreterDevice.getTornadoVMBackend().ordinal();
+        final int deviceIndex = interpreterDevice.getDeviceContext().getDeviceIndex();
+        final int platformIndex = interpreterDevice.getDeviceContext().getDevicePlatform();
+        final long result = NativeBytecodeInterpreter.execute(bytecodeResult.getBytecode(), bytecodeResult.position(), bytecodeResult.limit(), flags, nativeBufferHandles, nativeBufferOffsets,
+                nativeBufferSizes, nativeHostPointers, nativeKernelHandles, nativeProgramHandles, nativeConstants, commandQueue, deviceContextHandle, backend, deviceIndex, platformIndex,
+                executionPlanId);
         bytecodeResult.position(NativeBytecodeInterpreter.positionOf(result));
 
         final int status = NativeBytecodeInterpreter.statusOf(result);
@@ -586,6 +611,44 @@ public class TornadoVMInterpreter {
             return false;
         }
         return status != NativeBytecodeInterpreter.STATUS_EOF;
+    }
+
+    /**
+     * Rebuilds the primitive tables the native loop reads from the current Java interpreter
+     * state. Called before every native crossing so a Java ALLOC/LAUNCH that ran since the
+     * last crossing is visible. Kernel/program slots stay 0 until a backend-neutral getter
+     * exists on {@code TornadoInstalledCode}.
+     */
+    private void refreshNativeStateTables() {
+        ensureNativeStateTables();
+        for (int i = 0; i < objects.size(); i++) {
+            nativeHostPointers[i] = NativeBytecodeInterpreter.hostPointerOf(objects.get(i));
+            XPUDeviceBufferState state = resolveObjectState(i);
+            if (state == null || !state.hasObjectBuffer()) {
+                nativeBufferHandles[i] = 0L;
+                nativeBufferOffsets[i] = 0L;
+                nativeBufferSizes[i] = 0L;
+                continue;
+            }
+            XPUBuffer buffer = state.getXPUBuffer();
+            nativeBufferHandles[i] = buffer.toBuffer();
+            nativeBufferOffsets[i] = buffer.getBufferOffset();
+            nativeBufferSizes[i] = buffer.size();
+        }
+    }
+
+    private void ensureNativeStateTables() {
+        if (nativeBufferHandles != null) {
+            return;
+        }
+        final int objectCount = objects.size();
+        nativeBufferHandles = new long[objectCount];
+        nativeBufferOffsets = new long[objectCount];
+        nativeBufferSizes = new long[objectCount];
+        nativeHostPointers = new long[objectCount];
+        nativeKernelHandles = new long[installedCodes.length];
+        nativeProgramHandles = new long[installedCodes.length];
+        nativeConstants = NativeBytecodeInterpreter.packConstants(constants);
     }
 
     private void preCompileLaunchesInCaptureRegion() {

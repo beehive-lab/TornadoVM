@@ -99,13 +99,14 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
+import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
-public class MetalTornadoDevice implements TornadoXPUDevice {
+public class MetalTornadoDevice implements TornadoXPUDevice, TornadoNativeStreamSupport {
 
     private static MetalBackendImpl driver = null;
     private static final Pattern NAME_PATTERN = Pattern.compile("^Metal (\\d)\\.(\\d).*");
@@ -774,6 +775,16 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
     @Override
     public TornadoVMBackendType getTornadoVMBackend() {
         return TornadoVMBackendType.METAL;
+    }
+
+    @Override
+    public long getNativeStream(long executionPlanId) {
+        return getDeviceContext().getNativeStream(executionPlanId);
+    }
+
+    @Override
+    public long getNativeContext(long executionPlanId) {
+        return getDeviceContext().getNativeContext(executionPlanId);
     }
 
     @Override

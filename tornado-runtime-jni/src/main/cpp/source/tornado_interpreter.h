@@ -28,6 +28,8 @@
 
 #include <stdint.h>
 
+#include "tornado_context.h"
+
 /*
  * Outcome of a call to tornado_interpret. These values MUST be kept in sync with
  * the STATUS_* constants in
@@ -55,21 +57,20 @@ enum TornadoInterpreterFlags {
 };
 
 /*
- * Runs the TornadoVM bytecode loop over `code` starting at `position`, stopping at the
- * first bytecode that cannot be handled natively.
+ * Runs the TornadoVM bytecode loop over `ctx->code` starting at `ctx->position`, stopping
+ * at the first bytecode that cannot be handled natively.
  *
- * `code`     the bytecode buffer; must hold at least `limit` readable bytes.
- * `position` the index to start decoding from; must satisfy 0 <= position <= limit.
- * `limit`    the number of valid bytes in `code`.
- * `flags`    a bitwise OR of TornadoInterpreterFlags values.
+ * `ctx` must not be null. `ctx->code` must hold at least `ctx->limit` readable bytes,
+ * and `ctx->position` must satisfy 0 <= position <= limit. The table pointers may be
+ * null when the corresponding count is 0.
  *
  * Returns a TornadoInterpreterStatus in the high 32 bits and the resulting position in
  * the low 32 bits. The position is always in [0, limit] and always a valid bytecode
  * boundary, so the Java interpreter can resume from it directly.
  *
  * This function performs no allocation, makes no JNI calls and never reads outside
- * [code, code + limit).
+ * [ctx->code, ctx->code + ctx->limit). It does not mutate `ctx`.
  */
-int64_t tornado_interpret(const uint8_t *code, int32_t position, int32_t limit, int32_t flags);
+int64_t tornado_interpret(const TornadoInterpreterContext *ctx);
 
 #endif /* TORNADO_INTERPRETER_H */

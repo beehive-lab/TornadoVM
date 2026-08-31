@@ -33,10 +33,10 @@ extern "C" {
 /*
  * Class:     uk_ac_manchester_tornado_runtime_interpreter_NativeBytecodeInterpreter
  * Method:    execute
- * Signature: ([BIII)J
+ * Signature: ([BIII[J[J[J[J[J[J[BJJIIIJ)J
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_runtime_interpreter_NativeBytecodeInterpreter_execute
-        (JNIEnv *, jclass, jbyteArray, jint, jint, jint);
+        (JNIEnv *, jclass, jbyteArray, jint, jint, jint, jlongArray, jlongArray, jlongArray, jlongArray, jlongArray, jlongArray, jbyteArray, jlong, jlong, jint, jint, jint, jlong);
 
 #ifdef __cplusplus
 }

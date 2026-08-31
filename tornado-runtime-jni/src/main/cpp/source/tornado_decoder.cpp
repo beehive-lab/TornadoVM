@@ -49,21 +49,6 @@ static inline bool fits(int32_t position, int32_t bytes, int32_t limit) {
     return position >= 0 && bytes >= 0 && limit >= bytes && position <= limit - bytes;
 }
 
-/*
- * The two readers below assemble the value from individual bytes. These are little-endian.
- * They are counterparts to the methods getInt() and getLong() in Java.
- */
-static inline int32_t read_i32(const uint8_t *code, int32_t position) {
-    const uint8_t *p = code + position;
-    return (int32_t) ((uint32_t) p[0] | ((uint32_t) p[1] << 8) | ((uint32_t) p[2] << 16) | ((uint32_t) p[3] << 24));
-}
-
-static inline int64_t read_i64(const uint8_t *code, int32_t position) {
-    const uint8_t *p = code + position;
-    return (int64_t) ((uint64_t) p[0] | ((uint64_t) p[1] << 8) | ((uint64_t) p[2] << 16) | ((uint64_t) p[3] << 24) | ((uint64_t) p[4] << 32) | ((uint64_t) p[5] << 40) | ((uint64_t) p[6] << 48)
-            | ((uint64_t) p[7] << 56));
-}
-
 /* True when the byte at `position` is the opcode `expected`. */
 static inline bool opcode_is(const uint8_t *code, int32_t position, int32_t limit, TornadoBytecode expected) {
     return fits(position, 1, limit) && static_cast<TornadoBytecode>(code[position]) == expected;
@@ -115,8 +100,8 @@ int32_t tornado_operand_bytes(const uint8_t *code, int32_t position, int32_t lim
                 return TORNADO_DECODE_ERROR;
             }
             // ALLOC has [opcode, sizeBatch, argCount], sizeBatch is long, thus we skip 8 bytes,
-            // argCount is int thus we use read_i32
-            const int32_t argCount = read_i32(code, operands + 8);
+            // argCount is int thus we use tornado_read_i32
+            const int32_t argCount = tornado_read_i32(code, operands + 8);
             if (argCount < 0 || argCount > (limit - operands - OPERANDS_ALLOC_HEADER) / 4) {
                 return TORNADO_DECODE_ERROR;
             }
@@ -129,8 +114,8 @@ int32_t tornado_operand_bytes(const uint8_t *code, int32_t position, int32_t lim
             }
             // LAUNCH has [opcode, callWrapperIndex, taskIndex, numArgs, eventId, offset, batchThreads],
             // Thus to read numArgs, we need to skip 8 bytes, as callWrapperIndex and taskIndex are ints,
-            // and numArgs is int thus we use read_i32
-            const int32_t numArgs = read_i32(code, operands + 8);
+            // and numArgs is int thus we use tornado_read_i32
+            const int32_t numArgs = tornado_read_i32(code, operands + 8);
             if (numArgs < 0 || numArgs > (limit - operands - OPERANDS_LAUNCH_HEADER) / BYTES_PER_PUSH_ARGUMENT) {
                 return TORNADO_DECODE_ERROR;
             }
@@ -215,9 +200,9 @@ int32_t tornado_decode_init(const uint8_t *code, int32_t position, int32_t limit
         return TORNADO_DECODE_ERROR;
     }
     const int32_t operands = position + 1;
-    out->numContexts = read_i32(code, operands);
-    out->numStacks = read_i32(code, operands + 4);
-    out->numDeps = read_i32(code, operands + 8);
+    out->numContexts = tornado_read_i32(code, operands);
+    out->numStacks = tornado_read_i32(code, operands + 4);
+    out->numDeps = tornado_read_i32(code, operands + 8);
     return operands + OPERANDS_INIT;
 }
 
@@ -249,7 +234,7 @@ int32_t tornado_decode_index(const uint8_t *code, int32_t position, int32_t limi
     if (!fits(operands, OPERANDS_INDEX, limit)) {
         return TORNADO_DECODE_ERROR;
     }
-    out->index = read_i32(code, operands);
+    out->index = tornado_read_i32(code, operands);
     return operands + OPERANDS_INDEX;
 }
 
@@ -270,8 +255,8 @@ int32_t tornado_decode_object_event(const uint8_t *code, int32_t position, int32
     if (!fits(operands, OPERANDS_OBJECT_EVENT, limit)) {
         return TORNADO_DECODE_ERROR;
     }
-    out->objectIndex = read_i32(code, operands);
-    out->eventId = read_i32(code, operands + 4);
+    out->objectIndex = tornado_read_i32(code, operands);
+    out->eventId = tornado_read_i32(code, operands + 4);
     return operands + OPERANDS_OBJECT_EVENT;
 }
 
@@ -297,10 +282,10 @@ int32_t tornado_decode_transfer(const uint8_t *code, int32_t position, int32_t l
     if (!fits(operands, OPERANDS_TRANSFER, limit)) {
         return TORNADO_DECODE_ERROR;
     }
-    out->objectIndex = read_i32(code, operands);
-    out->eventId = read_i32(code, operands + 4);
-    out->offset = read_i64(code, operands + 8);
-    out->sizeBatch = read_i64(code, operands + 16);
+    out->objectIndex = tornado_read_i32(code, operands);
+    out->eventId = tornado_read_i32(code, operands + 4);
+    out->offset = tornado_read_i64(code, operands + 8);
+    out->sizeBatch = tornado_read_i64(code, operands + 16);
     return operands + OPERANDS_TRANSFER;
 }
 
@@ -318,8 +303,8 @@ int32_t tornado_decode_alloc(const uint8_t *code, int32_t position, int32_t limi
     }
 
     const int32_t operands = position + 1;
-    out->sizeBatch = read_i64(code, operands);
-    out->argCount = read_i32(code, operands + 8);
+    out->sizeBatch = tornado_read_i64(code, operands);
+    out->argCount = tornado_read_i32(code, operands + 8);
     out->argsPosition = operands + OPERANDS_ALLOC_HEADER;
     return operands + operandBytes;
 }
@@ -331,7 +316,7 @@ bool tornado_decode_alloc_argument(const uint8_t *code, const TornadoAllocOperan
     if (argIndex < 0 || argIndex >= ops->argCount) {
         return false;
     }
-    *out = read_i32(code, ops->argsPosition + (argIndex * 4));
+    *out = tornado_read_i32(code, ops->argsPosition + (argIndex * 4));
     return true;
 }
 
@@ -349,12 +334,12 @@ int32_t tornado_decode_launch(const uint8_t *code, int32_t position, int32_t lim
     }
 
     const int32_t operands = position + 1;
-    out->callWrapperIndex = read_i32(code, operands);
-    out->taskIndex = read_i32(code, operands + 4);
-    out->numArgs = read_i32(code, operands + 8);
-    out->eventId = read_i32(code, operands + 12);
-    out->offset = read_i64(code, operands + 16);
-    out->batchThreads = read_i64(code, operands + 24);
+    out->callWrapperIndex = tornado_read_i32(code, operands);
+    out->taskIndex = tornado_read_i32(code, operands + 4);
+    out->numArgs = tornado_read_i32(code, operands + 8);
+    out->eventId = tornado_read_i32(code, operands + 12);
+    out->offset = tornado_read_i64(code, operands + 16);
+    out->batchThreads = tornado_read_i64(code, operands + 24);
     out->argsPosition = operands + OPERANDS_LAUNCH_HEADER;
     return operands + operandBytes;
 }
@@ -373,6 +358,6 @@ int32_t tornado_decode_push_argument(const uint8_t *code, int32_t position, int3
     }
 
     out->kind = code[position];
-    out->index = read_i32(code, position + 1);
+    out->index = tornado_read_i32(code, position + 1);
     return position + BYTES_PER_PUSH_ARGUMENT;
 }
