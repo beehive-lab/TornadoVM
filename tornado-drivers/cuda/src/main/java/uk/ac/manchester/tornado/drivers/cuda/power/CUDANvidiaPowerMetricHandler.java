@@ -23,16 +23,21 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.power;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+
+import uk.ac.manchester.tornado.drivers.common.ffm.NVMLAPI;
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
 import uk.ac.manchester.tornado.drivers.cuda.exceptions.CUDAException;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 
 public class CUDANvidiaPowerMetricHandler implements PowerMetric {
 
     private final CUDADeviceContext deviceContext;
     private final TornadoLogger logger;
-    private long[] oclDevice = new long[1];
+    private long[] nvmlDevice = new long[1];
 
     public CUDANvidiaPowerMetricHandler(CUDADeviceContext deviceContext) {
         this.deviceContext = deviceContext;
@@ -40,35 +45,46 @@ public class CUDANvidiaPowerMetricHandler implements PowerMetric {
         initializePowerLibrary();
     }
 
-    /** NVML_SUCCESS. */
-    private static final long NVML_SUCCESS = 0;
-
-    /*
-     * NVML power metrics are not wired up: these report success with a zero power reading so the
-     * profiler degrades gracefully rather than failing when it asks for a measurement. Reading real
-     * power would mean binding libnvidia-ml, which is a separate change from removing JNI.
-     */
-
-    static long clNvmlInit() throws CUDAException {
-        return NVML_SUCCESS;
-    }
-
-    static long clNvmlDeviceGetHandleByIndex(long index, long[] device) throws CUDAException {
-        return NVML_SUCCESS;
-    }
-
-    static long clNvmlDeviceGetPowerUsage(long[] device, long[] powerUsage) throws CUDAException {
-        if (powerUsage != null && powerUsage.length > 0) {
-            powerUsage[0] = 0;
+    static long nvmlInit() throws CUDAException {
+        if (!NVMLAPI.isAvailable()) {
+            return -1;
         }
-        return NVML_SUCCESS;
+        return NVMLAPI.nvmlInit();
+    }
+
+    static long nvmlDeviceGetHandleByIndex(long index, long[] device) throws CUDAException {
+        if (!NVMLAPI.isAvailable() || device == null || device.length == 0) {
+            return -1;
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment handle = FFMSupport.allocatePointer(arena);
+            int result = NVMLAPI.nvmlDeviceGetHandleByIndex((int) index, handle);
+            device[0] = handle.get(FFMSupport.C_POINTER, 0).address();
+            return result;
+        }
+    }
+
+    /** Reports the device's current draw in milliwatts, which is the unit the profiler prints. */
+    static long nvmlDeviceGetPowerUsage(long[] device, long[] powerUsage) throws CUDAException {
+        if (!NVMLAPI.isAvailable() || device == null || device.length == 0) {
+            return -1;
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment milliwatts = FFMSupport.allocateInt(arena);
+            int result = NVMLAPI.nvmlDeviceGetPowerUsage(device[0], milliwatts);
+            if (powerUsage != null && powerUsage.length > 0) {
+                // An unsigned int, but no NVIDIA GPU draws anywhere near 2^31 milliwatts.
+                powerUsage[0] = Integer.toUnsignedLong(milliwatts.get(FFMSupport.C_INT, 0));
+            }
+            return result;
+        }
     }
 
     @Override
     public void initializePowerLibrary() {
         try {
-            clNvmlInit();
-            clNvmlDeviceGetHandleByIndex(this.deviceContext.getDevice().getIndex(), this.oclDevice);
+            nvmlInit();
+            nvmlDeviceGetHandleByIndex(this.deviceContext.getDevice().getIndex(), this.nvmlDevice);
         } catch (CUDAException e) {
             logger.error(e.getMessage());
         }
@@ -77,7 +93,7 @@ public class CUDANvidiaPowerMetricHandler implements PowerMetric {
     @Override
     public void getPowerUsage(long[] powerUsage) {
         try {
-            clNvmlDeviceGetPowerUsage(this.oclDevice, powerUsage);
+            nvmlDeviceGetPowerUsage(this.nvmlDevice, powerUsage);
         } catch (CUDAException e) {
             logger.error(e.getMessage());
         }
