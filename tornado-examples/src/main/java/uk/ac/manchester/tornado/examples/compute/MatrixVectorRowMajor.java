@@ -43,11 +43,18 @@ import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.utils.QuantizationUtils;
 
 /**
+ * Benchmarks row-major matrix-vector products, including KernelContext tiles
+ * and FP16 / quantized variants.
+ * <p>
+ * Each variant builds a {@code TaskGraph}, copies inputs on first execution,
+ * and copies the result back on every execution.
+ * </p>
+ * <p>
+ * How to run?
  * </p>
  * <code>
  * $ tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
  * </code>
- *
  */
 public class MatrixVectorRowMajor {
 

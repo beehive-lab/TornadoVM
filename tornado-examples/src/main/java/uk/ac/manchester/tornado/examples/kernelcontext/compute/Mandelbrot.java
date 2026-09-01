@@ -41,11 +41,16 @@ import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
+ * Mandelbrot renderer using the KernelContext API instead of {@code @Parallel}.
+ * <p>
+ * The image component builds a {@code TaskGraph} with a KernelContext task,
+ * copies the output back on every execution, and shows it in a Swing window.
+ * </p>
  * <p>
  * How to run?
  * </p>
  * <code>
- *      $ tornado --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.kernelcontext.compute.Mandelbrot
+ * $ tornado --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.kernelcontext.compute.Mandelbrot
  * </code>
  */
 public class Mandelbrot {

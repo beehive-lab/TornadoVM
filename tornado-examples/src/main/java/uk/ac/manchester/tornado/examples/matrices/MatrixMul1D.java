@@ -32,13 +32,18 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 /**
+ * Matrix multiplication stored in 1D {@code FloatArray} buffers with nested
+ * {@code @Parallel} loops.
+ * <p>
+ * Copies both matrices on first execution, runs {@code matrixMultiplication},
+ * and copies the result back on every execution.
+ * </p>
  * <p>
  * How to run?
  * </p>
  * <code>
  * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.matrices.MatrixMul1D
  * </code>
- *
  */
 public class MatrixMul1D {
     // CHECKSTYLE:OFF
