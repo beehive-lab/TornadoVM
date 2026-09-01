@@ -33,6 +33,8 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -109,19 +111,35 @@ public final class NVRTCAPI {
         for (int major = 13; major >= 10; major--) {
             candidates.add("libnvrtc.so." + major);
         }
-        candidates.add("nvrtc64_120_0.dll");
+        // Windows bakes the CUDA version into the DLL name and NVIDIA bumps it on every release
+        // whose ABI changed: nvrtc64_120_0.dll served every CUDA 12.x release, CUDA 13.0
+        // introduced nvrtc64_130_0.dll. A single hardcoded name goes stale the day a newer
+        // toolkit ships, so every version this backend has ever been run against is tried here,
+        // newest first, before falling through to the toolkit-root scan below (which finds
+        // whatever is actually installed by filename, not by a version this code had to guess).
+        for (int major = 13; major >= 10; major--) {
+            for (int minor = 9; minor >= 0; minor--) {
+                candidates.add("nvrtc64_" + major + minor + "_0.dll");
+            }
+        }
         candidates.add("libnvrtc.dylib");
-        // Then the lib64 directory of every toolkit root the environment names, for the common case
-        // of a toolkit that is installed but not on the loader path.
+        // Then every directory that might hold NVRTC under every toolkit root the environment
+        // names (or, absent those, the standard install location - see toolkitRoots()), for the
+        // common case of a toolkit that is installed but not on the loader path. bin/x64 is
+        // where CUDA 13.x moved the Windows runtime DLLs (older toolkits kept them directly in
+        // bin); both are checked since the layout varies by toolkit version.
         for (String root : toolkitRoots()) {
-            for (String libDir : new String[] { "lib64", "lib", "lib/x64", "bin" }) {
+            for (String libDir : new String[] { "lib64", "lib", "lib/x64", "bin", "bin/x64" }) {
                 File dir = new File(root, libDir);
-                if (!dir.isDirectory()) {
+                File[] files = dir.listFiles();
+                if (files == null) {
                     continue;
                 }
-                for (String name : new String[] { "libnvrtc.so", "libnvrtc.so.13", "libnvrtc.so.12", "libnvrtc.so.11.2", "libnvrtc.dylib" }) {
-                    File file = new File(dir, name);
-                    if (file.isFile()) {
+                for (File file : files) {
+                    String name = file.getName();
+                    boolean isNvrtc = name.equals("libnvrtc.so") || name.startsWith("libnvrtc.so.") || name.equals("libnvrtc.dylib")
+                            || (name.startsWith("nvrtc64_") && name.endsWith(".dll"));
+                    if (isNvrtc) {
                         candidates.add(file.getAbsolutePath());
                     }
                 }
@@ -148,7 +166,48 @@ public final class NVRTCAPI {
         if (!roots.contains("/usr")) {
             roots.add("/usr");
         }
+        // Windows has no equivalent of /usr/local/cuda: the installer's default location instead
+        // carries the version in the path itself (v13.2, v12.8, ...), and only sets the plain
+        // CUDA_PATH to whichever toolkit was installed last - a machine with several toolkits, or
+        // one where CUDA_PATH was never exported to this process, would otherwise find none of
+        // them. Every version under the standard install root is offered here, newest first, so
+        // NVRTC is still found without requiring any environment variable to be set.
+        String programFiles = System.getenv("ProgramFiles");
+        File cudaRoot = new File(programFiles != null ? programFiles : "C:\\Program Files", "NVIDIA GPU Computing Toolkit" + File.separator + "CUDA");
+        File[] versions = cudaRoot.listFiles(File::isDirectory);
+        if (versions != null) {
+            // Lexicographic order on the directory name would rank "v9.0" above "v13.2" (a
+            // character comparison sees '9' > '1'), so a stray old toolkit could shadow a newer
+            // one; compare the parsed major/minor numerically instead.
+            Arrays.sort(versions, Comparator.comparingInt(NVRTCAPI::cudaVersionKey).reversed());
+            for (File version : versions) {
+                String path = version.getAbsolutePath();
+                if (!roots.contains(path)) {
+                    roots.add(path);
+                }
+            }
+        }
         return roots;
+    }
+
+    /**
+     * Numeric sort key for a toolkit directory named {@code vMAJOR.MINOR} (as the Windows
+     * installer names them), highest first. Anything that does not parse sorts last rather than
+     * first, so an unrecognised entry cannot masquerade as the newest toolkit.
+     */
+    private static int cudaVersionKey(File versionDir) {
+        String name = versionDir.getName();
+        if (!name.isEmpty() && (name.charAt(0) == 'v' || name.charAt(0) == 'V')) {
+            name = name.substring(1);
+        }
+        String[] parts = name.split("\\.", 2);
+        try {
+            int major = Integer.parseInt(parts[0]);
+            int minor = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
+            return major * 1000 + minor;
+        } catch (NumberFormatException e) {
+            return -1;
+        }
     }
 
     /** Whether an NVRTC could be loaded; false when no CUDA toolkit is reachable. */
