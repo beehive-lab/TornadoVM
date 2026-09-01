@@ -27,14 +27,20 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guara
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueInfo.CL_QUEUE_CONTEXT;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueInfo.CL_QUEUE_DEVICE;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
-
+import java.util.Arrays;
 import jdk.vm.ci.meta.JavaKind;
+
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.drivers.common.CommandQueue;
+import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
+import uk.ac.manchester.tornado.drivers.opencl.ffm.OpenCLAPI;
 import uk.ac.manchester.tornado.drivers.opencl.natives.NativeCommandQueue;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
@@ -66,12 +72,60 @@ public class OCLCommandQueue extends CommandQueue {
         return commandQueuePtr;
     }
 
-    static native void clReleaseCommandQueue(long queueId) throws OCLException;
+    /** Reusable per-thread native buffers for info queries and for Java-array transfer staging. */
+    private static final FFMSupport.Staging INFO_STAGING = new FFMSupport.Staging();
 
-    static native void clGetCommandQueueInfo(long queueId, int info, byte[] buffer) throws OCLException;
+    private static final FFMSupport.Staging TRANSFER_STAGING = new FFMSupport.Staging();
+
+    static void clReleaseCommandQueue(long queueId) throws OCLException {
+        OpenCLAPI.clReleaseCommandQueue(queueId);
+    }
+
+    static void clGetCommandQueueInfo(long queueId, int info, byte[] buffer) throws OCLException {
+        Arrays.fill(buffer, (byte) 0);
+        MemorySegment value = INFO_STAGING.forBytes(buffer.length);
+        if (OpenCLAPI.clGetCommandQueueInfo(queueId, info, buffer.length, value, MemorySegment.NULL) != OpenCLAPI.CL_SUCCESS) {
+            return;
+        }
+        MemorySegment.copy(value, FFMSupport.C_CHAR, 0, buffer, 0, buffer.length);
+    }
 
     /**
-     * Dispatch an OpenCL kernel via a JNI call.
+     * Copies a wait list into native memory. The array is laid out as {@code [count, e0, e1, ...]},
+     * so the count comes from the head and the handles from what follows it.
+     *
+     * @return the native {@code cl_event} vector, or {@code MemorySegment.NULL} when the list is
+     *     empty -- which is what OpenCL requires when the count is zero.
+     */
+    private static MemorySegment waitList(Arena arena, long[] events, int[] countOut) {
+        int count = 0;
+        if (events != null && events.length > 0) {
+            count = (int) Math.min(events[0], events.length - 1L);
+        }
+        countOut[0] = count;
+        if (count <= 0) {
+            return MemorySegment.NULL;
+        }
+        MemorySegment handles = FFMSupport.allocateArray(arena, FFMSupport.C_POINTER, count);
+        for (int i = 0; i < count; i++) {
+            handles.set(FFMSupport.C_POINTER, i * FFMSupport.C_POINTER.byteSize(), MemorySegment.ofAddress(events[i + 1]));
+        }
+        return handles;
+    }
+
+    /** Copies a work-size array into a native {@code size_t} vector, or NULL when absent. */
+    private static MemorySegment workSize(Arena arena, long[] sizes, int dimensions) {
+        if (sizes == null) {
+            return MemorySegment.NULL;
+        }
+        int count = Math.min(sizes.length, dimensions);
+        MemorySegment segment = FFMSupport.allocateArray(arena, FFMSupport.C_LONG, Math.max(count, 1));
+        MemorySegment.copy(sizes, 0, segment, FFMSupport.C_LONG, 0, count);
+        return segment;
+    }
+
+    /**
+     * Dispatch an OpenCL kernel.
      *
      * @param queueId
      *     OpenCL command queue object
@@ -79,64 +133,189 @@ public class OCLCommandQueue extends CommandQueue {
      *     OpenCL kernel ID object
      * @param dim
      *     Dimensions of the Kernel (1D, 2D or 3D)
-     * @param global_work_offset
+     * @param globalWorkOffset
      *     Offset within global access
-     * @param global_work_size
+     * @param globalWorkSize
      *     Total number of threads to launch
-     * @param local_work_size
+     * @param localWorkSize
      *     Local work group size
      * @param events
-     *     List of events
+     *     wait list, laid out as {@code [count, e0, e1, ...]}
      * @return Returns an event's ID
      * @throws OCLException
      *     OpenCL Exception
      */
-    static native long clEnqueueNDRangeKernel(long queueId, long kernelId, int dim, long[] global_work_offset, long[] global_work_size, long[] local_work_size, long[] events) throws OCLException;
+    static long clEnqueueNDRangeKernel(long queueId, long kernelId, int dim, long[] globalWorkOffset, long[] globalWorkSize, long[] localWorkSize, long[] events) throws OCLException {
+        try (Arena arena = Arena.ofConfined()) {
+            int[] count = new int[1];
+            MemorySegment waitList = waitList(arena, events, count);
+            MemorySegment event = FFMSupport.allocatePointer(arena);
+            OpenCLAPI.clEnqueueNDRangeKernel(queueId, kernelId, dim, workSize(arena, globalWorkOffset, dim), workSize(arena, globalWorkSize, dim), workSize(arena, localWorkSize, dim), count[0],
+                    waitList, event);
+            return event.get(FFMSupport.C_POINTER, 0).address();
+        }
+    }
 
-    static native long writeArrayToDevice(long queueId, byte[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
+    /**
+     * Host-to-device copy whose host side is a Java array.
+     *
+     * <p>
+     * A downcall cannot address the Java heap, so the array's bytes go through a reused per-thread
+     * native buffer rather than being pinned in place the way the JNI critical region did. The copy
+     * is blocking regardless of the caller's flag, exactly as the JNI version was: the staging
+     * buffer is reused as soon as this returns.
+     */
+    private static long writeArray(long queueId, Object array, ValueLayout layout, int elementOffset, int elementCount, long offset, long bytes, long ptr, long[] events) throws OCLException {
+        try (Arena arena = Arena.ofConfined()) {
+            int[] count = new int[1];
+            MemorySegment waitList = waitList(arena, events, count);
+            MemorySegment staging = TRANSFER_STAGING.forBytes(bytes);
+            MemorySegment.copy(array, elementOffset, staging, layout, 0, elementCount);
+            MemorySegment event = FFMSupport.allocatePointer(arena);
+            OpenCLAPI.clEnqueueWriteBuffer(queueId, ptr, OpenCLAPI.CL_TRUE, offset, bytes, staging.address(), count[0], waitList, event);
+            return event.get(FFMSupport.C_POINTER, 0).address();
+        }
+    }
 
-    static native long writeArrayToDevice(long queueId, char[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
+    /** Device-to-host counterpart of {@link #writeArray}; blocking, so the copy back is complete. */
+    private static long readArray(long queueId, Object array, ValueLayout layout, int elementOffset, int elementCount, long offset, long bytes, long ptr, long[] events) throws OCLException {
+        try (Arena arena = Arena.ofConfined()) {
+            int[] count = new int[1];
+            MemorySegment waitList = waitList(arena, events, count);
+            MemorySegment staging = TRANSFER_STAGING.forBytes(bytes);
+            MemorySegment event = FFMSupport.allocatePointer(arena);
+            OpenCLAPI.clEnqueueReadBuffer(queueId, ptr, OpenCLAPI.CL_TRUE, offset, bytes, staging.address(), count[0], waitList, event);
+            MemorySegment.copy(staging, layout, 0, array, elementOffset, elementCount);
+            return event.get(FFMSupport.C_POINTER, 0).address();
+        }
+    }
 
-    static native long writeArrayToDevice(long queueId, short[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
+    static long writeArrayToDevice(long queueId, byte[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException {
+        return writeArray(queueId, buffer, FFMSupport.C_CHAR, (int) hostOffset, (int) bytes, offset, bytes, ptr, events);
+    }
 
-    static native long writeArrayToDevice(long queueId, int[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
+    static long writeArrayToDevice(long queueId, char[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException {
+        return writeArray(queueId, buffer, ValueLayout.JAVA_CHAR, (int) (hostOffset / Character.BYTES), (int) (bytes / Character.BYTES), offset, bytes, ptr, events);
+    }
 
-    static native long writeArrayToDevice(long queueId, long[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
+    static long writeArrayToDevice(long queueId, short[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException {
+        return writeArray(queueId, buffer, ValueLayout.JAVA_SHORT, (int) (hostOffset / Short.BYTES), (int) (bytes / Short.BYTES), offset, bytes, ptr, events);
+    }
 
-    static native long writeArrayToDevice(long queueId, float[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
+    static long writeArrayToDevice(long queueId, int[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException {
+        return writeArray(queueId, buffer, ValueLayout.JAVA_INT, (int) (hostOffset / Integer.BYTES), (int) (bytes / Integer.BYTES), offset, bytes, ptr, events);
+    }
 
-    static native long writeArrayToDevice(long queueId, double[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
+    static long writeArrayToDevice(long queueId, long[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException {
+        return writeArray(queueId, buffer, FFMSupport.C_LONG, (int) (hostOffset / Long.BYTES), (int) (bytes / Long.BYTES), offset, bytes, ptr, events);
+    }
 
-    native static long writeArrayToDevice(long queueId, long hostPointer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
+    static long writeArrayToDevice(long queueId, float[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException {
+        return writeArray(queueId, buffer, FFMSupport.C_FLOAT, (int) (hostOffset / Float.BYTES), (int) (bytes / Float.BYTES), offset, bytes, ptr, events);
+    }
 
-    static native long readArrayFromDevice(long queueId, byte[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
+    static long writeArrayToDevice(long queueId, double[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException {
+        return writeArray(queueId, buffer, ValueLayout.JAVA_DOUBLE, (int) (hostOffset / Double.BYTES), (int) (bytes / Double.BYTES), offset, bytes, ptr, events);
+    }
 
-    static native long readArrayFromDevice(long queueId, char[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
+    static long writeArrayToDevice(long queueId, long hostPointer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException {
+        try (Arena arena = Arena.ofConfined()) {
+            int[] count = new int[1];
+            MemorySegment waitList = waitList(arena, events, count);
+            MemorySegment event = FFMSupport.allocatePointer(arena);
+            OpenCLAPI.clEnqueueWriteBuffer(queueId, ptr, blocking ? OpenCLAPI.CL_TRUE : OpenCLAPI.CL_FALSE, offset, bytes, hostPointer + hostOffset, count[0], waitList, event);
+            return event.get(FFMSupport.C_POINTER, 0).address();
+        }
+    }
 
-    static native long readArrayFromDevice(long queueId, short[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
+    static long readArrayFromDevice(long queueId, byte[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException {
+        return readArray(queueId, buffer, FFMSupport.C_CHAR, (int) hostOffset, (int) bytes, offset, bytes, ptr, events);
+    }
 
-    static native long readArrayFromDevice(long queueId, int[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
+    static long readArrayFromDevice(long queueId, char[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException {
+        return readArray(queueId, buffer, ValueLayout.JAVA_CHAR, (int) (hostOffset / Character.BYTES), (int) (bytes / Character.BYTES), offset, bytes, ptr, events);
+    }
 
-    static native long readArrayFromDevice(long queueId, long[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
+    static long readArrayFromDevice(long queueId, short[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException {
+        return readArray(queueId, buffer, ValueLayout.JAVA_SHORT, (int) (hostOffset / Short.BYTES), (int) (bytes / Short.BYTES), offset, bytes, ptr, events);
+    }
 
-    static native long readArrayFromDevice(long queueId, float[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
+    static long readArrayFromDevice(long queueId, int[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException {
+        return readArray(queueId, buffer, ValueLayout.JAVA_INT, (int) (hostOffset / Integer.BYTES), (int) (bytes / Integer.BYTES), offset, bytes, ptr, events);
+    }
 
-    static native long readArrayFromDevice(long queueId, double[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
+    static long readArrayFromDevice(long queueId, long[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException {
+        return readArray(queueId, buffer, FFMSupport.C_LONG, (int) (hostOffset / Long.BYTES), (int) (bytes / Long.BYTES), offset, bytes, ptr, events);
+    }
 
-    static native long readArrayFromDeviceOffHeap(long queueId, long hostPointer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
+    static long readArrayFromDevice(long queueId, float[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException {
+        return readArray(queueId, buffer, FFMSupport.C_FLOAT, (int) (hostOffset / Float.BYTES), (int) (bytes / Float.BYTES), offset, bytes, ptr, events);
+    }
 
-    static native void clEnqueueWaitForEvents(long queueId, long[] events) throws OCLException;
+    static long readArrayFromDevice(long queueId, double[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException {
+        return readArray(queueId, buffer, ValueLayout.JAVA_DOUBLE, (int) (hostOffset / Double.BYTES), (int) (bytes / Double.BYTES), offset, bytes, ptr, events);
+    }
+
+    static long readArrayFromDeviceOffHeap(long queueId, long hostPointer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException {
+        try (Arena arena = Arena.ofConfined()) {
+            int[] count = new int[1];
+            MemorySegment waitList = waitList(arena, events, count);
+            MemorySegment event = FFMSupport.allocatePointer(arena);
+            OpenCLAPI.clEnqueueReadBuffer(queueId, ptr, blocking ? OpenCLAPI.CL_TRUE : OpenCLAPI.CL_FALSE, offset, bytes, hostPointer + hostOffset, count[0], waitList, event);
+            return event.get(FFMSupport.C_POINTER, 0).address();
+        }
+    }
+
+    /**
+     * Makes later commands on this queue wait for the listed events.
+     *
+     * <p>
+     * {@code clEnqueueWaitForEvents} is an OpenCL 1.1 entry point that 1.2 dropped from the headers.
+     * Where an ICD no longer exports it, a barrier on the same wait list is enqueued instead: it
+     * orders the queue behind those events the same way.
+     */
+    static void clEnqueueWaitForEvents(long queueId, long[] events) throws OCLException {
+        try (Arena arena = Arena.ofConfined()) {
+            int[] count = new int[1];
+            MemorySegment waitList = waitList(arena, events, count);
+            if (OpenCLAPI.hasEnqueueWaitForEvents()) {
+                OpenCLAPI.clEnqueueWaitForEvents(queueId, count[0], waitList);
+            } else {
+                OpenCLAPI.clEnqueueBarrierWithWaitList(queueId, count[0], waitList, MemorySegment.NULL);
+            }
+        }
+    }
 
     /*
      * for OpenCL 1.2 implementations
      */
-    static native long clEnqueueMarkerWithWaitList(long queueId, long[] events) throws OCLException;
+    static long clEnqueueMarkerWithWaitList(long queueId, long[] events) throws OCLException {
+        try (Arena arena = Arena.ofConfined()) {
+            int[] count = new int[1];
+            MemorySegment waitList = waitList(arena, events, count);
+            MemorySegment event = FFMSupport.allocatePointer(arena);
+            OpenCLAPI.clEnqueueMarkerWithWaitList(queueId, count[0], waitList, event);
+            return event.get(FFMSupport.C_POINTER, 0).address();
+        }
+    }
 
-    static native long clEnqueueBarrierWithWaitList(long queueId, long[] events) throws OCLException;
+    static long clEnqueueBarrierWithWaitList(long queueId, long[] events) throws OCLException {
+        try (Arena arena = Arena.ofConfined()) {
+            int[] count = new int[1];
+            MemorySegment waitList = waitList(arena, events, count);
+            MemorySegment event = FFMSupport.allocatePointer(arena);
+            OpenCLAPI.clEnqueueBarrierWithWaitList(queueId, count[0], waitList, event);
+            return event.get(FFMSupport.C_POINTER, 0).address();
+        }
+    }
 
-    static native void clFlush(long queueId) throws OCLException;
+    static void clFlush(long queueId) throws OCLException {
+        OpenCLAPI.clFlush(queueId);
+    }
 
-    static native void clFinish(long queueId) throws OCLException;
+    static void clFinish(long queueId) throws OCLException {
+        OpenCLAPI.clFinish(queueId);
+    }
 
     public void flushEvents() {
         try {

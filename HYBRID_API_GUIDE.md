@@ -430,10 +430,14 @@ make BACKEND=cuda        # activates the cuda-backend Maven profile
 ```
 
 The Java modules (`tornado-cublas`, `tornado-cufft`, `tornado-cudnn`,
-`tornado-cusparse`, `tornado-cutlass`) always compile. Their native `*-jni`
-counterparts build only under the `cuda-backend` profile, and each is
-**self-guarding**: if its library/toolkit is missing the native `.so` is skipped
-(the build still succeeds) and that provider reports `UNSUPPORTED` at runtime.
+`tornado-cusparse`, `tornado-cutlass`) always compile. `cublas`, `cufft` and
+`cusparse` bind straight to the toolkit through `java.lang.foreign` — no
+native module at all. `cudnn` and `cutlass` still carry a native module
+(`cudnn-jni` for the cudnn-frontend SDPA shim, `cutlass-jni` for `nvcc`-compiled
+device code) that builds only under the `cuda-backend` profile. Either way it is
+**self-guarding**: if a library/toolkit is missing, the `SymbolLookup` (or the
+native `.so`) comes back empty and that provider reports `UNSUPPORTED` at
+runtime rather than failing the build.
 
 The launcher adds the provider modules to `--add-modules` automatically when the
 CUDA backend is present:
@@ -540,11 +544,15 @@ open module tornado.mylib {
 …and add the same class name to
 `src/main/resources/META-INF/services/uk.ac.manchester.tornado.runtime.library.spi.TornadoLibraryProvider`.
 
-**4. Native binding** — a `tornado-drivers/mylib-jni` CMake module (see
-`cudnn-jni` for a host library, `cutlass-jni` for one that compiles device code)
-under the `cuda-backend` profile, plus wiring in the root `pom.xml`, the
-`tornado-drivers` profile, `tornado-assembly` (`assembly.xml` + `pom.xml`), and
-`tornado.py` (`--add-modules`).
+**4. Native binding** — bind the library's calls with `java.lang.foreign`
+directly in `MyNativeLib.java` (see `CuBlasNativeLib`): a `SymbolLookup`
+resolved at class-init time and one downcall handle per entry point, no
+separate module or build step. Only add a `tornado-drivers/mylib-jni` CMake
+module (see `cudnn-jni` for a host library, `cutlass-jni` for one that
+compiles device code) under the `cuda-backend` profile — plus wiring in the
+root `pom.xml`, the `tornado-drivers` profile, `tornado-assembly`
+(`assembly.xml` + `pom.xml`), and `tornado.py` (`--add-modules`) — when the
+library needs actual compiled C/C++, not just a symbol table.
 
 Key SPI types (in `tornado-runtime/.../runtime/library/spi/`):
 

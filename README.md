@@ -144,7 +144,7 @@ try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
 }
 ```
 
-Library bindings are discovered via Java `ServiceLoader` — implement `TornadoLibraryProvider`, add a JNI module, and any native library joins the graph with no core runtime changes. TornadoVM is a member of the **NVIDIA Inception Program** and has presented this work at **NVIDIA GTC**. [Hybrid API guide →](https://tornadovm.readthedocs.io/en/latest/)
+Library bindings are discovered via Java `ServiceLoader` — implement `TornadoLibraryProvider`, bind the calls through `java.lang.foreign` (a JNI module only if the library genuinely needs compiled C/C++), and any native library joins the graph with no core runtime changes. TornadoVM is a member of the **NVIDIA Inception Program** and has presented this work at **NVIDIA GTC**. [Hybrid API guide →](https://tornadovm.readthedocs.io/en/latest/)
 
 
 ---

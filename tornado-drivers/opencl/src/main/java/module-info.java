@@ -13,6 +13,7 @@ module tornado.drivers.opencl {
     exports uk.ac.manchester.tornado.drivers.opencl;
     exports uk.ac.manchester.tornado.drivers.opencl.builtins;
     exports uk.ac.manchester.tornado.drivers.opencl.enums;
+    exports uk.ac.manchester.tornado.drivers.opencl.ffm;
     exports uk.ac.manchester.tornado.drivers.opencl.exceptions;
     exports uk.ac.manchester.tornado.drivers.opencl.graal;
     exports uk.ac.manchester.tornado.drivers.opencl.graal.asm;

@@ -31,6 +31,8 @@ import java.util.List;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.drivers.metal.ffm.MetalObjects;
+import uk.ac.manchester.tornado.drivers.metal.ffm.MetalAPI;
 import uk.ac.manchester.tornado.drivers.metal.graal.MetalInstalledCode;
 import uk.ac.manchester.tornado.drivers.metal.runtime.MetalTornadoDevice;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
@@ -40,10 +42,8 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class Metal {
 
-    public static final String METAL_JNI_LIBRARY = "tornado-objc-metal";
-
     private static boolean initialised = false;
-    // Indicates whether native Metal JNI bindings were successfully loaded and initialised.
+    // Indicates whether the Metal framework and the Objective-C runtime are both reachable through FFM.
     private static boolean nativeAvailable = false;
 
     private static final List<TornadoPlatformInterface> platforms = new ArrayList<>();
@@ -54,32 +54,9 @@ public class Metal {
     public static final int METAL_FALSE = 0;
 
     static {
-        try {
-            // Loading JNI Metal library. Prefer the SDK-installed native lib under $TORNADO_SDK/lib
-            final String tornadoSdk = System.getenv("TORNADO_SDK");
-            if (tornadoSdk != null) {
-                final String sdkLib = tornadoSdk + "/lib/libtornado-objc-metal.dylib";
-                try {
-                    System.load(sdkLib);
-                    nativeAvailable = true;
-                } catch (UnsatisfiedLinkError ex) {
-                    // Fall back to system library lookup
-                    System.loadLibrary(Metal.METAL_JNI_LIBRARY);
-                    nativeAvailable = true;
-                }
-            } else {
-                // Fall back to system library lookup when SDK not set
-                System.loadLibrary(Metal.METAL_JNI_LIBRARY);
-                nativeAvailable = true;
-            }
-        } catch (final UnsatisfiedLinkError e) {
-            // Native JNI not available in this environment. Mark as unavailable and continue so the
-            // runtime can decide a fallback (e.g., deopt to sequential execution).
-            nativeAvailable = false;
-        } catch (final Throwable e) {
-            // Any other failure loading native bindings — mark unavailable.
-            nativeAvailable = false;
-        }
+        // Metal is now reached through java.lang.foreign rather than a JNI shim, so there is no
+        // TornadoVM native library to load; availability is a question about the host frameworks.
+        nativeAvailable = MetalAPI.isAvailable();
 
         if (nativeAvailable) {
             try {
@@ -98,17 +75,19 @@ public class Metal {
     }
 
     /**
-     * Returns true when native Metal JNI bindings were successfully loaded and initialised.
+     * Returns true when the Metal framework and the Objective-C runtime are both reachable through FFM.
      */
     public static boolean isNativeAvailable() {
         return nativeAvailable;
     }
 
-    static native boolean registerCallback();
+    static int mtGetPlatformCount() {
+        return MetalObjects.platformCount();
+    }
 
-    static native int mtGetPlatformCount();
-
-    static native int mtGetPlatformIDs(long[] platformIds);
+    static int mtGetPlatformIDs(long[] platformIds) {
+        return MetalObjects.platformIDs(platformIds);
+    }
 
     public static void cleanup() {
         if (initialised) {

@@ -18,6 +18,7 @@
 #
 
 import argparse
+import glob
 import os
 import platform
 import re
@@ -67,6 +68,8 @@ __TORNADOVM_ADD_MODULES__ = "--add-modules jdk.unsupported,java.management,java.
 __OPENCL_MODULE__ = "tornado.drivers.opencl"
 __METAL_MODULE__ = "tornado.drivers.metal"
 __CUDA_MODULE__ = "tornado.drivers.cuda"
+__ENABLE_NATIVE_ACCESS__ = "--enable-native-access="
+__FFM_MODULE__ = "tornado.runtime"
 __CUBLAS_MODULE__ = "tornado.cublas"
 __CUFFT_MODULE__ = "tornado.cufft"
 __CUDNN_MODULE__ = "tornado.cudnn"
@@ -169,168 +172,128 @@ def check_nvidia_driver():
     return shutil.which('nvidia-smi') is not None
 
 def validate_opencl_backend(sdk_path):
-    """Validate OpenCL backend dependencies on Windows."""
+    """Validate OpenCL backend dependencies on Windows.
+
+    The OpenCL backend has no JNI library of its own: it calls the ICD loader through
+    java.lang.foreign. So what has to be resolvable at run time is OpenCL.dll itself, which the GPU
+    driver installs, not a TornadoVM DLL.
+    """
     if os.name != 'nt':
         return True
 
-    opencl_dll = os.path.join(sdk_path, 'lib', 'tornado-opencl.dll')
+    system_opencl = os.path.join(os.environ.get('SystemRoot', 'C:\\Windows'), 'System32', 'OpenCL.dll')
+    try:
+        if os.path.exists(system_opencl):
+            return True
+    except Exception:
+        # Silently skip if we cannot check (permission issues); assume it is there.
+        return True
 
-    if not os.path.exists(opencl_dll):
-        print(f"[WARNING] OpenCL backend configured but tornado-opencl.dll not found")
-        print(f"[INFO] Expected location: {opencl_dll}")
-        print()
-        return False
+    print("[ERROR] Cannot find OpenCL.dll, the ICD loader the OpenCL backend talks to")
+    print()
 
-    # Try to load the DLL
-    if not check_dll_loadable(opencl_dll):
-        print("[ERROR] Cannot load OpenCL JNI library")
-        print()
-        print(f"[INFO] Library location: {opencl_dll}")
-        print()
-
-        # Detect GPU to provide better guidance
-        gpus = get_gpu_info()
-        if gpus:
-            print("[INFO] Detected GPU(s):")
-            for gpu in gpus:
-                print(f"       - {gpu}")
-            print()
-
-        # Check for NVIDIA drivers
-        has_nvidia_driver = check_nvidia_driver()
-
-        print("[CAUSE] Missing OpenCL drivers or dependencies")
-        print("        The OpenCL backend requires OpenCL 2.1+ drivers for GPUs/CPUs.")
+    gpus = get_gpu_info()
+    if gpus:
+        print("[INFO] Detected GPU(s):")
+        for gpu in gpus:
+            print(f"       - {gpu}")
         print()
 
-        # Check system OpenCL.dll (safe read-only operation)
-        system_opencl = os.path.join(os.environ.get('SystemRoot', 'C:\\Windows'), 'System32', 'OpenCL.dll')
-        try:
-            if os.path.exists(system_opencl):
-                print(f"[INFO] System OpenCL.dll found at: {system_opencl}")
-                print("       But tornado-opencl.dll cannot load due to missing dependencies")
-            else:
-                print("[INFO] System OpenCL.dll not found in Windows\\System32")
-                print("       OpenCL drivers are not installed")
-        except Exception:
-            # Silently skip if we can't check (permission issues)
-            pass
-        print()
+    has_nvidia_driver = check_nvidia_driver()
 
-        print("[FIX] Install appropriate GPU drivers based on your hardware:")
-        print()
-        print("      For NVIDIA GPUs:")
-        print("      - GPU driver must match or exceed CUDA Toolkit version")
-        print("      - Download NVIDIA drivers (usually pre-installed on Windows)")
-        print("      - Install CUDA Toolkit 10.0+ (Windows requires 12.0+)")
-        print("      - Download from: https://developer.nvidia.com/cuda-downloads")
-        print()
-        print("      For Intel GPUs:")
-        print("      - Install Intel Graphics drivers with OpenCL support")
-        print("      - Download from: https://www.intel.com/content/www/us/en/download-center/home.html")
-        print("      - Or install Intel Compute Runtime")
-        print("      - Download from: https://github.com/intel/compute-runtime/releases")
-        print()
-        print("      For AMD GPUs:")
-        print("      - Install AMD drivers with OpenCL 2.1+ support")
-        print("      - Download from AMD website")
-        print()
-        print("      After installation:")
-        print("      1. Restart your terminal/IDE")
-        print("      2. Run tornado --devices to verify installation")
-        print()
-        sys.exit(1)
-
-    return True
+    print("[CAUSE] OpenCL drivers are not installed")
+    print(f"        Expected the ICD loader at: {system_opencl}")
+    print("        The OpenCL backend requires OpenCL 2.1+ drivers for GPUs/CPUs.")
+    print()
+    print("[FIX] Install appropriate GPU drivers based on your hardware:")
+    print()
+    print("      For NVIDIA GPUs:")
+    print("      - GPU driver must match or exceed CUDA Toolkit version")
+    print("      - Download NVIDIA drivers (usually pre-installed on Windows)")
+    print("      - Download from: https://developer.nvidia.com/cuda-downloads")
+    print()
+    print("      For Intel GPUs:")
+    print("      - Install Intel Graphics drivers with OpenCL support")
+    print("      - Download from: https://www.intel.com/content/www/us/en/download-center/home.html")
+    print()
+    if has_nvidia_driver:
+        print("[INFO] NVIDIA drivers detected (nvidia-smi available)")
+    print()
+    sys.exit(1)
 
 def validate_cuda_backend(sdk_path):
-    """Validate CUDA backend dependencies on Windows."""
+    """Validate CUDA backend dependencies on Windows.
+
+    The CUDA backend has no JNI library of its own: it calls the driver and NVRTC through
+    java.lang.foreign. So what has to be resolvable at run time is the driver (nvcuda.dll, installed
+    with the GPU driver) and NVRTC (nvrtc64_*.dll, installed with the CUDA Toolkit), not a
+    TornadoVM DLL. NVRTC is the one that actually goes missing, because it lives under
+    %CUDA_PATH%\\bin rather than next to the SDK.
+    """
     if os.name != 'nt':
         return True
 
-    cuda_dll = os.path.join(sdk_path, 'lib', 'tornado-cuda.dll')
+    # add_cuda_toolkit_to_path() already ran (see validate_windows_dependencies) and put every
+    # existing %CUDA_PATH%\bin / %CUDA_PATH%\bin\x64 on PATH, so a missing NVRTC here means the
+    # Toolkit is absent or its layout is not one of the known ones.
+    cuda_bin_dirs = get_cuda_bin_dirs()
+    if any(glob.glob(os.path.join(d, 'nvrtc64_*.dll')) for d in cuda_bin_dirs):
+        return True
 
-    if not os.path.exists(cuda_dll):
-        print(f"[WARNING] CUDA backend configured but tornado-cuda.dll not found")
-        print(f"[INFO] Expected location: {cuda_dll}")
+    print("[ERROR] Cannot find NVRTC, the CUDA runtime compiler the CUDA backend compiles kernels with")
+    print()
+
+    gpus = get_gpu_info()
+    if gpus:
+        print("[INFO] Detected GPU(s):")
+        for gpu in gpus:
+            print(f"       - {gpu}")
+            if "NVIDIA" not in gpu.upper():
+                print("         (This is not an NVIDIA GPU - CUDA requires NVIDIA)")
         print()
-        return False
 
-    if not check_dll_loadable(cuda_dll):
-        print("[ERROR] Cannot load CUDA JNI library")
+    has_nvidia_driver = check_nvidia_driver()
+    cuda_path = os.environ.get('CUDA_PATH')
+
+    if cuda_bin_dirs:
+        print("[CAUSE] The following CUDA Toolkit directories are on PATH:")
+        for d in cuda_bin_dirs:
+            print(f"          {d}")
+        print("        but none of them contains an nvrtc64_*.dll. The Toolkit installation")
+        print("        looks incomplete, or its runtime components were not installed.")
         print()
-        print(f"[INFO] Library location: {cuda_dll}")
+        print("[FIX] Verify NVRTC exists and matches your installed Toolkit version:")
+        for d in cuda_bin_dirs:
+            print(f"        dir {d}\\nvrtc64_*.dll")
+        print("      If it is missing, reinstall the CUDA Toolkit with its runtime components.")
         print()
-
-        gpus = get_gpu_info()
-        if gpus:
-            print("[INFO] Detected GPU(s):")
-            for gpu in gpus:
-                print(f"       - {gpu}")
-                if "NVIDIA" not in gpu.upper():
-                    print("         (This is not an NVIDIA GPU - CUDA requires NVIDIA)")
-            print()
-
-        has_nvidia_driver = check_nvidia_driver()
-
-        # add_cuda_toolkit_to_path() already ran (see validate_windows_dependencies)
-        # and put every existing %CUDA_PATH%\bin / %CUDA_PATH%\bin\x64 on PATH,
-        # so a load failure here is diagnosed from *why* that did or didn't
-        # help, rather than assuming the Toolkit itself is missing --
-        # tornado-cuda.dll existing (checked above) plus a load failure almost
-        # always means a dependent runtime DLL (nvrtc64_*.dll, cudart64_*.dll,
-        # ...) couldn't be resolved, which is a different problem than "no
-        # Toolkit installed".
-        cuda_path = os.environ.get('CUDA_PATH')
-        cuda_bin_dirs = get_cuda_bin_dirs()
-
-        if cuda_bin_dirs:
-            print("[CAUSE] tornado-cuda.dll exists and the following are on PATH:")
-            for d in cuda_bin_dirs:
-                print(f"          {d}")
-            print("        but the DLL still failed to load. This usually means a")
-            print("        dependent runtime DLL (nvrtc64_*.dll, cudart64_*.dll, ...) is")
-            print("        missing or version-mismatched, or a required Visual C++")
-            print("        Redistributable is not installed.")
-            print()
-            print("[FIX] Verify these exist and match your installed Toolkit version:")
-            for d in cuda_bin_dirs:
-                print(f"        dir {d}\\nvrtc64_*.dll")
-                print(f"        dir {d}\\cudart64_*.dll")
-            print("      Also ensure the latest Microsoft Visual C++ Redistributable (x64):")
-            print("        https://aka.ms/vs/17/release/vc_redist.x64.exe")
-            print()
-        elif cuda_path:
-            print(f"[CAUSE] CUDA_PATH is set to '{cuda_path}' but neither")
-            print(f"        '{os.path.join(cuda_path, 'bin')}' nor")
-            print(f"        '{os.path.join(cuda_path, 'bin', 'x64')}' exists.")
-            print("        The CUDA Toolkit installation looks incomplete or corrupted.")
-            print()
-            print("[FIX] Reinstall NVIDIA CUDA Toolkit 12.0+")
+    elif cuda_path:
+        print(f"[CAUSE] CUDA_PATH is set to '{cuda_path}' but neither")
+        print(f"        '{os.path.join(cuda_path, 'bin')}' nor")
+        print(f"        '{os.path.join(cuda_path, 'bin', 'x64')}' exists.")
+        print("        The CUDA Toolkit installation looks incomplete or corrupted.")
+        print()
+        print("[FIX] Reinstall NVIDIA CUDA Toolkit 12.0+")
+        print("      Download from: https://developer.nvidia.com/cuda-downloads")
+        print()
+    else:
+        print("[CAUSE] CUDA_PATH environment variable is not set, so nvrtc64_*.dll")
+        print("        (which lives under %CUDA_PATH%\\bin or %CUDA_PATH%\\bin\\x64)")
+        print("        cannot be located.")
+        print()
+        if not has_nvidia_driver:
+            print("[FIX] Install NVIDIA CUDA Toolkit and drivers")
             print("      Download from: https://developer.nvidia.com/cuda-downloads")
-            print()
         else:
-            print("[CAUSE] CUDA_PATH environment variable is not set")
-            print("        tornado-cuda.dll depends on CUDA Toolkit runtime DLLs")
-            print("        (nvrtc64_*.dll, cudart64_*.dll, ...) that live under")
-            print("        %CUDA_PATH%\\bin or %CUDA_PATH%\\bin\\x64, so without it")
-            print("        they cannot be located.")
-            print()
-            if not has_nvidia_driver:
-                print("[FIX] Install NVIDIA CUDA Toolkit and drivers")
-                print("      Download from: https://developer.nvidia.com/cuda-downloads")
-            else:
-                print("[INFO] NVIDIA drivers detected (nvidia-smi available)")
-                print("[FIX] Install NVIDIA CUDA Toolkit 12.0+ (drivers alone are not enough)")
-                print("      Download from: https://developer.nvidia.com/cuda-downloads")
-            print()
-
-        print("[NOTE] CUDA backend is NVIDIA-specific")
-        print("       For non-NVIDIA GPUs, use the OpenCL backend instead")
+            print("[INFO] NVIDIA drivers detected (nvidia-smi available)")
+            print("[FIX] Install NVIDIA CUDA Toolkit 12.0+ (drivers alone are not enough)")
+            print("      Download from: https://developer.nvidia.com/cuda-downloads")
         print()
-        sys.exit(1)
 
-    return True
+    print("[NOTE] CUDA backend is NVIDIA-specific")
+    print("       For non-NVIDIA GPUs, use the OpenCL backend instead")
+    print()
+    sys.exit(1)
 
 def get_cuda_bin_dirs():
     """Return the CUDA Toolkit bin directories that may hold runtime DLLs.
@@ -353,15 +316,14 @@ def get_cuda_bin_dirs():
 def add_cuda_toolkit_to_path():
     """Prepend the CUDA Toolkit's bin directories to PATH.
 
-    tornado-cuda.dll (and tornado-cublas.dll/tornado-cufft.dll/tornado-cudnn.dll)
-    depend on CUDA Toolkit runtime DLLs that live under %CUDA_PATH%\\bin or
+    The CUDA backend (via NVRTC) and the library-task DLLs (tornado-cublas.dll/
+    tornado-cufft.dll/tornado-cudnn.dll) need CUDA Toolkit runtime DLLs that live under %CUDA_PATH%\\bin or
     %CUDA_PATH%\\bin\\x64 (see get_cuda_bin_dirs), not next to the tornado-*.dll
     themselves. The CUDA installer normally adds these to the system PATH, but
     a shell that predates the install (or never picked up the machine-wide
     PATH change, unlike e.g. a VS Developer Command Prompt that re-derives its
-    own PATH) will not have them, causing LoadLibrary to fail with "module not
-    found" even though tornado-cuda.dll itself is present and the Toolkit is
-    correctly installed.
+    own PATH) will not have them, causing the load to fail with "module not
+    found" even though the Toolkit is correctly installed.
     """
     if os.name != 'nt':
         return
@@ -728,15 +690,11 @@ class TornadoVMRunnerTool():
         """Check if the system has compatible libstdc++ version for TornadoVM native libraries"""
         try:
             # Check if OpenCL backend is installed
+            # The CUDA backend ships no native library of its own (it uses java.lang.foreign),
+            # so OpenCL's is the one that can carry a libstdc++ requirement.
             opencl_lib = os.path.join(self.sdk, 'lib', 'libtornado-opencl.so')
-            cuda_lib = os.path.join(self.sdk, 'lib', 'libtornado-cuda.so')
 
-            # Find at least one native library to check
-            lib_to_check = None
-            if os.path.exists(opencl_lib):
-                lib_to_check = opencl_lib
-            elif os.path.exists(cuda_lib):
-                lib_to_check = cuda_lib
+            lib_to_check = opencl_lib if os.path.exists(opencl_lib) else None
 
             if not lib_to_check:
                 # No native libraries found, skip check
@@ -904,14 +862,10 @@ class TornadoVMRunnerTool():
             major_version = int(macos_version.split('.')[0])
 
             # Check native libraries for deployment target
+            # The CUDA backend ships no native library of its own (it uses java.lang.foreign).
             opencl_lib = os.path.join(self.sdk, 'lib', 'libtornado-opencl.dylib')
-            cuda_lib = os.path.join(self.sdk, 'lib', 'libtornado-cuda.dylib')
 
-            lib_to_check = None
-            if os.path.exists(opencl_lib):
-                lib_to_check = opencl_lib
-            elif os.path.exists(cuda_lib):
-                lib_to_check = cuda_lib
+            lib_to_check = opencl_lib if os.path.exists(opencl_lib) else None
 
             if not lib_to_check:
                 return
@@ -1366,6 +1320,11 @@ class TornadoVMRunnerTool():
         cuda = self.sdk + __CUDA_EXPORTS__
 
         javaFlags = javaFlags + " @" + common + " "
+        # The backends and the library-task providers reach their native libraries through
+        # java.lang.foreign rather than a JNI library of their own, and every one of those lookups
+        # goes through tornado.runtime. Those are restricted methods, so without this the lookup
+        # fails outright (JDK 21) or warns on every run.
+        javaFlags = javaFlags + __ENABLE_NATIVE_ACCESS__ + __FFM_MODULE__ + " "
         if ("opencl-backend" in self.listOfBackends):
             javaFlags = javaFlags + "@" + opencl + " "
             tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__

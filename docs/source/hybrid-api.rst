@@ -145,9 +145,13 @@ a new library requires **no changes to the core runtime**:
 3. Expose user-facing factory methods that build a
    :code:`LibraryTaskDescriptor` (library name, function name, parameters,
    accesses), following ``CuBlas.cublasSgemv``.
-4. Add a JNI module for the native binding (see
-   ``tornado-drivers/cublas-jni``), linked under the ``cuda-backend`` Maven
-   profile.
+4. Bind the native calls with ``java.lang.foreign`` (see ``CuBlasNativeLib``
+   in ``tornado-cublas``): a ``SymbolLookup`` resolved at class-init time,
+   downcall handles per entry point, no separate native module or build step.
+   Only reach for a JNI module (see ``cudnn-jni``, ``cutlass-jni``) when the
+   library needs actual compiled C/C++ — a vendor header-only template
+   library, or a runtime whose ABI ``java.lang.foreign`` cannot express
+   directly.
 
 Backends expose their native stream to providers through
 :code:`TornadoNativeStreamSupport` (implemented by the CUDA backend). Provider
@@ -160,12 +164,16 @@ Implemented today, via the same provider SPI: **cuBLAS** and **cuBLASLt**
 (dense linear algebra, fused-epilogue GEMM), **cuFFT** (FFTs), **cuDNN**
 (deep-learning primitives, including fused FP16 flash attention), **cuSPARSE**
 (CSR SpMV/SpMM), and **CUTLASS** (open-template FP32/FP16/BF16 GEMM with fused
-epilogues). Each is a Java module pair (a ``tornado-<lib>`` API
-module plus a native ``*-jni`` module) with per-(plan, device) contexts for
-cached descriptors and plans. The native ``*-jni`` module for each library
-builds only under the ``cuda-backend`` Maven profile, and is
-self-guarding — if the library/toolkit isn't installed, the native side is
-skipped and that provider reports ``UNSUPPORTED`` at runtime rather than
+epilogues), each a ``tornado-<lib>`` API module with per-(plan, device)
+contexts for cached descriptors and plans. cuBLAS, cuBLASLt, cuFFT and
+cuSPARSE bind their native calls directly through ``java.lang.foreign`` —
+no native module, nothing gated behind the ``cuda-backend`` Maven profile
+beyond the module itself. cuDNN keeps a small native module
+(``cudnn-jni``) for the cudnn-frontend C++ SDPA shim, and CUTLASS
+(``cutlass-jni``) compiles device code with ``nvcc``, so both still need a
+C++ toolchain. Either way it is self-guarding — if the library/toolkit
+isn't installed, the ``SymbolLookup`` (or the native build) comes back
+empty and that provider reports ``UNSUPPORTED`` at runtime rather than
 failing the build. Some libraries need an extra runtime dependency (e.g.,
 cuDNN needs ``libcudnn9``); see the full guide linked below for per-library
 install requirements.

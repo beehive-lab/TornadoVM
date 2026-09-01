@@ -31,6 +31,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalDeviceType;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalPlatformInfo;
 import uk.ac.manchester.tornado.drivers.metal.exceptions.MetalException;
+import uk.ac.manchester.tornado.drivers.metal.ffm.MetalObjects;
 
 public class MetalPlatform implements TornadoPlatformInterface {
 
@@ -85,13 +86,21 @@ public class MetalPlatform implements TornadoPlatformInterface {
         return this.getVendor().toLowerCase().startsWith(vendor.getVendorName().toLowerCase());
     }
 
-    native String metalGetPlatformInfo(long id, int info);
+    String metalGetPlatformInfo(long id, int info) {
+        return MetalObjects.platformInfo(info);
+    }
 
-    native int metalGetDeviceCount(long id, long type);
+    int metalGetDeviceCount(long id, long type) {
+        return MetalObjects.deviceCount(type);
+    }
 
-    native int metalGetDeviceIDs(long id, long type, long[] devices);
+    int metalGetDeviceIDs(long id, long type, long[] devices) {
+        return MetalObjects.deviceIDs(type, devices);
+    }
 
-    native long metalCreateContext(long platform, long[] devices) throws MetalException;
+    long metalCreateContext(long platform, long[] devices) throws MetalException {
+        return MetalObjects.createContext(devices);
+    }
 
     public List<MetalTargetDevice> getDevices() {
         return devices;

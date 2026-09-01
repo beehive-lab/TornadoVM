@@ -35,6 +35,7 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.cudnn.CuDnn;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+import uk.ac.manchester.tornado.cudnn.provider.CuDnnLibraryProvider;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
 
 /**
@@ -63,10 +64,8 @@ public class TestCuDnn extends TornadoTestBase {
                 default -> throw new TornadoVMCUDANotSupported(message);
             }
         }
-        try {
-            System.loadLibrary("tornado-cudnn");
-        } catch (UnsatisfiedLinkError e) {
-            throw new TornadoVMCUDANotSupported("libtornado-cudnn is not available: " + e.getMessage());
+        if (!CuDnnLibraryProvider.isAvailable()) {
+            throw new TornadoVMCUDANotSupported("cuDNN is not available on this host");
         }
     }
 

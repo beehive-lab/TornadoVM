@@ -36,9 +36,10 @@ make BACKEND=cuda
 source setvars.sh
 ```
 
-This builds the CUDA backend, the `tornado-cublas` Java module, and the
-`tornado-drivers/cublas-jni` native binding (`libtornado-cublas.so`), and bundles them
-into the SDK (`tornado.cublas` is added to the launcher's `--add-modules` automatically).
+This builds the CUDA backend and the `tornado-cublas` Java module, which binds
+straight to `libcublas`/`libcudart` through `java.lang.foreign` — no separate
+native module or `.so` to build — and bundles it into the SDK (`tornado.cublas`
+is added to the launcher's `--add-modules` automatically).
 
 ## Supported operations
 
@@ -329,6 +330,7 @@ Library bindings are discovered via `java.util.ServiceLoader` — no core runtim
 are needed. Implement
 `uk.ac.manchester.tornado.runtime.library.spi.TornadoLibraryProvider`, declare it with
 `provides` in your module descriptor, expose factory methods that build a
-`LibraryTaskDescriptor`, and add a JNI module for the native binding. See
-`CuBlasLibraryProvider`, `CuBlas`, and `tornado-drivers/cublas-jni` as the reference
+`LibraryTaskDescriptor`, and bind the native calls with `java.lang.foreign` (a
+JNI module only if the library needs actual compiled C/C++). See
+`CuBlasLibraryProvider`, `CuBlas`, and `CuBlasNativeLib` as the reference
 implementation, and `docs/source/hybrid-api.rst` for the full guide.

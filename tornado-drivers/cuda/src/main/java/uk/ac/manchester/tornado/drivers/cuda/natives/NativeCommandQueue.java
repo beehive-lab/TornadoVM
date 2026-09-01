@@ -23,9 +23,34 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.natives;
 
+import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDADriverAPI;
+import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDAHandles;
+
 public class NativeCommandQueue {
 
-    public static native long mapOnDeviceMemoryRegion(long destDevicePtr, long srcDevicePtr);
+    /**
+     * CUDA device pointers are flat addresses, so mapping a source region onto a destination simply
+     * yields the source device pointer; no host mapping is needed.
+     */
+    public static long mapOnDeviceMemoryRegion(long destDevicePtr, long srcDevicePtr) {
+        return srcDevicePtr;
+    }
 
-    public static native long mapOnDeviceMemoryNDRegion(long commandQueuePtr, long destDevicePtr, long srcDevicePtr, long offset, int sizeDataType, long headerSize, long sizeSource, long sizeDest);
+    /**
+     * Device-to-device copy of the payload, skipping the TornadoVM segment header. Returns the
+     * destination pointer on success, or the failing {@code CUresult}.
+     */
+    public static long mapOnDeviceMemoryNDRegion(long commandQueuePtr, long destDevicePtr, long srcDevicePtr, long offset, int sizeDataType, long headerSize, long sizeSource, long sizeDest) {
+        CUDAHandles.Queue queue = CUDAHandles.resolve(commandQueuePtr, CUDAHandles.Queue.class);
+        long headerBytes = headerSize * sizeDataType;
+        long payloadBytes = Math.max(sizeDest - headerBytes, 0);
+        if (queue != null) {
+            CUDADriverAPI.cuCtxSetCurrent(queue.context());
+        }
+        int result = CUDADriverAPI.cuMemcpyDtoD(destDevicePtr + headerBytes, srcDevicePtr + (offset * sizeDataType) + headerBytes, payloadBytes);
+        if (result != CUDADriverAPI.CUDA_SUCCESS) {
+            return result;
+        }
+        return destDevicePtr;
+    }
 }

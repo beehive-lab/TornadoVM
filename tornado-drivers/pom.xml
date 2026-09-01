@@ -29,7 +29,6 @@
             </activation>
             <modules>
                 <module>metal</module>
-                <module>metal-jni</module>
             </modules>
         </profile>
 
@@ -40,7 +39,6 @@
             </activation>
             <modules>
                 <module>opencl</module>
-                <module>opencl-jni</module>
             </modules>
         </profile>
 
@@ -51,11 +49,7 @@
             </activation>
             <modules>
                 <module>cuda</module>
-                <module>cuda-jni</module>
-                <module>cublas-jni</module>
-                <module>cufft-jni</module>
                 <module>cudnn-jni</module>
-                <module>cusparse-jni</module>
                 <module>cutlass-jni</module>
             </modules>
         </profile>

@@ -32,13 +32,18 @@ import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.CL_
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_SUBMIT;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.ENABLE_OPENCL_PROFILING;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
+import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandExecutionStatus;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
+import uk.ac.manchester.tornado.drivers.opencl.ffm.OpenCLAPI;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
@@ -73,13 +78,49 @@ public class OCLEvent implements Event {
         this.oclEventID = eventId;
     }
 
-    native static void clGetEventInfo(long eventId, int param, byte[] buffer) throws OCLException;
+    /** Reusable per-thread native buffers for event info and profiling queries. */
+    private static final FFMSupport.Staging INFO_STAGING = new FFMSupport.Staging();
 
-    native static void clGetEventProfilingInfo(long eventId, long param, byte[] buffer) throws OCLException;
+    private static final FFMSupport.Staging PROFILING_STAGING = new FFMSupport.Staging();
 
-    native static void clWaitForEvents(long[] events) throws OCLException;
+    static void clGetEventInfo(long eventId, int param, byte[] buffer) throws OCLException {
+        Arrays.fill(buffer, (byte) 0);
+        MemorySegment value = INFO_STAGING.forBytes(buffer.length);
+        if (OpenCLAPI.clGetEventInfo(eventId, param, buffer.length, value, MemorySegment.NULL) != OpenCLAPI.CL_SUCCESS) {
+            return;
+        }
+        MemorySegment.copy(value, FFMSupport.C_CHAR, 0, buffer, 0, buffer.length);
+    }
 
-    native static void clReleaseEvent(long eventId) throws OCLException;
+    /** Every profiling query answers one {@code cl_ulong}, which is what the caller reads back. */
+    static void clGetEventProfilingInfo(long eventId, long param, byte[] buffer) throws OCLException {
+        Arrays.fill(buffer, (byte) 0);
+        if (buffer.length < Long.BYTES) {
+            return;
+        }
+        MemorySegment value = PROFILING_STAGING.forBytes(Long.BYTES);
+        if (OpenCLAPI.clGetEventProfilingInfo(eventId, (int) param, Long.BYTES, value, MemorySegment.NULL) != OpenCLAPI.CL_SUCCESS) {
+            return;
+        }
+        MemorySegment.copy(value, FFMSupport.C_CHAR, 0, buffer, 0, Long.BYTES);
+    }
+
+    static void clWaitForEvents(long[] events) throws OCLException {
+        if (events == null || events.length == 0) {
+            return;
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment handles = FFMSupport.allocateArray(arena, FFMSupport.C_POINTER, events.length);
+            for (int i = 0; i < events.length; i++) {
+                handles.set(FFMSupport.C_POINTER, i * FFMSupport.C_POINTER.byteSize(), MemorySegment.ofAddress(events[i]));
+            }
+            OpenCLAPI.clWaitForEvents(events.length, handles);
+        }
+    }
+
+    static void clReleaseEvent(long eventId) throws OCLException {
+        OpenCLAPI.clReleaseEvent(eventId);
+    }
 
     private long readEventTime(OCLProfilingInfo eventType) {
         if (!ENABLE_OPENCL_PROFILING) {

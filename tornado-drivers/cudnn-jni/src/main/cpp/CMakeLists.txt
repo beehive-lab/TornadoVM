@@ -77,7 +77,11 @@ include_directories(
 	$ENV{C_INCLUDE_PATH}
 )
 
-file(GLOB_RECURSE SOURCE_FILES "source/*.cpp")
+# Only the fused SDPA path still needs a compiled shim: it is built on cudnn-frontend, a
+# header-only C++ graph API with no C ABI, so java.lang.foreign cannot call it. The rest of the
+# cuDNN surface is bound directly from Java (see CuDnnNativeLib), and its former translation
+# unit has been deleted.
+set(SOURCE_FILES "source/tornado-cudnn-sdpa.cpp")
 add_library(tornado-cudnn SHARED ${SOURCE_FILES})
 
 # Prefer $CUDA_PATH and /usr/local/cuda over the CMake-discovered toolkit so

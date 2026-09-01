@@ -76,6 +76,21 @@ public final class CuBlasLibraryProvider implements TornadoLibraryProvider {
     /** cublasGemmAlgo_t CUBLAS_GEMM_DEFAULT: heuristic algorithm selection. */
     private static final int CUBLAS_GEMM_DEFAULT = -1;
 
+
+    /**
+     * Whether cuBLAS can actually be reached on this host. The provider no longer ships a JNI library
+     * of its own, so "is the library there" is a question about the CUDA Toolkit rather than about
+     * TornadoVM's own artifacts; tests and callers ask it here instead of probing for a .so.
+     */
+    public static boolean isAvailable() {
+        try {
+            CuBlasNativeLib.load();
+            return true;
+        } catch (RuntimeException e) {
+            return false;
+        }
+    }
+
     @Override
     public String libraryName() {
         return CuBlas.LIBRARY_NAME;

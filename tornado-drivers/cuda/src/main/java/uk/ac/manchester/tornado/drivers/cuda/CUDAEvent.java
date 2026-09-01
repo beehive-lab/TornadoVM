@@ -32,13 +32,18 @@ import static uk.ac.manchester.tornado.drivers.cuda.enums.CUDAProfilingInfo.CL_P
 import static uk.ac.manchester.tornado.drivers.cuda.enums.CUDAProfilingInfo.CL_PROFILING_COMMAND_SUBMIT;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.ENABLE_OPENCL_PROFILING;
 
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDACommandExecutionStatus;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDAProfilingInfo;
 import uk.ac.manchester.tornado.drivers.cuda.exceptions.CUDAException;
+import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDADriverAPI;
+import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDAHandles;
+import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
@@ -73,16 +78,88 @@ public class CUDAEvent implements Event {
         this.oclEventID = eventId;
     }
 
-    native static void clGetEventInfo(long eventId, int param, byte[] buffer) throws CUDAException;
+    static void clGetEventInfo(long eventId, int param, byte[] buffer) throws CUDAException {
+        Arrays.fill(buffer, (byte) 0);
+        if (param != CL_EVENT_COMMAND_EXECUTION_STATUS.getValue() || buffer.length < Integer.BYTES) {
+            return;
+        }
+        CUDAHandles.Event event = CUDAHandles.resolve(eventId, CUDAHandles.Event.class);
+        CUDACommandExecutionStatus executionStatus = CL_COMPLETE;
+        if (event != null) {
+            executionStatus = CUDADriverAPI.cuEventQuery(event.event()) == CUDADriverAPI.CUDA_SUCCESS ? CL_COMPLETE : CUDACommandExecutionStatus.CL_RUNNING;
+        }
+        ByteBuffer.wrap(buffer).order(CUDADriver.BYTE_ORDER).putInt(executionStatus.getValue());
+    }
 
-    native static void clGetEventProfilingInfo(long eventId, long param, byte[] buffer) throws CUDAException;
+    /**
+     * CUDA exposes no absolute event timestamps, unlike OpenCL's COMMAND_START/END: only
+     * {@code cuEventElapsedTime} between two events. The absolute-timestamp queries are therefore
+     * reported as zero, and elapsed time comes from {@link #cuEventElapsedTime} instead.
+     */
+    static void clGetEventProfilingInfo(long eventId, long param, byte[] buffer) throws CUDAException {
+        Arrays.fill(buffer, (byte) 0);
+    }
 
-    native static void clWaitForEvents(long[] events) throws CUDAException;
+    /**
+     * Waits for every event in the list.
+     *
+     * <p>
+     * This is reached with two different array layouts: a plain list of handles from
+     * {@code waitForEvents}, and a count-prefixed {@code {1, handle}} from {@code waitOnPassive}.
+     * Rather than guess which one it has been given, it walks every element and waits on the ones
+     * that resolve to a real event; a count word resolves to nothing and is skipped.
+     */
+    static void clWaitForEvents(long[] events) throws CUDAException {
+        if (events == null) {
+            return;
+        }
+        for (long handle : events) {
+            CUDAHandles.Event event = CUDAHandles.resolve(handle, CUDAHandles.Event.class);
+            if (event == null) {
+                continue;
+            }
+            int result = CUDADriverAPI.cuEventSynchronize(event.event());
+            if (result != CUDADriverAPI.CUDA_SUCCESS) {
+                // A failed wait means the caller is about to read a buffer the device may still be
+                // writing, so it has to see the failure rather than the buffer.
+                throw new CUDAException(CUDADriverAPI.describe("cuEventSynchronize", result));
+            }
+        }
+    }
 
-    native static void clReleaseEvent(long eventId) throws CUDAException;
+    static void clReleaseEvent(long eventId) throws CUDAException {
+        CUDAHandles.Event event = (CUDAHandles.Event) CUDAHandles.release(eventId);
+        if (event == null) {
+            return;
+        }
+        if (event.start() != 0) {
+            CUDADriverAPI.cuEventDestroy(event.start());
+        }
+        if (event.event() != 0) {
+            CUDADriverAPI.cuEventDestroy(event.event());
+        }
+    }
 
-    // Returns the device elapsed time (ns) between the event's start and end CUevents.
-    native static long cuEventElapsedTime(long eventId);
+    /**
+     * The device time, in nanoseconds, of the operation bracketed by the event's start and end
+     * CUevents ({@code cuEventElapsedTime} reports milliseconds as a float). Zero when the event has
+     * no start timestamp -- a marker, say -- or when the query fails.
+     */
+    static long cuEventElapsedTime(long eventId) {
+        CUDAHandles.Event event = CUDAHandles.resolve(eventId, CUDAHandles.Event.class);
+        if (event == null || event.start() == 0 || event.event() == 0) {
+            return 0;
+        }
+        // Both events must have completed, or cuEventElapsedTime returns CUDA_ERROR_NOT_READY.
+        if (CUDADriverAPI.cuEventSynchronize(event.event()) != CUDADriverAPI.CUDA_SUCCESS) {
+            return 0;
+        }
+        MemorySegment milliseconds = FFMSupport.scratchFloat();
+        if (CUDADriverAPI.cuEventElapsedTime(milliseconds, event.start(), event.event()) != CUDADriverAPI.CUDA_SUCCESS) {
+            return 0;
+        }
+        return (long) (milliseconds.get(FFMSupport.C_FLOAT, 0) * 1.0e6f);
+    }
 
     private long readEventTime(CUDAProfilingInfo eventType) {
         if (!ENABLE_OPENCL_PROFILING) {
