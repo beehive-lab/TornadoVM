@@ -342,6 +342,12 @@ jobs:
       # JDK from 22 up — any JDK >= 22 here produces an identical artifact, so this is pinned to
       # 25 purely to match the build JDK build-test-platform.yml already uses, not a requirement.
       JDK22PLUS_HOME: 'C:\jdks\jdk25'
+      # Every profile other than jdk21 vendors jdk.internal.vm.ci from a real JDK 21 runtime
+      # image (bin/build_jvmci_module.py, via pull_graal_jars.py). That script reads
+      # JVMCI_SOURCE_JDK and otherwise falls back to a hardcoded ~/.sdkman path that does not
+      # exist on Windows, so the jdk22plus build fails with "no runtime image at ...; set
+      # JVMCI_SOURCE_JDK to a JDK 21 home". Point it at the JDK 21 already on this runner.
+      JVMCI_SOURCE_JDK: 'C:\jdks\jdk21'
       RELEASE_ARCHIVES_DIR: 'C:\release-archives'
       PLATFORM_DIR: windows-amd64
       VENV_PATH: '${{ github.workspace }}\venv-build-sdks'
