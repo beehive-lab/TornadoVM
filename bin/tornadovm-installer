@@ -62,7 +62,7 @@ import textwrap
 
 # Configuration
 __DIRECTORY_DEPENDENCIES__ = (Path("etc") / "dependencies").resolve()
-__VERSION__ = "v6.0.0"
+__VERSION__ = "v6.0.1-dev"
 
 # Vendor keyword prefix (matches the __<PREFIX><version>__ constants in installer_config.py) and
 # display name, in menu order. Versions where a vendor has no build (e.g. graal-jdk-26,
