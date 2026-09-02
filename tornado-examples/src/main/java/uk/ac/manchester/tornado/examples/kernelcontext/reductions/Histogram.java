@@ -30,6 +30,12 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import java.util.Random;
 
 /**
+ * Histogram with KernelContext {@code atomicAdd}. Each work-item increments
+ * the bin for its input value.
+ * <p>
+ * The graph runs {@code histogramKernel} on a 1D {@code WorkerGrid} and copies
+ * the histogram back on every execution.
+ * </p>
  * <p>
  * How to run?
  * </p>

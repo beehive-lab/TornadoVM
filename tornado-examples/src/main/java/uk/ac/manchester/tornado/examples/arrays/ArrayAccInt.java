@@ -25,6 +25,13 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 /**
+ * Accumulates into an {@code IntArray} by composing eight {@code acc} tasks
+ * in one graph. Each task adds 1 to every element.
+ * <p>
+ * Copies the array to the device on first execution, registers eight
+ * {@code @Parallel} tasks, copies the result back on every execution, then
+ * runs the snapshot with {@code TornadoExecutionPlan}.
+ * </p>
  * <p>
  * How to run?
  * </p>

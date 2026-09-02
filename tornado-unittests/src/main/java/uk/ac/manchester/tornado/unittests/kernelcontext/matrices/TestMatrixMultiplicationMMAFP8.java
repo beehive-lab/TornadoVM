@@ -362,9 +362,7 @@ public class TestMatrixMultiplicationMMAFP8 extends TornadoTestBase {
 
     private void assumeFP8MMASupported() {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
-        assertNotBackend(TornadoVMBackendType.PTX);
     }
 
     private void runGemmTest(int dimM, int dimN, int dimK) throws TornadoExecutionPlanException {

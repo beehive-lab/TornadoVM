@@ -66,7 +66,6 @@ public class TestShortCircuits extends TornadoTestBase {
 
     @Test
     public void testShortCircuitOrNode() {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         int size = 8;
         IntArray testArr = new IntArray(size);
 
@@ -95,7 +94,6 @@ public class TestShortCircuits extends TornadoTestBase {
 
     @Test
     public void testShortCircuitAndNode() {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         int size = 8;
         IntArray testArr = new IntArray(size);
 

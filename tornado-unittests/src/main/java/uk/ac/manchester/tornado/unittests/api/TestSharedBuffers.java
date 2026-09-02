@@ -25,6 +25,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
@@ -89,6 +90,107 @@ public class TestSharedBuffers extends TornadoTestBase {
     public static void processBuffer(IntArray input, IntArray output, IntArray context, int size) {
         for (int i = 0; i < size; i++) {
             output.set(i, input.get(i) + context.get(i));
+        }
+    }
+
+    public static void increment(IntArray array) {
+        for (@Parallel int i = 0; i < array.getSize(); i++) {
+            array.set(i, array.get(i) + 1);
+        }
+    }
+
+    public static void copy(IntArray source, IntArray destination) {
+        for (@Parallel int i = 0; i < source.getSize(); i++) {
+            destination.set(i, source.get(i));
+        }
+    }
+
+    /**
+     * The producing task-graph is not the previously executed one when the consumer runs.
+     *
+     * <p>
+     * A plan that revisits graphs - an iterative solver running
+     * {@code producer -> other -> other -> consumer} - must still see the producer's data. Resolving the
+     * producer from "whatever ran last" silently hands the consumer its own, separate device buffer.
+     * </p>
+     */
+    @Test
+    public void testConsumeFromNonAdjacentProducer() throws TornadoExecutionPlanException {
+        IntArray shared = new IntArray(numElements);
+        IntArray unrelated = new IntArray(numElements);
+        IntArray result = new IntArray(numElements);
+        shared.init(0);
+        unrelated.init(0);
+        result.init(-1);
+
+        TaskGraph producer = new TaskGraph("producer") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, shared) //
+                .task("produce", TestSharedBuffers::increment, shared) //
+                .persistOnDevice(shared);
+
+        TaskGraph other = new TaskGraph("other") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, unrelated) //
+                .task("touch", TestSharedBuffers::increment, unrelated) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, unrelated);
+
+        TaskGraph consumer = new TaskGraph("consumer") //
+                .consumeFromDevice("producer", shared) //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, result) //
+                .task("copy", TestSharedBuffers::copy, shared, result) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(producer.snapshot(), other.snapshot(), consumer.snapshot())) {
+            plan.withGraph(0).execute();
+            plan.withGraph(0).execute();
+            plan.withGraph(0).execute();
+            // another graph runs in between, so the producer is no longer the previously executed graph
+            plan.withGraph(1).execute();
+            plan.withGraph(2).execute();
+        }
+
+        for (int i = 0; i < numElements; i++) {
+            assertEquals(3, result.get(i));
+        }
+    }
+
+    /**
+     * The consumer runs before its producer ever has.
+     *
+     * <p>
+     * A persisted object without a device buffer must be allocated rather than dereferenced: a pipeline
+     * can legitimately reach the consumer first (KFusion's ICP runs before the first raycast exists).
+     * The contents of that fresh buffer are undefined, so only the absence of a failure is asserted
+     * here; once the producer has run, its data must be visible.
+     * </p>
+     */
+    @Test
+    public void testConsumeBeforeProducerHasRun() throws TornadoExecutionPlanException {
+        IntArray shared = new IntArray(numElements);
+        IntArray result = new IntArray(numElements);
+        shared.init(0);
+        result.init(-1);
+
+        TaskGraph producer = new TaskGraph("producer") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, shared) //
+                .task("produce", TestSharedBuffers::increment, shared) //
+                .persistOnDevice(shared);
+
+        TaskGraph consumer = new TaskGraph("consumer") //
+                .consumeFromDevice("producer", shared) //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, result) //
+                .task("copy", TestSharedBuffers::copy, shared, result) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(producer.snapshot(), consumer.snapshot())) {
+            // consumer first: must not throw, even though no device buffer exists yet
+            plan.withGraph(1).execute();
+
+            plan.withGraph(0).execute();
+            plan.withGraph(1).execute();
+        }
+
+        for (int i = 0; i < numElements; i++) {
+            assertEquals(1, result.get(i));
         }
     }
 

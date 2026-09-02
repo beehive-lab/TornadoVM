@@ -16,7 +16,10 @@ Given a base version tag (e.g. `v4.0.0`), the script:
 - Python 3.8 or later
 - Git 2.5 or later (for `git worktree`)
 - Maven wrapper (`mvnw` / `mvnw.cmd`) — already in the repo
-- A working C/C++ toolchain (CMake, compiler) for the native JNI libraries
+- A working C/C++ toolchain (CMake, compiler) — most backends and library
+  providers bind through `java.lang.foreign` and need no native build, but the
+  cuDNN SDPA shim and CUTLASS (`cudnn-jni`, `cutlass-jni`) still compile native
+  code when the CUDA SDK variant is built
 
 ### macOS and Linux — sdkman with Temurin JDKs
 The script resolves JDK paths automatically from sdkman.  Both JDK 21 and JDK 25
@@ -67,13 +70,10 @@ The build matrix depends on the detected platform:
 | macOS    | jdk21, jdk25 | `opencl` | `opencl` |
 | macOS    | jdk21, jdk25 | `metal` | `metal` |
 | Linux    | jdk21, jdk25 | `opencl` | `opencl` |
-| Linux    | jdk21, jdk25 | `ptx` | `ptx` |
-| Linux    | jdk21, jdk25 | `spirv` | `spirv` |
-| Linux    | jdk21, jdk25 | `opencl,ptx,spirv` | `full` |
+| Linux    | jdk21, jdk25 | `cuda` | `cuda` |
+| Linux    | jdk21, jdk25 | `opencl,cuda` | `full` |
 | Windows  | jdk21, jdk25 | `opencl` | `opencl` |
-| Windows  | jdk21, jdk25 | `ptx` | `ptx` |
-| Windows  | jdk21, jdk25 | `spirv` | `spirv` |
-| Windows  | jdk21, jdk25 | `opencl,ptx,spirv` | `full` |
+| Windows  | jdk21, jdk25 | `cuda` | `cuda` |
 
 Each build calls `bin/compile --sdk` from the checked-out worktree, which
 compiles TornadoVM and produces `.tar.gz` and `.zip` archives in that

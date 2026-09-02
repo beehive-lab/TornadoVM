@@ -55,12 +55,34 @@ public class ASMClassVisitor extends ClassVisitor implements ASMClassVisitorProv
         return null;
     }
 
+    // ASM's ClassReader only knows class-file versions up to the ASM release it ships with; a newer JDK class
+    // on the class path (e.g. java.lang.Float is v71 on JDK 27) makes it throw. @Parallel-annotation extraction
+    // is class-file-version independent, so cap the major version for the read.
+    //
+    // NOTE: this is the ASM parser's ceiling, NOT the highest JDK TornadoVM supports -- raising it past what the
+    // bundled ASM understands is exactly what makes ClassReader throw. It is deliberately expressed as the
+    // Opcodes constant rather than the literal 67 so it stays tied to the asm version in tornado-annotation/pom.xml:
+    // dropping below that asm release stops compiling here instead of failing at run time.
+    private static final int MAX_SUPPORTED_MAJOR = Opcodes.V23;
+
     @Override
     public ParallelAnnotationProvider[] getParallelAnnotations(ResolvedJavaMethod method) {
         String methodClassFile = method.getDeclaringClass().getName().replaceFirst("L", "").replaceFirst(";", ".class");
         InputStream inputStream = ClassLoader.getSystemClassLoader().getResourceAsStream(methodClassFile);
+        if (inputStream == null) {
+            // e.g. a JDK class whose resource is not visible, or a runtime-generated hidden class
+            // (e.g. java/lang/invoke/LambdaForm$MH.0x...) with no loadable .class resource; either
+            // way it carries no @Parallel/@Reduce annotations.
+            return new ParallelAnnotationProvider[0];
+        }
         try {
-            ClassReader classReader = new ClassReader(inputStream);
+            byte[] classFileBytes = inputStream.readAllBytes();
+            int major = ((classFileBytes[6] & 0xFF) << 8) | (classFileBytes[7] & 0xFF);
+            if (major > MAX_SUPPORTED_MAJOR) {
+                classFileBytes[6] = (byte) ((MAX_SUPPORTED_MAJOR >> 8) & 0xFF);
+                classFileBytes[7] = (byte) (MAX_SUPPORTED_MAJOR & 0xFF);
+            }
+            ClassReader classReader = new ClassReader(classFileBytes);
             ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
             ASMClassVisitor visitor = new ASMClassVisitor(Opcodes.ASM9, cw, method);
             classReader.accept(visitor, 0);

@@ -57,7 +57,7 @@ public class TestCutlass extends TornadoTestBase {
         if (backendType != TornadoVMBackendType.CUDA) {
             String message = "CUTLASS library tasks require the CUDA backend (default device is " + backendType + ")";
             switch (backendType) {
-                case OPENCL, PTX, SPIRV, METAL -> assertNotBackend(backendType, message);
+                case OPENCL, METAL -> assertNotBackend(backendType, message);
                 default -> throw new TornadoVMCUDANotSupported(message);
             }
         }

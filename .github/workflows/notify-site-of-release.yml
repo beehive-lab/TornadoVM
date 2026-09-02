@@ -1,0 +1,34 @@
+name: 6 - Notify Site of Release [auto]
+
+# Fires after "5 - Publish SDKMAN [auto]" succeeds, so the site only refreshes
+# once a release is fully done — SDKs built, uploaded, and installable via
+# SDKMAN — not just as soon as the GitHub Release exists.
+#
+# Unlike the old per-JDK pipeline (which had two separate publish workflows,
+# 5.1/5.2, needing a "did my sibling also finish" cross-check before
+# dispatching), there is now exactly one publish-archives-to-sdkman.yml run
+# per release, so nothing to cross-check — dispatch directly on its success.
+
+on:
+  workflow_run:
+    workflows:
+      - "5 - Publish SDKMAN [auto]"
+    types: [completed]
+
+jobs:
+  notify:
+    name: Trigger tornadovm-site rebuild
+    if: |
+      github.repository == 'beehive-lab/TornadoVM' &&
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Dispatch to beehive-lab/tornadovm-site
+        env:
+          GH_TOKEN: ${{ secrets.SITE_DISPATCH_TOKEN }}
+        run: |
+          gh api repos/beehive-lab/tornadovm-site/dispatches \
+            -f event_type=tornadovm-release

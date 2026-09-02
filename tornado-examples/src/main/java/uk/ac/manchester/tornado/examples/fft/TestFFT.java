@@ -24,10 +24,14 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 /**
- * Example of FFT provided by Nikos Foutris.
- *
- * How to run:
- *
+ * Nested-loop FFT sketch provided by Nikos Foutris.
+ * <p>
+ * Copies {@code input}, {@code factors} and {@code dimArr} on first execution,
+ * runs {@code nesting}, and copies {@code input} back on every execution.
+ * </p>
+ * <p>
+ * How to run?
+ * </p>
  * <code>
  * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.fft.TestFFT
  * </code>

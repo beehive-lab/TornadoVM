@@ -36,6 +36,7 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.cusparse.Cusparse;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+import uk.ac.manchester.tornado.cusparse.provider.CusparseLibraryProvider;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
 
 /**
@@ -56,14 +57,12 @@ public class TestCusparse extends TornadoTestBase {
         if (backendType != TornadoVMBackendType.CUDA) {
             String message = "cuSPARSE library tasks require the CUDA backend (default device is " + backendType + ")";
             switch (backendType) {
-                case OPENCL, PTX, SPIRV, METAL -> assertNotBackend(backendType, message);
+                case OPENCL, METAL -> assertNotBackend(backendType, message);
                 default -> throw new TornadoVMCUDANotSupported(message);
             }
         }
-        try {
-            System.loadLibrary("tornado-cusparse");
-        } catch (UnsatisfiedLinkError e) {
-            throw new TornadoVMCUDANotSupported("libtornado-cusparse is not available: " + e.getMessage());
+        if (!CusparseLibraryProvider.isAvailable()) {
+            throw new TornadoVMCUDANotSupported("cuSPARSE is not available on this host");
         }
     }
 

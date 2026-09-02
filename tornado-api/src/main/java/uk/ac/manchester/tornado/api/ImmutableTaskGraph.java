@@ -154,6 +154,14 @@ public class ImmutableTaskGraph {
         return taskGraph.isFinished();
     }
 
+    void transferDataToDevice(ExecutorFrame executionPackage) {
+        taskGraph.transferDataToDevice(executionPackage);
+    }
+
+    void transferDataToDevice(ExecutorFrame executionPackage, Object... objects) {
+        taskGraph.transferDataToDevice(executionPackage, objects);
+    }
+
     void dumpProfiles() {
         taskGraph.dumpProfiles();
     }
@@ -240,6 +248,14 @@ public class ImmutableTaskGraph {
 
     void mapOnDeviceMemoryRegion(Object destArray, Object srcArray, long offset, ImmutableTaskGraph taskGraphSrc) {
         taskGraph.mapOnDeviceMemoryRegion(destArray, srcArray, offset, taskGraphSrc.taskGraph.taskGraphImpl);
+    }
+
+    void setPlanTaskGraphs(java.util.List<TornadoTaskGraphInterface> planTaskGraphs) {
+        taskGraph.setPlanTaskGraphs(planTaskGraphs);
+    }
+
+    TornadoTaskGraphInterface getTaskGraphImplementation() {
+        return taskGraph.getTaskGraphImplementation();
     }
 
     void setLastExecutedTaskGraph(ImmutableTaskGraph lastExecutedTaskGraph) {

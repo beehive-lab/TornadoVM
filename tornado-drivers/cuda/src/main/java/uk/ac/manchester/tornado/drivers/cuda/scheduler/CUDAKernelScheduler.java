@@ -41,10 +41,6 @@ public abstract class CUDAKernelScheduler {
     protected double min;
     protected double max;
 
-    public final String WARNING_FPGA_THREAD_LOCAL = "[TornadoVM CUDA] Warning: TornadoVM changed the user-defined local size to: " + ((getDefaultLocalWorkGroup() != null)
-            ? Arrays.toString(getDefaultLocalWorkGroup())
-            : "null") + ".";
-
     public static final String WARNING_THREAD_LOCAL = "[TornadoVM CUDA] Warning: TornadoVM changed the user-defined local size to null. Now, the CUDADriver driver will select the best configuration.";
 
     protected CUDAKernelScheduler(final CUDADeviceContext context) {
@@ -124,15 +120,9 @@ public abstract class CUDAKernelScheduler {
             CUDAGridInfo gridInfo = new CUDAGridInfo(deviceContext, local);
             boolean checkedDimensions = gridInfo.checkGridDimensions();
             if (!checkedDimensions) {
-                if (deviceContext.isPlatformFPGA()) {
-                    System.out.println(WARNING_FPGA_THREAD_LOCAL);
-                    grid.setLocalWork(64, 1, 1);
-                    grid.setNumberOfWorkgroupsToNull();
-                } else {
-                    System.out.println(WARNING_THREAD_LOCAL);
-                    grid.setLocalWorkToNull();
-                    grid.setNumberOfWorkgroupsToNull();
-                }
+                System.out.println(WARNING_THREAD_LOCAL);
+                grid.setLocalWorkToNull();
+                grid.setNumberOfWorkgroupsToNull();
             }
         }
     }
@@ -144,8 +134,8 @@ public abstract class CUDAKernelScheduler {
             }
             if (!meta.isLocalWorkDefined()) {
                 // For multi-dimensional kernels, size the block from the CUDA occupancy API,
-                // which accounts for the kernel's register/shared-memory usage. This mirrors the
-                // PTX backend and prevents register-heavy 2D/3D kernels from requesting an
+                // which accounts for the kernel's register/shared-memory usage.
+                // This prevents register-heavy 2D/3D kernels from requesting an
                 // unlaunchable block (CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES). 1D kernels keep the
                 // existing heuristic so reduction thread/partial layout is unaffected.
                 int maxBlockThreads = (meta.getDims() > 1) ? kernel.getMaxPotentialBlockSize() : 0;
@@ -171,7 +161,7 @@ public abstract class CUDAKernelScheduler {
     /**
      * Distributes an occupancy-suggested maximum block size ({@code maxBlockThreads} total
      * threads) across the kernel's dimensions, choosing per-dimension sizes that divide the
-     * global work evenly. Mirrors the PTX backend's occupancy-based block sizing.
+     * global work evenly.
      */
     protected void calculateLocalWorkFromMaxBlock(final TaskDataContext meta, int maxBlockThreads) {
         final long[] localWork = meta.initLocalWork();

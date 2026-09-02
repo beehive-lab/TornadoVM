@@ -23,18 +23,18 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.graal.compiler;
 
-import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
+import static tornado.graal.compiler.core.common.GraalOptions.ConditionalElimination;
 
-import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.common.AddressLoweringByNodePhase;
-import org.graalvm.compiler.phases.common.AddressLoweringByNodePhase.AddressLowering;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
-import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
-import org.graalvm.compiler.phases.common.FixReadsPhase;
-import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
-import org.graalvm.compiler.phases.common.LowTierLoweringPhase;
-import org.graalvm.compiler.phases.common.UseTrappingNullChecksPhase;
-import org.graalvm.compiler.phases.schedule.SchedulePhase;
+import tornado.graal.compiler.options.OptionValues;
+import tornado.graal.compiler.phases.common.AddressLoweringByNodePhase;
+import tornado.graal.compiler.phases.common.AddressLoweringByNodePhase.AddressLowering;
+import tornado.graal.compiler.phases.common.CanonicalizerPhase;
+import tornado.graal.compiler.phases.common.DeadCodeEliminationPhase;
+import tornado.graal.compiler.phases.common.FixReadsPhase;
+import tornado.graal.compiler.phases.common.IterativeConditionalEliminationPhase;
+import tornado.graal.compiler.phases.common.LowTierLoweringPhase;
+import tornado.graal.compiler.phases.common.UseTrappingNullChecksPhase;
+import tornado.graal.compiler.phases.schedule.SchedulePhase;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.analysis.TornadoFeatureExtraction;
@@ -46,8 +46,6 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.phases.InverseSquareRootPhase
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.CUDAFMAPhase;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.CUDAFP16SupportPhase;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.CUDAFP64SupportPhase;
-import uk.ac.manchester.tornado.drivers.cuda.graal.phases.CUDAFPGAPragmaPhase;
-import uk.ac.manchester.tornado.drivers.cuda.graal.phases.CUDAFPGAThreadScheduler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.CUDAFieldCoopsAccessPhase;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.TornadoAtomicsParametersPhase;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.TornadoAtomicsScheduling;
@@ -88,10 +86,6 @@ public class CUDALowTier extends TornadoLowTier {
 
         appendPhase(new DeadCodeEliminationPhase(DeadCodeEliminationPhase.Optionality.Required));
 
-        if (tornadoDeviceContext.isPlatformFPGA()) {
-            appendPhase(new CUDAFPGAPragmaPhase(tornadoDeviceContext));
-            appendPhase(new CUDAFPGAThreadScheduler());
-        }
 
         appendPhase(new TornadoHalfFloatVectorOffset());
 

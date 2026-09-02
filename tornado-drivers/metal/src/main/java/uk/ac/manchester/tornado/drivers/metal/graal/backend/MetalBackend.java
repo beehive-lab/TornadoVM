@@ -32,30 +32,32 @@ import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.ENABLE_EXCE
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.graalvm.compiler.code.CompilationResult;
-import org.graalvm.compiler.core.common.CompilationIdentifier;
-import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
-import org.graalvm.compiler.lir.LIR;
-import org.graalvm.compiler.lir.LIRInstruction;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
-import org.graalvm.compiler.lir.asm.DataBuilder;
-import org.graalvm.compiler.lir.framemap.FrameMap;
-import org.graalvm.compiler.lir.framemap.FrameMapBuilder;
-import org.graalvm.compiler.lir.framemap.ReferenceMapBuilder;
-import org.graalvm.compiler.lir.gen.LIRGenerationResult;
-import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
-import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
-import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.tiers.SuitesProvider;
-import org.graalvm.compiler.phases.util.Providers;
+import tornado.graal.compiler.code.CompilationResult;
+import tornado.graal.compiler.core.common.CompilationIdentifier;
+import tornado.graal.compiler.core.common.alloc.RegisterAllocationConfig;
+import tornado.graal.compiler.lir.LIR;
+import tornado.graal.compiler.lir.LIRInstruction;
+import tornado.graal.compiler.lir.Variable;
+import tornado.graal.compiler.lir.asm.CompilationResultBuilder;
+import tornado.graal.compiler.lir.asm.DataBuilder;
+import tornado.graal.compiler.lir.framemap.FrameMap;
+import tornado.graal.compiler.lir.framemap.FrameMapBuilder;
+import tornado.graal.compiler.lir.framemap.ReferenceMapBuilder;
+import tornado.graal.compiler.lir.gen.LIRGenerationResult;
+import tornado.graal.compiler.lir.gen.LIRGeneratorTool;
+import tornado.graal.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.nodes.cfg.ControlFlowGraph;
+import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
+import tornado.graal.compiler.options.OptionValues;
+import tornado.graal.compiler.phases.tiers.SuitesProvider;
+import tornado.graal.compiler.phases.util.Providers;
 
 import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.CompilationRequest;
@@ -101,7 +103,6 @@ import uk.ac.manchester.tornado.drivers.metal.graal.compiler.MetalNodeLIRBuilder
 import uk.ac.manchester.tornado.drivers.metal.graal.compiler.MetalNodeMatchRules;
 import uk.ac.manchester.tornado.drivers.metal.graal.compiler.MetalReferenceMapBuilder;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalKind;
-import uk.ac.manchester.tornado.drivers.metal.graal.nodes.FPGAWorkGroupSizeNode;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.MetalTokens;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -237,7 +238,7 @@ public class MetalBackend extends XPUBackend<MetalProviders> implements FrameMap
             }
 
             if (!kindToVariable.containsKey(metalKind)) {
-                kindToVariable.put(metalKind, new HashSet<>());
+                kindToVariable.put(metalKind, new LinkedHashSet<>());
             }
 
             final Set<Variable> varList = kindToVariable.get(metalKind);
@@ -261,7 +262,10 @@ public class MetalBackend extends XPUBackend<MetalProviders> implements FrameMap
     }
 
     private void emitVariableDefs(MetalCompilationResultBuilder crb, MetalAssembler asm, LIR lir) {
-        Map<MetalKind, Set<Variable>> kindToVariable = new HashMap<>();
+        // LinkedHashMap/LinkedHashSet: the declaration order of temporaries must not depend on
+        // identity hash codes, which differ on every JVM run and made the generated kernel source
+        // (and therefore any on-disk code cache keyed by it) unstable across processes.
+        Map<MetalKind, Set<Variable>> kindToVariable = new LinkedHashMap<>();
         final int expectedVariables = lir.numVariables();
         final AtomicInteger variableCount = new AtomicInteger();
 

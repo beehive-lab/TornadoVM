@@ -21,19 +21,20 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.core.common.type.TypeReference;
-import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FixedNode;
-import org.graalvm.compiler.nodes.spi.LIRLowerable;
-import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import tornado.graal.compiler.core.common.LIRKind;
+import tornado.graal.compiler.core.common.type.StampFactory;
+import tornado.graal.compiler.core.common.type.TypeReference;
+import tornado.graal.compiler.graph.NodeClass;
+import tornado.graal.compiler.lir.Variable;
+import tornado.graal.compiler.nodeinfo.NodeInfo;
+import tornado.graal.compiler.nodes.ConstantNode;
+import tornado.graal.compiler.nodes.FixedNode;
+import tornado.graal.compiler.nodes.spi.LIRLowerable;
+import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryTemplate;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBinary;
@@ -78,6 +79,10 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable {
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
+        if (arrayTemplate == null || pointerTemplate == null) {
+            throw new TornadoBailoutRuntimeException("The OpenCL backend does not support on-device arrays of element type " + elementType.toJavaName() + " (OCLKind " + elementKind
+                    + "). Packed vector-element arrays such as Half2 local/private arrays are unsupported on OpenCL.");
+        }
         // generate declaration of private array
         final Value lengthValue = gen.operand(length);
         LIRKind lirKind = LIRKind.value(gen.getLIRGeneratorTool().target().arch.getWordKind());

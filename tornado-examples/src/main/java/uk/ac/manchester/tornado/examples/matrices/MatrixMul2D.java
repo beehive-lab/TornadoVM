@@ -31,13 +31,18 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
 
 /**
+ * Matrix multiplication on {@code Matrix2DFloat}, run once on CUDA and once on
+ * OpenCL when both backends are present.
+ * <p>
+ * Each plan copies A and B on first execution, runs the {@code @Parallel}
+ * kernel, and copies C back on every execution.
+ * </p>
  * <p>
  * How to run?
  * </p>
  * <code>
  * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.matrices.MatrixMul2D
  * </code>
- *
  */
 public class MatrixMul2D {
     // CHECKSTYLE:OFF
@@ -147,7 +152,7 @@ public class MatrixMul2D {
             }
         }
         if (oclDevice == null) {
-            System.err.println("There is no device with both OpenCL and CUDA-PTX support");
+            System.err.println("There is no device with both OpenCL and CUDA support");
             System.exit(1);
         }
         executorOCL.withDevice(oclDevice);
@@ -222,9 +227,9 @@ public class MatrixMul2D {
         String formatOpenCLFGlops = String.format("%.2f", OpenCLGigaFlops);
 
         System.out.println("\tOpenCL Execution: " + formatOpenCLFGlops + " GFlops, Total time = " + msecOCLElapsedTime + " ms");
-        System.out.println("\tPTX Execution: " + formatCUDAFGlops + " GFlops, Total Time = " + msecCUDAElapsedTime + " ms");
+        System.out.println("\tCUDA Execution: " + formatCUDAFGlops + " GFlops, Total Time = " + msecCUDAElapsedTime + " ms");
         System.out.println("\tOpenCL Speedup: " + OpenCLspeedup + "x");
-        System.out.println("\tPTX Speedup: " + CUDAspeedup + "x");
+        System.out.println("\tCUDA Speedup: " + CUDAspeedup + "x");
         System.out.println();
     }
 }

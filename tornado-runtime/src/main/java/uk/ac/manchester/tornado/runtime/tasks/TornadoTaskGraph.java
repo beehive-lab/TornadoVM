@@ -49,8 +49,8 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.graalvm.compiler.graph.Graph;
-import org.graalvm.compiler.phases.util.Providers;
+import tornado.graal.compiler.graph.Graph;
+import tornado.graal.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.GridScheduler;
@@ -140,6 +140,13 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private static final String RESET = "\u001B[0m";
     private static final String RED = "\u001B[31m";
     private static final String WARNING_DEOPT_MESSAGE = RED + "WARNING: Code Bailout to Java sequential. Use --debug to see the reason" + RESET;
+    private static final String WARNING_APPLE_OPENCL_PROFILER_MESSAGE = RED
+            + "WARNING: Profiling the OpenCL backend on Apple's OpenCL platform. Apple's OpenCL driver is deprecated and "
+            + "does not provide reliable event-profiling timestamps: TOTAL_KERNEL_TIME, TOTAL_DISPATCH_KERNEL_TIME, and the "
+            + "copy timers can report values that are not physically possible on the underlying hardware. "
+            + "TOTAL_TASK_GRAPH_TIME is unaffected and remains a reliable end-to-end measurement. "
+            + "Prefer the Metal backend for absolute or cross-backend timing on Apple Silicon." + RESET;
+    private static boolean appleOpenCLProfilerWarningShown = false;
 
     private static final Pattern SIZE_PATTERN = Pattern.compile("(\\d+)(MB|mg|gb|GB)");
     private static final CompileInfo COMPILE_ONLY = new CompileInfo(true, false);
@@ -165,6 +172,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private List<Object> streamInObjects;
     private Map<TornadoTaskGraph, List<Object>> taskToPersistentObjectMap;
     private TornadoTaskGraphInterface lastExecutedTaskGraph;
+
+    /** The other task-graphs of the same execution plan, used to resolve named producers. */
+    private List<TornadoTaskGraphInterface> planTaskGraphs;
     private Set<Object> argumentsLookUp;
     private List<StreamingObject> inputModesObjects; // List of objects with its data transfer mode (IN)
     private List<StreamingObject> outputModeObjects; // List of objects with its data transfer mode (OUT)
@@ -188,7 +198,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private Access[] accesses;
 
     /**
-     * Task Schedule implementation that uses GPU/FPGA and multicore backends. This constructor must be public. It is invoked using the reflection API.
+     * Task Schedule implementation that uses GPU and multicore backends. This constructor must be public. It is invoked using the reflection API.
      *
      * @param taskScheduleName
      *     Task-Schedule name
@@ -347,6 +357,31 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         TornadoOptions.TORNADO_PROFILER = true;
         if (profilerMode == ProfilerMode.SILENT) {
             TornadoOptions.TORNADO_PROFILER_LOG = true;
+        }
+    }
+
+    /**
+     * Apple's OpenCL implementation on macOS is deprecated and its event-profiling timestamps are not
+     * reliable (kernel/dispatch/copy timers can report values that are not physically possible on the
+     * underlying hardware). Warn the user once per JVM run so profiler-based conclusions on this
+     * platform are not taken at face value.
+     */
+    private void warnIfAppleOpenCLProfiler() {
+        if (appleOpenCLProfilerWarningShown) {
+            return;
+        }
+        try {
+            TornadoDevice device = executionContext.getDeviceOfFirstTask();
+            if (device == null || device.getTornadoVMBackend() != TornadoVMBackendType.OPENCL) {
+                return;
+            }
+            String platformName = device.getPlatformName();
+            if (platformName != null && platformName.toLowerCase().contains("apple")) {
+                appleOpenCLProfilerWarningShown = true;
+                System.out.println(WARNING_APPLE_OPENCL_PROFILER_MESSAGE);
+            }
+        } catch (Exception e) {
+            // Best-effort diagnostic only; never let it interfere with execution.
         }
     }
 
@@ -511,6 +546,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
+    public void setPlanTaskGraphs(List<TornadoTaskGraphInterface> planTaskGraphs) {
+        this.planTaskGraphs = planTaskGraphs;
+    }
+
+    @Override
     public long getTotalBytesTransferred() {
         return getProfilerValue(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES) + getProfilerValue(TOTAL_COPY_OUT_SIZE_BYTES);
     }
@@ -587,15 +627,31 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     @Override
     public void updatePersistedObjectState() {
+        // Objects declared with consumeFromDevice(producerName, ...) are resolved against the named
+        // producer directly. Relying on the producer being the *previously executed* graph (the old
+        // behaviour) breaks for any plan that revisits graphs, e.g. an iterative solver that runs
+        // producer -> consumerA -> consumerA -> consumerB: by the time consumerB runs, the previously
+        // executed graph is consumerA and the aliasing was silently skipped, so the consumer read a
+        // separate (stale) device buffer.
+        boolean aliasedByName = aliasNamedProducers();
+
         if (this.lastExecutedTaskGraph == null) {
             //this indicates that this is the first task-graph executed
             return;
         }
 
         TornadoTaskGraph graphSrc = (TornadoTaskGraph) this.lastExecutedTaskGraph;
+        if (graphSrc == this) {
+            // re-executing the same graph: nothing to import
+            return;
+        }
         List<Object> objectsToSync = executionContext.getPersistedTaskToObjectsMap().get(graphSrc.taskGraphName);
 
         if (objectsToSync == null) {
+            if (aliasedByName) {
+                // every consumed object was already resolved through its named producer
+                return;
+            }
             // Empty consumeFromDevice (no explicit source task-graph name): the objects to
             // synchronise from the previously executed task-graph are exactly the ones marked
             // as consumed/on-device. The graph's own persisted *outputs* must NOT be included:
@@ -615,29 +671,82 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
 
         for (Object objectToSync : objectsToSync) {
-            Access objectAccessSrc = graphSrc.getObjectAccess(objectToSync);
-            LocalObjectState localStateSrc = graphSrc.executionContext.getLocalStateObject(objectToSync, objectAccessSrc);
-            DataObjectState dataObjectStateSrc = localStateSrc.getDataObjectState();
+            importDeviceBuffer(graphSrc, objectToSync);
+        }
+    }
 
-            // The device is the same for both task-graphs
-            TornadoXPUDevice device = graphSrc.meta().getXPUDevice();
-            XPUDeviceBufferState deviceStateSrc = dataObjectStateSrc.getDeviceBufferState(device);
-
-            Access objectAccessDest = Access.READ_WRITE;
-            LocalObjectState localStateDest = executionContext.getLocalStateObject(objectToSync, objectAccessDest);
-            if (localStateDest == null) {
+    /**
+     * Points this graph's device buffers at the buffers of the named producing graphs, for every
+     * object registered through {@code consumeFromDevice(producerName, ...)}.
+     *
+     * @return whether at least one object was resolved this way.
+     */
+    private boolean aliasNamedProducers() {
+        if (planTaskGraphs == null) {
+            return false;
+        }
+        boolean aliased = false;
+        for (Map.Entry<String, List<Object>> entry : executionContext.getPersistedTaskToObjectsMap().entrySet()) {
+            final String producerName = entry.getKey();
+            if (producerName == null || producerName.equals(taskGraphName)) {
                 continue;
             }
-            if (!graphSrc.meta().getXPUDevice().equals(executionContext.meta().getXPUDevice())) {
-                throw new TornadoRuntimeException("[ERROR] Object " + objectsToSync + " is not on the same device pesisted and consumed: " + graphSrc.meta()
-                        .getXPUDevice() + " " + " vs " + executionContext.meta().getXPUDevice());
+            TornadoTaskGraph producer = null;
+            for (TornadoTaskGraphInterface candidate : planTaskGraphs) {
+                if (candidate instanceof TornadoTaskGraph taskGraph && producerName.equals(taskGraph.taskGraphName)) {
+                    producer = taskGraph;
+                    break;
+                }
             }
-
-            DataObjectState dataObjectStateDest = localStateDest.getDataObjectState();
-            XPUDeviceBufferState deviceStateDest = dataObjectStateDest.getDeviceBufferState(device);
-
-            deviceStateDest.setXPUBuffer(deviceStateSrc.getXPUBuffer());
+            if (producer == null || producer == this) {
+                continue;
+            }
+            for (Object objectToSync : entry.getValue()) {
+                aliased |= importDeviceBuffer(producer, objectToSync);
+            }
         }
+        return aliased;
+    }
+
+    /**
+     * Makes {@code objectToSync} in this graph refer to the device buffer that {@code graphSrc}
+     * allocated for it. Returns false when the producer has no buffer yet (it has not run).
+     */
+    private boolean importDeviceBuffer(TornadoTaskGraph graphSrc, Object objectToSync) {
+        Access objectAccessSrc = graphSrc.getObjectAccess(objectToSync);
+        if (objectAccessSrc == null) {
+            return false;
+        }
+        LocalObjectState localStateSrc = graphSrc.executionContext.getLocalStateObject(objectToSync, objectAccessSrc);
+        if (localStateSrc == null) {
+            return false;
+        }
+        DataObjectState dataObjectStateSrc = localStateSrc.getDataObjectState();
+
+        // The device is the same for both task-graphs
+        TornadoXPUDevice device = graphSrc.meta().getXPUDevice();
+        XPUDeviceBufferState deviceStateSrc = dataObjectStateSrc.getDeviceBufferState(device);
+
+        Access objectAccessDest = Access.READ_WRITE;
+        LocalObjectState localStateDest = executionContext.getLocalStateObject(objectToSync, objectAccessDest);
+        if (localStateDest == null) {
+            return false;
+        }
+        if (!graphSrc.meta().getXPUDevice().equals(executionContext.meta().getXPUDevice())) {
+            throw new TornadoRuntimeException("[ERROR] Object " + objectToSync + " is not on the same device persisted and consumed: " + graphSrc.meta()
+                    .getXPUDevice() + " " + " vs " + executionContext.meta().getXPUDevice());
+        }
+
+        if (deviceStateSrc.getXPUBuffer() == null) {
+            // the producer has not executed yet, so there is no device buffer to alias
+            return false;
+        }
+
+        DataObjectState dataObjectStateDest = localStateDest.getDataObjectState();
+        XPUDeviceBufferState deviceStateDest = dataObjectStateDest.getDeviceBufferState(device);
+
+        deviceStateDest.setXPUBuffer(deviceStateSrc.getXPUBuffer());
+        return true;
     }
 
     @Override
@@ -885,35 +994,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         return compileInfo.compile;
     }
 
-    private void compileTaskToOpenCL() {
-        vm.withPreCompilation();
-    }
-
-    /**
-     * If current FPGA execution and JIT mode, then run warm-up.
-     */
-    private void preCompileForFPGAs() {
-        boolean compile = false;
-        if (TornadoOptions.FPGA_EMULATION) {
-            compile = true;
-        } else if (executionContext.getDeviceOfFirstTask() instanceof TornadoXPUDevice tornadoAcceleratorDevice) {
-            if (tornadoAcceleratorDevice.isFullJITMode(executionPlanId, executionContext.getTask(0))) {
-                compile = true;
-            }
-        }
-
-        if (compile) {
-            if (DEBUG) {
-                System.out.println("[DEBUG] JIT compilation for the FPGA");
-            }
-            compileTaskToOpenCL();
-        }
-    }
-
     private void updateProfiler() {
         if (!TornadoOptions.isProfilerEnabled()) {
             return;
         }
+
+        warnIfAppleOpenCLProfiler();
 
         if (!TornadoOptions.PROFILER_LOGS_ACCUMULATE()) {
             timeProfiler.dumpJson(new StringBuilder(), this.getId());
@@ -952,13 +1038,74 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         runAllTasksJavaSequential();
     }
 
+    /**
+     * Uploads the current host contents of the given objects, without running anything. Objects
+     * this task-graph does not know are left to the other graphs of the plan.
+     */
+    @Override
+    public void transferDataToDevice(ExecutorFrame executionPackage, Object... objects) {
+        // A plan of many task-graphs asks every one of them to upload, and most of them do not
+        // know the object. Answering that question first keeps the whole preparation - profiler,
+        // bytecode check, device reset - off the graphs with nothing to do, which is what makes a
+        // targeted upload cheap enough to sit in a per-iteration loop.
+        if (!ownsAnyOf(objects)) {
+            return;
+        }
+        prepareForDataTransfers(executionPackage);
+
+        final TornadoXPUDevice device = meta().getXPUDevice();
+        boolean uploaded = false;
+        for (Object object : objects) {
+            if (object == null || !argumentsLookUp.contains(object)) {
+                continue;
+            }
+            final Access access = getObjectAccess(object);
+            final LocalObjectState localState = executionContext.getLocalStateObject(object, access);
+            final XPUDeviceBufferState deviceState = localState.getDataObjectState().getDeviceBufferState(device);
+            if (!deviceState.hasObjectBuffer()) {
+                // The plan may not have run yet, in which case nothing has allocated for this object.
+                device.allocateObjects(new Object[] { object }, 0L, new XPUDeviceBufferState[] { deviceState }, new Access[] { access });
+                if (TornadoOptions.isReusedBuffersEnabled()) {
+                    deviceState.setLockBuffer(true);
+                }
+            }
+            device.streamIn(executionPlanId, object, 0L, 0L, deviceState, null);
+            uploaded = true;
+        }
+
+        if (uploaded) {
+            device.sync(executionPlanId);
+        }
+    }
+
+    private boolean ownsAnyOf(Object... objects) {
+        for (Object object : objects) {
+            if (object != null && argumentsLookUp.contains(object)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void prepareForDataTransfers(ExecutorFrame executionPackage) {
+        setupProfiler();
+        getDevice().getDeviceContext().setResetToFalse();
+        timeProfiler.clean();
+
+        compileComputeGraphToTornadoVMBytecode();
+        executionPlanId = executionPackage.getExecutionPlanId();
+        executionContext.setExecutionPlanId(executionPlanId);
+    }
+
+    @Override
+    public void transferDataToDevice(ExecutorFrame executionPackage) {
+        prepareForDataTransfers(executionPackage);
+        vm.transferDataToDevice();
+    }
+
     @Override
     public void scheduleInner() {
-        boolean compile = compileComputeGraphToTornadoVMBytecode();
-        TornadoXPUDevice deviceForTask = executionContext.getDeviceForTask(0);
-        if (compile && deviceForTask.getDeviceContext().isPlatformFPGA()) {
-            preCompileForFPGAs();
-        }
+        compileComputeGraphToTornadoVMBytecode();
 
         try {
             event = vm.execute(isConcurrentDevicesEnabled, timeProfiler);
@@ -1490,6 +1637,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private TornadoTaskGraphInterface reduceAnalysis() {
         TornadoTaskGraphInterface abstractTaskGraph = null;
         if (analysisTaskGraph == null && !reduceAnalysis) {
+            // CodeAnalysis.buildHighLevelGraalGraph is JDK-neutral: on the JVMCI-absent path (JDK 27+) it uses
+            // the TornadoVM backend's reflection providers instead of HotSpotJVMCIRuntime, so @Reduce analysis
+            // works there too.
             analysisTaskGraph = ReduceCodeAnalysis.analyzeTaskGraph(taskPackages);
             reduceAnalysis = true;
             if (analysisTaskGraph != null && analysisTaskGraph.isValid()) {
@@ -1603,7 +1753,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         // Single context ID per execution plan.
         // This is used to create/obtain low-level command queues from the driver
-        // and other resources (e.g., Level Zero Command Lists).
+        // and other backend resources.
         executionContext.setExecutionPlanId(executionPlanId);
 
         updatePersistedObjectState();
@@ -1650,9 +1800,18 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     }
 
-    private boolean isTaskNamePresent(String taskName) {
+    private boolean isTaskNamePresent(String qualifiedTaskName) {
+        // Compare in place instead of building "<graph>.<task>" for every task on every call.
+        final int prefixLength = taskGraphName.length();
+        if (qualifiedTaskName.length() <= prefixLength + 1 //
+                || qualifiedTaskName.charAt(prefixLength) != '.' //
+                || !qualifiedTaskName.startsWith(taskGraphName)) {
+            return false;
+        }
+        final int idLength = qualifiedTaskName.length() - prefixLength - 1;
         for (TaskPackage taskPackage : taskPackages) {
-            if (taskName.equals(taskGraphName + "." + taskPackage.getId())) {
+            final String id = taskPackage.getId();
+            if (id.length() == idLength && qualifiedTaskName.regionMatches(prefixLength + 1, id, 0, idLength)) {
                 return true;
             }
         }

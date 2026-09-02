@@ -37,16 +37,22 @@ gates it. Status: `[x]` done / `[~]` in progress / `[ ]` planned / `[-]` not pla
 
 ## How a feature is added (the modular recipe)
 
-Adding a cuBLAS function touches **only the `tornado-cublas` module pair** — never the
+> Superseded by the JNI→FFM port: `cublas-jni` is deleted and step 3 below is now a
+> `java.lang.foreign` downcall handle declared directly in `CuBlasNativeLib.java`, not a
+> C++ wrapper. Everything else in this recipe, and the tracks below, still holds — the
+> "JNI wrapper" mentions further down describe how each feature was actually built at the
+> time and are left as history rather than rewritten.
+
+Adding a cuBLAS function touches **only the `tornado-cublas` module** — never the
 core runtime:
 
 1. **Factory** in `CuBlas.java`: builds the `LibraryTaskDescriptor` (function name,
    `Object[]` params, `Access[]` — outputs `WRITE_ONLY`, or `READ_WRITE` when read back,
    e.g. `beta != 0`).
 2. **Dispatch case** in `CuBlasLibraryProvider.dispatch`: positional marshalling from
-   `LibraryInvocation` (device pointers for arrays, boxed scalars) to the JNI call.
-3. **JNI wrapper** in `cublas-jni/src/main/cpp/source/tornado-cublas.cpp` + native
-   declaration in `CuBlasNativeLib.java`: thin, stateless, returns `cublasStatus_t`.
+   `LibraryInvocation` (device pointers for arrays, boxed scalars) to the FFM call.
+3. **FFM binding** in `CuBlasNativeLib.java`: a `SymbolLookup`-resolved downcall handle,
+   thin, stateless, returns `cublasStatus_t`.
 4. **Test** in `uk.ac.manchester.tornado.cublas.tests`: validate vs a sequential Java
    reference (pattern: `TestCuBlasSgemv`), plus a CUDA Graph variant when relevant.
 
@@ -171,7 +177,7 @@ transitively loads `libcublasLt`). Exercises everything the SPI reserved:
 | # | Item | Notes | Status |
 |---|---|---|---|
 | G1 | 64-bit interface (`cublas*_64`) | TornadoVM segments can exceed INT_MAX elements; switch to `_64` entry points wholesale (int64 dims) rather than dual-binding | [ ] |
-| G2 | Graph-capture guard surfaced to providers | `LibraryInvocation.isCapturing()` so providers can reject capture-unsafe options (C6 AUTOTUNE, E-b host pointer mode) with a clear error instead of a corrupted capture | [ ] |
+| G2 | Graph-capture guard surfaced to providers | `LibraryInvocation.isCapturing()` ships; cuSPARSE uses it to refuse a workspace growth during capture, and the cuBLAS workspace is now pre-allocated in `prepare()`. Remaining users: C6 AUTOTUNE, E-b host pointer mode | [x] |
 | G3 | Multi-device | One context per device already; needs TornadoVM-level multi-device task graphs. `cublasXt` is **not** the path (host-pointer API conflicts with device-buffer model) | [-] |
 | G4 | Legacy cuBLAS API / emulation modes (`CUBLAS_EMULATE_*`) | Env-var driven, work without binding changes; document only | [-] |
 | G5 | tornado-test harness integration | `uk.ac.manchester.tornado.unittests.cublas.TestCuBlas` (10 JUnit tests, registered in `tornado-test`); skips via JUnit assumption when the default device is not CUDA or libtornado-cublas is missing. main()-runners kept as documented examples | [x] |

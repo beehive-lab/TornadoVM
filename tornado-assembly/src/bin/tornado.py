@@ -18,6 +18,7 @@
 #
 
 import argparse
+import glob
 import os
 import platform
 import re
@@ -61,15 +62,14 @@ __TORNADOVM_PROVIDERS__ = """\
 # ########################################################
 __COMMON_EXPORTS__ = "/etc/exportLists/common-exports"
 __OPENCL_EXPORTS__ = "/etc/exportLists/opencl-exports"
-__PTX_EXPORTS__ = "/etc/exportLists/ptx-exports"
-__SPIRV_EXPORTS__ = "/etc/exportLists/spirv-exports"
 __METAL_EXPORTS__ = "/etc/exportLists/metal-exports"
 __CUDA_EXPORTS__ = "/etc/exportLists/cuda-exports"
-__TORNADOVM_ADD_MODULES__ = "--add-modules ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.common"
-__PTX_MODULE__ = "tornado.drivers.ptx"
+__TORNADOVM_ADD_MODULES__ = "--add-modules jdk.unsupported,java.management,java.logging,jdk.jfr,java.naming,jdk.management,tornado.graal,tornado.runtime,tornado.annotation,tornado.drivers.common"
 __OPENCL_MODULE__ = "tornado.drivers.opencl"
 __METAL_MODULE__ = "tornado.drivers.metal"
 __CUDA_MODULE__ = "tornado.drivers.cuda"
+__ENABLE_NATIVE_ACCESS__ = "--enable-native-access="
+__FFM_MODULE__ = "tornado.runtime"
 __CUBLAS_MODULE__ = "tornado.cublas"
 __CUFFT_MODULE__ = "tornado.cufft"
 __CUDNN_MODULE__ = "tornado.cudnn"
@@ -80,9 +80,29 @@ __CUTLASS_MODULE__ = "tornado.cutlass"
 # JAVA FLAGS
 # ########################################################
 __JAVA_GC__ = "-XX:+UseParallelGC "
-__JAVA_BASE_OPTIONS__ = "-server -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI --enable-preview "
-__TRUFFLE_BASE_OPTIONS__ = "--jvm --polyglot --vm.XX:+UnlockExperimentalVMOptions --vm.XX:+EnableJVMCI --enable-preview "
-
+__JAVA_BASE_OPTIONS__ = "-server -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI "
+# Only an SDK compiled with enable-preview needs it at run time (the jdk21 profiles: FFM was a
+# preview API before JDK 22). Appending it unconditionally would switch preview APIs on JVM-wide
+# for SDKs that contain no preview class files at all.
+__JAVA_PREVIEW_OPTION__ = "--enable-preview "
+# JDK 27+ removed JVMCI: -XX:+EnableJVMCI is an unrecognized (fatal) option and Panama is
+# final so --enable-preview is unnecessary. TornadoVM sources all metadata via the reflection
+# providers (the only path) against the vendored jdk.internal.vm.ci module.
+__JAVA_BASE_OPTIONS_NO_JVMCI__ = ("-server -XX:+UnlockExperimentalVMOptions "
+                                  # The vendored jdk.vm.ci.services.Services gates on JVMCI_ENABLED,
+                                  # read from VM.getSavedProperties().get("jdk.internal.vm.ci.enabled").
+                                  # HotSpot used to set this when +EnableJVMCI; that flag is gone on
+                                  # JDK 27, so we set the saved property directly (a command-line -D
+                                  # lands in the saved-property map) to satisfy checkJVMCIEnabled().
+                                  "-Djdk.internal.vm.ci.enabled=true "
+                                  # The platform jdk.internal.vm.ci module received these java.base
+                                  # internal packages as qualified exports; our vendored same-named
+                                  # application module must request them explicitly (Services /
+                                  # InitTimer / Unsafe use jdk.internal.misc etc.).
+                                  "--add-exports java.base/jdk.internal.misc=jdk.internal.vm.ci "
+                                  "--add-exports java.base/jdk.internal.vm=jdk.internal.vm.ci "
+                                  "--add-exports java.base/jdk.internal.vm.annotation=jdk.internal.vm.ci "
+                                  "--add-exports java.base/jdk.internal.reflect=jdk.internal.vm.ci ")
 # We do not satisfy the Graal compiler assertions because we only support a subset of the Java specification.
 # This allows us to have the GraalIR in states which normally would be illegal.
 __GRAAL_ENABLE_ASSERTIONS__ = " -ea -da:org.graalvm.compiler... "
@@ -152,341 +172,128 @@ def check_nvidia_driver():
     return shutil.which('nvidia-smi') is not None
 
 def validate_opencl_backend(sdk_path):
-    """Validate OpenCL backend dependencies on Windows."""
+    """Validate OpenCL backend dependencies on Windows.
+
+    The OpenCL backend has no JNI library of its own: it calls the ICD loader through
+    java.lang.foreign. So what has to be resolvable at run time is OpenCL.dll itself, which the GPU
+    driver installs, not a TornadoVM DLL.
+    """
     if os.name != 'nt':
         return True
 
-    opencl_dll = os.path.join(sdk_path, 'lib', 'tornado-opencl.dll')
+    system_opencl = os.path.join(os.environ.get('SystemRoot', 'C:\\Windows'), 'System32', 'OpenCL.dll')
+    try:
+        if os.path.exists(system_opencl):
+            return True
+    except Exception:
+        # Silently skip if we cannot check (permission issues); assume it is there.
+        return True
 
-    if not os.path.exists(opencl_dll):
-        print(f"[WARNING] OpenCL backend configured but tornado-opencl.dll not found")
-        print(f"[INFO] Expected location: {opencl_dll}")
-        print()
-        return False
+    print("[ERROR] Cannot find OpenCL.dll, the ICD loader the OpenCL backend talks to")
+    print()
 
-    # Try to load the DLL
-    if not check_dll_loadable(opencl_dll):
-        print("[ERROR] Cannot load OpenCL JNI library")
-        print()
-        print(f"[INFO] Library location: {opencl_dll}")
-        print()
-
-        # Detect GPU to provide better guidance
-        gpus = get_gpu_info()
-        if gpus:
-            print("[INFO] Detected GPU(s):")
-            for gpu in gpus:
-                print(f"       - {gpu}")
-            print()
-
-        # Check for NVIDIA drivers
-        has_nvidia_driver = check_nvidia_driver()
-
-        print("[CAUSE] Missing OpenCL drivers or dependencies")
-        print("        The OpenCL backend requires OpenCL 2.1+ drivers for GPUs/CPUs")
-        print("        or OpenCL 1.0+ for FPGAs.")
+    gpus = get_gpu_info()
+    if gpus:
+        print("[INFO] Detected GPU(s):")
+        for gpu in gpus:
+            print(f"       - {gpu}")
         print()
 
-        # Check system OpenCL.dll (safe read-only operation)
-        system_opencl = os.path.join(os.environ.get('SystemRoot', 'C:\\Windows'), 'System32', 'OpenCL.dll')
-        try:
-            if os.path.exists(system_opencl):
-                print(f"[INFO] System OpenCL.dll found at: {system_opencl}")
-                print("       But tornado-opencl.dll cannot load due to missing dependencies")
-            else:
-                print("[INFO] System OpenCL.dll not found in Windows\\System32")
-                print("       OpenCL drivers are not installed")
-        except Exception:
-            # Silently skip if we can't check (permission issues)
-            pass
-        print()
+    has_nvidia_driver = check_nvidia_driver()
 
-        print("[FIX] Install appropriate GPU drivers based on your hardware:")
-        print()
-        print("      For NVIDIA GPUs:")
-        print("      - GPU driver must match or exceed CUDA Toolkit version")
-        print("      - Download NVIDIA drivers (usually pre-installed on Windows)")
-        print("      - Install CUDA Toolkit 10.0+ (Windows requires 12.0+)")
-        print("      - Download from: https://developer.nvidia.com/cuda-downloads")
-        print()
-        print("      For Intel GPUs:")
-        print("      - Install Intel Graphics drivers with OpenCL support")
-        print("      - Download from: https://www.intel.com/content/www/us/en/download-center/home.html")
-        print("      - Or install Intel Compute Runtime")
-        print("      - Download from: https://github.com/intel/compute-runtime/releases")
-        print()
-        print("      For AMD GPUs:")
-        print("      - Install AMD drivers with OpenCL 2.1+ support")
-        print("      - Download from AMD website")
-        print()
-        print("      After installation:")
-        print("      1. Restart your terminal/IDE")
-        print("      2. Run tornado --devices to verify installation")
-        print()
-        sys.exit(1)
+    print("[CAUSE] OpenCL drivers are not installed")
+    print(f"        Expected the ICD loader at: {system_opencl}")
+    print("        The OpenCL backend requires OpenCL 2.1+ drivers for GPUs/CPUs.")
+    print()
+    print("[FIX] Install appropriate GPU drivers based on your hardware:")
+    print()
+    print("      For NVIDIA GPUs:")
+    print("      - GPU driver must match or exceed CUDA Toolkit version")
+    print("      - Download NVIDIA drivers (usually pre-installed on Windows)")
+    print("      - Download from: https://developer.nvidia.com/cuda-downloads")
+    print()
+    print("      For Intel GPUs:")
+    print("      - Install Intel Graphics drivers with OpenCL support")
+    print("      - Download from: https://www.intel.com/content/www/us/en/download-center/home.html")
+    print()
+    if has_nvidia_driver:
+        print("[INFO] NVIDIA drivers detected (nvidia-smi available)")
+    print()
+    sys.exit(1)
 
-    return True
+def validate_cuda_backend(sdk_path):
+    """Validate CUDA backend dependencies on Windows.
 
-def validate_ptx_backend(sdk_path):
-    """Validate PTX backend dependencies on Windows."""
+    The CUDA backend has no JNI library of its own: it calls the driver and NVRTC through
+    java.lang.foreign. So what has to be resolvable at run time is the driver (nvcuda.dll, installed
+    with the GPU driver) and NVRTC (nvrtc64_*.dll, installed with the CUDA Toolkit), not a
+    TornadoVM DLL. NVRTC is the one that actually goes missing, because it lives under
+    %CUDA_PATH%\\bin rather than next to the SDK.
+    """
     if os.name != 'nt':
         return True
 
-    ptx_dll = os.path.join(sdk_path, 'lib', 'tornado-ptx.dll')
+    # add_cuda_toolkit_to_path() already ran (see validate_windows_dependencies) and put every
+    # existing %CUDA_PATH%\bin / %CUDA_PATH%\bin\x64 on PATH, so a missing NVRTC here means the
+    # Toolkit is absent or its layout is not one of the known ones.
+    cuda_bin_dirs = get_cuda_bin_dirs()
+    if any(glob.glob(os.path.join(d, 'nvrtc64_*.dll')) for d in cuda_bin_dirs):
+        return True
 
-    if not os.path.exists(ptx_dll):
-        print(f"[WARNING] PTX backend configured but tornado-ptx.dll not found")
-        print(f"[INFO] Expected location: {ptx_dll}")
-        print()
-        return False
+    print("[ERROR] Cannot find NVRTC, the CUDA runtime compiler the CUDA backend compiles kernels with")
+    print()
 
-    # Try to load the DLL
-    if not check_dll_loadable(ptx_dll):
-        print("[ERROR] Cannot load PTX JNI library")
-        print()
-        print(f"[INFO] Library location: {ptx_dll}")
-        print()
-
-        # Detect GPU to provide better guidance
-        gpus = get_gpu_info()
-        if gpus:
-            print("[INFO] Detected GPU(s):")
-            for gpu in gpus:
-                print(f"       - {gpu}")
-                if "NVIDIA" not in gpu.upper():
-                    print("         (This is not an NVIDIA GPU - PTX requires NVIDIA)")
-            print()
-
-        # Check for NVIDIA drivers
-        has_nvidia_driver = check_nvidia_driver()
-
-        print("[CAUSE] Missing NVIDIA CUDA Toolkit or drivers")
-        print("        The PTX backend requires:")
-        print("        - NVIDIA GPU")
-        print("        - NVIDIA drivers (usually pre-installed on Windows)")
-        print("        - CUDA Toolkit 10.0+ (Windows requires 12.0+)")
-        print("        - GPU driver must match or exceed CUDA Toolkit version")
+    gpus = get_gpu_info()
+    if gpus:
+        print("[INFO] Detected GPU(s):")
+        for gpu in gpus:
+            print(f"       - {gpu}")
+            if "NVIDIA" not in gpu.upper():
+                print("         (This is not an NVIDIA GPU - CUDA requires NVIDIA)")
         print()
 
+    has_nvidia_driver = check_nvidia_driver()
+    cuda_path = os.environ.get('CUDA_PATH')
+
+    if cuda_bin_dirs:
+        print("[CAUSE] The following CUDA Toolkit directories are on PATH:")
+        for d in cuda_bin_dirs:
+            print(f"          {d}")
+        print("        but none of them contains an nvrtc64_*.dll. The Toolkit installation")
+        print("        looks incomplete, or its runtime components were not installed.")
+        print()
+        print("[FIX] Verify NVRTC exists and matches your installed Toolkit version:")
+        for d in cuda_bin_dirs:
+            print(f"        dir {d}\\nvrtc64_*.dll")
+        print("      If it is missing, reinstall the CUDA Toolkit with its runtime components.")
+        print()
+    elif cuda_path:
+        print(f"[CAUSE] CUDA_PATH is set to '{cuda_path}' but neither")
+        print(f"        '{os.path.join(cuda_path, 'bin')}' nor")
+        print(f"        '{os.path.join(cuda_path, 'bin', 'x64')}' exists.")
+        print("        The CUDA Toolkit installation looks incomplete or corrupted.")
+        print()
+        print("[FIX] Reinstall NVIDIA CUDA Toolkit 12.0+")
+        print("      Download from: https://developer.nvidia.com/cuda-downloads")
+        print()
+    else:
+        print("[CAUSE] CUDA_PATH environment variable is not set, so nvrtc64_*.dll")
+        print("        (which lives under %CUDA_PATH%\\bin or %CUDA_PATH%\\bin\\x64)")
+        print("        cannot be located.")
+        print()
         if not has_nvidia_driver:
             print("[FIX] Install NVIDIA CUDA Toolkit and drivers")
             print("      Download from: https://developer.nvidia.com/cuda-downloads")
-            print()
-            print("      Installation steps:")
-            print("      1. Verify you have an NVIDIA GPU (check detected GPUs above)")
-            print("      2. Download CUDA Toolkit 12.0+ for Windows")
-            print("      3. Run the installer (includes NVIDIA drivers)")
-            print("      4. Restart your system")
-            print("      5. Verify installation: nvidia-smi")
-            print("      6. Run tornado --devices again")
         else:
             print("[INFO] NVIDIA drivers detected (nvidia-smi available)")
-            print()
-            print("[FIX] Reinstall or update NVIDIA CUDA Toolkit")
-            print("      The tornado-ptx.dll requires complete CUDA Toolkit installation")
-            print()
-            print("      1. Download CUDA Toolkit 12.0+ for Windows")
-            print("         From: https://developer.nvidia.com/cuda-downloads")
-            print("      2. Run the installer and select 'Custom' installation")
-            print("      3. Ensure all CUDA components are selected")
-            print("      4. Restart your system")
-            print("      5. Verify with: nvidia-smi")
-            print("      6. Run tornado --devices again")
-
-        print()
-        print("[NOTE] PTX backend is NVIDIA-specific")
-        print("       For non-NVIDIA GPUs, use OpenCL or SPIR-V backends instead")
-        print()
-        sys.exit(1)
-
-    return True
-
-def validate_cuda_backend(sdk_path):
-    """Validate CUDA backend dependencies on Windows."""
-    if os.name != 'nt':
-        return True
-
-    cuda_dll = os.path.join(sdk_path, 'lib', 'tornado-cuda.dll')
-
-    if not os.path.exists(cuda_dll):
-        print(f"[WARNING] CUDA backend configured but tornado-cuda.dll not found")
-        print(f"[INFO] Expected location: {cuda_dll}")
-        print()
-        return False
-
-    if not check_dll_loadable(cuda_dll):
-        print("[ERROR] Cannot load CUDA JNI library")
-        print()
-        print(f"[INFO] Library location: {cuda_dll}")
-        print()
-
-        gpus = get_gpu_info()
-        if gpus:
-            print("[INFO] Detected GPU(s):")
-            for gpu in gpus:
-                print(f"       - {gpu}")
-                if "NVIDIA" not in gpu.upper():
-                    print("         (This is not an NVIDIA GPU - CUDA requires NVIDIA)")
-            print()
-
-        has_nvidia_driver = check_nvidia_driver()
-
-        # add_cuda_toolkit_to_path() already ran (see validate_windows_dependencies)
-        # and put every existing %CUDA_PATH%\bin / %CUDA_PATH%\bin\x64 on PATH,
-        # so a load failure here is diagnosed from *why* that did or didn't
-        # help, rather than assuming the Toolkit itself is missing --
-        # tornado-cuda.dll existing (checked above) plus a load failure almost
-        # always means a dependent runtime DLL (nvrtc64_*.dll, cudart64_*.dll,
-        # ...) couldn't be resolved, which is a different problem than "no
-        # Toolkit installed".
-        cuda_path = os.environ.get('CUDA_PATH')
-        cuda_bin_dirs = get_cuda_bin_dirs()
-
-        if cuda_bin_dirs:
-            print("[CAUSE] tornado-cuda.dll exists and the following are on PATH:")
-            for d in cuda_bin_dirs:
-                print(f"          {d}")
-            print("        but the DLL still failed to load. This usually means a")
-            print("        dependent runtime DLL (nvrtc64_*.dll, cudart64_*.dll, ...) is")
-            print("        missing or version-mismatched, or a required Visual C++")
-            print("        Redistributable is not installed.")
-            print()
-            print("[FIX] Verify these exist and match your installed Toolkit version:")
-            for d in cuda_bin_dirs:
-                print(f"        dir {d}\\nvrtc64_*.dll")
-                print(f"        dir {d}\\cudart64_*.dll")
-            print("      Also ensure the latest Microsoft Visual C++ Redistributable (x64):")
-            print("        https://aka.ms/vs/17/release/vc_redist.x64.exe")
-            print()
-        elif cuda_path:
-            print(f"[CAUSE] CUDA_PATH is set to '{cuda_path}' but neither")
-            print(f"        '{os.path.join(cuda_path, 'bin')}' nor")
-            print(f"        '{os.path.join(cuda_path, 'bin', 'x64')}' exists.")
-            print("        The CUDA Toolkit installation looks incomplete or corrupted.")
-            print()
-            print("[FIX] Reinstall NVIDIA CUDA Toolkit 12.0+")
+            print("[FIX] Install NVIDIA CUDA Toolkit 12.0+ (drivers alone are not enough)")
             print("      Download from: https://developer.nvidia.com/cuda-downloads")
-            print()
-        else:
-            print("[CAUSE] CUDA_PATH environment variable is not set")
-            print("        tornado-cuda.dll depends on CUDA Toolkit runtime DLLs")
-            print("        (nvrtc64_*.dll, cudart64_*.dll, ...) that live under")
-            print("        %CUDA_PATH%\\bin or %CUDA_PATH%\\bin\\x64, so without it")
-            print("        they cannot be located.")
-            print()
-            if not has_nvidia_driver:
-                print("[FIX] Install NVIDIA CUDA Toolkit and drivers")
-                print("      Download from: https://developer.nvidia.com/cuda-downloads")
-            else:
-                print("[INFO] NVIDIA drivers detected (nvidia-smi available)")
-                print("[FIX] Install NVIDIA CUDA Toolkit 12.0+ (drivers alone are not enough)")
-                print("      Download from: https://developer.nvidia.com/cuda-downloads")
-            print()
-
-        print("[NOTE] CUDA backend is NVIDIA-specific")
-        print("       For non-NVIDIA GPUs, use OpenCL or SPIR-V backends instead")
-        print()
-        sys.exit(1)
-
-    return True
-
-def validate_spirv_backend(sdk_path):
-    """Validate SPIR-V backend dependencies on Windows."""
-    if os.name != 'nt':
-        return True
-
-    # SPIR-V can run through OpenCL or Level Zero runtimes
-    opencl_dll = os.path.join(sdk_path, 'lib', 'tornado-opencl.dll')
-    levelzero_dll = os.path.join(sdk_path, 'lib', 'tornado-levelzero.dll')
-
-    has_opencl = os.path.exists(opencl_dll)
-    has_levelzero = os.path.exists(levelzero_dll)
-
-    if not has_opencl and not has_levelzero:
-        print(f"[WARNING] SPIR-V backend configured but no compatible runtime found")
-        print(f"[INFO] SPIR-V requires either:")
-        print(f"       - tornado-opencl.dll at: {opencl_dll}")
-        print(f"       - tornado-levelzero.dll at: {levelzero_dll}")
-        print()
-        return False
-
-    # Try to load at least one of the DLLs
-    opencl_loadable = has_opencl and check_dll_loadable(opencl_dll)
-    levelzero_loadable = has_levelzero and check_dll_loadable(levelzero_dll)
-
-    if not opencl_loadable and not levelzero_loadable:
-        print("[ERROR] Cannot load SPIR-V runtime libraries")
-        print()
-        if has_opencl:
-            print(f"[INFO] Found but failed to load: {opencl_dll}")
-        if has_levelzero:
-            print(f"[INFO] Found but failed to load: {levelzero_dll}")
         print()
 
-        # Detect GPU to provide better guidance
-        gpus = get_gpu_info()
-        if gpus:
-            print("[INFO] Detected GPU(s):")
-            for gpu in gpus:
-                print(f"       - {gpu}")
-            print()
-
-        print("[CAUSE] Missing Level Zero loader or Intel Compute Runtime")
-        print("        The SPIR-V backend requires:")
-        print("        - Intel Level Zero 1.2+ (recommended for Intel GPUs)")
-        print("        - Intel Compute Runtime (for OpenCL support)")
-        print("        - Supports Intel HD Graphics (integrated) and Intel ARC GPUs")
-        print()
-
-        # Check if ze_loader.dll exists in System32
-        system_root = os.environ.get('SystemRoot', 'C:\\Windows')
-        ze_loader = os.path.join(system_root, 'System32', 'ze_loader.dll')
-
-        try:
-            if os.path.exists(ze_loader):
-                print(f"[INFO] Level Zero loader found at: {ze_loader}")
-                print("       But additional dependencies may be missing")
-            else:
-                print("[INFO] Level Zero loader (ze_loader.dll) not found in System32")
-                print("       Level Zero runtime is not installed")
-        except Exception:
-            pass
-        print()
-
-        # Check system OpenCL.dll
-        system_opencl = os.path.join(system_root, 'System32', 'OpenCL.dll')
-        try:
-            if os.path.exists(system_opencl):
-                print(f"[INFO] System OpenCL.dll found at: {system_opencl}")
-            else:
-                print("[INFO] System OpenCL.dll not found")
-                print("       Intel Compute Runtime is likely not installed")
-        except Exception:
-            pass
-        print()
-
-        print("[FIX] Install Intel GPU drivers and runtime:")
-        print()
-        print("      Option 1: Install Intel Graphics drivers (recommended)")
-        print("      1. Download Intel Graphics drivers from:")
-        print("         https://www.intel.com/content/www/us/en/download-center/home.html")
-        print("      2. Run the installer")
-        print("      3. Restart your system")
-        print("      4. Run tornado --devices again")
-        print()
-        print("      Option 2: Install Intel Compute Runtime")
-        print("      1. Download from: https://github.com/intel/compute-runtime/releases")
-        print("      2. Install both Level Zero (1.2+) and OpenCL packages")
-        print("      3. Restart your system")
-        print("      4. Run tornado --devices again")
-        print()
-        print("[NOTE] SPIR-V backend works best with Intel GPUs")
-        print("       For NVIDIA GPUs, use PTX backend instead")
-        print("       For AMD GPUs, use OpenCL backend instead")
-        print()
-        sys.exit(1)
-
-    return True
+    print("[NOTE] CUDA backend is NVIDIA-specific")
+    print("       For non-NVIDIA GPUs, use the OpenCL backend instead")
+    print()
+    sys.exit(1)
 
 def get_cuda_bin_dirs():
     """Return the CUDA Toolkit bin directories that may hold runtime DLLs.
@@ -509,15 +316,14 @@ def get_cuda_bin_dirs():
 def add_cuda_toolkit_to_path():
     """Prepend the CUDA Toolkit's bin directories to PATH.
 
-    tornado-cuda.dll (and tornado-cublas.dll/tornado-cufft.dll/tornado-cudnn.dll)
-    depend on CUDA Toolkit runtime DLLs that live under %CUDA_PATH%\\bin or
+    The CUDA backend (via NVRTC) and the library-task DLLs (tornado-cublas.dll/
+    tornado-cufft.dll/tornado-cudnn.dll) need CUDA Toolkit runtime DLLs that live under %CUDA_PATH%\\bin or
     %CUDA_PATH%\\bin\\x64 (see get_cuda_bin_dirs), not next to the tornado-*.dll
     themselves. The CUDA installer normally adds these to the system PATH, but
     a shell that predates the install (or never picked up the machine-wide
     PATH change, unlike e.g. a VS Developer Command Prompt that re-derives its
-    own PATH) will not have them, causing LoadLibrary to fail with "module not
-    found" even though tornado-cuda.dll itself is present and the Toolkit is
-    correctly installed.
+    own PATH) will not have them, causing the load to fail with "module not
+    found" even though the Toolkit is correctly installed.
     """
     if os.name != 'nt':
         return
@@ -551,14 +357,9 @@ def validate_windows_dependencies(sdk_path):
                 if 'opencl-backend' in content:
                     validate_opencl_backend(sdk_path)
 
-                if 'ptx-backend' in content:
-                    validate_ptx_backend(sdk_path)
-
                 if 'cuda-backend' in content:
                     validate_cuda_backend(sdk_path)
 
-                if 'spirv-backend' in content:
-                    validate_spirv_backend(sdk_path)
 
         except (OSError, PermissionError, IOError):
             # Silently skip if we can't read the backend file
@@ -600,36 +401,20 @@ class TornadoVMRunnerTool():
             print("Please ensure the JAVA_HOME environment variable is set correctly")
             sys.exit(0)
 
-        env_vars = {
-            "GRAALPY_HOME": "graalpy",
-            "GRAALJS_HOME": "js",
-            "GRAALNODEJS_HOME": "node",
-            "TRUFFLERUBY_HOME": "truffleruby"
-        }
-
-        self.setTruffleVars(env_vars)
-
-        self.commands = {
-            "java": os.path.join(self.java_home, "bin", "java"),
-            "python": self.graalpy,
-            "js": self.js,
-            "node": self.node,
-            "ruby": self.truffleruby
-        }
-
-        self.isTruffleCommand = args.truffle_language != None
-
-        if (self.isTruffleCommand):
-            if (args.truffle_language in self.commands) and (self.commands[args.truffle_language] != None):
-                self.cmd = self.commands[args.truffle_language]
-            else:
-                print(
-                    "Support for " + args.truffle_language + " not provided yet. Please run --truffle with one of the following options: python|ruby|js|node, and ensure that the (GRAALPY_HOME, TRUFFLERUBY_HOME, GRAALJS_HOME, GRAALNODEJS_HOME) environment variables are set correctly.")
-                sys.exit(0)
-        else:
-            self.cmd = self.commands["java"]
+        self.cmd = os.path.join(self.java_home, "bin", "java")
 
         self.java_version, self.isGraalVM = self.getJavaVersion()
+        # JVMCI was removed from OpenJDK entirely in JDK 27 (openjdk/jdk#30834): no
+        # jdk.internal.vm.ci module and no -XX:+EnableJVMCI flag. On such JDKs TornadoVM
+        # supplies jdk.internal.vm.ci itself as a vendored application module and runs its
+        # compilation pipeline via the reflection provider path.
+        self.jvmci_absent = self.java_version >= 27
+        # JDK 22-26 still ship jdk.internal.vm.ci, but its interfaces have drifted from the
+        # JDK-21 shape the reflection providers are compiled against. Patch the platform module
+        # with the frozen JDK-21 jvmci classes so the runtime SPI matches the compiled code
+        # (uniform vendoring; mirrors the compile-time --patch-module in the jdk25/jdk26 profiles).
+        self.jvmci_patched = 22 <= self.java_version <= 26
+        self.sdk_jdk_floor, self.sdk_jdk_preview = self.readSDKJDKContract()
         self.checkCompatibilityWithTornadoVM()
         self.platform = sys.platform
         self.listOfBackends = self.getInstalledBackends(False)
@@ -650,29 +435,22 @@ class TornadoVMRunnerTool():
         if (self.platform == 'darwin'):
             self.checkMacOSCompatibility()
 
-    def setTruffleVars(self, env_vars):
-        for var, attr in env_vars.items():
-            if var in os.environ:
-                setattr(self, attr, os.environ[var] + f"/bin/{attr} ")
-            else:
-                setattr(self, attr, None)
-
     def getJavaVersion(self):
         try:
             if os.name == 'nt':
                 # Use list format to avoid issues with paths containing spaces
-                versionCommand = subprocess.Popen([self.commands["java"], "-version"],
+                versionCommand = subprocess.Popen([self.cmd, "-version"],
                                                   stdout=subprocess.PIPE,
                                                   stderr=subprocess.PIPE)
             else:
-                versionCommand = subprocess.Popen(shlex.split(self.commands["java"] + " -version"), stdout=subprocess.PIPE,
+                versionCommand = subprocess.Popen(shlex.split(self.cmd + " -version"), stdout=subprocess.PIPE,
                                                   stderr=subprocess.PIPE)
             stdout, stderr = versionCommand.communicate()
         except FileNotFoundError:
             print("[ERROR] Cannot find Java.")
             print(f"[ERROR] Please ensure JAVA_HOME is set correctly and that Java is accessible.")
             print(f"[ERROR] Current JAVA_HOME: {self.java_home}")
-            print(f"[ERROR] Looking for Java at: {self.commands['java']}")
+            print(f"[ERROR] Looking for Java at: {self.cmd}")
             if os.name == 'nt':
                 print("[ERROR] On Windows, ensure %JAVA_HOME%\\bin is in your PATH.")
             sys.exit(1)
@@ -697,9 +475,58 @@ class TornadoVMRunnerTool():
             print(f"[DEBUG] Java version output was: {stderr.decode('utf-8', errors='ignore')}")
             sys.exit(0)
 
+    def readSDKJDKContract(self):
+        """(floor, preview) for THIS SDK, as recorded by bin/compile in etc/tornado.jdk.
+
+        Which JDKs an SDK accepts is a property of how it was compiled, not of the launcher, so
+        it travels with the SDK rather than being hardcoded here.
+        """
+        contract = os.path.join(self.sdk, "etc", "tornado.jdk")
+        if os.path.isfile(contract):
+            floor, preview = 21, True
+            try:
+                with open(contract, "r") as f:
+                    for line in f.read().splitlines():
+                        if line.startswith("tornado.jdk.floor="):
+                            floor = int(line.split("=", 1)[1].strip())
+                        elif line.startswith("tornado.jdk.preview="):
+                            preview = line.split("=", 1)[1].strip().lower() == "true"
+                return floor, preview
+            except (IOError, OSError, ValueError):
+                pass
+
+        # No contract to read. Do NOT just assume the oldest shape: a stale or mistyped
+        # TORNADOVM_HOME is far likelier than a genuinely old SDK, and guessing turns that into a
+        # confident "runs on JDK 21 only", which points at the SDK when the env var is at fault.
+        jars = os.path.join(self.sdk, "share", "java", "tornado")
+        if not os.path.isdir(jars):
+            print("[ERROR] TORNADOVM_HOME does not look like a TornadoVM SDK:")
+            print("            " + self.sdk)
+            print("        (no share/java/tornado inside it). If you have just rebuilt, run:")
+            print("            source setvars.sh")
+            sys.exit(0)
+
+        # A real SDK that predates etc/tornado.jdk: infer from the artifact version it ships.
+        for name in sorted(os.listdir(jars)):
+            if name.startswith("tornado-api-"):
+                return (22, False) if "jdk22plus" in name else (21, True)
+        return 21, True
+
     def checkCompatibilityWithTornadoVM(self):
-        if (self.java_version != 21):
-            print("TornadoVM supports only JDK version 21")
+        # TornadoVM runs on arbitrary modern JDKs because Graal (tornado.graal) and, on JDK 27+,
+        # JVMCI (jdk.internal.vm.ci) are vendored as application modules. How far that reaches
+        # depends on the SDK: a preview-compiled one is pinned to a single release, everything
+        # else is good from its floor upwards.
+        if (self.sdk_jdk_preview):
+            if (self.java_version != self.sdk_jdk_floor):
+                print("This TornadoVM SDK was built for JDK " + str(self.sdk_jdk_floor)
+                      + " with preview features enabled, so it runs on JDK " + str(self.sdk_jdk_floor)
+                      + " only (found JDK " + str(self.java_version) + ").")
+                print("Use the jdk22plus SDK for JDK 22 and newer.")
+                sys.exit(0)
+        elif (self.java_version < self.sdk_jdk_floor):
+            print("This TornadoVM SDK requires JDK " + str(self.sdk_jdk_floor)
+                  + " or newer (found JDK " + str(self.java_version) + ").")
             sys.exit(0)
 
     def checkOpenCLDriversWindows(self):
@@ -863,18 +690,11 @@ class TornadoVMRunnerTool():
         """Check if the system has compatible libstdc++ version for TornadoVM native libraries"""
         try:
             # Check if OpenCL backend is installed
+            # The CUDA backend ships no native library of its own (it uses java.lang.foreign),
+            # so OpenCL's is the one that can carry a libstdc++ requirement.
             opencl_lib = os.path.join(self.sdk, 'lib', 'libtornado-opencl.so')
-            spirv_lib = os.path.join(self.sdk, 'lib', 'libtornado-levelzero.so')
-            ptx_lib = os.path.join(self.sdk, 'lib', 'libtornado-ptx.so')
 
-            # Find at least one native library to check
-            lib_to_check = None
-            if os.path.exists(opencl_lib):
-                lib_to_check = opencl_lib
-            elif os.path.exists(spirv_lib):
-                lib_to_check = spirv_lib
-            elif os.path.exists(ptx_lib):
-                lib_to_check = ptx_lib
+            lib_to_check = opencl_lib if os.path.exists(opencl_lib) else None
 
             if not lib_to_check:
                 # No native libraries found, skip check
@@ -1042,17 +862,10 @@ class TornadoVMRunnerTool():
             major_version = int(macos_version.split('.')[0])
 
             # Check native libraries for deployment target
+            # The CUDA backend ships no native library of its own (it uses java.lang.foreign).
             opencl_lib = os.path.join(self.sdk, 'lib', 'libtornado-opencl.dylib')
-            spirv_lib = os.path.join(self.sdk, 'lib', 'libtornado-levelzero.dylib')
-            ptx_lib = os.path.join(self.sdk, 'lib', 'libtornado-ptx.dylib')
 
-            lib_to_check = None
-            if os.path.exists(opencl_lib):
-                lib_to_check = opencl_lib
-            elif os.path.exists(spirv_lib):
-                lib_to_check = spirv_lib
-            elif os.path.exists(ptx_lib):
-                lib_to_check = ptx_lib
+            lib_to_check = opencl_lib if os.path.exists(opencl_lib) else None
 
             if not lib_to_check:
                 return
@@ -1229,15 +1042,50 @@ class TornadoVMRunnerTool():
             tornadoFlags = tornadoFlags + " -Djava.ext.dirs=" + self.sdk + "/share/java/tornado "
         else:
             tornadoFlags = tornadoFlags + " --module-path ." + os.pathsep + self.sdk + "/share/java/tornado"
+            # On JDK 27+ the platform no longer ships jdk.internal.vm.ci; add the vendored
+            # same-named module. It must NOT be on the module-path on JDK <=26 (the platform
+            # module of the same name would cause a "two versions of module" resolution error).
+            if (self.jvmci_absent):
+                tornadoFlags = tornadoFlags + os.pathsep + self.sdk + "/share/java/jvmci"
+            # The caller's --module-path EXTENDS the module path built above, so it has to be
+            # appended while the flag string still ends in the module path itself -- i.e. before
+            # any further flag is emitted. It also carries whatever extra JVM options the caller
+            # packed into the same argument (the TornadoVM-Ray-Tracer launcher passes its whole
+            # JFLAGS this way), so nothing may be glued onto its tail either; that is why the
+            # jdk22-26 block below is emitted after it rather than before. Appending it after
+            # --patch-module instead handed the caller's entries to the patch: on jdk22-26 the
+            # caller's modules then never reached the module path at all (FindException for
+            # whatever it was adding, e.g. javafx.graphics), while jdk21 and jdk27+ were fine
+            # because on those the string still ended in the module path.
+            if (args.module_path != None):
+                tornadoFlags = tornadoFlags + ":" + args.module_path
 
-        if (args.module_path != None):
-            tornadoFlags = tornadoFlags + ":" + args.module_path + " "
-        else:
-            tornadoFlags = tornadoFlags + " "
+            # On JDK 22-26 the platform module stays on the module path (resolved via
+            # -XX:+EnableJVMCI); we overlay the frozen JDK-21 classes with --patch-module so the
+            # loaded jdk.vm.ci.* matches what the reflection providers were compiled against. The
+            # patched-in JDK-21 jdk.vm.ci.services.Services.checkJVMCIEnabled() reads the saved
+            # property jdk.internal.vm.ci.enabled, so set it explicitly (HotSpot's own +EnableJVMCI
+            # bookkeeping is not visible to the overlaid classes).
+            if (self.jvmci_patched):
+                tornadoFlags = tornadoFlags + " -Djdk.internal.vm.ci.enabled=true --patch-module jdk.internal.vm.ci=" + self.sdk + "/share/java/jvmci/jvmci-21.0.2.jar"
 
-        # If the execution will take place through truffle, adapt the flags
-        if (self.isTruffleCommand):
-            tornadoFlags = self.truffleCompatibleFlags(tornadoFlags)
+            # share/java/graalJars vendors GraalVM's foundational-API jars (word, collections,
+            # truffle-compiler, ...) under their ORIGINAL org.graalvm.* module names - unlike
+            # tornado.graal's compiler internals, these are not relocated, because they are
+            # TornadoVM's only supported way to get them under a non-GraalVM JDK. That is exactly
+            # the problem under a GraalVM-branded JAVA_HOME: the platform already ships a module
+            # of the same name (e.g. org.graalvm.word, resolvable from jrt:/org.graalvm.word).
+            # JPMS resolves same-named system modules before ever consulting --module-path, so a
+            # plain --module-path entry here is silently ignored in favor of the platform's
+            # version - and if that version is missing a class TornadoVM needs (observed:
+            # org.graalvm.word.impl.WordBoxFactory, on GraalVM 22+), it fails with
+            # NoClassDefFoundError at first use instead of a build-time or startup error.
+            # --upgrade-module-path is the JPMS-sanctioned way to supply a replacement for a
+            # module that already exists in the boot layer; under a non-GraalVM JDK, where no
+            # module of these names exists at all, it behaves exactly like --module-path.
+            tornadoFlags = tornadoFlags + " --upgrade-module-path " + self.sdk + "/share/java/graalJars"
+
+        tornadoFlags = tornadoFlags + " "
 
         return tornadoFlags
 
@@ -1291,6 +1139,24 @@ class TornadoVMRunnerTool():
                 # Silently fail - this is not critical for tornado operation
                 pass
 
+    def regenerateArgfileTemplate(self):
+        """Re-run gen-tornado-argfile-template.py so the template matches this JDK.
+
+        Best effort: if the generator is missing or fails, fall back to whatever template the
+        SDK already ships rather than blocking the caller.
+        """
+        gen = os.path.join(self.sdk, "bin", "gen-tornado-argfile-template.py")
+        if not os.path.exists(gen):
+            return
+        backends = ",".join(b.replace("-backend", "") for b in self.listOfBackends)
+        python_cmd = "python" if os.name == "nt" else "python3"
+        try:
+            subprocess.run([python_cmd, gen, backends], cwd=os.path.join(self.sdk, "bin"),
+                           check=True, capture_output=True, text=True)
+        except (subprocess.CalledProcessError, OSError) as e:
+            print(f"[WARNING] Could not regenerate the argfile template for this JDK ({e});"
+                  f" reusing the one shipped with the SDK")
+
     def generateArgfile(self):
         """
         Regenerate tornado-argfile in SDK directory.
@@ -1299,6 +1165,16 @@ class TornadoVMRunnerTool():
         """
         template_file = os.path.join(self.sdk, "tornado-argfile.template")
         output_file = os.path.join(self.sdk, "tornado-argfile")
+
+        # Rebuild the template against the JDK running RIGHT NOW rather than reusing the one the
+        # build left behind. The flags it holds are JDK-specific -- -XX:+EnableJVMCI and the jvmci
+        # --patch-module on 22-26, the vendored jvmci module-path entry on 27+ -- while the SDK
+        # itself is not: one jdk22plus SDK serves every JDK from 22 up. Expanding a template
+        # produced under the build JDK therefore hands a JDK-26-shaped command line to a JDK 27
+        # JVM, which rejects it outright ("Unrecognized VM option 'EnableJVMCI'"). Callers already
+        # expect this: kfusion's run.sh regenerates before every launch precisely so the flags
+        # match its JAVA_HOME.
+        self.regenerateArgfileTemplate()
 
         if not os.path.exists(template_file):
             print(f"[ERROR] Argfile is not found in TORNADOVM_HOME")
@@ -1328,15 +1204,29 @@ class TornadoVMRunnerTool():
                         lines[i] = line.replace(':', ';')
                 expanded = '\n'.join(lines)
 
+            # Stamp the JDK this was generated for. An argfile is a static file, but the flags in
+            # it are NOT JDK-neutral: -XX:+EnableJVMCI is required on JDK <=26 and is a fatal
+            # unrecognized option on 27+, and the jvmci --patch-module applies only on 22-26. A
+            # jdk22plus SDK is explicitly built once and run on many JDKs, so an argfile carried
+            # over from another JDK fails with "Unrecognized VM option 'EnableJVMCI'". Java
+            # argfiles support # comments, so say so in the file itself -- whoever debugs that
+            # error will open this file first.
+            header = (
+                f"# Generated by 'tornado --generate-argfile' for JDK {self.java_version}.\n"
+                f"# JDK-SPECIFIC: re-run 'tornado --generate-argfile' after switching JDK.\n"
+                f"# (EnableJVMCI is required on JDK <=26 and fatal on 27+.)\n"
+            )
+
             # Write expanded argfile
             with open(output_file, 'w') as f:
-                f.write(expanded)
+                f.write(header + expanded)
 
-            print(f"[INFO] Generated argfile at: {output_file}")
+            print(f"[INFO] Generated argfile at: {output_file} (for JDK {self.java_version})")
             if os.name == 'nt':
                 print(f"[INFO] You can now use: java @%TORNADOVM_HOME%\\tornado-argfile -cp <classpath> <MainClass>")
             else:
                 print(f"[INFO] You can now use: java @$TORNADOVM_HOME/tornado-argfile -cp <classpath> <MainClass>")
+            print(f"[INFO] Regenerate it after switching JDK -- the flags above are JDK-specific.")
 
         except subprocess.CalledProcessError as e:
             print(f"[ERROR] Failed to generate argfile")
@@ -1385,83 +1275,65 @@ class TornadoVMRunnerTool():
             params += args.param15 + " "
         return params
 
-    def buildJavaCommand(self, args):
+    def buildJavaCommand(self, args, raw=False):
         tornadoFlags = self.buildTornadoVMOptions(args)
-        if (self.isTruffleCommand):
-            tornadoAddModules = __TORNADOVM_ADD_MODULES__.replace("--", "--vm.-").replace(" ",
-                                                                                          "=") + ",tornado.examples"
-        else:
-            tornadoAddModules = __TORNADOVM_ADD_MODULES__
+        tornadoAddModules = __TORNADOVM_ADD_MODULES__
 
         javaFlags = ""
         if (args.enableAssertions):
             javaFlags = javaFlags + __GRAAL_ENABLE_ASSERTIONS__
 
-        if (self.isTruffleCommand):
-            javaFlags = javaFlags + " " + __TRUFFLE_BASE_OPTIONS__
+        if (self.jvmci_absent):
+            javaFlags = javaFlags + " " + __JAVA_BASE_OPTIONS_NO_JVMCI__
         else:
             javaFlags = javaFlags + " " + __JAVA_BASE_OPTIONS__
+            if (self.sdk_jdk_preview):
+                javaFlags = javaFlags + __JAVA_PREVIEW_OPTION__
 
         javaFlags = javaFlags + tornadoFlags + __TORNADOVM_PROVIDERS__ + " "
 
-        upgradeModulePath = "--upgrade-module-path " + self.sdk + "/share/java/graalJars "
-
-        if (self.isGraalVM == False):
-            javaFlags = javaFlags + upgradeModulePath
+        # share/java/graalJars goes on --upgrade-module-path as a WHOLE (see above), and that
+        # includes tornado-graal-<ver>.jar. The directory holds two kinds of module:
+        #
+        #   org.graalvm.word / .collections / .truffle.compiler   original names, not relocated
+        #   tornado.graal                                          TornadoVM's relocated compiler
+        #
+        # Only the first kind NEEDS the upgrade path: under a GraalVM-branded JAVA_HOME the platform
+        # ships modules of those names, and JPMS resolves a same-named system module before ever
+        # consulting --module-path, so a plain --module-path entry is silently ignored in favour of
+        # the platform's copy. tornado.graal has a unique name and would resolve from either path.
+        #
+        # It stays on the upgrade path anyway because the two are shipped in one directory and
+        # splitting them buys nothing: a module on --upgrade-module-path is added to the boot layer
+        # whether or not it shadows a platform module. Do NOT narrow this entry to the org.graalvm.*
+        # jars on the assumption that tornado.graal is carried by --module-path -- it is not on any
+        # other path, and dropping it fails at boot layer creation with
+        # "FindException: Module tornado.graal not found, required by tornado.runtime".
+        # Verified end to end: jdk22plus SDK on JDK 25/26/27 and jdk21 SDK on JDK 21 all compile and
+        # execute kernels with graalJars reachable only from --upgrade-module-path.
 
         javaFlags = javaFlags + __JAVA_GC__
 
         common = self.sdk + __COMMON_EXPORTS__
         opencl = self.sdk + __OPENCL_EXPORTS__
-        ptx = self.sdk + __PTX_EXPORTS__
-        spirv = self.sdk + __SPIRV_EXPORTS__
         metal = self.sdk + __METAL_EXPORTS__
         cuda = self.sdk + __CUDA_EXPORTS__
 
-        if (self.isTruffleCommand):
-            common = self.truffleCompatibleExports(common)
-            opencl = self.truffleCompatibleExports(opencl)
-            ptx = self.truffleCompatibleExports(ptx)
-            spirv = self.truffleCompatibleExports(spirv)
-            metal = self.truffleCompatibleExports(metal)
-            cuda = self.truffleCompatibleExports(cuda)
-
-        # For Truffle, exports are already expanded inline (no @ prefix needed)
-        # For Java, use @ to read from file
-        if (self.isTruffleCommand):
-            javaFlags = javaFlags + " " + common + " "
-            if ("opencl-backend" in self.listOfBackends):
-                javaFlags = javaFlags + opencl + " "
-                tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
-            if ("spirv-backend" in self.listOfBackends):
-                javaFlags = javaFlags + opencl + " " + spirv + " "
-                tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
-            if ("ptx-backend" in self.listOfBackends):
-                javaFlags = javaFlags + ptx + " "
-                tornadoAddModules = tornadoAddModules + "," + __PTX_MODULE__
-            if ("metal-backend" in self.listOfBackends):
-                javaFlags = javaFlags + metal + " "
-                tornadoAddModules = tornadoAddModules + "," + __METAL_MODULE__
-            if ("cuda-backend" in self.listOfBackends):
-                javaFlags = javaFlags + cuda + " "
-                tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__ + "," + __CUBLAS_MODULE__ + "," + __CUFFT_MODULE__ + "," + __CUDNN_MODULE__ + "," + __CUSPARSE_MODULE__ + "," + __CUTLASS_MODULE__
-        else:
-            javaFlags = javaFlags + " @" + common + " "
-            if ("opencl-backend" in self.listOfBackends):
-                javaFlags = javaFlags + "@" + opencl + " "
-                tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
-            if ("spirv-backend" in self.listOfBackends):
-                javaFlags = javaFlags + "@" + opencl + " @" + spirv + " "
-                tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
-            if ("ptx-backend" in self.listOfBackends):
-                javaFlags = javaFlags + "@" + ptx + " "
-                tornadoAddModules = tornadoAddModules + "," + __PTX_MODULE__
-            if ("metal-backend" in self.listOfBackends):
-                javaFlags = javaFlags + "@" + metal + " "
-                tornadoAddModules = tornadoAddModules + "," + __METAL_MODULE__
-            if ("cuda-backend" in self.listOfBackends):
-                javaFlags = javaFlags + "@" + cuda + " "
-                tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__ + "," + __CUBLAS_MODULE__ + "," + __CUFFT_MODULE__ + "," + __CUDNN_MODULE__ + "," + __CUSPARSE_MODULE__ + "," + __CUTLASS_MODULE__
+        javaFlags = javaFlags + " @" + common + " "
+        # The backends and the library-task providers reach their native libraries through
+        # java.lang.foreign rather than a JNI library of their own, and every one of those lookups
+        # goes through tornado.runtime. Those are restricted methods, so without this the lookup
+        # fails outright (JDK 21) or warns on every run.
+        javaFlags = javaFlags + __ENABLE_NATIVE_ACCESS__ + __FFM_MODULE__ + " "
+        if ("opencl-backend" in self.listOfBackends):
+            javaFlags = javaFlags + "@" + opencl + " "
+            tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
+        if ("metal-backend" in self.listOfBackends):
+            javaFlags = javaFlags + "@" + metal + " "
+            tornadoAddModules = tornadoAddModules + "," + __METAL_MODULE__
+        if ("cuda-backend" in self.listOfBackends):
+            javaFlags = javaFlags + "@" + cuda + " "
+            tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__ + "," + __CUBLAS_MODULE__ + "," + __CUFFT_MODULE__ + "," + __CUDNN_MODULE__ + "," + __CUSPARSE_MODULE__ + "," + __CUTLASS_MODULE__
 
         javaFlags = javaFlags + tornadoAddModules + " "
 
@@ -1477,10 +1349,7 @@ class TornadoVMRunnerTool():
             except:
                 javaFlags = javaFlags + " "
 
-        if (self.isTruffleCommand):
-            executionFlags = self.truffleCompatibleFlags(javaFlags)
-        else:
-            executionFlags = javaFlags
+        executionFlags = javaFlags
 
         if os.name == 'nt':
             # -Dstdout.encoding=UTF-8 (see the generated argfile) makes the JVM
@@ -1492,35 +1361,22 @@ class TornadoVMRunnerTool():
             # characters (e.g. the checkmark in "Validation PASSED" renders as
             # mojibake instead of a '?' substitution or the correct glyph).
             # Properly quote the command path if it contains spaces.
+            # raw=True skips the chcp/quoting wrapper: --printJavaFlags (and any other
+            # caller that wants a plain "<java> <flags...>" listing rather than an
+            # os.system()-ready shell command) needs self.cmd's bare "...\\bin\\java"
+            # token so consumers that strip the leading java binary by checking
+            # flags[0].endswith("java"/"java.exe") - e.g.
+            # gen-tornado-argfile-template.py's get_tornado_flags() - actually match it.
+            # Otherwise the printed string starts with "chcp 65001 >nul && \"<path>\"
+            # <flags>", and since "chcp" isn't stripped, it ends up as the first token
+            # of the generated tornado-argfile - which `java @argfile` then treats as
+            # the main class name (ClassNotFoundException: chcp) once it hits it before
+            # any following -cp/main-class arguments on the actual command line.
+            if raw:
+                return self.cmd + " " + executionFlags
             return 'chcp 65001 >nul && "' + self.cmd + '" ' + executionFlags
         else:
             return self.cmd + " " + executionFlags
-
-    def truffleCompatibleExports(self, exportFile):
-        data = Path(exportFile).read_text()
-        # ignore the header of the file
-        data = re.sub(r'(?m)^\#.*\n?', "", data)
-        # make exports compatible with truffle
-        data = data.replace('--add', '--vm.-add').replace(' ', '=').replace('\n', ' ')
-        return data
-
-    def truffleCompatibleFlags(self, javaFlags):
-        flags = javaFlags.split()
-        truffleFlags = ""
-        for flag in flags:
-            if (flag.startswith("--vm") or flag == "--jvm" or flag == "--polyglot"):
-                truffleFlags = truffleFlags + flag + " "
-            elif (flag.startswith("-D")):
-                truffleFlags = truffleFlags + flag.replace("-D", "--vm.D") + " "
-            elif (flag.startswith("--module")):
-                truffleFlags = truffleFlags + "--vm.-module-path="
-            elif (flag.startswith("--")):
-                truffleFlags = truffleFlags + flag.replace("--", "--vm.-") + " "
-            elif (flag.startswith("-")):
-                truffleFlags = truffleFlags + flag.replace("-", "--vm.") + " "
-            elif (flag != "@"):
-                truffleFlags = truffleFlags + flag + " "
-        return truffleFlags
 
     def executeCommand(self, args):
         javaFlags = self.buildJavaCommand(args)
@@ -1531,7 +1387,7 @@ class TornadoVMRunnerTool():
             sys.exit(0)
 
         if (args.printFlags):
-            print(javaFlags)
+            print(self.buildJavaCommand(args, raw=True))
             sys.exit(0)
 
         if (args.generate_argfile):
@@ -1588,7 +1444,7 @@ def parseArguments():
     parser.add_argument('--igvLowTier', action="store_true", dest="igvLowTier", default=False,
                         help="Debug Low Tier Compilation Graphs using Ideal Graph Visualizer (IGV)")
     parser.add_argument('--printKernel', '-pk', action="store_true", dest="printKernel", default=False,
-                        help="Print generated kernel (OpenCL, PTX or SPIR-V)")
+                        help="Print generated kernel (OpenCL, CUDA or Metal)")
     parser.add_argument('--printBytecodes', '-pbc', action="store_true", dest="printBytecodes", default=False,
                         help="Print the generated TornadoVM bytecodes from the Task-Graphs")
     parser.add_argument('--enableProfiler', action="store", dest="enable_profiler", default=None,
@@ -1616,8 +1472,6 @@ def parseArguments():
     parser.add_argument('--params', action="store", dest="application_parameters", default=None,
                         help="Command-line parameters for the host-application. Example: --params=\"param1 param2...\"")
     parser.add_argument("application", nargs="?")
-    parser.add_argument("--truffle", action="store", dest="truffle_language", default=None,
-                        help="Enable Truffle languages through TornadoVM. Example: --truffle python|r|js")
     parser.add_argument('--dumpBC', action="store", dest="dump_bytecodes_dir", default=None,
                         help="Dump the TornadoVM bytecodes to a directory")
     parser.add_argument('--generate-argfile', action="store_true", dest="generate_argfile", default=False,

@@ -47,8 +47,6 @@ public interface CUDADeviceContextInterface extends TornadoDeviceContext {
 
     CUDAInstalledCode installCode(long executionPlanId, TaskDataContext meta, String id, String entryPoint, byte[] code);
 
-    CUDAInstalledCode installCode(long executionPlanId, String id, String entryPoint, byte[] code, boolean printKernel);
-
     boolean isKernelAvailable(long executionPlanId);
 
     void reset(long executionPlanId);

@@ -53,6 +53,16 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     void scheduleInner();
 
+    /**
+     * Allocates this task-graph's buffers and uploads its inputs, without running any task.
+     */
+    void transferDataToDevice(ExecutorFrame executionPackage);
+
+    /**
+     * Uploads the current host contents of the given objects, without running anything.
+     */
+    void transferDataToDevice(ExecutorFrame executionPackage, Object... objects);
+
     void withBatch(String batchSize);
 
     void withCUDAGraph();
@@ -146,6 +156,13 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
     void updateObjectAccess();
 
     void setLastExecutedTaskGraph(TornadoTaskGraphInterface lastExecutedTaskGraph);
+
+    /**
+     * Registers the other task-graphs of the same execution plan, so that
+     * {@code consumeFromDevice(producerName, ...)} can resolve its named producer directly instead of
+     * relying on the producer being the previously executed graph.
+     */
+    void setPlanTaskGraphs(java.util.List<TornadoTaskGraphInterface> planTaskGraphs);
 
     boolean isGridRegistered();
 

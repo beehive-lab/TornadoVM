@@ -30,16 +30,17 @@ import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanRead
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableFreq;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
+import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceInfo;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLLocalMemType;
+import uk.ac.manchester.tornado.drivers.opencl.ffm.OpenCLAPI;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class OCLDevice implements OCLTargetDevice {
 
@@ -76,11 +77,6 @@ public class OCLDevice implements OCLTargetDevice {
     private OCLLocalMemType localMemoryType;
     private int deviceVendorID;
     private OCLDeviceContextInterface deviceContext;
-    private float spirvVersion = SPIRV_VERSION_INIT;
-
-    private static final int SPIRV_VERSION_INIT = -1;
-    private static final int SPIRV_NOT_SUPPORTED = -2;
-    private static final float SPIRV_SUPPPORTED = TornadoOptions.SPIRV_VERSION_SUPPORTED;
 
     public OCLDevice(int index, long devicePointer) {
         this.index = index;
@@ -145,7 +141,17 @@ public class OCLDevice implements OCLTargetDevice {
         getDeviceVendorId();
     }
 
-    static native void clGetDeviceInfo(long id, int info, byte[] buffer);
+    /** Reusable per-thread native buffer the driver answers info queries into. */
+    private static final FFMSupport.Staging INFO_STAGING = new FFMSupport.Staging();
+
+    static void clGetDeviceInfo(long id, int info, byte[] buffer) {
+        Arrays.fill(buffer, (byte) 0);
+        MemorySegment value = INFO_STAGING.forBytes(buffer.length);
+        if (OpenCLAPI.clGetDeviceInfo(id, info, buffer.length, value, MemorySegment.NULL) != OpenCLAPI.CL_SUCCESS) {
+            return;
+        }
+        MemorySegment.copy(value, FFMSupport.C_CHAR, 0, buffer, 0, buffer.length);
+    }
 
     public long getDevicePointer() {
         return devicePtr;
@@ -445,42 +451,6 @@ public class OCLDevice implements OCLTargetDevice {
     @Override
     public int deviceVersion() {
         return Integer.parseInt(getVersion().split(" ")[1].replace(".", "")) * 10;
-    }
-
-    @Override
-    public boolean isSPIRVSupported() {
-        if (spirvVersion == SPIRV_NOT_SUPPORTED) {
-            // We query the device properties and the current device does not support
-            // OpenCL 1.2 or higher. 
-            return false;
-        } else if (spirvVersion > 0) {
-            // We query the device properties and the device supports at least SPIR-V 1.2.
-            return spirvVersion >= SPIRV_SUPPPORTED;
-        } else {
-            // Query the device properties and parse the version
-            queryOpenCLAPI(OCLDeviceInfo.CL_DEVICE_IL_VERSION.getValue());
-            String versionQuery = new String(buffer.array(), StandardCharsets.US_ASCII);
-            if (versionQuery.isEmpty()) {
-                return false;
-            }
-            String[] spirvVersions = versionQuery.trim().split(" ");
-            // We iterate through all supported versions and check there
-            // is support for SPIR-V >= 1.2
-            for (String version : spirvVersions) {
-                if (!version.isEmpty()) {
-                    String v = version.split("_")[1];
-                    try {
-                        spirvVersion = Float.parseFloat(v);
-                        return spirvVersion >= SPIRV_SUPPPORTED;
-                    } catch (NumberFormatException e) {
-                    }
-                }
-            }
-            // if all versions have been visited and none of them is >= 1.2
-            // then, we return false;
-            spirvVersion = SPIRV_NOT_SUPPORTED;
-            return false;
-        }
     }
 
     public int getWordSize() {

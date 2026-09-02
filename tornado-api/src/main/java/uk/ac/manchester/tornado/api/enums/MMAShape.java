@@ -18,7 +18,7 @@
 package uk.ac.manchester.tornado.api.enums;
 
 /**
- * Supported mma.sync tile shapes for TornadoVM's PTX and CUDA backends.
+ * Supported mma.sync tile shapes for TornadoVM's CUDA backend.
  *
  * <p>A shape is only the M/N/K tile geometry; the operand element type comes from
  * the KernelContext method used:

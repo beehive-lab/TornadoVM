@@ -30,6 +30,11 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 /**
+ * Parallel reduction that stores partial sums in global memory.
+ * <p>
+ * A 1D {@code WorkerGrid} runs the KernelContext reduction, then a second
+ * task folds the partials. The result copies back on every execution.
+ * </p>
  * <p>
  * How to run?
  * </p>

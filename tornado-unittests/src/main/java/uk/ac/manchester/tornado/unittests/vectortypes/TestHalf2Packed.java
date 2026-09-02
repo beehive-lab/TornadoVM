@@ -30,6 +30,7 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
@@ -217,6 +218,8 @@ public class TestHalf2Packed extends TornadoTestBase {
 
     @Test
     public void testDotRowsFloatAccumulate() throws TornadoExecutionPlanException {
+        // Packed half2 lane extraction is not supported on the Metal backend.
+        assertNotBackend(TornadoVMBackendType.METAL);
         final int rowSize = 128;
         final int numRows = NUM_ELEMENTS / rowSize;
         HalfFloatArray a = createSequenceArray(NUM_ELEMENTS, 0.25f);
@@ -244,6 +247,9 @@ public class TestHalf2Packed extends TornadoTestBase {
 
     @Test
     public void testLocalTileDot() throws TornadoExecutionPlanException {
+        // Half2 local-memory arrays are unsupported on OpenCL (no half2 storage).
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.METAL);
         final int numPairs = NUM_ELEMENTS / 2;
         HalfFloatArray a = createSequenceArray(NUM_ELEMENTS, 0.25f);
         HalfFloatArray b = createSequenceArray(NUM_ELEMENTS, 0.5f);

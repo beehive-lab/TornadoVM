@@ -33,22 +33,22 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ValueKind;
-import org.graalvm.compiler.core.common.CompressEncoding;
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.calc.Condition;
-import org.graalvm.compiler.core.common.memory.BarrierType;
-import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
-import org.graalvm.compiler.core.common.spi.CodeGenProviders;
-import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
-import org.graalvm.compiler.core.common.type.Stamp;
-import org.graalvm.compiler.lir.ConstantValue;
-import org.graalvm.compiler.lir.LIRFrameState;
-import org.graalvm.compiler.lir.LIRInstruction;
-import org.graalvm.compiler.lir.LabelRef;
-import org.graalvm.compiler.lir.SwitchStrategy;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.lir.gen.LIRGenerationResult;
-import org.graalvm.compiler.lir.gen.LIRGenerator;
+import tornado.graal.compiler.core.common.CompressEncoding;
+import tornado.graal.compiler.core.common.LIRKind;
+import tornado.graal.compiler.core.common.calc.Condition;
+import tornado.graal.compiler.core.common.memory.BarrierType;
+import tornado.graal.compiler.core.common.memory.MemoryOrderMode;
+import tornado.graal.compiler.core.common.spi.CodeGenProviders;
+import tornado.graal.compiler.core.common.spi.ForeignCallLinkage;
+import tornado.graal.compiler.core.common.type.Stamp;
+import tornado.graal.compiler.lir.ConstantValue;
+import tornado.graal.compiler.lir.LIRFrameState;
+import tornado.graal.compiler.lir.LIRInstruction;
+import tornado.graal.compiler.lir.LabelRef;
+import tornado.graal.compiler.lir.SwitchStrategy;
+import tornado.graal.compiler.lir.Variable;
+import tornado.graal.compiler.lir.gen.LIRGenerationResult;
+import tornado.graal.compiler.lir.gen.LIRGenerator;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.cuda.CUDATargetDescription;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDALIRKindTool;
@@ -278,14 +278,36 @@ public class CUDALIRGenerator extends LIRGenerator {
         append(new CUDAControlFlow.SwitchOp(key, strategy.getKeyConstants(), keyTargets, defaultTarget));
     }
 
+    /**
+     * Graal picks this lowering over {@link #emitStrategySwitch} once the keys are dense enough to
+     * be worth a jump table. A jump table is a machine-code notion, though, and this backend emits
+     * C source, so the right output is the same {@code switch} statement in either case - what to
+     * do with it is the C compiler's decision.
+     *
+     * <p>
+     * Emitting nothing here is not an option: the case labels come from
+     * {@code CUDAStructuredControlFlow}, which reads them off the {@code IntegerSwitchNode} in the
+     * HIR, so without this the kernel gets case labels with no enclosing switch. NVRTC rejects it
+     * and TornadoVM falls back to running the method on the host - which silently yields wrong
+     * results whenever the data it reads is device-resident.
+     * </p>
+     */
     @Override
     protected void emitRangeTableSwitch(int lowKey, LabelRef defaultTarget, LabelRef[] targets, AllocatableValue key) {
-
+        JavaConstant[] keyConstants = new JavaConstant[targets.length];
+        for (int i = 0; i < targets.length; i++) {
+            keyConstants[i] = JavaConstant.forInt(lowKey + i);
+        }
+        append(new CUDAControlFlow.SwitchOp(key, keyConstants, targets, defaultTarget));
     }
 
+    /**
+     * As {@link #emitRangeTableSwitch}: the hashed form exists to index a table, which a C
+     * {@code switch} on the original value expresses directly. The hash itself is unused.
+     */
     @Override
     protected void emitHashTableSwitch(JavaConstant[] keys, LabelRef defaultTarget, LabelRef[] targets, AllocatableValue value, Value hash) {
-
+        append(new CUDAControlFlow.SwitchOp(value, keys, targets, defaultTarget));
     }
 
     @Override

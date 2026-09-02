@@ -67,6 +67,21 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
         }
     }
 
+
+    /**
+     * Whether cuDNN can actually be reached on this host. The ops surface no longer ships a JNI
+     * library of its own, so this is a question about the cuDNN installation; the fused SDPA path,
+     * which does still need a shim, reports its own absence when it is used.
+     */
+    public static boolean isAvailable() {
+        try {
+            CuDnnNativeLib.load();
+            return true;
+        } catch (RuntimeException e) {
+            return false;
+        }
+    }
+
     @Override
     public String libraryName() {
         return CuDnn.LIBRARY_NAME;
@@ -154,6 +169,9 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
         String planKey = b + ":" + h + ":" + sQ + ":" + sKv + ":" + d + ":" + scale + ":" + causal;
         Long plan = context.sdpaPlanCache.get(planKey);
         if (plan == null) {
+            // Only this path needs the remaining JNI shim, so it is loaded here rather than with
+            // the provider: the other cuDNN ops work without it.
+            CuDnnNativeLib.loadSdpaShim();
             plan = CuDnnNativeLib.createSdpaPlan(context.handle, b, h, sQ, sKv, d, scale, causal);
             if (plan == 0) {
                 throw new TornadoRuntimeException("[ERROR] cuDNN SDPA plan creation failed for " + planKey + " (requires Ampere+, head dim multiple of 8, <= 256)");

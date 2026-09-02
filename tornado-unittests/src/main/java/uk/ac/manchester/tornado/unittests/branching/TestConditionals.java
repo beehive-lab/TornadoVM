@@ -189,6 +189,32 @@ public class TestConditionals extends TornadoTestBase {
         }
     }
 
+    // Intentional fallthrough: case 10 has no `break`, so it also executes case 20's body.
+    public static void switchFallthrough(IntArray a) {
+        for (int i = 0; i < a.getSize(); i++) {
+            int value = a.get(i);
+            int acc = 0;
+            switch (value) {
+                case 10:
+                    acc += 1;
+                case 20:
+                    acc += 100;
+                    break;
+                default:
+                    acc = -1;
+            }
+            a.set(i, acc);
+        }
+    }
+
+    public static void tripleNestedTernary(IntArray a, IntArray out) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            int v = a.get(i);
+            int result = (v < 10) ? 1 : (v < 20) ? 2 : (v < 30) ? 3 : 4;
+            out.set(i, result);
+        }
+    }
+
     public static void integerTestMove(IntArray output, int dimensionSize) {
         for (@Parallel int i = 0; i < dimensionSize; i++) {
             for (@Parallel int j = 0; j < dimensionSize; j++) {
@@ -476,6 +502,60 @@ public class TestConditionals extends TornadoTestBase {
     }
 
     @Test
+    public void testSwitchFallthrough() throws TornadoExecutionPlanException {
+        final int size = 16;
+        IntArray a = new IntArray(size);
+        // half the values hit case 10 (falls through into case 20), half hit case 20 directly,
+        // and one hits default -- exercises all three paths in the same run.
+        for (int i = 0; i < size; i++) {
+            a.set(i, (i % 3 == 0) ? 10 : (i % 3 == 1) ? 20 : 99);
+        }
+        IntArray expected = new IntArray(size);
+        for (int i = 0; i < size; i++) {
+            expected.set(i, a.get(i));
+        }
+        switchFallthrough(expected);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestConditionals::switchFallthrough, a) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(expected.get(i), a.get(i));
+        }
+    }
+
+    @Test
+    public void testTripleNestedTernary() throws TornadoExecutionPlanException {
+        final int size = 40;
+        IntArray a = new IntArray(size);
+        for (int i = 0; i < size; i++) {
+            a.set(i, i);
+        }
+        IntArray out = new IntArray(size);
+        IntArray expected = new IntArray(size);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestConditionals::tripleNestedTernary, a, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        tripleNestedTernary(a, expected);
+        for (int i = 0; i < size; i++) {
+            assertEquals(expected.get(i), out.get(i));
+        }
+    }
+
+    @Test
     public void testSwitch6() throws TornadoExecutionPlanException {
         final int size = 8192;
         IntArray a = new IntArray(size);
@@ -567,7 +647,6 @@ public class TestConditionals extends TornadoTestBase {
 
     @Test
     public void testConditionalShortCircuit() {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         IntArray testArr = new IntArray(8);
 
         // When using the kernel-parallel API, we need to create a Grid and a Worker

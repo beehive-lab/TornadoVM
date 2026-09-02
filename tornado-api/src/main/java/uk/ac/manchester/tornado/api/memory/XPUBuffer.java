@@ -49,6 +49,18 @@ public interface XPUBuffer {
 
     int enqueueRead(long executionPlanId, Object reference, long hostOffset, int[] events, boolean useDeps);
 
+    /**
+     * Whether {@link #enqueueRead} copies out exactly what {@link #read} would, so that a caller
+     * may issue the read without waiting for it and synchronise the device later instead.
+     *
+     * <p>Defaults to {@code false}: several implementations (field buffers, for instance) support
+     * the blocking read only, and would silently copy the wrong bytes - or nothing at all - if the
+     * asynchronous variant were used in its place.
+     */
+    default boolean supportsAsyncRead() {
+        return false;
+    }
+
     List<Integer> enqueueWrite(long executionPlanId, Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps);
 
     void allocate(Object reference, long batchSize, Access access) throws TornadoOutOfMemoryException, TornadoMemoryException;

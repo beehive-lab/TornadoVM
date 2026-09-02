@@ -182,7 +182,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      */
     public TornadoExecutionResult execute() {
         tornadoExecutor.execute(executionFrame);
-        TornadoProfilerResult profilerResult = new TornadoProfilerResult(tornadoExecutor, this.getTraceExecutionPlan());
+        TornadoProfilerResult profilerResult = new TornadoProfilerResult(tornadoExecutor, this::getTraceExecutionPlan);
         TornadoExecutionResult executionResult = new TornadoExecutionResult(profilerResult);
         planResults.add(executionResult);
         tornadoExecutor.updateLastExecutedTaskGraph();
@@ -447,7 +447,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     /**
      * Reset the execution context for the current execution plan. The TornadoVM
      * runtime system will clean the code cache and all events associated with the
-     * current execution. It resets the internal GPU/FPGA/CPU execution context to
+     * current execution. It resets the internal GPU/CPU execution context to
      * its default values.
      *
      * @return {@link TornadoExecutionPlan}
@@ -636,8 +636,50 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         return new WithWarmUpIterations(this, iterations);
     }
 
+    /**
+     * Uploads this plan's inputs to the device without running it: buffers are allocated and every
+     * declared copy-in is performed, while the tasks themselves are skipped. The data is on the
+     * device when the call returns.
+     *
+     * <p>This is the copy-in counterpart of
+     * {@link TornadoExecutionResult#transferToHost(Object...)}. It exists for plans whose inputs
+     * are large and stable - model weights, lookup tables, a mesh - where the first execution
+     * would otherwise pay the whole upload, and where the alternative today is to run the plan once
+     * on dummy data purely to make the transfer happen.
+     *
+     * <p>Applies to every task-graph of the plan. Objects declared
+     * {@link uk.ac.manchester.tornado.api.enums.DataTransferMode#FIRST_EXECUTION} are uploaded once
+     * and will not be re-uploaded by the first real execution; objects declared
+     * {@code EVERY_EXECUTION} are uploaded here as well and again on each execution, as their mode
+     * says.
+     *
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan transferToDevice() {
+        tornadoExecutor.transferDataToDevice(executionFrame);
+        return this;
+    }
+
+    /**
+     * Uploads the current host contents of the given objects to the device, without running the
+     * plan. Use it to refresh one input between executions, or to place an input before the first
+     * one, when running the plan is not what you want.
+     *
+     * <p>Each object is uploaded by the task-graphs of this plan that take it as a parameter;
+     * graphs that do not know it ignore it. The data is on the device when the call returns. An
+     * object that has no device buffer yet gets one, so this works before the plan has ever run.
+     *
+     * @param objects
+     *     Host objects to upload.
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan transferToDevice(Object... objects) {
+        tornadoExecutor.transferDataToDevice(executionFrame, objects);
+        return this;
+    }
+
     public TornadoExecutionPlan withCUDAGraph() {
-        //TODO: include a check to verify that the BACKEND is PTX
+        //TODO: include a check to verify that the BACKEND is CUDA
         tornadoExecutor.withCUDAGraph();
         return new WithCUDAGraph(this);
     }
@@ -647,8 +689,8 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * (e.g. H2D copies, kernels, D2H copies) are routed to separate role streams so they
      * may overlap, with cross-stream ordering preserved via device events derived from the
      * bytecode dependency DAG.
-     * Currently realised on the PTX and CUDA backends with CUDA streams.
-     * A no-op for OPENCL, METAL and SPIRV backends.
+     * Currently realised on the CUDA backend with CUDA streams.
+     * A no-op for OPENCL and METAL backends.
      * Default is off (single stream).
      *
      * @return {@link TornadoExecutionPlan}
@@ -677,8 +719,8 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * Only transfers that are non-batched, read-only and at least
      * {@code -Dtornado.staged.min.size} bytes (default 16MB) are staged; every other buffer keeps
      * the default direct path, including host pinning.
-     * Currently realised on the PTX and CUDA backends.
-     * A no-op for OPENCL, METAL and SPIRV backends.
+     * Currently realised on the CUDA backend.
+     * A no-op for OPENCL and METAL backends.
      * Default is off, and can also be enabled process-wide with
      * {@code -Dtornado.staged.transfers=true}.
      *

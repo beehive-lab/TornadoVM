@@ -25,13 +25,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.graalvm.compiler.core.common.cfg.Loop;
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.graph.iterators.NodeIterable;
-import org.graalvm.compiler.nodes.IfNode;
-import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
-import org.graalvm.compiler.nodes.cfg.HIRBlock;
-import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
+import tornado.graal.compiler.core.common.cfg.Loop;
+import tornado.graal.compiler.graph.Node;
+import tornado.graal.compiler.graph.iterators.NodeIterable;
+import tornado.graal.compiler.nodes.IfNode;
+import tornado.graal.compiler.nodes.cfg.ControlFlowGraph;
+import tornado.graal.compiler.nodes.cfg.HIRBlock;
+import tornado.graal.compiler.nodes.extended.IntegerSwitchNode;
 
 import jdk.vm.ci.meta.JavaConstant;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;

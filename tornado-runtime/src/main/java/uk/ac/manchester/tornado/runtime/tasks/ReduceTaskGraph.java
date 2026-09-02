@@ -25,8 +25,7 @@
  */
 package uk.ac.manchester.tornado.runtime.tasks;
 
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -36,11 +35,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.graalvm.compiler.graph.Graph;
-import org.graalvm.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.graph.Graph;
+import tornado.graal.compiler.nodes.StructuredGraph;
 
-import jdk.vm.ci.code.InstalledCode;
-import jdk.vm.ci.code.InvalidInstalledCodeException;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -58,15 +55,14 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.analyzer.CodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceTasks;
 import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis.REDUCE_OPERATION;
+import uk.ac.manchester.tornado.runtime.analyzer.TaskUtils;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils;
 import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils.BackendSelectionContainer;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 class ReduceTaskGraph {
 
@@ -138,7 +134,7 @@ class ReduceTaskGraph {
     }
 
     /**
-     * It computes the right local work group size for GPUs/FPGAs.
+     * It computes the right local work group size for GPUs.
      *
      * @param device
      *     Input device.
@@ -155,7 +151,7 @@ class ReduceTaskGraph {
         int maxBlockSize = (int) device.getDeviceMaxWorkgroupDimensions()[0];
 
         if (maxBlockSize <= 0) {
-            // Due to a bug on Xilinx platforms, this value can be -1. In that case, we
+            // On some platforms this value can be -1. In that case, we
             // setup the block size to the default value.
             return DEFAULT_GPU_WORK_GROUP;
         }
@@ -169,42 +165,6 @@ class ReduceTaskGraph {
             value--;
         }
         return value;
-    }
-
-    private static void inspectBinariesFPGA(String taskScheduleName, String graphName, String taskName, boolean sequential) {
-        String idTaskGraph = graphName + "." + taskName;
-        StringBuilder originalBinaries = TornadoOptions.FPGA_BINARIES;
-        if (originalBinaries != null) {
-            String[] binaries = originalBinaries.toString().split(",");
-            if (binaries.length == 1) {
-                binaries = MetaDataUtils.processPrecompiledBinariesFromFile(binaries[0]);
-                StringBuilder sb = new StringBuilder();
-                for (String binary : binaries) {
-                    sb.append(binary.replace(" ", "")).append(",");
-                }
-                sb = sb.deleteCharAt(sb.length() - 1);
-                originalBinaries = new StringBuilder(sb.toString());
-            }
-
-            for (int i = 0; i < binaries.length; i += 2) {
-                String givenTaskName = binaries[i + 1].split(".device")[0];
-                if (givenTaskName.equals(idTaskGraph)) {
-                    BackendSelectionContainer info = MetaDataUtils.resolveDriverDeviceIndexes(MetaDataUtils.getProperty(idTaskGraph + ".device"));
-                    int deviceNumber = info.deviceIndex();
-
-                    if (!sequential) {
-                        originalBinaries.append("," + binaries[i] + "," + taskScheduleName + "." + taskName + ".device=0:" + deviceNumber);
-                    } else {
-                        originalBinaries.append("," + binaries[i] + "," + taskScheduleName + "." + SEQUENTIAL_TASK_REDUCE_NAME + counterSeqName + ".device=0:" + deviceNumber);
-                    }
-                }
-            }
-            TornadoOptions.FPGA_BINARIES = originalBinaries;
-        }
-    }
-
-    private boolean isAheadOfTime() {
-        return TornadoOptions.FPGA_BINARIES != null;
     }
 
     private BackendSelectionContainer changeDriverAndDeviceIfNeeded(String taskScheduleName, String graphName, String taskName) {
@@ -286,7 +246,7 @@ class ReduceTaskGraph {
 
     /**
      * Returns true if the input size is not power of 2 and the target device is
-     * either the GPU or the FPGA.
+     * either the GPU or an accelerator.
      *
      * @param targetDeviceToRun
      *     index of the target device within the Tornado device list.
@@ -295,7 +255,7 @@ class ReduceTaskGraph {
     private boolean isTaskEligibleSplitHostAndDevice(final int targetDeviceToRun, final long elementsReductionLeftOver) {
         if (elementsReductionLeftOver > 0) {
             TornadoDeviceType deviceType = TornadoCoreRuntime.getTornadoRuntime().getBackend(0).getDevice(targetDeviceToRun).getDeviceType();
-            return (deviceType == TornadoDeviceType.GPU || deviceType == TornadoDeviceType.FPGA || deviceType == TornadoDeviceType.ACCELERATOR);
+            return (deviceType == TornadoDeviceType.GPU || deviceType == TornadoDeviceType.ACCELERATOR);
         }
         return false;
     }
@@ -311,11 +271,6 @@ class ReduceTaskGraph {
                 }
             });
         }
-    }
-
-    private ReduceCompilationThread createCompilationThread(final TaskPackage taskPackage, final int sizeTargetDevice) {
-        Object codeTask = taskPackage.getTaskParameters()[0];
-        return new ReduceCompilationThread(codeTask, sizeTargetDevice);
     }
 
     private void updateStreamInOutVariables(Map<Integer, MetaReduceTasks> tableReduce) {
@@ -362,19 +317,6 @@ class ReduceTaskGraph {
         }
     }
 
-    private boolean isDeviceAnAccelerator(final int deviceToRun) {
-        TornadoDeviceType deviceType = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getDevice(deviceToRun).getDeviceType();
-        return (deviceType == TornadoDeviceType.ACCELERATOR);
-    }
-
-    private void updateGlobalAndLocalDimensionsFPGA(final int deviceToRun, String taskScheduleReduceName, TaskPackage taskPackage, int inputSize) {
-        // Update GLOBAL and LOCAL workgroup size if device to run is the FPGA
-        if (isAheadOfTime() && isDeviceAnAccelerator(deviceToRun)) {
-            TornadoRuntimeProvider.setProperty(taskScheduleReduceName + "." + taskPackage.getId() + TaskDataContext.GLOBAL_WORKGROUP_SUFFIX, Integer.toString(inputSize));
-            TornadoRuntimeProvider.setProperty(taskScheduleReduceName + "." + taskPackage.getId() + TaskDataContext.LOCAL_WORKGROUP_SUFFIX, "64");
-        }
-    }
-
     private Object createHostArrayForHybridMode(Object originalReduceArray, TaskPackage taskPackage, int sizeTargetDevice) {
         hybridMode = true;
         if (hostHybridVariables == null) {
@@ -393,7 +335,7 @@ class ReduceTaskGraph {
      * final sequential reduction.
      * <p>
      * It also creates a new thread in the case the input size for the reduction is
-     * not power of two and the target device is either the FPGA or the GPU. In this
+     * not power of two and the target device is either an accelerator or the GPU. In this
      * case, the new thread will compile the host part with the corresponding
      * sub-range that does not fit into the power-of-two part.
      *
@@ -437,7 +379,6 @@ class ReduceTaskGraph {
                 backendToRun = selectionContainer.backendIndex();
                 deviceToRun = selectionContainer.deviceIndex();
             }
-            inspectBinariesFPGA(taskScheduleReduceName, graphName, taskPackage.getId(), false);
 
             if (tableReduce.containsKey(taskNumber)) {
 
@@ -456,8 +397,6 @@ class ReduceTaskGraph {
                     }
 
                     inputSize = metaReduceTasks.getInputSize(taskNumber);
-
-                    updateGlobalAndLocalDimensionsFPGA(deviceToRun, taskScheduleReduceName, taskPackage, inputSize);
 
                     // Analyse Input Size - if not power of 2 -> split host and device executions
                     boolean isInputPowerOfTwo = isPowerOfTwo(inputSize);
@@ -495,22 +434,17 @@ class ReduceTaskGraph {
                 streamReduceTable.put(taskNumber, streamReduceList);
 
                 if (hybridMode) {
-                    ReduceCompilationThread compilationThread = createCompilationThread(taskPackage, inputSize);
-                    compilationThread.start();
                     if (threadSequentialExecution == null) {
                         threadSequentialExecution = new ArrayList<>();
                     }
-
-                    HybridThreadMeta meta = new HybridThreadMeta(taskPackage, compilationThread);
                     if (hybridThreadMetas == null) {
                         hybridThreadMetas = new ArrayList<>();
                     }
-                    hybridThreadMetas.add(meta);
-
-                    SequentialExecutionThread sequentialExecutionThread = new SequentialExecutionThread(compilationThread, taskPackage, hostHybridVariables);
-                    threadSequentialExecution.add(sequentialExecutionThread);
-                    sequentialExecutionThread.start();
-                    hybridInitialized = true;
+                    // The host reduction is a fast reflective invoke; it must not run before
+                    // setNeutralElement() or its result is wiped by the neutral refill. The host thread is
+                    // therefore created and started only at the post-setNeutralElement site (leaving
+                    // hybridInitialized false here). inputSize is the power-of-two size reduced on the GPU.
+                    hybridThreadMetas.add(new HybridThreadMeta(taskPackage, inputSize));
                 }
             }
         }
@@ -571,7 +505,6 @@ class ReduceTaskGraph {
                         final String newTaskSequentialName = SEQUENTIAL_TASK_REDUCE_NAME + counterSeqName.get();
                         String fullName = rewrittenTaskGraph.getTaskGraphName() + "." + newTaskSequentialName;
                         TornadoRuntimeProvider.setProperty(fullName + ".device", backendToRun + ":" + deviceToRun);
-                        inspectBinariesFPGA(taskScheduleReduceName, graphName, taskPackage.getId(), true);
 
                         switch (operation) {
                             case SUM -> ReduceFactory.handleAdd(newArray, rewrittenTaskGraph, sizeReduceArray, newTaskSequentialName);
@@ -657,7 +590,7 @@ class ReduceTaskGraph {
             hybridInitialized = true;
             threadSequentialExecution.clear();
             for (HybridThreadMeta meta : hybridThreadMetas) {
-                threadSequentialExecution.add(new SequentialExecutionThread(meta.compilationThread, meta.taskPackage, hostHybridVariables));
+                threadSequentialExecution.add(new SequentialExecutionThread(meta.taskPackage, hostHybridVariables, meta.sizeTargetDevice));
             }
             threadSequentialExecution.forEach(Thread::start);
         }
@@ -809,73 +742,40 @@ class ReduceTaskGraph {
         }
     }
 
-    private static class ReduceCompilationThread extends Thread {
-        private final int sizeTargetDevice;
-        private final Object codeTask;
-        private InstalledCode code;
-        private boolean finished;
-
-        ReduceCompilationThread(Object codeTask, final int sizeTargetDevice) {
-            this.codeTask = codeTask;
-            this.sizeTargetDevice = sizeTargetDevice;
-        }
-
-        public InstalledCode getCode() {
-            return this.code;
-        }
-
-        public boolean isFinished() {
-            return finished;
-        }
-
-        @Override
-        public void run() {
-            StructuredGraph originalGraph = CodeAnalysis.buildHighLevelGraalGraph(codeTask);
-            assert originalGraph != null;
-            StructuredGraph graph = (StructuredGraph) originalGraph.copy(getDebugContext());
-            ReduceCodeAnalysis.performLoopBoundNodeSubstitution(graph, sizeTargetDevice);
-            code = CodeAnalysis.compileAndInstallMethod(graph);
-            finished = true;
-        }
-    }
-
     private static class HybridThreadMeta {
         private final TaskPackage taskPackage;
-        private final ReduceCompilationThread compilationThread;
+        private final int sizeTargetDevice;
 
-        HybridThreadMeta(TaskPackage taskPackage, ReduceCompilationThread compilationThread) {
+        HybridThreadMeta(TaskPackage taskPackage, int sizeTargetDevice) {
             this.taskPackage = taskPackage;
-            this.compilationThread = compilationThread;
+            this.sizeTargetDevice = sizeTargetDevice;
         }
     }
 
     private static class SequentialExecutionThread extends Thread {
 
-        final ReduceCompilationThread compilationThread;
         private final TaskPackage taskPackage;
         private final Map<Object, Object> hostHybridVariables;
+        private final int sizeTargetDevice;
 
-        SequentialExecutionThread(ReduceCompilationThread compilationThread, TaskPackage taskPackage, Map<Object, Object> hostHybridVariables) {
-            this.compilationThread = compilationThread;
+        SequentialExecutionThread(TaskPackage taskPackage, Map<Object, Object> hostHybridVariables, int sizeTargetDevice) {
             this.taskPackage = taskPackage;
             this.hostHybridVariables = hostHybridVariables;
+            this.sizeTargetDevice = sizeTargetDevice;
         }
 
         /**
-         * It runs a compiled method by Graal in HotSpot.
+         * Runs the reduction method on the host to combine the leftover tail of a
+         * non-power-of-two reduction with the GPU's partial result.
          *
          * @param taskPackage
          *     {@link TaskPackage} metadata that stores the method parameters.
-         * @param code
-         *     {@link InstalledCode} code to be executed
          * @param hostHybridVariables
          *     HashMap that relates the GPU buffer with the new CPU buffer.
          */
-        private void runBinaryCodeForReduction(TaskPackage taskPackage, InstalledCode code, Map<Object, Object> hostHybridVariables) {
+        private void runHostTailReduction(TaskPackage taskPackage, Map<Object, Object> hostHybridVariables) {
             try {
-                // Execute the generated binary with Graal with the host loop-bound
-
-                // 1. Set arguments to the method-compiled code
+                // 1. Set arguments to the reduction method.
                 int numArgs = taskPackage.getTaskParameters().length - 1;
                 Object[] args = new Object[numArgs];
                 for (int i = 0; i < numArgs; i++) {
@@ -883,23 +783,124 @@ class ReduceTaskGraph {
                     args[i] = hostHybridVariables.getOrDefault(argument, argument);
                 }
 
-                // 2. Run the binary
-                code.executeVarargs(args);
-
-            } catch (InvalidInstalledCodeException e) {
+                // 2. The GPU reduced input[0, start); the host must reduce only the leftover tail
+                // input[start, size). Neutralise the prefix [0, start) of the input array with the
+                // reduction's neutral element so the unmodified reduction method (which loops the full
+                // size) reduces only the tail; the output array is already pre-filled with the neutral.
+                runReflectiveTailReduction(taskPackage, args, hostHybridVariables, sizeTargetDevice);
+            } catch (ReflectiveOperationException e) {
                 e.printStackTrace();
+            }
+        }
+
+        private static void runReflectiveTailReduction(TaskPackage taskPackage, Object[] args, Map<Object, Object> hostHybridVariables, int start) throws ReflectiveOperationException {
+            Object neutral = null;
+            for (Object a : args) {
+                if (a != null && hostHybridVariables.containsValue(a)) {
+                    neutral = elementZero(a);
+                    break;
+                }
+            }
+            Object[] hostArgs = args.clone();
+            if (neutral != null) {
+                for (int i = 0; i < hostArgs.length; i++) {
+                    Object a = hostArgs[i];
+                    if (a != null && !hostHybridVariables.containsValue(a) && isReducibleArray(a)) {
+                        hostArgs[i] = copyWithNeutralPrefix(a, start, neutral);
+                    }
+                }
+            }
+            Method method = TaskUtils.resolveMethodHandle(taskPackage.getTaskParameters()[0]);
+            method.setAccessible(true);
+            method.invoke(null, hostArgs);
+        }
+
+        private static boolean isReducibleArray(Object a) {
+            return a instanceof int[] || a instanceof float[] || a instanceof double[] || a instanceof long[] //
+                    || a instanceof IntArray || a instanceof FloatArray || a instanceof DoubleArray || a instanceof LongArray;
+        }
+
+        private static Object elementZero(Object a) {
+            return switch (a) {
+                case int[] v -> v[0];
+                case float[] v -> v[0];
+                case double[] v -> v[0];
+                case long[] v -> v[0];
+                case IntArray v -> v.get(0);
+                case FloatArray v -> v.get(0);
+                case DoubleArray v -> v.get(0);
+                case LongArray v -> v.get(0);
+                default -> null;
+            };
+        }
+
+        private static Object copyWithNeutralPrefix(Object input, int start, Object neutral) {
+            switch (input) {
+                case int[] v -> {
+                    int[] c = v.clone();
+                    for (int i = 0; i < Math.min(start, c.length); i++) {
+                        c[i] = (int) neutral;
+                    }
+                    return c;
+                }
+                case float[] v -> {
+                    float[] c = v.clone();
+                    for (int i = 0; i < Math.min(start, c.length); i++) {
+                        c[i] = (float) neutral;
+                    }
+                    return c;
+                }
+                case double[] v -> {
+                    double[] c = v.clone();
+                    for (int i = 0; i < Math.min(start, c.length); i++) {
+                        c[i] = (double) neutral;
+                    }
+                    return c;
+                }
+                case long[] v -> {
+                    long[] c = v.clone();
+                    for (int i = 0; i < Math.min(start, c.length); i++) {
+                        c[i] = (long) neutral;
+                    }
+                    return c;
+                }
+                case IntArray v -> {
+                    IntArray c = new IntArray(v.getSize());
+                    for (int i = 0; i < v.getSize(); i++) {
+                        c.set(i, i < start ? (int) neutral : v.get(i));
+                    }
+                    return c;
+                }
+                case FloatArray v -> {
+                    FloatArray c = new FloatArray(v.getSize());
+                    for (int i = 0; i < v.getSize(); i++) {
+                        c.set(i, i < start ? (float) neutral : v.get(i));
+                    }
+                    return c;
+                }
+                case DoubleArray v -> {
+                    DoubleArray c = new DoubleArray(v.getSize());
+                    for (int i = 0; i < v.getSize(); i++) {
+                        c.set(i, i < start ? (double) neutral : v.get(i));
+                    }
+                    return c;
+                }
+                case LongArray v -> {
+                    LongArray c = new LongArray(v.getSize());
+                    for (int i = 0; i < v.getSize(); i++) {
+                        c.set(i, i < start ? (long) neutral : v.get(i));
+                    }
+                    return c;
+                }
+                default -> {
+                    return input;
+                }
             }
         }
 
         @Override
         public void run() {
-            try {
-                // We need to wait for the compilation to be finished
-                compilationThread.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            runBinaryCodeForReduction(taskPackage, compilationThread.getCode(), hostHybridVariables);
+            runHostTailReduction(taskPackage, hostHybridVariables);
         }
     }
 }

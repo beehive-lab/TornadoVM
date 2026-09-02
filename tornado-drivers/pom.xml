@@ -5,7 +5,7 @@
     <parent>
         <groupId>io.github.beehive-lab</groupId>
         <artifactId>tornado</artifactId>
-        <version>5.2.1-jdk21-dev</version>
+        <version>${revision}</version>
     </parent>
     <artifactId>tornado-drivers</artifactId>
     <name>tornado-drivers</name>
@@ -29,7 +29,6 @@
             </activation>
             <modules>
                 <module>metal</module>
-                <module>metal-jni</module>
             </modules>
         </profile>
 
@@ -40,30 +39,6 @@
             </activation>
             <modules>
                 <module>opencl</module>
-                <module>opencl-jni</module>
-            </modules>
-        </profile>
-
-        <profile>
-            <id>spirv-backend</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <modules>
-                <module>opencl</module>
-                <module>opencl-jni</module>
-                <module>spirv</module>
-            </modules>
-        </profile>
-
-        <profile>
-            <id>ptx-backend</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <modules>
-                <module>ptx</module>
-                <module>ptx-jni</module>
             </modules>
         </profile>
 
@@ -74,11 +49,7 @@
             </activation>
             <modules>
                 <module>cuda</module>
-                <module>cuda-jni</module>
-                <module>cublas-jni</module>
-                <module>cufft-jni</module>
                 <module>cudnn-jni</module>
-                <module>cusparse-jni</module>
                 <module>cutlass-jni</module>
             </modules>
         </profile>

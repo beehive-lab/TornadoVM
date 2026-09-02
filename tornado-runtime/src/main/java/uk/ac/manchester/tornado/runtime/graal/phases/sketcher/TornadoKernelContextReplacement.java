@@ -26,14 +26,14 @@ import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContex
 import java.util.ArrayList;
 import java.util.Optional;
 
-import org.graalvm.compiler.debug.DebugContext;
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.FixedWithNextNode;
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.extended.UnboxNode;
-import org.graalvm.compiler.nodes.java.LoadFieldNode;
-import org.graalvm.compiler.phases.BasePhase;
+import tornado.graal.compiler.debug.DebugContext;
+import tornado.graal.compiler.graph.Node;
+import tornado.graal.compiler.nodes.FixedWithNextNode;
+import tornado.graal.compiler.nodes.GraphState;
+import tornado.graal.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.nodes.extended.UnboxNode;
+import tornado.graal.compiler.nodes.java.LoadFieldNode;
+import tornado.graal.compiler.phases.BasePhase;
 
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -48,8 +48,8 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
  * The {@link TornadoKernelContextReplacement} phase is performed during
  * {@link uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier}.
  * The objective is to replace all the FieldNodes of the {@link KernelContext}
- * fields with FixedNodes that can be lowered to TornadoVM nodes for OpenCL,
- * SPIR-V and PTX code emission.
+ * fields with FixedNodes that can be lowered to TornadoVM nodes for OpenCL
+ * and CUDA code emission.
  */
 public class TornadoKernelContextReplacement extends BasePhase<TornadoSketchTierContext> {
     @Override

@@ -205,7 +205,7 @@ public interface TornadoXPUDevice extends TornadoDevice {
      * Informs the backend whether the given execution plan should run with intra-plan
      * concurrency (DAG-independent ops routed to separate role streams). Called by the
      * interpreter before issuing a plan's bytecodes. Per-plan (keyed by executionPlanId),
-     * replacing any process-global flag. No-op by default; the PTX backend overrides it.
+     * replacing any process-global flag. No-op by default; the CUDA backend overrides it.
      *
      * @param executionPlanId the execution plan
      * @param enabled whether intra-plan concurrency is enabled for this plan
@@ -227,7 +227,7 @@ public interface TornadoXPUDevice extends TornadoDevice {
      * Informs the backend whether large one-shot host-to-device uploads should be routed through
      * the pinned staging ring. Called by the interpreter before issuing a plan's bytecodes, so the
      * setting is in place for the plan's allocations (which decide host pinning) and transfers.
-     * No-op by default; the CUDA and PTX backends override it.
+     * No-op by default; the CUDA backend overrides it.
      *
      * @param enabled whether staged transfers are enabled
      */

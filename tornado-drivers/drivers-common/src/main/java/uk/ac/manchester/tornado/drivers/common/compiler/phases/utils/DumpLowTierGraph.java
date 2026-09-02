@@ -25,10 +25,10 @@ import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContex
 
 import java.util.Optional;
 
-import org.graalvm.compiler.debug.DebugContext;
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.phases.Phase;
+import tornado.graal.compiler.debug.DebugContext;
+import tornado.graal.compiler.nodes.GraphState;
+import tornado.graal.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.phases.Phase;
 
 public class DumpLowTierGraph extends Phase {
     @Override

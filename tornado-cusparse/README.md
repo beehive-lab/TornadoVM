@@ -49,12 +49,13 @@ make BACKEND=cuda
 tornado-test -V uk.ac.manchester.tornado.unittests.cusparse.TestCusparse
 ```
 
-If `cusparse.h`/`libcusparse` cannot be located the native library is skipped
-(the build still succeeds) and the cuSPARSE tasks report `UNSUPPORTED` at
-runtime.
+cuSPARSE binds straight to `libcusparse` through `java.lang.foreign` — no native
+module or build-time detection. If `libcusparse` cannot be located at class-init
+time the lookup comes back empty and the cuSPARSE tasks report `UNSUPPORTED` at
+runtime instead.
 
 ## Notes
 
 - FP32 only, CSR only, non-transposed `A`, `alpha = 1`, `beta = 0` in this first
   version. Other data types, formats (COO/BSR), transpose modes, and `alpha`/
-  `beta` are natural extensions on the same JNI surface.
+  `beta` are natural extensions on the same FFM surface.

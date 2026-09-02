@@ -34,6 +34,7 @@ import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.cufft.CuFft;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+import uk.ac.manchester.tornado.cufft.provider.CuFftLibraryProvider;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
 
 /**
@@ -58,14 +59,12 @@ public class TestCuFft extends TornadoTestBase {
         if (backendType != TornadoVMBackendType.CUDA) {
             String message = "cuFFT library tasks require the CUDA backend (default device is " + backendType + ")";
             switch (backendType) {
-                case OPENCL, PTX, SPIRV, METAL -> assertNotBackend(backendType, message);
+                case OPENCL, METAL -> assertNotBackend(backendType, message);
                 default -> throw new TornadoVMCUDANotSupported(message);
             }
         }
-        try {
-            System.loadLibrary("tornado-cufft");
-        } catch (UnsatisfiedLinkError e) {
-            throw new TornadoVMCUDANotSupported("libtornado-cufft is not available: " + e.getMessage());
+        if (!CuFftLibraryProvider.isAvailable()) {
+            throw new TornadoVMCUDANotSupported("cuFFT is not available on this host");
         }
     }
 

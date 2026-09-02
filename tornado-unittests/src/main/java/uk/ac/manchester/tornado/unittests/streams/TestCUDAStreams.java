@@ -39,7 +39,7 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
- * Functional correctness tests for the PTX backend's CUDA-stream support. This is the single
+ * Functional correctness tests for the CUDA backend's CUDA-stream support. This is the single
  * correctness suite for the feature; wall-clock benefit measurements live in
  * {@link TestStreamsPerformance}.
  *
@@ -203,7 +203,6 @@ public class TestCUDAStreams extends TornadoTestBase {
     @Test
     public void testTaskDependency() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
 
         FloatArray a = new FloatArray(N);
@@ -240,7 +239,6 @@ public class TestCUDAStreams extends TornadoTestBase {
     @Test
     public void testMixedDependencyGraph() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
 
         FloatArray x = new FloatArray(N);
@@ -288,7 +286,6 @@ public class TestCUDAStreams extends TornadoTestBase {
     @Test
     public void testManyIndependentUnitsSingleStream() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
 
         FloatArray[] x = new FloatArray[MANY_UNITS];
@@ -326,7 +323,6 @@ public class TestCUDAStreams extends TornadoTestBase {
     @Test
     public void testManyIndependentUnitsMultiStream() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
 
         FloatArray[] x = new FloatArray[MANY_UNITS];
@@ -366,7 +362,6 @@ public class TestCUDAStreams extends TornadoTestBase {
     @Test
     public void testMultipleIterations() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
 
         FloatArray x = new FloatArray(N);
@@ -402,7 +397,6 @@ public class TestCUDAStreams extends TornadoTestBase {
     @Test
     public void testSingleStreamGraphReplay() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
 
         FloatArray x = new FloatArray(GRAPH_N);
@@ -440,7 +434,6 @@ public class TestCUDAStreams extends TornadoTestBase {
     @Test
     public void testMultiStreamGraphReplay() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
 
         FloatArray x = new FloatArray(GRAPH_N);
@@ -481,7 +474,6 @@ public class TestCUDAStreams extends TornadoTestBase {
     @Test
     public void testMultiStreamGraphReplayWithProfiler() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
 
         FloatArray x = new FloatArray(GRAPH_N);
@@ -520,7 +512,6 @@ public class TestCUDAStreams extends TornadoTestBase {
     @Test
     public void testDecodeLoopConcurrent() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
 
         // Resident read-only weights (uploaded once, FIRST_EXECUTION) - row-stochastic (W[i][j] = 1/DIM).
@@ -570,7 +561,6 @@ public class TestCUDAStreams extends TornadoTestBase {
     @Test
     public void testStagedFirstExecutionTransfer() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 48 * 1024 * 1024; // 192 MB: 12 chunks of 16MB over a 4-slot ring
         FloatArray weights = new FloatArray(size);
@@ -607,7 +597,6 @@ public class TestCUDAStreams extends TornadoTestBase {
     @Test
     public void testStagedRingReleasedOnResetDeviceAndRebuilt() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 48 * 1024 * 1024; // 192 MB: forces multi-chunk ring wrap-around
         FloatArray weights = new FloatArray(size);
@@ -645,7 +634,6 @@ public class TestCUDAStreams extends TornadoTestBase {
     @Test
     public void testWithoutStagedTransfersOverridesProperty() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 48 * 1024 * 1024;
         FloatArray weights = new FloatArray(size);

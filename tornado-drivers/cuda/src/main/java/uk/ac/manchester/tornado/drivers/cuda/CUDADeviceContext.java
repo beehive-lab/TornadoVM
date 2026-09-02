@@ -101,7 +101,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      * Number of CUDA streams in the per-plan COMPUTE pool. DAG-independent kernels are round-robined
      * across these so they can execute concurrently (CUDA serialises within a single stream). A single
      * COMPUTE queue would serialise every kernel, which is why kernel/kernel overlap needs a pool.
-     * Configurable via {@code -Dtornado.cuda.compute.streams}; defaults to 4 (mirrors the PTX backend).
+     * Configurable via {@code -Dtornado.cuda.compute.streams}; defaults to 4.
      */
     private static final int COMPUTE_POOL_SIZE = Math.max(1, Integer.getInteger("tornado.cuda.compute.streams", 4));
     /** Per-plan COMPUTE stream pool, grown lazily up to {@link #COMPUTE_POOL_SIZE}. */
@@ -376,7 +376,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      * Intra-plan concurrency (multi-queue issue) is only beneficial when the device can actually overlap
      * work: either run kernels concurrently or overlap copies with compute (async copy engines). On hardware
      * that supports neither, role queues add cross-queue event overhead for no gain, so we fall back to
-     * single-queue execution - mirroring the PTX backend.
+     * single-queue execution.
      */
     private boolean deviceSupportsIntraPlanConcurrency() {
         return device.supportsConcurrentKernels() || device.getAsyncEngineCount() >= 1;
@@ -537,8 +537,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     /**
      * Frees the pinned staging ring. Called at device teardown, matching the ring's scope: the ring is
      * device-wide and shared across plans, so it must NOT be released from the per-plan reset - that
-     * would pull it out from under a concurrent plan. Mirrors the PTX backend, which frees its ring in
-     * {@code PTXStream.cuDestroyStream()}.
+     * would pull it out from under a concurrent plan.
      * <p>
      * Each in-flight slot DMA reads FROM ring memory, so every outstanding slot event is drained
      * before the pinned block is released; freeing it under a live DMA is undefined behaviour. The
@@ -914,16 +913,6 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     }
 
     @Override
-    public boolean isPlatformFPGA() {
-        return this.getDevice().getDeviceType() == CUDADeviceType.CL_DEVICE_TYPE_ACCELERATOR && (getPlatformContext().getPlatform().getName().toLowerCase().contains("fpga") || isPlatformXilinxFPGA());
-    }
-
-    @Override
-    public boolean isPlatformXilinxFPGA() {
-        return getPlatformContext().getPlatform().getName().toLowerCase().contains("xilinx");
-    }
-
-    @Override
     public boolean isFP64Supported() {
         return device.isDeviceDoubleFPSupported();
     }
@@ -982,12 +971,6 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
         entryPoint = checkKernelName(entryPoint);
         CUDACodeCache oclCodeCache = getCUDACodeCache(executionPlanId);
         return oclCodeCache.installSource(meta, id, entryPoint, code);
-    }
-
-    @Override
-    public CUDAInstalledCode installCode(long executionPlanId, String id, String entryPoint, byte[] code, boolean printKernel) {
-        CUDACodeCache oclCodeCache = getCUDACodeCache(executionPlanId);
-        return oclCodeCache.installFPGASource(id, entryPoint, code, printKernel);
     }
 
     @Override

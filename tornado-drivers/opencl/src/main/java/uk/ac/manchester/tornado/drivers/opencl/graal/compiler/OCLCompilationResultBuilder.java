@@ -33,26 +33,26 @@ import java.util.Set;
 
 import org.graalvm.collections.EconomicMap;
 import org.graalvm.collections.Equivalence;
-import org.graalvm.compiler.asm.Assembler;
-import org.graalvm.compiler.code.CompilationResult;
-import org.graalvm.compiler.core.common.spi.CodeGenProviders;
-import org.graalvm.compiler.debug.DebugContext;
-import org.graalvm.compiler.lir.InstructionValueProcedure;
-import org.graalvm.compiler.lir.LIR;
-import org.graalvm.compiler.lir.LIRInstruction;
-import org.graalvm.compiler.lir.LIRInstruction.OperandFlag;
-import org.graalvm.compiler.lir.LIRInstruction.OperandMode;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
-import org.graalvm.compiler.lir.asm.DataBuilder;
-import org.graalvm.compiler.lir.asm.FrameContext;
-import org.graalvm.compiler.lir.framemap.FrameMap;
-import org.graalvm.compiler.nodes.AbstractMergeNode;
-import org.graalvm.compiler.nodes.IfNode;
-import org.graalvm.compiler.nodes.LoopBeginNode;
-import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
-import org.graalvm.compiler.nodes.cfg.HIRBlock;
-import org.graalvm.compiler.options.OptionValues;
+import tornado.graal.compiler.asm.Assembler;
+import tornado.graal.compiler.code.CompilationResult;
+import tornado.graal.compiler.core.common.spi.CodeGenProviders;
+import tornado.graal.compiler.debug.DebugContext;
+import tornado.graal.compiler.lir.InstructionValueProcedure;
+import tornado.graal.compiler.lir.LIR;
+import tornado.graal.compiler.lir.LIRInstruction;
+import tornado.graal.compiler.lir.LIRInstruction.OperandFlag;
+import tornado.graal.compiler.lir.LIRInstruction.OperandMode;
+import tornado.graal.compiler.lir.Variable;
+import tornado.graal.compiler.lir.asm.CompilationResultBuilder;
+import tornado.graal.compiler.lir.asm.DataBuilder;
+import tornado.graal.compiler.lir.asm.FrameContext;
+import tornado.graal.compiler.lir.framemap.FrameMap;
+import tornado.graal.compiler.nodes.AbstractMergeNode;
+import tornado.graal.compiler.nodes.IfNode;
+import tornado.graal.compiler.nodes.LoopBeginNode;
+import tornado.graal.compiler.nodes.cfg.ControlFlowGraph;
+import tornado.graal.compiler.nodes.cfg.HIRBlock;
+import tornado.graal.compiler.options.OptionValues;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -74,7 +74,6 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     protected LIR lir;
     private int currentBlockIndex;
     private boolean isKernel;
-    private int loops = 0;
     private boolean isParallel;
     private TaskDataContext metaData;
     private long[] localGrid;
@@ -173,10 +172,6 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         instructions.addAll(index - 1, moved);
     }
 
-    private static boolean isLoopDependencyNode(LIRInstruction op) {
-        return ((op instanceof OCLControlFlow.LoopInitOp || op instanceof OCLControlFlow.LoopConditionOp || op instanceof OCLControlFlow.LoopPostOp));
-    }
-
     private static void emitOp(CompilationResultBuilder crb, LIRInstruction op) {
         try {
             trace("op: " + op);
@@ -196,10 +191,6 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
     public OCLCompilationResult getResult() {
         return (OCLCompilationResult) compilationResult;
-    }
-
-    public boolean shouldRemoveLoop() {
-        return (isParallel() && deviceContext.isPlatformFPGA());
     }
 
     public boolean isKernel() {
@@ -301,15 +292,6 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
                 continue;
             } else if (op instanceof OCLControlFlow.LoopBreakOp) {
                 breakInst = op;
-                continue;
-            } else if ((shouldRemoveLoop() && loops == 0) && isLoopDependencyNode(op)) {
-                /**
-                 * Apply the Loop Flattening optimization for FPGAs,
-                 * which omits the outermost for loop along with every data dependency associated with it.
-                 */
-                if (op instanceof OCLControlFlow.LoopPostOp) {
-                    loops++;
-                }
                 continue;
             }
             if (Options.PrintLIRWithAssembly.getValue(getOptions())) {

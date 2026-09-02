@@ -4,7 +4,7 @@ Frequently Asked Questions
 1. What can TornadoVM do?
 -------------------------
 
-TornadoVM accelerates parts of your Java applications on heterogeneous hardware devices such as multicore CPUs, GPUs, and FPGAs.
+TornadoVM accelerates parts of your Java applications on heterogeneous hardware devices such as multicore CPUs and GPUs.
 
 TornadoVM is currently being used to accelerate machine learning and deep learning applications, computer vision, physics simulations,
 financial applications, computational photography, natural language processing and signal processing.
@@ -37,9 +37,9 @@ List of compatible JDKs
 
 TornadoVM currently supports:
 
--  JDK 21 (e.g. OpenJDK 21, Red Hat Mandrel 21, Amazon Corretto 21, Azul Zulu JDK 21).
--  JDK 25.
--  GraalVM (JDK 21), for polyglot interoperability (see :ref:`truffle-languages`).
+-  JDK 21 (e.g. OpenJDK 21, Red Hat Mandrel 21, Amazon Corretto 21, Azul Zulu JDK 21), via the ``jdk21`` build profile.
+-  JDK 22 and newer, including JDK 27, via the single ``jdk22plus`` build profile. TornadoVM no longer depends on JVMCI, so this SDK is built once and runs on any JDK from 22 upwards rather than being tied to one release.
+-  GraalVM (JDK 21), as an alternative JDK 21 distribution (the ``graal-jdk-21`` build profile).
 
 Windows
 ~~~~~~~~~~
@@ -60,16 +60,14 @@ Usage
 4. Which programming languages does TornadoVM support?
 ------------------------------------------------------
 
-TornadoVM primarily supports Java. However, with the integration with GraalVM you can call your TornadoVM-compatible Java code through other
-programming languages supported by GraalVM's polyglot runtime (e.g., Python, R, Ruby, Javascript, Node.js, etc).
-
-`Here <https://github.com/beehive-lab/TornadoVM/tree/master/tornado-examples/src/main/java/uk/ac/manchester/tornado/examples/polyglot>`__
-you can find examples of how to use TornadoVM with GraalVM Polyglot.
+TornadoVM primarily supports Java (Polyglot support was removed after the 5.2.0 release; to call
+TornadoVM-compatible Java code from other programming languages via GraalVM's polyglot runtime,
+e.g. Python, R, Ruby, Javascript, Node.js, use TornadoVM <= 5.2.0).
 
 5. Is TornadoVM a Domain Specific Language (DSL)?
 --------------------------------------------------------------
 
-No, TornadoVM is not a DSL. It compiles a subset of Java code to OpenCL C, NVIDIA PTX, NVIDIA CUDA C, SPIR-V, and Apple Metal.
+No, TornadoVM is not a DSL. It compiles a subset of Java code to OpenCL C, NVIDIA CUDA C, and Apple Metal.
 
 To express parallelism, TornadoVM offers the :ref:`Loop Parallel API <loop-parallel-api>` (``@Parallel`` and ``@Reduce`` annotations) and the lower-level :ref:`Kernel API <kernel-context-api>` (``KernelContext``), plus an API to:
 
@@ -91,15 +89,15 @@ With **Dynamic Reconfiguration** opted into (see :ref:`dynamic_reconfiguration`)
 8. Does TornadoVM support only OpenCL devices?
 ----------------------------------------------
 
-No. Currently, TornadoVM supports multiple compiler backends and therefore, it is able to generate OpenCL C, NVIDIA PTX, CUDA C
-(compiled to PTX via NVRTC), SPIR-V, and Metal code depending on the hardware configuration.
+No. Currently, TornadoVM supports multiple compiler backends and therefore, it is able to generate OpenCL C, CUDA C
+(compiled to PTX via NVRTC), and Metal code depending on the hardware configuration.
 
 9. Why is it called a VM?
 --------------------------
 
 The VM name is used because TornadoVM implements its own set of bytecodes for handling heterogeneous execution.
 These bytecodes are used for handling JIT compilation, device exploration, data management and live task-migration
-for heterogeneous devices (multi-core CPUs, GPUs, and FPGAs). We sometimes refer to a VM inside a VM (nested VM).
+for heterogeneous devices (multi-core CPUs and GPUs). We sometimes refer to a VM inside a VM (nested VM).
 The main VM is the Java Virtual Machine, and TornadoVM sits on top of that.
 
 You can find more information here: `https://dl.acm.org/doi/10.1145/3313808.3313819 <https://dl.acm.org/doi/10.1145/3313808.3313819>`_.
@@ -107,7 +105,7 @@ You can find more information here: `https://dl.acm.org/doi/10.1145/3313808.3313
 10. How does it interact with OpenJDK?
 --------------------------------------
 
-TornadoVM makes use of the Java Virtual Machine Common Interface (JVMCI) that is included from Java 9 to compile Java bytecode to OpenCL C, NVIDIA PTX, NVIDIA CUDA C, SPIR-V, and Apple Metal at runtime.
+TornadoVM makes use of the Java Virtual Machine Common Interface (JVMCI) that is included from Java 9 to compile Java bytecode to OpenCL C, NVIDIA CUDA C, and Apple Metal at runtime.
 As a JVMCI implementation, TornadoVM uses Graal (it extends the Graal IR and includes new backends for each of these targets).
 
 11.  How do I know which parts of my application are suitable for acceleration?
@@ -144,7 +142,5 @@ Note that this restriction also applies to low-level parallel programming models
 14. Do I need a GPU to run TornadoVM?
 ------------------------------------------------------------
 
-No. TornadoVM can also run on multi-core CPUs and/or FPGAs. What TornadoVM needs is a compatible driver/runtime installed in the machine.
+No. TornadoVM can also run on multi-core CPUs. What TornadoVM needs is a compatible driver/runtime installed in the machine.
 For example, to enable TornadoVM getting access to an Intel CPU, developers can use the `Intel CPU Runtime for OpenCL <https://www.intel.com/content/www/us/en/developer/articles/technical/intel-cpu-runtime-for-opencl-applications-with-sycl-support.html>`__ (also part of the `Intel oneAPI Base Toolkit <https://www.intel.com/content/www/us/en/developer/tools/oneapi/base-toolkit.html>`__).
-
-To enable TornadoVM accessing FPGAs, developers can use the Intel and AMD OpenCL implementations for the Intel and Xilinx FPGAs, respectively.

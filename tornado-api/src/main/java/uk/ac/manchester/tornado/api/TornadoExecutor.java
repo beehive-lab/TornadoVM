@@ -43,6 +43,21 @@ class TornadoExecutor {
     TornadoExecutor(ImmutableTaskGraph... immutableTaskGraphs) {
         immutableTaskGraphList = new ArrayList<>();
         Collections.addAll(immutableTaskGraphList, immutableTaskGraphs);
+        registerPlanTaskGraphs();
+    }
+
+    /**
+     * Lets every task-graph of this plan see its siblings, so that consumeFromDevice(producerName,
+     * ...) can resolve the producing graph by name regardless of the execution order.
+     */
+    private void registerPlanTaskGraphs() {
+        List<TornadoTaskGraphInterface> planGraphs = new ArrayList<>();
+        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
+            planGraphs.add(immutableTaskGraph.getTaskGraphImplementation());
+        }
+        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
+            immutableTaskGraph.setPlanTaskGraphs(planGraphs);
+        }
     }
 
     public void withCUDAGraph() {
@@ -139,6 +154,22 @@ class TornadoExecutor {
         // At this point we compute the offsets and the total size in bytes.
         dataRange.materialize();
         immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.transferToHost(dataRange.getArray(), dataRange.getOffset(), dataRange.getPartialSize()));
+    }
+
+    void transferDataToDevice(ExecutorFrame executionPackage) {
+        allTaskGraphs().forEach(immutableTaskGraph -> immutableTaskGraph.transferDataToDevice(executionPackage));
+    }
+
+    void transferDataToDevice(ExecutorFrame executionPackage, Object... objects) {
+        allTaskGraphs().forEach(immutableTaskGraph -> immutableTaskGraph.transferDataToDevice(executionPackage, objects));
+    }
+
+    /**
+     * Every task-graph of the plan, including the ones a {@code withGraph(i)} has currently
+     * selected away: an upload is about the plan's data, not about which graph runs next.
+     */
+    private List<ImmutableTaskGraph> allTaskGraphs() {
+        return subgraphList != null ? subgraphList : immutableTaskGraphList;
     }
 
     boolean isFinished() {

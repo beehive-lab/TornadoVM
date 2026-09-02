@@ -26,6 +26,11 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 /**
+ * Integer vector addition ({@code c[i] = a[i] + b[i]}) with a profiler dump.
+ * <p>
+ * Copies {@code a} and {@code b} to the device, runs a {@code @Parallel}
+ * {@code vectorAdd} task, copies {@code c} back, and prints the profiler log.
+ * </p>
  * <p>
  * How to run?
  * </p>

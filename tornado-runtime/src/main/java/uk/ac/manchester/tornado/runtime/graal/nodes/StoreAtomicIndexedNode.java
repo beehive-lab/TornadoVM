@@ -25,17 +25,17 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.nodes;
 
-import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.FrameState;
-import org.graalvm.compiler.nodes.StateSplit;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.extended.GuardingNode;
-import org.graalvm.compiler.nodes.java.AccessIndexedNode;
-import org.graalvm.compiler.nodes.spi.Lowerable;
-import org.graalvm.compiler.nodes.spi.Virtualizable;
-import org.graalvm.compiler.nodes.spi.VirtualizerTool;
+import tornado.graal.compiler.core.common.type.StampFactory;
+import tornado.graal.compiler.graph.NodeClass;
+import tornado.graal.compiler.nodeinfo.NodeInfo;
+import tornado.graal.compiler.nodes.FrameState;
+import tornado.graal.compiler.nodes.StateSplit;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.extended.GuardingNode;
+import tornado.graal.compiler.nodes.java.AccessIndexedNode;
+import tornado.graal.compiler.nodes.spi.Lowerable;
+import tornado.graal.compiler.nodes.spi.Virtualizable;
+import tornado.graal.compiler.nodes.spi.VirtualizerTool;
 
 import jdk.vm.ci.meta.JavaKind;
 

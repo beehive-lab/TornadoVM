@@ -11,7 +11,7 @@ Programming in TornadoVM involves the development of four parts:
 
 1. **Data Representation:** TornadoVM offers a set of data types, built on top of the `Foreign Function & Memory API <https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/foreign/package-summary.html>`_ from Project Panama, to allocate data off-heap and to migrate data from on-heap to off-heap (and vice versa). These off-heap data types are automatically managed by the TornadoVM Runtime and the compiler.
 2. **Expressing parallelism within Java methods:** TornadoVM offers two APIs: one for loop parallelization using Java annotations; and a second one for low-level programming using a Kernel API.
-   Developers can choose which one to use. The loop API is recommended for non-expert GPU/FPGA programmers.
+   Developers can choose which one to use. The loop API is recommended for non-expert GPU programmers.
    The kernel API is recommended for experts GPU programmers than want more control (access to GPU's local memory, barriers, etc.).
 3. **Selecting the methods to be accelerated using a Task-Graph API:** once Java methods have been identified for acceleration (either using the loop parallel API or kernel API), Java methods can be grouped together in a graph.
    TornadoVM offers an API to define the data as well as the Java methods to be accelerated.
@@ -91,13 +91,13 @@ The main methods that the off-heap types expose to manage the Memory Segment of 
 ------------------------------------------------
 
 
-TornadoVM offloads Java methods to heterogeneous hardware such as GPUs and FPGAs for parallel execution.
+TornadoVM offloads Java methods to heterogeneous hardware such as GPUs and multi-core CPUs for parallel execution.
 Those Java methods usually represents the sequential (single thread) implementation of the work to perform on the accelerator.
 However, TornadoVM does not auto-parallelize Java methods.
 
 Thus, TornadoVM needs a hint about how to parallelize the code.
 TornadoVM has two APIs to achieve this goal: one for loop parallelization using Java annotations; and a second one for low-level programming using a Kernel API.
-Developers can choose which one to use. The loop API is recommended for non-expert GPU/FPGA programmers.
+Developers can choose which one to use. The loop API is recommended for non-expert GPU programmers.
 
 
 .. _loop-parallel-api:
@@ -112,7 +112,7 @@ a) ``@Parallel`` for annotating parallel loops; and b) ``@Reduce`` for annotatin
 The following code snippet shows a full example to accelerate Matrix-Multiplication using TornadoVM and the loop-parallel API:
 The two outermost loops can be parallelizable because there are no data dependencies across different iterations.
 Therefore, we can annotate these two loops.
-Note that, since TornadoVM maps parallel loops to Parallel ND-Range for OpenCL, CUDA and SPIR-V, developers can benefit
+Note that, since TornadoVM maps parallel loops to Parallel ND-Range for OpenCL, CUDA and PTX, developers can benefit
 from 1D (annotating one parallel loop), 2D (annotating two consecutive parallel loops) and 3D (annotating 3 consecutive parallel loops) in their Java methods.
 
 
@@ -133,7 +133,7 @@ Another way to express compute-kernels in TornadoVM is via the kernel API.
 To do so, TornadoVM exposes a ``KernelContext`` with which the application can directly access
 the thread-id, allocate memory in local memory (shared memory on NVIDIA devices), and insert barriers.
 This model is similar to programming compute-kernels in OpenCL and CUDA.
-Therefore, this API is more suitable for GPU/FPGA expert programmers that want more control or want to port existing CUDA/OpenCL compute kernels into TornadoVM.
+Therefore, this API is more suitable for GPU expert programmers that want more control or want to port existing CUDA/OpenCL compute kernels into TornadoVM.
 
 The following code-snippet shows the Matrix Multiplication example using the kernel-parallel API:
 
@@ -157,7 +157,7 @@ Examples can be found in the ``Grid``
 KernelContext Features
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The following table presents the available features that TornadoVM exposes in Java along with the respective OpenCL and CUDA PTX terminology.
+The following table presents the available features that TornadoVM exposes in Java along with the respective OpenCL and CUDA terminology.
 
 .. code:: java
 
@@ -165,7 +165,7 @@ The following table presents the available features that TornadoVM exposes in Ja
    kc = new KernelContext();
 
 +----------------------------------------------------+-------------------------------+------------------------------------+
-| TornadoVM KernelContext                            | OpenCL                        | PTX                                |
+| TornadoVM KernelContext                            | OpenCL                        | CUDA                               |
 +====================================================+===============================+====================================+
 | kc.globalIdx                                       | get_global_id(0)              | blockIdx \* blockDim.x + threadIdx |
 +----------------------------------------------------+-------------------------------+------------------------------------+
@@ -175,18 +175,58 @@ The following table presents the available features that TornadoVM exposes in Ja
 +----------------------------------------------------+-------------------------------+------------------------------------+
 | kc.getLocalGroupSize()                             | get_local_size()              | blockDim                           |
 +----------------------------------------------------+-------------------------------+------------------------------------+
-| kc.localBarrier()                                  | barrier(CLK_LOCAL_MEM_FENCE)  | barrier.sync                       |
+| kc.localBarrier()                                  | barrier(CLK_LOCAL_MEM_FENCE)  | \__syncthreads()                   |
 +----------------------------------------------------+-------------------------------+------------------------------------+
-| kc.globalBarrier()                                 | barrier(CLK_GLOBAL_MEM_FENCE) | barrier.sync                       |
+| kc.globalBarrier()                                 | barrier(CLK_GLOBAL_MEM_FENCE) | \__syncthreads()                   |
 +----------------------------------------------------+-------------------------------+------------------------------------+
-| int[] array = kc.allocateIntLocalArray(size)       | \__local int array[size]      | .shared .s32 array[size]           |
+| int[] array = kc.allocateIntLocalArray(size)       | \__local int array[size]      | \__shared__ int array[size]        |
 +----------------------------------------------------+-------------------------------+------------------------------------+
-| float[] array = kc.allocateFloatLocalArray(size)   | \__local float array[size]    | .shared .s32 array[size]           |
+| float[] array = kc.allocateFloatLocalArray(size)   | \__local float array[size]    | \__shared__ float array[size]      |
 +----------------------------------------------------+-------------------------------+------------------------------------+
-| long[] array = kc.allocateLongLocalArray(size)     | \__local long array[size]     | .shared .s64 array[size]           |
+| long[] array = kc.allocateLongLocalArray(size)     | \__local long array[size]     | \__shared__ long array[size]       |
 +----------------------------------------------------+-------------------------------+------------------------------------+
-| double[] array = kc.allocateDoubleLocalArray(size) | \__local double array[size]   | .shared .s64 array[size]           |
+| double[] array = kc.allocateDoubleLocalArray(size) | \__local double array[size]   | \__shared__ double array[size]     |
 +----------------------------------------------------+-------------------------------+------------------------------------+
+
+Both barriers synchronise a work-group (a CUDA block), not the whole grid.
+``__syncthreads()`` already makes a block's prior global and shared memory
+accesses visible to the rest of the block, so it is the correct mapping for
+``globalBarrier()`` as well.
+
+Backend support for the advanced operations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Not every ``KernelContext`` operation exists on every backend. An operation a
+backend cannot honour is rejected while the task graph is compiled, with a
+message naming the operation — it is never silently replaced by its Java
+fallback, which would run without complaint and produce a wrong result.
+
++-----------------------------------------------------------------+------------+--------+-------+
+| Operation                                                       | CUDA       | OpenCL | Metal |
++=================================================================+============+========+=======+
+| ``atomicAdd`` (IntArray, int[], LongArray)                      | yes        | yes    | yes   |
++-----------------------------------------------------------------+------------+--------+-------+
+| ``atomicAdd`` (FloatArray, DoubleArray)                         | yes        | no     | yes   |
++-----------------------------------------------------------------+------------+--------+-------+
+| ``atomicCAS``, ``atomicExchange``, ``atomicMin``, ``atomicMax`` | local only | no     | no    |
++-----------------------------------------------------------------+------------+--------+-------+
+| ``simdSum``, ``simdShuffleDown``, ``simdBroadcastFirst``        | yes        | no     | yes   |
++-----------------------------------------------------------------+------------+--------+-------+
+| ``allocateHalf2LocalArray``                                     | yes        | no     | no    |
++-----------------------------------------------------------------+------------+--------+-------+
+| ``mma*`` Tensor Core ops (FP16/BF16/INT8/FP8)                   | yes        | no     | no    |
++-----------------------------------------------------------------+------------+--------+-------+
+| ``asyncCopyToLocal`` and friends (``cp.async``, Ampere+)        | yes        | no     | no    |
++-----------------------------------------------------------------+------------+--------+-------+
+| ``swizzleLoadFp16Stride32``, ``swizzleStoreFp16Stride32``       | yes        | no     | no    |
++-----------------------------------------------------------------+------------+--------+-------+
+| ``swizzle*Fp16Stride16``, ``swizzle*Int8``                      | no         | no     | no    |
++-----------------------------------------------------------------+------------+--------+-------+
+| ``simdgroupMatrix*``, ``matrixMultiply8x8``                     | no         | no     | yes   |
++-----------------------------------------------------------------+------------+--------+-------+
+
+``local only`` means the operation is supported when the array was allocated
+with ``KernelContext.allocateIntLocalArray(int)``; a global array is rejected.
 
 Example
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -383,7 +423,6 @@ This is performed using the ``task`` API call as follows:
 
 Developers can add as many tasks as needed.
 The maximum number of tasks depends on the amount of code that can be shipped to the accelerator.
-Usually, FPGAs are more limited than GPUs.
 
 
 C. Copy out from the device (accelerator) to the host (main CPU).
@@ -506,20 +545,20 @@ Example:
 The code is very similar to a Java sequential reduction but with ``@Reduce`` and ``@Parallel`` annotations.
 The ``@Reduce`` annotation is associated with a variable, in this case, with the ``result`` float
 array.
-Then, we annotate the loop with ``@Parallel``. The OpenCL/PTX JIT compilers generate OpenCL/PTX parallel version for this code that can
+Then, we annotate the loop with ``@Parallel``. The OpenCL/CUDA JIT compilers generate OpenCL/CUDA parallel version for this code that can
 run on GPU and CPU.
 
 Creating reduction tasks
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-TornadoVM generates different OpenCL/SPIR-V code depending on the target device.
+TornadoVM generates different OpenCL/PTX code depending on the target device.
 Internally, if the target is a GPU, TornadoVM performs full and
 parallel reductions using the threads within the same OpenCL work-group.
 If the target is a CPU, TornadoVM performs full reductions within the
 same thread-id. Besides, TornadoVM automatically resizes the output
 variables according to the number of work-groups and threads selected.
 
-For PTX code generation, TornadoVM will always perform full and parallel
+For CUDA code generation, TornadoVM will always perform full and parallel
 reductions using the threads within the same CUDA block.
 
 .. code:: java

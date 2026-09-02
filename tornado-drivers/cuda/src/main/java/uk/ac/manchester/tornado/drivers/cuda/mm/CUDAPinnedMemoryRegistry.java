@@ -39,9 +39,9 @@ import uk.ac.manchester.tornado.drivers.cuda.CUDAContext;
  * true transfer/compute overlap), but a registration that outlives its segment is a
  * data hazard: when the segment is freed and its virtual address is reused by a new
  * allocation, the driver's stale pin still maps the OLD physical pages, so transfers
- * silently read/write the wrong memory. Per-buffer "do I own the pin" booleans (the
- * PTX backend's scheme) cannot track this once buffers alias or bulk-release paths
- * skip the per-buffer free hook; this registry closes those holes:
+ * silently read/write the wrong memory. Per-buffer "do I own the pin" booleans cannot
+ * track this once buffers alias or bulk-release paths skip the per-buffer free hook;
+ * this registry closes those holes:
  * <ul>
  *   <li><b>Refcounting</b>: several holders of the same live segment share one driver
  *       registration.</li>
@@ -54,14 +54,12 @@ import uk.ac.manchester.tornado.drivers.cuda.CUDAContext;
  *       presents the SAME {@link MemorySegment} instance (tracked by weak reference).
  *       A new segment at a reused address is a different instance, and a collected
  *       segment clears the weak reference - both force unregister + fresh register, so
- *       DMA always sees the current physical pages. This is the stale-pin detection the
- *       PTX backend lacks.</li>
+ *       DMA always sees the current physical pages. </li>
  *   <li><b>Sync before unpin</b>: the native unregister synchronises the context first,
  *       so no in-flight async DMA can still touch a region being unpinned.</li>
  *   <li><b>External pins are never stolen</b>: if the driver reports the range as
- *       already registered by someone outside this registry (e.g. the PTX backend
- *       sharing the process), the entry is tracked as {@code external} and this
- *       registry never unregisters it.</li>
+ *       already registered by someone outside this registry the entry is tracked
+ *       as {@code external} and this registry never unregisters it.</li>
  *   <li><b>Drain on plan teardown</b> ({@link #unpinAll()}): bulk buffer releases
  *       bypass per-buffer free hooks, so the device context drains the registry on
  *       {@code reset()}; cached-but-stale pins are also reclaimed there.</li>
@@ -136,8 +134,8 @@ public final class CUDAPinnedMemoryRegistry {
             return true;
         }
         if (result == CUDAContext.CUDA_ERROR_HOST_MEMORY_ALREADY_REGISTERED) {
-            // Pinned by someone outside this registry (e.g. the PTX backend in the same
-            // process). The memory IS page-locked, so DMA works; track it but never
+            // Pinned by someone outside this registry
+            // The memory IS page-locked, so DMA works; track it but never
             // unregister a pin we do not own.
             registrations.put(hostPointer, new Registration(numBytes, 1, true, segment));
             return true;

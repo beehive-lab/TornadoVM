@@ -76,7 +76,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoAPIProvider;
  * Tornado Task Graph API.
  * <p>
  * Task-based parallel API to express methods to be accelerated on any OpenCL,
- * PTX and/or SPIR-V compatible device.
+ * CUDA compatible device.
  * </p>
  *
  * @since v0.15
@@ -1104,6 +1104,14 @@ public class TaskGraph implements TaskGraphInterface {
         return taskGraphImpl.isFinished();
     }
 
+    void transferDataToDevice(ExecutorFrame executionPackage) {
+        taskGraphImpl.transferDataToDevice(executionPackage);
+    }
+
+    void transferDataToDevice(ExecutorFrame executionPackage, Object... objects) {
+        taskGraphImpl.transferDataToDevice(executionPackage, objects);
+    }
+
     public Set<Object> getArgumentsLookup() {
         return taskGraphImpl.getArgumentsLookup();
     }
@@ -1213,6 +1221,14 @@ public class TaskGraph implements TaskGraphInterface {
 
     void mapOnDeviceMemoryRegion(Object destArray, Object srcArray, long offset, TornadoTaskGraphInterface taskGraphSrc) {
         taskGraphImpl.mapOnDeviceMemoryRegion(destArray, srcArray, offset, taskGraphSrc);
+    }
+
+    void setPlanTaskGraphs(java.util.List<TornadoTaskGraphInterface> planTaskGraphs) {
+        taskGraphImpl.setPlanTaskGraphs(planTaskGraphs);
+    }
+
+    TornadoTaskGraphInterface getTaskGraphImplementation() {
+        return taskGraphImpl;
     }
 
     void setLastExecutedTaskGraph(TornadoTaskGraphInterface lastExecutedTaskGraph) {

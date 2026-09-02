@@ -38,7 +38,7 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
- * Demonstrates <b>how to enable</b> PTX intra-plan concurrency (CUDA streams) and <b>measures</b> its
+ * Demonstrates <b>how to enable</b> CUDA intra-plan concurrency (CUDA streams) and <b>measures</b> its
  * wall-clock effect on three deliberately different workloads.
  *
  * <h3>Usage (the one line that matters)</h3>
@@ -239,7 +239,6 @@ public class TestStreamsPerformance extends TornadoTestBase {
     @Test
     public void testOverlapSpeedup() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
 
         FloatArray[] x = new FloatArray[UNITS];
@@ -283,7 +282,6 @@ public class TestStreamsPerformance extends TornadoTestBase {
     @Test
     public void testComputeConcurrency() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
 
         FloatArray[] x = new FloatArray[UNITS];
@@ -332,7 +330,6 @@ public class TestStreamsPerformance extends TornadoTestBase {
     @Test
     public void testSmallKernelConcurrency() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
 
         FloatArray[] x = new FloatArray[UNITS];
@@ -395,7 +392,6 @@ public class TestStreamsPerformance extends TornadoTestBase {
     @Test
     public void testFirstExecutionUpload() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         // GPULlama-like shape: the model's weights are many separate read-only tensors, each
         // uploaded once on first execution (the direct path pays one cuMemHostRegister per tensor).

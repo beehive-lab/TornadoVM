@@ -174,9 +174,7 @@ public class TestSwizzledLocalArrays extends TornadoTestBase {
     @Test
     public void testSwizzleLoadStoreFp16Stride32() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
-        assertNotBackend(TornadoVMBackendType.CUDA);
         // Tile geometry: 16 rows × 16 fp16 cols = 256 elements per work-group.
         // Stride 32 bytes = 16 fp16 cols, which matches FP16_STRIDE_32 policy.
         final int rowsPerTile = 16;
@@ -215,7 +213,6 @@ public class TestSwizzledLocalArrays extends TornadoTestBase {
     @Test
     public void testSwizzleLoadStoreFp16Stride16() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
         assertNotBackend(TornadoVMBackendType.CUDA);
         // Tile geometry: 16 rows × 8 fp16 cols = 128 elements per work-group.
@@ -256,7 +253,6 @@ public class TestSwizzledLocalArrays extends TornadoTestBase {
     @Test
     public void testSwizzleLoadStoreInt8() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
         assertNotBackend(TornadoVMBackendType.CUDA);
         final int rowsPerTile = 16;
@@ -298,9 +294,7 @@ public class TestSwizzledLocalArrays extends TornadoTestBase {
     @Test
     public void testSwizzleLoadConvertToFloat() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
-        assertNotBackend(TornadoVMBackendType.CUDA);
 
         final int rowsPerTile = 16;
         final int colsPerTile = 16;
@@ -339,7 +333,6 @@ public class TestSwizzledLocalArrays extends TornadoTestBase {
     @Test
     public void testSwizzleLoadConvertToFloatStride16() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
         assertNotBackend(TornadoVMBackendType.CUDA);
 
@@ -380,7 +373,6 @@ public class TestSwizzledLocalArrays extends TornadoTestBase {
     @Test
     public void testSwizzleLoadStoreInt8Stride16() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
         assertNotBackend(TornadoVMBackendType.CUDA);
 

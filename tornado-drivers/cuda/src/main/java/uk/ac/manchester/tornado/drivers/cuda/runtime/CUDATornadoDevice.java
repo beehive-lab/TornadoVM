@@ -32,12 +32,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
@@ -65,6 +64,7 @@ import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
+import uk.ac.manchester.tornado.api.memory.NativeArrayLayouts;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.cuda.CUDABackendImpl;
 import uk.ac.manchester.tornado.drivers.cuda.CUDACodeCache;
@@ -111,7 +111,6 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamSupport {
 
     private static CUDABackendImpl driver = null;
-    private static final Pattern NAME_PATTERN = Pattern.compile("^CUDADriver (\\d)\\.(\\d).*");
     private final CUDATargetDevice device;
     private final int deviceIndex;
     private final int platformIndex;
@@ -248,11 +247,6 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
         return atomicsBuffer;
     }
 
-    private boolean isOpenCLPreLoadBinary(long executionPlanId, CUDADeviceContextInterface deviceContext, String deviceInfo) {
-        CUDACodeCache installedCode = deviceContext.getCodeCache(executionPlanId);
-        return (installedCode.isLoadBinaryOptionEnabled() && (installedCode.getOpenCLBinary(deviceInfo) != null));
-    }
-
     private TornadoInstalledCode compileTask(long executionPlanId, SchedulableTask task) {
         final CUDADeviceContextInterface deviceContext = getDeviceContext();
         final CompilableTask executable = (CompilableTask) task;
@@ -296,14 +290,7 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
 
             profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
             // Compile the code
-            CUDAInstalledCode installedCode;
-            if (CUDABackend.isDeviceAnFPGAAccelerator(deviceContext)) {
-                // A) for FPGA
-                installedCode = deviceContext.installCode(executionPlanId, result.getId(), result.getName(), result.getTargetCode(), task.meta().isPrintKernelEnabled());
-            } else {
-                // B) for CPU multi-core or GPU
-                installedCode = deviceContext.installCode(executionPlanId, result);
-            }
+            CUDAInstalledCode installedCode = deviceContext.installCode(executionPlanId, result);
             profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
             profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
 
@@ -330,16 +317,7 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
         TornadoInternalError.guarantee(path.toFile().exists(), "file does not exist: %s", executable.getFilename());
         try {
             final byte[] source = Files.readAllBytes(path);
-
-            CUDAInstalledCode installedCode;
-            if (CUDABackend.isDeviceAnFPGAAccelerator(deviceContext)) {
-                // A) for FPGA
-                installedCode = deviceContext.installCode(executionPlanId, task.getId(), executable.getEntryPoint(), source, task.meta().isPrintKernelEnabled());
-            } else {
-                // B) for CPU multi-core or GPU
-                installedCode = deviceContext.installCode(executionPlanId, executable.meta(), task.getId(), executable.getEntryPoint(), source);
-            }
-            return installedCode;
+            return deviceContext.installCode(executionPlanId, executable.meta(), task.getId(), executable.getEntryPoint(), source);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -360,35 +338,9 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
         return task.getTaskName();
     }
 
-    private TornadoInstalledCode loadPreCompiledBinaryForTask(long executionPlanId, SchedulableTask task) {
-        final CUDADeviceContextInterface deviceContext = getDeviceContext();
-        final CUDACodeCache codeCache = deviceContext.getCodeCache(executionPlanId);
-        final String deviceFullName = getFullTaskIdDevice(task);
-        final Path lookupPath = Paths.get(codeCache.getOpenCLBinary(deviceFullName));
-        String entry = getTaskEntryName(task);
-
-        if (deviceContext.getInstalledCode(executionPlanId, task.getId(), entry) != null) {
-            return deviceContext.getInstalledCode(executionPlanId, task.getId(), entry);
-        } else {
-            return codeCache.installEntryPointForBinaryForFPGAs(task.getId(), lookupPath, entry);
-        }
-    }
-
-    private String getFullTaskIdDevice(SchedulableTask task) {
-        TaskContextInterface meta = task.meta();
-        if (meta instanceof TaskDataContext) {
-            TaskDataContext metaData = (TaskDataContext) task.meta();
-            return task.getId() + ".device=" + metaData.getBackendIndex() + ":" + metaData.getDeviceIndex();
-        } else {
-            throw new RuntimeException("[ERROR] TaskMetadata expected");
-        }
-    }
-
     @Override
     public boolean isFullJITMode(long executionPlanId, SchedulableTask task) {
-        final CUDADeviceContextInterface deviceContext = getDeviceContext();
-        final String deviceFullName = getFullTaskIdDevice(task);
-        return (!isOpenCLPreLoadBinary(executionPlanId, deviceContext, deviceFullName) && deviceContext.isPlatformFPGA());
+        return false;
     }
 
     @Override
@@ -450,34 +402,9 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
         return TornadoAtomicIntegerNode.globalAtomicsParameters.containsKey(task.meta().getCompiledResolvedJavaMethod());
     }
 
-    private boolean isJITTaskForFGPA(long executionPlanId, SchedulableTask task) {
-        final CUDADeviceContextInterface deviceContext = getDeviceContext();
-        final String deviceFullName = getFullTaskIdDevice(task);
-        return !isOpenCLPreLoadBinary(executionPlanId, deviceContext, deviceFullName) && deviceContext.isPlatformFPGA();
-    }
-
-    private boolean isJITTaskForGPUsAndCPUs(long executionplanId, SchedulableTask task) {
-        final CUDADeviceContextInterface deviceContext = getDeviceContext();
-        final String deviceFullName = getFullTaskIdDevice(task);
-        return !isOpenCLPreLoadBinary(executionplanId, deviceContext, deviceFullName) && !deviceContext.isPlatformFPGA();
-    }
-
-    private TornadoInstalledCode compileJavaForFPGAs(long executionPlanId, SchedulableTask task) {
-        TornadoInstalledCode tornadoInstalledCode = compileJavaToAccelerator(executionPlanId, task);
-        if (tornadoInstalledCode != null) {
-            return loadPreCompiledBinaryForTask(executionPlanId, task);
-        }
-        return null;
-    }
-
     @Override
     public TornadoInstalledCode installCode(long executionPlanId, SchedulableTask task) {
-        if (isJITTaskForFGPA(executionPlanId, task)) {
-            return compileJavaForFPGAs(executionPlanId, task);
-        } else if (isJITTaskForGPUsAndCPUs(executionPlanId, task)) {
-            return compileJavaToAccelerator(executionPlanId, task);
-        }
-        return loadPreCompiledBinaryForTask(executionPlanId, task);
+        return compileJavaToAccelerator(executionPlanId, task);
     }
 
     private XPUBuffer createArrayWrapper(Class<?> type, CUDADeviceContext device, long batchSize, Access access) {
@@ -545,32 +472,15 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
                 result = new CUDAVectorWrapper(deviceContext, object, batchSize, access);
             } else if (object instanceof MemorySegment) {
                 result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, 0);
-            } else if (object instanceof IntArray) {
-                result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.INT.getSizeInBytes());
-            } else if (object instanceof FloatArray) {
-                result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.FLOAT.getSizeInBytes());
-            } else if (object instanceof DoubleArray) {
-                result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.DOUBLE.getSizeInBytes());
-            } else if (object instanceof LongArray) {
-                result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.LONG.getSizeInBytes());
-            } else if (object instanceof ShortArray) {
-                result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.SHORT.getSizeInBytes());
-            } else if (object instanceof ByteArray) {
-                result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.CHAR.getSizeInBytes());
-            } else if (object instanceof CharArray) {
-                result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.CHAR.getSizeInBytes());
-            } else if (object instanceof HalfFloatArray) {
-                result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.HALF.getSizeInBytes());
-            } else if (object instanceof BFloat16Array) {
-                result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.BF16.getSizeInBytes());
-            } else if (object instanceof Int8Array) {
-                result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.CHAR.getSizeInBytes());
-            } else if (object instanceof FP8Array) {
-                // FP8 is one byte per element (CUDA-only storage type); the bytes are dequantized
-                // to float in-kernel via the FP8 codecs (no special code generation needed).
-                result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, CUDAKind.CHAR.getSizeInBytes());
             } else {
-                result = new CUDAFieldBuffer(deviceContext, object, access);
+                // Native array types share one layout table (NativeArrayLayouts); anything not in it
+                // is an ordinary object graph and goes to the field buffer.
+                OptionalInt elementSize = NativeArrayLayouts.elementSizeOf(object);
+                if (elementSize.isPresent()) {
+                    result = new CUDAMemorySegmentWrapper(deviceContext, batchSize, access, elementSize.getAsInt());
+                } else {
+                    result = new CUDAFieldBuffer(deviceContext, object, access);
+                }
             }
         }
 
@@ -619,7 +529,13 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
     }
 
     private boolean reuseBatchBuffer(long batchSize, Access access, TornadoBufferProvider bufferProvider, HashMap<Access, Integer> distinctAccesses, DeviceBufferState state) {
-        if (batchSize != 0) {
+        // A state with no buffer of its own has nothing to reuse: reuseBufferForBatchProcessing()
+        // answers the global question "is a buffer of this size and access already in use", which is
+        // true as soon as any other object of the same access type holds one. Treating that as "this
+        // object may reuse its buffer" leaves the object unallocated, and the LAUNCH that follows
+        // dereferences a null device buffer - which is what a batched graph with more than one
+        // output used to do on its second chunk.
+        if (batchSize != 0 && state.hasObjectBuffer()) {
             int numberOfBuffersForAccessType = distinctAccesses.get(access);
             // if there is a buffer available in the used-list with the same access type, reuse it
             if (bufferProvider.reuseBufferForBatchProcessing(batchSize, access, numberOfBuffersForAccessType)) {
@@ -912,29 +828,6 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
     @Override
     public TornadoVMBackendType getTornadoVMBackend() {
         return TornadoVMBackendType.CUDA;
-    }
-
-    @Override
-    public boolean isSPIRVSupported() {
-        // An CUDADriver device supports SPIR-V if the version is >= 2.1
-        String version = device.getDeviceContext().getPlatformContext().getPlatform().getVersion();
-
-        if (version.contains("CUDA")) {
-            // Currently, the CUDA platform does not allow dispatching SPIR-V kernels
-            return false;
-        }
-
-        Matcher matcher = NAME_PATTERN.matcher(version);
-        int majorVersion = 0;
-        int minorVersion = 0;
-        if (matcher.find()) {
-            majorVersion = Integer.parseInt(matcher.group(1));
-            minorVersion = Integer.parseInt(matcher.group(2));
-        }
-        if (majorVersion > 2) {
-            return true;
-        }
-        return majorVersion == 2 && minorVersion >= 1;
     }
 
     @Override

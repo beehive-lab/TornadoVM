@@ -145,9 +145,13 @@ a new library requires **no changes to the core runtime**:
 3. Expose user-facing factory methods that build a
    :code:`LibraryTaskDescriptor` (library name, function name, parameters,
    accesses), following ``CuBlas.cublasSgemv``.
-4. Add a JNI module for the native binding (see
-   ``tornado-drivers/cublas-jni``), linked under the ``cuda-backend`` Maven
-   profile.
+4. Bind the native calls with ``java.lang.foreign`` (see ``CuBlasNativeLib``
+   in ``tornado-cublas``): a ``SymbolLookup`` resolved at class-init time,
+   downcall handles per entry point, no separate native module or build step.
+   Only reach for a JNI module (see ``cudnn-jni``, ``cutlass-jni``) when the
+   library needs actual compiled C/C++ — a vendor header-only template
+   library, or a runtime whose ABI ``java.lang.foreign`` cannot express
+   directly.
 
 Backends expose their native stream to providers through
 :code:`TornadoNativeStreamSupport` (implemented by the CUDA backend). Provider
@@ -158,14 +162,18 @@ Scope and roadmap
 
 Implemented today, via the same provider SPI: **cuBLAS** and **cuBLASLt**
 (dense linear algebra, fused-epilogue GEMM), **cuFFT** (FFTs), **cuDNN**
-(deep-learning primitives, including fused FP16 flash attention), **CUTLASS**
-(open-template FP32/FP16 GEMM with fused epilogues), and **cuTENSOR** (tensor
-contractions / einsum). Each is a Java module pair (a ``tornado-<lib>`` API
-module plus a native ``*-jni`` module) with per-(plan, device) contexts for
-cached descriptors and plans. The native ``*-jni`` module for each library
-builds only under the ``cuda-backend`` Maven profile, and is
-self-guarding — if the library/toolkit isn't installed, the native side is
-skipped and that provider reports ``UNSUPPORTED`` at runtime rather than
+(deep-learning primitives, including fused FP16 flash attention), **cuSPARSE**
+(CSR SpMV/SpMM), and **CUTLASS** (open-template FP32/FP16/BF16 GEMM with fused
+epilogues), each a ``tornado-<lib>`` API module with per-(plan, device)
+contexts for cached descriptors and plans. cuBLAS, cuBLASLt, cuFFT and
+cuSPARSE bind their native calls directly through ``java.lang.foreign`` —
+no native module, nothing gated behind the ``cuda-backend`` Maven profile
+beyond the module itself. cuDNN keeps a small native module
+(``cudnn-jni``) for the cudnn-frontend C++ SDPA shim, and CUTLASS
+(``cutlass-jni``) compiles device code with ``nvcc``, so both still need a
+C++ toolchain. Either way it is self-guarding — if the library/toolkit
+isn't installed, the ``SymbolLookup`` (or the native build) comes back
+empty and that provider reports ``UNSUPPORTED`` at runtime rather than
 failing the build. Some libraries need an extra runtime dependency (e.g.,
 cuDNN needs ``libcudnn9``); see the full guide linked below for per-library
 install requirements.
@@ -175,8 +183,12 @@ read; the binding marks it ``READ_WRITE`` automatically (include it in
 :code:`transferToDevice` if its initial values come from the host). Batch
 processing (:code:`withBatch`) is not supported for library tasks.
 
-Header-only device libraries (CUB, CUTLASS/CuTe) plug into the CUDA-C
-backend's NVRTC compilation rather than the library-task path.
+A cuTENSOR provider (tensor contractions / einsum) exists on branch
+``hybrid-cutensor`` but is not part of this build.
+
+Header-only device libraries (CUB, CUTLASS/CuTe) would plug into the CUDA-C
+backend's NVRTC compilation rather than the library-task path. No CUB
+integration ships today.
 
 Note that cuBLAS assumes column-major storage: for row-major TornadoVM arrays
 pass the transpose operation (SGEMV) or swap operands (SGEMM), as in the
@@ -187,7 +199,7 @@ See also
 
 `HYBRID_API_GUIDE.md <https://github.com/beehive-lab/TornadoVM/blob/master/HYBRID_API_GUIDE.md>`__
 (repository root) is a complete, example-driven guide to every provider
-(cuBLAS, cuBLASLt, cuFFT, cuDNN, CUTLASS, cuTENSOR): factory tables, code
+(cuBLAS, cuBLASLt, cuFFT, cuDNN, cuSPARSE, CUTLASS): factory tables, code
 snippets, composition patterns, CUDA-Graph usage, build/install
 requirements, CLI flags, a "write your own provider" walkthrough, and a
 troubleshooting table.

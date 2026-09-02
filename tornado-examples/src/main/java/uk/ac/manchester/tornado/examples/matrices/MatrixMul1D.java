@@ -32,13 +32,18 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 /**
+ * Matrix multiplication stored in 1D {@code FloatArray} buffers with nested
+ * {@code @Parallel} loops.
+ * <p>
+ * Copies both matrices on first execution, runs {@code matrixMultiplication},
+ * and copies the result back on every execution.
+ * </p>
  * <p>
  * How to run?
  * </p>
  * <code>
  * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.matrices.MatrixMul1D
  * </code>
- *
  */
 public class MatrixMul1D {
     // CHECKSTYLE:OFF
@@ -124,7 +129,7 @@ public class MatrixMul1D {
             }
         }
         if (oclDevice == null) {
-            System.err.println("There is no device with both OpenCL and CUDA-PTX support");
+            System.err.println("There is no device with both OpenCL and CUDA support");
             System.exit(1);
         }
 
@@ -185,9 +190,9 @@ public class MatrixMul1D {
         String formatOpenCLFGlops = String.format("%.2f", OpenCLGigaFlops);
 
         System.out.println("\tOpenCL Execution: " + formatOpenCLFGlops + " GFlops, Total time = " + averageOpenCL + " ms");
-        System.out.println("\tPTX Execution: " + formatCUDAFGlops + " GFlops, Total Time = " + averageCUDA + " ms");
+        System.out.println("\tCUDA Execution: " + formatCUDAFGlops + " GFlops, Total Time = " + averageCUDA + " ms");
         System.out.println("\tOpenCL Speedup: " + OpenCLspeedup + "x");
-        System.out.println("\tPTX Speedup: " + CUDAspeedup + "x");
+        System.out.println("\tCUDA Speedup: " + CUDAspeedup + "x");
         System.out.println();
 
     }

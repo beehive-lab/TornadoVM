@@ -205,9 +205,7 @@ public class TestMatrixMultiplicationMMACpAsync extends TornadoTestBase {
 
     private void assumeCpAsyncSupported() {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         assertNotBackend(TornadoVMBackendType.METAL);
-        assertNotBackend(TornadoVMBackendType.PTX);
     }
 
     private void runGemmTest(int dimM, int dimN, int dimK) throws TornadoExecutionPlanException {

@@ -23,6 +23,8 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.nio.LongBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +33,9 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDADeviceType;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDAPlatformInfo;
 import uk.ac.manchester.tornado.drivers.cuda.exceptions.CUDAException;
+import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDADriverAPI;
+import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDAHandles;
+import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 
 public class CUDAPlatform implements TornadoPlatformInterface {
 
@@ -43,8 +48,7 @@ public class CUDAPlatform implements TornadoPlatformInterface {
         INTEL("Intel"), //
         AMD("AMD"), //
         NVIDIA("Nvidia"), //
-        MESA("Mesa/X.org"), //
-        XILINX("Xilinx");
+        MESA("Mesa/X.org");
 
         final String vendorName;
 
@@ -64,18 +68,14 @@ public class CUDAPlatform implements TornadoPlatformInterface {
 
         final int deviceCount;
 
-        if (isVendor(Vendor.XILINX)) {
-            deviceCount = clGetDeviceCount(platformPointers, CUDADeviceType.CL_DEVICE_TYPE_ACCELERATOR.getValue());
-        } else if (isVendor(Vendor.MESA)) {
+        if (isVendor(Vendor.MESA)) {
             deviceCount = clGetDeviceCount(platformPointers, CUDADeviceType.CL_DEVICE_TYPE_GPU.getValue());
         } else {
             deviceCount = clGetDeviceCount(platformPointers, CUDADeviceType.CL_DEVICE_TYPE_ALL.getValue());
         }
 
         final long[] ids = new long[deviceCount];
-        if (isVendor(Vendor.XILINX)) {
-            clGetDeviceIDs(platformPointers, CUDADeviceType.CL_DEVICE_TYPE_ACCELERATOR.getValue(), ids);
-        } else if (isVendor(Vendor.MESA)) {
+        if (isVendor(Vendor.MESA)) {
             clGetDeviceIDs(platformPointers, CUDADeviceType.CL_DEVICE_TYPE_GPU.getValue(), ids);
         } else {
             clGetDeviceIDs(platformPointers, CUDADeviceType.CL_DEVICE_TYPE_ALL.getValue(), ids);
@@ -90,13 +90,77 @@ public class CUDAPlatform implements TornadoPlatformInterface {
         return this.getVendor().toLowerCase().startsWith(vendor.getVendorName().toLowerCase());
     }
 
-    native String clGetPlatformInfo(long id, int info);
+    /**
+     * CUDA-oriented platform strings. The version string must be of the form
+     * {@code "<vendor> <major>.<minor>"} because {@link #getVersion()} parses {@code split(" ")[1]}.
+     */
+    String clGetPlatformInfo(long id, int info) {
+        if (info == CUDAPlatformInfo.CL_PLATFORM_PROFILE.getValue()) {
+            return "FULL_PROFILE";
+        } else if (info == CUDAPlatformInfo.CL_PLATFORM_VERSION.getValue()) {
+            try (Arena arena = Arena.ofConfined()) {
+                MemorySegment version = FFMSupport.allocateInt(arena);
+                CUDADriverAPI.cuDriverGetVersion(version);
+                int driverVersion = version.get(FFMSupport.C_INT, 0);
+                return "CUDA " + (driverVersion / 1000) + "." + ((driverVersion % 1000) / 10);
+            }
+        } else if (info == CUDAPlatformInfo.CL_PLATFORM_NAME.getValue()) {
+            return "NVIDIA CUDA";
+        } else if (info == CUDAPlatformInfo.CL_PLATFORM_VENDOR.getValue()) {
+            return "NVIDIA Corporation";
+        }
+        return "";
+    }
 
-    native int clGetDeviceCount(long id, long type);
+    int clGetDeviceCount(long id, long type) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment count = FFMSupport.allocateInt(arena);
+            if (CUDADriverAPI.cuDeviceGetCount(count) != CUDADriverAPI.CUDA_SUCCESS) {
+                return 0;
+            }
+            return count.get(FFMSupport.C_INT, 0);
+        }
+    }
 
-    native int clGetDeviceIDs(long id, long type, long[] devices);
+    /** Boxes each {@code CUdevice} behind a handle the Java layer addresses it by. */
+    int clGetDeviceIDs(long id, long type, long[] devices) {
+        int available = clGetDeviceCount(id, type);
+        int count = Math.min(available, devices.length);
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment device = FFMSupport.allocateInt(arena);
+            for (int i = 0; i < count; i++) {
+                // Device enumeration must degrade to "no devices" rather than abort discovery, so a
+                // failing query leaves the ordinal's CUdevice at its zero default rather than throwing.
+                CUDADriverAPI.cuDeviceGet(device, i);
+                devices[i] = CUDAHandles.register(new CUDAHandles.Device(device.get(FFMSupport.C_INT, 0), i));
+            }
+        }
+        return count;
+    }
 
-    native long clCreateContext(long platform, long[] devices) throws CUDAException;
+    /**
+     * CUDA contexts are per-device, so a context is created for the first device in the array. The
+     * per-device split that OpenCL allows is handled at the Java level (one CUDADeviceContext per
+     * device) and each pins this context with {@code cuCtxSetCurrent}.
+     */
+    long clCreateContext(long platform, long[] devices) throws CUDAException {
+        if (devices.length == 0) {
+            return 0;
+        }
+        CUDAHandles.Device device = CUDAHandles.resolve(devices[0], CUDAHandles.Device.class);
+        if (device == null) {
+            return 0;
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment context = FFMSupport.allocatePointer(arena);
+            int result = CUDADriverAPI.cuCtxCreate(context, CUDADriverAPI.CU_CTX_SCHED_YIELD, device.device());
+            if (result != CUDADriverAPI.CUDA_SUCCESS) {
+                throw new CUDAException(CUDADriverAPI.describe("cuCtxCreate", result));
+            }
+            long contextPointer = context.get(FFMSupport.C_POINTER, 0).address();
+            return CUDAHandles.register(new CUDAHandles.Context(contextPointer, device.device(), device.ordinal()));
+        }
+    }
 
     public List<CUDATargetDevice> getDevices() {
         return devices;
@@ -125,12 +189,6 @@ public class CUDAPlatform implements TornadoPlatformInterface {
     @Override
     public String getVersion() {
         return clGetPlatformInfo(oclPlatformPtr, CUDAPlatformInfo.CL_PLATFORM_VERSION.getValue());
-    }
-
-    @Override
-    public boolean isSPIRVSupported() {
-        // This indicates that this platform has at least one device with support for SPIR-V.
-        return devices.stream().anyMatch(CUDATargetDevice::isSPIRVSupported);
     }
 
     public String getName() {

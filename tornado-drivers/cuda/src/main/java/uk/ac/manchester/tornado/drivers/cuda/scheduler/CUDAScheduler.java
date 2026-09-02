@@ -38,8 +38,7 @@ public class CUDAScheduler {
         AMD("Advanced Micro Devices"), //
         CODEPLAY("Codeplay"), //
         INTEL("Intel"), //
-        NVIDIA("NVIDIA"), //
-        XILINX("Xilinx");
+        NVIDIA("NVIDIA");
 
         private String name;
 
@@ -88,8 +87,6 @@ public class CUDAScheduler {
             case CL_DEVICE_TYPE_ACCELERATOR -> {
                 if (context.getDevice().getDeviceVendor().contains(SUPPORTED_VENDORS.CODEPLAY.getName())) {
                     return getInstanceGPUScheduler(context);
-                } else if (context.isPlatformFPGA()) {
-                    return new CUDAFPGAScheduler(context);
                 } else {
                     return new CUDACPUScheduler(context);
                 }

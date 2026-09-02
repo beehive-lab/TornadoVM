@@ -39,6 +39,7 @@ import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalCommandExecutionStatus;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalProfilingInfo;
 import uk.ac.manchester.tornado.drivers.metal.exceptions.MetalException;
+import uk.ac.manchester.tornado.drivers.metal.ffm.MetalObjects;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
@@ -73,13 +74,21 @@ public class MetalEvent implements Event {
         this.metalEventID = eventId;
     }
 
-    native static void metalGetEventInfo(long eventId, int param, byte[] buffer) throws MetalException;
+    static void metalGetEventInfo(long eventId, int param, byte[] buffer) throws MetalException {
+        MetalObjects.eventInfo(eventId, param, buffer);
+    }
 
-    native static void metalGetEventProfilingInfo(long eventId, long param, byte[] buffer) throws MetalException;
+    static void metalGetEventProfilingInfo(long eventId, long param, byte[] buffer) throws MetalException {
+        MetalObjects.eventProfilingInfo(eventId, param, buffer);
+    }
 
-    native static void metalWaitForEvents(long[] events) throws MetalException;
+    static void metalWaitForEvents(long[] events) throws MetalException {
+        MetalObjects.waitForEvents(events);
+    }
 
-    native static void metalReleaseEvent(long eventId) throws MetalException;
+    static void metalReleaseEvent(long eventId) throws MetalException {
+        MetalObjects.releaseEvent(eventId);
+    }
 
     private long readEventTime(MetalProfilingInfo eventType) {
         if (!ENABLE_METAL_PROFILING) {

@@ -31,13 +31,19 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.examples.common.Messages;
 
 /**
+ * Initializes a large {@code FloatArray} on the default device by adding 100
+ * to every element.
  * <p>
- * Run with.
+ * Builds a {@code TaskGraph}, registers a {@code @Parallel} {@code compute}
+ * task, copies the array back with {@code DataTransferMode.EVERY_EXECUTION},
+ * snapshots the graph, and runs it with {@code TornadoExecutionPlan}.
+ * </p>
+ * <p>
+ * How to run?
  * </p>
  * <code>
  * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.Init <size>
  * </code>
- *
  */
 public class Init {
 

@@ -32,13 +32,18 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
 
 /**
+ * Numerical integration of {@code f(x)} on [1, 4] using a {@code @Reduce}
+ * sum over a {@code @Parallel} loop.
+ * <p>
+ * Copies the input on every execution, runs {@code integrationTornado}, and
+ * copies the reduced sum back.
+ * </p>
  * <p>
  * How to run?
  * </p>
  * <code>
  * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.reductions.Integration
  * </code>
- *
  */
 public class Integration {
 

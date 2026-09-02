@@ -216,7 +216,7 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
         // For large read-only segments served by the staged-transfer ring, skip the whole-segment
         // pin: registering synchronously pages in and pins the entire (possibly cold, mmap'd)
         // segment - exactly the upfront cost the staging ring exists to avoid - and the ring's
-        // own pinned slots already make the chunked H2D DMA async. Mirrors the PTX backend.
+        // own pinned slots already make the chunked H2D DMA async.
         if (useStagedTransfer() && access == Access.READ_ONLY) {
             if (TornadoOptions.FULL_DEBUG) {
                 new TornadoLogger().info("skipping host pinning (staged transfers): %s", toString());
@@ -300,4 +300,10 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
         return sizeOfType;
     }
 
+
+    @Override
+    public boolean supportsAsyncRead() {
+        // enqueueRead and read copy the same region for a whole-segment transfer.
+        return true;
+    }
 }

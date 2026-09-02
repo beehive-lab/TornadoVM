@@ -23,18 +23,18 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.compiler;
 
 import java.util.List;
 
-import org.graalvm.compiler.core.common.cfg.BasicBlock;
-import org.graalvm.compiler.core.common.cfg.BlockMap;
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.lir.gen.LIRGenerationResult;
-import org.graalvm.compiler.lir.gen.LIRGenerator;
-import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
-import org.graalvm.compiler.lir.phases.LIRPhase;
-import org.graalvm.compiler.lir.ssa.SSAUtil;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.StructuredGraph.ScheduleResult;
-import org.graalvm.compiler.nodes.cfg.HIRBlock;
-import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import tornado.graal.compiler.core.common.cfg.BasicBlock;
+import tornado.graal.compiler.core.common.cfg.BlockMap;
+import tornado.graal.compiler.graph.Node;
+import tornado.graal.compiler.lir.gen.LIRGenerationResult;
+import tornado.graal.compiler.lir.gen.LIRGenerator;
+import tornado.graal.compiler.lir.gen.LIRGeneratorTool;
+import tornado.graal.compiler.lir.phases.LIRPhase;
+import tornado.graal.compiler.lir.ssa.SSAUtil;
+import tornado.graal.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.nodes.StructuredGraph.ScheduleResult;
+import tornado.graal.compiler.nodes.cfg.HIRBlock;
+import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.code.TargetDescription;
 

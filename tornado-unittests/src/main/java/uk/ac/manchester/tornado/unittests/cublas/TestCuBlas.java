@@ -38,6 +38,7 @@ import uk.ac.manchester.tornado.cublas.CuBlas;
 import uk.ac.manchester.tornado.cublas.CuBlasOptions;
 import uk.ac.manchester.tornado.cublas.enums.CuBlasOperation;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+import uk.ac.manchester.tornado.cublas.provider.CuBlasLibraryProvider;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
 
 /**
@@ -69,14 +70,12 @@ public class TestCuBlas extends TornadoTestBase {
         if (backendType != TornadoVMBackendType.CUDA) {
             String message = "cuBLAS library tasks require the CUDA backend (default device is " + backendType + ")";
             switch (backendType) {
-                case OPENCL, PTX, SPIRV, METAL -> assertNotBackend(backendType, message);
+                case OPENCL, METAL -> assertNotBackend(backendType, message);
                 default -> throw new TornadoVMCUDANotSupported(message);
             }
         }
-        try {
-            System.loadLibrary("tornado-cublas");
-        } catch (UnsatisfiedLinkError e) {
-            throw new TornadoVMCUDANotSupported("libtornado-cublas is not available: " + e.getMessage());
+        if (!CuBlasLibraryProvider.isAvailable()) {
+            throw new TornadoVMCUDANotSupported("cuBLAS is not available on this host");
         }
     }
 
@@ -492,6 +491,94 @@ public class TestCuBlas extends TornadoTestBase {
                     assertEquals("iteration " + it, expected.get(i) + 1.0f, output.get(i), 0.01f * Math.max(1.0f, Math.abs(expected.get(i))));
                 }
             }
+        }
+    }
+
+    /**
+     * A library task whose weight matrix is placed on the device by an explicit upload rather than
+     * by an execution, and swapped for another one between executions. The matrix is declared
+     * {@code FIRST_EXECUTION}, so without the upload the second result would repeat the first.
+     */
+    @Test
+    public void testSgemmWithAdHocWeightUpload() throws TornadoExecutionPlanException {
+        FloatArray matrixA = randomArray(SIZE * SIZE);
+        FloatArray weights = randomArray(SIZE * SIZE);
+        FloatArray matrixC = new FloatArray(SIZE * SIZE);
+        FloatArray expected = new FloatArray(SIZE * SIZE);
+
+        TaskGraph taskGraph = new TaskGraph("gemmUpload") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, weights) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, matrixA) //
+                .libraryTask("sgemm", CuBlas::cublasSgemm, //
+                        CuBlasOperation.CUBLAS_OP_N.operation(), CuBlasOperation.CUBLAS_OP_N.operation(), //
+                        SIZE, SIZE, SIZE, 1.0f, weights, SIZE, matrixA, SIZE, 0.0f, matrixC, SIZE) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixC);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            // The weights reach the device without the plan running.
+            plan.transferToDevice(weights);
+            plan.execute();
+
+            matrixMultiplyJava(matrixA, weights, expected, SIZE);
+            for (int i = 0; i < SIZE * SIZE; i++) {
+                assertEquals(expected.get(i), matrixC.get(i), 0.01f * Math.max(1.0f, Math.abs(expected.get(i))));
+            }
+
+            // Swap the weights for new ones, mid-run.
+            FloatArray newWeights = randomArray(SIZE * SIZE);
+            for (int i = 0; i < SIZE * SIZE; i++) {
+                weights.set(i, newWeights.get(i));
+            }
+            plan.transferToDevice(weights);
+            plan.execute();
+
+            matrixMultiplyJava(matrixA, weights, expected, SIZE);
+            for (int i = 0; i < SIZE * SIZE; i++) {
+                assertEquals(expected.get(i), matrixC.get(i), 0.01f * Math.max(1.0f, Math.abs(expected.get(i))));
+            }
+        }
+    }
+
+    /**
+     * A library task in a pipeline: the GEMM result stays on the device and a second graph reads
+     * it, with the whole plan's inputs uploaded up front.
+     */
+    @Test
+    public void testSgemmPipelineWithUpFrontUpload() throws TornadoExecutionPlanException {
+        FloatArray matrixA = randomArray(SIZE * SIZE);
+        FloatArray matrixB = randomArray(SIZE * SIZE);
+        FloatArray matrixC = new FloatArray(SIZE * SIZE);
+        FloatArray output = new FloatArray(SIZE * SIZE);
+        FloatArray expected = new FloatArray(SIZE * SIZE);
+
+        TaskGraph producer = new TaskGraph("gemmProducer") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
+                .libraryTask("sgemm", CuBlas::cublasSgemm, //
+                        CuBlasOperation.CUBLAS_OP_N.operation(), CuBlasOperation.CUBLAS_OP_N.operation(), //
+                        SIZE, SIZE, SIZE, 1.0f, matrixB, SIZE, matrixA, SIZE, 0.0f, matrixC, SIZE) //
+                .persistOnDevice(matrixC);
+
+        TaskGraph consumer = new TaskGraph("gemmConsumer") //
+                .consumeFromDevice("gemmProducer", matrixC) //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, output) //
+                .task("scale", TestCuBlas::scaleByTwo, matrixC, output) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(producer.snapshot(), consumer.snapshot())) {
+            plan.transferToDevice();
+            plan.withGraph(0).execute();
+            plan.withGraph(1).execute();
+        }
+
+        matrixMultiplyJava(matrixA, matrixB, expected, SIZE);
+        for (int i = 0; i < SIZE * SIZE; i++) {
+            assertEquals(2.0f * expected.get(i), output.get(i), 0.02f * Math.max(1.0f, Math.abs(expected.get(i))));
+        }
+    }
+
+    public static void scaleByTwo(FloatArray input, FloatArray output) {
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            output.set(i, 2.0f * input.get(i));
         }
     }
 }

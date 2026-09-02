@@ -26,15 +26,19 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 /**
- * Montecarlo algorithm to approximate the PI value. This version has been
- * adapted from Marawacc test-suite.
+ * Monte Carlo approximation of PI (adapted from the Marawacc test-suite).
+ * Each {@code @Parallel} iteration samples a point and writes 1 if it falls
+ * inside the unit circle.
+ * <p>
+ * The task graph runs {@code computeMontecarlo} and copies the output back on
+ * every execution. The host sums the hits and multiplies by 4.
+ * </p>
  * <p>
  * How to run?
  * </p>
  * <code>
  * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MonteCarlo
  * </code>
- *
  */
 public class MonteCarlo {
 

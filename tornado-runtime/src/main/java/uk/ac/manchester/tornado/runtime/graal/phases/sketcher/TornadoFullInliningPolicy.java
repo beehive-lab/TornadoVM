@@ -21,10 +21,10 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases.sketcher;
 
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.spi.Replacements;
-import org.graalvm.compiler.phases.common.inlining.info.InlineInfo;
-import org.graalvm.compiler.phases.common.inlining.walker.MethodInvocation;
+import tornado.graal.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.nodes.spi.Replacements;
+import tornado.graal.compiler.phases.common.inlining.info.InlineInfo;
+import tornado.graal.compiler.phases.common.inlining.walker.MethodInvocation;
 
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoInliningPolicy;
 

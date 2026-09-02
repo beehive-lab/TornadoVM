@@ -107,7 +107,7 @@ public class TestHalfFloats extends TornadoTestBase {
 
 
         // Store partial sum in local memory
-        localSum[localId] = partialSum.getHalfFloatValue();
+        localSum[localId] = partialSum.getFloat32();
         context.localBarrier();
 
         // Parallel reduction within workgroup
@@ -222,7 +222,6 @@ public class TestHalfFloats extends TornadoTestBase {
 
     @Test
     public void testMatrixVectorHalfFloatOptimized() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         Random random = new Random(42);
         int localWorkgroupSize = 64;

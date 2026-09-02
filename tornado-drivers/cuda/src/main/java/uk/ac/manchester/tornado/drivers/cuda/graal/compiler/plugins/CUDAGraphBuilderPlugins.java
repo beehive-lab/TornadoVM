@@ -24,36 +24,35 @@
 package uk.ac.manchester.tornado.drivers.cuda.graal.compiler.plugins;
 
 import jdk.vm.ci.meta.ResolvedJavaField;
-import org.graalvm.compiler.core.common.memory.BarrierType;
-import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
-import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FixedWithNextNode;
-import org.graalvm.compiler.nodes.NodeView;
-import org.graalvm.compiler.nodes.PiNode;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.AddNode;
-import org.graalvm.compiler.nodes.calc.MulNode;
-import org.graalvm.compiler.nodes.calc.SignExtendNode;
-import org.graalvm.compiler.nodes.extended.BoxNode;
-import org.graalvm.compiler.nodes.extended.JavaReadNode;
-import org.graalvm.compiler.nodes.extended.JavaWriteNode;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
-import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
-import org.graalvm.compiler.nodes.java.LoadFieldNode;
-import org.graalvm.compiler.nodes.java.NewArrayNode;
-import org.graalvm.compiler.nodes.java.StoreIndexedNode;
-import org.graalvm.compiler.nodes.memory.address.AddressNode;
-import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
-import org.graalvm.compiler.nodes.util.GraphUtil;
-import org.graalvm.compiler.replacements.InlineDuringParsingPlugin;
-import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
+import tornado.graal.compiler.core.common.memory.BarrierType;
+import tornado.graal.compiler.core.common.memory.MemoryOrderMode;
+import tornado.graal.compiler.core.common.type.StampFactory;
+import tornado.graal.compiler.graph.Node;
+import tornado.graal.compiler.nodes.ConstantNode;
+import tornado.graal.compiler.nodes.FixedWithNextNode;
+import tornado.graal.compiler.nodes.NodeView;
+import tornado.graal.compiler.nodes.PiNode;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.calc.AddNode;
+import tornado.graal.compiler.nodes.calc.MulNode;
+import tornado.graal.compiler.nodes.calc.SignExtendNode;
+import tornado.graal.compiler.nodes.extended.BoxNode;
+import tornado.graal.compiler.nodes.extended.JavaReadNode;
+import tornado.graal.compiler.nodes.extended.JavaWriteNode;
+import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderContext;
+import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugin;
+import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
+import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
+import tornado.graal.compiler.nodes.graphbuilderconf.NodePlugin;
+import tornado.graal.compiler.nodes.java.LoadFieldNode;
+import tornado.graal.compiler.nodes.java.NewArrayNode;
+import tornado.graal.compiler.nodes.java.StoreIndexedNode;
+import tornado.graal.compiler.nodes.memory.address.AddressNode;
+import tornado.graal.compiler.nodes.memory.address.OffsetAddressNode;
+import tornado.graal.compiler.nodes.util.GraphUtil;
+import tornado.graal.compiler.replacements.InlineDuringParsingPlugin;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;
@@ -64,16 +63,24 @@ import org.graalvm.word.LocationIdentity;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.enums.MMAShape;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.BFloat16;
 import uk.ac.manchester.tornado.api.types.FP8;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
+import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
+import uk.ac.manchester.tornado.api.types.arrays.CharArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FP8Array;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoMemorySegment;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Float;
 import uk.ac.manchester.tornado.api.types.vectors.Half2;
 import uk.ac.manchester.tornado.api.utils.QuantizationUtils;
 import uk.ac.manchester.tornado.drivers.cuda.CUDAProgram;
@@ -81,6 +88,8 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAArchitecture;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAUnary;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.ReadHalfFloatNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.WriteHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.AtomAddNodeTemplate;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAComputeNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAFragmentNode;
@@ -93,7 +102,9 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAStoreBSwizzledNo
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAStoreNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAShuffleDownNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASimdBroadcastFirstNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAAtomicRmwNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASimdSumNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAWarpVoteNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.DecAtomicNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GetAtomicNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GlobalThreadIdNode;
@@ -117,9 +128,9 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASwizzledLoadFP16Str
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASwizzledStoreFP16Stride32Node;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.PrintfNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.TornadoAtomicIntegerNode;
-import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
+import java.lang.reflect.Field;
 import java.util.function.Supplier;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
@@ -143,12 +154,13 @@ import static uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAIntUnaryIntr
 
 public class CUDAGraphBuilderPlugins {
 
-    public static void registerInvocationPlugins(final Plugins ps, final InvocationPlugins plugins, final HotSpotMetaAccessProvider metaAccessProvider) {
+    public static void registerInvocationPlugins(final Plugins ps, final InvocationPlugins plugins, final MetaAccessProvider metaAccessProvider) {
         if (TornadoOptions.INLINE_DURING_BYTECODE_PARSING) {
             ps.appendInlineInvokePlugin(new InlineDuringParsingPlugin());
         }
 
         registerFP16ConversionPlugins(plugins);
+        registerNativeArrayAccessPlugins(plugins);
         registerFP8ConversionPlugins(plugins);
         registerBF16ConversionPlugins(plugins);
         registerTornadoVMIntrinsicsPlugins(plugins);
@@ -296,30 +308,15 @@ public class CUDAGraphBuilderPlugins {
     }
 
     private static void registerAtomicAddOperation(Registration r) {
-        // Accessing the vmConfig during initialization was causing a NullPointerException.
-        // By using Suppliers, the getVMConfig() is only invoked at compile time, when the Supplier's get() is invoked in the plugins.
-        Supplier<Integer> intHeaderSupplier = () -> {
-            var vmConfig = TornadoCoreRuntime.getVMConfig();
-            int headerSize = vmConfig.getArrayBaseOffset(JavaKind.Int);
-            return headerSize / JavaKind.Int.getByteCount(); // 16/4=4 or 24/4=6
-        };
-
-        Supplier<Integer> longHeaderSupplier = () -> {
-            var vmConfig = TornadoCoreRuntime.getVMConfig();
-            int headerSize = vmConfig.getArrayBaseOffset(JavaKind.Long);
-            return headerSize / JavaKind.Long.getByteCount(); // 16/8=2 or 24/8=3
-        };
-        Supplier<Integer> floatHeaderSupplier = () -> {
-            var vmConfig = TornadoCoreRuntime.getVMConfig();
-            int headerSize = vmConfig.getArrayBaseOffset(JavaKind.Float);
-            return headerSize / JavaKind.Float.getByteCount();
-        };
-
-        Supplier<Integer> doubleHeaderSupplier = () -> {
-            var vmConfig = TornadoCoreRuntime.getVMConfig();
-            int headerSize = vmConfig.getArrayBaseOffset(JavaKind.Double);
-            return headerSize / JavaKind.Double.getByteCount();
-        };
+        // The header offset must match the fixed device-buffer convention (PANAMA_OBJECT_HEADER_SIZE)
+        // used elsewhere in this file (see registerCpAsyncCopy) and by the host-side array wrappers -
+        // not a live vmConfig.getArrayBaseOffset() query, which varies with the host JDK's object header
+        // layout (12 vs 16 under JDK 27 compact headers) and desyncs from that fixed 16, shifting
+        // atomicAdd's target address by one element.
+        Supplier<Integer> intHeaderSupplier = () -> (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE / JavaKind.Int.getByteCount(); // 16/4=4
+        Supplier<Integer> longHeaderSupplier = () -> (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE / JavaKind.Long.getByteCount(); // 16/8=2
+        Supplier<Integer> floatHeaderSupplier = () -> (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE / JavaKind.Float.getByteCount(); // 16/4=4
+        Supplier<Integer> doubleHeaderSupplier = () -> (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE / JavaKind.Double.getByteCount(); // 16/8=2
 
         registerAtomicAddPlugin(r, "atomicAdd", IntArray.class, CUDAKind.UINT, intHeaderSupplier);
         registerAtomicAddPlugin(r, "atomicAdd", int[].class, CUDAKind.UINT, intHeaderSupplier);
@@ -484,6 +481,57 @@ public class CUDAGraphBuilderPlugins {
         registerMMAPlugins(r);
         registerCpAsyncPlugins(r);
         registerSwizzledLocalAccessesPlugins(r);
+        registerUnsupportedSimdgroupMatrixPlugins(r);
+    }
+
+    /**
+     * The {@code simdgroup_float8x8} matrix-unit intrinsics ({@link KernelContext} {@code simdgroupMatrix*},
+     * and {@code matrixMultiply8x8} which is written in terms of them) are Metal-only. They cannot be
+     * intrinsified on this backend, so reject them at graph-build time with a clear message instead of
+     * failing later when the JVM-fallback object allocations are lowered.
+     */
+    private static void registerUnsupportedSimdgroupMatrixPlugins(Registration r) {
+        final String message = "simdgroup_float8x8 matrix operations (KernelContext.simdgroupMatrix*) are only supported on the Metal backend. Use the mma* Tensor Core operations instead.";
+        r.register(new InvocationPlugin("simdgroupMatrixZero", Receiver.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        r.register(new InvocationPlugin("simdgroupMatrixLoad", Receiver.class, FloatArray.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode base, ValueNode stride) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        r.register(new InvocationPlugin("simdgroupMatrixLoad", Receiver.class, float[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode base, ValueNode stride) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        r.register(new InvocationPlugin("simdgroupMatrixMultiplyAccumulate", Receiver.class, Matrix8x8Float.class, Matrix8x8Float.class, Matrix8x8Float.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode bMat, ValueNode c) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        r.register(new InvocationPlugin("simdgroupMatrixStore", Receiver.class, Matrix8x8Float.class, FloatArray.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode matrix, ValueNode array, ValueNode base, ValueNode stride) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
     }
 
     /**
@@ -492,8 +540,8 @@ public class CUDAGraphBuilderPlugins {
      */
     private static void registerCpAsyncPlugins(Registration r) {
         registerCpAsyncCopy(r, HalfFloatArray.class, JavaKind.Short);
-        registerCpAsyncCopy(r, uk.ac.manchester.tornado.api.types.arrays.FP8Array.class, JavaKind.Byte);
-        registerCpAsyncCopy(r, uk.ac.manchester.tornado.api.types.arrays.ByteArray.class, JavaKind.Byte);
+        registerCpAsyncCopy(r, FP8Array.class, JavaKind.Byte);
+        registerCpAsyncCopy(r, ByteArray.class, JavaKind.Byte);
 
         r.register(new InvocationPlugin("asyncCopyCommit", InvocationPlugin.Receiver.class) {
             @Override
@@ -525,7 +573,10 @@ public class CUDAGraphBuilderPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver,
                                  ValueNode dstTile, ValueNode dstIndex, ValueNode srcArray, ValueNode srcIndex) {
                 receiver.get(true);
-                int headerBytes = TornadoCoreRuntime.getVMConfig().getArrayBaseOffset(elementKind);
+                // Panama native array data begins after PANAMA_OBJECT_HEADER_SIZE (16) bytes - not the JVM
+                // array-base offset that getVMConfig().getArrayBaseOffset returns (12 under compact object
+                // headers), which would read every source element 4 bytes early.
+                int headerBytes = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
                 b.add(new CUDACpAsyncCopyNode(dstTile, dstIndex, srcArray, srcIndex,
                         elementKind.getByteCount(), headerBytes));
                 return true;
@@ -623,8 +674,7 @@ public class CUDAGraphBuilderPlugins {
                                  ValueNode fragD, ValueNode target,
                                  ValueNode tileRow, ValueNode tileCol, ValueNode dimN) {
                 receiver.get(true);
-                int headerElements = TornadoCoreRuntime.getVMConfig()
-                        .getArrayBaseOffset(JavaKind.Float) / JavaKind.Float.getByteCount();
+                int headerElements = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE / JavaKind.Float.getByteCount();
                 b.add(new CUDAMMAStoreNode(fragD, target, tileRow, tileCol, dimN, headerElements));
                 return true;
             }
@@ -743,8 +793,7 @@ public class CUDAGraphBuilderPlugins {
                                  ValueNode fragD, ValueNode target,
                                  ValueNode tileRow, ValueNode tileCol, ValueNode dimN) {
                 receiver.get(true);
-                int headerElements = TornadoCoreRuntime.getVMConfig()
-                        .getArrayBaseOffset(JavaKind.Int) / JavaKind.Int.getByteCount();
+                int headerElements = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE / JavaKind.Int.getByteCount();
                 b.add(new CUDAMMAStoreNode(fragD, target, tileRow, tileCol, dimN, headerElements, true));
                 return true;
             }
@@ -878,10 +927,89 @@ public class CUDAGraphBuilderPlugins {
             }
         });
 
+        registerAtomicRmwPlugins(r);
+
         r.register(new InvocationPlugin("simdBroadcastFirst", InvocationPlugin.Receiver.class, float.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode val) {
                 b.addPush(JavaKind.Float, new CUDASimdBroadcastFirstNode(val));
+                return true;
+            }
+        });
+
+        // Warp votes. Same reasoning as above: the KernelContext defaults answer for a single lane,
+        // so without these plugins a vote would silently reduce to its own predicate.
+        r.register(new InvocationPlugin("simdAny", InvocationPlugin.Receiver.class, boolean.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode predicate) {
+                b.addPush(JavaKind.Boolean, new CUDAWarpVoteNode(CUDALIRStmt.WarpVoteStmt.Mode.ANY, predicate));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("simdAll", InvocationPlugin.Receiver.class, boolean.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode predicate) {
+                b.addPush(JavaKind.Boolean, new CUDAWarpVoteNode(CUDALIRStmt.WarpVoteStmt.Mode.ALL, predicate));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("simdBallot", InvocationPlugin.Receiver.class, boolean.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode predicate) {
+                b.addPush(JavaKind.Int, new CUDAWarpVoteNode(CUDALIRStmt.WarpVoteStmt.Mode.BALLOT, predicate));
+                return true;
+            }
+        });
+    }
+
+    private static final String ATOMIC_RMW_LOCAL_ONLY = "Atomic read-modify-write operations (KernelContext.atomicCAS/atomicExchange/atomicMin/atomicMax) are supported on local (shared) arrays only. "
+            + "Allocate the array with KernelContext.allocateIntLocalArray(int).";
+
+    /**
+     * Read-modify-write atomics over a local (shared) int array. Without these the KernelContext defaults
+     * apply the operation non-atomically, which is only correct for a single thread. A global array is
+     * rejected rather than left to the default, which would race silently.
+     */
+    private static void registerAtomicRmwPlugins(Registration r) {
+        r.register(new InvocationPlugin("atomicCAS", InvocationPlugin.Receiver.class, int[].class, int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index, ValueNode expected, ValueNode value) {
+                if (!isLocalArray(array)) {
+                    unimplemented(ATOMIC_RMW_LOCAL_ONLY);
+                    return false;
+                }
+                receiver.get(true);
+                b.addPush(JavaKind.Int, new CUDAAtomicRmwNode(CUDALIRStmt.AtomicRmwStmt.Mode.CAS, array, index, expected, value));
+                return true;
+            }
+        });
+
+        registerAtomicRmwPlugin(r, "atomicExchange", CUDALIRStmt.AtomicRmwStmt.Mode.EXCHANGE);
+        registerAtomicRmwPlugin(r, "atomicMin", CUDALIRStmt.AtomicRmwStmt.Mode.MIN);
+        registerAtomicRmwPlugin(r, "atomicMax", CUDALIRStmt.AtomicRmwStmt.Mode.MAX);
+    }
+
+    /**
+     * Whether {@code array} is a local (shared) array declared inside the kernel. Only those are addressable
+     * as {@code &name[index]}; a global array parameter arrives as a raw address held in an integer, so the
+     * same emission would not compile. Global arrays are rejected with {@link #ATOMIC_RMW_LOCAL_ONLY}.
+     */
+    private static boolean isLocalArray(ValueNode array) {
+        return GraphUtil.unproxify(array) instanceof LocalArrayNode;
+    }
+
+    private static void registerAtomicRmwPlugin(Registration r, String name, CUDALIRStmt.AtomicRmwStmt.Mode mode) {
+        r.register(new InvocationPlugin(name, InvocationPlugin.Receiver.class, int[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index, ValueNode value) {
+                if (!isLocalArray(array)) {
+                    unimplemented(ATOMIC_RMW_LOCAL_ONLY);
+                    return false;
+                }
+                receiver.get(true);
+                b.addPush(JavaKind.Int, new CUDAAtomicRmwNode(mode, array, index, null, value));
                 return true;
             }
         });
@@ -910,7 +1038,7 @@ public class CUDAGraphBuilderPlugins {
         r.register(new InvocationPlugin("swizzleLoadFp16Stride16", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride) {
-                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                unimplemented("Swizzled local memory accesses are not supported on this backend.");
                 return false;
             }
         });
@@ -918,7 +1046,7 @@ public class CUDAGraphBuilderPlugins {
         r.register(new InvocationPlugin("swizzleStoreFp16Stride16", InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class, int.class, HalfFloat.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode value) {
-                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                unimplemented("Swizzled local memory accesses are not supported on this backend.");
                 return false;
             }
         });
@@ -928,7 +1056,7 @@ public class CUDAGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver,
                                  ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride) {
-                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                unimplemented("Swizzled local memory accesses are not supported on this backend.");
                 return false;
             }
         });
@@ -938,7 +1066,7 @@ public class CUDAGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver,
                                  ValueNode local_array, ValueNode row, ValueNode column, ValueNode stride, ValueNode value) {
-                unimplemented("Swizzled local memory accesses are currently only supported for the PTX backend.");
+                unimplemented("Swizzled local memory accesses are not supported on this backend.");
                 return false;
             }
         });
@@ -1133,7 +1261,7 @@ public class CUDAGraphBuilderPlugins {
 
     }
 
-    private static void registerMemoryAccessPlugins(InvocationPlugins plugins, HotSpotMetaAccessProvider metaAccessProvider) {
+    private static void registerMemoryAccessPlugins(InvocationPlugins plugins, MetaAccessProvider metaAccessProvider) {
         Registration r = new Registration(plugins, TornadoMemorySegment.class);
 
         for (JavaKind kind : JavaKind.values()) {
@@ -1336,5 +1464,142 @@ public class CUDAGraphBuilderPlugins {
 
     public static void registerParameterPlugins(Plugins plugins) {
         CUDAVectorPlugins.registerParameterPlugins(plugins);
+    }
+
+    /**
+     * Intrinsify the {@code get(int)}/{@code set(int,val)} accessors of the TornadoVM native array types
+     * directly at the accessor call site. Bypasses the delegate chain {@code get -> getXAtIndex ->
+     * MemorySegment.getAtIndex}; the terminal Panama accessor is abstract (bodiless) on JDK 22+, so on the
+     * reflection path the sketcher would descend into it and fail ("this.code is null"). Emitting the
+     * memory read/write up front avoids reaching the abstract method.
+     */
+    private static void registerNativeArrayAccessPlugins(InvocationPlugins plugins) {
+        registerNativeArrayGetSet(plugins, IntArray.class, JavaKind.Int);
+        registerNativeArrayGetSet(plugins, FloatArray.class, JavaKind.Float);
+        registerNativeArrayGetSet(plugins, DoubleArray.class, JavaKind.Double);
+        registerNativeArrayGetSet(plugins, LongArray.class, JavaKind.Long);
+        registerNativeArrayGetSet(plugins, ShortArray.class, JavaKind.Short);
+        registerNativeArrayGetSet(plugins, ByteArray.class, JavaKind.Byte);
+        registerNativeArrayGetSet(plugins, Int8Array.class, JavaKind.Byte);
+        registerNativeArrayGetSet(plugins, CharArray.class, JavaKind.Char);
+        registerNativeArrayGetSet(plugins, BFloat16Array.class, JavaKind.Short);
+        registerNativeArrayGetSet(plugins, FP8Array.class, JavaKind.Byte);
+        registerHalfFloatArrayGetSet(plugins);
+        registerByteArrayHalfFloatAccess(plugins);
+    }
+
+    /**
+     * Intrinsify {@code ByteArray.getHalfFloat(byteIndex)}/{@code setHalfFloat(byteIndex, HalfFloat)} directly.
+     * These read/write a 2-byte HALF at a raw BYTE offset (Q8_0 tensors pack a fp16 scale inside a byte buffer),
+     * delegating {@code -> TornadoMemorySegment.getShortAtIndex -> MemorySegment.getAtIndex} (abstract/bodiless on
+     * JDK 22+). Without this the reflection-path sketcher descends into the abstract Panama accessor and fails.
+     * The byte offset is {@code baseIndex + byteIndex} (baseIndex == arrayHeaderSize for ByteArray), i.e.
+     * {@link #arrayElementAddress} with a Byte element size.
+     */
+    private static void registerByteArrayHalfFloatAccess(InvocationPlugins plugins) {
+        final Field segmentField;
+        final Field baseIndexField;
+        try {
+            segmentField = ByteArray.class.getDeclaredField("segment");
+            baseIndexField = ByteArray.class.getDeclaredField("baseIndex");
+        } catch (NoSuchFieldException e) {
+            throw new TornadoRuntimeException("ByteArray is missing expected fields for intrinsification: " + e);
+        }
+        Registration r = new Registration(plugins, ByteArray.class);
+        r.register(new InvocationPlugin("getHalfFloat", Receiver.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode byteIndex) {
+                AddressNode addressNode = arrayElementAddress(b, receiver, byteIndex, JavaKind.Byte, segmentField, baseIndexField);
+                ReadHalfFloatNode readNode = b.append(new ReadHalfFloatNode(addressNode));
+                b.push(JavaKind.Object, readNode);
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin("setHalfFloat", Receiver.class, int.class, HalfFloat.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode byteIndex, ValueNode value) {
+                AddressNode addressNode = arrayElementAddress(b, receiver, byteIndex, JavaKind.Byte, segmentField, baseIndexField);
+                WriteHalfFloatNode writeNode = new WriteHalfFloatNode(addressNode, value);
+                b.add(writeNode);
+                return true;
+            }
+        });
+    }
+
+    private static void registerHalfFloatArrayGetSet(InvocationPlugins plugins) {
+        final Field segmentField;
+        final Field baseIndexField;
+        try {
+            segmentField = HalfFloatArray.class.getDeclaredField("segment");
+            baseIndexField = HalfFloatArray.class.getDeclaredField("baseIndex");
+        } catch (NoSuchFieldException e) {
+            throw new TornadoRuntimeException("HalfFloatArray is missing expected fields for intrinsification: " + e);
+        }
+        Registration r = new Registration(plugins, HalfFloatArray.class);
+        r.register(new InvocationPlugin("get", Receiver.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index) {
+                AddressNode addressNode = arrayElementAddress(b, receiver, index, JavaKind.Short, segmentField, baseIndexField);
+                ReadHalfFloatNode readNode = b.append(new ReadHalfFloatNode(addressNode));
+                b.push(JavaKind.Object, readNode);
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin("set", Receiver.class, int.class, HalfFloat.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value) {
+                AddressNode addressNode = arrayElementAddress(b, receiver, index, JavaKind.Short, segmentField, baseIndexField);
+                WriteHalfFloatNode writeNode = new WriteHalfFloatNode(addressNode, value);
+                b.add(writeNode);
+                return true;
+            }
+        });
+    }
+
+    private static void registerNativeArrayGetSet(InvocationPlugins plugins, Class<?> arrayClass, JavaKind kind) {
+        final Field segmentField;
+        final Field baseIndexField;
+        try {
+            segmentField = arrayClass.getDeclaredField("segment");
+            baseIndexField = arrayClass.getDeclaredField("baseIndex");
+        } catch (NoSuchFieldException e) {
+            throw new TornadoRuntimeException("Native array type " + arrayClass.getName() + " is missing expected fields for intrinsification: " + e);
+        }
+        Registration r = new Registration(plugins, arrayClass);
+        r.register(new InvocationPlugin("get", Receiver.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index) {
+                AddressNode addressNode = arrayElementAddress(b, receiver, index, kind, segmentField, baseIndexField);
+                JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
+                b.addPush(kind, readNode);
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin("set", Receiver.class, int.class, kind.toJavaClass()) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value) {
+                AddressNode addressNode = arrayElementAddress(b, receiver, index, kind, segmentField, baseIndexField);
+                JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
+                b.add(writeNode);
+                return true;
+            }
+        });
+    }
+
+    /**
+     * Build {@code &segment[(baseIndex + index) * elementBytes]} for a native array accessor, matching the
+     * inlined {@code TornadoMemorySegment.get/setAtIndex} intrinsic.
+     */
+    private static AddressNode arrayElementAddress(GraphBuilderContext b, Receiver receiver, ValueNode index, JavaKind kind, Field segmentField, Field baseIndexField) {
+        ValueNode arrayNode = receiver.get(true); // adds the null check
+        ResolvedJavaField segment = b.getMetaAccess().lookupJavaField(segmentField);
+        ResolvedJavaField baseIndex = b.getMetaAccess().lookupJavaField(baseIndexField);
+        ValueNode segmentNode = b.append(LoadFieldNode.create(b.getGraph().getAssumptions(), arrayNode, segment));
+        ValueNode baseIndexNode = b.append(LoadFieldNode.create(b.getGraph().getAssumptions(), arrayNode, baseIndex));
+        ValueNode longIndex = b.append(SignExtendNode.create(index, 64, NodeView.DEFAULT));
+        ValueNode longBaseIndex = b.append(SignExtendNode.create(baseIndexNode, 64, NodeView.DEFAULT));
+        AddNode absoluteIndexNode = b.append(new AddNode(longIndex, longBaseIndex));
+        MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forLong(kind.getByteCount())));
+        return b.append(new OffsetAddressNode(segmentNode, mulNode));
     }
 }

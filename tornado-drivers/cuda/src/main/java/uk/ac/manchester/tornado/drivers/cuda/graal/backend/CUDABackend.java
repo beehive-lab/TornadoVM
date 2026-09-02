@@ -34,30 +34,31 @@ import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEV
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.graalvm.compiler.code.CompilationResult;
-import org.graalvm.compiler.core.common.CompilationIdentifier;
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
-import org.graalvm.compiler.lir.LIR;
-import org.graalvm.compiler.lir.LIRInstruction;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
-import org.graalvm.compiler.lir.asm.DataBuilder;
-import org.graalvm.compiler.lir.framemap.FrameMap;
-import org.graalvm.compiler.lir.framemap.FrameMapBuilder;
-import org.graalvm.compiler.lir.framemap.ReferenceMapBuilder;
-import org.graalvm.compiler.lir.gen.LIRGenerationResult;
-import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
-import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
-import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.tiers.SuitesProvider;
-import org.graalvm.compiler.phases.util.Providers;
+import tornado.graal.compiler.code.CompilationResult;
+import tornado.graal.compiler.core.common.CompilationIdentifier;
+import tornado.graal.compiler.core.common.LIRKind;
+import tornado.graal.compiler.core.common.alloc.RegisterAllocationConfig;
+import tornado.graal.compiler.lir.LIR;
+import tornado.graal.compiler.lir.LIRInstruction;
+import tornado.graal.compiler.lir.Variable;
+import tornado.graal.compiler.lir.asm.CompilationResultBuilder;
+import tornado.graal.compiler.lir.asm.DataBuilder;
+import tornado.graal.compiler.lir.framemap.FrameMap;
+import tornado.graal.compiler.lir.framemap.FrameMapBuilder;
+import tornado.graal.compiler.lir.framemap.ReferenceMapBuilder;
+import tornado.graal.compiler.lir.gen.LIRGenerationResult;
+import tornado.graal.compiler.lir.gen.LIRGeneratorTool;
+import tornado.graal.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.nodes.cfg.ControlFlowGraph;
+import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
+import tornado.graal.compiler.options.OptionValues;
+import tornado.graal.compiler.phases.tiers.SuitesProvider;
+import tornado.graal.compiler.phases.util.Providers;
 
 import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.CompilationRequest;
@@ -101,7 +102,6 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDANodeMatchRules;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDAReferenceMapBuilder;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt;
-import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.FPGAWorkGroupSizeNode;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.CUDATokens;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -126,10 +126,6 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
         this.codeCache = codeCache;
         this.deviceContext = deviceContext;
         architecture = (CUDAArchitecture) target.arch;
-    }
-
-    public static boolean isDeviceAnFPGAAccelerator(CUDADeviceContextInterface deviceContext) {
-        return deviceContext.isPlatformFPGA();
     }
 
     @Override
@@ -235,7 +231,7 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
             }
 
             if (!kindToVariable.containsKey(oclKind)) {
-                kindToVariable.put(oclKind, new HashSet<>());
+                kindToVariable.put(oclKind, new LinkedHashSet<>());
             }
 
             final Set<Variable> varList = kindToVariable.get(oclKind);
@@ -244,7 +240,10 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
     }
 
     private void emitVariableDefs(CUDACompilationResultBuilder crb, CUDAAssembler asm, LIR lir) {
-        Map<CUDAKind, Set<Variable>> kindToVariable = new HashMap<>();
+        // LinkedHashMap/LinkedHashSet: the declaration order of temporaries must not depend on
+        // identity hash codes, which differ on every JVM run and made the generated kernel source
+        // (and therefore any on-disk code cache keyed by it) unstable across processes.
+        Map<CUDAKind, Set<Variable>> kindToVariable = new LinkedHashMap<>();
         Map<Variable, CUDAKind> fragmentPhis = new LinkedHashMap<>();
 
         final int expectedVariables = lir.numVariables();
@@ -380,14 +379,6 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
              * starting at address 0x0. (I assume that this is an interesting case that
              * leads to a few issues.) Iris Pro is the only culprit at the moment.
              */
-            final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
-            if (cfg.getStartBlock().getEndNode().predecessor() instanceof FPGAWorkGroupSizeNode) {
-                FPGAWorkGroupSizeNode fpgaNode = (FPGAWorkGroupSizeNode) (cfg.getStartBlock().getEndNode().predecessor());
-                String attribute = fpgaNode.createThreadAttribute();
-
-                asm.emitSymbol(attribute);
-                asm.emitLine("");
-            }
 
             asm.emit("%s void %s(%s", CUDAAssemblerConstants.KERNEL_MODIFIER, methodName, architecture.getABI());
             emitMethodParameters(asm, method, incomingArguments, true);
@@ -405,6 +396,12 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
             }
             asm.eol();
         } else {
+
+            // Non-kernel callees are emitted ahead of the kernel in the same compilation unit, so the
+            // cuda_fp16.h include from the kernel prologue lands after them. A __device__ callee compiled from a
+            // HalfFloat method (e.g. getFloat32 -> __half2float) would then reference __half2float before the
+            // header is included. Emit the preamble here too; cuda_fp16.h's include guard makes the duplicate safe.
+            asm.emit(CUDAPreamble.PREAMBLE);
 
             methodName = CUDAUtils.makeMethodName(method);
 
@@ -477,6 +474,12 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
                     if (tmpKind != CUDAKind.ILLEGAL) {
                         oclKind = tmpKind;
                     }
+                }
+                // A HalfFloat receiver/parameter must be typed __half, not its SHORT platform kind: callers pass a
+                // __half value (e.g. getFloat32(A.get(i))), so a `short` parameter would numerically truncate 2.5 to
+                // 2 at the call before __half2float ever runs.
+                if (isHalfFloat(javaType)) {
+                    oclKind = CUDAKind.HALF;
                 }
                 guarantee(oclKind != CUDAKind.ILLEGAL, "illegal type for %s", param.getPlatformKind());
                 asm.emit(", ");

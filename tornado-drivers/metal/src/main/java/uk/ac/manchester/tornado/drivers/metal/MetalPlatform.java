@@ -31,6 +31,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalDeviceType;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalPlatformInfo;
 import uk.ac.manchester.tornado.drivers.metal.exceptions.MetalException;
+import uk.ac.manchester.tornado.drivers.metal.ffm.MetalObjects;
 
 public class MetalPlatform implements TornadoPlatformInterface {
 
@@ -43,8 +44,7 @@ public class MetalPlatform implements TornadoPlatformInterface {
         INTEL("Intel"), //
         AMD("AMD"), //
         NVIDIA("Nvidia"), //
-        MESA("Mesa/X.org"), //
-        XILINX("Xilinx");
+        MESA("Mesa/X.org");
 
         final String vendorName;
 
@@ -64,18 +64,14 @@ public class MetalPlatform implements TornadoPlatformInterface {
 
         final int deviceCount;
 
-        if (isVendor(Vendor.XILINX)) {
-            deviceCount = metalGetDeviceCount(platformPointers, MetalDeviceType.METAL_DEVICE_TYPE_ACCELERATOR.getValue());
-        } else if (isVendor(Vendor.MESA)) {
+        if (isVendor(Vendor.MESA)) {
             deviceCount = metalGetDeviceCount(platformPointers, MetalDeviceType.METAL_DEVICE_TYPE_GPU.getValue());
         } else {
             deviceCount = metalGetDeviceCount(platformPointers, MetalDeviceType.METAL_DEVICE_TYPE_ALL.getValue());
         }
 
         final long[] ids = new long[deviceCount];
-        if (isVendor(Vendor.XILINX)) {
-            metalGetDeviceIDs(platformPointers, MetalDeviceType.METAL_DEVICE_TYPE_ACCELERATOR.getValue(), ids);
-        } else if (isVendor(Vendor.MESA)) {
+        if (isVendor(Vendor.MESA)) {
             metalGetDeviceIDs(platformPointers, MetalDeviceType.METAL_DEVICE_TYPE_GPU.getValue(), ids);
         } else {
             metalGetDeviceIDs(platformPointers, MetalDeviceType.METAL_DEVICE_TYPE_ALL.getValue(), ids);
@@ -90,13 +86,21 @@ public class MetalPlatform implements TornadoPlatformInterface {
         return this.getVendor().toLowerCase().startsWith(vendor.getVendorName().toLowerCase());
     }
 
-    native String metalGetPlatformInfo(long id, int info);
+    String metalGetPlatformInfo(long id, int info) {
+        return MetalObjects.platformInfo(info);
+    }
 
-    native int metalGetDeviceCount(long id, long type);
+    int metalGetDeviceCount(long id, long type) {
+        return MetalObjects.deviceCount(type);
+    }
 
-    native int metalGetDeviceIDs(long id, long type, long[] devices);
+    int metalGetDeviceIDs(long id, long type, long[] devices) {
+        return MetalObjects.deviceIDs(type, devices);
+    }
 
-    native long metalCreateContext(long platform, long[] devices) throws MetalException;
+    long metalCreateContext(long platform, long[] devices) throws MetalException {
+        return MetalObjects.createContext(devices);
+    }
 
     public List<MetalTargetDevice> getDevices() {
         return devices;
@@ -125,12 +129,6 @@ public class MetalPlatform implements TornadoPlatformInterface {
     @Override
     public String getVersion() {
         return metalGetPlatformInfo(metalPlatformPtr, MetalPlatformInfo.METAL_PLATFORM_VERSION.getValue());
-    }
-
-    @Override
-    public boolean isSPIRVSupported() {
-        // This indicates that this platform has at least one device with support for SPIR-V.
-        return devices.stream().anyMatch(MetalTargetDevice::isSPIRVSupported);
     }
 
     public String getName() {

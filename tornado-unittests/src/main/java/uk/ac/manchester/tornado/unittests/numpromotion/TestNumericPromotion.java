@@ -221,7 +221,6 @@ public class TestNumericPromotion extends TornadoTestBase {
 
     @Test
     public void testBitwiseNot() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         ByteArray result = new ByteArray(8);
         ByteArray input = ByteArray.fromElements((byte) 0, (byte) 0, (byte) 127, (byte) -127, (byte) 1, (byte) -1, (byte) 1, (byte) 1);
@@ -422,6 +421,395 @@ public class TestNumericPromotion extends TornadoTestBase {
         ByteArray sequential = new ByteArray(4);
         sequential.init((byte) 8);
         unsignedRightShift(sequential, input, elements);
+        for (int i = 0; i < result.getSize(); i++) {
+            assertEquals(sequential.get(i), result.get(i));
+        }
+    }
+
+    // Compound-assignment operators (JLS 15.26.2): each includes an implicit narrowing
+    // cast back to byte, distinct from the plain-operator methods above.
+
+    public static void compoundAddAssign(ByteArray result, ByteArray input, ByteArray elements) {
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < elements.get(0); j++) {
+                byte value = result.get(j);
+                value += input.get((i * elements.get(0)) + j);
+                result.set(j, value);
+            }
+        }
+    }
+
+    public static void compoundSubAssign(ByteArray result, ByteArray input, ByteArray elements) {
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < elements.get(0); j++) {
+                byte value = result.get(j);
+                value -= input.get((i * elements.get(0)) + j);
+                result.set(j, value);
+            }
+        }
+    }
+
+    public static void compoundMulAssign(ByteArray result, ByteArray input, ByteArray elements) {
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < elements.get(0); j++) {
+                byte value = result.get(j);
+                value *= input.get((i * elements.get(0)) + j);
+                result.set(j, value);
+            }
+        }
+    }
+
+    public static void compoundDivAssign(ByteArray result, ByteArray input, ByteArray elements) {
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < elements.get(0); j++) {
+                byte value = result.get(j);
+                value /= input.get((i * elements.get(0)) + j);
+                result.set(j, value);
+            }
+        }
+    }
+
+    public static void compoundModAssign(ByteArray result, ByteArray input, ByteArray elements) {
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < elements.get(0); j++) {
+                byte value = result.get(j);
+                value %= input.get((i * elements.get(0)) + j);
+                result.set(j, value);
+            }
+        }
+    }
+
+    public static void compoundAndAssign(ByteArray result, ByteArray input, ByteArray elements) {
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < elements.get(0); j++) {
+                byte value = result.get(j);
+                value &= input.get((i * elements.get(0)) + j);
+                result.set(j, value);
+            }
+        }
+    }
+
+    public static void compoundOrAssign(ByteArray result, ByteArray input, ByteArray elements) {
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < elements.get(0); j++) {
+                byte value = result.get(j);
+                value |= input.get((i * elements.get(0)) + j);
+                result.set(j, value);
+            }
+        }
+    }
+
+    public static void compoundXorAssign(ByteArray result, ByteArray input, ByteArray elements) {
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < elements.get(0); j++) {
+                byte value = result.get(j);
+                value ^= input.get((i * elements.get(0)) + j);
+                result.set(j, value);
+            }
+        }
+    }
+
+    public static void compoundLeftShiftAssign(ByteArray result, ByteArray input, ByteArray elements) {
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < elements.get(0); j++) {
+                byte value = result.get(j);
+                value <<= input.get((i * elements.get(0)) + j);
+                result.set(j, value);
+            }
+        }
+    }
+
+    public static void compoundRightShiftAssign(ByteArray result, ByteArray input, ByteArray elements) {
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < elements.get(0); j++) {
+                byte value = result.get(j);
+                value >>= input.get((i * elements.get(0)) + j);
+                result.set(j, value);
+            }
+        }
+    }
+
+    public static void compoundUnsignedRightShiftAssign(ByteArray result, ByteArray input, ByteArray elements) {
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < elements.get(0); j++) {
+                byte value = result.get(j);
+                value >>>= input.get((i * elements.get(0)) + j);
+                result.set(j, value);
+            }
+        }
+    }
+
+    @Test
+    public void testCompoundAddAssign() throws TornadoExecutionPlanException {
+        ByteArray elements = new ByteArray(1);
+        elements.init((byte) 4);
+        ByteArray result = new ByteArray(4);
+        ByteArray input = ByteArray.fromElements((byte) 127, (byte) 127, (byte) 127, (byte) 127, (byte) 1, (byte) 1, (byte) 1, (byte) 1);
+
+        TaskGraph taskGraph = new TaskGraph("s0")//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
+                .task("t0", TestNumericPromotion::compoundAddAssign, result, input, elements)//
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        ByteArray sequential = new ByteArray(4);
+        compoundAddAssign(sequential, input, elements);
+        for (int i = 0; i < result.getSize(); i++) {
+            assertEquals(sequential.get(i), result.get(i));
+        }
+    }
+
+    @Test
+    public void testCompoundSubAssign() throws TornadoExecutionPlanException {
+        ByteArray elements = new ByteArray(1);
+        elements.init((byte) 4);
+        ByteArray result = new ByteArray(4);
+        ByteArray input = ByteArray.fromElements((byte) 125, (byte) 125, (byte) 125, (byte) 125, (byte) 1, (byte) 1, (byte) 1, (byte) 1);
+
+        TaskGraph taskGraph = new TaskGraph("s0")//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
+                .task("t0", TestNumericPromotion::compoundSubAssign, result, input, elements)//
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        ByteArray sequential = new ByteArray(4);
+        compoundSubAssign(sequential, input, elements);
+        for (int i = 0; i < result.getSize(); i++) {
+            assertEquals(sequential.get(i), result.get(i));
+        }
+    }
+
+    @Test
+    public void testCompoundMulAssign() throws TornadoExecutionPlanException {
+        ByteArray elements = new ByteArray(1);
+        elements.init((byte) 4);
+        ByteArray result = new ByteArray(4);
+        result.init((byte) 1);
+        ByteArray input = ByteArray.fromElements((byte) 125, (byte) 125, (byte) 125, (byte) 125, (byte) 1, (byte) 1, (byte) 1, (byte) 1);
+
+        TaskGraph taskGraph = new TaskGraph("s0")//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
+                .task("t0", TestNumericPromotion::compoundMulAssign, result, input, elements)//
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        ByteArray sequential = new ByteArray(4);
+        sequential.init((byte) 1);
+        compoundMulAssign(sequential, input, elements);
+        for (int i = 0; i < result.getSize(); i++) {
+            assertEquals(sequential.get(i), result.get(i));
+        }
+    }
+
+    @Test
+    public void testCompoundDivAssign() throws TornadoExecutionPlanException {
+        ByteArray elements = new ByteArray(1);
+        elements.init((byte) 4);
+        ByteArray result = new ByteArray(4);
+        result.init((byte) 8);
+        ByteArray input = ByteArray.fromElements((byte) 2, (byte) 2, (byte) 2, (byte) 2, (byte) 1, (byte) 1, (byte) 1, (byte) 1);
+
+        TaskGraph taskGraph = new TaskGraph("s0")//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
+                .task("t0", TestNumericPromotion::compoundDivAssign, result, input, elements)//
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        ByteArray sequential = new ByteArray(4);
+        sequential.init((byte) 8);
+        compoundDivAssign(sequential, input, elements);
+        for (int i = 0; i < result.getSize(); i++) {
+            assertEquals(sequential.get(i), result.get(i));
+        }
+    }
+
+    @Test
+    public void testCompoundModAssign() throws TornadoExecutionPlanException {
+        ByteArray elements = new ByteArray(1);
+        elements.init((byte) 4);
+        ByteArray result = new ByteArray(4);
+        result.init((byte) 9);
+        ByteArray input = ByteArray.fromElements((byte) 4, (byte) 4, (byte) 4, (byte) 4, (byte) 5, (byte) 5, (byte) 5, (byte) 5);
+
+        TaskGraph taskGraph = new TaskGraph("s0")//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
+                .task("t0", TestNumericPromotion::compoundModAssign, result, input, elements)//
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        ByteArray sequential = new ByteArray(4);
+        sequential.init((byte) 9);
+        compoundModAssign(sequential, input, elements);
+        for (int i = 0; i < result.getSize(); i++) {
+            assertEquals(sequential.get(i), result.get(i));
+        }
+    }
+
+    @Test
+    public void testCompoundAndAssign() throws TornadoExecutionPlanException {
+        ByteArray elements = new ByteArray(1);
+        elements.init((byte) 4);
+        ByteArray result = new ByteArray(4);
+        ByteArray input = ByteArray.fromElements((byte) 127, (byte) 127, (byte) 127, (byte) 127, (byte) 1, (byte) 1, (byte) 1, (byte) 1);
+
+        TaskGraph taskGraph = new TaskGraph("s0")//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
+                .task("t0", TestNumericPromotion::compoundAndAssign, result, input, elements)//
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        ByteArray sequential = new ByteArray(4);
+        compoundAndAssign(sequential, input, elements);
+        for (int i = 0; i < result.getSize(); i++) {
+            assertEquals(sequential.get(i), result.get(i));
+        }
+    }
+
+    @Test
+    public void testCompoundOrAssign() throws TornadoExecutionPlanException {
+        ByteArray elements = new ByteArray(1);
+        elements.init((byte) 4);
+        ByteArray result = new ByteArray(4);
+        ByteArray input = ByteArray.fromElements((byte) 127, (byte) 127, (byte) 127, (byte) 127, (byte) 1, (byte) 1, (byte) 1, (byte) 1);
+
+        TaskGraph taskGraph = new TaskGraph("s0")//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
+                .task("t0", TestNumericPromotion::compoundOrAssign, result, input, elements)//
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        ByteArray sequential = new ByteArray(4);
+        compoundOrAssign(sequential, input, elements);
+        for (int i = 0; i < result.getSize(); i++) {
+            assertEquals(sequential.get(i), result.get(i));
+        }
+    }
+
+    @Test
+    public void testCompoundXorAssign() throws TornadoExecutionPlanException {
+        ByteArray elements = new ByteArray(1);
+        elements.init((byte) 4);
+        ByteArray result = new ByteArray(4);
+        ByteArray input = ByteArray.fromElements((byte) 127, (byte) 127, (byte) 127, (byte) 127, (byte) 1, (byte) 1, (byte) 1, (byte) 1);
+
+        TaskGraph taskGraph = new TaskGraph("s0")//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
+                .task("t0", TestNumericPromotion::compoundXorAssign, result, input, elements)//
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        ByteArray sequential = new ByteArray(4);
+        compoundXorAssign(sequential, input, elements);
+        for (int i = 0; i < result.getSize(); i++) {
+            assertEquals(sequential.get(i), result.get(i));
+        }
+    }
+
+    @Test
+    public void testCompoundLeftShiftAssign() throws TornadoExecutionPlanException {
+        ByteArray elements = new ByteArray(1);
+        elements.init((byte) 4);
+        ByteArray result = new ByteArray(4);
+        result.init((byte) 1);
+        ByteArray input = ByteArray.fromElements((byte) 1, (byte) 1, (byte) 1, (byte) 1, (byte) 2, (byte) 2, (byte) 2, (byte) 2);
+
+        TaskGraph taskGraph = new TaskGraph("s0")//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
+                .task("t0", TestNumericPromotion::compoundLeftShiftAssign, result, input, elements)//
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        ByteArray sequential = new ByteArray(4);
+        sequential.init((byte) 1);
+        compoundLeftShiftAssign(sequential, input, elements);
+        for (int i = 0; i < result.getSize(); i++) {
+            assertEquals(sequential.get(i), result.get(i));
+        }
+    }
+
+    @Test
+    public void testCompoundRightShiftAssign() throws TornadoExecutionPlanException {
+        ByteArray elements = new ByteArray(1);
+        elements.init((byte) 4);
+        ByteArray result = new ByteArray(4);
+        result.init((byte) -128);
+        ByteArray input = ByteArray.fromElements((byte) 1, (byte) 1, (byte) 1, (byte) 1, (byte) 2, (byte) 2, (byte) 2, (byte) 2);
+
+        TaskGraph taskGraph = new TaskGraph("s0")//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
+                .task("t0", TestNumericPromotion::compoundRightShiftAssign, result, input, elements)//
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        ByteArray sequential = new ByteArray(4);
+        sequential.init((byte) -128);
+        compoundRightShiftAssign(sequential, input, elements);
+        for (int i = 0; i < result.getSize(); i++) {
+            assertEquals(sequential.get(i), result.get(i));
+        }
+    }
+
+    @Test
+    public void testCompoundUnsignedRightShiftAssign() throws TornadoExecutionPlanException {
+        ByteArray elements = new ByteArray(1);
+        elements.init((byte) 4);
+        ByteArray result = new ByteArray(4);
+        result.init((byte) -128);
+        ByteArray input = ByteArray.fromElements((byte) 1, (byte) 1, (byte) 1, (byte) 1, (byte) 2, (byte) 2, (byte) 2, (byte) 2);
+
+        TaskGraph taskGraph = new TaskGraph("s0")//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
+                .task("t0", TestNumericPromotion::compoundUnsignedRightShiftAssign, result, input, elements)//
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        ByteArray sequential = new ByteArray(4);
+        sequential.init((byte) -128);
+        compoundUnsignedRightShiftAssign(sequential, input, elements);
         for (int i = 0; i < result.getSize(); i++) {
             assertEquals(sequential.get(i), result.get(i));
         }

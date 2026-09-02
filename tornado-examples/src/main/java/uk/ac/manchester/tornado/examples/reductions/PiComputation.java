@@ -31,13 +31,18 @@ import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 /**
+ * Leibniz series for PI, reduced with {@code @Reduce} on a {@code @Parallel}
+ * loop. The host multiplies the sum by 4.
+ * <p>
+ * Copies the input on every execution, runs {@code computePi}, and copies the
+ * reduced result back.
+ * </p>
  * <p>
  * How to run?
  * </p>
  * <code>
  * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.reductions.PiComputation
  * </code>
- *
  */
 public class PiComputation {
 

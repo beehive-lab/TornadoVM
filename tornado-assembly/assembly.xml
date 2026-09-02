@@ -64,6 +64,7 @@
             </includes>
             <excludes>
                 <exclude>tornado.backend</exclude>
+                <exclude>tornado.jdk</exclude>
             </excludes>
             <filtered>true</filtered>
             <lineEnding>unix</lineEnding>
@@ -75,6 +76,7 @@
             <outputDirectory>etc</outputDirectory>
             <includes>
                 <include>tornado.backend</include>
+                <include>tornado.jdk</include>
             </includes>
             <filtered>false</filtered>
             <lineEnding>unix</lineEnding>
@@ -107,20 +109,6 @@
             <fileMode>0444</fileMode>
         </fileSet>
         <fileSet>
-            <directory>../levelzero-jni/levelZeroLib/build</directory>
-            <outputDirectory>./lib/</outputDirectory>
-            <includes>
-                <include>libtornado-levelzero.so</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>../levelzero-jni/levelZeroLib/build/Release</directory>
-            <outputDirectory>./lib/</outputDirectory>
-            <includes>
-                <include>*.dll</include>
-            </includes>
-        </fileSet>
-        <fileSet>
             <directory>../tornado-drivers/opencl-jni/target/windows-i386-release/cmake/Release</directory>
             <outputDirectory>./lib/</outputDirectory>
             <includes>
@@ -129,20 +117,6 @@
         </fileSet>
         <fileSet>
             <directory>../tornado-drivers/opencl-jni/target/windows-amd64-release/cmake/Release</directory>
-            <outputDirectory>./lib/</outputDirectory>
-            <includes>
-                <include>*.dll</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>../tornado-drivers/ptx-jni/target/windows-i386-release/cmake/Release</directory>
-            <outputDirectory>./lib/</outputDirectory>
-            <includes>
-                <include>*.dll</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>../tornado-drivers/ptx-jni/target/windows-amd64-release/cmake/Release</directory>
             <outputDirectory>./lib/</outputDirectory>
             <includes>
                 <include>*.dll</include>
@@ -159,10 +133,30 @@
         </fileSet>
         <fileSet>
             <directory>../graalJars</directory>
-            <!-- Graal compiler JARs for JDK 21 -->
+            <!-- Bare-minimum Graal JARs for JDK 21. The compiler is shipped relocated as
+                 the vendored tornado.graal module (tornado-graal-*.jar) so it resolves
+                 from the regular module-path; word/collections/truffle-compiler are its
+                 transitive requires. truffle-api/polyglot/graal-sdk/compiler-management
+                 are excluded. -->
             <outputDirectory>share/java/graalJars</outputDirectory>
             <includes>
-                <include>*.jar</include>
+                <include>tornado-graal-*.jar</include>
+                <include>truffle-compiler-*.jar</include>
+                <include>collections-*.jar</include>
+                <include>word-*.jar</include>
+            </includes>
+            <fileMode>0644</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>../graalJars</directory>
+            <!-- Vendored jdk.internal.vm.ci (JDK-21 jvmci repackaged as a same-named
+                 application module by bin/build_jvmci_module.py). Shipped to a SEPARATE
+                 directory: the tornado launcher adds it to the module-path ONLY on JDK 27+
+                 where the platform no longer provides jdk.internal.vm.ci. On JDK <=26 a
+                 module of the same name would collide with the platform module. -->
+            <outputDirectory>share/java/jvmci</outputDirectory>
+            <includes>
+                <include>jvmci-*.jar</include>
             </includes>
             <fileMode>0644</fileMode>
         </fileSet>
@@ -173,16 +167,12 @@
             <useAllReactorProjects>true</useAllReactorProjects>
             <!-- Now, select which projects to include in this module-set. -->
             <includes>
-                <include>tornado:beehive-spirv-toolkit</include>
-                <include>tornado:beehive-levelzero-jni</include>
                 <include>io.github.beehive-lab:tornado-api</include>
                 <include>io.github.beehive-lab:tornado-runtime</include>
                 <include>io.github.beehive-lab:tornado-annotation</include>
                 <include>io.github.beehive-lab:tornado-matrices</include>
                 <include>io.github.beehive-lab:tornado-drivers-common</include>
-                <include>io.github.beehive-lab:tornado-drivers-ptx</include>
                 <include>io.github.beehive-lab:tornado-drivers-opencl</include>
-                <include>io.github.beehive-lab:tornado-drivers-spirv</include>
                 <include>io.github.beehive-lab:tornado-drivers-metal</include>
                 <include>io.github.beehive-lab:tornado-examples</include>
                 <include>io.github.beehive-lab:tornado-benchmarks</include>
@@ -214,7 +204,6 @@
             </unpackOptions>
             <includes>
                 <include>io.github.beehive-lab:tornado-drivers-metal-jni:jar:libs</include>
-                <include>io.github.beehive-lab:tornado-drivers-ptx-jni:jar:libs</include>
                 <include>io.github.beehive-lab:tornado-drivers-opencl-jni:jar:libs</include>
                 <include>io.github.beehive-lab:tornado-drivers-cuda-jni:jar:libs</include>
                 <include>io.github.beehive-lab:tornado-drivers-cublas-jni:jar:libs</include>
