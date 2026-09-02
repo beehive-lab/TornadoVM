@@ -5,7 +5,7 @@
 
     <groupId>io.github.beehive-lab</groupId>
     <artifactId>tornado</artifactId>
-    <version>${revision}</version>
+    <version>6.0.0</version>
     <packaging>pom</packaging>
     <name>tornado</name>
     <url>https://github.com/beehive-lab/tornadovm</url>

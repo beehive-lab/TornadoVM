@@ -13,7 +13,7 @@ TornadoVM is a GPU programming framework for Java that works with JDK 21+ (curre
 [![Docs](https://img.shields.io/badge/docs-readthedocs-blue)](https://tornadovm.readthedocs.io/en/latest/)
 [![Slack](https://img.shields.io/badge/chat-Slack-4A154B?logo=slack)](https://join.slack.com/t/tornadovmcommunity/shared_invite/zt-3ai2wyqva-bKz~cQRFlaJ~ZnPrbkwIEw)
 
-**Latest release:** TornadoVM 5.2.0 (JDK 21 / JDK 25) — native **NVIDIA library integration** (cuBLAS / cuFFT / cuDNN) and Tensor Core intrinsics, plus a native **Apple Metal backend** for Apple Silicon. [Changelog](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html) · [Website](https://www.tornadovm.org) · [Documentation](https://tornadovm.readthedocs.io/en/latest/)
+**Latest release:** TornadoVM 6.0.0 (JDK 21 / JDK 25) — native **NVIDIA library integration** (cuBLAS / cuFFT / cuDNN) and Tensor Core intrinsics, plus a native **Apple Metal backend** for Apple Silicon. [Changelog](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html) · [Website](https://www.tornadovm.org) · [Documentation](https://tornadovm.readthedocs.io/en/latest/)
 
 
 ---
@@ -201,12 +201,12 @@ tornado --devices
 ```bash
 # Unix (Linux/macOS)
 java @$TORNADOVM_HOME/tornado-argfile \
-  -cp $TORNADOVM_HOME/share/java/tornado/tornado-examples-5.2.0.jar \
+  -cp $TORNADOVM_HOME/share/java/tornado/tornado-examples-6.0.0.jar \
   uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
 
 # Windows 10+
 java @%TORNADOVM_HOME%\tornado-argfile ^
-  -cp %TORNADOVM_HOME%\share\java\tornado\tornado-examples-5.2.0.jar ^
+  -cp %TORNADOVM_HOME%\share\java\tornado\tornado-examples-6.0.0.jar ^
   uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
 ```
 
@@ -223,12 +223,12 @@ Maven Central coordinates are per-JDK — pin the `-jdk21`/`-jdk25`/`-jdk26`/`-j
   <dependency>
     <groupId>io.github.beehive-lab</groupId>
     <artifactId>tornado-api</artifactId>
-    <version>5.2.0-jdk21</version>
+    <version>6.0.0-jdk21</version>
   </dependency>
   <dependency>
     <groupId>io.github.beehive-lab</groupId>
     <artifactId>tornado-runtime</artifactId>
-    <version>5.2.0-jdk21</version>
+    <version>6.0.0-jdk21</version>
   </dependency>
 </dependencies>
 ```
