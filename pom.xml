@@ -143,8 +143,16 @@
                         <artifactId>maven-javadoc-plugin</artifactId>
                         <version>3.6.3</version>
                         <configuration>
+                            <!-- Use source, not the release flag. The release flag resolves modules
+                                 against ct.sym, which omits JDK-internal modules, so
+                                 `requires transitive jdk.internal.vm.ci` in
+                                 tornado-runtime/module-info.java fails with "module not found:
+                                 jdk.internal.vm.ci" (seen only on a GraalVM build JDK). failOnError
+                                 is false so the deploy still succeeds, but the published
+                                 tornado-runtime javadoc jar ends up empty. source links against the
+                                 real platform modules, matching maven-compiler-plugin (which also
+                                 uses source/target for the jdk21 profile). -->
                             <source>21</source>
-                            <release>21</release>
                             <skip>false</skip>
                             <failOnError>false</failOnError>
 
