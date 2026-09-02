@@ -32,13 +32,18 @@ import uk.ac.manchester.tornado.api.types.vectors.Double3;
 import java.util.Random;
 
 /**
+ * Triangle intersection test using {@code Double3} vectors and KernelContext
+ * local memory.
+ * <p>
+ * Copies the vertex buffer on first execution and runs
+ * {@code shortCircuitTestKernel} on a 1D {@code WorkerGrid}.
+ * </p>
  * <p>
  * How to run?
  * </p>
  * <code>
  * tornado --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.vectors.TestCrossPointTriangles
  * </code>
- *
  */
 public class TestCrossPointTriangles {
 

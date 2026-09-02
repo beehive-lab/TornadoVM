@@ -29,6 +29,13 @@ import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 /**
+ * Dense matrix multiplication on {@code FloatArray} buffers using two nested
+ * {@code @Parallel} loops over rows and columns.
+ * <p>
+ * Copies both matrices on first execution, runs {@code matrixMultiplication},
+ * and copies the result back on every execution. Also warms up the plan with
+ * {@code withPreCompilation()}.
+ * </p>
  * <p>
  * How to run?
  * </p>

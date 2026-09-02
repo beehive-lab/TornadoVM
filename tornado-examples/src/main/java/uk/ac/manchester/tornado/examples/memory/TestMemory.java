@@ -9,14 +9,18 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 /**
- * Full example to show to matrix addition with non vector types
+ * Stresses device allocation by copying larger {@code FloatArray} buffers
+ * (about 1.5 GB up to 2 GB). May fail on OpenCL devices with a smaller cap.
+ * <p>
+ * Each size builds a {@code TaskGraph}, copies the input on every execution,
+ * runs a {@code @Parallel} {@code moveData} task, and copies the output back.
+ * </p>
  * <p>
  * How to run?
  * </p>
  * <code>
  * tornado --jvm="-Dtornado.device.memory=4GB" -m tornado.examples/uk.ac.manchester.tornado.examples.memory.TestMemory
  * </code>
- *
  */
 public class TestMemory {
 

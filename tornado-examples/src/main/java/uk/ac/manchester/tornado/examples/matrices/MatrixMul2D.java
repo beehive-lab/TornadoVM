@@ -31,13 +31,18 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
 
 /**
+ * Matrix multiplication on {@code Matrix2DFloat}, run once on CUDA and once on
+ * OpenCL when both backends are present.
+ * <p>
+ * Each plan copies A and B on first execution, runs the {@code @Parallel}
+ * kernel, and copies C back on every execution.
+ * </p>
  * <p>
  * How to run?
  * </p>
  * <code>
  * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.matrices.MatrixMul2D
  * </code>
- *
  */
 public class MatrixMul2D {
     // CHECKSTYLE:OFF

@@ -25,9 +25,14 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 /**
- * Example of a task-graph with multiple tasks.
+ * Task graph with two lambdas: {@code t0} multiplies {@code a*b} into {@code c},
+ * then {@code t1} adds {@code c+b} into {@code d} (expected value 8).
  * <p>
- * How to run?:
+ * Transfers inputs on first execution, runs both {@code @Parallel} tasks, and
+ * copies {@code d} back on every execution.
+ * </p>
+ * <p>
+ * How to run?
  * </p>
  * <code>
  * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.arrays.ArrayMultiplyAdd

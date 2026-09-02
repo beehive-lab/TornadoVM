@@ -25,6 +25,12 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 
 /**
+ * Element-wise addition of two {@code DoubleArray} buffers.
+ * <p>
+ * Copies {@code a} and {@code b} to the device on first execution, runs a
+ * {@code @Parallel} {@code add} task, and copies {@code c} back on every
+ * execution.
+ * </p>
  * <p>
  * How to run?
  * </p>
