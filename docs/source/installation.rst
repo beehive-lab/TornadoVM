@@ -17,7 +17,7 @@ Via SDKMAN!:
    sdk install tornadovm                              # default: latest version, JDK 21, OpenCL backend
    sdk install tornadovm <version>-<jdk-version>-<backend>
    # e.g.:
-   sdk install tornadovm 5.2.1-jdk21-cuda
+   sdk install tornadovm 6.0.0-jdk21-cuda
    sdk install tornadovm 5.2.1-jdk22plus-metal
    sdk install tornadovm 5.2.1-jdk22plus-opencl
 
@@ -49,7 +49,7 @@ The TornadoVM API is also published on Maven Central, so you can add it directly
    <dependency>
       <groupId>io.github.beehive-lab</groupId>
       <artifactId>tornado-api</artifactId>
-      <version>5.2.1-jdk21</version>
+      <version>6.0.0-jdk21</version>
    </dependency>
 
    <!-- JDK 22 and newer, including 27 -->
