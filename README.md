@@ -179,14 +179,14 @@ TornadoVM is used to accelerate machine learning and deep learning, computer vis
 sdk install tornadovm
 ```
 
-Pick a backend-specific build if you prefer a smaller install. Candidate versions are per-JDK (swap `jdk21` below for `jdk25`, `jdk26`, or `jdk27` to install a build for that JDK line):
+Pick a backend-specific build if you prefer a smaller install. Candidate versions are per-JDK (swap `jdk21` below for `jdk22plus` to install a build for that JDK line):
 
 | Backend | SDKMAN! version | Targets |
 |---|---|---|
-| OpenCL *(default)* | `5.2.0-opencl` | NVIDIA / AMD / Intel GPUs, multi-core CPUs, FPGAs |
-| CUDA | `5.2.0-cuda` | **NVIDIA GPUs (CUDA) — codegen, Tensor Cores, cuBLAS/cuFFT/cuDNN library tasks** |
-| Metal 🆕 | `5.2.0-metal` | Apple Silicon GPUs (M1–M4), natively via MSL |
-| All backends | `5.2.0-full` | Everything above |
+| OpenCL *(default)* | `6.0.0-opencl` | NVIDIA / AMD / Intel GPUs, multi-core CPUs, FPGAs |
+| CUDA | `6.0.0-cuda` | **NVIDIA GPUs (CUDA) — codegen, Tensor Cores, cuBLAS/cuFFT/cuDNN library tasks** |
+| Metal 🆕 | `6.0.0-metal` | Apple Silicon GPUs (M1–M4), natively via MSL |
+| All backends | `6.0.0-full` | Everything above |
 
 Binaries are also on the [official website](https://www.tornadovm.org/downloads). For [Docker](https://github.com/beehive-lab/docker-tornado#docker-for-tornadovm) and [AWS (CPUs/GPUs)](https://tornadovm.readthedocs.io/en/latest/cloud.html) see the linked guides.
 
@@ -216,7 +216,7 @@ More examples — NBody, DFT, KMeans, matrix kernels, reductions: [tornado-examp
 
 ## 📦 Use TornadoVM in your project
 
-Maven Central coordinates are per-JDK — pin the `-jdk21`/`-jdk25`/`-jdk26`/`-jdk27` version matching the JDK you build with:
+Maven Central coordinates are per-JDK — pin the `-jdk21` / `-jdk22plus` version matching the JDK you build with:
 
 ```xml
 <dependencies>

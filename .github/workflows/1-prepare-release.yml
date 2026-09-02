@@ -101,19 +101,23 @@ jobs:
           # keeping the hand-written highlight text after it untouched
           sed -i -E "s/(\*\*Latest [Rr]elease:\*\* TornadoVM )[0-9]+\.[0-9]+\.[0-9]+/\1${VERSION}/" README.md
 
+          # Normalise the supported-JDK range shown right after the version in that
+          # same banner. It is otherwise hand-maintained and drifts (it read
+          # "(JDK 21 / JDK 25)" long after JDK 26/27 were supported); the release
+          # line supports JDK 21 through JDK 27, so pin it here.
+          sed -i -E "s/(\*\*Latest [Rr]elease:\*\* TornadoVM [0-9]+\.[0-9]+\.[0-9]+ )\([^)]*\)/\1(JDK 21 - JDK 27)/" README.md
+
           # Update Maven Central dependency versions (io.github.beehive-lab groupId).
           # Central coordinates are still deployed per-JDK (4.0.1-jdk21, -jdk25, -jdk26,
           # -jdk27 — see deploy-maven-central.yml), so this only updates the base
           # version number; any -jdkNN suffix shown in README examples is preserved.
           sed -i -E 's|(<version>)[0-9]+\.[0-9]+\.[0-9]+(-jdk[0-9]+)?(</version>)|\1${{ env.VERSION }}\2\3|g' README.md
 
-          # Update SDKMAN! per-JDK, per-backend candidate versions (e.g. `4.0.1-jdk21-opencl`).
-          # The JDK identity isn't part of $VERSION anymore (see above) — README's
-          # static example lines already list one per JDK/backend combo, so this
-          # only bumps the leading version number and preserves the existing
-          # "-jdkNN-backend" suffix verbatim (captured as \1) rather than
-          # regenerating it.
-          sed -i -E 's/`[0-9]+\.[0-9]+\.[0-9]+(-jdk[0-9]+-(opencl|cuda|metal|full))`/`${{ env.VERSION }}\1`/g' README.md
+          # Update the SDKMAN! per-backend candidate versions in the install table
+          # (e.g. `5.2.0-opencl`). The table lists one row per backend without a JDK
+          # token, so match `<version>-<backend>` and bump only the leading version,
+          # preserving the "-backend" suffix (captured as \1).
+          sed -i -E 's/`[0-9]+\.[0-9]+\.[0-9]+(-(opencl|cuda|metal|full))`/`${{ env.VERSION }}\1`/g' README.md
 
           # Update the tornado-examples jar version in the "Run your first program" snippet
           sed -i 's/tornado-examples-[0-9]\+\.[0-9]\+\.[0-9]\+\.jar/tornado-examples-${{ env.VERSION }}.jar/g' README.md
