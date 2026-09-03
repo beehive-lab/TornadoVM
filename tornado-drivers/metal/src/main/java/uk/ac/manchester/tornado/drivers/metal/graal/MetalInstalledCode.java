@@ -120,19 +120,15 @@ public class MetalInstalledCode extends InstalledCode implements TornadoInstalle
 
     @Override
     public boolean prepareForNativeLaunch(TaskDataContext meta, long batchThreads) {
-        // Metal's reflected threadgroup-argument remapping remains on the Java path.
-        if (!valid || kernel == null || meta == null || isSPIRVBinary || meta.getConstantSize() != 0 || meta.getLocalSize() != 0) {
-            return false;
-        }
-        if (meta.isParallel() || meta.isWorkerGridAvailable()) {
-            scheduler.prepareLaunch(kernel, meta, batchThreads);
-        }
-        return true;
+        // Native Metal launch binds kernel context / local / atomics at fixed slots. The Java
+        // path remaps threadgroup arguments from pipeline reflection; without that remap a
+        // dispatch can hang on the GPU (vectortypes.TestFloats). Keep launch on Java.
+        return false;
     }
 
     @Override
     public long getNativeKernelHandle() {
-        return kernel == null ? 0L : kernel.getMetalKernelID();
+        return kernel == null ? 0L : kernel.getNativePipelineHandle();
     }
 
     @Override

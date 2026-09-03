@@ -27,6 +27,8 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <unordered_map>
+#include <vector>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -176,8 +178,7 @@ class CUDABackendOperations final : public TornadoBackendOperations {
     using CopyDtoH = int (*)(void *, uint64_t, size_t, void *);
     using Synchronize = int (*)(void *);
     using Memset = int (*)(uint64_t, unsigned char, size_t);
-    using SetKernelArgument = int (*)(int64_t, int32_t, int32_t, const void *, int64_t);
-    using LaunchKernel = int (*)(int64_t, int64_t, int64_t, int32_t, const int64_t *, const int64_t *, const int64_t *);
+    using CuLaunchKernel = int (*)(void *, unsigned, unsigned, unsigned, unsigned, unsigned, unsigned, unsigned, void *, void **, void **);
 
     int64_t queue_;
     int64_t context_;
@@ -188,8 +189,8 @@ class CUDABackendOperations final : public TornadoBackendOperations {
     CopyDtoH d2h_ = nullptr;
     Synchronize synchronize_ = nullptr;
     Memset memset_ = nullptr;
-    SetKernelArgument setArgument_ = nullptr;
-    LaunchKernel launch_ = nullptr;
+    CuLaunchKernel launch_ = nullptr;
+    std::unordered_map<int64_t, std::vector<std::vector<char>>> kernelArgs_;
 
     // Mirrors CUDAContext.enableContext() before a Java CUDA driver call.
     bool setContext() const {
@@ -221,8 +222,7 @@ public:
             Memset function = reinterpret_cast<Memset>(lookup("cuMemsetD8_v2"));
             return function != nullptr ? function : reinterpret_cast<Memset>(lookup("cuMemsetD8"));
         }();
-        static SetKernelArgument setArgument = reinterpret_cast<SetKernelArgument>(lookup("tornado_cuda_set_kernel_argument"));
-        static LaunchKernel launch = reinterpret_cast<LaunchKernel>(lookup("tornado_cuda_launch_kernel"));
+        static CuLaunchKernel launch = reinterpret_cast<CuLaunchKernel>(lookup("cuLaunchKernel"));
         setContext_ = setContext;
         allocate_ = allocate;
         release_ = release;
@@ -230,7 +230,6 @@ public:
         d2h_ = d2h;
         synchronize_ = synchronize;
         memset_ = memset;
-        setArgument_ = setArgument;
         launch_ = launch;
     }
 
@@ -290,13 +289,59 @@ public:
     }
 
     int setKernelArgument(int64_t kernel, int32_t index, int32_t kind, const void *value, int64_t bytes) override {
-        if (setArgument_ == nullptr || kernel == 0 || !setContext()) return TORNADO_COPY_UNSUPPORTED;
-        return setArgument_(kernel, index, kind, value, bytes) == 0 ? TORNADO_COPY_OK : TORNADO_COPY_FAILED;
+        if (kernel == 0 || index < 0 || bytes < 0 || (kind != TORNADO_KERNEL_ARG_LOCAL && value == nullptr)) {
+            return TORNADO_COPY_FAILED;
+        }
+        std::vector<std::vector<char>> &slots = kernelArgs_[kernel];
+        if ((int32_t) slots.size() <= index) {
+            slots.resize((size_t) index + 1);
+        }
+        if (kind == TORNADO_KERNEL_ARG_LOCAL) {
+            slots[(size_t) index].assign((size_t) bytes, 0);
+        } else {
+            slots[(size_t) index].assign((const char *) value, (const char *) value + (size_t) bytes);
+        }
+        return TORNADO_COPY_OK;
     }
 
     int launchKernel(int64_t kernel, int32_t dimensions, const int64_t *globalOffset, const int64_t *globalWork, const int64_t *localWork) override {
-        if (launch_ == nullptr || queue_ == 0 || kernel == 0 || globalWork == nullptr || !setContext()) return TORNADO_COPY_UNSUPPORTED;
-        return launch_(queue_, context_, kernel, dimensions, globalOffset, globalWork, localWork) == 0 ? TORNADO_COPY_OK : TORNADO_COPY_FAILED;
+        (void) globalOffset;
+        if (launch_ == nullptr || queue_ == 0 || kernel == 0 || globalWork == nullptr || dimensions < 1 || dimensions > 3 || !setContext()) {
+            return TORNADO_COPY_UNSUPPORTED;
+        }
+        uint64_t global[3] = { 1, 1, 1 };
+        unsigned block[3] = { 1, 1, 1 };
+        for (int32_t i = 0; i < dimensions; i++) {
+            if (globalWork[i] <= 0) {
+                return TORNADO_COPY_FAILED;
+            }
+            global[i] = (uint64_t) globalWork[i];
+            if (localWork != nullptr && localWork[i] > 0) {
+                block[i] = (unsigned) localWork[i];
+            }
+        }
+        if (localWork == nullptr || localWork[0] <= 0) {
+            block[0] = (unsigned) (global[0] < 256 ? global[0] : 256);
+        }
+        if (global[0] > 0 && block[0] > global[0]) {
+            block[0] = (unsigned) global[0];
+        }
+        unsigned grid[3];
+        for (int i = 0; i < 3; i++) {
+            grid[i] = (unsigned) ((global[i] + block[i] - 1) / block[i]);
+            if (grid[i] == 0) {
+                grid[i] = 1;
+            }
+        }
+        std::vector<std::vector<char>> &slots = kernelArgs_[kernel];
+        std::vector<void *> params(slots.size());
+        for (size_t i = 0; i < slots.size(); i++) {
+            params[i] = slots[i].empty() ? nullptr : slots[i].data();
+        }
+        void *stream = reinterpret_cast<void *>(static_cast<uintptr_t>(queue_));
+        void *function = reinterpret_cast<void *>(static_cast<uintptr_t>(kernel));
+        int status = launch_(function, grid[0], grid[1], grid[2], block[0], block[1], block[2], 0, stream, params.empty() ? nullptr : params.data(), nullptr);
+        return status == 0 ? TORNADO_COPY_OK : TORNADO_COPY_FAILED;
     }
 
     int flush() override {
@@ -304,6 +349,16 @@ public:
         return synchronize_(reinterpret_cast<void *>(static_cast<uintptr_t>(queue_))) == 0 ? TORNADO_COPY_OK : TORNADO_COPY_FAILED;
     }
 };
+
+#ifdef __APPLE__
+extern "C" {
+int tornado_metal_allocate(int64_t context, int64_t bytes, int64_t *handle);
+int tornado_metal_release(int64_t handle);
+int tornado_metal_copy(int toDevice, int64_t handle, int64_t deviceOffset, int64_t bytes, int64_t hostPointer, int64_t hostOffset);
+int tornado_metal_set_kernel_argument(int64_t kernelId, int32_t index, int32_t kind, const void *value, int64_t size);
+int tornado_metal_launch_kernel(int64_t queueId, int64_t kernelId, int32_t dimensions, const int64_t *globalOffset, const int64_t *globalWork, const int64_t *localWork);
+}
+#endif
 
 class MetalBackendOperations final : public TornadoBackendOperations {
     using Allocate = int (*)(int64_t, int64_t, int64_t *);
@@ -323,16 +378,13 @@ class MetalBackendOperations final : public TornadoBackendOperations {
 public:
     // Binds the native equivalent of Java's Metal context.
     MetalBackendOperations(int64_t queue, int64_t context) : queue_(queue), context_(context) {
-        static Allocate allocate = reinterpret_cast<Allocate>(lookup("tornado_metal_allocate"));
-        static Release release = reinterpret_cast<Release>(lookup("tornado_metal_release"));
-        static Copy copy = reinterpret_cast<Copy>(lookup("tornado_metal_copy"));
-        static SetKernelArgument setArgument = reinterpret_cast<SetKernelArgument>(lookup("tornado_metal_set_kernel_argument"));
-        static LaunchKernel launch = reinterpret_cast<LaunchKernel>(lookup("tornado_metal_launch_kernel"));
-        allocate_ = allocate;
-        release_ = release;
-        copy_ = copy;
-        setArgument_ = setArgument;
-        launch_ = launch;
+#ifdef __APPLE__
+        allocate_ = tornado_metal_allocate;
+        release_ = tornado_metal_release;
+        copy_ = tornado_metal_copy;
+        setArgument_ = tornado_metal_set_kernel_argument;
+        launch_ = tornado_metal_launch_kernel;
+#endif
     }
 
     // Java counterpart: MetalBufferProvider.allocateBuffer().

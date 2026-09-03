@@ -454,6 +454,15 @@ public final class MetalObjects {
         }
     }
 
+    /**
+     * Raw {@code MTLComputePipelineState}. The kernel id the Java layer holds is a registry key,
+     * not a Metal pointer; the native bytecode interpreter needs the pipeline itself.
+     */
+    public static long nativePipelineHandle(long kernelId) {
+        KernelState state = KERNELS.get(kernelId);
+        return state == null ? 0L : state.pipeline;
+    }
+
     public static void kernelInfo(long kernel, int info, byte[] buffer) {
         java.util.Arrays.fill(buffer, (byte) 0);
         if (info == METAL_KERNEL_FUNCTION_NAME) {

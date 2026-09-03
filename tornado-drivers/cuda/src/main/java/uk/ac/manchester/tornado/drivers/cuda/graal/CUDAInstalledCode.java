@@ -116,7 +116,7 @@ public class CUDAInstalledCode extends InstalledCode implements TornadoInstalled
 
     @Override
     public long getNativeKernelHandle() {
-        return kernel == null ? 0L : kernel.getOclKernelID();
+        return kernel == null ? 0L : kernel.getNativeFunctionHandle();
     }
 
     @Override

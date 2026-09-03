@@ -280,5 +280,13 @@ public class MetalKernel {
         return metalKernelID;
     }
 
+    /**
+     * Raw {@code MTLComputePipelineState}. {@link #getMetalKernelID()} is a Java registry key, not
+     * a Metal pointer; the native bytecode interpreter needs the pipeline itself.
+     */
+    public long getNativePipelineHandle() {
+        return MetalObjects.nativePipelineHandle(metalKernelID);
+    }
+
     // (no-op) end of class
 }

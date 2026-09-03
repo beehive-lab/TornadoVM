@@ -698,6 +698,13 @@ public class TornadoVMInterpreter {
                 Object object = objects.get(objectIndex);
                 // KernelContext and AtomicInteger have no per-object device buffer.
                 if (isNativeNonBufferObject(object)) {
+                    // Native D2H of AtomicInteger is a no-op. Mark copy-back here too: Metal keeps
+                    // LAUNCH on Java, so publishNativeAtomics never runs.
+                    if (object instanceof AtomicInteger && (op == TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS.value()
+                            || op == TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS_BLOCKING.value())) {
+                        ensureNativeStateTables();
+                        nativeAtomicCopyBack[objectIndex] = true;
+                    }
                     return true;
                 }
                 XPUDeviceBufferState state = resolveObjectState(objectIndex);

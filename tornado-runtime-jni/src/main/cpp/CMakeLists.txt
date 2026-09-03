@@ -46,15 +46,24 @@ include_directories(
 	${JNI_INCLUDE_DIRS}
 	)
 
-add_library(tornado-runtime SHARED
+set(TORNADO_RUNTIME_SOURCES
 	source/tornado_decoder.cpp
 	source/tornado_state.cpp
 	source/tornado_backend.cpp
 	source/tornado_interpreter.cpp
 	source/TornadoNativeBytecodeInterpreter.cpp
 )
+if(APPLE)
+	list(APPEND TORNADO_RUNTIME_SOURCES source/tornado_metal_backend.mm)
+endif()
+
+add_library(tornado-runtime SHARED ${TORNADO_RUNTIME_SOURCES})
 
 target_link_libraries(tornado-runtime ${JNI_LIB_DIRS} ${CMAKE_DL_LIBS})
+if(APPLE)
+	set_source_files_properties(source/tornado_metal_backend.mm PROPERTIES COMPILE_FLAGS "-fno-objc-arc -std=c++11 -O2 -fPIC")
+	target_link_libraries(tornado-runtime "-framework Metal" "-framework Foundation")
+endif()
 
 if(CMAKE_HOST_WIN32)
     set_target_properties(tornado-runtime PROPERTIES PREFIX "")

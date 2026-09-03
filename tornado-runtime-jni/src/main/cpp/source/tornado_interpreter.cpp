@@ -110,6 +110,13 @@ static int64_t array_element_bytes(uint8_t kind) {
  * Returns 0 to advance, or a packed status.
  */
 static int64_t run_alloc(const TornadoInterpreterContext *ctx, const uint8_t *code, int32_t pc, const TornadoAllocOperands *ops) {
+    // Constant-only kernels (TestHello.testHello) still emit ALLOC with no objects.
+    // object_count is 0, so JNI leaves buffer_handles null. Java executeAlloc is a
+    // no-op for that case; matching it here avoids a false STATUS_ERROR.
+    if (ops->argCount == 0) {
+        store_last_event(ctx, -1);
+        return 0;
+    }
     if (ctx->allocate_buffer == nullptr || ctx->release_buffer == nullptr || ctx->buffer_handles == nullptr) {
         return pack(TORNADO_STATUS_ERROR, pc);
     }
