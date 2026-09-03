@@ -85,7 +85,9 @@ public class InterpreterEval {
 
     private static final int DEFAULT_WARMUP = 20;
     private static final int DEFAULT_ITERS = 100;
-    private static final int N = 8192;
+    private static final int N = Integer.getInteger("tornado.eval.n", 8192);
+    private static final int MATRIX_N = Integer.getInteger("tornado.eval.matrix", 256);
+    private static final int BATCH_N = Integer.getInteger("tornado.eval.batch", 1 << 20);
 
     @FunctionalInterface
     private interface Workload {
@@ -602,7 +604,7 @@ public class InterpreterEval {
     }
 
     private static Row matmul2d(int warmup, int iters) throws TornadoExecutionPlanException {
-        final int n = 256;
+        final int n = MATRIX_N;
         Matrix2DFloat a = new Matrix2DFloat(n, n);
         Matrix2DFloat b = new Matrix2DFloat(n, n);
         Matrix2DFloat c = new Matrix2DFloat(n, n);
@@ -784,7 +786,7 @@ public class InterpreterEval {
     }
 
     private static Row batch(int warmup, int iters) throws TornadoExecutionPlanException {
-        final int n = 1 << 20;
+        final int n = BATCH_N;
         FloatArray a = floats(n, 1.0f);
         FloatArray b = new FloatArray(n);
         TaskGraph graph = new TaskGraph("s0") //
@@ -795,7 +797,7 @@ public class InterpreterEval {
     }
 
     private static Row batch3(int warmup, int iters) throws TornadoExecutionPlanException {
-        final int n = 1 << 20;
+        final int n = BATCH_N;
         FloatArray a = floats(n, 1.0f);
         FloatArray b = floats(n, 2.0f);
         FloatArray c = new FloatArray(n);
@@ -807,7 +809,7 @@ public class InterpreterEval {
     }
 
     private static Row batchInt(int warmup, int iters) throws TornadoExecutionPlanException {
-        final int n = 1 << 20;
+        final int n = BATCH_N;
         IntArray a = ints(n, 1);
         IntArray b = ints(n, 2);
         IntArray c = new IntArray(n);
@@ -819,7 +821,7 @@ public class InterpreterEval {
     }
 
     private static Row batchCopy(int warmup, int iters) throws TornadoExecutionPlanException {
-        final int n = 1 << 20;
+        final int n = BATCH_N;
         FloatArray a = floats(n, 7.0f);
         TaskGraph graph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
