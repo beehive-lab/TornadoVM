@@ -2008,7 +2008,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         int type = taskPackage.getTaskType();
         Object[] parameters = taskPackage.getTaskParameters();
 
-        Method method = TaskUtils.resolveMethodHandle(parameters[0]);
+        // A method task names its kernel directly, so there is no lambda to unpick and the
+        // arity switch below does not apply: the parameters are already the kernel's arguments.
+        Method method = taskPackage.isMethodTask()
+                ? taskPackage.getMethod()
+                : TaskUtils.resolveMethodHandle(parameters[0]);
         ScheduleContext meta = meta();
 
         // Set the number of threads to run. If 0, it will execute as many
@@ -2019,7 +2023,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         meta.setNumThreads(taskPackage.getNumThreadsToRun());
 
         try {
-            addInner(type, method, meta, id, parameters);
+            if (taskPackage.isMethodTask()) {
+                addInner(TaskUtils.createMethodTask(meta, id, method, parameters));
+            } else {
+                addInner(type, method, meta, id, parameters);
+            }
         } catch (TornadoBailoutRuntimeException e) {
             this.bailout = true;
             if (!DEBUG) {

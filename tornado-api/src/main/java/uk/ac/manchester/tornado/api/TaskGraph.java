@@ -21,6 +21,9 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+
 import uk.ac.manchester.tornado.api.common.PrebuiltTaskPackage;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -106,6 +109,48 @@ public class TaskGraph implements TaskGraphInterface {
     @Override
     public TaskGraph addTask(TaskPackage taskPackage) {
         taskGraphImpl.addTask(taskPackage);
+        return this;
+    }
+
+    /**
+     * Adds a task whose kernel is named by a {@link Method} rather than by a method reference.
+     *
+     * <p>Every other {@code task} overload takes a lambda, from which the kernel is recovered
+     * through the {@code SerializedLambda} the compiler emits. That works only for a method
+     * reference written in source. A kernel generated at run time has no such source, so this
+     * overload lets the caller name the method directly.
+     *
+     * <p>Two requirements, both a consequence of how the method is compiled:
+     *
+     * <ul>
+     * <li>{@code method} must be <b>static</b>. A {@link Method} captures no receiver and no
+     * enclosing variables, so every argument is passed here explicitly.
+     * <li>the declaring class's bytecode must be readable as a resource from its own class loader,
+     * because that is how the kernel's bytecode is obtained. A class written to disk and loaded by
+     * a {@code URLClassLoader} satisfies this; a class defined only in memory does not, unless its
+     * loader also serves it from {@code getResourceAsStream}.
+     * </ul>
+     *
+     * @param id
+     *     Task-id
+     * @param method
+     *     the kernel
+     * @param args
+     *     arguments to the kernel, in declaration order
+     * @return {@link TaskGraph}
+     */
+    @Override
+    public TaskGraph task(String id, Method method, Object... args) {
+        checkTaskName(id);
+        if (method == null) {
+            throw new TornadoTaskRuntimeException("The kernel method must not be null");
+        }
+        if (!Modifier.isStatic(method.getModifiers())) {
+            throw new TornadoTaskRuntimeException(
+                    "The kernel method must be static, but " + method + " is not. A Method carries "
+                            + "no receiver, so an instance method has no object to be invoked on.");
+        }
+        taskGraphImpl.addTask(TaskPackage.createPackage(id, method, args));
         return this;
     }
 
