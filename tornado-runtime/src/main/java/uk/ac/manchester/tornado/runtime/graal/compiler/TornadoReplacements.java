@@ -23,15 +23,15 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.compiler;
 
-import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
-import org.graalvm.compiler.bytecode.BytecodeProvider;
-import org.graalvm.compiler.java.GraphBuilderPhase;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
-import org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext;
-import org.graalvm.compiler.phases.OptimisticOptimizations;
-import org.graalvm.compiler.phases.util.Providers;
-import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
-import org.graalvm.compiler.replacements.ReplacementsImpl;
+import tornado.graal.compiler.api.replacements.SnippetReflectionProvider;
+import tornado.graal.compiler.bytecode.BytecodeProvider;
+import tornado.graal.compiler.java.GraphBuilderPhase;
+import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
+import tornado.graal.compiler.nodes.graphbuilderconf.IntrinsicContext;
+import tornado.graal.compiler.phases.OptimisticOptimizations;
+import tornado.graal.compiler.phases.util.Providers;
+import tornado.graal.compiler.printer.GraalDebugHandlersFactory;
+import tornado.graal.compiler.replacements.ReplacementsImpl;
 
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.ResolvedJavaMethod;

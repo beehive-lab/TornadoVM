@@ -3,8 +3,9 @@
 NVIDIA cuFFT as TornadoVM library tasks: FFTs share TornadoVM-managed device buffers
 with JIT-compiled tasks and run on the same CUDA stream. This is the second library
 provider after [tornado-cublas](../tornado-cublas/README.md), added as a self-contained
-module pair (`tornado-cufft` + `tornado-drivers/cufft-jni`) with **zero core-runtime
-changes** — see `docs/source/hybrid-api.rst` for the provider SPI.
+`tornado-cufft` module — binding straight to `libcufft` through `java.lang.foreign`,
+no native module — with **zero core-runtime changes** — see
+`docs/source/hybrid-api.rst` for the provider SPI.
 
 ```java
 // Forward FFT, then a JIT task consuming the spectrum on the device:

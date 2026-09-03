@@ -5,16 +5,15 @@
 
 ## Write Java. Run on GPUs. Fast.
 
-TornadoVM is a GPU programming framework for Java that works with JDK 21+ (currently JDK 21 and JDK 25). It JIT-compiles Java bytecode into **NVIDIA CUDA, OpenCL C, and Apple Metal (MSL)** at runtime, so your existing Java code runs on **NVIDIA GPUs (via CUDA)**, AMD, Intel, and Apple Silicon GPUs, integrated GPUs, and multi-core CPUs. On NVIDIA hardware it goes further: beyond generating PTX, TornadoVM now calls straight into the **NVIDIA library ecosystem — cuBLAS, cuFFT, cuDNN — and exposes Tensor Core `mma.sync` instructions from pure Java**. No CUDA C. No JNI bindings to maintain. No native toolchain in your application.
+TornadoVM is a GPU programming framework for Java that works with JDK 21+ (currently JDK 21, JDK 25, JDK 26, and JDK 27). It JIT-compiles Java bytecode into **NVIDIA CUDA, OpenCL C, and Apple Metal (MSL)** at runtime, so your existing Java code runs on **NVIDIA GPUs (via CUDA)**, AMD, Intel, and Apple Silicon GPUs, integrated GPUs, and multi-core CPUs. On NVIDIA hardware it goes further: beyond generating CUDA, TornadoVM now calls straight into the **NVIDIA library ecosystem — cuBLAS, cuFFT, cuDNN — and exposes Tensor Core `mma.sync` instructions from pure Java**. No CUDA C. No JNI bindings to maintain. No native toolchain in your application.
 
-[![Build & Test JDK 21](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk21.yml/badge.svg)](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk21.yml)
-[![Build & Test JDK 25](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk25.yml/badge.svg?branch=jdk25)](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test-jdk25.yml)
+[![Build & Test](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test.yml/badge.svg)](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test.yml)
 [![Tornado API](https://img.shields.io/maven-central/v/io.github.beehive-lab/tornado-api?logo=apache-maven&color=blue&label=Tornado%20API)](https://central.sonatype.com/artifact/io.github.beehive-lab/tornado-api)
 [![Install with SDKMAN!](https://img.shields.io/badge/Install%20with-SDKMAN!-2c7a7b?logo=sdkman&logoColor=white)](https://sdkman.io/sdks/tornadovm/)
 [![Docs](https://img.shields.io/badge/docs-readthedocs-blue)](https://tornadovm.readthedocs.io/en/latest/)
 [![Slack](https://img.shields.io/badge/chat-Slack-4A154B?logo=slack)](https://join.slack.com/t/tornadovmcommunity/shared_invite/zt-3ai2wyqva-bKz~cQRFlaJ~ZnPrbkwIEw)
 
-**Latest release:** TornadoVM 5.2.0 (JDK 21 / JDK 25) — native **NVIDIA library integration** (cuBLAS / cuFFT / cuDNN) and Tensor Core intrinsics, plus a native **Apple Metal backend** for Apple Silicon. [Changelog](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html) · [Website](https://www.tornadovm.org) · [Documentation](https://tornadovm.readthedocs.io/en/latest/)
+**Latest release:** TornadoVM 6.0.0 (JDK 21 - JDK 27) — native **NVIDIA library integration** (cuBLAS / cuFFT / cuDNN) and Tensor Core intrinsics, plus a native **Apple Metal backend** for Apple Silicon. [Changelog](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html) · [Website](https://www.tornadovm.org) · [Documentation](https://tornadovm.readthedocs.io/en/latest/)
 
 
 ---
@@ -145,7 +144,7 @@ try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
 }
 ```
 
-Library bindings are discovered via Java `ServiceLoader` — implement `TornadoLibraryProvider`, add a JNI module, and any native library joins the graph with no core runtime changes. TornadoVM is a member of the **NVIDIA Inception Program** and has presented this work at **NVIDIA GTC**. [Hybrid API guide →](https://tornadovm.readthedocs.io/en/latest/)
+Library bindings are discovered via Java `ServiceLoader` — implement `TornadoLibraryProvider`, bind the calls through `java.lang.foreign` (a JNI module only if the library genuinely needs compiled C/C++), and any native library joins the graph with no core runtime changes. TornadoVM is a member of the **NVIDIA Inception Program** and has presented this work at **NVIDIA GTC**. [Hybrid API guide →](https://tornadovm.readthedocs.io/en/latest/)
 
 
 ---
@@ -180,14 +179,14 @@ TornadoVM is used to accelerate machine learning and deep learning, computer vis
 sdk install tornadovm
 ```
 
-Pick a backend-specific build if you prefer a smaller install:
+Pick a backend-specific build if you prefer a smaller install. Candidate versions are per-JDK (swap `jdk21` below for `jdk22plus` to install a build for that JDK line):
 
 | Backend | SDKMAN! version | Targets |
 |---|---|---|
-| OpenCL *(default)* | `5.2.0-opencl` | NVIDIA / AMD / Intel GPUs, multi-core CPUs, FPGAs |
-| CUDA | `5.2.0-cuda` | **NVIDIA GPUs (CUDA) — codegen, Tensor Cores, cuBLAS/cuFFT/cuDNN library tasks** |
-| Metal 🆕 | `5.2.0-metal` | Apple Silicon GPUs (M1–M4), natively via MSL |
-| All backends | `5.2.0-full` | Everything above |
+| OpenCL *(default)* | `6.0.0-opencl` | NVIDIA / AMD / Intel GPUs, multi-core CPUs, FPGAs |
+| CUDA | `6.0.0-cuda` | **NVIDIA GPUs (CUDA) — codegen, Tensor Cores, cuBLAS/cuFFT/cuDNN library tasks** |
+| Metal 🆕 | `6.0.0-metal` | Apple Silicon GPUs (M1–M4), natively via MSL |
+| All backends | `6.0.0-full` | Everything above |
 
 Binaries are also on the [official website](https://www.tornadovm.org/downloads). For [Docker](https://github.com/beehive-lab/docker-tornado#docker-for-tornadovm) and [AWS (CPUs/GPUs)](https://tornadovm.readthedocs.io/en/latest/cloud.html) see the linked guides.
 
@@ -202,12 +201,12 @@ tornado --devices
 ```bash
 # Unix (Linux/macOS)
 java @$TORNADOVM_HOME/tornado-argfile \
-  -cp $TORNADOVM_HOME/share/java/tornado/tornado-examples-5.2.0.jar \
+  -cp $TORNADOVM_HOME/share/java/tornado/tornado-examples-6.0.0.jar \
   uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
 
 # Windows 10+
 java @%TORNADOVM_HOME%\tornado-argfile ^
-  -cp %TORNADOVM_HOME%\share\java\tornado\tornado-examples-5.2.0.jar ^
+  -cp %TORNADOVM_HOME%\share\java\tornado\tornado-examples-6.0.0.jar ^
   uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
 ```
 
@@ -217,17 +216,19 @@ More examples — NBody, DFT, KMeans, matrix kernels, reductions: [tornado-examp
 
 ## 📦 Use TornadoVM in your project
 
+Maven Central coordinates are per-JDK — pin the `-jdk21` / `-jdk22plus` version matching the JDK you build with:
+
 ```xml
 <dependencies>
   <dependency>
     <groupId>io.github.beehive-lab</groupId>
     <artifactId>tornado-api</artifactId>
-    <version>5.2.0-jdk21</version>
+    <version>6.0.0-jdk21</version>
   </dependency>
   <dependency>
     <groupId>io.github.beehive-lab</groupId>
     <artifactId>tornado-runtime</artifactId>
-    <version>5.2.0-jdk21</version>
+    <version>6.0.0-jdk21</version>
   </dependency>
 </dependencies>
 ```

@@ -150,6 +150,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestInts"),
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestVectorAllocation"),
     TestEntry("uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTests"),
+    TestEntry("uk.ac.manchester.tornado.unittests.prebuilt.TestPrebuiltTaskOrdering"),
     TestEntry("uk.ac.manchester.tornado.unittests.cublas.TestCuBlas"),
     TestEntry("uk.ac.manchester.tornado.unittests.cublas.TestCuBlasLt"),
     TestEntry("uk.ac.manchester.tornado.unittests.cufft.TestCuFft"),
@@ -189,10 +190,15 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestInitDataTypes"),
     TestEntry("uk.ac.manchester.tornado.unittests.memory.TestMemoryLimit"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestIO"),
+    TestEntry("uk.ac.manchester.tornado.unittests.api.TestMultipleCopyOuts"),
+    TestEntry("uk.ac.manchester.tornado.unittests.api.TestNativeArrayLayouts"),
+    TestEntry("uk.ac.manchester.tornado.unittests.api.TestOnDemandCopyIn"),
+    TestEntry("uk.ac.manchester.tornado.unittests.api.TestCopyInPipelines"),
     TestEntry("uk.ac.manchester.tornado.unittests.executor.TestExecutor"),
     TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGrid"),
     TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGridScheduler"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.Grids"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestLaunchFailureReporting"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestCombinedTaskGraph"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestVectorAdditionKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.KernelContextWorkGroupTests"),
@@ -235,6 +241,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.fields.TestFields"),
     TestEntry("uk.ac.manchester.tornado.unittests.fields.TestInheritedFields"),
     TestEntry("uk.ac.manchester.tornado.unittests.profiler.TestProfiler"),
+    TestEntry("uk.ac.manchester.tornado.unittests.profiler.TestProfilerTransferBytes"),
     TestEntry("uk.ac.manchester.tornado.unittests.bitsets.BitSetTests"),
     TestEntry("uk.ac.manchester.tornado.unittests.quantization.QuantizationTests"),
     TestEntry("uk.ac.manchester.tornado.unittests.fails.TestFails"),
@@ -352,7 +359,6 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 
     ## Precision errors
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testNBodyBigNoWorker",
-    "uk.ac.manchester.tornado.unittests.compute.MMwithBytes#testMatrixMultiplicationWithBytes",
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testEuler",
     "uk.ac.manchester.tornado.unittests.codegen.CodeGenTest#test02",
     "uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats#testComputePi",
@@ -459,7 +465,7 @@ else:
 
 ENABLE_ASSERTIONS = "-ea "
 
-__VERSION__ = "5.2.1-jdk21-dev"
+__VERSION__ = "6.0.1-dev"
 
 try:
     javaHome = os.environ["JAVA_HOME"]

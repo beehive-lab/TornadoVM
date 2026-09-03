@@ -1,17 +1,17 @@
-#pragma OPENCL EXTENSION cl_khr_fp64 : enable
-#pragma OPENCL EXTENSION cl_khr_fp16 : enable
-#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
-__kernel void maxReduction(__global long *_kernel_context, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics, __global uchar *input, __global uchar *result)
+#pragma OPENCL EXTENSION cl_khr_fp64 : enable  
+#pragma OPENCL EXTENSION cl_khr_fp16 : enable  
+#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable  
+__kernel void maxReduction(__global long *_kernel_context, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics, __global uchar *arg0, __global uchar *arg1)
 {
-  long l_29, l_10, l_31, l_30, l_9, l_8;
-  float f_12, f_26, f_21, f_22, f_19;
-  int i_4, i_3, i_6, i_5, i_33, i_28, i_27, i_24, i_23, i_20, i_16, i_15, i_17, i_14, i_13, i_7;
-  ulong ul_11, ul_0, ul_32, ul_1;
-  bool b_18, b_25;
+  ulong ul_0, ul_1, ul_11, ul_32; 
+  int i_3, i_4, i_5, i_6, i_7, i_13, i_14, i_15, i_16, i_17, i_20, i_23, i_24, i_27, i_28, i_33; 
+  long l_8, l_9, l_10, l_29, l_30, l_31; 
+  float f_12, f_19, f_21, f_22, f_26; 
+  bool b_18, b_25; 
 
   // BLOCK 0
-  ul_0  =  (ulong) input;
-  ul_1  =  (ulong) result;
+  ul_0  =  (ulong) arg0;
+  ul_1  =  (ulong) arg1;
   __local float adf_2[1024];
   i_3  =  get_global_size(0);
   i_4  =  get_global_id(0);
@@ -84,16 +84,16 @@ __kernel void maxReduction(__global long *_kernel_context, __constant uchar *_co
   return;
 }  //  kernel
 
-#pragma OPENCL EXTENSION cl_khr_fp64 : enable
-#pragma OPENCL EXTENSION cl_khr_fp16 : enable
-#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
-__kernel void rMax(__global long *_kernel_context, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics, __global uchar *array, __private int size)
+#pragma OPENCL EXTENSION cl_khr_fp64 : enable  
+#pragma OPENCL EXTENSION cl_khr_fp16 : enable  
+#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable  
+__kernel void rMax(__global long *_kernel_context, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics, __global uchar *arg0, __private int arg1)
 {
-  float f_2, f_25, f_26, f_23, f_24, f_21, f_22, f_19, f_20, f_18, f_16, f_14, f_12, f_10, f_8, f_6, f_4;
-  ulong ul_13, ul_11, ul_0, ul_1, ul_17, ul_15, ul_5, ul_3, ul_9, ul_7;
+  ulong ul_0, ul_1, ul_3, ul_5, ul_7, ul_9, ul_11, ul_13, ul_15, ul_17; 
+  float f_2, f_4, f_6, f_8, f_10, f_12, f_14, f_16, f_18, f_19, f_20, f_21, f_22, f_23, f_24, f_25, f_26; 
 
   // BLOCK 0
-  ul_0  =  (ulong) array;
+  ul_0  =  (ulong) arg0;
   ul_1  =  ul_0 + 24L;
   f_2  =  *((__global float *) ul_1);
   ul_3  =  ul_0 + 28L;
@@ -123,3 +123,4 @@ __kernel void rMax(__global long *_kernel_context, __constant uchar *_constant_r
   *((__global float *) ul_1)  =  f_26;
   return;
 }  //  kernel
+

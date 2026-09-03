@@ -31,13 +31,18 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 /**
+ * Reduction over a size that is not a power of two ({@code @Reduce} +
+ * {@code @Parallel}).
+ * <p>
+ * Copies the input on every execution, runs {@code reduceFloats}, and copies
+ * the reduced sum back.
+ * </p>
  * <p>
  * How to run?
  * </p>
  * <code>
  * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.reductions.ReductionIrregular
  * </code>
- *
  */
 public class ReductionIrregular {
 

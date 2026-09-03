@@ -2,7 +2,7 @@ import uk.ac.manchester.tornado.runtime.TornadoBackendProvider;
 
 module tornado.drivers.metal {
     requires transitive jdk.internal.vm.ci;
-    requires transitive jdk.internal.vm.compiler;
+    requires transitive tornado.graal;
     requires transitive org.graalvm.collections;
     requires transitive org.graalvm.word;
     requires transitive tornado.api;
@@ -15,6 +15,7 @@ module tornado.drivers.metal {
     exports uk.ac.manchester.tornado.drivers.metal;
     exports uk.ac.manchester.tornado.drivers.metal.builtins;
     exports uk.ac.manchester.tornado.drivers.metal.enums;
+    exports uk.ac.manchester.tornado.drivers.metal.ffm;
     exports uk.ac.manchester.tornado.drivers.metal.exceptions;
     exports uk.ac.manchester.tornado.drivers.metal.graal;
     exports uk.ac.manchester.tornado.drivers.metal.graal.asm;

@@ -5,7 +5,7 @@ description: NVIDIA-specific TornadoVM workflows on the CUDA backend — profile
 
 # TornadoVM on NVIDIA (CUDA backend)
 
-All of this targets the **CUDA-C backend**: build with `make BACKEND=cuda` (which also builds the `*-jni` library modules under the `cuda-backend` Maven profile), then `source setvars.sh`. Repo-root refs: `HYBRID_API_GUIDE.md`, `NVIDIA_ROADMAP.md`, and `docs/source/hybrid-api.rst`.
+All of this targets the **CUDA-C backend**: build with `make BACKEND=cuda` (the CUDA backend itself and most library providers — cuBLAS/cuBLASLt/cuFFT/cuSPARSE — bind through `java.lang.foreign`, no native module to build; cuDNN's SDPA shim and CUTLASS still build a native `*-jni` module under the `cuda-backend` Maven profile), then `source setvars.sh`. Repo-root refs: `HYBRID_API_GUIDE.md` and `docs/source/hybrid-api.rst`.
 
 ## 1. Profiling with Nsight Systems (nsys)
 
@@ -61,7 +61,7 @@ TaskGraph graph = new TaskGraph("g")
 - **Scalar outputs** (e.g. `cublas dot`) use `CUBLAS_POINTER_MODE_DEVICE` with a 1-element TornadoVM array to stay capture-safe.
 - **Every hybrid feature ships with a test** (validated vs sequential Java) and perf features with a **WoW benchmark** vs both Java and the best KernelContext kernel (patterns `BenchmarkSgemm`, `MatrixVectorRowMajorWithCuBlas`, `BenchmarkSdpa`). Tests: `tornado-unittests/.../unittests/{cublas,cudnn,cufft,cusparse,nvtx}/...`; benchmarks/examples in `tornado-examples`.
 
-Build note: library JNI modules link against the CUDA toolkit at `/usr/local/cuda` (prefer it over any older apt CUDA to avoid NVRTC-version mismatch); each JNI CMake is guarded — a missing library skips that provider.
+Build note: the FFM providers (cuBLAS/cuBLASLt/cuFFT/cuSPARSE) resolve their toolkit libraries at class-init time via `java.lang.foreign` — a missing library leaves the provider `UNSUPPORTED` at runtime rather than failing the build. `cudnn-jni`/`cutlass-jni` still link against the CUDA toolkit at `/usr/local/cuda` (prefer it over any older apt CUDA to avoid NVRTC-version mismatch); each JNI CMake is guarded the same way at build time — a missing library skips that provider.
 
 ## 3. Print the generated CUDA-C kernel
 

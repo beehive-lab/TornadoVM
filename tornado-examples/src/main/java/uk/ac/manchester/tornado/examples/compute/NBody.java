@@ -28,6 +28,12 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 /**
+ * N-body gravity simulation. Each body updates position and velocity from the
+ * force of every other body.
+ * <p>
+ * The {@code @Parallel} {@code nBody} kernel runs inside a {@code TaskGraph}.
+ * Positions transfer on first execution; velocities copy back on demand.
+ * </p>
  * <p>
  * How to run?
  * </p>

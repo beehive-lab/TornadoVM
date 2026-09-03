@@ -79,10 +79,10 @@ public class MetalArchitecture extends Architecture {
                 metalKind = MetalKind.USHORT;
                 break;
             case Int:
-                metalKind = (javaKind.isUnsigned()) ? MetalKind.UINT : MetalKind.INT;
+                metalKind = (javaKind.isUnsigned() || getWordKind() == MetalKind.UINT) ? MetalKind.UINT : MetalKind.INT;
                 break;
             case Long:
-                metalKind = (javaKind.isUnsigned()) ? MetalKind.ULONG : MetalKind.LONG;
+                metalKind = (javaKind.isUnsigned() || getWordKind() == MetalKind.ULONG) ? MetalKind.ULONG : MetalKind.LONG;
                 break;
             case Float:
                 metalKind = MetalKind.FLOAT;

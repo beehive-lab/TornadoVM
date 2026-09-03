@@ -34,14 +34,22 @@ import static uk.ac.manchester.tornado.drivers.cuda.enums.CUDAProgramInfo.CL_PRO
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDABuildStatus;
 import uk.ac.manchester.tornado.drivers.cuda.exceptions.CUDAException;
+import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDACompiler;
+import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDADriverAPI;
+import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDAHandles;
+import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class CUDAProgram {
@@ -63,21 +71,89 @@ public class CUDAProgram {
         this.logger = new TornadoLogger(this.getClass());
     }
 
-    static native void clReleaseProgram(long programId) throws CUDAException;
+    static void clReleaseProgram(long programId) throws CUDAException {
+        CUDAHandles.Program program = (CUDAHandles.Program) CUDAHandles.release(programId);
+        if (program != null && program.moduleLoaded) {
+            CUDADriverAPI.cuModuleUnload(program.module);
+        }
+    }
 
-    static native void clBuildProgram(long programId, long[] devices, String options) throws CUDAException;
+    /**
+     * Compiles the program's CUDA C for the first device's architecture with NVRTC and loads the
+     * resulting module. The OpenCL clone builds for a set of devices; CUDA modules are per-context,
+     * so the first device is the one that decides the target architecture.
+     */
+    static void clBuildProgram(long programId, long[] devices, String options) throws CUDAException {
+        CUDAHandles.Program program = CUDAHandles.resolve(programId, CUDAHandles.Program.class);
+        if (program == null) {
+            return;
+        }
+        int device = 0;
+        if (devices.length > 0) {
+            CUDAHandles.Device boxed = CUDAHandles.resolve(devices[0], CUDAHandles.Device.class);
+            if (boxed != null) {
+                device = boxed.device();
+            }
+        }
+        CUDACompiler.build(program, device, options);
+    }
 
-    static native void clGetProgramInfo(long programId, int param, byte[] buffer) throws CUDAException;
+    static void clGetProgramInfo(long programId, int param, byte[] buffer) throws CUDAException {
+        Arrays.fill(buffer, (byte) 0);
+        CUDAHandles.Program program = CUDAHandles.resolve(programId, CUDAHandles.Program.class);
+        ByteBuffer out = ByteBuffer.wrap(buffer).order(CUDADriver.BYTE_ORDER);
+        if (param == CL_PROGRAM_NUM_DEVICES.getValue() && buffer.length >= Integer.BYTES) {
+            out.putInt(1);
+        } else if (param == CL_PROGRAM_BINARY_SIZES.getValue() && buffer.length >= Long.BYTES) {
+            out.putLong(program == null ? 0 : program.binary.length);
+        }
+    }
 
-    static native void clGetProgramBuildInfo(long programId, long deviceId, int param, byte[] buffer) throws CUDAException;
+    /** Surfaces the NVRTC build status and log to the Java side. */
+    static void clGetProgramBuildInfo(long programId, long deviceId, int param, byte[] buffer) throws CUDAException {
+        Arrays.fill(buffer, (byte) 0);
+        CUDAHandles.Program program = CUDAHandles.resolve(programId, CUDAHandles.Program.class);
+        if (program == null) {
+            return;
+        }
+        if (param == CL_PROGRAM_BUILD_STATUS.getValue() && buffer.length >= Integer.BYTES) {
+            ByteBuffer.wrap(buffer).order(CUDADriver.BYTE_ORDER).putInt(program.buildStatus);
+        } else if (param == CL_PROGRAM_BUILD_LOG.getValue()) {
+            byte[] log = program.log.getBytes(StandardCharsets.UTF_8);
+            int length = Math.min(log.length, buffer.length - 1);
+            System.arraycopy(log, 0, buffer, 0, length);
+            buffer[length] = 0; // getBuildLog substrings up to the first NUL
+        }
+    }
 
-    static native long clCreateKernel(long programId, String name) throws CUDAException;
+    /** Resolves a {@code CUfunction} from the loaded module. */
+    static long clCreateKernel(long programId, String name) throws CUDAException {
+        CUDAHandles.Program program = CUDAHandles.resolve(programId, CUDAHandles.Program.class);
+        if (program == null || !program.moduleLoaded) {
+            return 0;
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment function = FFMSupport.allocatePointer(arena);
+            int result = CUDADriverAPI.cuModuleGetFunction(function, program.module, FFMSupport.allocateCString(arena, name));
+            if (result != CUDADriverAPI.CUDA_SUCCESS) {
+                return 0;
+            }
+            long functionPointer = function.get(FFMSupport.C_POINTER, 0).address();
+            return CUDAHandles.register(new CUDAHandles.Kernel(functionPointer, program.module, name));
+        }
+    }
 
-    static native void getBinaries(long programId, long numDevices, ByteBuffer buffer) throws CUDAException;
-
-    static native boolean nvrtcCanCompileHeader(String headerName);
-
-    static native int nvrtcVersion();
+    /** Copies the compiled module image (cubin or PTX) into the provided direct buffer. */
+    static void getBinaries(long programId, long numDevices, ByteBuffer buffer) throws CUDAException {
+        CUDAHandles.Program program = CUDAHandles.resolve(programId, CUDAHandles.Program.class);
+        if (program == null) {
+            return;
+        }
+        int length = Math.min(program.binary.length, buffer.remaining());
+        if (length > 0) {
+            buffer.put(program.binary, 0, length);
+        }
+    }
 
     private static Boolean nativeFP8ConversionAvailable;
 
@@ -95,7 +171,7 @@ public class CUDAProgram {
      */
     public static synchronized int getNvrtcVersion() {
         if (nvrtcVersionCached == null) {
-            nvrtcVersionCached = nvrtcVersion();
+            nvrtcVersionCached = CUDACompiler.version();
         }
         return nvrtcVersionCached;
     }
@@ -109,7 +185,7 @@ public class CUDAProgram {
      */
     public static synchronized boolean isNativeFP8ConversionAvailable() {
         if (nativeFP8ConversionAvailable == null) {
-            nativeFP8ConversionAvailable = nvrtcCanCompileHeader("cuda_fp8.h");
+            nativeFP8ConversionAvailable = CUDACompiler.canCompileHeader("cuda_fp8.h");
         }
         return nativeFP8ConversionAvailable;
     }

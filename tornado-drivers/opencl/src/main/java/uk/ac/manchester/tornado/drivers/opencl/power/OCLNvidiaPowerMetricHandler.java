@@ -23,6 +23,11 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.power;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+
+import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
+import uk.ac.manchester.tornado.drivers.common.ffm.NVMLAPI;
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
@@ -40,11 +45,40 @@ public class OCLNvidiaPowerMetricHandler implements PowerMetric {
         initializePowerLibrary();
     }
 
-    static native long clNvmlInit() throws OCLException;
+    static long clNvmlInit() throws OCLException {
+        if (!NVMLAPI.isAvailable()) {
+            return -1;
+        }
+        return NVMLAPI.nvmlInit();
+    }
 
-    static native long clNvmlDeviceGetHandleByIndex(long index, long[] device) throws OCLException;
+    static long clNvmlDeviceGetHandleByIndex(long index, long[] device) throws OCLException {
+        if (!NVMLAPI.isAvailable() || device == null || device.length == 0) {
+            return -1;
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment handle = FFMSupport.allocatePointer(arena);
+            int result = NVMLAPI.nvmlDeviceGetHandleByIndex((int) index, handle);
+            device[0] = handle.get(FFMSupport.C_POINTER, 0).address();
+            return result;
+        }
+    }
 
-    static native long clNvmlDeviceGetPowerUsage(long[] device, long[] powerUsage) throws OCLException;
+    /** Reports the device's current draw in milliwatts, which is the unit the profiler prints. */
+    static long clNvmlDeviceGetPowerUsage(long[] device, long[] powerUsage) throws OCLException {
+        if (!NVMLAPI.isAvailable() || device == null || device.length == 0) {
+            return -1;
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment milliwatts = FFMSupport.allocateInt(arena);
+            int result = NVMLAPI.nvmlDeviceGetPowerUsage(device[0], milliwatts);
+            if (powerUsage != null && powerUsage.length > 0) {
+                // An unsigned int, but no NVIDIA GPU draws anywhere near 2^31 milliwatts.
+                powerUsage[0] = Integer.toUnsignedLong(milliwatts.get(FFMSupport.C_INT, 0));
+            }
+            return result;
+        }
+    }
 
     @Override
     public void initializePowerLibrary() {

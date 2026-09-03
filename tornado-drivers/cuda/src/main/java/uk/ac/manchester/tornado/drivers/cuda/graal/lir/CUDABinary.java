@@ -23,9 +23,9 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.LIRInstruction.Use;
-import org.graalvm.compiler.lir.Opcode;
+import tornado.graal.compiler.core.common.LIRKind;
+import tornado.graal.compiler.lir.LIRInstruction.Use;
+import tornado.graal.compiler.lir.Opcode;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler;
@@ -70,7 +70,7 @@ public class CUDABinary {
 
         @Override
         public String toString() {
-            return String.format("%s %s %s", opcode.toString(), x, y);
+            return String.format("%s %s %s", opcode, x, y);
         }
 
     }

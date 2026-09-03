@@ -23,12 +23,12 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.nodes;
 
-import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.nodeinfo.InputType;
-import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.NodeView;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.FloatingNode;
+import tornado.graal.compiler.graph.NodeClass;
+import tornado.graal.compiler.nodeinfo.InputType;
+import tornado.graal.compiler.nodeinfo.NodeInfo;
+import tornado.graal.compiler.nodes.NodeView;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.calc.FloatingNode;
 
 @NodeInfo(shortName = "Atomic")
 public class AtomicAccessNode extends FloatingNode {

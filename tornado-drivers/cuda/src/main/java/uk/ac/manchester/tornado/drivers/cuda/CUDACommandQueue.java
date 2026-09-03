@@ -27,14 +27,24 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guara
 import static uk.ac.manchester.tornado.drivers.cuda.enums.CUDACommandQueueInfo.CL_QUEUE_CONTEXT;
 import static uk.ac.manchester.tornado.drivers.cuda.enums.CUDACommandQueueInfo.CL_QUEUE_DEVICE;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
-
+import java.util.Arrays;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import jdk.vm.ci.meta.JavaKind;
+
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.drivers.common.CommandQueue;
 import uk.ac.manchester.tornado.drivers.cuda.exceptions.CUDAException;
+import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDADriverAPI;
+import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDAHandles;
+import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
+import uk.ac.manchester.tornado.drivers.cuda.ffm.NVTXAPI;
 import uk.ac.manchester.tornado.drivers.cuda.natives.NativeCommandQueue;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
@@ -97,125 +107,717 @@ public class CUDACommandQueue extends CommandQueue {
         nvtxNameStream(commandQueuePtr, name);
     }
 
-    static native void clReleaseCommandQueue(long queueId) throws CUDAException;
+    static void clReleaseCommandQueue(long queueId) throws CUDAException {
+        CUDAHandles.Queue queue = (CUDAHandles.Queue) CUDAHandles.release(queueId);
+        if (queue != null) {
+            CUDADriverAPI.cuStreamDestroy(queue.stream());
+        }
+    }
 
-    private static native void nvtxNameStream(long queueId, String name);
+    /**
+     * Labels a CUDA stream with a human-readable name (its role: DEFAULT / H2D / COMPUTE / D2H) so
+     * the Nsight Systems timeline shows named stream rows instead of raw stream ids.
+     */
+    private static void nvtxNameStream(long queueId, String name) {
+        CUDAHandles.Queue queue = CUDAHandles.resolve(queueId, CUDAHandles.Queue.class);
+        if (queue != null && name != null) {
+            NVTXAPI.nameStream(queue.stream(), name);
+        }
+    }
 
-    /** Opens a host-side NVTX range labelled {@code name} (no-op without a profiler). */
-    public static native void nvtxRangePush(String name);
+    /**
+     * Opens a host-side NVTX range labelled {@code name} (no-op without a profiler), so native
+     * library tasks (cuBLAS, cuDNN, CUTLASS, cuTENSOR, ...) appear as named spans on the Nsight
+     * Systems timeline next to the backend's own kernel and transfer ranges.
+     */
+    public static void nvtxRangePush(String name) {
+        NVTXAPI.rangePush(name == null ? "library-task" : name);
+    }
 
     /** Closes the most recently opened host-side NVTX range. */
-    public static native void nvtxRangePop();
+    public static void nvtxRangePop() {
+        NVTXAPI.rangePop();
+    }
 
     /**
-     * Pushes the profiler state to the native layer: when timing is off, per-operation
-     * START timestamp events are skipped (halving events per op) and the remaining
-     * dependency events are created with {@code CU_EVENT_DISABLE_TIMING} (cheaper).
+     * Whether per-operation device timing is wanted, i.e. the TornadoVM profiler is active. Pushed
+     * from Java before each plan execution. When off, the START timestamp event is skipped entirely
+     * (halving the events per operation) and the remaining events are created with
+     * {@code CU_EVENT_DISABLE_TIMING}, which is cheaper to record. Events without a start report an
+     * elapsed time of zero.
      */
-    static native void nativeEnableTiming(boolean enabled);
+    private static volatile boolean timingEnabled = true;
 
-    static native void clGetCommandQueueInfo(long queueId, int info, byte[] buffer) throws CUDAException;
+    /** CUresult for a call the backend rejects before it reaches the driver. */
+    private static final int CUDA_ERROR_INVALID_VALUE = 1;
 
     /**
-     * Dispatch an CUDADriver kernel via a JNI call.
+     * Size of {@code CUgraphExecUpdateResultInfo}: a 4-byte result enum padded to 8, then two node
+     * pointers. The driver fills it in and only the returned CUresult is used, but it still has to
+     * be given somewhere valid to write.
+     */
+    private static final int GRAPH_EXEC_UPDATE_RESULT_INFO_BYTES = 24;
+
+    /** {@code CUevent_flags}. */
+    private static final int CU_EVENT_DEFAULT = 0x0;
+    private static final int CU_EVENT_DISABLE_TIMING = 0x2;
+
+    /** Default block size when the caller supplies no local work size. */
+    private static final int DEFAULT_BLOCK_SIZE = 256;
+
+    static void nativeEnableTiming(boolean enabled) {
+        timingEnabled = enabled;
+    }
+
+    private static int eventFlags() {
+        return timingEnabled ? CU_EVENT_DEFAULT : CU_EVENT_DISABLE_TIMING;
+    }
+
+    /**
+     * How many times the issue path is exercised when a queue is created. The first calls through a
+     * downcall handle are the expensive ones -- the handle is linked and the surrounding Java is
+     * still interpreted -- and a few repetitions are enough to get past that.
+     */
+    private static final int WARM_UP_ITERATIONS = 256;
+
+    /** Size of the throwaway buffer the warm-up copies; small enough that the copy itself is free. */
+    private static final int WARM_UP_BYTES = 256;
+
+    /**
+     * Runs the transfer issue path a few times on a throwaway buffer, so the work of linking the
+     * downcall handles happens here rather than inside the first transfer of the first plan.
+     *
+     * <p>
+     * Without this the first few copies measure several times their steady-state cost. The device
+     * timestamps the profiler reports bracket the host work that issues the copy -- the end event
+     * cannot be recorded until the host gets to it -- so warm-up on the issue path shows up as
+     * device time and skews the first execution's transfer numbers. Failures are ignored: this is
+     * an optimisation, and anything genuinely wrong with the queue will be reported by the real
+     * work that follows.
+     */
+    static void warmUpIssuePath(long queueId) {
+        CUDAHandles.Queue queue = CUDAHandles.resolve(queueId, CUDAHandles.Queue.class);
+        if (queue == null) {
+            return;
+        }
+        long devicePointer = 0;
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment host = arena.allocate(WARM_UP_BYTES, Long.BYTES);
+            MemorySegment allocation = FFMSupport.allocateLong(arena);
+            if (CUDADriverAPI.cuMemAlloc(allocation, WARM_UP_BYTES) != CUDADriverAPI.CUDA_SUCCESS) {
+                return;
+            }
+            devicePointer = allocation.get(FFMSupport.C_LONG, 0);
+            for (int i = 0; i < WARM_UP_ITERATIONS; i++) {
+                discardEvent(transferToDevice(queue, host.address(), 0, 0, WARM_UP_BYTES, devicePointer, null, true));
+                discardEvent(transferToHost(queue, host.address(), 0, 0, WARM_UP_BYTES, devicePointer, null, true));
+            }
+        } catch (CUDAException | RuntimeException e) {
+            // An optimisation only; the real work that follows will report anything genuinely wrong.
+        } finally {
+            if (devicePointer != 0) {
+                CUDADriverAPI.cuMemFree(devicePointer);
+            }
+        }
+    }
+
+    static void clGetCommandQueueInfo(long queueId, int info, byte[] buffer) throws CUDAException {
+        Arrays.fill(buffer, (byte) 0);
+        CUDAHandles.Queue queue = CUDAHandles.resolve(queueId, CUDAHandles.Queue.class);
+        if (queue == null || buffer.length < Long.BYTES) {
+            return;
+        }
+        long value = 0;
+        if (info == CL_QUEUE_CONTEXT.getValue()) {
+            value = queue.context();
+        } else if (info == CL_QUEUE_DEVICE.getValue()) {
+            value = queue.device();
+        }
+        ByteBuffer.wrap(buffer).order(CUDADriver.BYTE_ORDER).putLong(value);
+    }
+
+    /**
+     * Creates a {@code CUevent}, records it on the queue's stream and returns its handle. This is
+     * the event result the OpenCL clone expects from an enqueue. No start event is recorded, so the
+     * reported elapsed time is zero -- which is what markers and barriers want, since they do not
+     * bracket a timed operation.
+     */
+    private static long recordEvent(CUDAHandles.Queue queue) throws CUDAException {
+        long event = createEvent(eventFlags(), "cuEventCreate");
+        int result = CUDADriverAPI.cuEventRecord(event, queue.stream());
+        if (result != CUDADriverAPI.CUDA_SUCCESS) {
+            CUDADriverAPI.cuEventDestroy(event);
+            throw new CUDAException(CUDADriverAPI.describe("cuEventRecord", result));
+        }
+        return CUDAHandles.register(new CUDAHandles.Event(event, 0));
+    }
+
+    private static long createEvent(int flags, String call) throws CUDAException {
+        MemorySegment event = FFMSupport.scratchPointer();
+        int result = CUDADriverAPI.cuEventCreate(event, flags);
+        if (result != CUDADriverAPI.CUDA_SUCCESS) {
+            throw new CUDAException(CUDADriverAPI.describe(call, result));
+        }
+        return event.get(FFMSupport.C_POINTER, 0).address();
+    }
+
+    /**
+     * Records a START timestamp on the stream when the profiler is active, to be paired with
+     * {@link #endEvent} after the operation so that {@code cuEventElapsedTime(start, end)} yields
+     * its device time. Returns {@code 0} when timing is off.
+     */
+    private static long beginEvent(CUDAHandles.Queue queue) throws CUDAException {
+        if (!timingEnabled) {
+            return 0;
+        }
+        long start = createEvent(CU_EVENT_DEFAULT, "cuEventCreate(start)");
+        int result = CUDADriverAPI.cuEventRecord(start, queue.stream());
+        if (result != CUDADriverAPI.CUDA_SUCCESS) {
+            CUDADriverAPI.cuEventDestroy(start);
+            throw new CUDAException(CUDADriverAPI.describe("cuEventRecord(start)", result));
+        }
+        return start;
+    }
+
+    /**
+     * Records the completion event for an operation opened with {@link #beginEvent} and returns the
+     * handle carrying both. This event doubles as the operation's dependency handle, for
+     * {@code cuStreamWaitEvent} and status queries, so it is always created.
+     */
+    private static long endEvent(long start, CUDAHandles.Queue queue) throws CUDAException {
+        long end;
+        try {
+            end = createEvent(eventFlags(), "cuEventCreate(end)");
+        } catch (CUDAException e) {
+            // The start event recorded by beginEvent has to go back to the driver too.
+            destroyEvent(start);
+            throw e;
+        }
+        int result = CUDADriverAPI.cuEventRecord(end, queue.stream());
+        if (result != CUDADriverAPI.CUDA_SUCCESS) {
+            destroyEvent(start);
+            CUDADriverAPI.cuEventDestroy(end);
+            throw new CUDAException(CUDADriverAPI.describe("cuEventRecord(end)", result));
+        }
+        return CUDAHandles.register(new CUDAHandles.Event(end, start));
+    }
+
+    private static void destroyEvent(long event) {
+        if (event != 0) {
+            CUDADriverAPI.cuEventDestroy(event);
+        }
+    }
+
+    /**
+     * Releases an event handle whose value is about to be dropped, so its CUevents go back to the
+     * driver rather than leaking when the caller unwinds instead of returning it.
+     */
+    private static void discardEvent(long handle) {
+        CUDAHandles.Event event = (CUDAHandles.Event) CUDAHandles.release(handle);
+        if (event != null) {
+            destroyEvent(event.start());
+            destroyEvent(event.event());
+        }
+    }
+
+    /**
+     * Makes the queue's stream wait, GPU-side, on each event of the wait list, which is laid out as
+     * {@code [count, e0, e1, ...]}. CUevents are valid across streams, which is what allows
+     * cross-queue ordering when a plan runs with intra-plan concurrency (one queue per role).
+     */
+    private static void waitEvents(CUDAHandles.Queue queue, long[] events) {
+        if (events == null || events.length == 0) {
+            return;
+        }
+        int count = (int) Math.min(events[0], events.length - 1L);
+        for (int i = 0; i < count; i++) {
+            CUDAHandles.Event event = CUDAHandles.resolve(events[i + 1], CUDAHandles.Event.class);
+            if (event != null) {
+                CUDADriverAPI.cuStreamWaitEvent(queue.stream(), event.event(), 0);
+            }
+        }
+    }
+
+    /**
+     * Whether the queue's stream is currently capturing into a CUDA graph. During capture the
+     * stream must not be synchronised -- that invalidates the capture -- so the transfer helpers
+     * skip their post-copy synchronise while it is.
+     */
+    private static boolean isCapturing(CUDAHandles.Queue queue) {
+        MemorySegment status = FFMSupport.scratchInt();
+        if (CUDADriverAPI.cuStreamIsCapturing(queue.stream(), status) != CUDADriverAPI.CUDA_SUCCESS) {
+            return false;
+        }
+        return status.get(FFMSupport.C_INT, 0) == CUDADriverAPI.CU_STREAM_CAPTURE_STATUS_ACTIVE;
+    }
+
+    /**
+     * Formats "H2D 24.0 MB" / "D2H 24 B" so individual copies are identifiable on the timeline.
+     *
+     * <p>
+     * A plan moves the same buffers on every iteration, so the same handful of labels is wanted
+     * over and over; they are formatted once and remembered. The cost of formatting one lands
+     * between the copy and its end event, and therefore inside the device time the profiler
+     * reports, which is what makes it worth avoiding on the repeat. The cache is capped so an
+     * unusual workload with many distinct sizes formats afresh rather than growing without limit.
+     */
+    private static final int LABEL_CACHE_LIMIT = 512;
+
+    private static final Map<Long, String> WRITE_LABELS = new ConcurrentHashMap<>();
+
+    private static final Map<Long, String> READ_LABELS = new ConcurrentHashMap<>();
+
+    private static String transferLabel(Map<Long, String> cache, String direction, long numBytes) {
+        String label = cache.get(numBytes);
+        if (label != null) {
+            return label;
+        }
+        label = formatTransferLabel(direction, numBytes);
+        if (cache.size() < LABEL_CACHE_LIMIT) {
+            cache.put(numBytes, label);
+        }
+        return label;
+    }
+
+    private static String formatTransferLabel(String direction, long numBytes) {
+        if (numBytes >= 1048576) {
+            return String.format("%s %.1f MB", direction, numBytes / 1048576.0);
+        } else if (numBytes >= 1024) {
+            return String.format("%s %.1f KB", direction, numBytes / 1024.0);
+        }
+        return direction + " " + numBytes + " B";
+    }
+
+    /**
+     * Dispatch a CUDA kernel, translating an OpenCL NDRange into a grid/block launch.
+     * {@code globalWorkSize} is the total thread count per dimension and {@code localWorkSize} the
+     * block dimension; when no local size is given, a default block is picked and the grid derived.
      *
      * @param queueId
-     *     CUDADriver command queue object
+     *     command queue handle
      * @param kernelId
-     *     CUDADriver kernel ID object
+     *     kernel handle
      * @param dim
-     *     Dimensions of the Kernel (1D, 2D or 3D)
-     * @param global_work_offset
-     *     Offset within global access
-     * @param global_work_size
-     *     Total number of threads to launch
-     * @param local_work_size
-     *     Local work group size
+     *     dimensions of the kernel (1D, 2D or 3D)
+     * @param globalWorkOffset
+     *     offset within global access
+     * @param globalWorkSize
+     *     total number of threads to launch
+     * @param localWorkSize
+     *     local work group size
      * @param events
-     *     List of events
-     * @return Returns an event's ID
+     *     wait list, laid out as {@code [count, e0, e1, ...]}
+     * @return the launch event's handle
      * @throws CUDAException
-     *     CUDADriver Exception
+     *     if the launch fails
      */
-    static native long clEnqueueNDRangeKernel(long queueId, long kernelId, int dim, long[] global_work_offset, long[] global_work_size, long[] local_work_size, long[] events) throws CUDAException;
+    static long clEnqueueNDRangeKernel(long queueId, long kernelId, int dim, long[] globalWorkOffset, long[] globalWorkSize, long[] localWorkSize, long[] events) throws CUDAException {
+        CUDAHandles.Queue queue = CUDAHandles.resolve(queueId, CUDAHandles.Queue.class);
+        CUDAHandles.Kernel kernel = CUDAHandles.resolve(kernelId, CUDAHandles.Kernel.class);
+        if (queue == null || kernel == null) {
+            return 0;
+        }
 
-    static native long writeArrayToDevice(long queueId, byte[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException;
+        long[] global = { 1, 1, 1 };
+        long[] local = { 0, 0, 0 };
+        if (globalWorkSize != null) {
+            System.arraycopy(globalWorkSize, 0, global, 0, Math.min(globalWorkSize.length, 3));
+        }
+        if (localWorkSize != null) {
+            System.arraycopy(localWorkSize, 0, local, 0, Math.min(localWorkSize.length, 3));
+        }
 
-    static native long writeArrayToDevice(long queueId, char[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException;
+        int[] block = new int[3];
+        block[0] = local[0] > 0 ? (int) local[0] : (dim >= 1 ? DEFAULT_BLOCK_SIZE : 1);
+        block[1] = local[1] > 0 ? (int) local[1] : 1;
+        block[2] = local[2] > 0 ? (int) local[2] : 1;
+        if (global[0] > 0 && block[0] > global[0]) {
+            block[0] = (int) global[0];
+        }
 
-    static native long writeArrayToDevice(long queueId, short[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException;
+        int[] grid = new int[3];
+        for (int i = 0; i < 3; i++) {
+            grid[i] = (int) ((global[i] + block[i] - 1) / block[i]);
+            if (grid[i] == 0) {
+                grid[i] = 1;
+            }
+        }
 
-    static native long writeArrayToDevice(long queueId, int[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException;
+        // Label the launch with the actual kernel name: the profiler's own function-name table can
+        // go stale when modules are unloaded and their handles recycled (kernels then show under a
+        // previous kernel's name), so the NVTX row is the reliable source.
+        NVTXAPI.rangePush(kernel.name);
+        try (Arena arena = Arena.ofConfined()) {
+            CUDADriverAPI.cuCtxSetCurrent(queue.context());
+            waitEvents(queue, events);
+            long start = beginEvent(queue);
+            int result = CUDADriverAPI.cuLaunchKernel(kernel.function, grid[0], grid[1], grid[2], block[0], block[1], block[2], 0, queue.stream(), kernelParameters(arena, kernel),
+                    MemorySegment.NULL);
+            long launchEvent = endEvent(start, queue);
+            // A failed launch leaves the kernel's outputs untouched. Surfacing it makes the caller
+            // bail out instead of returning stale buffers as a valid result.
+            if (result != CUDADriverAPI.CUDA_SUCCESS) {
+                discardEvent(launchEvent);
+                throw new CUDAException(CUDADriverAPI.describe("cuLaunchKernel", result));
+            }
+            return launchEvent;
+        } finally {
+            NVTXAPI.rangePop();
+        }
+    }
 
-    static native long writeArrayToDevice(long queueId, long[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException;
+    /** Builds the {@code kernelParams} vector of pointers into copies of the staged argument blobs. */
+    private static MemorySegment kernelParameters(Arena arena, CUDAHandles.Kernel kernel) {
+        int count = kernel.arguments.size();
+        if (count == 0) {
+            return MemorySegment.NULL;
+        }
+        MemorySegment parameters = FFMSupport.allocateArray(arena, FFMSupport.C_POINTER, count);
+        for (int i = 0; i < count; i++) {
+            byte[] argument = kernel.arguments.get(i);
+            MemorySegment slot = MemorySegment.NULL;
+            if (argument != null && argument.length > 0) {
+                slot = arena.allocate(argument.length, Long.BYTES);
+                MemorySegment.copy(argument, 0, slot, FFMSupport.C_CHAR, 0, argument.length);
+            }
+            parameters.set(FFMSupport.C_POINTER, i * FFMSupport.C_POINTER.byteSize(), slot);
+        }
+        return parameters;
+    }
 
-    static native long writeArrayToDevice(long queueId, float[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException;
+    /**
+     * Host-to-device copy of {@code numBytes} from {@code hostPointer + hostOffset} to
+     * {@code devicePointer + deviceOffset}.
+     *
+     * @param syncAfter
+     *     the caller requires the copy to have completed on return. Always true for Java-array
+     *     transfers, whose staging buffer is reused as soon as this returns, and for blocking
+     *     off-heap transfers; false for async off-heap transfers, whose completion is ordered by
+     *     events and the end-of-plan sync. While capturing into a CUDA graph the stream must not be
+     *     synchronised, so the sync is skipped: the copy becomes a graph node whose host pointer, a
+     *     stable off-heap segment, is re-read on each graph launch.
+     */
+    private static long transferToDevice(CUDAHandles.Queue queue, long hostPointer, long hostOffset, long deviceOffset, long numBytes, long devicePointer, long[] events, boolean syncAfter)
+            throws CUDAException {
+        NVTXAPI.rangePush(transferLabel(WRITE_LABELS, "H2D", numBytes));
+        try {
+            CUDADriverAPI.cuCtxSetCurrent(queue.context());
+            waitEvents(queue, events);
+            long start = beginEvent(queue);
+            int result = CUDADriverAPI.cuMemcpyHtoDAsync(devicePointer + deviceOffset, hostPointer + hostOffset, numBytes, queue.stream());
+            result = syncIfNeeded(queue, result, syncAfter);
+            long event = endEvent(start, queue);
+            if (result != CUDADriverAPI.CUDA_SUCCESS) {
+                discardEvent(event);
+                throw new CUDAException(CUDADriverAPI.describe("cuMemcpyHtoDAsync", result));
+            }
+            return event;
+        } finally {
+            NVTXAPI.rangePop();
+        }
+    }
 
-    static native long writeArrayToDevice(long queueId, double[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException;
+    /** Device-to-host counterpart of {@link #transferToDevice}. */
+    private static long transferToHost(CUDAHandles.Queue queue, long hostPointer, long hostOffset, long deviceOffset, long numBytes, long devicePointer, long[] events, boolean syncAfter)
+            throws CUDAException {
+        NVTXAPI.rangePush(transferLabel(READ_LABELS, "D2H", numBytes));
+        try {
+            CUDADriverAPI.cuCtxSetCurrent(queue.context());
+            waitEvents(queue, events);
+            long start = beginEvent(queue);
+            int result = CUDADriverAPI.cuMemcpyDtoHAsync(hostPointer + hostOffset, devicePointer + deviceOffset, numBytes, queue.stream());
+            result = syncIfNeeded(queue, result, syncAfter);
+            long event = endEvent(start, queue);
+            if (result != CUDADriverAPI.CUDA_SUCCESS) {
+                discardEvent(event);
+                throw new CUDAException(CUDADriverAPI.describe("cuMemcpyDtoHAsync", result));
+            }
+            return event;
+        } finally {
+            NVTXAPI.rangePop();
+        }
+    }
 
-    native static long writeArrayToDevice(long queueId, long hostPointer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException;
+    /** Returns the first failure of the copy and the synchronise that follows it, if any. */
+    private static int syncIfNeeded(CUDAHandles.Queue queue, int copyResult, boolean syncAfter) {
+        if (!syncAfter || isCapturing(queue)) {
+            return copyResult;
+        }
+        int sync = CUDADriverAPI.cuStreamSynchronize(queue.stream());
+        return copyResult != CUDADriverAPI.CUDA_SUCCESS ? copyResult : sync;
+    }
 
-    static native long readArrayFromDevice(long queueId, byte[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException;
+    /**
+     * Per-thread staging buffer for transfers whose host side is a Java array.
+     *
+     * <p>
+     * A downcall cannot address the Java heap, so an array's bytes are copied through native memory
+     * rather than pinned in place the way the JNI critical region used to. The buffer is per-thread
+     * and reused, so the cost is one host memcpy per transfer and not an allocation as well; it is
+     * safe to reuse because every array transfer synchronises before it returns. Off-heap
+     * transfers, which is what the runtime's own segment-backed arrays use, never come through
+     * here.
+     */
+    private static final FFMSupport.Staging STAGING = new FFMSupport.Staging();
 
-    static native long readArrayFromDevice(long queueId, char[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException;
+    private static long writeArray(long queueId, Object array, ValueLayout layout, int elementOffset, int elementCount, long offset, long bytes, long ptr, long[] events) throws CUDAException {
+        CUDAHandles.Queue queue = CUDAHandles.resolve(queueId, CUDAHandles.Queue.class);
+        if (queue == null) {
+            return 0;
+        }
+        MemorySegment staging = STAGING.forBytes(bytes);
+        MemorySegment.copy(array, elementOffset, staging, layout, 0, elementCount);
+        return transferToDevice(queue, staging.address(), 0, offset, bytes, ptr, events, true);
+    }
 
-    static native long readArrayFromDevice(long queueId, short[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException;
+    private static long readArray(long queueId, Object array, ValueLayout layout, int elementOffset, int elementCount, long offset, long bytes, long ptr, long[] events) throws CUDAException {
+        CUDAHandles.Queue queue = CUDAHandles.resolve(queueId, CUDAHandles.Queue.class);
+        if (queue == null) {
+            return 0;
+        }
+        MemorySegment staging = STAGING.forBytes(bytes);
+        long event = transferToHost(queue, staging.address(), 0, offset, bytes, ptr, events, true);
+        MemorySegment.copy(staging, layout, 0, array, elementOffset, elementCount);
+        return event;
+    }
 
-    static native long readArrayFromDevice(long queueId, int[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException;
+    static long writeArrayToDevice(long queueId, byte[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException {
+        return writeArray(queueId, buffer, FFMSupport.C_CHAR, (int) hostOffset, (int) bytes, offset, bytes, ptr, events);
+    }
 
-    static native long readArrayFromDevice(long queueId, long[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException;
+    static long writeArrayToDevice(long queueId, char[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException {
+        return writeArray(queueId, buffer, ValueLayout.JAVA_CHAR, (int) (hostOffset / Character.BYTES), (int) (bytes / Character.BYTES), offset, bytes, ptr, events);
+    }
 
-    static native long readArrayFromDevice(long queueId, float[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException;
+    static long writeArrayToDevice(long queueId, short[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException {
+        return writeArray(queueId, buffer, ValueLayout.JAVA_SHORT, (int) (hostOffset / Short.BYTES), (int) (bytes / Short.BYTES), offset, bytes, ptr, events);
+    }
 
-    static native long readArrayFromDevice(long queueId, double[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException;
+    static long writeArrayToDevice(long queueId, int[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException {
+        return writeArray(queueId, buffer, ValueLayout.JAVA_INT, (int) (hostOffset / Integer.BYTES), (int) (bytes / Integer.BYTES), offset, bytes, ptr, events);
+    }
 
-    static native long readArrayFromDeviceOffHeap(long queueId, long hostPointer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException;
+    static long writeArrayToDevice(long queueId, long[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException {
+        return writeArray(queueId, buffer, FFMSupport.C_LONG, (int) (hostOffset / Long.BYTES), (int) (bytes / Long.BYTES), offset, bytes, ptr, events);
+    }
 
-    static native void clEnqueueWaitForEvents(long queueId, long[] events) throws CUDAException;
+    static long writeArrayToDevice(long queueId, float[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException {
+        return writeArray(queueId, buffer, FFMSupport.C_FLOAT, (int) (hostOffset / Float.BYTES), (int) (bytes / Float.BYTES), offset, bytes, ptr, events);
+    }
 
-    /** Allocates page-locked (pinned) host memory; returns 0 on failure. */
-    static native long cuMemAllocHost(long numBytes);
+    static long writeArrayToDevice(long queueId, double[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException {
+        return writeArray(queueId, buffer, ValueLayout.JAVA_DOUBLE, (int) (hostOffset / Double.BYTES), (int) (bytes / Double.BYTES), offset, bytes, ptr, events);
+    }
+
+    static long writeArrayToDevice(long queueId, long hostPointer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException {
+        CUDAHandles.Queue queue = CUDAHandles.resolve(queueId, CUDAHandles.Queue.class);
+        if (queue == null) {
+            return 0;
+        }
+        return transferToDevice(queue, hostPointer, hostOffset, offset, bytes, ptr, events, blocking);
+    }
+
+    static long readArrayFromDevice(long queueId, byte[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException {
+        return readArray(queueId, buffer, FFMSupport.C_CHAR, (int) hostOffset, (int) bytes, offset, bytes, ptr, events);
+    }
+
+    static long readArrayFromDevice(long queueId, char[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException {
+        return readArray(queueId, buffer, ValueLayout.JAVA_CHAR, (int) (hostOffset / Character.BYTES), (int) (bytes / Character.BYTES), offset, bytes, ptr, events);
+    }
+
+    static long readArrayFromDevice(long queueId, short[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException {
+        return readArray(queueId, buffer, ValueLayout.JAVA_SHORT, (int) (hostOffset / Short.BYTES), (int) (bytes / Short.BYTES), offset, bytes, ptr, events);
+    }
+
+    static long readArrayFromDevice(long queueId, int[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException {
+        return readArray(queueId, buffer, ValueLayout.JAVA_INT, (int) (hostOffset / Integer.BYTES), (int) (bytes / Integer.BYTES), offset, bytes, ptr, events);
+    }
+
+    static long readArrayFromDevice(long queueId, long[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException {
+        return readArray(queueId, buffer, FFMSupport.C_LONG, (int) (hostOffset / Long.BYTES), (int) (bytes / Long.BYTES), offset, bytes, ptr, events);
+    }
+
+    static long readArrayFromDevice(long queueId, float[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException {
+        return readArray(queueId, buffer, FFMSupport.C_FLOAT, (int) (hostOffset / Float.BYTES), (int) (bytes / Float.BYTES), offset, bytes, ptr, events);
+    }
+
+    static long readArrayFromDevice(long queueId, double[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException {
+        return readArray(queueId, buffer, ValueLayout.JAVA_DOUBLE, (int) (hostOffset / Double.BYTES), (int) (bytes / Double.BYTES), offset, bytes, ptr, events);
+    }
+
+    static long readArrayFromDeviceOffHeap(long queueId, long hostPointer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws CUDAException {
+        CUDAHandles.Queue queue = CUDAHandles.resolve(queueId, CUDAHandles.Queue.class);
+        if (queue == null) {
+            return 0;
+        }
+        return transferToHost(queue, hostPointer, hostOffset, offset, bytes, ptr, events, blocking);
+    }
+
+    static void clEnqueueWaitForEvents(long queueId, long[] events) throws CUDAException {
+        CUDAHandles.Queue queue = CUDAHandles.resolve(queueId, CUDAHandles.Queue.class);
+        if (queue != null) {
+            waitEvents(queue, events);
+        }
+    }
+
+    /** Allocates page-locked (pinned) host memory for the staged-transfer ring; 0 on failure. */
+    static long cuMemAllocHost(long numBytes) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment hostPointer = FFMSupport.allocatePointer(arena);
+            if (CUDADriverAPI.cuMemAllocHost(hostPointer, numBytes) != CUDADriverAPI.CUDA_SUCCESS) {
+                return 0L;
+            }
+            return hostPointer.get(FFMSupport.C_POINTER, 0).address();
+        }
+    }
 
     /** Releases pinned host memory allocated by {@link #cuMemAllocHost(long)}. */
-    static native void cuMemFreeHost(long hostPtr);
+    static void cuMemFreeHost(long hostPtr) {
+        CUDADriverAPI.cuMemFreeHost(hostPtr);
+    }
 
-    /** Plain host-side memcpy between raw pointers (staged-transfer slot fill). */
-    static native void memcpyHostToHost(long dstPtr, long srcPtr, long numBytes);
-
-    /*
-     * for CUDADriver 1.2 implementations
+    /**
+     * Plain host-side copy between raw pointers. The staged-transfer path uses it to fill a pinned
+     * staging slot from the pageable source segment on the CPU while a previous slot's async DMA is
+     * still in flight.
      */
-    static native long clEnqueueMarkerWithWaitList(long queueId, long[] events) throws CUDAException;
+    static void memcpyHostToHost(long dstPtr, long srcPtr, long numBytes) {
+        MemorySegment.copy(FFMSupport.asSegment(srcPtr, numBytes), 0, FFMSupport.asSegment(dstPtr, numBytes), 0, numBytes);
+    }
 
-    static native long clEnqueueBarrierWithWaitList(long queueId, long[] events) throws CUDAException;
+    static long clEnqueueMarkerWithWaitList(long queueId, long[] events) throws CUDAException {
+        CUDAHandles.Queue queue = CUDAHandles.resolve(queueId, CUDAHandles.Queue.class);
+        if (queue == null) {
+            return 0;
+        }
+        return recordEvent(queue);
+    }
 
-    static native void clFlush(long queueId) throws CUDAException;
+    static long clEnqueueBarrierWithWaitList(long queueId, long[] events) throws CUDAException {
+        CUDAHandles.Queue queue = CUDAHandles.resolve(queueId, CUDAHandles.Queue.class);
+        if (queue == null) {
+            return 0;
+        }
+        // Honour the wait list, then place a marker event.
+        waitEvents(queue, events);
+        return recordEvent(queue);
+    }
 
-    static native void clFinish(long queueId) throws CUDAException;
+    static void clFlush(long queueId) throws CUDAException {
+        synchronizeStream(queueId);
+    }
 
-    /* ---- CUDA Graph (stream capture) native bindings ---- */
+    static void clFinish(long queueId) throws CUDAException {
+        synchronizeStream(queueId);
+    }
 
-    private static native long cuStreamBeginCapture(long queueId, int mode);
+    private static void synchronizeStream(long queueId) throws CUDAException {
+        CUDAHandles.Queue queue = CUDAHandles.resolve(queueId, CUDAHandles.Queue.class);
+        if (queue == null) {
+            return;
+        }
+        int result = CUDADriverAPI.cuStreamSynchronize(queue.stream());
+        if (result != CUDADriverAPI.CUDA_SUCCESS) {
+            throw new CUDAException(CUDADriverAPI.describe("cuStreamSynchronize", result));
+        }
+    }
 
-    private static native long cuStreamEndCapture(long queueId);
+    /* ---- CUDA Graph (stream capture) ---- */
 
-    private static native boolean cuStreamIsCapturing(long queueId);
+    /**
+     * Puts the queue's stream into capture mode; {@code mode} maps directly onto
+     * {@code CUstreamCaptureMode}. Returns the {@code CUresult}.
+     */
+    private static long cuStreamBeginCapture(long queueId, int mode) {
+        CUDAHandles.Queue queue = CUDAHandles.resolve(queueId, CUDAHandles.Queue.class);
+        if (queue == null) {
+            return CUDA_ERROR_INVALID_VALUE;
+        }
+        CUDADriverAPI.cuCtxSetCurrent(queue.context());
+        return CUDADriverAPI.cuStreamBeginCapture(queue.stream(), mode);
+    }
 
-    private static native long cuGraphInstantiate(long graphHandle);
+    /** Ends capture and returns the constructed {@code CUgraph} as a raw pointer (0 on failure). */
+    private static long cuStreamEndCapture(long queueId) {
+        CUDAHandles.Queue queue = CUDAHandles.resolve(queueId, CUDAHandles.Queue.class);
+        if (queue == null) {
+            return 0;
+        }
+        CUDADriverAPI.cuCtxSetCurrent(queue.context());
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment graph = FFMSupport.allocatePointer(arena);
+            if (CUDADriverAPI.cuStreamEndCapture(queue.stream(), graph) != CUDADriverAPI.CUDA_SUCCESS) {
+                return 0;
+            }
+            return graph.get(FFMSupport.C_POINTER, 0).address();
+        }
+    }
 
-    private static native long cuGraphExecUpdate(long graphExecHandle, long graphHandle);
+    private static boolean cuStreamIsCapturing(long queueId) {
+        CUDAHandles.Queue queue = CUDAHandles.resolve(queueId, CUDAHandles.Queue.class);
+        return queue != null && isCapturing(queue);
+    }
 
-    private static native long cuGraphLaunch(long graphExecHandle, long queueId);
+    /** Instantiates an executable graph and returns the {@code CUgraphExec} (0 on failure). */
+    private static long cuGraphInstantiate(long graphHandle) {
+        if (graphHandle == 0) {
+            return 0;
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment graphExec = FFMSupport.allocatePointer(arena);
+            if (CUDADriverAPI.cuGraphInstantiateWithFlags(graphExec, graphHandle, 0) != CUDADriverAPI.CUDA_SUCCESS) {
+                return 0;
+            }
+            return graphExec.get(FFMSupport.C_POINTER, 0).address();
+        }
+    }
 
-    private static native long cuGraphExecDestroy(long graphExecHandle);
+    /**
+     * Attempts to update an instantiated graph in place with the topology of a new {@code CUgraph}.
+     * Returns {@code CUDA_SUCCESS} when the update succeeded, otherwise the error code so the
+     * caller can fall back to re-instantiation.
+     */
+    private static long cuGraphExecUpdate(long graphExecHandle, long graphHandle) {
+        if (graphExecHandle == 0 || graphHandle == 0) {
+            return CUDA_ERROR_INVALID_VALUE;
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            // CUgraphExecUpdateResultInfo: the driver fills it in, and only the CUresult is used.
+            MemorySegment info = arena.allocate(GRAPH_EXEC_UPDATE_RESULT_INFO_BYTES, Long.BYTES);
+            info.fill((byte) 0);
+            return CUDADriverAPI.cuGraphExecUpdate(graphExecHandle, graphHandle, info);
+        }
+    }
 
-    private static native long cuGraphDestroy(long graphHandle);
+    /** Launches an instantiated graph on the queue's stream. */
+    private static long cuGraphLaunch(long graphExecHandle, long queueId) {
+        CUDAHandles.Queue queue = CUDAHandles.resolve(queueId, CUDAHandles.Queue.class);
+        if (graphExecHandle == 0 || queue == null) {
+            return CUDA_ERROR_INVALID_VALUE;
+        }
+        CUDADriverAPI.cuCtxSetCurrent(queue.context());
+        return CUDADriverAPI.cuGraphLaunch(graphExecHandle, queue.stream());
+    }
+
+    private static long cuGraphExecDestroy(long graphExecHandle) {
+        return graphExecHandle == 0 ? CUDADriverAPI.CUDA_SUCCESS : CUDADriverAPI.cuGraphExecDestroy(graphExecHandle);
+    }
+
+    private static long cuGraphDestroy(long graphHandle) {
+        return graphHandle == 0 ? CUDADriverAPI.CUDA_SUCCESS : CUDADriverAPI.cuGraphDestroy(graphHandle);
+    }
 
     /* ---- Native interop (external libraries, e.g. cuBLAS) ---- */
 
-    private static native long getStreamPointer(long queueId);
+    private static long getStreamPointer(long queueId) {
+        CUDAHandles.Queue queue = CUDAHandles.resolve(queueId, CUDAHandles.Queue.class);
+        return queue == null ? 0 : queue.stream();
+    }
 
-    private static native long getContextPointer(long queueId);
+    private static long getContextPointer(long queueId) {
+        CUDAHandles.Queue queue = CUDAHandles.resolve(queueId, CUDAHandles.Queue.class);
+        return queue == null ? 0 : queue.context();
+    }
 
     /**
      * Raw CUstream handle of this queue, for handing to external native

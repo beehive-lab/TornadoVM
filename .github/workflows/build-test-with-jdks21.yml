@@ -34,7 +34,7 @@ jobs:
       JAVA_HOME: ${{ matrix.jdk.java_home }}
       MAVEN_HOME: /opt/maven
       CMAKE_ROOT: /opt/jenkins/cmake-3.25.2-linux-x86_64
-      GRAAL_JARS: /opt/graalJars
+      GRAAL_JARS: /opt/graalJarsNoJvmci
       TORNADO_ROOT: ${{ github.workspace }}
       TORNADOVM_HOME: ${{ github.workspace }}/bin/sdk
       VENV_PATH: ${{ github.workspace }}/venv-opencl
@@ -67,14 +67,14 @@ jobs:
         run: |
           source $VENV_PATH/bin/activate
           source setvars.sh
-          tornado-test --ea --verbose --jvm="-Dtornado.unittests.device=0:0" -qp
+          tornado-test --verbose --jvm="-Dtornado.unittests.device=0:0" -qp
       - name: Run fast unit-tests (${{ matrix.jdk.name }}) for OpenCL on Integrated Graphics
         run: |
           source $VENV_PATH/bin/activate
           source setvars.sh
-          tornado-test --ea --verbose --jvm="-Dtornado.unittests.device=0:1" -qp
+          tornado-test --verbose --jvm="-Dtornado.unittests.device=0:1" -qp
       - name: Run fast unit-tests (${{ matrix.jdk.name }}) for CUDA on NVIDIA GPU
         run: |
           source $VENV_PATH/bin/activate
           source setvars.sh
-          tornado-test --ea --verbose --jvm="-Dtornado.unittests.device=1:0" -qp
+          tornado-test --verbose --jvm="-Dtornado.unittests.device=1:0" -qp

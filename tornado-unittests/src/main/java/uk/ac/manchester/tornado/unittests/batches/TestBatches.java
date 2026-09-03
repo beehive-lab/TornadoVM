@@ -1026,6 +1026,48 @@ public class TestBatches extends TornadoTestBase {
         }
     }
 
+    /**
+     * A batched graph with more than one output. Each chunk has to allocate every output: a buffer
+     * already in use by another object of the same access type is not this object's to reuse, and
+     * treating it as such used to leave the second output unallocated, so the next LAUNCH found a
+     * null device buffer.
+     */
+    @Test
+    public void testBatchWithTwoOutputs() throws TornadoExecutionPlanException {
+        long maxAllocMemory = checkMaxHeapAllocationOnDevice(16, MemoryUnit.MB);
+        // 8 chunks of 1MB per array: more chunks than this and the per-chunk bytecodes of a
+        // two-task graph outgrow the default tornado.tvm.maxbytecodesize, which is a separate limit.
+        int size = 2 * 1024 * 1024;
+        if ((long) size * 4 > maxAllocMemory) {
+            size = (int) ((maxAllocMemory / 4 / 3) * 0.9);
+        }
+        FloatArray input = new FloatArray(size);
+        FloatArray outputA = new FloatArray(size);
+        FloatArray outputB = new FloatArray(size);
+
+        TaskGraph taskGraph = new TaskGraph("batchTwoOutputs") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .task("t0", TestBatches::compute, input, outputA) //
+                .task("t1", TestBatches::compute, input, outputB) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outputA, outputB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withBatch("1MB");
+            // Two executions: the second one exercises the per-chunk reuse path with both outputs
+            // already holding buffers.
+            for (int iteration = 0; iteration < 2; iteration++) {
+                float value = 3.0f + iteration;
+                input.init(value);
+                executionPlan.execute();
+                for (int i = 0; i < size; i++) {
+                    assertEquals(value + 100, outputA.get(i), 0.1f);
+                    assertEquals(value + 100, outputB.get(i), 0.1f);
+                }
+            }
+        }
+    }
+
     private long checkMaxHeapAllocationOnDevice(int size, MemoryUnit memoryUnit) throws UnsupportedConfigurationException {
         long maxAllocMemory = getTornadoRuntime().getDefaultDevice().getDeviceContext().getMemoryManager().getHeapSize();
 

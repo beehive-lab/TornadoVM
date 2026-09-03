@@ -23,12 +23,12 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
-import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.nodeinfo.InputType;
-import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FixedWithNextNode;
-import org.graalvm.compiler.nodes.ValueNode;
+import tornado.graal.compiler.graph.NodeClass;
+import tornado.graal.compiler.nodeinfo.InputType;
+import tornado.graal.compiler.nodeinfo.NodeInfo;
+import tornado.graal.compiler.nodes.ConstantNode;
+import tornado.graal.compiler.nodes.FixedWithNextNode;
+import tornado.graal.compiler.nodes.ValueNode;
 
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStampFactory;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;

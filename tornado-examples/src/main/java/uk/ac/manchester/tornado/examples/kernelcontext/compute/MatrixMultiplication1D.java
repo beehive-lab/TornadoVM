@@ -31,6 +31,12 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
+ * Matrix multiplication expressed with KernelContext (explicit global ids)
+ * instead of {@code @Parallel} loops.
+ * <p>
+ * Copies both matrices on first execution, runs the KernelContext task, and
+ * copies the result back on every execution.
+ * </p>
  * <p>
  * How to run?
  * </p>

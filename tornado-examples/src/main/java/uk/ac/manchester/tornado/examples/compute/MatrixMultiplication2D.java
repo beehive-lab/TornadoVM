@@ -33,6 +33,12 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
 
 /**
+ * Dense matrix multiplication on {@code Matrix2DFloat} with nested
+ * {@code @Parallel} loops, compared against Java parallel streams.
+ * <p>
+ * Copies A and B on first execution, runs the task, and copies C back on
+ * every execution. Pin the device with {@code -Ds0.t0.device=0:0}.
+ * </p>
  * <p>
  * How to run?
  * </p>

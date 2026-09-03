@@ -100,6 +100,42 @@ public class TestLogic extends TornadoTestBase {
         }
     }
 
+    // A || (B && C) exhaustively over 16 neighbour counts x {DEAD, ALIVE}, the Game-of-Life
+    // B3/S23 survival predicate as written in upstream Java source (OQ-17).
+    public static void logicOrOfAnd(IntArray count, IntArray cell, IntArray output) {
+        for (@Parallel int i = 0; i < count.getSize(); i++) {
+            int c = count.get(i);
+            int v = cell.get(i);
+            boolean result = (c == 3) || ((c == 2) && (v == -1));
+            output.set(i, result ? -1 : 0);
+        }
+    }
+
+    // A || (B && C && D), i.e. A || ((B && C) && D): a three-way conjunction nested inside the
+    // disjunction, so the inner AND-of-AND is itself a ShortCircuitOrNode nested two deep. OQ-17
+    // follow-up.
+    public static void logicOrOfAndAnd(IntArray count, IntArray cell, IntArray w, IntArray output) {
+        for (@Parallel int i = 0; i < count.getSize(); i++) {
+            int c = count.get(i);
+            int v = cell.get(i);
+            int ww = w.get(i);
+            boolean result = (c == 3) || ((c == 2) && (v == -1) && (ww == 1));
+            output.set(i, result ? -1 : 0);
+        }
+    }
+
+    // A || (B && (C || D)): an OR nested inside the AND nested inside the outer OR - three
+    // levels of ShortCircuitOrNode, mixing the two connectives. OQ-17 follow-up.
+    public static void logicOrOfAndOr(IntArray count, IntArray cell, IntArray w, IntArray output) {
+        for (@Parallel int i = 0; i < count.getSize(); i++) {
+            int c = count.get(i);
+            int v = cell.get(i);
+            int ww = w.get(i);
+            boolean result = (c == 3) || ((c == 2) && ((v == -1) || (ww == 1)));
+            output.set(i, result ? -1 : 0);
+        }
+    }
+
     @Test
     public void testLogic01() throws TornadoExecutionPlanException {
         final int N = 1024;
@@ -288,6 +324,97 @@ public class TestLogic extends TornadoTestBase {
 
         for (int i = 0; i < N; i++) {
             assertEquals(sequential.get(i), output.get(i));
+        }
+    }
+
+    @Test
+    public void testLogicOrOfAnd() throws TornadoExecutionPlanException {
+        final int N = 256;
+        IntArray count = new IntArray(N);
+        IntArray cell = new IntArray(N);
+        IntArray output = new IntArray(N);
+        IntArray sequential = new IntArray(N);
+
+        for (int i = 0; i < N; i++) {
+            count.set(i, (i >> 1) & 0xf); // 0..15 neighbour counts
+            cell.set(i, (i & 1) != 0 ? -1 : 0); // the only two cell encodings life produces
+        }
+
+        TaskGraph taskGraph = new TaskGraph("taskGraph") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, count, cell) //
+                .task("t0", TestLogic::logicOrOfAnd, count, cell, output) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+        logicOrOfAnd(count, cell, sequential);
+
+        for (int i = 0; i < N; i++) {
+            assertEquals("index " + i + ": count=" + count.get(i) + " cell=" + cell.get(i), sequential.get(i), output.get(i));
+        }
+    }
+
+    @Test
+    public void testLogicOrOfAndAnd() throws TornadoExecutionPlanException {
+        final int N = 64;
+        IntArray count = new IntArray(N);
+        IntArray cell = new IntArray(N);
+        IntArray w = new IntArray(N);
+        IntArray output = new IntArray(N);
+        IntArray sequential = new IntArray(N);
+
+        for (int i = 0; i < N; i++) {
+            count.set(i, (i >> 2) & 0xf); // 0..15 neighbour counts
+            cell.set(i, ((i >> 1) & 1) != 0 ? -1 : 0);
+            w.set(i, i & 1);
+        }
+
+        TaskGraph taskGraph = new TaskGraph("taskGraph") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, count, cell, w) //
+                .task("t0", TestLogic::logicOrOfAndAnd, count, cell, w, output) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+        logicOrOfAndAnd(count, cell, w, sequential);
+
+        for (int i = 0; i < N; i++) {
+            assertEquals("index " + i + ": count=" + count.get(i) + " cell=" + cell.get(i) + " w=" + w.get(i), sequential.get(i), output.get(i));
+        }
+    }
+
+    @Test
+    public void testLogicOrOfAndOr() throws TornadoExecutionPlanException {
+        final int N = 64;
+        IntArray count = new IntArray(N);
+        IntArray cell = new IntArray(N);
+        IntArray w = new IntArray(N);
+        IntArray output = new IntArray(N);
+        IntArray sequential = new IntArray(N);
+
+        for (int i = 0; i < N; i++) {
+            count.set(i, (i >> 2) & 0xf); // 0..15 neighbour counts
+            cell.set(i, ((i >> 1) & 1) != 0 ? -1 : 0);
+            w.set(i, i & 1);
+        }
+
+        TaskGraph taskGraph = new TaskGraph("taskGraph") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, count, cell, w) //
+                .task("t0", TestLogic::logicOrOfAndOr, count, cell, w, output) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+        logicOrOfAndOr(count, cell, w, sequential);
+
+        for (int i = 0; i < N; i++) {
+            assertEquals("index " + i + ": count=" + count.get(i) + " cell=" + cell.get(i) + " w=" + w.get(i), sequential.get(i), output.get(i));
         }
     }
     // CHECKSTYLE:ON

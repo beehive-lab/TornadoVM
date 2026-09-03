@@ -23,9 +23,15 @@
  */
 package uk.ac.manchester.tornado.drivers.metal.natives;
 
+import uk.ac.manchester.tornado.drivers.metal.ffm.MetalObjects;
+
 public class NativeCommandQueue {
 
-    public static native long mapOnDeviceMemoryRegion(long destDevicePtr, long srcDevicePtr);
+    public static long mapOnDeviceMemoryRegion(long destDevicePtr, long srcDevicePtr) {
+        return MetalObjects.mapOnDeviceMemoryRegion(destDevicePtr, srcDevicePtr);
+    }
 
-    public static native long mapOnDeviceMemoryNDRegion(long commandQueuePtr, long destDevicePtr, long srcDevicePtr, long offset, int sizeDataType, long headerSize, long sizeSource, long sizeDest);
+    public static long mapOnDeviceMemoryNDRegion(long commandQueuePtr, long destDevicePtr, long srcDevicePtr, long offset, int sizeDataType, long headerSize, long sizeSource, long sizeDest) {
+        return MetalObjects.mapOnDeviceMemoryNDRegion(commandQueuePtr, destDevicePtr, srcDevicePtr, offset, sizeDataType, headerSize, sizeSource, sizeDest);
+    }
 }

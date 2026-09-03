@@ -38,6 +38,12 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 
 /**
+ * Renders a Mandelbrot set into a Swing window. The kernel writes iteration
+ * counts into a {@code ShortArray} with {@code @Parallel} loops.
+ * <p>
+ * The image component builds a {@code TaskGraph}, copies the output back on
+ * every execution, and displays the result.
+ * </p>
  * <p>
  * How to run?
  * </p>

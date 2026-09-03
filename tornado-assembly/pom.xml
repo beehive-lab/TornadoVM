@@ -5,7 +5,7 @@
     <parent>
         <groupId>io.github.beehive-lab</groupId>
         <artifactId>tornado</artifactId>
-        <version>5.2.1-jdk21-dev</version>
+        <version>${revision}</version>
     </parent>
     <artifactId>tornado-assembly</artifactId>
     <packaging>pom</packaging>
@@ -78,12 +78,6 @@
                     <artifactId>tornado-drivers-opencl</artifactId>
                     <version>${project.version}</version>
                 </dependency>
-                <dependency>
-                    <groupId>${project.groupId}</groupId>
-                    <artifactId>tornado-drivers-opencl-jni</artifactId>
-                    <version>${project.version}</version>
-                    <classifier>libs</classifier>
-                </dependency>
             </dependencies>
         </profile>
 
@@ -97,12 +91,6 @@
                     <groupId>${project.groupId}</groupId>
                     <artifactId>tornado-drivers-metal</artifactId>
                     <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>${project.groupId}</groupId>
-                    <artifactId>tornado-drivers-metal-jni</artifactId>
-                    <version>${project.version}</version>
-                    <classifier>libs</classifier>
                 </dependency>
             </dependencies>
         </profile>
@@ -120,31 +108,13 @@
                 </dependency>
                 <dependency>
                     <groupId>${project.groupId}</groupId>
-                    <artifactId>tornado-drivers-cuda-jni</artifactId>
-                    <version>${project.version}</version>
-                    <classifier>libs</classifier>
-                </dependency>
-                <dependency>
-                    <groupId>${project.groupId}</groupId>
                     <artifactId>tornado-cublas</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>
                     <groupId>${project.groupId}</groupId>
-                    <artifactId>tornado-drivers-cublas-jni</artifactId>
-                    <version>${project.version}</version>
-                    <classifier>libs</classifier>
-                </dependency>
-                <dependency>
-                    <groupId>${project.groupId}</groupId>
                     <artifactId>tornado-cufft</artifactId>
                     <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>${project.groupId}</groupId>
-                    <artifactId>tornado-drivers-cufft-jni</artifactId>
-                    <version>${project.version}</version>
-                    <classifier>libs</classifier>
                 </dependency>
                 <dependency>
                     <groupId>${project.groupId}</groupId>
@@ -161,12 +131,6 @@
                     <groupId>${project.groupId}</groupId>
                     <artifactId>tornado-cusparse</artifactId>
                     <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>${project.groupId}</groupId>
-                    <artifactId>tornado-drivers-cusparse-jni</artifactId>
-                    <version>${project.version}</version>
-                    <classifier>libs</classifier>
                 </dependency>
                 <dependency>
                     <groupId>${project.groupId}</groupId>

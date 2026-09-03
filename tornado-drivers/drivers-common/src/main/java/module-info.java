@@ -1,6 +1,6 @@
 open module tornado.drivers.common {
     requires transitive jdk.internal.vm.ci;
-    requires transitive jdk.internal.vm.compiler;
+    requires transitive tornado.graal;
     requires transitive tornado.runtime;
     
     exports uk.ac.manchester.tornado.drivers.providers;
@@ -16,4 +16,5 @@ open module tornado.drivers.common {
     exports uk.ac.manchester.tornado.drivers.common.compiler.phases.analysis;
     exports uk.ac.manchester.tornado.drivers.common.utils;
     exports uk.ac.manchester.tornado.drivers.common.power;
+    exports uk.ac.manchester.tornado.drivers.common.ffm;
 }

@@ -30,15 +30,18 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.profiler.ChromeEventTracer;
 
 /**
- * Montecarlo algorithm to approximate the PI value. This version has been
- * adapted from Marawacc test-suite.
+ * N-body gravity simulation expressed with KernelContext instead of
+ * {@code @Parallel} loops.
+ * <p>
+ * Copies positions and velocities on first execution, runs the KernelContext
+ * {@code nBody} task, and copies results back on every execution.
+ * </p>
  * <p>
  * How to run?
  * </p>
  * <code>
  * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.kernelcontext.compute.NBody
  * </code>
- *
  */
 public class NBody {
     // CHECKSTYLE:OFF

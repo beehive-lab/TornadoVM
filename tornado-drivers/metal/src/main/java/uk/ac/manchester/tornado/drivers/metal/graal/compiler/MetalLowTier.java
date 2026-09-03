@@ -23,18 +23,18 @@
  */
 package uk.ac.manchester.tornado.drivers.metal.graal.compiler;
 
-import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
+import static tornado.graal.compiler.core.common.GraalOptions.ConditionalElimination;
 
-import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.common.AddressLoweringByNodePhase;
-import org.graalvm.compiler.phases.common.AddressLoweringByNodePhase.AddressLowering;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
-import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
-import org.graalvm.compiler.phases.common.FixReadsPhase;
-import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
-import org.graalvm.compiler.phases.common.LowTierLoweringPhase;
-import org.graalvm.compiler.phases.common.UseTrappingNullChecksPhase;
-import org.graalvm.compiler.phases.schedule.SchedulePhase;
+import tornado.graal.compiler.options.OptionValues;
+import tornado.graal.compiler.phases.common.AddressLoweringByNodePhase;
+import tornado.graal.compiler.phases.common.AddressLoweringByNodePhase.AddressLowering;
+import tornado.graal.compiler.phases.common.CanonicalizerPhase;
+import tornado.graal.compiler.phases.common.DeadCodeEliminationPhase;
+import tornado.graal.compiler.phases.common.FixReadsPhase;
+import tornado.graal.compiler.phases.common.IterativeConditionalEliminationPhase;
+import tornado.graal.compiler.phases.common.LowTierLoweringPhase;
+import tornado.graal.compiler.phases.common.UseTrappingNullChecksPhase;
+import tornado.graal.compiler.phases.schedule.SchedulePhase;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.analysis.TornadoFeatureExtraction;
@@ -45,6 +45,7 @@ import uk.ac.manchester.tornado.drivers.metal.graal.phases.InverseSquareRootPhas
 import uk.ac.manchester.tornado.drivers.metal.graal.phases.MetalFMAPhase;
 import uk.ac.manchester.tornado.drivers.metal.graal.phases.MetalFP16SupportPhase;
 import uk.ac.manchester.tornado.drivers.metal.graal.phases.MetalFP64SupportPhase;
+import uk.ac.manchester.tornado.drivers.metal.graal.phases.MetalFieldCoopsAccessPhase;
 import uk.ac.manchester.tornado.drivers.metal.graal.phases.TornadoAtomicsParametersPhase;
 import uk.ac.manchester.tornado.drivers.metal.graal.phases.TornadoAtomicsScheduling;
 import uk.ac.manchester.tornado.drivers.metal.graal.phases.TornadoFixedArrayCopyPhase;
@@ -99,6 +100,8 @@ public class MetalLowTier extends TornadoLowTier {
         appendPhase(new TornadoAtomicsParametersPhase());
 
         appendPhase(new TornadoAtomicsScheduling());
+
+        appendPhase(new MetalFieldCoopsAccessPhase());
 
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS));
 
