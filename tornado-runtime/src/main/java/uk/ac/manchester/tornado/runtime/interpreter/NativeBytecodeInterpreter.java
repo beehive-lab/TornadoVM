@@ -72,12 +72,68 @@ public final class NativeBytecodeInterpreter {
      */
     public static final int STATUS_BAIL = 2;
 
+    /** A handled bytecode or backend operation failed. */
+    public static final int STATUS_ERROR = 3;
+
     /**
      * Tells the native loop that the Java interpreter is running a warm-up pass, which
      * compiles kernels but does not execute them.
      *
      */
     public static final int FLAG_WARMUP = 1;
+
+    /**
+     * Tells the native loop that event-list tracking is on ({@code useDependencies}).
+     * Without it {@code ADD_DEPENDENCY} is a no-op, matching the Java handler.
+     */
+    public static final int FLAG_USE_DEPENDENCIES = 2;
+
+    /**
+     * Tells the native loop that an execution graph has already been captured
+     * ({@code executionGraphHandles} is non-empty). {@code ALLOC} and {@code DEALLOC} are
+     * skipped, matching the Java {@code execute()} loop.
+     */
+    public static final int FLAG_GRAPH_INSTANTIATED = 8;
+
+    /** Batch memory operations still use the Java handlers in this MVP. */
+    public static final int FLAG_BATCHED_EXECUTION = 16;
+
+    /** Forced physical deallocation still uses Java's whole-pool release. */
+    public static final int FLAG_FORCE_DEALLOCATION = 32;
+
+    /** Flush the backend queue when the native loop consumes END. */
+    public static final int FLAG_USE_VM_FLUSH = 64;
+
+    /**
+     * Object already has device contents. {@code TRANSFER_HOST_TO_DEVICE_ONCE} skips the copy.
+     */
+    static final byte OBJ_HAS_CONTENT = 1;
+
+    /**
+     * Buffer is locked for reuse. {@code DEALLOC} is a no-op.
+     */
+    static final byte OBJ_LOCKED = 2;
+
+    /** Object is launch metadata. Native allocation, transfer and deallocation skip it. */
+    static final byte OBJ_KERNEL_CONTEXT = 4;
+
+    static final byte OBJ_PERSISTENT = 8;
+    static final byte OBJ_NATIVE_ALLOCATED = 16;
+    static final byte OBJ_NATIVE_DEALLOCATED = 32;
+    static final byte OBJ_NATIVE_ALLOCATION_PREPARED = 64;
+    /** Host pointer addresses a reusable staging buffer, so asynchronous H2D is unsafe. */
+    static final byte OBJ_STAGED_HOST_BUFFER = (byte) 128;
+
+    static final byte OBJECT_KIND_UNSUPPORTED = 0;
+    static final byte OBJECT_KIND_SEGMENT = 1;
+    static final byte OBJECT_KIND_BYTE_ARRAY = 2;
+    static final byte OBJECT_KIND_CHAR_ARRAY = 3;
+    static final byte OBJECT_KIND_SHORT_ARRAY = 4;
+    static final byte OBJECT_KIND_INT_ARRAY = 5;
+    static final byte OBJECT_KIND_LONG_ARRAY = 6;
+    static final byte OBJECT_KIND_FLOAT_ARRAY = 7;
+    static final byte OBJECT_KIND_DOUBLE_ARRAY = 8;
+    static final byte OBJECT_KIND_ATOMIC = 9;
 
     /**
      * Bytes per packed constant: one type tag and an 8-byte little-endian payload.
@@ -95,6 +151,21 @@ public final class NativeBytecodeInterpreter {
     static final byte CONSTANT_DOUBLE = 7;
     static final byte CONSTANT_HALF = 8;
 
+    /* Per-task native launch table. Must match tornado_context.h. */
+    static final int LAUNCH_META_STRIDE = 18;
+    static final int LAUNCH_META_FRAME_BUFFER = 0;
+    static final int LAUNCH_META_CONSTANT_BUFFER = 1;
+    static final int LAUNCH_META_ATOMIC_BUFFER = 2;
+    static final int LAUNCH_META_LOCAL_MEMORY = 3;
+    static final int LAUNCH_META_DIMENSIONS = 4;
+    static final int LAUNCH_META_FLAGS = 5;
+    static final int LAUNCH_META_CONTEXT = 6;
+    static final int LAUNCH_META_GLOBAL_OFFSET = 9;
+    static final int LAUNCH_META_GLOBAL_WORK = 12;
+    static final int LAUNCH_META_LOCAL_WORK = 15;
+    static final long LAUNCH_FLAG_SUPPORTED = 1;
+    static final long LAUNCH_FLAG_HAS_LOCAL_WORK = 2;
+
     /**
      * Name of the shared library built by the {@code tornado-runtime-jni} module.
      */
@@ -103,10 +174,37 @@ public final class NativeBytecodeInterpreter {
     /**
      * The bytecodes that the native loop implements. This list must be kept in sync with the
      * cases of the switch in {@code tornado_interpreter.cpp}.
+     *
+     * <p>
+     * {@code ADD_DEPENDENCY}, {@code ON_DEVICE} and {@code PERSIST} update native event state.
+     * {@code ALLOC} and all four {@code TRANSFER_*} bytecodes call the OpenCL, CUDA, or
+     * Metal backend directly. Normal {@code DEALLOC} updates the existing buffer pool
+     * without a driver call. Primitive arrays are pinned once for the native-loop call.
+     * Images, matrices and collections are copied through a contiguous host staging
+     * buffer that matches the compound device layout on OpenCL, CUDA and Metal.
+     * {@code AtomicInteger} has no per-object buffer: native ALLOC/TRANSFER/DEALLOC/LAUNCH
+     * skip it the same way as {@code KernelContext}. Java writes the shared atomics
+     * region before the native call and copies values back afterwards.
+     * Batch memory operations, dependency-producing transfers, and forced
+     * pool release also bail out because their Java lifecycle is not represented here yet.
+     * {@code BARRIER} is intentionally not ported. {@code INIT}, {@code BEGIN} and
+     * {@code CONTEXT} are skipped if they appear.
      */
     private static final TornadoVMBytecodes[] PORTED_BYTECODES = {
-        // Only END is ported now
-        TornadoVMBytecodes.END
+        TornadoVMBytecodes.INIT,
+        TornadoVMBytecodes.BEGIN,
+        TornadoVMBytecodes.CONTEXT,
+        TornadoVMBytecodes.END,
+        TornadoVMBytecodes.ADD_DEPENDENCY,
+        TornadoVMBytecodes.ON_DEVICE,
+        TornadoVMBytecodes.PERSIST,
+        TornadoVMBytecodes.ALLOC,
+        TornadoVMBytecodes.DEALLOC,
+        TornadoVMBytecodes.TRANSFER_HOST_TO_DEVICE_ONCE,
+        TornadoVMBytecodes.TRANSFER_HOST_TO_DEVICE_ALWAYS,
+        TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS,
+        TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS_BLOCKING,
+        TornadoVMBytecodes.LAUNCH
     };
 
     private static final boolean AVAILABLE = loadNativeLibrary();
@@ -211,7 +309,12 @@ public final class NativeBytecodeInterpreter {
     /**
      * Stable host address of an off-heap Tornado object, or {@code 0} when the object is a
      * Java array (or anything else without a Panama segment). A zero means C++ must not
-     * dereference the pointer: on-heap arrays have to be pinned per transfer, later.
+     * dereference the pointer; on-heap primitive arrays are pinned once for the native call.
+     *
+     * <p>
+     * Images, matrices and collections return the payload segment only. That is not the
+     * compound device layout. Field buffers copy those objects through
+     * {@code OBJ_STAGED_HOST_BUFFER} instead of this pointer.
      */
     static long hostPointerOf(Object object) {
         if (object == null) {
@@ -234,7 +337,8 @@ public final class NativeBytecodeInterpreter {
      * <p>
      * The table arguments may be {@code null} when the caller has nothing to publish. Parallel
      * {@code long[]} tables that are non-null must share a length. C++ pins the arrays for the
-     * duration of the call and does not write them.
+     * duration of the call. Buffer handles, object flags, {@code lastEvent},
+     * {@code eventsIndexes} and {@code events} can be updated.
      *
      * @param bytecode
      *     the bytecode buffer backing the current {@code TornadoVMBytecodeResult}.
@@ -275,11 +379,25 @@ public final class NativeBytecodeInterpreter {
      *     index of this interpreter's platform.
      * @param executionPlanId
      *     execution-plan id this interpreter is running for.
+     * @param lastEvent
+     *     length-1 in/out slot for the loop-carried event-pool id (Java {@code lastEvent}).
+     * @param eventsIndexes
+     *     write cursors for each event list, or {@code null} when there are no lists.
+     * @param events
+     *     event-list rows (Java {@code events}), or {@code null}. Null rows are allocated
+     *     on first {@code ADD_DEPENDENCY}, matching {@code waitListForWrite}.
+     * @param eventRowLength
+     *     length of each event-list row ({@code TornadoOptions.MAX_EVENTS}).
+     * @param objectFlags
+     *     per-object bits ({@code OBJ_HAS_CONTENT}, {@code OBJ_LOCKED},
+     *     {@code OBJ_KERNEL_CONTEXT}). {@code HAS_CONTENT} is written on a successful
+     *     {@code TRANSFER_HOST_TO_DEVICE_ONCE}.
      * @return a {@code STATUS_*} value in the high 32 bits and the resulting position, which
      *     is always a valid bytecode boundary, in the low 32 bits.
      */
     static native long execute(byte[] bytecode, int position, int limit, int flags, long[] bufferHandles, long[] bufferOffsets, long[] bufferSizes, long[] hostPointers, long[] kernelHandles,
-            long[] programHandles, byte[] constants, long commandQueue, long deviceContext, int backend, int deviceIndex, int platformIndex, long executionPlanId);
+            long[] programHandles, long[] launchMetadata, byte[] constants, long commandQueue, long deviceContext, int backend, int deviceIndex, int platformIndex, long executionPlanId, int[] lastEvent,
+            int[] eventsIndexes, int[][] events, int eventRowLength, byte[] objectFlags, byte[] objectAccesses, Object[] objects, byte[] objectKinds, long[] dataOffsets, long[] partialCopySizes);
 
     /**
      * Extracts the {@code STATUS_*} value from a result returned by {@link #execute}.

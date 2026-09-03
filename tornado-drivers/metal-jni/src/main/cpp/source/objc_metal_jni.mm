@@ -76,6 +76,127 @@ static inline MetalHostTimingEvent *getTimingEvent(jlong eventId) {
 
 extern "C" {
 
+/* Native counterpart of MetalBufferProvider.allocateBuffer(). */
+int tornado_metal_allocate(int64_t context, int64_t bytes, int64_t *handle) {
+    if (context == 0 || bytes <= 0 || handle == nullptr) return -1;
+    @autoreleasepool {
+        id<MTLCommandQueue> queue = (__bridge id<MTLCommandQueue>)(void *)(uintptr_t)context;
+        id<MTLBuffer> buffer = [[queue device] newBufferWithLength:(NSUInteger)bytes options:MTLResourceStorageModeShared];
+        if (!buffer) return -1;
+        CFRetain((__bridge CFTypeRef)buffer);
+        *handle = (int64_t)(uintptr_t)(__bridge void *)buffer;
+        return 0;
+    }
+}
+
+/* Native counterpart of MetalBufferProvider.releaseBuffer(). */
+int tornado_metal_release(int64_t handle) {
+    if (handle == 0) return -1;
+    @autoreleasepool {
+        id<MTLBuffer> buffer = (__bridge id<MTLBuffer>)(void *)(uintptr_t)handle;
+        CFRelease((__bridge CFTypeRef)buffer);
+        return 0;
+    }
+}
+
+/* Native counterpart of MetalDeviceContext writeBuffer/readBuffer. */
+int tornado_metal_copy(int toDevice, int64_t handle, int64_t deviceOffset, int64_t bytes, int64_t hostPointer, int64_t hostOffset) {
+    if (handle == 0 || hostPointer == 0 || bytes <= 0) return -1;
+    @autoreleasepool {
+        id<MTLBuffer> buffer = (__bridge id<MTLBuffer>)(void *)(uintptr_t)handle;
+        if (deviceOffset < 0 || (uint64_t)deviceOffset + (uint64_t)bytes > (uint64_t)[buffer length]) return -1;
+        char *device = (char *)[buffer contents];
+        char *host = (char *)(uintptr_t)hostPointer;
+        if (device == nullptr || host == nullptr) return -1;
+        if (toDevice) memcpy(device + deviceOffset, host + hostOffset, (size_t)bytes);
+        else memcpy(host + hostOffset, device + deviceOffset, (size_t)bytes);
+        return 0;
+    }
+}
+
+/* C ABI used by the backend-neutral native bytecode interpreter. */
+int tornado_metal_set_kernel_argument(int64_t kernelId, int32_t index, int32_t kind, const void *value, int64_t size) {
+    if (kernelId == 0 || index < 0 || size <= 0 || (kind != 2 && value == nullptr)) return -1;
+    @autoreleasepool {
+        MetalKernelWrapper *kernel = (__bridge MetalKernelWrapper *)(void *)(uintptr_t) kernelId;
+        if (!kernel) return -1;
+        ArgItem *item = [[ArgItem alloc] init];
+        if (kind == 1) {
+            const int64_t handle = *(const int64_t *) value;
+            if (handle == 0) return -1;
+            item.kind = 0;
+            item.obj = (__bridge id<MTLBuffer>)(void *)(uintptr_t) handle;
+            item.size = 0;
+        } else if (kind == 2) {
+            item.kind = 2;
+            item.obj = nil;
+            item.size = (NSUInteger) size;
+        } else {
+            item.kind = 1;
+            item.obj = [NSData dataWithBytes:value length:(NSUInteger) size];
+            item.size = (NSUInteger) size;
+        }
+        const NSUInteger argumentIndex = (NSUInteger) index;
+        while (kernel.args.count <= argumentIndex) [kernel.args addObject:[NSNull null]];
+        [kernel.args replaceObjectAtIndex:argumentIndex withObject:item];
+        [item release];
+        return 0;
+    }
+}
+
+/* C ABI used by the backend-neutral native bytecode interpreter. */
+int tornado_metal_launch_kernel(int64_t queueId, int64_t kernelId, int32_t dimensions, const int64_t *globalOffset, const int64_t *globalWork, const int64_t *localWork) {
+    (void) globalOffset;
+    if (queueId == 0 || kernelId == 0 || globalWork == nullptr || dimensions < 1 || dimensions > 3) return -1;
+    @autoreleasepool {
+        id<MTLCommandQueue> queue = (__bridge id<MTLCommandQueue>)(void *)(uintptr_t) queueId;
+        MetalKernelWrapper *kernel = (__bridge MetalKernelWrapper *)(void *)(uintptr_t) kernelId;
+        if (!queue || !kernel || !kernel.pipeline) return -1;
+
+        NSUInteger global[3] = { 1, 1, 1 };
+        NSUInteger local[3] = { 1, 1, 1 };
+        for (int32_t i = 0; i < dimensions; i++) {
+            if (globalWork[i] <= 0) return -1;
+            global[i] = (NSUInteger) globalWork[i];
+            if (localWork != nullptr && localWork[i] > 0) local[i] = (NSUInteger) localWork[i];
+        }
+        if (localWork == nullptr) local[0] = kernel.pipeline.threadExecutionWidth;
+        if (local[0] * local[1] * local[2] > kernel.pipeline.maxTotalThreadsPerThreadgroup) {
+            local[0] = MIN(local[0], kernel.pipeline.maxTotalThreadsPerThreadgroup);
+            local[1] = 1;
+            local[2] = 1;
+        }
+
+        id<MTLCommandBuffer> commandBuffer = [queue commandBuffer];
+        id<MTLComputeCommandEncoder> encoder = [commandBuffer computeCommandEncoder];
+        [encoder setComputePipelineState:kernel.pipeline];
+        for (NSUInteger i = 0; i < kernel.args.count; i++) {
+            id value = [kernel.args objectAtIndex:i];
+            if ((NSNull *) value == [NSNull null]) continue;
+            ArgItem *argument = (ArgItem *) value;
+            if (argument.kind == 0) {
+                [encoder setBuffer:(id<MTLBuffer>) argument.obj offset:0 atIndex:i];
+            } else if (argument.kind == 1 && argument.size > 0) {
+                NSData *data = (NSData *) argument.obj;
+                [encoder setBytes:data.bytes length:argument.size atIndex:i];
+            } else if (argument.kind == 2) {
+                [encoder setThreadgroupMemoryLength:argument.size atIndex:i];
+            }
+        }
+
+        const uint32_t sizes[3] = { (uint32_t) global[0], (uint32_t) global[1], (uint32_t) global[2] };
+        id<MTLBuffer> sizesBuffer = [kernel.device newBufferWithBytes:sizes length:sizeof(sizes) options:MTLResourceStorageModeShared];
+        if (sizesBuffer) [encoder setBuffer:sizesBuffer offset:0 atIndex:kernel.args.count];
+        [encoder dispatchThreads:MTLSizeMake(global[0], global[1], global[2]) threadsPerThreadgroup:MTLSizeMake(local[0], local[1], local[2])];
+        [encoder endEncoding];
+        [commandBuffer commit];
+        [commandBuffer waitUntilCompleted];
+        const int status = commandBuffer.status == MTLCommandBufferStatusCompleted ? 0 : -1;
+        [sizesBuffer release];
+        return status;
+    }
+}
+
 static inline id<MTLDevice> toDevice(jlong p) {
     return (__bridge id<MTLDevice>)(void*)(uintptr_t)p;
 }

@@ -228,4 +228,14 @@ public class VirtualCUDADeviceContext implements CUDADeviceContextInterface {
         return false;
     }
 
+    @Override
+    public long getNativeStream(long executionPlanId) {
+        return 0L;
+    }
+
+    @Override
+    public long getNativeContext(long executionPlanId) {
+        return 0L;
+    }
+
 }

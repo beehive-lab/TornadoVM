@@ -27,6 +27,12 @@
 #include "nvtx3/nvToolsExt.h"
 #include "nvtx3/nvToolsExtCuda.h"
 
+#ifdef _WIN32
+#define TORNADO_NATIVE_EXPORT __declspec(dllexport)
+#else
+#define TORNADO_NATIVE_EXPORT __attribute__((visibility("default")))
+#endif
+
 /*
  * RAII host-side NVTX range wrapped around a native issue point, so the Nsight
  * Systems timeline shows a labelled span (CUDA H2D / kernel / D2H) on the issuing
@@ -58,6 +64,37 @@ extern "C" {
 /* OpenCL cl_command_queue_info values (cloned CUDACommandQueueInfo). */
 #define CL_QUEUE_CONTEXT 0x1090
 #define CL_QUEUE_DEVICE  0x1091
+
+/* C ABI used by the backend-neutral native bytecode interpreter. */
+TORNADO_NATIVE_EXPORT int tornado_cuda_launch_kernel(int64_t stream_id, int64_t context_id, int64_t kernel_id, int32_t dimensions,
+        const int64_t *global_offset, const int64_t *global_work, const int64_t *local_work) {
+    (void) global_offset;
+    cuda_kernel_t *kernel = (cuda_kernel_t *) (uintptr_t) kernel_id;
+    CUstream stream = (CUstream) (uintptr_t) stream_id;
+    CUcontext context = (CUcontext) (uintptr_t) context_id;
+    if (kernel == nullptr || stream == nullptr || context == nullptr || global_work == nullptr || dimensions < 1 || dimensions > 3) return -1;
+
+    uint64_t global[3] = { 1, 1, 1 };
+    uint32_t block[3] = { 1, 1, 1 };
+    for (int32_t i = 0; i < dimensions; i++) {
+        if (global_work[i] <= 0) return -1;
+        global[i] = (uint64_t) global_work[i];
+        if (local_work != nullptr && local_work[i] > 0) block[i] = (uint32_t) local_work[i];
+    }
+    if (local_work == nullptr) block[0] = (uint32_t) (global[0] < 256 ? global[0] : 256);
+
+    uint32_t grid[3];
+    for (int32_t i = 0; i < 3; i++) grid[i] = (uint32_t) ((global[i] + block[i] - 1) / block[i]);
+
+    std::vector<void *> params(kernel->arg_data.size());
+    for (size_t i = 0; i < kernel->arg_data.size(); i++) params[i] = kernel->arg_data[i].empty() ? nullptr : kernel->arg_data[i].data();
+
+    NvtxRange range(kernel->name.c_str());
+    if (cuCtxSetCurrent(context) != CUDA_SUCCESS) return -1;
+    CUresult result = cuLaunchKernel(kernel->function, grid[0], grid[1], grid[2], block[0], block[1], block[2], 0, stream, params.empty() ? nullptr : params.data(), nullptr);
+    LOG_CUDA_AND_VALIDATE("cuLaunchKernel", result);
+    return result == CUDA_SUCCESS ? 0 : -1;
+}
 
 /*
  * Returns true when the queue's stream is currently capturing into a CUDA

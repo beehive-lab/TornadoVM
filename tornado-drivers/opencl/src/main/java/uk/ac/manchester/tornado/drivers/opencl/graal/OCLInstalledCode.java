@@ -104,6 +104,22 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     }
 
     @Override
+    public boolean prepareForNativeLaunch(TaskDataContext meta, long batchThreads) {
+        if (!valid || kernel == null || meta == null || isSPIRVBinary || meta.getConstantSize() != 0) {
+            return false;
+        }
+        if (meta.isParallel() || meta.isWorkerGridAvailable()) {
+            scheduler.prepareLaunch(kernel, meta, batchThreads);
+        }
+        return true;
+    }
+
+    @Override
+    public long getNativeKernelHandle() {
+        return kernel == null ? 0L : kernel.getOclKernelID();
+    }
+
+    @Override
     public Object executeVarargs(final Object... args) throws InvalidInstalledCodeException {
         return null;
     }

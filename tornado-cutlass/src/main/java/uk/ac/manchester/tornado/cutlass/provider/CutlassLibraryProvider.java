@@ -71,11 +71,6 @@ public final class CutlassLibraryProvider implements TornadoLibraryProvider {
     }
 
     @Override
-    public boolean canHandle(TornadoXPUDevice device) {
-        return device instanceof TornadoNativeStreamSupport;
-    }
-
-    @Override
     public LibraryContext createContext(TornadoXPUDevice device, long executionPlanId) {
         CutlassNativeLib.load();
         long stream = ((TornadoNativeStreamSupport) device).getNativeStream(executionPlanId);

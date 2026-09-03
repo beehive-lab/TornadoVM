@@ -23,10 +23,27 @@
 #include <jni.h>
 #include "cuda_jni.h"
 
+#ifdef _WIN32
+#define TORNADO_NATIVE_EXPORT __declspec(dllexport)
+#else
+#define TORNADO_NATIVE_EXPORT __attribute__((visibility("default")))
+#endif
+
 extern "C" {
 
 /* OpenCL cl_kernel_info value queried by the Java clone (CUDAKernelInfo). */
 #define CL_KERNEL_FUNCTION_NAME 0x1190
+
+/* C ABI used by the backend-neutral native bytecode interpreter. */
+TORNADO_NATIVE_EXPORT int tornado_cuda_set_kernel_argument(int64_t kernel_id, int32_t index, int32_t kind, const void *value, int64_t size) {
+    cuda_kernel_t *kernel = (cuda_kernel_t *) (uintptr_t) kernel_id;
+    if (kernel == nullptr || index < 0 || size <= 0 || (kind != 2 && value == nullptr)) return -1;
+    if ((int32_t) kernel->arg_data.size() <= index) kernel->arg_data.resize((size_t) index + 1);
+    std::vector<char> &slot = kernel->arg_data[(size_t) index];
+    if (kind == 2) slot.assign((size_t) size, 0);
+    else slot.assign((const char *) value, (const char *) value + size);
+    return 0;
+}
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAKernel

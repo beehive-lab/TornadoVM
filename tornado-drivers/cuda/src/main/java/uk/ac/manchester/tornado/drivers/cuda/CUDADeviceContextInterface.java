@@ -134,12 +134,8 @@ public interface CUDADeviceContextInterface extends TornadoDeviceContext {
 
     /* ---- Native interop (external libraries, e.g. cuBLAS) ---- */
 
-    default long getNativeStream(long executionPlanId) {
-        throw new UnsupportedOperationException("Native stream interop is not supported on this device context");
-    }
+    long getNativeStream(long executionPlanId);
 
-    default long getNativeContext(long executionPlanId) {
-        throw new UnsupportedOperationException("Native context interop is not supported on this device context");
-    }
+    long getNativeContext(long executionPlanId);
 
 }

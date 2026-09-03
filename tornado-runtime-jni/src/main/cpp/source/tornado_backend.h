@@ -22,24 +22,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#include <jni.h>
-/* Header for class uk_ac_manchester_tornado_runtime_interpreter_NativeBytecodeInterpreter */
 
-#ifndef _Included_uk_ac_manchester_tornado_runtime_interpreter_NativeBytecodeInterpreter
-#define _Included_uk_ac_manchester_tornado_runtime_interpreter_NativeBytecodeInterpreter
-#ifdef __cplusplus
-extern "C" {
-#endif
-/*
- * Class:     uk_ac_manchester_tornado_runtime_interpreter_NativeBytecodeInterpreter
- * Method:    execute
- * Signature: ([BIII[J[J[J[J[J[J[J[BJJIIIJ[I[I[[II[B[B[Ljava/lang/Object;[B[J[J)J
- */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_runtime_interpreter_NativeBytecodeInterpreter_execute
-        (JNIEnv *, jclass, jbyteArray, jint, jint, jint, jlongArray, jlongArray, jlongArray, jlongArray, jlongArray, jlongArray, jlongArray, jbyteArray, jlong, jlong, jint, jint, jint, jlong, jintArray,
-                jintArray, jobjectArray, jint, jbyteArray, jbyteArray, jobjectArray, jbyteArray, jlongArray, jlongArray);
+#ifndef TORNADO_BACKEND_H
+#define TORNADO_BACKEND_H
 
-#ifdef __cplusplus
-}
-#endif
+#include <stdint.h>
+#include <memory>
+
+#include "tornado_context.h"
+
+class TornadoBackendOperations {
+public:
+    virtual ~TornadoBackendOperations() = default;
+
+    virtual int allocate(int64_t bytes, int32_t access, int64_t *handle) = 0;
+    virtual int prepareReusedAllocation(int64_t handle, int64_t bytes, int32_t access) = 0;
+    virtual int release(int64_t handle) = 0;
+    virtual int copy(bool toDevice, bool blocking, int64_t buffer, int64_t deviceOffset,
+                     int64_t bytes, int64_t hostPointer, int64_t hostOffset) = 0;
+    virtual int setKernelArgument(int64_t kernel, int32_t index, int32_t kind, const void *value, int64_t bytes) = 0;
+    virtual int launchKernel(int64_t kernel, int32_t dimensions, const int64_t *globalOffset,
+                             const int64_t *globalWork, const int64_t *localWork) = 0;
+    virtual int flush() = 0;
+};
+
+std::unique_ptr<TornadoBackendOperations> tornado_create_backend(int32_t backend, int64_t queue, int64_t context);
+
 #endif

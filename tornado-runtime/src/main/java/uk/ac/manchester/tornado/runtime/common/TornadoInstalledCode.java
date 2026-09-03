@@ -35,4 +35,13 @@ public interface TornadoInstalledCode {
     boolean isValid();
 
     void invalidate();
+
+    /**
+     * Calculates backend scheduling metadata without issuing the kernel. This is used by the
+     * native bytecode interpreter after Java compilation and before its single native replay.
+     */
+    boolean prepareForNativeLaunch(TaskDataContext meta, long batchThreads);
+
+    /** Backend kernel handle consumed by the native launch implementation. */
+    long getNativeKernelHandle();
 }

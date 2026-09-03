@@ -99,14 +99,14 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
-import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
+import uk.ac.manchester.tornado.runtime.common.TornadoNativeInterpreterSupport;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
-public class MetalTornadoDevice implements TornadoXPUDevice, TornadoNativeStreamSupport {
+public class MetalTornadoDevice implements TornadoXPUDevice, TornadoNativeInterpreterSupport {
 
     private static MetalBackendImpl driver = null;
     private static final Pattern NAME_PATTERN = Pattern.compile("^Metal (\\d)\\.(\\d).*");
@@ -785,6 +785,54 @@ public class MetalTornadoDevice implements TornadoXPUDevice, TornadoNativeStream
     @Override
     public long getNativeContext(long executionPlanId) {
         return getDeviceContext().getNativeContext(executionPlanId);
+    }
+
+    @Override
+    public boolean supportsNativeInterpreterObject(Object object) {
+        return MetalFieldBuffer.canStageNativeInterpreterObject(object);
+    }
+
+    @Override
+    public long prepareNativeInterpreterHostBuffer(Object object, XPUDeviceBufferState state) {
+        if (state != null && state.getXPUBuffer() instanceof MetalFieldBuffer fieldBuffer) {
+            return fieldBuffer.prepareNativeInterpreterHostBuffer(object);
+        }
+        return 0L;
+    }
+
+    @Override
+    public void completeNativeInterpreterHostBuffer(Object object, XPUDeviceBufferState state) {
+        if (state != null && state.getXPUBuffer() instanceof MetalFieldBuffer fieldBuffer) {
+            fieldBuffer.completeNativeInterpreterHostBuffer(object);
+        }
+    }
+
+    @Override
+    public void prepareNativeAllocation(Object object, long batchSize, XPUDeviceBufferState state, Access access) {
+        if (state.hasObjectBuffer()) {
+            return;
+        }
+        XPUBuffer buffer = createDeviceBuffer(object.getClass(), object, (MetalDeviceContext) getDeviceContext(), batchSize, access);
+        buffer.prepareForNativeAllocation(object, batchSize, access);
+        long cachedBuffer = getDeviceContext().getBufferProvider().prepareNativeAllocation(buffer.size(), access);
+        if (cachedBuffer != 0) {
+            buffer.setBuffer(new XPUBuffer.XPUBufferWrapper(cachedBuffer, 0));
+        }
+        state.setXPUBuffer(buffer);
+    }
+
+    @Override
+    public void attachNativeAllocation(XPUDeviceBufferState state, Access access, long handle, long bytes) {
+        XPUBuffer buffer = state.getXPUBuffer();
+        buffer.setBuffer(new XPUBuffer.XPUBufferWrapper(handle, 0));
+        getDeviceContext().getBufferProvider().registerNativeAllocation(handle, bytes, access);
+    }
+
+    @Override
+    public void detachNativeAllocation(XPUDeviceBufferState state, Access access, long handle) {
+        getDeviceContext().getBufferProvider().releaseNativeAllocation(handle, state.getXPUBuffer().size(), access);
+        state.setContents(false);
+        state.setXPUBuffer(null);
     }
 
     @Override

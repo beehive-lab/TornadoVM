@@ -119,6 +119,23 @@ public class MetalInstalledCode extends InstalledCode implements TornadoInstalle
     }
 
     @Override
+    public boolean prepareForNativeLaunch(TaskDataContext meta, long batchThreads) {
+        // Metal's reflected threadgroup-argument remapping remains on the Java path.
+        if (!valid || kernel == null || meta == null || isSPIRVBinary || meta.getConstantSize() != 0 || meta.getLocalSize() != 0) {
+            return false;
+        }
+        if (meta.isParallel() || meta.isWorkerGridAvailable()) {
+            scheduler.prepareLaunch(kernel, meta, batchThreads);
+        }
+        return true;
+    }
+
+    @Override
+    public long getNativeKernelHandle() {
+        return kernel == null ? 0L : kernel.getMetalKernelID();
+    }
+
+    @Override
     public Object executeVarargs(final Object... args) throws InvalidInstalledCodeException {
         return null;
     }

@@ -85,11 +85,6 @@ public final class CuFftLibraryProvider implements TornadoLibraryProvider {
     }
 
     @Override
-    public boolean canHandle(TornadoXPUDevice device) {
-        return device instanceof TornadoNativeStreamSupport;
-    }
-
-    @Override
     public LibraryContext createContext(TornadoXPUDevice device, long executionPlanId) {
         CuFftNativeLib.load();
         return new CuFftContext(((TornadoNativeStreamSupport) device).getNativeStream(executionPlanId));

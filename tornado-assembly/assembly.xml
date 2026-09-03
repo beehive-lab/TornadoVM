@@ -39,6 +39,7 @@
                 <include>*.py</include>
                 <include>tornado</include>
                 <include>tornado-test</include>
+                <include>tornado-eval</include>
                 <include>tornado-benchmarks.py</include>
                 <include>misc/*.py</include>
             </includes>

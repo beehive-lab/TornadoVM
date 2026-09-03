@@ -49,11 +49,12 @@ include_directories(
 add_library(tornado-runtime SHARED
 	source/tornado_decoder.cpp
 	source/tornado_state.cpp
+	source/tornado_backend.cpp
 	source/tornado_interpreter.cpp
 	source/TornadoNativeBytecodeInterpreter.cpp
 )
 
-target_link_libraries(tornado-runtime ${JNI_LIB_DIRS})
+target_link_libraries(tornado-runtime ${JNI_LIB_DIRS} ${CMAKE_DL_LIBS})
 
 if(CMAKE_HOST_WIN32)
     set_target_properties(tornado-runtime PROPERTIES PREFIX "")

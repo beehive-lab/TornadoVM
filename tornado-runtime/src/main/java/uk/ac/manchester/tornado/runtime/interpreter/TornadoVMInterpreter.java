@@ -49,6 +49,8 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.internal.annotations.Payload;
+import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
@@ -60,6 +62,7 @@ import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoNativeInterpreterSupport;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
@@ -76,6 +79,7 @@ import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.LibraryTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
+import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
 /**
  * TornadoVMInterpreter: serves as a bytecode interpreter for TornadoVM
@@ -129,7 +133,22 @@ public class TornadoVMInterpreter {
     private long[] nativeHostPointers;
     private long[] nativeKernelHandles;
     private long[] nativeProgramHandles;
+    private long[] nativeLaunchMetadata;
+    private KernelStackFrame[] nativeLaunchFrames;
+    private boolean[] nativeLaunchPrepared;
     private byte[] nativeConstants;
+    private byte[] nativeObjectFlags;
+    private byte[] nativeObjectAccesses;
+    private Object[] nativeObjects;
+    private byte[] nativeObjectKinds;
+    private long[] nativeDataOffsets;
+    private long[] nativePartialCopySizes;
+    private boolean[] nativeAllocationPrepared;
+    private boolean[] nativeAtomicCopyBack;
+    // Compound objects (Matrix2D, Vector, Image) are flattened into a staging buffer
+    // for C++. Only pack when this native run will actually H2D, and only unpack after D2H.
+    private boolean[] nativeHostPackNeeded;
+    private boolean[] nativeHostUnpackNeeded;
 
     private TornadoLogger logger = new TornadoLogger(this.getClass());
 
@@ -290,12 +309,13 @@ public class TornadoVMInterpreter {
     }
 
     /**
-     * The native loop does not model the event dependency lists, and the Java handlers index into
-     * them before their warm-up early-exit, so it is only equivalent when dependency tracking is
-     * off.
+     * Native is used whenever the flag is on and the library loaded. Profiling and
+     * bytecode logging remain on the Java path until their Phase 7 native records exist;
+     * otherwise enabling either feature would silently lose data.
      */
     private boolean resolveUseNativeInterpreter() {
-        return TornadoOptions.INTERPRETER_NATIVE && !useDependencies && NativeBytecodeInterpreter.isAvailable();
+        return TornadoOptions.INTERPRETER_NATIVE && interpreterDevice instanceof TornadoNativeInterpreterSupport && NativeBytecodeInterpreter.isAvailable() && !TornadoOptions.isProfilerEnabled()
+                && !TornadoOptions.LOG_BYTECODES();
     }
 
     private boolean isMemoryLimitEnabled() {
@@ -360,6 +380,7 @@ public class TornadoVMInterpreter {
         // resolveAndWaitCrossStream into cuStreamWaitEvent calls on the target stream.
         // Initialised to -1; ADD_DEPENDENCY skips it when -1 (no-op or warmup).
         int lastEvent = -1;
+        final int[] lastEventHolder = new int[1];
         initWaitEventList();
 
         StringBuilder logBuilder = null;
@@ -369,9 +390,33 @@ public class TornadoVMInterpreter {
                     " Running in thread: ")).append(Thread.currentThread().getName()).append("\n");
         }
 
+        boolean endedInNative = false;
+        int nativeInterpreterCalls = 0;
+        int javaFallbackOpcodes = 0;
+        if (nativeAtomicCopyBack != null) {
+            Arrays.fill(nativeAtomicCopyBack, false);
+        }
         while (bytecodeResult.hasRemaining()) {
-            if (useNativeInterpreter && NativeBytecodeInterpreter.isPorted(bytecodeResult.peek()) && !advanceWithNativeInterpreter(logBuilder, isWarmup)) {
-                break;
+            if (useNativeInterpreter && !insideCaptureRegion && NativeBytecodeInterpreter.isPorted(bytecodeResult.peek()) && prepareNativeRun(isWarmup)) {
+                lastEventHolder[0] = lastEvent;
+                final int nativeStatus;
+                try {
+                    nativeInterpreterCalls++;
+                    nativeStatus = advanceWithNativeInterpreter(isWarmup, lastEventHolder);
+                } finally {
+                    cancelPendingNativeAllocations();
+                }
+                lastEvent = lastEventHolder[0];
+                if (nativeStatus == NativeBytecodeInterpreter.STATUS_END) {
+                    endedInNative = true;
+                    break;
+                }
+                if (nativeStatus == NativeBytecodeInterpreter.STATUS_EOF) {
+                    break;
+                }
+            }
+            if (useNativeInterpreter) {
+                javaFallbackOpcodes++;
             }
             final byte op = bytecodeResult.get();
             if (op == TornadoVMBytecodes.ALLOC.value()) {
@@ -540,7 +585,7 @@ public class TornadoVMInterpreter {
                 barrier = interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), event);
             }
 
-            if (TornadoOptions.USE_VM_FLUSH) {
+            if (TornadoOptions.USE_VM_FLUSH && !endedInNative) {
                 interpreterDevice.flush(graphExecutionContext.getExecutionPlanId());
             }
         }
@@ -566,6 +611,10 @@ public class TornadoVMInterpreter {
             RuntimeUtilities.writeBytecodeToFile(logBuilder);
         }
 
+        if (useNativeInterpreter && (nativeInterpreterCalls != 1 || javaFallbackOpcodes != 0 || !endedInNative)) {
+            System.out.printf("[native-interpreter-fallback] calls=%d javaOpcodes=%d endedInNative=%s warmup=%s%n", nativeInterpreterCalls, javaFallbackOpcodes, endedInNative, isWarmup);
+        }
+
         return barrier;
     }
 
@@ -578,16 +627,32 @@ public class TornadoVMInterpreter {
      * position it reports back is always a bytecode boundary. Anything it does not implement
      * is left untouched for the Java interpreter below to decode and execute as usual.
      *
-     * @param logBuilder
-     *     the bytecode log being built, or null when logging is disabled.
      * @param isWarmup
      *     whether this is a warm-up pass.
-     * @return true when the Java interpreter must execute the bytecode now under the cursor,
-     *     false when the native loop consumed the remainder of the bytecode stream.
+     * @param lastEventHolder
+     *     length-1 in/out slot for the loop-carried event-pool id.
+     * @return the native {@code STATUS_*} result.
      */
-    private boolean advanceWithNativeInterpreter(StringBuilder logBuilder, boolean isWarmup) {
-        refreshNativeStateTables();
-        final int flags = isWarmup ? NativeBytecodeInterpreter.FLAG_WARMUP : 0;
+    private int advanceWithNativeInterpreter(boolean isWarmup, int[] lastEventHolder) {
+        int flags = 0;
+        if (isWarmup) {
+            flags |= NativeBytecodeInterpreter.FLAG_WARMUP;
+        }
+        if (useDependencies) {
+            flags |= NativeBytecodeInterpreter.FLAG_USE_DEPENDENCIES;
+        }
+        if (!executionGraphHandles.isEmpty()) {
+            flags |= NativeBytecodeInterpreter.FLAG_GRAPH_INSTANTIATED;
+        }
+        if (!currentBatchNumberPerObject.isEmpty()) {
+            flags |= NativeBytecodeInterpreter.FLAG_BATCHED_EXECUTION;
+        }
+        if (TornadoOptions.isDeallocateBufferEnabled()) {
+            flags |= NativeBytecodeInterpreter.FLAG_FORCE_DEALLOCATION;
+        }
+        if (TornadoOptions.USE_VM_FLUSH) {
+            flags |= NativeBytecodeInterpreter.FLAG_USE_VM_FLUSH;
+        }
         final long executionPlanId = graphExecutionContext.getExecutionPlanId();
         long commandQueue = 0L;
         long deviceContextHandle = 0L;
@@ -598,31 +663,381 @@ public class TornadoVMInterpreter {
         final int backend = interpreterDevice.getTornadoVMBackend().ordinal();
         final int deviceIndex = interpreterDevice.getDeviceContext().getDeviceIndex();
         final int platformIndex = interpreterDevice.getDeviceContext().getDevicePlatform();
+        refreshNativeStateTables();
         final long result = NativeBytecodeInterpreter.execute(bytecodeResult.getBytecode(), bytecodeResult.position(), bytecodeResult.limit(), flags, nativeBufferHandles, nativeBufferOffsets,
-                nativeBufferSizes, nativeHostPointers, nativeKernelHandles, nativeProgramHandles, nativeConstants, commandQueue, deviceContextHandle, backend, deviceIndex, platformIndex,
-                executionPlanId);
+                nativeBufferSizes, nativeHostPointers, nativeKernelHandles, nativeProgramHandles, nativeLaunchMetadata, nativeConstants, commandQueue, deviceContextHandle, backend, deviceIndex, platformIndex,
+                executionPlanId, lastEventHolder, eventsIndexes, events, MAX_EVENTS, nativeObjectFlags, nativeObjectAccesses, nativeObjects, nativeObjectKinds, nativeDataOffsets, nativePartialCopySizes);
         bytecodeResult.position(NativeBytecodeInterpreter.positionOf(result));
+        completeNativeInterpreterHostBuffers();
+        completeNativeAtomics();
+        syncNativeObjectFlags();
 
         final int status = NativeBytecodeInterpreter.statusOf(result);
-        if (status == NativeBytecodeInterpreter.STATUS_END) {
-            if (!isWarmup && TornadoOptions.LOG_BYTECODES()) {
-                logBuilder.append("bc: ").append(InterpreterUtilities.debugHighLightBC("END\n")).append("\n");
+        if (status == NativeBytecodeInterpreter.STATUS_ERROR) {
+            throw new TornadoInternalError("native bytecode handler failed for opcode %d at bytecode position %d", Byte.toUnsignedInt(bytecodeResult.peek()), bytecodeResult.position());
+        }
+        return status;
+    }
+
+    // Prepares every ALLOC that C++ can reach before its next Java fallback.
+    private boolean prepareNativeRun(boolean isWarmup) {
+        final int savedPosition = bytecodeResult.position();
+        boolean hasNativeWork = false;
+        if (nativeHostPackNeeded != null) {
+            Arrays.fill(nativeHostPackNeeded, false);
+            Arrays.fill(nativeHostUnpackNeeded, false);
+        }
+        try {
+            while (bytecodeResult.hasRemaining() && NativeBytecodeInterpreter.isPorted(bytecodeResult.peek())) {
+                if (!prepareCurrentOpcodeForNativeExecution(isWarmup)) {
+                    break;
+                }
+                hasNativeWork = true;
+                final byte op = bytecodeResult.get();
+                skipBytecodeOperands(op);
             }
+            return hasNativeWork;
+        } catch (RuntimeException | Error e) {
+            cancelPendingNativeAllocations();
+            throw e;
+        } finally {
+            bytecodeResult.position(savedPosition);
+        }
+    }
+
+    // Creates the same wrapper metadata as Java ALLOC, but makes no backend JNI call.
+    private void prepareCurrentNativeAllocation() {
+        TornadoInternalError.guarantee(interpreterDevice instanceof TornadoNativeInterpreterSupport, "backend cannot prepare a native allocation");
+        TornadoNativeInterpreterSupport nativeDevice = (TornadoNativeInterpreterSupport) interpreterDevice;
+        ensureNativeStateTables();
+        final int savedPosition = bytecodeResult.position();
+        try {
+            TornadoInternalError.guarantee(bytecodeResult.get() == TornadoVMBytecodes.ALLOC.value(), "native allocation preparation requested for a non-ALLOC bytecode");
+            final long sizeBatch = bytecodeResult.getLong();
+            final int argCount = bytecodeResult.getInt();
+            for (int i = 0; i < argCount; i++) {
+                final int objectIndex = bytecodeResult.getInt();
+                Object object = objects.get(objectIndex);
+                if (isObjectKernelContext(object)) {
+                    continue;
+                }
+                if (object instanceof AtomicInteger) {
+                    prepareNativeAtomicInteger(objectIndex, object, sizeBatch);
+                    continue;
+                }
+                XPUDeviceBufferState state = resolveObjectState(objectIndex);
+                if (state != null && !state.hasObjectBuffer()) {
+                    nativeDevice.prepareNativeAllocation(object, sizeBatch, state, objectAccesses.get(object));
+                    nativeAllocationPrepared[objectIndex] = true;
+                }
+            }
+        } finally {
+            bytecodeResult.position(savedPosition);
+        }
+    }
+
+    // Cancels allocations prepared beyond the bytecode where the native loop stopped.
+    private void cancelPendingNativeAllocations() {
+        if (!(interpreterDevice instanceof TornadoNativeInterpreterSupport nativeDevice) || nativeAllocationPrepared == null) {
+            return;
+        }
+        for (int i = 0; i < nativeAllocationPrepared.length; i++) {
+            if (!nativeAllocationPrepared[i]) {
+                continue;
+            }
+            XPUDeviceBufferState state = resolveObjectState(i);
+            TornadoInternalError.guarantee(state != null && state.hasObjectBuffer(), "missing prepared native allocation");
+            Object object = objects.get(i);
+            long handle = Math.max(0L, state.getXPUBuffer().toBuffer());
+            nativeDevice.detachNativeAllocation(state, objectAccesses.get(object), handle);
+            nativeAllocationPrepared[i] = false;
+        }
+    }
+
+    /* This mirrors the native bailout checks so ALLOC is only reserved for the next
+     * uninterrupted native run. Unsupported lifecycles stay on the Java path. */
+    private boolean prepareCurrentOpcodeForNativeExecution(boolean isWarmup) {
+        final int savedPosition = bytecodeResult.position();
+        try {
+            final byte op = bytecodeResult.get();
+            // LAUNCH must still compile and publish its native state during warm-up.
+            if (isWarmup && op != TornadoVMBytecodes.LAUNCH.value()) {
+                return true;
+            }
+            if (!currentBatchNumberPerObject.isEmpty() && isPhaseFiveMemoryOpcode(op)) {
+                return false;
+            }
+            if (op == TornadoVMBytecodes.LAUNCH.value()) {
+                return prepareCurrentNativeLaunch(isWarmup);
+            } else if (op == TornadoVMBytecodes.ALLOC.value()) {
+                // Java skips allocation after an execution graph has been captured.
+                if (!executionGraphHandles.isEmpty()) {
+                    return true;
+                }
+                bytecodeResult.getLong();
+                final int argCount = bytecodeResult.getInt();
+                for (int i = 0; i < argCount; i++) {
+                    Object object = objects.get(bytecodeResult.getInt());
+                    if (!isNativeNonBufferObject(object) && !isNativeBufferShape(object)) {
+                        return false;
+                    }
+                }
+                bytecodeResult.position(savedPosition);
+                prepareCurrentNativeAllocation();
+            } else if (op == TornadoVMBytecodes.DEALLOC.value()
+                    || op == TornadoVMBytecodes.TRANSFER_HOST_TO_DEVICE_ONCE.value()
+                    || op == TornadoVMBytecodes.TRANSFER_HOST_TO_DEVICE_ALWAYS.value()
+                    || op == TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS.value()
+                    || op == TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS_BLOCKING.value()) {
+                final int objectIndex = bytecodeResult.getInt();
+                Object object = objects.get(objectIndex);
+                // KernelContext and AtomicInteger have no per-object device buffer.
+                if (isNativeNonBufferObject(object)) {
+                    return true;
+                }
+                XPUDeviceBufferState state = resolveObjectState(objectIndex);
+                if (op == TornadoVMBytecodes.DEALLOC.value() && !executionGraphHandles.isEmpty()) {
+                    return true;
+                }
+                if (op == TornadoVMBytecodes.DEALLOC.value() && TornadoOptions.isDeallocateBufferEnabled() && state != null && !state.isLockedBuffer()) {
+                    return false;
+                }
+                if (op != TornadoVMBytecodes.DEALLOC.value() && (useDependencies || !isNativeTransferSupported(object))) {
+                    return false;
+                }
+                if (op != TornadoVMBytecodes.DEALLOC.value()) {
+                    bytecodeResult.getInt(); // eventId
+                    bytecodeResult.getLong(); // offset
+                    markNativeTransferHostBuffer(op, objectIndex, bytecodeResult.getLong(), state);
+                }
+            }
+            return true;
+        } finally {
+            bytecodeResult.position(savedPosition);
+        }
+    }
+
+    // Matches C++ run_transfer: ONCE with content already on device is a no-op, ALWAYS copies,
+    // and D2H always writes back. Staging flatten is only needed for those actual copies.
+    private void markNativeTransferHostBuffer(byte op, int objectIndex, long sizeBatch, XPUDeviceBufferState state) {
+        ensureNativeStateTables();
+        if (op == TornadoVMBytecodes.TRANSFER_HOST_TO_DEVICE_ONCE.value()) {
+            if (sizeBatch > 0 || state == null || !state.hasContent()) {
+                nativeHostPackNeeded[objectIndex] = true;
+            }
+        } else if (op == TornadoVMBytecodes.TRANSFER_HOST_TO_DEVICE_ALWAYS.value()) {
+            nativeHostPackNeeded[objectIndex] = true;
+        } else if (op == TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS.value()
+                || op == TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS_BLOCKING.value()) {
+            nativeHostUnpackNeeded[objectIndex] = true;
+        }
+    }
+
+    /**
+     * Compiles and schedules a LAUNCH without issuing it. The native loop will decode the
+     * argument list and perform the first and all later kernel submissions.
+     */
+    private boolean prepareCurrentNativeLaunch(boolean isWarmup) {
+        final int callWrapperIndex = bytecodeResult.getInt();
+        final int taskIndex = bytecodeResult.getInt();
+        final int numArgs = bytecodeResult.getInt();
+        final int eventId = bytecodeResult.getInt();
+        bytecodeResult.getLong(); // offset: only used by batched launches, which bail below
+        final long batchThreads = bytecodeResult.getLong();
+
+        if (useDependencies || batchThreads != 0 || !currentBatchNumberPerObject.isEmpty() || taskIndex < 0 || taskIndex >= taskExecutionContexts.size()) {
             return false;
         }
-        return status != NativeBytecodeInterpreter.STATUS_EOF;
+        final SchedulableTask task = taskExecutionContexts.get(taskIndex);
+        if (task instanceof LibraryTask) {
+            return false;
+        }
+
+        ensureNativeStateTables();
+        nativeLaunchPrepared[taskIndex] = false;
+        final XPUExecutionFrame executionFrame = compileTaskFromBytecodeToBinary(callWrapperIndex, numArgs, eventId, taskIndex, batchThreads);
+        final int localTaskIndex = globalToLocalTaskIndex(taskIndex);
+        TornadoInstalledCode installedCode = installedCodes[localTaskIndex];
+        if (installedCode == null) {
+            installedCode = interpreterDevice.getCodeFromCache(graphExecutionContext.getExecutionPlanId(), task);
+            installedCodes[localTaskIndex] = installedCode;
+        }
+
+        final int[] atomics = (task instanceof PrebuiltTask prebuiltTask) ? prebuiltTask.getAtomics() : interpreterDevice.checkAtomicsForTask(task);
+        if (installedCode == null || executionFrame.stackFrame == null || !(task.meta() instanceof TaskDataContext dataContext)
+                || !installedCode.prepareForNativeLaunch(dataContext, batchThreads)) {
+            return false;
+        }
+        if (!isWarmup && !publishNativeAtomics(task, numArgs, atomics)) {
+            return false;
+        }
+
+        nativeLaunchFrames[taskIndex] = executionFrame.stackFrame;
+        nativeLaunchPrepared[taskIndex] = true;
+        return true;
+    }
+
+    /*
+     * Same host-side atomics write as executeLaunch, done before the native loop so C++
+     * can bind the shared region that is already kernel argument 3. AtomicInteger itself
+     * is not a kernel argument.
+     */
+    private boolean publishNativeAtomics(SchedulableTask task, int numArgs, int[] atomicsArray) {
+        if (atomicsArray == null) {
+            return true;
+        }
+        if (nativeAtomicCopyBack == null) {
+            nativeAtomicCopyBack = new boolean[objects.size()];
+        }
+        for (int i = 0; i < numArgs; i++) {
+            final byte argType = bytecodeResult.get();
+            final int argIndex = bytecodeResult.getInt();
+            if (argType != TornadoVMBytecodes.PUSH_REFERENCE_ARGUMENT.value()) {
+                continue;
+            }
+            Object object = objects.get(argIndex);
+            if (!isObjectAtomic(object)) {
+                continue;
+            }
+            final DataObjectState globalState = resolveGlobalObjectState(argIndex);
+            final XPUDeviceBufferState objectState = globalState.getDeviceBufferState(interpreterDevice);
+            if (!isObjectInAtomicRegion(objectState, interpreterDevice, task)) {
+                continue;
+            }
+            atomicsArray = interpreterDevice.updateAtomicRegionAndObjectState(task, atomicsArray, i, object, objectState);
+            nativeAtomicCopyBack[argIndex] = true;
+        }
+        XPUBuffer bufferAtomics = interpreterDevice.createOrReuseAtomicsBuffer(atomicsArray, Access.READ_WRITE);
+        bufferAtomics.enqueueWrite(graphExecutionContext.getExecutionPlanId(), null, 0, 0, null, false);
+        return true;
+    }
+
+    private static boolean isPhaseFiveMemoryOpcode(byte op) {
+        return op == TornadoVMBytecodes.ALLOC.value() || op == TornadoVMBytecodes.DEALLOC.value() || op == TornadoVMBytecodes.TRANSFER_HOST_TO_DEVICE_ONCE.value()
+                || op == TornadoVMBytecodes.TRANSFER_HOST_TO_DEVICE_ALWAYS.value() || op == TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS.value()
+                || op == TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS_BLOCKING.value();
+    }
+
+    private void refreshNativeLaunchTables() {
+        Arrays.fill(nativeKernelHandles, 0L);
+        Arrays.fill(nativeProgramHandles, 0L);
+        Arrays.fill(nativeLaunchMetadata, 0L);
+
+        for (int taskIndex = 0; taskIndex < taskExecutionContexts.size(); taskIndex++) {
+            if (!nativeLaunchPrepared[taskIndex]) {
+                continue;
+            }
+            final TornadoInstalledCode installedCode = installedCodes[globalToLocalTaskIndex(taskIndex)];
+            final KernelStackFrame frame = nativeLaunchFrames[taskIndex];
+            final SchedulableTask task = taskExecutionContexts.get(taskIndex);
+            if (installedCode == null || !installedCode.isValid() || frame == null || !frame.isValid() || !(task.meta() instanceof TaskDataContext meta)) {
+                nativeLaunchPrepared[taskIndex] = false;
+                continue;
+            }
+
+            final long kernelHandle = installedCode.getNativeKernelHandle();
+            final long frameBuffer = frame.getNativeFrameBuffer();
+            final long constantBuffer = frame.getNativeConstantBuffer();
+            final long atomicBuffer = frame.getNativeAtomicBuffer();
+            if (kernelHandle == 0 || frameBuffer == 0 || constantBuffer == 0 || atomicBuffer == 0) {
+                nativeLaunchPrepared[taskIndex] = false;
+                continue;
+            }
+
+            final int base = taskIndex * NativeBytecodeInterpreter.LAUNCH_META_STRIDE;
+            nativeKernelHandles[taskIndex] = kernelHandle;
+            nativeLaunchMetadata[base + NativeBytecodeInterpreter.LAUNCH_META_FRAME_BUFFER] = frameBuffer;
+            nativeLaunchMetadata[base + NativeBytecodeInterpreter.LAUNCH_META_CONSTANT_BUFFER] = constantBuffer;
+            nativeLaunchMetadata[base + NativeBytecodeInterpreter.LAUNCH_META_ATOMIC_BUFFER] = atomicBuffer;
+            nativeLaunchMetadata[base + NativeBytecodeInterpreter.LAUNCH_META_LOCAL_MEMORY] = meta.getLocalSize();
+
+            final WorkerGrid workerGrid = gridScheduler == null ? null : gridScheduler.get(task.getId());
+            final int dimensions;
+            final long[] globalOffset;
+            final long[] globalWork;
+            final long[] localWork;
+            if (workerGrid != null) {
+                dimensions = workerGrid.dimension();
+                globalOffset = workerGrid.getGlobalOffset();
+                globalWork = workerGrid.getGlobalWork();
+                localWork = workerGrid.getLocalWork();
+                copyLaunchVector(workerGrid.getGlobalWork(), base + NativeBytecodeInterpreter.LAUNCH_META_CONTEXT);
+            } else if (meta.isParallel()) {
+                dimensions = meta.getDims();
+                globalOffset = meta.getGlobalOffset();
+                globalWork = meta.getGlobalWork();
+                final boolean useDriverScheduling = interpreterDevice.getTornadoVMBackend() == TornadoVMBackendType.METAL
+                        ? meta.shouldUseMetalDriverScheduling()
+                        : meta.shouldUseOpenCLDriverScheduling();
+                localWork = useDriverScheduling ? null : meta.getLocalWork();
+            } else {
+                dimensions = 1;
+                globalOffset = null;
+                final long[] sequentialGlobalWork = meta.getGlobalWork();
+                final boolean singleThreadLaunch = sequentialGlobalWork == null || sequentialGlobalWork.length == 0;
+                globalWork = singleThreadLaunch ? new long[] { 1 } : sequentialGlobalWork;
+                localWork = singleThreadLaunch ? new long[] { 1 } : meta.getLocalWork();
+            }
+
+            if (dimensions < 1 || dimensions > 3 || globalWork == null) {
+                nativeLaunchPrepared[taskIndex] = false;
+                nativeKernelHandles[taskIndex] = 0L;
+                continue;
+            }
+            nativeLaunchMetadata[base + NativeBytecodeInterpreter.LAUNCH_META_DIMENSIONS] = dimensions;
+            copyLaunchVector(globalOffset, base + NativeBytecodeInterpreter.LAUNCH_META_GLOBAL_OFFSET);
+            copyLaunchVector(globalWork, base + NativeBytecodeInterpreter.LAUNCH_META_GLOBAL_WORK);
+            copyLaunchVector(localWork, base + NativeBytecodeInterpreter.LAUNCH_META_LOCAL_WORK);
+            long launchFlags = NativeBytecodeInterpreter.LAUNCH_FLAG_SUPPORTED;
+            if (localWork != null) {
+                launchFlags |= NativeBytecodeInterpreter.LAUNCH_FLAG_HAS_LOCAL_WORK;
+            }
+            nativeLaunchMetadata[base + NativeBytecodeInterpreter.LAUNCH_META_FLAGS] = launchFlags;
+        }
+    }
+
+    private void copyLaunchVector(long[] source, int destination) {
+        if (source == null) {
+            return;
+        }
+        System.arraycopy(source, 0, nativeLaunchMetadata, destination, Math.min(3, source.length));
     }
 
     /**
      * Rebuilds the primitive tables the native loop reads from the current Java interpreter
      * state. Called before every native crossing so a Java ALLOC/LAUNCH that ran since the
-     * last crossing is visible. Kernel/program slots stay 0 until a backend-neutral getter
-     * exists on {@code TornadoInstalledCode}.
+     * last crossing is visible. Launch slots stay zero until the Java prepass has compiled
+     * and prepared that task for native submission.
      */
     private void refreshNativeStateTables() {
         ensureNativeStateTables();
         for (int i = 0; i < objects.size(); i++) {
-            nativeHostPointers[i] = NativeBytecodeInterpreter.hostPointerOf(objects.get(i));
+            final Object object = objects.get(i);
+            final Object transferObject = nativeTransferObject(object);
+            final boolean backendNativeObject = interpreterDevice instanceof TornadoNativeInterpreterSupport nativeDevice && nativeDevice.supportsNativeInterpreterObject(object);
+            nativeObjects[i] = transferObject;
+            nativeHostPointers[i] = 0L;
+            nativeObjectFlags[i] = 0;
+            nativeObjectKinds[i] = isNativeBufferShape(object) ? nativeObjectKind(transferObject) : NativeBytecodeInterpreter.OBJECT_KIND_UNSUPPORTED;
+            nativeDataOffsets[i] = 0;
+            nativePartialCopySizes[i] = 0;
+            if (object instanceof AtomicInteger) {
+                nativeObjectKinds[i] = NativeBytecodeInterpreter.OBJECT_KIND_ATOMIC;
+            }
+            if (isObjectKernelContext(object)) {
+                nativeObjectFlags[i] |= NativeBytecodeInterpreter.OBJ_KERNEL_CONTEXT;
+            }
+            if (backendNativeObject) {
+                nativeObjectFlags[i] |= NativeBytecodeInterpreter.OBJ_STAGED_HOST_BUFFER;
+                nativeObjectKinds[i] = NativeBytecodeInterpreter.OBJECT_KIND_SEGMENT;
+            }
+            if (isPersistentObject(object)) {
+                nativeObjectFlags[i] |= NativeBytecodeInterpreter.OBJ_PERSISTENT;
+            }
+            if (nativeAllocationPrepared[i]) {
+                nativeObjectFlags[i] |= NativeBytecodeInterpreter.OBJ_NATIVE_ALLOCATION_PREPARED;
+            }
+            nativeObjectAccesses[i] = objectAccesses.get(object).position;
             XPUDeviceBufferState state = resolveObjectState(i);
             if (state == null || !state.hasObjectBuffer()) {
                 nativeBufferHandles[i] = 0L;
@@ -630,10 +1045,208 @@ public class TornadoVMInterpreter {
                 nativeBufferSizes[i] = 0L;
                 continue;
             }
+            if (state.hasContent()) {
+                nativeObjectFlags[i] |= NativeBytecodeInterpreter.OBJ_HAS_CONTENT;
+            }
+            if (state.isLockedBuffer()) {
+                nativeObjectFlags[i] |= NativeBytecodeInterpreter.OBJ_LOCKED;
+            }
             XPUBuffer buffer = state.getXPUBuffer();
-            nativeBufferHandles[i] = buffer.toBuffer();
+            if (object instanceof AtomicInteger) {
+                nativeBufferHandles[i] = 0L;
+                nativeBufferOffsets[i] = 0L;
+                nativeBufferSizes[i] = buffer.size();
+                continue;
+            }
+            if (backendNativeObject) {
+                if (nativeHostPackNeeded[i] || nativeHostUnpackNeeded[i]) {
+                    nativeHostPointers[i] = ((TornadoNativeInterpreterSupport) interpreterDevice).prepareNativeInterpreterHostBuffer(object, state);
+                    TornadoInternalError.guarantee(nativeHostPointers[i] != 0, "backend did not provide a native host buffer for %s", object.getClass().getName());
+                    nativeDataOffsets[i] = 0;
+                }
+            } else {
+                nativeHostPointers[i] = NativeBytecodeInterpreter.hostPointerOf(transferObject);
+                nativeDataOffsets[i] = nativeDataOffset(object, transferObject, buffer);
+            }
+            nativeBufferHandles[i] = Math.max(0L, buffer.toBuffer());
             nativeBufferOffsets[i] = buffer.getBufferOffset();
             nativeBufferSizes[i] = buffer.size();
+            nativePartialCopySizes[i] = state.getPartialCopySize();
+        }
+        refreshNativeLaunchTables();
+    }
+
+    private static Object nativeTransferObject(Object object) {
+        if (object != null && object.getClass().getAnnotation(Vector.class) != null && TornadoUtils.hasAnnotatedField(object, Payload.class)) {
+            return TornadoUtils.getAnnotatedObjectFromField(object, Payload.class);
+        }
+        return object;
+    }
+
+    private boolean isNativeTransferSupported(Object object) {
+        if (interpreterDevice instanceof TornadoNativeInterpreterSupport nativeDevice && nativeDevice.supportsNativeInterpreterObject(object)) {
+            return true;
+        }
+        if (!isNativeBufferShape(object)) {
+            return false;
+        }
+        Object transferObject = nativeTransferObject(object);
+        return NativeBytecodeInterpreter.hostPointerOf(transferObject) != 0 || nativeObjectKind(transferObject) != NativeBytecodeInterpreter.OBJECT_KIND_UNSUPPORTED;
+    }
+
+    /* These are the object shapes whose existing Java wrappers map to one flat buffer. */
+    private boolean isNativeBufferShape(Object object) {
+        if (object == null || object instanceof AtomicInteger) {
+            return false;
+        }
+        Class<?> type = object.getClass();
+        if (object instanceof TornadoNativeArray) {
+            return true;
+        }
+        if (type.getAnnotation(Vector.class) != null) {
+            return nativeObjectKind(nativeTransferObject(object)) != NativeBytecodeInterpreter.OBJECT_KIND_UNSUPPORTED;
+        }
+        if (type.isArray() && type.getComponentType().isPrimitive() && nativeObjectKind(object) != NativeBytecodeInterpreter.OBJECT_KIND_UNSUPPORTED) {
+            return true;
+        }
+        return interpreterDevice instanceof TornadoNativeInterpreterSupport nativeDevice && nativeDevice.supportsNativeInterpreterObject(object);
+    }
+
+    private static byte nativeObjectKind(Object object) {
+        if (object instanceof AtomicInteger) {
+            return NativeBytecodeInterpreter.OBJECT_KIND_ATOMIC;
+        }
+        if (NativeBytecodeInterpreter.hostPointerOf(object) != 0) {
+            return NativeBytecodeInterpreter.OBJECT_KIND_SEGMENT;
+        }
+        if (object == null || !object.getClass().isArray()) {
+            return NativeBytecodeInterpreter.OBJECT_KIND_UNSUPPORTED;
+        }
+        Class<?> component = object.getClass().getComponentType();
+        if (component == byte.class) {
+            return NativeBytecodeInterpreter.OBJECT_KIND_BYTE_ARRAY;
+        }
+        if (component == char.class) {
+            return NativeBytecodeInterpreter.OBJECT_KIND_CHAR_ARRAY;
+        }
+        if (component == short.class) {
+            return NativeBytecodeInterpreter.OBJECT_KIND_SHORT_ARRAY;
+        }
+        if (component == int.class) {
+            return NativeBytecodeInterpreter.OBJECT_KIND_INT_ARRAY;
+        }
+        if (component == long.class) {
+            return NativeBytecodeInterpreter.OBJECT_KIND_LONG_ARRAY;
+        }
+        if (component == float.class) {
+            return NativeBytecodeInterpreter.OBJECT_KIND_FLOAT_ARRAY;
+        }
+        if (component == double.class) {
+            return NativeBytecodeInterpreter.OBJECT_KIND_DOUBLE_ARRAY;
+        }
+        return NativeBytecodeInterpreter.OBJECT_KIND_UNSUPPORTED;
+    }
+
+    private static long nativeDataOffset(Object object, Object transferObject, XPUBuffer buffer) {
+        if (object != transferObject) {
+            return 0;
+        }
+        if (NativeBytecodeInterpreter.hostPointerOf(transferObject) != 0) {
+            return 0;
+        }
+        if (!transferObject.getClass().isArray()) {
+            return 0;
+        }
+        final int elementBytes = switch (nativeObjectKind(transferObject)) {
+            case NativeBytecodeInterpreter.OBJECT_KIND_BYTE_ARRAY -> Byte.BYTES;
+            case NativeBytecodeInterpreter.OBJECT_KIND_CHAR_ARRAY -> Character.BYTES;
+            case NativeBytecodeInterpreter.OBJECT_KIND_SHORT_ARRAY -> Short.BYTES;
+            case NativeBytecodeInterpreter.OBJECT_KIND_INT_ARRAY -> Integer.BYTES;
+            case NativeBytecodeInterpreter.OBJECT_KIND_LONG_ARRAY -> Long.BYTES;
+            case NativeBytecodeInterpreter.OBJECT_KIND_FLOAT_ARRAY -> Float.BYTES;
+            case NativeBytecodeInterpreter.OBJECT_KIND_DOUBLE_ARRAY -> Double.BYTES;
+            default -> 0;
+        };
+        TornadoInternalError.guarantee(elementBytes > 0, "unsupported primitive array kind");
+        long payloadBytes = (long) java.lang.reflect.Array.getLength(transferObject) * elementBytes;
+        return buffer.size() - payloadBytes;
+    }
+
+    /**
+     * Copies {@code HAS_CONTENT} bits the native loop set (after a ONCE transfer) back
+     * onto the Java buffer state so the next {@code execute()} still skips the copy.
+     */
+    private void syncNativeObjectFlags() {
+        if (nativeObjectFlags == null) {
+            return;
+        }
+        boolean allocated = false;
+        long allocationTotal = 0;
+        for (int i = 0; i < objects.size(); i++) {
+            XPUDeviceBufferState state = resolveObjectState(i);
+            if (state == null) {
+                continue;
+            }
+            final Access access = objectAccesses.get(objects.get(i));
+            if ((nativeObjectFlags[i] & NativeBytecodeInterpreter.OBJ_NATIVE_ALLOCATED) != 0 && interpreterDevice instanceof TornadoNativeInterpreterSupport nativeDevice) {
+                final long bytes = nativeBufferSizes[i];
+                nativeDevice.attachNativeAllocation(state, access, nativeBufferHandles[i], bytes);
+                nativeAllocationPrepared[i] = false;
+                if (TornadoOptions.isReusedBuffersEnabled()) {
+                    state.setLockBuffer(true);
+                }
+                allocated = true;
+            }
+            if ((nativeObjectFlags[i] & NativeBytecodeInterpreter.OBJ_NATIVE_DEALLOCATED) != 0 && interpreterDevice instanceof TornadoNativeInterpreterSupport nativeDevice) {
+                final long handle = state.getXPUBuffer().toBuffer();
+                nativeDevice.detachNativeAllocation(state, access, handle);
+                nativeAllocationPrepared[i] = false;
+                continue;
+            }
+            if ((nativeObjectFlags[i] & NativeBytecodeInterpreter.OBJ_HAS_CONTENT) != 0) {
+                state.setContents(true);
+            }
+            if (state.hasObjectBuffer()) {
+                allocationTotal += state.getXPUBuffer().size();
+            }
+        }
+        if (allocated) {
+            graphExecutionContext.setCurrentDeviceMemoryUsage(allocationTotal);
+        }
+    }
+
+    private void completeNativeInterpreterHostBuffers() {
+        if (!(interpreterDevice instanceof TornadoNativeInterpreterSupport nativeDevice) || nativeObjectFlags == null || nativeHostUnpackNeeded == null) {
+            return;
+        }
+        for (int i = 0; i < objects.size(); i++) {
+            if (!nativeHostUnpackNeeded[i] || (nativeObjectFlags[i] & NativeBytecodeInterpreter.OBJ_STAGED_HOST_BUFFER) == 0) {
+                continue;
+            }
+            XPUDeviceBufferState state = resolveObjectState(i);
+            if (state != null && state.hasObjectBuffer()) {
+                nativeDevice.completeNativeInterpreterHostBuffer(objects.get(i), state);
+            }
+        }
+    }
+
+    /*
+     * Native D2H of AtomicInteger is a no-op. Copy the shared atomics region back into
+     * each AtomicInteger the same way Java streamOutBlocking does.
+     */
+    private void completeNativeAtomics() {
+        if (nativeAtomicCopyBack == null) {
+            return;
+        }
+        for (int i = 0; i < nativeAtomicCopyBack.length; i++) {
+            if (!nativeAtomicCopyBack[i]) {
+                continue;
+            }
+            XPUDeviceBufferState state = resolveObjectState(i);
+            if (state != null && state.isAtomicRegionPresent()) {
+                interpreterDevice.streamOutBlocking(graphExecutionContext.getExecutionPlanId(), objects.get(i), 0, state, null);
+            }
+            nativeAtomicCopyBack[i] = false;
         }
     }
 
@@ -646,8 +1259,22 @@ public class TornadoVMInterpreter {
         nativeBufferOffsets = new long[objectCount];
         nativeBufferSizes = new long[objectCount];
         nativeHostPointers = new long[objectCount];
-        nativeKernelHandles = new long[installedCodes.length];
-        nativeProgramHandles = new long[installedCodes.length];
+        nativeObjectFlags = new byte[objectCount];
+        nativeObjectAccesses = new byte[objectCount];
+        nativeObjects = objects.toArray();
+        nativeObjectKinds = new byte[objectCount];
+        nativeDataOffsets = new long[objectCount];
+        nativePartialCopySizes = new long[objectCount];
+        nativeAllocationPrepared = new boolean[objectCount];
+        nativeAtomicCopyBack = new boolean[objectCount];
+        nativeHostPackNeeded = new boolean[objectCount];
+        nativeHostUnpackNeeded = new boolean[objectCount];
+        final int taskCount = taskExecutionContexts.size();
+        nativeKernelHandles = new long[taskCount];
+        nativeProgramHandles = new long[taskCount];
+        nativeLaunchMetadata = new long[taskCount * NativeBytecodeInterpreter.LAUNCH_META_STRIDE];
+        nativeLaunchFrames = new KernelStackFrame[taskCount];
+        nativeLaunchPrepared = new boolean[taskCount];
         nativeConstants = NativeBytecodeInterpreter.packConstants(constants);
     }
 
@@ -744,6 +1371,9 @@ public class TornadoVMInterpreter {
                 || op == TornadoVMBytecodes.CUDA_GRAPH_LAUNCH.value()
                 || op == TornadoVMBytecodes.CUDA_GRAPH_DESTROY.value()) {
             bytecodeResult.getInt();  // graphId
+        } else if (op == TornadoVMBytecodes.INIT.value()) {
+            bytecodeResult.getLong();
+            bytecodeResult.getInt();
         } else if (op == TornadoVMBytecodes.BEGIN.value()
                 || op == TornadoVMBytecodes.END.value()) {
             // no operands
@@ -818,6 +1448,12 @@ public class TornadoVMInterpreter {
         return waitList;
     }
 
+    /** Whether the object already has a device buffer in this interpreter's object state. */
+    private boolean hasDeviceBuffer(int arg) {
+        XPUDeviceBufferState state = resolveObjectState(arg);
+        return state != null && state.getXPUBuffer() != null;
+    }
+
     /**
      * Checks if the given object exists in the persistent task objects map in
      * order to prevent excess allocations.
@@ -826,12 +1462,6 @@ public class TornadoVMInterpreter {
      *     The object to search for in the persistent tasks
      * @return true if the object is found in any persistent task, otherwise false
      */
-    /** Whether the object already has a device buffer in this interpreter's object state. */
-    private boolean hasDeviceBuffer(int arg) {
-        XPUDeviceBufferState state = resolveObjectState(arg);
-        return state != null && state.getXPUBuffer() != null;
-    }
-
     private boolean isPersistentObject(Object object) {
         if (graphExecutionContext == null || object == null) {
             return false;
@@ -1542,6 +2172,25 @@ public class TornadoVMInterpreter {
 
     private boolean isObjectKernelContext(Object object) {
         return (object instanceof KernelContext);
+    }
+
+    private boolean isObjectAtomic(Object object) {
+        return object instanceof AtomicInteger;
+    }
+
+    private boolean isNativeNonBufferObject(Object object) {
+        return isObjectKernelContext(object) || isObjectAtomic(object);
+    }
+
+    private void prepareNativeAtomicInteger(int objectIndex, Object object, long sizeBatch) {
+        XPUDeviceBufferState state = resolveObjectState(objectIndex);
+        if (state == null || state.hasObjectBuffer()) {
+            return;
+        }
+        interpreterDevice.allocate(object, sizeBatch, state, objectAccesses.get(object));
+        if (TornadoOptions.isReusedBuffersEnabled()) {
+            state.setLockBuffer(true);
+        }
     }
 
     private boolean isNotObjectAtomic(Object object) {

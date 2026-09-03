@@ -181,24 +181,29 @@ public class MetalMemorySegmentWrapper implements XPUBuffer {
 
     @Override
     public void allocate(Object reference, long batchSize, Access access) throws TornadoOutOfMemoryException, TornadoMemoryException {
+        prepareForNativeAllocation(reference, batchSize, access);
+        bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(batchSize <= 0 ? bufferSize : bufferSize + TornadoNativeArray.ARRAY_HEADER, access);
+
+        if (TornadoOptions.FULL_DEBUG) {
+            new TornadoLogger().info("allocated: %s", toString());
+        }
+    }
+
+    @Override
+    public void prepareForNativeAllocation(Object reference, long batchSize, Access access) throws TornadoMemoryException {
         MemorySegment segment;
         segment = getSegmentWithHeader(reference);
 
         if (batchSize <= 0) {
             bufferSize = segment.byteSize();
-            bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize, access);
         } else {
             bufferSize = batchSize;
-            bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize + TornadoNativeArray.ARRAY_HEADER, access);
         }
 
         if (bufferSize <= 0) {
             throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
         }
 
-        if (TornadoOptions.FULL_DEBUG) {
-            new TornadoLogger().info("allocated: %s", toString());
-        }
     }
 
     @Override
