@@ -31,6 +31,7 @@ tornado_unittests.log
 OpenCL-Headers/
 tornado-assembly/src/etc/tornado.backend
 hs_err_pid*.log
+
 # Temporary, will remove it once dissertation is completed
 .vscode/
 AGENTS.md
