@@ -222,6 +222,15 @@ public class TornadoOptions {
      * code. This option is True by default.
      */
     public static final boolean RECOVER_BAILOUT = getBooleanValue("tornado.recover.bailout", TRUE);
+
+    /**
+     * Share the result of the Graal front end across execution plans, instead of re-running it
+     * for every new {@code TornadoExecutionPlan}. Installed modules stay per execution plan;
+     * only the generated source is reused, so a new plan pays the (much cheaper) install step
+     * alone. This option is True by default; set it to False to restore the previous behaviour
+     * of compiling from scratch for each plan.
+     */
+    public static final boolean SHARE_COMPILATION_ACROSS_PLANS = getBooleanValue("tornado.compilation.share", TRUE);
     /**
      * Option to log the IP of the current machine on the profiler logs.
      */

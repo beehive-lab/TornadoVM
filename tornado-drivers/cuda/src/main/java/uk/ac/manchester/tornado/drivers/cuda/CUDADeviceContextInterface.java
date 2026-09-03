@@ -39,6 +39,15 @@ public interface CUDADeviceContextInterface extends TornadoDeviceContext {
 
     CUDACodeCache getCodeCache(long executionPlanId);
 
+    /**
+     * Returns the front-end compilation result cached for {@code compilationKey}, or
+     * {@code null}. Unlike installed code, these are shared by every execution plan on the
+     * device.
+     */
+    CUDACompiledKernel getCompiledKernel(String compilationKey);
+
+    void putCompiledKernel(String compilationKey, CUDACompiledKernel compiledKernel);
+
     boolean isCached(long executionPlanId, String id, String entryPoint);
 
     CUDAInstalledCode getInstalledCode(long executionPlanId, String id, String entryPoint);
