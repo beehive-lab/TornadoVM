@@ -202,17 +202,34 @@ jobs:
           source $VENV_PATH/bin/activate
           make fast-tests
 
-      - name: Resolve the SDK's artifact version
+      - name: Install the SDK's TornadoVM jars into the local Maven repo
         run: |
           # The sample apps take their TornadoVM coordinate from a tornadovm.version property.
           # Build them against the API this SDK ships, not the released one: kernel entries are
           # resolved through the compiler-generated writeReplace()/SerializedLambda, which javac
           # only emits when TornadoFunctions.TaskN was Serializable at the application's COMPILE
           # time, so a jar built against an older API fails at run time whatever it runs on.
-          VERSION=$(ls "$TORNADOVM_HOME/share/java/tornado" | sed -n 's/^tornado-api-\(.*\)\.jar$/\1/p' | head -1)
+          #
+          # This job only unpacks the SDK tarball - it never runs `mvn install` - so the
+          # tornado-* coordinates must be seeded here rather than relied on from whatever the
+          # build job happened to leave in a shared ~/.m2 (which silently served a stale,
+          # wrong-profile jar until the version string gained its -jdkNN suffix).
+          TDIR="$TORNADOVM_HOME/share/java/tornado"
+          VERSION=$(ls "$TDIR" | sed -n 's/^tornado-api-\(.*\)\.jar$/\1/p' | head -1)
           [ -n "$VERSION" ] || { echo "::error::could not resolve the SDK's tornado-api version"; exit 1; }
           echo "Building the sample apps against tornado-api $VERSION"
           echo "TORNADO_VERSION=$VERSION" >> "$GITHUB_ENV"
+          # Run install-file from a neutral cwd: inside the checkout the root pom's
+          # <classifier>${platform}</classifier> leaks in and the jars land under a
+          # mac-aarch64/linux-amd64 classifier instead of the bare coordinate.
+          cd "${RUNNER_TEMP:-/tmp}"
+          for jar in "$TDIR"/tornado-*-"$VERSION".jar; do
+            art=$(basename "$jar" ".jar"); art=${art%-"$VERSION"}
+            mvn -q org.apache.maven.plugins:maven-install-plugin:3.1.1:install-file \
+              -Dfile="$jar" -DgroupId=io.github.beehive-lab -DartifactId="$art" \
+              -Dversion="$VERSION" -Dpackaging=jar
+            echo "  installed io.github.beehive-lab:$art:$VERSION"
+          done
 
       - name: Build & run TornadoVM-Ray-Tracer (regression)
         timeout-minutes: 15
