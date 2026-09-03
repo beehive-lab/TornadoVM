@@ -26,158 +26,87 @@ package uk.ac.manchester.tornado.runtime.interpreter;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
-import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 
+/**
+ * Records what the interpreter did, one {@link BytecodeLogEntry} per bytecode.
+ *
+ * <p>
+ * These methods used to build finished, coloured strings. They now only collect facts: the device is
+ * named once in the {@link BytecodeLog} header rather than on every line, and {@link BytecodeRenderer}
+ * decides what to show at the requested verbosity.
+ * </p>
+ */
 class DebugInterpreter {
 
-    private static void appendLogBuilder(String logMessage, StringBuilder logBuilder) {
-        logBuilder.append(logMessage).append("\n");
+    static void logAllocObject(Object object, long size, long sizeBatch, BytecodeLog log) {
+        log.add(BytecodeLogEntry.of("ALLOC", object, size, sizeBatch));
     }
 
-    static void logAllocObject(Object object, TornadoXPUDevice interpreterDevice, long size, long sizeBatch, StringBuilder logBuilder) {
-        String verbose = String.format("bc: %s%s on %s, size=%d, batchSize=%d", //
-                InterpreterUtilities.debugHighLightBC("ALLOC"), //
-                object, //
-                InterpreterUtilities.debugDeviceBC(interpreterDevice), //
-                size, //
-                sizeBatch); //
-        appendLogBuilder(verbose, logBuilder);
+    static void logDeallocObject(Object object, BytecodeLog log, boolean materializeDealloc) {
+        log.add(BytecodeLogEntry.of("DEALLOC", object, 0, 0).withStatus(materializeDealloc, materializeDealloc ? "Freed" : "Persisted"));
     }
 
-    static void logDeallocObject(Object object, TornadoXPUDevice interpreterDevice, StringBuilder logBuilder, boolean materializeDealloc) {
-        String verbose = String.format("bc: %s[0x%x] %s [Status:%s] on %s", //
-                materializeDealloc ? InterpreterUtilities.debugHighLightBC("DEALLOC") : InterpreterUtilities.debugHighLightNonExecBC("DEALLOC"), //
-                object.hashCode(), //
-                object, //
-                InterpreterUtilities.debugHighLightNonExecBC(materializeDealloc ? "Freed" : "Persisted"), //
-                InterpreterUtilities.debugDeviceBC(interpreterDevice)); //
-        appendLogBuilder(verbose, logBuilder);
+    /**
+     * An allocation the interpreter skipped because an execution (CUDA) graph already owns the
+     * buffers. Logged for the same reason the matching deallocation is: a bytecode that silently
+     * does nothing is what makes a log hard to trust.
+     */
+    static void logAllocSkipped(Object object, BytecodeLog log) {
+        log.addSkipped(BytecodeLogEntry.of("ALLOC", object, 0, 0).withStatus(false, "Skipped: execution graph active"));
     }
 
-    static void logOnDeviceObject(Object object, TornadoXPUDevice interpreterDevice, StringBuilder logBuilder) {
-        String verbose = String.format("bc: %s[0x%x] %s on %s", //
-                InterpreterUtilities.debugHighLightBC("ON_DEVICE"), //
-                object.hashCode(), //
-                object, //
-                InterpreterUtilities.debugDeviceBC(interpreterDevice));
-        appendLogBuilder(verbose, logBuilder);
+    /** A deallocation the interpreter skipped because an execution (CUDA) graph still owns the buffer. */
+    static void logDeallocSkipped(Object object, BytecodeLog log) {
+        log.addSkipped(BytecodeLogEntry.of("DEALLOC", object, 0, 0).withStatus(false, "Skipped: execution graph active"));
     }
 
-    static void logPersistedObject(Object object, TornadoXPUDevice interpreterDevice, StringBuilder logBuilder) {
-        String verbose = String.format("bc: %s[0x%x] %s on %s", //
-                InterpreterUtilities.debugHighLightBC("PERSIST"), //
-                object.hashCode(), //
-                object, //
-                InterpreterUtilities.debugDeviceBC(interpreterDevice));
-        appendLogBuilder(verbose, logBuilder);
+    static void logOnDeviceObject(Object object, BytecodeLog log) {
+        log.add(BytecodeLogEntry.of("ON_DEVICE", object, 0, 0));
     }
 
-    static void logTransferToDeviceOnce(List<Integer> allEvents, Object object, TornadoXPUDevice deviceForInterpreter, //
-            long sizeObject, long sizeBatch, long offset, final int eventList, StringBuilder logBuilder) {
+    static void logPersistedObject(Object object, BytecodeLog log) {
+        log.add(BytecodeLogEntry.of("PERSIST", object, 0, 0));
+    }
 
+    static void logTransferToDeviceOnce(List<Integer> allEvents, Object object, long sizeObject, long sizeBatch, long offset, final int eventList, BytecodeLog log) {
+        // A null event list means the buffer was already on the device, so nothing was transferred.
         boolean executed = allEvents != null;
-
-        String transferStatus = executed ? "Transferred" : "Present";
-
-        String coloredText = executed //
-                ? InterpreterUtilities.debugHighLightBC("TRANSFER_HOST_TO_DEVICE_ONCE") //
-                : InterpreterUtilities.debugHighLightNonExecBC("TRANSFER_HOST_TO_DEVICE_ONCE"); //
-
-        String verbose = String.format("bc: %s [Object Hash Code=0x%x] %s on %s, size=%d, batchSize=%d, offset=%d [event list=%d], [Status:%s] ", //
-                coloredText, //
-                object.hashCode(), //
-                object, //
-                InterpreterUtilities.debugDeviceBC(deviceForInterpreter), //
-                sizeObject, // 
-                sizeBatch, //
-                offset, //
-                eventList, //
-                InterpreterUtilities.debugHighLightNonExecBC(transferStatus));
-
-        appendLogBuilder(verbose, logBuilder);
+        log.add(BytecodeLogEntry.of("TRANSFER_HOST_TO_DEVICE_ONCE", object, sizeObject, sizeBatch) //
+                .withTransfer(offset, eventList, null) //
+                .withStatus(executed, executed ? "Transferred" : "Present"));
     }
 
-    static void logTransferToDeviceAlways(Object object, TornadoXPUDevice deviceForInterpreter, long sizeObject, long sizeBatch, long offset, //
-            final int eventList, StringBuilder logBuilder) {
-        String verbose = String.format("bc: %s [0x%x] %s on %s, size=%d, batchSize=%d, offset=%d [event list=%d]", //
-                InterpreterUtilities.debugHighLightBC("TRANSFER_HOST_TO_DEVICE_ALWAYS"), //
-                object.hashCode(), //
-                object, //
-                InterpreterUtilities.debugDeviceBC(deviceForInterpreter), //
-                sizeObject, //
-                sizeBatch, //
-                offset, //
-                eventList); //
-        appendLogBuilder(verbose, logBuilder);
+    static void logTransferToDeviceAlways(Object object, long sizeObject, long sizeBatch, long offset, final int eventList, BytecodeLog log) {
+        log.add(BytecodeLogEntry.of("TRANSFER_HOST_TO_DEVICE_ALWAYS", object, sizeObject, sizeBatch).withTransfer(offset, eventList, null));
     }
 
-    static void logTransferToHostAlways(Object object, TornadoXPUDevice interpreterDevice, long sizeObject, long sizeBatch, //
-            long offset, final int eventList, StringBuilder logBuilder) {
-        String verbose = String.format("bc: " //
-                + InterpreterUtilities.debugHighLightBC("TRANSFER_DEVICE_TO_HOST_ALWAYS") //
-                + "[0x%x] %s on %s, size=%d, batchSize=%d, offset=%d [event list=%d]", //
-                object.hashCode(), //
-                object, //
-                InterpreterUtilities.debugDeviceBC(interpreterDevice), //
-                sizeObject, // 
-                sizeBatch, //
-                offset, //
-                eventList);
-        appendLogBuilder(verbose, logBuilder);
+    static void logTransferToHostAlways(Object object, long sizeObject, long sizeBatch, long offset, final int eventList, BytecodeLog log) {
+        log.add(BytecodeLogEntry.of("TRANSFER_DEVICE_TO_HOST_ALWAYS", object, sizeObject, sizeBatch).withTransfer(offset, eventList, null));
     }
 
-    static void logTransferToHostAlwaysBlocking(Object object, TornadoXPUDevice interpreterDevice, StringBuilder logBuilder, //
-            long sizeObject, long sizeBatch, long offset, int eventId) {
-        String verbose = String.format("bc: " //
-                + InterpreterUtilities.debugHighLightBC("TRANSFER_DEVICE_TO_HOST_ALWAYS_BLOCKING") //
-                + " [0x%x] %s on %s, size=%d, sizeBatch=%d, offset=%d [event list=%d]", //
-                object.hashCode(), //
-                object, //
-                InterpreterUtilities.debugDeviceBC(interpreterDevice), //
-                sizeObject, // 
-                sizeBatch, //
-                offset, //
-                eventId);
-        appendLogBuilder(verbose, logBuilder);
+    static void logTransferToHostAlwaysBlocking(Object object, BytecodeLog log, long sizeObject, long sizeBatch, long offset, int eventId) {
+        log.add(BytecodeLogEntry.of("TRANSFER_DEVICE_TO_HOST_ALWAYS_BLOCKING", object, sizeObject, sizeBatch).withTransfer(offset, eventId, null));
     }
 
-    public static void logLaunchTask(SchedulableTask task, TornadoXPUDevice interpreterDevice, long numBatchThreads, long offset, int eventId, StringBuilder logBuilder) {
-        String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("LAUNCH") //
-                + " %s on %s, numThreadBatch=%d, offset=%d [event list=%d]", //
-                task.getFullName(), //
-                interpreterDevice, //
-                numBatchThreads, //
-                offset, //
-                eventId);
-        appendLogBuilder(verbose, logBuilder);
+    static void logLaunchTask(SchedulableTask task, long numBatchThreads, long offset, int eventId, BytecodeLog log) {
+        String note = numBatchThreads > 0 ? "threads=" + numBatchThreads : null;
+        log.add(new BytecodeLogEntry("LAUNCH", true, null, task.getFullName(), 0, 0, offset, eventId, null, null, note));
     }
 
-    public static void logStreamInAtomic(Object bufferAtomics, TornadoXPUDevice interpreterDevice, int eventId, StringBuilder logBuilder) {
-        String verbose = String.format("bc: " //
-                + InterpreterUtilities.debugHighLightBC("STREAM_IN") //
-                + "  ATOMIC [0x%x] %s on %s, batchSize=%d, offset=%d [event list=%d]", //
-                bufferAtomics.hashCode(), //
-                bufferAtomics, //
-                interpreterDevice, //
-                0, //
-                0, //
-                eventId);
-        appendLogBuilder(verbose, logBuilder);
+    static void logStreamInAtomic(Object bufferAtomics, int eventId, BytecodeLog log) {
+        log.add(BytecodeLogEntry.of("STREAM_IN", bufferAtomics, 0, 0).withTransfer(0, eventId, null).withStatus(true, "Atomics"));
     }
 
-    public static void logAddDependency(int lastEvent, int eventId, StringBuilder logBuilder) {
-        String verbose = String.format("bc: " //
-                + InterpreterUtilities.debugHighLightBC("ADD_DEPENDENCY") //
-                + " %s to event list %d",  //
-                lastEvent,  //
-                eventId); //
-        appendLogBuilder(verbose, logBuilder);
+    /** Execution-graph (CUDA graph) capture, replay and teardown bytecodes. */
+    static void logExecutionGraph(BytecodeLog log, String op, int graphId) {
+        log.add(BytecodeLogEntry.control(op, "graphId=" + graphId));
     }
 
-    public static void logBarrier(int enventId, StringBuilder logBuilder) {
-        logBuilder.append(String.format("bc: " //
-                + InterpreterUtilities.debugHighLightBC("BARRIER") //
-                + " event-list %d%n",  //
-                enventId));
+    static void logAddDependency(int lastEvent, int eventId, BytecodeLog log) {
+        log.add(BytecodeLogEntry.control("ADD_DEPENDENCY", String.format("event %d to event list %d", lastEvent, eventId)));
+    }
+
+    static void logBarrier(int eventId, int[] waitList, BytecodeLog log) {
+        log.add(new BytecodeLogEntry("BARRIER", true, null, null, 0, 0, 0, eventId, waitList, null, null));
     }
 }

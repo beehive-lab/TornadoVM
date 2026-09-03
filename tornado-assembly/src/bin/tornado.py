@@ -39,7 +39,7 @@ __TORNADOVM_THREAD_INFO__ = " -Dtornado.threadInfo=True "
 __TORNADOVM_IGV__ = " -Dgraal.Dump=*:5 -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true "
 __TORNADOVM__IGV_LOW_TIER = " -Dgraal.Dump=*:1 -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true -Dtornado.debug.lowtier=True "
 __TORNADOVM_PRINT_KERNEL__ = " -Dtornado.printKernel=True "
-__TORNADOVM_PRINT_BC__ = " -Dtornado.print.bytecodes=True "
+__TORNADOVM_PRINT_BC__ = " -Dtornado.print.bytecodes="
 __TORNADOVM_DUMP_PROFILER__ = " -Dtornado.profiler=True -Dtornado.log.profiler=True -Dtornado.profiler.dump.dir="
 __TORNADOVM_ENABLE_PROFILER_SILENT__ = " -Dtornado.profiler=True -Dtornado.log.profiler=True "
 __TORNADOVM_ENABLE_PROFILER_CONSOLE__ = " -Dtornado.profiler=True "
@@ -1017,7 +1017,7 @@ class TornadoVMRunnerTool():
             tornadoFlags = tornadoFlags + __TORNADOVM__IGV_LOW_TIER
 
         if (args.printBytecodes):
-            tornadoFlags = tornadoFlags + __TORNADOVM_PRINT_BC__
+            tornadoFlags = tornadoFlags + __TORNADOVM_PRINT_BC__ + args.printBytecodes + " "
 
         if (args.dump_bytecodes_dir != None):
             tornadoFlags = tornadoFlags + __TORNADOVM_DUMP_BYTECODES_DIR__ + args.dump_bytecodes_dir + " "
@@ -1427,6 +1427,26 @@ class TornadoVMRunnerTool():
         sys.exit(status)
 
 
+__BYTECODE_LOG_MODES__ = ("compact", "full", "trace", "dot", "true", "false")
+
+
+def normalizeBytecodeFlag(argv):
+    """Make the optional value of --printBytecodes explicit.
+
+    The flag takes an optional verbosity, and argparse's nargs='?' would otherwise consume whatever
+    follows it - so `--printBytecodes some.Test.Class` silently swallowed the positional and ran
+    everything. Inserting the default here keeps the bare flag working without that ambiguity.
+    """
+    normalized = []
+    for index, argument in enumerate(argv):
+        normalized.append(argument)
+        if argument in ("--printBytecodes", "-pbc"):
+            following = argv[index + 1] if index + 1 < len(argv) else None
+            if following is None or following.startswith("-") or following.lower() not in __BYTECODE_LOG_MODES__:
+                normalized.append("full")
+    return normalized
+
+
 def parseArguments():
     """ Parse command line arguments """
     parser = argparse.ArgumentParser(
@@ -1445,8 +1465,9 @@ def parseArguments():
                         help="Debug Low Tier Compilation Graphs using Ideal Graph Visualizer (IGV)")
     parser.add_argument('--printKernel', '-pk', action="store_true", dest="printKernel", default=False,
                         help="Print generated kernel (OpenCL, CUDA or Metal)")
-    parser.add_argument('--printBytecodes', '-pbc', action="store_true", dest="printBytecodes", default=False,
-                        help="Print the generated TornadoVM bytecodes from the Task-Graphs")
+    parser.add_argument('--printBytecodes', '-pbc', nargs='?', const="full", default=None, dest="printBytecodes",
+                        help="Print the generated TornadoVM bytecodes from the Task-Graphs. "
+                             "Optional verbosity: compact|full|trace|dot (default: full)")
     parser.add_argument('--enableProfiler', action="store", dest="enable_profiler", default=None,
                         help="Enable the profiler {silent|console}")
     parser.add_argument('--dumpProfiler', action="store", dest="dump_profiler", default=None,
@@ -1496,7 +1517,7 @@ def parseArguments():
         parser.print_help()
         sys.exit(0)
 
-    args = parser.parse_args()
+    args = parser.parse_args(normalizeBytecodeFlag(sys.argv[1:]))
     return args
 
 
