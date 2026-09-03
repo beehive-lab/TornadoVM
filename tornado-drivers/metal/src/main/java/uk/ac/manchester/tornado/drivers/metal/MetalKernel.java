@@ -33,6 +33,7 @@ import java.util.List;
 
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalKernelInfo;
 import uk.ac.manchester.tornado.drivers.metal.exceptions.MetalException;
+import uk.ac.manchester.tornado.drivers.metal.ffm.MetalObjects;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class MetalKernel {
@@ -56,18 +57,30 @@ public class MetalKernel {
 
     }
 
-    native static void metalReleaseKernel(long kernelId) throws MetalException;
+    static void metalReleaseKernel(long kernelId) throws MetalException {
+        MetalObjects.releaseKernel(kernelId);
+    }
 
-    native static void metalSetKernelArg(long kernelId, int index, long size, byte[] buffer) throws MetalException;
+    static void metalSetKernelArg(long kernelId, int index, long size, byte[] buffer) throws MetalException {
+        MetalObjects.setKernelArg(kernelId, index, size, buffer);
+    }
 
-    native static void metalSetKernelArgRef(long kernelId, int index, long buffer) throws MetalException;
+    static void metalSetKernelArgRef(long kernelId, int index, long buffer) throws MetalException {
+        MetalObjects.setKernelArgRef(kernelId, index, buffer);
+    }
 
-    native static void metalGetKernelInfo(long kernelId, int info, byte[] buffer) throws MetalException;
+    static void metalGetKernelInfo(long kernelId, int info, byte[] buffer) throws MetalException {
+        MetalObjects.kernelInfo(kernelId, info, buffer);
+    }
 
-    // Reflection helpers implemented in the native JNI layer (objc_metal_jni.mm)
-    native static int metalGetKernelArgCount(long kernelId) throws MetalException;
+    // Reflection helpers, now answered from the pipeline's argument reflection captured at creation.
+    static int metalGetKernelArgCount(long kernelId) throws MetalException {
+        return MetalObjects.kernelArgCount(kernelId);
+    }
 
-    native static void metalGetKernelArgInfo(long kernelId, int index, byte[] buffer) throws MetalException;
+    static void metalGetKernelArgInfo(long kernelId, int index, byte[] buffer) throws MetalException {
+        MetalObjects.kernelArgInfo(kernelId, index, buffer);
+    }
 
     public void setArg(int index, ByteBuffer buffer) {
         try {

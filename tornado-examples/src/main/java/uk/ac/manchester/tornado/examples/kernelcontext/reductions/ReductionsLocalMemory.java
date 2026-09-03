@@ -30,6 +30,12 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 /**
+ * Parallel reduction that uses KernelContext local memory inside each work
+ * group, then folds the per-group partials.
+ * <p>
+ * A 1D {@code WorkerGrid} with local size 256 runs the reduction. The result
+ * copies back on every execution.
+ * </p>
  * <p>
  * How to run?
  * </p>

@@ -156,6 +156,22 @@ class TornadoExecutor {
         immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.transferToHost(dataRange.getArray(), dataRange.getOffset(), dataRange.getPartialSize()));
     }
 
+    void transferDataToDevice(ExecutorFrame executionPackage) {
+        allTaskGraphs().forEach(immutableTaskGraph -> immutableTaskGraph.transferDataToDevice(executionPackage));
+    }
+
+    void transferDataToDevice(ExecutorFrame executionPackage, Object... objects) {
+        allTaskGraphs().forEach(immutableTaskGraph -> immutableTaskGraph.transferDataToDevice(executionPackage, objects));
+    }
+
+    /**
+     * Every task-graph of the plan, including the ones a {@code withGraph(i)} has currently
+     * selected away: an upload is about the plan's data, not about which graph runs next.
+     */
+    private List<ImmutableTaskGraph> allTaskGraphs() {
+        return subgraphList != null ? subgraphList : immutableTaskGraphList;
+    }
+
     boolean isFinished() {
         boolean result = true;
         for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {

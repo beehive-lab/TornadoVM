@@ -29,27 +29,27 @@ import java.util.Optional;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.RawConstant;
-import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FixedGuardNode;
-import org.graalvm.compiler.nodes.FixedNode;
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.PiNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.ValuePhiNode;
-import org.graalvm.compiler.nodes.ValueProxyNode;
-import org.graalvm.compiler.nodes.calc.FloatConvertNode;
-import org.graalvm.compiler.nodes.calc.IsNullNode;
-import org.graalvm.compiler.nodes.extended.JavaReadNode;
-import org.graalvm.compiler.nodes.extended.JavaWriteNode;
-import org.graalvm.compiler.nodes.extended.ValueAnchorNode;
-import org.graalvm.compiler.nodes.java.LoadFieldNode;
-import org.graalvm.compiler.nodes.java.LoadIndexedNode;
-import org.graalvm.compiler.nodes.java.NewInstanceNode;
-import org.graalvm.compiler.nodes.memory.address.AddressNode;
-import org.graalvm.compiler.phases.BasePhase;
+import tornado.graal.compiler.core.common.type.StampFactory;
+import tornado.graal.compiler.graph.Node;
+import tornado.graal.compiler.nodes.ConstantNode;
+import tornado.graal.compiler.nodes.FixedGuardNode;
+import tornado.graal.compiler.nodes.FixedNode;
+import tornado.graal.compiler.nodes.GraphState;
+import tornado.graal.compiler.nodes.PiNode;
+import tornado.graal.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.ValuePhiNode;
+import tornado.graal.compiler.nodes.ValueProxyNode;
+import tornado.graal.compiler.nodes.calc.FloatConvertNode;
+import tornado.graal.compiler.nodes.calc.IsNullNode;
+import tornado.graal.compiler.nodes.extended.JavaReadNode;
+import tornado.graal.compiler.nodes.extended.JavaWriteNode;
+import tornado.graal.compiler.nodes.extended.ValueAnchorNode;
+import tornado.graal.compiler.nodes.java.LoadFieldNode;
+import tornado.graal.compiler.nodes.java.LoadIndexedNode;
+import tornado.graal.compiler.nodes.java.NewInstanceNode;
+import tornado.graal.compiler.nodes.memory.address.AddressNode;
+import tornado.graal.compiler.phases.BasePhase;
 
 import uk.ac.manchester.tornado.api.internal.annotations.HalfType;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalKind;
@@ -79,6 +79,22 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.VectorHalfRead;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
 public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContext> {
+
+    /**
+     * Finds the {@link NewHalfFloatInstance} that the node plugin inserted at the {@code HalfFloat.<init>}
+     * call site for this allocation. It is not always the allocation's immediate fixed successor: a computed
+     * constructor argument (e.g. an array read, {@code new HalfFloat(a.get(i))}) emits its own fixed nodes
+     * between the {@code new} and the {@code <init>} it feeds, so this walks the straight-line fixed chain
+     * forward (bounded, since argument evaluation cannot branch) looking for it. Mirrors CUDA's
+     * TornadoHalfFloatReplacement.
+     */
+    private static Node findSucceedingHalfFloatInstance(NewInstanceNode newInstanceNode) {
+        Node cursor = newInstanceNode.successors().isNotEmpty() ? newInstanceNode.successors().first() : null;
+        for (int hops = 0; cursor != null && !(cursor instanceof NewHalfFloatInstance) && !(cursor instanceof NewInstanceNode) && hops < 16; hops++) {
+            cursor = cursor.successors().isNotEmpty() ? cursor.successors().first() : null;
+        }
+        return cursor instanceof NewHalfFloatInstance ? cursor : null;
+    }
 
     @Override
     public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
@@ -123,8 +139,7 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
 
         for (NewInstanceNode newInstanceNode : graph.getNodes().filter(NewInstanceNode.class)) {
             if (newInstanceNode.instanceClass().getAnnotation(HalfType.class) != null) {
-                if (newInstanceNode.successors().first() instanceof NewHalfFloatInstance) {
-                    NewHalfFloatInstance newHalfFloatInstance = (NewHalfFloatInstance) newInstanceNode.successors().first();
+                if (findSucceedingHalfFloatInstance(newInstanceNode) instanceof NewHalfFloatInstance newHalfFloatInstance) {
                     ValueNode valueInput = getHalfFloatValue(newHalfFloatInstance.getValue(), graph);
                     newInstanceNode.replaceAtUsages(valueInput);
                     deleteFixed(newInstanceNode);

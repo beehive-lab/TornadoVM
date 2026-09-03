@@ -66,7 +66,12 @@ public abstract class MetalArrayWrapper<T> implements XPUBuffer {
         this.access = access;
 
         arrayLengthOffset = getVMConfig().arrayOopDescLengthOffset();
-        arrayHeaderSize = getVMConfig().getArrayBaseOffset(kind);
+        // Data-start offset of the device buffer this wrapper lays out. Kernels address the data region
+        // with the fixed TornadoNativeArray.ARRAY_HEADER convention (see
+        // MetalLoweringProvider#createNativeArrayAddress), so the host-side layout must use the same
+        // constant - not this JVM's real on-heap array base offset (getVMConfig().getArrayBaseOffset),
+        // which is unrelated to the device-buffer layout and not stable across host JDKs.
+        arrayHeaderSize = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
         logger = new TornadoLogger(this.getClass());
     }
 

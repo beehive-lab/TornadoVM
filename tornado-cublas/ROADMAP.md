@@ -37,16 +37,22 @@ gates it. Status: `[x]` done / `[~]` in progress / `[ ]` planned / `[-]` not pla
 
 ## How a feature is added (the modular recipe)
 
-Adding a cuBLAS function touches **only the `tornado-cublas` module pair** — never the
+> Superseded by the JNI→FFM port: `cublas-jni` is deleted and step 3 below is now a
+> `java.lang.foreign` downcall handle declared directly in `CuBlasNativeLib.java`, not a
+> C++ wrapper. Everything else in this recipe, and the tracks below, still holds — the
+> "JNI wrapper" mentions further down describe how each feature was actually built at the
+> time and are left as history rather than rewritten.
+
+Adding a cuBLAS function touches **only the `tornado-cublas` module** — never the
 core runtime:
 
 1. **Factory** in `CuBlas.java`: builds the `LibraryTaskDescriptor` (function name,
    `Object[]` params, `Access[]` — outputs `WRITE_ONLY`, or `READ_WRITE` when read back,
    e.g. `beta != 0`).
 2. **Dispatch case** in `CuBlasLibraryProvider.dispatch`: positional marshalling from
-   `LibraryInvocation` (device pointers for arrays, boxed scalars) to the JNI call.
-3. **JNI wrapper** in `cublas-jni/src/main/cpp/source/tornado-cublas.cpp` + native
-   declaration in `CuBlasNativeLib.java`: thin, stateless, returns `cublasStatus_t`.
+   `LibraryInvocation` (device pointers for arrays, boxed scalars) to the FFM call.
+3. **FFM binding** in `CuBlasNativeLib.java`: a `SymbolLookup`-resolved downcall handle,
+   thin, stateless, returns `cublasStatus_t`.
 4. **Test** in `uk.ac.manchester.tornado.cublas.tests`: validate vs a sequential Java
    reference (pattern: `TestCuBlasSgemv`), plus a CUDA Graph variant when relevant.
 

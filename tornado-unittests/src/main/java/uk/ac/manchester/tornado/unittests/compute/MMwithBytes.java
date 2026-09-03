@@ -59,19 +59,25 @@ public class MMwithBytes extends TornadoTestBase {
         // Define matrix/vector dimensions
         final int dim = 128;  // example dimension, adjust as necessary
         final int numRows = 1024; // example number of rows for ByteArray
+        final int blockSize = 32;
+        final int bytesPerBlock = 2 + blockSize;
+        final int blocksPerRow = dim / blockSize; // matmulTornado addresses blockIndex = (idx*dim + j) / blockSize,
+                                                   // i.e. dim/blockSize blocks per row, not just one.
 
         // Initialize input data
-        ByteArray byteArrayWeights = new ByteArray(numRows * (2 + 32)); // dim + 2 bytes for scale per row
+        ByteArray byteArrayWeights = new ByteArray(numRows * blocksPerRow * bytesPerBlock);
         FloatArray inputVector = new FloatArray(dim);
         FloatArray outputVector = new FloatArray(numRows);
 
         // Populate the ByteArray with dummy quantized weights and scales
         for (int i = 0; i < numRows; i++) {
-            int offset = i * (2 + 32);
-            byteArrayWeights.set(offset, (byte) 0);          // scale byte 1
-            byteArrayWeights.set(offset + 1, (byte) 0);      // scale byte 2
-            for (int j = 2; j < 2 + 32; j++) {
-                byteArrayWeights.set(offset + j, (byte) ((i * 3f) * 255 - 128)); // random quantized values
+            for (int block = 0; block < blocksPerRow; block++) {
+                int offset = (i * blocksPerRow + block) * bytesPerBlock;
+                byteArrayWeights.set(offset, (byte) 0);          // scale byte 1
+                byteArrayWeights.set(offset + 1, (byte) 0);      // scale byte 2
+                for (int j = 2; j < bytesPerBlock; j++) {
+                    byteArrayWeights.set(offset + j, (byte) ((i * 3f) * 255 - 128)); // random quantized values
+                }
             }
         }
 

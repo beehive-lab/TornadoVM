@@ -28,9 +28,19 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 /**
- * Simple example of how to perform a flat-map with TornadoVM. Since we
- * currently don't support dynamic memory allocation, the space for the output
- * has to be allocated before running the method on the target device.
+ * Flat-map over a {@code FloatArray}. Values above 100 expand into {@code SIZE}
+ * outputs. The output buffer is allocated up front because TornadoVM does not
+ * support dynamic device allocation.
+ * <p>
+ * Copies the input on every execution, runs a {@code @Parallel}
+ * {@code computeFlatMap} task, and copies the output back.
+ * </p>
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.flatmap.FlatMapExample
+ * </code>
  */
 public class FlatMapExample {
 

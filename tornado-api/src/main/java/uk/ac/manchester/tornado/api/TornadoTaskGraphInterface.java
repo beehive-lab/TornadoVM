@@ -53,6 +53,16 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     void scheduleInner();
 
+    /**
+     * Allocates this task-graph's buffers and uploads its inputs, without running any task.
+     */
+    void transferDataToDevice(ExecutorFrame executionPackage);
+
+    /**
+     * Uploads the current host contents of the given objects, without running anything.
+     */
+    void transferDataToDevice(ExecutorFrame executionPackage, Object... objects);
+
     void withBatch(String batchSize);
 
     void withCUDAGraph();

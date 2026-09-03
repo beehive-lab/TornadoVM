@@ -23,10 +23,10 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.nodes;
 
-import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.FloatingNode;
+import tornado.graal.compiler.graph.NodeClass;
+import tornado.graal.compiler.nodeinfo.NodeInfo;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.calc.FloatingNode;
 
 @NodeInfo(nameTemplate = "Range")
 public class ParallelRangeNode extends AbstractParallelNode {

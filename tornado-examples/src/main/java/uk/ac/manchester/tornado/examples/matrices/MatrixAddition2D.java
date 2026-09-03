@@ -31,14 +31,17 @@ import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat4;
 import uk.ac.manchester.tornado.api.types.vectors.Float4;
 
 /**
- * Full example to show to matrix addition with non vector types
+ * 2D matrix addition on {@code Matrix2DFloat} (non-vector types).
+ * <p>
+ * Copies A and B on first execution, runs a {@code @Parallel}
+ * {@code matrixAddition} task, and copies C back on every execution.
+ * </p>
  * <p>
  * How to run?
  * </p>
  * <code>
  * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.matrices.MatrixAddition2D
  * </code>
- *
  */
 public class MatrixAddition2D {
     // CHECKSTYLE:OFF

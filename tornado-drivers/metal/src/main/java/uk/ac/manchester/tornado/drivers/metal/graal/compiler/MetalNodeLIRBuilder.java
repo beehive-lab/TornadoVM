@@ -34,65 +34,65 @@ import java.util.Collection;
 import java.util.List;
 
 import jdk.vm.ci.meta.PlatformKind;
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.calc.Condition;
-import org.graalvm.compiler.core.common.cfg.BlockMap;
-import org.graalvm.compiler.core.common.type.ObjectStamp;
-import org.graalvm.compiler.core.common.type.Stamp;
-import org.graalvm.compiler.core.gen.NodeLIRBuilder;
-import org.graalvm.compiler.core.gen.NodeMatchRules;
-import org.graalvm.compiler.core.match.ComplexMatchValue;
-import org.graalvm.compiler.debug.GraalError;
-import org.graalvm.compiler.debug.TTY;
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.lir.ConstantValue;
-import org.graalvm.compiler.lir.LIR;
-import org.graalvm.compiler.lir.LIRFrameState;
-import org.graalvm.compiler.lir.LIRInstruction;
-import org.graalvm.compiler.lir.LabelRef;
-import org.graalvm.compiler.lir.StandardOp.LabelOp;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.lir.gen.LIRGenerator.Options;
-import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
-import org.graalvm.compiler.lir.gen.LIRGeneratorTool.BlockScope;
-import org.graalvm.compiler.nodes.AbstractEndNode;
-import org.graalvm.compiler.nodes.AbstractMergeNode;
-import org.graalvm.compiler.nodes.BeginNode;
-import org.graalvm.compiler.nodes.BreakpointNode;
-import org.graalvm.compiler.nodes.DirectCallTargetNode;
-import org.graalvm.compiler.nodes.EndNode;
-import org.graalvm.compiler.nodes.FixedNode;
-import org.graalvm.compiler.nodes.IfNode;
-import org.graalvm.compiler.nodes.IndirectCallTargetNode;
-import org.graalvm.compiler.nodes.Invoke;
-import org.graalvm.compiler.nodes.LogicConstantNode;
-import org.graalvm.compiler.nodes.LogicNode;
-import org.graalvm.compiler.nodes.LoopBeginNode;
-import org.graalvm.compiler.nodes.LoopEndNode;
-import org.graalvm.compiler.nodes.LoopExitNode;
-import org.graalvm.compiler.nodes.LoweredCallTargetNode;
-import org.graalvm.compiler.nodes.MergeNode;
-import org.graalvm.compiler.nodes.NodeView;
-import org.graalvm.compiler.nodes.ParameterNode;
-import org.graalvm.compiler.nodes.PhiNode;
-import org.graalvm.compiler.nodes.ReturnNode;
-import org.graalvm.compiler.nodes.SafepointNode;
-import org.graalvm.compiler.nodes.ShortCircuitOrNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.ValuePhiNode;
-import org.graalvm.compiler.nodes.calc.CompareNode;
-import org.graalvm.compiler.nodes.calc.ConditionalNode;
-import org.graalvm.compiler.nodes.calc.FloatEqualsNode;
-import org.graalvm.compiler.nodes.calc.FloatLessThanNode;
-import org.graalvm.compiler.nodes.calc.IntegerBelowNode;
-import org.graalvm.compiler.nodes.calc.IntegerEqualsNode;
-import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
-import org.graalvm.compiler.nodes.calc.IntegerTestNode;
-import org.graalvm.compiler.nodes.calc.IsNullNode;
-import org.graalvm.compiler.nodes.cfg.HIRBlock;
-import org.graalvm.compiler.nodes.extended.SwitchNode;
-import org.graalvm.compiler.options.OptionValues;
+import tornado.graal.compiler.core.common.LIRKind;
+import tornado.graal.compiler.core.common.calc.Condition;
+import tornado.graal.compiler.core.common.cfg.BlockMap;
+import tornado.graal.compiler.core.common.type.ObjectStamp;
+import tornado.graal.compiler.core.common.type.Stamp;
+import tornado.graal.compiler.core.gen.NodeLIRBuilder;
+import tornado.graal.compiler.core.gen.NodeMatchRules;
+import tornado.graal.compiler.core.match.ComplexMatchValue;
+import tornado.graal.compiler.debug.GraalError;
+import tornado.graal.compiler.debug.TTY;
+import tornado.graal.compiler.graph.Node;
+import tornado.graal.compiler.lir.ConstantValue;
+import tornado.graal.compiler.lir.LIR;
+import tornado.graal.compiler.lir.LIRFrameState;
+import tornado.graal.compiler.lir.LIRInstruction;
+import tornado.graal.compiler.lir.LabelRef;
+import tornado.graal.compiler.lir.StandardOp.LabelOp;
+import tornado.graal.compiler.lir.Variable;
+import tornado.graal.compiler.lir.gen.LIRGenerator.Options;
+import tornado.graal.compiler.lir.gen.LIRGeneratorTool;
+import tornado.graal.compiler.lir.gen.LIRGeneratorTool.BlockScope;
+import tornado.graal.compiler.nodes.AbstractEndNode;
+import tornado.graal.compiler.nodes.AbstractMergeNode;
+import tornado.graal.compiler.nodes.BeginNode;
+import tornado.graal.compiler.nodes.BreakpointNode;
+import tornado.graal.compiler.nodes.DirectCallTargetNode;
+import tornado.graal.compiler.nodes.EndNode;
+import tornado.graal.compiler.nodes.FixedNode;
+import tornado.graal.compiler.nodes.IfNode;
+import tornado.graal.compiler.nodes.IndirectCallTargetNode;
+import tornado.graal.compiler.nodes.Invoke;
+import tornado.graal.compiler.nodes.LogicConstantNode;
+import tornado.graal.compiler.nodes.LogicNode;
+import tornado.graal.compiler.nodes.LoopBeginNode;
+import tornado.graal.compiler.nodes.LoopEndNode;
+import tornado.graal.compiler.nodes.LoopExitNode;
+import tornado.graal.compiler.nodes.LoweredCallTargetNode;
+import tornado.graal.compiler.nodes.MergeNode;
+import tornado.graal.compiler.nodes.NodeView;
+import tornado.graal.compiler.nodes.ParameterNode;
+import tornado.graal.compiler.nodes.PhiNode;
+import tornado.graal.compiler.nodes.ReturnNode;
+import tornado.graal.compiler.nodes.SafepointNode;
+import tornado.graal.compiler.nodes.ShortCircuitOrNode;
+import tornado.graal.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.ValuePhiNode;
+import tornado.graal.compiler.nodes.calc.CompareNode;
+import tornado.graal.compiler.nodes.calc.ConditionalNode;
+import tornado.graal.compiler.nodes.calc.FloatEqualsNode;
+import tornado.graal.compiler.nodes.calc.FloatLessThanNode;
+import tornado.graal.compiler.nodes.calc.IntegerBelowNode;
+import tornado.graal.compiler.nodes.calc.IntegerEqualsNode;
+import tornado.graal.compiler.nodes.calc.IntegerLessThanNode;
+import tornado.graal.compiler.nodes.calc.IntegerTestNode;
+import tornado.graal.compiler.nodes.calc.IsNullNode;
+import tornado.graal.compiler.nodes.cfg.HIRBlock;
+import tornado.graal.compiler.nodes.extended.SwitchNode;
+import tornado.graal.compiler.options.OptionValues;
 
 import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.meta.AllocatableValue;
@@ -341,8 +341,8 @@ public class MetalNodeLIRBuilder extends NodeLIRBuilder {
             final Value value = operand(isNullNode.getValue());
             result = getGen().getArithmetic().genBinaryExpr(MetalBinaryOp.RELATIONAL_NE, boolLirKind, value, new ConstantValue(intLirKind, PrimitiveConstant.NULL_POINTER));
         } else if (node instanceof ShortCircuitOrNode shortCircuitOrNode) {
-            final Value x = operandOrConjunction(shortCircuitOrNode.getX());
-            final Value y = operandOrConjunction(shortCircuitOrNode.getY());
+            final Value x = shortCircuitOrNode.isXNegated() ? operandOrConjunction(shortCircuitOrNode.getX()) : negatedOperand(shortCircuitOrNode.getX());
+            final Value y = shortCircuitOrNode.isYNegated() ? operandOrConjunction(shortCircuitOrNode.getY()) : negatedOperand(shortCircuitOrNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(MetalBinaryOp.LOGICAL_AND, boolLirKind, x, y);
         } else if (node instanceof IntegerTestNode testNode) {
             final Value x = operand(testNode.getX());
@@ -354,7 +354,6 @@ public class MetalNodeLIRBuilder extends NodeLIRBuilder {
         } else {
             throw new TornadoRuntimeException(String.format("logic node (class=%s)", node.getClass().getName()));
         }
-        setResult(node, result);
         return (MetalLIROp) result;
     }
 
@@ -404,8 +403,8 @@ public class MetalNodeLIRBuilder extends NodeLIRBuilder {
             final Value value = operand(isNullNode.getValue());
             result = getGen().getArithmetic().genBinaryExpr(MetalBinaryOp.RELATIONAL_EQ, boolLirKind, value, new ConstantValue(intLirKind, PrimitiveConstant.NULL_POINTER));
         } else if (node instanceof ShortCircuitOrNode shortCircuitOrNode) {
-            final Value x = operandOrConjunction(shortCircuitOrNode.getX());
-            final Value y = operandOrConjunction(shortCircuitOrNode.getY());
+            final Value x = shortCircuitOrNode.isXNegated() ? negatedOperand(shortCircuitOrNode.getX()) : operandOrConjunction(shortCircuitOrNode.getX());
+            final Value y = shortCircuitOrNode.isYNegated() ? negatedOperand(shortCircuitOrNode.getY()) : operandOrConjunction(shortCircuitOrNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(MetalBinaryOp.LOGICAL_OR, boolLirKind, x, y);
         } else if (node instanceof IntegerTestNode integerTestNode) {
             final Value x = operand(integerTestNode.getX());
@@ -418,6 +417,15 @@ public class MetalNodeLIRBuilder extends NodeLIRBuilder {
         }
         setResult(node, result);
         return (MetalLIROp) result;
+    }
+
+    private Value negatedOperand(ValueNode value) {
+        if (value instanceof LogicNode) {
+            return emitNegatedLogicNode((LogicNode) value);
+        } else {
+            shouldNotReachHere();
+        }
+        return null;
     }
 
     private Value operandOrConjunction(ValueNode value) {

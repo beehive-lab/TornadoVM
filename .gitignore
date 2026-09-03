@@ -1,5 +1,6 @@
 .idea/
 .unittestingStatus
+.flattened-pom.xml
 .build/*.xml
 beehive-spirv-toolkit/
 **/__pycache__/
@@ -30,6 +31,7 @@ tornado.iml
 tornado_unittests.log
 OpenCL-Headers/
 tornado-assembly/src/etc/tornado.backend
+tornado-assembly/src/etc/tornado.jdk
 hs_err_pid*.log
 
 # Temporary, will remove it once dissertation is completed

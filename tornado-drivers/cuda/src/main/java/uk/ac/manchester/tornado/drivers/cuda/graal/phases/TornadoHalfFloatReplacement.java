@@ -24,27 +24,32 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.phases;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.RawConstant;
-import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FixedGuardNode;
-import org.graalvm.compiler.nodes.FixedNode;
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.PiNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.ValuePhiNode;
-import org.graalvm.compiler.nodes.ValueProxyNode;
-import org.graalvm.compiler.nodes.calc.FloatConvertNode;
-import org.graalvm.compiler.nodes.calc.IsNullNode;
-import org.graalvm.compiler.nodes.extended.JavaReadNode;
-import org.graalvm.compiler.nodes.extended.JavaWriteNode;
-import org.graalvm.compiler.nodes.extended.ValueAnchorNode;
-import org.graalvm.compiler.nodes.java.LoadFieldNode;
-import org.graalvm.compiler.nodes.java.LoadIndexedNode;
-import org.graalvm.compiler.nodes.java.NewInstanceNode;
-import org.graalvm.compiler.nodes.memory.address.AddressNode;
-import org.graalvm.compiler.phases.BasePhase;
+import tornado.graal.compiler.core.common.type.ObjectStamp;
+import tornado.graal.compiler.core.common.type.Stamp;
+import tornado.graal.compiler.core.common.type.StampFactory;
+import tornado.graal.compiler.graph.Node;
+import tornado.graal.compiler.nodes.ConstantNode;
+import tornado.graal.compiler.nodes.FixedGuardNode;
+import tornado.graal.compiler.nodes.FixedNode;
+import tornado.graal.compiler.nodes.GraphState;
+import tornado.graal.compiler.nodes.InvokeNode;
+import tornado.graal.compiler.nodes.NodeView;
+import tornado.graal.compiler.nodes.ParameterNode;
+import tornado.graal.compiler.nodes.PiNode;
+import tornado.graal.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.ValuePhiNode;
+import tornado.graal.compiler.nodes.ValueProxyNode;
+import tornado.graal.compiler.nodes.calc.FloatConvertNode;
+import tornado.graal.compiler.nodes.calc.IsNullNode;
+import tornado.graal.compiler.nodes.extended.JavaReadNode;
+import tornado.graal.compiler.nodes.extended.JavaWriteNode;
+import tornado.graal.compiler.nodes.extended.ValueAnchorNode;
+import tornado.graal.compiler.nodes.java.LoadFieldNode;
+import tornado.graal.compiler.nodes.java.LoadIndexedNode;
+import tornado.graal.compiler.nodes.java.NewInstanceNode;
+import tornado.graal.compiler.nodes.memory.address.AddressNode;
+import tornado.graal.compiler.phases.BasePhase;
 import uk.ac.manchester.tornado.api.internal.annotations.HalfType;
 import uk.ac.manchester.tornado.drivers.cuda.graal.HalfFloatStamp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
@@ -79,6 +84,21 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContext> {
+
+    /**
+     * Finds the {@link NewHalfFloatInstance} that the {@code CUDAHalfFloatPlugins} node plugin inserted at the
+     * {@code HalfFloat.<init>} call site for this allocation. It is not always the allocation's immediate fixed
+     * successor: a computed constructor argument (e.g. an array read, {@code new HalfFloat(a.get(i) * 2.0f)})
+     * emits its own fixed nodes between the {@code new} and the {@code <init>} it feeds, so this walks the
+     * straight-line fixed chain forward (bounded, since argument evaluation cannot branch) looking for it.
+     */
+    private static Node findSucceedingHalfFloatInstance(NewInstanceNode newInstanceNode) {
+        Node cursor = newInstanceNode.successors().isNotEmpty() ? newInstanceNode.successors().first() : null;
+        for (int hops = 0; cursor != null && !(cursor instanceof NewHalfFloatInstance) && !(cursor instanceof NewInstanceNode) && hops < 16; hops++) {
+            cursor = cursor.successors().isNotEmpty() ? cursor.successors().first() : null;
+        }
+        return cursor instanceof NewHalfFloatInstance ? cursor : null;
+    }
 
     private static void replaceFieldAccess(LoadFieldNode loadFieldNode) {
         // remove the FixGuardNode associated with the loading of the field
@@ -116,11 +136,20 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
                 && localArray.getCUDAKind() == CUDAKind.HALF) {
             return input;
         }
-        // A swizzled fp16 load produces a HALF-kind value directly, so it is a half-source in the
-        // same way a ReadHalfFloatNode is. Without this case, calling getFloat32() on a value read
-        // through swizzleLoadFp16Stride32 nulls out the convert node's input.
+        // A swizzled fp16 load produces a __half value directly, so it is a valid half-source for
+        // CUDAConvertHalfToFloat (swizzleLoadFp16Stride32(...).getFloat32()).
         if (input instanceof CUDASwizzledLoadFP16Stride32Node) {
             return input;
+        }
+        // A HalfFloat-typed method parameter is itself the half value: when getFloat32() is compiled as its own
+        // device function (not inlined), `this` arrives as a HalfFloat parameter and this.halfFloatValue reads
+        // straight off it, so the ParameterNode is the half-source for CUDAConvertHalfToFloat.
+        if (input instanceof ParameterNode) {
+            Stamp paramStamp = ((ValueNode) input).stamp(NodeView.DEFAULT);
+            if (paramStamp instanceof ObjectStamp objectStamp && objectStamp.type() != null //
+                    && objectStamp.type().getAnnotation(HalfType.class) != null) {
+                return input;
+            }
         }
         if (input instanceof PiNode || input instanceof IsNullNode) {
             nodesToBeDeleted.add(input);
@@ -375,6 +404,20 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
 
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
 
+        // Reflection-path recovery: HalfFloat.getHalfFloatValue()'s InvocationPlugin misses when JVMCI is absent, so
+        // the call survives as a device-function invoke whose generated body dereferences the receiver as an object
+        // pointer (this + 8, the halfFloatValue field offset) instead of returning the half bits - for a small half
+        // value that reads ~address 0x8, faulting with an out-of-bounds global read (seen in the tensor-core kernels
+        // that bit-pack a.get(i).getHalfFloatValue() into shared tiles). Rewrite it to the HalfFloatPlaceholder the
+        // plugin would have produced; the placeholder handler at the end of this phase lowers it to the half bits.
+        for (InvokeNode invoke : graph.getNodes().filter(InvokeNode.class).snapshot()) {
+            if (invoke.callTarget() != null && invoke.callTarget().targetName() != null && invoke.callTarget().targetName().contains("getHalfFloatValue")) {
+                HalfFloatPlaceholder placeholder = graph.addWithoutUnique(new HalfFloatPlaceholder(invoke.callTarget().arguments().get(0)));
+                invoke.replaceAtUsages(placeholder);
+                deleteFixed(invoke);
+            }
+        }
+
         for (ValueAnchorNode valueAnchorNode : graph.getNodes().filter(ValueAnchorNode.class)) {
             ArrayList<PiNode> deletePi = new ArrayList<PiNode>();
             for (Node valueAnchorNodeUsage : valueAnchorNode.usages()) {
@@ -411,8 +454,7 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
 
         for (NewInstanceNode newInstanceNode : graph.getNodes().filter(NewInstanceNode.class)) {
             if (newInstanceNode.instanceClass().getAnnotation(HalfType.class) != null) {
-                if (newInstanceNode.successors().first() instanceof NewHalfFloatInstance) {
-                    NewHalfFloatInstance newHalfFloatInstance = (NewHalfFloatInstance) newInstanceNode.successors().first();
+                if (findSucceedingHalfFloatInstance(newInstanceNode) instanceof NewHalfFloatInstance newHalfFloatInstance) {
                     ValueNode valueInput = getHalfFloatValue(newHalfFloatInstance.getValue(), graph);
                     newInstanceNode.replaceAtUsages(valueInput);
                     deleteFixed(newInstanceNode);
@@ -531,17 +573,48 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             }
         }
 
+        // A `new HalfFloat(...)` passed straight into an intrinsified sink (e.g.
+        // HalfFloatArray.set(int, HalfFloat), lowered directly to WriteHalfFloatNode by its
+        // InvocationPlugin) never has its NewHalfFloatInstance carrier referenced as a data input -
+        // the plugin captures the constructor argument value directly - so it is left as inert
+        // dead weight wired into the fixed control flow (predecessor/successor of real nodes) with
+        // no usages. None of the usage-driven replacement above touches it, and it would otherwise
+        // reach LIR with "node is not LIRLowerable: NewHalfFloatInstance". Any usages that do
+        // remain (should not normally happen once the above has run) are redirected to the raw
+        // value first, matching the write-context handling.
+        for (NewHalfFloatInstance leftover : graph.getNodes().filter(NewHalfFloatInstance.class).snapshot()) {
+            if (leftover.usages().isNotEmpty()) {
+                leftover.replaceAtUsages(leftover.getValue());
+            }
+            deleteFixed(leftover);
+        }
+
         // Replace any remaining HalfFloatPlaceholder nodes in arithmetic contexts
         // (e.g. getHalfFloatValue() used in bit-packing: lo = a.get(i).getHalfFloatValue() & 0xFFFF).
         // These were not consumed by the write-context handler above.
         for (HalfFloatPlaceholder placeholder : graph.getNodes().filter(HalfFloatPlaceholder.class).snapshot()) {
-            if (!placeholder.isDeleted()) {
-                CUDAConvertHalfBitsToIntNode bitsNode =
-                        new CUDAConvertHalfBitsToIntNode(placeholder.getInput());
-                graph.addWithoutUnique(bitsNode);
-                placeholder.replaceAtUsages(bitsNode);
-                placeholder.safeDelete();
+            if (placeholder.isDeleted()) {
+                continue;
             }
+            // A CUDAConvertHalfToFloat usage (from CUDAHalfFloatPlugins#getFloat32, which never goes
+            // through a LoadFieldNode and so is never seen by the replaceFieldAccess/identifyFieldReplacement
+            // path above) needs the placeholder's real underlying half value - e.g. the ReadHalfFloatNode
+            // that ByteArray.getHalfFloat() already produces - so __half2float() decodes actual half bits.
+            // Reinterpreting it as CUDAConvertHalfBitsToIntNode instead (the branch below) hands
+            // __half2float() a plain int, which CUDA's __half(int) ctor treats as a numeric value rather
+            // than raw bits, silently turning e.g. half 1.0 (bit pattern 0x3C00) into 15360.0f.
+            for (CUDAConvertHalfToFloat convert : placeholder.usages().filter(CUDAConvertHalfToFloat.class).snapshot()) {
+                convert.replaceFirstInput(placeholder, placeholder.getInput());
+            }
+            if (placeholder.hasNoUsages()) {
+                placeholder.safeDelete();
+                continue;
+            }
+            CUDAConvertHalfBitsToIntNode bitsNode =
+                    new CUDAConvertHalfBitsToIntNode(placeholder.getInput());
+            graph.addWithoutUnique(bitsNode);
+            placeholder.replaceAtUsages(bitsNode);
+            placeholder.safeDelete();
         }
 
     }

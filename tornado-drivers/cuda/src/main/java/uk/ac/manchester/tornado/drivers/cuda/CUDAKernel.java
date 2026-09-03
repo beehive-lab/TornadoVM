@@ -25,12 +25,17 @@ package uk.ac.manchester.tornado.drivers.cuda;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDAKernelInfo;
 import uk.ac.manchester.tornado.drivers.cuda.exceptions.CUDAException;
+import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDADriverAPI;
+import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDAHandles;
+import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class CUDAKernel {
@@ -52,15 +57,72 @@ public class CUDAKernel {
 
     }
 
-    native static void clReleaseKernel(long kernelId) throws CUDAException;
+    /** OpenCL {@code cl_kernel_info} value queried by the Java layer (see CUDAKernelInfo). */
+    private static final int CL_KERNEL_FUNCTION_NAME = 0x1190;
 
-    native static void clSetKernelArg(long kernelId, int index, long size, byte[] buffer) throws CUDAException;
+    static void clReleaseKernel(long kernelId) throws CUDAException {
+        // The CUfunction is owned by the module, so dropping the handle is all there is to do.
+        CUDAHandles.release(kernelId);
+    }
 
-    native static void clSetKernelArgRef(long kernelId, int index, long buffer) throws CUDAException;
+    /**
+     * Stages the argument bytes so that index {@code index} maps to slot {@code index};
+     * {@code cuLaunchKernel} consumes them as its kernelParams vector. A null {@code buffer}
+     * denotes a {@code __shared__} argument of the given size: CUDA expresses dynamic shared memory
+     * through cuLaunchKernel's sharedMemBytes rather than per argument, so the slot is recorded as
+     * that many zero bytes.
+     */
+    static void clSetKernelArg(long kernelId, int index, long size, byte[] buffer) throws CUDAException {
+        CUDAHandles.Kernel kernel = CUDAHandles.resolve(kernelId, CUDAHandles.Kernel.class);
+        if (kernel == null) {
+            return;
+        }
+        kernel.setArgument(index, buffer == null ? new byte[(int) size] : buffer.clone());
+    }
 
-    native static void clGetKernelInfo(long kernelId, int info, byte[] buffer) throws CUDAException;
+    /** Stages a device pointer argument by value. */
+    static void clSetKernelArgRef(long kernelId, int index, long buffer) throws CUDAException {
+        CUDAHandles.Kernel kernel = CUDAHandles.resolve(kernelId, CUDAHandles.Kernel.class);
+        if (kernel == null) {
+            return;
+        }
+        byte[] value = new byte[Long.BYTES];
+        ByteBuffer.wrap(value).order(CUDADriver.BYTE_ORDER).putLong(buffer);
+        kernel.setArgument(index, value);
+    }
 
-    native static int cuOccupancyMaxPotentialBlockSize(long kernelId) throws CUDAException;
+    static void clGetKernelInfo(long kernelId, int info, byte[] buffer) throws CUDAException {
+        Arrays.fill(buffer, (byte) 0);
+        CUDAHandles.Kernel kernel = CUDAHandles.resolve(kernelId, CUDAHandles.Kernel.class);
+        if (kernel == null || info != CL_KERNEL_FUNCTION_NAME) {
+            return;
+        }
+        byte[] name = kernel.name.getBytes(StandardCharsets.UTF_8);
+        int length = Math.min(name.length, buffer.length - 1);
+        System.arraycopy(name, 0, buffer, 0, length);
+        buffer[length] = 0;
+    }
+
+    /**
+     * The block size (threads per block) that maximises occupancy for this kernel, accounting for
+     * its register and shared-memory usage. The scheduler uses it to pick a launchable block for
+     * register-heavy kernels. Zero on failure.
+     */
+    static int cuOccupancyMaxPotentialBlockSize(long kernelId) throws CUDAException {
+        CUDAHandles.Kernel kernel = CUDAHandles.resolve(kernelId, CUDAHandles.Kernel.class);
+        if (kernel == null) {
+            return 0;
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment minGridSize = FFMSupport.allocateInt(arena);
+            MemorySegment blockSize = FFMSupport.allocateInt(arena);
+            int result = CUDADriverAPI.cuOccupancyMaxPotentialBlockSize(minGridSize, blockSize, kernel.function, 0, 0, 0);
+            if (result != CUDADriverAPI.CUDA_SUCCESS) {
+                return 0;
+            }
+            return blockSize.get(FFMSupport.C_INT, 0);
+        }
+    }
 
     private int maxPotentialBlockSize = -1;
 

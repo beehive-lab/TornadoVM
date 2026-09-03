@@ -37,6 +37,7 @@ import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.cublas.CuBlasLt;
 import uk.ac.manchester.tornado.cublas.enums.CuBlasOperation;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+import uk.ac.manchester.tornado.cublas.provider.CuBlasLibraryProvider;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
 
 /**
@@ -66,10 +67,8 @@ public class TestCuBlasLt extends TornadoTestBase {
                 default -> throw new TornadoVMCUDANotSupported(message);
             }
         }
-        try {
-            System.loadLibrary("tornado-cublas");
-        } catch (UnsatisfiedLinkError e) {
-            throw new TornadoVMCUDANotSupported("libtornado-cublas is not available: " + e.getMessage());
+        if (!CuBlasLibraryProvider.isAvailable()) {
+            throw new TornadoVMCUDANotSupported("cuBLAS is not available on this host");
         }
     }
 

@@ -29,13 +29,18 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 /**
+ * Two sequential tasks on the same {@code FloatArray}: {@code foo} adds 100,
+ * then {@code bar} adds 200.
  * <p>
- * Run with.
+ * The {@code TaskGraph} copies {@code x} to the device, runs both
+ * {@code @Parallel} tasks, and copies {@code y} back on every execution.
+ * </p>
+ * <p>
+ * How to run?
  * </p>
  * <code>
  * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.MultipleTasks
  * </code>
- *
  */
 public class MultipleTasks {
 

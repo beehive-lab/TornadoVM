@@ -25,13 +25,13 @@ package uk.ac.manchester.tornado.runtime.graal.phases.sketcher;
 
 import java.util.Optional;
 
-import org.graalvm.compiler.core.common.type.Stamp;
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.NodeView;
-import org.graalvm.compiler.nodes.PhiNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.phases.BasePhase;
+import tornado.graal.compiler.core.common.type.Stamp;
+import tornado.graal.compiler.nodes.GraphState;
+import tornado.graal.compiler.nodes.NodeView;
+import tornado.graal.compiler.nodes.PhiNode;
+import tornado.graal.compiler.nodes.StructuredGraph;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.phases.BasePhase;
 
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
 

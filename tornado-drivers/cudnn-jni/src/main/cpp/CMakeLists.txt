@@ -13,19 +13,45 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Header-only cudnn-frontend (NVIDIA-recommended interface to the cuDNN graph
 # API), used for fused patterns such as SDPA / flash attention.
-include(FetchContent)
-FetchContent_Declare(
-    cudnn_frontend
-    GIT_REPOSITORY https://github.com/NVIDIA/cudnn-frontend.git
-    GIT_TAG v1.25.0
-    GIT_SHALLOW TRUE
-)
-# Header-only: populate the sources but do NOT add_subdirectory (the frontend's
-# own CMakeLists requires cmake >= 3.23; we only need its include/ directory).
-FetchContent_GetProperties(cudnn_frontend)
-if(NOT cudnn_frontend_POPULATED)
-    FetchContent_Populate(cudnn_frontend)
+#
+# A plain FetchContent_Populate() checks out cudnn-frontend's entire tree,
+# including python/ and samples/ - full of deeply nested, long, discrete/
+# template-mangled filenames (e.g. python/cudnn/discrete_grouped_gemm/
+# discrete_grouped_gemm_dswiglu/discrete_B_blockscaled_grouped_gemm_dglu_dbias.py).
+# Header-only: we only need its include/ directory (the frontend's own
+# CMakeLists requires cmake >= 3.23 and is never invoked here), so sparse-
+# checkout (cone mode) just that - same fix as cutlass-jni/CMakeLists.txt,
+# and for the same reason: under a deep build path (e.g. a release-build
+# worktree under the OS temp dir) the combined path length for those unused
+# files exceeds Windows' 260-char MAX_PATH, and git's checkout fails with
+# "unable to create file ...: Filename too long" even with core.longpaths=true
+# set - confirmed in CI, this git-for-windows install doesn't fully honor that
+# flag for the checkout inside git clone.
+set(CUDNN_FRONTEND_SOURCE_DIR "${CMAKE_BINARY_DIR}/_deps/cudnn_frontend-src")
+if(NOT EXISTS "${CUDNN_FRONTEND_SOURCE_DIR}/include/cudnn_frontend.h")
+    find_package(Git REQUIRED)
+    file(REMOVE_RECURSE "${CUDNN_FRONTEND_SOURCE_DIR}")
+    file(MAKE_DIRECTORY "${CUDNN_FRONTEND_SOURCE_DIR}")
+
+    macro(cudnn_frontend_git)
+        execute_process(
+            COMMAND ${GIT_EXECUTABLE} ${ARGN}
+            WORKING_DIRECTORY "${CUDNN_FRONTEND_SOURCE_DIR}"
+            RESULT_VARIABLE _cudnn_frontend_git_rc
+        )
+        if(NOT _cudnn_frontend_git_rc EQUAL 0)
+            message(FATAL_ERROR "cudnn-frontend sparse checkout failed: git ${ARGN}")
+        endif()
+    endmacro()
+
+    cudnn_frontend_git(init -q)
+    cudnn_frontend_git(remote add origin https://github.com/NVIDIA/cudnn-frontend.git)
+    cudnn_frontend_git(sparse-checkout init --cone)
+    cudnn_frontend_git(sparse-checkout set include)
+    cudnn_frontend_git(fetch --depth 1 origin v1.25.0)
+    cudnn_frontend_git(checkout FETCH_HEAD)
 endif()
+set(cudnn_frontend_SOURCE_DIR "${CUDNN_FRONTEND_SOURCE_DIR}")
 
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_VERBOSE_MAKEFILE on)
@@ -51,7 +77,11 @@ include_directories(
 	$ENV{C_INCLUDE_PATH}
 )
 
-file(GLOB_RECURSE SOURCE_FILES "source/*.cpp")
+# Only the fused SDPA path still needs a compiled shim: it is built on cudnn-frontend, a
+# header-only C++ graph API with no C ABI, so java.lang.foreign cannot call it. The rest of the
+# cuDNN surface is bound directly from Java (see CuDnnNativeLib), and its former translation
+# unit has been deleted.
+set(SOURCE_FILES "source/tornado-cudnn-sdpa.cpp")
 add_library(tornado-cudnn SHARED ${SOURCE_FILES})
 
 # Prefer $CUDA_PATH and /usr/local/cuda over the CMake-discovered toolkit so

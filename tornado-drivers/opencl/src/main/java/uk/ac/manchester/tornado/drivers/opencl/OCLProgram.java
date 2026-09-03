@@ -34,14 +34,19 @@ import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProgramInfo.CL_PR
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
+import uk.ac.manchester.tornado.drivers.opencl.ffm.OpenCLAPI;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class OCLProgram {
@@ -63,17 +68,100 @@ public class OCLProgram {
         this.logger = new TornadoLogger(this.getClass());
     }
 
-    static native void clReleaseProgram(long programId) throws OCLException;
+    /** {@code CL_PROGRAM_BINARIES}; the sizes query already has an enum constant. */
+    private static final int CL_PROGRAM_BINARIES = 0x1166;
 
-    static native void clBuildProgram(long programId, long[] devices, String options) throws OCLException;
+    /** Reusable per-thread native buffer the driver answers info queries into. */
+    private static final FFMSupport.Staging INFO_STAGING = new FFMSupport.Staging();
 
-    static native void clGetProgramInfo(long programId, int param, byte[] buffer) throws OCLException;
+    static void clReleaseProgram(long programId) throws OCLException {
+        OpenCLAPI.clReleaseProgram(programId);
+    }
 
-    static native void clGetProgramBuildInfo(long programId, long deviceId, int param, byte[] buffer) throws OCLException;
+    static void clBuildProgram(long programId, long[] devices, String options) throws OCLException {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment deviceIds = FFMSupport.allocateArray(arena, FFMSupport.C_POINTER, Math.max(devices.length, 1));
+            for (int i = 0; i < devices.length; i++) {
+                deviceIds.set(FFMSupport.C_POINTER, i * FFMSupport.C_POINTER.byteSize(), MemorySegment.ofAddress(devices[i]));
+            }
+            MemorySegment buildOptions = options == null ? MemorySegment.NULL : FFMSupport.allocateCString(arena, options);
+            // The build status is not raised here: the caller reads it back with
+            // clGetProgramBuildInfo, which is also where the compiler log comes from.
+            OpenCLAPI.clBuildProgram(programId, devices.length, deviceIds, buildOptions, MemorySegment.NULL, MemorySegment.NULL);
+        }
+    }
 
-    static native long clCreateKernel(long programId, String name) throws OCLException;
+    static void clGetProgramInfo(long programId, int param, byte[] buffer) throws OCLException {
+        Arrays.fill(buffer, (byte) 0);
+        MemorySegment value = INFO_STAGING.forBytes(buffer.length);
+        if (OpenCLAPI.clGetProgramInfo(programId, param, buffer.length, value, MemorySegment.NULL) != OpenCLAPI.CL_SUCCESS) {
+            return;
+        }
+        MemorySegment.copy(value, FFMSupport.C_CHAR, 0, buffer, 0, buffer.length);
+    }
 
-    static native void getBinaries(long programId, long numDevices, ByteBuffer buffer) throws OCLException;
+    static void clGetProgramBuildInfo(long programId, long deviceId, int param, byte[] buffer) throws OCLException {
+        Arrays.fill(buffer, (byte) 0);
+        MemorySegment value = INFO_STAGING.forBytes(buffer.length);
+        if (OpenCLAPI.clGetProgramBuildInfo(programId, deviceId, param, buffer.length, value, MemorySegment.NULL) != OpenCLAPI.CL_SUCCESS) {
+            return;
+        }
+        MemorySegment.copy(value, FFMSupport.C_CHAR, 0, buffer, 0, buffer.length);
+    }
+
+    static long clCreateKernel(long programId, String name) throws OCLException {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment status = FFMSupport.allocateInt(arena);
+            long kernel = OpenCLAPI.clCreateKernel(programId, FFMSupport.allocateCString(arena, name), status);
+            int result = status.get(FFMSupport.C_INT, 0);
+            if (result != OpenCLAPI.CL_SUCCESS) {
+                throw new OCLException("clCreateKernel(" + name + ") failed: CL error " + result);
+            }
+            return kernel;
+        }
+    }
+
+    /**
+     * Copies each device's compiled binary into the provided direct buffer, back to back.
+     *
+     * <p>
+     * {@code CL_PROGRAM_BINARIES} takes an array of destination pointers, one per device, which the
+     * driver writes through; the sizes query first says how much each will take, so the pointers can
+     * be laid out end to end.
+     */
+    static void getBinaries(long programId, long numDevices, ByteBuffer buffer) throws OCLException {
+        int devices = (int) numDevices;
+        if (devices <= 0) {
+            return;
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment sizes = FFMSupport.allocateArray(arena, FFMSupport.C_LONG, devices);
+            if (OpenCLAPI.clGetProgramInfo(programId, CL_PROGRAM_BINARY_SIZES.getValue(), FFMSupport.C_LONG.byteSize() * devices, sizes, MemorySegment.NULL) != OpenCLAPI.CL_SUCCESS) {
+                return;
+            }
+            long total = 0;
+            for (int i = 0; i < devices; i++) {
+                total += sizes.get(FFMSupport.C_LONG, i * FFMSupport.C_LONG.byteSize());
+            }
+            if (total <= 0) {
+                return;
+            }
+            MemorySegment staging = arena.allocate(total, 8);
+            MemorySegment binaries = FFMSupport.allocateArray(arena, FFMSupport.C_POINTER, devices);
+            long offset = 0;
+            for (int i = 0; i < devices; i++) {
+                binaries.set(FFMSupport.C_POINTER, i * FFMSupport.C_POINTER.byteSize(), staging.asSlice(offset));
+                offset += sizes.get(FFMSupport.C_LONG, i * FFMSupport.C_LONG.byteSize());
+            }
+            if (OpenCLAPI.clGetProgramInfo(programId, CL_PROGRAM_BINARIES, FFMSupport.C_POINTER.byteSize() * devices, binaries, MemorySegment.NULL) != OpenCLAPI.CL_SUCCESS) {
+                return;
+            }
+            int length = (int) Math.min(total, buffer.remaining());
+            byte[] bytes = new byte[length];
+            MemorySegment.copy(staging, FFMSupport.C_CHAR, 0, bytes, 0, length);
+            buffer.put(bytes);
+        }
+    }
 
     public OCLBuildStatus getStatus(long deviceId) {
         OCLBuildStatus result;

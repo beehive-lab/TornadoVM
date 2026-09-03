@@ -31,13 +31,17 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 /**
+ * Sums a {@code FloatArray} with {@code @Reduce} on a {@code @Parallel} loop.
+ * <p>
+ * Copies the input on every execution, runs {@code reductionAddFloats}, and
+ * copies the reduced sum back.
+ * </p>
  * <p>
  * How to run?
  * </p>
  * <code>
  * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.reductions.ReductionAddFloats
  * </code>
- *
  */
 public class ReductionAddFloats {
 

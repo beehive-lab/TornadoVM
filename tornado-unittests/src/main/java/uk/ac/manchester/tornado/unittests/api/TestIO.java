@@ -171,6 +171,12 @@ public class TestIO extends TornadoTestBase {
     public void testCopyInWithDevice() throws TornadoExecutionPlanException {
         final int N = 16384;
         final int ITERATIONS = 40;
+        // The profiler's device timestamps bracket the host work that issues a copy -- the end
+        // event cannot be recorded until the host gets to it -- so the first executions of a plan
+        // measure the JIT ramp of the issue path as well as the transfer itself. Without a warm-up,
+        // the first measured window is systematically slower than the second for reasons that have
+        // nothing to do with what this test is checking.
+        final int WARM_UP_ITERATIONS = 30;
 
         FloatArray arrayA = createAndInitializeArray(N);
         FloatArray arrayB = createAndInitializeArray(N);
@@ -187,6 +193,14 @@ public class TestIO extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            for (int i = 0; i < WARM_UP_ITERATIONS; i++) {
+                executionPlan.execute();
+            }
+            // Both measured windows start from a freed device, so each pays exactly one
+            // FIRST_EXECUTION copy of arrayA. Warming up without this would leave arrayA resident
+            // for the first window but not the second, trading one asymmetry for another.
+            executionPlan.freeDeviceMemory();
+
             long copyInSumSimpleExec = 0L;
             for (int i = 0; i < ITERATIONS; i++) {
                 TornadoExecutionResult executionResult = executionPlan.execute();
@@ -201,8 +215,11 @@ public class TestIO extends TornadoTestBase {
                 TornadoExecutionResult executionResult = executionPlan.execute();
                 copyInSumSimpleExecWithDev += executionResult.getProfilerResult().getDeviceWriteTime();
             }
-            // Generous assertions with delta of 25%
-            assertEquals(copyInSumSimpleExec, copyInSumSimpleExecWithDev, (float) copyInSumSimpleExec / 4);
+            // What is being checked is that withDevice does not turn a FIRST_EXECUTION transfer
+            // into an every-execution one, which would roughly double the second window. The bound
+            // is deliberately loose: these are wall-clock device timings on a shared GPU, and a
+            // tighter one fails on scheduling noise rather than on the behaviour under test.
+            assertEquals(copyInSumSimpleExec, copyInSumSimpleExecWithDev, (float) copyInSumSimpleExec / 2);
         }
     }
     // CHECKSTYLE:ON

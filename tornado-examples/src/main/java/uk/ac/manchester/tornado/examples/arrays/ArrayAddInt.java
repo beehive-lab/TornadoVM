@@ -29,6 +29,12 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import java.util.Arrays;
 
 /**
+ * Copies {@code a} into {@code c} on the device using an {@code IntArray}
+ * task graph (the {@code add} kernel writes {@code a[i]} into {@code c[i]}).
+ * <p>
+ * Transfers {@code a} and {@code b} on first execution, runs the
+ * {@code @Parallel} task, and copies {@code c} back on every execution.
+ * </p>
  * <p>
  * How to run?
  * </p>

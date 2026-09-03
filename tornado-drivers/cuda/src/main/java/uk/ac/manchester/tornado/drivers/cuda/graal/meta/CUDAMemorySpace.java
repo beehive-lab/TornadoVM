@@ -21,7 +21,7 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.graal.meta;
 
-import org.graalvm.compiler.core.common.LIRKind;
+import tornado.graal.compiler.core.common.LIRKind;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
