@@ -5,7 +5,7 @@
 
     <groupId>io.github.beehive-lab</groupId>
     <artifactId>tornado</artifactId>
-    <version>6.0.1-dev</version>
+    <version>${revision}</version>
     <packaging>pom</packaging>
     <name>tornado</name>
     <url>https://github.com/beehive-lab/tornadovm</url>
@@ -49,8 +49,16 @@
              directory/archive name, tornado.release's version= field, Maven Central coordinates)
              correctly reflects the JDK actually being built, with no committed-file mutation
              needed at build time. Flattened to a concrete version by flatten-maven-plugin below
-             before install/deploy, since only THIS reactor's own POM parsing understands ${revision}. -->
-        <revision>5.2.1-jdk21-dev</revision>
+             before install/deploy, since only THIS reactor's own POM parsing understands ${revision}.
+
+             Release automation MUST keep every pom's <version>/<parent><version> as the literal
+             ${revision} and only bump this property and the two profile overrides below - via
+             scripts/set-maven-version.py, never `mvn versions:set`, which rewrites ${revision} to a
+             hard-coded string so every build then stamps the same JDK-less version regardless of
+             the active jdkNN profile (that regression is what broke the 6.0.0 to 6.0.1-dev bump:
+             the SDK's tornado-api jar lost its -jdkNN suffix and a jdk21 preview-enabled jar
+             leaked into jdk22plus consumer builds). -->
+        <revision>6.0.1-jdk21-dev</revision>
         <tornado.version>${project.version}</tornado.version>
         <tornado.backend>opencl</tornado.backend>
         <graalvm.version>23.1.0</graalvm.version>
@@ -364,7 +372,7 @@
                 <activeByDefault>false</activeByDefault>
             </activation>
             <properties>
-                <revision>5.2.1-jdk21-dev</revision>
+                <revision>6.0.1-jdk21-dev</revision>
                 <!-- Runtime module access for pure-JVM unit tests (mirrors this profile's compilerArgs). -->
                 <tornado.test.argLine>--enable-preview --add-modules=jdk.incubator.vector --add-modules=jdk.internal.vm.ci --add-exports jdk.internal.vm.ci/jdk.vm.ci.meta=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.code=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.common=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=ALL-UNNAMED</tornado.test.argLine>
             </properties>
@@ -470,7 +478,7 @@
                 <activeByDefault>false</activeByDefault>
             </activation>
             <properties>
-                <revision>5.2.1-jdk22plus-dev</revision>
+                <revision>6.0.1-jdk22plus-dev</revision>
                 <!-- Runtime module access for the opt-in pure-JVM unit tests, which run under the
                      BUILD JDK; specialised below when that JDK still ships the platform module. -->
                 <tornado.test.argLine>--add-modules=jdk.incubator.vector</tornado.test.argLine>
@@ -599,8 +607,8 @@
         <finalName>${project.artifactId}-${project.version}-${buildNumber}</finalName>
         <plugins>
             <!-- CI-friendly versions: <revision> in <properties> above (default jdk21, overridden per
-                 jdkNN profile) lets every jdk21/25/26/27 profile drive `${project.version}` without
-                 ever mutating a committed pom.xml. This plugin resolves ${revision} into the concrete
+                 jdkNN profile) lets the jdk21 and jdk22plus profiles each drive `${project.version}`
+                 without ever mutating a committed pom.xml. This plugin resolves ${revision} into the concrete
                  version in the POM that actually gets installed/deployed (mvn's own in-reactor
                  resolution already understands ${revision} for module-to-module dependency wiring;
                  this is only needed for the *published* .pom file consumers see).
