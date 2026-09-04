@@ -300,7 +300,19 @@ public final class CUDACompiler {
                     // caller, with the complete log.
                     return new NvrtcResult(false, null, log);
                 }
-                return new NvrtcResult(true, image(arena, program, useCubin), log);
+                // A compile that succeeded but yielded nothing to load is a failure here, not a
+                // success with an empty image: reporting it as success sets BUILD_SUCCESS and
+                // defers the problem to cuModuleLoadDataEx, which sees a zero-length image and
+                // reports only CUDA_ERROR_INVALID_PTX - naming neither the retrieval that failed
+                // nor the kernel it belonged to. Retrieval fails when the requested image format
+                // does not match what was compiled (asking for a cubin from a compute_XX virtual
+                // target, say), so say which format was asked for.
+                byte[] compiled = image(arena, program, useCubin);
+                if (compiled.length == 0) {
+                    String format = useCubin ? "cubin" : "PTX";
+                    return new NvrtcResult(false, null, "NVRTC reported success but produced no " + format + " image for this kernel." + (log.isEmpty() ? "" : "\n\nNVRTC log:\n" + log));
+                }
+                return new NvrtcResult(true, compiled, log);
             } finally {
                 MemorySegment handle = FFMSupport.allocatePointer(arena);
                 handle.set(FFMSupport.C_POINTER, 0, MemorySegment.ofAddress(program));
@@ -443,9 +455,22 @@ public final class CUDACompiler {
             archFallbackWarned = true;
         }
         int target = fallbackArch > 0 ? fallbackArch : gpuArch;
+        // Name the NVRTC that imposed the cap. A host commonly has more than one toolkit -- a
+        // distribution package plus a newer hand-installed one -- and "upgrade the CUDA toolkit"
+        // is unactionable, even misleading, when the newer toolkit is already installed and simply
+        // was not the one loaded.
+        String library = NVRTCAPI.loadedLibrary();
+        int version = version();
+        StringBuilder which = new StringBuilder();
+        if (version >= 0) {
+            which.append(" CUDA ").append(version / 1000).append('.').append(version % 1000);
+        }
+        if (library != null) {
+            which.append(" from ").append(library);
+        }
         System.out.println(LOG_PREFIX + "WARNING: CUDA toolkit (NVRTC max sm_" + maxSupportedArch + ") predates this GPU (sm_" + gpuArch + "). Using compute_" + target
-                + " PTX JIT'd by the driver - functional but not optimal (extra load-time JIT; codegen limited to the compute_" + target + " ISA). Upgrade the CUDA toolkit to one supporting sm_"
-                + gpuArch + " for native codegen.");
+                + " PTX JIT'd by the driver - functional but not optimal (extra load-time JIT; codegen limited to the compute_" + target + " ISA). The NVRTC in use is" + which
+                + ". Install, or point CUDA_PATH / TORNADO_NVRTC_LIBRARY at, a CUDA toolkit supporting sm_" + gpuArch + " for native codegen.");
     }
 
     /**
@@ -573,7 +598,7 @@ public final class CUDACompiler {
      */
     private static String headerUnresolvableMessage() {
         return "NVRTC cannot resolve <cuda_fp16.h>: this NVRTC provides no built-in CUDA headers and no CUDA toolkit include directory containing cuda_fp16.h was found "
-                + "(checked $CUDA_PATH/$CUDA_HOME/$CUDA_ROOT/include, /usr/local/cuda/include, /usr/include). "
+                + "(checked $CUDA_PATH/$CUDA_HOME/$CUDA_ROOT/include, /usr/local/cuda*/include, /usr/include). "
                 + "Install a CUDA toolkit or set CUDA_PATH to one so the CUDA backend can compile FP16 kernels.";
     }
 
