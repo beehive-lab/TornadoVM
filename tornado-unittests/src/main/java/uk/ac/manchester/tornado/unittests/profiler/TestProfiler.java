@@ -51,6 +51,41 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  */
 public class TestProfiler extends TornadoTestBase {
 
+    /**
+     * Asserts every counter a profiled execution is expected to populate, naming the counter and
+     * the value it actually held when one of them does not.
+     *
+     * <p>
+     * The same twelve assertions were written out at three call sites with no messages, so a zero
+     * counter failed as {@code [REASON] null} -- identifying neither which assertion tripped nor
+     * what it read. That matters here because the counters do not fail as a group: a backend can
+     * report real compile and write times while a dispatch counter is stuck at zero.
+     * </p>
+     */
+    private static void assertProfilerCountersPopulated(TornadoProfilerResult profiler) {
+        assertPositive("getTotalTime()", profiler.getTotalTime());
+        assertPositive("getTornadoCompilerTime()", profiler.getTornadoCompilerTime());
+        assertPositive("getCompileTime()", profiler.getCompileTime());
+        assertNotNegative("getDataTransfersTime()", profiler.getDataTransfersTime());
+        assertNotNegative("getDeviceWriteTime()", profiler.getDeviceWriteTime());
+        assertPositive("getDataTransferDispatchTime()", profiler.getDataTransferDispatchTime());
+        assertPositive("getKernelDispatchTime()", profiler.getKernelDispatchTime());
+        assertPositive("getDeviceReadTime()", profiler.getDeviceReadTime());
+
+        assertEquals("getDeviceWriteTime() + getDeviceReadTime() should equal getDataTransfersTime()", //
+                profiler.getDeviceWriteTime() + profiler.getDeviceReadTime(), profiler.getDataTransfersTime());
+        assertEquals("getTornadoCompilerTime() + getDriverInstallTime() should equal getCompileTime()", //
+                profiler.getTornadoCompilerTime() + profiler.getDriverInstallTime(), profiler.getCompileTime());
+    }
+
+    private static void assertPositive(String counter, long value) {
+        assertTrue(counter + " should be > 0, was " + value, value > 0);
+    }
+
+    private static void assertNotNegative(String counter, long value) {
+        assertTrue(counter + " should be >= 0, was " + value, value >= 0);
+    }
+
     private static void reduction(float[] input, @Reduce float[] output) {
         for (@Parallel int i = 0; i < input.length; i++) {
             output[0] += input[i];
@@ -86,21 +121,7 @@ public class TestProfiler extends TornadoTestBase {
             // Execute the plan (default TornadoVM optimization choices)
             TornadoExecutionResult executionResult = plan.withProfiler(ProfilerMode.SILENT).execute();
 
-            assertTrue(executionResult.getProfilerResult().getTotalTime() > 0);
-            assertTrue(executionResult.getProfilerResult().getTornadoCompilerTime() > 0);
-            assertTrue(executionResult.getProfilerResult().getCompileTime() > 0);
-            assertTrue(executionResult.getProfilerResult().getDataTransfersTime() >= 0);
-            assertTrue(executionResult.getProfilerResult().getDeviceReadTime() >= 0);
-            assertTrue(executionResult.getProfilerResult().getDeviceWriteTime() >= 0);
-            assertTrue(executionResult.getProfilerResult().getDataTransferDispatchTime() > 0);
-            assertTrue(executionResult.getProfilerResult().getKernelDispatchTime() > 0);
-            assertTrue(executionResult.getProfilerResult().getDeviceWriteTime() >= 0);
-            assertTrue(executionResult.getProfilerResult().getDeviceReadTime() > 0);
-
-            assertEquals(executionResult.getProfilerResult().getDeviceWriteTime() + executionResult.getProfilerResult().getDeviceReadTime(), executionResult.getProfilerResult()
-                    .getDataTransfersTime());
-            assertEquals(executionResult.getProfilerResult().getTornadoCompilerTime() + executionResult.getProfilerResult().getDriverInstallTime(), executionResult.getProfilerResult()
-                    .getCompileTime());
+            assertProfilerCountersPopulated(executionResult.getProfilerResult());
 
             // Disable profiler
             plan.withoutProfiler();
@@ -172,19 +193,7 @@ public class TestProfiler extends TornadoTestBase {
 
                 TornadoProfilerResult profilerResult = executionResult.getProfilerResult();
 
-            assertTrue(profilerResult.getTotalTime() > 0);
-            assertTrue(profilerResult.getTornadoCompilerTime() > 0);
-            assertTrue(profilerResult.getCompileTime() > 0);
-            assertTrue(profilerResult.getDataTransfersTime() >= 0);
-            assertTrue(profilerResult.getDeviceReadTime() >= 0);
-            assertTrue(profilerResult.getDeviceWriteTime() >= 0);
-            assertTrue(profilerResult.getDataTransferDispatchTime() > 0);
-            assertTrue(profilerResult.getKernelDispatchTime() > 0);
-            assertTrue(profilerResult.getDeviceWriteTime() >= 0);
-            assertTrue(profilerResult.getDeviceReadTime() > 0);
-
-            assertEquals(profilerResult.getDeviceWriteTime() + profilerResult.getDeviceReadTime(), profilerResult.getDataTransfersTime());
-            assertEquals(profilerResult.getTornadoCompilerTime() + profilerResult.getDriverInstallTime(), profilerResult.getCompileTime());
+            assertProfilerCountersPopulated(profilerResult);
         }
     }
 
@@ -214,21 +223,7 @@ public class TestProfiler extends TornadoTestBase {
             // Execute the plan (default TornadoVM optimization choices)
             TornadoExecutionResult executionResult = executionPlan.execute();
 
-                assertTrue(executionResult.getProfilerResult().getTotalTime() > 0);
-            assertTrue(executionResult.getProfilerResult().getTornadoCompilerTime() > 0);
-            assertTrue(executionResult.getProfilerResult().getCompileTime() > 0);
-            assertTrue(executionResult.getProfilerResult().getDataTransfersTime() >= 0);
-            assertTrue(executionResult.getProfilerResult().getDeviceReadTime() >= 0);
-            assertTrue(executionResult.getProfilerResult().getDeviceWriteTime() >= 0);
-            assertTrue(executionResult.getProfilerResult().getDataTransferDispatchTime() > 0);
-            assertTrue(executionResult.getProfilerResult().getKernelDispatchTime() > 0);
-            assertTrue(executionResult.getProfilerResult().getDeviceWriteTime() >= 0);
-            assertTrue(executionResult.getProfilerResult().getDeviceReadTime() > 0);
-
-            assertEquals(executionResult.getProfilerResult().getDeviceWriteTime() + executionResult.getProfilerResult().getDeviceReadTime(), executionResult.getProfilerResult()
-                    .getDataTransfersTime());
-            assertEquals(executionResult.getProfilerResult().getTornadoCompilerTime() + executionResult.getProfilerResult().getDriverInstallTime(), executionResult.getProfilerResult()
-                    .getCompileTime());
+            assertProfilerCountersPopulated(executionResult.getProfilerResult());
 
             executionPlan.withoutProfiler().execute();
         }
