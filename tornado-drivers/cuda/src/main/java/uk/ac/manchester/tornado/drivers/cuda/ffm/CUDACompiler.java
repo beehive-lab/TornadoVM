@@ -455,9 +455,22 @@ public final class CUDACompiler {
             archFallbackWarned = true;
         }
         int target = fallbackArch > 0 ? fallbackArch : gpuArch;
+        // Name the NVRTC that imposed the cap. A host commonly has more than one toolkit -- a
+        // distribution package plus a newer hand-installed one -- and "upgrade the CUDA toolkit"
+        // is unactionable, even misleading, when the newer toolkit is already installed and simply
+        // was not the one loaded.
+        String library = NVRTCAPI.loadedLibrary();
+        int version = version();
+        StringBuilder which = new StringBuilder();
+        if (version >= 0) {
+            which.append(" CUDA ").append(version / 1000).append('.').append(version % 1000);
+        }
+        if (library != null) {
+            which.append(" from ").append(library);
+        }
         System.out.println(LOG_PREFIX + "WARNING: CUDA toolkit (NVRTC max sm_" + maxSupportedArch + ") predates this GPU (sm_" + gpuArch + "). Using compute_" + target
-                + " PTX JIT'd by the driver - functional but not optimal (extra load-time JIT; codegen limited to the compute_" + target + " ISA). Upgrade the CUDA toolkit to one supporting sm_"
-                + gpuArch + " for native codegen.");
+                + " PTX JIT'd by the driver - functional but not optimal (extra load-time JIT; codegen limited to the compute_" + target + " ISA). The NVRTC in use is" + which
+                + ". Install, or point CUDA_PATH / TORNADO_NVRTC_LIBRARY at, a CUDA toolkit supporting sm_" + gpuArch + " for native codegen.");
     }
 
     /**
