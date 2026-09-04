@@ -135,7 +135,8 @@ public abstract class MetalKernelScheduler {
         }
     }
 
-    public int submit(long executionPlanId, final MetalKernel kernel, final TaskDataContext meta, final int[] waitEvents, long batchThreads) {
+    /** Calculates the launch geometry without submitting the kernel. */
+    public void prepareLaunch(final MetalKernel kernel, final TaskDataContext meta, long batchThreads) {
         if (!meta.isWorkerGridAvailable()) {
             if (!meta.isGlobalWorkDefined()) {
                 calculateGlobalWork(meta, batchThreads);
@@ -147,6 +148,10 @@ public abstract class MetalKernelScheduler {
         } else {
             checkLocalWorkGroupFitsOnDevice(meta);
         }
+    }
+
+    public int submit(long executionPlanId, final MetalKernel kernel, final TaskDataContext meta, final int[] waitEvents, long batchThreads) {
+        prepareLaunch(kernel, meta, batchThreads);
 
         if (meta.isThreadInfoEnabled()) {
             meta.printThreadDims();
@@ -157,17 +162,7 @@ public abstract class MetalKernelScheduler {
     }
 
     public int submit(long executionPlanId, final MetalKernel kernel, final TaskDataContext meta, final long[] waitEvents, long batchThreads) {
-        if (!meta.isWorkerGridAvailable()) {
-            if (!meta.isGlobalWorkDefined()) {
-                calculateGlobalWork(meta, batchThreads);
-            }
-            if (!meta.isLocalWorkDefined()) {
-                calculateLocalWork(meta);
-                checkAndAdaptLocalWork(meta);
-            }
-        } else {
-            checkLocalWorkGroupFitsOnDevice(meta);
-        }
+        prepareLaunch(kernel, meta, batchThreads);
 
         if (meta.isThreadInfoEnabled()) {
             meta.printThreadDims();

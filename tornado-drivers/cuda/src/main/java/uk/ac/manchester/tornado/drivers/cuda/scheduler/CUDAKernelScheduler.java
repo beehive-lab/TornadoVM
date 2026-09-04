@@ -127,7 +127,8 @@ public abstract class CUDAKernelScheduler {
         }
     }
 
-    public int submit(long executionPlanId, final CUDAKernel kernel, final TaskDataContext meta, final int[] waitEvents, long batchThreads) {
+    /** Calculates the launch geometry without submitting the kernel. */
+    public void prepareLaunch(final CUDAKernel kernel, final TaskDataContext meta, long batchThreads) {
         if (!meta.isWorkerGridAvailable()) {
             if (!meta.isGlobalWorkDefined()) {
                 calculateGlobalWork(meta, batchThreads);
@@ -149,6 +150,10 @@ public abstract class CUDAKernelScheduler {
         } else {
             checkLocalWorkGroupFitsOnDevice(meta);
         }
+    }
+
+    public int submit(long executionPlanId, final CUDAKernel kernel, final TaskDataContext meta, final int[] waitEvents, long batchThreads) {
+        prepareLaunch(kernel, meta, batchThreads);
 
         if (meta.isThreadInfoEnabled()) {
             meta.printThreadDims();

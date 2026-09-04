@@ -84,4 +84,8 @@ public interface OCLDeviceContextInterface extends TornadoDeviceContext {
 
     OCLProgram createProgramWithIL(byte[] binary, long[] lengths);
 
+    long getNativeStream(long executionPlanId);
+
+    long getNativeContext(long executionPlanId);
+
 }

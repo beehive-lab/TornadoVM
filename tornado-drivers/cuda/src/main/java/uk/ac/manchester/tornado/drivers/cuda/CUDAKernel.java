@@ -210,4 +210,13 @@ public class CUDAKernel {
     public long getOclKernelID() {
         return oclKernelID;
     }
+
+    /**
+     * Raw {@code CUfunction}. {@link #getOclKernelID()} is a Java registry key, not a driver
+     * pointer; the native bytecode interpreter needs the function itself.
+     */
+    public long getNativeFunctionHandle() {
+        CUDAHandles.Kernel kernel = CUDAHandles.resolve(oclKernelID, CUDAHandles.Kernel.class);
+        return kernel == null ? 0L : kernel.function;
+    }
 }

@@ -30,6 +30,7 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimp
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEBUG;
 
+import java.lang.foreign.MemorySegment;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.ByteBuffer;
@@ -59,6 +60,7 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoNativeInterpreterSupport;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
@@ -77,6 +79,7 @@ public class OCLFieldBuffer implements XPUBuffer {
     private long bufferId;
     private long bufferOffset;
     private ByteBuffer buffer;
+    private MemorySegment nativeStagingBuffer;
     private long setSubRegionSize;
     private final TornadoLogger logger;
     private final Access access;
@@ -369,6 +372,41 @@ public class OCLFieldBuffer implements XPUBuffer {
 
             fieldBuffer.setBuffer(bufferWrapper);
         }
+    }
+
+    public static boolean canStageNativeInterpreterObject(Object object) {
+        return TornadoNativeInterpreterSupport.canStageCompoundObject(object);
+    }
+
+    /**
+     * Builds one host-side buffer matching the compound device allocation.
+     * {@link #serialise} writes nested payload offsets into the object header, so
+     * those offsets must be assigned first even when the device handle is still 0.
+     */
+    public long prepareNativeInterpreterHostBuffer(Object reference) {
+        final MemorySegment payload = TornadoNativeInterpreterSupport.compoundPayload(reference);
+        if (payload == null) {
+            return 0L;
+        }
+
+        setBuffer(new XPUBufferWrapper(bufferId, bufferOffset));
+        final long objectBytes = getObjectSize();
+        final long requiredBytes = objectBytes + payload.byteSize();
+        if (requiredBytes != size()) {
+            throw new TornadoMemoryException("Unsupported native object layout for " + reference.getClass().getName());
+        }
+        nativeStagingBuffer = TornadoNativeInterpreterSupport.ensureStagingBuffer(nativeStagingBuffer, requiredBytes);
+        serialise(reference);
+        return TornadoNativeInterpreterSupport.copyCompoundIn(buffer.array(), objectBytes, payload, nativeStagingBuffer);
+    }
+
+    public void completeNativeInterpreterHostBuffer(Object reference) {
+        final MemorySegment payload = TornadoNativeInterpreterSupport.compoundPayload(reference);
+        if (payload == null || nativeStagingBuffer == null) {
+            return;
+        }
+        TornadoNativeInterpreterSupport.copyCompoundOut(nativeStagingBuffer, getObjectSize(), buffer.array(), payload);
+        deserialise(reference);
     }
 
     @Override

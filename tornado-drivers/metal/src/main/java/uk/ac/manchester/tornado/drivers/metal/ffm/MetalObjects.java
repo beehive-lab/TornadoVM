@@ -454,6 +454,52 @@ public final class MetalObjects {
         }
     }
 
+    /**
+     * Raw {@code MTLComputePipelineState}. The kernel id the Java layer holds is a registry key,
+     * not a Metal pointer; the native bytecode interpreter needs the pipeline itself.
+     */
+    public static long nativePipelineHandle(long kernelId) {
+        KernelState state = KERNELS.get(kernelId);
+        return state == null ? 0L : state.pipeline;
+    }
+
+    /**
+     * Copies pipeline argument kinds into {@code libtornado-runtime} so native Metal launch can
+     * remap threadgroup slots the same way {@code MetalInstalledCode.setKernelArgs} does.
+     */
+    public static boolean registerNativeInterpreterArgumentTypes(long pipeline, int[] types) {
+        if (pipeline == 0 || types == null || types.length == 0) {
+            return false;
+        }
+        MethodHandle handle = nativeRegisterArgumentTypes();
+        if (handle == null) {
+            return false;
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment array = FFMSupport.allocateArray(arena, C_INT, types.length);
+            for (int i = 0; i < types.length; i++) {
+                array.setAtIndex(C_INT, i, types[i]);
+            }
+            return ((int) handle.invokeExact(pipeline, array, types.length)) == 0;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    private static volatile MethodHandle registerNativeArgumentTypes;
+
+    private static MethodHandle nativeRegisterArgumentTypes() {
+        MethodHandle handle = registerNativeArgumentTypes;
+        if (handle != null) {
+            return handle;
+        }
+        handle = FFMSupport.downcallLoaded(FunctionDescriptor.of(C_INT, C_LONG, C_POINTER, C_INT), "tornado_metal_register_argument_types");
+        if (handle != null) {
+            registerNativeArgumentTypes = handle;
+        }
+        return handle;
+    }
+
     public static void kernelInfo(long kernel, int info, byte[] buffer) {
         java.util.Arrays.fill(buffer, (byte) 0);
         if (info == METAL_KERNEL_FUNCTION_NAME) {

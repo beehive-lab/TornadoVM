@@ -94,7 +94,7 @@ import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAShortArrayWrapper;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAVectorWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
-import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
+import uk.ac.manchester.tornado.runtime.common.TornadoNativeInterpreterSupport;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
@@ -108,7 +108,7 @@ import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
-public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamSupport {
+public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeInterpreterSupport {
 
     private static CUDABackendImpl driver = null;
     private final CUDATargetDevice device;
@@ -828,6 +828,54 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
     @Override
     public TornadoVMBackendType getTornadoVMBackend() {
         return TornadoVMBackendType.CUDA;
+    }
+
+    @Override
+    public boolean supportsNativeInterpreterObject(Object object) {
+        return CUDAFieldBuffer.canStageNativeInterpreterObject(object);
+    }
+
+    @Override
+    public long prepareNativeInterpreterHostBuffer(Object object, XPUDeviceBufferState state) {
+        if (state != null && state.getXPUBuffer() instanceof CUDAFieldBuffer fieldBuffer) {
+            return fieldBuffer.prepareNativeInterpreterHostBuffer(object);
+        }
+        return 0L;
+    }
+
+    @Override
+    public void completeNativeInterpreterHostBuffer(Object object, XPUDeviceBufferState state) {
+        if (state != null && state.getXPUBuffer() instanceof CUDAFieldBuffer fieldBuffer) {
+            fieldBuffer.completeNativeInterpreterHostBuffer(object);
+        }
+    }
+
+    @Override
+    public void prepareNativeAllocation(Object object, long batchSize, XPUDeviceBufferState state, Access access) {
+        if (state.hasObjectBuffer()) {
+            return;
+        }
+        XPUBuffer buffer = createDeviceBuffer(object.getClass(), object, (CUDADeviceContext) getDeviceContext(), batchSize, access);
+        buffer.prepareForNativeAllocation(object, batchSize, access);
+        long cachedBuffer = getDeviceContext().getBufferProvider().prepareNativeAllocation(buffer.size(), access);
+        if (cachedBuffer != 0) {
+            buffer.setBuffer(new XPUBuffer.XPUBufferWrapper(cachedBuffer, 0));
+        }
+        state.setXPUBuffer(buffer);
+    }
+
+    @Override
+    public void attachNativeAllocation(XPUDeviceBufferState state, Access access, long handle, long bytes) {
+        XPUBuffer buffer = state.getXPUBuffer();
+        buffer.setBuffer(new XPUBuffer.XPUBufferWrapper(handle, 0));
+        getDeviceContext().getBufferProvider().registerNativeAllocation(handle, bytes, access);
+    }
+
+    @Override
+    public void detachNativeAllocation(XPUDeviceBufferState state, Access access, long handle) {
+        getDeviceContext().getBufferProvider().releaseNativeAllocation(handle, state.getXPUBuffer().size(), access);
+        state.setContents(false);
+        state.setXPUBuffer(null);
     }
 
     @Override

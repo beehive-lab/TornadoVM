@@ -197,26 +197,37 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
 
     @Override
     public void allocate(Object reference, long batchSize, Access access) throws TornadoOutOfMemoryException, TornadoMemoryException {
+        prepareForNativeAllocation(reference, batchSize, access);
+        pinHostMemory(reference, access);
+        bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(batchSize <= 0 ? bufferSize : bufferSize + TornadoNativeArray.ARRAY_HEADER, access);
+
+        if (TornadoOptions.FULL_DEBUG) {
+            new TornadoLogger().info("allocated: %s", toString());
+        }
+    }
+
+    @Override
+    public void prepareForNativeAllocation(Object reference, long batchSize, Access access) throws TornadoMemoryException {
         MemorySegment segment;
         segment = getSegmentWithHeader(reference);
 
         if (batchSize <= 0) {
             bufferSize = segment.byteSize();
-            bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize, access);
         } else {
             bufferSize = batchSize;
-            bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize + TornadoNativeArray.ARRAY_HEADER, access);
         }
 
-        // Pin the full host segment so async H2D/D2H transfers DMA directly (no driver
-        // staging copy, true transfer/compute overlap). Ownership, aliasing and pin
-        // caching are handled by the central CUDAPinnedMemoryRegistry (refcounted,
-        // stale-pin safe). Any hold from a previous allocate is released first, so the
-        // refcount stays balanced across alloc/free cycles.
-        // For large read-only segments served by the staged-transfer ring, skip the whole-segment
-        // pin: registering synchronously pages in and pins the entire (possibly cold, mmap'd)
-        // segment - exactly the upfront cost the staging ring exists to avoid - and the ring's
-        // own pinned slots already make the chunked H2D DMA async.
+        if (bufferSize <= 0) {
+            throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
+        }
+    }
+
+    private void pinHostMemory(Object reference, Access access) {
+        MemorySegment segment = getSegmentWithHeader(reference);
+
+        // Java-issued asynchronous transfers retain the existing pinning policy. Native
+        // interpreter transfers are blocking on CUDA and therefore only call
+        // prepareForNativeAllocation(), which deliberately performs no driver call.
         if (useStagedTransfer() && access == Access.READ_ONLY) {
             if (TornadoOptions.FULL_DEBUG) {
                 new TornadoLogger().info("skipping host pinning (staged transfers): %s", toString());
@@ -230,14 +241,6 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
             if (pinRegistry.pin(segment, segment.byteSize())) {
                 pinnedHostPointer = segment.address();
             }
-        }
-
-        if (bufferSize <= 0) {
-            throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
-        }
-
-        if (TornadoOptions.FULL_DEBUG) {
-            new TornadoLogger().info("allocated: %s", toString());
         }
     }
 

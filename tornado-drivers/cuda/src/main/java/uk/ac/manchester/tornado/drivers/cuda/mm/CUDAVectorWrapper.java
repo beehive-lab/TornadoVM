@@ -84,6 +84,18 @@ public class CUDAVectorWrapper implements XPUBuffer {
 
     @Override
     public void allocate(Object value, long batchSize, Access access) {
+        prepareForNativeAllocation(value, batchSize, access);
+
+        this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize, access);
+
+        if (TornadoOptions.FULL_DEBUG) {
+            new TornadoLogger().info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), bufferOffset,
+                    TornadoOptions.PANAMA_OBJECT_HEADER_SIZE);
+        }
+    }
+
+    @Override
+    public void prepareForNativeAllocation(Object value, long batchSize, Access access) {
         TornadoInternalError.guarantee(value instanceof PrimitiveStorage, "Expecting a PrimitiveStorage type");
         final Object hostArray = TornadoUtils.getAnnotatedObjectFromField(value, Payload.class);
         if (batchSize <= 0) {
@@ -94,13 +106,6 @@ public class CUDAVectorWrapper implements XPUBuffer {
 
         if (bufferSize <= 0) {
             throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
-        }
-
-        this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize, access);
-
-        if (TornadoOptions.FULL_DEBUG) {
-            new TornadoLogger().info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), bufferOffset,
-                    TornadoOptions.PANAMA_OBJECT_HEADER_SIZE);
         }
     }
 

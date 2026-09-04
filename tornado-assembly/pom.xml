@@ -25,6 +25,12 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>tornado-runtime-jni</artifactId>
+            <version>${project.version}</version>
+            <classifier>libs</classifier>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>tornado-annotation</artifactId>
             <version>${project.version}</version>
         </dependency>

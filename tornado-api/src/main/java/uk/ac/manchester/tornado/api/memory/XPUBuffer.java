@@ -65,6 +65,14 @@ public interface XPUBuffer {
 
     void allocate(Object reference, long batchSize, Access access) throws TornadoOutOfMemoryException, TornadoMemoryException;
 
+    /**
+     * Computes the allocation layout without allocating device memory. Native bytecode
+     * execution uses this to publish the size and offsets before C++ handles ALLOC.
+     * Implementations whose layout is fully known at construction need no work here.
+     */
+    default void prepareForNativeAllocation(Object reference, long batchSize, Access access) throws TornadoMemoryException {
+    }
+
     void markAsFreeBuffer() throws TornadoMemoryException;
 
     long size();

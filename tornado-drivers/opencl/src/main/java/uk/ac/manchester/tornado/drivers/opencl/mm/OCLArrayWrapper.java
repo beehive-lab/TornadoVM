@@ -98,6 +98,19 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
 
     @Override
     public void allocate(Object value, long batchSize, Access access) {
+        prepareForNativeAllocation(value, batchSize, access);
+
+        this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize, access);
+
+        if (TornadoOptions.FULL_DEBUG) {
+            logger.info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
+            logger.info("allocated: %s", toString());
+        }
+
+    }
+
+    @Override
+    public void prepareForNativeAllocation(Object value, long batchSize, Access access) {
         final T hostArray = cast(value);
         if (batchSize <= 0) {
             bufferSize = sizeOf(hostArray);
@@ -108,14 +121,6 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
         if (bufferSize <= 0) {
             throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
         }
-
-        this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize, access);
-
-        if (TornadoOptions.FULL_DEBUG) {
-            logger.info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
-            logger.info("allocated: %s", toString());
-        }
-
     }
 
     @Override

@@ -50,6 +50,7 @@ public abstract class TornadoBufferProvider {
     protected final HashMap<Access, ArrayList<BufferContainer>> freeBuffers;
     protected final HashMap<Access, ArrayList<BufferContainer>> usedBuffers;
     protected long currentMemoryAvailable;
+    private long nativeMemoryReservations;
     private TornadoLogger logger = new TornadoLogger(this.getClass());
 
     private static final String RESET = "\u001B[0m";
@@ -61,6 +62,7 @@ public abstract class TornadoBufferProvider {
         this.usedBuffers = initializeBufferHashMap();
         this.freeBuffers = initializeBufferHashMap();
         currentMemoryAvailable = TornadoOptions.DEVICE_AVAILABLE_MEMORY;
+        nativeMemoryReservations = 0;
     }
 
     private HashMap<Access, ArrayList<BufferContainer>> initializeBufferHashMap() {
@@ -216,6 +218,31 @@ public abstract class TornadoBufferProvider {
     }
 
     /**
+     * Reserves memory for a native-interpreter allocation. It returns a cached buffer,
+     * or {@code 0} when C++ should allocate a new one. This method never calls a backend
+     * native method.
+     *
+     * It cannot release several smaller cached buffers here because that would reintroduce
+     * backend JNI calls. This method throws in that uncommon memory-pressure case.
+     */
+    public synchronized long prepareNativeAllocation(long sizeInBytes, Access access) {
+        TornadoTargetDevice device = deviceContext.getDevice();
+        if (sizeInBytes <= 0 || sizeInBytes >= device.getDeviceMaxAllocationSize()) {
+            throw new TornadoOutOfMemoryException("[ERROR] Unable to allocate " + sizeInBytes + " bytes of memory." + OUT_OF_MEMORY_MESSAGE);
+        }
+        if (sizeInBytes <= currentMemoryAvailable) {
+            currentMemoryAvailable -= sizeInBytes;
+            nativeMemoryReservations += sizeInBytes;
+            return 0;
+        }
+        int freeBufferIndex = bufferIndexOfAFreeSpace(sizeInBytes, access);
+        if (freeBufferIndex != -1) {
+            return markBufferUsed(freeBufferIndex, access).buffer;
+        }
+        throw new TornadoOutOfMemoryException("Unable to allocate " + sizeInBytes + " bytes of memory." + OUT_OF_MEMORY_MESSAGE);
+    }
+
+    /**
      * Removes the buffer from the {@link #usedBuffers} list and add it to
      * the @{@link #freeBuffers} list.
      */
@@ -235,6 +262,31 @@ public abstract class TornadoBufferProvider {
             freeBuffers.get(access).add(removedBuffer);
             logger.debug("Buffer %s has been released and included in the freeBuffers list for access: %s", removedBuffer, access);
         }
+    }
+
+    /** Commits memory that was reserved before the native ALLOC handler ran. */
+    public synchronized void registerNativeAllocation(long buffer, long size, Access access) {
+        TornadoInternalError.guarantee(buffer != 0 && size > 0, "invalid native buffer allocation");
+        for (BufferContainer candidate : usedBuffers.get(access)) {
+            if (candidate.buffer == buffer) {
+                return;
+            }
+        }
+        TornadoInternalError.guarantee(nativeMemoryReservations >= size, "native allocation was not reserved");
+        nativeMemoryReservations -= size;
+        BufferContainer bufferInfo = new BufferContainer(buffer, size, access);
+        usedBuffers.get(access).add(bufferInfo);
+    }
+
+    /** Releases a pooled buffer, or cancels a native allocation that did not complete. */
+    public synchronized void releaseNativeAllocation(long buffer, long size, Access access) {
+        if (buffer != 0) {
+            markBufferReleased(buffer, access);
+            return;
+        }
+        TornadoInternalError.guarantee(size > 0 && nativeMemoryReservations >= size, "invalid native allocation reservation");
+        nativeMemoryReservations -= size;
+        currentMemoryAvailable += size;
     }
 
     /**

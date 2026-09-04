@@ -1,0 +1,70 @@
+cmake_minimum_required (VERSION 3.6)
+project (TornadoRuntime)
+
+find_package(JNI REQUIRED)
+
+set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_VERBOSE_MAKEFILE on)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+if(MSVC)
+	string(REPLACE "/MDd" "/MTd" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+	string(REPLACE "/MD" "/MT" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+
+	# enable multi-process compilation, not supported by clang-cl
+	if(NOT CMAKE_CXX_COMPILER_ID STREQUAL Clang)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+	endif()
+
+	# enable exceptions handling
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
+
+	# enable creation of PDB files for Release Builds
+	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Zi")
+	set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} /DEBUG /OPT:REF /OPT:ICF")
+
+	# enable CET shadow stack
+	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /CETCOMPAT")
+
+	#Use of sccache with MSVC requires workaround of replacing /Zi with /Z7
+	#https://github.com/mozilla/sccache
+	if(USE_Z7) #sccache
+		string(REPLACE "/Zi" "/Z7" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+		string(REPLACE "/Z7" "/Z7" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
+		string(REPLACE "/Zi" "/Z7" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+		string(REPLACE "/Zi" "/Z7" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
+		string(REPLACE "/Zi" "/Z7" CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
+		string(REPLACE "/Zi" "/Z7" CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO}")
+	endif()
+else()
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -fPIC")
+endif()
+
+include_directories(
+	source/
+	${JNI_INCLUDE_DIRS}
+	)
+
+set(TORNADO_RUNTIME_SOURCES
+	source/tornado_decoder.cpp
+	source/tornado_state.cpp
+	source/tornado_backend.cpp
+	source/tornado_interpreter.cpp
+	source/TornadoNativeBytecodeInterpreter.cpp
+)
+if(APPLE)
+	list(APPEND TORNADO_RUNTIME_SOURCES source/tornado_metal_backend.mm)
+endif()
+
+add_library(tornado-runtime SHARED ${TORNADO_RUNTIME_SOURCES})
+
+target_link_libraries(tornado-runtime ${JNI_LIB_DIRS} ${CMAKE_DL_LIBS})
+if(APPLE)
+	set_source_files_properties(source/tornado_metal_backend.mm PROPERTIES COMPILE_FLAGS "-fno-objc-arc -std=c++11 -O2 -fPIC")
+	target_link_libraries(tornado-runtime "-framework Metal" "-framework Foundation")
+endif()
+
+if(CMAKE_HOST_WIN32)
+    set_target_properties(tornado-runtime PROPERTIES PREFIX "")
+endif()

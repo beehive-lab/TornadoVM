@@ -125,7 +125,8 @@ public abstract class OCLKernelScheduler {
         }
     }
 
-    public int submit(long executionPlanId, final OCLKernel kernel, final TaskDataContext meta, final int[] waitEvents, long batchThreads) {
+    /** Calculates the launch geometry without submitting the kernel. */
+    public void prepareLaunch(final OCLKernel kernel, final TaskDataContext meta, long batchThreads) {
         if (!meta.isWorkerGridAvailable()) {
             if (!meta.isGlobalWorkDefined()) {
                 calculateGlobalWork(meta, batchThreads);
@@ -137,6 +138,10 @@ public abstract class OCLKernelScheduler {
         } else {
             checkLocalWorkGroupFitsOnDevice(meta);
         }
+    }
+
+    public int submit(long executionPlanId, final OCLKernel kernel, final TaskDataContext meta, final int[] waitEvents, long batchThreads) {
+        prepareLaunch(kernel, meta, batchThreads);
 
         if (meta.isThreadInfoEnabled()) {
             meta.printThreadDims();

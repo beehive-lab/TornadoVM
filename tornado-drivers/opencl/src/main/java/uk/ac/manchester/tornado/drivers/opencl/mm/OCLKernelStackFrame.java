@@ -83,4 +83,19 @@ public class OCLKernelStackFrame extends OCLByteBuffer implements KernelStackFra
             }
         }
     }
+
+    @Override
+    public long getNativeFrameBuffer() {
+        return toBuffer();
+    }
+
+    @Override
+    public long getNativeConstantBuffer() {
+        return toConstantAddress();
+    }
+
+    @Override
+    public long getNativeAtomicBuffer() {
+        return toAtomicAddress();
+    }
 }

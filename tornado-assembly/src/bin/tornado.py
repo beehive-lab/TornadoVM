@@ -45,6 +45,7 @@ __TORNADOVM_ENABLE_PROFILER_SILENT__ = " -Dtornado.profiler=True -Dtornado.log.p
 __TORNADOVM_ENABLE_PROFILER_CONSOLE__ = " -Dtornado.profiler=True "
 __TORNADOVM_ENABLE_CONCURRENT__DEVICES__ = " -Dtornado.concurrent.devices=True "
 __TORNADOVM_DUMP_BYTECODES_DIR__ = " -Dtornado.print.bytecodes=True -Dtornado.dump.bytecodes.dir="
+__TORNADOVM_NATIVE_INTERPRETER__ = " -Dtornado.interpreter.native=True "
 
 # ########################################################
 # LIST OF TORNADOVM PROVIDERS: Set of Java Classes that
@@ -1025,6 +1026,9 @@ class TornadoVMRunnerTool():
         if (args.enableConcurrentDevices):
             tornadoFlags = tornadoFlags + __TORNADOVM_ENABLE_CONCURRENT__DEVICES__
 
+        if (args.nativeInterpreter):
+            tornadoFlags = tornadoFlags + __TORNADOVM_NATIVE_INTERPRETER__
+
         if (args.enable_profiler != None):
             if (args.enable_profiler == "silent"):
                 tornadoFlags = tornadoFlags + __TORNADOVM_ENABLE_PROFILER_SILENT__
@@ -1457,6 +1461,8 @@ def parseArguments():
                         help="Print information about the  accelerators available")
     parser.add_argument('--enableConcurrentDevices', action="store_true", dest="enableConcurrentDevices", default=False,
                         help="Enable concurrent execution on multiple devices by multiple threads")
+    parser.add_argument('--nativeInterpreter', action="store_true", dest="nativeInterpreter", default=False,
+                        help="Run the TornadoVM bytecode loop natively where implemented (experimental)")
     parser.add_argument('--ea', '-ea', action="store_true", dest="enableAssertions", default=False,
                         help="Enable assertions")
     parser.add_argument('--module-path', action="store", dest="module_path", default=None,

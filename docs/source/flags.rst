@@ -85,6 +85,17 @@ Profiling
 Performance & Scheduling
 ------------------------
 
+**CLI Flags**
+
+.. table::
+   :align: left
+
+   =======================  ============================================================================
+   Flag                     Description
+   =======================  ============================================================================
+   ``--nativeInterpreter``  Runs the TornadoVM bytecode loop natively (experimental).
+   =======================  ============================================================================
+
 **JVM Flags**
 
 .. table::
@@ -102,6 +113,7 @@ Performance & Scheduling
    ``-Dtornado.reuse.device.buffers=false``                          Disables reusing device buffers across executions of the same task-graph (default: true).
    ``-Dtornado.deallocate.buffers=false``                            Disables freeing device resources when the execution plan closes (default: true).
    ``-Dtornado.scheduler.block=true``                                Partitions the iteration space into blocks (one per visible CPU core when running on CPUs) (default: false).
+   ``-Dtornado.interpreter.native=true``                             Runs the bytecode loop natively where implemented (default: false).
    ================================================================  ==============================================================================
 
 Optimizations

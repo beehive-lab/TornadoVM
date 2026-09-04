@@ -133,6 +133,16 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     }
 
     @Override
+    public long getNativeStream(long executionPlanId) {
+        return getCommandQueue(executionPlanId).getCommandQueuePtr();
+    }
+
+    @Override
+    public long getNativeContext(long executionPlanId) {
+        return context.getContextId();
+    }
+
+    @Override
     public OCLMemoryManager getMemoryManager() {
         return memoryManager;
     }

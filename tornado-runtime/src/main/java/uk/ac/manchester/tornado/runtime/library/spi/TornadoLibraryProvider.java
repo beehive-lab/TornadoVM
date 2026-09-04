@@ -23,6 +23,9 @@
  */
 package uk.ac.manchester.tornado.runtime.library.spi;
 
+import java.util.Set;
+
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 
 /**
@@ -42,6 +45,11 @@ import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 public interface TornadoLibraryProvider {
 
     /**
+     * Backends that can run NVIDIA library tasks. Only CUDA is supported for now.
+     */
+    Set<TornadoVMBackendType> SUPPORTED_BACKENDS = Set.of(TornadoVMBackendType.CUDA);
+
+    /**
      * Unique library identifier matched against
      * {@link uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor#getLibraryName()},
      * e.g. {@code "nvidia/cublas"}.
@@ -49,10 +57,12 @@ public interface TornadoLibraryProvider {
     String libraryName();
 
     /**
-     * Returns true if this provider can execute on the given device (e.g.,
-     * requires a CUDA backend device).
+     * Returns true if this provider can execute on the given device. Default:
+     * the device's backend is in {@link #SUPPORTED_BACKENDS}.
      */
-    boolean canHandle(TornadoXPUDevice device);
+    default boolean canHandle(TornadoXPUDevice device) {
+        return device != null && SUPPORTED_BACKENDS.contains(device.getTornadoVMBackend());
+    }
 
     /**
      * Creates the native execution context for the given device and execution

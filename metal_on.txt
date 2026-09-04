@@ -1,0 +1,84 @@
+WARNING: Using incubator modules: jdk.incubator.vector
+native=true warmup=20 iters=100 workloads=50
+
+== primitive-arrays
+workload                  median_us       p10_us       p90_us ok
+vectorAdd                     229.9        206.8        276.1 yes
+vectorAddInt                  226.5        207.9        253.4 yes
+vectorAddLong                 193.0        179.3        223.4 yes
+vectorAddShort                162.4        137.5        187.0 yes
+vectorAddByte                 140.4        117.4        186.4 yes
+addAccumulator                131.2        114.8        154.6 yes
+
+== foundation
+workload                  median_us       p10_us       p90_us ok
+foundationFloat               122.3        114.7        146.9 yes
+foundationInt                 121.2        112.0        146.4 yes
+foundationMul                 133.9        124.6        153.1 yes
+foundationSub                 123.7        110.3        148.4 yes
+foundationSaxpy               110.0         98.5        127.5 yes
+foundationCopy                116.8        106.5        137.8 yes
+
+== vector-types
+workload                  median_us       p10_us       p90_us ok
+vectorFloat2                  153.4        134.2        187.1 yes
+vectorFloat3                  141.1        128.4        161.8 yes
+vectorFloat4                  139.1        124.1        160.4 yes
+vectorFloat8                  135.7        124.5        160.7 yes
+vectorInt2                    130.9        120.9        149.3 yes
+vectorInt4                    123.2        117.3        146.6 yes
+
+== multi-task
+workload                  median_us       p10_us       p90_us ok
+multiTask2                    225.4        201.6        238.1 yes
+multiTask3                    270.7        262.3        301.1 yes
+multiFn                       117.9        107.2        136.5 yes
+combined3                     270.4        262.8        292.6 yes
+
+== reductions
+workload                  median_us       p10_us       p90_us ok
+reduction                     217.0        191.9        252.8 yes
+reductionMulti                286.6        268.4        335.2 yes
+reductionSeq                  627.0        600.0        669.0 yes
+reductionDot                  218.7        206.2        258.1 yes
+
+== kernel-context
+workload                  median_us       p10_us       p90_us ok
+kernelContext                 111.3        100.0        139.6 yes
+kernelContextLast             113.3        108.2        140.1 yes
+kernelThreadId                105.5         91.0        120.4 yes
+kernelLocal                   108.0         90.5        120.7 yes
+kernelMatmul                  119.1        115.0        130.9 yes
+
+== matrices
+workload                  median_us       p10_us       p90_us ok
+matmul2d                      224.4        219.6        247.5 yes
+matrixSum                     150.9        145.4        163.7 yes
+matrixSumInt                  151.7        146.5        167.6 yes
+matrix3d                      139.3        133.6        160.5 yes
+matrixFloat4                  137.9        125.3        158.5 yes
+
+== compute
+workload                  median_us       p10_us       p90_us ok
+hilbert                       120.6        112.9        139.7 yes
+dft                             0.0          0.0          0.0 NO TornadoDeviceFP64NotSupported
+[native-interpreter-fallback] calls=2 javaOpcodes=1 endedInNative=true warmup=false
+dftFloat                      117.4        112.1        152.4 yes
+[native-interpreter-fallback] calls=2 javaOpcodes=1 endedInNative=true warmup=false
+julia                         135.9        133.2        151.7 yes
+
+== math
+workload                  median_us       p10_us       p90_us ok
+mathExp                         0.0          0.0          0.0 NO TornadoDeviceFP64NotSupported
+mathAbs                       110.5        105.0        128.0 yes
+mathPow                         0.0          0.0          0.0 NO TornadoDeviceFP64NotSupported
+mathMin                       113.4        107.7        137.9 yes
+mathFma                        96.3         92.4        109.9 yes
+mathCos                       110.2        105.3        134.9 yes
+
+== batches
+workload                  median_us       p10_us       p90_us ok
+batch                        4532.3       3848.2       5374.3 yes
+batch3                       4574.0       3635.8       6675.4 yes
+batchInt                     4061.8       3412.1       4716.0 yes
+batchCopy                    3406.2       2871.1       4138.5 yes

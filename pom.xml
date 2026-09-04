@@ -806,6 +806,7 @@
     </dependencies>
     <modules>
         <module>tornado-runtime</module>
+        <module>tornado-runtime-jni</module>
         <module>tornado-matrices</module>
         <module>tornado-drivers</module>
         <module>tornado-examples</module>

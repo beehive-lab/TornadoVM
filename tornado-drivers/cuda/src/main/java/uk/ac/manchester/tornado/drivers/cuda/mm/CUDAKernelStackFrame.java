@@ -135,4 +135,19 @@ public class CUDAKernelStackFrame extends CUDAByteBuffer implements KernelStackF
             }
         }
     }
+
+    @Override
+    public long getNativeFrameBuffer() {
+        return toBuffer();
+    }
+
+    @Override
+    public long getNativeConstantBuffer() {
+        return toConstantAddress();
+    }
+
+    @Override
+    public long getNativeAtomicBuffer() {
+        return toAtomicAddress();
+    }
 }

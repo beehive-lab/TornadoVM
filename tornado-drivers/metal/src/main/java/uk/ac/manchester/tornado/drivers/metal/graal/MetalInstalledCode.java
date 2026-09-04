@@ -119,6 +119,28 @@ public class MetalInstalledCode extends InstalledCode implements TornadoInstalle
     }
 
     @Override
+    public boolean prepareForNativeLaunch(TaskDataContext meta, long batchThreads) {
+        if (!valid || kernel == null || meta == null || isSPIRVBinary || meta.getConstantSize() != 0) {
+            return false;
+        }
+        // Native run_launch binds OpenCL-style slots. Metal threadgroup memory can sit at a
+        // different index; the C++ binder remaps from this reflection table. No table means
+        // the GPU can hang, so launch stays on Java.
+        if (!kernel.publishNativeArgumentTypes()) {
+            return false;
+        }
+        if (meta.isParallel() || meta.isWorkerGridAvailable()) {
+            scheduler.prepareLaunch(kernel, meta, batchThreads);
+        }
+        return true;
+    }
+
+    @Override
+    public long getNativeKernelHandle() {
+        return kernel == null ? 0L : kernel.getNativePipelineHandle();
+    }
+
+    @Override
     public Object executeVarargs(final Object... args) throws InvalidInstalledCodeException {
         return null;
     }

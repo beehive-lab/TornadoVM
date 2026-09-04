@@ -55,6 +55,8 @@ public class CUDACommandQueue extends CommandQueue {
     private TornadoLogger logger = new TornadoLogger(this.getClass());
 
     private final long commandQueuePtr;
+    private final long nativeStream;
+    private final long nativeContext;
 
     /**
      * Small buffer for querying properties regarding the command queue.
@@ -73,6 +75,8 @@ public class CUDACommandQueue extends CommandQueue {
 
     public CUDACommandQueue(long commandQueuePtr, long properties, int version) {
         this.commandQueuePtr = commandQueuePtr;
+        this.nativeStream = getStreamPointer(commandQueuePtr);
+        this.nativeContext = getContextPointer(commandQueuePtr);
         this.properties = properties;
         this.buffer = ByteBuffer.allocate(128);
         this.buffer.order(CUDADriver.BYTE_ORDER);
@@ -825,14 +829,14 @@ public class CUDACommandQueue extends CommandQueue {
      * TornadoVM kernels and transfers on the same stream.
      */
     public long getNativeStream() {
-        return getStreamPointer(commandQueuePtr);
+        return nativeStream;
     }
 
     /**
      * Raw CUcontext handle of this queue.
      */
     public long getNativeContext() {
-        return getContextPointer(commandQueuePtr);
+        return nativeContext;
     }
 
     /** CU_STREAM_CAPTURE_MODE_GLOBAL. */

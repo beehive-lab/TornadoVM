@@ -95,11 +95,6 @@ public final class CusparseLibraryProvider implements TornadoLibraryProvider {
     }
 
     @Override
-    public boolean canHandle(TornadoXPUDevice device) {
-        return device instanceof TornadoNativeStreamSupport;
-    }
-
-    @Override
     public LibraryContext createContext(TornadoXPUDevice device, long executionPlanId) {
         CusparseNativeLib.load();
         long stream = ((TornadoNativeStreamSupport) device).getNativeStream(executionPlanId);

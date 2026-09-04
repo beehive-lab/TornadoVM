@@ -39,6 +39,7 @@
                 <include>*.py</include>
                 <include>tornado</include>
                 <include>tornado-test</include>
+                <include>tornado-eval</include>
                 <include>tornado-benchmarks.py</include>
                 <include>misc/*.py</include>
             </includes>
@@ -203,6 +204,7 @@
                 </includes>
             </unpackOptions>
             <includes>
+                <include>io.github.beehive-lab:tornado-runtime-jni:jar:libs</include>
                 <include>io.github.beehive-lab:tornado-drivers-metal-jni:jar:libs</include>
                 <include>io.github.beehive-lab:tornado-drivers-opencl-jni:jar:libs</include>
                 <include>io.github.beehive-lab:tornado-drivers-cuda-jni:jar:libs</include>

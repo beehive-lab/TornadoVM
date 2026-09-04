@@ -78,11 +78,6 @@ public final class CuBlasLtLibraryProvider implements TornadoLibraryProvider {
     }
 
     @Override
-    public boolean canHandle(TornadoXPUDevice device) {
-        return device instanceof TornadoNativeStreamSupport;
-    }
-
-    @Override
     public LibraryContext createContext(TornadoXPUDevice device, long executionPlanId) {
         CuBlasNativeLib.load();
         long stream = ((TornadoNativeStreamSupport) device).getNativeStream(executionPlanId);

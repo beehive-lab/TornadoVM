@@ -61,4 +61,16 @@ public interface KernelStackFrame {
     boolean isValid();
 
     void invalidate();
+
+    /**
+     * Device buffer that stores the three-slot Tornado kernel context. A zero handle means
+     * that this frame cannot be used by the native bytecode interpreter.
+     */
+    long getNativeFrameBuffer();
+
+    /** Device buffer used for the backend's constant-memory argument. */
+    long getNativeConstantBuffer();
+
+    /** Device buffer used for the backend's atomics argument. */
+    long getNativeAtomicBuffer();
 }

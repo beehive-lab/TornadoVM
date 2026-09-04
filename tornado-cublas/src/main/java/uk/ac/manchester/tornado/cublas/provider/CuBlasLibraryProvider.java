@@ -97,12 +97,6 @@ public final class CuBlasLibraryProvider implements TornadoLibraryProvider {
     }
 
     @Override
-    public boolean canHandle(TornadoXPUDevice device) {
-        // Only the CUDA backend exposes its native stream for library interop
-        return device instanceof TornadoNativeStreamSupport;
-    }
-
-    @Override
     public LibraryContext createContext(TornadoXPUDevice device, long executionPlanId) {
         CuBlasNativeLib.load();
         long stream = ((TornadoNativeStreamSupport) device).getNativeStream(executionPlanId);
