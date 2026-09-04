@@ -127,6 +127,14 @@ public final class NVRTCAPI {
     private static SymbolLookup loadNvrtc() {
         List<String> candidates = new ArrayList<>();
 
+        // An explicit choice outranks every heuristic below: a host with several toolkits can pin
+        // the exact NVRTC it means to measure with, which the version ranking would otherwise
+        // decide for it.
+        String explicit = explicitNvrtcLibrary();
+        if (explicit != null) {
+            candidates.add(explicit);
+        }
+
         // Toolkit roots BEFORE the bare soname. The unversioned libnvrtc.so on the loader path
         // belongs to whichever toolkit the distribution packaged, and that is routinely OLDER than
         // one installed later under /usr/local: on a Blackwell host carrying Ubuntu's CUDA 12.0
@@ -179,6 +187,20 @@ public final class NVRTCAPI {
         return loadedLibrary;
     }
 
+    /**
+     * Absolute path of an NVRTC named explicitly by the {@code tornado.cuda.nvrtc.library} system
+     * property or the {@code TORNADO_NVRTC_LIBRARY} environment variable, or {@code null} when
+     * neither is set. Provides a deterministic override on hosts holding several toolkits, where
+     * measurements have to state which one produced them.
+     */
+    private static String explicitNvrtcLibrary() {
+        String property = System.getProperty("tornado.cuda.nvrtc.library");
+        if (property != null && !property.isEmpty()) {
+            return property;
+        }
+        String variable = System.getenv("TORNADO_NVRTC_LIBRARY");
+        return variable != null && !variable.isEmpty() ? variable : null;
+    }
 
     /**
      * Every NVRTC found under the toolkit roots, newest first. Roots the environment names keep
