@@ -41,11 +41,14 @@ def main():
     parser.add_argument("workloads", nargs="*", help="workload names (default: all). See Java class for the list.")
     parser.add_argument("--jvm", "-J", dest="jvmFlags", default="", help="JVM flags, e.g. -J=-Dtornado.interpreter.native=true")
     parser.add_argument("--native", action="store_true", help="set -Dtornado.interpreter.native=true")
+    parser.add_argument("--seq", action="store_true", help="time sequential Java of the same kernels, no execute()")
     args = parser.parse_args()
 
     jvm = "-Dtornado.recover.bailout=False "
     if args.native:
         jvm += "-Dtornado.interpreter.native=true "
+    if args.seq:
+        jvm += "-Dtornado.eval.seq=true "
     if args.jvmFlags:
         jvm += args.jvmFlags + " "
 

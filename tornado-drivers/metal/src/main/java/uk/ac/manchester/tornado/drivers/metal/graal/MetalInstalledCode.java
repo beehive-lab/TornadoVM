@@ -120,10 +120,19 @@ public class MetalInstalledCode extends InstalledCode implements TornadoInstalle
 
     @Override
     public boolean prepareForNativeLaunch(TaskDataContext meta, long batchThreads) {
-        // Native Metal launch binds kernel context / local / atomics at fixed slots. The Java
-        // path remaps threadgroup arguments from pipeline reflection; without that remap a
-        // dispatch can hang on the GPU (vectortypes.TestFloats). Keep launch on Java.
-        return false;
+        if (!valid || kernel == null || meta == null || isSPIRVBinary || meta.getConstantSize() != 0) {
+            return false;
+        }
+        // Native run_launch binds OpenCL-style slots. Metal threadgroup memory can sit at a
+        // different index; the C++ binder remaps from this reflection table. No table means
+        // the GPU can hang, so launch stays on Java.
+        if (!kernel.publishNativeArgumentTypes()) {
+            return false;
+        }
+        if (meta.isParallel() || meta.isWorkerGridAvailable()) {
+            scheduler.prepareLaunch(kernel, meta, batchThreads);
+        }
+        return true;
     }
 
     @Override

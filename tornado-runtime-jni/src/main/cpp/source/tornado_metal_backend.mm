@@ -45,6 +45,11 @@ struct MetalArg {
 
 std::mutex g_argsMutex;
 std::unordered_map<int64_t, std::vector<MetalArg>> g_kernelArgs;
+// 0 = buffer/value, 1 = threadgroup. Same array-index order as Java MetalKernel.getArgInfoObject.
+std::unordered_map<int64_t, std::vector<int32_t>> g_argTypes;
+std::unordered_map<int64_t, int64_t> g_localBytes;
+
+enum { METAL_REFLECT_BUFFER = 0, METAL_REFLECT_THREADGROUP = 1 };
 
 std::vector<MetalArg> &slotList(int64_t kernel, int32_t index) {
     std::vector<MetalArg> &slots = g_kernelArgs[kernel];
@@ -52,6 +57,24 @@ std::vector<MetalArg> &slotList(int64_t kernel, int32_t index) {
         slots.resize((size_t) index + 1);
     }
     return slots;
+}
+
+int32_t reflectedType(int64_t kernel, int32_t index) {
+    auto it = g_argTypes.find(kernel);
+    if (it == g_argTypes.end() || index < 0 || index >= (int32_t) it->second.size()) {
+        return METAL_REFLECT_BUFFER;
+    }
+    return it->second[index];
+}
+
+bool hasReflection(int64_t kernel) {
+    auto it = g_argTypes.find(kernel);
+    return it != g_argTypes.end() && !it->second.empty();
+}
+
+int64_t localBytesFor(int64_t kernel) {
+    auto it = g_localBytes.find(kernel);
+    return it == g_localBytes.end() || it->second <= 0 ? (int64_t) sizeof(int64_t) : it->second;
 }
 
 } // namespace
@@ -107,27 +130,60 @@ int tornado_metal_copy(int toDevice, int64_t handle, int64_t deviceOffset, int64
     }
 }
 
+int tornado_metal_register_argument_types(int64_t kernelId, const int32_t *types, int32_t count) {
+    if (kernelId == 0 || types == nullptr || count <= 0) {
+        return -1;
+    }
+    std::lock_guard<std::mutex> lock(g_argsMutex);
+    g_argTypes[kernelId] = std::vector<int32_t>(types, types + count);
+    g_kernelArgs.erase(kernelId);
+    g_localBytes.erase(kernelId);
+    return 0;
+}
+
 int tornado_metal_set_kernel_argument(int64_t kernelId, int32_t index, int32_t kind, const void *value, int64_t size) {
     if (kernelId == 0 || index < 0 || size < 0 || (kind != TORNADO_KERNEL_ARG_LOCAL && value == nullptr)) {
         return -1;
     }
     std::lock_guard<std::mutex> lock(g_argsMutex);
+    // Pipeline pointers are recycled. Leftover high-index buffers from a previous
+    // kernel at this id would be setBuffer'd as live objects and crash in objc_retain.
+    if (index == 0) {
+        g_kernelArgs[kernelId].clear();
+        g_localBytes.erase(kernelId);
+    }
+    int32_t effectiveKind = kind;
+    int64_t effectiveSize = size;
+    if (hasReflection(kernelId)) {
+        if (kind == TORNADO_KERNEL_ARG_LOCAL) {
+            g_localBytes[kernelId] = size > 0 ? size : (int64_t) sizeof(int64_t);
+        }
+        if (reflectedType(kernelId, index) == METAL_REFLECT_THREADGROUP) {
+            effectiveKind = TORNADO_KERNEL_ARG_LOCAL;
+            if (kind != TORNADO_KERNEL_ARG_LOCAL) {
+                effectiveSize = localBytesFor(kernelId);
+            }
+        } else if (kind == TORNADO_KERNEL_ARG_LOCAL) {
+            // Dummy OpenCL local slot. The real threadgroup index is later; leave this unused.
+            return 0;
+        }
+    }
     MetalArg &arg = slotList(kernelId, index)[(size_t) index];
     arg.set = true;
-    arg.kind = kind;
-    arg.size = size;
+    arg.kind = effectiveKind;
+    arg.size = effectiveSize;
     arg.buffer = 0;
     arg.bytes.clear();
-    if (kind == TORNADO_KERNEL_ARG_REFERENCE) {
+    if (effectiveKind == TORNADO_KERNEL_ARG_REFERENCE) {
         arg.buffer = *(const int64_t *) value;
         if (arg.buffer == 0) {
             arg.set = false;
             return -1;
         }
-    } else if (kind == TORNADO_KERNEL_ARG_LOCAL) {
-        arg.size = size;
+    } else if (effectiveKind == TORNADO_KERNEL_ARG_LOCAL) {
+        arg.size = effectiveSize;
     } else {
-        arg.bytes.assign((const char *) value, (const char *) value + (size_t) size);
+        arg.bytes.assign((const char *) value, (const char *) value + (size_t) effectiveSize);
     }
     return 0;
 }
@@ -144,6 +200,25 @@ int tornado_metal_launch_kernel(int64_t queueId, int64_t kernelId, int32_t dimen
         auto it = g_kernelArgs.find(kernelId);
         if (it != g_kernelArgs.end()) {
             args = it->second;
+        }
+        auto typeIt = g_argTypes.find(kernelId);
+        if (typeIt != g_argTypes.end()) {
+            const int64_t localBytes = localBytesFor(kernelId);
+            const std::vector<int32_t> &types = typeIt->second;
+            const size_t limit = args.size() < types.size() ? args.size() : types.size();
+            for (size_t i = 0; i < limit; i++) {
+                if (types[i] != METAL_REFLECT_THREADGROUP) {
+                    continue;
+                }
+                if (args[i].set && args[i].kind == TORNADO_KERNEL_ARG_LOCAL) {
+                    continue;
+                }
+                args[i].set = true;
+                args[i].kind = TORNADO_KERNEL_ARG_LOCAL;
+                args[i].size = localBytes;
+                args[i].buffer = 0;
+                args[i].bytes.clear();
+            }
         }
     }
 

@@ -1,0 +1,81 @@
+native=false warmup=30 iters=200 workloads=50
+
+== primitive-arrays
+workload                  median_us       p10_us       p90_us ok
+vectorAdd                     650.0        251.7       1436.4 yes
+vectorAddInt                  392.8        241.0        764.1 yes
+vectorAddLong                 214.7        166.3        376.4 yes
+vectorAddShort                145.5        114.3        221.3 yes
+vectorAddByte                 106.6         94.0        141.6 yes
+addAccumulator                179.6         99.0        414.4 yes
+
+== foundation
+workload                  median_us       p10_us       p90_us ok
+foundationFloat               469.8        290.7        816.8 yes
+foundationInt                 556.7        306.7        970.0 yes
+foundationMul                 198.0        143.9        464.9 yes
+foundationSub                 161.6        121.5        404.9 yes
+foundationSaxpy               204.1        110.4        483.2 yes
+foundationCopy                 96.1         73.2        281.1 yes
+
+== vector-types
+workload                  median_us       p10_us       p90_us ok
+vectorFloat2                  601.7        333.9       1142.3 yes
+vectorFloat3                  372.1        226.1        669.9 yes
+vectorFloat4                  383.3        210.4        654.6 yes
+vectorFloat8                    0.0          0.0          0.0 NO TornadoBailoutRuntimeException
+vectorInt2                    587.0        370.9        881.9 yes
+vectorInt4                    444.8        218.6        950.0 yes
+
+== multi-task
+workload                  median_us       p10_us       p90_us ok
+multiTask2                    148.0        104.7        241.7 yes
+multiTask3                    253.6        146.9        409.5 yes
+multiFn                       131.5         98.4        232.1 yes
+combined3                     256.0        170.0        364.0 yes
+
+== reductions
+workload                  median_us       p10_us       p90_us ok
+reduction                     245.2        154.2        369.1 yes
+reductionMulti                289.3        201.0        475.3 yes
+reductionSeq                  219.7        143.2        486.5 yes
+reductionDot                  191.5        144.4        296.7 yes
+
+== kernel-context
+workload                  median_us       p10_us       p90_us ok
+kernelContext                 188.0         99.9        531.0 yes
+kernelContextLast             120.4         81.1        272.4 yes
+kernelThreadId                104.8         80.0        185.1 yes
+kernelLocal                   123.5         81.2        287.1 yes
+kernelMatmul                  199.3        142.1        506.7 yes
+
+== matrices
+workload                  median_us       p10_us       p90_us ok
+matmul2d                     1477.6        968.0       3459.3 yes
+matrixSum                     835.1        419.4       2020.8 yes
+matrixSumInt                  394.5        300.9        684.6 yes
+matrix3d                      515.8        282.9        804.1 yes
+matrixFloat4                  221.3        144.6        499.1 yes
+
+== compute
+workload                  median_us       p10_us       p90_us ok
+hilbert                       107.8         91.9        137.8 yes
+dft                           375.8        283.2        544.0 yes
+dftFloat                      142.1        107.3        253.9 yes
+julia                         127.1         99.9        184.4 yes
+
+== math
+workload                  median_us       p10_us       p90_us ok
+mathExp                        89.8         77.1        107.2 yes
+mathAbs                        97.7         75.4        149.3 yes
+mathPow                       159.2        139.3        198.9 yes
+mathMin                       107.7         91.2        136.4 yes
+mathFma                       107.6         90.9        138.7 yes
+mathCos                        84.8         69.3        100.6 yes
+
+== batches
+workload                  median_us       p10_us       p90_us ok
+batch                       10061.6       8772.8      14415.6 yes
+batch3                       6940.4       6275.1       9226.0 yes
+batchInt                     6536.1       5907.1       8448.1 yes
+batchCopy                    5331.7       4836.1       6968.9 yes

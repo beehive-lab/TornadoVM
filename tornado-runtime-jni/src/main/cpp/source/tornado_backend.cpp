@@ -357,6 +357,7 @@ int tornado_metal_release(int64_t handle);
 int tornado_metal_copy(int toDevice, int64_t handle, int64_t deviceOffset, int64_t bytes, int64_t hostPointer, int64_t hostOffset);
 int tornado_metal_set_kernel_argument(int64_t kernelId, int32_t index, int32_t kind, const void *value, int64_t size);
 int tornado_metal_launch_kernel(int64_t queueId, int64_t kernelId, int32_t dimensions, const int64_t *globalOffset, const int64_t *globalWork, const int64_t *localWork);
+int tornado_metal_register_argument_types(int64_t kernelId, const int32_t *types, int32_t count);
 }
 #endif
 
@@ -384,6 +385,8 @@ public:
         copy_ = tornado_metal_copy;
         setArgument_ = tornado_metal_set_kernel_argument;
         launch_ = tornado_metal_launch_kernel;
+        // Java MetalInstalledCode looks this up by name from the already-loaded dylib.
+        (void) tornado_metal_register_argument_types;
 #endif
     }
 

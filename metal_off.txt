@@ -1,0 +1,82 @@
+WARNING: Using incubator modules: jdk.incubator.vector
+native=false warmup=20 iters=100 workloads=50
+
+== primitive-arrays
+workload                  median_us       p10_us       p90_us ok
+vectorAdd                     321.3        281.2        408.3 yes
+vectorAddInt                  266.7        239.4        290.9 yes
+vectorAddLong                 231.0        205.5        327.0 yes
+vectorAddShort                266.6        200.8        376.7 yes
+vectorAddByte                 202.4        172.7        285.1 yes
+addAccumulator                193.7        175.1        277.6 yes
+
+== foundation
+workload                  median_us       p10_us       p90_us ok
+foundationFloat               190.7        171.9        216.8 yes
+foundationInt                 165.1        139.9        198.9 yes
+foundationMul                 168.2        130.8        196.3 yes
+foundationSub                 141.1        123.6        232.2 yes
+foundationSaxpy               138.3        126.3        175.2 yes
+foundationCopy                134.7        114.5        161.0 yes
+
+== vector-types
+workload                  median_us       p10_us       p90_us ok
+vectorFloat2                  186.9        160.8        215.7 yes
+vectorFloat3                  168.0        146.7        195.9 yes
+vectorFloat4                  136.8        115.0        167.5 yes
+vectorFloat8                  129.1        113.5        159.7 yes
+vectorInt2                    138.4        116.2        164.3 yes
+vectorInt4                    150.7        112.4        166.6 yes
+
+== multi-task
+workload                  median_us       p10_us       p90_us ok
+multiTask2                    230.7        215.8        271.5 yes
+multiTask3                    317.8        304.9        349.7 yes
+multiFn                       132.0        118.8        162.3 yes
+combined3                     316.8        297.3        346.1 yes
+
+== reductions
+workload                  median_us       p10_us       p90_us ok
+reduction                     234.2        211.4        263.9 yes
+reductionMulti                314.8        299.2        362.2 yes
+reductionSeq                  835.9        647.3        888.0 yes
+reductionDot                  245.9        219.5        280.5 yes
+
+== kernel-context
+workload                  median_us       p10_us       p90_us ok
+kernelContext                 131.9        121.1        174.6 yes
+kernelContextLast             133.4        122.9        182.6 yes
+kernelThreadId                117.5        111.1        133.5 yes
+kernelLocal                   123.0        103.7        166.3 yes
+kernelMatmul                  137.1        126.4        151.3 yes
+
+== matrices
+workload                  median_us       p10_us       p90_us ok
+matmul2d                      210.3        194.6        241.0 yes
+matrixSum                     129.5        121.9        146.7 yes
+matrixSumInt                  142.1        135.4        169.0 yes
+matrix3d                      155.3        114.5        172.3 yes
+matrixFloat4                  130.7        113.7        146.9 yes
+
+== compute
+workload                  median_us       p10_us       p90_us ok
+hilbert                       123.1        112.8        139.6 yes
+dft                             0.0          0.0          0.0 NO TornadoDeviceFP64NotSupported
+dftFloat                      126.1        117.7        150.5 yes
+julia                         149.3        139.9        179.7 yes
+
+== math
+workload                  median_us       p10_us       p90_us ok
+mathExp                         0.0          0.0          0.0 NO TornadoDeviceFP64NotSupported
+mathAbs                       130.2        112.8        191.0 yes
+mathPow                         0.0          0.0          0.0 NO TornadoDeviceFP64NotSupported
+mathMin                       141.9        122.4        220.2 yes
+mathFma                       122.1        112.2        153.6 yes
+mathCos                       118.8        110.7        171.5 yes
+
+== batches
+workload                  median_us       p10_us       p90_us ok
+batch                        3540.8       3079.8       4071.7 yes
+batch3                       3158.6       2887.9       3717.0 yes
+batchInt                     3506.3       2926.0       4609.0 yes
+batchCopy                    2601.7       2173.8       3480.7 yes

@@ -78,7 +78,8 @@ import uk.ac.manchester.tornado.unittests.vectortypes.TestInts;
  * tornado-eval
  * tornado-eval primitive-arrays
  * tornado-eval vectorAdd matmul2d
- * tornado-eval -J-Dtornado.interpreter.native=true
+ * tornado-eval --native
+ * tornado-eval --seq
  * </pre>
  */
 public class InterpreterEval {
@@ -88,6 +89,7 @@ public class InterpreterEval {
     private static final int N = Integer.getInteger("tornado.eval.n", 8192);
     private static final int MATRIX_N = Integer.getInteger("tornado.eval.matrix", 256);
     private static final int BATCH_N = Integer.getInteger("tornado.eval.batch", 1 << 20);
+    private static final boolean SEQ = Boolean.parseBoolean(System.getProperty("tornado.eval.seq", "false"));
 
     @FunctionalInterface
     private interface Workload {
@@ -183,7 +185,11 @@ public class InterpreterEval {
         }
 
         boolean nativeOn = Boolean.parseBoolean(System.getProperty("tornado.interpreter.native", "false"));
-        System.out.printf("native=%s warmup=%d iters=%d workloads=%d%n", nativeOn, warmup, iters, selected.size());
+        if (SEQ) {
+            System.out.printf("seq=true warmup=%d iters=%d workloads=%d%n", warmup, iters, selected.size());
+        } else {
+            System.out.printf("native=%s warmup=%d iters=%d workloads=%d%n", nativeOn, warmup, iters, selected.size());
+        }
 
         boolean allOk = true;
         String lastCategory = null;
@@ -216,7 +222,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestArrays::vectorAddFloat, a, b, c) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
-        return time("vectorAdd", warmup, iters, graph, null, null, () -> close(c.get(0), 3.0f));
+        return time("vectorAdd", warmup, iters, graph, null, null, () -> close(c.get(0), 3.0f), () -> TestArrays.vectorAddFloat(a, b, c));
     }
 
     private static Row vectorAddInt(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -227,7 +233,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestArrays::vectorAddInteger, a, b, c) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
-        return time("vectorAddInt", warmup, iters, graph, null, null, () -> c.get(0) == 3 ? null : "c=" + c.get(0));
+        return time("vectorAddInt", warmup, iters, graph, null, null, () -> c.get(0) == 3 ? null : "c=" + c.get(0), () -> TestArrays.vectorAddInteger(a, b, c));
     }
 
     private static Row vectorAddLong(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -240,7 +246,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestArrays::vectorAddLong, a, b, c) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
-        return time("vectorAddLong", warmup, iters, graph, null, null, () -> c.get(0) == 3L ? null : "c=" + c.get(0));
+        return time("vectorAddLong", warmup, iters, graph, null, null, () -> c.get(0) == 3L ? null : "c=" + c.get(0), () -> TestArrays.vectorAddLong(a, b, c));
     }
 
     private static Row vectorAddShort(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -253,7 +259,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestArrays::vectorAddShort, a, b, c) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
-        return time("vectorAddShort", warmup, iters, graph, null, null, () -> c.get(0) == 3 ? null : "c=" + c.get(0));
+        return time("vectorAddShort", warmup, iters, graph, null, null, () -> c.get(0) == 3 ? null : "c=" + c.get(0), () -> TestArrays.vectorAddShort(a, b, c));
     }
 
     private static Row vectorAddByte(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -266,7 +272,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestArrays::vectorAddByte, a, b, c) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
-        return time("vectorAddByte", warmup, iters, graph, null, null, () -> c.get(0) == 3 ? null : "c=" + c.get(0));
+        return time("vectorAddByte", warmup, iters, graph, null, null, () -> c.get(0) == 3 ? null : "c=" + c.get(0), () -> TestArrays.vectorAddByte(a, b, c));
     }
 
     private static Row addAccumulator(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -275,7 +281,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestArrays::addAccumulator, a, 7) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
-        return time("addAccumulator", warmup, iters, graph, null, null, () -> a.init(5), () -> a.get(0) == 12 ? null : "a=" + a.get(0));
+        return time("addAccumulator", warmup, iters, graph, null, null, () -> a.init(5), () -> a.get(0) == 12 ? null : "a=" + a.get(0), () -> TestArrays.addAccumulator(a, 7));
     }
 
     private static Row foundationFloat(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -286,7 +292,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, b, c) //
                 .task("t0", TestKernels::vectorAddFloatCompute, a, b, c) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
-        return time("foundationFloat", warmup, iters, graph, null, null, () -> close(a.get(0), 300.0f));
+        return time("foundationFloat", warmup, iters, graph, null, null, () -> close(a.get(0), 300.0f), () -> TestKernels.vectorAddFloatCompute(a, b, c));
     }
 
     private static Row foundationInt(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -297,7 +303,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, b, c) //
                 .task("t0", TestKernels::vectorAddCompute, a, b, c) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
-        return time("foundationInt", warmup, iters, graph, null, null, () -> a.get(0) == 300 ? null : "a=" + a.get(0));
+        return time("foundationInt", warmup, iters, graph, null, null, () -> a.get(0) == 300 ? null : "a=" + a.get(0), () -> TestKernels.vectorAddCompute(a, b, c));
     }
 
     private static Row foundationMul(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -308,7 +314,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, b, c) //
                 .task("t0", TestKernels::vectorMul, a, b, c) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
-        return time("foundationMul", warmup, iters, graph, null, null, () -> a.get(0) == 42 ? null : "a=" + a.get(0));
+        return time("foundationMul", warmup, iters, graph, null, null, () -> a.get(0) == 42 ? null : "a=" + a.get(0), () -> TestKernels.vectorMul(a, b, c));
     }
 
     private static Row foundationSub(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -319,7 +325,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, b, c) //
                 .task("t0", TestKernels::vectorSub, a, b, c) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
-        return time("foundationSub", warmup, iters, graph, null, null, () -> a.get(0) == 150 ? null : "a=" + a.get(0));
+        return time("foundationSub", warmup, iters, graph, null, null, () -> a.get(0) == 150 ? null : "a=" + a.get(0), () -> TestKernels.vectorSub(a, b, c));
     }
 
     private static Row foundationSaxpy(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -330,7 +336,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, b, c) //
                 .task("t0", TestKernels::saxpy, a, b, c, 4) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
-        return time("foundationSaxpy", warmup, iters, graph, null, null, () -> a.get(0) == 11 ? null : "a=" + a.get(0));
+        return time("foundationSaxpy", warmup, iters, graph, null, null, () -> a.get(0) == 11 ? null : "a=" + a.get(0), () -> TestKernels.saxpy(a, b, c, 4));
     }
 
     private static Row foundationCopy(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -338,7 +344,7 @@ public class InterpreterEval {
         TaskGraph graph = new TaskGraph("s0") //
                 .task("t0", TestKernels::copyTest, a) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
-        return time("foundationCopy", warmup, iters, graph, null, null, () -> a.get(0) == 50 ? null : "a=" + a.get(0));
+        return time("foundationCopy", warmup, iters, graph, null, null, () -> a.get(0) == 50 ? null : "a=" + a.get(0), () -> TestKernels.copyTest(a));
     }
 
     private static Row vectorFloat2(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -356,7 +362,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestFloats::addVectorFloat2, a, b, c) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
-        return time("vectorFloat2", warmup, iters, graph, null, null, () -> close(c.get(0).getX(), 3.0f));
+        return time("vectorFloat2", warmup, iters, graph, null, null, () -> close(c.get(0).getX(), 3.0f), () -> TestFloats.addVectorFloat2(a, b, c));
     }
 
     private static Row vectorFloat3(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -374,7 +380,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestFloats::addVectorFloat3, a, b, c) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
-        return time("vectorFloat3", warmup, iters, graph, null, null, () -> close(c.get(0).getX(), 3.0f));
+        return time("vectorFloat3", warmup, iters, graph, null, null, () -> close(c.get(0).getX(), 3.0f), () -> TestFloats.addVectorFloat3(a, b, c));
     }
 
     private static Row vectorFloat4(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -392,7 +398,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestFloats::addVectorFloat4, a, b, c) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
-        return time("vectorFloat4", warmup, iters, graph, null, null, () -> close(c.get(0).getX(), 3.0f));
+        return time("vectorFloat4", warmup, iters, graph, null, null, () -> close(c.get(0).getX(), 3.0f), () -> TestFloats.addVectorFloat4(a, b, c));
     }
 
     private static Row vectorFloat8(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -410,7 +416,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestFloats::addVectorFloat8, a, b, c) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
-        return time("vectorFloat8", warmup, iters, graph, null, null, () -> close(c.get(0).getS0(), 3.0f));
+        return time("vectorFloat8", warmup, iters, graph, null, null, () -> close(c.get(0).getS0(), 3.0f), () -> TestFloats.addVectorFloat8(a, b, c));
     }
 
     private static Row vectorInt2(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -428,7 +434,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestInts::addVectorInt2, a, b, c) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
-        return time("vectorInt2", warmup, iters, graph, null, null, () -> c.get(0).getX() == 3 ? null : "c=" + c.get(0).getX());
+        return time("vectorInt2", warmup, iters, graph, null, null, () -> c.get(0).getX() == 3 ? null : "c=" + c.get(0).getX(), () -> TestInts.addVectorInt2(a, b, c));
     }
 
     private static Row vectorInt4(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -446,7 +452,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestInts::addVectorInt4, a, b, c) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
-        return time("vectorInt4", warmup, iters, graph, null, null, () -> c.get(0).getX() == 3 ? null : "c=" + c.get(0).getX());
+        return time("vectorInt4", warmup, iters, graph, null, null, () -> c.get(0).getX() == 3 ? null : "c=" + c.get(0).getX(), () -> TestInts.addVectorInt4(a, b, c));
     }
 
     private static Row multiTask2(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -456,7 +462,10 @@ public class InterpreterEval {
                 .task("t0", TestMultipleTasksSingleDevice::task0Initialization, a) //
                 .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
-        return time("multiTask2", warmup, iters, graph, null, null, () -> a.get(0) == 120 ? null : "a=" + a.get(0));
+        return time("multiTask2", warmup, iters, graph, null, null, () -> a.get(0) == 120 ? null : "a=" + a.get(0), () -> {
+            TestMultipleTasksSingleDevice.task0Initialization(a);
+            TestMultipleTasksSingleDevice.task1Multiplication(a, 12);
+        });
     }
 
     private static Row multiTask3(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -468,7 +477,11 @@ public class InterpreterEval {
                 .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12) //
                 .task("t2", TestMultipleTasksSingleDevice::task2Saxpy, a, a, b, 12) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
-        return time("multiTask3", warmup, iters, graph, null, null, () -> b.get(0) == 1560 ? null : "b=" + b.get(0));
+        return time("multiTask3", warmup, iters, graph, null, null, () -> b.get(0) == 1560 ? null : "b=" + b.get(0), () -> {
+            TestMultipleTasksSingleDevice.task0Initialization(a);
+            TestMultipleTasksSingleDevice.task1Multiplication(a, 12);
+            TestMultipleTasksSingleDevice.task2Saxpy(a, a, b, 12);
+        });
     }
 
     private static Row multiFn(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -479,7 +492,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestMultipleFunctions::vectorAddInteger, a, b, c) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
-        return time("multiFn", warmup, iters, graph, null, null, () -> c.get(0) == 3 ? null : "c=" + c.get(0));
+        return time("multiFn", warmup, iters, graph, null, null, () -> c.get(0) == 3 ? null : "c=" + c.get(0), () -> TestMultipleFunctions.vectorAddInteger(a, b, c));
     }
 
     private static Row combined3(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -492,7 +505,11 @@ public class InterpreterEval {
                 .task("t1", TestCombinedTaskGraph::vectorMulV1, c, b, c) //
                 .task("t2", TestCombinedTaskGraph::vectorSubV1, c, b, c) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
-        return time("combined3", warmup, iters, graph, null, null, () -> c.get(0) == 12 ? null : "c=" + c.get(0));
+        return time("combined3", warmup, iters, graph, null, null, () -> c.get(0) == 12 ? null : "c=" + c.get(0), () -> {
+            TestCombinedTaskGraph.vectorAddV1(a, b, c);
+            TestCombinedTaskGraph.vectorMulV1(c, b, c);
+            TestCombinedTaskGraph.vectorSubV1(c, b, c);
+        });
     }
 
     private static Row reduction(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -502,7 +519,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", TestReductionsAutomatic::test, input, result) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
-        return time("reduction", warmup, iters, graph, null, null, () -> result.get(0) == N ? null : "sum=" + result.get(0));
+        return time("reduction", warmup, iters, graph, null, null, () -> result.get(0) == N ? null : "sum=" + result.get(0), () -> TestReductionsAutomatic.test(input, result));
     }
 
     private static Row reductionMulti(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -513,7 +530,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, out1, out2) //
                 .task("t0", MultipleReductions::test, input, out1, out2) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out1);
-        return time("reductionMulti", warmup, iters, graph, null, null, () -> out1.get(0) == N ? null : "sum=" + out1.get(0));
+        return time("reductionMulti", warmup, iters, graph, null, null, () -> out1.get(0) == N ? null : "sum=" + out1.get(0), () -> MultipleReductions.test(input, out1, out2));
     }
 
     private static Row reductionSeq(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -526,7 +543,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, array) //
                 .task("t0", TestGridScheduler::reduceAdd, array, N) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, array);
-        return time("reductionSeq", warmup, iters, graph, grid, null, () -> array.init(1.0f), () -> close(array.get(0), (float) N));
+        return time("reductionSeq", warmup, iters, graph, grid, null, () -> array.init(1.0f), () -> close(array.get(0), (float) N), () -> TestGridScheduler.reduceAdd(array, N));
     }
 
     private static Row reductionDot(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -536,7 +553,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", TestFloats::dotProductFunctionReduce, input, result) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
-        return time("reductionDot", warmup, iters, graph, null, null, () -> close(result.get(0), (float) N));
+        return time("reductionDot", warmup, iters, graph, null, null, () -> close(result.get(0), (float) N), () -> TestFloats.dotProductFunctionReduce(input, result));
     }
 
     private static Row kernelContext(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -548,7 +565,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestVectorAdditionKernelContext::vectorAdd, context, a, b, c) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
-        return time("kernelContext", warmup, iters, graph, grid1D("s0.t0", N), null, () -> c.get(0) == 30 ? null : "c=" + c.get(0));
+        return time("kernelContext", warmup, iters, graph, grid1D("s0.t0", N), null, () -> c.get(0) == 30 ? null : "c=" + c.get(0), () -> TestVectorAdditionKernelContext.vectorAddJava(a, b, c));
     }
 
     private static Row kernelContextLast(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -560,7 +577,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestVectorAdditionKernelContext::vectorAdd, a, b, c, context) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
-        return time("kernelContextLast", warmup, iters, graph, grid1D("s0.t0", N), null, () -> c.get(0) == 30 ? null : "c=" + c.get(0));
+        return time("kernelContextLast", warmup, iters, graph, grid1D("s0.t0", N), null, () -> c.get(0) == 30 ? null : "c=" + c.get(0), () -> TestVectorAdditionKernelContext.vectorAddJava(a, b, c));
     }
 
     private static Row kernelThreadId(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -571,7 +588,11 @@ public class InterpreterEval {
         TaskGraph graph = new TaskGraph("s0") //
                 .task("t0", TestReductionsIntegersKernelContext::basicAccessThreadIds, context, a) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
-        return time("kernelThreadId", warmup, iters, graph, grid1DLocal("s0.t0", size, local), null, () -> a.get(0) == 0 && a.get(size - 1) == size - 1 ? null : "a=" + a.get(size - 1));
+        return time("kernelThreadId", warmup, iters, graph, grid1DLocal("s0.t0", size, local), null, () -> a.get(0) == 0 && a.get(size - 1) == size - 1 ? null : "a=" + a.get(size - 1), () -> {
+            for (int i = 0; i < size; i++) {
+                a.set(i, i);
+            }
+        });
     }
 
     private static Row kernelLocal(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -587,7 +608,11 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestReductionsIntegersKernelContext::basicAccessThreadIds02, context, a, b) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
-        return time("kernelLocal", warmup, iters, graph, grid1DLocal("s0.t0", size, local), null, () -> b.get(0) == 0 && b.get(size - 1) == size - 1 ? null : "b=" + b.get(size - 1));
+        return time("kernelLocal", warmup, iters, graph, grid1DLocal("s0.t0", size, local), null, () -> b.get(0) == 0 && b.get(size - 1) == size - 1 ? null : "b=" + b.get(size - 1), () -> {
+            for (int i = 0; i < size; i++) {
+                b.set(i, a.get(i));
+            }
+        });
     }
 
     private static Row kernelMatmul(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -600,7 +625,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestMatrixMultiplicationKernelContext::matrixMultiplication1D, context, a, b, c, size) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
-        return time("kernelMatmul", warmup, iters, graph, grid1D("s0.t0", size), null, () -> close(c.get(0), (float) size));
+        return time("kernelMatmul", warmup, iters, graph, grid1D("s0.t0", size), null, () -> close(c.get(0), (float) size), () -> seqMatmul1D(a, b, c, size));
     }
 
     private static Row matmul2d(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -614,7 +639,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestMatrixTypes::computeMatrixMultiplication, a, b, c) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
-        return time("matmul2d", warmup, iters, graph, null, null, () -> close(c.get(0, 0), n * 2.0f));
+        return time("matmul2d", warmup, iters, graph, null, null, () -> close(c.get(0, 0), n * 2.0f), () -> TestMatrixTypes.computeMatrixMultiplication(a, b, c));
     }
 
     private static Row matrixSum(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -626,7 +651,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestMatrixTypes::computeMatrixSum, a, b, n) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
-        return time("matrixSum", warmup, iters, graph, null, null, () -> close(b.get(0, 0), 2.0f));
+        return time("matrixSum", warmup, iters, graph, null, null, () -> close(b.get(0, 0), 2.0f), () -> TestMatrixTypes.computeMatrixSum(a, b, n));
     }
 
     private static Row matrixSumInt(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -642,7 +667,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestMatrixTypes::computeMatrixSum, a, b, n, n) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
-        return time("matrixSumInt", warmup, iters, graph, null, null, () -> b.get(0, 0) == 2 ? null : "b=" + b.get(0, 0));
+        return time("matrixSumInt", warmup, iters, graph, null, null, () -> b.get(0, 0) == 2 ? null : "b=" + b.get(0, 0), () -> TestMatrixTypes.computeMatrixSum(a, b, n, n));
     }
 
     private static Row matrix3d(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -660,7 +685,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestMatrixTypes::computeMatrixSum, a, b, n) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
-        return time("matrix3d", warmup, iters, graph, null, null, () -> close(b.get(0, 0, 0), 2.0f));
+        return time("matrix3d", warmup, iters, graph, null, null, () -> close(b.get(0, 0, 0), 2.0f), () -> TestMatrixTypes.computeMatrixSum(a, b, n));
     }
 
     private static Row matrixFloat4(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -677,7 +702,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestMatrixTypes::computeMatrixSum, a, b, n, n) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
-        return time("matrixFloat4", warmup, iters, graph, null, null, () -> close(b.get(0, 0).getX(), 2.0f));
+        return time("matrixFloat4", warmup, iters, graph, null, null, () -> close(b.get(0, 0).getX(), 2.0f), () -> TestMatrixTypes.computeMatrixSum(a, b, n, n));
     }
 
     private static Row hilbert(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -686,7 +711,7 @@ public class InterpreterEval {
         TaskGraph graph = new TaskGraph("s0") //
                 .task("t0", ComputeTests::hilbertComputation, output, n, n) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
-        return time("hilbert", warmup, iters, graph, null, null, () -> close(output.get(0), 1.0f));
+        return time("hilbert", warmup, iters, graph, null, null, () -> close(output.get(0), 1.0f), () -> ComputeTests.hilbertComputation(output, n, n));
     }
 
     private static Row dft(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -699,7 +724,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, inReal, inImag) //
                 .task("t0", ComputeTests::computeDFT, inReal, inImag, outReal, outImag) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, outReal);
-        return time("dft", warmup, iters, graph, null, null, () -> close(outReal.get(0), (float) n));
+        return time("dft", warmup, iters, graph, null, null, () -> close(outReal.get(0), (float) n), () -> ComputeTests.computeDFT(inReal, inImag, outReal, outImag));
     }
 
     private static Row dftFloat(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -712,7 +737,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, inReal, inImag) //
                 .task("t0", ComputeTests::computeDFTFloat, inReal, inImag, outReal, outImag) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, outReal);
-        return time("dftFloat", warmup, iters, graph, null, null, () -> close(outReal.get(0), (float) n));
+        return time("dftFloat", warmup, iters, graph, null, null, () -> close(outReal.get(0), (float) n), () -> ComputeTests.computeDFTFloat(inReal, inImag, outReal, outImag));
     }
 
     private static Row julia(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -722,7 +747,7 @@ public class InterpreterEval {
         TaskGraph graph = new TaskGraph("s0") //
                 .task("t0", ComputeTests::juliaSetTornado, n, hue, brightness) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, brightness);
-        return time("julia", warmup, iters, graph, null, null, () -> brightness.get(0) == 0.0f || brightness.get(0) == 1.0f ? null : "b=" + brightness.get(0));
+        return time("julia", warmup, iters, graph, null, null, () -> brightness.get(0) == 0.0f || brightness.get(0) == 1.0f ? null : "b=" + brightness.get(0), () -> ComputeTests.juliaSetTornado(n, hue, brightness));
     }
 
     private static Row mathExp(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -731,7 +756,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestMath::testExpFloat, a) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
-        return time("mathExp", warmup, iters, graph, null, null, () -> a.init(1.0f), () -> close(a.get(0), (float) Math.exp(1.0f)));
+        return time("mathExp", warmup, iters, graph, null, null, () -> a.init(1.0f), () -> close(a.get(0), (float) Math.exp(1.0f)), () -> TestMath.testExpFloat(a));
     }
 
     private static Row mathAbs(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -740,7 +765,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestMath::testAbs, a) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
-        return time("mathAbs", warmup, iters, graph, null, null, () -> a.init(-2.0f), () -> close(a.get(0), 2.0f));
+        return time("mathAbs", warmup, iters, graph, null, null, () -> a.init(-2.0f), () -> close(a.get(0), 2.0f), () -> TestMath.testAbs(a));
     }
 
     private static Row mathPow(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -749,7 +774,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestMath::testPow, a) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
-        return time("mathPow", warmup, iters, graph, null, null, () -> a.init(1.0f), () -> close(a.get(0), 2.0f));
+        return time("mathPow", warmup, iters, graph, null, null, () -> a.init(1.0f), () -> close(a.get(0), 2.0f), () -> TestMath.testPow(a));
     }
 
     private static Row mathMin(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -760,7 +785,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestMath::testMin, a, b, c) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
-        return time("mathMin", warmup, iters, graph, null, null, () -> close(c.get(0), 1.0f));
+        return time("mathMin", warmup, iters, graph, null, null, () -> close(c.get(0), 1.0f), () -> TestMath.testMin(a, b, c));
     }
 
     private static Row mathFma(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -773,7 +798,7 @@ public class InterpreterEval {
         return time("mathFma", warmup, iters, graph, null, null, () -> {
             a.init(2.0f);
             b.init(3.0f);
-        }, () -> close(b.get(0), 8.0f));
+        }, () -> close(b.get(0), 8.0f), () -> TestMath.testFMA(a, b));
     }
 
     private static Row mathCos(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -782,7 +807,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestTornadoMathCollection::testTornadoCos, a) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
-        return time("mathCos", warmup, iters, graph, null, null, () -> a.init(0.0f), () -> close(a.get(0), 1.0f));
+        return time("mathCos", warmup, iters, graph, null, null, () -> a.init(0.0f), () -> close(a.get(0), 1.0f), () -> TestTornadoMathCollection.testTornadoCos(a));
     }
 
     private static Row batch(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -793,7 +818,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestBatches::compute, a, b) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
-        return time("batch", warmup, iters, graph, null, "1MB", () -> close(b.get(0), 101.0f));
+        return time("batch", warmup, iters, graph, null, "1MB", () -> close(b.get(0), 101.0f), () -> TestBatches.compute(a, b));
     }
 
     private static Row batch3(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -805,7 +830,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestBatches::compute, a, b, c) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
-        return time("batch3", warmup, iters, graph, null, "1MB", () -> close(c.get(0), 3.0f));
+        return time("batch3", warmup, iters, graph, null, "1MB", () -> close(c.get(0), 3.0f), () -> TestBatches.compute(a, b, c));
     }
 
     private static Row batchInt(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -817,7 +842,7 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestBatches::compute, a, b, c) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
-        return time("batchInt", warmup, iters, graph, null, "1MB", () -> c.get(0) == 3 ? null : "c=" + c.get(0));
+        return time("batchInt", warmup, iters, graph, null, "1MB", () -> c.get(0) == 3 ? null : "c=" + c.get(0), () -> TestBatches.compute(a, b, c));
     }
 
     private static Row batchCopy(int warmup, int iters) throws TornadoExecutionPlanException {
@@ -827,14 +852,17 @@ public class InterpreterEval {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestBatches::compute, a) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
-        return time("batchCopy", warmup, iters, graph, null, "1MB", () -> close(a.get(0), 7.0f));
+        return time("batchCopy", warmup, iters, graph, null, "1MB", () -> close(a.get(0), 7.0f), () -> TestBatches.compute(a));
     }
 
-    private static Row time(String name, int warmup, int iters, TaskGraph graph, GridScheduler grid, String batch, Validator validator) throws TornadoExecutionPlanException {
-        return time(name, warmup, iters, graph, grid, batch, null, validator);
+    private static Row time(String name, int warmup, int iters, TaskGraph graph, GridScheduler grid, String batch, Validator validator, Runnable seqKernel) throws TornadoExecutionPlanException {
+        return time(name, warmup, iters, graph, grid, batch, null, validator, seqKernel);
     }
 
-    private static Row time(String name, int warmup, int iters, TaskGraph graph, GridScheduler grid, String batch, Runnable restore, Validator validator) throws TornadoExecutionPlanException {
+    private static Row time(String name, int warmup, int iters, TaskGraph graph, GridScheduler grid, String batch, Runnable restore, Validator validator, Runnable seqKernel) throws TornadoExecutionPlanException {
+        if (SEQ) {
+            return timeSeq(name, warmup, iters, restore, seqKernel, validator);
+        }
         ImmutableTaskGraph snapshot = graph.snapshot();
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(snapshot)) {
             if (grid != null) {
@@ -861,6 +889,39 @@ public class InterpreterEval {
             String reason = validator.check();
             Stats stats = stats(samples);
             return new Row(name, stats.median, stats.p10, stats.p90, reason == null, reason == null ? "" : reason);
+        }
+    }
+
+    private static Row timeSeq(String name, int warmup, int iters, Runnable restore, Runnable seqKernel, Validator validator) {
+        for (int i = 0; i < warmup; i++) {
+            if (restore != null) {
+                restore.run();
+            }
+            seqKernel.run();
+        }
+        long[] samples = new long[iters];
+        for (int i = 0; i < iters; i++) {
+            if (restore != null) {
+                restore.run();
+            }
+            long t0 = System.nanoTime();
+            seqKernel.run();
+            samples[i] = System.nanoTime() - t0;
+        }
+        String reason = validator.check();
+        Stats stats = stats(samples);
+        return new Row(name, stats.median, stats.p10, stats.p90, reason == null, reason == null ? "" : reason);
+    }
+
+    private static void seqMatmul1D(FloatArray a, FloatArray b, FloatArray c, int size) {
+        for (int idx = 0; idx < size; idx++) {
+            for (int jdx = 0; jdx < size; jdx++) {
+                float sum = 0.0f;
+                for (int k = 0; k < size; k++) {
+                    sum += a.get((idx * size) + k) * b.get((k * size) + jdx);
+                }
+                c.set((idx * size) + jdx, sum);
+            }
         }
     }
 

@@ -288,5 +288,25 @@ public class MetalKernel {
         return MetalObjects.nativePipelineHandle(metalKernelID);
     }
 
+    /**
+     * Publishes per-slot argument kinds to the native bytecode interpreter. Indexing matches
+     * {@link #getArgInfoObject(int)}, which is what {@code MetalInstalledCode.setKernelArgs}
+     * uses when it remaps threadgroup memory.
+     */
+    public boolean publishNativeArgumentTypes() {
+        ensureArgInfoLoaded();
+        if (argInfoCache == null || argInfoCache.length == 0) {
+            return false;
+        }
+        int[] types = new int[argInfoCache.length];
+        for (int i = 0; i < argInfoCache.length; i++) {
+            KernelArgInfo info = argInfoCache[i];
+            if (info != null && info.type == KernelArgInfo.ArgType.THREADGROUP) {
+                types[i] = 1;
+            }
+        }
+        return MetalObjects.registerNativeInterpreterArgumentTypes(getNativePipelineHandle(), types);
+    }
+
     // (no-op) end of class
 }

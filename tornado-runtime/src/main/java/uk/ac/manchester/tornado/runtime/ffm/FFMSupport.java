@@ -121,6 +121,14 @@ public final class FFMSupport {
     }
 
     /**
+     * Resolves a symbol from libraries already loaded into this process ({@code System.loadLibrary}).
+     * Used by the Metal driver to publish pipeline argument types into {@code libtornado-runtime}.
+     */
+    public static MethodHandle downcallLoaded(FunctionDescriptor descriptor, String... candidates) {
+        return downcall(SymbolLookup.loaderLookup(), descriptor, candidates);
+    }
+
+    /**
      * Builds an upcall stub, so that native code can call back into Java.
      *
      * <p>
