@@ -28,6 +28,7 @@ import static uk.ac.manchester.tornado.runtime.ffm.FFMSupport.C_POINTER;
 import static uk.ac.manchester.tornado.runtime.ffm.FFMSupport.downcall;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SymbolLookup;
@@ -51,6 +52,26 @@ public final class NVRTCAPI {
 
     /** nvrtcResult success code. */
     public static final int NVRTC_SUCCESS = 0;
+
+    private static final String LIBNVRTC_SO_PREFIX = "libnvrtc.so.";
+
+    /**
+     * Directories under a toolkit root that may hold NVRTC. {@code bin/x64} is where CUDA 13.x
+     * moved the Windows runtime DLLs (older toolkits kept them directly in {@code bin}), and the
+     * multiarch directories are where Debian and Ubuntu package the distribution's own CUDA
+     * runtime - a toolkit root ({@code /usr}) whose libraries live in none of the others, so
+     * without them the packaged NVRTC was reachable only by soname and never version-ranked
+     * against the toolkits installed under {@code /usr/local}.
+     */
+    private static final String[] LIB_DIRS = { "lib64", "lib", "lib/x64", "bin", "bin/x64", "lib/x86_64-linux-gnu", "lib/aarch64-linux-gnu" };
+
+    /**
+     * The candidate {@link #loadNvrtc()} actually loaded. Assigned before {@link #LIBNVRTC} is,
+     * since it is set from that field's own initializer. A host can hold several toolkits and the
+     * one in use decides which architectures can be targeted, so measurements have to be able to
+     * state which NVRTC produced them rather than inferring it from what is installed.
+     */
+    private static String loadedLibrary;
 
     private static final SymbolLookup LIBNVRTC = loadNvrtc();
 
@@ -105,9 +126,20 @@ public final class NVRTCAPI {
 
     private static SymbolLookup loadNvrtc() {
         List<String> candidates = new ArrayList<>();
-        // Sonames first: these resolve through LD_LIBRARY_PATH / the ldconfig cache, which is how
-        // a toolkit that has been put on the loader path is found.
-        candidates.add("libnvrtc.so");
+
+        // Toolkit roots BEFORE the bare soname. The unversioned libnvrtc.so on the loader path
+        // belongs to whichever toolkit the distribution packaged, and that is routinely OLDER than
+        // one installed later under /usr/local: on a Blackwell host carrying Ubuntu's CUDA 12.0
+        // nvidia-cuda-toolkit alongside a hand-installed CUDA 13.0, taking the soname first pins
+        // the backend to the 12.0 NVRTC, which cannot emit sm_120 at all and so forces the
+        // compute_90 PTX fallback - with the newer toolkit sitting unused on disk and nothing in
+        // the log naming the older one as the reason. Ranking the toolkits actually present by
+        // version and trying them first makes the newest installed NVRTC win, which is the
+        // assumption the arch selection in CUDACompiler is written against.
+        candidates.addAll(toolkitNvrtcFiles());
+
+        // Versioned sonames next, newest major first, so a toolkit that IS on the loader path but
+        // installed somewhere this scan does not know about is still found.
         for (int major = 13; major >= 10; major--) {
             candidates.add("libnvrtc.so." + major);
         }
@@ -115,37 +147,134 @@ public final class NVRTCAPI {
         // whose ABI changed: nvrtc64_120_0.dll served every CUDA 12.x release, CUDA 13.0
         // introduced nvrtc64_130_0.dll. A single hardcoded name goes stale the day a newer
         // toolkit ships, so every version this backend has ever been run against is tried here,
-        // newest first, before falling through to the toolkit-root scan below (which finds
-        // whatever is actually installed by filename, not by a version this code had to guess).
+        // newest first.
         for (int major = 13; major >= 10; major--) {
             for (int minor = 9; minor >= 0; minor--) {
                 candidates.add("nvrtc64_" + major + minor + "_0.dll");
             }
         }
+        // Unversioned names last. They name no version, so they are the weakest evidence of which
+        // toolkit is being loaded, and serve only as the fallback for an install neither the
+        // environment nor the root scan located.
+        candidates.add("libnvrtc.so");
         candidates.add("libnvrtc.dylib");
-        // Then every directory that might hold NVRTC under every toolkit root the environment
-        // names (or, absent those, the standard install location - see toolkitRoots()), for the
-        // common case of a toolkit that is installed but not on the loader path. bin/x64 is
-        // where CUDA 13.x moved the Windows runtime DLLs (older toolkits kept them directly in
-        // bin); both are checked since the layout varies by toolkit version.
+
+        // Tried one at a time rather than in a single call so the winning candidate can be
+        // recorded; see loadedLibrary().
+        for (String candidate : candidates) {
+            SymbolLookup lookup = FFMSupport.loadLibrary(candidate);
+            if (lookup != null) {
+                loadedLibrary = candidate;
+                return lookup;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * The NVRTC that was loaded - an absolute path when it was found under a toolkit root, or the
+     * soname the loader resolved otherwise - or {@code null} when none could be loaded.
+     */
+    public static String loadedLibrary() {
+        return loadedLibrary;
+    }
+
+
+    /**
+     * Every NVRTC found under the toolkit roots, newest first. Roots the environment names keep
+     * their stated priority ahead of the discovered ones - naming a toolkit is a deliberate act, so
+     * it outranks a merely newer one found on disk. Within each group the files are ordered by the
+     * CUDA version their soname carries, so an older toolkit cannot shadow a newer one just by
+     * sorting earlier in a directory listing.
+     */
+    private static List<String> toolkitNvrtcFiles() {
+        List<String> named = environmentRoots();
+        List<File> fromNamedRoots = new ArrayList<>();
+        List<File> fromDiscoveredRoots = new ArrayList<>();
         for (String root : toolkitRoots()) {
-            for (String libDir : new String[] { "lib64", "lib", "lib/x64", "bin", "bin/x64" }) {
-                File dir = new File(root, libDir);
-                File[] files = dir.listFiles();
+            List<File> bucket = named.contains(root) ? fromNamedRoots : fromDiscoveredRoots;
+            for (String libDir : LIB_DIRS) {
+                File[] files = new File(root, libDir).listFiles();
                 if (files == null) {
                     continue;
                 }
                 for (File file : files) {
-                    String name = file.getName();
-                    boolean isNvrtc = name.equals("libnvrtc.so") || name.startsWith("libnvrtc.so.") || name.equals("libnvrtc.dylib")
-                            || (name.startsWith("nvrtc64_") && name.endsWith(".dll"));
-                    if (isNvrtc) {
-                        candidates.add(file.getAbsolutePath());
+                    if (isNvrtcLibrary(file.getName())) {
+                        bucket.add(file);
                     }
                 }
             }
         }
-        return FFMSupport.loadLibrary(candidates.toArray(new String[0]));
+        List<String> ordered = new ArrayList<>();
+        for (List<File> bucket : List.of(fromNamedRoots, fromDiscoveredRoots)) {
+            bucket.sort(Comparator.comparingInt(NVRTCAPI::nvrtcFileVersionKey).reversed());
+            for (File file : bucket) {
+                String path = file.getAbsolutePath();
+                if (!ordered.contains(path)) {
+                    ordered.add(path);
+                }
+            }
+        }
+        return ordered;
+    }
+
+    private static boolean isNvrtcLibrary(String name) {
+        return name.equals("libnvrtc.so") || name.startsWith("libnvrtc.so.") || name.equals("libnvrtc.dylib") || (name.startsWith("nvrtc64_") && name.endsWith(".dll"));
+    }
+
+    /**
+     * CUDA version of an NVRTC file as {@code major * 1000 + minor}. The soname normally carries it
+     * (libnvrtc.so.13.0.88, nvrtc64_130_0.dll); an unversioned libnvrtc.so is usually a symlink, so
+     * it is resolved before falling back to the version named by the toolkit directory holding it.
+     * Anything that identifies no version sorts last rather than first, so an unrecognised file
+     * cannot masquerade as the newest toolkit.
+     */
+    private static int nvrtcFileVersionKey(File file) {
+        int key = sonameVersionKey(file.getName());
+        if (key < 0) {
+            try {
+                key = sonameVersionKey(file.getCanonicalFile().getName());
+            } catch (IOException e) {
+                // Unreadable link: fall through to the directory-derived version below.
+            }
+        }
+        if (key < 0) {
+            for (File directory = file.getParentFile(); directory != null; directory = directory.getParentFile()) {
+                int fromDirectory = cudaVersionKey(directory);
+                if (fromDirectory >= 0) {
+                    return fromDirectory;
+                }
+            }
+        }
+        return key;
+    }
+
+    /** Version encoded in an NVRTC library filename, or {@code -1} when it carries none. */
+    private static int sonameVersionKey(String name) {
+        if (name.startsWith(LIBNVRTC_SO_PREFIX)) {
+            String[] parts = name.substring(LIBNVRTC_SO_PREFIX.length()).split("\\.");
+            try {
+                int major = Integer.parseInt(parts[0]);
+                int minor = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
+                return major * 1000 + minor;
+            } catch (NumberFormatException e) {
+                return -1;
+            }
+        }
+        if (name.startsWith("nvrtc64_") && name.endsWith(".dll")) {
+            int end = name.indexOf('_', "nvrtc64_".length());
+            if (end < 0) {
+                return -1;
+            }
+            try {
+                // nvrtc64_130_0.dll: the "130" field packs major 13 and minor 0 together.
+                int packed = Integer.parseInt(name.substring("nvrtc64_".length(), end));
+                return (packed / 10) * 1000 + packed % 10;
+            } catch (NumberFormatException e) {
+                return -1;
+            }
+        }
+        return -1;
     }
 
     /**
@@ -153,15 +282,11 @@ public final class NVRTCAPI {
      * NVRTC that gets loaded and the headers that get offered to it come from the same toolkit.
      */
     public static List<String> toolkitRoots() {
-        List<String> roots = new ArrayList<>();
-        for (String var : new String[] { "CUDA_PATH", "CUDA_HOME", "CUDA_ROOT" }) {
-            String value = System.getenv(var);
-            if (value != null && !value.isEmpty() && !roots.contains(value)) {
-                roots.add(value);
+        List<String> roots = new ArrayList<>(environmentRoots());
+        for (String root : localCudaRoots()) {
+            if (!roots.contains(root)) {
+                roots.add(root);
             }
-        }
-        if (!roots.contains("/usr/local/cuda")) {
-            roots.add("/usr/local/cuda");
         }
         if (!roots.contains("/usr")) {
             roots.add("/usr");
@@ -190,14 +315,71 @@ public final class NVRTCAPI {
         return roots;
     }
 
+    /** Toolkit roots the environment names, in the order the variables are consulted. */
+    private static List<String> environmentRoots() {
+        List<String> roots = new ArrayList<>();
+        for (String var : new String[] { "CUDA_PATH", "CUDA_HOME", "CUDA_ROOT" }) {
+            String value = System.getenv(var);
+            if (value != null && !value.isEmpty() && !roots.contains(value)) {
+                roots.add(value);
+            }
+        }
+        return roots;
+    }
+
+    /**
+     * CUDA toolkits installed under {@code /usr/local}, newest first. Linux installs one versioned
+     * directory per toolkit (cuda-13.0, cuda-12.8) plus an optional {@code cuda} symlink naming a
+     * default, so a host readily holds several at once. Only the symlink used to be consulted,
+     * which left a toolkit installed beside it undiscoverable - the usual shape of adding CUDA 13
+     * to a machine whose distribution already packaged an older one. The versioned directories are
+     * enumerated and ranked here for the same reason the Windows branch ranks its own: the newest
+     * toolkit present should win, not whichever one a symlink or a directory listing happens to
+     * name first.
+     */
+    private static List<String> localCudaRoots() {
+        File[] entries = new File("/usr/local").listFiles(f -> f.isDirectory() && (f.getName().equals("cuda") || f.getName().startsWith("cuda-")));
+        if (entries == null) {
+            // No /usr/local/cuda* at all; still offer the conventional path in case it appears as
+            // something this filter cannot see (a symlink to an unreadable directory, say).
+            return List.of("/usr/local/cuda");
+        }
+        Arrays.sort(entries, Comparator.comparingInt(NVRTCAPI::localCudaVersionKey).reversed());
+        List<String> roots = new ArrayList<>();
+        for (File entry : entries) {
+            roots.add(entry.getAbsolutePath());
+        }
+        return roots;
+    }
+
+    /**
+     * Version of a {@code /usr/local} CUDA directory, resolving the unversioned {@code cuda}
+     * symlink to the versioned directory it points at so it ranks alongside its siblings instead
+     * of sorting last.
+     */
+    private static int localCudaVersionKey(File directory) {
+        int key = cudaVersionKey(directory);
+        if (key < 0) {
+            try {
+                key = cudaVersionKey(directory.getCanonicalFile());
+            } catch (IOException e) {
+                // Unreadable link: leave it unversioned so it sorts last.
+            }
+        }
+        return key;
+    }
+
     /**
      * Numeric sort key for a toolkit directory named {@code vMAJOR.MINOR} (as the Windows
-     * installer names them), highest first. Anything that does not parse sorts last rather than
-     * first, so an unrecognised entry cannot masquerade as the newest toolkit.
+     * installer names them) or {@code cuda-MAJOR.MINOR} (as Linux installs them), highest first.
+     * Anything that does not parse sorts last rather than first, so an unrecognised entry cannot
+     * masquerade as the newest toolkit.
      */
     private static int cudaVersionKey(File versionDir) {
         String name = versionDir.getName();
-        if (!name.isEmpty() && (name.charAt(0) == 'v' || name.charAt(0) == 'V')) {
+        if (name.startsWith("cuda-")) {
+            name = name.substring("cuda-".length());
+        } else if (!name.isEmpty() && (name.charAt(0) == 'v' || name.charAt(0) == 'V')) {
             name = name.substring(1);
         }
         String[] parts = name.split("\\.", 2);
