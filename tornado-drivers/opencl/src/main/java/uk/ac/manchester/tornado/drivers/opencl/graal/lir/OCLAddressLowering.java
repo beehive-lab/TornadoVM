@@ -37,6 +37,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBa
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayCopyNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalArrayNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLDecompressedReadFieldNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.calc.TornadoAddressArithmeticNode;
 
 public class OCLAddressLowering extends AddressLoweringByNodePhase.AddressLowering {
@@ -50,7 +51,14 @@ public class OCLAddressLowering extends AddressLoweringByNodePhase.AddressLoweri
             memoryRegister = fixedArrayCopyNode.getMemoryRegister();
         } else if (base instanceof LocalArrayNode localArrayNode) {
             memoryRegister = localArrayNode.getMemoryRegister();
-        } else if (!((base instanceof TornadoAddressArithmeticNode) || (base instanceof ParameterNode) || (base instanceof ReadNode) || (base instanceof FloatingReadNode) || (base instanceof PiNode))) {
+        } else if (!((base instanceof TornadoAddressArithmeticNode) || (base instanceof ParameterNode) || (base instanceof ReadNode) || (base instanceof FloatingReadNode) || (base instanceof PiNode)
+                // An OCLDecompressedReadFieldNode yields the absolute device address of the referenced
+                // object (its generate() decompresses the field's compressed reference against the owning
+                // object's base), so it is a valid base for a further address computation - e.g. writing a
+                // scalar HalfFloat into VectorHalf.storage (a HalfFloatArray field), where the
+                // WriteHalfFloatNode's OffsetAddressNode uses the decompressed storage reference directly
+                // as its base.
+                || (base instanceof OCLDecompressedReadFieldNode))) {
             TornadoInternalError.unimplemented("address origin unimplemented: %s", base.getClass().getName());
         }
 
