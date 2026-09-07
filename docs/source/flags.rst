@@ -137,6 +137,7 @@ TornadoVM's **CUDA C** backend targets NVIDIA GPUs: it emits CUDA C, compiled to
    ================================================================  ==================================================================================================================
    ``-Dtornado.cuda.compiler.flags=FLAGS``                           Passes additional flags to NVRTC when compiling the generated CUDA C source (default: none).
    ``-Dtornado.cuda.host.pinning=false``                             Disables pinning host memory for faster host↔device transfers (default: true).
+   ``-Dtornado.cuda.payloadAlignment=N``                             Byte boundary that a native array's first data element is aligned to, by prepending ``N``-byte-aligned padding to the device allocation (default: 32). The 16-byte array header otherwise offsets the payload half of a 32-byte L2 sector, so every warp-wide access fetches 5 sectors instead of 4; aligning to 32 restores 4-sector loads at a cost of 16 bytes per buffer. Set to ``0`` to disable the padding and restore the previous layout. Applies to non-batched allocations only; the generated kernel is byte-identical either way.
    ================================================================  ==================================================================================================================
 
 .. note::
