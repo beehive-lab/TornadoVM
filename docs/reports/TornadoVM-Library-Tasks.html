@@ -1,0 +1,1238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TornadoVM Library Tasks</title>
+<style>
+@page {
+  size: A4;
+  margin: 18mm 16mm 20mm 16mm;
+  @bottom-center { content: counter(page); }
+}
+:root{
+  --ink:#15181d; --muted:#5b6472; --rule:#d8dde5; --rule2:#eef1f5;
+  --accent:#1a5fb4; --green:#1a7f37; --amber:#9a6700; --red:#a40e26;
+  --code:#f5f7fa;
+}
+*{box-sizing:border-box}
+body{
+  font-family:"Charter","Bitstream Charter","Georgia",serif;
+  font-size:9.4pt; line-height:1.5; color:var(--ink); margin:0;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
+}
+h1,h2,h3,h4{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;line-height:1.22;color:var(--ink)}
+h1{font-size:20pt;margin:0 0 4pt;letter-spacing:-.4pt}
+h2{font-size:13.5pt;margin:22pt 0 7pt;padding-bottom:4pt;border-bottom:1.6pt solid var(--ink);break-after:avoid}
+h3{font-size:11pt;margin:15pt 0 5pt;break-after:avoid}
+h4{font-size:9.6pt;margin:11pt 0 3pt;color:var(--muted);text-transform:uppercase;letter-spacing:.5pt;break-after:avoid}
+p{margin:0 0 6pt}
+ul,ol{margin:0 0 6pt;padding-left:15pt}
+li{margin-bottom:2.5pt}
+code,kbd{font-family:"DejaVu Sans Mono","Menlo",monospace;font-size:8.1pt;background:var(--code);
+  padding:.5pt 2.5pt;border-radius:2px;border:.5pt solid var(--rule2)}
+pre{font-family:"DejaVu Sans Mono","Menlo",monospace;font-size:7.6pt;line-height:1.42;
+  background:var(--code);border:.6pt solid var(--rule);border-left:2.5pt solid var(--accent);
+  padding:6pt 8pt;margin:6pt 0 9pt;overflow:hidden;white-space:pre-wrap;border-radius:2px;break-inside:avoid}
+pre code{background:none;border:none;padding:0;font-size:inherit}
+table{width:100%;border-collapse:collapse;margin:5pt 0 10pt;font-size:7.9pt;break-inside:auto}
+caption{caption-side:top;text-align:left;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+  font-size:8.2pt;font-weight:600;color:var(--muted);padding-bottom:3pt}
+th{background:#eef1f6;text-align:left;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+  font-size:7.6pt;font-weight:600;padding:3.5pt 5pt;border-bottom:1pt solid var(--ink);
+  border-top:.6pt solid var(--rule);vertical-align:bottom}
+td{padding:3.2pt 5pt;border-bottom:.6pt solid var(--rule2);vertical-align:top}
+tr{break-inside:avoid}
+thead{display:table-header-group}
+td code{font-size:7.3pt;background:none;border:none;padding:0;white-space:nowrap}
+td.wrapcode code{white-space:normal}
+.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ctr{text-align:center}
+.yes{color:var(--green);font-weight:700}
+.no{color:var(--red);font-weight:700}
+.part{color:var(--amber);font-weight:700}
+.small{font-size:8.2pt;color:var(--muted)}
+.note{background:#f7f9fc;border:.6pt solid var(--rule);border-left:2.5pt solid var(--muted);
+  padding:6pt 9pt;margin:8pt 0;font-size:8.4pt;break-inside:avoid}
+.note b{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;font-size:8pt}
+.finding{background:#fff8e8;border:.6pt solid #e6d29a;border-left:2.5pt solid var(--amber);
+  padding:6pt 9pt;margin:8pt 0;font-size:8.4pt;break-inside:avoid}
+.newpage{break-before:page}
+.lede{font-size:10.2pt;color:var(--muted);margin:0 0 14pt}
+hr.title{border:none;border-top:2.5pt solid var(--ink);margin:0 0 3pt}
+.meta{font-size:8.2pt;color:var(--muted);border-top:.6pt solid var(--rule);padding-top:5pt;margin-top:10pt}
+.toc{font-size:8.6pt;column-count:2;column-gap:16pt}
+.toc div{margin-bottom:2.5pt;break-inside:avoid}
+.toc .l1{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;font-weight:600;font-size:8.4pt;margin-top:6pt}
+.toc .l2{padding-left:9pt;color:var(--muted)}
+.kpi{display:flex;gap:7pt;margin:10pt 0 12pt}
+.kpi div{flex:1;border:.6pt solid var(--rule);border-top:2.2pt solid var(--accent);padding:6pt 7pt;background:#fbfcfe}
+.kpi .k{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;font-size:15pt;font-weight:700;line-height:1}
+.kpi .v{font-size:7.4pt;color:var(--muted);margin-top:3pt;line-height:1.3}
+.bar{display:inline-block;height:6pt;background:var(--accent);vertical-align:middle;border-radius:1px}
+.bartrack{display:inline-block;width:38pt;height:6pt;background:var(--rule2);vertical-align:middle;
+  border-radius:1px;margin-right:4pt;overflow:hidden}
+.bartrack .bar{display:block;height:100%}
+</style>
+</head>
+<body>
+
+<hr class="title">
+<h1>Library Tasks in TornadoVM</h1>
+<p class="lede">The hybrid API surface, its execution mechanism, and an exhaustive
+comparison against the NVIDIA libraries it binds</p>
+
+<div class="kpi">
+  <div><div class="k">6</div><div class="v">providers shipped<br>cuBLAS · cuBLASLt · cuFFT · cuDNN · cuSPARSE · CUTLASS</div></div>
+  <div><div class="k">39</div><div class="v">public factory entry points across all providers</div></div>
+  <div><div class="k">75</div><div class="v">JUnit tests in <code>tornado-unittests</code></div></div>
+  <div><div class="k">0</div><div class="v">core-runtime changes needed to add a provider</div></div>
+</div>
+
+<p>A <b>library task</b> is a node in a TornadoVM <code>TaskGraph</code> that dispatches a native
+NVIDIA library call instead of a JIT-compiled kernel. It shares TornadoVM-managed device buffers
+with the surrounding JIT tasks, runs on the same CUDA stream, and is captured into CUDA Graphs
+alongside them — so a value produced by a <code>@Parallel</code> kernel feeds cuBLAS (and back)
+with no host round trip and no manual memory management.</p>
+
+<p>This report is derived entirely from the source tree at commit <code>e06a2e5</code>
+(branch <code>claude/tornadovm-library-support-doc-mjrg18</code>): the six
+<code>tornado-&lt;lib&gt;</code> modules, the two JNI modules under
+<code>tornado-drivers/</code>, the runtime SPI in <code>tornado-runtime</code>, and the interpreter's
+library-launch path. Where the repository's own documentation and its code disagree, the code wins,
+and the discrepancy is flagged.</p>
+
+<h4>Contents</h4>
+<div class="toc">
+<div class="l1">Part I — Mechanism</div>
+<div class="l2">1. The <code>libraryTask</code> API surface</div>
+<div class="l2">2. Anatomy of a library task</div>
+<div class="l2">3. The provider SPI</div>
+<div class="l2">4. Device pointers, layout, alignment</div>
+<div class="l2">5. Stream binding and ordering</div>
+<div class="l2">6. <code>prepare()</code> and CUDA Graph safety</div>
+<div class="l2">7. Context lifetime and caching</div>
+<div class="l2">8. Profiling and observability</div>
+<div class="l2">9. Execution-plan controls</div>
+<div class="l2">10. Failure modes</div>
+<div class="l1">Part II — What is supported</div>
+<div class="l2">11. cuBLAS</div>
+<div class="l2">12. cuBLASLt</div>
+<div class="l2">13. cuFFT</div>
+<div class="l2">14. cuDNN</div>
+<div class="l2">15. cuSPARSE</div>
+<div class="l2">16. CUTLASS</div>
+<div class="l2">17. Composition patterns</div>
+<div class="l1">Part III — Comparison with NVIDIA</div>
+<div class="l2">18. Method and the two questions</div>
+<div class="l2">19. cuBLAS vs. cuBLAS</div>
+<div class="l2">20. cuBLASLt vs. cuBLASLt</div>
+<div class="l2">21. cuFFT vs. cuFFT</div>
+<div class="l2">22. cuDNN vs. cuDNN</div>
+<div class="l2">23. cuSPARSE vs. cuSPARSE</div>
+<div class="l2">24. CUTLASS vs. CUTLASS</div>
+<div class="l2">25. Semantic fidelity gaps</div>
+<div class="l2">26. Cross-cutting structural limits</div>
+<div class="l2">27. Libraries with no binding</div>
+<div class="l1">Part IV — Performance</div>
+<div class="l2">28. Measured numbers</div>
+<div class="l2">29. Where parity holds and breaks</div>
+<div class="l1">Part V — Engineering surface</div>
+<div class="l2">30. Build, install, packaging</div>
+<div class="l2">31. Test coverage</div>
+<div class="l2">32. Writing a provider</div>
+<div class="l1">Part VI — Assessment</div>
+<div class="l2">33. Findings</div>
+</div>
+
+<div class="meta">
+Source: <code>beehive-lab/TornadoVM</code> @ <code>e06a2e5</code> ·
+Reference GPU for all measurements: NVIDIA GeForce RTX 4090 (Ada, SM 8.9), CUDA 12.6, cuDNN 9.23 ·
+Requires the CUDA backend (<code>make BACKEND=cuda</code>).
+</div>
+
+<h2 class="newpage">Part I — Mechanism</h2>
+
+<h3>1. The <code>libraryTask</code> API surface</h3>
+
+<p>The entire user-facing addition to TornadoVM is one method on <code>TaskGraph</code>, a sibling
+of <code>.task(...)</code>:</p>
+
+<pre><code>TaskGraph graph = new TaskGraph("hybrid")
+    .transferToDevice(DataTransferMode.EVERY_EXECUTION, matrix, vector)
+    .task("pre",  MyKernels::preprocess, matrix)                       // JIT
+    .libraryTask("sgemv", CuBlas::cublasSgemv,                         // native cuBLAS
+            CuBlasOperation.CUBLAS_OP_T.operation(),
+            m, n, 1.0f, matrix, lda, vector, 1, 0.0f, output, 1)
+    .task("post", MyKernels::postprocess, output)                      // JIT
+    .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+    plan.execute();
+}</code></pre>
+
+<p><code>TaskGraph</code> declares <b>20 generic overloads</b> of <code>libraryTask</code>, one per
+arity, each taking a <code>LibraryTaskN&lt;T1..TN&gt;</code> functional interface from
+<code>TornadoFunctions</code> plus N typed arguments. Arity 20 is the ceiling; the widest factory
+actually shipped is <code>cublasSgemmStridedBatched</code> at 17 arguments.</p>
+
+<p>The second argument is a <i>factory</i> — a static method reference that returns a
+<code>LibraryTaskDescriptor</code> rather than performing any work. The descriptor is a four-field
+record built with a fluent API:</p>
+
+<table>
+<caption>Table 1 — <code>LibraryTaskDescriptor</code> fields (<code>tornado-api</code>)</caption>
+<thead><tr><th style="width:22%">Field</th><th style="width:20%">Set by</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>libraryName</code></td><td><code>withLibrary(String)</code></td><td>Provider id, e.g. <code>"nvidia/cublas"</code>. Matched against <code>TornadoLibraryProvider.libraryName()</code> at LAUNCH.</td></tr>
+<tr><td><code>functionName</code></td><td><code>withFunction(String)</code></td><td>Key into the provider's dispatch registry, e.g. <code>"cublasSgemv"</code>.</td></tr>
+<tr><td><code>parameters</code></td><td><code>withParameters(Object[])</code></td><td>Positional arguments. Reference elements become device buffers; primitives are boxed constants.</td></tr>
+<tr><td><code>access</code></td><td><code>withAccess(Access[])</code></td><td>Per-argument <code>READ_ONLY</code> / <code>WRITE_ONLY</code> / <code>READ_WRITE</code>. This is what the data-flow graph consumes.</td></tr>
+<tr><td><code>tuning</code></td><td><code>withTuning(Object)</code></td><td>Opaque per-call options. <code>tornado-api</code> stays library-agnostic; <code>tornado-cublas</code> interprets it as <code>CuBlasOptions</code>.</td></tr>
+</tbody>
+</table>
+
+<p>The <code>Access[]</code> array is the load-bearing part. It is what lets a native call participate
+in TornadoVM's ordinary dependency analysis without the compiler ever seeing the callee. The cuBLAS
+factories compute it dynamically — note that <code>beta</code> changes the access class of the
+output operand:</p>
+
+<pre><code>private static Access[] readOnlyExcept(int numArgs, int outputIndex, float beta) {
+    Access[] accesses = new Access[numArgs];
+    Arrays.fill(accesses, Access.READ_ONLY);
+    accesses[outputIndex] = (beta != 0.0f) ? Access.READ_WRITE : Access.WRITE_ONLY;
+    return accesses;
+}</code></pre>
+
+<p>With <code>beta != 0</code>, cuBLAS reads <code>C</code> before overwriting it, so the operand is
+marked <code>READ_WRITE</code> and TornadoVM keeps its device contents live. This is inferred from a
+<i>value</i> at graph-construction time, which is only possible because the factory runs on the host
+before the graph is snapshotted.</p>
+
+<h3>2. Anatomy of a library task</h3>
+
+<p>A library task is a <code>SchedulableTask</code> <b>without a sketch</b> — structurally the same
+trick as a pre-built task. It never enters the Graal-based JIT pipeline. What it does enter is
+everything else:</p>
+
+<table>
+<caption>Table 2 — Lifecycle of a library task, stage by stage</caption>
+<thead><tr><th style="width:18%">Stage</th><th style="width:26%">Component</th><th>What happens</th></tr></thead>
+<tbody>
+<tr><td>Construction</td><td><code>TaskGraph.libraryTask</code></td><td>Factory is invoked on the host; returns a <code>LibraryTaskDescriptor</code>. Shape validation happens here (e.g. CUTLASS rejects <code>k</code> not a multiple of 4 with a <code>TornadoRuntimeException</code>).</td></tr>
+<tr><td>Graph build</td><td><code>TornadoTaskGraph</code></td><td>Wrapped in a <code>LibraryTask</code>; its <code>Access[]</code> joins the data-flow graph exactly like a kernel's parameter accesses.</td></tr>
+<tr><td>Bytecode gen</td><td><code>TornadoVMGraphCompiler</code></td><td>Emits ordinary <code>ALLOC</code> / <code>TRANSFER_HOST_TO_DEVICE</code> / <code>LAUNCH</code> / <code>TRANSFER_DEVICE_TO_HOST</code>. Arguments are pushed as <code>PUSH_CONSTANT_ARGUMENT</code> or <code>PUSH_REFERENCE_ARGUMENT</code>.</td></tr>
+<tr><td>Pre-compile</td><td><code>withPreCompilation()</code></td><td>Provider <code>prepare()</code> runs: native plans, descriptors and workspaces are created <i>before</i> any capture region opens.</td></tr>
+<tr><td>LAUNCH</td><td><code>TornadoVMInterpreter.executeLibraryLaunch</code></td><td>Reference args resolved to raw device pointers, constants unboxed from the pool, provider located, context fetched or created, NVTX range opened, <code>dispatch()</code> called.</td></tr>
+<tr><td>Teardown</td><td><code>LibraryRegistry.destroyContexts</code></td><td>On execution-plan close, every context for that plan id is passed to its provider's <code>destroyContext()</code>.</td></tr>
+</tbody>
+</table>
+
+<p>The interpreter's argument-resolution loop is the seam between the two worlds:</p>
+
+<pre><code>for (int i = 0; i &lt; numArgs; i++) {
+    final byte argType  = bytecodeResult.get();
+    final int  argIndex = bytecodeResult.getInt();
+    if (argType == TornadoVMBytecodes.PUSH_CONSTANT_ARGUMENT.value()) {
+        callArgs[i] = constants.get(argIndex);
+    } else if (argType == TornadoVMBytecodes.PUSH_REFERENCE_ARGUMENT.value()) {
+        final DataObjectState globalState = resolveGlobalObjectState(argIndex);
+        final XPUDeviceBufferState objectState = globalState.getDeviceBufferState(interpreterDevice);
+        callArgs[i] = objects.get(argIndex);
+        // Pointer to the first data element on the device, past the array header
+        devicePointers[i] = objectState.getXPUBuffer().toBuffer() + TornadoNativeArray.ARRAY_HEADER;
+        isReference[i] = true;
+    }
+}</code></pre>
+
+<p>Everything the provider receives is packaged into a <code>LibraryInvocation</code>:
+<code>getArg(i)</code> for boxed scalars, <code>getDevicePointer(i)</code> for buffers,
+<code>isReference(i)</code>, <code>getContext()</code>, <code>getTuning()</code>, and
+<code>isCapturing()</code> — the last of which lets a provider refuse an operation that would be
+illegal inside a CUDA Graph capture region.</p>
+
+<h3>3. The provider SPI</h3>
+
+<p>Providers are discovered with <code>java.util.ServiceLoader</code> from
+<code>LibraryRegistry</code>, lazily and once per JVM (double-checked locking on a
+<code>volatile List</code>). Adding a library therefore requires <b>no change to
+<code>tornado-runtime</code></b>.</p>
+
+<table>
+<caption>Table 3 — <code>TornadoLibraryProvider</code>, the six methods a provider implements</caption>
+<thead><tr><th style="width:30%">Method</th><th>Contract</th></tr></thead>
+<tbody>
+<tr><td><code>libraryName()</code></td><td>Returns the provider id string matched against the descriptor.</td></tr>
+<tr><td><code>canHandle(device)</code></td><td>Capability gate. Every shipped provider tests <code>device instanceof TornadoNativeStreamSupport</code> — i.e. CUDA only.</td></tr>
+<tr><td><code>createContext(device, planId)</code></td><td>Creates the native handle, binds it to the plan's CUstream, allocates a workspace. Called once per <i>(library, device, execution plan)</i>.</td></tr>
+<tr><td><code>prepare(descriptor, context)</code></td><td>Idempotent pre-capture hook. Builds and caches per-shape plans/descriptors/workspaces so that <code>dispatch()</code> allocates nothing.</td></tr>
+<tr><td><code>dispatch(fn, invocation)</code></td><td>The actual call. Positional marshalling from the invocation to the native entry point.</td></tr>
+<tr><td><code>destroyContext(context)</code></td><td>Frees plans, workspaces, and the handle when the execution plan closes.</td></tr>
+</tbody>
+</table>
+
+<p>Two supporting types complete the SPI. <code>LibraryContext</code> is a bare marker interface —
+each provider subclasses it with whatever state it needs (handle, stream, plan cache, workspace
+pointer and size). <code>TornadoNativeStreamSupport</code> is implemented by the CUDA backend device
+and exposes <code>getNativeStream(planId)</code>, <code>getNativeContext(planId)</code>, and the NVTX
+range calls.</p>
+
+<h3>4. Device pointers, layout, and the alignment consequence</h3>
+
+<p>TornadoVM's off-heap arrays (<code>FloatArray</code>, <code>HalfFloatArray</code>,
+<code>BFloat16Array</code>, <code>DoubleArray</code>, <code>IntArray</code>,
+<code>ByteArray</code>) store a <b>24-byte header</b> ahead of the payload. The device pointer handed
+to a native library is <code>buffer + TornadoNativeArray.ARRAY_HEADER</code>.</p>
+
+<div class="finding">
+<b>Structural consequence.</b> Because 24 is not a multiple of 16, the payload pointer can never be
+16-byte aligned even when the buffer base is. TornadoVM therefore guarantees only <b>8-byte
+alignment</b>. This propagates directly into the CUTLASS kernels, which are instantiated with
+<code>kAlign = 4</code> (four halves = 8 bytes) instead of the 8 (16-byte, 128-bit) that CUTLASS
+FP16 tensor-core kernels normally use — and which is why the FP16 factories reject shapes where
+<code>k</code> or <code>n</code> is not a multiple of 4. It is also why cuBLASLt FP8, which requires
+leading dimensions that are multiples of 16 bytes, is the one path with an explicit alignment caveat
+in its javadoc.
+</div>
+
+<p>Storage order differs per provider and is not normalized by TornadoVM:</p>
+
+<table>
+<caption>Table 4 — Memory layout per provider</caption>
+<thead><tr><th style="width:20%">Provider</th><th style="width:16%">Order</th><th>Consequence for row-major TornadoVM arrays</th></tr></thead>
+<tbody>
+<tr><td>cuBLAS / cuBLASLt</td><td>Column-major</td><td>Caller compensates. GEMV: pass <code>CUBLAS_OP_T</code>. GEMM: swap operands — row-major <code>C = A·B</code> is column-major <code>C_cm = B_cm · A_cm</code>. No data is moved; the cost is purely cognitive.</td></tr>
+<tr><td>CUTLASS</td><td>Row-major</td><td>Direct match. All operands declared <code>cutlass::layout::RowMajor</code> in the <code>.cu</code>.</td></tr>
+<tr><td>cuSPARSE</td><td>Row-major dense</td><td>Direct match — dense operands created with <code>CUSPARSE_ORDER_ROW</code>.</td></tr>
+<tr><td>cuDNN</td><td>NCHW / BHSD</td><td>Direct match; packed strides computed in the shim.</td></tr>
+<tr><td>cuFFT</td><td>Interleaved complex</td><td><code>(re, im)</code> pairs packed into a <code>FloatArray</code>/<code>DoubleArray</code>.</td></tr>
+</tbody>
+</table>
+
+<h3>5. Stream binding and ordering</h3>
+
+<p>Each provider binds its native handle to the backend's CUstream during
+<code>createContext</code> — <code>cublasSetStream_v2</code>, <code>cublasLtMatmul</code>'s stream
+argument, <code>cufftSetStream</code>, <code>cudnnSetStream</code>,
+<code>cusparseSetStream</code>; CUTLASS takes the stream per call. Everything therefore runs
+<b>in order on one stream</b>: JIT kernels, H2D/D2H transfers, and native calls, with no host
+synchronization at the boundary.</p>
+
+<p>The interpreter adds an explicit guard for the non-capture case. When dependency tracking is
+active it enqueues a marker on the producer events before the native call, ensuring the library sees
+completed inputs. During capture this is skipped deliberately — a single in-order stream already
+orders the work, and waiting on pre-capture events would invalidate the capture.</p>
+
+<h3>6. <code>prepare()</code> and CUDA Graph capture safety</h3>
+
+<p>Device allocation is illegal inside a CUDA Graph capture region. Every library that creates
+per-shape plans or workspaces — cuDNN, CUTLASS, cuFFT, cuSPARSE, cuBLAS, cuBLASLt — does that work
+in <code>prepare()</code>, which the interpreter invokes in the pre-compilation pass before capture
+begins. <code>prepare()</code> is idempotent via a plan-cache lookup, so the per-call
+<code>dispatch()</code> allocates nothing and is capture-safe.</p>
+
+<pre><code>try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+    plan.withCUDAGraph();          // iteration 0 captures; the rest replay
+    for (int i = 0; i &lt; iterations; i++) {
+        plan.execute();
+    }
+}</code></pre>
+
+<p>One provider goes further and uses the capture flag defensively. cuSPARSE pre-allocates an 8 MiB
+workspace in <code>prepare()</code>, but the true external-buffer size depends on the sparse
+structure and is only known at dispatch, from <code>cusparseSpMV_bufferSize</code>. If a matrix needs
+more than the pre-allocated amount <i>and</i> <code>invocation.isCapturing()</code> is true, the
+provider raises a clear error rather than corrupting the capture:</p>
+
+<pre><code>long needed = CusparseNativeLib.spmvBufferSize(context.handle, rows, cols, nnz, ...);
+context.growWorkspace(needed, invocation.isCapturing());   // throws if growth is needed mid-capture</code></pre>
+
+<h3>7. Context lifetime and caching</h3>
+
+<p><code>LibraryRegistry</code> keys contexts on a three-part record:</p>
+
+<pre><code>private record ContextKey(String libraryName, TornadoXPUDevice device, long executionPlanId) {}
+private static final Map&lt;ContextKey, LibraryContext&gt; CONTEXTS = new ConcurrentHashMap&lt;&gt;();</code></pre>
+
+<p>Per-plan scoping is what makes cuBLASLt's heuristic cache and cuDNN's convolution plan cache
+correct: a plan owns its shapes. Two execution plans using the same device get independent handles,
+workspaces and caches, and closing one frees only its own.</p>
+
+<table>
+<caption>Table 5 — Per-context cached state, by provider</caption>
+<thead><tr><th style="width:16%">Provider</th><th style="width:30%">Handle / plan cache</th><th>Workspace policy</th></tr></thead>
+<tbody>
+<tr><td>cuBLAS</td><td><code>cublasHandle_t</code></td><td>User-requested via <code>CuBlasOptions.withWorkspace(bytes)</code>; grow-only, 256-byte aligned, pre-allocated in <code>prepare()</code>, freed with the context.</td></tr>
+<tr><td>cuBLASLt</td><td><code>cublasLtHandle_t</code> + cache of <code>(shape, types, epilogue) → matmul plan</code> (desc + layouts + heuristic algo)</td><td>Fixed <b>32 MiB</b>, allocated in <code>createContext</code>.</td></tr>
+<tr><td>cuFFT</td><td>Plan cache keyed by <code>(kind, dim1, dim2)</code>; plans created with <code>cufftPlan1d</code>/<code>cufftPlan2d</code></td><td>cuFFT-internal work area (allocated at plan creation, hence in <code>prepare()</code>).</td></tr>
+<tr><td>cuDNN</td><td><code>cudnnHandle_t</code>; per-shape <code>ConvPlan</code> (tensor/filter/conv/output descriptors + algo + workspace size); per-shape SDPA plan from cudnn-frontend</td><td>Grow-only device workspace shared by conv and SDPA.</td></tr>
+<tr><td>cuSPARSE</td><td><code>cusparseHandle_t</code></td><td>8 MiB default, grow-only, refuses to grow during capture.</td></tr>
+<tr><td>CUTLASS</td><td>Stream captured at <code>createContext</code></td><td>Per-shape workspace sized in <code>prepare()</code> from the kernel's own <code>get_workspace_size</code>.</td></tr>
+</tbody>
+</table>
+
+<h3>8. Profiling and observability</h3>
+
+<p>Library tasks report <code>TASK_KERNEL_TIME</code> alongside <code>BACKEND</code>,
+<code>DEVICE</code> and <code>METHOD</code>, next to regular tasks, under
+<code>--enableProfiler console</code>. The timing is <b>host-side</b>, bracketed by stream markers
+that are waited on, because the CUDA-C backend does not yet expose device-event timestamps for this
+path:</p>
+
+<pre><code>final boolean profileCall = TornadoOptions.isProfilerEnabled() &amp;&amp; !insideCaptureRegion;
+if (profileCall) {
+    int preEvent = interpreterDevice.enqueueMarker(planId);
+    interpreterDevice.resolveEvent(planId, preEvent).waitForEvents(planId);
+    profilerStartTime = System.nanoTime();
+}</code></pre>
+
+<p>Two consequences follow. Profiling a library task <i>synchronizes the stream twice per call</i>,
+so it is a measurement mode, not a production one. And it is disabled entirely while capturing,
+since synchronizing would invalidate the capture.</p>
+
+<p>Independently of the profiler, every dispatch is wrapped in an NVTX range named
+<code>&lt;library&gt;/&lt;function&gt;</code> (e.g. <code>nvidia/cutlass/cutlassHgemm</code>), so
+native calls appear as labelled spans on the Nsight Systems timeline next to the backend's own
+kernel and transfer ranges. This is a no-op without a profiler attached.</p>
+
+<pre><code>nsys profile --trace=cuda,nvtx -o run tornado -m &lt;module&gt;/&lt;MainClass&gt;
+nsys stats --report cuda_gpu_trace run.nsys-rep   # library kernels + JIT kernels, same Strm</code></pre>
+
+<h3>9. Execution-plan controls that matter for hybrid plans</h3>
+
+<table>
+<caption>Table 6 — <code>TornadoExecutionPlan</code> options with library-task-specific relevance</caption>
+<thead><tr><th style="width:26%">Option</th><th style="width:12%">Backends</th><th>Relevance</th></tr></thead>
+<tbody>
+<tr><td><code>withCUDAGraph()</code></td><td>CUDA</td><td>Captures the whole region — transfers, JIT kernels, native calls — and replays with one <code>cuGraphLaunch</code>.</td></tr>
+<tr><td><code>withPreCompilation()</code></td><td>all</td><td>Runs every provider's <code>prepare()</code> up front. Prerequisite for graph capture.</td></tr>
+<tr><td><code>transferToDevice(Object...)</code></td><td>all</td><td>Uploads large stable inputs (weights, tables) without running the plan, so the first execution does not pay the upload.</td></tr>
+<tr><td><code>withMemoryLimit("8GB")</code></td><td>all</td><td>Worth setting explicitly — library workspaces (32 MiB for cuBLASLt, 8 MiB for cuSPARSE, unbounded grow-only for cuDNN) sit alongside operands.</td></tr>
+<tr><td><code>withIntraPlanConcurrency()</code></td><td>CUDA</td><td>Routes DAG-independent work to separate role streams. Off by default.</td></tr>
+<tr><td><code>withStagedTransfers()</code></td><td>CUDA</td><td>Stages non-batched read-only transfers through pinned host memory.</td></tr>
+<tr><td><code>withWarmUpIterations(n)</code></td><td>all</td><td>Runs the plan <code>n</code> times before the measured run.</td></tr>
+<tr><td class="no">withBatch(...)</td><td>—</td><td><b>Rejected.</b> <code>executeLibraryLaunch</code> throws if <code>batchThreads != 0</code>. Use a library's own batched entry point instead.</td></tr>
+</tbody>
+</table>
+
+<h3>10. Failure modes</h3>
+
+<table>
+<caption>Table 7 — How each failure surfaces</caption>
+<thead><tr><th style="width:30%">Condition</th><th style="width:22%">Where</th><th>Behaviour</th></tr></thead>
+<tbody>
+<tr><td>Vendor library absent at class-init</td><td><code>*NativeLib</code> static init</td><td><code>SymbolLookup</code> (or <code>System.loadLibrary</code>) comes back empty; provider reports <code>UNSUPPORTED</code> at runtime. <b>The build still succeeds</b> — every binding is self-guarding.</td></tr>
+<tr><td>Non-CUDA default device</td><td><code>LibraryRegistry.findProvider</code></td><td>Provider found by name but <code>canHandle</code> false → <code>TornadoRuntimeException</code> naming the device and telling the user to select a compatible backend.</td></tr>
+<tr><td>Module not on module path</td><td><code>LibraryRegistry.findProvider</code></td><td><code>TornadoRuntimeException</code>: "No provider found for library ... ensure the corresponding TornadoVM library module is on the module path."</td></tr>
+<tr><td>Unknown function name</td><td>provider dispatch registry</td><td>Explicit error from the provider's registry lookup.</td></tr>
+<tr><td>Bad shape (CUTLASS FP16)</td><td>factory, at graph build</td><td>Fails fast on the host, before any device work: "requires k and n to be multiples of 4 (8-byte operand alignment); got n=..., k=...".</td></tr>
+<tr><td>Native error status</td><td>provider dispatch</td><td><code>TornadoRuntimeException</code> carrying the decoded status string (<code>CUBLAS_STATUS_INVALID_VALUE</code>, <code>CUSPARSE_STATUS_ARCH_MISMATCH</code>, ...).</td></tr>
+<tr><td>Workspace growth during capture</td><td>cuSPARSE context</td><td>Explicit refusal with remediation advice (run once without CUDA graphs, or reduce the problem size).</td></tr>
+<tr><td><code>withBatch</code> on a library task</td><td>interpreter</td><td><code>TornadoRuntimeException</code> naming the offending task id.</td></tr>
+</tbody>
+</table>
+
+<div class="note">
+<b>On the "silent UNSUPPORTED" phrasing.</b> <code>HYBRID_API_GUIDE.md</code> says library tasks are
+"silently reported as <code>UNSUPPORTED</code> on OpenCL/Metal". In the code the outcome is a thrown
+<code>TornadoRuntimeException</code> with a descriptive message; what is silent is the <i>build</i>,
+not the run. The JUnit suites turn this into a skip through a JUnit assumption on the default
+device's backend.
+</div>
+
+<h2 class="newpage">Part II — What is supported</h2>
+
+<p>Six providers ship in this build. Every entry point below was read from the factory classes and
+cross-checked against the provider dispatch registry and the native binding, so the tables state what
+the code does rather than what the documentation claims.</p>
+
+<table>
+<caption>Table 8 — Provider inventory</caption>
+<thead><tr><th style="width:15%">Provider id</th><th style="width:15%">Java module</th><th style="width:17%">Native binding</th><th class="ctr" style="width:9%">Entry<br>points</th><th class="ctr" style="width:9%">JUnit<br>tests</th><th>Domain</th></tr></thead>
+<tbody>
+<tr><td><code>nvidia/cublas</code></td><td><code>tornado-cublas</code></td><td>FFM → <code>libcublas</code></td><td class="ctr">7</td><td class="ctr">14</td><td>Dense BLAS: GEMV, GEMM, batched GEMM, mixed-precision GemmEx</td></tr>
+<tr><td><code>nvidia/cublaslt</code></td><td><code>tornado-cublas</code></td><td>FFM → <code>libcublasLt</code></td><td class="ctr">5</td><td class="ctr">6</td><td>Plan-based matmul with fused epilogues; FP8</td></tr>
+<tr><td><code>nvidia/cufft</code></td><td><code>tornado-cufft</code></td><td>FFM → <code>libcufft</code></td><td class="ctr">8</td><td class="ctr">8</td><td>1D/2D FFTs, FP32 and FP64</td></tr>
+<tr><td><code>nvidia/cudnn</code></td><td><code>tornado-cudnn</code></td><td>FFM → <code>libcudnn</code> + JNI shim (<code>cudnn-jni</code>)</td><td class="ctr">7</td><td class="ctr">11</td><td>DL primitives + fused flash attention</td></tr>
+<tr><td><code>nvidia/cusparse</code></td><td><code>tornado-cusparse</code></td><td>FFM → <code>libcusparse</code></td><td class="ctr">2</td><td class="ctr">11</td><td>CSR sparse × dense products</td></tr>
+<tr><td><code>nvidia/cutlass</code></td><td><code>tornado-cutlass</code></td><td>JNI, <code>nvcc</code>-compiled (<code>cutlass-jni</code>)</td><td class="ctr">10</td><td class="ctr">25</td><td>Row-major GEMM with fused activation epilogues</td></tr>
+<tr><th>Total</th><th></th><th></th><th class="ctr">39</th><th class="ctr">75</th><th></th></tr>
+</tbody>
+</table>
+
+<p>Four of the six bind through <code>java.lang.foreign</code> alone — a <code>SymbolLookup</code>
+resolved at class-init and one downcall handle per entry point, with no native module and nothing
+gated behind the <code>cuda-backend</code> Maven profile beyond the Java module itself. Only cuDNN
+(the cudnn-frontend C++ SDPA shim) and CUTLASS (device code that must go through <code>nvcc</code>)
+still carry a compiled artifact.</p>
+
+<h3>11. cuBLAS — <code>nvidia/cublas</code></h3>
+
+<p>Factories on <code>uk.ac.manchester.tornado.cublas.CuBlas</code>. Column-major, so callers pass a
+transpose op (GEMV) or swap operands (GEMM).</p>
+
+<table>
+<caption>Table 9 — cuBLAS entry points, complete</caption>
+<thead><tr><th style="width:23%">Factory</th><th style="width:17%">Native symbol</th><th style="width:19%">Types</th><th class="ctr" style="width:6%">Args</th><th>Semantics and configuration</th></tr></thead>
+<tbody>
+<tr><td class="wrapcode"><code>cublasSgemv(op, m, n, alpha, A, lda, x, incx, beta, y, incy)</code></td><td><code>cublasSgemv_v2</code></td><td><code>FloatArray</code></td><td class="ctr">11</td><td><code>y = α·op(A)·x + β·y</code>. Output index 9, <code>READ_WRITE</code> when <code>β≠0</code>.</td></tr>
+<tr><td class="wrapcode"><code>cublasSgemm(transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc)</code></td><td><code>cublasSgemm_v2</code></td><td><code>FloatArray</code></td><td class="ctr">13</td><td><code>C = α·op(A)·op(B) + β·C</code>. Output index 11.</td></tr>
+<tr><td class="wrapcode"><code>cublasSgemmTF32(...)</code></td><td><code>cublasSgemm_v2</code> + <code>cublasSetMathMode</code></td><td><code>FloatArray</code></td><td class="ctr">13</td><td>Delegates to <code>cublasSgemm</code> with <code>withTuning(CUBLAS_TF32_TENSOR_OP_MATH)</code>. Math mode is set before the call and restored to <code>CUBLAS_DEFAULT_MATH</code> after. ~10-bit mantissa multiply, FP32 accumulate.</td></tr>
+<tr><td class="wrapcode"><code>cublasSgemmStridedBatched(transa, transb, m, n, k, alpha, A, lda, strideA, B, ldb, strideB, beta, C, ldc, strideC, batchCount)</code></td><td><code>cublasSgemmStridedBatched</code></td><td><code>FloatArray</code>, <code>long</code> strides</td><td class="ctr">17</td><td><code>C[i] = α·op(A[i])·op(B[i]) + β·C[i]</code>. Operand <i>i</i> at <code>base + i·stride</code> in one flat array. Output index 13.</td></tr>
+<tr><td class="wrapcode"><code>cublasGemmExFP16(...)</code></td><td><code>cublasGemmEx</code></td><td><code>HalfFloatArray</code> in/out</td><td class="ctr">13</td><td>FP16 in and out, <code>CUBLAS_COMPUTE_32F</code> accumulate on tensor cores.</td></tr>
+<tr><td class="wrapcode"><code>cublasGemmExFP16FP32(...)</code></td><td><code>cublasGemmEx</code></td><td><code>HalfFloatArray</code> A,B → <code>FloatArray</code> C</td><td class="ctr">13</td><td>FP16 inputs, FP32 output — keeps accumulation precision at the boundary. Standard inference config.</td></tr>
+<tr><td class="wrapcode"><code>cublasGemmExBF16(...)</code></td><td><code>cublasGemmEx</code></td><td><code>BFloat16Array</code> in/out</td><td class="ctr">13</td><td>BF16 in and out, FP32 accumulate. BF16 keeps FP32's exponent range (no ±65504 overflow boundary).</td></tr>
+</tbody>
+</table>
+
+<h4>Per-call tuning</h4>
+<p><code>CuBlasOptions</code> is attached through the opaque <code>withTuning</code> field and carries
+exactly two knobs:</p>
+<table>
+<thead><tr><th style="width:26%">Knob</th><th style="width:26%">Values</th><th>Applied as</th></tr></thead>
+<tbody>
+<tr><td><code>withMathMode(...)</code></td><td><code>CUBLAS_DEFAULT_MATH</code> (0), <code>CUBLAS_PEDANTIC_MATH</code> (1), <code>CUBLAS_TF32_TENSOR_OP_MATH</code> (3)</td><td><code>cublasSetMathMode</code> before the call, restored to default after.</td></tr>
+<tr><td><code>withWorkspace(bytes)</code></td><td>any size</td><td><code>cublasSetWorkspace_v2</code>. Per-<i>(device, plan)</i>, grow-only, freed with the plan. Needed for run-to-run reproducibility across streams and for device-launched graphs.</td></tr>
+</tbody>
+</table>
+
+<p>Four enum classes ship in <code>tornado-cublas</code>: <code>CuBlasOperation</code> (N/T/C),
+<code>CuBlasMathMode</code> (3 values), <code>CublasComputeType</code> (11 values), and
+<code>CudaDataType</code> (16 values). The latter two are <b>far wider than what the factories
+use</b> — the compute-type enum declares INT32, FP64 and the FAST_16F/FAST_16BF families that no
+entry point currently reaches. They are scaffolding for the roadmap, not capability.</p>
+
+<h3>12. cuBLASLt — <code>nvidia/cublaslt</code></h3>
+
+<p>A separate provider inside the same module. It builds a matmul <i>plan</i> — descriptor, three
+matrix layouts, and a heuristic-selected algorithm — per unique
+<code>(shape, types, epilogue)</code>, caches it in the context, and executes with a 32 MiB
+workspace. All five entry points use <code>CUBLAS_COMPUTE_32F</code> with scale type
+<code>CUDA_R_32F</code>, because alpha and beta are passed as host floats.</p>
+
+<table>
+<caption>Table 10 — cuBLASLt entry points, complete</caption>
+<thead><tr><th style="width:22%">Factory</th><th style="width:16%">A / B type</th><th style="width:12%">C type</th><th style="width:15%">Epilogue</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td><code>ltMatmulFP32</code></td><td><code>CUDA_R_32F</code></td><td><code>CUDA_R_32F</code></td><td><code>DEFAULT</code> (1)</td><td>13 args. Plain <code>cublasLtMatmul</code>.</td></tr>
+<tr><td><code>ltMatmulFP16</code></td><td><code>CUDA_R_16F</code></td><td><code>CUDA_R_16F</code></td><td><code>DEFAULT</code> (1)</td><td>13 args. FP32 tensor-core accumulation.</td></tr>
+<tr><td><code>ltMatmulFP8</code></td><td><code>CUDA_R_8F_E4M3</code> in a <code>ByteArray</code></td><td><code>CUDA_R_16F</code></td><td><code>DEFAULT</code> (1)</td><td>13 args. Requires the <b>TN form</b> (<code>transa = OP_T</code>, <code>transb = OP_N</code>) and leading dimensions that are multiples of 16 bytes. Hardware FP8 path: Ada sm_89 / Hopper.</td></tr>
+<tr><td><code>ltMatmulBiasFP16</code></td><td><code>CUDA_R_16F</code></td><td><code>CUDA_R_16F</code></td><td><code>BIAS</code> (4)</td><td>14 args. <code>C = op(A)·op(B) + bias</code>, bias broadcast over the <i>m</i> rows of the column-major result.</td></tr>
+<tr><td><code>ltMatmulGeluBiasFP16</code></td><td><code>CUDA_R_16F</code></td><td><code>CUDA_R_16F</code></td><td><code>GELU_BIAS</code> (36)</td><td>14 args. <code>C = GELU(op(A)·op(B) + bias)</code>, tanh approximation. The fully fused transformer MLP block.</td></tr>
+</tbody>
+</table>
+
+<p>Twelve <code>cublasLt*</code> symbols are bound: <code>Create</code>, <code>Destroy</code>,
+<code>MatmulDescCreate/Destroy/SetAttribute</code>, <code>MatrixLayoutCreate/Destroy</code>,
+<code>MatmulPreferenceCreate/Destroy/SetAttribute</code>,
+<code>MatmulAlgoGetHeuristic</code>, and <code>Matmul</code> itself. The
+<code>CuBlasLtEpilogue</code> enum declares six values (<code>DEFAULT</code>, <code>RELU</code>,
+<code>BIAS</code>, <code>RELU_BIAS</code>, <code>GELU</code>, <code>GELU_BIAS</code>) but the
+dispatch registry reaches only three.</p>
+
+<h3>13. cuFFT — <code>nvidia/cufft</code></h3>
+
+<p>Plans are created with <code>cufftPlan1d</code> / <code>cufftPlan2d</code> and cached per
+<code>(kind, dim1, dim2)</code>. All eight factories share the same access pattern:
+<code>{READ_ONLY, WRITE_ONLY, READ_ONLY, READ_ONLY}</code> — in, out, and two dimension scalars.
+Complex data is interleaved <code>(re, im)</code>. Inverse transforms follow cuFFT semantics and are
+<b>unnormalized</b>: <code>inverse(forward(x)) = n·x</code>.</p>
+
+<table>
+<caption>Table 11 — cuFFT entry points, complete</caption>
+<thead><tr><th style="width:22%">Factory</th><th style="width:14%">Native exec</th><th style="width:10%">Plan type</th><th style="width:11%">Array</th><th>Buffer sizing</th></tr></thead>
+<tbody>
+<tr><td><code>cufftForwardC2C(in, out, n, batch)</code></td><td><code>cufftExecC2C</code> (dir −1)</td><td><code>CUFFT_C2C</code> 1D</td><td><code>FloatArray</code></td><td>In and out: <code>2·n·batch</code> floats.</td></tr>
+<tr><td><code>cufftInverseC2C(in, out, n, batch)</code></td><td><code>cufftExecC2C</code> (dir +1)</td><td><code>CUFFT_C2C</code> 1D</td><td><code>FloatArray</code></td><td>As above; unnormalized.</td></tr>
+<tr><td><code>cufftForwardR2C(in, out, n, batch)</code></td><td><code>cufftExecR2C</code></td><td><code>CUFFT_R2C</code> 1D</td><td><code>FloatArray</code></td><td>In <code>n·batch</code> reals → out <code>2·(n/2+1)·batch</code> floats (non-redundant Hermitian half).</td></tr>
+<tr><td><code>cufftInverseC2R(in, out, n, batch)</code></td><td><code>cufftExecC2R</code></td><td><code>CUFFT_C2R</code> 1D</td><td><code>FloatArray</code></td><td>In <code>2·(n/2+1)·batch</code> floats (must be Hermitian) → out <code>n·batch</code> reals.</td></tr>
+<tr><td><code>cufftForwardZ2Z(in, out, n, batch)</code></td><td><code>cufftExecZ2Z</code> (dir −1)</td><td><code>CUFFT_Z2Z</code> 1D</td><td><code>DoubleArray</code></td><td>FP64. <code>2·n·batch</code> doubles.</td></tr>
+<tr><td><code>cufftInverseZ2Z(in, out, n, batch)</code></td><td><code>cufftExecZ2Z</code> (dir +1)</td><td><code>CUFFT_Z2Z</code> 1D</td><td><code>DoubleArray</code></td><td>FP64; unnormalized.</td></tr>
+<tr><td><code>cufftForward2dC2C(in, out, nx, ny)</code></td><td><code>cufftExecC2C</code> (dir −1)</td><td><code>CUFFT_C2C</code> 2D</td><td><code>FloatArray</code></td><td><code>nx × ny</code> row-major grid, <code>2·nx·ny</code> floats.</td></tr>
+<tr><td><code>cufftInverse2dC2C(in, out, nx, ny)</code></td><td><code>cufftExecC2C</code> (dir +1)</td><td><code>CUFFT_C2C</code> 2D</td><td><code>FloatArray</code></td><td>Unnormalized: <code>inverse(forward(x)) = nx·ny·x</code>.</td></tr>
+</tbody>
+</table>
+
+<h3>14. cuDNN — <code>nvidia/cudnn</code></h3>
+
+<p>Two distinct generations sit behind one Java surface. Four factories use the <b>legacy</b>
+compute functions (FP32, NCHW); one uses the <b>graph API</b> through a cudnn-frontend v1.25.0 C++
+shim compiled into <code>libtornado-cudnn</code>.</p>
+
+<table>
+<caption>Table 12 — cuDNN entry points, complete</caption>
+<thead><tr><th style="width:22%">Factory</th><th style="width:19%">cuDNN call</th><th style="width:12%">Precision</th><th>Fixed configuration</th></tr></thead>
+<tbody>
+<tr><td><code>cudnnSoftmax(in, out, rows, cols)</code></td><td><code>cudnnSoftmaxForward</code></td><td>FP32, NCHW</td><td><code>CUDNN_SOFTMAX_ACCURATE</code>, <code>INSTANCE</code> mode. Rows normalized independently — the attention-score shape.</td></tr>
+<tr><td><code>cudnnRelu(in, out, size)</code></td><td rowspan="3"><code>cudnnActivationForward</code></td><td rowspan="3">FP32</td><td rowspan="3">Element-wise; tensor described as <code>1×1×1×size</code>. Three of cuDNN's activation modes are reachable; no coefficient parameter is exposed.</td></tr>
+<tr><td><code>cudnnSigmoid(in, out, size)</code></td></tr>
+<tr><td><code>cudnnTanh(in, out, size)</code></td></tr>
+<tr><td><code>cudnnMaxPool2d(in, out, n, c, h, w, window, stride)</code></td><td><code>cudnnPoolingForward</code></td><td>FP32, NCHW</td><td><code>MAX</code> only, square window, square stride, <b>no padding</b>. Output spatial dims <code>(h − window)/stride + 1</code>.</td></tr>
+<tr><td><code>cudnnConv2d(in, filter, out, n, c, h, w, k, r, s, pad, stride)</code></td><td><code>cudnnConvolutionForward</code></td><td>FP32, NCHW / KCRS</td><td><code>CUDNN_CROSS_CORRELATION</code>, fixed algorithm <code>IMPLICIT_PRECOMP_GEMM</code>, <b>dilation hard-coded to (1,1)</b>, group count 1, square pad and stride. Output <code>(n, k, (h+2·pad−r)/stride+1, (w+2·pad−s)/stride+1)</code>.</td></tr>
+<tr><td><code>sdpaForward(q, k, v, o, b, h, sQ, sKv, d, scale, causal)</code></td><td>graph API <code>sdpa()</code> via cudnn-frontend</td><td>FP16 I/O, FP32 intermediate and compute</td><td>Packed BHSD: <code>Q/O = [b,h,sQ,d]</code>, <code>K/V = [b,h,sKv,d]</code>, strides <code>{h·s·d, s·d, d, 1}</code>. <code>set_generate_stats(false)</code> → inference only. Optional causal mask. Built with heuristic mode A. Constraints: <code>d</code> multiple of 8, <code>d ≤ 256</code>, Ampere or newer.</td></tr>
+</tbody>
+</table>
+
+<div class="note">
+<b>The <code>h</code> parameter is shared between Q and K/V.</b> The shim builds
+<code>dim_q = {b, h, s_q, d}</code> and <code>dim_kv = {b, h, s_kv, d}</code> from the same
+<code>h</code>, so grouped-query and multi-query attention (kv-heads ≠ q-heads) cannot be expressed —
+consistent with the roadmap, which marks C2 as in progress.
+</div>
+
+<h3>15. cuSPARSE — <code>nvidia/cusparse</code></h3>
+
+<p>The narrowest provider: two operations, both over the modern generic API
+(<code>cusparseSpMV</code> / <code>cusparseSpMM</code> with <code>cusparseCreateCsr</code> +
+<code>CreateDnVec</code>/<code>CreateDnMat</code> descriptors).</p>
+
+<table>
+<caption>Table 13 — cuSPARSE entry points, complete</caption>
+<thead><tr><th style="width:26%">Factory</th><th style="width:14%">Native call</th><th>Semantics and fixed configuration</th></tr></thead>
+<tbody>
+<tr><td class="wrapcode"><code>cusparseSpMV(rows, cols, nnz, csrRowOffsets, csrColInd, csrValues, x, y)</code></td><td><code>cusparseSpMV</code></td><td><code>y = A·x</code>. <code>A</code> is <code>rows × cols</code> CSR, <code>x</code> length <code>cols</code>, <code>y</code> length <code>rows</code> (index 7, <code>WRITE_ONLY</code>).</td></tr>
+<tr><td class="wrapcode"><code>cusparseSpMM(rows, k, n, nnz, csrRowOffsets, csrColInd, csrValues, b, c)</code></td><td><code>cusparseSpMM</code></td><td><code>C = A·B</code>. <code>A</code> is <code>rows × k</code> CSR, <code>B</code> dense <code>k × n</code> row-major, <code>C</code> dense <code>rows × n</code> (index 8, <code>WRITE_ONLY</code>).</td></tr>
+</tbody>
+</table>
+
+<p>Everything else is fixed in the provider, not parameterised:</p>
+<ul>
+<li><b>Format:</b> CSR only — <code>CUSPARSE_INDEX_32I</code> for both offsets and column indices, <code>CUSPARSE_INDEX_BASE_ZERO</code>.</li>
+<li><b>Type:</b> <code>CUDA_R_32F</code> throughout. <code>csrRowOffsets</code>/<code>csrColInd</code> are <code>IntArray</code>; values and dense operands are <code>FloatArray</code>.</li>
+<li><b>Transpose:</b> <code>CUSPARSE_OPERATION_NON_TRANSPOSE</code> for both operands, hard-coded.</li>
+<li><b>Scalars:</b> <code>alpha = 1.0f</code>, <code>beta = 0.0f</code>, passed as literals from the provider. The native layer accepts them as parameters, but no factory exposes them.</li>
+<li><b>Algorithm:</b> <code>CUSPARSE_SPMV_ALG_DEFAULT</code> / <code>CUSPARSE_SPMM_ALG_DEFAULT</code>.</li>
+<li><b>Ordering:</b> dense operands use <code>CUSPARSE_ORDER_ROW</code>, matching TornadoVM arrays.</li>
+</ul>
+
+<h3>16. CUTLASS — <code>nvidia/cutlass</code></h3>
+
+<p>Row-major throughout, so there is no transposition to reason about. Kernels are compiled ahead of
+time by <code>nvcc</code> from <code>tornado-cutlass.cu</code>, which fetches header-only CUTLASS
+v3.5.1 through CMake <code>FetchContent</code>.</p>
+
+<table>
+<caption>Table 14 — CUTLASS entry points, complete</caption>
+<thead><tr><th style="width:24%">Factory</th><th style="width:15%">Element type</th><th style="width:13%">Op class</th><th>Computes</th></tr></thead>
+<tbody>
+<tr><td><code>cutlassSgemm(m,n,k,α,A,B,β,C)</code></td><td><code>FloatArray</code> FP32</td><td><code>OpClassSimt</code></td><td><code>C = α·A·B + β·C</code>. Alignment 1 — <b>no shape constraint</b>. The correctness baseline.</td></tr>
+<tr><td><code>cutlassHgemm(m,n,k,α,A,B,β,D)</code></td><td><code>HalfFloatArray</code> FP16</td><td><code>OpClassTensorOp</code></td><td><code>D = α·A·B + β·D</code>, FP32 accumulate. Requires <code>k, n</code> multiples of 4.</td></tr>
+<tr><td><code>cutlassBgemm(m,n,k,α,A,B,β,C)</code></td><td><code>BFloat16Array</code> BF16</td><td><code>OpClassTensorOp</code></td><td>Same shapes and constraint as FP16 (bfloat16 is also 2 bytes). FP32 accumulate; FP32 exponent range.</td></tr>
+<tr><td><code>cutlassHgemmBatched(m,n,k,α,A,B,β,C,batchCount)</code></td><td><code>HalfFloatArray</code> FP16</td><td><code>OpClassTensorOp</code></td><td><code>GemmUniversalMode::kBatched</code>. Batch strides fixed at <code>m·k</code>, <code>k·n</code>, <code>m·n</code> — matrices packed contiguously. Rejects <code>batchCount ≤ 0</code>.</td></tr>
+<tr><td><code>cutlassGemmBiasRelu(m,n,k,A,B,bias,D)</code></td><td rowspan="6"><code>HalfFloatArray</code> FP16</td><td rowspan="6"><code>OpClassTensorOp</code></td><td><code>D = relu(A·B + bias)</code>, <code>LinearCombinationRelu</code></td></tr>
+<tr><td><code>cutlassGemmBiasGelu(...)</code></td><td><code>D = gelu(A·B + bias)</code>, <code>LinearCombinationGELU</code></td></tr>
+<tr><td><code>cutlassGemmBiasSilu(...)</code></td><td><code>D = silu(A·B + bias)</code>, <code>LinearCombinationSilu</code> — the SwiGLU gate activation of the LLaMA/Qwen families</td></tr>
+<tr><td><code>cutlassGemmBiasSigmoid(...)</code></td><td><code>D = sigmoid(A·B + bias)</code>, <code>LinearCombinationSigmoid</code></td></tr>
+<tr><td><code>cutlassGemmBiasTanh(...)</code></td><td><code>D = tanh(A·B + bias)</code>, <code>LinearCombinationGeneric&lt;Tanh&gt;</code></td></tr>
+<tr><td><code>cutlassGemmBiasHardSwish(...)</code></td><td><code>D = hardswish(A·B + bias)</code>, <code>LinearCombinationHardSwish</code></td></tr>
+</tbody>
+</table>
+
+<h4>The single kernel configuration</h4>
+<p>All FP16 and BF16 kernels are one instantiation of
+<code>cutlass::gemm::device::GemmUniversal</code>, fixed at compile time:</p>
+
+<table>
+<thead><tr><th style="width:30%">Template parameter</th><th style="width:24%">Value</th><th>Consequence</th></tr></thead>
+<tbody>
+<tr><td>Architecture tag</td><td><code>cutlass::arch::Sm80</code></td><td>Built as <code>sm_80</code> SASS plus <code>compute_80</code> PTX. Runs natively on all Ampere/Ada 8.x; JIT-compiles from PTX on Hopper. Override with <code>CUDA_ARCH=&lt;cc&gt;</code>.</td></tr>
+<tr><td><code>ThreadblockShape</code></td><td><code>GemmShape&lt;128,128,32&gt;</code></td><td>One tile size for every shape — no per-problem tile selection.</td></tr>
+<tr><td><code>WarpShape</code></td><td><code>GemmShape&lt;64,64,32&gt;</code></td><td rowspan="2">Standard Ampere HMMA configuration.</td></tr>
+<tr><td><code>InstructionShape</code></td><td><code>GemmShape&lt;16,8,16&gt;</code></td></tr>
+<tr><td><code>kStages</code></td><td>3</td><td>Three-stage software pipeline.</td></tr>
+<tr><td><code>kAlign</code> (A and B)</td><td>4</td><td>Four halves = 8 bytes. Forced by TornadoVM's 24-byte header. This is the <code>k, n</code> multiple-of-4 constraint.</td></tr>
+<tr><td>Layouts</td><td>RowMajor × 3</td><td>No column-major or mixed-layout instantiation exists.</td></tr>
+<tr><td>Swizzle</td><td><code>GemmIdentityThreadblockSwizzle</code></td><td>Default identity swizzle.</td></tr>
+</tbody>
+</table>
+
+<p>The fused-epilogue kernels use a specific trick: the length-<i>n</i> bias vector is supplied as the
+<code>C</code> source operand with <code>ldc = 0</code>, so every output row reads the same vector,
+and the epilogue computes <code>act(α·A·B + βC)</code> with <b><code>α = β = 1</code> hard-coded</b>:</p>
+
+<pre><code>template &lt;typename Gemm&gt;
+static int gemmBiasAct(int m, int n, int k, jlong dA, jlong dB, jlong dBias, jlong dD, ...) {
+    typename Gemm::Arguments args(
+            cutlass::gemm::GemmUniversalMode::kGemm, {m, n, k}, 1, {1.0f, 1.0f},
+            (void const *) dA, (void const *) dB, (void const *) dBias, (void *) dD,
+            0, 0, 0, 0, k, n, 0, n);   // ldc = 0 -> row broadcast
+    return runGemm&lt;Gemm&gt;(args, (void *) workspace, (cudaStream_t) stream);
+}</code></pre>
+
+<p>This is why the six bias-activation factories take no <code>alpha</code>/<code>beta</code>
+arguments, unlike <code>cutlassSgemm</code>/<code>cutlassHgemm</code>/<code>cutlassBgemm</code>.</p>
+
+<h3>17. Composition patterns</h3>
+
+<p>The value of the mechanism is not any single call but the ability to interleave. Four patterns are
+exercised by the test suites:</p>
+
+<table>
+<caption>Table 15 — Composition patterns and their gating tests</caption>
+<thead><tr><th style="width:24%">Pattern</th><th style="width:26%">Shape</th><th>Gating test</th></tr></thead>
+<tbody>
+<tr><td>JIT → library → JIT</td><td>Native call sandwiched between kernels on shared buffers</td><td><code>TestCuBlas#testMixedPrePostTasks</code>, <code>TestCutlass#testSgemmWithJitPreAndPost</code>, <code>TestCusparse#testSpMVWithJitPreAndPost</code></td></tr>
+<tr><td>Library → library chain</td><td>Two native calls, intermediate stays on device</td><td><code>TestCutlass#testChainedSgemm</code>, <code>#testTwoLayerFusedMlp</code>, <code>TestCuDnn#testConvReluPoolPipeline</code></td></tr>
+<tr><td>Shared buffers across graphs</td><td><code>persistOnDevice</code> / <code>consumeFromDevice</code> — a producer graph's native result consumed by a second graph, no host round trip</td><td><code>TestCuBlas#testSharedBufferAcrossTaskGraphs</code>, <code>TestCutlass#testSharedBufferAcrossTaskGraphs</code></td></tr>
+<tr><td>Mixed precision in one graph</td><td>FP32 and FP16 library tasks side by side</td><td><code>TestCutlass#testMixedPrecisionGraph</code></td></tr>
+<tr><td>Under CUDA Graph capture</td><td>Any of the above, captured once and replayed</td><td><code>TestCuBlas#testMixedTasksWithCudaGraph</code>, <code>TestCuDnn#testConv2dWithCudaGraph</code>, <code>TestCusparse#testSpMVWithCudaGraph</code>, <code>TestCutlass#testGemmWithCudaGraph</code>, <code>#testFusedMlpWithCudaGraph</code></td></tr>
+</tbody>
+</table>
+
+<p>A representative deep pipeline — a two-layer feed-forward block as two fused CUTLASS tasks, with
+nothing returning to the host between them:</p>
+
+<pre><code>new TaskGraph("ffn")
+    .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, w1, b1, w2, b2)
+    .libraryTask("l1", Cutlass::cutlassGemmBiasRelu, m, n1, k1, x, w1, b1, h)
+    .libraryTask("l2", Cutlass::cutlassGemmBiasGelu, m, n2, n1, h, w2, b2, y)
+    .transferToHost(DataTransferMode.EVERY_EXECUTION, y);</code></pre>
+
+<h2 class="newpage">Part III — Comparison with the actual NVIDIA libraries</h2>
+
+<h3>18. Method, and the two questions that get confused</h3>
+
+<p>"How does it compare with the actual NVIDIA libraries" splits into two questions with opposite
+answers, and keeping them apart is the whole point of this section.</p>
+
+<table>
+<thead><tr><th style="width:32%">Question</th><th style="width:20%">Short answer</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td><b>Is it as fast?</b> For an operation that is bound, does the TornadoVM path reach the library's own throughput?</td><td class="yes">Essentially yes</td><td>TornadoVM does not reimplement anything. It calls the real <code>libcublas</code>, <code>libcufft</code>, <code>libcudnn</code>, <code>libcusparse</code>, <code>libcublasLt</code>, and real CUTLASS device code, on the real stream, with real device pointers. The only additions are a hash lookup, a downcall, an NVTX push/pop, and a pointer arithmetic. Section 29 quantifies the exceptions.</td></tr>
+<tr><td><b>Is it as capable?</b> How much of each library's API can you reach?</td><td class="no">A small fraction</td><td>39 entry points across six libraries. Whole levels of BLAS, all of cuDNN's backward pass, five of six cuSPARSE formats, and CUTLASS's entire configuration space are absent. Sections 19–26 enumerate this.</td></tr>
+</tbody>
+</table>
+
+<p>The denominators below are counted in <b>API families</b> — a family being one mathematical
+operation regardless of its type-suffixed variants. Counting cuBLAS's <code>gemm</code> once rather
+than four times (S/D/C/Z), or eight (adding the <code>_64</code> forms), is the reading most
+favourable to TornadoVM, and even so the coverage is thin. Family counts are enumerated from the
+public NVIDIA API references and are approximate at the margins (whether <code>gemm3m</code> is its
+own family, and so on); they are stated to establish an order of magnitude, not a precise ratio.</p>
+
+<h3>19. cuBLAS</h3>
+
+<table>
+<caption>Table 16 — cuBLAS coverage by API section</caption>
+<thead><tr><th style="width:22%">Section</th><th class="ctr" style="width:12%">NVIDIA<br>families</th><th class="ctr" style="width:12%">Bound</th><th style="width:16%">Coverage</th><th>What is bound / what is not</th></tr></thead>
+<tbody>
+<tr><td><b>Level 1</b> (vector)</td><td class="ctr">~13</td><td class="ctr">0</td><td><span class="bartrack"><span class="bar" style="width:0%"></span></span>0%</td><td class="no">Nothing. <code>axpy</code>, <code>dot</code>, <code>nrm2</code>, <code>scal</code>, <code>copy</code>, <code>swap</code>, <code>asum</code>, <code>amax</code>/<code>amin</code>, <code>rot</code>/<code>rotg</code>/<code>rotm</code>/<code>rotmg</code> — all absent.</td></tr>
+<tr><td><b>Level 2</b> (matrix-vector)</td><td class="ctr">~23</td><td class="ctr">1</td><td><span class="bartrack"><span class="bar" style="width:4%"></span></span>~4%</td><td><span class="yes">gemv</span> (FP32 only). Absent: <code>gbmv</code>, <code>symv</code>, <code>sbmv</code>, <code>spmv</code>, <code>trmv</code>, <code>tbmv</code>, <code>tpmv</code>, <code>trsv</code>, <code>tbsv</code>, <code>tpsv</code>, <code>ger</code>, <code>syr</code>, <code>syr2</code>, <code>spr</code>, <code>spr2</code>, and all seven Hermitian routines.</td></tr>
+<tr><td><b>Level 3</b> (matrix-matrix)</td><td class="ctr">~15</td><td class="ctr">2</td><td><span class="bartrack"><span class="bar" style="width:13%"></span></span>~13%</td><td><span class="yes">gemm</span>, <span class="yes">gemmStridedBatched</span>. Absent: <code>symm</code>, <code>syrk</code>, <code>syr2k</code>, <code>syrkx</code>, <code>trmm</code>, <b><code>trsm</code></b>, <code>trsmBatched</code>, <code>gemmBatched</code> (pointer-array form), <code>gemm3m</code>, and all Hermitian forms.</td></tr>
+<tr><td><b>BLAS-like extensions</b></td><td class="ctr">~19</td><td class="ctr">1</td><td><span class="bartrack"><span class="bar" style="width:5%"></span></span>~5%</td><td><span class="yes">gemmEx</span> (three typed factories). Absent: <code>geam</code> (would give an on-device transpose — directly useful at the row/column-major seam), <code>dgmm</code>, <code>gemmBatchedEx</code>, <code>gemmStridedBatchedEx</code>, <code>axpyEx</code>/<code>dotEx</code>/<code>scalEx</code>/<code>nrm2Ex</code>/<code>rotEx</code>, and the batched LAPACK-ish family (<code>getrfBatched</code>, <code>getriBatched</code>, <code>getrsBatched</code>, <code>matinvBatched</code>, <code>geqrfBatched</code>, <code>gelsBatched</code>).</td></tr>
+<tr><th>Total</th><th class="ctr">~70</th><th class="ctr">4</th><th><span class="bartrack"><span class="bar" style="width:6%"></span></span>~6%</th><th></th></tr>
+</tbody>
+</table>
+
+<h4>Data-type coverage</h4>
+<p>cuBLAS ships S/D/C/Z variants of nearly every routine, plus the <code>Ex</code> family's
+per-operand <code>cudaDataType</code>. TornadoVM reaches four element types and no complex ones:</p>
+
+<table>
+<thead><tr><th style="width:16%">Type</th><th class="ctr" style="width:12%">Bound</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>FP32 (S)</td><td class="ctr yes">yes</td><td><code>gemv</code>, <code>gemm</code>, <code>gemmStridedBatched</code>, TF32 math mode</td></tr>
+<tr><td>FP16</td><td class="ctr yes">yes</td><td><code>gemmEx</code>, FP16→FP16 and FP16→FP32</td></tr>
+<tr><td>BF16</td><td class="ctr yes">yes</td><td><code>gemmEx</code>, BF16→BF16</td></tr>
+<tr><td>FP64 (D)</td><td class="ctr no">no</td><td>No <code>DoubleArray</code> path in cuBLAS at all. <code>dgemm</code> is a trivial clone of <code>sgemm</code> and is roadmap item B1.</td></tr>
+<tr><td>Complex (C, Z)</td><td class="ctr no">no</td><td>No complex array type participates. Rules out the entire Hermitian half of Levels 2 and 3.</td></tr>
+<tr><td>INT8 / INT32</td><td class="ctr no">no</td><td><code>CublasComputeType.CUBLAS_COMPUTE_32I</code> is declared in the enum but unreachable. Roadmap C3.</td></tr>
+</tbody>
+</table>
+
+<h4>Handle-level configuration</h4>
+<table>
+<thead><tr><th style="width:30%">cuBLAS control</th><th class="ctr" style="width:12%">Bound</th><th>Consequence</th></tr></thead>
+<tbody>
+<tr><td><code>cublasSetStream</code></td><td class="ctr yes">yes</td><td>The whole mechanism depends on it.</td></tr>
+<tr><td><code>cublasSetMathMode</code></td><td class="ctr yes">yes</td><td>DEFAULT / PEDANTIC / TF32, per call, restored after.</td></tr>
+<tr><td><code>cublasSetWorkspace</code></td><td class="ctr yes">yes</td><td>Grow-only, per <i>(device, plan)</i>.</td></tr>
+<tr><td><code>cublasSetPointerMode</code></td><td class="ctr no">no</td><td class="wrapcode"><b>The most consequential gap.</b> With the default <code>CUBLAS_POINTER_MODE_HOST</code>, <code>alpha</code>/<code>beta</code> are host floats. Under CUDA Graph capture they are <i>baked into the captured graph by value</i>, so a scaling factor cannot vary between replays without re-capturing. Device pointer mode would also let a preceding JIT task compute <code>alpha</code> — and is the only way to bind the scalar-output Level-1 routines (<code>dot</code>, <code>nrm2</code>, <code>asum</code>) without synchronizing the stream and breaking capture. Roadmap A3/E4.</td></tr>
+<tr><td><code>cublasSetAtomicsMode</code></td><td class="ctr no">no</td><td>Only affects <code>symv</code>/<code>hemv</code>, neither of which is bound.</td></tr>
+<tr><td><code>cublasGemmAlgo_t</code> selection</td><td class="ctr no">no</td><td>Every <code>gemmEx</code> call uses the default algorithm. Note that <code>CUBLAS_GEMM_ALGO*_TENSOR_OP</code> autotuning would not be capture-safe anyway.</td></tr>
+<tr><td>64-bit API (<code>cublas*_64</code>)</td><td class="ctr no">no</td><td>All dimensions and leading dimensions are <code>int</code>. TornadoVM off-heap segments can exceed <code>INT_MAX</code> elements, so this is a real ceiling, not a theoretical one. Roadmap G1.</td></tr>
+<tr><td><code>cublasXt</code> (multi-GPU)</td><td class="ctr no">no</td><td>Marked <b>not planned</b> in the roadmap: its host-pointer API conflicts with TornadoVM's device-buffer model.</td></tr>
+</tbody>
+</table>
+
+<h3>20. cuBLASLt</h3>
+
+<p>cuBLASLt's surface is not a routine list but a descriptor system: one <code>cublasLtMatmul</code>
+plus roughly 30 exported functions for building descriptors, layouts, preferences, and algorithm
+configurations. TornadoVM binds 12 of them, enough to build and execute a plan, and none of the
+algorithm-introspection or matrix-transform surface.</p>
+
+<table>
+<caption>Table 17 — cuBLASLt: what a plan can and cannot express through TornadoVM</caption>
+<thead><tr><th style="width:24%">Axis</th><th style="width:26%">Reachable</th><th>Not reachable</th></tr></thead>
+<tbody>
+<tr><td>Epilogue</td><td><code>DEFAULT</code>, <code>BIAS</code>, <code>GELU_BIAS</code> (3)</td><td>The rest of the enum, roughly 16 values: <code>RELU</code>, <code>RELU_BIAS</code>, <code>GELU</code>, <code>GELU_AUX</code>, <code>GELU_AUX_BIAS</code>, and the entire backward family (<code>DRELU</code>, <code>DGELU</code>, <code>DRELU_BGRAD</code>, <code>DGELU_BGRAD</code>, <code>BGRADA</code>, <code>BGRADB</code>). <code>RELU</code> and <code>RELU_BIAS</code> are already declared in <code>CuBlasLtEpilogue</code> but have no factory — roadmap F3b.</td></tr>
+<tr><td>Compute type</td><td><code>CUBLAS_COMPUTE_32F</code> only</td><td>16F, 64F, 32I, and the FAST_16F / FAST_16BF / FAST_TF32 variants. The restriction is structural: <code>alpha</code>/<code>beta</code> are host floats, so the scale type must be <code>CUDA_R_32F</code>.</td></tr>
+<tr><td>Element types</td><td>FP32, FP16, FP8 E4M3</td><td>BF16, FP8 E5M2, INT8. <code>CUDA_R_8F_E5M2</code> is declared in the enum and accepted by the FP8 type check, but no factory produces it.</td></tr>
+<tr><td>FP8 scaling</td><td>Nothing</td><td class="wrapcode"><b>A real fidelity gap.</b> Production FP8 matmul sets <code>A_SCALE_POINTER</code>, <code>B_SCALE_POINTER</code>, <code>D_SCALE_POINTER</code> and <code>AMAX_D_POINTER</code> on the matmul descriptor — that per-tensor scaling is what makes 8-bit numerically usable. <code>ltMatmulFP8</code> sets none of them, so all scales are implicitly 1.0. The path exercises the FP8 tensor cores correctly but is not the FP8 workflow a practitioner would recognise.</td></tr>
+<tr><td>Batching</td><td>Nothing</td><td><code>BATCH_COUNT</code> / <code>STRIDED_BATCH_OFFSET</code> layout attributes are never set. Batched Lt matmul is unavailable — the only batched paths are <code>cublasSgemmStridedBatched</code> (FP32) and <code>cutlassHgemmBatched</code> (FP16).</td></tr>
+<tr><td>Layout / ordering</td><td>Plain column-major</td><td><code>CUBLASLT_ORDER_COL32</code>, <code>COL4_4R2_8C</code>, <code>COL32_2R_4R4</code> — the tensor-op-friendly orderings, and <code>cublasLtMatrixTransform</code> which converts between them.</td></tr>
+<tr><td>Algorithm control</td><td><code>MatmulAlgoGetHeuristic</code>, top result</td><td><code>AlgoGetIds</code>, <code>AlgoInit</code>, <code>AlgoCheck</code>, <code>AlgoConfigSetAttribute</code> — i.e. no explicit tile/split-k/stage search. The heuristics cache API (<code>HeuristicsCacheGetCapacity</code>) is also unbound; TornadoVM caches plans itself, per execution plan.</td></tr>
+<tr><td>Workspace</td><td>Fixed 32 MiB</td><td>Not user-tunable. It matches NVIDIA's own recommendation for Ada/Hopper, but a plan with many concurrent contexts pays it repeatedly.</td></tr>
+</tbody>
+</table>
+
+<h3>21. cuFFT</h3>
+
+<table>
+<caption>Table 18 — cuFFT coverage by axis</caption>
+<thead><tr><th style="width:20%">Axis</th><th style="width:30%">Bound</th><th>Not bound</th></tr></thead>
+<tbody>
+<tr><td>Transform types</td><td>C2C, R2C, C2R, Z2Z <span class="small">(4 of 6)</span></td><td class="no">D2Z, Z2D — double-precision real transforms. <code>cufftExecD2Z</code>/<code>Z2D</code> are simply not among the nine bound symbols.</td></tr>
+<tr><td>Dimensionality</td><td>1D (all four types), 2D (C2C only)</td><td class="no">3D entirely (<code>cufftPlan3d</code> unbound). 2D for R2C/C2R/Z2Z.</td></tr>
+<tr><td>Plan construction</td><td><code>cufftPlan1d</code>, <code>cufftPlan2d</code></td><td class="no"><code>cufftPlanMany</code> and <code>cufftMakePlanMany</code> — no advanced strided/embedded layouts, so batches must be contiguous and unit-stride. This rules out FFTs over a non-innermost axis of a multidimensional array without an explicit transpose kernel first.</td></tr>
+<tr><td>Precision</td><td>FP32, FP64</td><td class="no">FP16 and BF16 via <code>cufftXtMakePlanMany</code>.</td></tr>
+<tr><td>Callbacks</td><td>—</td><td class="no"><code>cufftXtSetCallback</code> / <code>cufftXtSetJITCallback</code>. These fuse pre/post-processing into the FFT kernel itself; TornadoVM's answer is a separate JIT task, which is composable but not fused.</td></tr>
+<tr><td>Work area</td><td>Implicit</td><td class="no"><code>cufftSetAutoAllocation</code> / <code>cufftSetWorkArea</code> — the FFT work area is allocated by cuFFT at plan creation, outside TornadoVM's memory accounting.</td></tr>
+<tr><td>Multi-GPU</td><td>—</td><td class="no">The whole <code>cufftXt</code> descriptor API.</td></tr>
+</tbody>
+</table>
+
+<div class="note">
+<b>Where the composition story wins anyway.</b> The absent callback API is the case where TornadoVM's
+model substitutes cleanly: <code>FrequencyFilterExample</code> runs cuFFT R2C → a JIT kernel that
+zeroes high bins → cuFFT C2R → a JIT normalize, all on shared device buffers on one stream. A
+cuFFT callback would fuse the filter into the transform and save a round trip to global memory; the
+TornadoVM version does not, but it is four lines of ordinary Java rather than a device-side function
+pointer.
+</div>
+
+<h3>22. cuDNN</h3>
+
+<p>cuDNN is where the coverage ratio is worst and the reason is architectural. The library has two
+APIs: the legacy per-operation functions, and the v9 graph API. TornadoVM binds four legacy forward
+ops and exactly one graph-API pattern.</p>
+
+<table>
+<caption>Table 19 — cuDNN coverage</caption>
+<thead><tr><th style="width:20%">Area</th><th style="width:28%">Bound</th><th>Not bound</th></tr></thead>
+<tbody>
+<tr><td>Activations</td><td>ReLU, sigmoid, tanh (forward)</td><td class="no">ELU, CLIPPED_RELU, SWISH, IDENTITY; the coefficient parameter; all backward passes.</td></tr>
+<tr><td>Softmax</td><td><code>ACCURATE</code> + <code>INSTANCE</code>, forward</td><td class="no"><code>FAST</code>, <code>LOG</code> modes; <code>CHANNEL</code> mode; backward.</td></tr>
+<tr><td>Pooling</td><td>MAX, square window, no padding, forward</td><td class="no">Average pooling (both padding conventions), asymmetric windows and strides, padding, Nd pooling, backward.</td></tr>
+<tr><td>Convolution</td><td>2D forward, FP32, NCHW, fixed <code>IMPLICIT_PRECOMP_GEMM</code></td><td class="no">The other seven forward algorithms and <code>cudnnFindConvolutionForwardAlgorithm</code> autotuning; NHWC (the tensor-core-preferred layout); FP16/BF16/INT8; dilation ≠ 1; grouped and depthwise convolution; 3D convolution; <b>backward data and backward filter</b>.</td></tr>
+<tr><td>Attention</td><td>Fused SDPA forward, FP16, causal or unmasked, inference</td><td class="no">GQA/MQA (kv-heads ≠ q-heads); padding, sliding-window and bias masks; dropout; ragged/variable-length offsets; paged KV-cache attention; FP8 SDPA; SDPA backward.</td></tr>
+<tr><td>Normalization</td><td>—</td><td class="no">Nothing. No batch norm, no LayerNorm, no <b>RMSNorm</b> — the last being the natural companion to SDPA in a LLaMA block, and roadmap D1.</td></tr>
+<tr><td>Tensor ops</td><td>—</td><td class="no"><code>cudnnAddTensor</code> (broadcast bias), <code>cudnnOpTensor</code>, <code>cudnnReduceTensor</code>. Bias-add in the CNN pipeline is done by a JIT task instead.</td></tr>
+<tr><td>Other</td><td>—</td><td class="no">Dropout, LRN, the RNN v8 API (explicitly out of scope for a transformer-focused effort), fused ConvBiasAct, NormAddRelu.</td></tr>
+<tr><td>Training</td><td>—</td><td class="no">No backward operation of any kind is bound. This is an <b>inference-only</b> binding.</td></tr>
+</tbody>
+</table>
+
+<div class="finding">
+<b>The deprecation problem.</b> Every legacy compute function TornadoVM binds —
+<code>cudnnSoftmaxForward</code>, <code>cudnnActivationForward</code>,
+<code>cudnnPoolingForward</code>, <code>cudnnConvolutionForward</code> — has been <b>deprecated since
+cuDNN 9.0</b>. They remain fully functional (validated on 9.23) but are slated for removal in favour
+of the graph API. The repository's own roadmap tracks this as item F6: re-implement the v1 ops as
+graph-API patterns behind the same Java factories now that the cudnn-frontend integration exists.
+The Java API surface would be unaffected; the risk is entirely on the binding's future
+compilability against a newer cuDNN.
+</div>
+
+<h3>23. cuSPARSE</h3>
+
+<table>
+<caption>Table 20 — cuSPARSE coverage by axis</caption>
+<thead><tr><th style="width:18%">Axis</th><th style="width:20%">Bound</th><th class="ctr" style="width:10%">Coverage</th><th>Not bound</th></tr></thead>
+<tbody>
+<tr><td>Generic-API operations</td><td>SpMV, SpMM</td><td class="ctr">2 of ~9</td><td class="no">SpGEMM (sparse × sparse, and its reuse variant), SpSV and SpSM (triangular solve — the core of iterative solvers and preconditioners), SDDMM (sampled dense-dense, central to sparse attention), SpMMOp, Sparse-to-Dense and Dense-to-Sparse conversion, and the sparse-vector routines (<code>axpby</code>, <code>gather</code>, <code>scatter</code>, <code>rot</code>).</td></tr>
+<tr><td>Sparse formats</td><td>CSR</td><td class="ctr">1 of ~6</td><td class="no">CSC, COO, BSR, Blocked-ELL (the format for structured 2:4 sparsity), Sliced-ELLPACK. Conversions between formats are also unbound, so a caller holding COO must convert on the host.</td></tr>
+<tr><td>Index types</td><td>32-bit, zero-based</td><td class="ctr">1 of 4</td><td class="no">64-bit indices (<code>CUSPARSE_INDEX_64I</code>); one-based indexing.</td></tr>
+<tr><td>Value types</td><td>FP32</td><td class="ctr">1 of ~6</td><td class="no">FP16, BF16, FP64, complex FP32/FP64, INT8.</td></tr>
+<tr><td>Transpose modes</td><td>NON_TRANSPOSE</td><td class="ctr">1 of 3</td><td class="no">TRANSPOSE, CONJUGATE_TRANSPOSE — hard-coded in the provider for both operands.</td></tr>
+<tr><td>Scalars</td><td><code>α = 1</code>, <code>β = 0</code></td><td class="ctr">fixed</td><td class="no">Arbitrary α/β. The native layer already takes them as parameters; only the factory signature withholds them. This is the cheapest gap in the whole report to close.</td></tr>
+<tr><td>Algorithms</td><td>ALG_DEFAULT</td><td class="ctr">1 of ~4</td><td class="no"><code>SPMV_CSR_ALG1</code>/<code>ALG2</code>, <code>SPMM_CSR_ALG1</code>/<code>ALG2</code>/<code>ALG3</code> — the deterministic and load-balanced variants.</td></tr>
+</tbody>
+</table>
+
+<h3>24. CUTLASS</h3>
+
+<p>CUTLASS is not an API with a function list; it is a template metaprogramming library whose
+configuration space is effectively unbounded. The honest comparison is therefore not "how many
+functions" but "how much of the design space is instantiated".</p>
+
+<table>
+<caption>Table 21 — CUTLASS: the instantiated slice vs. the template space</caption>
+<thead><tr><th style="width:22%">Dimension</th><th style="width:26%">TornadoVM instantiates</th><th>CUTLASS offers</th></tr></thead>
+<tbody>
+<tr><td>Architecture</td><td><code>Sm80</code> only</td><td class="no"><code>Sm70</code>, <code>Sm75</code>, <code>Sm80</code>, <code>Sm89</code>, <code>Sm90</code> (Hopper warp-specialized, TMA, persistent kernels), <code>Sm100</code>. On Hopper, TornadoVM's <code>compute_80</code> PTX JITs and runs, but as an Ampere kernel — it cannot use TMA or the Hopper-class GEMM schedules that account for much of Hopper's advantage.</td></tr>
+<tr><td>Kernel API generation</td><td>CUTLASS 2.x <code>device::GemmUniversal</code></td><td class="no">CUTLASS 3.x <code>CollectiveBuilder</code> / CuTe, which is where the Hopper and Blackwell kernels live.</td></tr>
+<tr><td>Tile configuration</td><td>One: 128×128×32 threadblock, 64×64×32 warp, 16×8×16 instruction, 3 stages</td><td class="no">The full tile/stage/swizzle search space, plus the CUTLASS profiler that picks per-problem. A single tile is right for large square problems and wrong for skinny ones — exactly the shapes LLM decoding produces.</td></tr>
+<tr><td>Alignment</td><td><code>kAlign = 4</code> (64-bit loads)</td><td class="no"><code>kAlign = 8</code> (128-bit loads), the normal setting for FP16 tensor-core GEMM. Blocked by TornadoVM's 24-byte array header.</td></tr>
+<tr><td>Layouts</td><td>RowMajor × RowMajor × RowMajor</td><td class="no">Any combination of RowMajor/ColumnMajor, plus interleaved and tensor layouts.</td></tr>
+<tr><td>Element types</td><td>FP32 (SIMT), FP16, BF16</td><td class="no">TF32, FP8 (E4M3/E5M2), FP6, FP4, INT8, INT4, binary, and mixed-input GEMM (e.g. FP16 × INT4, the weight-only-quantization primitive).</td></tr>
+<tr><td>Operations</td><td>GEMM, batched GEMM</td><td class="no">Implicit-GEMM convolution (fprop/dgrad/wgrad), grouped GEMM (the MoE primitive), sparse (2:4) GEMM, Syrk/Trmm, ranked contractions, fused multi-head attention examples.</td></tr>
+<tr><td>Epilogues</td><td>6 activations + plain linear combination</td><td class="no">The full <code>LinearCombination*</code> catalogue plus user-written epilogue visitor trees (EVT), per-channel scaling, residual add, and split-k reductions.</td></tr>
+<tr><td>Scheduling</td><td>Identity swizzle, no split-k</td><td class="no">Split-k, stream-k, and the threadblock swizzles that matter for occupancy on non-square problems.</td></tr>
+</tbody>
+</table>
+
+<h3>25. Semantic fidelity gaps</h3>
+
+<p>Distinct from "not bound at all": these are operations that <i>are</i> bound but whose TornadoVM
+form is narrower than the native call, in ways a caller could reasonably not expect.</p>
+
+<table>
+<caption>Table 22 — Where a bound operation is narrower than its native counterpart</caption>
+<thead><tr><th style="width:20%">Operation</th><th style="width:34%">Native capability</th><th>TornadoVM form</th></tr></thead>
+<tbody>
+<tr><td><code>cusparseSpMV</code> / <code>SpMM</code></td><td>Arbitrary α and β; op(A) ∈ {N, T, CT}; six formats; six value types; four algorithm choices</td><td>α = 1, β = 0, N only, CSR only, FP32 only, default algorithm. <b>β = 0 means the accumulate form <code>y = αAx + βy</code> is unavailable</b> — a caller wanting accumulation must add a JIT task.</td></tr>
+<tr><td><code>cudnnConvolutionForward</code></td><td>Eight algorithms plus heuristic selection; α/β blending; dilation; groups; NCHW and NHWC; FP32/FP16/INT8</td><td>One algorithm, no blending, dilation fixed at (1,1), one group, NCHW, FP32. The fixed algorithm is the largest single performance concession in the binding (see §29).</td></tr>
+<tr><td><code>cudnnPoolingForward</code></td><td>MAX and two AVG modes; asymmetric window, stride and padding; Nd</td><td>MAX, square window, square stride, zero padding, 2D.</td></tr>
+<tr><td>cuDNN SDPA</td><td>GQA/MQA; four mask kinds; dropout; ragged offsets; paged KV cache; FP8; training</td><td>Shared head count for Q and KV; causal or nothing; FP16; inference (<code>set_generate_stats(false)</code>).</td></tr>
+<tr><td><code>cublasLtMatmul</code> FP8</td><td>Per-tensor A/B/D scale pointers and AMAX output — the mechanism that makes FP8 numerically viable</td><td>No scale attributes set; implicit scale 1.0. Correct as an FP8 tensor-core exercise, incomplete as an FP8 workflow.</td></tr>
+<tr><td>CUTLASS fused epilogues</td><td>Arbitrary α and β in the <code>LinearCombination</code> parameters</td><td>α = β = 1 hard-coded in <code>gemmBiasAct</code>; bias delivered as the C operand with <code>ldc = 0</code>. Six of the ten factories therefore take no scaling arguments at all.</td></tr>
+<tr><td><code>cutlassHgemmBatched</code></td><td>Independent batch strides per operand</td><td>Strides fixed at <code>m·k</code>, <code>k·n</code>, <code>m·n</code> — matrices must be packed contiguously, so a broadcast operand (one shared B across the batch, common in attention) cannot be expressed.</td></tr>
+<tr><td>cuBLAS GEMM/GEMV under capture</td><td>Device pointer mode lets α/β vary per replay</td><td>Host pointer mode only; scalars are baked into the captured graph.</td></tr>
+</tbody>
+</table>
+
+<h3>26. Cross-cutting structural limits</h3>
+
+<table>
+<caption>Table 23 — Limits that apply to every provider</caption>
+<thead><tr><th style="width:26%">Limit</th><th style="width:22%">Origin</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td>8-byte pointer alignment</td><td>24-byte <code>TornadoNativeArray</code> header</td><td>CUTLASS FP16/BF16 restricted to 64-bit vector loads and to <code>k, n</code> multiples of 4. cuBLASLt FP8's 16-byte leading-dimension requirement becomes the caller's problem. This is the deepest structural constraint in the design, and it is not fixable inside a provider.</td></tr>
+<tr><td>32-bit dimensions</td><td>All factory signatures take <code>int</code></td><td>No access to the <code>cublas*_64</code> entry points or 64-bit cuSPARSE indices, even though TornadoVM segments can exceed <code>INT_MAX</code> elements.</td></tr>
+<tr><td>Single device</td><td><code>ContextKey</code> is per-device, but task graphs are single-device</td><td>No multi-GPU library task. <code>cublasXt</code> is explicitly ruled out; NCCL has no binding at all.</td></tr>
+<tr><td><code>withBatch</code> incompatibility</td><td>Interpreter rejects <code>batchThreads != 0</code></td><td>TornadoVM's own out-of-core batching cannot be combined with library tasks. Batching must come from the library (<code>cublasSgemmStridedBatched</code>, <code>cutlassHgemmBatched</code>) or from an explicit loop.</td></tr>
+<tr><td>Host-timed profiling</td><td>CUDA-C backend exposes no device timestamps for this path</td><td><code>TASK_KERNEL_TIME</code> costs two stream synchronizations per call and is disabled under capture. NVTX ranges are the accurate alternative.</td></tr>
+<tr><td>CUDA-only</td><td>Every <code>canHandle</code> requires <code>TornadoNativeStreamSupport</code></td><td>No library task runs on the OpenCL, Metal, PTX or SPIR-V paths. There is no rocBLAS/oneMKL analogue, and no fallback to a JIT implementation of the same operation — a graph written with library tasks is not portable.</td></tr>
+<tr><td>No JIT fallback</td><td>By design</td><td>A missing vendor library is an exception, not a slower path. Portable code must branch on device capability at graph-construction time.</td></tr>
+</tbody>
+</table>
+
+<h3>27. NVIDIA libraries with no binding at all</h3>
+
+<table>
+<caption>Table 24 — Absent from this build</caption>
+<thead><tr><th style="width:18%">Library</th><th style="width:18%">Status</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td><b>cuTENSOR</b></td><td class="part">Branch only</td><td>A <code>nvidia/cutensor</code> provider for tensor contractions and einsum exists on branch <code>hybrid-cutensor</code> and is <b>not part of this build</b>. The only trace in the tree is a comment in <code>CUDACommandQueue</code> listing it as an NVTX-range example.</td></tr>
+<tr><td><b>NCCL</b></td><td class="no">Not implemented</td><td>No module, no provider, no reference anywhere in <code>tornado-*</code>. Collective communication would also require multi-device task graphs, which TornadoVM does not yet have.</td></tr>
+<tr><td><b>CUB / CuTe</b></td><td class="no">Not applicable</td><td>Header-only <i>device</i> libraries. These would plug into the CUDA-C backend's NVRTC compilation, not the library-task path, since they are called from inside a kernel rather than from the host.</td></tr>
+<tr><td><b>cuSOLVER</b></td><td class="no">Not implemented</td><td>No binding. Dense and sparse factorizations, eigensolvers and SVD are entirely absent — as are cuBLAS's own batched LU/QR/least-squares routines, which are the nearest available substitute.</td></tr>
+<tr><td><b>cuRAND</b></td><td class="no">Not implemented</td><td>No binding. Random number generation stays in JIT kernels.</td></tr>
+<tr><td><b>nvJPEG, NPP, cuDSS, cuQuantum</b></td><td class="no">Not implemented</td><td>Outside the project's stated scope.</td></tr>
+</tbody>
+</table>
+
+<div class="finding">
+<b>Documentation drift, in TornadoVM's favour.</b> The two ROADMAP files understate what is now
+shipped. <code>tornado-cublas/ROADMAP.md</code> marks C4 (BF16 GemmEx) and C5 (FP8) as
+<i>blocked on missing tornado-api types</i> and F4 (cuBLASLt FP8) as not started — but
+<code>cublasGemmExBF16</code>, <code>cutlassBgemm</code> and <code>ltMatmulFP8</code> all exist in the
+code, and <code>BFloat16Array</code> and <code>ByteArray</code>-backed FP8 are wired through.
+Similarly, <code>tornado-cudnn/README.md</code> lists the graph API under "not bound yet" while
+<code>sdpaForward</code> ships. Treat the roadmaps as design records, not as a coverage statement.
+</div>
+
+<h2 class="newpage">Part IV — Performance</h2>
+
+<h3>28. Measured numbers</h3>
+
+<p>Every figure below is published in the repository, measured on an <b>NVIDIA GeForce RTX 4090</b>
+(Ada, SM 8.9) with CUDA 12.6 and cuDNN 9.23. They are collected here unchanged; nothing was
+re-measured for this report, and no GPU was available in the environment it was written in.</p>
+
+<table>
+<caption>Table 25 — SGEMM ladder (<code>BenchmarkSgemm</code>, FP32/TF32/FP16, TFLOP/s)</caption>
+<thead><tr><th style="width:10%">Size</th><th class="num">Naive <code>@Parallel</code></th><th class="num">KernelContext (tiled)</th><th class="num">cuBLAS FP32</th><th class="num">cuBLAS TF32</th><th class="num">cuBLAS FP16</th><th class="num">FP16 vs tiled</th></tr></thead>
+<tbody>
+<tr><td>1024</td><td class="num">4.0</td><td class="num">3.9</td><td class="num">26.1</td><td class="num">28.2</td><td class="num">44.1</td><td class="num">11.3×</td></tr>
+<tr><td>2048</td><td class="num">5.1</td><td class="num">6.0</td><td class="num">48.3</td><td class="num">62.8</td><td class="num">120.6</td><td class="num">20.4×</td></tr>
+<tr><td>4096</td><td class="num">5.3</td><td class="num">5.8</td><td class="num">57.0</td><td class="num">81.1</td><td class="num"><b>160.6</b></td><td class="num"><b>27.4×</b></td></tr>
+</tbody>
+</table>
+
+<p>The repository states that 160.6 TFLOP/s is the RTX 4090's peak FP16 tensor throughput and
+81 TFLOP/s its TF32 peak — i.e. at 4096 the library task is running at the hardware ceiling, with
+TornadoVM's dispatch overhead invisible. Each step across that table is a factory-name swap in the
+task graph.</p>
+
+<table>
+<caption>Table 26 — SGEMV, memory-bound (<code>MatrixVectorRowMajorWithCuBlas</code>, 8192×2048, 120 iterations)</caption>
+<thead><tr><th style="width:38%">Variant</th><th class="num">Time</th><th class="num">Bandwidth</th><th class="num">vs sequential Java</th></tr></thead>
+<tbody>
+<tr><td>Sequential Java</td><td class="num">8.551 ms</td><td class="num">7.9 GB/s</td><td class="num">1.0×</td></tr>
+<tr><td><code>@Parallel</code> kernel (naive)</td><td class="num">3.309 ms</td><td class="num">20.3 GB/s</td><td class="num">2.6×</td></tr>
+<tr><td>KernelContext (workgroup-per-row)</td><td class="num">0.164 ms</td><td class="num">410 GB/s</td><td class="num">52×</td></tr>
+<tr><td>cuBLAS SGEMV library task</td><td class="num">0.116 ms</td><td class="num">578 GB/s</td><td class="num">74×</td></tr>
+</tbody>
+</table>
+
+<p>This is the instructive counterweight to Table 25: on a memory-bound kernel cuBLAS is only
+<b>1.4×</b> the best hand-written TornadoVM kernel, against 6–27× on the compute-bound one. The
+payoff from a library task tracks how much tensor-core and tiling expertise the operation
+rewards.</p>
+
+<table>
+<caption>Table 27 — Fused epilogue (<code>BenchmarkLtFusedMlp</code>, FP16, TFLOP/s)</caption>
+<thead><tr><th style="width:14%">Size</th><th class="num">Unfused: GemmEx + JIT bias/GELU</th><th class="num">Fused: cuBLASLt <code>GELU_BIAS</code></th><th class="num">Fusion speedup</th></tr></thead>
+<tbody>
+<tr><td>1024</td><td class="num">17.5</td><td class="num">29.4</td><td class="num">1.68×</td></tr>
+<tr><td>2048</td><td class="num">73.8</td><td class="num">98.3</td><td class="num">1.33×</td></tr>
+<tr><td>4096</td><td class="num">132.1</td><td class="num">147.3</td><td class="num">1.11×</td></tr>
+</tbody>
+</table>
+
+<p>Fusion pays most at small and medium sizes — the launch-and-memory-bound regime that LLM decoding
+lives in — and converges toward parity as the GEMM itself starts to dominate.</p>
+
+<table>
+<caption>Table 28 — cuDNN convolution (<code>BenchmarkConv2d</code>, FP32, 3×3, pad 1)</caption>
+<thead><tr><th style="width:32%">Layer (NCHW)</th><th class="num">TornadoVM JIT direct conv</th><th class="num">cuDNN library task</th><th class="num">Speedup</th></tr></thead>
+<tbody>
+<tr><td>8×64×56×56, k=64</td><td class="num">3.8 TFLOP/s</td><td class="num">11.6 TFLOP/s</td><td class="num">3.1×</td></tr>
+<tr><td>16×128×28×28, k=128</td><td class="num">4.0 TFLOP/s</td><td class="num">21.1 TFLOP/s</td><td class="num">5.3×</td></tr>
+</tbody>
+</table>
+
+<table>
+<caption>Table 29 — Fused flash attention (<code>BenchmarkSdpa</code>, causal)</caption>
+<thead><tr><th style="width:26%">Shape (b, h, s, d)</th><th class="num">JIT attention kernel (FP32)</th><th class="num">cuDNN fused SDPA (FP16)</th><th class="num">Speedup</th></tr></thead>
+<tbody>
+<tr><td>4, 16, 1024, 128</td><td class="num">90.7 ms — 0.19 TFLOP/s</td><td class="num">0.268 ms — 64.2 TFLOP/s</td><td class="num"><b>339×</b></td></tr>
+<tr><td>1, 32, 2048, 128</td><td class="num">203.3 ms — 0.17 TFLOP/s</td><td class="num">0.407 ms — 84.3 TFLOP/s</td><td class="num"><b>499×</b></td></tr>
+</tbody>
+</table>
+
+<p>These are the largest ratios in the repository, and they are honest but need reading carefully:
+they compare a <i>fused FP16 flash-attention kernel</i> against an <i>unfused FP32 JIT attention
+kernel</i> that materializes the full score matrix. Roughly half a step of the gap is precision and
+tensor cores, the rest is the algorithmic difference between flash attention and the naive
+formulation. Results are cross-validated against the FP32 reference on the same FP16-rounded
+inputs.</p>
+
+<table>
+<caption>Table 30 — Remaining published figures</caption>
+<thead><tr><th style="width:26%">Benchmark</th><th style="width:22%">Configuration</th><th>Result</th></tr></thead>
+<tbody>
+<tr><td><code>BenchmarkFft</code></td><td>n = 65536, 20 iterations</td><td>Sequential Java DFT 228,819 ms · TornadoVM JIT DFT kernel 63.4 ms · cuFFT <b>0.080 ms</b> — <b>793×</b> the JIT kernel.</td></tr>
+<tr><td><code>BenchmarkCutlassGemm</code></td><td>1024×1024, FP16</td><td>CUTLASS tensor-core ≈ <b>39 TFLOP/s</b>, <b>7.7×</b> the tiled <code>KernelContext</code> kernel. Fused GEMM+bias+GELU ≈ <b>1.28×</b> the unfused CUTLASS GEMM followed by a JIT epilogue task.</td></tr>
+<tr><td><code>TestCuBlasSgemmTF32</code></td><td>4096</td><td>82.6 TFLOP/s, 14.2× the tiled <code>KernelContext</code> kernel, maximum relative error ≈ 1e−4.</td></tr>
+</tbody>
+</table>
+
+<div class="note">
+<b>An internal inconsistency worth knowing about.</b> <code>docs/source/hybrid-api.rst</code> quotes
+cuBLAS SGEMM as "24 / 46 / 51 TFLOP/s at 1024 / 2048 / 4096"; <code>tornado-cublas/README.md</code>
+quotes 26.1 / 48.3 / 57.0 for the same benchmark and sizes, and <code>tornado-cublas/ROADMAP.md</code>
+quotes 51 TFLOP/s at 4096 alongside a TF32 figure of 82.6 where the README says 81.1. These are
+separate measurement runs recorded at different times rather than a contradiction, but any figure
+quoted downstream should name its source file.
+</div>
+
+<h3>29. Where parity holds, and where it breaks</h3>
+
+<p>Because TornadoVM invokes the vendor library rather than reimplementing it, the default
+expectation is parity. The per-call overhead added on the dispatch path is: one
+<code>ConcurrentHashMap</code> lookup for the context, one linear scan over the (six-element)
+provider list, N pointer additions, one hash lookup in the provider's dispatch registry, an NVTX
+push/pop, and an FFM downcall or JNI transition. All of this is host-side and measured in
+nanoseconds against kernels measured in microseconds to milliseconds. Under CUDA Graph capture even
+that disappears from the replay path.</p>
+
+<p>Four situations break the parity expectation, in descending order of importance.</p>
+
+<h4>1. cuDNN convolution runs a fixed algorithm</h4>
+<p>The binding hard-codes <code>CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM</code> and never
+calls <code>cudnnFindConvolutionForwardAlgorithm</code> or the v7 heuristic query. cuDNN's central
+value proposition is that it picks among eight algorithms per shape; a caller who fixes one is using
+cuDNN as a kernel library rather than as cuDNN. Combined with FP32/NCHW — rather than FP16/NHWC,
+the tensor-core-preferred combination — the measured 11.6 and 21.1 TFLOP/s sit well below what the
+same GPU reaches on cuBLAS FP32 GEMM (48–57 TFLOP/s, Table 25), let alone its FP16 tensor path.
+The repository's own README names algorithm autotuning and the FP16 tensor-core path as "the next
+big steps", so this is a known position rather than an oversight.</p>
+
+<h4>2. CUTLASS runs one tile configuration at reduced alignment</h4>
+<p>A derived comparison, using two different benchmarks on the same GPU at the same size and
+precision: <code>BenchmarkCutlassGemm</code> reports ≈39 TFLOP/s for FP16 at 1024, while
+<code>BenchmarkSgemm</code> reports 44.1 TFLOP/s for cuBLAS FP16 at the same size. The CUTLASS path
+is therefore roughly <b>0.9× cuBLAS</b> on this shape. Two causes are visible in the source and both
+are structural rather than incidental:</p>
+<ul>
+<li><code>kAlign = 4</code> — 64-bit operand loads instead of the 128-bit loads a normal FP16
+tensor-core CUTLASS kernel uses, forced by the 24-byte array header (§4).</li>
+<li>A single 128×128×32 tile for every problem, where cuBLAS dispatches among many tuned kernels and
+the CUTLASS profiler would select per shape.</li>
+</ul>
+<p>These are not a controlled A/B — the two benchmarks differ in harness and validation — so treat
+0.9× as an indication, not a measurement. The direction is nonetheless what the kernel configuration
+predicts. CUTLASS's advantage here is not raw GEMM throughput but the fused epilogues and the
+row-major layout; on a plain GEMM, cuBLAS is the better call.</p>
+
+<h4>3. Profiling changes what it measures</h4>
+<p>Enabling <code>--enableProfiler</code> inserts two stream markers per library task and waits on
+both. For a short call this can dominate the measurement. NVTX ranges under <code>nsys</code> are
+the non-perturbing alternative and are always on.</p>
+
+<h4>4. Host-pointer scalars under CUDA Graph replay</h4>
+<p>Not a throughput issue but a correctness trap: α and β are captured by value, so a replayed graph
+silently reuses the values from capture time. There is no diagnostic; the caller must re-capture or
+avoid varying scalars.</p>
+
+<div class="note">
+<b>What TornadoVM adds that the C API does not have.</b> The comparison so far has been one-directional.
+Against a hand-written C program calling the same libraries, the TornadoVM path <i>adds</i>:
+automatic buffer lifetime and residency across the JIT↔native boundary; dependency-driven ordering
+derived from <code>Access[]</code> rather than hand-placed events; CUDA Graph capture of the whole
+mixed region for free; a uniform profiler and NVTX labelling across JIT and native work; and the
+ability to write the surrounding pre/post-processing in Java instead of CUDA C. For the operations
+that <i>are</i> bound, that is a strictly better place to call them from.
+</div>
+
+<h2 class="newpage">Part V — Engineering surface</h2>
+
+<h3>30. Build, install, and packaging</h3>
+
+<p>One command builds everything: <code>make BACKEND=cuda</code>, which activates the
+<code>cuda-backend</code> Maven profile. The five Java modules always compile. What differs is
+whether a native artifact is also produced.</p>
+
+<table>
+<caption>Table 31 — Build and install requirements per provider</caption>
+<thead><tr><th style="width:14%">Provider</th><th style="width:16%">Native module</th><th style="width:22%">Runtime dependency</th><th>How obtained · library search order</th></tr></thead>
+<tbody>
+<tr><td>cuBLAS</td><td class="ctr">none</td><td>CUDA toolkit</td><td>Nothing to install. FFM lookup: <code>libcublas.so.12</code> → <code>.so.11</code> → <code>.so</code> → <code>cublas64_12.dll</code> → <code>libcublas.dylib</code>; also loads <code>libcudart</code>.</td></tr>
+<tr><td>cuBLASLt</td><td class="ctr">none</td><td>CUDA toolkit</td><td><code>libcublasLt.so.12</code> → <code>.so.11</code> → <code>.so</code> → <code>cublasLt64_12.dll</code> → <code>.dylib</code>.</td></tr>
+<tr><td>cuFFT</td><td class="ctr">none</td><td>CUDA toolkit</td><td><code>libcufft.so.11</code> → <code>.so.10</code> → <code>.so</code> → <code>cufft64_11.dll</code> → <code>.dylib</code>.</td></tr>
+<tr><td>cuSPARSE</td><td class="ctr">none</td><td>CUDA toolkit</td><td><code>libcusparse.so.12</code> → <code>.so.11</code> → <code>.so</code> → <code>cusparse64_12.dll</code> → <code>.dylib</code>.</td></tr>
+<tr><td>cuDNN</td><td><code>cudnn-jni</code></td><td><b>libcudnn 9</b> (separate install)</td><td><code>apt install libcudnn9-cuda-12 libcudnn9-dev-cuda-12</code>. FFM lookup <code>libcudnn.so.9</code> → <code>.so.8</code> → …; the JNI shim also fetches cudnn-frontend v1.25.0. Note: the Debian package installs headers under the multiarch path <code>/usr/include/x86_64-linux-gnu</code>, which the CMake hints cover.</td></tr>
+<tr><td>CUTLASS</td><td><code>cutlass-jni</code></td><td>CUDA <b>12.0+</b>, C++ toolchain</td><td>Header-only CUTLASS v3.5.1 fetched by CMake <code>FetchContent</code>; nothing to install. Compiled for <code>sm_80</code> SASS + <code>compute_80</code> PTX; override with <code>CUDA_ARCH=&lt;cc&gt;</code> (e.g. <code>CUDA_ARCH=89</code>). On CUDA &lt; 12 the native library is skipped and the provider reports <code>UNSUPPORTED</code>.</td></tr>
+</tbody>
+</table>
+
+<p>The design principle throughout is <b>self-guarding</b>: a missing library never fails the build.
+The <code>SymbolLookup</code> (or the native <code>.so</code> load) comes back empty and that provider
+reports <code>UNSUPPORTED</code> at runtime. The launcher adds the provider modules to
+<code>--add-modules</code> automatically whenever the CUDA backend is present:
+<code>tornado.cublas, tornado.cufft, tornado.cudnn, tornado.cusparse, tornado.cutlass</code>.</p>
+
+<h3>31. Test coverage</h3>
+
+<p>75 JUnit tests across five suites in <code>tornado-unittests</code>, all registered with
+<code>tornado-test</code> and all self-skipping through a JUnit assumption when the default device
+is not on the CUDA backend or the vendor library is unavailable. Every operation is validated
+against a sequential Java reference.</p>
+
+<table>
+<caption>Table 32 — Test suites</caption>
+<thead><tr><th style="width:26%">Suite</th><th class="ctr" style="width:8%">Tests</th><th>What is covered beyond the plain operation</th></tr></thead>
+<tbody>
+<tr><td><code>cublas.TestCuBlas</code></td><td class="ctr">14</td><td>β≠0 read-write output, TF32 math mode, user workspace, GemmEx in FP16/BF16/FP16→FP32, strided-batched, mixed pre/post JIT tasks, cross-graph shared buffers, CUDA Graph capture, ad-hoc and up-front weight upload.</td></tr>
+<tr><td><code>cublas.TestCuBlasLt</code></td><td class="ctr">6</td><td>FP32 and FP16 matmul, plan-cache reuse across shapes, BIAS and GELU_BIAS epilogues.</td></tr>
+<tr><td><code>cufft.TestCuFft</code></td><td class="ctr">8</td><td>C2C round trip, R2C/C2R Hermitian round trip, Z2Z FP64, 2D transforms, capture/replay.</td></tr>
+<tr><td><code>cudnn.TestCuDnn</code></td><td class="ctr">11</td><td>Softmax, ReLU, tanh, max-pool, conv2d; the conv → JIT bias → ReLU → pool mixed pipeline; SDPA plain and causal; conv under CUDA Graph; up-front upload paths.</td></tr>
+<tr><td><code>cusparse.TestCusparse</code></td><td class="ctr">11</td><td>General, identity, diagonal, rectangular, empty-row and near-dense CSR matrices; SpMM; JIT pre/post; capture; multiple shapes sharing one context; repeated-execution stability.</td></tr>
+<tr><td><code>cutlass.TestCutlass</code></td><td class="ctr">25</td><td>The widest suite: all six fused epilogues individually, a SwiGLU feed-forward composite, batched HGEMM, BF16, rectangular shapes, chained GEMMs, a two-layer fused MLP, a deep mixed pipeline, cross-graph shared buffers, mixed precision in one graph, multiple shapes on one context, repeated-execution stability, capture of both a plain GEMM and a fused MLP, and a negative test (<code>testHgemmBadAlignmentShape</code>) asserting the alignment rejection.</td></tr>
+</tbody>
+</table>
+
+<p>Alongside these, each module ships <code>main()</code>-runnable examples and benchmarks that
+double as documentation — <code>TestCuBlasSgemv</code>, <code>FrequencyFilterExample</code>,
+<code>BenchmarkSgemm</code>, <code>BenchmarkSdpa</code>, <code>BenchmarkCutlassGemm</code> and the
+rest — each validating against sequential Java and printing throughput.</p>
+
+<h3>32. Writing a provider</h3>
+
+<p>The extension story is the strongest part of the design: adding a library touches
+<b>only the new module</b>. Four steps, mirroring <code>tornado-cudnn</code>:</p>
+
+<ol>
+<li><b>Factory</b> — a static method returning a <code>LibraryTaskDescriptor</code> with library
+name, function name, <code>Object[]</code> parameters, and the <code>Access[]</code> array.</li>
+<li><b>Provider</b> — implement <code>TornadoLibraryProvider</code>'s six methods; bind the stream in
+<code>createContext</code>, do all allocation in <code>prepare()</code>.</li>
+<li><b>Register</b> — <code>provides ... with MyProvider;</code> in <code>module-info.java</code>
+<i>and</i> the same class name in
+<code>META-INF/services/uk.ac.manchester.tornado.runtime.library.spi.TornadoLibraryProvider</code>.</li>
+<li><b>Bind</b> — a <code>SymbolLookup</code> plus downcall handles in
+<code>java.lang.foreign</code>. A <code>tornado-drivers/&lt;lib&gt;-jni</code> CMake module is needed
+<i>only</i> when the library requires actual compiled C/C++ (a header-only template library, or an
+ABI FFM cannot express) — and that path additionally requires wiring in the root
+<code>pom.xml</code>, the <code>tornado-drivers</code> profile, <code>tornado-assembly</code>
+(<code>assembly.xml</code> and <code>pom.xml</code>), and <code>tornado.py</code>'s
+<code>--add-modules</code> list.</li>
+</ol>
+
+<p>Four of the six shipped providers took path (4) without a JNI module, which is the evidence that
+the FFM route is the default and the native module the exception.</p>
+
+<h2 class="newpage">Part VI — Assessment</h2>
+
+<h3>33. Findings</h3>
+
+<h4>What the design gets right</h4>
+<ol>
+<li><b>The <code>Access[]</code> insight.</b> Reusing TornadoVM's existing data-flow machinery by
+having a factory declare per-argument access — including deriving <code>READ_WRITE</code> from the
+runtime value of <code>beta</code> — is what lets an opaque native call participate in dependency
+analysis without the compiler knowing anything about it. Everything else follows from this.</li>
+<li><b>The <code>prepare()</code> / <code>dispatch()</code> split.</b> Hoisting every allocation into
+a pre-capture hook is what makes native library calls CUDA-Graph-capturable at all, and it is
+enforced uniformly across six providers with different allocation behaviours.</li>
+<li><b>Zero core-runtime coupling.</b> Six providers exist and <code>tornado-runtime</code> knows
+about none of them. <code>LibraryRegistry</code> is 60 lines of ServiceLoader and a
+<code>ConcurrentHashMap</code>.</li>
+<li><b>Self-guarding builds.</b> A missing vendor library degrades to a runtime
+<code>UNSUPPORTED</code>, never a build failure. This is what makes it viable to ship six optional
+NVIDIA dependencies in one SDK.</li>
+<li><b>Honest, comparative benchmarks.</b> Every benchmark measures against the best hand-written
+TornadoVM kernel, not only against sequential Java, and cross-validates results. The SGEMV table —
+where cuBLAS wins by only 1.4× — is included even though it is the least flattering number in the
+set.</li>
+</ol>
+
+<h4>The limits that matter most</h4>
+<ol>
+<li><b>The 24-byte header caps alignment at 8 bytes.</b> This is the one constraint no provider can
+work around, and it costs measurable CUTLASS FP16 throughput while imposing a user-visible shape
+restriction. Any future FP8 or 128-bit-load path meets the same wall.</li>
+<li><b>Host pointer mode blocks a whole class of operations.</b> Without
+<code>CUBLAS_POINTER_MODE_DEVICE</code>, α and β cannot be produced on-device or varied across CUDA
+Graph replays, and the scalar-output Level-1 routines cannot be bound at all without breaking
+capture. Roadmap A3/E4 is the highest-leverage unblocking item in the tree.</li>
+<li><b>cuDNN's fixed convolution algorithm.</b> Using one of eight algorithms without heuristic
+selection forgoes cuDNN's main advantage, and the FP32/NCHW choice forgoes tensor cores on top of
+that.</li>
+<li><b>cuSPARSE's α=1, β=0.</b> The narrowest provider is narrower than it needs to be — the native
+layer already takes both scalars as parameters; only the factory signature withholds them.</li>
+<li><b>Inference only, single device.</b> No backward operation anywhere, no multi-GPU, no NCCL. The
+binding targets inference and numerical kernels, not training.</li>
+<li><b>Not portable.</b> A graph containing a library task runs on CUDA or throws. There is no JIT
+fallback for the same operation, so portable code must branch at graph-construction time.</li>
+</ol>
+
+<h4>Overall</h4>
+<p>The right way to read this subsystem is as <b>a mechanism with a demonstration set</b>, not as a
+Java binding for the NVIDIA math libraries. The mechanism — shared device buffers, one stream,
+dependency-driven ordering, capture-safe preparation, ServiceLoader extensibility — is complete and
+uniformly applied, and it is the hard part. The 39 entry points on top of it are a curated slice
+chosen for LLM and CNN inference: GEMM in five precisions, fused MLP epilogues, flash attention,
+FFTs, CSR SpMV. Where a slice exists it runs at the vendor library's own speed, up to the hardware
+ceiling. Everywhere else, the honest answer to "does TornadoVM support <i>X</i>" is that adding
+<i>X</i> is a factory, a registry entry, a downcall handle and a test, in one module, with no core
+changes — which is precisely what the design was built to make true.</p>
+
+<div class="meta">
+Compiled from <code>beehive-lab/TornadoVM</code> at commit <code>e06a2e5</code>. Primary sources:
+<code>HYBRID_API_GUIDE.md</code>; <code>docs/source/hybrid-api.rst</code>; the six
+<code>tornado-&lt;lib&gt;</code> modules and their READMEs and ROADMAPs;
+<code>tornado-drivers/{cudnn-jni,cutlass-jni}</code>;
+<code>tornado-runtime/.../runtime/library/</code>;
+<code>TornadoVMInterpreter.executeLibraryLaunch</code>; and the five suites under
+<code>tornado-unittests/.../unittests/</code>. NVIDIA-side API family counts are enumerated from the
+public cuBLAS, cuBLASLt, cuFFT, cuDNN, cuSPARSE and CUTLASS references and are approximate at the
+margins; they establish orders of magnitude, not exact ratios. No GPU was available while this
+report was written — all performance figures are quoted from the repository, not re-measured.
+</div>
+
+</body>
+</html>
