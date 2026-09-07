@@ -77,7 +77,10 @@ jobs:
 
       - name: Update Maven versions
         run: |
-          ./mvnw versions:set -DnewVersion=${{ env.VERSION }} -DgenerateBackupPoms=false
+          # NOT `mvn versions:set` - that rewrites every pom's <version>${revision}</version>
+          # to a hard-coded literal, killing the jdk21/jdk22plus profile <revision> overrides so
+          # every build stamps the same JDK-less version (broke the 6.0.0 -> 6.0.1-dev bump).
+          python3 scripts/set-maven-version.py release ${{ env.VERSION }}
           echo "✅ Maven versions updated to ${{ env.VERSION }}"
 
       - name: Update tornadovm-installer version
