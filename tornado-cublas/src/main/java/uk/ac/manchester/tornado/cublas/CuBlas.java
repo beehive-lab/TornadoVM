@@ -21,6 +21,7 @@ import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
@@ -59,6 +60,18 @@ public final class CuBlas {
         Access[] accesses = new Access[numArgs];
         Arrays.fill(accesses, Access.READ_ONLY);
         accesses[outputIndex] = (beta != 0.0f) ? Access.READ_WRITE : Access.WRITE_ONLY;
+        return accesses;
+    }
+
+    /**
+     * Double-precision counterpart of {@link #readOnlyExcept(int, int, float)}. Comparing the
+     * double directly matters: narrowing to float first would round a small non-zero beta to
+     * 0.0f and mark an operand WRITE_ONLY that cuBLAS is going to read.
+     */
+    private static Access[] readOnlyExcept(int numArgs, int outputIndex, double beta) {
+        Access[] accesses = new Access[numArgs];
+        Arrays.fill(accesses, Access.READ_ONLY);
+        accesses[outputIndex] = (beta != 0.0d) ? Access.READ_WRITE : Access.WRITE_ONLY;
         return accesses;
     }
 
@@ -164,6 +177,24 @@ public final class CuBlas {
         return new LibraryTaskDescriptor() //
                 .withLibrary(LIBRARY_NAME) //
                 .withFunction("cublasSgemm") //
+                .withParameters(new Object[] { transa, transb, m, n, k, alpha, matrixA, lda, matrixB, ldb, beta, matrixC, ldc }) //
+                .withAccess(readOnlyExcept(13, 11, beta));
+    }
+
+    /**
+     * FP64 matrix-matrix product via {@code cublasDgemm}:
+     * C = alpha * op(A) * op(B) + beta * C, with all operands {@link DoubleArray}.
+     *
+     * <p>The double-precision counterpart of {@link #cublasSgemm}. cuBLAS is column-major, so a
+     * row-major C = A * B is expressed by swapping the operands (C_cm = B_cm * A_cm), exactly as
+     * for the FP32 form.</p>
+     */
+    public static LibraryTaskDescriptor cublasDgemm(int transa, int transb, int m, int n, int k, //
+            double alpha, DoubleArray matrixA, int lda, DoubleArray matrixB, int ldb, //
+            double beta, DoubleArray matrixC, int ldc) {
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cublasDgemm") //
                 .withParameters(new Object[] { transa, transb, m, n, k, alpha, matrixA, lda, matrixB, ldb, beta, matrixC, ldc }) //
                 .withAccess(readOnlyExcept(13, 11, beta));
     }

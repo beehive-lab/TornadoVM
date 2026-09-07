@@ -62,6 +62,7 @@ final class CuBlasNativeLib {
     private static final MethodHandle CUBLAS_SET_WORKSPACE;
     private static final MethodHandle CUBLAS_SGEMV;
     private static final MethodHandle CUBLAS_SGEMM;
+    private static final MethodHandle CUBLAS_DGEMM;
     private static final MethodHandle CUBLAS_SGEMM_STRIDED_BATCHED;
     private static final MethodHandle CUBLAS_GEMM_EX;
     private static final MethodHandle CUDA_MALLOC;
@@ -76,6 +77,7 @@ final class CuBlasNativeLib {
             CUBLAS_SET_WORKSPACE = null;
             CUBLAS_SGEMV = null;
             CUBLAS_SGEMM = null;
+            CUBLAS_DGEMM = null;
             CUBLAS_SGEMM_STRIDED_BATCHED = null;
             CUBLAS_GEMM_EX = null;
         } else {
@@ -90,6 +92,8 @@ final class CuBlasNativeLib {
                     "cublasSgemv_v2");
             CUBLAS_SGEMM = FFMSupport.downcall(LIBCUBLAS,
                     FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_INT, C_INT, C_INT, C_INT, C_POINTER, C_LONG, C_INT, C_LONG, C_INT, C_POINTER, C_LONG, C_INT), "cublasSgemm_v2");
+            CUBLAS_DGEMM = FFMSupport.downcall(LIBCUBLAS,
+                    FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_INT, C_INT, C_INT, C_INT, C_POINTER, C_LONG, C_INT, C_LONG, C_INT, C_POINTER, C_LONG, C_INT), "cublasDgemm_v2");
             CUBLAS_SGEMM_STRIDED_BATCHED = FFMSupport.downcall(LIBCUBLAS,
                     FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_INT, C_INT, C_INT, C_INT, C_POINTER, C_LONG, C_INT, C_LONG, C_LONG, C_INT, C_LONG, C_POINTER, C_LONG, C_INT, C_LONG, C_INT),
                     "cublasSgemmStridedBatched");
@@ -134,6 +138,14 @@ final class CuBlasNativeLib {
         MemorySegment segment = SCALARS.forBytes(2L * Float.BYTES);
         segment.set(FFMSupport.C_FLOAT, 0, alpha);
         segment.set(FFMSupport.C_FLOAT, Float.BYTES, beta);
+        return segment;
+    }
+
+    /** Writes a double alpha and beta into the per-thread scalar scratch and returns it. */
+    private static MemorySegment scalars(double alpha, double beta) {
+        MemorySegment segment = SCALARS.forBytes(2L * Double.BYTES);
+        segment.set(FFMSupport.C_DOUBLE, 0, alpha);
+        segment.set(FFMSupport.C_DOUBLE, Double.BYTES, beta);
         return segment;
     }
 
@@ -224,6 +236,15 @@ final class CuBlasNativeLib {
         MemorySegment scalars = scalars(alpha, beta);
         try {
             return (int) CUBLAS_SGEMM.invokeExact(handle, transa, transb, m, n, k, scalars.asSlice(0, Float.BYTES), dA, lda, dB, ldb, scalars.asSlice(Float.BYTES, Float.BYTES), dC, ldc);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    static int cublasDgemm(long handle, int transa, int transb, int m, int n, int k, double alpha, long dA, int lda, long dB, int ldb, double beta, long dC, int ldc) {
+        MemorySegment scalars = scalars(alpha, beta);
+        try {
+            return (int) CUBLAS_DGEMM.invokeExact(handle, transa, transb, m, n, k, scalars.asSlice(0, Double.BYTES), dA, lda, dB, ldb, scalars.asSlice(Double.BYTES, Double.BYTES), dC, ldc);
         } catch (Throwable t) {
             throw rethrow(t);
         }
