@@ -310,12 +310,17 @@ public class TestSharedMemoryStaging extends TornadoTestBase {
         TaskGraph build(TaskGraph graph);
     }
 
+    /**
+     * Runs one kernel on a fixed 1D grid of {@link #GROUPS} groups of {@link #GROUP} threads.
+     * {@code name} identifies the task graph, so a failure in the scheduler or the profiler
+     * names the kernel under test rather than a generic "s0".
+     */
     private void run(String name, TaskBuilder builder, IntArray... inputs) throws TornadoExecutionPlanException {
         WorkerGrid worker = new WorkerGrid1D(SIZE);
         worker.setLocalWork(GROUP, 1, 1);
-        GridScheduler grid = new GridScheduler("s0.t0", worker);
+        GridScheduler grid = new GridScheduler(name + ".t0", worker);
 
-        TaskGraph graph = builder.build(new TaskGraph("s0").transferToDevice(DataTransferMode.EVERY_EXECUTION, (Object[]) inputs));
+        TaskGraph graph = builder.build(new TaskGraph(name).transferToDevice(DataTransferMode.EVERY_EXECUTION, (Object[]) inputs));
         ImmutableTaskGraph snapshot = graph.snapshot();
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(snapshot)) {
             plan.withGridScheduler(grid).execute();

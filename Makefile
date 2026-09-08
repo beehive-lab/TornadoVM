@@ -96,11 +96,9 @@ checkstyle:
 test-reflection:
 	./mvnw -P$(JDK_PROFILE) -pl tornado-api,tornado-runtime -am clean test -DskipTests=false
 
-# No-GPU tests for the CUDA code generator (tornado-drivers/cuda/src/test). These build LIR by
-# hand and run the code-generator passes over it, so they need neither a device nor a CUDA
-# driver, and they are the fastest way to check a codegen change before spending a GPU run on it.
-# `-am` is required: tornado-drivers-cuda resolves tornado-drivers-common from the reactor, not
-# from the local repository. Same JDK override as test-reflection.
+# No-GPU tests for the CUDA code generator (tornado-drivers/cuda/src/test): they build LIR by hand,
+# so they need no device. `-am` is required -- tornado-drivers-cuda resolves tornado-drivers-common
+# from the reactor, not the local repository.
 test-cuda-codegen:
 	./mvnw -P$(JDK_PROFILE),cuda-backend -Dtornado.backend=cuda -pl tornado-drivers/cuda -am test -DskipTests=false
 

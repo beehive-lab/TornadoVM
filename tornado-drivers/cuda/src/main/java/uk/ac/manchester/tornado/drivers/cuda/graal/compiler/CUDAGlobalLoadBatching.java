@@ -44,22 +44,42 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt.StoreStmt;
  *
  * <pre>
  * ul_107 = ul_0 + l_106;
- * f_108  = *((__global float *) ul_107);   // global load
+ * f_108  = *(( float *) ul_107);           // global load
  * adf_5[i_97] = f_108;                     // shared store, consumes it at once
  * i_109  = i_92 + i_102;
  * l_110  = (long long) i_109;
  * l_112  = (l_110 + 4L) &lt;&lt; 2;
  * ul_113 = ul_0 + l_112;
- * f_114  = *((__global float *) ul_113);   // next global load, cannot start
+ * f_114  = *(( float *) ul_113);           // next global load, cannot start
  * adf_5[i_88] = f_114;                     //   until the previous one landed
  * </pre>
  *
- * ptxas will not hoist the loads itself: it cannot prove that the shared store
- * and the global load do not alias, so each {@code LDG} has to retire before the
- * next one is issued. On an Ada tile kernel that shows up as a
- * {@code long_scoreboard} stall of 12.25 cycles/instruction against 1.14 for the
- * equivalent hand-written CUDA, and an issue rate of 20.6% against 51.5%, with
- * identical FFMA counts, identical occupancy and zero spills on both sides.
+ * ptxas will not batch the loads itself, and the reason is visible in the cast
+ * above: the emitted C carries no address space, because
+ * {@code CUDAAssemblerConstants.GLOBAL_MEM_MODIFIER} is the empty string. ptxas
+ * therefore lowers these to a <b>generic</b> {@code LD}, which may target shared
+ * memory, so it may not be reordered against a shared store. Hand-written CUDA
+ * loads through a {@code const float *} parameter, lowers to {@code LDG} — proven
+ * global, and so provably not aliasing the {@code STS} beside it — and ptxas
+ * batches those on its own. The SASS staging schedules on an Ada tile kernel,
+ * with {@code L} a global load and {@code S} a shared store:
+ *
+ * <pre>
+ * before this pass    L S L S L S L S L S L S L S L S     generic LD
+ * after this pass     L L L L L L L L S S S S S S S S     generic LD
+ * hand-written CUDA   L L L L L L L L S S S S S S S S     LDG
+ * </pre>
+ *
+ * The cost of the serialised form is a {@code long_scoreboard} stall of 12.10
+ * cycles per issue against 1.45 for the equivalent hand-written CUDA, and an issue
+ * rate of 20.8% against 50.9%, with identical FFMA counts, identical occupancy and
+ * zero spills on both sides.
+ *
+ * <p>
+ * Giving ptxas the address space directly — emitting {@code __ldg()} or a
+ * global-qualified pointer — would fix the schedule at its source and make this
+ * pass unnecessary for the cases ptxas can then handle. That is a change to
+ * address lowering and is not attempted here.
  *
  * <h2>The transformation</h2>
  *
@@ -110,11 +130,11 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt.StoreStmt;
  *
  * <pre>
  * ul_107 = ul_0 + l_106;
- * f_108  = *((__global float *) ul_107);
+ * f_108  = *(( float *) ul_107);
  * i_109  = i_92 + i_102;
  * ...
  * ul_113 = ul_0 + l_112;
- * f_114  = *((__global float *) ul_113);
+ * f_114  = *(( float *) ul_113);
  * adf_5[i_97] = f_108;
  * adf_5[i_88] = f_114;
  * </pre>
