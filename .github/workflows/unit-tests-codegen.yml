@@ -1,0 +1,76 @@
+name: Code Generator Unit Tests (no-GPU) [JDK 21, 22-27]
+
+# Pure-JVM tests for the CUDA code generator (tornado-drivers/cuda/src/test). They build LIR
+# sequences by hand and run the code-generator passes over them, so they need no GPU and no CUDA
+# driver and can run on standard GitHub-hosted runners.
+#
+# Why this is worth its own lane: a code-generator reordering bug does not fail loudly. It
+# produces a kernel that still compiles, still launches, and returns a slightly wrong number.
+# The GPU suite in build-test.yml would catch only the cases its kernels happen to exercise,
+# and it runs on two serialised self-hosted machines. These tests instead assert the schedule
+# directly -- including several thousand randomly generated instruction sequences -- and finish
+# in under a second, so every push gets them.
+#
+# The JDK matrix mirrors unit-tests-reflection.yml: the same jdk22plus profile must build and
+# run on every host JDK from the floor up, and the jdk21 profile on 21 alone.
+
+on:
+  push:
+    branches: [master, develop]
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+jobs:
+  codegen-unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - profile: jdk21
+            setup_java_version: '21'
+          - profile: jdk22plus
+            setup_java_version: |
+              21
+              25
+    steps:
+      - uses: actions/checkout@v4
+
+      # setup-java points JAVA_HOME at the LAST JDK installed, and bin/compile checks JAVA_HOME
+      # against the profile's floor, so the host JDK must be listed last. JDK 21 is installed
+      # alongside because build_jvmci_module.py needs a 21 runtime image to source the frozen
+      # jdk.vm.ci.* SPI from, whatever the build JDK is.
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.setup_java_version }}
+
+      - name: Report the host JDK under test
+        run: java -version
+
+      - name: Point JVMCI_SOURCE_JDK at the co-installed JDK 21 (jdk22plus only)
+        if: matrix.profile != 'jdk21'
+        run: echo "JVMCI_SOURCE_JDK=$JAVA_HOME_21_X64" >> "$GITHUB_ENV"
+
+      - name: Install native build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ocl-icd-opencl-dev opencl-headers python3-venv
+
+      # Built against the OpenCL backend on purpose. These tests never touch a device, but the
+      # reactor still needs graalJars/ staged and tornado.graal installed locally, and the CUDA
+      # backend's own build would want a CUDA toolkit this runner does not have. The CUDA driver
+      # module itself is pure Java (src/main has no native sources), so it compiles and tests
+      # fine on top of an OpenCL build.
+      - name: Build TornadoVM (opencl, ${{ matrix.profile }})
+        run: |
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip tqdm psutil
+          make ${{ matrix.profile }} BACKEND=opencl
+
+      - name: Run CUDA code generator unit tests (${{ matrix.profile }})
+        run: make test-cuda-codegen JDK=${{ matrix.profile }}

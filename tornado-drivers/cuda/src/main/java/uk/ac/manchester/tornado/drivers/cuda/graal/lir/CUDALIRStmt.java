@@ -1181,7 +1181,7 @@ public class CUDALIRStmt {
          *
          * @return boolean This returns if the memory base is private or local.
          */
-        private boolean isLocalOrPrivateLoad() {
+        public boolean isLocalOrPrivateLoad() {
             return this.cast.getMemorySpace().getBase().getMemorySpace() == CUDAMemorySpace.LOCAL || this.cast.getMemorySpace().getBase().getMemorySpace() == CUDAMemorySpace.PRIVATE;
         }
 
@@ -1195,6 +1195,10 @@ public class CUDALIRStmt {
 
         public MemoryAccess getAddress() {
             return address;
+        }
+
+        public Value getIndex() {
+            return index;
         }
     }
 
@@ -1399,7 +1403,7 @@ public class CUDALIRStmt {
          *
          * @return It returns true if the memory base is private or local.
          */
-        private boolean isLocalOrPrivateStore() {
+        public boolean isLocalOrPrivateStore() {
             return this.cast.getMemorySpace().getBase().getMemorySpace() == CUDAMemorySpace.LOCAL || this.cast.getMemorySpace().getBase().getMemorySpace() == CUDAMemorySpace.PRIVATE;
         }
 
@@ -1413,6 +1417,10 @@ public class CUDALIRStmt {
 
         public MemoryAccess getAddress() {
             return address;
+        }
+
+        public Value getIndex() {
+            return index;
         }
     }
 
