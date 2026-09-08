@@ -42,6 +42,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalBuildStatus;
 import uk.ac.manchester.tornado.drivers.metal.exceptions.MetalException;
 import uk.ac.manchester.tornado.drivers.metal.graal.MetalInstalledCode;
+import uk.ac.manchester.tornado.runtime.common.CodeCacheDirectory;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -55,9 +56,9 @@ public class MetalCodeCache {
     private final boolean METAL_DUMP_BINS = Boolean.parseBoolean(getProperty("tornado.metal.codecache.dump", FALSE));
     private final boolean METAL_DUMP_SOURCE = Boolean.parseBoolean(getProperty("tornado.metal.source.dump", FALSE));
     private final boolean PRINT_LOAD_TIME = false;
-    private final String METAL_CACHE_DIR = getProperty("tornado.metal.codecache.dir", "/var/metal-codecache");
-    private final String METAL_SOURCE_DIR = getProperty("tornado.metal.source.dir", "/var/metal-compiler");
-    private final String METAL_LOG_DIR = getProperty("tornado.metal.log.dir", "/var/metal-logs");
+    private final String METAL_CACHE_DIR = getProperty("tornado.metal.codecache.dir", "var/metal-codecache");
+    private final String METAL_SOURCE_DIR = getProperty("tornado.metal.source.dir", "var/metal-compiler");
+    private final String METAL_LOG_DIR = getProperty("tornado.metal.log.dir", "var/metal-logs");
 
     private final ConcurrentHashMap<String, MetalInstalledCode> cache;
     private final MetalDeviceContextInterface deviceContext;
@@ -83,9 +84,8 @@ public class MetalCodeCache {
     }
 
     private Path resolveDirectory(String dir) {
-        final String tornadoRoot = System.getenv("TORNADO_SDK");
         final String deviceDir = String.format("device-%d-%d", deviceContext.getPlatformContext().getPlatformIndex(), deviceContext.getDevice().getIndex());
-        final Path outDir = Paths.get(tornadoRoot + "/" + dir + "/" + deviceDir);
+        final Path outDir = CodeCacheDirectory.resolve(dir, deviceDir);
         createOrReuseDirectory(outDir);
         return outDir;
     }

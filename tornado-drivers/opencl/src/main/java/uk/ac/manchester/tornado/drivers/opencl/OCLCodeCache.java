@@ -42,6 +42,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
+import uk.ac.manchester.tornado.runtime.common.CodeCacheDirectory;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
@@ -54,9 +55,9 @@ public class OCLCodeCache {
     private final boolean OPENCL_CACHE_ENABLE = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.enable", FALSE));
     private final boolean OPENCL_DUMP_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.dump", FALSE));
     private final boolean OPENCL_DUMP_SOURCE = Boolean.parseBoolean(getProperty("tornado.opencl.source.dump", FALSE));
-    private final String OPENCL_CACHE_DIR = getProperty("tornado.opencl.codecache.dir", "/var/opencl-codecache");
-    private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-compiler");
-    private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.log.dir", "/var/opencl-logs");
+    private final String OPENCL_CACHE_DIR = getProperty("tornado.opencl.codecache.dir", "var/opencl-codecache");
+    private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "var/opencl-compiler");
+    private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.log.dir", "var/opencl-logs");
 
     private final ConcurrentHashMap<String, OCLInstalledCode> cache;
     private final OCLDeviceContextInterface deviceContext;
@@ -82,9 +83,8 @@ public class OCLCodeCache {
     }
 
     private Path resolveDirectory(String dir) {
-        final String tornadoRoot = System.getenv("TORNADOVM_HOME");
         final String deviceDir = String.format("device-%d-%d", deviceContext.getPlatformContext().getPlatformIndex(), deviceContext.getDevice().getIndex());
-        final Path outDir = Paths.get(tornadoRoot + "/" + dir + "/" + deviceDir);
+        final Path outDir = CodeCacheDirectory.resolve(dir, deviceDir);
         createOrReuseDirectory(outDir);
         return outDir;
     }

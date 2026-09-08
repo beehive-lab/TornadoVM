@@ -47,6 +47,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDABuildStatus;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDADeviceType;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAInstalledCode;
+import uk.ac.manchester.tornado.runtime.common.CodeCacheDirectory;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
@@ -61,9 +62,9 @@ public class CUDACodeCache {
     private final boolean OPENCL_CACHE_ENABLE = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.enable", FALSE));
     private final boolean OPENCL_DUMP_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.dump", FALSE));
     private final boolean OPENCL_DUMP_SOURCE = Boolean.parseBoolean(getProperty("tornado.opencl.source.dump", FALSE));
-    private final String OPENCL_CACHE_DIR = getProperty("tornado.opencl.codecache.dir", "/var/opencl-codecache");
-    private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-compiler");
-    private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.log.dir", "/var/opencl-logs");
+    private final String OPENCL_CACHE_DIR = getProperty("tornado.opencl.codecache.dir", "var/opencl-codecache");
+    private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "var/opencl-compiler");
+    private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.log.dir", "var/opencl-logs");
 
     /**
      * Persist compiled module images and reload them on the next run, so that a kernel is only handed to
@@ -71,7 +72,7 @@ public class CUDACodeCache {
      * compilation again, which dominates start-up for applications with many kernels.
      */
     private final boolean CUDA_CODE_CACHE_ENABLE = Boolean.parseBoolean(getProperty("tornado.cuda.codecache.enable", TRUE));
-    private final String CUDA_CODE_CACHE_DIR = getProperty("tornado.cuda.codecache.dir", "/var/cuda-codecache");
+    private final String CUDA_CODE_CACHE_DIR = getProperty("tornado.cuda.codecache.dir", "var/cuda-codecache");
 
     private final ConcurrentHashMap<String, CUDAInstalledCode> cache;
     private final CUDADeviceContextInterface deviceContext;
@@ -97,9 +98,8 @@ public class CUDACodeCache {
     }
 
     private Path resolveDirectory(String dir) {
-        final String tornadoRoot = System.getenv("TORNADOVM_HOME");
         final String deviceDir = String.format("device-%d-%d", deviceContext.getPlatformContext().getPlatformIndex(), deviceContext.getDevice().getIndex());
-        final Path outDir = Paths.get(tornadoRoot + "/" + dir + "/" + deviceDir);
+        final Path outDir = CodeCacheDirectory.resolve(dir, deviceDir);
         createOrReuseDirectory(outDir);
         return outDir;
     }
