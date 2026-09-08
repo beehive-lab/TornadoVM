@@ -37,6 +37,8 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler.CUDAUnaryIn
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt.AssignStmt;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt.ExprStmt;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt.LoadStmt;
+import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt.HalfBitsToIntStmt;
+import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt.ConvertHalfToFloatStmt;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt.MoveStmt;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt.StoreStmt;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDABarrierNode.CUDAMemFenceFlags;
@@ -108,9 +110,28 @@ final class CUDALIRTestPrograms {
         return new ExprStmt(new CUDAUnary.Barrier(CUDAUnaryIntrinsic.BARRIER, CUDAMemFenceFlags.LOCAL));
     }
 
-    /** Any instruction outside the pass's whitelist. */
-    MoveStmt opaque(Variable result, Value operand) {
+    /** A move: a pure register computation, so it may float above a sunk store. */
+    MoveStmt move(Variable result, Value operand) {
         return new MoveStmt(result, operand);
+    }
+
+    /** {@code u = (unsigned) __half_as_ushort(h)} — the fp16 packing statement. */
+    HalfBitsToIntStmt halfBitsToInt(Variable result, Value half) {
+        return new HalfBitsToIntStmt(result, half);
+    }
+
+    /** {@code f = __half2float(h)} — a pure conversion. */
+    ConvertHalfToFloatStmt halfToFloat(Variable result, Value half) {
+        return new ConvertHalfToFloatStmt(result, half);
+    }
+
+    /**
+     * An instruction outside the pass's alphabet. A warp shuffle has a cross-lane effect,
+     * so it must end a run — a deliberately meaningful choice of ineligible instruction
+     * rather than an arbitrary one.
+     */
+    LIRInstruction opaque(Variable result, Value operand) {
+        return new CUDALIRStmt.ShuffleSyncStmt(CUDALIRStmt.ShuffleSyncStmt.Mode.XOR, result, operand, operand);
     }
 
     private LoadStmt load(CUDAMemoryBase base, Variable result, Value address) {

@@ -30,7 +30,7 @@ import tornado.graal.compiler.lir.LIRInstruction;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIROp;
-import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt.AssignStmt;
+import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PureRegisterComputation;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt.LoadStmt;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt.StoreStmt;
 
@@ -87,8 +87,10 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt.StoreStmt;
  *
  * <ul>
  * <li>a <b>global</b> {@link LoadStmt} (not local, not private),</li>
- * <li>an {@link AssignStmt} — pure register arithmetic; no CUDA LIR operator
- * dereferences memory, only Load/Store statements do,</li>
+ * <li>a {@link PureRegisterComputation} — a statement that computes one value from
+ * registers alone, touching no memory and no other lane. That covers plain assignment
+ * and moves, and the half/bf16/fp8 conversion and arithmetic statements, each of which
+ * opts in beside its own {@code emitCode},</li>
  * <li>a <b>local or private</b> {@link StoreStmt},</li>
  * </ul>
  *
@@ -194,7 +196,7 @@ public final class CUDAGlobalLoadBatching {
     }
 
     private static boolean isEligible(LIRInstruction op) {
-        return isGlobalLoad(op) || isSinkableStore(op) || op instanceof AssignStmt;
+        return isGlobalLoad(op) || isSinkableStore(op) || op instanceof PureRegisterComputation;
     }
 
     private static boolean isGlobalLoad(LIRInstruction op) {
@@ -264,8 +266,8 @@ public final class CUDAGlobalLoadBatching {
         Value defined;
         if (mover instanceof LoadStmt) {
             defined = ((LoadStmt) mover).getResult();
-        } else if (mover instanceof AssignStmt) {
-            defined = ((AssignStmt) mover).getResult();
+        } else if (mover instanceof PureRegisterComputation) {
+            defined = ((PureRegisterComputation) mover).getDefinedValue();
         } else {
             return false; // unreachable for an eligible run; refuse rather than guess
         }

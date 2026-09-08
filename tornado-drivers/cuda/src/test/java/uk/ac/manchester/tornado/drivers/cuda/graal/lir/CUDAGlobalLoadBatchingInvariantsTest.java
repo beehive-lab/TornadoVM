@@ -39,7 +39,7 @@ import tornado.graal.compiler.lir.Variable;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDAGlobalLoadBatching;
-import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt.AssignStmt;
+import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PureRegisterComputation;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt.LoadStmt;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt.StoreStmt;
 
@@ -135,7 +135,12 @@ public class CUDAGlobalLoadBatchingInvariantsTest {
             switch (random.nextInt(10)) {
                 case 0, 1, 2 -> program.add(p.globalLoad(a, b));
                 case 3, 4, 5 -> program.add(p.sharedStore(a, b));
-                case 6 -> program.add(p.assign(a, b));
+                case 6 -> program.add(switch (random.nextInt(4)) {
+                    case 0 -> p.assign(a, b);
+                    case 1 -> p.halfBitsToInt(a, b);
+                    case 2 -> p.halfToFloat(a, b);
+                    default -> p.move(a, b);
+                });
                 case 7 -> program.add(p.privateStore(a, b));
                 case 8 -> program.add(random.nextBoolean() ? p.barrier() : p.globalStore(a, b));
                 default -> program.add(random.nextBoolean() ? p.sharedLoad(a, b) : p.opaque(a, b));
@@ -145,7 +150,7 @@ public class CUDAGlobalLoadBatchingInvariantsTest {
     }
 
     private static boolean isEligible(LIRInstruction op) {
-        if (op instanceof AssignStmt) {
+        if (op instanceof PureRegisterComputation) {
             return true;
         }
         if (op instanceof LoadStmt) {
@@ -165,8 +170,8 @@ public class CUDAGlobalLoadBatchingInvariantsTest {
         if (op instanceof LoadStmt) {
             return ((LoadStmt) op).getResult();
         }
-        if (op instanceof AssignStmt) {
-            return ((AssignStmt) op).getResult();
+        if (op instanceof PureRegisterComputation) {
+            return ((PureRegisterComputation) op).getDefinedValue();
         }
         return null;
     }

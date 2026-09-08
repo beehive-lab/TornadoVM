@@ -253,6 +253,68 @@ public class CUDAGlobalLoadBatchingTest {
         assertEquals(list(l0, l1, s0, s1, b, l2, l3, s2, s3), out);
     }
 
+    /**
+     * The fp16 staging shape: a global load, a half-to-int conversion, then a shared store.
+     * Before {@code HalfBitsToIntStmt} was a {@link CUDALIRStmt.PureRegisterComputation} the
+     * conversion ended the run, so an interleaved fp16 kernel was silently skipped rather
+     * than optimised.
+     */
+    @Test
+    public void batchesAcrossHalfConversions() {
+        Variable h0 = p.variable();
+        Variable u0 = p.variable();
+        Variable h1 = p.variable();
+        Variable u1 = p.variable();
+
+        LIRInstruction l0 = p.globalLoad(h0, p.variable());
+        LIRInstruction c0 = p.halfBitsToInt(u0, h0);
+        LIRInstruction s0 = p.sharedStore(p.variable(), u0);
+        LIRInstruction l1 = p.globalLoad(h1, p.variable());
+        LIRInstruction c1 = p.halfBitsToInt(u1, h1);
+        LIRInstruction s1 = p.sharedStore(p.variable(), u1);
+
+        assertEquals(list(l0, c0, l1, c1, s0, s1), CUDAGlobalLoadBatching.reorder(list(l0, c0, s0, l1, c1, s1)));
+    }
+
+    /** The same for a float conversion, which is the fp16 compute path rather than the packing one. */
+    @Test
+    public void batchesAcrossFloatConversions() {
+        Variable h0 = p.variable();
+        Variable f0 = p.variable();
+        Variable h1 = p.variable();
+
+        LIRInstruction l0 = p.globalLoad(h0, p.variable());
+        LIRInstruction c0 = p.halfToFloat(f0, h0);
+        LIRInstruction s0 = p.sharedStore(p.variable(), f0);
+        LIRInstruction l1 = p.globalLoad(h1, p.variable());
+
+        assertEquals(list(l0, c0, l1, s0), CUDAGlobalLoadBatching.reorder(list(l0, c0, s0, l1)));
+    }
+
+    /** A conversion that redefines a value the store reads is still refused. */
+    @Test
+    public void refusesWhenAHoistedConversionWouldClobberAStoredValue() {
+        Variable reused = p.variable(11);
+        LIRInstruction s = p.sharedStore(p.variable(), reused);
+        LIRInstruction c = p.halfBitsToInt(reused, p.variable()); // redefines what s reads
+        LIRInstruction l = p.globalLoad(p.variable(), p.variable());
+
+        List<LIRInstruction> in = list(s, c, l);
+        assertSame(in, CUDAGlobalLoadBatching.reorder(in));
+    }
+
+    /** A move is a pure register computation, so it floats above a sunk store. */
+    @Test
+    public void hoistsPastAMove() {
+        Variable v = p.variable();
+        Variable m = p.variable();
+        LIRInstruction s = p.sharedStore(p.variable(), v);
+        LIRInstruction mv = p.move(m, p.variable());
+        LIRInstruction l = p.globalLoad(p.variable(), m);
+
+        assertEquals(list(mv, l, s), CUDAGlobalLoadBatching.reorder(list(s, mv, l)));
+    }
+
     /** An empty block and a block with nothing eligible come back as-is. */
     @Test
     public void leavesIneligibleBlocksAlone() {
