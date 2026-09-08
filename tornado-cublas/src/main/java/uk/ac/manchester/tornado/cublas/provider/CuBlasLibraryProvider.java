@@ -65,13 +65,14 @@ public final class CuBlasLibraryProvider implements TornadoLibraryProvider {
     /**
      * Dispatch registry: function name -> marshalling call.
      */
-    private static final Map<String, CuBlasCall> FUNCTIONS = Map.of(//
-            "cublasSgemv", CuBlasLibraryProvider::sgemv, //
-            "cublasSgemm", CuBlasLibraryProvider::sgemm, //
-            "cublasSgemmStridedBatched", CuBlasLibraryProvider::sgemmStridedBatched, //
-            "cublasGemmExFP16", (handle, inv) -> gemmEx(handle, inv, CudaDataType.CUDA_R_16F, CudaDataType.CUDA_R_16F), //
-            "cublasGemmExFP16FP32", (handle, inv) -> gemmEx(handle, inv, CudaDataType.CUDA_R_16F, CudaDataType.CUDA_R_32F), //
-            "cublasGemmExBF16", (handle, inv) -> gemmEx(handle, inv, CudaDataType.CUDA_R_16BF, CudaDataType.CUDA_R_16BF));
+    private static final Map<String, CuBlasCall> FUNCTIONS = Map.ofEntries(//
+            Map.entry("cublasSgemv", CuBlasLibraryProvider::sgemv), //
+            Map.entry("cublasSgemm", CuBlasLibraryProvider::sgemm), //
+            Map.entry("cublasDgemm", CuBlasLibraryProvider::dgemm), //
+            Map.entry("cublasSgemmStridedBatched", CuBlasLibraryProvider::sgemmStridedBatched), //
+            Map.entry("cublasGemmExFP16", (handle, inv) -> gemmEx(handle, inv, CudaDataType.CUDA_R_16F, CudaDataType.CUDA_R_16F)), //
+            Map.entry("cublasGemmExFP16FP32", (handle, inv) -> gemmEx(handle, inv, CudaDataType.CUDA_R_16F, CudaDataType.CUDA_R_32F)), //
+            Map.entry("cublasGemmExBF16", (handle, inv) -> gemmEx(handle, inv, CudaDataType.CUDA_R_16BF, CudaDataType.CUDA_R_16BF)));
 
     /** cublasGemmAlgo_t CUBLAS_GEMM_DEFAULT: heuristic algorithm selection. */
     private static final int CUBLAS_GEMM_DEFAULT = -1;
@@ -277,6 +278,23 @@ public final class CuBlasLibraryProvider implements TornadoLibraryProvider {
                 invocation.getDevicePointer(8), //
                 (int) invocation.getArg(9), //
                 (float) invocation.getArg(10), //
+                invocation.getDevicePointer(11), //
+                (int) invocation.getArg(12));
+    }
+
+    private static int dgemm(long handle, LibraryInvocation invocation) {
+        return CuBlasNativeLib.cublasDgemm(handle, //
+                (int) invocation.getArg(0), //
+                (int) invocation.getArg(1), //
+                (int) invocation.getArg(2), //
+                (int) invocation.getArg(3), //
+                (int) invocation.getArg(4), //
+                (double) invocation.getArg(5), //
+                invocation.getDevicePointer(6), //
+                (int) invocation.getArg(7), //
+                invocation.getDevicePointer(8), //
+                (int) invocation.getArg(9), //
+                (double) invocation.getArg(10), //
                 invocation.getDevicePointer(11), //
                 (int) invocation.getArg(12));
     }

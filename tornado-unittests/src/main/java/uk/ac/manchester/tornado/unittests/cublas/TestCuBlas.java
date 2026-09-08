@@ -32,6 +32,7 @@ import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.cublas.CuBlas;
@@ -579,6 +580,122 @@ public class TestCuBlas extends TornadoTestBase {
     public static void scaleByTwo(FloatArray input, FloatArray output) {
         for (@Parallel int i = 0; i < input.getSize(); i++) {
             output.set(i, 2.0f * input.get(i));
+        }
+    }
+
+    // ---- FP64 ----
+
+    /** C = A * B in FP64, validated against a double-precision CPU reference. */
+    @Test
+    public void testDgemm() throws TornadoExecutionPlanException {
+        final int size = 128;
+        DoubleArray matrixA = new DoubleArray(size * size);
+        DoubleArray matrixB = new DoubleArray(size * size);
+        DoubleArray matrixC = new DoubleArray(size * size);
+        for (int i = 0; i < size * size; i++) {
+            matrixA.set(i, random.nextDouble() - 0.5);
+            matrixB.set(i, random.nextDouble() - 0.5);
+        }
+
+        // Column-major cuBLAS: row-major C = A * B is C_cm = B_cm * A_cm.
+        TaskGraph taskGraph = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, matrixA, matrixB) //
+                .libraryTask("dgemm", CuBlas::cublasDgemm, //
+                        CuBlasOperation.CUBLAS_OP_N.operation(), CuBlasOperation.CUBLAS_OP_N.operation(), //
+                        size, size, size, 1.0, matrixB, size, matrixA, size, 0.0, matrixC, size) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixC);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.execute();
+        }
+
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                double sum = 0.0;
+                for (int p = 0; p < size; p++) {
+                    sum += matrixA.get(i * size + p) * matrixB.get(p * size + j);
+                }
+                assertEquals(sum, matrixC.get(i * size + j), 1e-10 * Math.max(1.0, Math.abs(sum)));
+            }
+        }
+    }
+
+    /**
+     * beta != 0 makes C an input as well as an output. This is the case that fails if the
+     * output is marked WRITE_ONLY, because its prior device contents would not be kept live.
+     */
+    @Test
+    public void testDgemmBetaReadsC() throws TornadoExecutionPlanException {
+        final int size = 64;
+        final double alpha = 1.0;
+        final double beta = 2.0;
+        DoubleArray matrixA = new DoubleArray(size * size);
+        DoubleArray matrixB = new DoubleArray(size * size);
+        DoubleArray matrixC = new DoubleArray(size * size);
+        double[] priorC = new double[size * size];
+        for (int i = 0; i < size * size; i++) {
+            matrixA.set(i, random.nextDouble() - 0.5);
+            matrixB.set(i, random.nextDouble() - 0.5);
+            double c = random.nextDouble() - 0.5;
+            matrixC.set(i, c);
+            priorC[i] = c;
+        }
+
+        TaskGraph taskGraph = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, matrixA, matrixB, matrixC) //
+                .libraryTask("dgemm", CuBlas::cublasDgemm, //
+                        CuBlasOperation.CUBLAS_OP_N.operation(), CuBlasOperation.CUBLAS_OP_N.operation(), //
+                        size, size, size, alpha, matrixB, size, matrixA, size, beta, matrixC, size) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixC);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.execute();
+        }
+
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                double sum = 0.0;
+                for (int p = 0; p < size; p++) {
+                    sum += matrixA.get(i * size + p) * matrixB.get(p * size + j);
+                }
+                double expected = alpha * sum + beta * priorC[i * size + j];
+                assertEquals(expected, matrixC.get(i * size + j), 1e-10 * Math.max(1.0, Math.abs(expected)));
+            }
+        }
+    }
+
+    /**
+     * FP64 must actually be double precision. The product below is exact in FP64 and not
+     * representable in FP32, so an accidental single-precision path fails here.
+     */
+    @Test
+    public void testDgemmIsTrulyDoublePrecision() throws TornadoExecutionPlanException {
+        final int size = 32;
+        // 1 + 2^-30 is representable in FP64 and rounds to exactly 1.0f in FP32.
+        final double epsilon = Math.pow(2.0, -30);
+        DoubleArray matrixA = new DoubleArray(size * size);
+        DoubleArray matrixB = new DoubleArray(size * size);
+        DoubleArray matrixC = new DoubleArray(size * size);
+        for (int i = 0; i < size * size; i++) {
+            matrixA.set(i, 0.0);
+            matrixB.set(i, 0.0);
+        }
+        for (int i = 0; i < size; i++) {
+            matrixA.set(i * size + i, 1.0 + epsilon); // diagonal
+            matrixB.set(i * size + i, 1.0);
+        }
+
+        TaskGraph taskGraph = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, matrixA, matrixB) //
+                .libraryTask("dgemm", CuBlas::cublasDgemm, //
+                        CuBlasOperation.CUBLAS_OP_N.operation(), CuBlasOperation.CUBLAS_OP_N.operation(), //
+                        size, size, size, 1.0, matrixB, size, matrixA, size, 0.0, matrixC, size) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixC);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.execute();
+        }
+
+        for (int i = 0; i < size; i++) {
+            double got = matrixC.get(i * size + i);
+            assertEquals(1.0 + epsilon, got, 0.0); // exact: FP32 would give 1.0
         }
     }
 }
