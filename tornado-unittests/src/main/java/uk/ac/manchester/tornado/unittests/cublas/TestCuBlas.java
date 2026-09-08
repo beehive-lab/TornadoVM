@@ -619,6 +619,117 @@ public class TestCuBlas extends TornadoTestBase {
         }
     }
 
+    // ---- scalar-output level-1 routines (device pointer mode) ----
+
+    /** Scales every element by the value a preceding library task left on the device. */
+    public static void scaleByDeviceScalar(FloatArray data, FloatArray scalar) {
+        for (@Parallel int i = 0; i < data.getSize(); i++) {
+            data.set(i, data.get(i) * scalar.get(0));
+        }
+    }
+
+    @Test
+    public void testSdot() throws TornadoExecutionPlanException {
+        final int n = 1024;
+        FloatArray x = randomArray(n);
+        FloatArray y = randomArray(n);
+        FloatArray result = new FloatArray(1);
+
+        TaskGraph g = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, y) //
+                .libraryTask("dot", CuBlas::cublasSdot, n, x, 1, y, 1, result) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(g.snapshot())) {
+            plan.execute();
+        }
+
+        float expected = 0.0f;
+        for (int i = 0; i < n; i++) {
+            expected += x.get(i) * y.get(i);
+        }
+        assertEquals(expected, result.get(0), 1e-3f * Math.max(1.0f, Math.abs(expected)));
+    }
+
+    @Test
+    public void testSnrm2() throws TornadoExecutionPlanException {
+        final int n = 1024;
+        FloatArray x = randomArray(n);
+        FloatArray result = new FloatArray(1);
+
+        TaskGraph g = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
+                .libraryTask("nrm2", CuBlas::cublasSnrm2, n, x, 1, result) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(g.snapshot())) {
+            plan.execute();
+        }
+
+        double sum = 0.0;
+        for (int i = 0; i < n; i++) {
+            sum += (double) x.get(i) * x.get(i);
+        }
+        float expected = (float) Math.sqrt(sum);
+        assertEquals(expected, result.get(0), 1e-3f * Math.max(1.0f, Math.abs(expected)));
+    }
+
+    @Test
+    public void testSasum() throws TornadoExecutionPlanException {
+        final int n = 1024;
+        FloatArray x = randomArray(n);
+        FloatArray result = new FloatArray(1);
+
+        TaskGraph g = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
+                .libraryTask("asum", CuBlas::cublasSasum, n, x, 1, result) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(g.snapshot())) {
+            plan.execute();
+        }
+
+        double expected = 0.0;
+        for (int i = 0; i < n; i++) {
+            expected += Math.abs(x.get(i));
+        }
+        assertEquals((float) expected, result.get(0), 1e-3f * Math.max(1.0f, Math.abs((float) expected)));
+    }
+
+    /**
+     * The result never leaves the device: a JIT task consumes it directly. In the default host
+     * pointer mode this composition is not expressible, because the value would have to come back
+     * to the host before it could be used as a kernel argument.
+     */
+    @Test
+    public void testNrm2ResultFeedsJitTaskOnDevice() throws TornadoExecutionPlanException {
+        final int n = 512;
+        FloatArray x = randomArray(n);
+        FloatArray data = randomArray(n);
+        FloatArray norm = new FloatArray(1);
+
+        float[] dataOriginal = new float[n];
+        for (int i = 0; i < n; i++) {
+            dataOriginal[i] = data.get(i);
+        }
+
+        TaskGraph g = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, data) //
+                .libraryTask("nrm2", CuBlas::cublasSnrm2, n, x, 1, norm) //
+                .task("scale", TestCuBlas::scaleByDeviceScalar, data, norm) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(g.snapshot())) {
+            plan.execute();
+        }
+
+        double sum = 0.0;
+        for (int i = 0; i < n; i++) {
+            sum += (double) x.get(i) * x.get(i);
+        }
+        float expectedNorm = (float) Math.sqrt(sum);
+        for (int i = 0; i < n; i++) {
+            float expected = dataOriginal[i] * expectedNorm;
+            assertEquals(expected, data.get(i), 1e-3f * Math.max(1.0f, Math.abs(expected)));
+        }
+    }
+
     /**
      * beta != 0 makes C an input as well as an output. This is the case that fails if the
      * output is marked WRITE_ONLY, because its prior device contents would not be kept live.
@@ -696,6 +807,36 @@ public class TestCuBlas extends TornadoTestBase {
         for (int i = 0; i < size; i++) {
             double got = matrixC.get(i * size + i);
             assertEquals(1.0 + epsilon, got, 0.0); // exact: FP32 would give 1.0
+        }
+    }
+
+    /**
+     * Captured into a CUDA Graph and replayed. Under the default host pointer mode cuBLAS would
+     * have to synchronise the stream to deliver the scalar, which is illegal inside a capture
+     * region, so this composition only works because the result is device-resident.
+     */
+    @Test
+    public void testSdotUnderCudaGraph() throws TornadoExecutionPlanException {
+        final int n = 1024;
+        FloatArray x = randomArray(n);
+        FloatArray y = randomArray(n);
+        FloatArray result = new FloatArray(1);
+
+        float expected = 0.0f;
+        for (int i = 0; i < n; i++) {
+            expected += x.get(i) * y.get(i);
+        }
+
+        TaskGraph g = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, x, y) //
+                .libraryTask("dot", CuBlas::cublasSdot, n, x, 1, y, 1, result) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(g.snapshot())) {
+            plan.withCUDAGraph();
+            for (int it = 0; it < 5; it++) {
+                plan.execute();
+                assertEquals(expected, result.get(0), 1e-3f * Math.max(1.0f, Math.abs(expected)));
+            }
         }
     }
 }

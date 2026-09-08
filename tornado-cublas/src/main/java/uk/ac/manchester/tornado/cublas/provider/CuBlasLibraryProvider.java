@@ -67,6 +67,9 @@ public final class CuBlasLibraryProvider implements TornadoLibraryProvider {
      */
     private static final Map<String, CuBlasCall> FUNCTIONS = Map.ofEntries(//
             Map.entry("cublasSgemv", CuBlasLibraryProvider::sgemv), //
+            Map.entry("cublasSdot", CuBlasLibraryProvider::sdot), //
+            Map.entry("cublasSnrm2", CuBlasLibraryProvider::snrm2), //
+            Map.entry("cublasSasum", CuBlasLibraryProvider::sasum), //
             Map.entry("cublasSgemm", CuBlasLibraryProvider::sgemm), //
             Map.entry("cublasDgemm", CuBlasLibraryProvider::dgemm), //
             Map.entry("cublasSgemmStridedBatched", CuBlasLibraryProvider::sgemmStridedBatched), //
@@ -265,6 +268,22 @@ public final class CuBlasLibraryProvider implements TornadoLibraryProvider {
     }
 
     /** (transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc). */
+    // (n, x, incx, y, incy, result)
+    private static int sdot(long handle, LibraryInvocation invocation) {
+        return CuBlasNativeLib.cublasSdot(handle, (int) invocation.getArg(0), invocation.getDevicePointer(1), (int) invocation.getArg(2), invocation.getDevicePointer(3),
+                (int) invocation.getArg(4), invocation.getDevicePointer(5));
+    }
+
+    // (n, x, incx, result)
+    private static int snrm2(long handle, LibraryInvocation invocation) {
+        return CuBlasNativeLib.cublasSnrm2(handle, (int) invocation.getArg(0), invocation.getDevicePointer(1), (int) invocation.getArg(2), invocation.getDevicePointer(3));
+    }
+
+    // (n, x, incx, result)
+    private static int sasum(long handle, LibraryInvocation invocation) {
+        return CuBlasNativeLib.cublasSasum(handle, (int) invocation.getArg(0), invocation.getDevicePointer(1), (int) invocation.getArg(2), invocation.getDevicePointer(3));
+    }
+
     private static int sgemm(long handle, LibraryInvocation invocation) {
         return CuBlasNativeLib.cublasSgemm(handle, //
                 (int) invocation.getArg(0), //

@@ -107,6 +107,62 @@ public final class CuBlas {
      *     Stride between consecutive elements of y.
      * @return {@link LibraryTaskDescriptor}
      */
+    /**
+     * Dot product {@code result[0] = x . y} over {@code n} elements.
+     *
+     * <p>The result is written to a device-resident {@link FloatArray} rather than returned, so it
+     * never leaves the GPU: a following task can consume it directly. This is what makes the
+     * routine usable inside a CUDA Graph. cuBLAS is put into {@code CUBLAS_POINTER_MODE_DEVICE}
+     * for the call and restored afterwards; in the default host pointer mode cuBLAS would have to
+     * synchronise the stream to deliver the value, which stalls the pipeline and is illegal during
+     * graph capture.</p>
+     *
+     * @param result
+     *            single-element device buffer receiving the dot product.
+     */
+    public static LibraryTaskDescriptor cublasSdot(int n, FloatArray x, int incx, FloatArray y, int incy, FloatArray result) {
+        Access[] access = new Access[6];
+        Arrays.fill(access, Access.READ_ONLY);
+        access[5] = Access.WRITE_ONLY; // result
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cublasSdot") //
+                .withParameters(new Object[] { n, x, incx, y, incy, result }) //
+                .withAccess(access);
+    }
+
+    /**
+     * Euclidean norm {@code result[0] = ||x||_2} over {@code n} elements, written to a
+     * device-resident single-element buffer. See {@link #cublasSdot} for why the result stays on
+     * the device.
+     */
+    public static LibraryTaskDescriptor cublasSnrm2(int n, FloatArray x, int incx, FloatArray result) {
+        Access[] access = new Access[4];
+        Arrays.fill(access, Access.READ_ONLY);
+        access[3] = Access.WRITE_ONLY; // result
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cublasSnrm2") //
+                .withParameters(new Object[] { n, x, incx, result }) //
+                .withAccess(access);
+    }
+
+    /**
+     * Sum of absolute values {@code result[0] = sum(|x_i|)} over {@code n} elements, written to a
+     * device-resident single-element buffer. See {@link #cublasSdot} for why the result stays on
+     * the device.
+     */
+    public static LibraryTaskDescriptor cublasSasum(int n, FloatArray x, int incx, FloatArray result) {
+        Access[] access = new Access[4];
+        Arrays.fill(access, Access.READ_ONLY);
+        access[3] = Access.WRITE_ONLY; // result
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cublasSasum") //
+                .withParameters(new Object[] { n, x, incx, result }) //
+                .withAccess(access);
+    }
+
     public static LibraryTaskDescriptor cublasSgemv(int operation, //
             int m, //
             int n, //
