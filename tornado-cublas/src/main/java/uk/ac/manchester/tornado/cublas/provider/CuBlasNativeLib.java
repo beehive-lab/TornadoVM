@@ -64,6 +64,8 @@ final class CuBlasNativeLib {
     private static final MethodHandle CUBLAS_SDOT;
     private static final MethodHandle CUBLAS_SNRM2;
     private static final MethodHandle CUBLAS_SASUM;
+    private static final MethodHandle CUBLAS_ISAMAX;
+    private static final MethodHandle CUBLAS_ISAMIN;
     private static final MethodHandle CUBLAS_SGEMV;
     private static final MethodHandle CUBLAS_SGEMM;
     private static final MethodHandle CUBLAS_DGEMM;
@@ -83,6 +85,8 @@ final class CuBlasNativeLib {
             CUBLAS_SDOT = null;
             CUBLAS_SNRM2 = null;
             CUBLAS_SASUM = null;
+            CUBLAS_ISAMAX = null;
+            CUBLAS_ISAMIN = null;
             CUBLAS_SGEMV = null;
             CUBLAS_SGEMM = null;
             CUBLAS_DGEMM = null;
@@ -103,6 +107,10 @@ final class CuBlasNativeLib {
             CUBLAS_SDOT = FFMSupport.downcall(LIBCUBLAS, FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_LONG, C_INT, C_LONG, C_INT, C_LONG), "cublasSdot_v2");
             CUBLAS_SNRM2 = FFMSupport.downcall(LIBCUBLAS, FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_LONG, C_INT, C_LONG), "cublasSnrm2_v2");
             CUBLAS_SASUM = FFMSupport.downcall(LIBCUBLAS, FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_LONG, C_INT, C_LONG), "cublasSasum_v2");
+            // The index-returning routines write an int rather than a float, but are otherwise the
+            // same shape and have the same host-pointer-mode synchronisation problem.
+            CUBLAS_ISAMAX = FFMSupport.downcall(LIBCUBLAS, FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_LONG, C_INT, C_LONG), "cublasIsamax_v2");
+            CUBLAS_ISAMIN = FFMSupport.downcall(LIBCUBLAS, FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_LONG, C_INT, C_LONG), "cublasIsamin_v2");
             CUBLAS_SGEMV = FFMSupport.downcall(LIBCUBLAS, FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_INT, C_INT, C_POINTER, C_LONG, C_INT, C_LONG, C_INT, C_POINTER, C_LONG, C_INT),
                     "cublasSgemv_v2");
             CUBLAS_SGEMM = FFMSupport.downcall(LIBCUBLAS,
@@ -290,6 +298,26 @@ final class CuBlasNativeLib {
         return inDevicePointerMode(handle, h -> {
             try {
                 return (int) CUBLAS_SASUM.invokeExact(h, n, dX, incx, dResult);
+            } catch (Throwable t) {
+                throw rethrow(t);
+            }
+        });
+    }
+
+    static int cublasIsamax(long handle, int n, long dX, int incx, long dResult) {
+        return inDevicePointerMode(handle, h -> {
+            try {
+                return (int) CUBLAS_ISAMAX.invokeExact(h, n, dX, incx, dResult);
+            } catch (Throwable t) {
+                throw rethrow(t);
+            }
+        });
+    }
+
+    static int cublasIsamin(long handle, int n, long dX, int incx, long dResult) {
+        return inDevicePointerMode(handle, h -> {
+            try {
+                return (int) CUBLAS_ISAMIN.invokeExact(h, n, dX, incx, dResult);
             } catch (Throwable t) {
                 throw rethrow(t);
             }

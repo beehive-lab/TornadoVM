@@ -34,6 +34,7 @@ import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.cublas.CuBlas;
 import uk.ac.manchester.tornado.cublas.CuBlasOptions;
@@ -836,6 +837,78 @@ public class TestCuBlas extends TornadoTestBase {
             for (int it = 0; it < 5; it++) {
                 plan.execute();
                 assertEquals(expected, result.get(0), 1e-3f * Math.max(1.0f, Math.abs(expected)));
+            }
+        }
+    }
+
+    /**
+     * cuBLAS returns a 1-based index, following the BLAS convention. A planted maximum at a known
+     * position pins that down: an off-by-one in the binding would show here rather than in a
+     * random-data test where any plausible index looks right.
+     */
+    @Test
+    public void testIsamaxReturnsOneBasedIndex() throws TornadoExecutionPlanException {
+        final int n = 512;
+        final int peakAt = 300; // Java index
+        FloatArray x = new FloatArray(n);
+        for (int i = 0; i < n; i++) {
+            x.set(i, 0.5f);
+        }
+        x.set(peakAt, -42.0f); // largest by absolute value, and negative on purpose
+        IntArray result = new IntArray(1);
+
+        TaskGraph g = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
+                .libraryTask("amax", CuBlas::cublasIsamax, n, x, 1, result) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(g.snapshot())) {
+            plan.execute();
+        }
+        assertEquals(peakAt + 1, result.get(0));
+    }
+
+    @Test
+    public void testIsaminReturnsOneBasedIndex() throws TornadoExecutionPlanException {
+        final int n = 512;
+        final int troughAt = 117;
+        FloatArray x = new FloatArray(n);
+        for (int i = 0; i < n; i++) {
+            x.set(i, 5.0f);
+        }
+        x.set(troughAt, 0.001f);
+        IntArray result = new IntArray(1);
+
+        TaskGraph g = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
+                .libraryTask("amin", CuBlas::cublasIsamin, n, x, 1, result) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(g.snapshot())) {
+            plan.execute();
+        }
+        assertEquals(troughAt + 1, result.get(0));
+    }
+
+    /** The int result is device-resident too, so it survives CUDA Graph capture and replay. */
+    @Test
+    public void testIsamaxUnderCudaGraph() throws TornadoExecutionPlanException {
+        final int n = 256;
+        final int peakAt = 200;
+        FloatArray x = new FloatArray(n);
+        for (int i = 0; i < n; i++) {
+            x.set(i, 1.0f);
+        }
+        x.set(peakAt, 99.0f);
+        IntArray result = new IntArray(1);
+
+        TaskGraph g = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, x) //
+                .libraryTask("amax", CuBlas::cublasIsamax, n, x, 1, result) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(g.snapshot())) {
+            plan.withCUDAGraph();
+            for (int it = 0; it < 5; it++) {
+                plan.execute();
+                assertEquals(peakAt + 1, result.get(0));
             }
         }
     }

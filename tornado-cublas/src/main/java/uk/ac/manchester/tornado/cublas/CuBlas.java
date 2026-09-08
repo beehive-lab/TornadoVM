@@ -25,6 +25,7 @@ import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.cublas.enums.CuBlasMathMode;
 
 /**
@@ -159,6 +160,43 @@ public final class CuBlas {
         return new LibraryTaskDescriptor() //
                 .withLibrary(LIBRARY_NAME) //
                 .withFunction("cublasSasum") //
+                .withParameters(new Object[] { n, x, incx, result }) //
+                .withAccess(access);
+    }
+
+    /**
+     * Index of the element of {@code x} with the largest absolute value, written to a
+     * device-resident single-element {@link IntArray}.
+     *
+     * <p><b>The index is 1-based</b>, following the BLAS convention that cuBLAS preserves: for a
+     * vector whose largest element sits at Java index {@code i}, this writes {@code i + 1}.</p>
+     *
+     * <p>Like {@link #cublasSdot} the result stays on the device, so a following task can consume
+     * it and the call is legal inside a CUDA Graph.</p>
+     */
+    public static LibraryTaskDescriptor cublasIsamax(int n, FloatArray x, int incx, IntArray result) {
+        Access[] access = new Access[4];
+        Arrays.fill(access, Access.READ_ONLY);
+        access[3] = Access.WRITE_ONLY; // result
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cublasIsamax") //
+                .withParameters(new Object[] { n, x, incx, result }) //
+                .withAccess(access);
+    }
+
+    /**
+     * Index of the element of {@code x} with the smallest absolute value, written to a
+     * device-resident single-element {@link IntArray}. <b>1-based</b>, as for
+     * {@link #cublasIsamax}.
+     */
+    public static LibraryTaskDescriptor cublasIsamin(int n, FloatArray x, int incx, IntArray result) {
+        Access[] access = new Access[4];
+        Arrays.fill(access, Access.READ_ONLY);
+        access[3] = Access.WRITE_ONLY; // result
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cublasIsamin") //
                 .withParameters(new Object[] { n, x, incx, result }) //
                 .withAccess(access);
     }
