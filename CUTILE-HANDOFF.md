@@ -298,6 +298,53 @@ The entry symbol is the unmangled `vectorAdd`, so `extern "C" __tile_global__` b
 `scheduler/CUDATileScheduler` (force local work to 1x1x1) and `graal/CUDATileInstalledCode`.
 The example pins `setLocalWork(1, 1, 1)` by hand instead, which is why it gets as far as it does.
 
+## 5c. Pending work, by whether it needs the driver
+
+Audited against the API surface, not from memory. `A` items need a driver R580+ box; `B` items
+can be done anywhere.
+
+### A. Needs driver R580+ (the reason this handoff exists)
+
+| # | Item | Notes |
+|---|---|---|
+| A1 | `scheduler/CUDATileScheduler` | Force local work to 1x1x1; never consult `cuOccupancyMaxPotentialBlockSize` or `DEFAULT_BLOCK_SIZE`. Until it exists, a tile task only launches correctly if the user pins `setLocalWork(1, 1, 1)` by hand, as `TileVectorAdd` does. |
+| A2 | `graal/CUDATileInstalledCode` | `TornadoInstalledCode` is four methods; reuse `setKernelArgs` unchanged, reject batch processing. Selected by the installed code so SIMT and tile tasks can share a device. |
+| A3 | Phase 2 bring-up | Section 6. Start by running the section 5b command and seeing how much already passes. |
+| A4 | Phase 4 chaining | Section 7. The mixed JIT + tile + cuBLAS graph, one stream, no host round trip. |
+| A5 | CUDA-graph capture of a tile kernel | Undocumented by NVIDIA. Measure it; today nothing guards `withCUDAGraph()` on a tile task, and it should refuse until proven. |
+| A6 | cuBLAS interop on one stream | Undocumented. Expected to work; confirm. |
+| A7 | TMA question | The GEMM cubin shows no `UBLKCP` with masked loads on sm_89. Retry with unmasked loads on divisible extents before drawing any conclusion about alignment. |
+
+### B. Not blocked by the driver
+
+| # | Item | Notes |
+|---|---|---|
+| B1 | Plugins for `full`, `iota`, `scale`, `transpose`, `cast` | These five API methods have **no invocation plugin**, so calling one hits the unintrinsified guard in `CUDATileSupportPhase`. The failure is loud, not silent, but the API currently promises more than the compiler implements. |
+| B2 | Unit tests | `tornado-unittests/.../tile/` does not exist yet. Port `TestTileElementwise` and `TestTileMatmul` from `feat/jtile` onto `TileContext`, add masked-edge and negative-guard cases, and register the suite in `tornado-assembly/src/bin/tornado-test`. |
+| B3 | `TornadoCUDAIntrinsicsReplacements` tile cases | A reflectively resolved kernel skips plugin lookup. Guarded today, so it fails with an explanation; finishing it means one case per operation, as the MMA intrinsics have. |
+| B4 | Documentation | No `docs/source/*.rst` page for the tile API, and no mention in the hybrid API guide. |
+| B5 | Host-only API methods | `getRank`, `getTileDimension`, `getBlockCount`, `setBlockIndex`, `setBlockCount` exist for the JVM fallback and have no device meaning. Calling one inside a kernel hits the same guard. Document them as host-only, or split them out of the kernel-facing type. |
+
+### Verified `ct::` spellings, so nobody has to guess
+
+Probed against nvcc 13.3 rather than inferred from documentation:
+
+| Operation | Spelling | Status |
+|---|---|---|
+| fill | `ct::full<TileType>(value)` | compiles |
+| scale by a scalar | `tile * 2.0f` (broadcast, no named function) | compiles |
+| transpose | `ct::transpose(tile)` | compiles |
+| reduction | `ct::sum(tile, 1_ic)` | compiles |
+| iota | `ct::iota<ct::tile<int, ct::shape<16>>>()` | compiles |
+| element conversion | **`ct::element_cast<Element>(tile)`** | compiles. **Not** `ct::cast`, which does not exist. |
+| matmul | both `ct::mma(a, b, acc)` and `ct::matmul` exist | `mma` is what the emitter uses |
+
+**CUDA Tile rejects narrowing conversions.** `element_cast<__half>` on an f32 tile is refused by
+the constraint `tile_convertible_to`; widening f16 to f32 is accepted. So a `cast` plugin must
+validate direction and produce a real message, not pass the pair through to the tile compiler.
+A tile of `__half` also requires `#include <cuda_fp16.h>`, which the existing preamble scan
+already injects.
+
 ## 6. PHASE 2 - for an agent on a box with driver R580+
 
 **Goal:** run a cuTile kernel inside a TornadoVM `TaskGraph` with *zero* TornadoVM code changes,
