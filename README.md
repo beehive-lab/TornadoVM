@@ -13,7 +13,7 @@ TornadoVM is a GPU programming framework for Java that works with JDK 21+ (curre
 [![Docs](https://img.shields.io/badge/docs-readthedocs-blue)](https://tornadovm.readthedocs.io/en/latest/)
 [![Slack](https://img.shields.io/badge/chat-Slack-4A154B?logo=slack)](https://join.slack.com/t/tornadovmcommunity/shared_invite/zt-3ai2wyqva-bKz~cQRFlaJ~ZnPrbkwIEw)
 
-**Latest release:** TornadoVM 6.0.0 (JDK 21 - JDK 27) — native **NVIDIA library integration** (cuBLAS / cuFFT / cuDNN) and Tensor Core intrinsics, plus a native **Apple Metal backend** for Apple Silicon. [Changelog](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html) · [Website](https://www.tornadovm.org) · [Documentation](https://tornadovm.readthedocs.io/en/latest/)
+**Latest release:** TornadoVM 6.1.0 (JDK 21 - JDK 27) — native **NVIDIA library integration** (cuBLAS / cuFFT / cuDNN) and Tensor Core intrinsics, plus a native **Apple Metal backend** for Apple Silicon. [Changelog](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html) · [Website](https://www.tornadovm.org) · [Documentation](https://tornadovm.readthedocs.io/en/latest/)
 
 
 ---
@@ -183,10 +183,10 @@ Pick a backend-specific build if you prefer a smaller install. Candidate version
 
 | Backend | SDKMAN! version | Targets |
 |---|---|---|
-| OpenCL *(default)* | `6.0.0-opencl` | NVIDIA / AMD / Intel GPUs, multi-core CPUs, FPGAs |
-| CUDA | `6.0.0-cuda` | **NVIDIA GPUs (CUDA) — codegen, Tensor Cores, cuBLAS/cuFFT/cuDNN library tasks** |
-| Metal 🆕 | `6.0.0-metal` | Apple Silicon GPUs (M1–M4), natively via MSL |
-| All backends | `6.0.0-full` | Everything above |
+| OpenCL *(default)* | `6.1.0-opencl` | NVIDIA / AMD / Intel GPUs, multi-core CPUs, FPGAs |
+| CUDA | `6.1.0-cuda` | **NVIDIA GPUs (CUDA) — codegen, Tensor Cores, cuBLAS/cuFFT/cuDNN library tasks** |
+| Metal 🆕 | `6.1.0-metal` | Apple Silicon GPUs (M1–M4), natively via MSL |
+| All backends | `6.1.0-full` | Everything above |
 
 Binaries are also on the [official website](https://www.tornadovm.org/downloads). For [Docker](https://github.com/beehive-lab/docker-tornado#docker-for-tornadovm) and [AWS (CPUs/GPUs)](https://tornadovm.readthedocs.io/en/latest/cloud.html) see the linked guides.
 
@@ -201,12 +201,12 @@ tornado --devices
 ```bash
 # Unix (Linux/macOS)
 java @$TORNADOVM_HOME/tornado-argfile \
-  -cp $TORNADOVM_HOME/share/java/tornado/tornado-examples-6.0.0.jar \
+  -cp $TORNADOVM_HOME/share/java/tornado/tornado-examples-6.1.0.jar \
   uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
 
 # Windows 10+
 java @%TORNADOVM_HOME%\tornado-argfile ^
-  -cp %TORNADOVM_HOME%\share\java\tornado\tornado-examples-6.0.0.jar ^
+  -cp %TORNADOVM_HOME%\share\java\tornado\tornado-examples-6.1.0.jar ^
   uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
 ```
 
@@ -223,12 +223,12 @@ Maven Central coordinates are per-JDK — pin the `-jdk21` / `-jdk22plus` versio
   <dependency>
     <groupId>io.github.beehive-lab</groupId>
     <artifactId>tornado-api</artifactId>
-    <version>6.0.0-jdk21</version>
+    <version>6.1.0-jdk21</version>
   </dependency>
   <dependency>
     <groupId>io.github.beehive-lab</groupId>
     <artifactId>tornado-runtime</artifactId>
-    <version>6.0.0-jdk21</version>
+    <version>6.1.0-jdk21</version>
   </dependency>
 </dependencies>
 ```
