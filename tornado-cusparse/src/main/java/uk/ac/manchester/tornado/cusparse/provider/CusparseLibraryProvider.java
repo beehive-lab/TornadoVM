@@ -130,41 +130,45 @@ public final class CusparseLibraryProvider implements TornadoLibraryProvider {
         CusparseNativeLib.checkStatus(status, functionName);
     }
 
-    // (rows, cols, nnz, csrRowOffsets, csrColInd, csrValues, x, y)
+    // (rows, cols, nnz, alpha, csrRowOffsets, csrColInd, csrValues, x, beta, y)
     private static int spmv(CusparseContext context, LibraryInvocation invocation) {
         int rows = (int) invocation.getArg(0);
         int cols = (int) invocation.getArg(1);
         int nnz = (int) invocation.getArg(2);
-        long dRow = invocation.getDevicePointer(3);
-        long dCol = invocation.getDevicePointer(4);
-        long dVal = invocation.getDevicePointer(5);
-        long dX = invocation.getDevicePointer(6);
-        long dY = invocation.getDevicePointer(7);
-        long needed = CusparseNativeLib.spmvBufferSize(context.handle, rows, cols, nnz, dRow, dCol, dVal, dX, dY, 1.0f, 0.0f);
+        float alpha = (float) invocation.getArg(3);
+        long dRow = invocation.getDevicePointer(4);
+        long dCol = invocation.getDevicePointer(5);
+        long dVal = invocation.getDevicePointer(6);
+        long dX = invocation.getDevicePointer(7);
+        float beta = (float) invocation.getArg(8);
+        long dY = invocation.getDevicePointer(9);
+        long needed = CusparseNativeLib.spmvBufferSize(context.handle, rows, cols, nnz, dRow, dCol, dVal, dX, dY, alpha, beta);
         if (needed < 0) {
             throw new TornadoRuntimeException("[ERROR] cusparseSpMV_bufferSize failed");
         }
         context.growWorkspace(needed, invocation.isCapturing());
-        return CusparseNativeLib.spmv(context.handle, rows, cols, nnz, dRow, dCol, dVal, dX, dY, 1.0f, 0.0f, context.workspacePtr);
+        return CusparseNativeLib.spmv(context.handle, rows, cols, nnz, dRow, dCol, dVal, dX, dY, alpha, beta, context.workspacePtr);
     }
 
-    // (rows, k, n, nnz, csrRowOffsets, csrColInd, csrValues, b, c)
+    // (rows, k, n, nnz, alpha, csrRowOffsets, csrColInd, csrValues, b, beta, c)
     private static int spmm(CusparseContext context, LibraryInvocation invocation) {
         int rows = (int) invocation.getArg(0);
         int k = (int) invocation.getArg(1);
         int n = (int) invocation.getArg(2);
         int nnz = (int) invocation.getArg(3);
-        long dRow = invocation.getDevicePointer(4);
-        long dCol = invocation.getDevicePointer(5);
-        long dVal = invocation.getDevicePointer(6);
-        long dB = invocation.getDevicePointer(7);
-        long dC = invocation.getDevicePointer(8);
-        long needed = CusparseNativeLib.spmmBufferSize(context.handle, rows, k, n, nnz, dRow, dCol, dVal, dB, dC, 1.0f, 0.0f);
+        float alpha = (float) invocation.getArg(4);
+        long dRow = invocation.getDevicePointer(5);
+        long dCol = invocation.getDevicePointer(6);
+        long dVal = invocation.getDevicePointer(7);
+        long dB = invocation.getDevicePointer(8);
+        float beta = (float) invocation.getArg(9);
+        long dC = invocation.getDevicePointer(10);
+        long needed = CusparseNativeLib.spmmBufferSize(context.handle, rows, k, n, nnz, dRow, dCol, dVal, dB, dC, alpha, beta);
         if (needed < 0) {
             throw new TornadoRuntimeException("[ERROR] cusparseSpMM_bufferSize failed");
         }
         context.growWorkspace(needed, invocation.isCapturing());
-        return CusparseNativeLib.spmm(context.handle, rows, k, n, nnz, dRow, dCol, dVal, dB, dC, 1.0f, 0.0f, context.workspacePtr);
+        return CusparseNativeLib.spmm(context.handle, rows, k, n, nnz, dRow, dCol, dVal, dB, dC, alpha, beta, context.workspacePtr);
     }
 
     @Override
