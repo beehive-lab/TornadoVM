@@ -7,6 +7,35 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 
 CHANGELOG
 
+TornadoVM 6.1.0
+---------------
+10/09/26
+
+Improvements
+~~~~~~~~~~~~
+
+- `#1022 <https://github.com/beehive-lab/TornadoVM/pull/1022>`_: [cuda] Skip the per-launch kernel stack-frame upload when the device copy is unchanged (~2x on short task graphs)
+
+Bug Fixes
+~~~~~~~~~~~~
+
+- `#1073 <https://github.com/beehive-lab/TornadoVM/pull/1073>`_: Accept OCLDecompressedReadFieldNode as an address base for FP16 OpenCL devices
+
+Other Changes
+~~~~~~~~~~~~
+
+- `#1075 <https://github.com/beehive-lab/TornadoVM/pull/1075>`_: [cublaslt] Add factories for the RELU, GELU and RELU_BIAS epilogues
+- `#1074 <https://github.com/beehive-lab/TornadoVM/pull/1074>`_: [cusparse] Expose alpha and beta on SpMV and SpMM
+- `#1077 <https://github.com/beehive-lab/TornadoVM/pull/1077>`_: [cublas] Bind the scalar-output level-1 routines using device pointer mode
+- `#1081 <https://github.com/beehive-lab/TornadoVM/pull/1081>`_: [cuda] Skip stream synchronisation when nothing has been enqueued since the last drain (3 per execution to 1)
+- `#1076 <https://github.com/beehive-lab/TornadoVM/pull/1076>`_: [cublas] Bind cublasDgemm for FP64 matrix multiply
+- `#1079 <https://github.com/beehive-lab/TornadoVM/pull/1079>`_: Batch the global loads of a shared-memory staging sequence in the CUDA backend
+- `#1055 <https://github.com/beehive-lab/TornadoVM/pull/1055>`_: [curand] Add a cuRAND library-task provider for device-side random number generation
+- `#1068 <https://github.com/beehive-lab/TornadoVM/pull/1068>`_: [cuda] Rank NVRTC candidates by version so an older toolkit cannot shadow a newer one
+- `#1066 <https://github.com/beehive-lab/TornadoVM/pull/1066>`_: [cuda] Align native array payload to 32 bytes to restore coalesced access
+- `#1072 <https://github.com/beehive-lab/TornadoVM/pull/1072>`_: [test] Say which profiler counter was zero instead of failing with a null reason
+
+
 TornadoVM 6.0.0
 ---------------
 02/09/26
