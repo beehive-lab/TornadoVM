@@ -216,7 +216,7 @@ jobs:
           echo "✅ SDKMAN default version set to ${DEFAULT_VERSION}"
 
   notify-site:
-    name: Notify site to rebuild
+    name: Notify site & downstream repos
     runs-on: ubuntu-latest
     needs: [ publish-to-sdkman, set-sdkman-default ]
 
@@ -230,7 +230,7 @@ jobs:
     # behaviour so the explicit result checks below are what decide whether
     # this runs — set-sdkman-default itself only runs for a real `release`
     # event or a manual publish=true dry run, so a plain verify-only dry run
-    # (publish=false) correctly never reaches the site.
+    # (publish=false) correctly never reaches the site or any downstream repo.
     if: >
       always() &&
       github.repository == 'beehive-lab/TornadoVM' &&
@@ -238,9 +238,60 @@ jobs:
       needs.set-sdkman-default.result == 'success'
 
     steps:
+      - name: Derive version
+        id: vars
+        shell: bash
+        env:
+          TAG: ${{ github.event_name == 'release' && github.event.release.tag_name || inputs.tag }}
+        run: |
+          set -euo pipefail
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
       - name: Dispatch to beehive-lab/tornadovm-site
         env:
           GH_TOKEN: ${{ secrets.SITE_DISPATCH_TOKEN }}
         run: |
           gh api repos/beehive-lab/tornadovm-site/dispatches \
             -f event_type=tornadovm-release
+
+      # Downstream projects that vendor a pinned TornadoVM Maven Central coordinate
+      # (the tornadovm.base.version property in their pom.xml). Each repo's own
+      # bump-tornadovm-version.yml listens for this event, bumps that property,
+      # verifies the bump actually builds against the real published coordinate, and
+      # opens a PR — it never pushes directly, see that workflow. Reuses
+      # SITE_DISPATCH_TOKEN (already scoped for cross-repo dispatch within beehive-lab)
+      # rather than a separate secret.
+      - name: Dispatch version bump to downstream Maven projects
+        env:
+          GH_TOKEN: ${{ secrets.SITE_DISPATCH_TOKEN }}
+          VERSION: ${{ steps.vars.outputs.version }}
+        run: |
+          set -euo pipefail
+          for repo in kfusion-tornadovm TornadoVM-Ray-Tracer GPULlama3.java; do
+            echo "Dispatching tornadovm-release to beehive-lab/$repo (version=${VERSION})..."
+            gh api "repos/beehive-lab/$repo/dispatches" --input - <<EOF
+          {"event_type":"tornadovm-release","client_payload":{"version":"${VERSION}"}}
+          EOF
+          done
+
+      # docker-tornadovm's build-test-push-docker.yml is workflow_dispatch-only (it
+      # needs explicit platform/push_images/build_jdk22plus inputs and runs on
+      # self-hosted GPU runners, so a bare repository_dispatch listener isn't a fit).
+      # push_images=true here means a successful run also pushes the new images
+      # publicly to the beehivelab Docker Hub org and commits the version bump back to
+      # that repo — intentional, not a dry run. build_jdk22plus stays off: those images
+      # remain best-effort/experimental (see that repo's jdk22plus Dockerfiles).
+      - name: Dispatch docker-tornadovm build/test/push
+        env:
+          GH_TOKEN: ${{ secrets.SITE_DISPATCH_TOKEN }}
+          TAG: ${{ steps.vars.outputs.tag }}
+        run: |
+          set -euo pipefail
+          echo "Dispatching build-test-push-docker.yml to beehive-lab/docker-tornadovm (version=${TAG})..."
+          gh workflow run build-test-push-docker.yml \
+            --repo beehive-lab/docker-tornadovm \
+            -f version="${TAG}" \
+            -f platform=all \
+            -f build_jdk22plus=false \
+            -f push_images=true
