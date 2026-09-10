@@ -60,5 +60,15 @@ public final class CUDAPreamble {
      */
     public static final String FP8_PREAMBLE =
         "#include <cuda_fp8.h>\n";
+
+    /**
+     * Header and namespace aliases for a CUDA Tile kernel. Requires CUDA 13.3 or newer and a
+     * compilation with --enable-tile; the literals namespace supplies the _ic suffix used for
+     * the compile-time constants in tile shapes.
+     */
+    public static final String TILE_PREAMBLE =
+        "#include \"cuda_tile.h\"\n"
+        + "namespace ct = cuda::tiles;\n"
+        + "using namespace ct::literals;\n";
     // @formatter:on
 }

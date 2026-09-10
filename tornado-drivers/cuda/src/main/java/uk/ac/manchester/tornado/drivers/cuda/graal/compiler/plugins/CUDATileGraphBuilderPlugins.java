@@ -1,0 +1,417 @@
+/*
+ * Copyright (c) 2018, 2020-2022, 2024, 2025, APT Group, Department of Computer Science,
+ * The University of Manchester. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ */
+
+package uk.ac.manchester.tornado.drivers.cuda.graal.compiler.plugins;
+
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaField;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
+import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.ValuePhiNode;
+import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderContext;
+import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugin;
+import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
+import tornado.graal.compiler.nodes.java.LoadFieldNode;
+import uk.ac.manchester.tornado.api.tile.DType;
+import uk.ac.manchester.tornado.api.tile.PartitionView;
+import uk.ac.manchester.tornado.api.tile.TensorView;
+import uk.ac.manchester.tornado.api.tile.Tile;
+import uk.ac.manchester.tornado.api.tile.TileContext;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileBinaryNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileBlockIdNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileCreateNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileLoadNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileMmaNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATilePartitionViewNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileReduceNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileStoreNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileViewNode;
+
+/**
+ * Intrinsifies the CUDA Tile API onto tile nodes, so that a kernel written against
+ * {@link TileContext} lowers to {@code ct::} calls and never to hand-written PTX.
+ *
+ * <p>
+ * Two properties of the API make this tractable. Accessors are fixed arity, so no plugin has to
+ * constant-fold an array allocation to read an index list. And shapes are compile-time constants
+ * by contract, so a shape that fails to fold is reported here, by name, instead of bailing out of
+ * the sketch with no explanation.
+ * </p>
+ *
+ * <p>
+ * Every method registered here must also be handled in
+ * {@code TornadoCUDAIntrinsicsReplacements}: a kernel resolved through reflection never reaches
+ * plugin lookup, and an intrinsic registered in only one of the two places works in some launch
+ * modes and silently fails in others.
+ * </p>
+ */
+public class CUDATileGraphBuilderPlugins {
+
+    /**
+     * Offset of the payload inside a TornadoVM native array. The runtime pads the device
+     * allocation so that this offset is 32 byte aligned, which is what makes the
+     * {@code ct::assume_aligned(p, 16_ic)} hint in the emitted view legal, and therefore what
+     * keeps a load TMA eligible.
+     */
+    private static final int PAYLOAD_OFFSET = (int) TornadoNativeArray.ARRAY_HEADER;
+
+    private CUDATileGraphBuilderPlugins() {
+    }
+
+    public static void registerTileContextPlugins(InvocationPlugins plugins) {
+        Registration context = new Registration(plugins, TileContext.class);
+        registerBlockIndexPlugins(context);
+        registerViewPlugins(context);
+        registerPartitionPlugins(context);
+        registerTileCreationPlugins(context);
+        registerTileComputePlugins(context);
+
+        Registration view = new Registration(plugins, PartitionView.class);
+        registerAccessPlugins(view);
+    }
+
+    // -------------------------------------------------------------------------------------
+    // Grid
+    // -------------------------------------------------------------------------------------
+
+    private static void registerBlockIndexPlugins(Registration r) {
+        registerBlockIndex(r, "bidX", false, 'x');
+        registerBlockIndex(r, "bidY", false, 'y');
+        registerBlockIndex(r, "bidZ", false, 'z');
+        registerBlockIndex(r, "numBlocksX", true, 'x');
+        registerBlockIndex(r, "numBlocksY", true, 'y');
+        registerBlockIndex(r, "numBlocksZ", true, 'z');
+    }
+
+    private static void registerBlockIndex(Registration r, String name, boolean gridSize, char dimension) {
+        r.register(new InvocationPlugin(name, InvocationPlugin.Receiver.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                receiver.get(true);
+                b.addPush(JavaKind.Int, new CUDATileBlockIdNode(gridSize, dimension));
+                return true;
+            }
+        });
+    }
+
+    // -------------------------------------------------------------------------------------
+    // Views
+    // -------------------------------------------------------------------------------------
+
+    private static void registerViewPlugins(Registration r) {
+        registerView(r, FloatArray.class, DType.F32);
+        registerView(r, HalfFloatArray.class, DType.F16);
+        registerView(r, IntArray.class, DType.S32);
+    }
+
+    private static void registerView(Registration r, Class<?> arrayType, DType dtype) {
+        r.register(new InvocationPlugin("view", InvocationPlugin.Receiver.class, arrayType, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode extent) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDATileViewNode(array, new ValueNode[] { extent }, dtype));
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin("view", InvocationPlugin.Receiver.class, arrayType, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode rows, ValueNode columns) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDATileViewNode(array, new ValueNode[] { rows, columns }, dtype));
+                return true;
+            }
+        });
+    }
+
+    private static void registerPartitionPlugins(Registration r) {
+        r.register(new InvocationPlugin("partition", InvocationPlugin.Receiver.class, TensorView.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode viewNode, ValueNode tileExtent) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, partitionOf(viewNode, new int[] { shapeConstant(tileExtent, "tile extent") }));
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin("partition", InvocationPlugin.Receiver.class, TensorView.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode viewNode, ValueNode tileRows, ValueNode tileColumns) {
+                receiver.get(true);
+                int[] shape = { shapeConstant(tileRows, "tile rows"), shapeConstant(tileColumns, "tile columns") };
+                b.addPush(JavaKind.Object, partitionOf(viewNode, shape));
+                return true;
+            }
+        });
+    }
+
+    /**
+     * Folds a view descriptor and a tile shape into the partition view that actually reaches the
+     * generated code. The view node is a parse time carrier with no device representation, so it
+     * is consumed here rather than lowered.
+     */
+    private static CUDATilePartitionViewNode partitionOf(ValueNode viewNode, int[] tileShape) {
+        if (!(viewNode instanceof CUDATileViewNode view)) {
+            throw new IllegalStateException("[TileContext] partition(...) expects the result of view(...) directly. "
+                    + "Storing a TensorView in a field or passing it between methods is not supported, because a view "
+                    + "is compile-time metadata rather than a value.");
+        }
+        if (view.getRank() != tileShape.length) {
+            throw new IllegalStateException("[TileContext] A rank " + view.getRank() + " view cannot be partitioned "
+                    + "into a rank " + tileShape.length + " tile.");
+        }
+        return new CUDATilePartitionViewNode(view.getBuffer(), view.getExtents(), view.getDType(), tileShape, PAYLOAD_OFFSET);
+    }
+
+    // -------------------------------------------------------------------------------------
+    // Tile creation and compute
+    // -------------------------------------------------------------------------------------
+
+    private static void registerTileCreationPlugins(Registration r) {
+        r.register(new InvocationPlugin("zeros", InvocationPlugin.Receiver.class, DType.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode dtypeNode, ValueNode extent) {
+                receiver.get(true);
+                DType dtype = resolveDType(b, dtypeNode);
+                b.addPush(JavaKind.Object, new CUDATileCreateNode(dtype, new int[] { shapeConstant(extent, "tile extent") }, zeroLiteral(dtype)));
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin("zeros", InvocationPlugin.Receiver.class, DType.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode dtypeNode, ValueNode rows, ValueNode columns) {
+                receiver.get(true);
+                DType dtype = resolveDType(b, dtypeNode);
+                int[] shape = { shapeConstant(rows, "tile rows"), shapeConstant(columns, "tile columns") };
+                b.addPush(JavaKind.Object, new CUDATileCreateNode(dtype, shape, zeroLiteral(dtype)));
+                return true;
+            }
+        });
+    }
+
+    private static void registerTileComputePlugins(Registration r) {
+        registerBinary(r, "add", "+");
+        registerBinary(r, "sub", "-");
+        registerBinary(r, "mul", "*");
+
+        r.register(new InvocationPlugin("mma", InvocationPlugin.Receiver.class, Tile.class, Tile.class, Tile.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode tileA, ValueNode tileB, ValueNode accumulator) {
+                receiver.get(true);
+                CUDATileNode operand = tileNodeOf(tileA, "the left operand of mma");
+                CUDATileNode acc = tileNodeOf(accumulator, "the accumulator of mma");
+                b.addPush(JavaKind.Object, new CUDATileMmaNode(tileA, tileB, accumulator, operand.tileDType(), acc.tileDType(), acc.tileShape()));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("sum", InvocationPlugin.Receiver.class, Tile.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode tile, ValueNode axisNode) {
+                receiver.get(true);
+                CUDATileNode source = tileNodeOf(tile, "the operand of sum");
+                int axis = shapeConstant(axisNode, "reduction axis");
+                int[] shape = source.tileShape().clone();
+                shape[axis] = 1;
+                b.addPush(JavaKind.Object, new CUDATileReduceNode(tile, "sum", axis, source.tileDType(), shape));
+                return true;
+            }
+        });
+    }
+
+    private static void registerBinary(Registration r, String name, String operator) {
+        r.register(new InvocationPlugin(name, InvocationPlugin.Receiver.class, Tile.class, Tile.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode left, ValueNode right) {
+                receiver.get(true);
+                CUDATileNode source = tileNodeOf(left, "the left operand of " + name);
+                b.addPush(JavaKind.Object, new CUDATileBinaryNode(left, right, operator, source.tileDType(), source.tileShape()));
+                return true;
+            }
+        });
+    }
+
+    // -------------------------------------------------------------------------------------
+    // Loads and stores, registered on PartitionView
+    // -------------------------------------------------------------------------------------
+
+    private static void registerAccessPlugins(Registration r) {
+        registerLoad(r, "load", false, 1);
+        registerLoad(r, "load", false, 2);
+        registerLoad(r, "loadMasked", true, 1);
+        registerLoad(r, "loadMasked", true, 2);
+        registerStore(r, "store", false, 1);
+        registerStore(r, "store", false, 2);
+        registerStore(r, "storeMasked", true, 1);
+        registerStore(r, "storeMasked", true, 2);
+    }
+
+    private static void registerLoad(Registration r, String name, boolean masked, int rank) {
+        if (rank == 1) {
+            r.register(new InvocationPlugin(name, InvocationPlugin.Receiver.class, int.class) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode blockX) {
+                    ValueNode view = receiver.get(true);
+                    b.addPush(JavaKind.Object, loadOf(view, new ValueNode[] { blockX }, masked));
+                    return true;
+                }
+            });
+        } else {
+            r.register(new InvocationPlugin(name, InvocationPlugin.Receiver.class, int.class, int.class) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode blockX, ValueNode blockY) {
+                    ValueNode view = receiver.get(true);
+                    b.addPush(JavaKind.Object, loadOf(view, new ValueNode[] { blockX, blockY }, masked));
+                    return true;
+                }
+            });
+        }
+    }
+
+    private static void registerStore(Registration r, String name, boolean masked, int rank) {
+        if (rank == 1) {
+            r.register(new InvocationPlugin(name, InvocationPlugin.Receiver.class, Tile.class, int.class) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode tile, ValueNode blockX) {
+                    ValueNode view = receiver.get(true);
+                    b.add(new CUDATileStoreNode(view, tile, new ValueNode[] { blockX }, masked));
+                    return true;
+                }
+            });
+        } else {
+            r.register(new InvocationPlugin(name, InvocationPlugin.Receiver.class, Tile.class, int.class, int.class) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode tile, ValueNode blockX, ValueNode blockY) {
+                    ValueNode view = receiver.get(true);
+                    b.add(new CUDATileStoreNode(view, tile, new ValueNode[] { blockX, blockY }, masked));
+                    return true;
+                }
+            });
+        }
+    }
+
+    private static CUDATileLoadNode loadOf(ValueNode view, ValueNode[] indices, boolean masked) {
+        CUDATileNode partition = tileNodeOf(view, "the receiver of a tile load");
+        return new CUDATileLoadNode(view, indices, partition.tileDType(), partition.tileShape(), masked);
+    }
+
+    // -------------------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------------------
+
+    /**
+     * Finds the tile node a value came from, seeing through the phi that a loop introduces.
+     * An accumulator threaded through a loop reaches the mma plugin as a phi on every iteration
+     * after the first, so resolving only the direct node would reject the canonical GEMM.
+     */
+    private static CUDATileNode tileNodeOf(ValueNode node, String role) {
+        CUDATileNode resolved = resolveTileNode(node, 0);
+        if (resolved == null || resolved.tileDType() == null || resolved.tileShape() == null) {
+            throw new IllegalStateException("[TileContext] Could not determine the tile type of " + role
+                    + ". A tile must come from TileContext or from a partition view in the same kernel; tiles cannot "
+                    + "be passed across method boundaries or stored in fields.");
+        }
+        return resolved;
+    }
+
+    private static CUDATileNode resolveTileNode(ValueNode node, int depth) {
+        if (node == null || depth > 8) {
+            return null;
+        }
+        if (node instanceof CUDATileNode tileNode) {
+            return tileNode;
+        }
+        if (node instanceof ValuePhiNode phi) {
+            for (ValueNode input : phi.values()) {
+                CUDATileNode candidate = resolveTileNode(input, depth + 1);
+                if (candidate != null && candidate.tileDType() != null) {
+                    return candidate;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Reads a shape argument, which the API contract requires to be a compile-time constant.
+     */
+    private static int shapeConstant(ValueNode node, String role) {
+        JavaConstant constant = node.asJavaConstant();
+        if (constant == null) {
+            throw new IllegalStateException("[TileContext] The " + role + " must be a compile-time constant, because "
+                    + "a CUDA Tile shape is part of the kernel's type. Use a literal or a static final int.");
+        }
+        int value = constant.asInt();
+        if (value <= 0 || (value & (value - 1)) != 0) {
+            throw new IllegalStateException("[TileContext] The " + role + " must be a positive power of two, got " + value + ".");
+        }
+        return value;
+    }
+
+    /**
+     * Folds a DType argument. Enum constants often reach a plugin as an unread static field, so
+     * the field is resolved directly, mirroring how MMAShape is folded for the mma intrinsics.
+     */
+    private static DType resolveDType(GraphBuilderContext b, ValueNode dtypeNode) {
+        JavaConstant constant = dtypeNode.asJavaConstant();
+        if (constant == null && dtypeNode instanceof LoadFieldNode load && load.field().isStatic()) {
+            constant = b.getConstantReflection().readFieldValue(load.field(), null);
+        }
+        if (constant == null || constant.isNull()) {
+            throw new IllegalStateException("[TileContext] The element type must be a compile-time constant DType.");
+        }
+        ResolvedJavaType enumType = b.getMetaAccess().lookupJavaType(DType.class);
+        ResolvedJavaField ordinalField = null;
+        for (ResolvedJavaField field : enumType.getInstanceFields(true)) {
+            if (field.getName().equals("ordinal")) {
+                ordinalField = field;
+                break;
+            }
+        }
+        if (ordinalField == null) {
+            throw new IllegalStateException("[TileContext] Cannot locate Enum.ordinal on DType.");
+        }
+        JavaConstant ordinal = b.getConstantReflection().readFieldValue(ordinalField, constant);
+        if (ordinal == null) {
+            throw new IllegalStateException("[TileContext] Failed to read the ordinal of a DType constant.");
+        }
+        return DType.values()[ordinal.asInt()];
+    }
+
+    /**
+     * The zero literal CUDA Tile wants for this element type. An integer tile takes a plain 0,
+     * a floating point tile takes a typed literal so the ct::full template deduces correctly.
+     */
+    private static String zeroLiteral(DType dtype) {
+        return switch (dtype) {
+            case S8, S32 -> "0";
+            case F64 -> "0.0";
+            default -> "0.0f";
+        };
+    }
+}

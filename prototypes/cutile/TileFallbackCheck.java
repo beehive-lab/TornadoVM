@@ -12,9 +12,9 @@ public class TileFallbackCheck {
         PartitionView cv = tc.partition(tc.view(c, m, n), 32, 32);
         Tile acc = tc.zeros(DType.F32, 32, 32);
         for (int t = 0; t < k / 32; t++) {
-            acc = tc.mma(av.load(tc.bidX, t), bv.load(t, tc.bidY), acc);
+            acc = tc.mma(av.load(tc.bidX(), t), bv.load(t, tc.bidY()), acc);
         }
-        cv.store(acc, tc.bidX, tc.bidY);
+        cv.store(acc, tc.bidX(), tc.bidY());
     }
 
     public static void main(String[] args) {

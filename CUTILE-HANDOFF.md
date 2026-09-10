@@ -21,9 +21,10 @@ thing being replaced, not the goal. The check is that `--printKernel` shows `ct:
 | 0 | Design note | **done** |
 | 1 | Toolchain spike: tile C++ with TornadoVM's ABI, compiled to sm_89 cubin | **done, verified** (see 2) |
 | 3a | `TileContext` Java API + JVM fallback | **done, verified** (see 3) |
-| 3b | Compiler integration: plugins, nodes, LIR, emitter, gate | **in progress** (see 5) |
+| 3b | Compiler integration: plugins, nodes, LIR, emitter, gate | **done, builds clean** (see 5) |
 | 2 | Prebuilt-task bring-up: run a tile cubin inside a TaskGraph | **BLOCKED on driver R580+** (see 6) |
 | 4 | Chaining: mixed JIT + tile + cuBLAS graph, cache keys, guards | **BLOCKED on driver R580+** (see 7) |
+| 3c | Compile path: `CUDATileCompiler`, `installSource` branch, cache keys, scheduler | **not started** (see 5, items 7-9) |
 | 5 | In-process NVRTC (`nvrtcGetTileIR`) | blocked: needs R610+ and `nvidia-cuda-nvrtc` |
 | 6 | Direct Tile IR emission | research, separate branch |
 
@@ -86,11 +87,13 @@ extern "C" __tile_global__ void gemm(
 ```
 
 The four reserved parameters are declared and ignored **on purpose**: keeping them leaves
-`CUDAArchitecture.getABI()` and `CUDAInstalledCode.setKernelArgs` untouched. `PAYLOAD_OFFSET`
-in the kernels is 32, which must be replaced by the real value:
-`TornadoNativeArray.ARRAY_HEADER` (24) plus the 6.1.0 payload padding
-(`-Dtornado.cuda.payloadAlignment`, commit `94886413f`). Hardcoding 24 does not error, it
-silently loses TMA eligibility.
+`CUDAArchitecture.getABI()` and `CUDAInstalledCode.setKernelArgs` untouched. The payload offset is
+**`TornadoNativeArray.ARRAY_HEADER`**, nothing more. An earlier draft of this file said to add
+the 6.1.0 payload padding on top; that is wrong. `CUDAMemorySegmentWrapper.HEADER_PAD` pads the
+*allocation* so that `base + ARRAY_HEADER` lands on a `tornado.cuda.payloadAlignment` (32 byte)
+boundary, and the kernel is handed the padded pointer and still indexes at `+ ARRAY_HEADER`.
+So the alignment that `ct::assume_aligned(p, 16_ic)` promises is already guaranteed by the
+runtime, and the plugin uses `TornadoOptions.PANAMA_OBJECT_HEADER_SIZE`.
 
 ---
 
@@ -141,73 +144,79 @@ leading `KernelContext` selects the kernel-parallel API. No new `TaskGraph` verb
 
 ---
 
-## 5. Phase 3b: compiler integration, the work in flight
+## 5. Phase 3b: compiler integration, landed
 
 All paths relative to
 `tornado-drivers/cuda/src/main/java/uk/ac/manchester/tornado/drivers/cuda`.
+`make BACKEND=cuda` is green with all of this in the tree.
 
-Follow the MMA integration pattern exactly; it is the in-tree precedent that works.
+**What exists**
 
-1. **Two registration sites, both mandatory.**
-   - `graal/compiler/plugins/CUDAGraphBuilderPlugins.java`: add `registerTileContextPlugins`
-     beside `registerMMAPlugins` (around line 587), one `InvocationPlugin` per `TileContext`
-     method, constant-folding shape arguments the way `resolveShape` folds `MMAShape`. Also skip
-     the `TileContext` parameter in `registerParameterPlugins`, as `KernelContext` is skipped.
-   - `graal/phases/TornadoCUDAIntrinsicsReplacements.java`: add a
-     `case "Direct#TileContext.<name>"` for **every** intrinsic. Reflection-resolved kernels miss
-     plugin lookup; an intrinsic registered in only one place works in some launch modes and
-     fails silently in others.
-2. **Nodes** in `graal/nodes/`: `CUDATileViewNode`, `CUDATilePartitionViewNode`,
-   `CUDATileLoadNode` (masked flag), `CUDATileStoreNode`, `CUDATileCreateNode`,
-   `CUDATileElementwiseNode`, `CUDATileMmaNode`, `CUDATileReduceNode`, `CUDATileShuffleNode`,
-   `CUDATileCastNode`, `CUDATileBlockIdNode`. All `LIRLowerable`, all modelled on
-   `CUDAMMAComputeNode.generate`.
-3. **Tile-typed LIR values.** `CUDAKind` is an enum, so per-shape tile kinds cannot be enumerated
-   the way the fixed `MMA_FRAG_*` set at `graal/lir/CUDAKind.java:199` is. Add one synthetic
-   `TILE` kind plus a per-compilation `Variable -> declared C++ type` table on
-   `CUDACompilationResultBuilder`, and generalise the hardcoded `isMMAFragment()` /
-   `fragmentElementCType` switch in `CUDABackend.emitVariableDefs` into a
-   `getDeclarationCType(Variable)` lookup. `Tile.toCppType()` already produces the spelling.
-   Note a `Tile` carried across a loop becomes an **object phi**, the same situation the MMA
-   fragment phis already handle (`float ul_52[4];`) - reuse that path.
-4. **Emitters** in `graal/lir/CUDALIRStmt.java`, modelled on the `MMAComputeStmt` family at
-   :2205, emitting `ct::` calls instead of inline PTX.
-5. **Prologue** in `graal/backend/CUDABackend.java#emitPrologue`: `extern "C" __tile_global__`
-   for entries, `__tile__` for non-inlined callees. `CUDACompilationResultBuilder#finish` (:241)
-   already prepends `cuda_fp16.h`/`cuda_fp8.h` conditionally - add `cuda_tile.h` plus
-   `namespace ct = cuda::tiles;` and `using namespace ct::literals;` there.
-6. **Capability gate**: new `graal/phases/CUDATileSupportPhase.java`, appended first in
-   `graal/compiler/CUDALowTier.java` beside `CUDATensorCoreSupportPhase`. Require cc >= 8.0,
-   toolkit/NVRTC >= 13.3 via `CUDAProgram.getNvrtcVersion()` as the FP8 gate does, driver >= R580,
-   and validate every shape/dtype pair. Throw a new `TornadoDeviceTileNotSupported`.
-7. **Compile path**: `CUDACodeCache.installSource` already branches on content
-   (`isInputSourceSPIRVBinary`). Add a third branch for tile source into a new
-   `ffm/CUDATileCompiler.java` that runs `nvcc -tilecubin --tile-only -std=c++20 -arch=sm_XX`
-   and loads the cubin through the existing `CUDAContext.createProgramWithBinary` (:220) seam.
-   Discover `nvcc` the way NVRTC is discovered, including the pip wheel path.
-8. **Cache keys**: add a `tile | simt` strategy tag plus toolkit identity to both the
-   `"id-entryPoint"` map key and `moduleCacheKey(source, flags)`. Without it a SIMT and a tile
-   compilation of the same method collide, and since `__tile__` cannot be called from
-   `__global__`, a helper shared between a tile task and a SIMT task legitimately compiles twice.
-9. **Launch**: new `scheduler/CUDATileScheduler` forcing local work `(1,1,1)` and never
-   consulting `cuOccupancyMaxPotentialBlockSize` or `DEFAULT_BLOCK_SIZE`; new
-   `graal/CUDATileInstalledCode` reusing `setKernelArgs` unchanged and rejecting batch
-   processing. Note `CUDACommandQueue.clEnqueueNDRangeKernel` already hardcodes
-   `sharedMemBytes = 0` and computes `grid = ceil(global/block)`, so with local work 1 the
-   existing path emits exactly the launch CUDA Tile needs - **do not change that method**.
+1. `graal/lir/CUDAKind.java` - two synthetic kinds, `TILE` and `TILE_VIEW`, plus `isTileLike()`.
+   They carry no Java class, because a tile's C++ type depends on its shape and cannot be
+   enumerated the way the fixed `MMA_FRAG_*` set is.
+2. `graal/lir/CUDATileStmt.java` - eight emitters: partition view, create, load, store, mma,
+   binary, reduce, block id. Every one emits `ct::` calls; none emits inline PTX, and that is
+   the invariant to preserve.
+3. `graal/nodes/CUDATile*.java` - the nodes, all implementing the `CUDATileNode` marker, which
+   also exposes `tileDType()` and `tileShape()` so a tile's type can be recovered from the node.
+   `CUDATileViewNode` is deliberately *not* lowerable: it is a parse-time descriptor that the
+   `partition(...)` plugin folds away.
+4. `graal/compiler/plugins/CUDATileGraphBuilderPlugins.java` - the invocation plugins, called
+   from `CUDAGraphBuilderPlugins#registerInvocationPlugins`. Two details worth keeping:
+   `resolveTileNode` sees through a `ValuePhiNode`, without which the canonical GEMM is rejected
+   because the accumulator arrives as a phi on every iteration after the first; and shapes are
+   folded with a message naming the argument rather than bailing out of the sketch.
+5. `graal/backend/CUDABackend.java` - `emitVariableDefs` skips tile-like variables (their
+   defining statement declares them) and pre-declares *tile phis* with the concrete
+   `ct::tile<...>` type, mirroring exactly what the MMA fragment phis already needed.
+   `emitPrologue` emits `extern "C" __tile_global__` for a tile kernel, and the `TileContext`
+   parameter is dropped from the signature as `KernelContext` is.
+6. `graal/CUDATileKernels.java` - a task is a tile task when its kernel takes a `TileContext`.
+   Matched by type name, so recognising one never depends on loading the API class.
+7. `graal/backend/CUDAPreamble.java` + `graal/compiler/CUDACompilationResultBuilder.java` -
+   `cuda_tile.h` and the `ct` / literals aliases are injected by the same source scan that
+   already injects `cuda_fp16.h`.
+8. `graal/phases/CUDATileSupportPhase.java`, registered first in `CUDALowTier` beside
+   `CUDATensorCoreSupportPhase` - gates on cc >= 8.0 and toolkit >= 13.3, validates every mma
+   operand/accumulator pair, and rejects a view that was never partitioned.
+
+**What is missing, and the two traps in it**
+
+- **`TornadoCUDAIntrinsicsReplacements` has no tile cases yet.** A reflectively resolved kernel
+  skips plugin lookup, so the tile calls would survive as invokes. Rather than emit a call to a
+  function that does not exist, `CUDATileSupportPhase#verifyNoUnintrinsifiedTileCalls` detects
+  any surviving `TileContext.` or `PartitionView.` invoke and fails with an explanation. That
+  makes the gap loud, not silent - **finishing it means adding a case per operation there**, the
+  same way the MMA intrinsics are handled twice.
+- **The compile and launch path is not wired** (section 3 phase A). Still to do:
+  - `ffm/CUDATileCompiler.java` running `nvcc -tilecubin --tile-only -std=c++20 -arch=sm_XX`,
+    reached from a third branch in `CUDACodeCache.installSource` next to the existing
+    `isInputSourceSPIRVBinary` branch, loading the cubin through `CUDAContext
+    .createProgramWithBinary` (:220). Discover `nvcc` the way NVRTC is discovered, including the
+    pip wheel path in section 2.
+  - a `tile | simt` strategy tag plus toolkit identity in both the `"id-entryPoint"` code-cache
+    key and `moduleCacheKey(source, flags)`. Without it a SIMT and a tile compilation of the
+    same method collide, and since `__tile__` cannot be called from `__global__`, a helper
+    shared between a tile task and a SIMT task legitimately compiles twice.
+  - `scheduler/CUDATileScheduler` forcing local work `(1,1,1)` and never consulting
+    `cuOccupancyMaxPotentialBlockSize` or `DEFAULT_BLOCK_SIZE`, and
+    `graal/CUDATileInstalledCode` reusing `setKernelArgs` unchanged. Note
+    `CUDACommandQueue.clEnqueueNDRangeKernel` already hardcodes `sharedMemBytes = 0` and computes
+    `grid = ceil(global/block)`, so with local work 1 the existing path emits exactly the launch
+    CUDA Tile needs - **do not change that method**.
 
 Build and check with:
 
 ```
-make BACKEND=cuda          # the only supported invocation, see below
+make BACKEND=cuda          # the only supported invocation
 make checkstyle            # judge by exit code, never by grepping for ^[ERROR]
 ```
 
 Repo conventions that will bite otherwise: build only with `make BACKEND=cuda` (or `ptx`);
 **ASCII only in Java sources** - an em-dash in javadoc fails checkstyle; and deleting code tends
-to leave unused imports, which also fails checkstyle.
-
----
+to leave unused imports, which also fails checkstyle. Do not `source setvars.sh` before building,
+and build with `JAVA_HOME=$HOME/.sdkman/candidates/java/21.0.2-open`.
 
 ## 6. PHASE 2 - for an agent on a box with driver R580+
 

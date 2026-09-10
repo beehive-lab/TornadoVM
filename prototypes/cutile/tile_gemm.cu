@@ -9,7 +9,7 @@ __tile_global__ void gemm(unsigned char *_kernel_context, unsigned char *_consta
     namespace ct = cuda::tiles;
     using namespace ct::literals;
 
-    const int HDR = 32;  // TornadoVM array header + 6.1.0 payload padding
+    const int HDR = 24;  // TornadoNativeArray.ARRAY_HEADER; the runtime pads the allocation so base + HDR is 32B aligned
 
     auto *pa = ct::assume_aligned(reinterpret_cast<__half *>(a + HDR), 16_ic);
     auto *pb = ct::assume_aligned(reinterpret_cast<__half *>(b + HDR), 16_ic);

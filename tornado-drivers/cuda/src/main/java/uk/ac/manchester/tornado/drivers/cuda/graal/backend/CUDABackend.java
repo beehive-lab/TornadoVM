@@ -100,8 +100,10 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDALIRGenerator;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDANodeLIRBuilder;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDANodeMatchRules;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDAReferenceMapBuilder;
+import uk.ac.manchester.tornado.drivers.cuda.graal.CUDATileKernels;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt;
+import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDATileStmt;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.CUDATokens;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -245,6 +247,22 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
         // (and therefore any on-disk code cache keyed by it) unstable across processes.
         Map<CUDAKind, Set<Variable>> kindToVariable = new LinkedHashMap<>();
         Map<Variable, CUDAKind> fragmentPhis = new LinkedHashMap<>();
+        Map<Variable, String> tilePhis = new LinkedHashMap<>();
+
+        // A tile's C++ type depends on its shape, so it cannot be named by a CUDAKind. Tile
+        // statements declare their own result at the definition site, and report the concrete
+        // type here so that a tile value carried across a loop can still be pre-declared.
+        Map<Value, String> tileTypes = new LinkedHashMap<>();
+        for (int b : lir.linearScanOrder()) {
+            for (LIRInstruction lirInstruction : lir.getLIRforBlock(lir.getBlockById(b))) {
+                if (lirInstruction instanceof CUDATileStmt.TileValued tileValued) {
+                    String cppType = tileValued.getTileCppType();
+                    if (cppType != null) {
+                        tileTypes.put(tileValued.getTileResult(), cppType);
+                    }
+                }
+            }
+        }
 
         final int expectedVariables = lir.numVariables();
         final AtomicInteger variableCount = new AtomicInteger();
@@ -262,6 +280,11 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
                             fragmentPhis.putIfAbsent((Variable) lhs, rhsKind);
                         }
                     }
+                    // Same situation for tiles: the copy at a loop back edge targets a variable
+                    // no tile statement declares, so declare it here with the source tile's type.
+                    if (lhs instanceof Variable && tileTypes.containsKey(rhs) && !tileTypes.containsKey(lhs)) {
+                        tilePhis.putIfAbsent((Variable) lhs, tileTypes.get(rhs));
+                    }
                 }
 
                 lirInstruction.forEachOutput((instruction, value, mode, flags) -> {
@@ -269,7 +292,7 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
                         Variable variable = (Variable) value;
                         if (variable.toString() != null) {
                             CUDAKind kind = platformKindOf(variable);
-                            if (kind != null && kind.isMMAFragment()) {
+                            if (kind != null && (kind.isMMAFragment() || kind.isTileLike())) {
                                 return value;
                             }
                             addVariableDef(kindToVariable, variable);
@@ -308,6 +331,16 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
             asm.emit("%s ", fragmentElementCType(fragKind));
             asm.emitValue(crb, frag);
             asm.emit("[%d];", fragKind.getVectorLength());
+            asm.eol();
+        }
+
+        // Emit tile-phi variables with their concrete tile type.
+        // e.g. "ct::tile<float, ct::shape<64, 64>> ul_31;"
+        for (Map.Entry<Variable, String> entry : tilePhis.entrySet()) {
+            asm.indent();
+            asm.emit("%s ", entry.getValue());
+            asm.emitValue(crb, entry.getKey());
+            asm.emit(";");
             asm.eol();
         }
     }
@@ -380,7 +413,13 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
              * leads to a few issues.) Iris Pro is the only culprit at the moment.
              */
 
-            asm.emit("%s void %s(%s", CUDAAssemblerConstants.KERNEL_MODIFIER, methodName, architecture.getABI());
+            // A tile kernel keeps the same ABI as a SIMT kernel: the four reserved slots are
+            // declared and ignored, so CUDAArchitecture.getABI() and the argument marshalling in
+            // CUDAInstalledCode.setKernelArgs are inherited rather than reimplemented.
+            String kernelModifier = CUDATileKernels.isTileKernel(method)
+                    ? CUDAAssemblerConstants.TILE_KERNEL_MODIFIER
+                    : CUDAAssemblerConstants.KERNEL_MODIFIER;
+            asm.emit("%s void %s(%s", kernelModifier, methodName, architecture.getABI());
             emitMethodParameters(asm, method, incomingArguments, true);
             asm.emitLine(")");
 
@@ -455,6 +494,11 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
                 } else {
                     // Skip the kernel context object
                     if (javaType.toJavaName().equals(KernelContext.class.getName())) {
+                        continue;
+                    }
+                    // Skip the tile context object, for the same reason: it exists to be
+                    // intrinsified, and has no device representation.
+                    if (CUDATileKernels.isTileContext(javaType)) {
                         continue;
                     }
                     // Skip atomic integers

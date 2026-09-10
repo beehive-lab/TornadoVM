@@ -45,9 +45,9 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
  *     PartitionView cv = tc.partition(tc.view(c, m, n), 64, 64);
  *     Tile acc = tc.zeros(DType.F32, 64, 64);
  *     for (int t = 0; t &lt; k / 32; t++) {
- *         acc = tc.mma(av.load(tc.bidX, t), bv.load(t, tc.bidY), acc);
+ *         acc = tc.mma(av.load(tc.bidX(), t), bv.load(t, tc.bidY()), acc);
  *     }
- *     cv.store(acc, tc.bidX, tc.bidY);
+ *     cv.store(acc, tc.bidX(), tc.bidY());
  * }
  * </pre>
  *
@@ -59,30 +59,63 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
  */
 public class TileContext {
 
+    private int blockX = 0;
+
+    private int blockY = 0;
+
+    private int blockZ = 0;
+
+    private int blocksX = 1;
+
+    private int blocksY = 1;
+
+    private int blocksZ = 1;
+
+    // -------------------------------------------------------------------------------------
+    // Grid, counted in tile blocks. These are methods rather than public fields, unlike
+    // KernelContext's thread identifiers: a method call is intrinsified by an invocation
+    // plugin like every other tile operation, whereas a field read would have to be special
+    // cased in TornadoTaskSpecialisation as the KernelContext fields are.
+    // -------------------------------------------------------------------------------------
+
     /**
-     * Index of this tile block along x. Replaced by the backend; the value read on the JVM is
-     * whatever {@link #setBlockIndex} was given, so a kernel can be driven from a host loop.
+     * @return index of this tile block along x, lowering to {@code ct::bid().x}
      */
-    public int bidX = 0;
+    public int bidX() {
+        return blockX;
+    }
 
-    public int bidY = 0;
+    public int bidY() {
+        return blockY;
+    }
 
-    public int bidZ = 0;
+    public int bidZ() {
+        return blockZ;
+    }
 
-    public int numBlocksX = 1;
+    /**
+     * @return number of tile blocks along x, lowering to {@code ct::num_blocks().x}
+     */
+    public int numBlocksX() {
+        return blocksX;
+    }
 
-    public int numBlocksY = 1;
+    public int numBlocksY() {
+        return blocksY;
+    }
 
-    public int numBlocksZ = 1;
+    public int numBlocksZ() {
+        return blocksZ;
+    }
 
     /**
      * Drives the JVM fallback over a grid of tile blocks. Has no meaning on an accelerator,
      * where the block index comes from {@code ct::bid()}.
      */
     public void setBlockIndex(int x, int y, int z) {
-        this.bidX = x;
-        this.bidY = y;
-        this.bidZ = z;
+        this.blockX = x;
+        this.blockY = y;
+        this.blockZ = z;
     }
 
     /**
@@ -90,9 +123,9 @@ public class TileContext {
      * where the grid comes from the worker grid of the task.
      */
     public void setBlockCount(int x, int y, int z) {
-        this.numBlocksX = x;
-        this.numBlocksY = y;
-        this.numBlocksZ = z;
+        this.blocksX = x;
+        this.blocksY = y;
+        this.blocksZ = z;
     }
 
     // -------------------------------------------------------------------------------------

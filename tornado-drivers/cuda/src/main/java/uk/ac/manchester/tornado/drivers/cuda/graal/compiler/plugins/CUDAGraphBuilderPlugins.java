@@ -168,6 +168,9 @@ public class CUDAGraphBuilderPlugins {
         // Register Atomics
         registerKernelContextPlugins(plugins);
 
+        // CUDA Tile: a task whose kernel takes a TileContext compiles through the tile path.
+        CUDATileGraphBuilderPlugins.registerTileContextPlugins(plugins);
+
         CUDAMathPlugins.registerTornadoMathPlugins(plugins);
         registerOpenCLBuiltinPlugins(plugins);
         CUDAVectorPlugins.registerPlugins(ps, plugins);
