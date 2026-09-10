@@ -27,6 +27,7 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import tornado.graal.compiler.nodes.PiNode;
 import tornado.graal.compiler.nodes.ValueNode;
 import tornado.graal.compiler.nodes.ValuePhiNode;
 import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderContext;
@@ -345,6 +346,12 @@ public class CUDATileGraphBuilderPlugins {
         }
         if (node instanceof CUDATileNode tileNode) {
             return tileNode;
+        }
+        // receiver.get(true) inserts a null-checking PiNode, so the receiver of a load or store
+        // is never the partition node itself. Unwrapping it here is what makes av.load(...) work
+        // at all; without it every tile access reports an unresolvable type.
+        if (node instanceof PiNode pi) {
+            return resolveTileNode(pi.object(), depth + 1);
         }
         if (node instanceof ValuePhiNode phi) {
             for (ValueNode input : phi.values()) {

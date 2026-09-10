@@ -6,7 +6,7 @@ __tile_global__ void saxpy(unsigned char *_kernel_context, unsigned char *_const
                            int n, float alpha) {
     namespace ct = cuda::tiles;
     using namespace ct::literals;
-    const int HDR = 24;  // TornadoNativeArray.ARRAY_HEADER; the runtime pads the allocation so base + HDR is 32B aligned
+    const int HDR = 16;  // TornadoNativeArray.ARRAY_HEADER on this build; the runtime pads the allocation so base + HDR is 32B aligned
     auto *pa = ct::assume_aligned(reinterpret_cast<float *>(a + HDR), 16_ic);
     auto *pb = ct::assume_aligned(reinterpret_cast<float *>(b + HDR), 16_ic);
     auto *pc = ct::assume_aligned(reinterpret_cast<float *>(c + HDR), 16_ic);

@@ -22,9 +22,9 @@ thing being replaced, not the goal. The check is that `--printKernel` shows `ct:
 | 1 | Toolchain spike: tile C++ with TornadoVM's ABI, compiled to sm_89 cubin | **done, verified** (see 2) |
 | 3a | `TileContext` Java API + JVM fallback | **done, verified** (see 3) |
 | 3b | Compiler integration: plugins, nodes, LIR, emitter, gate | **done, builds clean** (see 5) |
-| 2 | Prebuilt-task bring-up: run a tile cubin inside a TaskGraph | **BLOCKED on driver R580+** (see 6) |
+| 2 | Prebuilt-task bring-up: run a tile cubin inside a TaskGraph | **BLOCKED on driver R580+** - boundary reached and confirmed, see 5b (see 6) |
 | 4 | Chaining: mixed JIT + tile + cuBLAS graph, cache keys, guards | **BLOCKED on driver R580+** (see 7) |
-| 3c | Compile path: `CUDATileCompiler`, `installSource` branch, cache keys, scheduler | **not started** (see 5, items 7-9) |
+| 3c | Compile path: `CUDATileCompiler`, `installSource` branch, cache keys | **done; end to end to a cubin** (see 5b) |
 | 5 | In-process NVRTC (`nvrtcGetTileIR`) | blocked: needs R610+ and `nvidia-cuda-nvrtc` |
 | 6 | Direct Tile IR emission | research, separate branch |
 
@@ -218,6 +218,86 @@ Repo conventions that will bite otherwise: build only with `make BACKEND=cuda` (
 to leave unused imports, which also fails checkstyle. Do not `source setvars.sh` before building,
 and build with `JAVA_HOME=$HOME/.sdkman/candidates/java/21.0.2-open`.
 
+## 5b. Phase 3c: the compile path, and the exact point where the driver stops us
+
+`make BACKEND=cuda` green, `make checkstyle` green, and a tile task now runs all the way from
+Java to a cubin. Reproduce with:
+
+```
+source ./setvars.sh && export JAVA_HOME=$HOME/.sdkman/candidates/java/21.0.2-open
+tornado --printKernel --jvm="-Dtornado.recover.bailout=False" \
+    -m tornado.examples/uk.ac.manchester.tornado.examples.tile.TileVectorAdd
+```
+
+**What it prints.** This is TornadoVM compiler output, not hand-written:
+
+```cpp
+#include "cuda_tile.h"
+namespace ct = cuda::tiles;
+using namespace ct::literals;
+extern "C" __tile_global__ void vectorAdd(long long *_kernel_context, unsigned char *_constant_region,
+        unsigned char *_local_region, int *_atomics,
+        unsigned char *arg1, unsigned char *arg2, unsigned char *arg3, int arg4)
+{
+  unsigned long long ul_0, ul_1, ul_2;
+  int i_6;
+
+  // BLOCK 0
+  ul_0  =  (unsigned long long) arg1;
+  ul_1  =  (unsigned long long) arg2;
+  ul_2  =  (unsigned long long) arg3;
+  auto tview_3 = ct::partition_view{ct::tensor_span{ct::assume_aligned(reinterpret_cast<float *>(ul_0 + 16), 16_ic), ct::extents{4096}}, ct::shape{256_ic}};
+  auto tview_4 = ct::partition_view{ct::tensor_span{ct::assume_aligned(reinterpret_cast<float *>(ul_1 + 16), 16_ic), ct::extents{4096}}, ct::shape{256_ic}};
+  auto tview_5 = ct::partition_view{ct::tensor_span{ct::assume_aligned(reinterpret_cast<float *>(ul_2 + 16), 16_ic), ct::extents{4096}}, ct::shape{256_ic}};
+  i_6 = ct::bid().x;
+  auto tile_7 = tview_3.load(i_6);
+  auto tile_8 = tview_4.load(i_6);
+  auto tile_9 = tile_7 + tile_8;
+  tview_5.store(tile_9, i_6);
+  return;
+}  //  kernel
+```
+
+No `asm volatile`, no `mma.sync`, no thread indexing: the invariant held.
+
+**Then it stops, in exactly one place:**
+
+```
+[TornadoVM-CUDA] cuModuleLoadDataEx failed: device kernel image is invalid
+```
+
+That is driver 565 refusing a CUDA 13 cubin. **nvcc had already succeeded** - the failure is at
+module load, after compilation. Verified independently: that exact generated source, saved as
+`prototypes/cutile/generated_vectoradd.cu`, compiles with
+`nvcc -tilecubin --tile-only -std=c++20 -arch=sm_89` and disassembles to real sm_89 SASS
+(`REG:17 SHARED:0 CONSTANT[0]:412`, and a `BAR.SYNC.DEFER_BLOCKING` - the tile compiler expanded
+the single logical thread into multi-threaded code, which is the whole point of the model).
+The entry symbol is the unmangled `vectorAdd`, so `extern "C" __tile_global__` behaves.
+
+**So the remaining gap to a working tile kernel is the driver, and nothing else.**
+
+**Five traps cleared getting here. Do not rediscover them:**
+
+1. `receiver.get(true)` inserts a null-checking `PiNode`, so the receiver of `view.load(...)` is
+   never the partition node. `resolveTileNode` unwraps it. Without this every tile access fails
+   with "could not determine the tile type", which reads like an API misuse and is not.
+2. `TornadoTaskGraph.isArgumentIgnorable` demanded a transfer for the `TileContext`. It now sits
+   beside `KernelContext`, the only other host-side-only parameter.
+3. The driver reflects over a context object's fields to allocate its (unused) device buffer, so
+   `tornado-api` must `opens uk.ac.manchester.tornado.api.tile`, exactly as it already opens the
+   package holding `KernelContext`. Skipping the allocation outright would be better and would
+   help `KernelContext` too; it is not done here.
+4. `CUDAVariablePrefix` needs an entry per `CUDAKind`, or the assembler throws
+   "Unsupported type: tile_view" while naming variables.
+5. **The capability gate must check nvcc, not NVRTC.** It originally read
+   `CUDAProgram.getNvrtcVersion()`, which reports the *system* CUDA (12.6 here) and rejected
+   every tile kernel even with a perfectly good userspace nvcc 13.3 - that is, it rejected
+   exactly the setup section 2 recommends. It now calls `CUDATileCompiler.toolkitVersion()`.
+
+**Still to do in 3c**, and only reachable with a driver, so it is deliberately left for phase 2:
+`scheduler/CUDATileScheduler` (force local work to 1x1x1) and `graal/CUDATileInstalledCode`.
+The example pins `setLocalWork(1, 1, 1)` by hand instead, which is why it gets as far as it does.
+
 ## 6. PHASE 2 - for an agent on a box with driver R580+
 
 **Goal:** run a cuTile kernel inside a TornadoVM `TaskGraph` with *zero* TornadoVM code changes,
@@ -229,15 +309,24 @@ proving the load-and-launch path before any codegen exists.
 Why the driver: on driver 565 `cuModuleLoadData` of a CUDA-13 cubin returns
 `CUDA_ERROR_INVALID_IMAGE`. Compilation is unaffected, only loading.
 
+**Before anything else:** phase 3c already took a tile task from Java to a cubin on a box with
+driver 565, stopping only at `cuModuleLoadDataEx`. So on a box with R580+ your first job is not
+to build anything - it is to run the section 5b command and see how much of phase 2 is already
+done. Expect to need `CUDATileScheduler` and `CUDATileInstalledCode` (section 5b, last
+paragraph) before a task works without pinning `setLocalWork(1, 1, 1)` by hand.
+
 **Steps**
 
-1. Confirm the blocker is actually gone. Smallest possible check, before involving TornadoVM:
-   load `prototypes/cutile/tile_saxpy.cubin` with `cuModuleLoadData` and launch it with
-   `grid=(n/256,1,1)`, `block=(1,1,1)`, `sharedMemBytes=0`. A few lines of ctypes against
-   `libcuda.so` is enough. If this fails, stop - nothing downstream can work.
-2. Rebuild `tile_saxpy.cu` with the **real** payload offset, not 32: read
-   `TornadoNativeArray.ARRAY_HEADER` and the value of `-Dtornado.cuda.payloadAlignment` in this
-   tree and compute it. Getting this wrong produces wrong results, not an error.
+1. Confirm the blocker is actually gone, with the fastest possible check: run the example in
+   section 5b. If `cuModuleLoadDataEx failed: device kernel image is invalid` is gone, the
+   driver is new enough and **the tile path should run end to end immediately** - everything
+   before that line already works. If you want an even smaller check first, load
+   `prototypes/cutile/generated_vectoradd.cubin` (TornadoVM's own output, committed here) with
+   `cuModuleLoadData` and launch it with `grid=(16,1,1)`, `block=(1,1,1)`, `sharedMemBytes=0`;
+   a few lines of ctypes against `libcuda.so` is enough.
+2. The payload offset is `TornadoNativeArray.ARRAY_HEADER`, which is **16** in this tree (the
+   emitted source in section 5b shows `ul_0 + 16`). The plugin already reads the constant, so
+   nothing to change there; only the standalone `.cu` files in `prototypes/cutile` hardcode it.
 3. Register it as a prebuilt task. `TaskGraph.prebuiltTask(id, entryPoint, filename,
    AccessorParameters)` reaches `CUDATornadoDevice#compilePreBuiltTask` (:307), which reads any
    file's bytes and calls `installCode`. Entry point is `saxpy` (this is why `extern "C"`

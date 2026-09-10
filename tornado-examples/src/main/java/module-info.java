@@ -29,6 +29,7 @@ open module tornado.examples {
     exports uk.ac.manchester.tornado.examples.kernelcontext.compute;
     exports uk.ac.manchester.tornado.examples.kernelcontext.matrices;
     exports uk.ac.manchester.tornado.examples.kernelcontext.reductions;
+    exports uk.ac.manchester.tornado.examples.tile;
     exports uk.ac.manchester.tornado.examples.matrices;
     exports uk.ac.manchester.tornado.examples.reductions;
     exports uk.ac.manchester.tornado.examples.vectors;

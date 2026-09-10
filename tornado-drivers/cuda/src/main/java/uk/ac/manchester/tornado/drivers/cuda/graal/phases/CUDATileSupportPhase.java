@@ -33,7 +33,7 @@ import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceTileNotSupported;
 import uk.ac.manchester.tornado.api.tile.DType;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADevice;
-import uk.ac.manchester.tornado.drivers.cuda.CUDAProgram;
+import uk.ac.manchester.tornado.drivers.cuda.CUDATileCompiler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileMmaNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileViewNode;
@@ -50,9 +50,9 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileViewNode;
  *
  * <ul>
  * <li>compute capability 8.0 or newer, which is where CUDA Tile code generation starts;</li>
- * <li>toolkit 13.3 or newer, the first release with the CUDA Tile C++ surface. NVRTC stamps its
- * own version, so an older toolkit cannot express tile code at all, independent of the
- * device;</li>
+ * <li>toolkit 13.3 or newer, the first release with the CUDA Tile C++ surface. The version
+ * checked is the nvcc that would compile the kernel, not NVRTC: the tile path does not use
+ * NVRTC, so a system CUDA older than 13.3 with a userspace 13.3 nvcc is fine;</li>
  * <li>a driver new enough to load the result. That one cannot be checked here and is reported
  * by the loader, but the message below names it because it is the requirement people miss.</li>
  * </ul>
@@ -64,8 +64,8 @@ public class CUDATileSupportPhase extends Phase {
     private static final int TILE_MINOR_MIN = 0;
 
     /**
-     * CUDA Tile C++ ships in toolkit 13.3. Encoded as major * 1000 + minor to match
-     * {@link CUDAProgram#getNvrtcVersion()}.
+     * CUDA Tile C++ ships in toolkit 13.3. Encoded as major * 1000 + minor, the same encoding
+     * the rest of the backend uses for toolkit versions.
      */
     private static final int TILE_TOOLKIT_MIN = 13003;
 
@@ -121,10 +121,18 @@ public class CUDATileSupportPhase extends Phase {
                     + ". Rewrite this task with KernelContext to use the SIMT path instead.");
         }
 
-        int toolkit = CUDAProgram.getNvrtcVersion();
-        if (toolkit > 0 && toolkit < TILE_TOOLKIT_MIN) {
-            throw new TornadoDeviceTileNotSupported("CUDA Tile C++ requires CUDA Toolkit 13.3 or newer; this "
-                    + "installation reports " + (toolkit / 1000) + "." + (toolkit % 1000)
+        // The tile toolchain is nvcc, not NVRTC, so this asks nvcc. A system CUDA older than
+        // 13.3 alongside a userspace 13.3 nvcc is a perfectly workable setup, and gating on the
+        // NVRTC version would reject it.
+        int toolkit = CUDATileCompiler.toolkitVersion();
+        if (toolkit == 0) {
+            throw new TornadoDeviceTileNotSupported("No nvcc capable of compiling CUDA Tile C++ was found. Install "
+                    + "CUDA Toolkit 13.3 or newer, or point -Dtornado.cuda.nvcc at one; 'pip install --user "
+                    + "cuda-tile[tileiras]' installs a usable one without root.");
+        }
+        if (toolkit < TILE_TOOLKIT_MIN) {
+            throw new TornadoDeviceTileNotSupported("CUDA Tile C++ requires CUDA Toolkit 13.3 or newer, but the nvcc "
+                    + "selected for the tile path reports " + (toolkit / 1000) + "." + (toolkit % 1000)
                     + ". Loading a tile kernel additionally needs driver R580 or newer.");
         }
     }

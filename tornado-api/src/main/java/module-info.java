@@ -30,6 +30,11 @@ module tornado.api {
     exports uk.ac.manchester.tornado.api.utils;
 
     opens uk.ac.manchester.tornado.api;
+    // Opened for the same reason as the package above: the driver reflects over a context
+    // object's fields when it allocates its (unused) device buffer, exactly as it does for
+    // KernelContext. Skipping the allocation outright would be better, but that would change
+    // KernelContext's behaviour too.
+    opens uk.ac.manchester.tornado.api.tile;
     exports uk.ac.manchester.tornado.api.math;
     exports uk.ac.manchester.tornado.api.types.arrays;
     opens uk.ac.manchester.tornado.api.types.arrays;
