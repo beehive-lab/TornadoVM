@@ -14,6 +14,11 @@ name: 5 - Publish SDKMAN [auto]
 # step checks this before calling the SDKMAN action, since otherwise a
 # mismatch anywhere in the naming chain would fail silently (SDKMAN would
 # just record a 404 URL).
+#
+# Once every matrix leg (and the default-version job) succeeds, this
+# dispatches beehive-lab/tornadovm-site directly (see the notify-site job)
+# so the Downloads page rebuilds — replaces the old notify-site-of-release.yml,
+# whose workflow_run listener on this workflow's completion never fired.
 
 on:
   release:
@@ -209,3 +214,33 @@ jobs:
             "${SDKMAN_ENDPOINT}"
 
           echo "✅ SDKMAN default version set to ${DEFAULT_VERSION}"
+
+  notify-site:
+    name: Notify site to rebuild
+    runs-on: ubuntu-latest
+    needs: [ publish-to-sdkman, set-sdkman-default ]
+
+    # Dispatched explicitly here, not via workflow_run on this workflow's
+    # completion — that pattern was already tried once for this exact
+    # pipeline (see deploy-maven-central.yml's header) and confirmed to
+    # never actually fire, so every job downstream of another job now
+    # dispatches its successor directly instead of relying on workflow_run.
+    #
+    # always() bypasses the implicit "skip if a dependency was skipped"
+    # behaviour so the explicit result checks below are what decide whether
+    # this runs — set-sdkman-default itself only runs for a real `release`
+    # event or a manual publish=true dry run, so a plain verify-only dry run
+    # (publish=false) correctly never reaches the site.
+    if: >
+      always() &&
+      github.repository == 'beehive-lab/TornadoVM' &&
+      needs.publish-to-sdkman.result == 'success' &&
+      needs.set-sdkman-default.result == 'success'
+
+    steps:
+      - name: Dispatch to beehive-lab/tornadovm-site
+        env:
+          GH_TOKEN: ${{ secrets.SITE_DISPATCH_TOKEN }}
+        run: |
+          gh api repos/beehive-lab/tornadovm-site/dispatches \
+            -f event_type=tornadovm-release
