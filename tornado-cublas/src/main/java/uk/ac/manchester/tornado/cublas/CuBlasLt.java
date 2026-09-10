@@ -128,4 +128,54 @@ public final class CuBlasLt {
                 .withParameters(new Object[] { transa, transb, m, n, k, alpha, matrixA, lda, matrixB, ldb, beta, matrixC, ldc, bias }) //
                 .withAccess(readOnlyExcept(14, 11, beta));
     }
+
+    /**
+     * FP16 matmul with a fused ReLU: C = ReLU(alpha * op(A) * op(B) + beta * C).
+     *
+     * <p>The activation is applied by the cuBLASLt epilogue, so no separate pass over C is
+     * needed. Use {@link #ltMatmulReluBiasFP16} when a bias is also wanted.</p>
+     */
+    public static LibraryTaskDescriptor ltMatmulReluFP16(int transa, int transb, int m, int n, int k, //
+            float alpha, HalfFloatArray matrixA, int lda, HalfFloatArray matrixB, int ldb, //
+            float beta, HalfFloatArray matrixC, int ldc) {
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("ltMatmulReluFP16") //
+                .withParameters(new Object[] { transa, transb, m, n, k, alpha, matrixA, lda, matrixB, ldb, beta, matrixC, ldc }) //
+                .withAccess(readOnlyExcept(13, 11, beta));
+    }
+
+    /**
+     * FP16 matmul with a fused GELU (tanh approximation):
+     * C = GELU(alpha * op(A) * op(B) + beta * C).
+     *
+     * <p>The bias-free counterpart of {@link #ltMatmulGeluBiasFP16}.</p>
+     */
+    public static LibraryTaskDescriptor ltMatmulGeluFP16(int transa, int transb, int m, int n, int k, //
+            float alpha, HalfFloatArray matrixA, int lda, HalfFloatArray matrixB, int ldb, //
+            float beta, HalfFloatArray matrixC, int ldc) {
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("ltMatmulGeluFP16") //
+                .withParameters(new Object[] { transa, transb, m, n, k, alpha, matrixA, lda, matrixB, ldb, beta, matrixC, ldc }) //
+                .withAccess(readOnlyExcept(13, 11, beta));
+    }
+
+    /**
+     * FP16 matmul with fused bias add and ReLU:
+     * C = ReLU(alpha * op(A) * op(B) + beta * C + bias).
+     *
+     * <p>The bias is a length-{@code m} vector broadcast over the rows of the column-major
+     * result, matching {@link #ltMatmulBiasFP16}. The ReLU counterpart of
+     * {@link #ltMatmulGeluBiasFP16}.</p>
+     */
+    public static LibraryTaskDescriptor ltMatmulReluBiasFP16(int transa, int transb, int m, int n, int k, //
+            float alpha, HalfFloatArray matrixA, int lda, HalfFloatArray matrixB, int ldb, //
+            float beta, HalfFloatArray matrixC, int ldc, HalfFloatArray bias) {
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("ltMatmulReluBiasFP16") //
+                .withParameters(new Object[] { transa, transb, m, n, k, alpha, matrixA, lda, matrixB, ldb, beta, matrixC, ldc, bias }) //
+                .withAccess(readOnlyExcept(14, 11, beta));
+    }
 }
