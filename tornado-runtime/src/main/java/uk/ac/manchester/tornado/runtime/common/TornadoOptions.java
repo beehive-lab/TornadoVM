@@ -79,6 +79,13 @@ public class TornadoOptions {
     public static final boolean TORNADO_LOOP_INTERCHANGE = getBooleanValue("tornado.loop.interchange", "True");
 
     /**
+     * Option to batch the global loads of a shared-memory staging sequence in the CUDA
+     * backend, so that independent loads issue back to back instead of one per shared
+     * store. Only reorders across provably disjoint address spaces.
+     */
+    public static final boolean CUDA_BATCH_GLOBAL_LOADS = getBooleanValue("tornado.cuda.batchGlobalLoads", "True");
+
+    /**
      * Enable thread deployment debugging from the TornadoVM runtime and code dispatcher.
      */
     public static final boolean THREAD_INFO = getBooleanValue("tornado.threadInfo", FALSE);

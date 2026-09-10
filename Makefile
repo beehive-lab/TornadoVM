@@ -96,6 +96,12 @@ checkstyle:
 test-reflection:
 	./mvnw -P$(JDK_PROFILE) -pl tornado-api,tornado-runtime -am clean test -DskipTests=false
 
+# No-GPU tests for the CUDA code generator (tornado-drivers/cuda/src/test): they build LIR by hand,
+# so they need no device. `-am` is required -- tornado-drivers-cuda resolves tornado-drivers-common
+# from the reactor, not the local repository.
+test-cuda-codegen:
+	./mvnw -P$(JDK_PROFILE),cuda-backend -Dtornado.backend=cuda -pl tornado-drivers/cuda -am test -DskipTests=false
+
 # Only the reflection JVMCI-layer suites (uk.ac.manchester.tornado.runtime.jvmci.reflection.*Test) —
 # the standalone metadata API, a subset of what test-reflection runs. Same JDK override and
 # clean+-am rationale as test-reflection.

@@ -58,6 +58,7 @@ import jdk.vm.ci.code.Register;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.backend.CUDAPreamble;
@@ -306,7 +307,11 @@ public class CUDACompilationResultBuilder extends CompilationResultBuilder {
         LIRInstruction breakInst = null;
 
         boolean relocatableInstruction = false;
-        for (LIRInstruction op : lir.getLIRforBlock(block)) {
+        List<LIRInstruction> instructions = lir.getLIRforBlock(block);
+        if (TornadoOptions.CUDA_BATCH_GLOBAL_LOADS) {
+            instructions = CUDAGlobalLoadBatching.reorder(instructions);
+        }
+        for (LIRInstruction op : instructions) {
             if (op instanceof CUDALIRStmt.MarkRelocateInstruction) {
                 relocatableInstruction = true;
             }
