@@ -60,8 +60,15 @@ final class CuBlasNativeLib {
     private static final MethodHandle CUBLAS_SET_STREAM;
     private static final MethodHandle CUBLAS_SET_MATH_MODE;
     private static final MethodHandle CUBLAS_SET_WORKSPACE;
+    private static final MethodHandle CUBLAS_SET_POINTER_MODE;
+    private static final MethodHandle CUBLAS_SDOT;
+    private static final MethodHandle CUBLAS_SNRM2;
+    private static final MethodHandle CUBLAS_SASUM;
+    private static final MethodHandle CUBLAS_ISAMAX;
+    private static final MethodHandle CUBLAS_ISAMIN;
     private static final MethodHandle CUBLAS_SGEMV;
     private static final MethodHandle CUBLAS_SGEMM;
+    private static final MethodHandle CUBLAS_DGEMM;
     private static final MethodHandle CUBLAS_SGEMM_STRIDED_BATCHED;
     private static final MethodHandle CUBLAS_GEMM_EX;
     private static final MethodHandle CUDA_MALLOC;
@@ -74,8 +81,15 @@ final class CuBlasNativeLib {
             CUBLAS_SET_STREAM = null;
             CUBLAS_SET_MATH_MODE = null;
             CUBLAS_SET_WORKSPACE = null;
+            CUBLAS_SET_POINTER_MODE = null;
+            CUBLAS_SDOT = null;
+            CUBLAS_SNRM2 = null;
+            CUBLAS_SASUM = null;
+            CUBLAS_ISAMAX = null;
+            CUBLAS_ISAMIN = null;
             CUBLAS_SGEMV = null;
             CUBLAS_SGEMM = null;
+            CUBLAS_DGEMM = null;
             CUBLAS_SGEMM_STRIDED_BATCHED = null;
             CUBLAS_GEMM_EX = null;
         } else {
@@ -86,10 +100,23 @@ final class CuBlasNativeLib {
             CUBLAS_SET_STREAM = FFMSupport.downcall(LIBCUBLAS, FunctionDescriptor.of(C_INT, C_LONG, C_LONG), "cublasSetStream_v2");
             CUBLAS_SET_MATH_MODE = FFMSupport.downcall(LIBCUBLAS, FunctionDescriptor.of(C_INT, C_LONG, C_INT), "cublasSetMathMode");
             CUBLAS_SET_WORKSPACE = FFMSupport.downcall(LIBCUBLAS, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_LONG), "cublasSetWorkspace_v2");
+            CUBLAS_SET_POINTER_MODE = FFMSupport.downcall(LIBCUBLAS, FunctionDescriptor.of(C_INT, C_LONG, C_INT), "cublasSetPointerMode_v2");
+            // The scalar-output level-1 routines write their result through a pointer. Under
+            // CUBLAS_POINTER_MODE_DEVICE that pointer is device memory, so the result stays on the
+            // GPU and cuBLAS does not have to synchronise the stream to deliver it.
+            CUBLAS_SDOT = FFMSupport.downcall(LIBCUBLAS, FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_LONG, C_INT, C_LONG, C_INT, C_LONG), "cublasSdot_v2");
+            CUBLAS_SNRM2 = FFMSupport.downcall(LIBCUBLAS, FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_LONG, C_INT, C_LONG), "cublasSnrm2_v2");
+            CUBLAS_SASUM = FFMSupport.downcall(LIBCUBLAS, FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_LONG, C_INT, C_LONG), "cublasSasum_v2");
+            // The index-returning routines write an int rather than a float, but are otherwise the
+            // same shape and have the same host-pointer-mode synchronisation problem.
+            CUBLAS_ISAMAX = FFMSupport.downcall(LIBCUBLAS, FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_LONG, C_INT, C_LONG), "cublasIsamax_v2");
+            CUBLAS_ISAMIN = FFMSupport.downcall(LIBCUBLAS, FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_LONG, C_INT, C_LONG), "cublasIsamin_v2");
             CUBLAS_SGEMV = FFMSupport.downcall(LIBCUBLAS, FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_INT, C_INT, C_POINTER, C_LONG, C_INT, C_LONG, C_INT, C_POINTER, C_LONG, C_INT),
                     "cublasSgemv_v2");
             CUBLAS_SGEMM = FFMSupport.downcall(LIBCUBLAS,
                     FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_INT, C_INT, C_INT, C_INT, C_POINTER, C_LONG, C_INT, C_LONG, C_INT, C_POINTER, C_LONG, C_INT), "cublasSgemm_v2");
+            CUBLAS_DGEMM = FFMSupport.downcall(LIBCUBLAS,
+                    FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_INT, C_INT, C_INT, C_INT, C_POINTER, C_LONG, C_INT, C_LONG, C_INT, C_POINTER, C_LONG, C_INT), "cublasDgemm_v2");
             CUBLAS_SGEMM_STRIDED_BATCHED = FFMSupport.downcall(LIBCUBLAS,
                     FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_INT, C_INT, C_INT, C_INT, C_POINTER, C_LONG, C_INT, C_LONG, C_LONG, C_INT, C_LONG, C_POINTER, C_LONG, C_INT, C_LONG, C_INT),
                     "cublasSgemmStridedBatched");
@@ -134,6 +161,14 @@ final class CuBlasNativeLib {
         MemorySegment segment = SCALARS.forBytes(2L * Float.BYTES);
         segment.set(FFMSupport.C_FLOAT, 0, alpha);
         segment.set(FFMSupport.C_FLOAT, Float.BYTES, beta);
+        return segment;
+    }
+
+    /** Writes a double alpha and beta into the per-thread scalar scratch and returns it. */
+    private static MemorySegment scalars(double alpha, double beta) {
+        MemorySegment segment = SCALARS.forBytes(2L * Double.BYTES);
+        segment.set(FFMSupport.C_DOUBLE, 0, alpha);
+        segment.set(FFMSupport.C_DOUBLE, Double.BYTES, beta);
         return segment;
     }
 
@@ -211,6 +246,84 @@ final class CuBlasNativeLib {
         }
     }
 
+    /** {@code cublasPointerMode_t}. */
+    private static final int CUBLAS_POINTER_MODE_HOST = 0;
+    private static final int CUBLAS_POINTER_MODE_DEVICE = 1;
+
+    private static int setPointerMode(long handle, int mode) {
+        try {
+            return (int) CUBLAS_SET_POINTER_MODE.invokeExact(handle, mode);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    /**
+     * Runs a scalar-output level-1 routine with the handle in device pointer mode, restoring host
+     * mode afterwards because the handle is shared by every call of the execution plan.
+     */
+    private static int inDevicePointerMode(long handle, java.util.function.LongToIntFunction body) {
+        int status = setPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
+        if (status != CUBLAS_STATUS_SUCCESS) {
+            return status;
+        }
+        try {
+            return body.applyAsInt(handle);
+        } finally {
+            setPointerMode(handle, CUBLAS_POINTER_MODE_HOST);
+        }
+    }
+
+    static int cublasSdot(long handle, int n, long dX, int incx, long dY, int incy, long dResult) {
+        return inDevicePointerMode(handle, h -> {
+            try {
+                return (int) CUBLAS_SDOT.invokeExact(h, n, dX, incx, dY, incy, dResult);
+            } catch (Throwable t) {
+                throw rethrow(t);
+            }
+        });
+    }
+
+    static int cublasSnrm2(long handle, int n, long dX, int incx, long dResult) {
+        return inDevicePointerMode(handle, h -> {
+            try {
+                return (int) CUBLAS_SNRM2.invokeExact(h, n, dX, incx, dResult);
+            } catch (Throwable t) {
+                throw rethrow(t);
+            }
+        });
+    }
+
+    static int cublasSasum(long handle, int n, long dX, int incx, long dResult) {
+        return inDevicePointerMode(handle, h -> {
+            try {
+                return (int) CUBLAS_SASUM.invokeExact(h, n, dX, incx, dResult);
+            } catch (Throwable t) {
+                throw rethrow(t);
+            }
+        });
+    }
+
+    static int cublasIsamax(long handle, int n, long dX, int incx, long dResult) {
+        return inDevicePointerMode(handle, h -> {
+            try {
+                return (int) CUBLAS_ISAMAX.invokeExact(h, n, dX, incx, dResult);
+            } catch (Throwable t) {
+                throw rethrow(t);
+            }
+        });
+    }
+
+    static int cublasIsamin(long handle, int n, long dX, int incx, long dResult) {
+        return inDevicePointerMode(handle, h -> {
+            try {
+                return (int) CUBLAS_ISAMIN.invokeExact(h, n, dX, incx, dResult);
+            } catch (Throwable t) {
+                throw rethrow(t);
+            }
+        });
+    }
+
     static int cublasSgemv(long handle, int trans, int m, int n, float alpha, long dA, int lda, long dX, int incx, float beta, long dY, int incy) {
         MemorySegment scalars = scalars(alpha, beta);
         try {
@@ -224,6 +337,15 @@ final class CuBlasNativeLib {
         MemorySegment scalars = scalars(alpha, beta);
         try {
             return (int) CUBLAS_SGEMM.invokeExact(handle, transa, transb, m, n, k, scalars.asSlice(0, Float.BYTES), dA, lda, dB, ldb, scalars.asSlice(Float.BYTES, Float.BYTES), dC, ldc);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    static int cublasDgemm(long handle, int transa, int transb, int m, int n, int k, double alpha, long dA, int lda, long dB, int ldb, double beta, long dC, int ldc) {
+        MemorySegment scalars = scalars(alpha, beta);
+        try {
+            return (int) CUBLAS_DGEMM.invokeExact(handle, transa, transb, m, n, k, scalars.asSlice(0, Double.BYTES), dA, lda, dB, ldb, scalars.asSlice(Double.BYTES, Double.BYTES), dC, ldc);
         } catch (Throwable t) {
             throw rethrow(t);
         }

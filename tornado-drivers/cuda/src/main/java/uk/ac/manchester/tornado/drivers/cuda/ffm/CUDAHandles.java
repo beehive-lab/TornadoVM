@@ -92,7 +92,65 @@ public final class CUDAHandles {
      * {@code properties} carries the OpenCL-style queue property bits the Java layer created it
      * with, which is what tells the profiler whether the queue was asked to time its operations.
      */
-    public record Queue(long stream, long context, int device, long properties) {
+    /**
+     * A command queue: a CUDA stream plus the context it belongs to.
+     *
+     * <p>
+     * Not a record, because it carries one piece of mutable state. {@code pending} says whether
+     * anything has been enqueued on the stream since it was last drained, so that a
+     * {@code cuStreamSynchronize} against a stream that is already empty can be skipped. A task
+     * graph ends with a blocking read-back, a flush and a wait, and the last two synchronise a
+     * stream that the read-back already drained.
+     *
+     * <p>
+     * It is {@code volatile} rather than an {@code AtomicBoolean} because the transitions are a
+     * plain set and a plain clear -- there is no read-modify-write to lose -- and every write is a
+     * conservative "assume work is outstanding".
+     */
+    public static final class Queue {
+
+        private final long stream;
+        private final long context;
+        private final int device;
+        private final long properties;
+        private volatile boolean pending;
+
+        public Queue(long stream, long context, int device, long properties) {
+            this.stream = stream;
+            this.context = context;
+            this.device = device;
+            this.properties = properties;
+        }
+
+        public long stream() {
+            return stream;
+        }
+
+        public long context() {
+            return context;
+        }
+
+        public int device() {
+            return device;
+        }
+
+        public long properties() {
+            return properties;
+        }
+
+        /** Records that work may now be outstanding on the stream. Always safe to call. */
+        public void markPending() {
+            pending = true;
+        }
+
+        /** Records that the stream has been drained. Only ever called after a successful sync. */
+        public void clearPending() {
+            pending = false;
+        }
+
+        public boolean isPending() {
+            return pending;
+        }
     }
 
     /**

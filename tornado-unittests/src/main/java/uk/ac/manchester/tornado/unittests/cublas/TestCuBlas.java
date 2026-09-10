@@ -32,7 +32,9 @@ import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.cublas.CuBlas;
 import uk.ac.manchester.tornado.cublas.CuBlasOptions;
@@ -579,6 +581,335 @@ public class TestCuBlas extends TornadoTestBase {
     public static void scaleByTwo(FloatArray input, FloatArray output) {
         for (@Parallel int i = 0; i < input.getSize(); i++) {
             output.set(i, 2.0f * input.get(i));
+        }
+    }
+
+    // ---- FP64 ----
+
+    /** C = A * B in FP64, validated against a double-precision CPU reference. */
+    @Test
+    public void testDgemm() throws TornadoExecutionPlanException {
+        final int size = 128;
+        DoubleArray matrixA = new DoubleArray(size * size);
+        DoubleArray matrixB = new DoubleArray(size * size);
+        DoubleArray matrixC = new DoubleArray(size * size);
+        for (int i = 0; i < size * size; i++) {
+            matrixA.set(i, random.nextDouble() - 0.5);
+            matrixB.set(i, random.nextDouble() - 0.5);
+        }
+
+        // Column-major cuBLAS: row-major C = A * B is C_cm = B_cm * A_cm.
+        TaskGraph taskGraph = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, matrixA, matrixB) //
+                .libraryTask("dgemm", CuBlas::cublasDgemm, //
+                        CuBlasOperation.CUBLAS_OP_N.operation(), CuBlasOperation.CUBLAS_OP_N.operation(), //
+                        size, size, size, 1.0, matrixB, size, matrixA, size, 0.0, matrixC, size) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixC);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.execute();
+        }
+
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                double sum = 0.0;
+                for (int p = 0; p < size; p++) {
+                    sum += matrixA.get(i * size + p) * matrixB.get(p * size + j);
+                }
+                assertEquals(sum, matrixC.get(i * size + j), 1e-10 * Math.max(1.0, Math.abs(sum)));
+            }
+        }
+    }
+
+    // ---- scalar-output level-1 routines (device pointer mode) ----
+
+    /** Scales every element by the value a preceding library task left on the device. */
+    public static void scaleByDeviceScalar(FloatArray data, FloatArray scalar) {
+        for (@Parallel int i = 0; i < data.getSize(); i++) {
+            data.set(i, data.get(i) * scalar.get(0));
+        }
+    }
+
+    @Test
+    public void testSdot() throws TornadoExecutionPlanException {
+        final int n = 1024;
+        FloatArray x = randomArray(n);
+        FloatArray y = randomArray(n);
+        FloatArray result = new FloatArray(1);
+
+        TaskGraph g = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, y) //
+                .libraryTask("dot", CuBlas::cublasSdot, n, x, 1, y, 1, result) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(g.snapshot())) {
+            plan.execute();
+        }
+
+        float expected = 0.0f;
+        for (int i = 0; i < n; i++) {
+            expected += x.get(i) * y.get(i);
+        }
+        assertEquals(expected, result.get(0), 1e-3f * Math.max(1.0f, Math.abs(expected)));
+    }
+
+    @Test
+    public void testSnrm2() throws TornadoExecutionPlanException {
+        final int n = 1024;
+        FloatArray x = randomArray(n);
+        FloatArray result = new FloatArray(1);
+
+        TaskGraph g = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
+                .libraryTask("nrm2", CuBlas::cublasSnrm2, n, x, 1, result) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(g.snapshot())) {
+            plan.execute();
+        }
+
+        double sum = 0.0;
+        for (int i = 0; i < n; i++) {
+            sum += (double) x.get(i) * x.get(i);
+        }
+        float expected = (float) Math.sqrt(sum);
+        assertEquals(expected, result.get(0), 1e-3f * Math.max(1.0f, Math.abs(expected)));
+    }
+
+    @Test
+    public void testSasum() throws TornadoExecutionPlanException {
+        final int n = 1024;
+        FloatArray x = randomArray(n);
+        FloatArray result = new FloatArray(1);
+
+        TaskGraph g = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
+                .libraryTask("asum", CuBlas::cublasSasum, n, x, 1, result) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(g.snapshot())) {
+            plan.execute();
+        }
+
+        double expected = 0.0;
+        for (int i = 0; i < n; i++) {
+            expected += Math.abs(x.get(i));
+        }
+        assertEquals((float) expected, result.get(0), 1e-3f * Math.max(1.0f, Math.abs((float) expected)));
+    }
+
+    /**
+     * The result never leaves the device: a JIT task consumes it directly. In the default host
+     * pointer mode this composition is not expressible, because the value would have to come back
+     * to the host before it could be used as a kernel argument.
+     */
+    @Test
+    public void testNrm2ResultFeedsJitTaskOnDevice() throws TornadoExecutionPlanException {
+        final int n = 512;
+        FloatArray x = randomArray(n);
+        FloatArray data = randomArray(n);
+        FloatArray norm = new FloatArray(1);
+
+        float[] dataOriginal = new float[n];
+        for (int i = 0; i < n; i++) {
+            dataOriginal[i] = data.get(i);
+        }
+
+        TaskGraph g = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, data) //
+                .libraryTask("nrm2", CuBlas::cublasSnrm2, n, x, 1, norm) //
+                .task("scale", TestCuBlas::scaleByDeviceScalar, data, norm) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(g.snapshot())) {
+            plan.execute();
+        }
+
+        double sum = 0.0;
+        for (int i = 0; i < n; i++) {
+            sum += (double) x.get(i) * x.get(i);
+        }
+        float expectedNorm = (float) Math.sqrt(sum);
+        for (int i = 0; i < n; i++) {
+            float expected = dataOriginal[i] * expectedNorm;
+            assertEquals(expected, data.get(i), 1e-3f * Math.max(1.0f, Math.abs(expected)));
+        }
+    }
+
+    /**
+     * beta != 0 makes C an input as well as an output. This is the case that fails if the
+     * output is marked WRITE_ONLY, because its prior device contents would not be kept live.
+     */
+    @Test
+    public void testDgemmBetaReadsC() throws TornadoExecutionPlanException {
+        final int size = 64;
+        final double alpha = 1.0;
+        final double beta = 2.0;
+        DoubleArray matrixA = new DoubleArray(size * size);
+        DoubleArray matrixB = new DoubleArray(size * size);
+        DoubleArray matrixC = new DoubleArray(size * size);
+        double[] priorC = new double[size * size];
+        for (int i = 0; i < size * size; i++) {
+            matrixA.set(i, random.nextDouble() - 0.5);
+            matrixB.set(i, random.nextDouble() - 0.5);
+            double c = random.nextDouble() - 0.5;
+            matrixC.set(i, c);
+            priorC[i] = c;
+        }
+
+        TaskGraph taskGraph = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, matrixA, matrixB, matrixC) //
+                .libraryTask("dgemm", CuBlas::cublasDgemm, //
+                        CuBlasOperation.CUBLAS_OP_N.operation(), CuBlasOperation.CUBLAS_OP_N.operation(), //
+                        size, size, size, alpha, matrixB, size, matrixA, size, beta, matrixC, size) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixC);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.execute();
+        }
+
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                double sum = 0.0;
+                for (int p = 0; p < size; p++) {
+                    sum += matrixA.get(i * size + p) * matrixB.get(p * size + j);
+                }
+                double expected = alpha * sum + beta * priorC[i * size + j];
+                assertEquals(expected, matrixC.get(i * size + j), 1e-10 * Math.max(1.0, Math.abs(expected)));
+            }
+        }
+    }
+
+    /**
+     * FP64 must actually be double precision. The product below is exact in FP64 and not
+     * representable in FP32, so an accidental single-precision path fails here.
+     */
+    @Test
+    public void testDgemmIsTrulyDoublePrecision() throws TornadoExecutionPlanException {
+        final int size = 32;
+        // 1 + 2^-30 is representable in FP64 and rounds to exactly 1.0f in FP32.
+        final double epsilon = Math.pow(2.0, -30);
+        DoubleArray matrixA = new DoubleArray(size * size);
+        DoubleArray matrixB = new DoubleArray(size * size);
+        DoubleArray matrixC = new DoubleArray(size * size);
+        for (int i = 0; i < size * size; i++) {
+            matrixA.set(i, 0.0);
+            matrixB.set(i, 0.0);
+        }
+        for (int i = 0; i < size; i++) {
+            matrixA.set(i * size + i, 1.0 + epsilon); // diagonal
+            matrixB.set(i * size + i, 1.0);
+        }
+
+        TaskGraph taskGraph = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, matrixA, matrixB) //
+                .libraryTask("dgemm", CuBlas::cublasDgemm, //
+                        CuBlasOperation.CUBLAS_OP_N.operation(), CuBlasOperation.CUBLAS_OP_N.operation(), //
+                        size, size, size, 1.0, matrixB, size, matrixA, size, 0.0, matrixC, size) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixC);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.execute();
+        }
+
+        for (int i = 0; i < size; i++) {
+            double got = matrixC.get(i * size + i);
+            assertEquals(1.0 + epsilon, got, 0.0); // exact: FP32 would give 1.0
+        }
+    }
+
+    /**
+     * Captured into a CUDA Graph and replayed. Under the default host pointer mode cuBLAS would
+     * have to synchronise the stream to deliver the scalar, which is illegal inside a capture
+     * region, so this composition only works because the result is device-resident.
+     */
+    @Test
+    public void testSdotUnderCudaGraph() throws TornadoExecutionPlanException {
+        final int n = 1024;
+        FloatArray x = randomArray(n);
+        FloatArray y = randomArray(n);
+        FloatArray result = new FloatArray(1);
+
+        float expected = 0.0f;
+        for (int i = 0; i < n; i++) {
+            expected += x.get(i) * y.get(i);
+        }
+
+        TaskGraph g = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, x, y) //
+                .libraryTask("dot", CuBlas::cublasSdot, n, x, 1, y, 1, result) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(g.snapshot())) {
+            plan.withCUDAGraph();
+            for (int it = 0; it < 5; it++) {
+                plan.execute();
+                assertEquals(expected, result.get(0), 1e-3f * Math.max(1.0f, Math.abs(expected)));
+            }
+        }
+    }
+
+    /**
+     * cuBLAS returns a 1-based index, following the BLAS convention. A planted maximum at a known
+     * position pins that down: an off-by-one in the binding would show here rather than in a
+     * random-data test where any plausible index looks right.
+     */
+    @Test
+    public void testIsamaxReturnsOneBasedIndex() throws TornadoExecutionPlanException {
+        final int n = 512;
+        final int peakAt = 300; // Java index
+        FloatArray x = new FloatArray(n);
+        for (int i = 0; i < n; i++) {
+            x.set(i, 0.5f);
+        }
+        x.set(peakAt, -42.0f); // largest by absolute value, and negative on purpose
+        IntArray result = new IntArray(1);
+
+        TaskGraph g = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
+                .libraryTask("amax", CuBlas::cublasIsamax, n, x, 1, result) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(g.snapshot())) {
+            plan.execute();
+        }
+        assertEquals(peakAt + 1, result.get(0));
+    }
+
+    @Test
+    public void testIsaminReturnsOneBasedIndex() throws TornadoExecutionPlanException {
+        final int n = 512;
+        final int troughAt = 117;
+        FloatArray x = new FloatArray(n);
+        for (int i = 0; i < n; i++) {
+            x.set(i, 5.0f);
+        }
+        x.set(troughAt, 0.001f);
+        IntArray result = new IntArray(1);
+
+        TaskGraph g = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
+                .libraryTask("amin", CuBlas::cublasIsamin, n, x, 1, result) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(g.snapshot())) {
+            plan.execute();
+        }
+        assertEquals(troughAt + 1, result.get(0));
+    }
+
+    /** The int result is device-resident too, so it survives CUDA Graph capture and replay. */
+    @Test
+    public void testIsamaxUnderCudaGraph() throws TornadoExecutionPlanException {
+        final int n = 256;
+        final int peakAt = 200;
+        FloatArray x = new FloatArray(n);
+        for (int i = 0; i < n; i++) {
+            x.set(i, 1.0f);
+        }
+        x.set(peakAt, 99.0f);
+        IntArray result = new IntArray(1);
+
+        TaskGraph g = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, x) //
+                .libraryTask("amax", CuBlas::cublasIsamax, n, x, 1, result) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(g.snapshot())) {
+            plan.withCUDAGraph();
+            for (int it = 0; it < 5; it++) {
+                plan.execute();
+                assertEquals(peakAt + 1, result.get(0));
+            }
         }
     }
 }
