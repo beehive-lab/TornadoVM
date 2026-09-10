@@ -269,19 +269,6 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
         try {
             CUDAProviders providers = (CUDAProviders) getBackend().getProviders();
             TornadoProfiler profiler = task.getProfiler();
-
-            // The front end depends only on the sketch, the device and the task's compilation
-            // shape, none of which are tied to an execution plan. Reuse its result when an
-            // earlier plan on this device already produced it, so a new plan pays only the
-            // install step below.
-            //
-            // This deliberately does not consult shouldCompile(). The interpreter calls
-            // forceCompilation() unconditionally for the last task of every graph, so honouring
-            // it would disable this cache for any single-task graph. The states that genuinely
-            // invalidate generated code - a change of batch threads, and a batch that consumes
-            // the thread id - are both a function of the batch configuration, which
-            // compilationCacheKey() includes; updateBatchThreads() has already run by the time
-            // this executes, so the key reflects the batch about to be compiled.
             final String compilationKey = TornadoOptions.SHARE_COMPILATION_ACROSS_PLANS ? compilationCacheKey(executable, resolvedMethod) : null;
             CUDACompiledKernel compiledKernel = compilationKey != null ? deviceContext.getCompiledKernel(compilationKey) : null;
             profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
