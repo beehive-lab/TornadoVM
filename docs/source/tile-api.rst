@@ -204,8 +204,42 @@ Verifying and profiling
     # the unit tests
     tornado-test -V uk.ac.manchester.tornado.unittests.tile.TestTileMatmul
 
-Profile the JVM directly rather than the launcher: ``nsys profile $(which tornado) ...`` produces a
-report with no GPU rows, because the launcher execs a child JVM the injection does not follow.
-``prototypes/cutile/nsys-profile.sh`` generates a Java ``@argfile`` from ``tornado
---printJavaFlags`` and profiles that; it drops the leading ``java`` binary and inlines the nested
-``@.../exportLists/...`` files, because Java does not expand an argfile recursively.
+Profiling
+=========
+
+Profile the JVM directly rather than the launcher. ``nsys profile $(which tornado) ...`` produces a
+report with **no GPU rows**, because the launcher execs a child JVM that the injection does not
+follow. Build a Java ``@argfile`` from ``tornado --printJavaFlags`` and profile that instead. Two
+details are required, or ``java @argfile`` fails immediately:
+
+* drop the leading ``java`` binary, or it is taken as the main class;
+* inline the nested ``@.../exportLists/...`` files, because Java does not expand an ``@argfile``
+  recursively and passes the reference through as a literal argument.
+
+.. code-block:: bash
+
+    tornado --printJavaFlags > flags.raw
+    python3 - flags.raw > tornadovm.args <<'EOF'
+    import sys
+    out = []
+    for token in open(sys.argv[1]).read().split():
+        if token.endswith("/bin/java"):
+            continue
+        if token.startswith("@"):                  # Java will not expand this itself
+            out.extend(open(token[1:]).read().split())
+            continue
+        out.append(token)
+    if "-m" in out:                                # drop a trailing -m <module/Main>
+        out = out[:out.index("-m")]
+    print("\n".join(out))
+    EOF
+
+    nsys profile --trace=cuda,nvtx --cuda-graph-trace=node -o tilechain \
+        java @tornadovm.args \
+        -m tornado.unittests/uk.ac.manchester.tornado.unittests.tile.TileChainBenchmark 2000
+
+    nsys stats --report cuda_gpu_kern_sum --report cuda_gpu_mem_time_sum tilechain.nsys-rep
+
+``TileChainBenchmark`` also reports CUDA Graph capture against plain execution for the mixed
+pipeline, and verifies the result against a CPU reference afterwards, so a timing run doubles as a
+correctness check. Application arguments go after the main class, not in the argfile.
