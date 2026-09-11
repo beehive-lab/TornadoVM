@@ -30,10 +30,11 @@ module tornado.api {
     exports uk.ac.manchester.tornado.api.utils;
 
     opens uk.ac.manchester.tornado.api;
-    // Opened for the same reason as the package above: the driver reflects over a context
-    // object's fields when it allocates its (unused) device buffer, exactly as it does for
-    // KernelContext. Skipping the allocation outright would be better, but that would change
-    // KernelContext's behaviour too.
+    // Still required: marking TileContext host-only in the interpreter stops it consuming a
+    // kernel argument slot, but the ALLOC path builds its object list elsewhere and still
+    // creates a (never used) device buffer by reflecting over the context's fields - exactly as
+    // it already does for KernelContext. Skipping that allocation for host-only contexts would
+    // let this be dropped, and would help KernelContext too.
     opens uk.ac.manchester.tornado.api.tile;
     exports uk.ac.manchester.tornado.api.math;
     exports uk.ac.manchester.tornado.api.types.arrays;

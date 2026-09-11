@@ -32,12 +32,21 @@ import tornado.graal.compiler.lir.Variable;
 import tornado.graal.compiler.lir.gen.LIRGeneratorTool;
 import tornado.graal.compiler.nodeinfo.NodeInfo;
 import tornado.graal.compiler.nodes.FixedWithNextNode;
+import tornado.graal.compiler.nodes.PiNode;
 import tornado.graal.compiler.nodes.ValueNode;
 import tornado.graal.compiler.nodes.spi.LIRLowerable;
 import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.Set;
+
+import tornado.graal.compiler.graph.Node;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.tile.DType;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDATileStmt;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkArrayParameterAccess;
 
 /**
  * Wraps a device buffer in a partition view, the descriptor every tile load and store
@@ -45,7 +54,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDATileStmt;
  * CUDATileViewNode} produced by {@code view(...)}.
  */
 @NodeInfo
-public class CUDATilePartitionViewNode extends FixedWithNextNode implements LIRLowerable, CUDATileNode {
+public class CUDATilePartitionViewNode extends FixedWithNextNode implements LIRLowerable, CUDATileNode, MarkArrayParameterAccess {
 
     public static final NodeClass<CUDATilePartitionViewNode> TYPE = NodeClass.create(CUDATilePartitionViewNode.class);
 
@@ -78,6 +87,58 @@ public class CUDATilePartitionViewNode extends FixedWithNextNode implements LIRL
     @Override
     public String tileOperationName() {
         return "partition view";
+    }
+
+    /**
+     * Declares how this view's kernel parameter is accessed, which is what makes the result come
+     * back. The partition view is the only tile node that touches a kernel parameter directly:
+     * loads and stores address the view, not the buffer. Without this the sketch-time dataflow
+     * analysis sees a parameter handed to an unrecognised node, classifies it read-only, and
+     * TornadoVM emits no device-to-host transfer at all - the kernel computes the right answer
+     * on the device and the host reads zeros.
+     *
+     * <p>
+     * Pi wrappers are stripped on both sides: the buffer input is a PiNode around the parameter
+     * whenever a null check was inserted, and comparing a raw parameter against a wrapped input
+     * would report NONE.
+     * </p>
+     */
+    @Override
+    public Access getArrayParameterAccess(ValueNode parameter) {
+        if (MarkArrayParameterAccess.unwrapPi(parameter) != MarkArrayParameterAccess.unwrapPi(buffer)) {
+            return Access.NONE;
+        }
+        boolean read = false;
+        boolean written = false;
+        // Loads and stores do not consume this node directly: `av.load(...)` null-checks its
+        // receiver, so the access nodes consume a PiNode wrapping the view. Scanning only direct
+        // usages finds nothing, the parameter is reported read-only, and no device-to-host
+        // transfer is emitted. Follow Pi wrappers transitively.
+        Deque<Node> worklist = new ArrayDeque<>();
+        worklist.add(this);
+        Set<Node> seen = new HashSet<>();
+        while (!worklist.isEmpty()) {
+            Node current = worklist.removeFirst();
+            if (!seen.add(current)) {
+                continue;
+            }
+            for (Node usage : current.usages()) {
+                if (usage instanceof CUDATileStoreNode) {
+                    written = true;
+                } else if (usage instanceof CUDATileLoadNode) {
+                    read = true;
+                } else if (usage instanceof PiNode) {
+                    worklist.add(usage);
+                }
+            }
+        }
+        if (read && written) {
+            return Access.READ_WRITE;
+        }
+        if (written) {
+            return Access.WRITE_ONLY;
+        }
+        return read ? Access.READ_ONLY : Access.NONE;
     }
 
     @Override

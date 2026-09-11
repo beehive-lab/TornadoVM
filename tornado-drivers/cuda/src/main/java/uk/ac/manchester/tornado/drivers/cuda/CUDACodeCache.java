@@ -316,7 +316,7 @@ public class CUDACodeCache {
             storeCachedModule(moduleCacheFile, program, entryPoint);
         }
 
-        final CUDAInstalledCode code = new CUDAInstalledCode(entryPoint, source, (CUDADeviceContext) deviceContext, program, kernel, isSPIRVBinary);
+        final CUDAInstalledCode code = new CUDAInstalledCode(entryPoint, source, (CUDADeviceContext) deviceContext, program, kernel, isSPIRVBinary, isTileSource);
         if (status == CL_BUILD_SUCCESS) {
             logger.debug("\tOpenCL Kernel id = 0x%x", kernel.getOclKernelID());
             installCodeInCodeCache(program, id, entryPoint, code);

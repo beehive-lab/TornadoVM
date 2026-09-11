@@ -68,8 +68,9 @@ public class TileVectorAdd {
 
         // The worker grid of a tile task counts TILE BLOCKS, and local work is pinned to one:
         // CUDA Tile owns the thread mapping and requires a block dimension of 1x1x1.
+        // No setLocalWork here on purpose: CUDATileScheduler pins the block to one thread, so a
+        // tile task only has to say how many TILE BLOCKS it wants.
         WorkerGrid1D worker = new WorkerGrid1D(SIZE / TILE);
-        worker.setLocalWork(1, 1, 1);
         GridScheduler grid = new GridScheduler("tile.add", worker);
 
         TaskGraph graph = new TaskGraph("tile") //
