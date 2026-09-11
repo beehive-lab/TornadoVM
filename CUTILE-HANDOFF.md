@@ -22,7 +22,7 @@ thing being replaced, not the goal. The check is that `--printKernel` shows `ct:
 | 1 | Toolchain spike: tile C++ with TornadoVM's ABI, compiled to sm_89 cubin | **done, verified** (see 2) |
 | 3a | `TileContext` Java API + JVM fallback | **done, verified** (see 3) |
 | 3b | Compiler integration: plugins, nodes, LIR, emitter, gate | **done, builds clean** (see 5) |
-| 2 | Prebuilt-task bring-up: run a tile cubin inside a TaskGraph | **BLOCKED on driver R580+** - boundary reached and confirmed, see 5b (see 6) |
+| 2 | Bring-up: a tile kernel runs inside a TaskGraph | **DONE** on driver 610.57.04 (see 5d) |
 | 4 | Chaining: mixed JIT + tile + cuBLAS graph, cache keys, guards | **BLOCKED on driver R580+** (see 7) |
 | 3c | Compile path: `CUDATileCompiler`, `installSource` branch, cache keys | **done; end to end to a cubin** (see 5b) |
 | 5 | In-process NVRTC (`nvrtcGetTileIR`) | blocked: needs R610+ and `nvidia-cuda-nvrtc` |
@@ -425,6 +425,103 @@ the constraint `tile_convertible_to`; widening f16 to f32 is accepted. So a `cas
 validate direction and produce a real message, not pass the pair through to the tile compiler.
 A tile of `__half` also requires `#include <cuda_fp16.h>`, which the existing preamble scan
 already injects.
+
+## 5d. Driver 610: it runs. What the remaining bugs actually were
+
+Driver upgraded to **610.57.04** (`nvidia-driver-610-open`, DKMS built for 6.8.0-58). Modules
+load, nothing reports UNSUPPORTED, and after the fixes below everything passes:
+
+| Suite | Result |
+|---|---|
+| `TestTileElementwise` | 8 ran, 0 failed |
+| `TestTileMatmul` | 3 ran, 0 failed (fp16 tensor-core GEMM, 3 shapes) |
+| `TestTileChaining` | 4 ran, 0 failed |
+| `TestArrays` (SIMT regression) | 23 ran, 0 failed |
+| `TestCuBlas` (library regression) | 25 ran, 0 failed |
+
+**A1/A2 were not the blocker.** With the module loading, kernels launched cleanly - no faults
+under `compute-sanitizer`, correct grid and block, correct arguments - and every output was
+zero. Two things were wrong, and only one of them was the scheduler:
+
+1. **No device-to-host transfer was ever emitted.** The sketch-time dataflow analysis decides a
+   parameter's access from the nodes it flows into, did not recognise the tile nodes, and
+   classified the output array read-only. The kernel computed the right answer on the device
+   while the host read zeros. `CUDATilePartitionViewNode` now implements
+   `MarkArrayParameterAccess` - the hook `CUDAMMAStoreNode` already uses - because the view is
+   the only tile node that touches a kernel parameter directly.
+2. **`CUDATileScheduler`** (A1) pins the block to `1x1x1`. Overriding `calculateLocalWork` is not
+   sufficient: a tile task always supplies a worker grid, so the base class skips local-work
+   calculation and uses the grid's value, and a grid with no explicit local work reaches the
+   launch path as null and picks up `DEFAULT_BLOCK_SIZE`. A 256-thread block computes the wrong
+   answer silently. `submit` therefore forces 1x1x1 before delegating. The example no longer
+   pins local work by hand, which is what proves it.
+
+**A2 is moot.** Scheduler selection lives in `CUDAInstalledCode` (a constructor flag threaded
+from `installSource`), so no separate installed-code class is needed and the launch path is not
+duplicated.
+
+### How to debug this class of bug again
+
+The step that cracked it was reading the device buffer straight after the launch instead of
+reasoning about it: the buffer held `0, 3, 6, 9, 12, 15, 18, 21` while the Java array was all
+zeros, which immediately separates "the kernel is wrong" from "the result never comes back".
+`--printBytecodes` then showed the missing `TRANSFER_DEVICE_TO_HOST` directly.
+
+**PiNode wrappers caused three separate silent failures in this work.** Receivers are
+null-checked, so a receiver reaches a plugin or a usage scan as a `PiNode` around the real node:
+`av.load(...)` hid the partition view from the plugin, then hid the load and store from the
+access scan, and `receiver.get(true)` hid it a third time. Assume a Pi wrapper and unwrap it
+(`MarkArrayParameterAccess.unwrapPi`, or a transitive walk when scanning usages).
+
+### Two theories that looked right and were wrong
+
+- **`EIATTR_REQNTID = (128,1,1)`** in the cubin suggests `block=1` is an invalid launch. It is
+  not: launching TornadoVM's own cubin via the driver API with `grid=16, block=1` returns the
+  correct answer, and `block=1024` fails with `CUDA_ERROR_INVALID_VALUE`. `block=1` is right,
+  as the CUDA Tile documentation says.
+- **Dropping `opens uk.ac.manchester.tornado.api.tile`** once `TileContext` was marked host-only.
+  The interpreter no longer gives it a kernel argument slot, but the ALLOC path builds its object
+  list elsewhere and still creates a device buffer by reflecting over its fields. The `opens` is
+  still required; the comment in `module-info.java` records why.
+
+### A5, A6, A7 answered with evidence
+
+- **A5, CUDA-graph capture of a tile kernel: works.** `testTileKernelUnderCudaGraph` runs a tile
+  task under `withCUDAGraph()` twice, so the replay path is exercised, and the results are
+  correct. No guard is needed.
+- **A6, cuBLAS interop on one stream: works.** `testSimtThenTileThenCuBlasThenSimt` chains JIT
+  SIMT, CUDA Tile and `cublasSgemv`, and `testChainUnderIntraPlanConcurrency` repeats it under
+  `withIntraPlanConcurrency()`, which is where the interpreter's role-queue join around a
+  library launch matters.
+- **A7, TMA: absent for a hardware reason, not an alignment bug.** The emitted GEMM compiles to
+  `8x HMMA.16816.F32` with no `UBLKCP`/`LDSM`/`LDGSTS` even with unmasked loads on divisible
+  extents - because **TMA is a Hopper (sm_90) unit and Ada sm_89 does not have one**. The
+  `ct::assume_aligned` hint only starts paying off on sm_90+. Re-check there.
+
+### Chaining, measured rather than asserted
+
+`--printBytecodes` on the mixed chain:
+
+```
+TRANSFER_HOST_TO_DEVICE   input
+LAUNCH  chain.scale                     <- JIT SIMT
+LAUNCH  chain.tile                      <- CUDA Tile
+TRANSFER_HOST_TO_DEVICE   matrix        <- an input, placed before first use
+LAUNCH  chain.gemv[cublasSgemv]         <- native cuBLAS
+LAUNCH  chain.bias                      <- JIT SIMT
+TRANSFER_DEVICE_TO_HOST   result  [event list=4]
+```
+
+The intermediates never leave the device, and the final read waits on the chain's event. That is
+the design's central claim, now measured.
+
+### Still open
+
+| # | Item |
+|---|---|
+| B7 | **Tile cubins are never cached.** `storeCachedModule` asks `program.getModuleImage()`, which goes through `getBinarySizes()` and reports nothing for a program created from a pre-built binary, so every run re-invokes nvcc (~1-2 s per kernel). The cache key already carries the tile toolchain identity; only the store side is missing. |
+| B8 | Benchmark: tile GEMM through TornadoVM vs hand-written tile C++ vs cuBLAS vs the jTile `mma.sync` kernel. |
+| B9 | **Unrelated upstream bug found here:** `-Dtornado.debug.kernelargs` is broken on the CUDA backend. `CUDABackend.emitDebugKernelArgs` injects OpenCL (`get_global_id(...)`, plus an undeclared `slots`) into CUDA C, so enabling the flag makes every kernel fail to compile. Small, self-contained, and a good standalone PR. |
 
 ## 6. PHASE 2 - for an agent on a box with driver R580+
 
