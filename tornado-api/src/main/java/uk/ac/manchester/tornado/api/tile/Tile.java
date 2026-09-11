@@ -74,6 +74,14 @@ public final class Tile {
         return data;
     }
 
+    /**
+     * Reads one element of the JVM-side representation, for tests and host-side debugging. There
+     * is no device meaning: on an accelerator a tile has no host-visible elements.
+     */
+    public double getElement(int index) {
+        return data[index];
+    }
+
     int getElementCount() {
         return data.length;
     }

@@ -292,17 +292,19 @@ public class TestTileElementwise extends TornadoTestBase {
         }
     }
 
+    /**
+     * A narrowing conversion is permitted and loses precision, which is the behaviour to pin
+     * down. An earlier version of this test asserted that f32 to f16 was rejected; that was
+     * wrong, and the error came from this API rather than from CUDA Tile.
+     */
     @Test
-    public void testNarrowingCastIsRejected() {
-        // CUDA Tile refuses narrowing element conversions, and the API says so before the tile
-        // compiler has to.
+    public void testNarrowingCastRoundTrip() {
         TileContext tc = new TileContext();
-        try {
-            tc.cast(tc.zeros(DType.F32, TILE), DType.F16);
-            org.junit.Assert.fail("Expected the narrowing conversion F32 to F16 to be rejected");
-        } catch (IllegalArgumentException expected) {
-            org.junit.Assert.assertTrue(expected.getMessage().contains("narrowing"));
-        }
+        Tile f32 = tc.full(DType.F32, 1.0 / 3.0, 64);
+        Tile back = tc.cast(tc.cast(f32, DType.F16), DType.F32);
+        float expected = new HalfFloat((float) (1.0 / 3.0)).getFloat32();
+        org.junit.Assert.assertEquals(expected, (float) back.getElement(0), 0.0f);
+        org.junit.Assert.assertNotEquals("half precision should lose something", 1.0f / 3.0f, (float) back.getElement(0), 0.0f);
     }
 
     @Test

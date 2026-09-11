@@ -66,6 +66,13 @@ public final class CUDAPreamble {
      * compilation with --enable-tile; the literals namespace supplies the _ic suffix used for
      * the compile-time constants in tile shapes.
      */
+    /**
+     * Header for bfloat16. A tile whose element type is __nv_bfloat16 needs this, and the type
+     * appears only in generated tile code, so it is gated on the same source scan as the others.
+     */
+    public static final String BF16_PREAMBLE =
+        "#include <cuda_bf16.h>\n";
+
     public static final String TILE_PREAMBLE =
         "#include \"cuda_tile.h\"\n"
         + "namespace ct = cuda::tiles;\n"

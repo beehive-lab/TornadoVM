@@ -64,28 +64,20 @@ public enum DType {
      * Whether {@code ct::element_cast} accepts this conversion.
      *
      * <p>
-     * CUDA Tile refuses narrowing conversions: the constraint on {@code element_cast} rejects
-     * f32 to f16, while f16 to f32 is accepted. Checking it here turns a template constraint
-     * failure from the tile compiler into a message that names the two types.
+     * It accepts every pair of scalar element types, which was established by compiling each
+     * combination rather than inferred. An earlier version of this method rejected narrowing
+     * conversions such as f32 to f16; that was wrong, and came from a probe that had failed for
+     * an unrelated reason - a missing {@code cuda_fp16.h} - and was read as a type constraint.
+     * Narrowing still loses precision, but CUDA Tile permits it, so the API does too and leaves
+     * the choice to the caller.
      * </p>
      *
      * @param target
      *     element type to convert to
-     * @return true when the conversion is a widening one that CUDA Tile allows
+     * @return true; retained so the rule has one documented home if a future toolkit restricts it
      */
     public boolean canConvertTo(DType target) {
-        if (this == target) {
-            return true;
-        }
-        return switch (this) {
-            case FP8_E4M3, FP8_E5M2 -> target == F16 || target == BF16 || target == F32 || target == F64;
-            case F16, BF16 -> target == F32 || target == F64;
-            case TF32 -> target == F32 || target == F64;
-            case F32 -> target == F64;
-            case S8 -> target == S32 || target == F32 || target == F64;
-            case S32 -> target == F64;
-            case F64 -> false;
-        };
+        return target != null;
     }
 
     /**

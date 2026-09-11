@@ -243,6 +243,16 @@ public class CUDATileGraphBuilderPlugins {
                 return true;
             }
         });
+        r.register(new InvocationPlugin("iota", InvocationPlugin.Receiver.class, DType.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode dtypeNode, ValueNode rows, ValueNode columns) {
+                receiver.get(true);
+                DType dtype = resolveDType(b, dtypeNode);
+                int[] shape = { shapeConstant(rows, "tile rows"), shapeConstant(columns, "tile columns") };
+                b.addPush(JavaKind.Object, new CUDATileCreateNode(dtype, shape, null, true));
+                return true;
+            }
+        });
         r.register(new InvocationPlugin("iota", InvocationPlugin.Receiver.class, DType.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode dtypeNode, ValueNode extent) {
@@ -296,19 +306,15 @@ public class CUDATileGraphBuilderPlugins {
             }
         });
 
-        // There is no ct::cast. Elementwise conversion is ct::element_cast<Element>(tile), and
-        // CUDA Tile refuses narrowing, so the direction is checked here rather than letting a
-        // template constraint fail inside the tile compiler.
+        // There is no ct::cast; elementwise conversion is ct::element_cast<Element>(tile). Every
+        // scalar pair is accepted, including narrowing ones, which was established by compiling
+        // the combinations.
         r.register(new InvocationPlugin("cast", InvocationPlugin.Receiver.class, Tile.class, DType.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode tile, ValueNode targetNode) {
                 receiver.get(true);
                 CUDATileNode source = tileNodeOf(tile, "the operand of cast");
                 DType target = resolveDType(b, targetNode);
-                if (!source.tileDType().canConvertTo(target)) {
-                    throw new IllegalStateException("[TileContext] CUDA Tile rejects the narrowing conversion "
-                            + source.tileDType() + " to " + target + ". Only widening element conversions are allowed.");
-                }
                 b.addPush(JavaKind.Object, new CUDATileUnaryNode(tile, "element_cast", target.getCppType(), target, source.tileShape()));
                 return true;
             }
@@ -318,6 +324,8 @@ public class CUDATileGraphBuilderPlugins {
         registerBinaryCall(r, "maximum", "max");
 
         registerUnaryMath(r, "exp", "exp");
+        registerUnaryMath(r, "sin", "sin");
+        registerUnaryMath(r, "cos", "cos");
         registerUnaryMath(r, "sqrt", "sqrt");
         registerUnaryMath(r, "rsqrt", "rsqrt");
 

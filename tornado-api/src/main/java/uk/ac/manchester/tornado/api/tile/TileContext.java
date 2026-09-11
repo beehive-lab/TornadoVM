@@ -216,6 +216,19 @@ public class TileContext {
         return tile;
     }
 
+    /**
+     * Rank-2 {@code iota}, numbering elements in row-major order. The useful shape is
+     * {@code (1, n)}: a row of indices that broadcasts against tiles loaded from a partition
+     * view of the same width, which is what a position-dependent schedule such as RoPE needs.
+     */
+    public Tile iota(DType dtype, int rows, int columns) {
+        Tile tile = zeros(dtype, rows, columns);
+        for (int i = 0; i < rows * columns; i++) {
+            tile.getData()[i] = i % columns;
+        }
+        return tile;
+    }
+
     // -------------------------------------------------------------------------------------
     // Elementwise
     // -------------------------------------------------------------------------------------
@@ -351,6 +364,14 @@ public class TileContext {
         return mapUnary(a, Math::exp);
     }
 
+    public Tile sin(Tile a) {
+        return mapUnary(a, Math::sin);
+    }
+
+    public Tile cos(Tile a) {
+        return mapUnary(a, Math::cos);
+    }
+
     public Tile sqrt(Tile a) {
         return mapUnary(a, Math::sqrt);
     }
@@ -383,15 +404,19 @@ public class TileContext {
     }
 
     /**
-     * Elementwise conversion, lowering to {@code ct::element_cast}. Only widening conversions
-     * are legal: CUDA Tile rejects narrowing, so f16 to f32 is fine and f32 to f16 is not.
+     * Elementwise conversion, lowering to {@code ct::element_cast}. Any pair of scalar element
+     * types is accepted, narrowing included; a narrowing conversion loses precision, and that is
+     * the caller's decision rather than an error.
      */
     public Tile cast(Tile a, DType target) {
-        if (!a.getDType().canConvertTo(target)) {
-            throw new IllegalArgumentException("[TileContext] CUDA Tile rejects the narrowing conversion "
-                    + a.getDType() + " to " + target + ". Only widening element conversions are allowed.");
+        double[] values = a.getData().clone();
+        if (target == DType.F16) {
+            // Mirror half-precision rounding so the JVM fallback agrees with the device.
+            for (int i = 0; i < values.length; i++) {
+                values[i] = new uk.ac.manchester.tornado.api.types.HalfFloat((float) values[i]).getFloat32();
+            }
         }
-        return new Tile(target, a.getShape(), a.getData().clone());
+        return new Tile(target, a.getShape(), values);
     }
 
     // -------------------------------------------------------------------------------------
