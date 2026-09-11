@@ -124,6 +124,18 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      */
     private final Map<Long, CUDACodeCache> codeCache;
 
+    /**
+     * Front-end compilation results, cached once per device and shared by every execution plan.
+     *
+     * <p>
+     * {@link #codeCache} has to be per execution plan because plan teardown invalidates the
+     * installed module. Running the Graal front end again for each new plan is far more
+     * expensive than re-installing the module it produced, so the generated source is kept here
+     * and only the install step is repeated. Keyed by {@link #compilationCacheKey}.
+     * </p>
+     */
+    private final Map<String, CUDACompiledKernel> compiledKernelCache;
+
     public CUDADeviceContext(CUDATargetDevice device, CUDAContext context) {
         this.device = device;
         this.context = context;
@@ -139,6 +151,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
             this.powerMetricHandler = new CUDAEmptyPowerMetricHandler();
         }
         codeCache = new ConcurrentHashMap<>();
+        compiledKernelCache = new ConcurrentHashMap<>();
     }
 
     private boolean isDeviceContextOfNvidia() {
@@ -997,6 +1010,16 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     @Override
     public CUDACodeCache getCodeCache(long executionPlanId) {
         return getCUDACodeCache(executionPlanId);
+    }
+
+    @Override
+    public CUDACompiledKernel getCompiledKernel(String compilationKey) {
+        return compiledKernelCache.get(compilationKey);
+    }
+
+    @Override
+    public void putCompiledKernel(String compilationKey, CUDACompiledKernel compiledKernel) {
+        compiledKernelCache.put(compilationKey, compiledKernel);
     }
 
     public long mapOnDeviceMemoryRegion(long executionPlanId, long destDevicePtr, long srcDevicePtr, long offset, int sizeOfType, long sizeSource, long sizeDest) {

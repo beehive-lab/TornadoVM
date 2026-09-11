@@ -23,7 +23,9 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.virtual;
 
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
@@ -31,6 +33,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.cuda.CUDABackendImpl;
 import uk.ac.manchester.tornado.drivers.cuda.CUDACodeCache;
+import uk.ac.manchester.tornado.drivers.cuda.CUDACompiledKernel;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.cuda.CUDAProgram;
 import uk.ac.manchester.tornado.drivers.cuda.CUDATargetDevice;
@@ -46,6 +49,7 @@ public class VirtualCUDADeviceContext implements CUDADeviceContextInterface {
     private final CUDATargetDevice device;
     private final VirtualCUDAContext context;
     private final CUDACodeCache codeCache;
+    private final Map<String, CUDACompiledKernel> compiledKernelCache = new ConcurrentHashMap<>();
     private boolean wasReset;
 
     protected VirtualCUDADeviceContext(CUDATargetDevice device, VirtualCUDAContext context) {
@@ -221,6 +225,16 @@ public class VirtualCUDADeviceContext implements CUDADeviceContextInterface {
     @Override
     public CUDACodeCache getCodeCache(long executionPlanId) {
         return codeCache;
+    }
+
+    @Override
+    public CUDACompiledKernel getCompiledKernel(String compilationKey) {
+        return compiledKernelCache.get(compilationKey);
+    }
+
+    @Override
+    public void putCompiledKernel(String compilationKey, CUDACompiledKernel compiledKernel) {
+        compiledKernelCache.put(compilationKey, compiledKernel);
     }
 
     @Override
