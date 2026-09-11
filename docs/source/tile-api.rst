@@ -180,7 +180,10 @@ Known limitations
 *****************
 
 * ``atomicAdd`` through a ``PartitionView``, ``permute``, ``reshape`` and ``select`` are declared in
-  the API but not yet lowered.
+  the API but not yet lowered. The missing ``select`` is the one with a visible consequence: it
+  rules out causal masking and ragged key tails in attention, because a masked-out score has to
+  become ``-inf`` before the exponential. A zero-padded ``loadMasked`` is not a substitute — a
+  padded key contributes ``exp(0 - m)`` to the softmax denominator rather than nothing.
 * Batch processing (``withBatch``) is rejected for tile tasks.
 * Tile intrinsics are not yet handled in ``TornadoCUDAIntrinsicsReplacements``, so a reflectively
   resolved tile kernel fails with an explanation instead of miscompiling.
@@ -201,8 +204,11 @@ Verifying and profiling
     # tensor cores in the cached cubin
     cuobjdump -sass $TORNADOVM_HOME/var/cuda-codecache/device-0-0/<kernel>-*.cubin | grep HMMA
 
-    # the unit tests
+    # the unit tests: elementwise, GEMM, task chaining, the row kernels and the
+    # kernels ported from NVIDIA's TileGym suite
     tornado-test -V uk.ac.manchester.tornado.unittests.tile.TestTileMatmul
+    tornado-test -V uk.ac.manchester.tornado.unittests.tile.TestTileAttention
+    tornado-test -V uk.ac.manchester.tornado.unittests.tile.TestTileGemmVariants
 
 Profiling
 =========
