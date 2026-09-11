@@ -223,6 +223,14 @@ public class TileContext {
         return zip(a, b, '*');
     }
 
+    /**
+     * Elementwise division, with the same broadcasting as the other operators. Lowers to the
+     * {@code /} operator, which is how CUDA Tile spells it; there is no named divide.
+     */
+    public Tile div(Tile a, Tile b) {
+        return zip(a, b, '/');
+    }
+
     public Tile scale(Tile a, double scalar) {
         Tile result = Tile.allocate(a.getDType(), a.getShape());
         for (int i = 0; i < a.getElementCount(); i++) {
@@ -284,18 +292,58 @@ public class TileContext {
      * CUDA Tile C++.
      */
     public Tile sum(Tile a, int axis) {
+        return reduce(a, axis, false);
+    }
+
+    private Tile reduce(Tile a, int axis, boolean maximum) {
         if (a.getRank() != 2) {
-            throw new IllegalArgumentException("[TileContext] sum currently supports rank-2 tiles.");
+            throw new IllegalArgumentException("[TileContext] Reductions currently support rank-2 tiles.");
+        }
+        if (axis != 0 && axis != 1) {
+            throw new IllegalArgumentException("[TileContext] Reduction axis must be 0 or 1, got " + axis + ".");
         }
         int rows = a.getDimension(0);
         int columns = a.getDimension(1);
         int[] shape = axis == 0 ? new int[] { 1, columns } : new int[] { rows, 1 };
         Tile result = Tile.allocate(a.getDType(), shape);
+        if (maximum) {
+            java.util.Arrays.fill(result.getData(), Double.NEGATIVE_INFINITY);
+        }
         for (int row = 0; row < rows; row++) {
             for (int column = 0; column < columns; column++) {
                 int target = axis == 0 ? column : row;
-                result.getData()[target] += a.getData()[row * columns + column];
+                double value = a.getData()[row * columns + column];
+                result.getData()[target] = maximum ? Math.max(result.getData()[target], value) : result.getData()[target] + value;
             }
+        }
+        return result;
+    }
+
+    /**
+     * Maximum along {@code axis}, keeping the reduced dimension. Lowers to
+     * {@code ct::reduce_max}: in CUDA Tile {@code ct::max} is the elementwise two-operand form,
+     * and the reduction is a differently named function.
+     */
+    public Tile max(Tile a, int axis) {
+        return reduce(a, axis, true);
+    }
+
+    public Tile exp(Tile a) {
+        return mapUnary(a, Math::exp);
+    }
+
+    public Tile sqrt(Tile a) {
+        return mapUnary(a, Math::sqrt);
+    }
+
+    public Tile rsqrt(Tile a) {
+        return mapUnary(a, value -> 1.0 / Math.sqrt(value));
+    }
+
+    private Tile mapUnary(Tile a, java.util.function.DoubleUnaryOperator function) {
+        Tile result = Tile.allocate(a.getDType(), a.getShape());
+        for (int i = 0; i < a.getElementCount(); i++) {
+            result.getData()[i] = function.applyAsDouble(a.getData()[i]);
         }
         return result;
     }
@@ -329,21 +377,58 @@ public class TileContext {
 
     // -------------------------------------------------------------------------------------
 
+    /**
+     * Elementwise op with the broadcasting CUDA Tile applies to its operators: a singleton
+     * dimension is stretched to match. That is what lets a row reduction, which keeps its
+     * reduced dimension as 1, combine with the tile it came from - the shape softmax and
+     * RMS norm both rely on.
+     */
     private Tile zip(Tile a, Tile b, char operation) {
-        if (a.getElementCount() != b.getElementCount()) {
-            throw new IllegalArgumentException("[TileContext] Elementwise operands must have the same shape.");
-        }
-        Tile result = Tile.allocate(a.getDType(), a.getShape());
-        for (int i = 0; i < a.getElementCount(); i++) {
-            double left = a.getData()[i];
-            double right = b.getData()[i];
-            result.getData()[i] = switch (operation) {
-                case '+' -> left + right;
-                case '-' -> left - right;
-                default -> left * right;
-            };
+        int[] shape = broadcastShape(a, b);
+        Tile result = Tile.allocate(a.getDType(), shape);
+        int rows = shape.length == 2 ? shape[0] : 1;
+        int columns = shape.length == 2 ? shape[1] : shape[0];
+        for (int row = 0; row < rows; row++) {
+            for (int column = 0; column < columns; column++) {
+                double left = broadcastRead(a, row, column);
+                double right = broadcastRead(b, row, column);
+                double value = switch (operation) {
+                    case '+' -> left + right;
+                    case '-' -> left - right;
+                    case '/' -> left / right;
+                    default -> left * right;
+                };
+                result.getData()[row * columns + column] = value;
+            }
         }
         return result;
+    }
+
+    private static int[] broadcastShape(Tile a, Tile b) {
+        if (a.getRank() != b.getRank()) {
+            throw new IllegalArgumentException("[TileContext] Elementwise operands must have the same rank, got "
+                    + a.getRank() + " and " + b.getRank() + ".");
+        }
+        int[] shape = new int[a.getRank()];
+        for (int i = 0; i < shape.length; i++) {
+            int left = a.getDimension(i);
+            int right = b.getDimension(i);
+            if (left != right && left != 1 && right != 1) {
+                throw new IllegalArgumentException("[TileContext] Dimension " + i + " does not broadcast: " + left
+                        + " against " + right + ". CUDA Tile stretches a dimension only when it is 1.");
+            }
+            shape[i] = Math.max(left, right);
+        }
+        return shape;
+    }
+
+    private static double broadcastRead(Tile tile, int row, int column) {
+        if (tile.getRank() == 1) {
+            return tile.getData()[tile.getDimension(0) == 1 ? 0 : column];
+        }
+        int r = tile.getDimension(0) == 1 ? 0 : row;
+        int c = tile.getDimension(1) == 1 ? 0 : column;
+        return tile.getData()[r * tile.getDimension(1) + c];
     }
 
     private static void checkShape(int dimension) {

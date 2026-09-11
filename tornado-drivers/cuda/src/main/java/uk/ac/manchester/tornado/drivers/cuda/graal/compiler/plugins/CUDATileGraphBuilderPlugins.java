@@ -310,18 +310,63 @@ public class CUDATileGraphBuilderPlugins {
             }
         });
 
-        r.register(new InvocationPlugin("sum", InvocationPlugin.Receiver.class, Tile.class, int.class) {
+        registerBinary(r, "div", "/");
+
+        registerUnaryMath(r, "exp", "exp");
+        registerUnaryMath(r, "sqrt", "sqrt");
+        registerUnaryMath(r, "rsqrt", "rsqrt");
+
+        // ct::max is the elementwise two-operand form; the reduction is ct::reduce_max.
+        registerReduction(r, "max", "reduce_max");
+
+        registerReduction(r, "sum", "sum");
+    }
+
+    private static void registerUnaryMath(Registration r, String name, String function) {
+        r.register(new InvocationPlugin(name, InvocationPlugin.Receiver.class, Tile.class) {
             @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode tile, ValueNode axisNode) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode tile) {
                 receiver.get(true);
-                CUDATileNode source = tileNodeOf(tile, "the operand of sum");
-                int axis = shapeConstant(axisNode, "reduction axis");
-                int[] shape = source.tileShape().clone();
-                shape[axis] = 1;
-                b.addPush(JavaKind.Object, new CUDATileReduceNode(tile, "sum", axis, source.tileDType(), shape));
+                CUDATileNode source = tileNodeOf(tile, "the operand of " + name);
+                b.addPush(JavaKind.Object, new CUDATileUnaryNode(tile, function, null, source.tileDType(), source.tileShape()));
                 return true;
             }
         });
+    }
+
+    /**
+     * Reductions keep the reduced dimension, as CUDA Tile C++ does, so the result broadcasts
+     * back against the tile it came from.
+     */
+    private static void registerReduction(Registration r, String name, String function) {
+        r.register(new InvocationPlugin(name, InvocationPlugin.Receiver.class, Tile.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode tile, ValueNode axisNode) {
+                receiver.get(true);
+                CUDATileNode source = tileNodeOf(tile, "the operand of " + name);
+                int axis = axisConstant(axisNode, source.tileShape().length);
+                int[] shape = source.tileShape().clone();
+                shape[axis] = 1;
+                b.addPush(JavaKind.Object, new CUDATileReduceNode(tile, function, axis, source.tileDType(), shape));
+                return true;
+            }
+        });
+    }
+
+    /**
+     * A reduction axis is a plain index, not a tile dimension, so it is not required to be a
+     * power of two the way {@link #shapeConstant} demands.
+     */
+    private static int axisConstant(ValueNode node, int rank) {
+        JavaConstant constant = node.asJavaConstant();
+        if (constant == null) {
+            throw new IllegalStateException("[TileContext] The reduction axis must be a compile-time constant.");
+        }
+        int axis = constant.asInt();
+        if (axis < 0 || axis >= rank) {
+            throw new IllegalStateException("[TileContext] Reduction axis " + axis + " is out of range for a rank-" + rank + " tile.");
+        }
+        return axis;
     }
 
     private static void registerBinary(Registration r, String name, String operator) {
@@ -329,11 +374,34 @@ public class CUDATileGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode left, ValueNode right) {
                 receiver.get(true);
-                CUDATileNode source = tileNodeOf(left, "the left operand of " + name);
-                b.addPush(JavaKind.Object, new CUDATileBinaryNode(left, right, operator, source.tileDType(), source.tileShape()));
+                CUDATileNode leftTile = tileNodeOf(left, "the left operand of " + name);
+                CUDATileNode rightTile = tileNodeOf(right, "the right operand of " + name);
+                b.addPush(JavaKind.Object, new CUDATileBinaryNode(left, right, operator, leftTile.tileDType(),
+                        broadcastShape(leftTile.tileShape(), rightTile.tileShape(), name)));
                 return true;
             }
         });
+    }
+
+    /**
+     * Result shape of an elementwise op. CUDA Tile stretches a dimension of 1 to match, which is
+     * what lets a kept-dimension reduction combine with the tile it was reduced from - the shape
+     * both softmax and RMS norm depend on.
+     */
+    private static int[] broadcastShape(int[] left, int[] right, String operation) {
+        if (left.length != right.length) {
+            throw new IllegalStateException("[TileContext] The operands of " + operation + " must have the same rank, got "
+                    + left.length + " and " + right.length + ".");
+        }
+        int[] shape = new int[left.length];
+        for (int i = 0; i < shape.length; i++) {
+            if (left[i] != right[i] && left[i] != 1 && right[i] != 1) {
+                throw new IllegalStateException("[TileContext] Dimension " + i + " of " + operation + " does not broadcast: "
+                        + left[i] + " against " + right[i] + ".");
+            }
+            shape[i] = Math.max(left[i], right[i]);
+        }
+        return shape;
     }
 
     // -------------------------------------------------------------------------------------

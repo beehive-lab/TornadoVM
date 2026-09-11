@@ -519,9 +519,57 @@ the design's central claim, now measured.
 
 | # | Item |
 |---|---|
-| B7 | **Tile cubins are never cached.** `storeCachedModule` asks `program.getModuleImage()`, which goes through `getBinarySizes()` and reports nothing for a program created from a pre-built binary, so every run re-invokes nvcc (~1-2 s per kernel). The cache key already carries the tile toolchain identity; only the store side is missing. |
+| B7 | ~~Tile cubins are never cached.~~ **False alarm, closed.** They are cached. `resolveDirectory` prepends `TORNADOVM_HOME` and appends `device-<platform>-<device>`, so the files land in `$TORNADOVM_HOME/var/cuda-codecache/device-0-0/` and an absolute `-Dtornado.cuda.codecache.dir` is nested under that, not used as given. Verified: the cached `matmul-*.cubin` disassembles to 12x `HMMA.16816.F32`, and deleting an entry makes the next run re-create it (cold 0.89 s, warm 0.69 s). |
 | B8 | Benchmark: tile GEMM through TornadoVM vs hand-written tile C++ vs cuBLAS vs the jTile `mma.sync` kernel. |
 | B9 | **Unrelated upstream bug found here:** `-Dtornado.debug.kernelargs` is broken on the CUDA backend. `CUDABackend.emitDebugKernelArgs` injects OpenCL (`get_global_id(...)`, plus an undeclared `slots`) into CUDA C, so enabling the flag makes every kernel fail to compile. Small, self-contained, and a good standalone PR. |
+
+## 5e. Ported tests, and the API surface they forced
+
+The test suites are now the ones that drive the API, following NVIDIA's own **TileGym**
+(`NVIDIA/TileGym`, `tests/ops/`), which is the reference body of CUDA Tile kernels.
+
+| Suite | Tests | Covers |
+|---|---|---|
+| `TestTileElementwise` | 8 | arithmetic, scale, ragged edges, fill, iota, transpose, widening cast, narrowing rejected |
+| `TestTileMatmul` | 3 | fp16 tensor-core GEMM, square and rectangular |
+| `TestTileChaining` | 4 | JIT + tile + cuBLAS in one graph, intra-plan concurrency, CUDA graphs |
+| `TestTileRowKernels` | 8 | **softmax and RMS norm, ported from TileGym** |
+
+**Porting the row kernels is what exposed the missing API.** A GEMM needs almost nothing beyond
+`mma`; softmax and RMS norm need reductions that keep their dimension, the reduced row
+broadcast back across the tile, and transcendental math. Added for them: `div`, `max` (the
+reduction), `exp`, `sqrt`, `rsqrt`, and NumPy-style broadcasting in both the plugin shape rule
+and the JVM fallback.
+
+TileGym's shape parameterisation is worth keeping rather than rounding off. The ported tests use
+its awkward cases: `n = 9` is smaller than any sensible tile, and `n = 1009` and `n = 768` are
+not powers of two, so the last tile of every row is partial and the masked forms are mandatory.
+A tile shape must still be a power of two, so the kernels tile at a fixed width and mask the
+tail.
+
+### More verified `ct::` spellings
+
+Probed against nvcc, because two of them are not what the obvious guess would be:
+
+| Operation | Spelling | Note |
+|---|---|---|
+| max reduction | **`ct::reduce_max(tile, axis)`** | `ct::max` is the *elementwise two-operand* form, not the reduction |
+| sum reduction | `ct::sum(tile, axis)` | keeps the reduced dimension |
+| divide | `a / b` | no named function |
+| exp / sqrt / rsqrt | `ct::exp`, `ct::sqrt`, `ct::rsqrt` | |
+| broadcasting | implicit | `t - ct::reduce_max(t, 1_ic)` compiles; a kept dimension of 1 stretches |
+
+A reduced tile does **not** store back into the view it came from: `same_shape` rejects a 32x1
+tile against a 32x32 partition view. That is a constraint, not a bug, and it is why the row
+kernels broadcast the reduction back before storing.
+
+### Still worth porting from TileGym
+
+`layer_norm`, `silu_and_mul`, `swiglu` and `rope` are all expressible with the current API.
+`attention`, `moe` and the `*_decode` kernels are not yet: they need chunked loops over a row
+wider than one tile, and several need `select`/`where`, `reshape` and `permute`, none of which
+are intrinsified. `splitk_reduce` needs `atomic_add` through a partition view, which the API
+declares but does not yet lower.
 
 ## 6. PHASE 2 - for an agent on a box with driver R580+
 
