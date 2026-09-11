@@ -18,6 +18,7 @@
 package uk.ac.manchester.tornado.api.tile;
 
 import uk.ac.manchester.tornado.api.types.HalfFloat;
+import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
@@ -72,6 +73,8 @@ public final class TensorView {
             return floatArray.get(index);
         } else if (buffer instanceof HalfFloatArray halfFloatArray) {
             return halfFloatArray.get(index).getFloat32();
+        } else if (buffer instanceof BFloat16Array bfloatArray) {
+            return bfloatArray.getFloat(index);
         } else if (buffer instanceof IntArray intArray) {
             return intArray.get(index);
         }
@@ -86,6 +89,8 @@ public final class TensorView {
             floatArray.set(index, (float) value);
         } else if (buffer instanceof HalfFloatArray halfFloatArray) {
             halfFloatArray.set(index, new HalfFloat((float) value));
+        } else if (buffer instanceof BFloat16Array bfloatArray) {
+            bfloatArray.setFloat(index, (float) value);
         } else if (buffer instanceof IntArray intArray) {
             intArray.set(index, (int) value);
         } else {
@@ -95,6 +100,6 @@ public final class TensorView {
 
     private String unsupported() {
         return "[TileContext] The JVM fallback path does not model " + buffer.getClass().getName()
-                + " yet. Supported today: FloatArray, HalfFloatArray, IntArray. The accelerator path is unaffected.";
+                + " yet. Supported today: FloatArray, HalfFloatArray, BFloat16Array, IntArray. The accelerator path is unaffected.";
     }
 }

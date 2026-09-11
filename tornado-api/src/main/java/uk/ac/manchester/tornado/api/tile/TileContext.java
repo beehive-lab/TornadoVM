@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.api.tile;
 
+import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
@@ -151,6 +152,14 @@ public class TileContext {
 
     public TensorView view(HalfFloatArray array, int rows, int columns) {
         return new TensorView(array, DType.F16, new int[] { rows, columns });
+    }
+
+    public TensorView view(BFloat16Array array, int extent) {
+        return new TensorView(array, DType.BF16, new int[] { extent });
+    }
+
+    public TensorView view(BFloat16Array array, int rows, int columns) {
+        return new TensorView(array, DType.BF16, new int[] { rows, columns });
     }
 
     public TensorView view(IntArray array, int extent) {

@@ -135,6 +135,81 @@ public class TestTileMatmul extends TornadoTestBase {
         }
     }
 
+    /**
+     * GEMM with a K that is not a multiple of the tile depth, using masked loads.
+     *
+     * <p>
+     * TileGym parameterises this case (k = 1023) and then skips it, noting a "result mismatch
+     * when cannot divide BLOCK". It works here for a specific reason: a masked load zero-pads
+     * the tail of the last k-tile, and a zero contributes nothing to a dot product, so the
+     * padded lanes are harmless. That only holds for accumulate-style reductions, which is
+     * worth stating rather than assuming it generalises.
+     * </p>
+     */
+    public static void matmulRagged(TileContext tc, HalfFloatArray a, HalfFloatArray b, FloatArray c, int m, int n, int k, int kTiles) {
+        PartitionView av = tc.partition(tc.view(a, m, k), TILE_M, TILE_K);
+        PartitionView bv = tc.partition(tc.view(b, k, n), TILE_K, TILE_N);
+        PartitionView cv = tc.partition(tc.view(c, m, n), TILE_M, TILE_N);
+
+        Tile acc = tc.zeros(DType.F32, TILE_M, TILE_N);
+        for (int step = 0; step < kTiles; step++) {
+            acc = tc.mma(av.loadMasked(tc.bidX(), step), bv.loadMasked(step, tc.bidY()), acc);
+        }
+        cv.storeMasked(acc, tc.bidX(), tc.bidY());
+    }
+
+    private static void runRaggedGemm(int m, int n, int k) throws TornadoExecutionPlanException {
+        HalfFloatArray a = new HalfFloatArray(m * k);
+        HalfFloatArray b = new HalfFloatArray(k * n);
+        FloatArray c = new FloatArray(m * n);
+        java.util.Random random = new java.util.Random(53 + k);
+        for (int i = 0; i < m * k; i++) {
+            a.set(i, new HalfFloat(random.nextFloat() - 0.5f));
+        }
+        for (int i = 0; i < k * n; i++) {
+            b.set(i, new HalfFloat(random.nextFloat() - 0.5f));
+        }
+
+        int kTiles = (k + TILE_K - 1) / TILE_K;
+        TaskGraph graph = new TaskGraph("ragged") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .task("gemm", TestTileMatmul::matmulRagged, new TileContext(), a, b, c, m, n, k, kTiles) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        WorkerGrid2D worker = new WorkerGrid2D((m + TILE_M - 1) / TILE_M, (n + TILE_N - 1) / TILE_N);
+        GridScheduler grid = new GridScheduler("ragged.gemm", worker);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            executeOrReportUnsupported(plan, grid);
+        }
+
+        for (int row = 0; row < m; row++) {
+            for (int column = 0; column < n; column++) {
+                float expected = 0.0f;
+                for (int inner = 0; inner < k; inner++) {
+                    expected += a.get(row * k + inner).getFloat32() * b.get(inner * n + column).getFloat32();
+                }
+                assertEquals("(" + row + "," + column + ")", expected, c.get(row * n + column), 0.05f);
+            }
+        }
+    }
+
+    @Test
+    public void testGemmNonDivisibleK() throws TornadoExecutionPlanException {
+        runRaggedGemm(64, 64, 96 + 5);
+    }
+
+    @Test
+    public void testGemmNonDivisibleAllDims() throws TornadoExecutionPlanException {
+        // Partial tiles in M, N and K at once, so both masked loads and a masked store are used.
+        runRaggedGemm(70, 100, 37);
+    }
+
+    @Test
+    public void testGemmTiny() throws TornadoExecutionPlanException {
+        // TileGym's (8, 8, 8): smaller than a single tile in every dimension.
+        runRaggedGemm(8, 8, 8);
+    }
+
     @Test
     public void testGemm64() throws TornadoExecutionPlanException {
         runGemm(64, 64, 64);

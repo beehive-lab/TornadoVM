@@ -103,6 +103,80 @@ public class TestTileRowKernels extends TornadoTestBase {
         ov.storeMasked(tc.mul(x, scale), row, 0);
     }
 
+    /**
+     * Layer norm over one row per tile block: {@code (x - mean) * rsqrt(var + eps)}.
+     *
+     * <p>
+     * Needs two reductions over the same row and both of them broadcast back, which is a step
+     * beyond RMS norm: the mean is subtracted before the variance is taken, so the second
+     * reduction consumes the result of the first.
+     * </p>
+     */
+    public static void layerNormRow(TileContext tc, FloatArray in, FloatArray out, int rows, int n, float inverseN) {
+        PartitionView iv = tc.partition(tc.view(in, rows, n), 1, ROW_TILE);
+        PartitionView ov = tc.partition(tc.view(out, rows, n), 1, ROW_TILE);
+        int row = tc.bidX();
+
+        Tile x = iv.loadMasked(row, 0);
+        Tile mean = tc.scale(tc.sum(x, 1), inverseN);
+        Tile centred = tc.sub(x, mean);
+        Tile variance = tc.scale(tc.sum(tc.mul(centred, centred), 1), inverseN);
+        Tile scale = tc.rsqrt(tc.add(variance, tc.full(DType.F32, EPSILON, 1, 1)));
+        ov.storeMasked(tc.mul(centred, scale), row, 0);
+    }
+
+    /**
+     * SiLU-and-multiply, as TileGym defines it: the row is {@code 2 * hidden} wide, the first
+     * half is passed through SiLU and multiplied by the second half.
+     *
+     * <p>
+     * The split needs no slicing API: with a tile width of exactly {@code hidden}, block index 0
+     * along the row is the first half and block index 1 is the second. That is what a partition
+     * view is for.
+     * </p>
+     *
+     * <p>
+     * The hidden size is a compile-time constant, not a parameter, because it is the tile width
+     * and a CUDA Tile shape is part of the kernel's type. That is why there are two kernels
+     * below rather than one taking a size: a differently shaped variant is a differently
+     * compiled kernel, which is the model's own rule rather than a limitation of this API. The
+     * row count stays dynamic, because it is the grid.
+     * </p>
+     *
+     * <p>
+     * {@code silu(v) = v * sigmoid(v) = v / (1 + exp(-v))}, built from the primitives rather
+     * than a fused intrinsic, which is also a test that they compose.
+     * </p>
+     */
+    /** Hidden sizes are tile widths, so they must be literals in the kernel body. */
+    private static final int HIDDEN_SMALL = 512;
+
+    private static final int HIDDEN_LARGE = 2048;
+
+    public static void siluAndMul512(TileContext tc, FloatArray in, FloatArray out, int rows) {
+        PartitionView iv = tc.partition(tc.view(in, rows, 2 * HIDDEN_SMALL), 1, HIDDEN_SMALL);
+        PartitionView ov = tc.partition(tc.view(out, rows, HIDDEN_SMALL), 1, HIDDEN_SMALL);
+        int row = tc.bidX();
+
+        Tile gate = iv.load(row, 0);
+        Tile value = iv.load(row, 1);
+        Tile ones = tc.full(DType.F32, 1.0, 1, HIDDEN_SMALL);
+        Tile silu = tc.div(gate, tc.add(ones, tc.exp(tc.scale(gate, -1.0))));
+        ov.store(tc.mul(silu, value), row, 0);
+    }
+
+    public static void siluAndMul2048(TileContext tc, FloatArray in, FloatArray out, int rows) {
+        PartitionView iv = tc.partition(tc.view(in, rows, 2 * HIDDEN_LARGE), 1, HIDDEN_LARGE);
+        PartitionView ov = tc.partition(tc.view(out, rows, HIDDEN_LARGE), 1, HIDDEN_LARGE);
+        int row = tc.bidX();
+
+        Tile gate = iv.load(row, 0);
+        Tile value = iv.load(row, 1);
+        Tile ones = tc.full(DType.F32, 1.0, 1, HIDDEN_LARGE);
+        Tile silu = tc.div(gate, tc.add(ones, tc.exp(tc.scale(gate, -1.0))));
+        ov.store(tc.mul(silu, value), row, 0);
+    }
+
     private static FloatArray randomRows(int rows, int n, long seed) {
         java.util.Random random = new java.util.Random(seed);
         FloatArray array = new FloatArray(rows * n);
@@ -169,6 +243,98 @@ public class TestTileRowKernels extends TornadoTestBase {
                 assertEquals("row " + row + " column " + i, in.get(row * n + i) * scale, out.get(row * n + i), 5e-2);
             }
         }
+    }
+
+    private void checkLayerNorm(int rows, int n) throws TornadoExecutionPlanException {
+        FloatArray in = randomRows(rows, n, 97 + n);
+        FloatArray out = new FloatArray(rows * n);
+
+        TaskGraph graph = new TaskGraph("ln") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, in) //
+                .task("k", TestTileRowKernels::layerNormRow, new TileContext(), in, out, rows, n, 1.0f / ROW_TILE) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        runRowKernel("ln.k", graph, rows);
+
+        for (int row = 0; row < rows; row++) {
+            // The kernel normalises over the whole tile, so a short row contributes zeros to
+            // both reductions. The reference mirrors that rather than pretending otherwise.
+            double sum = 0.0;
+            for (int i = 0; i < n; i++) {
+                sum += in.get(row * n + i);
+            }
+            double mean = sum / ROW_TILE;
+            double variance = 0.0;
+            for (int i = 0; i < n; i++) {
+                double centred = in.get(row * n + i) - mean;
+                variance += centred * centred;
+            }
+            variance += (ROW_TILE - n) * mean * mean;
+            double scale = 1.0 / Math.sqrt(variance / ROW_TILE + EPSILON);
+            for (int i = 0; i < n; i++) {
+                assertEquals("row " + row + " column " + i, (in.get(row * n + i) - mean) * scale, out.get(row * n + i), 5e-2);
+            }
+        }
+    }
+
+    private void checkSiluAndMul(int rows, int hidden) throws TornadoExecutionPlanException {
+        FloatArray in = randomRows(rows, 2 * hidden, 137 + hidden);
+        FloatArray out = new FloatArray(rows * hidden);
+
+        TaskGraph graph = new TaskGraph("silu") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, in);
+        if (hidden == 512) {
+            graph.task("k", TestTileRowKernels::siluAndMul512, new TileContext(), in, out, rows);
+        } else {
+            graph.task("k", TestTileRowKernels::siluAndMul2048, new TileContext(), in, out, rows);
+        }
+        graph.transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        runRowKernel("silu.k", graph, rows);
+
+        for (int row = 0; row < rows; row++) {
+            for (int i = 0; i < hidden; i++) {
+                double gate = in.get(row * 2 * hidden + i);
+                double value = in.get(row * 2 * hidden + hidden + i);
+                double expected = gate / (1.0 + Math.exp(-gate)) * value;
+                assertEquals("row " + row + " column " + i, expected, out.get(row * hidden + i), 1e-2);
+            }
+        }
+    }
+
+    // TileGym parameterises silu_and_mul over batch x seq rows and hidden 512..4096, plus
+    // irregular rows (7, 13 batches; 100, 333 sequence lengths). The hidden size has to be a
+    // power of two here, because it is the tile width that splits the row in half.
+
+    @Test
+    public void testSiluAndMulSmallHidden() throws TornadoExecutionPlanException {
+        checkSiluAndMul(64, 512);
+    }
+
+    @Test
+    public void testSiluAndMulLargeHidden() throws TornadoExecutionPlanException {
+        checkSiluAndMul(16, 2048);
+    }
+
+    @Test
+    public void testSiluAndMulIrregularRows() throws TornadoExecutionPlanException {
+        // 7 * 100 rows: TileGym's prime batch and odd sequence length.
+        checkSiluAndMul(700, 512);
+    }
+
+    // TileGym parameterises layer norm over n = 256, 768 and 4096.
+
+    @Test
+    public void testLayerNormSquare() throws TornadoExecutionPlanException {
+        checkLayerNorm(128, 256);
+    }
+
+    @Test
+    public void testLayerNormFullRowTile() throws TornadoExecutionPlanException {
+        checkLayerNorm(64, ROW_TILE);
+    }
+
+    @Test
+    public void testLayerNormNonPowerOfTwoRow() throws TornadoExecutionPlanException {
+        checkLayerNorm(128, 768);
     }
 
     // TileGym parameterises softmax over (256, 256), (256, 2048), (256, 9) and (256, 1009).

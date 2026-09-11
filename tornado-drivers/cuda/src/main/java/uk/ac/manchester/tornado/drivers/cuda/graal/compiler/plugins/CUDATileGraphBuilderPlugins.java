@@ -40,6 +40,7 @@ import uk.ac.manchester.tornado.api.tile.PartitionView;
 import uk.ac.manchester.tornado.api.tile.TensorView;
 import uk.ac.manchester.tornado.api.tile.Tile;
 import uk.ac.manchester.tornado.api.tile.TileContext;
+import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
@@ -132,6 +133,7 @@ public class CUDATileGraphBuilderPlugins {
     private static void registerViewPlugins(Registration r) {
         registerView(r, FloatArray.class, DType.F32);
         registerView(r, HalfFloatArray.class, DType.F16);
+        registerView(r, BFloat16Array.class, DType.BF16);
         registerView(r, IntArray.class, DType.S32);
     }
 
