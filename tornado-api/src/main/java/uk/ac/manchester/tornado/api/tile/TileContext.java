@@ -376,6 +376,53 @@ public class TileContext {
         return mapUnary(a, Math::sqrt);
     }
 
+    /**
+     * Natural logarithm, {@code ct::log}. Needed to fold a running maximum and a running
+     * denominator into one log-sum-exp value, which is how a split-KV attention kernel hands
+     * its partial result to the reduction that combines the splits.
+     */
+    public Tile log(Tile a) {
+        return mapUnary(a, Math::log);
+    }
+
+    /**
+     * Base-two logarithm, {@code ct::log2}, the counterpart of {@link #exp2(Tile)}.
+     */
+    public Tile log2(Tile a) {
+        return mapUnary(a, value -> Math.log(value) / Math.log(2.0));
+    }
+
+    /**
+     * Base-two exponential, {@code ct::exp2}. This is the cheaper instruction, and it is what
+     * NVIDIA's own tile kernels use for softmax: they fold {@code 1/ln 2} into the score scale
+     * and exponentiate base two instead.
+     */
+    public Tile exp2(Tile a) {
+        return mapUnary(a, value -> Math.pow(2.0, value));
+    }
+
+    /**
+     * Hyperbolic tangent, {@code ct::tanh}. Used for logit soft-capping and for the tanh
+     * approximation of GELU.
+     */
+    public Tile tanh(Tile a) {
+        return mapUnary(a, Math::tanh);
+    }
+
+    /**
+     * Absolute value, {@code ct::abs}.
+     */
+    public Tile abs(Tile a) {
+        return mapUnary(a, Math::abs);
+    }
+
+    /**
+     * Round towards negative infinity, {@code ct::floor}.
+     */
+    public Tile floor(Tile a) {
+        return mapUnary(a, Math::floor);
+    }
+
     public Tile rsqrt(Tile a) {
         return mapUnary(a, value -> 1.0 / Math.sqrt(value));
     }

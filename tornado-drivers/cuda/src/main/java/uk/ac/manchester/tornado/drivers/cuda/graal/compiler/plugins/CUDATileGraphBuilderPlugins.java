@@ -325,6 +325,12 @@ public class CUDATileGraphBuilderPlugins {
         registerUnaryMath(r, "cos", "cos");
         registerUnaryMath(r, "sqrt", "sqrt");
         registerUnaryMath(r, "rsqrt", "rsqrt");
+        registerUnaryMath(r, "log", "log");
+        registerUnaryMath(r, "log2", "log2");
+        registerUnaryMath(r, "exp2", "exp2");
+        registerUnaryMath(r, "tanh", "tanh");
+        registerUnaryMath(r, "abs", "abs");
+        registerUnaryMath(r, "floor", "floor");
 
         // ct::max is the elementwise two-operand form; the reduction is ct::reduce_max.
         registerReduction(r, "max", "reduce_max");

@@ -231,6 +231,51 @@ public class TestTileRowKernels extends TornadoTestBase {
         }
     }
 
+    /** {@code sqrt(2/pi)}, the coefficient of the tanh approximation of GELU. */
+    private static final double GELU_COEFFICIENT = 0.7978845608028654;
+
+    private static final double GELU_CUBIC_TERM = 0.044715;
+
+    /**
+     * GELU, tanh approximation: {@code 0.5 x (1 + tanh(sqrt(2/pi) (x + 0.044715 x^3)))}.
+     *
+     * <p>
+     * This is TileGym's {@code OP == 1} branch of {@code ops/tilecpp/activation/gelu.cuh}. The
+     * exact form needs an error function, which CUDA Tile does not expose as a tile operation;
+     * the tanh approximation is what production inference uses anyway, and it is the reason
+     * {@link TileContext#tanh} is in the API.
+     * </p>
+     */
+    public static void gelu(TileContext tc, FloatArray in, FloatArray out, int rows) {
+        PartitionView iv = tc.partition(tc.view(in, rows, HIDDEN_SMALL), 1, HIDDEN_SMALL);
+        PartitionView ov = tc.partition(tc.view(out, rows, HIDDEN_SMALL), 1, HIDDEN_SMALL);
+        int row = tc.bidX();
+
+        Tile x = iv.load(row, 0);
+        Tile ones = tc.full(DType.F32, 1.0, 1, HIDDEN_SMALL);
+        Tile cubic = tc.mul(tc.mul(x, x), x);
+        Tile inner = tc.scale(tc.add(x, tc.scale(cubic, GELU_CUBIC_TERM)), GELU_COEFFICIENT);
+        ov.store(tc.scale(tc.mul(x, tc.add(ones, tc.tanh(inner))), 0.5), row, 0);
+    }
+
+    /**
+     * GEGLU: the packed row splits into {@code a} and {@code b}, and the result is
+     * {@code a * gelu(b)}. Same packed-row split as silu-and-multiply, different activation.
+     */
+    public static void geglu(TileContext tc, FloatArray in, FloatArray out, int rows) {
+        PartitionView iv = tc.partition(tc.view(in, rows, 2 * HIDDEN_SMALL), 1, HIDDEN_SMALL);
+        PartitionView ov = tc.partition(tc.view(out, rows, HIDDEN_SMALL), 1, HIDDEN_SMALL);
+        int row = tc.bidX();
+
+        Tile a = iv.load(row, 0);
+        Tile b = iv.load(row, 1);
+        Tile ones = tc.full(DType.F32, 1.0, 1, HIDDEN_SMALL);
+        Tile cubic = tc.mul(tc.mul(b, b), b);
+        Tile inner = tc.scale(tc.add(b, tc.scale(cubic, GELU_CUBIC_TERM)), GELU_COEFFICIENT);
+        Tile gelu = tc.scale(tc.mul(b, tc.add(ones, tc.tanh(inner))), 0.5);
+        ov.store(tc.mul(a, gelu), row, 0);
+    }
+
     /**
      * SwiGLU with the gate and the up-projection in separate buffers, as TileGym's swiglu takes
      * them, rather than split from one packed row as silu_and_mul does.
@@ -493,6 +538,51 @@ public class TestTileRowKernels extends TornadoTestBase {
                 double g = gate.get(row * HIDDEN_SMALL + i);
                 double expected = g / (1.0 + Math.exp(-g)) * up.get(row * HIDDEN_SMALL + i);
                 assertEquals("row " + row + " column " + i, expected, out.get(row * HIDDEN_SMALL + i), 1e-2);
+            }
+        }
+    }
+
+    @Test
+    public void testGeluTanhApproximation() throws TornadoExecutionPlanException {
+        final int rows = 96;
+        FloatArray in = randomRows(rows, HIDDEN_SMALL, 501);
+        FloatArray out = new FloatArray(rows * HIDDEN_SMALL);
+
+        TaskGraph graph = new TaskGraph("gelu") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, in) //
+                .task("k", TestTileRowKernels::gelu, new TileContext(), in, out, rows) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        runRowKernel("gelu.k", graph, rows);
+
+        for (int row = 0; row < rows; row++) {
+            for (int i = 0; i < HIDDEN_SMALL; i++) {
+                double x = in.get(row * HIDDEN_SMALL + i);
+                double inner = GELU_COEFFICIENT * (x + GELU_CUBIC_TERM * x * x * x);
+                double expected = 0.5 * x * (1.0 + Math.tanh(inner));
+                assertEquals("row " + row + " column " + i, expected, out.get(row * HIDDEN_SMALL + i), 1e-3);
+            }
+        }
+    }
+
+    @Test
+    public void testGeglu() throws TornadoExecutionPlanException {
+        final int rows = 64;
+        FloatArray in = randomRows(rows, 2 * HIDDEN_SMALL, 503);
+        FloatArray out = new FloatArray(rows * HIDDEN_SMALL);
+
+        TaskGraph graph = new TaskGraph("geglu") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, in) //
+                .task("k", TestTileRowKernels::geglu, new TileContext(), in, out, rows) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        runRowKernel("geglu.k", graph, rows);
+
+        for (int row = 0; row < rows; row++) {
+            for (int i = 0; i < HIDDEN_SMALL; i++) {
+                double a = in.get(row * 2 * HIDDEN_SMALL + i);
+                double b = in.get(row * 2 * HIDDEN_SMALL + HIDDEN_SMALL + i);
+                double inner = GELU_COEFFICIENT * (b + GELU_CUBIC_TERM * b * b * b);
+                double expected = a * 0.5 * b * (1.0 + Math.tanh(inner));
+                assertEquals("row " + row + " column " + i, expected, out.get(row * HIDDEN_SMALL + i), 1e-3);
             }
         }
     }

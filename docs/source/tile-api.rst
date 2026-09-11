@@ -129,7 +129,7 @@ API reference
    * - ``mma(a, b, acc)``
      - ``ct::mma``
      - tensor cores; instruction chosen by the compiler
-   * - ``exp sqrt rsqrt sin cos``
+   * - ``exp exp2 log log2 tanh sqrt rsqrt sin cos abs floor``
      - ``ct::exp`` ...
      -
    * - ``transpose(tile)``
