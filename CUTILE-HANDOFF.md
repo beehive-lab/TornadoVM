@@ -319,11 +319,73 @@ can be done anywhere.
 
 | # | Item | Notes |
 |---|---|---|
-| B1 | Plugins for `full`, `iota`, `scale`, `transpose`, `cast` | These five API methods have **no invocation plugin**, so calling one hits the unintrinsified guard in `CUDATileSupportPhase`. The failure is loud, not silent, but the API currently promises more than the compiler implements. |
-| B2 | Unit tests | `tornado-unittests/.../tile/` does not exist yet. Port `TestTileElementwise` and `TestTileMatmul` from `feat/jtile` onto `TileContext`, add masked-edge and negative-guard cases, and register the suite in `tornado-assembly/src/bin/tornado-test`. |
+| B1 | Plugins for `full`, `iota`, `scale`, `transpose`, `cast` | **DONE.** All five are intrinsified. `cast` emits `ct::element_cast<Element>` and rejects narrowing in the plugin; `scale` emits broadcast multiplication with the scalar cast to the tile's element type. |
+| B2 | Unit tests | **DONE.** `tornado-unittests/.../tile/TestTileElementwise` and `TestTileMatmul`, registered in `module-info` and `tornado-test`. See the note below on what a pass and an UNSUPPORTED mean on a pre-R580 box. |
 | B3 | `TornadoCUDAIntrinsicsReplacements` tile cases | A reflectively resolved kernel skips plugin lookup. Guarded today, so it fails with an explanation; finishing it means one case per operation, as the MMA intrinsics have. |
 | B4 | Documentation | No `docs/source/*.rst` page for the tile API, and no mention in the hybrid API guide. |
+| B6 | Codegen-validation harness | Emit each tile kernel with `--printKernel` and compile it with nvcc, so the emitters are validated without a driver. Manual recipe above. |
 | B5 | Host-only API methods | `getRank`, `getTileDimension`, `getBlockCount`, `setBlockIndex`, `setBlockCount` exist for the JVM fallback and have no device meaning. Calling one inside a kernel hits the same guard. Document them as host-only, or split them out of the kernel-facing type. |
+
+### Running the tests before the driver is upgraded
+
+```
+tornado-test -V uk.ac.manchester.tornado.unittests.tile.TestTileElementwise
+tornado-test -V uk.ac.manchester.tornado.unittests.tile.TestTileMatmul
+```
+
+On a box with a driver older than R580 the expected result is **every test UNSUPPORTED**, not
+failed, and measured here that is exactly what happens:
+
+```
+TestTileElementwise    Test ran: 8, Failed: 0, Unsupported: 8
+TestTileMatmul         Test ran: 3, Failed: 0, Unsupported: 3
+```
+
+The tests translate `TornadoDeviceTileNotSupported`, and specifically a bailout whose message
+contains `device kernel image is invalid`, into `TornadoVMCUDANotSupported`, which the runner
+counts as UNSUPPORTED. A JUnit `Assume` was deliberately not used: it reports as a pass, which
+would hide the fact that nothing ran.
+
+### Why support is probed exactly once - a JVM crash in the CUDA failure path
+
+`TileSupport.requireTileSupport()` compiles and launches one minimal tile kernel per JVM, caches
+the verdict, and every other test reports UNSUPPORTED from that cached answer. That is not just
+a speed optimisation.
+
+**Letting all eight tests fail their module load brought the JVM down**:
+
+```
+SIGSEGV in InterpreterRuntime::exception_handler_for_exception
+  CUDACompiler.loadModule -> CUDADriverAPI.errorString -> FFMSupport.allocatePointer
+  -> Arena.allocate -> Bits.reserveMemory
+```
+
+One failed `cuModuleLoadDataEx` is handled cleanly; eight in a row are not. `errorString` itself
+looks correct - it uses `Arena.ofConfined()` in try-with-resources - so something accumulates
+across repeated failures rather than leaking in one call. **This is a pre-existing robustness
+bug in the CUDA backend's error path, not in the tile code**: any host whose module loads fail
+repeatedly, for any reason, would hit it. Worth an upstream issue of its own; the probe-once
+design just keeps the suite away from it.
+
+### The trade-off that introduces
+
+Because the other tests now skip *before* compiling, on a pre-R580 box only the probe kernel
+proves that generated code compiles. UNSUPPORTED no longer implies "nvcc accepted this kernel"
+for every test, as it briefly did. To validate one kernel's codegen without a driver, emit and
+compile it by hand - this is how the missing rank-1 `full` overload and the absence of
+`ct::cast` were both found:
+
+```
+tornado --printKernel --jvm="-Dtornado.recover.bailout=False" \
+    -m tornado.examples/uk.ac.manchester.tornado.examples.tile.TileVectorAdd
+# copy the emitted kernel into a .cu file, then:
+nvcc -tilecubin --tile-only -std=c++20 -arch=sm_89 -o k.cubin k.cu
+```
+
+A standing codegen-validation harness that does this for every tile kernel would be a good
+addition, and is listed as B6 below.
+
+On an R580+ box the whole suite should simply run and check numbers.
 
 ### Verified `ct::` spellings, so nobody has to guess
 

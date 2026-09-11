@@ -111,6 +111,11 @@ public class TileContext {
     /**
      * Drives the JVM fallback over a grid of tile blocks. Has no meaning on an accelerator,
      * where the block index comes from {@code ct::bid()}.
+     *
+     * <p>
+     * Host side only. Calling this from inside a kernel is rejected at compile time, because
+     * there is no device operation to intrinsify it to.
+     * </p>
      */
     public void setBlockIndex(int x, int y, int z) {
         this.blockX = x;
@@ -180,6 +185,12 @@ public class TileContext {
         checkShape(rows);
         checkShape(columns);
         return Tile.allocate(dtype, new int[] { rows, columns });
+    }
+
+    public Tile full(DType dtype, double value, int extent) {
+        Tile tile = zeros(dtype, extent);
+        java.util.Arrays.fill(tile.getData(), value);
+        return tile;
     }
 
     public Tile full(DType dtype, double value, int rows, int columns) {
@@ -304,7 +315,15 @@ public class TileContext {
         return result;
     }
 
+    /**
+     * Elementwise conversion, lowering to {@code ct::element_cast}. Only widening conversions
+     * are legal: CUDA Tile rejects narrowing, so f16 to f32 is fine and f32 to f16 is not.
+     */
     public Tile cast(Tile a, DType target) {
+        if (!a.getDType().canConvertTo(target)) {
+            throw new IllegalArgumentException("[TileContext] CUDA Tile rejects the narrowing conversion "
+                    + a.getDType() + " to " + target + ". Only widening element conversions are allowed.");
+        }
         return new Tile(target, a.getShape(), a.getData().clone());
     }
 

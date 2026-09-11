@@ -52,7 +52,9 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileMmaNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATilePartitionViewNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileReduceNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileScaleNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileStoreNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileUnaryNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileViewNode;
 
 /**
@@ -92,6 +94,7 @@ public class CUDATileGraphBuilderPlugins {
         registerViewPlugins(context);
         registerPartitionPlugins(context);
         registerTileCreationPlugins(context);
+        registerTileFactoryPlugins(context);
         registerTileComputePlugins(context);
 
         Registration view = new Registration(plugins, PartitionView.class);
@@ -215,6 +218,39 @@ public class CUDATileGraphBuilderPlugins {
         });
     }
 
+    private static void registerTileFactoryPlugins(Registration r) {
+        r.register(new InvocationPlugin("full", InvocationPlugin.Receiver.class, DType.class, double.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode dtypeNode, ValueNode valueNode, ValueNode extent) {
+                receiver.get(true);
+                DType dtype = resolveDType(b, dtypeNode);
+                int[] shape = { shapeConstant(extent, "tile extent") };
+                b.addPush(JavaKind.Object, new CUDATileCreateNode(dtype, shape, literal(dtype, valueNode)));
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin("full", InvocationPlugin.Receiver.class, DType.class, double.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode dtypeNode, ValueNode valueNode, ValueNode rows, ValueNode columns) {
+                receiver.get(true);
+                DType dtype = resolveDType(b, dtypeNode);
+                int[] shape = { shapeConstant(rows, "tile rows"), shapeConstant(columns, "tile columns") };
+                b.addPush(JavaKind.Object, new CUDATileCreateNode(dtype, shape, literal(dtype, valueNode)));
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin("iota", InvocationPlugin.Receiver.class, DType.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode dtypeNode, ValueNode extent) {
+                receiver.get(true);
+                DType dtype = resolveDType(b, dtypeNode);
+                int[] shape = { shapeConstant(extent, "tile extent") };
+                b.addPush(JavaKind.Object, new CUDATileCreateNode(dtype, shape, null, true));
+                return true;
+            }
+        });
+    }
+
     private static void registerTileComputePlugins(Registration r) {
         registerBinary(r, "add", "+");
         registerBinary(r, "sub", "-");
@@ -227,6 +263,49 @@ public class CUDATileGraphBuilderPlugins {
                 CUDATileNode operand = tileNodeOf(tileA, "the left operand of mma");
                 CUDATileNode acc = tileNodeOf(accumulator, "the accumulator of mma");
                 b.addPush(JavaKind.Object, new CUDATileMmaNode(tileA, tileB, accumulator, operand.tileDType(), acc.tileDType(), acc.tileShape()));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("scale", InvocationPlugin.Receiver.class, Tile.class, double.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode tile, ValueNode scalar) {
+                receiver.get(true);
+                CUDATileNode source = tileNodeOf(tile, "the operand of scale");
+                b.addPush(JavaKind.Object, new CUDATileScaleNode(tile, scalar, source.tileDType(), source.tileShape()));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("transpose", InvocationPlugin.Receiver.class, Tile.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode tile) {
+                receiver.get(true);
+                CUDATileNode source = tileNodeOf(tile, "the operand of transpose");
+                int[] shape = source.tileShape();
+                if (shape.length != 2) {
+                    throw new IllegalStateException("[TileContext] transpose expects a rank-2 tile, got rank " + shape.length + ".");
+                }
+                int[] transposed = { shape[1], shape[0] };
+                b.addPush(JavaKind.Object, new CUDATileUnaryNode(tile, "transpose", null, source.tileDType(), transposed));
+                return true;
+            }
+        });
+
+        // There is no ct::cast. Elementwise conversion is ct::element_cast<Element>(tile), and
+        // CUDA Tile refuses narrowing, so the direction is checked here rather than letting a
+        // template constraint fail inside the tile compiler.
+        r.register(new InvocationPlugin("cast", InvocationPlugin.Receiver.class, Tile.class, DType.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode tile, ValueNode targetNode) {
+                receiver.get(true);
+                CUDATileNode source = tileNodeOf(tile, "the operand of cast");
+                DType target = resolveDType(b, targetNode);
+                if (!source.tileDType().canConvertTo(target)) {
+                    throw new IllegalStateException("[TileContext] CUDA Tile rejects the narrowing conversion "
+                            + source.tileDType() + " to " + target + ". Only widening element conversions are allowed.");
+                }
+                b.addPush(JavaKind.Object, new CUDATileUnaryNode(tile, "element_cast", target.getCppType(), target, source.tileShape()));
                 return true;
             }
         });
@@ -408,6 +487,24 @@ public class CUDATileGraphBuilderPlugins {
             throw new IllegalStateException("[TileContext] Failed to read the ordinal of a DType constant.");
         }
         return DType.values()[ordinal.asInt()];
+    }
+
+    /**
+     * Renders a constant initialiser for ct::full in the tile's element type. The value has to
+     * fold: it becomes part of the generated source, not a runtime argument.
+     */
+    private static String literal(DType dtype, ValueNode valueNode) {
+        JavaConstant constant = valueNode.asJavaConstant();
+        if (constant == null) {
+            throw new IllegalStateException("[TileContext] The fill value passed to full(...) must be a compile-time "
+                    + "constant, because it is emitted into the kernel source.");
+        }
+        double value = constant.asDouble();
+        return switch (dtype) {
+            case S8, S32 -> Long.toString((long) value);
+            case F64 -> Double.toString(value);
+            default -> value + "f";
+        };
     }
 
     /**

@@ -61,6 +61,34 @@ public enum DType {
     }
 
     /**
+     * Whether {@code ct::element_cast} accepts this conversion.
+     *
+     * <p>
+     * CUDA Tile refuses narrowing conversions: the constraint on {@code element_cast} rejects
+     * f32 to f16, while f16 to f32 is accepted. Checking it here turns a template constraint
+     * failure from the tile compiler into a message that names the two types.
+     * </p>
+     *
+     * @param target
+     *     element type to convert to
+     * @return true when the conversion is a widening one that CUDA Tile allows
+     */
+    public boolean canConvertTo(DType target) {
+        if (this == target) {
+            return true;
+        }
+        return switch (this) {
+            case FP8_E4M3, FP8_E5M2 -> target == F16 || target == BF16 || target == F32 || target == F64;
+            case F16, BF16 -> target == F32 || target == F64;
+            case TF32 -> target == F32 || target == F64;
+            case F32 -> target == F64;
+            case S8 -> target == S32 || target == F32 || target == F64;
+            case S32 -> target == F64;
+            case F64 -> false;
+        };
+    }
+
+    /**
      * Accumulator rules taken from the CUDA Tile {@code mmaf} / {@code mmai} tables. The
      * accumulator type must equal the result type, so this reports the accumulator that a
      * multiply-accumulate over this operand type is allowed to produce.

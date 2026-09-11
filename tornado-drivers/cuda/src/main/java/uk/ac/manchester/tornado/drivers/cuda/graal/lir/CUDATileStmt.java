@@ -199,12 +199,23 @@ public class CUDATileStmt {
         private final int[] shape;
         private final String initializer;
 
+        /**
+         * ct::iota takes no argument and fills the tile with 0, 1, 2, ..., so it is a distinct
+         * factory rather than a ct::full with a different value.
+         */
+        private final boolean iota;
+
         public TileCreateStmt(Value result, DType dtype, int[] shape, String initializer) {
+            this(result, dtype, shape, initializer, false);
+        }
+
+        public TileCreateStmt(Value result, DType dtype, int[] shape, String initializer, boolean iota) {
             super(TYPE);
             this.result = result;
             this.dtype = dtype;
             this.shape = shape;
             this.initializer = initializer;
+            this.iota = iota;
         }
 
         @Override
@@ -221,7 +232,11 @@ public class CUDATileStmt {
         public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
             String type = tileType(dtype, shape);
             asm.indent();
-            asm.emit(type + " " + asm.getStringValue(crb, result) + " = ct::full<" + type + ">(" + initializer + ")");
+            if (iota) {
+                asm.emit(type + " " + asm.getStringValue(crb, result) + " = ct::iota<" + type + ">()");
+            } else {
+                asm.emit(type + " " + asm.getStringValue(crb, result) + " = ct::full<" + type + ">(" + initializer + ")");
+            }
             asm.delimiter();
             asm.eol();
         }
@@ -466,6 +481,111 @@ public class CUDATileStmt {
             asm.indent();
             asm.emit("auto " + asm.getStringValue(crb, result) + " = ct::" + reduction + "("
                     + asm.getStringValue(crb, tile) + ", " + constant(axis) + ")");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
+    /**
+     * A one-operand tile operation.
+     *
+     * <p>
+     * Two spellings are needed and they differ in shape, which is why this carries the call
+     * text rather than an operator: {@code ct::transpose(t)} is a plain call, while an element
+     * conversion is {@code ct::element_cast<float>(t)} with the target type as a template
+     * argument. There is no {@code ct::cast} - that spelling does not exist.
+     * </p>
+     */
+    public static class TileUnaryStmt extends AbstractTileInstruction implements TileValued {
+
+        public static final LIRInstructionClass<TileUnaryStmt> TYPE = LIRInstructionClass.create(TileUnaryStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value tile;
+
+        private final String function;
+        private final String templateArgument;
+        private final DType dtype;
+        private final int[] shape;
+
+        public TileUnaryStmt(Value result, Value tile, String function, String templateArgument, DType dtype, int[] shape) {
+            super(TYPE);
+            this.result = result;
+            this.tile = tile;
+            this.function = function;
+            this.templateArgument = templateArgument;
+            this.dtype = dtype;
+            this.shape = shape;
+        }
+
+        @Override
+        public String getTileCppType() {
+            return tileType(dtype, shape);
+        }
+
+        @Override
+        public Value getTileResult() {
+            return result;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            asm.indent();
+            asm.emit("auto " + asm.getStringValue(crb, result) + " = ct::" + function);
+            if (templateArgument != null) {
+                asm.emit("<" + templateArgument + ">");
+            }
+            asm.emit("(" + asm.getStringValue(crb, tile) + ")");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
+    /**
+     * Scales a tile by a scalar. CUDA Tile has no named function for this: a scalar broadcasts
+     * across the tile, so it is plain multiplication. The scalar is cast to the tile's element
+     * type first, because a Java double operand would otherwise widen the arithmetic.
+     */
+    public static class TileScaleStmt extends AbstractTileInstruction implements TileValued {
+
+        public static final LIRInstructionClass<TileScaleStmt> TYPE = LIRInstructionClass.create(TileScaleStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value tile;
+        @Use({ OperandFlag.REG, OperandFlag.CONST })
+        protected Value scalar;
+
+        private final DType dtype;
+        private final int[] shape;
+
+        public TileScaleStmt(Value result, Value tile, Value scalar, DType dtype, int[] shape) {
+            super(TYPE);
+            this.result = result;
+            this.tile = tile;
+            this.scalar = scalar;
+            this.dtype = dtype;
+            this.shape = shape;
+        }
+
+        @Override
+        public String getTileCppType() {
+            return tileType(dtype, shape);
+        }
+
+        @Override
+        public Value getTileResult() {
+            return result;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            asm.indent();
+            asm.emit("auto " + asm.getStringValue(crb, result) + " = " + asm.getStringValue(crb, tile) + " * ("
+                    + dtype.getCppType() + ") " + asm.getStringValue(crb, scalar));
             asm.delimiter();
             asm.eol();
         }

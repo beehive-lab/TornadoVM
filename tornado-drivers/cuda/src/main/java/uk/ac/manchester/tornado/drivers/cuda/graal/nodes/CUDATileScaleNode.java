@@ -23,11 +23,9 @@
 package uk.ac.manchester.tornado.drivers.cuda.graal.nodes;
 
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.Value;
 import tornado.graal.compiler.core.common.LIRKind;
 import tornado.graal.compiler.core.common.type.StampFactory;
 import tornado.graal.compiler.graph.NodeClass;
-import tornado.graal.compiler.graph.NodeInputList;
 import tornado.graal.compiler.lir.Variable;
 import tornado.graal.compiler.lir.gen.LIRGeneratorTool;
 import tornado.graal.compiler.nodeinfo.NodeInfo;
@@ -40,43 +38,32 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDATileStmt;
 
 /**
- * Creates a tile filled with a constant, the start of an accumulator chain.
+ * Scales a tile by a scalar, which CUDA Tile expresses as broadcast multiplication.
  */
 @NodeInfo
-public class CUDATileCreateNode extends FixedWithNextNode implements LIRLowerable, CUDATileNode {
+public class CUDATileScaleNode extends FixedWithNextNode implements LIRLowerable, CUDATileNode {
 
-    public static final NodeClass<CUDATileCreateNode> TYPE = NodeClass.create(CUDATileCreateNode.class);
+    public static final NodeClass<CUDATileScaleNode> TYPE = NodeClass.create(CUDATileScaleNode.class);
+
+    @Input
+    protected ValueNode tile;
+    @Input
+    protected ValueNode scalar;
 
     private final DType dtype;
     private final int[] shape;
-    private final String initializer;
 
-    /** ct::iota takes no argument, so it is a distinct factory rather than a ct::full. */
-    private final boolean iota;
-
-    public CUDATileCreateNode(DType dtype, int[] shape, String initializer) {
-        this(dtype, shape, initializer, false);
-    }
-
-    public CUDATileCreateNode(DType dtype, int[] shape, String initializer, boolean iota) {
+    public CUDATileScaleNode(ValueNode tile, ValueNode scalar, DType dtype, int[] shape) {
         super(TYPE, StampFactory.forKind(JavaKind.Object));
+        this.tile = tile;
+        this.scalar = scalar;
         this.dtype = dtype;
         this.shape = shape;
-        this.initializer = initializer;
-        this.iota = iota;
-    }
-
-    public DType getDType() {
-        return dtype;
-    }
-
-    public int[] getShape() {
-        return shape;
     }
 
     @Override
     public String tileOperationName() {
-        return iota ? "tile iota" : "tile creation";
+        return "tile scale";
     }
 
     @Override
@@ -93,7 +80,7 @@ public class CUDATileCreateNode extends FixedWithNextNode implements LIRLowerabl
     public void generate(NodeLIRBuilderTool gen) {
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
         Variable result = tool.newVariable(LIRKind.value(CUDAKind.TILE));
-        tool.append(new CUDATileStmt.TileCreateStmt(result, dtype, shape, initializer, iota));
+        tool.append(new CUDATileStmt.TileScaleStmt(result, gen.operand(tile), gen.operand(scalar), dtype, shape));
         gen.setResult(this, result);
     }
 }
