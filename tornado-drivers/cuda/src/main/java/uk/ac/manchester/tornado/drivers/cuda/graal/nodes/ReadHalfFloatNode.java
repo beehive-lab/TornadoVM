@@ -40,9 +40,10 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAArchitecture;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAUnary;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkReadNode;
 
 @NodeInfo
-public class ReadHalfFloatNode extends FixedWithNextNode implements LIRLowerable {
+public class ReadHalfFloatNode extends FixedWithNextNode implements LIRLowerable, MarkReadNode {
 
     public static final NodeClass<ReadHalfFloatNode> TYPE = NodeClass.create(ReadHalfFloatNode.class);
 

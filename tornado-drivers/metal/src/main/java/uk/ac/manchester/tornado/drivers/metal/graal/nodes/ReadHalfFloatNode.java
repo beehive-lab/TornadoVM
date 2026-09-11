@@ -42,9 +42,10 @@ import uk.ac.manchester.tornado.drivers.metal.graal.MetalArchitecture;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalKind;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalLIRStmt;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalUnary;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkReadNode;
 
 @NodeInfo
-public class ReadHalfFloatNode extends FixedWithNextNode implements LIRLowerable {
+public class ReadHalfFloatNode extends FixedWithNextNode implements LIRLowerable, MarkReadNode {
 
     public static final NodeClass<ReadHalfFloatNode> TYPE = NodeClass.create(ReadHalfFloatNode.class);
 
