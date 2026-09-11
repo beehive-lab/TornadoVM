@@ -26,7 +26,9 @@ import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.tile.PartitionView;
@@ -269,6 +271,139 @@ public class TestTileChaining extends TornadoTestBase {
                     assertEquals("replay " + replay + " element " + i, expectedProjection + 0.25f, result.get(i), 0.05f);
                 }
             }
+        }
+    }
+
+    /** Stage for the KernelContext variant: one work-item per element, explicit thread ids. */
+    public static void scaleWithKernelContext(KernelContext ctx, FloatArray in, FloatArray out, float factor) {
+        out.set(ctx.globalIdx, in.get(ctx.globalIdx) * factor);
+    }
+
+    /** A TornadoVM reduction task, a fourth kind of task in the same graph. */
+    public static void sumInto(FloatArray in, @Reduce FloatArray total) {
+        for (@Parallel int i = 0; i < in.getSize(); i++) {
+            total.set(0, total.get(0) + in.get(i));
+        }
+    }
+
+    /**
+     * Four task kinds in one graph: a `@Parallel` JIT kernel, a `KernelContext` kernel, a
+     * `TileContext` kernel and a native cuBLAS call.
+     *
+     * <p>
+     * The `KernelContext` stage matters because it is the existing explicit-thread API, and its
+     * launch geometry is the opposite of a tile task's: it wants a real thread block, while a
+     * tile task is pinned to one thread per block. Both appear in the same graph with their own
+     * worker grids, which is the case a per-device scheduler choice would have broken.
+     * </p>
+     */
+    @Test
+    public void testJitAndKernelContextAndTileAndLibrary() throws TornadoExecutionPlanException {
+        FloatArray input = new FloatArray(SIZE);
+        FloatArray matrix = new FloatArray(SIZE * SIZE);
+        FloatArray ctxScaled = new FloatArray(SIZE);
+        FloatArray doubled = new FloatArray(SIZE);
+        FloatArray projected = new FloatArray(SIZE);
+        FloatArray result = new FloatArray(SIZE);
+
+        java.util.Random random = new java.util.Random(59);
+        for (int i = 0; i < SIZE; i++) {
+            input.set(i, random.nextFloat());
+        }
+        for (int i = 0; i < SIZE * SIZE; i++) {
+            matrix.set(i, random.nextFloat() - 0.5f);
+        }
+
+        // Two worker grids with opposite geometry in one scheduler.
+        WorkerGrid1D ctxWorker = new WorkerGrid1D(SIZE);
+        ctxWorker.setLocalWork(64, 1, 1);                       // a real thread block
+        WorkerGrid1D tileWorker = new WorkerGrid1D(SIZE / TILE); // tile blocks; block pinned to 1
+        GridScheduler grid = new GridScheduler();
+        grid.addWorkerGrid("mixed.ctx", ctxWorker);
+        grid.addWorkerGrid("mixed.tile", tileWorker);
+
+        TaskGraph graph = new TaskGraph("mixed") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, matrix) //
+                .task("ctx", TestTileChaining::scaleWithKernelContext, new KernelContext(), input, ctxScaled, 3.0f) //
+                .task("tile", TestTileChaining::tileDouble, new TileContext(), ctxScaled, doubled, SIZE) //
+                .libraryTask("gemv", CuBlas::cublasSgemv, //
+                        CuBlasOperation.CUBLAS_OP_T.operation(), SIZE, SIZE, 1.0f, matrix, SIZE, doubled, 1, 0.0f, projected, 1) //
+                .task("bias", TestTileChaining::bias, projected, result, 0.25f) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.withGridScheduler(grid).execute();
+        }
+
+        for (int i = 0; i < SIZE; i++) {
+            float expected = 0.0f;
+            for (int j = 0; j < SIZE; j++) {
+                expected += matrix.get(i * SIZE + j) * (2.0f * 3.0f * input.get(j));
+            }
+            assertEquals(expected + 0.25f, result.get(i), 0.05f);
+        }
+    }
+
+    // A tile task combined with an @Reduce task is deliberately NOT tested here, because
+    // ReduceTaskGraph keeps its own, stricter argument check and rewrites the graph:
+    //
+    //   * the rewrite creates a new TaskGraph with a generated name, so every task id changes
+    //     and a GridScheduler keyed on the original id stops matching. A tile task then runs
+    //     with no worker grid, which means one tile block, and the reduction silently returns
+    //     only the first tile's contribution.
+    //   * its check carries neither TornadoTaskGraph's exemption for native arrays nor an
+    //     allowance for a buffer arriving through consumeFromDevice, so an intermediate cannot
+    //     be left undeclared and the two stages cannot be split across graphs either.
+    //
+    // Both are pre-existing reduction behaviours rather than anything specific to tiles, so they
+    // are recorded rather than worked around. TileContext was added to that check's exemption
+    // list, which is the part that did belong here. Use tc.sum for a reduction inside a tile.
+
+    /**
+     * Producer and consumer task graphs sharing a device buffer: the tile task writes it in one
+     * graph, `persistOnDevice` keeps it there, and a cuBLAS task in a second graph consumes it
+     * through `consumeFromDevice` without a host round-trip.
+     */
+    @Test
+    public void testTileProducerCuBlasConsumerAcrossGraphs() throws TornadoExecutionPlanException {
+        FloatArray input = new FloatArray(SIZE);
+        FloatArray matrix = new FloatArray(SIZE * SIZE);
+        FloatArray doubled = new FloatArray(SIZE);
+        FloatArray projected = new FloatArray(SIZE);
+
+        java.util.Random random = new java.util.Random(71);
+        for (int i = 0; i < SIZE; i++) {
+            input.set(i, random.nextFloat());
+        }
+        for (int i = 0; i < SIZE * SIZE; i++) {
+            matrix.set(i, random.nextFloat() - 0.5f);
+        }
+
+        WorkerGrid1D tileWorker = new WorkerGrid1D(SIZE / TILE);
+        GridScheduler grid = new GridScheduler("producer.tile", tileWorker);
+
+        TaskGraph producer = new TaskGraph("producer") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .task("tile", TestTileChaining::tileDouble, new TileContext(), input, doubled, SIZE) //
+                .persistOnDevice(doubled);
+
+        TaskGraph consumer = new TaskGraph("consumer") //
+                .consumeFromDevice(producer.getTaskGraphName(), doubled) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, matrix) //
+                .libraryTask("gemv", CuBlas::cublasSgemv, //
+                        CuBlasOperation.CUBLAS_OP_T.operation(), SIZE, SIZE, 1.0f, matrix, SIZE, doubled, 1, 0.0f, projected, 1) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, projected);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(producer.snapshot(), consumer.snapshot())) {
+            plan.withGridScheduler(grid).execute();
+        }
+
+        for (int i = 0; i < SIZE; i++) {
+            float expected = 0.0f;
+            for (int j = 0; j < SIZE; j++) {
+                expected += matrix.get(i * SIZE + j) * (2.0f * input.get(j));
+            }
+            assertEquals(expected, projected.get(i), 0.05f);
         }
     }
 

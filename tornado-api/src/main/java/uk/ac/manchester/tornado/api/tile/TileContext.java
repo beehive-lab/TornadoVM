@@ -240,6 +240,16 @@ public class TileContext {
         return zip(a, b, '/');
     }
 
+    /**
+     * Elementwise maximum of two tiles, with broadcasting. Lowers to {@code ct::max}, which in
+     * CUDA Tile is the two-operand form; the reduction is {@link #max(Tile, int)} and lowers to
+     * {@code ct::reduce_max}. Keeping both is what allows a running maximum across chunks of a
+     * row wider than one tile.
+     */
+    public Tile maximum(Tile a, Tile b) {
+        return zip(a, b, 'M');
+    }
+
     public Tile scale(Tile a, double scalar) {
         Tile result = Tile.allocate(a.getDType(), a.getShape());
         for (int i = 0; i < a.getElementCount(); i++) {
@@ -405,6 +415,7 @@ public class TileContext {
                     case '+' -> left + right;
                     case '-' -> left - right;
                     case '/' -> left / right;
+                    case 'M' -> Math.max(left, right);
                     default -> left * right;
                 };
                 result.getData()[row * columns + column] = value;

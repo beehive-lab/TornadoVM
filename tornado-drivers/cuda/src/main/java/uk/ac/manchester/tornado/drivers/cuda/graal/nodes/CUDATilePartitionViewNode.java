@@ -33,6 +33,7 @@ import tornado.graal.compiler.lir.gen.LIRGeneratorTool;
 import tornado.graal.compiler.nodeinfo.NodeInfo;
 import tornado.graal.compiler.nodes.FixedWithNextNode;
 import tornado.graal.compiler.nodes.PiNode;
+import tornado.graal.compiler.nodes.ValueProxyNode;
 import tornado.graal.compiler.nodes.ValueNode;
 import tornado.graal.compiler.nodes.spi.LIRLowerable;
 import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
@@ -127,7 +128,9 @@ public class CUDATilePartitionViewNode extends FixedWithNextNode implements LIRL
                     written = true;
                 } else if (usage instanceof CUDATileLoadNode) {
                     read = true;
-                } else if (usage instanceof PiNode) {
+                } else if (usage instanceof PiNode || usage instanceof ValueProxyNode) {
+                    // Pi wrappers come from receiver null checks; proxies come from a view used
+                    // inside a loop. Both hide the real load/store from a direct-usage scan.
                     worklist.add(usage);
                 }
             }

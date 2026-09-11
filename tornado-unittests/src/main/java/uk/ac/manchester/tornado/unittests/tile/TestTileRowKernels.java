@@ -177,6 +177,76 @@ public class TestTileRowKernels extends TornadoTestBase {
         ov.store(tc.mul(silu, value), row, 0);
     }
 
+    /** Column-block width for kernels that walk a row wider than one tile. */
+    private static final int CHUNK = 256;
+
+    /**
+     * Softmax over a row wider than one tile, the shape TileGym reaches with n = 32768.
+     *
+     * <p>
+     * Three passes over the row's column blocks, which is what the online formulation avoids but
+     * is the clearer thing to test first: a running elementwise maximum, then the exponential
+     * sum, then normalise and store. The running maximum is why an elementwise {@code ct::max}
+     * is needed alongside the {@code ct::reduce_max} reduction - the first combines two tiles,
+     * the second collapses one.
+     * </p>
+     */
+    public static void softmaxChunked(TileContext tc, FloatArray in, FloatArray out, int rows, int n, int chunks) {
+        PartitionView iv = tc.partition(tc.view(in, rows, n), 1, CHUNK);
+        PartitionView ov = tc.partition(tc.view(out, rows, n), 1, CHUNK);
+        int row = tc.bidX();
+
+        Tile running = tc.full(DType.F32, -1.0e30, 1, CHUNK);
+        for (int c = 0; c < chunks; c++) {
+            running = tc.maximum(running, iv.loadMasked(row, c));
+        }
+        Tile rowMax = tc.max(running, 1);
+
+        Tile partial = tc.zeros(DType.F32, 1, CHUNK);
+        for (int c = 0; c < chunks; c++) {
+            partial = tc.add(partial, tc.exp(tc.sub(iv.loadMasked(row, c), rowMax)));
+        }
+        Tile total = tc.sum(partial, 1);
+
+        for (int c = 0; c < chunks; c++) {
+            ov.storeMasked(tc.div(tc.exp(tc.sub(iv.loadMasked(row, c), rowMax)), total), row, c);
+        }
+    }
+
+    /**
+     * Persistent RMS norm: the grid is sized to the device rather than the data, and each tile
+     * block strides over rows. This is the only kernel here that reads
+     * {@link TileContext#numBlocksX()}, and the loop bound is a runtime value, which is allowed
+     * because it is a grid quantity and not a tile shape.
+     */
+    public static void rmsNormPersistent(TileContext tc, FloatArray in, FloatArray out, int rows, int n, float inverseN) {
+        PartitionView iv = tc.partition(tc.view(in, rows, n), 1, ROW_TILE);
+        PartitionView ov = tc.partition(tc.view(out, rows, n), 1, ROW_TILE);
+
+        for (int row = tc.bidX(); row < rows; row += tc.numBlocksX()) {
+            Tile x = iv.loadMasked(row, 0);
+            Tile meanSquare = tc.scale(tc.sum(tc.mul(x, x), 1), inverseN);
+            Tile scale = tc.rsqrt(tc.add(meanSquare, tc.full(DType.F32, EPSILON, 1, 1)));
+            ov.storeMasked(tc.mul(x, scale), row, 0);
+        }
+    }
+
+    /**
+     * SwiGLU with the gate and the up-projection in separate buffers, as TileGym's swiglu takes
+     * them, rather than split from one packed row as silu_and_mul does.
+     */
+    public static void swiglu(TileContext tc, FloatArray gate, FloatArray up, FloatArray out, int rows) {
+        PartitionView gv = tc.partition(tc.view(gate, rows, HIDDEN_SMALL), 1, HIDDEN_SMALL);
+        PartitionView uv = tc.partition(tc.view(up, rows, HIDDEN_SMALL), 1, HIDDEN_SMALL);
+        PartitionView ov = tc.partition(tc.view(out, rows, HIDDEN_SMALL), 1, HIDDEN_SMALL);
+        int row = tc.bidX();
+
+        Tile g = gv.load(row, 0);
+        Tile ones = tc.full(DType.F32, 1.0, 1, HIDDEN_SMALL);
+        Tile silu = tc.div(g, tc.add(ones, tc.exp(tc.scale(g, -1.0))));
+        ov.store(tc.mul(silu, uv.load(row, 0)), row, 0);
+    }
+
     private static FloatArray randomRows(int rows, int n, long seed) {
         java.util.Random random = new java.util.Random(seed);
         FloatArray array = new FloatArray(rows * n);
@@ -335,6 +405,96 @@ public class TestTileRowKernels extends TornadoTestBase {
     @Test
     public void testLayerNormNonPowerOfTwoRow() throws TornadoExecutionPlanException {
         checkLayerNorm(128, 768);
+    }
+
+    private void checkSoftmaxChunked(int rows, int n) throws TornadoExecutionPlanException {
+        FloatArray in = randomRows(rows, n, 211 + n);
+        FloatArray out = new FloatArray(rows * n);
+        int chunks = (n + CHUNK - 1) / CHUNK;
+
+        TaskGraph graph = new TaskGraph("smc") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, in) //
+                .task("k", TestTileRowKernels::softmaxChunked, new TileContext(), in, out, rows, n, chunks) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        runRowKernel("smc.k", graph, rows);
+
+        for (int row = 0; row < rows; row++) {
+            double max = Double.NEGATIVE_INFINITY;
+            for (int i = 0; i < n; i++) {
+                max = Math.max(max, in.get(row * n + i));
+            }
+            // Masked lanes in the final chunk read as zero, so they join the sum as exp(-max).
+            int padded = chunks * CHUNK;
+            double total = 0.0;
+            for (int i = 0; i < n; i++) {
+                total += Math.exp(in.get(row * n + i) - max);
+            }
+            total += (padded - n) * Math.exp(-max);
+            for (int i = 0; i < n; i++) {
+                assertEquals("row " + row + " column " + i, Math.exp(in.get(row * n + i) - max) / total, out.get(row * n + i), 1e-5);
+            }
+        }
+    }
+
+    @Test
+    public void testSoftmaxChunkedWideRow() throws TornadoExecutionPlanException {
+        // TileGym's widest softmax case, walked in 128 column blocks.
+        checkSoftmaxChunked(64, 32768);
+    }
+
+    @Test
+    public void testSoftmaxChunkedRaggedTail() throws TornadoExecutionPlanException {
+        checkSoftmaxChunked(32, 1009);
+    }
+
+    @Test
+    public void testRmsNormPersistent() throws TornadoExecutionPlanException {
+        final int rows = 512;
+        final int n = 1024;
+        FloatArray in = randomRows(rows, n, 313);
+        FloatArray out = new FloatArray(rows * n);
+
+        TaskGraph graph = new TaskGraph("rmsp") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, in) //
+                .task("k", TestTileRowKernels::rmsNormPersistent, new TileContext(), in, out, rows, n, 1.0f / ROW_TILE) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+
+        // Grid deliberately smaller than the row count, so every block strides over many rows.
+        runRowKernel("rmsp.k", graph, 32);
+
+        for (int row = 0; row < rows; row++) {
+            double sumSquares = 0.0;
+            for (int i = 0; i < n; i++) {
+                double v = in.get(row * n + i);
+                sumSquares += v * v;
+            }
+            double scale = 1.0 / Math.sqrt(sumSquares / ROW_TILE + EPSILON);
+            for (int i = 0; i < n; i++) {
+                assertEquals("row " + row + " column " + i, in.get(row * n + i) * scale, out.get(row * n + i), 5e-2);
+            }
+        }
+    }
+
+    @Test
+    public void testSwiglu() throws TornadoExecutionPlanException {
+        final int rows = 96;
+        FloatArray gate = randomRows(rows, HIDDEN_SMALL, 401);
+        FloatArray up = randomRows(rows, HIDDEN_SMALL, 402);
+        FloatArray out = new FloatArray(rows * HIDDEN_SMALL);
+
+        TaskGraph graph = new TaskGraph("swiglu") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, gate, up) //
+                .task("k", TestTileRowKernels::swiglu, new TileContext(), gate, up, out, rows) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        runRowKernel("swiglu.k", graph, rows);
+
+        for (int row = 0; row < rows; row++) {
+            for (int i = 0; i < HIDDEN_SMALL; i++) {
+                double g = gate.get(row * HIDDEN_SMALL + i);
+                double expected = g / (1.0 + Math.exp(-g)) * up.get(row * HIDDEN_SMALL + i);
+                assertEquals("row " + row + " column " + i, expected, out.get(row * HIDDEN_SMALL + i), 1e-2);
+            }
+        }
     }
 
     // TileGym parameterises softmax over (256, 256), (256, 2048), (256, 9) and (256, 1009).

@@ -30,6 +30,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 import tornado.graal.compiler.nodes.PiNode;
 import tornado.graal.compiler.nodes.ValueNode;
 import tornado.graal.compiler.nodes.ValuePhiNode;
+import tornado.graal.compiler.nodes.ValueProxyNode;
 import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugins;
@@ -45,6 +46,7 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileBinaryCallNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileBinaryNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileBlockIdNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileCreateNode;
@@ -313,6 +315,7 @@ public class CUDATileGraphBuilderPlugins {
         });
 
         registerBinary(r, "div", "/");
+        registerBinaryCall(r, "maximum", "max");
 
         registerUnaryMath(r, "exp", "exp");
         registerUnaryMath(r, "sqrt", "sqrt");
@@ -322,6 +325,23 @@ public class CUDATileGraphBuilderPlugins {
         registerReduction(r, "max", "reduce_max");
 
         registerReduction(r, "sum", "sum");
+    }
+
+    /**
+     * A two-operand op spelled as a function rather than an operator, such as {@code ct::max}.
+     */
+    private static void registerBinaryCall(Registration r, String name, String function) {
+        r.register(new InvocationPlugin(name, InvocationPlugin.Receiver.class, Tile.class, Tile.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode left, ValueNode right) {
+                receiver.get(true);
+                CUDATileNode leftTile = tileNodeOf(left, "the left operand of " + name);
+                CUDATileNode rightTile = tileNodeOf(right, "the right operand of " + name);
+                b.addPush(JavaKind.Object, new CUDATileBinaryCallNode(left, right, function, leftTile.tileDType(),
+                        broadcastShape(leftTile.tileShape(), rightTile.tileShape(), name)));
+                return true;
+            }
+        });
     }
 
     private static void registerUnaryMath(Registration r, String name, String function) {
@@ -501,6 +521,12 @@ public class CUDATileGraphBuilderPlugins {
         // at all; without it every tile access reports an unresolvable type.
         if (node instanceof PiNode pi) {
             return resolveTileNode(pi.object(), depth + 1);
+        }
+        // A value that escapes a loop is wrapped in a loop-exit proxy, so a tile produced inside
+        // a loop and consumed after it arrives here as a ValueProxyNode rather than the node
+        // itself. Missing this rejects any kernel that walks a row in chunks and then reduces.
+        if (node instanceof ValueProxyNode proxy) {
+            return resolveTileNode(proxy.value(), depth + 1);
         }
         if (node instanceof ValuePhiNode phi) {
             for (ValueNode input : phi.values()) {

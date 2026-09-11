@@ -309,6 +309,11 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
         for (CUDAKind type : kindToVariable.keySet()) {
             Set<Variable> vars = kindToVariable.get(type);
             vars.removeAll(fragmentPhis.keySet());
+            // Tile phis are declared below with their concrete tile type. A phi's own kind is not
+            // tile-like, so without this it is also declared here and the kernel fails to compile
+            // with "already been declared in the current scope" - only for kernels whose loop is
+            // not fully unrolled, which is why it takes a long chunked loop to surface.
+            vars.removeAll(tilePhis.keySet());
             if (vars.isEmpty()) {
                 continue;
             }

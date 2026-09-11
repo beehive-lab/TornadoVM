@@ -439,6 +439,54 @@ public class CUDATileStmt {
     }
 
     /**
+     * A two-operand tile op spelled as a call: {@code auto v = ct::max(a, b);}
+     */
+    public static class TileBinaryCallStmt extends AbstractTileInstruction implements TileValued {
+
+        public static final LIRInstructionClass<TileBinaryCallStmt> TYPE = LIRInstructionClass.create(TileBinaryCallStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value left;
+        @Use
+        protected Value right;
+
+        private final String function;
+        private final DType dtype;
+        private final int[] shape;
+
+        public TileBinaryCallStmt(Value result, Value left, Value right, String function, DType dtype, int[] shape) {
+            super(TYPE);
+            this.result = result;
+            this.left = left;
+            this.right = right;
+            this.function = function;
+            this.dtype = dtype;
+            this.shape = shape;
+        }
+
+        @Override
+        public String getTileCppType() {
+            return tileType(dtype, shape);
+        }
+
+        @Override
+        public Value getTileResult() {
+            return result;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            asm.indent();
+            asm.emit("auto " + asm.getStringValue(crb, result) + " = ct::" + function + "("
+                    + asm.getStringValue(crb, left) + ", " + asm.getStringValue(crb, right) + ")");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
+    /**
      * Reduces along one axis, keeping the reduced dimension as CUDA Tile C++ does:
      * {@code auto v = ct::sum(a, 1_ic);}
      */
