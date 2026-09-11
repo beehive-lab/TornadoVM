@@ -217,6 +217,62 @@ public class TestTileChaining extends TornadoTestBase {
     }
 
     /**
+     * The combined pipeline captured into one CUDA graph: JIT SIMT, CUDA Tile and a native
+     * cuBLAS call all replayed from the same graph, not three separate ones.
+     *
+     * <p>
+     * This is the strongest of the chaining tests. Capture is the case where a library task is
+     * most likely to misbehave, because the interpreter tells providers they are capturing and
+     * a provider that allocates, synchronises or queries during capture would invalidate it.
+     * Executing twice matters: the second execution is the replay.
+     * </p>
+     */
+    @Test
+    public void testWholeChainInOneCudaGraph() throws TornadoExecutionPlanException {
+        FloatArray input = new FloatArray(SIZE);
+        FloatArray matrix = new FloatArray(SIZE * SIZE);
+        FloatArray scaled = new FloatArray(SIZE);
+        FloatArray doubled = new FloatArray(SIZE);
+        FloatArray projected = new FloatArray(SIZE);
+        FloatArray result = new FloatArray(SIZE);
+
+        java.util.Random random = new java.util.Random(41);
+        for (int i = 0; i < SIZE; i++) {
+            input.set(i, random.nextFloat());
+        }
+        for (int i = 0; i < SIZE * SIZE; i++) {
+            matrix.set(i, random.nextFloat() - 0.5f);
+        }
+
+        WorkerGrid1D tileWorker = new WorkerGrid1D(SIZE / TILE);
+        GridScheduler grid = new GridScheduler("graph.tile", tileWorker);
+
+        TaskGraph graph = new TaskGraph("graph") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, matrix) //
+                .task("scale", TestTileChaining::scale, input, scaled, 3.0f) //
+                .task("tile", TestTileChaining::tileDouble, new TileContext(), scaled, doubled, SIZE) //
+                .libraryTask("gemv", CuBlas::cublasSgemv, //
+                        CuBlasOperation.CUBLAS_OP_T.operation(), SIZE, SIZE, 1.0f, matrix, SIZE, doubled, 1, 0.0f, projected, 1) //
+                .task("bias", TestTileChaining::bias, projected, result, 0.25f) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            // First execution captures and instantiates; the rest replay.
+            for (int replay = 0; replay < 3; replay++) {
+                plan.withGridScheduler(grid).withCUDAGraph().execute();
+
+                for (int i = 0; i < SIZE; i++) {
+                    float expectedProjection = 0.0f;
+                    for (int j = 0; j < SIZE; j++) {
+                        expectedProjection += matrix.get(i * SIZE + j) * (2.0f * 3.0f * input.get(j));
+                    }
+                    assertEquals("replay " + replay + " element " + i, expectedProjection + 0.25f, result.get(i), 0.05f);
+                }
+            }
+        }
+    }
+
+    /**
      * The same chain with the tile stage removed, so a failure in the mixed test can be told
      * apart from a failure in the SIMT plus cuBLAS combination that already worked.
      */
