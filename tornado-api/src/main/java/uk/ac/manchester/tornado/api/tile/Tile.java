@@ -92,14 +92,6 @@ public final class Tile {
      *     diagnostics; on the JVM path it is only ever informational.
      */
     public String toCppType() {
-        StringBuilder builder = new StringBuilder("ct::tile<");
-        builder.append(dtype.getCppType()).append(", ct::shape<");
-        for (int i = 0; i < shape.length; i++) {
-            if (i > 0) {
-                builder.append(", ");
-            }
-            builder.append(shape[i]);
-        }
-        return builder.append(">>").toString();
+        return DType.tileCppType(dtype, shape);
     }
 }

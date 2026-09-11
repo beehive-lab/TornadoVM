@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.tile.TileContext;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
@@ -215,8 +216,10 @@ public class TornadoExecutionContext {
                 totalSize += tornadoMatrix.getNumBytesWithHeader();
             } else if (parameter instanceof TornadoImagesInterface<?> tornadoImage) {
                 totalSize += tornadoImage.getNumBytesWithHeader();
-            } else if (parameter instanceof KernelContext || parameter instanceof AtomicInteger) {
-                // ignore
+            } else if (parameter instanceof KernelContext || parameter instanceof TileContext || parameter instanceof AtomicInteger) {
+                // Host-side only: contributes nothing to the device footprint. TileContext belongs
+                // here for the same reason KernelContext does, and omitting it made a tile task
+                // throw "Unsupported type" from the memory-limit check rather than being ignored.
             } else {
                 throw new TornadoRuntimeException("Unsupported type: " + parameter.getClass());
             }

@@ -23,7 +23,6 @@
 package uk.ac.manchester.tornado.drivers.cuda;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -62,6 +61,8 @@ public final class CUDATileCompiler {
     private static final Pattern RELEASE_PATTERN = Pattern.compile("release\\s+(\\d+)\\.(\\d+)");
 
     private static final long COMPILE_TIMEOUT_SECONDS = 120;
+
+    private static final long VERSION_TIMEOUT_SECONDS = 30;
 
     private static String resolvedNvcc;
     private static String resolvedIdentity;
@@ -160,10 +161,15 @@ public final class CUDATileCompiler {
             command.add(output.toString());
             command.add(input.toString());
 
+            Path log = workingDirectory.resolve("nvcc.log");
             ProcessBuilder builder = new ProcessBuilder(command);
             builder.redirectErrorStream(true);
+            // The output goes to a file rather than a pipe this process reads. Draining the pipe
+            // before waitFor would block indefinitely on an nvcc that hangs without closing its
+            // stdout, which would defeat the timeout below; a file also cannot fill up and
+            // deadlock the child on a full pipe buffer.
+            builder.redirectOutput(log.toFile());
             Process process = builder.start();
-            String log = readFully(process.getInputStream());
             boolean finished = process.waitFor(COMPILE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!finished) {
                 process.destroyForcibly();
@@ -172,7 +178,7 @@ public final class CUDATileCompiler {
             }
             if (process.exitValue() != 0 || !Files.exists(output)) {
                 throw new TornadoBailoutRuntimeException("[ERROR] The CUDA Tile compiler failed.\nCommand: "
-                        + String.join(" ", command) + "\n\n" + log);
+                        + String.join(" ", command) + "\n\n" + readQuietly(log));
             }
             return Files.readAllBytes(output);
         } catch (IOException e) {
@@ -224,7 +230,10 @@ public final class CUDATileCompiler {
 
         for (String candidate : candidates) {
             if (candidate.indexOf('/') < 0 || Files.isExecutable(Paths.get(candidate))) {
-                if (versionOf(candidate) > 0) {
+                // Tile-capable, not merely runnable: on a box with a system CUDA 12.x on PATH and
+                // a userspace 13.3 wheel, accepting the first nvcc that answers --version would
+                // latch the 12.x one and then reject every tile kernel with "requires 13.3".
+                if (versionOf(candidate) >= MINIMUM_TOOLKIT) {
                     resolvedNvcc = candidate;
                     return resolvedNvcc;
                 }
@@ -248,15 +257,26 @@ public final class CUDATileCompiler {
      * @return the toolkit version as major * 1000 + minor, or 0 when nvcc cannot be run
      */
     private static int versionOf(String nvcc) {
+        Path output = null;
+        Process process = null;
         try {
+            output = Files.createTempFile("tornado-nvcc-version-", ".txt");
             ProcessBuilder builder = new ProcessBuilder(nvcc, "--version");
             builder.redirectErrorStream(true);
-            Process process = builder.start();
-            String output = readFully(process.getInputStream());
-            if (!process.waitFor(30, TimeUnit.SECONDS) || process.exitValue() != 0) {
+            // Same reasoning as in compile(): the probe writes to a file, so the timeout is what
+            // bounds this call rather than the child's willingness to close stdout.
+            builder.redirectOutput(output.toFile());
+            process = builder.start();
+            if (!process.waitFor(VERSION_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                // Without this the probe is left running for the lifetime of the JVM, and every
+                // candidate after a hung one adds another orphan.
+                process.destroyForcibly();
                 return 0;
             }
-            Matcher matcher = RELEASE_PATTERN.matcher(output);
+            if (process.exitValue() != 0) {
+                return 0;
+            }
+            Matcher matcher = RELEASE_PATTERN.matcher(readQuietly(output));
             if (matcher.find()) {
                 return Integer.parseInt(matcher.group(1)) * 1000 + Integer.parseInt(matcher.group(2));
             }
@@ -264,13 +284,22 @@ public final class CUDATileCompiler {
         } catch (IOException e) {
             return 0;
         } catch (InterruptedException e) {
+            if (process != null) {
+                process.destroyForcibly();
+            }
             Thread.currentThread().interrupt();
             return 0;
+        } finally {
+            deleteQuietly(output);
         }
     }
 
-    private static String readFully(InputStream stream) throws IOException {
-        return new String(stream.readAllBytes(), StandardCharsets.UTF_8);
+    private static String readQuietly(Path file) {
+        try {
+            return Files.exists(file) ? Files.readString(file, StandardCharsets.UTF_8) : "";
+        } catch (IOException e) {
+            return "";
+        }
     }
 
     private static void deleteQuietly(Path directory) {

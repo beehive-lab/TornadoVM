@@ -24,9 +24,7 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.compiler.plugins;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
 import tornado.graal.compiler.nodes.PiNode;
 import tornado.graal.compiler.nodes.ValueNode;
 import tornado.graal.compiler.nodes.ValuePhiNode;
@@ -35,7 +33,6 @@ import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
-import tornado.graal.compiler.nodes.java.LoadFieldNode;
 import uk.ac.manchester.tornado.api.tile.DType;
 import uk.ac.manchester.tornado.api.tile.PartitionView;
 import uk.ac.manchester.tornado.api.tile.TensorView;
@@ -564,33 +561,12 @@ public class CUDATileGraphBuilderPlugins {
     }
 
     /**
-     * Folds a DType argument. Enum constants often reach a plugin as an unread static field, so
-     * the field is resolved directly, mirroring how MMAShape is folded for the mma intrinsics.
+     * Folds a DType argument. Shares the enum-folding mechanics with the mma intrinsics, which
+     * fold an MMAShape the same way.
      */
     private static DType resolveDType(GraphBuilderContext b, ValueNode dtypeNode) {
-        JavaConstant constant = dtypeNode.asJavaConstant();
-        if (constant == null && dtypeNode instanceof LoadFieldNode load && load.field().isStatic()) {
-            constant = b.getConstantReflection().readFieldValue(load.field(), null);
-        }
-        if (constant == null || constant.isNull()) {
-            throw new IllegalStateException("[TileContext] The element type must be a compile-time constant DType.");
-        }
-        ResolvedJavaType enumType = b.getMetaAccess().lookupJavaType(DType.class);
-        ResolvedJavaField ordinalField = null;
-        for (ResolvedJavaField field : enumType.getInstanceFields(true)) {
-            if (field.getName().equals("ordinal")) {
-                ordinalField = field;
-                break;
-            }
-        }
-        if (ordinalField == null) {
-            throw new IllegalStateException("[TileContext] Cannot locate Enum.ordinal on DType.");
-        }
-        JavaConstant ordinal = b.getConstantReflection().readFieldValue(ordinalField, constant);
-        if (ordinal == null) {
-            throw new IllegalStateException("[TileContext] Failed to read the ordinal of a DType constant.");
-        }
-        return DType.values()[ordinal.asInt()];
+        return CUDAEnumFolding.resolveEnumConstant(b, dtypeNode, DType.class,
+                "[TileContext] The element type must be a compile-time constant DType.");
     }
 
     /**

@@ -90,15 +90,7 @@ public class CUDATileStmt {
          * Spells out a {@code ct::tile} type.
          */
         static String tileType(DType dtype, int[] shape) {
-            StringBuilder builder = new StringBuilder("ct::tile<");
-            builder.append(dtype.getCppType()).append(", ct::shape<");
-            for (int i = 0; i < shape.length; i++) {
-                if (i > 0) {
-                    builder.append(", ");
-                }
-                builder.append(shape[i]);
-            }
-            return builder.append(">>").toString();
+            return DType.tileCppType(dtype, shape);
         }
 
         /**

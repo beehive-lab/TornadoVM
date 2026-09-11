@@ -81,6 +81,35 @@ public enum DType {
     }
 
     /**
+     * Spells out a {@code ct::tile} type, for example
+     * {@code ct::tile<float, ct::shape<64, 64>>}.
+     *
+     * <p>
+     * This lives here because both the API ({@link Tile#toCppType()}) and the CUDA code
+     * generator need the identical spelling: the generator declares a variable with it and the
+     * API reports it in diagnostics, so two copies would let a declaration and its description
+     * drift apart.
+     * </p>
+     *
+     * @param dtype
+     *     element type
+     * @param shape
+     *     tile extents, innermost last
+     * @return the C++ type
+     */
+    public static String tileCppType(DType dtype, int[] shape) {
+        StringBuilder builder = new StringBuilder("ct::tile<");
+        builder.append(dtype.getCppType()).append(", ct::shape<");
+        for (int i = 0; i < shape.length; i++) {
+            if (i > 0) {
+                builder.append(", ");
+            }
+            builder.append(shape[i]);
+        }
+        return builder.append(">>").toString();
+    }
+
+    /**
      * Accumulator rules taken from the CUDA Tile {@code mmaf} / {@code mmai} tables. The
      * accumulator type must equal the result type, so this reports the accumulator that a
      * multiply-accumulate over this operand type is allowed to produce.

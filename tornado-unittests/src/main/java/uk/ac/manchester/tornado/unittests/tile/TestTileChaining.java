@@ -360,6 +360,41 @@ public class TestTileChaining extends TornadoTestBase {
     // list, which is the part that did belong here. Use tc.sum for a reduction inside a tile.
 
     /**
+     * A tile task under an execution-plan memory limit.
+     *
+     * <p>
+     * The limit check walks every task parameter to total the device footprint, and its type
+     * dispatch has to know that a TileContext contributes nothing. Without that it falls through
+     * to the unsupported-type branch, so setting a memory limit on any graph containing a tile
+     * task threw instead of running. Nothing else in the suite sets a limit, which is why this
+     * needs its own test.
+     * </p>
+     */
+    @Test
+    public void testTileTaskUnderMemoryLimit() throws TornadoExecutionPlanException {
+        FloatArray in = new FloatArray(SIZE);
+        FloatArray out = new FloatArray(SIZE);
+        for (int i = 0; i < SIZE; i++) {
+            in.set(i, i);
+        }
+
+        WorkerGrid1D worker = new WorkerGrid1D(SIZE / TILE);
+        GridScheduler grid = new GridScheduler("limit.tile", worker);
+        TaskGraph graph = new TaskGraph("limit") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, in) //
+                .task("tile", TestTileChaining::tileDouble, new TileContext(), in, out, SIZE) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.withGridScheduler(grid).withMemoryLimit("64MB").execute();
+        }
+
+        for (int i = 0; i < SIZE; i++) {
+            assertEquals(2.0f * i, out.get(i), 0.001f);
+        }
+    }
+
+    /**
      * Producer and consumer task graphs sharing a device buffer: the tile task writes it in one
      * graph, `persistOnDevice` keeps it there, and a cuBLAS task in a second graph consumes it
      * through `consumeFromDevice` without a host round-trip.
