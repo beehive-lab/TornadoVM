@@ -49,7 +49,8 @@ Debugging and Logging
    ``-Dtornado.print.kernel.dir=FILENAME``           Saves generated kernels to the specified file.
    ``-Dtornado.cuda.compile.profile=PROFILE``        Named NVRTC option bundle for the CUDA backend: ``default`` (no extra options), ``fast`` (``--use_fast_math --extra-device-vectorization``), ``debug`` (``-lineinfo``, so Nsight can attribute samples to the generated CUDA C) or ``repro`` (``--fmad=false``). Flags in ``tornado.cuda.compiler.flags`` are appended after the profile and win.
    ``-Dtornado.threadInfo=true``                     Displays the number of threads used.
-   ``-Dtornado.print.bytecodes=true``                Prints TornadoVM Internal Bytecodes to stdout.
+   ``-Dtornado.print.bytecodes=MODE``                Prints TornadoVM Internal Bytecodes to stdout. MODE is ``true``/``full`` (every field), ``compact`` (short names, human sizes, per-execution summary), ``trace`` (adds skipped bytecodes and wait-lists) or ``dot`` (Graphviz dependency graph).
+   ``-Dtornado.print.bytecodes.color=POLICY``        Colouring of the bytecode log: ``auto`` (default, only on a terminal), ``always`` or ``never``.
    ``-Dtornado.dump.bytecodes.dir=FILENAME``         Dumps TornadoVM Internal Bytecodes to the specified file.
    ================================================  ============================================================================
 
