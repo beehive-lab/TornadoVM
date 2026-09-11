@@ -360,12 +360,31 @@ SIGSEGV in InterpreterRuntime::exception_handler_for_exception
   -> Arena.allocate -> Bits.reserveMemory
 ```
 
-One failed `cuModuleLoadDataEx` is handled cleanly; eight in a row are not. `errorString` itself
-looks correct - it uses `Arena.ofConfined()` in try-with-resources - so something accumulates
-across repeated failures rather than leaking in one call. **This is a pre-existing robustness
-bug in the CUDA backend's error path, not in the tile code**: any host whose module loads fail
-repeatedly, for any reason, would hit it. Worth an upstream issue of its own; the probe-once
-design just keeps the suite away from it.
+One failed `cuModuleLoadDataEx` is handled cleanly; roughly seven in a row are not, and it is
+deterministic: looping a single failing tile task crashes at iteration 6 or 7 every time.
+
+**Where it is NOT.** An earlier revision of this file called it a bug in the CUDA backend's
+error path. That was stated too confidently, and the evidence since does not support it:
+
+- **Not the driver on its own.** 40 rejected `cuModuleLoadData` calls on the same CUDA 13 cubin
+  from pure ctypes, no JVM, with heap churn in between: clean.
+- **Not fork plus a live CUDA context.** 12 `nvcc` subprocess launches from a process holding an
+  initialised CUDA context, again from ctypes: clean.
+- **Not a wrong FFM binding.** `cuModuleLoadDataEx` is declared
+  `(C_INT, C_POINTER, C_POINTER, C_INT, C_POINTER, C_POINTER)`, which matches the CUDA signature
+  exactly, and the `CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES` value matches the 8192-byte allocation
+  it describes. Both `loadModule` and `errorString` use `Arena.ofConfined()` correctly.
+
+**What it looks like.** Two crashes, two different libjvm sites on two different threads:
+`InterpreterRuntime::exception_handler_for_exception` on `main` with `si_addr 0x7`, and
+`InstanceKlass::find_method_index` on `C1 CompilerThread1` with `si_code SI_KERNEL` and
+`si_addr 0x0`. Varying crash sites in unrelated VM subsystems is the signature of memory
+corruption or a VM-internal fault, not an ordinary `OutOfMemoryError`. It needs the JVM to
+reproduce, and it has not been attributed further.
+
+**Why it does not block anything.** It only triggers on a host that cannot run tile kernels at
+all, because it takes repeated *failed* module loads to get there. Worth an upstream issue with
+the repro above rather than a fix; the probe-once design keeps the suite clear of it.
 
 ### The trade-off that introduces
 
