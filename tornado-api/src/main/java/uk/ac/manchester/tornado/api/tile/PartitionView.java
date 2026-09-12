@@ -177,4 +177,50 @@ public final class PartitionView {
         return new IndexOutOfBoundsException("[TileContext] Unmasked tile access reached element " + index
                 + " of a tensor with " + extent + " elements. Use loadMasked/storeMasked for ragged edges.");
     }
+
+    /**
+     * Accumulates a tile into the view atomically: {@code view[block] += tile}, element by
+     * element, with every concurrent tile block's contribution kept.
+     *
+     * <p>
+     * This is how several tile blocks combine into one output without a second kernel - a
+     * split-K matmul accumulating partial products, or a scatter-add where blocks share rows.
+     * </p>
+     *
+     * <p>
+     * CUDA Tile has no atomic read-modify-write on a {@code partition_view}: the view offers
+     * only {@code atomic_load} and {@code atomic_store}, while {@code ct::atomic_add} takes a
+     * <em>tile of pointers</em>. The code generator therefore computes the pointer tile for the
+     * addressed block from the view's base pointer and extents. The ordering is relaxed and the
+     * scope is the device, which is what an accumulator in device memory wants; a stricter
+     * order would cost more and buy nothing here, since correctness comes from the atomicity of
+     * each element's update rather than from ordering between them.
+     * </p>
+     */
+    public void atomicAdd(Tile tile, int blockX) {
+        accumulate(tile, new int[] { blockX });
+    }
+
+    public void atomicAdd(Tile tile, int blockX, int blockY) {
+        accumulate(tile, new int[] { blockX, blockY });
+    }
+
+    private void accumulate(Tile tile, int[] blockIndices) {
+        // JVM fallback: single threaded, so a plain read-modify-write is the same thing.
+        int[] shape = tileShape;
+        if (shape.length == 1) {
+            int base = blockIndices[0] * shape[0];
+            for (int i = 0; i < shape[0]; i++) {
+                view.writeLinear(base + i, view.readLinear(base + i) + tile.getElement(i));
+            }
+            return;
+        }
+        int columns = view.getExtent(1);
+        for (int row = 0; row < shape[0]; row++) {
+            for (int column = 0; column < shape[1]; column++) {
+                int index = (blockIndices[0] * shape[0] + row) * columns + blockIndices[1] * shape[1] + column;
+                view.writeLinear(index, view.readLinear(index) + tile.getElement(row * shape[1] + column));
+            }
+        }
+    }
 }

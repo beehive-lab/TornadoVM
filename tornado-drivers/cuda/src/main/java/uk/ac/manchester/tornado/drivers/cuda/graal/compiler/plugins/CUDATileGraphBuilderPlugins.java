@@ -46,6 +46,7 @@ import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileAtomicAddNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileBinaryCallNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileBinaryNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileBlockIdNode;
@@ -581,6 +582,8 @@ public class CUDATileGraphBuilderPlugins {
         registerStore(r, "store", false, 2);
         registerStore(r, "storeMasked", true, 1);
         registerStore(r, "storeMasked", true, 2);
+        registerAtomicAdd(r, 1);
+        registerAtomicAdd(r, 2);
     }
 
     private static void registerLoad(Registration r, String name, boolean masked, int rank) {
@@ -625,6 +628,49 @@ public class CUDATileGraphBuilderPlugins {
                 }
             });
         }
+    }
+
+    /**
+     * Atomic accumulation through a view. Unlike a store this needs the view's buffer and
+     * extents rather than the view value itself, because CUDA Tile has no read-modify-write on
+     * a {@code partition_view} - see {@code CUDATileStmt.TileAtomicAddStmt}.
+     */
+    private static void registerAtomicAdd(Registration r, int rank) {
+        if (rank == 1) {
+            r.register(new InvocationPlugin("atomicAdd", InvocationPlugin.Receiver.class, Tile.class, int.class) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode tile, ValueNode blockX) {
+                    // get(false): no null check. Unlike a store, this plugin does not consume
+                    // the receiver as a node input - it reads the view's buffer and extents - so
+                    // a null check would survive to code generation unused, and the CUDA backend
+                    // has no emitter for one.
+                    b.add(atomicAddOf(receiver.get(false), tile, new ValueNode[] { blockX }));
+                    return true;
+                }
+            });
+        } else {
+            r.register(new InvocationPlugin("atomicAdd", InvocationPlugin.Receiver.class, Tile.class, int.class, int.class) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode tile, ValueNode blockX, ValueNode blockY) {
+                    b.add(atomicAddOf(receiver.get(false), tile, new ValueNode[] { blockX, blockY }));
+                    return true;
+                }
+            });
+        }
+    }
+
+    private static CUDATileAtomicAddNode atomicAddOf(ValueNode view, ValueNode tile, ValueNode[] indices) {
+        CUDATileNode resolved = tileNodeOf(view, "the receiver of an atomic add");
+        if (!(resolved instanceof CUDATilePartitionViewNode partition)) {
+            throw new IllegalStateException("[TileContext] atomicAdd needs the partition view itself as its receiver, "
+                    + "not a value derived from one.");
+        }
+        if (partition.getTileShape().length != indices.length) {
+            throw new IllegalStateException("[TileContext] atomicAdd was given " + indices.length + " block indices for a rank-"
+                    + partition.getTileShape().length + " view.");
+        }
+        return new CUDATileAtomicAddNode(partition.getBuffer(), tile, partition.getExtents(), indices, partition.getDType(), //
+                partition.getTileShape(), partition.getPayloadOffset());
     }
 
     private static CUDATileLoadNode loadOf(ValueNode view, ValueNode[] indices, boolean masked) {

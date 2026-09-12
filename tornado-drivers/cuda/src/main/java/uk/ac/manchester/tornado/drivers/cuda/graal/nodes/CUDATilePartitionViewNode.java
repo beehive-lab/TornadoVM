@@ -81,6 +81,18 @@ public class CUDATilePartitionViewNode extends FixedWithNextNode implements LIRL
         return dtype;
     }
 
+    public ValueNode getBuffer() {
+        return buffer;
+    }
+
+    public ValueNode[] getExtents() {
+        return extents.toArray(new ValueNode[0]);
+    }
+
+    public int getPayloadOffset() {
+        return payloadOffset;
+    }
+
     public int[] getTileShape() {
         return tileShape;
     }

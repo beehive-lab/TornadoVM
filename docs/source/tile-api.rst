@@ -144,6 +144,9 @@ API reference
    * - ``logicalAnd(m1, m2)`` / ``logicalOr``
      - ``m1 & m2`` / ``m1 | m2``
      - combines two predicate tiles
+   * - ``view.atomicAdd(tile, blocks...)``
+     - ``ct::atomic_add`` over a pointer tile
+     - relaxed order, device scope; see below
    * - ``select(mask, a, b)``
      - ``ct::select``
      - the only consumer of a predicate tile
@@ -166,6 +169,24 @@ reduction is ``ct::reduce_max``; and there is no ``ct::cast`` at all.
 A reduction keeps its dimension, so it broadcasts back against the tile it came from, but it does
 **not** store into the view it came from: a ``32x1`` tile against a ``32x32`` partition view is
 refused by CUDA Tile's ``same_shape`` constraint.
+
+Atomic accumulation
+*******************
+
+``view.atomicAdd(tile, blockIndices...)`` accumulates a tile into the view so that every
+concurrent tile block's contribution survives. It is what lets a split-K matmul finish in one
+kernel instead of writing per-split partials and reducing them in a second pass.
+
+CUDA Tile has no atomic read-modify-write on a ``partition_view``: the view offers only
+``atomic_load`` and ``atomic_store``, while ``ct::atomic_add`` takes a **tile of pointers**. The
+code generator therefore computes that pointer tile from the view's base pointer and extents.
+Rank 2 needs the row and column index within the tile separately, and neither ``/`` nor ``%`` is
+defined on a tile, so the indices come from two ``iota`` tiles broadcast to the tile shape.
+
+The order is ``memory_order_relaxed`` and the scope is ``thread_scope_device``: an accumulator
+in device memory needs each element's update to be atomic, not ordered against the others.
+Observed lowering on sm_89: ``ATOMG.E.ADD.F32.FTZ.RN.STRONG.GPU`` — device scope matters, since
+the default system scope emits the more expensive ``.SYS`` form.
 
 Element types
 *************
@@ -227,9 +248,10 @@ order of how much it costs:
      - ``view``/``partition`` are rank 1 and 2. A batch or head dimension has to be folded into
        the row index, which every attention kernel in the test suite does; it costs arithmetic,
        not expressiveness.
-   * - ``atomic_add`` and the rest of the atomic family
-     - no atomic accumulation into a view, so split-K has to write per-split partials and
-       reduce them in a second kernel (which the decode tests do).
+   * - the atomic family beyond ``atomicAdd``
+     - ``PartitionView.atomicAdd`` exists (see below); ``atomic_sub``, ``atomic_min``,
+       ``atomic_max``, the bitwise atomics, ``atomic_xchg`` and ``atomic_compare_exchange`` do
+       not, nor do the masked forms or a choice of memory order and scope.
    * - ``permute`` ``reshape`` ``broadcast`` ``extract``
      - a rank-2 tile can be reshaped only by ``transpose``, and broadcasting happens implicitly
        in elementwise ops rather than on demand.

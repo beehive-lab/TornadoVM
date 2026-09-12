@@ -765,4 +765,83 @@ public class CUDATileStmt {
             asm.eol();
         }
     }
+
+    /**
+     * Atomic accumulation into a view, which CUDA Tile expresses over a tile of pointers.
+     *
+     * <p>
+     * The emitted sequence builds the pointer tile for the addressed block from the base
+     * pointer and the view's extents. Rank 2 needs the row and column index within the tile
+     * separately, and neither {@code /} nor {@code %} is defined on a tile, so the indices come
+     * from two {@code iota} tiles broadcast to the tile shape rather than from dividing a linear
+     * one.
+     * </p>
+     *
+     * <p>
+     * {@code memory_order_relaxed} with {@code thread_scope_device}: an accumulator in device
+     * memory needs each element's update to be atomic, not ordered against the others, and
+     * device scope lowers to {@code ATOMG.E.ADD.F32.FTZ.RN.STRONG.GPU} where system scope would
+     * force the more expensive {@code .SYS} form.
+     * </p>
+     */
+    public static class TileAtomicAddStmt extends AbstractTileInstruction {
+
+        public static final LIRInstructionClass<TileAtomicAddStmt> TYPE = LIRInstructionClass.create(TileAtomicAddStmt.class);
+
+        @Use
+        protected Value buffer;
+        @Use
+        protected Value tile;
+        @Use({ OperandFlag.REG, OperandFlag.CONST })
+        protected Value[] extents;
+        @Use({ OperandFlag.REG, OperandFlag.CONST })
+        protected Value[] blockIndices;
+
+        private final DType dtype;
+        private final int[] tileShape;
+        private final int payloadOffset;
+
+        public TileAtomicAddStmt(Value buffer, Value tile, Value[] extents, Value[] blockIndices, DType dtype, int[] tileShape, int payloadOffset) {
+            super(TYPE);
+            this.buffer = buffer;
+            this.tile = tile;
+            this.extents = extents;
+            this.blockIndices = blockIndices;
+            this.dtype = dtype;
+            this.tileShape = tileShape;
+            this.payloadOffset = payloadOffset;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            String base = "reinterpret_cast<" + dtype.getCppType() + " *>(" + asm.getStringValue(crb, buffer) + " + " + payloadOffset + ")";
+            String pointers;
+            if (tileShape.length == 1) {
+                String indices = "ct::iota<" + tileType(DType.S32, tileShape) + ">() + " + asm.getStringValue(crb, blockIndices[0]) + " * " + tileShape[0];
+                pointers = base + " + (" + indices + ")";
+            } else {
+                String rowIota = "ct::broadcast(ct::iota<" + tileType(DType.S32, new int[] { tileShape[0], 1 }) + ">(), " + shapeTemplate() + ")";
+                String columnIota = "ct::broadcast(ct::iota<" + tileType(DType.S32, new int[] { 1, tileShape[1] }) + ">(), " + shapeTemplate() + ")";
+                String row = "(" + rowIota + " + " + asm.getStringValue(crb, blockIndices[0]) + " * " + tileShape[0] + ")";
+                String column = "(" + columnIota + " + " + asm.getStringValue(crb, blockIndices[1]) + " * " + tileShape[1] + ")";
+                pointers = base + " + (" + row + " * " + asm.getStringValue(crb, extents[1]) + " + " + column + ")";
+            }
+            asm.indent();
+            asm.emit("ct::atomic_add(" + pointers + ", " + asm.getStringValue(crb, tile)
+                    + ", ct::memory_order_relaxed_t{}, ct::thread_scope_device_t{})");
+            asm.delimiter();
+            asm.eol();
+        }
+
+        private String shapeTemplate() {
+            StringBuilder builder = new StringBuilder("ct::shape<");
+            for (int i = 0; i < tileShape.length; i++) {
+                if (i > 0) {
+                    builder.append(", ");
+                }
+                builder.append(tileShape[i]);
+            }
+            return builder.append(">{}").toString();
+        }
+    }
 }
