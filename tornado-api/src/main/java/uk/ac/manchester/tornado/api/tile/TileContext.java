@@ -294,6 +294,15 @@ public class TileContext {
         return tile;
     }
 
+    /** A tile of ones, {@code ct::ones}. */
+    public Tile ones(DType dtype, int extent) {
+        return full(dtype, 1.0, extent);
+    }
+
+    public Tile ones(DType dtype, int rows, int columns) {
+        return full(dtype, 1.0, rows, columns);
+    }
+
     public Tile iota(DType dtype, int extent) {
         Tile tile = zeros(dtype, extent);
         for (int i = 0; i < extent; i++) {
@@ -546,7 +555,12 @@ public class TileContext {
         SUM,
         MAXIMUM,
         MINIMUM,
-        PRODUCT
+        PRODUCT,
+        ALL,
+        ANY,
+        BIT_AND,
+        BIT_OR,
+        BIT_XOR
     }
 
     private Tile reduce(Tile a, int axis, Reduction kind) {
@@ -561,10 +575,11 @@ public class TileContext {
         int[] shape = axis == 0 ? new int[] { 1, columns } : new int[] { rows, 1 };
         Tile result = Tile.allocate(a.getDType(), shape);
         double initial = switch (kind) {
-            case SUM -> 0.0;
+            case SUM, ANY, BIT_OR, BIT_XOR -> 0.0;
             case MAXIMUM -> Double.NEGATIVE_INFINITY;
             case MINIMUM -> Double.POSITIVE_INFINITY;
-            case PRODUCT -> 1.0;
+            case PRODUCT, ALL -> 1.0;
+            case BIT_AND -> -1.0;
         };
         java.util.Arrays.fill(result.getData(), initial);
         for (int row = 0; row < rows; row++) {
@@ -577,6 +592,11 @@ public class TileContext {
                     case MAXIMUM -> Math.max(accumulated, value);
                     case MINIMUM -> Math.min(accumulated, value);
                     case PRODUCT -> accumulated * value;
+                    case ALL -> accumulated != 0.0 && value != 0.0 ? 1.0 : 0.0;
+                    case ANY -> accumulated != 0.0 || value != 0.0 ? 1.0 : 0.0;
+                    case BIT_AND -> (int) accumulated & (int) value;
+                    case BIT_OR -> (int) accumulated | (int) value;
+                    case BIT_XOR -> (int) accumulated ^ (int) value;
                 };
             }
         }
@@ -605,6 +625,34 @@ public class TileContext {
      */
     public Tile prod(Tile a, int axis) {
         return reduce(a, axis, Reduction.PRODUCT);
+    }
+
+    /**
+     * True where every element along {@code axis} holds, {@code ct::all_of}. Takes a predicate
+     * tile and produces one, so it composes with {@link #select(Tile, Tile, Tile)}.
+     */
+    public Tile allOf(Tile a, int axis) {
+        return predicateOf(reduce(a, axis, Reduction.ALL));
+    }
+
+    /** True where any element along {@code axis} holds, {@code ct::any_of}. */
+    public Tile anyOf(Tile a, int axis) {
+        return predicateOf(reduce(a, axis, Reduction.ANY));
+    }
+
+    /** Bitwise and along {@code axis}, {@code ct::reduce_bitand}. */
+    public Tile reduceBitAnd(Tile a, int axis) {
+        return reduce(a, axis, Reduction.BIT_AND);
+    }
+
+    /** Bitwise or along {@code axis}, {@code ct::reduce_bitor}. */
+    public Tile reduceBitOr(Tile a, int axis) {
+        return reduce(a, axis, Reduction.BIT_OR);
+    }
+
+    /** Bitwise exclusive or along {@code axis}, {@code ct::reduce_bitxor}. */
+    public Tile reduceBitXor(Tile a, int axis) {
+        return reduce(a, axis, Reduction.BIT_XOR);
     }
 
     /**
@@ -676,6 +724,88 @@ public class TileContext {
     /**
      * Round towards negative infinity, {@code ct::floor}.
      */
+    /** Round towards positive infinity, {@code ct::ceil}. */
+    public Tile ceil(Tile a) {
+        return mapUnary(a, Math::ceil);
+    }
+
+    public Tile tan(Tile a) {
+        return mapUnary(a, Math::tan);
+    }
+
+    public Tile sinh(Tile a) {
+        return mapUnary(a, Math::sinh);
+    }
+
+    public Tile cosh(Tile a) {
+        return mapUnary(a, Math::cosh);
+    }
+
+    /** Two-argument arc tangent, {@code ct::atan2(y, x)}. */
+    public Tile atan2(Tile y, Tile x) {
+        return zip(y, x, (left, right) -> Math.atan2(left, right));
+    }
+
+    /** {@code ct::pow}. */
+    public Tile pow(Tile base, Tile exponent) {
+        return zip(base, exponent, (left, right) -> Math.pow(left, right));
+    }
+
+    /** Remainder, {@code ct::remainder}. */
+    public Tile remainder(Tile a, Tile b) {
+        return zip(a, b, (left, right) -> left % right);
+    }
+
+    /** Division rounding towards negative infinity, {@code ct::floordiv}. */
+    public Tile floorDiv(Tile a, Tile b) {
+        return zip(a, b, (left, right) -> Math.floor(left / right));
+    }
+
+    /** Division rounding towards positive infinity, {@code ct::ceildiv}. */
+    public Tile ceilDiv(Tile a, Tile b) {
+        return zip(a, b, (left, right) -> Math.ceil(left / right));
+    }
+
+    /** High half of an integer multiply, {@code ct::mulhi}. */
+    public Tile mulhi(Tile a, Tile b) {
+        return zip(a, b, (left, right) -> (double) (int) (((long) (int) left * (long) (int) right) >> 32));
+    }
+
+    /**
+     * True where the element is NaN, {@code ct::isnan}. The result is a predicate tile, so it
+     * feeds {@link #select(Tile, Tile, Tile)} like any comparison.
+     */
+    public Tile isNaN(Tile a) {
+        return predicateOf(mapUnary(a, value -> Double.isNaN(value) ? 1.0 : 0.0));
+    }
+
+    /** True where the element is an infinity, {@code ct::isinf}. */
+    public Tile isInfinite(Tile a) {
+        return predicateOf(mapUnary(a, value -> Double.isInfinite(value) ? 1.0 : 0.0));
+    }
+
+    /** Negates a predicate tile, {@code !mask}. */
+    public Tile logicalNot(Tile a) {
+        return predicateOf(mapUnary(a, value -> value != 0.0 ? 0.0 : 1.0));
+    }
+
+    public Tile bitwiseAnd(Tile a, Tile b) {
+        return zip(a, b, (left, right) -> (int) left & (int) right);
+    }
+
+    public Tile bitwiseOr(Tile a, Tile b) {
+        return zip(a, b, (left, right) -> (int) left | (int) right);
+    }
+
+    public Tile bitwiseXor(Tile a, Tile b) {
+        return zip(a, b, (left, right) -> (int) left ^ (int) right);
+    }
+
+    /** Bitwise complement, {@code ~tile}. */
+    public Tile bitwiseNot(Tile a) {
+        return mapUnary(a, value -> ~(int) value);
+    }
+
     public Tile floor(Tile a) {
         return mapUnary(a, Math::floor);
     }

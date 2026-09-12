@@ -38,6 +38,7 @@ import uk.ac.manchester.tornado.api.tile.TileContext;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -119,9 +120,125 @@ public class TestTileAtomics extends TornadoTestBase {
         cView.atomicAdd(acc, rowBlock, columnBlock);
     }
 
+    /**
+     * The integer atomics, each applied by every block to the same row: min, max, and, or, xor.
+     *
+     * <p>
+     * CUDA Tile restricts these to 32- and 64-bit integers - a float minimum would need a
+     * compare-and-exchange loop, which is not exposed - so the views here are S32 and the
+     * compiler rejects a float one with a message saying which types it accepts.
+     * </p>
+     */
+    public static void integerAtomics(TileContext tc, IntArray in, IntArray minimums, IntArray maximums, IntArray ands, IntArray ors, IntArray xors, int rows) {
+        PartitionView iv = tc.partition(tc.view(in, rows, ROW_WIDTH), 1, ROW_WIDTH);
+        PartitionView minView = tc.partition(tc.view(minimums, 1, ROW_WIDTH), 1, ROW_WIDTH);
+        PartitionView maxView = tc.partition(tc.view(maximums, 1, ROW_WIDTH), 1, ROW_WIDTH);
+        PartitionView andView = tc.partition(tc.view(ands, 1, ROW_WIDTH), 1, ROW_WIDTH);
+        PartitionView orView = tc.partition(tc.view(ors, 1, ROW_WIDTH), 1, ROW_WIDTH);
+        PartitionView xorView = tc.partition(tc.view(xors, 1, ROW_WIDTH), 1, ROW_WIDTH);
+
+        int row = tc.bidX();
+        Tile values = iv.load(row, 0);
+        minView.atomicMin(values, 0, 0);
+        maxView.atomicMax(values, 0, 0);
+        andView.atomicAnd(values, 0, 0);
+        orView.atomicOr(values, 0, 0);
+        xorView.atomicXor(values, 0, 0);
+    }
+
+    /** Atomic subtract: every block removes its row from a running total. */
+    public static void subtractRows(TileContext tc, FloatArray in, FloatArray accumulator, int rows) {
+        PartitionView iv = tc.partition(tc.view(in, rows, ROW_WIDTH), 1, ROW_WIDTH);
+        PartitionView av = tc.partition(tc.view(accumulator, 1, ROW_WIDTH), 1, ROW_WIDTH);
+        av.atomicSub(iv.load(tc.bidX(), 0), 0, 0);
+    }
+
     // -------------------------------------------------------------------------------------
     // Tests
     // -------------------------------------------------------------------------------------
+
+    @Test
+    public void testIntegerAtomics() throws TornadoExecutionPlanException {
+        final int rows = 64;
+        IntArray in = new IntArray(rows * ROW_WIDTH);
+        Random random = new Random(1031);
+        for (int i = 0; i < rows * ROW_WIDTH; i++) {
+            in.set(i, random.nextInt(1 << 20));
+        }
+        IntArray minimums = new IntArray(ROW_WIDTH);
+        IntArray maximums = new IntArray(ROW_WIDTH);
+        IntArray ands = new IntArray(ROW_WIDTH);
+        IntArray ors = new IntArray(ROW_WIDTH);
+        IntArray xors = new IntArray(ROW_WIDTH);
+        for (int i = 0; i < ROW_WIDTH; i++) {
+            minimums.set(i, Integer.MAX_VALUE);
+            maximums.set(i, Integer.MIN_VALUE);
+            ands.set(i, -1);
+        }
+
+        WorkerGrid1D worker = new WorkerGrid1D(rows);
+        GridScheduler grid = new GridScheduler("ints.k", worker);
+        TaskGraph graph = new TaskGraph("ints") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, in, minimums, maximums, ands, ors, xors) //
+                .task("k", TestTileAtomics::integerAtomics, new TileContext(), in, minimums, maximums, ands, ors, xors, rows) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, minimums, maximums, ands, ors, xors);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.withGridScheduler(grid).execute();
+        }
+
+        for (int column = 0; column < ROW_WIDTH; column++) {
+            int expectedMin = Integer.MAX_VALUE;
+            int expectedMax = Integer.MIN_VALUE;
+            int expectedAnd = -1;
+            int expectedOr = 0;
+            int expectedXor = 0;
+            for (int row = 0; row < rows; row++) {
+                int value = in.get(row * ROW_WIDTH + column);
+                expectedMin = Math.min(expectedMin, value);
+                expectedMax = Math.max(expectedMax, value);
+                expectedAnd &= value;
+                expectedOr |= value;
+                expectedXor ^= value;
+            }
+            assertEquals("min " + column, expectedMin, minimums.get(column));
+            assertEquals("max " + column, expectedMax, maximums.get(column));
+            assertEquals("and " + column, expectedAnd, ands.get(column));
+            assertEquals("or " + column, expectedOr, ors.get(column));
+            assertEquals("xor " + column, expectedXor, xors.get(column));
+        }
+    }
+
+    @Test
+    public void testAtomicSubtract() throws TornadoExecutionPlanException {
+        final int rows = 48;
+        FloatArray in = new FloatArray(rows * ROW_WIDTH);
+        FloatArray accumulator = new FloatArray(ROW_WIDTH);
+        Random random = new Random(1033);
+        for (int i = 0; i < rows * ROW_WIDTH; i++) {
+            in.set(i, random.nextFloat());
+        }
+        for (int i = 0; i < ROW_WIDTH; i++) {
+            accumulator.set(i, 100.0f);
+        }
+
+        WorkerGrid1D worker = new WorkerGrid1D(rows);
+        GridScheduler grid = new GridScheduler("sub.k", worker);
+        TaskGraph graph = new TaskGraph("sub") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, in, accumulator) //
+                .task("k", TestTileAtomics::subtractRows, new TileContext(), in, accumulator, rows) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, accumulator);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.withGridScheduler(grid).execute();
+        }
+
+        for (int column = 0; column < ROW_WIDTH; column++) {
+            double expected = 100.0;
+            for (int row = 0; row < rows; row++) {
+                expected -= in.get(row * ROW_WIDTH + column);
+            }
+            assertEquals("column " + column, expected, accumulator.get(column), 1e-3);
+        }
+    }
 
     @Test
     public void testAccumulateRowsRank2() throws TornadoExecutionPlanException {

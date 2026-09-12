@@ -290,13 +290,114 @@ public final class PartitionView {
         accumulate(tile, new int[] { blockX, blockY });
     }
 
+    /**
+     * Atomic subtract, the counterpart of {@link #atomicAdd(Tile, int)}. Same element types:
+     * F16, F32, F64 or S32.
+     */
+    public void atomicSub(Tile tile, int blockX) {
+        apply(tile, new int[] { blockX }, AtomicOp.SUB);
+    }
+
+    public void atomicSub(Tile tile, int blockX, int blockY) {
+        apply(tile, new int[] { blockX, blockY }, AtomicOp.SUB);
+    }
+
+    /**
+     * Atomic minimum. CUDA Tile restricts this one to 32- and 64-bit integers, so an S32 view
+     * only; a float minimum would have to be built from a compare-and-exchange loop, which is
+     * not exposed.
+     */
+    public void atomicMin(Tile tile, int blockX) {
+        apply(tile, new int[] { blockX }, AtomicOp.MIN);
+    }
+
+    public void atomicMin(Tile tile, int blockX, int blockY) {
+        apply(tile, new int[] { blockX, blockY }, AtomicOp.MIN);
+    }
+
+    /** Atomic maximum; integer views only, as {@link #atomicMin(Tile, int)}. */
+    public void atomicMax(Tile tile, int blockX) {
+        apply(tile, new int[] { blockX }, AtomicOp.MAX);
+    }
+
+    public void atomicMax(Tile tile, int blockX, int blockY) {
+        apply(tile, new int[] { blockX, blockY }, AtomicOp.MAX);
+    }
+
+    /** Atomic bitwise and; integer views only. */
+    public void atomicAnd(Tile tile, int blockX) {
+        apply(tile, new int[] { blockX }, AtomicOp.AND);
+    }
+
+    public void atomicAnd(Tile tile, int blockX, int blockY) {
+        apply(tile, new int[] { blockX, blockY }, AtomicOp.AND);
+    }
+
+    /** Atomic bitwise or; integer views only. */
+    public void atomicOr(Tile tile, int blockX) {
+        apply(tile, new int[] { blockX }, AtomicOp.OR);
+    }
+
+    public void atomicOr(Tile tile, int blockX, int blockY) {
+        apply(tile, new int[] { blockX, blockY }, AtomicOp.OR);
+    }
+
+    /** Atomic bitwise exclusive or; integer views only. */
+    public void atomicXor(Tile tile, int blockX) {
+        apply(tile, new int[] { blockX }, AtomicOp.XOR);
+    }
+
+    public void atomicXor(Tile tile, int blockX, int blockY) {
+        apply(tile, new int[] { blockX, blockY }, AtomicOp.XOR);
+    }
+
+    /**
+     * Atomic exchange: writes the tile and discards the previous value. F32, F64 or S32 - CUDA
+     * Tile does not support an fp16 exchange.
+     */
+    public void atomicExchange(Tile tile, int blockX) {
+        apply(tile, new int[] { blockX }, AtomicOp.EXCHANGE);
+    }
+
+    public void atomicExchange(Tile tile, int blockX, int blockY) {
+        apply(tile, new int[] { blockX, blockY }, AtomicOp.EXCHANGE);
+    }
+
+    private enum AtomicOp {
+        ADD,
+        SUB,
+        MIN,
+        MAX,
+        AND,
+        OR,
+        XOR,
+        EXCHANGE;
+
+        double combine(double current, double value) {
+            return switch (this) {
+                case ADD -> current + value;
+                case SUB -> current - value;
+                case MIN -> Math.min(current, value);
+                case MAX -> Math.max(current, value);
+                case AND -> (int) current & (int) value;
+                case OR -> (int) current | (int) value;
+                case XOR -> (int) current ^ (int) value;
+                case EXCHANGE -> value;
+            };
+        }
+    }
+
     private void accumulate(Tile tile, int[] blockIndices) {
+        apply(tile, blockIndices, AtomicOp.ADD);
+    }
+
+    private void apply(Tile tile, int[] blockIndices, AtomicOp operation) {
         // JVM fallback: single threaded, so a plain read-modify-write is the same thing.
         int[] shape = tileShape;
         if (shape.length == 1) {
             int base = blockIndices[0] * shape[0];
             for (int i = 0; i < shape[0]; i++) {
-                view.writeLinear(base + i, view.readLinear(base + i) + tile.getElement(i));
+                view.writeLinear(base + i, operation.combine(view.readLinear(base + i), tile.getElement(i)));
             }
             return;
         }
@@ -304,7 +405,7 @@ public final class PartitionView {
         for (int row = 0; row < shape[0]; row++) {
             for (int column = 0; column < shape[1]; column++) {
                 int index = (blockIndices[0] * shape[0] + row) * columns + blockIndices[1] * shape[1] + column;
-                view.writeLinear(index, view.readLinear(index) + tile.getElement(row * shape[1] + column));
+                view.writeLinear(index, operation.combine(view.readLinear(index), tile.getElement(row * shape[1] + column)));
             }
         }
     }

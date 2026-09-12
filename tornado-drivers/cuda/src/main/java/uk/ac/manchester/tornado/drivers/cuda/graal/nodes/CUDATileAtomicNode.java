@@ -38,7 +38,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDATileStmt;
 import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkArrayParameterAccess;
 
 /**
- * Accumulates a tile into a view atomically.
+ * Applies a tile to a view atomically: add, sub, min, max, and, or, xor or exchange.
  *
  * <p>
  * Unlike a store, this cannot go through the {@code partition_view}: CUDA Tile gives a view
@@ -49,9 +49,9 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkArrayParamete
  * </p>
  */
 @NodeInfo
-public class CUDATileAtomicAddNode extends FixedWithNextNode implements LIRLowerable, CUDATileNode, MarkArrayParameterAccess {
+public class CUDATileAtomicNode extends FixedWithNextNode implements LIRLowerable, CUDATileNode, MarkArrayParameterAccess {
 
-    public static final NodeClass<CUDATileAtomicAddNode> TYPE = NodeClass.create(CUDATileAtomicAddNode.class);
+    public static final NodeClass<CUDATileAtomicNode> TYPE = NodeClass.create(CUDATileAtomicNode.class);
 
     @Input
     protected ValueNode buffer;
@@ -66,8 +66,11 @@ public class CUDATileAtomicAddNode extends FixedWithNextNode implements LIRLower
     private final int[] tileShape;
     private final int payloadOffset;
 
-    public CUDATileAtomicAddNode(ValueNode buffer, ValueNode tile, ValueNode[] extents, ValueNode[] blockIndices, DType dtype, int[] tileShape, int payloadOffset) {
+    private final String function;
+
+    public CUDATileAtomicNode(ValueNode buffer, ValueNode tile, ValueNode[] extents, ValueNode[] blockIndices, String function, DType dtype, int[] tileShape, int payloadOffset) {
         super(TYPE, StampFactory.forVoid());
+        this.function = function;
         this.buffer = buffer;
         this.tile = tile;
         this.extents = new NodeInputList<>(this, extents);
@@ -79,7 +82,7 @@ public class CUDATileAtomicAddNode extends FixedWithNextNode implements LIRLower
 
     @Override
     public String tileOperationName() {
-        return "tile atomic add";
+        return "tile " + function;
     }
 
     /**
@@ -124,6 +127,6 @@ public class CUDATileAtomicAddNode extends FixedWithNextNode implements LIRLower
         for (int i = 0; i < blockIndices.size(); i++) {
             indexValues[i] = gen.operand(blockIndices.get(i));
         }
-        tool.append(new CUDATileStmt.TileAtomicAddStmt(gen.operand(buffer), gen.operand(tile), extentValues, indexValues, dtype, tileShape, payloadOffset));
+        tool.append(new CUDATileStmt.TileAtomicStmt(gen.operand(buffer), gen.operand(tile), extentValues, indexValues, function, dtype, tileShape, payloadOffset));
     }
 }

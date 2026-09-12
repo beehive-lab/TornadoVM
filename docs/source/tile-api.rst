@@ -141,9 +141,12 @@ Views, partitions and memory
    * - ``storeMasked(tile, blocks...)``
      - ``view.store_masked(...)``
      - writes only the in-bounds elements
-   * - ``atomicAdd(tile, blocks...)``
-     - ``ct::atomic_add`` over a pointer tile
-     - rank 1 and 2; relaxed order, device scope. See *Atomic accumulation*
+   * - ``atomicAdd`` ``atomicSub`` ``atomicMin`` ``atomicMax`` ``atomicAnd`` ``atomicOr``
+       ``atomicXor`` ``atomicExchange``
+     - ``ct::atomic_add`` etc. over a pointer tile
+     - rank 1 and 2; relaxed order, device scope. Element types are CUDA Tile's rule and are
+       checked at compile time: add/sub take F16/F32/F64/S32, exchange excludes fp16, and
+       min/max/and/or/xor are integer only. See *Atomic accumulation*
 
 The buffer types a view accepts, and the element type each maps to, are listed under
 *Element types* below.
@@ -160,6 +163,9 @@ Creating tiles
      - Notes
    * - ``zeros(dtype, shape...)``
      - ``ct::zeros``
+     - rank 1 or 2
+   * - ``ones(dtype, shape...)``
+     - ``ct::ones``
      - rank 1 or 2
    * - ``full(dtype, value, shape...)``
      - ``ct::full``
@@ -208,6 +214,15 @@ Comparisons, masks and select
    * - ``logicalAnd(m1, m2)`` / ``logicalOr(m1, m2)``
      - ``m1 & m2`` / ``m1 | m2``
      - combines two predicate tiles; non-predicate operands are rejected at compile time
+   * - ``logicalNot(mask)``
+     - ``!mask``
+     - a prefix operator, not a named function
+   * - ``isNaN(tile)`` / ``isInfinite(tile)``
+     - ``ct::isnan`` / ``ct::isinf``
+     - produce predicate tiles, so they feed ``select`` like a comparison
+   * - ``allOf(mask, axis)`` / ``anyOf(mask, axis)``
+     - ``ct::all_of`` / ``ct::any_of``
+     - reduce a predicate tile to a predicate tile
    * - ``select(mask, whenTrue, whenFalse)``
      - ``ct::select``
      - the only consumer of a predicate tile
@@ -228,9 +243,15 @@ Math
    * - ``exp exp2 log log2``
      - ``ct::exp ct::exp2 ct::log ct::log2``
      - ``exp2``/``log2`` are the cheaper pair, and what NVIDIA's own softmax kernels use
-   * - ``sqrt rsqrt tanh sin cos abs floor``
+   * - ``sqrt rsqrt tanh sin cos tan sinh cosh abs floor ceil``
      - ``ct::sqrt`` ...
      - elementwise, shape preserved
+   * - ``atan2(y, x)`` ``pow`` ``remainder`` ``floorDiv`` ``ceilDiv`` ``mulhi``
+     - ``ct::atan2`` ``ct::pow`` ``ct::remainder`` ``ct::floordiv`` ``ct::ceildiv`` ``ct::mulhi``
+     - two operands, elementwise
+   * - ``bitwiseAnd`` ``bitwiseOr`` ``bitwiseXor`` ``bitwiseNot``
+     - ``& | ^ ~``
+     - integer tiles
 
 Reductions
 ==========
@@ -461,6 +482,13 @@ CUDA graph, tile task included, and ``withIntraPlanConcurrency()`` works as usua
 Known limitations
 *****************
 
+Measured against the ``__tile_builtin__`` set of CUDA 13.3 (84 operations, excluding the
+``assume_*`` hints), this API covers **65 of them**. The remainder is listed below; 11 of the 19
+are masked variants of atomics whose unmasked forms exist. Note that CUDA Tile's Python DSL is a
+larger surface again - it adds autotuning, device-side printing, static metaprogramming,
+gather/scatter, scans and block-scaled matmul - so coverage against C++ is the narrower claim of
+the two.
+
 The table above is the covered surface. What CUDA Tile has and this API does not, in rough
 order of how much it costs:
 
@@ -488,20 +516,19 @@ order of how much it costs:
        ``transpose``) is rank 2 by nature. *Rank support at a glance* above lists which is which.
        CUDA Tile itself goes beyond rank 3: an attention kernel folding two leading dimensions
        into one index would need rank 4 to stop doing so.
-   * - the atomic family beyond ``atomicAdd``
-     - ``PartitionView.atomicAdd`` exists (see *Atomic accumulation*); ``atomic_sub``, ``atomic_min``,
-       ``atomic_max``, the bitwise atomics, ``atomic_xchg`` and ``atomic_compare_exchange`` do
-       not, nor do the masked forms or a choice of memory order and scope.
+   * - masked atomics, ``atomic_compare_exchange``, ``atomic_load``/``atomic_store``
+     - the eight unmasked read-modify-write atomics exist; the ``_masked`` forms, the
+       compare-and-exchange, and the view's plain atomic load and store do not, nor does a choice
+       of memory order and scope (relaxed and device are hardcoded).
    * - ``permute``
      - on a rank-2 tile the only non-identity permutation is ``transpose``, which exists, so
        this would add surface without capability. ``reshape``, ``broadcast`` and ``extract`` are
        implemented.
    * - ``partial_sum`` / ``partial_prod``
      - no scans, so a cumulative softmax or a prefix sum needs a different formulation.
-   * - ``tan sinh cosh atan2 isnan isinf mulhi remainder``, ``element_bitcast`` and a
-       ``logicalNot``
-     - individually cheap to add; nothing in the ported kernels has needed them. A mask can be
-       inverted today by swapping the operands of ``select`` or reversing the comparison.
+   * - ``cat`` and ``element_bitcast``
+     - no tile concatenation, and no reinterpreting an element's bits without converting them.
+
    * - ``view_padding`` modes other than zero, and a masked load with an explicit pad value
      - ``loadMasked`` zero-pads. A softmax over a ragged tail therefore needs a comparison and
        a ``select`` to keep the padding out of the denominator, as

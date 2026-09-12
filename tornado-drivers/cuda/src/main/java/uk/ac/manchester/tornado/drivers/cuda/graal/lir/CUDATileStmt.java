@@ -573,11 +573,17 @@ public class CUDATileStmt {
         @Override
         public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
             asm.indent();
-            asm.emit("auto " + asm.getStringValue(crb, result) + " = ct::" + function);
-            if (templateArgument != null) {
-                asm.emit("<" + templateArgument + ">");
+            // A one-character function name is a prefix operator: CUDA Tile spells predicate
+            // negation "!mask" and bitwise complement "~tile", not as named functions.
+            if (function.length() == 1) {
+                asm.emit("auto " + asm.getStringValue(crb, result) + " = " + function + asm.getStringValue(crb, tile));
+            } else {
+                asm.emit("auto " + asm.getStringValue(crb, result) + " = ct::" + function);
+                if (templateArgument != null) {
+                    asm.emit("<" + templateArgument + ">");
+                }
+                asm.emit("(" + asm.getStringValue(crb, tile) + ")");
             }
-            asm.emit("(" + asm.getStringValue(crb, tile) + ")");
             asm.delimiter();
             asm.eol();
         }
@@ -767,7 +773,7 @@ public class CUDATileStmt {
     }
 
     /**
-     * Atomic accumulation into a view, which CUDA Tile expresses over a tile of pointers.
+     * An atomic read-modify-write on a view, which CUDA Tile expresses over a tile of pointers.
      *
      * <p>
      * The emitted sequence builds the pointer tile for the addressed block from the base
@@ -784,9 +790,9 @@ public class CUDATileStmt {
      * force the more expensive {@code .SYS} form.
      * </p>
      */
-    public static class TileAtomicAddStmt extends AbstractTileInstruction {
+    public static class TileAtomicStmt extends AbstractTileInstruction {
 
-        public static final LIRInstructionClass<TileAtomicAddStmt> TYPE = LIRInstructionClass.create(TileAtomicAddStmt.class);
+        public static final LIRInstructionClass<TileAtomicStmt> TYPE = LIRInstructionClass.create(TileAtomicStmt.class);
 
         @Use
         protected Value buffer;
@@ -801,8 +807,11 @@ public class CUDATileStmt {
         private final int[] tileShape;
         private final int payloadOffset;
 
-        public TileAtomicAddStmt(Value buffer, Value tile, Value[] extents, Value[] blockIndices, DType dtype, int[] tileShape, int payloadOffset) {
+        private final String function;
+
+        public TileAtomicStmt(Value buffer, Value tile, Value[] extents, Value[] blockIndices, String function, DType dtype, int[] tileShape, int payloadOffset) {
             super(TYPE);
+            this.function = function;
             this.buffer = buffer;
             this.tile = tile;
             this.extents = extents;
@@ -827,7 +836,7 @@ public class CUDATileStmt {
                 pointers = base + " + (" + row + " * " + asm.getStringValue(crb, extents[1]) + " + " + column + ")";
             }
             asm.indent();
-            asm.emit("ct::atomic_add(" + pointers + ", " + asm.getStringValue(crb, tile)
+            asm.emit("ct::" + function + "(" + pointers + ", " + asm.getStringValue(crb, tile)
                     + ", ct::memory_order_relaxed_t{}, ct::thread_scope_device_t{})");
             asm.delimiter();
             asm.eol();

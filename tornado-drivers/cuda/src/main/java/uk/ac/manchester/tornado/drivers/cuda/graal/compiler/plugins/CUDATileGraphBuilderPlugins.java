@@ -46,7 +46,7 @@ import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
-import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileAtomicAddNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileAtomicNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileBinaryCallNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileBinaryNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileBlockIdNode;
@@ -270,6 +270,29 @@ public class CUDATileGraphBuilderPlugins {
     }
 
     private static void registerTileFactoryPlugins(Registration r) {
+        // ones has to be intrinsified in its own right even though the Java body delegates to
+        // full(dtype, 1.0, ...): a plugin fires at parse time and inlining happens after, so a
+        // delegating helper never reaches the full plugin.
+        r.register(new InvocationPlugin("ones", InvocationPlugin.Receiver.class, DType.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode dtypeNode, ValueNode extent) {
+                receiver.get(true);
+                DType dtype = resolveDType(b, dtypeNode);
+                b.addPush(JavaKind.Object, new CUDATileCreateNode(dtype, new int[] { shapeConstant(extent, "tile extent") }, oneLiteral(dtype)));
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin("ones", InvocationPlugin.Receiver.class, DType.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode dtypeNode, ValueNode rows, ValueNode columns) {
+                receiver.get(true);
+                DType dtype = resolveDType(b, dtypeNode);
+                int[] shape = { shapeConstant(rows, "tile rows"), shapeConstant(columns, "tile columns") };
+                b.addPush(JavaKind.Object, new CUDATileCreateNode(dtype, shape, oneLiteral(dtype)));
+                return true;
+            }
+        });
+
         r.register(new InvocationPlugin("full", InvocationPlugin.Receiver.class, DType.class, double.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode dtypeNode, ValueNode valueNode, ValueNode extent) {
@@ -389,11 +412,34 @@ public class CUDATileGraphBuilderPlugins {
         registerUnaryMath(r, "tanh", "tanh");
         registerUnaryMath(r, "abs", "abs");
         registerUnaryMath(r, "floor", "floor");
+        registerUnaryMath(r, "ceil", "ceil");
+        registerUnaryMath(r, "tan", "tan");
+        registerUnaryMath(r, "sinh", "sinh");
+        registerUnaryMath(r, "cosh", "cosh");
+        registerUnaryMath(r, "bitwiseNot", "~");
+        registerUnaryPredicate(r, "isNaN", "isnan");
+        registerUnaryPredicate(r, "isInfinite", "isinf");
+        registerUnaryPredicate(r, "logicalNot", "!");
+
+        registerBinaryCall(r, "atan2", "atan2");
+        registerBinaryCall(r, "pow", "pow");
+        registerBinaryCall(r, "remainder", "remainder");
+        registerBinaryCall(r, "floorDiv", "floordiv");
+        registerBinaryCall(r, "ceilDiv", "ceildiv");
+        registerBinaryCall(r, "mulhi", "mulhi");
+        registerBinary(r, "bitwiseAnd", "&");
+        registerBinary(r, "bitwiseOr", "|");
+        registerBinary(r, "bitwiseXor", "^");
 
         // ct::max is the elementwise two-operand form; the reduction is ct::reduce_max.
         registerReduction(r, "max", "reduce_max");
         registerReduction(r, "min", "reduce_min");
         registerReduction(r, "prod", "prod");
+        registerReduction(r, "reduceBitAnd", "reduce_bitand");
+        registerReduction(r, "reduceBitOr", "reduce_bitor");
+        registerReduction(r, "reduceBitXor", "reduce_bitxor");
+        registerPredicateReduction(r, "allOf", "all_of");
+        registerPredicateReduction(r, "anyOf", "any_of");
         registerBinaryCall(r, "minimum", "min");
 
         // Comparisons yield a predicate tile, which only ct::select consumes. Both operand
@@ -546,6 +592,45 @@ public class CUDATileGraphBuilderPlugins {
         });
     }
 
+    /**
+     * A one-operand operation whose result is a predicate tile rather than the operand type:
+     * {@code isnan}, {@code isinf}, and the negation {@code !mask}.
+     */
+    private static void registerUnaryPredicate(Registration r, String name, String function) {
+        r.register(new InvocationPlugin(name, InvocationPlugin.Receiver.class, Tile.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode tile) {
+                receiver.get(true);
+                CUDATileNode source = tileNodeOf(tile, "the operand of " + name);
+                b.addPush(JavaKind.Object, new CUDATileUnaryNode(tile, function, null, DType.PRED, source.tileShape()));
+                return true;
+            }
+        });
+    }
+
+    /**
+     * A reduction over a predicate tile that yields a predicate tile: {@code all_of},
+     * {@code any_of}. Separate from {@link #registerReduction} only for the result type.
+     */
+    private static void registerPredicateReduction(Registration r, String name, String function) {
+        r.register(new InvocationPlugin(name, InvocationPlugin.Receiver.class, Tile.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode tile, ValueNode axisNode) {
+                receiver.get(true);
+                CUDATileNode source = tileNodeOf(tile, "the operand of " + name);
+                if (source.tileDType() != DType.PRED) {
+                    throw new IllegalStateException("[TileContext] " + name + " reduces a comparison result, but it was given a "
+                            + source.tileDType() + " tile.");
+                }
+                int axis = axisConstant(axisNode, source.tileShape().length);
+                int[] shape = source.tileShape().clone();
+                shape[axis] = 1;
+                b.addPush(JavaKind.Object, new CUDATileReduceNode(tile, function, axis, DType.PRED, shape));
+                return true;
+            }
+        });
+    }
+
     private static void registerUnaryMath(Registration r, String name, String function) {
         r.register(new InvocationPlugin(name, InvocationPlugin.Receiver.class, Tile.class) {
             @Override
@@ -645,8 +730,18 @@ public class CUDATileGraphBuilderPlugins {
         registerStore(r, "storeMasked", true, 1);
         registerStore(r, "storeMasked", true, 2);
         registerStore(r, "storeMasked", true, 3);
-        registerAtomicAdd(r, 1);
-        registerAtomicAdd(r, 2);
+        // The element-type rules are CUDA Tile's, not ours: add and sub take floats or 32/64-bit
+        // integers, exchange excludes fp16, and min/max/and/or/xor are integer only.
+        for (int rank = 1; rank <= 2; rank++) {
+            registerAtomic(r, "atomicAdd", "atomic_add", AtomicOperands.ADD_SUB, rank);
+            registerAtomic(r, "atomicSub", "atomic_sub", AtomicOperands.ADD_SUB, rank);
+            registerAtomic(r, "atomicMin", "atomic_min", AtomicOperands.INTEGER, rank);
+            registerAtomic(r, "atomicMax", "atomic_max", AtomicOperands.INTEGER, rank);
+            registerAtomic(r, "atomicAnd", "atomic_and", AtomicOperands.INTEGER, rank);
+            registerAtomic(r, "atomicOr", "atomic_or", AtomicOperands.INTEGER, rank);
+            registerAtomic(r, "atomicXor", "atomic_xor", AtomicOperands.INTEGER, rank);
+            registerAtomic(r, "atomicExchange", "atomic_xchg", AtomicOperands.EXCHANGE, rank);
+        }
     }
 
     private static void registerLoad(Registration r, String name, boolean masked, int rank) {
@@ -711,46 +806,75 @@ public class CUDATileGraphBuilderPlugins {
         }
     }
 
+    /** Which element types CUDA Tile accepts for each atomic. */
+    private enum AtomicOperands {
+        /** f16, f32, f64 and 32/64-bit integers. */
+        ADD_SUB,
+        /** 32/64-bit integers only. */
+        INTEGER,
+        /** f32, f64 and 32/64-bit integers - no fp16. */
+        EXCHANGE;
+
+        boolean accepts(DType dtype) {
+            return switch (this) {
+                case ADD_SUB -> dtype == DType.F16 || dtype == DType.F32 || dtype == DType.F64 || dtype == DType.S32;
+                case INTEGER -> dtype == DType.S32;
+                case EXCHANGE -> dtype == DType.F32 || dtype == DType.F64 || dtype == DType.S32;
+            };
+        }
+
+        String describe() {
+            return switch (this) {
+                case ADD_SUB -> "F16, F32, F64 or S32";
+                case INTEGER -> "S32 (this atomic is integer only)";
+                case EXCHANGE -> "F32, F64 or S32 (fp16 exchange is not supported)";
+            };
+        }
+    }
+
     /**
-     * Atomic accumulation through a view. Unlike a store this needs the view's buffer and
-     * extents rather than the view value itself, because CUDA Tile has no read-modify-write on
-     * a {@code partition_view} - see {@code CUDATileStmt.TileAtomicAddStmt}.
+     * An atomic read-modify-write through a view. Unlike a store these need the view's buffer
+     * and extents rather than the view value, because CUDA Tile has no read-modify-write on a
+     * {@code partition_view} - see {@code CUDATileStmt.TileAtomicStmt}.
      */
-    private static void registerAtomicAdd(Registration r, int rank) {
+    private static void registerAtomic(Registration r, String name, String function, AtomicOperands operands, int rank) {
         if (rank == 1) {
-            r.register(new InvocationPlugin("atomicAdd", InvocationPlugin.Receiver.class, Tile.class, int.class) {
+            r.register(new InvocationPlugin(name, InvocationPlugin.Receiver.class, Tile.class, int.class) {
                 @Override
                 public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode tile, ValueNode blockX) {
-                    // get(false): no null check. Unlike a store, this plugin does not consume
-                    // the receiver as a node input - it reads the view's buffer and extents - so
-                    // a null check would survive to code generation unused, and the CUDA backend
-                    // has no emitter for one.
-                    b.add(atomicAddOf(receiver.get(false), tile, new ValueNode[] { blockX }));
+                    // get(false): no null check. This plugin does not consume the receiver as a
+                    // node input, so a null check would survive to code generation unused, and
+                    // the CUDA backend has no emitter for one.
+                    b.add(atomicOf(receiver.get(false), tile, new ValueNode[] { blockX }, name, function, operands));
                     return true;
                 }
             });
         } else {
-            r.register(new InvocationPlugin("atomicAdd", InvocationPlugin.Receiver.class, Tile.class, int.class, int.class) {
+            r.register(new InvocationPlugin(name, InvocationPlugin.Receiver.class, Tile.class, int.class, int.class) {
                 @Override
                 public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode tile, ValueNode blockX, ValueNode blockY) {
-                    b.add(atomicAddOf(receiver.get(false), tile, new ValueNode[] { blockX, blockY }));
+                    b.add(atomicOf(receiver.get(false), tile, new ValueNode[] { blockX, blockY }, name, function, operands));
                     return true;
                 }
             });
         }
     }
 
-    private static CUDATileAtomicAddNode atomicAddOf(ValueNode view, ValueNode tile, ValueNode[] indices) {
-        CUDATileNode resolved = tileNodeOf(view, "the receiver of an atomic add");
+    private static CUDATileAtomicNode atomicOf(ValueNode view, ValueNode tile, ValueNode[] indices, String name, String function, AtomicOperands operands) {
+        CUDATileNode resolved = tileNodeOf(view, "the receiver of " + name);
         if (!(resolved instanceof CUDATilePartitionViewNode partition)) {
-            throw new IllegalStateException("[TileContext] atomicAdd needs the partition view itself as its receiver, "
+            throw new IllegalStateException("[TileContext] " + name + " needs the partition view itself as its receiver, "
                     + "not a value derived from one.");
         }
         if (partition.getTileShape().length != indices.length) {
-            throw new IllegalStateException("[TileContext] atomicAdd was given " + indices.length + " block indices for a rank-"
+            throw new IllegalStateException("[TileContext] " + name + " was given " + indices.length + " block indices for a rank-"
                     + partition.getTileShape().length + " view.");
         }
-        return new CUDATileAtomicAddNode(partition.getBuffer(), tile, partition.getExtents(), indices, partition.getDType(), //
+        if (!operands.accepts(partition.getDType())) {
+            throw new IllegalStateException("[TileContext] " + name + " cannot be applied to a " + partition.getDType()
+                    + " view. CUDA Tile accepts " + operands.describe() + ".");
+        }
+        return new CUDATileAtomicNode(partition.getBuffer(), tile, partition.getExtents(), indices, function, partition.getDType(), //
                 partition.getTileShape(), partition.getPayloadOffset());
     }
 
@@ -855,6 +979,10 @@ public class CUDATileGraphBuilderPlugins {
      * The zero literal CUDA Tile wants for this element type. An integer tile takes a plain 0,
      * a floating point tile takes a typed literal so the ct::full template deduces correctly.
      */
+    private static String oneLiteral(DType dtype) {
+        return dtype == DType.S8 || dtype == DType.S32 ? "1" : "1.0f";
+    }
+
     private static String zeroLiteral(DType dtype) {
         return switch (dtype) {
             case S8, S32 -> "0";
