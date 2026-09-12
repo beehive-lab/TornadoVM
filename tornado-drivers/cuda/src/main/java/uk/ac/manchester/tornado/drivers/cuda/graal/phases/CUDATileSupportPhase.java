@@ -69,6 +69,14 @@ public class CUDATileSupportPhase extends Phase {
      */
     private static final int TILE_TOOLKIT_MIN = 13003;
 
+    /**
+     * Compute capability where {@code tileiras} starts accepting fp8 tiles. Below this it
+     * rejects them with "Incompatibility with architecture 'sm_89': unsupported type
+     * 'f8E4M3FN'" from inside nvcc, which is a confusing place to learn it; measured against
+     * 13.3.73 by compiling the same kernel for sm_89 and sm_90.
+     */
+    private static final int FP8_MAJOR_MIN = 9;
+
     private final TornadoDeviceContext deviceContext;
 
     public CUDATileSupportPhase(TornadoDeviceContext deviceContext) {
@@ -83,6 +91,7 @@ public class CUDATileSupportPhase extends Phase {
     @Override
     protected void run(StructuredGraph graph) {
         CUDATileNode firstTileNode = null;
+        CUDATileNode fp8Node = null;
         for (Node node : graph.getNodes()) {
             if (node instanceof CUDATileViewNode) {
                 // A view is a parse time descriptor that the partition plugin consumes. One
@@ -98,6 +107,9 @@ public class CUDATileSupportPhase extends Phase {
                 }
                 if (node instanceof CUDATileMmaNode mma) {
                     verifyMmaTypes(mma);
+                }
+                if (fp8Node == null && isFp8(tileNode.tileDType())) {
+                    fp8Node = tileNode;
                 }
             }
         }
@@ -121,6 +133,13 @@ public class CUDATileSupportPhase extends Phase {
                     + ". Rewrite this task with KernelContext to use the SIMT path instead.");
         }
 
+        if (fp8Node != null && major < FP8_MAJOR_MIN) {
+            throw new TornadoDeviceTileNotSupported("The tile operation '" + fp8Node.tileOperationName() + "' uses "
+                    + fp8Node.tileDType() + ", and CUDA Tile supports fp8 tiles only from compute capability "
+                    + FP8_MAJOR_MIN + ".0 (Hopper) onwards; device reports " + major + "." + minor
+                    + ". Use F16 or BF16 operands on this device.");
+        }
+
         // The tile toolchain is nvcc, not NVRTC, so this asks nvcc. A system CUDA older than
         // 13.3 alongside a userspace 13.3 nvcc is a perfectly workable setup, and gating on the
         // NVRTC version would reject it.
@@ -135,6 +154,10 @@ public class CUDATileSupportPhase extends Phase {
                     + "selected for the tile path reports " + (toolkit / 1000) + "." + (toolkit % 1000)
                     + ". Loading a tile kernel additionally needs driver R580 or newer.");
         }
+    }
+
+    private static boolean isFp8(DType dtype) {
+        return dtype == DType.FP8_E4M3 || dtype == DType.FP8_E5M2;
     }
 
     /**

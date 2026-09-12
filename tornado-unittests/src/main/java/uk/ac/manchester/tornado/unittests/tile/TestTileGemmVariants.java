@@ -48,7 +48,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  *
  * <p>
  * Each is a different demand on the code generator rather than a different arithmetic result.
- * The persistent kernel decouples the grid from the output shape — one block emits several
+ * The persistent kernel decouples the grid from the output shape - one block emits several
  * output tiles, so the accumulator loop sits inside a second loop whose trip count depends on
  * {@code numBlocksX()}, and both loops carry tiles. The transposed cases put a
  * {@code transpose} between a load and an {@code mma}, which is where the tile abstraction earns
@@ -85,8 +85,8 @@ public class TestTileGemmVariants extends TornadoTestBase {
      * <p>
      * The grid is sized to the machine rather than to the problem: each block starts at its own
      * block index and strides by the total number of blocks, so a launch of four blocks covers
-     * sixteen output tiles in four passes. That is the whole point of the persistent form — the
-     * launch is independent of the output shape — and it is why this kernel is the one that
+     * sixteen output tiles in four passes. That is the whole point of the persistent form - the
+     * launch is independent of the output shape - and it is why this kernel is the one that
      * needs {@code numBlocksX()}.
      * </p>
      *
@@ -129,7 +129,7 @@ public class TestTileGemmVariants extends TornadoTestBase {
      * The B tile arrives as {@code [TILE_N, TILE_K]} and is transposed before the multiply.
      * TileGym reaches the same place with a {@code permute} of a rank-4 tile; a rank-2 view needs
      * only {@code transpose}. Either way the transposition never becomes a memory movement the
-     * kernel author has to stage — {@code tileiras} folds it into the operand layout.
+     * kernel author has to stage - {@code tileiras} folds it into the operand layout.
      * </p>
      */
     public static void matmulTransposedB(TileContext tc, HalfFloatArray a, HalfFloatArray b, FloatArray c, int m, int n, int k, int kBlocks) {
@@ -242,7 +242,7 @@ public class TestTileGemmVariants extends TornadoTestBase {
     }
 
     /**
-     * More blocks than output tiles, so some blocks emit one tile and the rest none — the
+     * More blocks than output tiles, so some blocks emit one tile and the rest none - the
      * loop-entry guard has to hold for a block whose first tile id is already past the end.
      */
     @Test

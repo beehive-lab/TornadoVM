@@ -170,10 +170,16 @@ refused by CUDA Tile's ``same_shape`` constraint.
 Element types
 *************
 
-``DType`` covers ``F16 BF16 F32 F64 TF32 FP8_E4M3 FP8_E5M2 S8 S32``. Views exist today for
-``FloatArray``, ``HalfFloatArray``, ``BFloat16Array`` and ``IntArray``. ``mma`` operand and
-accumulator pairs are validated against the CUDA Tile ``mmaf``/``mmai`` tables, where the
-accumulator type must equal the result type.
+``DType`` names ``F16``, ``BF16``, ``F32``, ``F64``, ``TF32``, ``FP8_E4M3``, ``FP8_E5M2``,
+``S8``, ``S32`` and the comparison-only ``PRED``. Buffers that can be viewed:
+``FloatArray``, ``HalfFloatArray``, ``BFloat16Array``, ``IntArray``, ``Int8Array``,
+``DoubleArray`` and ``FP8Array`` (whose view takes the format as an argument).
+
+An ``mma`` validates its operand and accumulator pair against the CUDA Tile ``mmaf``/``mmai``
+tables, where the accumulator type must equal the result type. Observed lowerings on Ada
+(sm_89): fp16 operands with an fp32 accumulator give ``HMMA.16816.F32``, int8 operands with an
+int32 accumulator give ``IMMA.16832.S8.S8.SAT``, and fp64 gives scalar ``DADD``/``DMUL``
+because Ada has no fp64 tensor core.
 
 Mixing tile tasks with everything else
 **************************************
@@ -206,10 +212,17 @@ order of how much it costs:
 
    * - Missing
      - Consequence
-   * - Views of ``FP8Array``, ``Int8Array``, ``DoubleArray``
-     - ``DType`` names fp8, s8, f64 and tf32 and ``mma`` validates them, but only
-       ``FloatArray``, ``HalfFloatArray``, ``BFloat16Array`` and ``IntArray`` can be viewed, so
-       a quantised GEMM cannot be fed. The largest remaining gap.
+   * - fp8 tiles below compute capability 9.0
+     - ``FP8Array`` can be viewed (the format is an argument, since the buffer carries both an
+       e4m3 and an e5m2 accessor), but ``tileiras`` rejects an fp8 tile for sm_89 with
+       "unsupported type 'f8E4M3FN'". The compiler gate refuses it first with a message naming
+       the requirement. Hopper and newer compile it.
+   * - fp64 tensor cores
+     - an fp64 ``mma`` is correct but lowers to scalar ``DADD``/``DMUL`` rather than ``DMMA`` on
+       Ada, so doubles work without being accelerated.
+   * - ``TF32`` views
+     - ``DType.TF32`` is accepted by ``mma`` and has no buffer type of its own; a tf32 operand
+       has to come from a cast, which is how CUDA Tile treats it too.
    * - Rank 3 and above
      - ``view``/``partition`` are rank 1 and 2. A batch or head dimension has to be folded into
        the row index, which every attention kernel in the test suite does; it costs arithmetic,

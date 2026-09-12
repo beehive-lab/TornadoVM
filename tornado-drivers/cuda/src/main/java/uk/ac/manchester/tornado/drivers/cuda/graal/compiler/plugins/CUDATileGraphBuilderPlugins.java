@@ -39,8 +39,11 @@ import uk.ac.manchester.tornado.api.tile.TensorView;
 import uk.ac.manchester.tornado.api.tile.Tile;
 import uk.ac.manchester.tornado.api.tile.TileContext;
 import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FP8Array;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileBinaryCallNode;
@@ -136,6 +139,32 @@ public class CUDATileGraphBuilderPlugins {
         registerView(r, HalfFloatArray.class, DType.F16);
         registerView(r, BFloat16Array.class, DType.BF16);
         registerView(r, IntArray.class, DType.S32);
+        registerView(r, Int8Array.class, DType.S8);
+        registerView(r, DoubleArray.class, DType.F64);
+        registerFp8View(r);
+    }
+
+    /**
+     * An fp8 view takes its format as an argument, because {@link FP8Array} is a byte buffer
+     * with both an e4m3 and an e5m2 accessor and carries no record of which it holds.
+     */
+    private static void registerFp8View(Registration r) {
+        r.register(new InvocationPlugin("view", InvocationPlugin.Receiver.class, FP8Array.class, DType.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode format, ValueNode extent) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDATileViewNode(array, new ValueNode[] { extent }, resolveDType(b, format)));
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin("view", InvocationPlugin.Receiver.class, FP8Array.class, DType.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode format, ValueNode rows, ValueNode columns) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDATileViewNode(array, new ValueNode[] { rows, columns }, resolveDType(b, format)));
+                return true;
+            }
+        });
     }
 
     private static void registerView(Registration r, Class<?> arrayType, DType dtype) {
@@ -422,7 +451,7 @@ public class CUDATileGraphBuilderPlugins {
     /**
      * Combines two predicate tiles, {@code mask & mask}. Separate from
      * {@link #registerBinary} only so the result type stays {@code PRED} and the operands are
-     * checked to be predicates — composing a mask with an arithmetic tile is a mistake worth
+     * checked to be predicates - composing a mask with an arithmetic tile is a mistake worth
      * catching at compile time.
      */
     private static void registerPredicateCombination(Registration r, String name, String operator) {

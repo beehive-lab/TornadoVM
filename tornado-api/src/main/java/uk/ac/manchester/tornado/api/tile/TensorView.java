@@ -19,8 +19,11 @@ package uk.ac.manchester.tornado.api.tile;
 
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FP8Array;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 /**
@@ -77,6 +80,14 @@ public final class TensorView {
             return bfloatArray.getFloat(index);
         } else if (buffer instanceof IntArray intArray) {
             return intArray.get(index);
+        } else if (buffer instanceof Int8Array int8Array) {
+            return int8Array.get(index);
+        } else if (buffer instanceof DoubleArray doubleArray) {
+            return doubleArray.get(index);
+        } else if (buffer instanceof FP8Array fp8Array) {
+            // The format lives on the view, not the buffer, so the JVM path reads the raw byte
+            // through whichever accessor the view's element type names.
+            return dtype == DType.FP8_E5M2 ? fp8Array.getE5M2(index) : fp8Array.getE4M3(index);
         }
         throw new UnsupportedOperationException(unsupported());
     }
@@ -93,6 +104,16 @@ public final class TensorView {
             bfloatArray.setFloat(index, (float) value);
         } else if (buffer instanceof IntArray intArray) {
             intArray.set(index, (int) value);
+        } else if (buffer instanceof Int8Array int8Array) {
+            int8Array.set(index, (byte) value);
+        } else if (buffer instanceof DoubleArray doubleArray) {
+            doubleArray.set(index, value);
+        } else if (buffer instanceof FP8Array fp8Array) {
+            if (dtype == DType.FP8_E5M2) {
+                fp8Array.setE5M2(index, (float) value);
+            } else {
+                fp8Array.setE4M3(index, (float) value);
+            }
         } else {
             throw new UnsupportedOperationException(unsupported());
         }
@@ -100,6 +121,7 @@ public final class TensorView {
 
     private String unsupported() {
         return "[TileContext] The JVM fallback path does not model " + buffer.getClass().getName()
-                + " yet. Supported today: FloatArray, HalfFloatArray, BFloat16Array, IntArray. The accelerator path is unaffected.";
+                + " yet. Supported today: FloatArray, HalfFloatArray, BFloat16Array, IntArray, Int8Array, DoubleArray,"
+                + " FP8Array. The accelerator path is unaffected.";
     }
 }

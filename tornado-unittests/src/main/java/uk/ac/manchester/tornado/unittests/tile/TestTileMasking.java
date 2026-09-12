@@ -46,7 +46,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * Until those two existed a tile kernel could only compute the same arithmetic for every
  * element, and the suite said so: causal attention and a ragged key tail were both listed as
  * not expressible. They are the reason comparisons are in the API, so they are what tests
- * them — together with the elementwise cases that are easy to check by hand (ReLU, clamp,
+ * them - together with the elementwise cases that are easy to check by hand (ReLU, clamp,
  * thresholding) and the two reductions that arrived with them.
  * </p>
  *
@@ -143,7 +143,7 @@ public class TestTileMasking extends TornadoTestBase {
      *
      * <p>
      * This is TileGym's {@code IS_CAUSAL} branch of {@code ops/tilecpp/attention.cuh}. The mask
-     * is built the way the original builds it — from index tiles rather than from a table — but
+     * is built the way the original builds it - from index tiles rather than from a table - but
      * a rank-2 API has to say it slightly differently. The row and column index tiles come from
      * {@code iota} broadcast to the score shape, and the comparison is against
      * {@code keyBlock * BLOCK_N - queryBlock * BLOCK_M}: shifting the threshold instead of the

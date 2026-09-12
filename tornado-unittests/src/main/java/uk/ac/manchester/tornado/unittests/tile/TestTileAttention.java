@@ -49,7 +49,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * These are the most demanding ports in the suite, and they are here because flash attention is
  * the kernel the whole tile abstraction exists for. In one loop body it needs a matmul, a row
  * reduction, a row broadcast against a full tile, a transcendental, a narrowing cast back to the
- * operand type and a second matmul that accumulates into a tile carried across the loop — three
+ * operand type and a second matmul that accumulates into a tile carried across the loop - three
  * loop-carried tiles at once, over a trip count that is only known at runtime.
  * </p>
  *
@@ -105,7 +105,7 @@ public class TestTileAttention extends TornadoTestBase {
      * <p>
      * The online softmax is the point of the kernel: rather than materialising the full
      * {@code [S_QO, S_KV]} score matrix, it walks the KV sequence one block at a time and keeps
-     * three running tiles — the row maximum {@code m}, the row denominator {@code l} and the
+     * three running tiles - the row maximum {@code m}, the row denominator {@code l} and the
      * unnormalised output {@code acc}. When a block raises a row's maximum, everything
      * accumulated so far for that row is rescaled by {@code exp(m_old - m_new)}, which is what
      * makes the single pass numerically equal to a two-pass softmax.
@@ -150,7 +150,7 @@ public class TestTileAttention extends TornadoTestBase {
      * There is no rank-4 view, and the kernel does not need one: with a two-dimensional grid the
      * head comes from {@code bidY} and every tensor is viewed as {@code (heads * sequence,
      * HEAD_DIM)}, so selecting a head is arithmetic on the block row. That is also what makes
-     * GQA a one-line change — several query heads map to one KV head by integer division, which
+     * GQA a one-line change - several query heads map to one KV head by integer division, which
      * is exactly what TileGym's {@code off_kv_h} computes.
      * </p>
      */
@@ -204,7 +204,7 @@ public class TestTileAttention extends TornadoTestBase {
      * </p>
      *
      * <p>
-     * The split count is a constant here, and it exists twice for that reason — it is
+     * The split count is a constant here, and it exists twice for that reason - it is
      * {@code NUM_KV_SPLITS_POW2}, a template parameter of the original, and a tile shape has to
      * be a compile-time constant on this side too. Writing it as a kernel parameter is rejected
      * at sketch time with an explicit message, and factoring the body into a shared helper does

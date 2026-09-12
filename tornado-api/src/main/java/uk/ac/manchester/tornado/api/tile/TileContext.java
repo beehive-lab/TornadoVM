@@ -18,8 +18,11 @@
 package uk.ac.manchester.tornado.api.tile;
 
 import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FP8Array;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 /**
@@ -168,6 +171,53 @@ public class TileContext {
 
     public TensorView view(IntArray array, int rows, int columns) {
         return new TensorView(array, DType.S32, new int[] { rows, columns });
+    }
+
+    /**
+     * A view of an 8-bit integer buffer, the operand type of an integer matmul. An
+     * {@code mma} over these accumulates into {@link DType#S32} and lowers to {@code IMMA} on
+     * Ada and newer.
+     */
+    public TensorView view(Int8Array array, int extent) {
+        return new TensorView(array, DType.S8, new int[] { extent });
+    }
+
+    public TensorView view(Int8Array array, int rows, int columns) {
+        return new TensorView(array, DType.S8, new int[] { rows, columns });
+    }
+
+    public TensorView view(DoubleArray array, int extent) {
+        return new TensorView(array, DType.F64, new int[] { extent });
+    }
+
+    public TensorView view(DoubleArray array, int rows, int columns) {
+        return new TensorView(array, DType.F64, new int[] { rows, columns });
+    }
+
+    /**
+     * A view of an 8-bit float buffer. The format is a parameter because {@link FP8Array} is a
+     * byte buffer with both an e4m3 and an e5m2 accessor - the buffer does not carry which one
+     * it holds, so the kernel has to say.
+     *
+     * <p>
+     * Requires compute capability 9.0 or newer. {@code tileiras} rejects an fp8 tile on Ada
+     * (sm_89) with "unsupported type 'f8E4M3FN'", so the compiler gate refuses it early with a
+     * message that names the requirement instead.
+     * </p>
+     */
+    public TensorView view(FP8Array array, DType format, int extent) {
+        return new TensorView(array, requireFp8(format), new int[] { extent });
+    }
+
+    public TensorView view(FP8Array array, DType format, int rows, int columns) {
+        return new TensorView(array, requireFp8(format), new int[] { rows, columns });
+    }
+
+    private static DType requireFp8(DType format) {
+        if (format != DType.FP8_E4M3 && format != DType.FP8_E5M2) {
+            throw new IllegalArgumentException("[TileContext] A view of an FP8Array needs FP8_E4M3 or FP8_E5M2 as its format, got " + format + ".");
+        }
+        return format;
     }
 
     public PartitionView partition(TensorView view, int tileExtent) {
