@@ -551,7 +551,7 @@ Beyond the operation set:
 Examples
 ********
 
-``tornado-examples`` carries four runnable tile examples. Each rewrites a known algorithm with
+``tornado-examples`` carries five runnable tile examples. Each rewrites a known algorithm with
 ``TileContext`` beside thread-level versions of the same thing, checks every result against a
 sequential Java reference, and prints a table of times:
 
@@ -568,6 +568,9 @@ sequential Java reference, and prints a table of times:
 
     # attention: thread-per-query against fused flash attention
     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.tile.TileAttention 1024 1024 20
+
+    # a transformer block built twice: all JIT, then JIT + CUDA Tile + cuBLAS
+    tornado -m tornado.examples/uk.ac.manchester.tornado.examples.tile.TileTransformerBlock
 
 The times are wall clock and include JVM-side dispatch, which dominates at small sizes; the
 examples say so, and ``TileExamples`` carries the nsys recipe for kernel time alone.

@@ -18,6 +18,7 @@
 open module tornado.examples {
     requires transitive java.desktop;
     requires transitive tornado.api;
+    requires tornado.cublas;
     requires jdk.incubator.vector;
 
     exports uk.ac.manchester.tornado.examples;
