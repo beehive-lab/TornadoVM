@@ -166,10 +166,9 @@ public class TestTileMasking extends TornadoTestBase {
         int queryBlock = tc.bidX();
 
         // Index tiles at the score shape: iota down the rows and along the columns, each
-        // stretched to [BLOCK_M, BLOCK_N] by adding a zero tile of that shape.
-        Tile spread = tc.zeros(DType.S32, BLOCK_M, BLOCK_N);
-        Tile rowIndex = tc.add(spread, tc.iota(DType.S32, BLOCK_M, 1));
-        Tile columnIndex = tc.add(spread, tc.iota(DType.S32, 1, BLOCK_N));
+        // stretched to [BLOCK_M, BLOCK_N] by broadcast.
+        Tile rowIndex = tc.broadcast(tc.iota(DType.S32, BLOCK_M, 1), BLOCK_M, BLOCK_N);
+        Tile columnIndex = tc.broadcast(tc.iota(DType.S32, 1, BLOCK_N), BLOCK_M, BLOCK_N);
         Tile rowMinusColumn = tc.sub(rowIndex, columnIndex);
         Tile masked = tc.full(DType.F32, NEGATIVE_LIMIT, BLOCK_M, BLOCK_N);
 
@@ -218,8 +217,7 @@ public class TestTileMasking extends TornadoTestBase {
         PartitionView outView = tc.partition(tc.view(out, queryRows, HEAD_DIM), BLOCK_M, HEAD_DIM);
 
         int queryBlock = tc.bidX();
-        Tile spread = tc.zeros(DType.S32, BLOCK_M, BLOCK_N);
-        Tile columnIndex = tc.add(spread, tc.iota(DType.S32, 1, BLOCK_N));
+        Tile columnIndex = tc.broadcast(tc.iota(DType.S32, 1, BLOCK_N), BLOCK_M, BLOCK_N);
         Tile masked = tc.full(DType.F32, NEGATIVE_LIMIT, BLOCK_M, BLOCK_N);
 
         Tile query = qView.load(queryBlock, 0);

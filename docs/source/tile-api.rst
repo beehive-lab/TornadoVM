@@ -147,6 +147,9 @@ API reference
    * - ``view.atomicAdd(tile, blocks...)``
      - ``ct::atomic_add`` over a pointer tile
      - relaxed order, device scope; see below
+   * - ``broadcast(t, shape)`` / ``reshape`` / ``extract``
+     - ``ct::broadcast`` / ``ct::reshape`` / ``ct::extract``
+     - ``extract`` indexes in sub-tile units, like a view addresses blocks
    * - ``select(mask, a, b)``
      - ``ct::select``
      - the only consumer of a predicate tile
@@ -252,9 +255,10 @@ order of how much it costs:
      - ``PartitionView.atomicAdd`` exists (see below); ``atomic_sub``, ``atomic_min``,
        ``atomic_max``, the bitwise atomics, ``atomic_xchg`` and ``atomic_compare_exchange`` do
        not, nor do the masked forms or a choice of memory order and scope.
-   * - ``permute`` ``reshape`` ``broadcast`` ``extract``
-     - a rank-2 tile can be reshaped only by ``transpose``, and broadcasting happens implicitly
-       in elementwise ops rather than on demand.
+   * - ``permute``
+     - on a rank-2 tile the only non-identity permutation is ``transpose``, which exists, so
+       this would add surface without capability. ``reshape``, ``broadcast`` and ``extract`` are
+       implemented.
    * - ``partial_sum`` / ``partial_prod``
      - no scans, so a cumulative softmax or a prefix sum needs a different formulation.
    * - ``tan sinh cosh atan2 isnan isinf mulhi remainder`` and ``element_bitcast``

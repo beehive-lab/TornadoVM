@@ -844,4 +844,65 @@ public class CUDATileStmt {
             return builder.append(">{}").toString();
         }
     }
+
+    /**
+     * {@code ct::broadcast}, {@code ct::reshape} or {@code ct::extract}: a tile, a target shape
+     * as a template argument, and for extract the sub-tile indices.
+     */
+    public static class TileShapeOpStmt extends AbstractTileInstruction implements TileValued {
+
+        public static final LIRInstructionClass<TileShapeOpStmt> TYPE = LIRInstructionClass.create(TileShapeOpStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value tile;
+        @Use({ OperandFlag.REG, OperandFlag.CONST })
+        protected Value[] blockIndices;
+
+        private final String function;
+        private final DType dtype;
+        private final int[] shape;
+
+        public TileShapeOpStmt(Value result, Value tile, Value[] blockIndices, String function, DType dtype, int[] shape) {
+            super(TYPE);
+            this.result = result;
+            this.tile = tile;
+            this.blockIndices = blockIndices;
+            this.function = function;
+            this.dtype = dtype;
+            this.shape = shape;
+        }
+
+        @Override
+        public String getTileCppType() {
+            return tileType(dtype, shape);
+        }
+
+        @Override
+        public Value getTileResult() {
+            return result;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            StringBuilder target = new StringBuilder("ct::shape<");
+            for (int i = 0; i < shape.length; i++) {
+                if (i > 0) {
+                    target.append(", ");
+                }
+                target.append(shape[i]);
+            }
+            target.append(">{}");
+
+            asm.indent();
+            asm.emit("auto " + asm.getStringValue(crb, result) + " = ct::" + function + "(" + asm.getStringValue(crb, tile) + ", " + target);
+            for (Value blockIndex : blockIndices) {
+                asm.emit(", " + asm.getStringValue(crb, blockIndex));
+            }
+            asm.emit(")");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
 }

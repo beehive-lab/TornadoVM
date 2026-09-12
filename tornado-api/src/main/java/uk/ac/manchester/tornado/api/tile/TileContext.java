@@ -656,6 +656,123 @@ public class TileContext {
         return result;
     }
 
+    /**
+     * Stretches a tile to a larger shape, {@code ct::broadcast}. Only a dimension of extent one
+     * may stretch, which is the same rule the elementwise operations apply implicitly; this is
+     * the explicit form, for when a row or column vector has to become a full tile before it is
+     * used more than once.
+     */
+    public Tile broadcast(Tile a, int extent) {
+        return broadcastTo(a, new int[] { extent });
+    }
+
+    public Tile broadcast(Tile a, int rows, int columns) {
+        return broadcastTo(a, new int[] { rows, columns });
+    }
+
+    private Tile broadcastTo(Tile a, int[] target) {
+        if (a.getRank() != target.length) {
+            throw new IllegalArgumentException("[TileContext] broadcast cannot change rank: a rank-" + a.getRank()
+                    + " tile cannot become rank-" + target.length + ". Use reshape for that.");
+        }
+        for (int axis = 0; axis < target.length; axis++) {
+            int from = a.getDimension(axis);
+            if (from != target[axis] && from != 1) {
+                throw new IllegalArgumentException("[TileContext] broadcast can only stretch a dimension of extent 1, but axis "
+                        + axis + " is " + from + " and the target is " + target[axis] + ".");
+            }
+        }
+        Tile result = Tile.allocate(a.getDType(), target);
+        int rows = target.length == 2 ? target[0] : 1;
+        int columns = target.length == 2 ? target[1] : target[0];
+        for (int row = 0; row < rows; row++) {
+            for (int column = 0; column < columns; column++) {
+                result.getData()[row * columns + column] = broadcastRead(a, row, column);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Reinterprets a tile with a different shape of the same size, {@code ct::reshape}, in
+     * row-major order. This is how a reduction result changes orientation: a {@code sum} along
+     * axis 1 gives {@code [rows, 1]}, and a kernel that needs it as {@code [1, rows]} reshapes
+     * rather than transposing, which would be a data movement.
+     */
+    public Tile reshape(Tile a, int extent) {
+        return reshapeTo(a, new int[] { extent });
+    }
+
+    public Tile reshape(Tile a, int rows, int columns) {
+        return reshapeTo(a, new int[] { rows, columns });
+    }
+
+    private Tile reshapeTo(Tile a, int[] target) {
+        int size = 1;
+        for (int dimension : target) {
+            checkShape(dimension);
+            size *= dimension;
+        }
+        if (size != a.getElementCount()) {
+            throw new IllegalArgumentException("[TileContext] reshape must keep the element count: " + a.getElementCount()
+                    + " elements cannot become " + size + ".");
+        }
+        return new Tile(a.getDType(), target, a.getData().clone());
+    }
+
+    /**
+     * Takes one sub-tile out of a tile, {@code ct::extract}.
+     *
+     * <p>
+     * The indices are in units of the sub-tile, not elements, the same way a partition view
+     * addresses blocks: {@code extract(row, 1, 32, 0, 1)} of a {@code [1, 64]} tile is elements
+     * 32 to 63. Verified against the toolkit rather than assumed.
+     * </p>
+     *
+     * <p>
+     * This is what splits a packed row without loading it twice, as a SiLU-and-multiply or a
+     * GEGLU has to: one load of the whole row, then two extracts.
+     * </p>
+     */
+    public Tile extract(Tile a, int extent, int block) {
+        return extractFrom(a, new int[] { extent }, new int[] { block });
+    }
+
+    public Tile extract(Tile a, int rows, int columns, int blockRow, int blockColumn) {
+        return extractFrom(a, new int[] { rows, columns }, new int[] { blockRow, blockColumn });
+    }
+
+    private Tile extractFrom(Tile a, int[] shape, int[] blockIndices) {
+        if (a.getRank() != shape.length) {
+            throw new IllegalArgumentException("[TileContext] extract cannot change rank: a rank-" + a.getRank()
+                    + " tile cannot yield a rank-" + shape.length + " sub-tile.");
+        }
+        for (int axis = 0; axis < shape.length; axis++) {
+            checkShape(shape[axis]);
+            if (a.getDimension(axis) % shape[axis] != 0) {
+                throw new IllegalArgumentException("[TileContext] extract needs the sub-tile to divide the tile, but axis "
+                        + axis + " is " + a.getDimension(axis) + " and the sub-tile is " + shape[axis] + ".");
+            }
+        }
+        Tile result = Tile.allocate(a.getDType(), shape);
+        if (shape.length == 1) {
+            int base = blockIndices[0] * shape[0];
+            for (int i = 0; i < shape[0]; i++) {
+                result.getData()[i] = a.getData()[base + i];
+            }
+            return result;
+        }
+        int columns = a.getDimension(1);
+        for (int row = 0; row < shape[0]; row++) {
+            for (int column = 0; column < shape[1]; column++) {
+                int sourceRow = blockIndices[0] * shape[0] + row;
+                int sourceColumn = blockIndices[1] * shape[1] + column;
+                result.getData()[row * shape[1] + column] = a.getData()[sourceRow * columns + sourceColumn];
+            }
+        }
+        return result;
+    }
+
     public Tile transpose(Tile a) {
         if (a.getRank() != 2) {
             throw new IllegalArgumentException("[TileContext] transpose currently supports rank-2 tiles.");

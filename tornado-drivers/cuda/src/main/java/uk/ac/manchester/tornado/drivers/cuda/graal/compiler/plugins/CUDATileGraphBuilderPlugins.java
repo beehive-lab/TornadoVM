@@ -58,6 +58,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATilePartitionViewNo
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileReduceNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileScalarCompareNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileScaleNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileShapeOpNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileStoreNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileTernaryNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileUnaryNode;
@@ -320,6 +321,13 @@ public class CUDATileGraphBuilderPlugins {
             }
         });
 
+        registerShapeOp(r, "broadcast", 1, 0);
+        registerShapeOp(r, "broadcast", 2, 0);
+        registerShapeOp(r, "reshape", 1, 0);
+        registerShapeOp(r, "reshape", 2, 0);
+        registerShapeOp(r, "extract", 1, 1);
+        registerShapeOp(r, "extract", 2, 2);
+
         r.register(new InvocationPlugin("transpose", InvocationPlugin.Receiver.class, Tile.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode tile) {
@@ -422,6 +430,39 @@ public class CUDATileGraphBuilderPlugins {
     /**
      * A two-operand op spelled as a function rather than an operator, such as {@code ct::max}.
      */
+    /**
+     * A shape-taking operation. The target shape must fold, like every tile shape; the sub-tile
+     * indices of {@code extract} need not, because they are ordinary runtime values.
+     */
+    private static void registerShapeOp(Registration r, String name, int rank, int indexCount) {
+        // One array, receiver first: the constructor takes Type... and a nested Class[] would
+        // be one argument of the wrong type rather than a spread signature.
+        java.lang.reflect.Type[] signature = new java.lang.reflect.Type[2 + rank + indexCount];
+        signature[0] = InvocationPlugin.Receiver.class;
+        signature[1] = Tile.class;
+        for (int i = 2; i < signature.length; i++) {
+            signature[i] = int.class;
+        }
+        r.register(new InvocationPlugin(name, signature) {
+            @Override
+            public boolean defaultHandler(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode... args) {
+                receiver.get(true);
+                ValueNode tile = args[0];
+                CUDATileNode source = tileNodeOf(tile, "the operand of " + name);
+                int[] shape = new int[rank];
+                for (int axis = 0; axis < rank; axis++) {
+                    shape[axis] = shapeConstant(args[1 + axis], name + " shape");
+                }
+                ValueNode[] indices = new ValueNode[indexCount];
+                for (int i = 0; i < indexCount; i++) {
+                    indices[i] = args[1 + rank + i];
+                }
+                b.addPush(JavaKind.Object, new CUDATileShapeOpNode(tile, indices, name, source.tileDType(), shape));
+                return true;
+            }
+        });
+    }
+
     /**
      * An elementwise comparison, in both its tile-to-tile and tile-to-scalar forms. The result
      * is a {@link DType#PRED} tile regardless of the operand type.
