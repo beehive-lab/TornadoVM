@@ -160,6 +160,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.tile.TestTileAttention"),
     TestEntry("uk.ac.manchester.tornado.unittests.tile.TestTileGemmVariants"),
     TestEntry("uk.ac.manchester.tornado.unittests.tile.TestTileAttentionVariants"),
+    TestEntry("uk.ac.manchester.tornado.unittests.tile.TestTileMasking"),
     TestEntry("uk.ac.manchester.tornado.unittests.cublas.TestCuBlas"),
     TestEntry("uk.ac.manchester.tornado.unittests.cublas.TestCuBlasLt"),
     TestEntry("uk.ac.manchester.tornado.unittests.cufft.TestCuFft"),

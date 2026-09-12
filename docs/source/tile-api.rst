@@ -132,6 +132,24 @@ API reference
    * - ``exp exp2 log log2 tanh sqrt rsqrt sin cos abs floor``
      - ``ct::exp`` ...
      -
+   * - ``minimum(a, b)`` / ``maximum(a, b)``
+     - ``ct::min`` / ``ct::max``
+     - elementwise, two operands
+   * - ``sum(t, axis)`` ``max`` ``min`` ``prod``
+     - ``ct::sum`` ``ct::reduce_max`` ``ct::reduce_min`` ``ct::prod``
+     - the reduced dimension is kept
+   * - ``lessThan(a, b)`` and the other five comparisons
+     - ``a < b`` ...
+     - result is a ``DType.PRED`` tile; the right operand may be a runtime scalar
+   * - ``logicalAnd(m1, m2)`` / ``logicalOr``
+     - ``m1 & m2`` / ``m1 | m2``
+     - combines two predicate tiles
+   * - ``select(mask, a, b)``
+     - ``ct::select``
+     - the only consumer of a predicate tile
+   * - ``fma(a, b, c)``
+     - ``ct::fma``
+     - elementwise, unlike ``mma``
    * - ``transpose(tile)``
      - ``ct::transpose``
      -
@@ -179,19 +197,52 @@ CUDA graph, tile task included, and ``withIntraPlanConcurrency()`` works as usua
 Known limitations
 *****************
 
-* ``atomicAdd`` through a ``PartitionView``, ``permute``, ``reshape`` and ``select`` are declared in
-  the API but not yet lowered. The missing ``select`` is the one with a visible consequence: it
-  rules out causal masking and ragged key tails in attention, because a masked-out score has to
-  become ``-inf`` before the exponential. A zero-padded ``loadMasked`` is not a substitute — a
-  padded key contributes ``exp(0 - m)`` to the softmax denominator rather than nothing.
+The table above is the covered surface. What CUDA Tile has and this API does not, in rough
+order of how much it costs:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - Missing
+     - Consequence
+   * - Views of ``FP8Array``, ``Int8Array``, ``DoubleArray``
+     - ``DType`` names fp8, s8, f64 and tf32 and ``mma`` validates them, but only
+       ``FloatArray``, ``HalfFloatArray``, ``BFloat16Array`` and ``IntArray`` can be viewed, so
+       a quantised GEMM cannot be fed. The largest remaining gap.
+   * - Rank 3 and above
+     - ``view``/``partition`` are rank 1 and 2. A batch or head dimension has to be folded into
+       the row index, which every attention kernel in the test suite does; it costs arithmetic,
+       not expressiveness.
+   * - ``atomic_add`` and the rest of the atomic family
+     - no atomic accumulation into a view, so split-K has to write per-split partials and
+       reduce them in a second kernel (which the decode tests do).
+   * - ``permute`` ``reshape`` ``broadcast`` ``extract``
+     - a rank-2 tile can be reshaped only by ``transpose``, and broadcasting happens implicitly
+       in elementwise ops rather than on demand.
+   * - ``partial_sum`` / ``partial_prod``
+     - no scans, so a cumulative softmax or a prefix sum needs a different formulation.
+   * - ``tan sinh cosh atan2 isnan isinf mulhi remainder`` and ``element_bitcast``
+     - individually cheap to add; nothing in the ported kernels has needed them.
+   * - ``view_padding`` modes other than zero, and a masked load with an explicit pad value
+     - ``loadMasked`` zero-pads. A softmax over a ragged tail therefore needs a comparison and
+       a ``select`` to keep the padding out of the denominator, as
+       ``TestTileMasking#raggedKeyTail`` shows.
+   * - rounding and NaN-propagation modes
+     - CUDA Tile takes per-operation rounding tags; the generated code uses the defaults.
+
+Beyond the operation set:
+
 * Batch processing (``withBatch``) is rejected for tile tasks.
-* Tile intrinsics are not yet handled in ``TornadoCUDAIntrinsicsReplacements``, so a reflectively
-  resolved tile kernel fails with an explanation instead of miscompiling.
-* An ``@Reduce`` task cannot share a ``TaskGraph`` with a tile task: the reduction rewrite renames
-  the graph, so a ``GridScheduler`` keyed on the original task id stops matching and the tile task
-  silently runs as one block. Use ``tc.sum`` inside the tile instead.
+* Tile intrinsics are not yet handled in ``TornadoCUDAIntrinsicsReplacements``, so a
+  reflectively resolved tile kernel fails with an explanation instead of miscompiling.
+* An ``@Reduce`` task cannot share a ``TaskGraph`` with a tile task: the reduction rewrite
+  renames the graph, so a ``GridScheduler`` keyed on the original task id stops matching and
+  the tile task silently runs as one block. Use ``tc.sum`` inside the tile instead.
 * TMA does not appear in the generated SASS on Ada (sm_89) because TMA is a Hopper unit; the
   alignment hint only pays off on sm_90 and newer.
+* No kernel emits CUDA Tile's ``num_ctas``, ``occupancy`` or ``latency`` hints yet, although a
+  JIT knows the shapes that would inform them.
 
 Verifying and profiling
 ***********************

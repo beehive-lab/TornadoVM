@@ -36,7 +36,15 @@ public enum DType {
     FP8_E4M3("__nv_fp8_e4m3", 1),
     FP8_E5M2("__nv_fp8_e5m2", 1),
     S8("signed char", 1),
-    S32("int", 4);
+    S32("int", 4),
+
+    /**
+     * The element type of a comparison result. CUDA Tile compares elementwise and yields a tile
+     * of {@code bool}, which {@code ct::select} then consumes; this is that type. It is not a
+     * storage type: there is no view of a boolean buffer, and a predicate tile only ever comes
+     * from a comparison.
+     */
+    PRED("bool", 1);
 
     private final String cppType;
     private final int bytes;
@@ -126,6 +134,7 @@ public enum DType {
             case F64 -> accumulator == F64;
             case S8 -> accumulator == S32;
             case S32 -> accumulator == S32;
+            case PRED -> false;
         };
     }
 }

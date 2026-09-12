@@ -52,8 +52,10 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileMmaNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATilePartitionViewNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileReduceNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileScalarCompareNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileScaleNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileStoreNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileTernaryNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileUnaryNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileViewNode;
 
@@ -334,6 +336,55 @@ public class CUDATileGraphBuilderPlugins {
 
         // ct::max is the elementwise two-operand form; the reduction is ct::reduce_max.
         registerReduction(r, "max", "reduce_max");
+        registerReduction(r, "min", "reduce_min");
+        registerReduction(r, "prod", "prod");
+        registerBinaryCall(r, "minimum", "min");
+
+        // Comparisons yield a predicate tile, which only ct::select consumes. Both operand
+        // forms exist because the right-hand side is often a runtime extent, and a tile-to-tile
+        // comparison would need a full(...) whose fill value has to fold.
+        registerComparison(r, "lessThan", "<");
+        registerComparison(r, "lessOrEqual", "<=");
+        registerComparison(r, "greaterThan", ">");
+        registerComparison(r, "greaterOrEqual", ">=");
+        registerComparison(r, "equalTo", "==");
+        registerComparison(r, "notEqualTo", "!=");
+        registerPredicateCombination(r, "logicalAnd", "&");
+        registerPredicateCombination(r, "logicalOr", "|");
+
+        r.register(new InvocationPlugin("select", InvocationPlugin.Receiver.class, Tile.class, Tile.class, Tile.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode predicate, ValueNode whenTrue, ValueNode whenFalse) {
+                receiver.get(true);
+                CUDATileNode condition = tileNodeOf(predicate, "the condition of select");
+                CUDATileNode left = tileNodeOf(whenTrue, "the true operand of select");
+                CUDATileNode right = tileNodeOf(whenFalse, "the false operand of select");
+                if (condition.tileDType() != DType.PRED) {
+                    throw new IllegalStateException("[TileContext] The condition of select must come from a comparison, but it is a "
+                            + condition.tileDType() + " tile.");
+                }
+                if (left.tileDType() != right.tileDType()) {
+                    throw new IllegalStateException("[TileContext] select needs both value operands in the same element type, got "
+                            + left.tileDType() + " and " + right.tileDType() + ".");
+                }
+                b.addPush(JavaKind.Object, new CUDATileTernaryNode(predicate, whenTrue, whenFalse, "select", left.tileDType(), //
+                        broadcastShape(left.tileShape(), right.tileShape(), "select")));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("fma", InvocationPlugin.Receiver.class, Tile.class, Tile.class, Tile.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode tileA, ValueNode tileB, ValueNode tileC) {
+                receiver.get(true);
+                CUDATileNode left = tileNodeOf(tileA, "the first operand of fma");
+                CUDATileNode right = tileNodeOf(tileB, "the second operand of fma");
+                CUDATileNode addend = tileNodeOf(tileC, "the addend of fma");
+                int[] shape = broadcastShape(broadcastShape(left.tileShape(), right.tileShape(), "fma"), addend.tileShape(), "fma");
+                b.addPush(JavaKind.Object, new CUDATileTernaryNode(tileA, tileB, tileC, "fma", left.tileDType(), shape));
+                return true;
+            }
+        });
 
         registerReduction(r, "sum", "sum");
     }
@@ -341,6 +392,57 @@ public class CUDATileGraphBuilderPlugins {
     /**
      * A two-operand op spelled as a function rather than an operator, such as {@code ct::max}.
      */
+    /**
+     * An elementwise comparison, in both its tile-to-tile and tile-to-scalar forms. The result
+     * is a {@link DType#PRED} tile regardless of the operand type.
+     */
+    private static void registerComparison(Registration r, String name, String operator) {
+        r.register(new InvocationPlugin(name, InvocationPlugin.Receiver.class, Tile.class, Tile.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode left, ValueNode right) {
+                receiver.get(true);
+                CUDATileNode leftTile = tileNodeOf(left, "the left operand of " + name);
+                CUDATileNode rightTile = tileNodeOf(right, "the right operand of " + name);
+                b.addPush(JavaKind.Object, new CUDATileBinaryNode(left, right, operator, DType.PRED, //
+                        broadcastShape(leftTile.tileShape(), rightTile.tileShape(), name)));
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin(name, InvocationPlugin.Receiver.class, Tile.class, double.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode tile, ValueNode scalar) {
+                receiver.get(true);
+                CUDATileNode source = tileNodeOf(tile, "the operand of " + name);
+                b.addPush(JavaKind.Object, new CUDATileScalarCompareNode(tile, scalar, operator, source.tileDType(), source.tileShape()));
+                return true;
+            }
+        });
+    }
+
+    /**
+     * Combines two predicate tiles, {@code mask & mask}. Separate from
+     * {@link #registerBinary} only so the result type stays {@code PRED} and the operands are
+     * checked to be predicates — composing a mask with an arithmetic tile is a mistake worth
+     * catching at compile time.
+     */
+    private static void registerPredicateCombination(Registration r, String name, String operator) {
+        r.register(new InvocationPlugin(name, InvocationPlugin.Receiver.class, Tile.class, Tile.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode left, ValueNode right) {
+                receiver.get(true);
+                CUDATileNode leftTile = tileNodeOf(left, "the left operand of " + name);
+                CUDATileNode rightTile = tileNodeOf(right, "the right operand of " + name);
+                if (leftTile.tileDType() != DType.PRED || rightTile.tileDType() != DType.PRED) {
+                    throw new IllegalStateException("[TileContext] " + name + " combines two comparison results, but it was given a "
+                            + leftTile.tileDType() + " and a " + rightTile.tileDType() + " tile.");
+                }
+                b.addPush(JavaKind.Object, new CUDATileBinaryNode(left, right, operator, DType.PRED, //
+                        broadcastShape(leftTile.tileShape(), rightTile.tileShape(), name)));
+                return true;
+            }
+        });
+    }
+
     private static void registerBinaryCall(Registration r, String name, String function) {
         r.register(new InvocationPlugin(name, InvocationPlugin.Receiver.class, Tile.class, Tile.class) {
             @Override

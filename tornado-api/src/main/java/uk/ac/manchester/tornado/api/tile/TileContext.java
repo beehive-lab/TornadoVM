@@ -263,6 +263,135 @@ public class TileContext {
         return zip(a, b, 'M');
     }
 
+    /**
+     * Elementwise minimum, {@code ct::min}. The counterpart of {@link #maximum(Tile, Tile)};
+     * both are the two-operand form, not a reduction.
+     */
+    public Tile minimum(Tile a, Tile b) {
+        return zip(a, b, (left, right) -> Math.min(left, right));
+    }
+
+    // -------------------------------------------------------------------------------------
+    // Comparisons and select
+    // -------------------------------------------------------------------------------------
+
+    /**
+     * Elementwise {@code a < b}, yielding a predicate tile.
+     *
+     * <p>
+     * A comparison is the only way to produce a {@link DType#PRED} tile, and
+     * {@link #select(Tile, Tile, Tile)} is the only thing that consumes one. Together they are
+     * what makes a data-dependent kernel expressible: causal masking, a ragged sequence tail,
+     * a clamp, a ReLU. Without them a tile kernel can only compute the same arithmetic for
+     * every element.
+     * </p>
+     */
+    public Tile lessThan(Tile a, Tile b) {
+        return compare(a, b, "<");
+    }
+
+    /** Elementwise {@code a < scalar}. */
+    public Tile lessThan(Tile a, double scalar) {
+        return compareScalar(a, scalar, "<");
+    }
+
+    public Tile lessOrEqual(Tile a, Tile b) {
+        return compare(a, b, "<=");
+    }
+
+    public Tile lessOrEqual(Tile a, double scalar) {
+        return compareScalar(a, scalar, "<=");
+    }
+
+    public Tile greaterThan(Tile a, Tile b) {
+        return compare(a, b, ">");
+    }
+
+    public Tile greaterThan(Tile a, double scalar) {
+        return compareScalar(a, scalar, ">");
+    }
+
+    public Tile greaterOrEqual(Tile a, Tile b) {
+        return compare(a, b, ">=");
+    }
+
+    public Tile greaterOrEqual(Tile a, double scalar) {
+        return compareScalar(a, scalar, ">=");
+    }
+
+    public Tile equalTo(Tile a, Tile b) {
+        return compare(a, b, "==");
+    }
+
+    public Tile equalTo(Tile a, double scalar) {
+        return compareScalar(a, scalar, "==");
+    }
+
+    public Tile notEqualTo(Tile a, Tile b) {
+        return compare(a, b, "!=");
+    }
+
+    public Tile notEqualTo(Tile a, double scalar) {
+        return compareScalar(a, scalar, "!=");
+    }
+
+    /**
+     * Elementwise conjunction of two predicate tiles, {@code a & b}. Spelled with the bitwise
+     * operator rather than {@code &&} because that is what composes two masks in CUDA Tile.
+     */
+    public Tile logicalAnd(Tile a, Tile b) {
+        return predicateOf(zip(a, b, (left, right) -> left != 0.0 && right != 0.0 ? 1.0 : 0.0));
+    }
+
+    /** Elementwise disjunction of two predicate tiles, {@code a | b}. */
+    public Tile logicalOr(Tile a, Tile b) {
+        return predicateOf(zip(a, b, (left, right) -> left != 0.0 || right != 0.0 ? 1.0 : 0.0));
+    }
+
+    /**
+     * Elementwise choice, {@code ct::select}: the element of {@code whenTrue} where the
+     * predicate holds, of {@code whenFalse} where it does not.
+     */
+    public Tile select(Tile predicate, Tile whenTrue, Tile whenFalse) {
+        if (predicate.getDType() != DType.PRED) {
+            throw new IllegalArgumentException("[TileContext] The first argument of select must be a comparison result, not a "
+                    + predicate.getDType() + " tile.");
+        }
+        Tile result = Tile.allocate(whenTrue.getDType(), whenTrue.getShape());
+        for (int i = 0; i < result.getElementCount(); i++) {
+            result.getData()[i] = predicate.getData()[i] != 0.0 ? whenTrue.getData()[i] : whenFalse.getData()[i];
+        }
+        return result;
+    }
+
+    private Tile compare(Tile a, Tile b, String operator) {
+        return predicateOf(zip(a, b, (left, right) -> holds(left, right, operator) ? 1.0 : 0.0));
+    }
+
+    private Tile compareScalar(Tile a, double scalar, String operator) {
+        Tile result = Tile.allocate(DType.PRED, a.getShape());
+        for (int i = 0; i < a.getElementCount(); i++) {
+            result.getData()[i] = holds(a.getData()[i], scalar, operator) ? 1.0 : 0.0;
+        }
+        return result;
+    }
+
+    private static boolean holds(double left, double right, String operator) {
+        return switch (operator) {
+            case "<" -> left < right;
+            case "<=" -> left <= right;
+            case ">" -> left > right;
+            case ">=" -> left >= right;
+            case "==" -> left == right;
+            default -> left != right;
+        };
+    }
+
+    /** Retypes a zip result as a predicate, since {@link #zip} keeps the operand type. */
+    private static Tile predicateOf(Tile computed) {
+        return new Tile(DType.PRED, computed.getShape(), computed.getData());
+    }
+
     public Tile scale(Tile a, double scalar) {
         Tile result = Tile.allocate(a.getDType(), a.getShape());
         for (int i = 0; i < a.getElementCount(); i++) {
@@ -324,10 +453,17 @@ public class TileContext {
      * CUDA Tile C++.
      */
     public Tile sum(Tile a, int axis) {
-        return reduce(a, axis, false);
+        return reduce(a, axis, Reduction.SUM);
     }
 
-    private Tile reduce(Tile a, int axis, boolean maximum) {
+    private enum Reduction {
+        SUM,
+        MAXIMUM,
+        MINIMUM,
+        PRODUCT
+    }
+
+    private Tile reduce(Tile a, int axis, Reduction kind) {
         if (a.getRank() != 2) {
             throw new IllegalArgumentException("[TileContext] Reductions currently support rank-2 tiles.");
         }
@@ -338,14 +474,24 @@ public class TileContext {
         int columns = a.getDimension(1);
         int[] shape = axis == 0 ? new int[] { 1, columns } : new int[] { rows, 1 };
         Tile result = Tile.allocate(a.getDType(), shape);
-        if (maximum) {
-            java.util.Arrays.fill(result.getData(), Double.NEGATIVE_INFINITY);
-        }
+        double initial = switch (kind) {
+            case SUM -> 0.0;
+            case MAXIMUM -> Double.NEGATIVE_INFINITY;
+            case MINIMUM -> Double.POSITIVE_INFINITY;
+            case PRODUCT -> 1.0;
+        };
+        java.util.Arrays.fill(result.getData(), initial);
         for (int row = 0; row < rows; row++) {
             for (int column = 0; column < columns; column++) {
                 int target = axis == 0 ? column : row;
                 double value = a.getData()[row * columns + column];
-                result.getData()[target] = maximum ? Math.max(result.getData()[target], value) : result.getData()[target] + value;
+                double accumulated = result.getData()[target];
+                result.getData()[target] = switch (kind) {
+                    case SUM -> accumulated + value;
+                    case MAXIMUM -> Math.max(accumulated, value);
+                    case MINIMUM -> Math.min(accumulated, value);
+                    case PRODUCT -> accumulated * value;
+                };
             }
         }
         return result;
@@ -357,7 +503,32 @@ public class TileContext {
      * and the reduction is a differently named function.
      */
     public Tile max(Tile a, int axis) {
-        return reduce(a, axis, true);
+        return reduce(a, axis, Reduction.MAXIMUM);
+    }
+
+    /**
+     * Minimum along {@code axis}, keeping the reduced dimension. Lowers to
+     * {@code ct::reduce_min}.
+     */
+    public Tile min(Tile a, int axis) {
+        return reduce(a, axis, Reduction.MINIMUM);
+    }
+
+    /**
+     * Product along {@code axis}, keeping the reduced dimension. Lowers to {@code ct::prod}.
+     */
+    public Tile prod(Tile a, int axis) {
+        return reduce(a, axis, Reduction.PRODUCT);
+    }
+
+    /**
+     * Fused multiply-add, {@code ct::fma(a, b, c)} elementwise. Distinct from
+     * {@link #mma(Tile, Tile, Tile)}, which is a matrix product: this one multiplies
+     * elementwise and never touches a tensor core.
+     */
+    public Tile fma(Tile a, Tile b, Tile c) {
+        Tile product = mul(a, b);
+        return add(product, c);
     }
 
     public Tile exp(Tile a) {
@@ -475,6 +646,30 @@ public class TileContext {
      * RMS norm both rely on.
      */
     private Tile zip(Tile a, Tile b, char operation) {
+        // Written as a statement switch over plain lambdas on purpose: a method reference
+        // inside a cast in a switch expression crashes javac 21 (DeferredAttr assertion).
+        java.util.function.DoubleBinaryOperator function;
+        switch (operation) {
+            case '+':
+                function = (left, right) -> left + right;
+                break;
+            case '-':
+                function = (left, right) -> left - right;
+                break;
+            case '/':
+                function = (left, right) -> left / right;
+                break;
+            case 'M':
+                function = (left, right) -> Math.max(left, right);
+                break;
+            default:
+                function = (left, right) -> left * right;
+                break;
+        }
+        return zip(a, b, function);
+    }
+
+    private Tile zip(Tile a, Tile b, java.util.function.DoubleBinaryOperator operation) {
         int[] shape = broadcastShape(a, b);
         Tile result = Tile.allocate(a.getDType(), shape);
         int rows = shape.length == 2 ? shape[0] : 1;
@@ -483,14 +678,7 @@ public class TileContext {
             for (int column = 0; column < columns; column++) {
                 double left = broadcastRead(a, row, column);
                 double right = broadcastRead(b, row, column);
-                double value = switch (operation) {
-                    case '+' -> left + right;
-                    case '-' -> left - right;
-                    case '/' -> left / right;
-                    case 'M' -> Math.max(left, right);
-                    default -> left * right;
-                };
-                result.getData()[row * columns + column] = value;
+                result.getData()[row * columns + column] = operation.applyAsDouble(left, right);
             }
         }
         return result;

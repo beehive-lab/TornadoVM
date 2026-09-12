@@ -660,4 +660,109 @@ public class CUDATileStmt {
             asm.eol();
         }
     }
+
+    /**
+     * A three-operand tile call: {@code auto v = ct::select(c, a, b);}.
+     */
+    public static class TileTernaryCallStmt extends AbstractTileInstruction implements TileValued {
+
+        public static final LIRInstructionClass<TileTernaryCallStmt> TYPE = LIRInstructionClass.create(TileTernaryCallStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value first;
+        @Use
+        protected Value second;
+        @Use
+        protected Value third;
+
+        private final String function;
+        private final DType dtype;
+        private final int[] shape;
+
+        public TileTernaryCallStmt(Value result, Value first, Value second, Value third, String function, DType dtype, int[] shape) {
+            super(TYPE);
+            this.result = result;
+            this.first = first;
+            this.second = second;
+            this.third = third;
+            this.function = function;
+            this.dtype = dtype;
+            this.shape = shape;
+        }
+
+        @Override
+        public String getTileCppType() {
+            return tileType(dtype, shape);
+        }
+
+        @Override
+        public Value getTileResult() {
+            return result;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            asm.indent();
+            asm.emit("auto " + asm.getStringValue(crb, result) + " = ct::" + function + "(" + asm.getStringValue(crb, first) + ", " //
+                    + asm.getStringValue(crb, second) + ", " + asm.getStringValue(crb, third) + ")");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
+    /**
+     * Compares a tile against one scalar: {@code auto v = t < (int) limit;}.
+     *
+     * <p>
+     * The cast names the <em>operand</em> element type rather than the result type, which is
+     * {@code bool}. Leaving it out would let an {@code int} tile compare against a promoted
+     * value and widen the comparison.
+     * </p>
+     */
+    public static class TileScalarCompareStmt extends AbstractTileInstruction implements TileValued {
+
+        public static final LIRInstructionClass<TileScalarCompareStmt> TYPE = LIRInstructionClass.create(TileScalarCompareStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value tile;
+        @Use({ OperandFlag.REG, OperandFlag.CONST })
+        protected Value scalar;
+
+        private final String operator;
+        private final DType operandType;
+        private final int[] shape;
+
+        public TileScalarCompareStmt(Value result, Value tile, Value scalar, String operator, DType operandType, int[] shape) {
+            super(TYPE);
+            this.result = result;
+            this.tile = tile;
+            this.scalar = scalar;
+            this.operator = operator;
+            this.operandType = operandType;
+            this.shape = shape;
+        }
+
+        @Override
+        public String getTileCppType() {
+            return tileType(DType.PRED, shape);
+        }
+
+        @Override
+        public Value getTileResult() {
+            return result;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            asm.indent();
+            asm.emit("auto " + asm.getStringValue(crb, result) + " = " + asm.getStringValue(crb, tile) + " " + operator //
+                    + " (" + operandType.getCppType() + ") " + asm.getStringValue(crb, scalar));
+            asm.delimiter();
+            asm.eol();
+        }
+    }
 }

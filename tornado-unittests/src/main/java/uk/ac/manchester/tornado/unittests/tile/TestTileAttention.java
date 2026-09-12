@@ -61,11 +61,9 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * <li>{@code exp} replaces {@code ct::exp2}. TileGym folds {@code 1/ln 2} into the QK scale and
  * exponentiates base two because that is the cheaper instruction; with a natural exponential the
  * scale is used as given. The softmax is identical either way.</li>
- * <li>Causal masking is omitted. It needs a boolean tile from a comparison and a
- * {@code ct::select}, and neither is exposed by {@link TileContext} yet; masking the ragged tail
- * of a KV sequence has the same requirement, so the KV length is kept a multiple of the KV block
- * here. Zero-padded {@code loadMasked} is not a substitute: a padded key contributes
- * {@code exp(0 - m)} to the denominator rather than nothing.</li>
+ * <li>Causal masking is omitted <em>here</em>, to keep these kernels to the prefill shape.
+ * It needs a comparison and a {@code ct::select}, which {@link TileContext} now has:
+ * {@link TestTileMasking} carries the causal kernel and the ragged-tail one.</li>
  * </ul>
  *
  * <pre>
