@@ -45,6 +45,7 @@ import uk.ac.manchester.tornado.drivers.cuda.runtime.CUDATornadoDevice;
 import uk.ac.manchester.tornado.drivers.cuda.scheduler.CUDAGenericGPUScheduler;
 import uk.ac.manchester.tornado.drivers.cuda.scheduler.CUDAKernelScheduler;
 import uk.ac.manchester.tornado.drivers.cuda.scheduler.CUDAScheduler;
+import uk.ac.manchester.tornado.drivers.cuda.scheduler.CUDATileScheduler;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
@@ -70,10 +71,17 @@ public class CUDAInstalledCode extends InstalledCode implements TornadoInstalled
     TornadoLogger logger = new TornadoLogger(this.getClass());
 
     public CUDAInstalledCode(final String entryPoint, final byte[] code, final CUDADeviceContext deviceContext, final CUDAProgram program, final CUDAKernel kernel, boolean isSPIRVBinary) {
+        this(entryPoint, code, deviceContext, program, kernel, isSPIRVBinary, false);
+    }
+
+    public CUDAInstalledCode(final String entryPoint, final byte[] code, final CUDADeviceContext deviceContext, final CUDAProgram program, final CUDAKernel kernel, boolean isSPIRVBinary,
+            boolean isTileKernel) {
         super(entryPoint);
         this.code = code;
         this.deviceContext = deviceContext;
-        this.scheduler = CUDAScheduler.create(deviceContext);
+        // A tile kernel must launch with one thread per block, which no general-purpose scheduler
+        // would choose. Selecting here rather than per device lets SIMT and tile tasks share a GPU.
+        this.scheduler = isTileKernel ? new CUDATileScheduler(deviceContext) : CUDAScheduler.create(deviceContext);
         this.DEFAULT_SCHEDULER = new CUDAGenericGPUScheduler(deviceContext);
         this.kernel = kernel;
         this.program = program;

@@ -203,6 +203,12 @@ public enum CUDAKind implements PlatformKind {
     MMA_FRAG_A_S8(4, null, UINT),      // A:   4 × b32 = 16 × s8  (row-major 16×32 slice)
     MMA_FRAG_B_S8(2, null, UINT),      // B:   2 × b32 = 8 × s8   (col-major 32×8 slice)
 
+    // --- CUDA Tile kinds. Synthetic: no Java class maps here, and the concrete C++ type
+    //     (ct::tile<E, ct::shape<...>>, or a partition_view) depends on the tile shape, so
+    //     these are declared at their definition site instead of in emitVariableDefs. ---
+    TILE(4, null),                     // a ct::tile value
+    TILE_VIEW(8, null),                // a ct::tensor_span / ct::partition_view descriptor
+
     ILLEGAL(0, null),
     INTEGER_ATOMIC_JAVA(4, java.util.concurrent.atomic.AtomicInteger.class);
     // @formatter:on
@@ -612,6 +618,22 @@ public enum CUDAKind implements PlatformKind {
         return this == MMA_FRAG_A_F16  || this == MMA_FRAG_B_F16
                 || this == MMA_FRAG_ACC_F32 || this == MMA_FRAG_ACC_S32
                 || this == MMA_FRAG_A_S8    || this == MMA_FRAG_B_S8;
+    }
+
+    public boolean isTile() {
+        return this == TILE;
+    }
+
+    public boolean isTileView() {
+        return this == TILE_VIEW;
+    }
+
+    /**
+     * Tile-like values are skipped by the grouped variable declarations in the backend: their
+     * C++ type depends on the tile shape, so the statement that defines one declares it.
+     */
+    public boolean isTileLike() {
+        return isTile() || isTileView();
     }
 
     public JavaConstant getDefaultValue() {

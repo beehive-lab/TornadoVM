@@ -41,6 +41,7 @@ import uk.ac.manchester.tornado.drivers.common.compiler.phases.analysis.TornadoF
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.loops.TornadoLoopCanonicalization;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.utils.DumpLowTierGraph;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.CUDATensorCoreSupportPhase;
+import uk.ac.manchester.tornado.drivers.cuda.graal.phases.CUDATileSupportPhase;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.InfinityReplacementPhase;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.InverseSquareRootPhase;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.CUDAFMAPhase;
@@ -63,6 +64,9 @@ public class CUDALowTier extends TornadoLowTier {
         CanonicalizerPhase canonicalizer = getCannonicalizer(options);
 
         appendPhase(new CUDATensorCoreSupportPhase(tornadoDeviceContext));
+        // Same position and the same reason as the tensor-core gate: report an unsupported
+        // device, toolkit or operand pair before code generation, not as a loader error later.
+        appendPhase(new CUDATileSupportPhase(tornadoDeviceContext));
 
         appendPhase(new CUDAFP64SupportPhase(tornadoDeviceContext));
 

@@ -67,6 +67,12 @@ Beyond JIT-compiling Java bytecode to each backend, TornadoVM's runtime provides
    hybrid-api
 
 .. toctree::
+   :caption: CUDA Tile Programming
+   :hidden:
+
+   tile-api
+
+.. toctree::
    :caption: Dev Tools
    :hidden:
 
