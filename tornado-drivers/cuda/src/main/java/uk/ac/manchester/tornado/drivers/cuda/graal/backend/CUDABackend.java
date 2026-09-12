@@ -241,6 +241,43 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
         }
     }
 
+    /**
+     * CUDA Tile launch hints for a tile kernel, read from {@code -Dtornado.cuda.tile.hints} as a
+     * comma-separated list of {@code key=value} pairs, for example
+     * {@code -Dtornado.cuda.tile.hints=occupancy=4,num_cta_in_cga=1}.
+     *
+     * <p>
+     * These are the knobs a human tile author has to guess and a JIT could know: the tile
+     * shapes, the element types and the problem extents are all available at compile time.
+     * Nothing derives them automatically yet, so they are exposed as a property first, which
+     * makes them measurable before anything guesses. {@code hint(0, ...)} applies to every
+     * architecture; per-architecture hints use the compute capability as the first argument.
+     * </p>
+     *
+     * <p>
+     * Be aware that the toolchain does not validate hint keys: a misspelled or unsupported key
+     * compiles silently and does nothing (verified against 13.3.73 with an invented key and with
+     * an absurd occupancy). A hint that appears to have no effect may simply not exist.
+     * </p>
+     *
+     * @return the attribute to place after {@code extern "C"}, or an empty string when no hints
+     *     are configured
+     */
+    private static String tileLaunchHints() {
+        String hints = System.getProperty("tornado.cuda.tile.hints", "");
+        if (hints.isBlank()) {
+            return "";
+        }
+        StringBuilder builder = new StringBuilder(" [[ using cutile : hint(0");
+        for (String hint : hints.split(",")) {
+            String trimmed = hint.trim();
+            if (!trimmed.isEmpty()) {
+                builder.append(", ").append(trimmed);
+            }
+        }
+        return builder.append(") ]]").toString();
+    }
+
     private void emitVariableDefs(CUDACompilationResultBuilder crb, CUDAAssembler asm, LIR lir) {
         // LinkedHashMap/LinkedHashSet: the declaration order of temporaries must not depend on
         // identity hash codes, which differ on every JVM run and made the generated kernel source
@@ -422,7 +459,7 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
             // declared and ignored, so CUDAArchitecture.getABI() and the argument marshalling in
             // CUDAInstalledCode.setKernelArgs are inherited rather than reimplemented.
             String kernelModifier = CUDATileKernels.isTileKernel(method)
-                    ? CUDAAssemblerConstants.TILE_KERNEL_MODIFIER
+                    ? CUDAAssemblerConstants.TILE_KERNEL_MODIFIER + tileLaunchHints()
                     : CUDAAssemblerConstants.KERNEL_MODIFIER;
             asm.emit("%s void %s(%s", kernelModifier, methodName, architecture.getABI());
             emitMethodParameters(asm, method, incomingArguments, true);

@@ -173,6 +173,45 @@ A reduction keeps its dimension, so it broadcasts back against the tile it came 
 **not** store into the view it came from: a ``32x1`` tile against a ``32x32`` partition view is
 refused by CUDA Tile's ``same_shape`` constraint.
 
+Launch hints
+************
+
+``-Dtornado.cuda.tile.hints=occupancy=2,num_cta_in_cga=1`` puts a
+``[[ using cutile : hint(0, ...) ]]`` attribute on every generated tile kernel. The keys are
+CUDA Tile's own; ``hint(0, ...)`` applies to all architectures.
+
+The hint reaches the tile compiler and changes its resource decisions. Measured on sm_89 for the
+FP16 GEMM of ``demos/22`` at ``n = 1024``:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Hint
+     - Registers / shared
+     - Kernel time
+   * - none (compiler's choice)
+     - 110 / 36 KB
+     - 65.3 us
+   * - ``occupancy=2``
+     - 110 / 36 KB
+     - 63.2 us (-2.9%, reproducible over three runs)
+   * - ``occupancy=4``
+     - 125 / 20 KB
+     - 132.5 us (2.0x slower)
+   * - ``occupancy=8``
+     - 64 / 8 KB
+     - 459.5 us (7.0x slower)
+
+**Nothing derives hints automatically, and this is why.** The compiler's default is already
+close to the best of these, and forcing occupancy up costs 2x to 7x: a heuristic that maximised
+occupancy would be actively harmful at this shape. Deriving hints from the shapes a JIT knows is
+still the most promising thing this integration could do that a hand-written kernel cannot, but
+it needs a model of the tradeoff rather than a rule of thumb.
+
+One caveat, verified against 13.3.73: **hint keys are not validated**. An invented key and an
+absurd value both compile silently and do nothing, so a hint that appears to have no effect may
+simply not exist.
+
 Atomic accumulation
 *******************
 
@@ -280,8 +319,7 @@ Beyond the operation set:
   the tile task silently runs as one block. Use ``tc.sum`` inside the tile instead.
 * TMA does not appear in the generated SASS on Ada (sm_89) because TMA is a Hopper unit; the
   alignment hint only pays off on sm_90 and newer.
-* No kernel emits CUDA Tile's ``num_ctas``, ``occupancy`` or ``latency`` hints yet, although a
-  JIT knows the shapes that would inform them.
+* Launch hints can be set but are not derived. See *Launch hints* below.
 
 Verifying and profiling
 ***********************

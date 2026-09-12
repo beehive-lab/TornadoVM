@@ -220,6 +220,39 @@ public class TestTileMatmul extends TornadoTestBase {
         runGemm(128, 128, 128);
     }
 
+    /**
+     * The same GEMM with a CUDA Tile launch hint set.
+     *
+     * <p>
+     * {@code -Dtornado.cuda.tile.hints} puts a {@code [[using cutile : hint(0, ...)]]}
+     * attribute on the generated kernel. The hint changes what the tile compiler does with
+     * registers and shared memory - measured on sm_89, {@code occupancy=8} takes the kernel
+     * from 110 registers and 36 KB of shared memory down to 64 and 8 KB - so what this test
+     * checks is the thing a hint must never change: the result.
+     * </p>
+     *
+     * <p>
+     * The property is read at code generation time, in this process, so setting it here
+     * affects the compilation that follows. It is restored afterwards so the rest of the suite
+     * compiles unhinted.
+     * </p>
+     */
+    @Test
+    public void testGemmWithLaunchHint() throws TornadoExecutionPlanException {
+        final String property = "tornado.cuda.tile.hints";
+        String previous = System.getProperty(property);
+        System.setProperty(property, "occupancy=2");
+        try {
+            runGemm(64, 64, 64);
+        } finally {
+            if (previous == null) {
+                System.clearProperty(property);
+            } else {
+                System.setProperty(property, previous);
+            }
+        }
+    }
+
     @Test
     public void testGemmRectangular() throws TornadoExecutionPlanException {
         runGemm(128, 64, 96);
