@@ -18,6 +18,7 @@
 package uk.ac.manchester.tornado.unittests.arrays;
 
 import static org.junit.Assert.assertEquals;
+import static uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider.getTornadoRuntime;
 
 import org.junit.Test;
 
@@ -28,11 +29,13 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
 
 /**
  * Regression tests for a kernel that reads and writes the same {@link HalfFloatArray}.
@@ -48,8 +51,14 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * </p>
  *
  * <p>
- * These tests fail on the buggy classification rather than on code generation, so they are
- * not backend-specific: any backend whose half-float read node is unmarked reproduces them.
+ * The defect and its fix are backend independent - all three backends' read nodes were
+ * unmarked and all three now implement the marker. The tests, though, are not: they are written
+ * with an inline {@code new HalfFloat(...)}, and the phase that makes such a construction
+ * lowerable exists in the CUDA backend only, so on OpenCL and Metal they stop at code
+ * generation with "Node implementing Lowerable not handled: NewInstance" before the
+ * classification is ever exercised. They are gated to CUDA for that reason, exactly as
+ * {@link TestHalfFloatInlineWrite} is. Reproducing the classification bug on another backend
+ * needs a kernel that writes a half-float without constructing one inline.
  * </p>
  *
  * <pre>
@@ -100,8 +109,32 @@ public class TestHalfFloatInPlaceUpdate extends TornadoTestBase {
         return array;
     }
 
+    /**
+     * These kernels write a {@code new HalfFloat(...)} back into the array they read, and the
+     * HalfFloat replacement phase that makes an inline construction lowerable exists in the CUDA
+     * backend only. On OpenCL and Metal the carrier survives to code generation and the compiler
+     * stops with "Node implementing Lowerable not handled: NewInstance".
+     *
+     * <p>
+     * Same guard, and the same reason, as {@link TestHalfFloatInlineWrite#assumeCudaBackend()}:
+     * the dataflow fix these tests cover is backend independent, but the construction they are
+     * written with is not, so they skip rather than report a failure for a gap they do not test.
+     * </p>
+     */
+    private void assumeCudaBackend() {
+        TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
+        if (backendType != TornadoVMBackendType.CUDA) {
+            String message = "Writing an inline new HalfFloat(...) is implemented for the CUDA backend (default device is " + backendType + ")";
+            switch (backendType) {
+                case OPENCL, METAL -> assertNotBackend(backendType, message);
+                default -> throw new TornadoVMCUDANotSupported(message);
+            }
+        }
+    }
+
     @Test
     public void testScaleInPlace() throws TornadoExecutionPlanException {
+        assumeCudaBackend();
         HalfFloatArray data = ramp(SIZE);
 
         TaskGraph graph = new TaskGraph("s0") //
@@ -120,6 +153,7 @@ public class TestHalfFloatInPlaceUpdate extends TornadoTestBase {
 
     @Test
     public void testScaleInPlaceWithKernelContext() throws TornadoExecutionPlanException {
+        assumeCudaBackend();
         HalfFloatArray data = ramp(SIZE);
 
         WorkerGrid1D worker = new WorkerGrid1D(SIZE);
@@ -140,6 +174,7 @@ public class TestHalfFloatInPlaceUpdate extends TornadoTestBase {
 
     @Test
     public void testAccumulateIntoHalfArray() throws TornadoExecutionPlanException {
+        assumeCudaBackend();
         HalfFloatArray data = ramp(SIZE);
         FloatArray addend = new FloatArray(SIZE);
         for (int i = 0; i < SIZE; i++) {
@@ -167,6 +202,7 @@ public class TestHalfFloatInPlaceUpdate extends TornadoTestBase {
      */
     @Test
     public void testScaleInPlaceTwoExecutions() throws TornadoExecutionPlanException {
+        assumeCudaBackend();
         HalfFloatArray data = ramp(SIZE);
 
         TaskGraph graph = new TaskGraph("s0") //
