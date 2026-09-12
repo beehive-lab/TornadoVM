@@ -220,6 +220,35 @@ public class TileContext {
         return format;
     }
 
+    /**
+     * A rank-3 view, for a batch or head dimension that would otherwise be folded into the row
+     * index. CUDA Tile views go to higher rank still; three is what the kernels in the test
+     * suite need.
+     */
+    public TensorView view(FloatArray array, int extent0, int extent1, int extent2) {
+        return new TensorView(array, DType.F32, new int[] { extent0, extent1, extent2 });
+    }
+
+    public TensorView view(HalfFloatArray array, int extent0, int extent1, int extent2) {
+        return new TensorView(array, DType.F16, new int[] { extent0, extent1, extent2 });
+    }
+
+    public TensorView view(BFloat16Array array, int extent0, int extent1, int extent2) {
+        return new TensorView(array, DType.BF16, new int[] { extent0, extent1, extent2 });
+    }
+
+    public TensorView view(IntArray array, int extent0, int extent1, int extent2) {
+        return new TensorView(array, DType.S32, new int[] { extent0, extent1, extent2 });
+    }
+
+    public TensorView view(Int8Array array, int extent0, int extent1, int extent2) {
+        return new TensorView(array, DType.S8, new int[] { extent0, extent1, extent2 });
+    }
+
+    public TensorView view(DoubleArray array, int extent0, int extent1, int extent2) {
+        return new TensorView(array, DType.F64, new int[] { extent0, extent1, extent2 });
+    }
+
     public PartitionView partition(TensorView view, int tileExtent) {
         checkShape(tileExtent);
         return new PartitionView(view, new int[] { tileExtent });
@@ -229,6 +258,13 @@ public class TileContext {
         checkShape(tileRows);
         checkShape(tileColumns);
         return new PartitionView(view, new int[] { tileRows, tileColumns });
+    }
+
+    public PartitionView partition(TensorView view, int tile0, int tile1, int tile2) {
+        checkShape(tile0);
+        checkShape(tile1);
+        checkShape(tile2);
+        return new PartitionView(view, new int[] { tile0, tile1, tile2 });
     }
 
     // -------------------------------------------------------------------------------------
@@ -705,6 +741,10 @@ public class TileContext {
 
     public Tile reshape(Tile a, int rows, int columns) {
         return reshapeTo(a, new int[] { rows, columns });
+    }
+
+    public Tile reshape(Tile a, int extent0, int extent1, int extent2) {
+        return reshapeTo(a, new int[] { extent0, extent1, extent2 });
     }
 
     private Tile reshapeTo(Tile a, int[] target) {

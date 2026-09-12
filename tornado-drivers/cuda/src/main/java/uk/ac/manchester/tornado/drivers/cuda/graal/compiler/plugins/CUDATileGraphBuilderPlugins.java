@@ -186,6 +186,14 @@ public class CUDATileGraphBuilderPlugins {
                 return true;
             }
         });
+        r.register(new InvocationPlugin("view", InvocationPlugin.Receiver.class, arrayType, int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode extent0, ValueNode extent1, ValueNode extent2) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDATileViewNode(array, new ValueNode[] { extent0, extent1, extent2 }, dtype));
+                return true;
+            }
+        });
     }
 
     private static void registerPartitionPlugins(Registration r) {
@@ -194,6 +202,15 @@ public class CUDATileGraphBuilderPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode viewNode, ValueNode tileExtent) {
                 receiver.get(true);
                 b.addPush(JavaKind.Object, partitionOf(viewNode, new int[] { shapeConstant(tileExtent, "tile extent") }));
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin("partition", InvocationPlugin.Receiver.class, TensorView.class, int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode viewNode, ValueNode tile0, ValueNode tile1, ValueNode tile2) {
+                receiver.get(true);
+                int[] shape = { shapeConstant(tile0, "tile extent 0"), shapeConstant(tile1, "tile extent 1"), shapeConstant(tile2, "tile extent 2") };
+                b.addPush(JavaKind.Object, partitionOf(viewNode, shape));
                 return true;
             }
         });
@@ -325,6 +342,7 @@ public class CUDATileGraphBuilderPlugins {
         registerShapeOp(r, "broadcast", 2, 0);
         registerShapeOp(r, "reshape", 1, 0);
         registerShapeOp(r, "reshape", 2, 0);
+        registerShapeOp(r, "reshape", 3, 0);
         registerShapeOp(r, "extract", 1, 1);
         registerShapeOp(r, "extract", 2, 2);
 
@@ -617,12 +635,16 @@ public class CUDATileGraphBuilderPlugins {
     private static void registerAccessPlugins(Registration r) {
         registerLoad(r, "load", false, 1);
         registerLoad(r, "load", false, 2);
+        registerLoad(r, "load", false, 3);
         registerLoad(r, "loadMasked", true, 1);
         registerLoad(r, "loadMasked", true, 2);
+        registerLoad(r, "loadMasked", true, 3);
         registerStore(r, "store", false, 1);
         registerStore(r, "store", false, 2);
+        registerStore(r, "store", false, 3);
         registerStore(r, "storeMasked", true, 1);
         registerStore(r, "storeMasked", true, 2);
+        registerStore(r, "storeMasked", true, 3);
         registerAtomicAdd(r, 1);
         registerAtomicAdd(r, 2);
     }
@@ -637,12 +659,21 @@ public class CUDATileGraphBuilderPlugins {
                     return true;
                 }
             });
-        } else {
+        } else if (rank == 2) {
             r.register(new InvocationPlugin(name, InvocationPlugin.Receiver.class, int.class, int.class) {
                 @Override
                 public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode blockX, ValueNode blockY) {
                     ValueNode view = receiver.get(true);
                     b.addPush(JavaKind.Object, loadOf(view, new ValueNode[] { blockX, blockY }, masked));
+                    return true;
+                }
+            });
+        } else {
+            r.register(new InvocationPlugin(name, InvocationPlugin.Receiver.class, int.class, int.class, int.class) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode blockX, ValueNode blockY, ValueNode blockZ) {
+                    ValueNode view = receiver.get(true);
+                    b.addPush(JavaKind.Object, loadOf(view, new ValueNode[] { blockX, blockY, blockZ }, masked));
                     return true;
                 }
             });
@@ -659,12 +690,21 @@ public class CUDATileGraphBuilderPlugins {
                     return true;
                 }
             });
-        } else {
+        } else if (rank == 2) {
             r.register(new InvocationPlugin(name, InvocationPlugin.Receiver.class, Tile.class, int.class, int.class) {
                 @Override
                 public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode tile, ValueNode blockX, ValueNode blockY) {
                     ValueNode view = receiver.get(true);
                     b.add(new CUDATileStoreNode(view, tile, new ValueNode[] { blockX, blockY }, masked));
+                    return true;
+                }
+            });
+        } else {
+            r.register(new InvocationPlugin(name, InvocationPlugin.Receiver.class, Tile.class, int.class, int.class, int.class) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode tile, ValueNode blockX, ValueNode blockY, ValueNode blockZ) {
+                    ValueNode view = receiver.get(true);
+                    b.add(new CUDATileStoreNode(view, tile, new ValueNode[] { blockX, blockY, blockZ }, masked));
                     return true;
                 }
             });

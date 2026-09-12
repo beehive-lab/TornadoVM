@@ -164,6 +164,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.tile.TestTileDTypes"),
     TestEntry("uk.ac.manchester.tornado.unittests.tile.TestTileAtomics"),
     TestEntry("uk.ac.manchester.tornado.unittests.tile.TestTileShapes"),
+    TestEntry("uk.ac.manchester.tornado.unittests.tile.TestTileRank3"),
     TestEntry("uk.ac.manchester.tornado.unittests.cublas.TestCuBlas"),
     TestEntry("uk.ac.manchester.tornado.unittests.cublas.TestCuBlasLt"),
     TestEntry("uk.ac.manchester.tornado.unittests.cufft.TestCuFft"),

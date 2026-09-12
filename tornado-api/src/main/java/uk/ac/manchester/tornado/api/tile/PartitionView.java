@@ -126,6 +126,91 @@ public final class PartitionView {
         }
     }
 
+    /**
+     * Loads one tile from a rank-3 view.
+     *
+     * <p>
+     * Rank 3 exists for addressing, not for arithmetic: a batch or head dimension stops having
+     * to be folded into the row index. The loaded tile is usually reshaped to rank 2 before it
+     * meets {@code mma} or a reduction, which is how NVIDIA's own kernels do it - they load a
+     * rank-4 tile and reshape it.
+     * </p>
+     */
+    public Tile load(int blockX, int blockY, int blockZ) {
+        return load3D(blockX, blockY, blockZ, false);
+    }
+
+    public Tile loadMasked(int blockX, int blockY, int blockZ) {
+        return load3D(blockX, blockY, blockZ, true);
+    }
+
+    public void store(Tile tile, int blockX, int blockY, int blockZ) {
+        store3D(tile, blockX, blockY, blockZ, false);
+    }
+
+    public void storeMasked(Tile tile, int blockX, int blockY, int blockZ) {
+        store3D(tile, blockX, blockY, blockZ, true);
+    }
+
+    private Tile load3D(int blockX, int blockY, int blockZ, boolean masked) {
+        checkRank(3);
+        Tile tile = Tile.allocate(view.getDType(), tileShape);
+        int[] blocks = { blockX, blockY, blockZ };
+        for (int i = 0; i < tileShape[0]; i++) {
+            for (int j = 0; j < tileShape[1]; j++) {
+                for (int k = 0; k < tileShape[2]; k++) {
+                    int[] within = { i, j, k };
+                    int linear = linearIndex(blocks, within, masked);
+                    if (linear >= 0) {
+                        tile.getData()[(i * tileShape[1] + j) * tileShape[2] + k] = view.readLinear(linear);
+                    }
+                }
+            }
+        }
+        return tile;
+    }
+
+    private void store3D(Tile tile, int blockX, int blockY, int blockZ, boolean masked) {
+        checkRank(3);
+        int[] blocks = { blockX, blockY, blockZ };
+        for (int i = 0; i < tileShape[0]; i++) {
+            for (int j = 0; j < tileShape[1]; j++) {
+                for (int k = 0; k < tileShape[2]; k++) {
+                    int[] within = { i, j, k };
+                    int linear = linearIndex(blocks, within, masked);
+                    if (linear >= 0) {
+                        view.writeLinear(linear, tile.getData()[(i * tileShape[1] + j) * tileShape[2] + k]);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Row-major linear index of one element of the addressed block, or -1 when it falls outside
+     * the view and the access is masked.
+     */
+    private int linearIndex(int[] blocks, int[] within, boolean masked) {
+        int linear = 0;
+        int total = 1;
+        for (int axis = 0; axis < tileShape.length; axis++) {
+            int index = blocks[axis] * tileShape[axis] + within[axis];
+            int extent = view.getExtent(axis);
+            if (index >= extent) {
+                if (masked) {
+                    return -1;
+                }
+                throw outOfBounds(index, extent);
+            }
+            linear = linear * extent + index;
+            total *= extent;
+        }
+        if (linear >= total) {
+            throw outOfBounds(linear, total);
+        }
+        return linear;
+    }
+
     private Tile load2D(int blockX, int blockY, boolean masked) {
         checkRank(2);
         Tile tile = Tile.allocate(view.getDType(), tileShape);

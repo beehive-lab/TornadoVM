@@ -212,6 +212,29 @@ One caveat, verified against 13.3.73: **hint keys are not validated**. An invent
 absurd value both compile silently and do nothing, so a hint that appears to have no effect may
 simply not exist.
 
+Rank
+****
+
+``view`` and ``partition`` take one, two or three extents. Rank 3 is for *addressing*: a batch or
+head dimension becomes a block index instead of arithmetic folded into the row index.
+
+Arithmetic stays rank 2 - ``mma``, the reductions and ``transpose`` are rank-2 operations - so a
+rank-3 load is reshaped before it is used:
+
+.. code-block:: java
+
+    PartitionView aView = tc.partition(tc.view(a, batch, m, k), 1, TILE, TILE);
+    Tile left = tc.reshape(aView.load(batchIndex, rowBlock, step), TILE, TILE);
+    acc = tc.mma(left, right, acc);
+
+That is the same shape as NVIDIA's own kernels, which load a rank-4 tile from a ``[B, H, S, D]``
+view and reshape it before the first multiply.
+
+View extents may be runtime values; tile extents may not, because a tile shape is part of the
+kernel's type. So ``tc.view(in, batch, rows, WIDTH)`` is fine with ``batch`` and ``rows`` as
+parameters, while the ``WIDTH`` passed to ``partition`` has to be a literal or a
+``static final int``.
+
 Atomic accumulation
 *******************
 
@@ -286,10 +309,10 @@ order of how much it costs:
    * - ``TF32`` views
      - ``DType.TF32`` is accepted by ``mma`` and has no buffer type of its own; a tf32 operand
        has to come from a cast, which is how CUDA Tile treats it too.
-   * - Rank 3 and above
-     - ``view``/``partition`` are rank 1 and 2. A batch or head dimension has to be folded into
-       the row index, which every attention kernel in the test suite does; it costs arithmetic,
-       not expressiveness.
+   * - rank 4 and above
+     - ``view``/``partition`` go up to rank 3, which covers a batch or head dimension. CUDA Tile
+       itself goes further; the attention kernels that fold two leading dimensions into one index
+       would need rank 4 to stop doing so.
    * - the atomic family beyond ``atomicAdd``
      - ``PartitionView.atomicAdd`` exists (see below); ``atomic_sub``, ``atomic_min``,
        ``atomic_max``, the bitwise atomics, ``atomic_xchg`` and ``atomic_compare_exchange`` do
