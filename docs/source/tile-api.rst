@@ -80,98 +80,270 @@ Three rules
 API reference
 *************
 
+Every operation below is a real method on ``TileContext`` or ``PartitionView``, and every one has
+a JVM implementation as well as a lowering, so a tile kernel also runs as ordinary Java.
+
+That dual life is worth knowing when a test passes unexpectedly. If a tile kernel fails to
+compile and ``tornado.recover.bailout`` is enabled, the task quietly runs the JVM implementation
+on the host and produces the right answer, so nothing fails. ``tornado-test`` sets
+``-Dtornado.recover.bailout=False`` for this reason; outside it, confirm with ``--printKernel``
+that a kernel was generated at all.
+
+Block indices
+=============
+
 .. list-table::
-   :widths: 42 34 24
+   :widths: 34 26 40
    :header-rows: 1
 
-   * - ``TileContext`` / ``PartitionView``
+   * - Java
      - CUDA Tile C++
      - Notes
-   * - ``view(array, n)`` / ``view(array, rows, cols)``
-     - ``ct::tensor_span``
-     - extents may be runtime values
-   * - ``partition(view, tile...)``
-     - ``ct::partition_view``
-     - tile shape: power-of-two constant
    * - ``bidX() bidY() bidZ()``
      - ``ct::bid().x/.y/.z``
      - index of this tile block
-   * - ``numBlocksX()`` ...
-     - ``ct::num_blocks().x``
-     - grid size, for persistent kernels
-   * - ``load(bx[, by])``
+   * - ``numBlocksX() numBlocksY() numBlocksZ()``
+     - ``ct::num_blocks().x/.y/.z``
+     - grid size; what a persistent kernel strides by
+
+``setBlockIndex`` and ``setBlockCount`` exist for the JVM path only - they let a plain Java caller
+place a kernel invocation when running it as ordinary code, and have no device meaning.
+
+Views, partitions and memory
+============================
+
+.. list-table::
+   :widths: 34 26 40
+   :header-rows: 1
+
+   * - Java
+     - CUDA Tile C++
+     - Notes
+   * - ``view(array, extents...)``
+     - ``ct::tensor_span``
+     - 1, 2 or 3 extents; extents may be runtime values
+   * - ``view(fp8Array, format, extents...)``
+     - ``ct::tensor_span``
+     - fp8 only: the format (``FP8_E4M3`` or ``FP8_E5M2``) is an argument, because the buffer
+       carries both accessors and no record of which it holds. Rank 1 and 2
+   * - ``partition(view, tile...)``
+     - ``ct::partition_view``
+     - 1, 2 or 3 tile extents, each a power-of-two constant
+   * - ``load(blocks...)``
      - ``view.load(...)``
-     - caller guarantees in-bounds
-   * - ``loadMasked(...)`` / ``storeMasked(...)``
-     - ``load_masked`` / ``store_masked``
+     - rank 1, 2 or 3; caller guarantees in bounds
+   * - ``loadMasked(blocks...)``
+     - ``view.load_masked(...)``
      - zero-pads a partial tile
-   * - ``store(tile, ...)``
+   * - ``store(tile, blocks...)``
      - ``view.store(...)``
-     -
-   * - ``zeros`` / ``full`` / ``iota``
-     - ``ct::full`` / ``ct::iota``
-     - ``iota`` has a rank-2 form for ``(1, n)`` index rows
+     - rank 1, 2 or 3
+   * - ``storeMasked(tile, blocks...)``
+     - ``view.store_masked(...)``
+     - writes only the in-bounds elements
+   * - ``atomicAdd(tile, blocks...)``
+     - ``ct::atomic_add`` over a pointer tile
+     - rank 1 and 2; relaxed order, device scope. See *Atomic accumulation*
+
+The buffer types a view accepts, and the element type each maps to, are listed under
+*Element types* below.
+
+Creating tiles
+==============
+
+.. list-table::
+   :widths: 34 26 40
+   :header-rows: 1
+
+   * - Java
+     - CUDA Tile C++
+     - Notes
+   * - ``zeros(dtype, shape...)``
+     - ``ct::zeros``
+     - rank 1 or 2
+   * - ``full(dtype, value, shape...)``
+     - ``ct::full``
+     - the fill value must be a compile-time constant: it is emitted into the source
+   * - ``iota(dtype, shape...)``
+     - ``ct::iota``
+     - 0, 1, 2, ... in row-major order. The rank-2 forms ``(rows, 1)`` and ``(1, cols)`` are the
+       index tiles a mask is built from
+
+Elementwise arithmetic
+======================
+
+.. list-table::
+   :widths: 34 26 40
+   :header-rows: 1
+
+   * - Java
+     - CUDA Tile C++
+     - Notes
    * - ``add sub mul div``
      - ``+ - * /``
-     - broadcasting: a dimension of 1 stretches
-   * - ``maximum(a, b)``
-     - ``ct::max``
-     - elementwise, two operands
-   * - ``max(tile, axis)``
-     - ``ct::reduce_max``
-     - reduction; keeps the reduced dimension
-   * - ``sum(tile, axis)``
-     - ``ct::sum``
-     - keeps the reduced dimension
+     - broadcasting: a dimension of extent 1 stretches
+   * - ``maximum(a, b)`` / ``minimum(a, b)``
+     - ``ct::max`` / ``ct::min``
+     - two operands, elementwise - not reductions
    * - ``scale(tile, s)``
      - ``tile * (E) s``
-     - no named function in CUDA Tile
-   * - ``mma(a, b, acc)``
-     - ``ct::mma``
-     - tensor cores; instruction chosen by the compiler
-   * - ``exp exp2 log log2 tanh sqrt rsqrt sin cos abs floor``
-     - ``ct::exp`` ...
-     -
-   * - ``minimum(a, b)`` / ``maximum(a, b)``
-     - ``ct::min`` / ``ct::max``
-     - elementwise, two operands
-   * - ``sum(t, axis)`` ``max`` ``min`` ``prod``
-     - ``ct::sum`` ``ct::reduce_max`` ``ct::reduce_min`` ``ct::prod``
-     - the reduced dimension is kept
-   * - ``lessThan(a, b)`` and the other five comparisons
-     - ``a < b`` ...
-     - result is a ``DType.PRED`` tile; the right operand may be a runtime scalar
-   * - ``logicalAnd(m1, m2)`` / ``logicalOr``
-     - ``m1 & m2`` / ``m1 | m2``
-     - combines two predicate tiles
-   * - ``view.atomicAdd(tile, blocks...)``
-     - ``ct::atomic_add`` over a pointer tile
-     - relaxed order, device scope; see below
-   * - ``broadcast(t, shape)`` / ``reshape`` / ``extract``
-     - ``ct::broadcast`` / ``ct::reshape`` / ``ct::extract``
-     - ``extract`` indexes in sub-tile units, like a view addresses blocks
-   * - ``select(mask, a, b)``
-     - ``ct::select``
-     - the only consumer of a predicate tile
+     - no named function in CUDA Tile. ``s`` may be a runtime value, unlike a ``full`` fill
    * - ``fma(a, b, c)``
      - ``ct::fma``
      - elementwise, unlike ``mma``
+
+Comparisons, masks and select
+=============================
+
+.. list-table::
+   :widths: 34 26 40
+   :header-rows: 1
+
+   * - Java
+     - CUDA Tile C++
+     - Notes
+   * - ``lessThan lessOrEqual greaterThan greaterOrEqual equalTo notEqualTo``
+     - ``< <= > >= == !=``
+     - each takes ``(Tile, Tile)`` or ``(Tile, double)``. The result is a ``DType.PRED`` tile
+   * - ``logicalAnd(m1, m2)`` / ``logicalOr(m1, m2)``
+     - ``m1 & m2`` / ``m1 | m2``
+     - combines two predicate tiles; non-predicate operands are rejected at compile time
+   * - ``select(mask, whenTrue, whenFalse)``
+     - ``ct::select``
+     - the only consumer of a predicate tile
+
+The scalar form is not a convenience. A mask usually compares against a runtime extent or block
+offset, and the tile-to-tile form would need a ``full(...)`` whose fill value has to fold.
+
+Math
+====
+
+.. list-table::
+   :widths: 34 26 40
+   :header-rows: 1
+
+   * - Java
+     - CUDA Tile C++
+     - Notes
+   * - ``exp exp2 log log2``
+     - ``ct::exp ct::exp2 ct::log ct::log2``
+     - ``exp2``/``log2`` are the cheaper pair, and what NVIDIA's own softmax kernels use
+   * - ``sqrt rsqrt tanh sin cos abs floor``
+     - ``ct::sqrt`` ...
+     - elementwise, shape preserved
+
+Reductions
+==========
+
+.. list-table::
+   :widths: 34 26 40
+   :header-rows: 1
+
+   * - Java
+     - CUDA Tile C++
+     - Notes
+   * - ``sum(tile, axis)``
+     - ``ct::sum``
+     - rank-2 tiles, axis 0 or 1
+   * - ``max(tile, axis)`` / ``min(tile, axis)``
+     - ``ct::reduce_max`` / ``ct::reduce_min``
+     - note the spelling: ``ct::max`` is the elementwise form
+   * - ``prod(tile, axis)``
+     - ``ct::prod``
+     - a product leaves the range of a narrow element type quickly; ``TestTileMasking`` keeps its
+       inputs near one for that reason
+
+A reduction keeps the reduced dimension, so the result broadcasts back against the tile it came
+from. It cannot be stored into the view it came from, though: a ``32x1`` tile against a
+``32x32`` partition view is refused by CUDA Tile's ``same_shape`` constraint. Reduce, use the
+result, and store a tile of the view's own shape.
+
+Matrix multiply
+===============
+
+.. list-table::
+   :widths: 34 26 40
+   :header-rows: 1
+
+   * - Java
+     - CUDA Tile C++
+     - Notes
+   * - ``mma(a, b, acc)``
+     - ``ct::mma``
+     - ``a * b + acc``. Tensor cores; the instruction is the tile compiler's choice. Operand and
+       accumulator types are validated against the ``mmaf``/``mmai`` tables
+
+Shape and type
+==============
+
+.. list-table::
+   :widths: 34 26 40
+   :header-rows: 1
+
+   * - Java
+     - CUDA Tile C++
+     - Notes
+   * - ``broadcast(tile, shape...)``
+     - ``ct::broadcast``
+     - stretches dimensions of extent 1; rank 1 or 2
+   * - ``reshape(tile, shape...)``
+     - ``ct::reshape``
+     - same element count, row-major; rank 1, 2 or 3, and the only way to change rank
+   * - ``extract(tile, shape..., blocks...)``
+     - ``ct::extract``
+     - a sub-tile, indexed in **sub-tile units** like a view addresses blocks; rank 1 or 2
    * - ``transpose(tile)``
      - ``ct::transpose``
-     -
+     - rank 2
    * - ``cast(tile, dtype)``
      - ``ct::element_cast<E>``
-     - any scalar pair, narrowing included
+     - any scalar pair, narrowing included. There is no ``ct::cast``
+
+Control flow
+============
+
+.. list-table::
+   :widths: 34 26 40
+   :header-rows: 1
+
+   * - Java
+     - CUDA Tile C++
+     - Notes
    * - a counted ``for`` loop
      - ``ct::irange``
-     - no iterator API, which would allocate
+     - write an ordinary loop; no iterator API, which would allocate
+   * - ``if`` on a scalar
+     - ``if``
+     - per-element conditions are ``select``, not control flow
 
-Two spellings are easy to get wrong: ``ct::max`` is the *elementwise* two-operand form and the
-reduction is ``ct::reduce_max``; and there is no ``ct::cast`` at all.
+Query methods
+=============
 
-A reduction keeps its dimension, so it broadcasts back against the tile it came from, but it does
-**not** store into the view it came from: a ``32x1`` tile against a ``32x32`` partition view is
-refused by CUDA Tile's ``same_shape`` constraint.
+``Tile`` exposes ``getDType``, ``getRank``, ``getDimension`` and ``getElement`` (JVM path only, for
+tests and host debugging); ``TensorView`` exposes ``getDType``, ``getRank``, ``getExtent``;
+``PartitionView`` adds ``getTileDimension`` and ``getBlockCount``.
+
+Rank support at a glance
+========================
+
+Rank coverage is deliberately uneven: rank 3 exists for *addressing*, and arithmetic stays rank 2.
+
+.. list-table::
+   :widths: 50 50
+   :header-rows: 1
+
+   * - Ranks
+     - Operations
+   * - 1, 2, 3
+     - ``view`` (except fp8), ``partition``, ``load``, ``loadMasked``, ``store``,
+       ``storeMasked``, ``reshape``
+   * - 1, 2
+     - ``zeros``, ``full``, ``iota``, ``atomicAdd``, ``broadcast``, ``extract``, fp8 ``view``
+   * - 2 only
+     - ``mma``, ``sum``, ``max``, ``min``, ``prod``, ``transpose``
+   * - any
+     - the elementwise operations, the comparisons, ``select``, ``scale``, ``cast``, the math
+       functions
 
 Launch hints
 ************
@@ -250,7 +422,7 @@ defined on a tile, so the indices come from two ``iota`` tiles broadcast to the 
 
 The order is ``memory_order_relaxed`` and the scope is ``thread_scope_device``: an accumulator
 in device memory needs each element's update to be atomic, not ordered against the others.
-Observed lowering on sm_89: ``ATOMG.E.ADD.F32.FTZ.RN.STRONG.GPU`` — device scope matters, since
+Observed lowering on sm_89: ``ATOMG.E.ADD.F32.FTZ.RN.STRONG.GPU`` - device scope matters, since
 the default system scope emits the more expensive ``.SYS`` form.
 
 Element types
@@ -309,12 +481,15 @@ order of how much it costs:
    * - ``TF32`` views
      - ``DType.TF32`` is accepted by ``mma`` and has no buffer type of its own; a tf32 operand
        has to come from a cast, which is how CUDA Tile treats it too.
-   * - rank 4 and above
-     - ``view``/``partition`` go up to rank 3, which covers a batch or head dimension. CUDA Tile
-       itself goes further; the attention kernels that fold two leading dimensions into one index
-       would need rank 4 to stop doing so.
+   * - rank 4 and above, and rank 3 for some operations
+     - ``view``, ``partition``, the loads and stores and ``reshape`` go up to rank 3, which covers
+       a batch or head dimension; tile creation, ``atomicAdd``, ``broadcast`` and ``extract`` stop
+       at rank 2, and the arithmetic that needs a specific rank (``mma``, the reductions,
+       ``transpose``) is rank 2 by nature. *Rank support at a glance* above lists which is which.
+       CUDA Tile itself goes beyond rank 3: an attention kernel folding two leading dimensions
+       into one index would need rank 4 to stop doing so.
    * - the atomic family beyond ``atomicAdd``
-     - ``PartitionView.atomicAdd`` exists (see below); ``atomic_sub``, ``atomic_min``,
+     - ``PartitionView.atomicAdd`` exists (see *Atomic accumulation*); ``atomic_sub``, ``atomic_min``,
        ``atomic_max``, the bitwise atomics, ``atomic_xchg`` and ``atomic_compare_exchange`` do
        not, nor do the masked forms or a choice of memory order and scope.
    * - ``permute``
@@ -323,8 +498,10 @@ order of how much it costs:
        implemented.
    * - ``partial_sum`` / ``partial_prod``
      - no scans, so a cumulative softmax or a prefix sum needs a different formulation.
-   * - ``tan sinh cosh atan2 isnan isinf mulhi remainder`` and ``element_bitcast``
-     - individually cheap to add; nothing in the ported kernels has needed them.
+   * - ``tan sinh cosh atan2 isnan isinf mulhi remainder``, ``element_bitcast`` and a
+       ``logicalNot``
+     - individually cheap to add; nothing in the ported kernels has needed them. A mask can be
+       inverted today by swapping the operands of ``select`` or reversing the comparison.
    * - ``view_padding`` modes other than zero, and a masked load with an explicit pad value
      - ``loadMasked`` zero-pads. A softmax over a ragged tail therefore needs a comparison and
        a ``select`` to keep the padding out of the denominator, as
@@ -342,7 +519,7 @@ Beyond the operation set:
   the tile task silently runs as one block. Use ``tc.sum`` inside the tile instead.
 * TMA does not appear in the generated SASS on Ada (sm_89) because TMA is a Hopper unit; the
   alignment hint only pays off on sm_90 and newer.
-* Launch hints can be set but are not derived. See *Launch hints* below.
+* Launch hints can be set but are not derived. See *Launch hints* above.
 
 Verifying and profiling
 ***********************
@@ -355,11 +532,15 @@ Verifying and profiling
     # tensor cores in the cached cubin
     cuobjdump -sass $TORNADOVM_HOME/var/cuda-codecache/device-0-0/<kernel>-*.cubin | grep HMMA
 
-    # the unit tests: elementwise, GEMM, task chaining, the row kernels and the
-    # kernels ported from NVIDIA's TileGym suite
+    # the unit tests, by area:
+    #   Elementwise Matmul Chaining          the core API and mixing with other task kinds
+    #   RowKernels LlmKernels                softmax, norms, activations, RoPE, dropout
+    #   Attention AttentionVariants          flash attention, GQA, split-KV decode, sinks, soft-cap
+    #   GemmVariants Masking                 persistent and transposed GEMM; causal and ragged masks
+    #   DTypes Atomics Shapes Rank3          int8/fp64/fp8, atomicAdd, broadcast/reshape/extract
     tornado-test -V uk.ac.manchester.tornado.unittests.tile.TestTileMatmul
     tornado-test -V uk.ac.manchester.tornado.unittests.tile.TestTileAttention
-    tornado-test -V uk.ac.manchester.tornado.unittests.tile.TestTileGemmVariants
+    tornado-test -V uk.ac.manchester.tornado.unittests.tile.TestTileMasking
 
 Profiling
 =========
