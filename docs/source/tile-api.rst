@@ -521,6 +521,30 @@ Beyond the operation set:
   alignment hint only pays off on sm_90 and newer.
 * Launch hints can be set but are not derived. See *Launch hints* above.
 
+Examples
+********
+
+``tornado-examples`` carries four runnable tile examples. Each rewrites a known algorithm with
+``TileContext`` beside thread-level versions of the same thing, checks every result against a
+sequential Java reference, and prints a table of times:
+
+.. code-block:: bash
+
+    # smallest useful tile kernel
+    tornado -m tornado.examples/uk.ac.manchester.tornado.examples.tile.TileVectorAdd
+
+    # matrix multiply: @Parallel, KernelContext shared-memory tiles, TileContext
+    tornado -m tornado.examples/uk.ac.manchester.tornado.examples.tile.TileMatrixMultiply 512 20
+
+    # row softmax: the reductions and the broadcast back across the row
+    tornado -m tornado.examples/uk.ac.manchester.tornado.examples.tile.TileSoftmax 4096 50
+
+    # attention: thread-per-query against fused flash attention
+    tornado -m tornado.examples/uk.ac.manchester.tornado.examples.tile.TileAttention 1024 1024 20
+
+The times are wall clock and include JVM-side dispatch, which dominates at small sizes; the
+examples say so, and ``TileExamples`` carries the nsys recipe for kernel time alone.
+
 Verifying and profiling
 ***********************
 
