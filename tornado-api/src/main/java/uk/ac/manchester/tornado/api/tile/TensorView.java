@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.api.tile;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.FP8Array;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
@@ -126,6 +127,11 @@ public final class TensorView {
             // The format lives on the view, not the buffer, so the JVM path reads the raw byte
             // through whichever accessor the view's element type names.
             return dtype == DType.FP8_E5M2 ? fp8Array.getE5M2(index) : fp8Array.getE4M3(index);
+        } else if (buffer instanceof ByteArray byteArray) {
+            // A ByteArray is a raw buffer, so the view's element type decides how to read it and
+            // the index is in units of that type - which is what lets one packed buffer be read
+            // as bytes and as halves by two views.
+            return dtype == DType.F16 ? byteArray.getHalfFloat(index * 2).getFloat32() : byteArray.get(index);
         }
         throw new UnsupportedOperationException(unsupported());
     }
@@ -152,6 +158,12 @@ public final class TensorView {
             } else {
                 fp8Array.setE4M3(index, (float) value);
             }
+        } else if (buffer instanceof ByteArray byteArray) {
+            if (dtype == DType.F16) {
+                byteArray.setHalfFloat(index * 2, new HalfFloat((float) value));
+            } else {
+                byteArray.set(index, (byte) value);
+            }
         } else {
             throw new UnsupportedOperationException(unsupported());
         }
@@ -160,6 +172,6 @@ public final class TensorView {
     private String unsupported() {
         return "[TileContext] The JVM fallback path does not model " + buffer.getClass().getName()
                 + " yet. Supported today: FloatArray, HalfFloatArray, BFloat16Array, IntArray, Int8Array, DoubleArray,"
-                + " FP8Array. The accelerator path is unaffected.";
+                + " FP8Array, ByteArray. The accelerator path is unaffected.";
     }
 }

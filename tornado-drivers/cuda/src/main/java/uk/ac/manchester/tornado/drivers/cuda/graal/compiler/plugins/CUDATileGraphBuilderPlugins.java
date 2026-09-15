@@ -40,6 +40,7 @@ import uk.ac.manchester.tornado.api.tile.Tile;
 import uk.ac.manchester.tornado.api.tile.TileContext;
 import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.FP8Array;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
@@ -145,12 +146,15 @@ public class CUDATileGraphBuilderPlugins {
         registerStridedView(r, IntArray.class, DType.S32);
         registerStridedView(r, Int8Array.class, DType.S8);
         registerStridedView(r, DoubleArray.class, DType.F64);
+        registerStridedView(r, ByteArray.class, DType.S8);
+        registerRawStridedView(r);
         registerView(r, FloatArray.class, DType.F32);
         registerView(r, HalfFloatArray.class, DType.F16);
         registerView(r, BFloat16Array.class, DType.BF16);
         registerView(r, IntArray.class, DType.S32);
         registerView(r, Int8Array.class, DType.S8);
         registerView(r, DoubleArray.class, DType.F64);
+        registerView(r, ByteArray.class, DType.S8);
         registerFp8View(r);
     }
 
@@ -172,6 +176,31 @@ public class CUDATileGraphBuilderPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode format, ValueNode rows, ValueNode columns) {
                 receiver.get(true);
                 b.addPush(JavaKind.Object, new CUDATileViewNode(array, new ValueNode[] { rows, columns }, resolveDType(b, format)));
+                return true;
+            }
+        });
+    }
+
+    /**
+     * A strided view of a raw {@link ByteArray} whose element type is an argument, so the same
+     * buffer can be read as bytes and as halves - which is what decoding a packed quantised
+     * block from one allocation requires.
+     */
+    private static void registerRawStridedView(Registration r) {
+        r.register(new InvocationPlugin("viewStrided", InvocationPlugin.Receiver.class, ByteArray.class, DType.class, int.class, int.class, int.class, int.class) {
+            @Override
+            public boolean defaultHandler(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode... args) {
+                receiver.get(true);
+                ValueNode array = args[0];
+                DType elementType = resolveDType(b, args[1]);
+                if (elementType != DType.S8 && elementType != DType.F16) {
+                    throw new IllegalStateException("[TileContext] A view of a ByteArray reads it as S8 or F16, got " + elementType + ".");
+                }
+                ValueNode elementOffset = args[2];
+                ValueNode rows = args[3];
+                ValueNode columns = args[4];
+                ValueNode rowStride = args[5];
+                b.addPush(JavaKind.Object, new CUDATileViewNode(array, new ValueNode[] { rows, columns }, rowStride, elementOffset, elementType));
                 return true;
             }
         });

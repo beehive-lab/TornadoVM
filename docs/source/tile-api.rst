@@ -126,6 +126,13 @@ Views, partitions and memory
      - ``ct::tensor_span`` with ``ct::layout_strided_mapping``
      - a row pitch and a starting offset instead of a contiguous view; extents and stride stay
        runtime values. See *Interleaved layouts* below
+   * - ``viewStrided(byteArray, dtype, offset, rows, columns, stride)``
+     - ``ct::tensor_span`` over a ``reinterpret_cast``
+     - a raw ``ByteArray`` read at a chosen element type (``S8`` or ``F16``), so one packed
+       buffer can be viewed as more than one type. Offsets and strides are in units of that type
+   * - ``view(byteArray, extents...)``
+     - ``ct::tensor_span``
+     - the same buffer as plain signed bytes
    * - ``view(fp8Array, format, extents...)``
      - ``ct::tensor_span``
      - fp8 only: the format (``FP8_E4M3`` or ``FP8_E5M2``) is an argument, because the buffer
@@ -493,19 +500,34 @@ Interleaved layouts
 read in place rather than being split into separate arrays first.
 
 The case this exists for is a GGUF Q4_0 block: ``[fp16 scale][16 nibble bytes]``, 18 bytes,
-repeated. Two views over the **same allocation**, with different element types and different
-offsets:
+repeated. That is a record with fields of two different widths, so reading it means viewing the
+same allocation twice, once per field type. A ``ByteArray`` is an untyped buffer, so the view
+takes the element type as an argument:
 
 .. code-block:: java
 
-    // scales: one fp16 per 18 bytes, i.e. every ninth half
-    PartitionView scaleView = tc.partition(tc.viewStrided(asHalf, 0, blocks, 1, 9), BLOCKS, 1);
-    // nibbles: 16 usable bytes of every 18, starting at byte 2
-    PartitionView nibbleView = tc.partition(tc.viewStrided(asBytes, 2, blocks, 16, 18), BLOCKS, 16);
+    // scales: one fp16 per 18 bytes, i.e. every ninth half. Offsets and strides are in units
+    // of the element type, so this pitch is 9 halves and the nibble pitch below is 18 bytes.
+    PartitionView scaleView = tc.partition(
+            tc.viewStrided(raw, DType.F16, 0, blocks, 1, 9), BLOCKS, 1);
+    // nibbles: 16 usable bytes of every 18, starting at byte 2, out of the same buffer
+    PartitionView nibbleView = tc.partition(
+            tc.viewStrided(raw, DType.S8, 2, blocks, 16, 18), BLOCKS, 16);
 
 Both lower to a ``ct::tensor_span`` carrying a ``ct::layout_strided_mapping`` whose extents and
-strides are dynamic, which is the form a JIT emits. ``TestTileStridedViews`` reads a real
-interleaved buffer this way and checks every dequantised weight.
+strides are dynamic, which is the form a JIT emits, over a ``reinterpret_cast`` of the one
+pointer — exactly what a hand-written CUDA Tile kernel does for the same record:
+
+.. code-block:: cpp
+
+    auto tview_2 = ct::partition_view{ct::tensor_span{(reinterpret_cast<__half *>(ul_0 + 16) + 0), ...
+    auto tview_3 = ct::partition_view{ct::tensor_span{(reinterpret_cast<signed char *>(ul_0 + 16) + 2), ...
+
+Nothing in the API knows what the record means: the unpacking is ordinary tile arithmetic over
+the two views — mask to the byte's width (an ``S8`` read sign-extends), shift out the high field,
+``concat`` the two halves, then centre and scale. ``TestTileRawBuffers`` does exactly that and
+checks every decoded value; ``TestTileStridedViews`` covers the same layout split across two
+typed arrays, which also still works.
 
 Note that a strided view is **not** marked ``assume_aligned``: its rows are not 16-byte aligned
 in general, and telling the tile compiler otherwise would be a lie it would act on. A contiguous
@@ -585,8 +607,9 @@ order of how much it costs:
      - Consequence
    * - ``layout_right_padded`` and rank-3 strides
      - ``viewStrided`` covers a rank-2 row pitch with a unit column stride, which is what an
-       interleaved block format needs. A padded layout, a non-unit column stride and a strided
-       rank-3 view are not exposed.
+       interleaved block format needs, and a raw ``ByteArray`` can be viewed at a chosen element
+       type so a record with mixed field widths needs only one allocation. A padded layout, a
+       non-unit column stride and a strided rank-3 view are not exposed.
    * - fp8 tiles below compute capability 9.0
      - ``FP8Array`` can be viewed (the format is an argument, since the buffer carries both an
        e4m3 and an e5m2 accessor), but ``tileiras`` rejects an fp8 tile for sm_89 with
@@ -694,6 +717,7 @@ Verifying and profiling
     #   GemmVariants Masking                 persistent and transposed GEMM; causal and ragged masks
     #   DTypes Atomics Shapes Rank3          int8/fp64/fp8, the atomic family, broadcast/reshape/extract
     #   MathOps StridedViews                 the math and bitwise surface; interleaved layouts
+    #   RawBuffers                           one ByteArray viewed at two element types
     #   MixedPipelines Recurrence            tile + KernelContext + cuBLAS in one graph; a
     #                                        loop-carried state tile (TileGym's gated delta rule)
     #   OpLevel                              one case per operator in isolation, plus the

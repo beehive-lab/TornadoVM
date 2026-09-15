@@ -18,6 +18,7 @@
 package uk.ac.manchester.tornado.api.tile;
 
 import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FP8Array;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
@@ -182,6 +183,25 @@ public class TileContext {
         return new TensorView(array, DType.S8, new int[] { extent });
     }
 
+    /**
+     * A view of a {@link ByteArray} as signed 8-bit elements.
+     *
+     * <p>
+     * {@code ByteArray} is a raw buffer rather than a typed one, which is how a quantised weight
+     * file is held in memory: a GGUF {@code Q4_0} block is two bytes of fp16 scale followed by
+     * sixteen bytes of packed nibbles, all in one allocation. Reading it needs the byte view for
+     * the nibbles and an {@code F16} view for the scales, which is what the
+     * {@link #viewStrided(ByteArray, DType, int, int, int, int)} overload is for.
+     * </p>
+     */
+    public TensorView view(ByteArray array, int extent) {
+        return new TensorView(array, DType.S8, new int[] { extent });
+    }
+
+    public TensorView view(ByteArray array, int rows, int columns) {
+        return new TensorView(array, DType.S8, new int[] { rows, columns });
+    }
+
     public TensorView view(Int8Array array, int rows, int columns) {
         return new TensorView(array, DType.S8, new int[] { rows, columns });
     }
@@ -285,6 +305,44 @@ public class TileContext {
 
     public TensorView viewStrided(Int8Array array, int elementOffset, int rows, int columns, int rowStride) {
         return strided(array, DType.S8, elementOffset, rows, columns, rowStride);
+    }
+
+    public TensorView viewStrided(ByteArray array, int elementOffset, int rows, int columns, int rowStride) {
+        return strided(array, DType.S8, elementOffset, rows, columns, rowStride);
+    }
+
+    /**
+     * A strided view of a raw {@link ByteArray} at a chosen element type, so one buffer can be
+     * read as more than one type.
+     *
+     * <p>
+     * This is what a packed quantised format needs and what no other view signature expresses. A
+     * GGUF {@code Q4_0} weight row is a run of 18-byte blocks, each holding an fp16 scale then
+     * sixteen nibble-packed bytes; decoding it means reading the same allocation twice, once as
+     * {@code F16} on an 18-byte pitch and once as {@code S8} starting two bytes in. Both views
+     * lower to a {@code ct::layout_strided_mapping} over a {@code reinterpret_cast} of the same
+     * pointer, which is exactly what a hand-written CUDA Tile kernel does.
+     * </p>
+     *
+     * <p>
+     * {@code elementOffset} and {@code rowStride} are in units of {@code elementType}, not
+     * bytes. A strided view gets no {@code assume_aligned}, so an offset that is not a multiple
+     * of the element width is not a correctness problem here - but it does mean TMA cannot fire.
+     * </p>
+     *
+     * @param elementType
+     *     how to read the bytes: {@link DType#S8} or {@link DType#F16}
+     */
+    public TensorView viewStrided(ByteArray array, DType elementType, int elementOffset, int rows, int columns, int rowStride) {
+        return strided(array, requireRawViewType(elementType), elementOffset, rows, columns, rowStride);
+    }
+
+    private static DType requireRawViewType(DType elementType) {
+        if (elementType != DType.S8 && elementType != DType.F16) {
+            throw new IllegalArgumentException("[TileContext] A view of a ByteArray reads it as S8 or F16, got " + elementType
+                    + ". These are the two a packed quantised block needs; widen this if another is.");
+        }
+        return elementType;
     }
 
     public TensorView viewStrided(DoubleArray array, int elementOffset, int rows, int columns, int rowStride) {
