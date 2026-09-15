@@ -169,6 +169,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.tile.TestTileMixedPipelines"),
     TestEntry("uk.ac.manchester.tornado.unittests.tile.TestTileStridedViews"),
     TestEntry("uk.ac.manchester.tornado.unittests.tile.TestTileRecurrence"),
+    TestEntry("uk.ac.manchester.tornado.unittests.tile.TestTileOpLevel"),
     TestEntry("uk.ac.manchester.tornado.unittests.cublas.TestCuBlas"),
     TestEntry("uk.ac.manchester.tornado.unittests.cublas.TestCuBlasLt"),
     TestEntry("uk.ac.manchester.tornado.unittests.cufft.TestCuFft"),

@@ -253,9 +253,18 @@ Math
    * - ``sqrt rsqrt tanh sin cos tan sinh cosh abs floor ceil``
      - ``ct::sqrt`` ...
      - elementwise, shape preserved
-   * - ``atan2(y, x)`` ``pow`` ``remainder`` ``floorDiv`` ``ceilDiv`` ``mulhi``
-     - ``ct::atan2`` ``ct::pow`` ``ct::remainder`` ``ct::floordiv`` ``ct::ceildiv`` ``ct::mulhi``
-     - two operands, elementwise
+   * - ``atan2(y, x)`` ``pow`` ``remainder``
+     - ``ct::atan2`` ``ct::pow`` ``ct::remainder``
+     - two operands, elementwise. ``remainder`` truncates towards zero, like Java's ``%`` and C's
+       ``fmod``, not like C's IEEE ``remainder``
+   * - ``floorDiv`` ``ceilDiv`` ``mulhi``
+     - ``ct::floordiv`` ``ct::ceildiv`` ``ct::mulhi``
+     - **integer tiles only** - the builtins take ``integral_tile`` operands, so calling these on
+       an F32 tile is a compile-time error. ``mulhi`` returns the *unsigned* high half even on a
+       signed ``S32`` tile: for ``-1171259281 * -1170105035`` it gives ``-2022270762``, where the
+       signed high half would be ``319093554``. That is CUDA Tile's own behaviour, confirmed
+       against a hand-written tile kernel, and the JVM fallback matches it so host and device
+       runs agree
    * - ``bitwiseAnd`` ``bitwiseOr`` ``bitwiseXor`` ``bitwiseNot`` ``shiftLeft`` ``shiftRight``
      - ``& | ^ ~ << >>``
      - integer tiles
@@ -357,7 +366,8 @@ Shape and type
      - reinterprets the bits without converting; same width only
    * - ``cast(tile, dtype)``
      - ``ct::element_cast<E>``
-     - any scalar pair, narrowing included. There is no ``ct::cast``
+     - any scalar pair, narrowing included. There is no ``ct::cast``. Float to integer truncates
+       towards zero, like a C cast, rather than rounding to nearest
 
 Control flow
 ============
@@ -548,8 +558,11 @@ Known limitations
 *****************
 
 Measured against the ``__tile_builtin__`` set of CUDA 13.3 (84 operations, excluding the
-``assume_*`` hints), this API covers **71 of them**. The remainder is 12 masked variants of atomics whose unmasked
-forms exist, plus ``permute``. Note that CUDA Tile's Python DSL is a
+``assume_*`` hints and the tag-enumerator helpers), this API covers **70 of them**. The
+remaining 14 are: the ten ``_masked`` atomic variants whose unmasked forms exist;
+``atomic_compare_exchange`` in both forms; ``matmul``, the accumulator-free product whose
+result element type is inferred from the operands rather than from an accumulator; and
+``permute``, which needs a ``dimension_map`` argument and only becomes meaningful above rank 2. Note that CUDA Tile's Python DSL is a
 larger surface again - it adds autotuning, device-side printing, static metaprogramming,
 gather/scatter and block-scaled matmul, none of which appear among the C++ builtins - so
 coverage against C++ is the narrower claim of the two.
@@ -580,11 +593,13 @@ order of how much it costs:
        has to come from a cast, which is how CUDA Tile treats it too.
    * - rank 4 and above, and rank 3 for some operations
      - ``view``, ``partition``, the loads and stores and ``reshape`` go up to rank 3, which covers
-       a batch or head dimension; tile creation, ``atomicAdd``, ``broadcast`` and ``extract`` stop
-       at rank 2, and the arithmetic that needs a specific rank (``mma``, the reductions,
-       ``transpose``) is rank 2 by nature. *Rank support at a glance* above lists which is which.
-       CUDA Tile itself goes beyond rank 3: an attention kernel folding two leading dimensions
-       into one index would need rank 4 to stop doing so.
+       a batch or head dimension; tile creation, the atomics, ``broadcast`` and ``extract`` stop
+       at rank 2. So do ``mma``, the reductions and ``transpose`` - and for ``mma`` that is this
+       API's limit, not CUDA Tile's: the builtin accepts rank-3 operands with a leading batch
+       extent that broadcasts (either side may be 1, or match the accumulator), which is a
+       batched GEMM this API cannot currently express. *Rank support at a glance* above lists
+       which is which. CUDA Tile also goes beyond rank 3: an attention kernel folding two
+       leading dimensions into one index would need rank 4 to stop doing so.
    * - masked atomics and ``atomic_compare_exchange``
      - the eight unmasked read-modify-write atomics exist, as do the view's ``atomic_load`` and
        ``atomic_store``; the ``_masked`` forms and the compare-and-exchange do not, nor does a
@@ -666,6 +681,12 @@ Verifying and profiling
     #   MathOps StridedViews                 the math and bitwise surface; interleaved layouts
     #   MixedPipelines Recurrence            tile + KernelContext + cuBLAS in one graph; a
     #                                        loop-carried state tile (TileGym's gated delta rule)
+    #   OpLevel                              one case per operator in isolation, plus the
+    #                                        type-generic operators at F16, BF16 and FP8_E4M3
+    #
+    # OpLevel is the one to run first after a toolkit or driver change: every other suite tests a
+    # kernel, so a single operator's regression surfaces as a wrong number somewhere downstream,
+    # whereas here a failure names the operator and nothing else.
     tornado-test -V uk.ac.manchester.tornado.unittests.tile.TestTileMatmul
     tornado-test -V uk.ac.manchester.tornado.unittests.tile.TestTileAttention
     tornado-test -V uk.ac.manchester.tornado.unittests.tile.TestTileMasking

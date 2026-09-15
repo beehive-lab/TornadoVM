@@ -819,9 +819,21 @@ public class TileContext {
         return zip(a, b, (left, right) -> Math.ceil(left / right));
     }
 
-    /** High half of an integer multiply, {@code ct::mulhi}. */
+    /**
+     * High half of an integer multiply, {@code ct::mulhi}.
+     *
+     * <p>
+     * The high half is <em>unsigned</em>, even on a signed {@link DType#S32} tile. That is CUDA
+     * Tile's own behaviour, not this API's choice: a standalone tile kernel calling
+     * {@code ct::mulhi} on an {@code int} tile returns the unsigned high half for negative
+     * operands (verified on CUDA 13.3, sm_89 - for -1171259281 * -1170105035 it gives
+     * -2022270762, the unsigned high half, where the signed one is 319093554). This fallback
+     * matches the device rather than Java's signed arithmetic, so a host run and a device run
+     * agree. {@code TestTileOpLevel#testMulhi} pins it.
+     * </p>
+     */
     public Tile mulhi(Tile a, Tile b) {
-        return zip(a, b, (left, right) -> (double) (int) (((long) (int) left * (long) (int) right) >> 32));
+        return zip(a, b, (left, right) -> (double) (int) ((Integer.toUnsignedLong((int) left) * Integer.toUnsignedLong((int) right)) >>> 32));
     }
 
     /**
