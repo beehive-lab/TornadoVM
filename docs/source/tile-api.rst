@@ -507,6 +507,13 @@ order of how much it costs:
 
    * - Missing
      - Consequence
+   * - strided and byte-offset views
+     - ``view`` builds a contiguous, zero-offset view of one element type. CUDA Tile's
+       ``tensor_span`` takes a layout - ``layout_strided``, ``layout_right_padded`` - and two
+       spans may share one allocation at different offsets with different element types, which is
+       what an interleaved quantised format such as GGUF's ``[fp16 scale][16 nibble bytes]``
+       needs. Verified against 13.3.73 with static and with fully dynamic extents and strides;
+       this is a gap in this API rather than in the tile model.
    * - fp8 tiles below compute capability 9.0
      - ``FP8Array`` can be viewed (the format is an argument, since the buffer carries both an
        e4m3 and an e5m2 accessor), but ``tileiras`` rejects an fp8 tile for sm_89 with

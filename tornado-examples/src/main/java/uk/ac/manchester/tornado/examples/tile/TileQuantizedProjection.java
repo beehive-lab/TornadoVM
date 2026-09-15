@@ -65,11 +65,19 @@ import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
  *
  * <p>
  * It does <b>not</b> keep GGUF's interleaving of the scale with the weights in one buffer. GGUF
- * writes {@code [fp16 scale][16 bytes of nibbles]} per block; reading that scale from inside a
- * tile kernel would mean viewing one byte buffer as both {@code S8} and {@code F16} at a byte
- * offset, and the tile API cannot express that - a view is one element type over one buffer. The
- * scales therefore live in their own array here. A production port would either store them
- * separately, as this does, or split them out in a preparation kernel.
+ * writes {@code [fp16 scale][16 bytes of nibbles]} per block, and reading that scale alongside
+ * the nibbles needs two views over one allocation: different element types, a byte offset
+ * between them, and a stride of the 18-byte block pitch rather than a contiguous row.
+ * </p>
+ *
+ * <p>
+ * <b>CUDA Tile itself can express that</b> - two {@code ct::tensor_span}s over the same pointer,
+ * one {@code __half} at offset 0 and one {@code signed char} at offset 2, each with a
+ * {@code ct::layout_strided_mapping} over the block pitch, compile and read correctly, with
+ * static or with fully dynamic extents and strides. What cannot express it is
+ * {@link TileContext#view}, which builds a contiguous, zero-offset view of one element type.
+ * Strided and offset views are a gap on this side, not in the tile programming model, so the
+ * scales live in their own array here rather than because the layout is unreachable.
  * </p>
  *
  * <pre>
