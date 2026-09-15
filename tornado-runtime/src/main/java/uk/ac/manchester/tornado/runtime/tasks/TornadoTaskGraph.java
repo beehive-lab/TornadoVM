@@ -31,6 +31,7 @@ import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEBUG;
 
 import java.io.IOException;
 import java.lang.foreign.MemorySegment;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -1826,6 +1827,28 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     @SuppressWarnings("unchecked")
     private void runSequentialCodeInThread(TaskPackage taskPackage) {
         int type = taskPackage.getTaskType();
+        if (taskPackage.isMethodTask()) {
+            // A method task carries no lambda, so there is no TaskN to apply and the arity switch
+            // below cannot dispatch it. Without this branch a bailout -- which is how a kernel that
+            // fails to launch is reported -- turns into "Sequential Runner not supported yet.
+            // Number of parameters: -1" instead of running the kernel on the host.
+            Method method = taskPackage.getMethod();
+            try {
+                method.invoke(null, taskPackage.getTaskParameters());
+            } catch (IllegalAccessException e) {
+                TornadoRuntimeException failure = new TornadoRuntimeException("Method task " + method + " is not accessible");
+                failure.initCause(e);
+                throw failure;
+            } catch (InvocationTargetException e) {
+                // The kernel itself threw. Unwrap so the message names the real fault rather than
+                // the reflection wrapper; TornadoRuntimeException takes no cause, hence initCause.
+                Throwable cause = e.getCause() == null ? e : e.getCause();
+                TornadoRuntimeException failure = new TornadoRuntimeException("Method task " + method + " threw " + cause);
+                failure.initCause(cause);
+                throw failure;
+            }
+            return;
+        }
         switch (type) {
             case 0 -> {
                 @SuppressWarnings("rawtypes") Task task = (Task) taskPackage.getTaskParameters()[0];
@@ -2008,7 +2031,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         int type = taskPackage.getTaskType();
         Object[] parameters = taskPackage.getTaskParameters();
 
-        Method method = TaskUtils.resolveMethodHandle(parameters[0]);
+        // A method task names its kernel directly, so there is no lambda to unpick and the
+        // arity switch below does not apply: the parameters are already the kernel's arguments.
+        Method method = taskPackage.isMethodTask()
+                ? taskPackage.getMethod()
+                : TaskUtils.resolveMethodHandle(parameters[0]);
         ScheduleContext meta = meta();
 
         // Set the number of threads to run. If 0, it will execute as many
@@ -2019,7 +2046,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         meta.setNumThreads(taskPackage.getNumThreadsToRun());
 
         try {
-            addInner(type, method, meta, id, parameters);
+            if (taskPackage.isMethodTask()) {
+                addInner(TaskUtils.createMethodTask(meta, id, method, parameters));
+            } else {
+                addInner(type, method, meta, id, parameters);
+            }
         } catch (TornadoBailoutRuntimeException e) {
             this.bailout = true;
             if (!DEBUG) {

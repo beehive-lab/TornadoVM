@@ -37,10 +37,15 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task4;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task5;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
+import java.lang.reflect.Method;
+
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
 
 public class TaskPackage {
+
+    /** Task type of a package built from a {@link Method} rather than a lambda. */
+    public static final int METHOD_TASK_TYPE = -1;
 
     private final String id;
     private final int taskType;
@@ -49,28 +54,35 @@ public class TaskPackage {
 
     private boolean isPrebuiltTask;
 
+    /** Non-null only for a method task; see {@link #createPackage(String, Method, Object...)}. */
+    private final Method method;
+
     public TaskPackage(String id, Task code) {
         this.id = id;
         this.taskType = 0;
         this.taskParameters = new Object[] { code };
+        this.method = null;
     }
 
     public <T1> TaskPackage(String id, Task1<T1> code, T1 arg) {
         this.id = id;
         this.taskType = 1;
         this.taskParameters = new Object[] { code, arg };
+        this.method = null;
     }
 
     public <T1, T2> TaskPackage(String id, Task2<T1, T2> code, T1 arg1, T2 arg2) {
         this.id = id;
         this.taskType = 2;
         this.taskParameters = new Object[] { code, arg1, arg2 };
+        this.method = null;
     }
 
     public <T1, T2, T3> TaskPackage(String id, Task3<T1, T2, T3> code, T1 arg1, T2 arg2, T3 arg3) {
         this.id = id;
         this.taskType = 3;
         this.taskParameters = new Object[] { code, arg1, arg2, arg3 };
+        this.method = null;
 
     }
 
@@ -78,30 +90,35 @@ public class TaskPackage {
         this.id = id;
         this.taskType = 4;
         this.taskParameters = new Object[] { code, arg1, arg2, arg3, arg4 };
+        this.method = null;
     }
 
     public <T1, T2, T3, T4, T5> TaskPackage(String id, Task5<T1, T2, T3, T4, T5> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) {
         this.id = id;
         this.taskType = 5;
         this.taskParameters = new Object[] { code, arg1, arg2, arg3, arg4, arg5 };
+        this.method = null;
     }
 
     public <T1, T2, T3, T4, T5, T6> TaskPackage(String id, Task6<T1, T2, T3, T4, T5, T6> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6) {
         this.id = id;
         this.taskType = 6;
         this.taskParameters = new Object[] { code, arg1, arg2, arg3, arg4, arg5, arg6 };
+        this.method = null;
     }
 
     public <T1, T2, T3, T4, T5, T6, T7> TaskPackage(String id, Task7<T1, T2, T3, T4, T5, T6, T7> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7) {
         this.id = id;
         this.taskType = 7;
         this.taskParameters = new Object[] { code, arg1, arg2, arg3, arg4, arg5, arg6, arg7 };
+        this.method = null;
     }
 
     public <T1, T2, T3, T4, T5, T6, T7, T8> TaskPackage(String id, Task8<T1, T2, T3, T4, T5, T6, T7, T8> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8) {
         this.id = id;
         this.taskType = 8;
         this.taskParameters = new Object[] { code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8 };
+        this.method = null;
     }
 
     public <T1, T2, T3, T4, T5, T6, T7, T8, T9> TaskPackage(String id, Task9<T1, T2, T3, T4, T5, T6, T7, T8, T9> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8,
@@ -109,6 +126,7 @@ public class TaskPackage {
         this.id = id;
         this.taskType = 9;
         this.taskParameters = new Object[] { code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9 };
+        this.method = null;
     }
 
     public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> TaskPackage(String id, Task10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7,
@@ -116,6 +134,7 @@ public class TaskPackage {
         this.id = id;
         this.taskType = 10;
         this.taskParameters = new Object[] { code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10 };
+        this.method = null;
     }
 
     public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> TaskPackage(String id, Task11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6,
@@ -123,6 +142,7 @@ public class TaskPackage {
         this.id = id;
         this.taskType = 11;
         this.taskParameters = new Object[] { code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11 };
+        this.method = null;
     }
 
     public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> TaskPackage(String id, Task12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5,
@@ -130,6 +150,7 @@ public class TaskPackage {
         this.id = id;
         this.taskType = 12;
         this.taskParameters = new Object[] { code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12 };
+        this.method = null;
     }
 
     public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> TaskPackage(String id, Task13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4,
@@ -137,6 +158,7 @@ public class TaskPackage {
         this.id = id;
         this.taskType = 13;
         this.taskParameters = new Object[] { code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13 };
+        this.method = null;
     }
 
     public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> TaskPackage(String id, Task14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> code, T1 arg1, T2 arg2, T3 arg3,
@@ -144,6 +166,7 @@ public class TaskPackage {
         this.id = id;
         this.taskType = 14;
         this.taskParameters = new Object[] { code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14 };
+        this.method = null;
     }
 
     public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> TaskPackage(String id, Task15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> code, T1 arg1, T2 arg2,
@@ -151,6 +174,7 @@ public class TaskPackage {
         this.id = id;
         this.taskType = 15;
         this.taskParameters = new Object[] { code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15 };
+        this.method = null;
     }
 
     public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> TaskPackage(String id, Task16<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> code, T1 arg1,
@@ -158,6 +182,7 @@ public class TaskPackage {
         this.id = id;
         this.taskType = 16;
         this.taskParameters = new Object[] { code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16 };
+        this.method = null;
     }
 
     public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17> TaskPackage(String id,
@@ -166,6 +191,7 @@ public class TaskPackage {
         this.id = id;
         this.taskType = 17;
         this.taskParameters = new Object[] { code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16, arg17 };
+        this.method = null;
     }
 
     public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18> TaskPackage(String id,
@@ -174,6 +200,7 @@ public class TaskPackage {
         this.id = id;
         this.taskType = 18;
         this.taskParameters = new Object[] { code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16, arg17, arg18 };
+        this.method = null;
     }
 
     public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19> TaskPackage(String id,
@@ -182,6 +209,7 @@ public class TaskPackage {
         this.id = id;
         this.taskType = 19;
         this.taskParameters = new Object[] { code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16, arg17, arg18, arg19 };
+        this.method = null;
     }
 
     public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20> TaskPackage(String id,
@@ -190,6 +218,37 @@ public class TaskPackage {
         this.id = id;
         this.taskType = 20;
         this.taskParameters = new Object[] { code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16, arg17, arg18, arg19, arg20 };
+        this.method = null;
+    }
+
+    /**
+     * Builds a package for a kernel identified by a {@link Method} rather than by a lambda.
+     *
+     * <p>The lambda-based factories exist because a method reference is the only way to name a
+     * kernel in source. When the kernel is generated at run time there is no source to write a
+     * method reference in, and the {@code SerializedLambda} that would normally recover the method
+     * cannot be produced -- so the method is supplied directly.
+     *
+     * <p>No captured variables are extracted: a {@link Method} captures nothing, so every argument
+     * the kernel receives is passed here explicitly. This also means the method must be static.
+     *
+     * @param id
+     *     Task-id
+     * @param method
+     *     the kernel, a static method whose declaring class is loadable and whose bytecode is
+     *     readable as a resource from that class's loader
+     * @param args
+     *     arguments to the kernel, in declaration order
+     */
+    public static TaskPackage createPackage(String id, Method method, Object... args) {
+        return new TaskPackage(id, method, args);
+    }
+
+    private TaskPackage(String id, Method method, Object[] args) {
+        this.id = id;
+        this.taskType = METHOD_TASK_TYPE;
+        this.taskParameters = args == null ? new Object[0] : args;
+        this.method = method;
     }
 
     public static TaskPackage createPackage(String id, Task code) {
@@ -321,6 +380,19 @@ public class TaskPackage {
      */
     public Object[] getTaskParameters() {
         return taskParameters;
+    }
+
+    /**
+     * The kernel, when this package was built from a {@link Method}; null when it was built from a
+     * lambda, in which case the method is recovered from the lambda's {@code SerializedLambda}.
+     */
+    public Method getMethod() {
+        return method;
+    }
+
+    /** Whether this package names its kernel directly rather than through a lambda. */
+    public boolean isMethodTask() {
+        return taskType == METHOD_TASK_TYPE;
     }
 
     public boolean isPrebuiltTask() {

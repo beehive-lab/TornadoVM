@@ -65,10 +65,60 @@ public class ASMClassVisitor extends ClassVisitor implements ASMClassVisitorProv
     // dropping below that asm release stops compiling here instead of failing at run time.
     private static final int MAX_SUPPORTED_MAJOR = Opcodes.V23;
 
+    /**
+     * Finds a kernel's class file, trying the context class loader before the system one.
+     *
+     * <p>The system class loader alone is not enough for a kernel that was generated and compiled
+     * at run time: such a class is loaded by whatever loader the generator created, which the
+     * system loader cannot see. The failure is silent and expensive -- no annotations are found,
+     * so {@code @Parallel} is dropped and the kernel is emitted as a sequential loop that every
+     * device thread executes in full. The results are correct and the performance is not.
+     */
+    private static InputStream openClassFile(ResolvedJavaMethod method, String methodClassFile) {
+        ClassLoader[] candidates = {
+                declaringClassLoader(method),
+                Thread.currentThread().getContextClassLoader(),
+                ClassLoader.getSystemClassLoader(),
+                ASMClassVisitor.class.getClassLoader()
+        };
+        for (ClassLoader loader : candidates) {
+            if (loader == null) {
+                continue;
+            }
+            InputStream stream = loader.getResourceAsStream(methodClassFile);
+            if (stream != null) {
+                return stream;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * The loader that actually defined the kernel's class, which is the only one guaranteed to
+     * serve its class file.
+     *
+     * <p>Obtained reflectively so this module keeps no dependency on the runtime's reflection
+     * types. It mirrors what {@code ReflectionUniverse} already does when it reads a method's
+     * bytecode -- the two must agree, or a kernel whose bytecode can be read will still lose its
+     * annotations. The context class loader is not a substitute: annotation lookup runs on a
+     * sketcher worker thread, which does not inherit the submitting thread's.
+     */
+    private static ClassLoader declaringClassLoader(ResolvedJavaMethod method) {
+        try {
+            Object declaringType = method.getDeclaringClass();
+            java.lang.reflect.Method getMirror = declaringType.getClass().getMethod("getMirror");
+            getMirror.setAccessible(true);
+            Object mirror = getMirror.invoke(declaringType);
+            return mirror instanceof Class ? ((Class<?>) mirror).getClassLoader() : null;
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            return null;
+        }
+    }
+
     @Override
     public ParallelAnnotationProvider[] getParallelAnnotations(ResolvedJavaMethod method) {
         String methodClassFile = method.getDeclaringClass().getName().replaceFirst("L", "").replaceFirst(";", ".class");
-        InputStream inputStream = ClassLoader.getSystemClassLoader().getResourceAsStream(methodClassFile);
+        InputStream inputStream = openClassFile(method, methodClassFile);
         if (inputStream == null) {
             // e.g. a JDK class whose resource is not visible, or a runtime-generated hidden class
             // (e.g. java/lang/invoke/LambdaForm$MH.0x...) with no loadable .class resource; either

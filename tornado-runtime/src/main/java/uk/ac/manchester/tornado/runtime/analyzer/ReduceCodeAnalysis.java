@@ -398,8 +398,13 @@ public class ReduceCodeAnalysis {
                 continue;
             }
 
-            Object taskCode = taskMetadata.getTaskParameters()[0];
-            StructuredGraph graph = CodeAnalysis.buildHighLevelGraalGraph(taskCode);
+            // A method task names its kernel directly and its parameter array holds only the
+            // kernel's arguments, so there is no lambda in slot 0 to resolve or to skip over.
+            final boolean methodTask = taskMetadata.isMethodTask();
+            final int argOffset = methodTask ? 0 : 1;
+            StructuredGraph graph = methodTask
+                    ? CodeAnalysis.buildHighLevelGraalGraph(taskMetadata.getMethod())
+                    : CodeAnalysis.buildHighLevelGraalGraph(taskMetadata.getTaskParameters()[0]);
 
             assert graph != null;
             Annotation[][] annotations = graph.method().getParameterAnnotations();
@@ -424,7 +429,7 @@ public class ReduceCodeAnalysis {
                 for (ValueNode valueNode : loopBound) {
                     int position = !graph.method().isStatic() ? i + 1 : i;
                     if (valueNode.equals(graph.getParameter(position))) {
-                        Object object = taskPackages.get(taskIndex).getTaskParameters()[i + 1];
+                        Object object = taskPackages.get(taskIndex).getTaskParameters()[i + argOffset];
                         if (object instanceof TornadoNativeArray tornadoNativeArray) {
                             inputSize = tornadoNativeArray.getSize();
                         } else if (object.getClass().isArray()) {
