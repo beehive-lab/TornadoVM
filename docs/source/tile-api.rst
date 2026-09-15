@@ -280,11 +280,37 @@ Reductions
      - ``ct::prod``
      - a product leaves the range of a narrow element type quickly; ``TestTileMasking`` keeps its
        inputs near one for that reason
+   * - ``reduceBitAnd`` ``reduceBitOr`` ``reduceBitXor``
+     - ``ct::reduce_bitand`` ``ct::reduce_bitor`` ``ct::reduce_bitxor``
+     - integer tiles only. Useful for collapsing a packed mask or a set of flags along an axis
+       without unpacking it first
 
 A reduction keeps the reduced dimension, so the result broadcasts back against the tile it came
 from. It cannot be stored into the view it came from, though: a ``32x1`` tile against a
 ``32x32`` partition view is refused by CUDA Tile's ``same_shape`` constraint. Reduce, use the
 result, and store a tile of the view's own shape.
+
+Scans
+=====
+
+.. list-table::
+   :widths: 34 26 40
+   :header-rows: 1
+
+   * - Java
+     - CUDA Tile C++
+     - Notes
+   * - ``prefixSum(tile, axis)``
+     - ``ct::partial_sum``
+     - inclusive prefix sum along the axis; the result has the tile's own shape, unlike a
+       reduction
+   * - ``prefixProduct(tile, axis)``
+     - ``ct::partial_prod``
+     - inclusive prefix product; the same range caveat as ``prod`` applies, sooner
+
+A scan is shape preserving, so unlike a reduction its result *can* be stored straight back into
+the partition view it was loaded from. That is what makes running offsets - a segment layout, a
+ragged row start, a cumulative distribution to sample from - expressible without a second pass.
 
 Matrix multiply
 ===============
@@ -354,7 +380,8 @@ Query methods
 =============
 
 ``Tile`` exposes ``getDType``, ``getRank``, ``getDimension`` and ``getElement`` (JVM path only, for
-tests and host debugging); ``TensorView`` exposes ``getDType``, ``getRank``, ``getExtent``;
+tests and host debugging); ``TensorView`` exposes ``getDType``, ``getRank``, ``getExtent``,
+and ``getElementOffset``/``getRowStride`` for a strided view;
 ``PartitionView`` adds ``getTileDimension`` and ``getBlockCount``.
 
 Rank support at a glance
@@ -524,8 +551,8 @@ Measured against the ``__tile_builtin__`` set of CUDA 13.3 (84 operations, exclu
 ``assume_*`` hints), this API covers **71 of them**. The remainder is 12 masked variants of atomics whose unmasked
 forms exist, plus ``permute``. Note that CUDA Tile's Python DSL is a
 larger surface again - it adds autotuning, device-side printing, static metaprogramming,
-gather/scatter, scans and block-scaled matmul - so coverage against C++ is the narrower claim of
-the two.
+gather/scatter and block-scaled matmul, none of which appear among the C++ builtins - so
+coverage against C++ is the narrower claim of the two.
 
 The table above is the covered surface. What CUDA Tile has and this API does not, in rough
 order of how much it costs:
@@ -635,7 +662,10 @@ Verifying and profiling
     #   RowKernels LlmKernels                softmax, norms, activations, RoPE, dropout
     #   Attention AttentionVariants          flash attention, GQA, split-KV decode, sinks, soft-cap
     #   GemmVariants Masking                 persistent and transposed GEMM; causal and ragged masks
-    #   DTypes Atomics Shapes Rank3          int8/fp64/fp8, atomicAdd, broadcast/reshape/extract
+    #   DTypes Atomics Shapes Rank3          int8/fp64/fp8, the atomic family, broadcast/reshape/extract
+    #   MathOps StridedViews                 the math and bitwise surface; interleaved layouts
+    #   MixedPipelines Recurrence            tile + KernelContext + cuBLAS in one graph; a
+    #                                        loop-carried state tile (TileGym's gated delta rule)
     tornado-test -V uk.ac.manchester.tornado.unittests.tile.TestTileMatmul
     tornado-test -V uk.ac.manchester.tornado.unittests.tile.TestTileAttention
     tornado-test -V uk.ac.manchester.tornado.unittests.tile.TestTileMasking

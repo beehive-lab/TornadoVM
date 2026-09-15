@@ -176,6 +176,39 @@ public class TestTileGemmVariants extends TornadoTestBase {
         cView.store(acc, rowBlock, columnBlock);
     }
 
+    /**
+     * The first half of TileGym's {@code linear_gluact_linear}: two projections of the same
+     * input in one pass, a SiLU on one of them, and their product.
+     *
+     * <p>
+     * Both weight matrices are stored {@code [n, k]} and transposed on load, and both
+     * accumulators are carried through the same k-loop - so one input tile feeds two
+     * {@code mma}s per step instead of being loaded twice by two kernels. That reuse is the
+     * point of fusing the pair, and it is the shape a gated MLP takes in every current LLM.
+     * </p>
+     */
+    public static void fusedGluMlp(TileContext tc, HalfFloatArray input, HalfFloatArray gateWeights, HalfFloatArray upWeights, FloatArray out, int m, int n, int k, int kBlocks) {
+        PartitionView inputView = tc.partition(tc.view(input, m, k), TILE_M, TILE_K);
+        PartitionView gateView = tc.partition(tc.view(gateWeights, n, k), TILE_N, TILE_K);
+        PartitionView upView = tc.partition(tc.view(upWeights, n, k), TILE_N, TILE_K);
+        PartitionView outView = tc.partition(tc.view(out, m, n), TILE_M, TILE_N);
+
+        int rowBlock = tc.bidX();
+        int columnBlock = tc.bidY();
+
+        Tile gateAcc = tc.zeros(DType.F32, TILE_M, TILE_N);
+        Tile upAcc = tc.zeros(DType.F32, TILE_M, TILE_N);
+        for (int step = 0; step < kBlocks; step++) {
+            Tile activations = inputView.load(rowBlock, step);
+            gateAcc = tc.mma(activations, tc.transpose(gateView.load(columnBlock, step)), gateAcc);
+            upAcc = tc.mma(activations, tc.transpose(upView.load(columnBlock, step)), upAcc);
+        }
+
+        Tile ones = tc.ones(DType.F32, TILE_M, TILE_N);
+        Tile silu = tc.div(gateAcc, tc.add(ones, tc.exp(tc.scale(gateAcc, -1.0))));
+        outView.store(tc.mul(silu, upAcc), rowBlock, columnBlock);
+    }
+
     // -------------------------------------------------------------------------------------
     // Tests
     // -------------------------------------------------------------------------------------
@@ -227,6 +260,44 @@ public class TestTileGemmVariants extends TornadoTestBase {
         }
 
         assertMatmul(a, b, c, m, n, k, false, false);
+    }
+
+    /**
+     * The fused gated MLP: both projections and the activation in one kernel.
+     */
+    @Test
+    public void testFusedGluMlp() throws TornadoExecutionPlanException {
+        final int m = 64;
+        final int n = 64;
+        final int k = 128;
+        HalfFloatArray input = randomHalf(m * k, 601);
+        HalfFloatArray gateWeights = randomHalf(n * k, 607);
+        HalfFloatArray upWeights = randomHalf(n * k, 613);
+        FloatArray out = new FloatArray(m * n);
+
+        WorkerGrid2D worker = new WorkerGrid2D(m / TILE_M, n / TILE_N);
+        GridScheduler grid = new GridScheduler("glu.k", worker);
+        TaskGraph graph = new TaskGraph("glu") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, gateWeights, upWeights) //
+                .task("k", TestTileGemmVariants::fusedGluMlp, new TileContext(), input, gateWeights, upWeights, out, m, n, k, k / TILE_K) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.withGridScheduler(grid).execute();
+        }
+
+        for (int row = 0; row < m; row++) {
+            for (int column = 0; column < n; column++) {
+                double gate = 0.0;
+                double up = 0.0;
+                for (int inner = 0; inner < k; inner++) {
+                    double activation = input.get(row * k + inner).getFloat32();
+                    gate += activation * gateWeights.get(column * k + inner).getFloat32();
+                    up += activation * upWeights.get(column * k + inner).getFloat32();
+                }
+                double expected = gate / (1.0 + Math.exp(-gate)) * up;
+                assertEquals("(" + row + "," + column + ")", expected, out.get(row * n + column), 0.05);
+            }
+        }
     }
 
     /** Four blocks for sixteen output tiles: every block emits four of them. */
