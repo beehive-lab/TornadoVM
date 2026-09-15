@@ -32,6 +32,7 @@ import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
 import uk.ac.manchester.tornado.drivers.cuda.CUDAGridInfo;
 import uk.ac.manchester.tornado.drivers.cuda.CUDAKernel;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public abstract class CUDAKernelScheduler {
@@ -144,6 +145,7 @@ public abstract class CUDAKernelScheduler {
                 } else {
                     calculateLocalWork(meta);
                     checkAndAdaptLocalWork(meta);
+                    clampLocalWorkToKernelLimit(meta, kernel);
                 }
             }
         } else {
@@ -171,6 +173,43 @@ public abstract class CUDAKernelScheduler {
         for (int i = 0; i < dims; i++) {
             localWork[i] = blockSizeForDimension(perDimensionMax, globalWork[i]);
         }
+    }
+
+    /**
+     * Lowers a heuristic block size that the kernel cannot actually launch.
+     *
+     * <p>The 1D path above sizes the block from the <em>device</em> maximum and knows nothing about
+     * how many registers the compiled kernel uses. An arithmetically heavy kernel then asks for a
+     * block whose combined register demand exceeds what an SM can supply, and the driver rejects
+     * the launch with {@code CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES} -- reported as a bailout, so the
+     * work silently moves to the host.
+     *
+     * <p>This never raises the heuristic's choice; it only lowers one the kernel cannot support, so
+     * a block that already fits -- which includes the reduction layouts the 1D path exists to
+     * preserve -- is left exactly as it was.
+     */
+    private void clampLocalWorkToKernelLimit(final TaskDataContext meta, final CUDAKernel kernel) {
+        if (meta.getId().startsWith(TornadoTaskGraph.GENERATED_TASK_GRAPH_PREFIX)) {
+            // Reductions size their partial-results array from the device's maximum work group,
+            // independently of what this scheduler picks. Lowering the block here would raise the
+            // number of workgroups past the partials the reduction allocated and silently produce
+            // wrong sums, so a generated reduction graph keeps the heuristic's block size and
+            // fails to launch loudly instead.
+            return;
+        }
+        final long[] localWork = meta.getLocalWork();
+        if (localWork == null) {
+            return;
+        }
+        long requested = 1;
+        for (long perDimension : localWork) {
+            requested *= perDimension;
+        }
+        final int maxBlockThreads = kernel.getMaxPotentialBlockSize();
+        if (maxBlockThreads <= 0 || requested <= maxBlockThreads) {
+            return;
+        }
+        calculateLocalWorkFromMaxBlock(meta, maxBlockThreads);
     }
 
     private static long blockSizeForDimension(long maxBlockSize, long globalWorkSize) {
