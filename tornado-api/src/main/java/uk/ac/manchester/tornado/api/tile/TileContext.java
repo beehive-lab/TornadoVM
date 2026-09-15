@@ -249,6 +249,59 @@ public class TileContext {
         return new TensorView(array, DType.F64, new int[] { extent0, extent1, extent2 });
     }
 
+    /**
+     * A rank-2 view with a row pitch and a starting offset, rather than a contiguous one.
+     *
+     * <p>
+     * This is what an interleaved quantised format needs. A GGUF Q4_0 block is
+     * {@code [fp16 scale][16 nibble bytes]} = 18 bytes, so from one allocation the scales are
+     * {@code viewStrided(halfView, 0, blocks, 1, 9)} - every ninth {@code __half} - and the
+     * nibbles are {@code viewStrided(byteView, 2, blocks, 16, 18)}: 16 usable bytes of every 18,
+     * starting at byte 2. Both lower to a {@code ct::tensor_span} with a
+     * {@code ct::layout_strided_mapping}, which takes the extents and the strides as runtime
+     * values.
+     * </p>
+     *
+     * @param elementOffset
+     *     elements, not bytes, from the start of the buffer to the view's first element
+     * @param rowStride
+     *     elements between the start of one row and the next; must be at least {@code columns}
+     */
+    public TensorView viewStrided(FloatArray array, int elementOffset, int rows, int columns, int rowStride) {
+        return strided(array, DType.F32, elementOffset, rows, columns, rowStride);
+    }
+
+    public TensorView viewStrided(HalfFloatArray array, int elementOffset, int rows, int columns, int rowStride) {
+        return strided(array, DType.F16, elementOffset, rows, columns, rowStride);
+    }
+
+    public TensorView viewStrided(BFloat16Array array, int elementOffset, int rows, int columns, int rowStride) {
+        return strided(array, DType.BF16, elementOffset, rows, columns, rowStride);
+    }
+
+    public TensorView viewStrided(IntArray array, int elementOffset, int rows, int columns, int rowStride) {
+        return strided(array, DType.S32, elementOffset, rows, columns, rowStride);
+    }
+
+    public TensorView viewStrided(Int8Array array, int elementOffset, int rows, int columns, int rowStride) {
+        return strided(array, DType.S8, elementOffset, rows, columns, rowStride);
+    }
+
+    public TensorView viewStrided(DoubleArray array, int elementOffset, int rows, int columns, int rowStride) {
+        return strided(array, DType.F64, elementOffset, rows, columns, rowStride);
+    }
+
+    private TensorView strided(Object array, DType dtype, int elementOffset, int rows, int columns, int rowStride) {
+        if (rowStride < columns) {
+            throw new IllegalArgumentException("[TileContext] A row stride of " + rowStride + " cannot hold " + columns
+                    + " columns; the rows would overlap.");
+        }
+        if (elementOffset < 0) {
+            throw new IllegalArgumentException("[TileContext] The element offset cannot be negative, got " + elementOffset + ".");
+        }
+        return new TensorView(array, dtype, new int[] { rows, columns }, elementOffset, rowStride);
+    }
+
     public PartitionView partition(TensorView view, int tileExtent) {
         checkShape(tileExtent);
         return new PartitionView(view, new int[] { tileExtent });

@@ -138,6 +138,12 @@ public class CUDATileGraphBuilderPlugins {
     // -------------------------------------------------------------------------------------
 
     private static void registerViewPlugins(Registration r) {
+        registerStridedView(r, FloatArray.class, DType.F32);
+        registerStridedView(r, HalfFloatArray.class, DType.F16);
+        registerStridedView(r, BFloat16Array.class, DType.BF16);
+        registerStridedView(r, IntArray.class, DType.S32);
+        registerStridedView(r, Int8Array.class, DType.S8);
+        registerStridedView(r, DoubleArray.class, DType.F64);
         registerView(r, FloatArray.class, DType.F32);
         registerView(r, HalfFloatArray.class, DType.F16);
         registerView(r, BFloat16Array.class, DType.BF16);
@@ -165,6 +171,27 @@ public class CUDATileGraphBuilderPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode format, ValueNode rows, ValueNode columns) {
                 receiver.get(true);
                 b.addPush(JavaKind.Object, new CUDATileViewNode(array, new ValueNode[] { rows, columns }, resolveDType(b, format)));
+                return true;
+            }
+        });
+    }
+
+    /**
+     * A view with a row pitch and an element offset, which lowers to a
+     * {@code ct::layout_strided_mapping} rather than plain extents. The extents and the stride
+     * stay runtime values; only the tile shape has to fold.
+     */
+    private static void registerStridedView(Registration r, Class<?> arrayType, DType dtype) {
+        r.register(new InvocationPlugin("viewStrided", InvocationPlugin.Receiver.class, arrayType, int.class, int.class, int.class, int.class) {
+            @Override
+            public boolean defaultHandler(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode... args) {
+                receiver.get(true);
+                ValueNode array = args[0];
+                ValueNode elementOffset = args[1];
+                ValueNode rows = args[2];
+                ValueNode columns = args[3];
+                ValueNode rowStride = args[4];
+                b.addPush(JavaKind.Object, new CUDATileViewNode(array, new ValueNode[] { rows, columns }, rowStride, elementOffset, dtype));
                 return true;
             }
         });
@@ -241,7 +268,8 @@ public class CUDATileGraphBuilderPlugins {
             throw new IllegalStateException("[TileContext] A rank " + view.getRank() + " view cannot be partitioned "
                     + "into a rank " + tileShape.length + " tile.");
         }
-        return new CUDATilePartitionViewNode(view.getBuffer(), view.getExtents(), view.getDType(), tileShape, PAYLOAD_OFFSET);
+        return new CUDATilePartitionViewNode(view.getBuffer(), view.getExtents(), view.getRowStride(), view.getElementOffset(), //
+                view.getDType(), tileShape, PAYLOAD_OFFSET);
     }
 
     // -------------------------------------------------------------------------------------

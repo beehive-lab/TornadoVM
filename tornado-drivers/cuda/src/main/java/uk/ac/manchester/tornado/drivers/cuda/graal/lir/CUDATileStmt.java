@@ -124,18 +124,33 @@ public class CUDATileStmt {
         @Use({ OperandFlag.REG, OperandFlag.CONST })
         protected Value[] extents;
 
+        @Use({ OperandFlag.REG, OperandFlag.CONST, OperandFlag.ILLEGAL })
+        protected Value rowStride;
+        @Use({ OperandFlag.REG, OperandFlag.CONST, OperandFlag.ILLEGAL })
+        protected Value elementOffset;
+
         private final DType dtype;
         private final int[] tileShape;
         private final int payloadOffset;
 
         public TilePartitionViewStmt(Value result, Value buffer, Value[] extents, DType dtype, int[] tileShape, int payloadOffset) {
+            this(result, buffer, extents, null, null, dtype, tileShape, payloadOffset);
+        }
+
+        public TilePartitionViewStmt(Value result, Value buffer, Value[] extents, Value rowStride, Value elementOffset, DType dtype, int[] tileShape, int payloadOffset) {
             super(TYPE);
             this.result = result;
             this.buffer = buffer;
             this.extents = extents;
+            this.rowStride = rowStride == null ? Value.ILLEGAL : rowStride;
+            this.elementOffset = elementOffset == null ? Value.ILLEGAL : elementOffset;
             this.dtype = dtype;
             this.tileShape = tileShape;
             this.payloadOffset = payloadOffset;
+        }
+
+        private boolean isStrided() {
+            return rowStride != null && !rowStride.equals(Value.ILLEGAL);
         }
 
         @Override
@@ -151,15 +166,33 @@ public class CUDATileStmt {
         @Override
         public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
             StringBuilder span = new StringBuilder();
-            span.append("ct::tensor_span{ct::assume_aligned(reinterpret_cast<").append(dtype.getCppType()).append(" *>(");
-            span.append(asm.getStringValue(crb, buffer)).append(" + ").append(payloadOffset).append("), 16_ic), ct::extents{");
-            for (int i = 0; i < extents.length; i++) {
-                if (i > 0) {
-                    span.append(", ");
+            if (isStrided()) {
+                // A view with a row pitch, and possibly an offset into the buffer: what an
+                // interleaved quantised block needs. The extents and the strides are dynamic,
+                // which is the form a JIT emits; ct::layout_strided_mapping takes both at run
+                // time. No assume_aligned here - a strided view's rows are not 16-byte aligned
+                // in general, and claiming otherwise would be a lie to the tile compiler.
+                String extentsType = "ct::extents<uint32_t, ct::dynamic_extent, ct::dynamic_extent>";
+                String pointer = "reinterpret_cast<" + dtype.getCppType() + " *>(" + asm.getStringValue(crb, buffer) + " + " + payloadOffset + ")";
+                if (elementOffset != null && !elementOffset.equals(Value.ILLEGAL)) {
+                    pointer = "(" + pointer + " + " + asm.getStringValue(crb, elementOffset) + ")";
                 }
-                span.append(asm.getStringValue(crb, extents[i]));
+                span.append("ct::tensor_span{").append(pointer).append(", ");
+                span.append("ct::layout_strided_mapping<").append(extentsType).append(", ").append(extentsType).append(">{");
+                span.append(extentsType).append("{(uint32_t) ").append(asm.getStringValue(crb, extents[0])).append(", (uint32_t) ")
+                        .append(asm.getStringValue(crb, extents[1])).append("}, ");
+                span.append(extentsType).append("{(uint32_t) ").append(asm.getStringValue(crb, rowStride)).append(", 1u}}}");
+            } else {
+                span.append("ct::tensor_span{ct::assume_aligned(reinterpret_cast<").append(dtype.getCppType()).append(" *>(");
+                span.append(asm.getStringValue(crb, buffer)).append(" + ").append(payloadOffset).append("), 16_ic), ct::extents{");
+                for (int i = 0; i < extents.length; i++) {
+                    if (i > 0) {
+                        span.append(", ");
+                    }
+                    span.append(asm.getStringValue(crb, extents[i]));
+                }
+                span.append("}}");
             }
-            span.append("}}");
 
             StringBuilder shape = new StringBuilder("ct::shape{");
             for (int i = 0; i < tileShape.length; i++) {

@@ -223,7 +223,7 @@ public final class PartitionView {
             for (int c = 0; c < columns; c++) {
                 int column = blockY * columns + c;
                 if (row < extentRows && column < extentColumns) {
-                    tile.getData()[r * columns + c] = view.readLinear(row * extentColumns + column);
+                    tile.getData()[r * columns + c] = view.readLinear(view.linearIndexOf(row, column));
                 } else if (!masked) {
                     throw outOfBounds(row * extentColumns + column, extentRows * extentColumns);
                 }
@@ -243,7 +243,7 @@ public final class PartitionView {
             for (int c = 0; c < columns; c++) {
                 int column = blockY * columns + c;
                 if (row < extentRows && column < extentColumns) {
-                    view.writeLinear(row * extentColumns + column, tile.getData()[r * columns + c]);
+                    view.writeLinear(view.linearIndexOf(row, column), tile.getData()[r * columns + c]);
                 } else if (!masked) {
                     throw outOfBounds(row * extentColumns + column, extentRows * extentColumns);
                 }

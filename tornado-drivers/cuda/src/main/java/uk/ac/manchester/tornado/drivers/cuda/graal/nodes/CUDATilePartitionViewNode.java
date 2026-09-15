@@ -26,6 +26,7 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
 import tornado.graal.compiler.core.common.LIRKind;
 import tornado.graal.compiler.core.common.type.StampFactory;
+import tornado.graal.compiler.graph.Node.OptionalInput;
 import tornado.graal.compiler.graph.NodeClass;
 import tornado.graal.compiler.graph.NodeInputList;
 import tornado.graal.compiler.lir.Variable;
@@ -64,17 +65,36 @@ public class CUDATilePartitionViewNode extends FixedWithNextNode implements LIRL
     @Input
     protected NodeInputList<ValueNode> extents;
 
+    @OptionalInput
+    protected ValueNode rowStride;
+    @OptionalInput
+    protected ValueNode elementOffset;
+
     private final DType dtype;
     private final int[] tileShape;
     private final int payloadOffset;
 
     public CUDATilePartitionViewNode(ValueNode buffer, ValueNode[] extents, DType dtype, int[] tileShape, int payloadOffset) {
+        this(buffer, extents, null, null, dtype, tileShape, payloadOffset);
+    }
+
+    public CUDATilePartitionViewNode(ValueNode buffer, ValueNode[] extents, ValueNode rowStride, ValueNode elementOffset, DType dtype, int[] tileShape, int payloadOffset) {
         super(TYPE, StampFactory.forKind(JavaKind.Object));
         this.buffer = buffer;
         this.extents = new NodeInputList<>(this, extents);
+        this.rowStride = rowStride;
+        this.elementOffset = elementOffset;
         this.dtype = dtype;
         this.tileShape = tileShape;
         this.payloadOffset = payloadOffset;
+    }
+
+    public ValueNode getRowStride() {
+        return rowStride;
+    }
+
+    public ValueNode getElementOffset() {
+        return elementOffset;
     }
 
     public DType getDType() {
@@ -174,7 +194,9 @@ public class CUDATilePartitionViewNode extends FixedWithNextNode implements LIRL
         for (int i = 0; i < extents.size(); i++) {
             extentValues[i] = gen.operand(extents.get(i));
         }
-        tool.append(new CUDATileStmt.TilePartitionViewStmt(result, gen.operand(buffer), extentValues, dtype, tileShape, payloadOffset));
+        tool.append(new CUDATileStmt.TilePartitionViewStmt(result, gen.operand(buffer), extentValues, //
+                rowStride == null ? null : gen.operand(rowStride), elementOffset == null ? null : gen.operand(elementOffset), //
+                dtype, tileShape, payloadOffset));
         gen.setResult(this, result);
     }
 }

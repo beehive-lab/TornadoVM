@@ -24,6 +24,7 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.nodes;
 
 import jdk.vm.ci.meta.JavaKind;
 import tornado.graal.compiler.core.common.type.StampFactory;
+import tornado.graal.compiler.graph.Node.OptionalInput;
 import tornado.graal.compiler.graph.NodeClass;
 import tornado.graal.compiler.graph.NodeInputList;
 import tornado.graal.compiler.nodeinfo.NodeInfo;
@@ -53,7 +54,26 @@ public class CUDATileViewNode extends FloatingNode {
     @Input
     protected NodeInputList<ValueNode> extents;
 
+    @OptionalInput
+    protected ValueNode rowStride;
+    @OptionalInput
+    protected ValueNode elementOffset;
+
     private final DType dtype;
+
+    public CUDATileViewNode(ValueNode buffer, ValueNode[] extents, ValueNode rowStride, ValueNode elementOffset, DType dtype) {
+        this(buffer, extents, dtype);
+        this.rowStride = rowStride;
+        this.elementOffset = elementOffset;
+    }
+
+    public ValueNode getRowStride() {
+        return rowStride;
+    }
+
+    public ValueNode getElementOffset() {
+        return elementOffset;
+    }
 
     public CUDATileViewNode(ValueNode buffer, ValueNode[] extents, DType dtype) {
         super(TYPE, StampFactory.forKind(JavaKind.Object));

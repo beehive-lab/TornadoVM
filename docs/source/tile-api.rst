@@ -122,6 +122,10 @@ Views, partitions and memory
    * - ``view(array, extents...)``
      - ``ct::tensor_span``
      - 1, 2 or 3 extents; extents may be runtime values
+   * - ``viewStrided(array, elementOffset, rows, columns, rowStride)``
+     - ``ct::tensor_span`` with ``ct::layout_strided_mapping``
+     - a row pitch and a starting offset instead of a contiguous view; extents and stride stay
+       runtime values. See *Interleaved layouts* below
    * - ``view(fp8Array, format, extents...)``
      - ``ct::tensor_span``
      - fp8 only: the format (``FP8_E4M3`` or ``FP8_E5M2``) is an argument, because the buffer
@@ -437,6 +441,31 @@ kernel's type. So ``tc.view(in, batch, rows, WIDTH)`` is fine with ``batch`` and
 parameters, while the ``WIDTH`` passed to ``partition`` has to be a literal or a
 ``static final int``.
 
+Interleaved layouts
+*******************
+
+``viewStrided`` gives a view a row pitch and a starting offset, so an interleaved format can be
+read in place rather than being split into separate arrays first.
+
+The case this exists for is a GGUF Q4_0 block: ``[fp16 scale][16 nibble bytes]``, 18 bytes,
+repeated. Two views over the **same allocation**, with different element types and different
+offsets:
+
+.. code-block:: java
+
+    // scales: one fp16 per 18 bytes, i.e. every ninth half
+    PartitionView scaleView = tc.partition(tc.viewStrided(asHalf, 0, blocks, 1, 9), BLOCKS, 1);
+    // nibbles: 16 usable bytes of every 18, starting at byte 2
+    PartitionView nibbleView = tc.partition(tc.viewStrided(asBytes, 2, blocks, 16, 18), BLOCKS, 16);
+
+Both lower to a ``ct::tensor_span`` carrying a ``ct::layout_strided_mapping`` whose extents and
+strides are dynamic, which is the form a JIT emits. ``TestTileStridedViews`` reads a real
+interleaved buffer this way and checks every dequantised weight.
+
+Note that a strided view is **not** marked ``assume_aligned``: its rows are not 16-byte aligned
+in general, and telling the tile compiler otherwise would be a lie it would act on. A contiguous
+view still carries the hint.
+
 Atomic accumulation
 *******************
 
@@ -507,13 +536,10 @@ order of how much it costs:
 
    * - Missing
      - Consequence
-   * - strided and byte-offset views
-     - ``view`` builds a contiguous, zero-offset view of one element type. CUDA Tile's
-       ``tensor_span`` takes a layout - ``layout_strided``, ``layout_right_padded`` - and two
-       spans may share one allocation at different offsets with different element types, which is
-       what an interleaved quantised format such as GGUF's ``[fp16 scale][16 nibble bytes]``
-       needs. Verified against 13.3.73 with static and with fully dynamic extents and strides;
-       this is a gap in this API rather than in the tile model.
+   * - ``layout_right_padded`` and rank-3 strides
+     - ``viewStrided`` covers a rank-2 row pitch with a unit column stride, which is what an
+       interleaved block format needs. A padded layout, a non-unit column stride and a strided
+       rank-3 view are not exposed.
    * - fp8 tiles below compute capability 9.0
      - ``FP8Array`` can be viewed (the format is an argument, since the buffer carries both an
        e4m3 and an e5m2 accessor), but ``tileiras`` rejects an fp8 tile for sm_89 with

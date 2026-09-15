@@ -41,10 +41,48 @@ public final class TensorView {
     private final DType dtype;
     private final int[] extents;
 
+    /** Element offset of the view's first element within the buffer. */
+    private final int elementOffset;
+
+    /**
+     * Elements between the start of one row and the next, or 0 for a contiguous view.
+     *
+     * <p>
+     * An interleaved format needs this: GGUF's Q4_0 block is {@code [fp16 scale][16 nibble
+     * bytes]}, so the scales are every ninth {@code __half} and the nibbles are 16 usable bytes
+     * of every 18 starting at byte 2. Both are one strided view over the same allocation.
+     * </p>
+     */
+    private final int rowStride;
+
     TensorView(Object buffer, DType dtype, int[] extents) {
+        this(buffer, dtype, extents, 0, 0);
+    }
+
+    TensorView(Object buffer, DType dtype, int[] extents, int elementOffset, int rowStride) {
         this.buffer = buffer;
         this.dtype = dtype;
         this.extents = extents;
+        this.elementOffset = elementOffset;
+        this.rowStride = rowStride;
+    }
+
+    public int getElementOffset() {
+        return elementOffset;
+    }
+
+    /** @return the row pitch in elements, or 0 when the view is contiguous */
+    public int getRowStride() {
+        return rowStride;
+    }
+
+    /**
+     * Maps a row-major position within the view to a linear index in the buffer, applying the
+     * offset and the row pitch.
+     */
+    int linearIndexOf(int row, int column) {
+        int pitch = rowStride > 0 ? rowStride : (extents.length == 2 ? extents[1] : 1);
+        return elementOffset + row * pitch + column;
     }
 
     public DType getDType() {
