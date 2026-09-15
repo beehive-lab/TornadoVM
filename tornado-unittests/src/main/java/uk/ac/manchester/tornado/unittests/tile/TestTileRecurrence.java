@@ -95,6 +95,82 @@ public class TestTileRecurrence extends TornadoTestBase {
      * column so the broadcast lands on the state's key axis. Values and outputs are
      * {@code [steps, VALUES]} rows.
      * </p>
+     *
+     * <p>
+     * The emitted kernel, from
+     * {@code tornado-test --printKernel -V ...TestTileRecurrence#testDeltaRuleLongerSequence}
+     * at 32 steps. The seven view constructions and the reserved ABI parameters are elided:
+     * </p>
+     *
+     * <pre>{@code
+     * extern "C" __tile_global__ void gatedDeltaRule(<4 reserved>, <7 buffers>, int arg8)
+     * {
+     *   unsigned long long ul_0, ul_1, ul_2, ul_3, ul_4, ul_5, ul_6;
+     *   int i_16, i_40;
+     *   ct::tile<float, ct::shape<32, 32>> ul_15;        // <- the loop-carried state
+     *
+     *   // BLOCK 0
+     *   ... seven partition_view constructions ...
+     *   ct::tile<float, ct::shape<32, 32>> tile_14 = ct::full<ct::tile<float, ct::shape<32, 32>>>(0.0f);
+     *   // BLOCK 1 MERGES [0 2 ]
+     *   ul_15  =  tile_14;
+     *   i_16  =  0;
+     *   for(;i_16 < 32;)
+     *   {
+     *     // BLOCK 2
+     *     auto tile_17 = tview_10.load(i_16, 0);                 // the gate, a [1, 1] tile
+     *     auto tile_18 = ct::exp(tile_17);                       // exp stays on the device
+     *     auto tile_19 = ct::broadcast(tile_18, ct::shape<32, 32>{});
+     *     auto tile_20 = ul_15 * tile_19;                        // state = state * decay
+     *     auto tile_21 = tview_7.load(i_16, 0);                  // a key row
+     *     auto tile_22 = ct::reshape(tile_21, ct::shape<32, 1>{});
+     *     auto tile_23 = ct::broadcast(tile_22, ct::shape<32, 32>{});
+     *     auto tile_24 = tile_20 * tile_23;
+     *     auto tile_25 = ct::sum(tile_24, 0_ic);                 // what the state predicts
+     *     auto tile_26 = tview_11.load(i_16, 0);                 // beta
+     *     auto tile_27 = ct::broadcast(tile_26, ct::shape<1, 32>{});
+     *     auto tile_28 = tview_9.load(i_16, 0);                  // the value row
+     *     auto tile_29 = tile_28 - tile_25;
+     *     auto tile_30 = tile_29 * tile_27;                      // delta
+     *     auto tile_31 = ct::broadcast(tile_22, ct::shape<32, 32>{});
+     *     auto tile_32 = ct::broadcast(tile_30, ct::shape<32, 32>{});
+     *     auto tile_33 = tile_31 * tile_32;                      // the rank-1 update
+     *     auto tile_34 = tile_20 + tile_33;                      // the new state
+     *     auto tile_35 = tview_8.load(i_16, 0);                  // a query row
+     *     auto tile_36 = ct::reshape(tile_35, ct::shape<32, 1>{});
+     *     auto tile_37 = ct::broadcast(tile_36, ct::shape<32, 32>{});
+     *     auto tile_38 = tile_34 * tile_37;
+     *     auto tile_39 = ct::sum(tile_38, 0_ic);                 // the readout
+     *     tview_12.store(tile_39, i_16, 0);
+     *     i_40  =  i_16 + 1;
+     *     ul_15  =  tile_34;                                     // <- the state travels round
+     *     i_16  =  i_40;
+     *   }  // B1
+     *   // BLOCK 3
+     *   tview_13.store(ul_15, 0, 0);
+     *   return;
+     * }
+     * }</pre>
+     *
+     * <p>
+     * The time loop survives as a real backward branch rather than being unrolled, and the
+     * interesting line is the declaration of {@code ul_15}. Every other tile in the body is an
+     * {@code auto} bound once, because the emitter is walking SSA values; the state is the one
+     * value that merges from two predecessors, so it becomes a named, explicitly typed
+     * {@code ct::tile<float, ct::shape<32, 32>>} at function scope with an assignment at the
+     * latch. That declaration is the phi node, and it is why a loop-carried tile needs the
+     * declared-type side table rather than {@code auto} - which is the part of the backend this
+     * kernel exercises that no straight-line kernel does.
+     * </p>
+     *
+     * <p>
+     * Two smaller things to read off it. {@code steps} has been constant-folded into both the
+     * loop bound and the view extents, so a different step count is a different compilation.
+     * And {@code ct::broadcast(tile_22, ...)} is emitted twice, at {@code tile_23} and
+     * {@code tile_31}: the same Java expression appears twice in the source and nothing is
+     * common-subexpression-eliminated at this level, which leaves the tile compiler to decide
+     * whether that is one broadcast or two.
+     * </p>
      */
     public static void gatedDeltaRule(TileContext tc, FloatArray keys, FloatArray queries, FloatArray values, FloatArray gates, FloatArray betas, FloatArray out,
             FloatArray finalState, int steps) {

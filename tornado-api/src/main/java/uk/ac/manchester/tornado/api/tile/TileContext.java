@@ -592,6 +592,54 @@ public class TileContext {
         return result;
     }
 
+    /**
+     * Computes {@code a * b} over whole tiles, with no accumulator. Lowers to
+     * {@code ct::matmul}.
+     *
+     * <p>
+     * This is a distinct builtin, not {@link #mma(Tile, Tile, Tile)} against a zero tile. The
+     * difference is where the result's element type comes from: {@code mma} takes it from the
+     * accumulator you pass in, so an fp16 product into an fp32 accumulator gives fp32, while
+     * {@code matmul} infers it from the operands - fp16 operands give an fp16 result. Use
+     * {@code mma} when you want to choose the accumulator width (which a multi-step K loop
+     * always does); use {@code matmul} for a single product where the operand type already says
+     * what you want back. See {@link DType#matmulResultType()} for the mapping.
+     * </p>
+     *
+     * @param a
+     *     left operand, shape MxK
+     * @param b
+     *     right operand, shape KxN
+     * @return a new tile of shape MxN, element type inferred from the operands
+     */
+    public Tile matmul(Tile a, Tile b) {
+        if (a.getRank() != 2 || b.getRank() != 2) {
+            throw new IllegalArgumentException("[TileContext] matmul operates on rank-2 tiles.");
+        }
+        int m = a.getDimension(0);
+        int k = a.getDimension(1);
+        int n = b.getDimension(1);
+        if (b.getDimension(0) != k) {
+            throw new IllegalArgumentException("[TileContext] matmul shape mismatch: " + m + "x" + k + " times "
+                    + b.getDimension(0) + "x" + n + ".");
+        }
+        if (a.getDType() != b.getDType()) {
+            throw new IllegalArgumentException("[TileContext] matmul needs operands of one element type, got "
+                    + a.getDType() + " and " + b.getDType() + ".");
+        }
+        Tile result = Tile.allocate(a.getDType().matmulResultType(), new int[] { m, n });
+        for (int row = 0; row < m; row++) {
+            for (int column = 0; column < n; column++) {
+                double sum = 0.0;
+                for (int inner = 0; inner < k; inner++) {
+                    sum += a.getData()[row * k + inner] * b.getData()[inner * n + column];
+                }
+                result.getData()[row * n + column] = sum;
+            }
+        }
+        return result;
+    }
+
     // -------------------------------------------------------------------------------------
     // Reductions and reshapes
     // -------------------------------------------------------------------------------------

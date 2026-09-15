@@ -443,6 +443,54 @@ public class CUDATileStmt {
     }
 
     /**
+     * An accumulator-free tile product: {@code auto v = ct::matmul(a, b);}. The element type of
+     * the result is CUDA Tile's own inference from the operands, not something this statement
+     * chooses - it only has to declare the type it knows will come back.
+     */
+    public static class TileMatmulStmt extends AbstractTileInstruction implements TileValued {
+
+        public static final LIRInstructionClass<TileMatmulStmt> TYPE = LIRInstructionClass.create(TileMatmulStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value tileA;
+        @Use
+        protected Value tileB;
+
+        private final DType resultType;
+        private final int[] resultShape;
+
+        public TileMatmulStmt(Value result, Value tileA, Value tileB, DType resultType, int[] resultShape) {
+            super(TYPE);
+            this.result = result;
+            this.tileA = tileA;
+            this.tileB = tileB;
+            this.resultType = resultType;
+            this.resultShape = resultShape;
+        }
+
+        @Override
+        public String getTileCppType() {
+            return tileType(resultType, resultShape);
+        }
+
+        @Override
+        public Value getTileResult() {
+            return result;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            asm.indent();
+            asm.emit("auto " + asm.getStringValue(crb, result) + " = ct::matmul(" + asm.getStringValue(crb, tileA) + ", "
+                    + asm.getStringValue(crb, tileB) + ")");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
+    /**
      * Elementwise arithmetic over whole tiles, with the broadcasting CUDA Tile already defines
      * for its operators: {@code auto v = a + b;}
      */

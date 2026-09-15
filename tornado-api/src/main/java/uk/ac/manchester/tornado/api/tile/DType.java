@@ -137,4 +137,30 @@ public enum DType {
             case PRED -> false;
         };
     }
+
+    /**
+     * The element type an accumulator-free {@code ct::matmul} produces from operands of this
+     * type.
+     *
+     * <p>
+     * Unlike {@code mma}, where the accumulator you pass in dictates the result type,
+     * {@code matmul} infers it from the operands. The mapping is CUDA Tile's
+     * {@code matmul_element_result}: an 8-bit integer product widens to {@code S32}, fp8 and
+     * fp16 produce {@code F16}, tf32/bf16/fp32 produce {@code F32}, and fp64 produces
+     * {@code F64}.
+     * </p>
+     *
+     * @return the result element type
+     * @throws IllegalArgumentException
+     *     when this type cannot be a {@code matmul} operand
+     */
+    public DType matmulResultType() {
+        return switch (this) {
+            case S8, S32 -> S32;
+            case FP8_E4M3, FP8_E5M2, F16 -> F16;
+            case TF32, BF16, F32 -> F32;
+            case F64 -> F64;
+            case PRED -> throw new IllegalArgumentException("[TileContext] a predicate tile cannot be a matmul operand.");
+        };
+    }
 }

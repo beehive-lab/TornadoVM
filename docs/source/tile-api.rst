@@ -335,6 +335,14 @@ Matrix multiply
      - ``ct::mma``
      - ``a * b + acc``. Tensor cores; the instruction is the tile compiler's choice. Operand and
        accumulator types are validated against the ``mmaf``/``mmai`` tables
+   * - ``matmul(a, b)``
+     - ``ct::matmul``
+     - ``a * b`` with no accumulator. A distinct builtin, not ``mma`` against a zero tile: the
+       result's element type is inferred from the operands rather than taken from an accumulator,
+       so fp16 operands give an fp16 result where ``mma`` into an fp32 accumulator gives fp32.
+       The mapping is CUDA Tile's own - 8-bit integers widen to ``S32``, fp8 and fp16 give
+       ``F16``, tf32/bf16/fp32 give ``F32``, fp64 gives ``F64``. Use ``mma`` whenever you want to
+       choose the accumulator width, which a multi-step K loop always does
 
 Shape and type
 ==============
@@ -558,11 +566,10 @@ Known limitations
 *****************
 
 Measured against the ``__tile_builtin__`` set of CUDA 13.3 (84 operations, excluding the
-``assume_*`` hints and the tag-enumerator helpers), this API covers **70 of them**. The
-remaining 14 are: the ten ``_masked`` atomic variants whose unmasked forms exist;
-``atomic_compare_exchange`` in both forms; ``matmul``, the accumulator-free product whose
-result element type is inferred from the operands rather than from an accumulator; and
-``permute``, which needs a ``dimension_map`` argument and only becomes meaningful above rank 2. Note that CUDA Tile's Python DSL is a
+``assume_*`` hints and the tag-enumerator helpers), this API covers **71 of them**. The
+remaining 13 are: the ten ``_masked`` atomic variants whose unmasked forms exist;
+``atomic_compare_exchange`` in both forms; and ``permute``, which needs a ``dimension_map``
+argument and only becomes meaningful above rank 2. Note that CUDA Tile's Python DSL is a
 larger surface again - it adds autotuning, device-side printing, static metaprogramming,
 gather/scatter and block-scaled matmul, none of which appear among the C++ builtins - so
 coverage against C++ is the narrower claim of the two.
@@ -661,6 +668,13 @@ sequential Java reference, and prints a table of times:
 The times are wall clock and include JVM-side dispatch, which dominates at small sizes; the
 examples say so, and ``TileExamples`` carries the nsys recipe for kernel time alone.
 
+Three kernels carry their own ``--printKernel`` output in a javadoc comment, next to the Java
+they came from, so the lowering can be read without running anything:
+``TestTileRowKernels#softmaxRow`` (reductions, and how a reduced dimension broadcasts back inside
+an operator), ``TestTileOpLevel#opMatmulHalf`` (``matmul`` beside ``mma``, and where the result
+type comes from in each), and ``TestTileRecurrence#gatedDeltaRule`` (a loop-carried tile, which
+is the case that becomes a named ``ct::tile`` variable at function scope instead of an ``auto``).
+
 Verifying and profiling
 ***********************
 
@@ -668,6 +682,7 @@ Verifying and profiling
 
     # the generated CUDA Tile C++ (expect ct:: calls and no inline PTX)
     tornado --printKernel -m tornado.examples/...TileVectorAdd
+    tornado-test --printKernel -V uk.ac.manchester.tornado.unittests.tile.TestTileRowKernels
 
     # tensor cores in the cached cubin
     cuobjdump -sass $TORNADOVM_HOME/var/cuda-codecache/device-0-0/<kernel>-*.cubin | grep HMMA

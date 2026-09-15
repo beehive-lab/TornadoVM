@@ -53,6 +53,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileBlockIdNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileConcatNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileCreateNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileLoadNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileMatmulNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileMmaNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATilePartitionViewNode;
@@ -376,6 +377,33 @@ public class CUDATileGraphBuilderPlugins {
                 CUDATileNode operand = tileNodeOf(tileA, "the left operand of mma");
                 CUDATileNode acc = tileNodeOf(accumulator, "the accumulator of mma");
                 b.addPush(JavaKind.Object, new CUDATileMmaNode(tileA, tileB, accumulator, operand.tileDType(), acc.tileDType(), acc.tileShape()));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("matmul", InvocationPlugin.Receiver.class, Tile.class, Tile.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode tileA, ValueNode tileB) {
+                receiver.get(true);
+                CUDATileNode left = tileNodeOf(tileA, "the left operand of matmul");
+                CUDATileNode right = tileNodeOf(tileB, "the right operand of matmul");
+                int[] leftShape = left.tileShape();
+                int[] rightShape = right.tileShape();
+                if (leftShape.length != 2 || rightShape.length != 2) {
+                    throw new IllegalStateException("[TileContext] matmul operates on rank-2 tiles, got rank "
+                            + leftShape.length + " times rank " + rightShape.length + ".");
+                }
+                if (leftShape[1] != rightShape[0]) {
+                    throw new IllegalStateException("[TileContext] matmul shape mismatch: " + leftShape[0] + "x" + leftShape[1]
+                            + " times " + rightShape[0] + "x" + rightShape[1] + ".");
+                }
+                if (left.tileDType() != right.tileDType()) {
+                    throw new IllegalStateException("[TileContext] matmul needs operands of one element type, got "
+                            + left.tileDType() + " and " + right.tileDType() + ".");
+                }
+                DType resultType = left.tileDType().matmulResultType();
+                int[] resultShape = new int[] { leftShape[0], rightShape[1] };
+                b.addPush(JavaKind.Object, new CUDATileMatmulNode(tileA, tileB, resultType, resultShape));
                 return true;
             }
         });

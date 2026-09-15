@@ -77,6 +77,48 @@ public class TestTileRowKernels extends TornadoTestBase {
      * because those lanes are masked out of the store, but it does mean the row maximum is at
      * least zero - the reference below does the same so the two agree.
      * </p>
+     *
+     * <p>
+     * What the compiler makes of the four lines below, from
+     * {@code tornado-test --printKernel -V ...TestTileRowKernels} at rows = n = 256 (the ABI's
+     * four reserved leading parameters are elided, and two long lines are wrapped):
+     *
+     * <pre>{@code
+     * extern "C" __tile_global__ void softmaxRow(<4 reserved>, unsigned char *arg1,
+     *                                            unsigned char *arg2, int arg3, int arg4)
+     * {
+     *   unsigned long long ul_0, ul_1;
+     *   int i_4;
+     *
+     *   // BLOCK 0
+     *   ul_0  =  (unsigned long long) arg1;
+     *   ul_1  =  (unsigned long long) arg2;
+     *   auto tview_2 = ct::partition_view{ct::tensor_span{ct::assume_aligned(
+     *       reinterpret_cast<float *>(ul_0 + 16), 16_ic), ct::extents{256, 256}}, ct::shape{1_ic, 2048_ic}};
+     *   auto tview_3 = ct::partition_view{ct::tensor_span{ct::assume_aligned(
+     *       reinterpret_cast<float *>(ul_1 + 16), 16_ic), ct::extents{256, 256}}, ct::shape{1_ic, 2048_ic}};
+     *   i_4 = ct::bid().x;
+     *   auto tile_5 = tview_2.load_masked(i_4, 0);
+     *   auto tile_6 = ct::reduce_max(tile_5, 1_ic);
+     *   auto tile_7 = tile_5 - tile_6;
+     *   auto tile_8 = ct::exp(tile_7);
+     *   auto tile_9 = ct::sum(tile_8, 1_ic);
+     *   auto tile_10 = tile_8 / tile_9;
+     *   tview_3.store_masked(tile_10, i_4, 0);
+     *   return;
+     * }
+     * }</pre>
+     *
+     * <p>
+     * Three things are worth reading off it. The reductions land as {@code ct::reduce_max} and
+     * {@code ct::sum} with the axis as an {@code _ic} compile-time literal, and their
+     * {@code [1, 1]} results are then used directly in {@code tile_5 - tile_6} and
+     * {@code tile_8 / tile_9} - CUDA Tile broadcasts a reduced dimension back in an operator, so
+     * {@code sub} and {@code div} need no explicit broadcast. The {@code 16} added to each
+     * buffer base is the header offset, and {@code assume_aligned} on it is what lets the tile
+     * compiler consider TMA. And there is no inline PTX and no {@code mma.sync} anywhere: the
+     * tile compiler owns the hardware mapping, which is the whole point of the path.
+     * </p>
      */
     public static void softmaxRow(TileContext tc, FloatArray in, FloatArray out, int rows, int n) {
         PartitionView iv = tc.partition(tc.view(in, rows, n), 1, ROW_TILE);

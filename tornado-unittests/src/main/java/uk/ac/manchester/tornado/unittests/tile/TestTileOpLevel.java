@@ -844,6 +844,72 @@ public class TestTileOpLevel extends TornadoTestBase {
         ov.store(tc.mma(av.load(0, 0), bv.load(0, 0), tc.zeros(DType.F32, MMA, MMA)), 0, 0);
     }
 
+    /**
+     * {@code ct::matmul}: the same product with no accumulator. The result's element type comes
+     * from the operands, so fp16 operands give an fp16 result - the cast to fp32 below is only
+     * so the test can read it, and the case checks that what comes back really was fp16.
+     *
+     * <p>
+     * From {@code tornado-test --printKernel -V ...TestTileOpLevel#testMatmulHalf} (reserved ABI
+     * parameters elided, long lines wrapped):
+     * </p>
+     *
+     * <pre>{@code
+     * extern "C" __tile_global__ void opMatmulHalf(<4 reserved>, unsigned char *arg1,
+     *                                              unsigned char *arg2, unsigned char *arg3, int arg4)
+     * {
+     *   unsigned long long ul_0, ul_1, ul_2;
+     *
+     *   // BLOCK 0
+     *   ul_0  =  (unsigned long long) arg1;
+     *   ul_1  =  (unsigned long long) arg2;
+     *   ul_2  =  (unsigned long long) arg3;
+     *   auto tview_3 = ct::partition_view{ct::tensor_span{ct::assume_aligned(
+     *       reinterpret_cast<__half *>(ul_0 + 16), 16_ic), ct::extents{32, 32}}, ct::shape{32_ic, 32_ic}};
+     *   auto tview_4 = ct::partition_view{ct::tensor_span{ct::assume_aligned(
+     *       reinterpret_cast<__half *>(ul_1 + 16), 16_ic), ct::extents{32, 32}}, ct::shape{32_ic, 32_ic}};
+     *   auto tview_5 = ct::partition_view{ct::tensor_span{ct::assume_aligned(
+     *       reinterpret_cast<float *>(ul_2 + 16), 16_ic), ct::extents{32, 32}}, ct::shape{32_ic, 32_ic}};
+     *   auto tile_6 = tview_3.load(0, 0);
+     *   auto tile_7 = tview_4.load(0, 0);
+     *   auto tile_8 = ct::matmul(tile_6, tile_7);
+     *   auto tile_9 = ct::element_cast<float>(tile_8);
+     *   tview_5.store(tile_9, 0, 0);
+     *   return;
+     * }
+     * }</pre>
+     *
+     * <p>
+     * Contrast {@code opMma} above, whose two corresponding lines are:
+     * </p>
+     *
+     * <pre>{@code
+     * ct::tile<float, ct::shape<32, 32>> tile_8 = ct::full<ct::tile<float, ct::shape<32, 32>>>(0.0f);
+     * auto tile_9 = ct::mma(tile_6, tile_7, tile_8);
+     * }</pre>
+     *
+     * <p>
+     * The accumulator is a declared fp32 tile, and it is what fixes the result type. Here there
+     * is no accumulator at all, and the {@code ct::element_cast<float>} is this kernel's own
+     * {@code cast} - which is the proof in the emitted source that the matmul's result was the
+     * narrower fp16 type and had to be widened on the way out.
+     * </p>
+     */
+    public static void opMatmulHalf(TileContext tc, HalfFloatArray a, HalfFloatArray b, FloatArray out, int size) {
+        PartitionView av = tc.partition(tc.view(a, size, size), MMA, MMA);
+        PartitionView bv = tc.partition(tc.view(b, size, size), MMA, MMA);
+        PartitionView ov = tc.partition(tc.view(out, size, size), MMA, MMA);
+        ov.store(tc.cast(tc.matmul(av.load(0, 0), bv.load(0, 0)), DType.F32), 0, 0);
+    }
+
+    /** {@code ct::matmul} with fp32 operands, where the inferred result type is fp32. */
+    public static void opMatmulFloat(TileContext tc, FloatArray a, FloatArray b, FloatArray out, int size) {
+        PartitionView av = tc.partition(tc.view(a, size, size), MMA, MMA);
+        PartitionView bv = tc.partition(tc.view(b, size, size), MMA, MMA);
+        PartitionView ov = tc.partition(tc.view(out, size, size), MMA, MMA);
+        ov.store(tc.matmul(av.load(0, 0), bv.load(0, 0)), 0, 0);
+    }
+
     // -------------------------------------------------------------------------------------
     // Shape and type
     // -------------------------------------------------------------------------------------
@@ -2316,6 +2382,52 @@ public class TestTileOpLevel extends TornadoTestBase {
                     expected += a.get(row * MMA + step).getFloat32() * b.get(step * MMA + column).getFloat32();
                 }
                 assertClose("mma at (" + row + ", " + column + ")", expected, out.get(row * MMA + column), HALF_TOL);
+            }
+        }
+    }
+
+    @Test
+    public void testMatmulHalf() throws TornadoExecutionPlanException {
+        HalfFloatArray a = halves(MMA * MMA, 113);
+        HalfFloatArray b = halves(MMA * MMA, 114);
+        FloatArray out = new FloatArray(MMA * MMA);
+        execute(new TaskGraph("op") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .task("k", TestTileOpLevel::opMatmulHalf, new TileContext(), a, b, out, MMA) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
+        for (int row = 0; row < MMA; row++) {
+            for (int column = 0; column < MMA; column++) {
+                double expected = 0.0;
+                for (int step = 0; step < MMA; step++) {
+                    expected += a.get(row * MMA + step).getFloat32() * b.get(step * MMA + column).getFloat32();
+                }
+                float actual = out.get(row * MMA + column);
+                assertClose("matmul at (" + row + ", " + column + ")", expected, actual, HALF_TOL);
+                // The point of the case: matmul infers fp16 from its operands, where mma would
+                // have taken fp32 from the accumulator. Rounding the result to fp16 has to be a
+                // no-op, or the inferred type was wider than it should be.
+                assertEquals("matmul result is not fp16-representable at (" + row + ", " + column + ")", //
+                        actual, new HalfFloat(actual).getFloat32(), 0.0f);
+            }
+        }
+    }
+
+    @Test
+    public void testMatmulFloat() throws TornadoExecutionPlanException {
+        FloatArray a = floats(MMA * MMA, Domain.NEAR_ONE, 115);
+        FloatArray b = floats(MMA * MMA, Domain.NEAR_ONE, 116);
+        FloatArray out = new FloatArray(MMA * MMA);
+        execute(new TaskGraph("op") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .task("k", TestTileOpLevel::opMatmulFloat, new TileContext(), a, b, out, MMA) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
+        for (int row = 0; row < MMA; row++) {
+            for (int column = 0; column < MMA; column++) {
+                double expected = 0.0;
+                for (int step = 0; step < MMA; step++) {
+                    expected += (double) a.get(row * MMA + step) * b.get(step * MMA + column);
+                }
+                assertClose("matmul at (" + row + ", " + column + ")", expected, out.get(row * MMA + column), TOL);
             }
         }
     }
