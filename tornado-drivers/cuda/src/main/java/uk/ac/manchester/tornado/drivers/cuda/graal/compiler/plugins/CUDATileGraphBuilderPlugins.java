@@ -50,6 +50,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileAtomicNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileBinaryCallNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileBinaryNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileBlockIdNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileConcatNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileCreateNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileLoadNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDATileMmaNode;
@@ -369,6 +370,33 @@ public class CUDATileGraphBuilderPlugins {
         registerShapeOp(r, "extract", 1, 1);
         registerShapeOp(r, "extract", 2, 2);
 
+        r.register(new InvocationPlugin("bitcast", InvocationPlugin.Receiver.class, Tile.class, DType.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode tile, ValueNode targetNode) {
+                receiver.get(true);
+                CUDATileNode source = tileNodeOf(tile, "the operand of bitcast");
+                DType target = resolveDType(b, targetNode);
+                if (source.tileDType().getBytes() != target.getBytes()) {
+                    throw new IllegalStateException("[TileContext] bitcast needs types of the same width, got " + source.tileDType()
+                            + " and " + target + ".");
+                }
+                b.addPush(JavaKind.Object, new CUDATileUnaryNode(tile, "element_bitcast", target.getCppType(), target, source.tileShape()));
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin("concat", InvocationPlugin.Receiver.class, Tile.class, Tile.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode leftNode, ValueNode rightNode, ValueNode axisNode) {
+                receiver.get(true);
+                CUDATileNode left = tileNodeOf(leftNode, "the left operand of concat");
+                CUDATileNode right = tileNodeOf(rightNode, "the right operand of concat");
+                int axis = axisConstant(axisNode, left.tileShape().length);
+                int[] shape = left.tileShape().clone();
+                shape[axis] = left.tileShape()[axis] + right.tileShape()[axis];
+                b.addPush(JavaKind.Object, new CUDATileConcatNode(leftNode, rightNode, axis, left.tileDType(), shape));
+                return true;
+            }
+        });
         r.register(new InvocationPlugin("transpose", InvocationPlugin.Receiver.class, Tile.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode tile) {
@@ -430,6 +458,10 @@ public class CUDATileGraphBuilderPlugins {
         registerBinary(r, "bitwiseAnd", "&");
         registerBinary(r, "bitwiseOr", "|");
         registerBinary(r, "bitwiseXor", "^");
+        registerBinary(r, "shiftLeft", "<<");
+        registerBinary(r, "shiftRight", ">>");
+        registerScan(r, "prefixSum", "partial_sum");
+        registerScan(r, "prefixProduct", "partial_prod");
 
         // ct::max is the elementwise two-operand form; the reduction is ct::reduce_max.
         registerReduction(r, "max", "reduce_max");
@@ -596,6 +628,63 @@ public class CUDATileGraphBuilderPlugins {
      * A one-operand operation whose result is a predicate tile rather than the operand type:
      * {@code isnan}, {@code isinf}, and the negation {@code !mask}.
      */
+    /**
+     * A scan: like a reduction in taking an axis, unlike one in keeping the tile's shape.
+     */
+    private static void registerScan(Registration r, String name, String function) {
+        r.register(new InvocationPlugin(name, InvocationPlugin.Receiver.class, Tile.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode tile, ValueNode axisNode) {
+                receiver.get(true);
+                CUDATileNode source = tileNodeOf(tile, "the operand of " + name);
+                int axis = axisConstant(axisNode, source.tileShape().length);
+                b.addPush(JavaKind.Object, new CUDATileReduceNode(tile, function, axis, source.tileDType(), source.tileShape()));
+                return true;
+            }
+        });
+    }
+
+    /** {@code atomicLoad} and {@code atomicStore} on a view: the same nodes, atomic spelling. */
+    private static void registerAtomicAccess(Registration r, int rank) {
+        if (rank == 1) {
+            r.register(new InvocationPlugin("atomicLoad", InvocationPlugin.Receiver.class, int.class) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode blockX) {
+                    ValueNode view = receiver.get(true);
+                    CUDATileNode partition = tileNodeOf(view, "the receiver of an atomic load");
+                    b.addPush(JavaKind.Object, new CUDATileLoadNode(view, new ValueNode[] { blockX }, partition.tileDType(), partition.tileShape(), false, true));
+                    return true;
+                }
+            });
+            r.register(new InvocationPlugin("atomicStore", InvocationPlugin.Receiver.class, Tile.class, int.class) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode tile, ValueNode blockX) {
+                    ValueNode view = receiver.get(true);
+                    b.add(new CUDATileStoreNode(view, tile, new ValueNode[] { blockX }, false, true));
+                    return true;
+                }
+            });
+        } else {
+            r.register(new InvocationPlugin("atomicLoad", InvocationPlugin.Receiver.class, int.class, int.class) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode blockX, ValueNode blockY) {
+                    ValueNode view = receiver.get(true);
+                    CUDATileNode partition = tileNodeOf(view, "the receiver of an atomic load");
+                    b.addPush(JavaKind.Object, new CUDATileLoadNode(view, new ValueNode[] { blockX, blockY }, partition.tileDType(), partition.tileShape(), false, true));
+                    return true;
+                }
+            });
+            r.register(new InvocationPlugin("atomicStore", InvocationPlugin.Receiver.class, Tile.class, int.class, int.class) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode tile, ValueNode blockX, ValueNode blockY) {
+                    ValueNode view = receiver.get(true);
+                    b.add(new CUDATileStoreNode(view, tile, new ValueNode[] { blockX, blockY }, false, true));
+                    return true;
+                }
+            });
+        }
+    }
+
     private static void registerUnaryPredicate(Registration r, String name, String function) {
         r.register(new InvocationPlugin(name, InvocationPlugin.Receiver.class, Tile.class) {
             @Override
@@ -721,6 +810,8 @@ public class CUDATileGraphBuilderPlugins {
         registerLoad(r, "load", false, 1);
         registerLoad(r, "load", false, 2);
         registerLoad(r, "load", false, 3);
+        registerAtomicAccess(r, 1);
+        registerAtomicAccess(r, 2);
         registerLoad(r, "loadMasked", true, 1);
         registerLoad(r, "loadMasked", true, 2);
         registerLoad(r, "loadMasked", true, 3);

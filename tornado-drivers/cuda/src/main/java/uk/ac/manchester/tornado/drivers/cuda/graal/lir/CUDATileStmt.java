@@ -254,6 +254,12 @@ public class CUDATileStmt {
         private final DType dtype;
         private final int[] tileShape;
         private final boolean masked;
+        private boolean atomic;
+
+        public TileLoadStmt(Value result, Value view, Value[] blockIndices, DType dtype, int[] tileShape, boolean masked, boolean atomic) {
+            this(result, view, blockIndices, dtype, tileShape, masked);
+            this.atomic = atomic;
+        }
 
         public TileLoadStmt(Value result, Value view, Value[] blockIndices, DType dtype, int[] tileShape, boolean masked) {
             super(TYPE);
@@ -279,7 +285,12 @@ public class CUDATileStmt {
         public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
             asm.indent();
             asm.emit("auto " + asm.getStringValue(crb, result) + " = " + asm.getStringValue(crb, view) + "."
-                    + (masked ? "load_masked(" : "load("));
+                    + (atomic ? "atomic_load(" : masked ? "load_masked(" : "load("));
+            if (atomic) {
+                // atomic_load's memory_order template parameter has no default, so the tag has
+                // to be passed or no overload matches.
+                asm.emit("ct::memory_order_relaxed_t{}, ");
+            }
             for (int i = 0; i < blockIndices.length; i++) {
                 if (i > 0) {
                     asm.emit(", ");
@@ -307,20 +318,37 @@ public class CUDATileStmt {
         protected Value[] blockIndices;
 
         private final boolean masked;
+        private final boolean atomic;
 
         public TileStoreStmt(Value view, Value tile, Value[] blockIndices, boolean masked) {
+            this(view, tile, blockIndices, masked, false);
+        }
+
+        public TileStoreStmt(Value view, Value tile, Value[] blockIndices, boolean masked, boolean atomic) {
             super(TYPE);
             this.view = view;
             this.tile = tile;
             this.blockIndices = blockIndices;
             this.masked = masked;
+            this.atomic = atomic;
+        }
+
+        private String storeName() {
+            if (atomic) {
+                return "atomic_store";
+            }
+            return masked ? "store_masked" : "store";
         }
 
         @Override
         public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
             asm.indent();
-            asm.emit(asm.getStringValue(crb, view) + "." + (masked ? "store_masked(" : "store(")
-                    + asm.getStringValue(crb, tile));
+            asm.emit(asm.getStringValue(crb, view) + "." + storeName() + "(" + asm.getStringValue(crb, tile));
+            if (atomic) {
+                // The order tag is not optional: atomic_store's memory_order template parameter
+                // has no default, so leaving it out matches no overload.
+                asm.emit(", ct::memory_order_relaxed_t{}");
+            }
             for (Value blockIndex : blockIndices) {
                 asm.emit(", " + asm.getStringValue(crb, blockIndex));
             }
@@ -910,6 +938,56 @@ public class CUDATileStmt {
                 asm.emit(", " + asm.getStringValue(crb, blockIndex));
             }
             asm.emit(")");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
+    /**
+     * {@code ct::cat(a, b, axis)}: two tiles joined along one dimension. Distinct from the
+     * binary-call statement because of the axis, and from the shape statement because the shape
+     * is the result rather than an argument.
+     */
+    public static class TileConcatStmt extends AbstractTileInstruction implements TileValued {
+
+        public static final LIRInstructionClass<TileConcatStmt> TYPE = LIRInstructionClass.create(TileConcatStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value left;
+        @Use
+        protected Value right;
+
+        private final int axis;
+        private final DType dtype;
+        private final int[] shape;
+
+        public TileConcatStmt(Value result, Value left, Value right, int axis, DType dtype, int[] shape) {
+            super(TYPE);
+            this.result = result;
+            this.left = left;
+            this.right = right;
+            this.axis = axis;
+            this.dtype = dtype;
+            this.shape = shape;
+        }
+
+        @Override
+        public String getTileCppType() {
+            return tileType(dtype, shape);
+        }
+
+        @Override
+        public Value getTileResult() {
+            return result;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            asm.indent();
+            asm.emit("auto " + asm.getStringValue(crb, result) + " = ct::cat(" + asm.getStringValue(crb, left) + ", "
+                    + asm.getStringValue(crb, right) + ", " + constant(axis) + ")");
             asm.delimiter();
             asm.eol();
         }

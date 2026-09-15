@@ -55,13 +55,19 @@ public class CUDATileStoreNode extends FixedWithNextNode implements LIRLowerable
     protected NodeInputList<ValueNode> blockIndices;
 
     private final boolean masked;
+    private final boolean atomic;
 
     public CUDATileStoreNode(ValueNode view, ValueNode tile, ValueNode[] blockIndices, boolean masked) {
+        this(view, tile, blockIndices, masked, false);
+    }
+
+    public CUDATileStoreNode(ValueNode view, ValueNode tile, ValueNode[] blockIndices, boolean masked, boolean atomic) {
         super(TYPE, StampFactory.forVoid());
         this.view = view;
         this.tile = tile;
         this.blockIndices = new NodeInputList<>(this, blockIndices);
         this.masked = masked;
+        this.atomic = atomic;
     }
 
     @Override
@@ -76,6 +82,6 @@ public class CUDATileStoreNode extends FixedWithNextNode implements LIRLowerable
         for (int i = 0; i < blockIndices.size(); i++) {
             indices[i] = gen.operand(blockIndices.get(i));
         }
-        tool.append(new CUDATileStmt.TileStoreStmt(gen.operand(view), gen.operand(tile), indices, masked));
+        tool.append(new CUDATileStmt.TileStoreStmt(gen.operand(view), gen.operand(tile), indices, masked, atomic));
     }
 }

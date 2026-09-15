@@ -139,6 +139,44 @@ public class TestTileMathOps extends TornadoTestBase {
         reducedView.store(tc.reduceBitXor(x, 1), row, 0);
     }
 
+    /** Shifts, the inclusive scans, a bitcast and a concatenation. */
+    public static void scansAndBits(TileContext tc, IntArray in, IntArray shifted, FloatArray values, FloatArray prefix, FloatArray products, IntArray exponent, IntArray joined,
+            int rows) {
+        PartitionView iv = tc.partition(tc.view(in, rows, WIDTH), 1, WIDTH);
+        PartitionView sv = tc.partition(tc.view(shifted, rows, WIDTH), 1, WIDTH);
+        PartitionView vv = tc.partition(tc.view(values, rows, WIDTH), 1, WIDTH);
+        PartitionView pv = tc.partition(tc.view(prefix, rows, WIDTH), 1, WIDTH);
+        PartitionView productView = tc.partition(tc.view(products, rows, WIDTH), 1, WIDTH);
+        PartitionView ev = tc.partition(tc.view(exponent, rows, WIDTH), 1, WIDTH);
+        PartitionView jv = tc.partition(tc.view(joined, rows, 2 * WIDTH), 1, 2 * WIDTH);
+
+        int row = tc.bidX();
+        Tile integers = iv.load(row, 0);
+        Tile three = tc.full(DType.S32, 3, 1, WIDTH);
+        sv.store(tc.shiftRight(tc.shiftLeft(integers, three), three), row, 0);
+
+        Tile x = vv.load(row, 0);
+        pv.store(tc.prefixSum(x, 1), row, 0);
+        productView.store(tc.prefixProduct(x, 1), row, 0);
+
+        // The raw bits of a float, which is how a sign or an exponent is reached.
+        ev.store(tc.bitcast(x, DType.S32), row, 0);
+
+        jv.store(tc.concat(integers, tc.add(integers, three), 1), row, 0);
+    }
+
+    /**
+     * An atomic store from one block and an atomic load from the next. Both stages are in one
+     * kernel over a row each, so this checks the spelling and the round trip rather than
+     * inter-block visibility, which the ordering of two tile tasks would be needed to test.
+     */
+    public static void atomicAccess(TileContext tc, FloatArray in, FloatArray out, int rows) {
+        PartitionView iv = tc.partition(tc.view(in, rows, WIDTH), 1, WIDTH);
+        PartitionView ov = tc.partition(tc.view(out, rows, WIDTH), 1, WIDTH);
+        int row = tc.bidX();
+        ov.atomicStore(tc.scale(iv.atomicLoad(row, 0), 2.0), row, 0);
+    }
+
     // -------------------------------------------------------------------------------------
     // Tests
     // -------------------------------------------------------------------------------------
@@ -147,6 +185,65 @@ public class TestTileMathOps extends TornadoTestBase {
         GridScheduler grid = new GridScheduler(taskId, new WorkerGrid1D(blocks));
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
             plan.withGridScheduler(grid).execute();
+        }
+    }
+
+    @Test
+    public void testScansShiftsBitcastAndConcat() throws TornadoExecutionPlanException {
+        final int rows = 16;
+        IntArray in = new IntArray(rows * WIDTH);
+        FloatArray values = new FloatArray(rows * WIDTH);
+        Random random = new Random(1619);
+        for (int i = 0; i < rows * WIDTH; i++) {
+            in.set(i, random.nextInt(1 << 20));
+            // Near one, so a 64-element prefix product stays in range.
+            values.set(i, 0.9f + 0.2f * random.nextFloat());
+        }
+        IntArray shifted = new IntArray(rows * WIDTH);
+        FloatArray prefix = new FloatArray(rows * WIDTH);
+        FloatArray products = new FloatArray(rows * WIDTH);
+        IntArray exponent = new IntArray(rows * WIDTH);
+        IntArray joined = new IntArray(rows * 2 * WIDTH);
+
+        run("scan.k", new TaskGraph("scan") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, in, values) //
+                .task("k", TestTileMathOps::scansAndBits, new TileContext(), in, shifted, values, prefix, products, exponent, joined, rows) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, shifted, prefix, products, exponent, joined), rows);
+
+        for (int row = 0; row < rows; row++) {
+            double runningSum = 0.0;
+            double runningProduct = 1.0;
+            for (int i = 0; i < WIDTH; i++) {
+                int index = row * WIDTH + i;
+                assertEquals("shift " + index, (in.get(index) << 3) >> 3, shifted.get(index));
+                runningSum += values.get(index);
+                runningProduct *= values.get(index);
+                assertEquals("prefixSum " + index, runningSum, prefix.get(index), 1e-3);
+                assertEquals("prefixProduct " + index, runningProduct, products.get(index), 1e-3);
+                assertEquals("bitcast " + index, Float.floatToRawIntBits(values.get(index)), exponent.get(index));
+                assertEquals("concat left " + index, in.get(index), joined.get(row * 2 * WIDTH + i));
+                assertEquals("concat right " + index, in.get(index) + 3, joined.get(row * 2 * WIDTH + WIDTH + i));
+            }
+        }
+    }
+
+    @Test
+    public void testAtomicLoadAndStore() throws TornadoExecutionPlanException {
+        final int rows = 16;
+        FloatArray in = new FloatArray(rows * WIDTH);
+        FloatArray out = new FloatArray(rows * WIDTH);
+        Random random = new Random(1621);
+        for (int i = 0; i < rows * WIDTH; i++) {
+            in.set(i, random.nextFloat());
+        }
+
+        run("atomic.k", new TaskGraph("atomic") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, in) //
+                .task("k", TestTileMathOps::atomicAccess, new TileContext(), in, out, rows) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out), rows);
+
+        for (int i = 0; i < rows * WIDTH; i++) {
+            assertEquals("element " + i, in.get(i) * 2.0f, out.get(i), 1e-6);
         }
     }
 

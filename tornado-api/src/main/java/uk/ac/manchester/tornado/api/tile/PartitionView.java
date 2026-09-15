@@ -363,6 +363,28 @@ public final class PartitionView {
         apply(tile, new int[] { blockX, blockY }, AtomicOp.EXCHANGE);
     }
 
+    /**
+     * Reads a tile with an atomic load per element, {@code view.atomic_load}. Unlike the plain
+     * {@link #load(int, int)} this is the read half of a read-modify-write protocol: it is what
+     * sees another block's {@code atomicStore} rather than a stale cached value.
+     */
+    public Tile atomicLoad(int blockX) {
+        return load1D(blockX, false);
+    }
+
+    public Tile atomicLoad(int blockX, int blockY) {
+        return load2D(blockX, blockY, false);
+    }
+
+    /** Writes a tile with an atomic store per element, {@code view.atomic_store}. */
+    public void atomicStore(Tile tile, int blockX) {
+        store1D(tile, blockX, false);
+    }
+
+    public void atomicStore(Tile tile, int blockX, int blockY) {
+        store2D(tile, blockX, blockY, false);
+    }
+
     private enum AtomicOp {
         ADD,
         SUB,

@@ -23,11 +23,9 @@
 package uk.ac.manchester.tornado.drivers.cuda.graal.nodes;
 
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.Value;
 import tornado.graal.compiler.core.common.LIRKind;
 import tornado.graal.compiler.core.common.type.StampFactory;
 import tornado.graal.compiler.graph.NodeClass;
-import tornado.graal.compiler.graph.NodeInputList;
 import tornado.graal.compiler.lir.Variable;
 import tornado.graal.compiler.lir.gen.LIRGeneratorTool;
 import tornado.graal.compiler.nodeinfo.NodeInfo;
@@ -40,48 +38,34 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDATileStmt;
 
 /**
- * Loads one tile through a partition view.
+ * Two tiles joined along one dimension, {@code ct::cat}.
  */
 @NodeInfo
-public class CUDATileLoadNode extends FixedWithNextNode implements LIRLowerable, CUDATileNode {
+public class CUDATileConcatNode extends FixedWithNextNode implements LIRLowerable, CUDATileNode {
 
-    public static final NodeClass<CUDATileLoadNode> TYPE = NodeClass.create(CUDATileLoadNode.class);
+    public static final NodeClass<CUDATileConcatNode> TYPE = NodeClass.create(CUDATileConcatNode.class);
 
     @Input
-    protected ValueNode view;
+    protected ValueNode left;
     @Input
-    protected NodeInputList<ValueNode> blockIndices;
+    protected ValueNode right;
 
+    private final int axis;
     private final DType dtype;
-    private final int[] tileShape;
-    private final boolean masked;
-    private final boolean atomic;
+    private final int[] shape;
 
-    public CUDATileLoadNode(ValueNode view, ValueNode[] blockIndices, DType dtype, int[] tileShape, boolean masked) {
-        this(view, blockIndices, dtype, tileShape, masked, false);
-    }
-
-    public CUDATileLoadNode(ValueNode view, ValueNode[] blockIndices, DType dtype, int[] tileShape, boolean masked, boolean atomic) {
+    public CUDATileConcatNode(ValueNode left, ValueNode right, int axis, DType dtype, int[] shape) {
         super(TYPE, StampFactory.forKind(JavaKind.Object));
-        this.view = view;
-        this.blockIndices = new NodeInputList<>(this, blockIndices);
+        this.left = left;
+        this.right = right;
+        this.axis = axis;
         this.dtype = dtype;
-        this.tileShape = tileShape;
-        this.masked = masked;
-        this.atomic = atomic;
-    }
-
-    public DType getDType() {
-        return dtype;
-    }
-
-    public int[] getTileShape() {
-        return tileShape;
+        this.shape = shape;
     }
 
     @Override
     public String tileOperationName() {
-        return masked ? "masked tile load" : "tile load";
+        return "tile concat";
     }
 
     @Override
@@ -91,18 +75,14 @@ public class CUDATileLoadNode extends FixedWithNextNode implements LIRLowerable,
 
     @Override
     public int[] tileShape() {
-        return tileShape;
+        return shape;
     }
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
         Variable result = tool.newVariable(LIRKind.value(CUDAKind.TILE));
-        Value[] indices = new Value[blockIndices.size()];
-        for (int i = 0; i < blockIndices.size(); i++) {
-            indices[i] = gen.operand(blockIndices.get(i));
-        }
-        tool.append(new CUDATileStmt.TileLoadStmt(result, gen.operand(view), indices, dtype, tileShape, masked, atomic));
+        tool.append(new CUDATileStmt.TileConcatStmt(result, gen.operand(left), gen.operand(right), axis, dtype, shape));
         gen.setResult(this, result);
     }
 }

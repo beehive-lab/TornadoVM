@@ -801,6 +801,16 @@ public class TileContext {
         return zip(a, b, (left, right) -> (int) left ^ (int) right);
     }
 
+    /** Left shift, {@code a << b}, on integer tiles. */
+    public Tile shiftLeft(Tile a, Tile b) {
+        return zip(a, b, (left, right) -> (int) left << (int) right);
+    }
+
+    /** Right shift, {@code a >> b}, on integer tiles. */
+    public Tile shiftRight(Tile a, Tile b) {
+        return zip(a, b, (left, right) -> (int) left >> (int) right);
+    }
+
     /** Bitwise complement, {@code ~tile}. */
     public Tile bitwiseNot(Tile a) {
         return mapUnary(a, value -> ~(int) value);
@@ -938,6 +948,96 @@ public class TileContext {
                 int sourceRow = blockIndices[0] * shape[0] + row;
                 int sourceColumn = blockIndices[1] * shape[1] + column;
                 result.getData()[row * shape[1] + column] = a.getData()[sourceRow * columns + sourceColumn];
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Inclusive prefix sum along {@code axis}, {@code ct::partial_sum}. Unlike a reduction this
+     * keeps the tile's shape: element {@code i} of the result is the sum of elements {@code 0}
+     * through {@code i}.
+     */
+    public Tile prefixSum(Tile a, int axis) {
+        return scan(a, axis, true);
+    }
+
+    /** Inclusive prefix product along {@code axis}, {@code ct::partial_prod}. */
+    public Tile prefixProduct(Tile a, int axis) {
+        return scan(a, axis, false);
+    }
+
+    private Tile scan(Tile a, int axis, boolean sum) {
+        if (a.getRank() != 2) {
+            throw new IllegalArgumentException("[TileContext] Scans currently support rank-2 tiles.");
+        }
+        if (axis != 0 && axis != 1) {
+            throw new IllegalArgumentException("[TileContext] Scan axis must be 0 or 1, got " + axis + ".");
+        }
+        int rows = a.getDimension(0);
+        int columns = a.getDimension(1);
+        Tile result = Tile.allocate(a.getDType(), a.getShape());
+        for (int row = 0; row < rows; row++) {
+            for (int column = 0; column < columns; column++) {
+                double running = sum ? 0.0 : 1.0;
+                int length = axis == 0 ? row : column;
+                for (int step = 0; step <= length; step++) {
+                    double value = axis == 0 ? a.getData()[step * columns + column] : a.getData()[row * columns + step];
+                    running = sum ? running + value : running * value;
+                }
+                result.getData()[row * columns + column] = running;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Reinterprets the bits of each element as another type of the same width,
+     * {@code ct::element_bitcast}. Unlike {@link #cast(Tile, DType)} no conversion happens: this
+     * is how a float's exponent or sign bit is reached.
+     */
+    public Tile bitcast(Tile a, DType target) {
+        if (a.getDType().getBytes() != target.getBytes()) {
+            throw new IllegalArgumentException("[TileContext] bitcast needs types of the same width, but " + a.getDType()
+                    + " is " + a.getDType().getBytes() + " bytes and " + target + " is " + target.getBytes() + ".");
+        }
+        double[] values = new double[a.getElementCount()];
+        for (int i = 0; i < values.length; i++) {
+            double value = a.getData()[i];
+            if (a.getDType() == DType.F32 && target == DType.S32) {
+                values[i] = Float.floatToRawIntBits((float) value);
+            } else if (a.getDType() == DType.S32 && target == DType.F32) {
+                values[i] = Float.intBitsToFloat((int) value);
+            } else {
+                values[i] = value;
+            }
+        }
+        return new Tile(target, a.getShape(), values);
+    }
+
+    /**
+     * Joins two tiles along {@code axis}, {@code ct::cat}. Every other dimension has to match.
+     */
+    public Tile concat(Tile a, Tile b, int axis) {
+        if (a.getRank() != b.getRank() || a.getRank() != 2) {
+            throw new IllegalArgumentException("[TileContext] concat currently joins two rank-2 tiles.");
+        }
+        int other = axis == 0 ? 1 : 0;
+        if (a.getDimension(other) != b.getDimension(other)) {
+            throw new IllegalArgumentException("[TileContext] concat needs the other dimension to match, but axis " + other
+                    + " is " + a.getDimension(other) + " and " + b.getDimension(other) + ".");
+        }
+        int[] shape = a.getShape().clone();
+        shape[axis] = a.getDimension(axis) + b.getDimension(axis);
+        Tile result = Tile.allocate(a.getDType(), shape);
+        int columns = shape[1];
+        for (int row = 0; row < shape[0]; row++) {
+            for (int column = 0; column < columns; column++) {
+                boolean fromA = axis == 0 ? row < a.getDimension(0) : column < a.getDimension(1);
+                Tile source = fromA ? a : b;
+                int sourceRow = axis == 0 && !fromA ? row - a.getDimension(0) : row;
+                int sourceColumn = axis == 1 && !fromA ? column - a.getDimension(1) : column;
+                result.getData()[row * columns + column] = source.getData()[sourceRow * source.getDimension(1) + sourceColumn];
             }
         }
         return result;

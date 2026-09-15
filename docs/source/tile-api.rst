@@ -141,6 +141,9 @@ Views, partitions and memory
    * - ``storeMasked(tile, blocks...)``
      - ``view.store_masked(...)``
      - writes only the in-bounds elements
+   * - ``atomicLoad`` / ``atomicStore``
+     - ``view.atomic_load`` / ``view.atomic_store``
+     - the read and write halves of an atomic protocol, as opposed to a plain load or store
    * - ``atomicAdd`` ``atomicSub`` ``atomicMin`` ``atomicMax`` ``atomicAnd`` ``atomicOr``
        ``atomicXor`` ``atomicExchange``
      - ``ct::atomic_add`` etc. over a pointer tile
@@ -249,8 +252,8 @@ Math
    * - ``atan2(y, x)`` ``pow`` ``remainder`` ``floorDiv`` ``ceilDiv`` ``mulhi``
      - ``ct::atan2`` ``ct::pow`` ``ct::remainder`` ``ct::floordiv`` ``ct::ceildiv`` ``ct::mulhi``
      - two operands, elementwise
-   * - ``bitwiseAnd`` ``bitwiseOr`` ``bitwiseXor`` ``bitwiseNot``
-     - ``& | ^ ~``
+   * - ``bitwiseAnd`` ``bitwiseOr`` ``bitwiseXor`` ``bitwiseNot`` ``shiftLeft`` ``shiftRight``
+     - ``& | ^ ~ << >>``
      - integer tiles
 
 Reductions
@@ -316,6 +319,12 @@ Shape and type
    * - ``transpose(tile)``
      - ``ct::transpose``
      - rank 2
+   * - ``concat(a, b, axis)``
+     - ``ct::cat``
+     - joins two tiles along one axis; the other dimension must match
+   * - ``bitcast(tile, dtype)``
+     - ``ct::element_bitcast``
+     - reinterprets the bits without converting; same width only
    * - ``cast(tile, dtype)``
      - ``ct::element_cast<E>``
      - any scalar pair, narrowing included. There is no ``ct::cast``
@@ -483,8 +492,8 @@ Known limitations
 *****************
 
 Measured against the ``__tile_builtin__`` set of CUDA 13.3 (84 operations, excluding the
-``assume_*`` hints), this API covers **65 of them**. The remainder is listed below; 11 of the 19
-are masked variants of atomics whose unmasked forms exist. Note that CUDA Tile's Python DSL is a
+``assume_*`` hints), this API covers **71 of them**. The remainder is 12 masked variants of atomics whose unmasked
+forms exist, plus ``permute``. Note that CUDA Tile's Python DSL is a
 larger surface again - it adds autotuning, device-side printing, static metaprogramming,
 gather/scatter, scans and block-scaled matmul - so coverage against C++ is the narrower claim of
 the two.
@@ -516,18 +525,14 @@ order of how much it costs:
        ``transpose``) is rank 2 by nature. *Rank support at a glance* above lists which is which.
        CUDA Tile itself goes beyond rank 3: an attention kernel folding two leading dimensions
        into one index would need rank 4 to stop doing so.
-   * - masked atomics, ``atomic_compare_exchange``, ``atomic_load``/``atomic_store``
-     - the eight unmasked read-modify-write atomics exist; the ``_masked`` forms, the
-       compare-and-exchange, and the view's plain atomic load and store do not, nor does a choice
-       of memory order and scope (relaxed and device are hardcoded).
+   * - masked atomics and ``atomic_compare_exchange``
+     - the eight unmasked read-modify-write atomics exist, as do the view's ``atomic_load`` and
+       ``atomic_store``; the ``_masked`` forms and the compare-and-exchange do not, nor does a
+       choice of memory order and scope (relaxed and device are hardcoded).
    * - ``permute``
      - on a rank-2 tile the only non-identity permutation is ``transpose``, which exists, so
        this would add surface without capability. ``reshape``, ``broadcast`` and ``extract`` are
        implemented.
-   * - ``partial_sum`` / ``partial_prod``
-     - no scans, so a cumulative softmax or a prefix sum needs a different formulation.
-   * - ``cat`` and ``element_bitcast``
-     - no tile concatenation, and no reinterpreting an element's bits without converting them.
 
    * - ``view_padding`` modes other than zero, and a masked load with an explicit pad value
      - ``loadMasked`` zero-pads. A softmax over a ragged tail therefore needs a comparison and
@@ -551,7 +556,7 @@ Beyond the operation set:
 Examples
 ********
 
-``tornado-examples`` carries five runnable tile examples. Each rewrites a known algorithm with
+``tornado-examples`` carries six runnable tile examples. Each rewrites a known algorithm with
 ``TileContext`` beside thread-level versions of the same thing, checks every result against a
 sequential Java reference, and prints a table of times:
 
@@ -571,6 +576,9 @@ sequential Java reference, and prints a table of times:
 
     # a transformer block built twice: all JIT, then JIT + CUDA Tile + cuBLAS
     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.tile.TileTransformerBlock
+
+    # a Q4_0 quantised projection, dequantised inside the tile kernel
+    tornado -m tornado.examples/uk.ac.manchester.tornado.examples.tile.TileQuantizedProjection 1024 1024 2048 20
 
 The times are wall clock and include JVM-side dispatch, which dominates at small sizes; the
 examples say so, and ``TileExamples`` carries the nsys recipe for kernel time alone.
