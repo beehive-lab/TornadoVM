@@ -556,7 +556,7 @@ Beyond the operation set:
 Examples
 ********
 
-``tornado-examples`` carries six runnable tile examples. Each rewrites a known algorithm with
+``tornado-examples`` carries seven runnable tile examples. Each rewrites a known algorithm with
 ``TileContext`` beside thread-level versions of the same thing, checks every result against a
 sequential Java reference, and prints a table of times:
 
@@ -579,6 +579,9 @@ sequential Java reference, and prints a table of times:
 
     # a Q4_0 quantised projection, dequantised inside the tile kernel
     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.tile.TileQuantizedProjection 1024 1024 2048 20
+
+    # three Qwen3 kernels from GPULlama3.java#150, thread-level against tiles
+    tornado -m tornado.examples/uk.ac.manchester.tornado.examples.tile.TileQwenNormKernels 4096 50
 
 The times are wall clock and include JVM-side dispatch, which dominates at small sizes; the
 examples say so, and ``TileExamples`` carries the nsys recipe for kernel time alone.
