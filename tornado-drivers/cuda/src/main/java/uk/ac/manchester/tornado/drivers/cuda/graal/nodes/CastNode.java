@@ -32,6 +32,8 @@ import tornado.graal.compiler.nodes.calc.FloatingNode;
 import tornado.graal.compiler.nodes.spi.LIRLowerable;
 import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 
+import jdk.vm.ci.meta.Value;
+
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler.CUDAUnaryOp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt.AssignStmt;
@@ -77,6 +79,26 @@ public class CastNode extends FloatingNode implements LIRLowerable, MarkCastNode
         return null;
     }
 
+    /**
+     * Java integer-to-floating-point conversions are always signed, but the backend may
+     * hold the source value in an unsigned variable: a zero extension such as
+     * {@code b & 0xFF} is emitted as an {@code unsigned int}, and the signed arithmetic
+     * applied afterwards keeps that kind even once the value crosses zero. A plain
+     * {@code (float)} cast would then read {@code 0xfffffff8} as 4.29e9 instead of -8,
+     * so reinterpret the operand through the signed C type of the Java source width
+     * first. Operands that already carry a signed kind are emitted unchanged.
+     */
+    private Value asSignedOperand(Value operand) {
+        if (operand.getValueKind() == null || !(operand.getPlatformKind() instanceof CUDAKind operandKind) || !operandKind.isUnsigned()) {
+            return operand;
+        }
+        return switch (op) {
+            case I2F, I2D -> new CUDAUnary.Expr(CUDAUnaryOp.CAST_TO_INT, LIRKind.value(CUDAKind.INT), operand);
+            case L2F, L2D -> new CUDAUnary.Expr(CUDAUnaryOp.CAST_TO_LONG, LIRKind.value(CUDAKind.LONG), operand);
+            default -> operand;
+        };
+    }
+
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         /*
@@ -87,7 +109,7 @@ public class CastNode extends FloatingNode implements LIRLowerable, MarkCastNode
         CUDAKind oclKind = (CUDAKind) lirKind.getPlatformKind();
         final Variable result = gen.getLIRGeneratorTool().newVariable(lirKind);
         if (oclKind.isFloating()) {
-            gen.getLIRGeneratorTool().append(new AssignStmt(result, new CUDAUnary.Expr(resolveOp(), lirKind, gen.operand(value))));
+            gen.getLIRGeneratorTool().append(new AssignStmt(result, new CUDAUnary.Expr(resolveOp(), lirKind, asSignedOperand(gen.operand(value)))));
         } else {
             gen.getLIRGeneratorTool().append(new AssignStmt(result, new CUDAUnary.FloatCast(CUDAUnaryOp.CAST_TO_INT, lirKind, gen.operand(value))));
 

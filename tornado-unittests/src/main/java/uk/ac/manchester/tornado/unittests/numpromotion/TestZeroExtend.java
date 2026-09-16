@@ -26,6 +26,8 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
@@ -76,6 +78,43 @@ public class TestZeroExtend {
     public static void longOverflowAdd(LongArray a, LongArray result, int size) {
         for(@Parallel int i = 0; i < size; i++) {
             result.set(i, a.get(i) + 1L);
+        }
+    }
+
+    // A zero extension such as (a & 0xFF) is held in an unsigned device variable. The signed
+    // arithmetic applied afterwards keeps that kind while the value crosses zero, so the
+    // conversion that consumes it has to reinterpret the operand as signed. See issue #1087.
+    public static void highNibbleRecentre(ByteArray a, FloatArray result, int size) {
+        for(@Parallel int i = 0; i < size; i++) {
+            int q = (a.get(i) & 0xFF) >> 4 & 0xF;
+            result.set(i, q - 8);
+        }
+    }
+
+    public static void lowNibbleRecentre(ByteArray a, FloatArray result, int size) {
+        for(@Parallel int i = 0; i < size; i++) {
+            int q = a.get(i) & 0xF;
+            result.set(i, q - 8);
+        }
+    }
+
+    // The workaround from the bug report: subtracting after the conversion must keep working.
+    public static void highNibbleRecentreAsFloat(ByteArray a, FloatArray result, int size) {
+        for(@Parallel int i = 0; i < size; i++) {
+            int q = (a.get(i) & 0xFF) >> 4 & 0xF;
+            result.set(i, (float) q - 8.0f);
+        }
+    }
+
+    public static void byteRecentreToDouble(ByteArray a, DoubleArray result, int size) {
+        for(@Parallel int i = 0; i < size; i++) {
+            result.set(i, (a.get(i) & 0xFF) - 128);
+        }
+    }
+
+    public static void byteRecentreToLong(ByteArray a, LongArray result, int size) {
+        for(@Parallel int i = 0; i < size; i++) {
+            result.set(i, (a.get(i) & 0xFF) - 128);
         }
     }
 
@@ -228,6 +267,143 @@ public class TestZeroExtend {
 
         assertEquals(Long.MIN_VALUE, result.get(0));
         for (int i = 0; i < expected.getSize(); i++) {
+            assertEquals(expected.get(i), result.get(i));
+        }
+    }
+    private static ByteArray allBytePatterns() {
+        ByteArray a = new ByteArray(256);
+        for (int i = 0; i < 256; i++) {
+            a.set(i, (byte) i);
+        }
+        return a;
+    }
+
+    @Test
+    public void testHighNibbleRecentre() throws TornadoExecutionPlanException {
+        ByteArray a = allBytePatterns();
+        int size = a.getSize();
+
+        FloatArray expected = new FloatArray(size);
+        FloatArray result = new FloatArray(size);
+        expected.init(0.0f);
+        result.init(0.0f);
+
+        TaskGraph graph = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, result)
+                .task("t0", TestZeroExtend::highNibbleRecentre, a, result, size)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
+        try(TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+            highNibbleRecentre(a, expected, size);
+        }
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(expected.get(i), result.get(i), 0.0f);
+        }
+    }
+
+    @Test
+    public void testLowNibbleRecentre() throws TornadoExecutionPlanException {
+        ByteArray a = allBytePatterns();
+        int size = a.getSize();
+
+        FloatArray expected = new FloatArray(size);
+        FloatArray result = new FloatArray(size);
+        expected.init(0.0f);
+        result.init(0.0f);
+
+        TaskGraph graph = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, result)
+                .task("t0", TestZeroExtend::lowNibbleRecentre, a, result, size)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
+        try(TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+            lowNibbleRecentre(a, expected, size);
+        }
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(expected.get(i), result.get(i), 0.0f);
+        }
+    }
+
+    @Test
+    public void testHighNibbleRecentreAsFloat() throws TornadoExecutionPlanException {
+        ByteArray a = allBytePatterns();
+        int size = a.getSize();
+
+        FloatArray expected = new FloatArray(size);
+        FloatArray result = new FloatArray(size);
+        expected.init(0.0f);
+        result.init(0.0f);
+
+        TaskGraph graph = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, result)
+                .task("t0", TestZeroExtend::highNibbleRecentreAsFloat, a, result, size)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
+        try(TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+            highNibbleRecentreAsFloat(a, expected, size);
+        }
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(expected.get(i), result.get(i), 0.0f);
+        }
+    }
+
+    @Test
+    public void testByteRecentreToDouble() throws TornadoExecutionPlanException {
+        ByteArray a = allBytePatterns();
+        int size = a.getSize();
+
+        DoubleArray expected = new DoubleArray(size);
+        DoubleArray result = new DoubleArray(size);
+        expected.init(0.0);
+        result.init(0.0);
+
+        TaskGraph graph = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, result)
+                .task("t0", TestZeroExtend::byteRecentreToDouble, a, result, size)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
+        try(TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+            byteRecentreToDouble(a, expected, size);
+        }
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(expected.get(i), result.get(i), 0.0);
+        }
+    }
+
+    @Test
+    public void testByteRecentreToLong() throws TornadoExecutionPlanException {
+        ByteArray a = allBytePatterns();
+        int size = a.getSize();
+
+        LongArray expected = new LongArray(size);
+        LongArray result = new LongArray(size);
+        expected.init(0L);
+        result.init(0L);
+
+        TaskGraph graph = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, result)
+                .task("t0", TestZeroExtend::byteRecentreToLong, a, result, size)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
+        try(TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+            byteRecentreToLong(a, expected, size);
+        }
+
+        for (int i = 0; i < size; i++) {
             assertEquals(expected.get(i), result.get(i));
         }
     }

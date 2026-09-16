@@ -144,7 +144,7 @@ public class CUDAArithmeticTool extends ArithmeticLIRGenerator {
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitFloatConvert: (%s) %s", floatConvert, input);
         switch (floatConvert) {
             case I2D:
-                return emitUnaryAssign(CUDAUnaryOp.CAST_TO_DOUBLE, LIRKind.value(CUDAKind.DOUBLE), input);
+                return emitUnaryAssign(CUDAUnaryOp.CAST_TO_DOUBLE, LIRKind.value(CUDAKind.DOUBLE), asSignedOperand(input, 32));
             default:
                 unimplemented("float convert %s", floatConvert);
         }
@@ -224,11 +224,25 @@ public class CUDAArithmeticTool extends ArithmeticLIRGenerator {
         return emitUnaryAssign(getSignExtendOp(toBits), lirKind, x);
     }
 
+    /**
+     * Reinterprets {@code x} as a signed {@code bits}-wide value when the backend holds it
+     * in an unsigned variable. A zero extension such as {@code b & 0xFF} is emitted as an
+     * {@code unsigned int} and the signed arithmetic applied afterwards keeps that kind
+     * even once the value crosses zero, so widening it without the reinterpretation would
+     * turn -8 into 4294967288. Values that already carry a signed kind are left alone.
+     */
+    private Value asSignedOperand(Value x, int bits) {
+        if (x.getValueKind() == null || !(x.getPlatformKind() instanceof CUDAKind kind) || !kind.isUnsigned()) {
+            return x;
+        }
+        return genUnaryExpr(getSignExtendOp(bits), getGen().getLIRKindTool().getIntegerKind(bits), x);
+    }
+
     @Override
     public Value emitSignExtend(Value x, int fromBits, int toBits) {
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitSignExtend: %s, %d, %d", x, fromBits, toBits);
         LIRKind lirKind = getGen().getLIRKindTool().getIntegerKind(toBits);
-        return emitUnaryAssign(getSignExtendOp(toBits), lirKind, x);
+        return emitUnaryAssign(getSignExtendOp(toBits), lirKind, asSignedOperand(x, fromBits));
     }
 
     @Override
