@@ -268,7 +268,7 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
         FixedArrayNode fixedArrayNode;
         final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
         ResolvedJavaType elementType = metaAccess.lookupJavaType(elementKind.toJavaClass());
-        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(OCLArchitecture.privateSpace, elementType, newLengthNode));
+        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(OCLArchitecture.privateSpace, elementType, newLengthNode, false));
         newArray.replaceAtUsages(fixedArrayNode);
     }
 

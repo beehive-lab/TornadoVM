@@ -262,7 +262,7 @@ public class TornadoMetalIntrinsicsReplacements extends BasePhase<TornadoHighTie
         FixedArrayNode fixedArrayNode;
         final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
         ResolvedJavaType elementType = metaAccess.lookupJavaType(elementKind.toJavaClass());
-        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(MetalArchitecture.privateSpace, elementType, newLengthNode));
+        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(MetalArchitecture.privateSpace, elementType, newLengthNode, false));
         newArray.replaceAtUsages(fixedArrayNode);
     }
 

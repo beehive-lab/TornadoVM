@@ -54,13 +54,15 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable {
     protected CUDABinaryTemplate arrayTemplate;
     protected CUDABinaryTemplate pointerTemplate;
 
-    public FixedArrayNode(CUDAMemoryBase memoryRegister, ResolvedJavaType elementType, ConstantNode length) {
+    public FixedArrayNode(CUDAMemoryBase memoryRegister, ResolvedJavaType elementType, ConstantNode length, boolean fillContents) {
         super(TYPE, StampFactory.objectNonNull(TypeReference.createTrustedWithoutAssumptions(elementType.getArrayClass())));
         this.memoryRegister = memoryRegister;
         this.length = length;
         this.elementType = elementType;
         this.elementKind = CUDAKind.fromResolvedJavaType(elementType);
-        this.arrayTemplate = CUDAKind.resolvePrivateTemplateType(elementType);
+        // Java zero-initializes `new T[n]`; only NewArrayNode.newUninitializedArray opts out.
+        final CUDABinaryTemplate declaration = CUDAKind.resolvePrivateTemplateType(elementType);
+        this.arrayTemplate = fillContents ? declaration.withZeroInitializer() : declaration;
         this.pointerTemplate = CUDAKind.resolvePrivatePointerTemplate(elementType);
     }
 

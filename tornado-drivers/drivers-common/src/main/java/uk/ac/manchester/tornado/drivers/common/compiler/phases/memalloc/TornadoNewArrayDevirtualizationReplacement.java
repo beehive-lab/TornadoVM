@@ -39,7 +39,11 @@ public class TornadoNewArrayDevirtualizationReplacement extends Phase {
 
     protected void run(StructuredGraph graph) {
         graph.getNodes().filter(NewArrayNode.class).forEach(newArrayNode -> {
-            NewArrayNonVirtualizableNode newArrayNonVirtualNode = new NewArrayNonVirtualizableNode(newArrayNode.elementType(), newArrayNode.length(), false);
+            // Carry fillContents across: it is true for an ordinary `new T[n]`, whose elements Java
+            // guarantees to be zero, and false only for NewArrayNode.newUninitializedArray. Hardcoding
+            // false here used to drop that guarantee, leaving private arrays reading whatever the
+            // registers happened to hold.
+            NewArrayNonVirtualizableNode newArrayNonVirtualNode = new NewArrayNonVirtualizableNode(newArrayNode.elementType(), newArrayNode.length(), newArrayNode.fillContents());
 
             graph.addOrUnique(newArrayNonVirtualNode);
 
