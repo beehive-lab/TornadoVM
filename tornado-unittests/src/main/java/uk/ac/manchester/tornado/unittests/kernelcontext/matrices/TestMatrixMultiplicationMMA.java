@@ -27,6 +27,8 @@ import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.MMAShape;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
@@ -48,6 +50,8 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
     static final int WMMA_N  = 16;  // covered by two m16n8k16 calls
     static final int WMMA_K  = 16;
     static final int WARP_SIZE = 32;
+    /** N of a single m16n8k16 tile, used by the accumulator fragment tests. */
+    static final int MMA_N   = 8;
 
     // -----------------------------------------------------------------------
     // Kernel
@@ -1027,4 +1031,190 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
         return arr;
     }
 
+
+    // -----------------------------------------------------------------------
+    // Reading the accumulator fragment in registers
+    // -----------------------------------------------------------------------
+
+    /**
+     * Post-processes the {@code mma} result in registers: each lane scales its four
+     * accumulator elements and writes them out itself, instead of handing the whole
+     * fragment to {@code mmaStore}.
+     *
+     * <p>The fragment is a per-lane register tuple, so {@code acc[i]} is not a read from
+     * memory and used to reach address lowering as a base it could not name
+     * ({@code address origin unimplemented: CUDAMMAComputeNode}).
+     *
+     * <p>The output is written in fragment order, {@code out[lane * 4 + i]}, so the test
+     * checks the documented lane mapping as well as the values.
+     */
+    public static void scaleFragmentInRegisters(KernelContext ctx, HalfFloatArray a,
+                                                HalfFloatArray b, FloatArray out) {
+        int lane = ctx.localIdx;
+        int[] aTile = ctx.allocateIntLocalArray(WMMA_M * WMMA_K / 2);
+        HalfFloat[] bTile = ctx.allocateHalfFloatLocalArray(MMA_N * WMMA_K);
+
+        loadFragmentTiles(ctx, a, b, aTile, bTile, lane);
+
+        float[] acc = ctx.mmaFragment(0.0f);
+        acc = ctx.mma(ctx.mmaLoadA(aTile, WMMA_K), ctx.mmaLoadBSwizzled(bTile, WMMA_K), acc,
+                MMAShape.M16N8K16);
+
+        out.set(lane * 4, acc[0] * 2.0f);
+        out.set(lane * 4 + 1, acc[1] * 2.0f);
+        out.set(lane * 4 + 2, acc[2] * 2.0f);
+        out.set(lane * 4 + 3, acc[3] * 2.0f);
+    }
+
+    /**
+     * The same tiles and {@code mma} as {@link #scaleFragmentInRegisters}, consumed through
+     * {@code mmaStore}. It is the control: it establishes that the tile setup and the MMA
+     * itself are right, so a failure of the probe is about the fragment read alone.
+     */
+    public static void storeFragmentToMemory(KernelContext ctx, HalfFloatArray a,
+                                             HalfFloatArray b, FloatArray out) {
+        int lane = ctx.localIdx;
+        int[] aTile = ctx.allocateIntLocalArray(WMMA_M * WMMA_K / 2);
+        HalfFloat[] bTile = ctx.allocateHalfFloatLocalArray(MMA_N * WMMA_K);
+
+        loadFragmentTiles(ctx, a, b, aTile, bTile, lane);
+
+        float[] acc = ctx.mmaFragment(0.0f);
+        acc = ctx.mma(ctx.mmaLoadA(aTile, WMMA_K), ctx.mmaLoadBSwizzled(bTile, WMMA_K), acc,
+                MMAShape.M16N8K16);
+
+        ctx.mmaStore(acc, out, 0, 0, MMA_N);
+    }
+
+    /**
+     * A run-time fragment index. It is rejected at compile time: the fragment lives in
+     * registers, and indexing it dynamically would push it into local memory.
+     */
+    public static void dynamicFragmentIndex(KernelContext ctx, HalfFloatArray a,
+                                            HalfFloatArray b, FloatArray out) {
+        int lane = ctx.localIdx;
+        int[] aTile = ctx.allocateIntLocalArray(WMMA_M * WMMA_K / 2);
+        HalfFloat[] bTile = ctx.allocateHalfFloatLocalArray(MMA_N * WMMA_K);
+
+        loadFragmentTiles(ctx, a, b, aTile, bTile, lane);
+
+        float[] acc = ctx.mmaFragment(0.0f);
+        acc = ctx.mma(ctx.mmaLoadA(aTile, WMMA_K), ctx.mmaLoadBSwizzled(bTile, WMMA_K), acc,
+                MMAShape.M16N8K16);
+
+        out.set(lane, acc[lane & 3]);
+    }
+
+    /** Cooperative load of the single 16x16 A tile and the swizzled 16x8 B tile. */
+    private static void loadFragmentTiles(KernelContext ctx, HalfFloatArray a, HalfFloatArray b,
+                                          int[] aTile, HalfFloat[] bTile, int lane) {
+        for (int slot = 0; slot < 4; slot++) {
+            int i = lane + slot * WARP_SIZE;
+            int row = i >>> 3;
+            int kk = (i & 7) << 1;
+            int base = row * WMMA_K + kk;
+            int lo = a.get(base).getHalfFloatValue() & 0xFFFF;
+            int hi = a.get(base + 1).getHalfFloatValue() & 0xFFFF;
+            aTile[i] = lo | (hi << 16);
+        }
+        for (int slot = 0; slot < 4; slot++) {
+            int i = lane + slot * WARP_SIZE;
+            int col = i >>> 4;
+            int kk = i & 15;
+            ctx.swizzleStoreFp16Stride32(bTile, kk, col, MMA_N, b.get(col * WMMA_K + kk));
+        }
+        ctx.localBarrier();
+    }
+
+    /**
+     * Reading the four accumulator elements per lane must produce the same tile as
+     * {@code mmaStore} does, scaled: element {@code i} of lane {@code L} is row
+     * {@code L / 4 + 8 * (i / 2)}, column {@code (L % 4) * 2 + i % 2}.
+     */
+    @Test
+    public void testFragmentElementReads() throws TornadoExecutionPlanException {
+        float[] aHost = new float[WMMA_M * WMMA_K];
+        float[] bHost = new float[MMA_N * WMMA_K];
+        FloatArray out = runFragmentKernel(TestMatrixMultiplicationMMA::scaleFragmentInRegisters,
+                aHost, bHost);
+
+        for (int lane = 0; lane < WARP_SIZE; lane++) {
+            for (int i = 0; i < 4; i++) {
+                int m = lane / 4 + 8 * (i / 2);
+                int n = (lane % 4) * 2 + (i % 2);
+                assertEquals("lane " + lane + " element " + i,
+                        2.0f * fragmentReference(aHost, bHost, m, n), out.get(lane * 4 + i), 0.01f);
+            }
+        }
+    }
+
+    /** The same MMA consumed through mmaStore: its row-major oracle must keep passing. */
+    @Test
+    public void testFragmentStoreStillMatchesItsOracle() throws TornadoExecutionPlanException {
+        float[] aHost = new float[WMMA_M * WMMA_K];
+        float[] bHost = new float[MMA_N * WMMA_K];
+        FloatArray out = runFragmentKernel(TestMatrixMultiplicationMMA::storeFragmentToMemory,
+                aHost, bHost);
+
+        for (int m = 0; m < WMMA_M; m++) {
+            for (int n = 0; n < MMA_N; n++) {
+                assertEquals(String.format("C[%d][%d]", m, n),
+                        fragmentReference(aHost, bHost, m, n), out.get(m * MMA_N + n), 0.01f);
+            }
+        }
+    }
+
+    /** A run-time fragment index is refused with an actionable message, not an internal error. */
+    @Test(expected = TornadoBailoutRuntimeException.class)
+    public void testDynamicFragmentIndexIsRejected() throws TornadoExecutionPlanException {
+        runFragmentKernel(TestMatrixMultiplicationMMA::dynamicFragmentIndex,
+                new float[WMMA_M * WMMA_K], new float[MMA_N * WMMA_K]);
+    }
+
+    /** B is column-major in the tile, so the product is over the shared K dimension. */
+    private static float fragmentReference(float[] aHost, float[] bHost, int m, int n) {
+        float sum = 0.0f;
+        for (int k = 0; k < WMMA_K; k++) {
+            sum += aHost[m * WMMA_K + k] * bHost[n * WMMA_K + k];
+        }
+        return sum;
+    }
+
+    /**
+     * Runs {@code kernel} over one warp with a single 16x16 A tile and 8x16 B tile, filling
+     * {@code aHost} / {@code bHost} with the values it sent to the device.
+     */
+    private FloatArray runFragmentKernel(
+            TornadoFunctions.Task4<KernelContext, HalfFloatArray, HalfFloatArray, FloatArray> kernel,
+            float[] aHost, float[] bHost) throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
+        HalfFloatArray a = new HalfFloatArray(WMMA_M * WMMA_K);
+        for (int i = 0; i < WMMA_M * WMMA_K; i++) {
+            aHost[i] = ((i * 7) % 13 - 6) * 0.25f;
+            a.set(i, new HalfFloat(aHost[i]));
+        }
+        HalfFloatArray b = new HalfFloatArray(MMA_N * WMMA_K);
+        for (int i = 0; i < MMA_N * WMMA_K; i++) {
+            bHost[i] = ((i * 5) % 11 - 5) * 0.5f;
+            b.set(i, new HalfFloat(bHost[i]));
+        }
+        FloatArray out = new FloatArray(WMMA_M * MMA_N);
+        out.init(0.0f);
+
+        WorkerGrid1D workerGrid = new WorkerGrid1D(WARP_SIZE);
+        workerGrid.setLocalWork(WARP_SIZE, 1, 1);
+        GridScheduler gridScheduler = new GridScheduler("mma_frag_test.k", workerGrid);
+
+        TaskGraph tg = new TaskGraph("mma_frag_test")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, out)
+                .task("k", kernel, new KernelContext(), a, b, out)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
+            plan.withGridScheduler(gridScheduler).execute();
+        }
+        return out;
+    }
 }

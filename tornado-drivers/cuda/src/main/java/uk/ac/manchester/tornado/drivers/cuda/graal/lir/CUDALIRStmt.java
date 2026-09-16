@@ -2153,6 +2153,35 @@ public class CUDALIRStmt {
         }
     }
 
+    @Opcode("MMA_FRAGMENT_ELEMENT")
+    public static class MMAFragmentElementStmt extends AbstractInstruction {
+        public static final LIRInstructionClass<MMAFragmentElementStmt> TYPE =
+                LIRInstructionClass.create(MMAFragmentElementStmt.class);
+
+        @Def protected Value result;
+        @Use protected Value fragment;
+        private final int index;
+
+        public MMAFragmentElementStmt(Value result, Value fragment, int index) {
+            super(TYPE);
+            this.result = result; this.fragment = fragment; this.index = index;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            // result = frag[i];  the fragment is the thread's own C array, so this is a
+            // register move rather than a memory access. The index is a compile-time
+            // constant (enforced when the access is lowered) so that nvcc can keep the
+            // fragment in registers instead of spilling it to local memory.
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.emit(" = ");
+            frag(crb, asm, fragment, index);
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
     @Opcode("LDMATRIX")
     public static class LdmatrixStmt extends AbstractInstruction {
 

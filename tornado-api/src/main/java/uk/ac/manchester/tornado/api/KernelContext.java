@@ -813,6 +813,19 @@ public class KernelContext implements ExecutionContext {
      * Declares a C/D accumulator fragment for MMA operations.
      * Lowered by the CUDA backend to register allocation.
      *
+     * <p>The returned array is the lane's own four accumulator registers, not an array in
+     * memory. Its elements can be read at a compile-time constant index - {@code acc[0]} ..
+     * {@code acc[3]} - to post-process the result in registers instead of writing the whole
+     * fragment out with {@link #mmaStore(float[], FloatArray, int, int, int)}. Which value of
+     * the tile each element holds is fixed by the PTX m16n8 C/D layout: for lane {@code L},
+     * element {@code i} is row {@code L / 4 + 8 * (i / 2)}, column {@code (L % 4) * 2 + i % 2}
+     * of the tile. Every lane holds a quarter of the tile, so code reading the fragment has to
+     * stay warp-uniform, exactly as the {@code mma} that produced it does.
+     *
+     * <p>A run-time index, and a write through an index, are both rejected at compile time: the
+     * fragment is register-resident, so neither can be served without spilling it to local
+     * memory. Use {@code mmaStore} and work on the result when either is needed.
+     *
      * PTX equivalent: mov.f32 rd0..rd3, v  (register-backed accumulator fragment)
      */
     public float[] mmaFragment(float v) {
@@ -852,6 +865,10 @@ public class KernelContext implements ExecutionContext {
 
     /**
      * Warp-collective matrix multiply-accumulate: D = A * B + C.
+     *
+     * <p>The accumulator it returns has the same per-lane element layout as the one
+     * {@link #mmaFragment(float)} creates, and its elements can be read at a constant index in
+     * the same way.
      *
      * PTX equivalent:
      *   mma.sync.aligned.{shape}.row.col.f32.f16.f16.f32
@@ -895,6 +912,9 @@ public class KernelContext implements ExecutionContext {
 
     /**
      * Allocates a 4xs32 accumulator fragment for int8 MMA, initialised to the given value.
+     *
+     * <p>Its elements follow the same constant-index rules and lane mapping as the f32
+     * accumulator; see {@link #mmaFragment(float)}.
      */
     public int[] mmaFragmentInt(int initValue) {
         return new int[4];
