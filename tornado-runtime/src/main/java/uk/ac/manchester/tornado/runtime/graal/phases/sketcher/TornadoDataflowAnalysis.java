@@ -66,6 +66,7 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelStrideNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkArrayParameterAccess;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkReadNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkWriteNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkVectorStore;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
@@ -216,7 +217,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 if (currentNode instanceof StoreIndexedNode) {
                     isWritingAllPositions = analyseWritingPositions((StoreIndexedNode) currentNode);
                 }
-            } else if (currentNode instanceof ReadNode || currentNode instanceof JavaReadNode) {
+            } else if (currentNode instanceof ReadNode || currentNode instanceof JavaReadNode || currentNode instanceof MarkReadNode) {
                 ValueNode readNode = (ValueNode) currentNode;
                 if (readNode.stamp(NodeView.DEFAULT) instanceof ObjectStamp) {
                     readNode.usages().forEach(nodesToProcess::add);

@@ -40,9 +40,10 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkReadNode;
 
 @NodeInfo
-public class ReadHalfFloatNode extends FixedWithNextNode implements LIRLowerable {
+public class ReadHalfFloatNode extends FixedWithNextNode implements LIRLowerable, MarkReadNode {
 
     public static final NodeClass<ReadHalfFloatNode> TYPE = NodeClass.create(ReadHalfFloatNode.class);
 

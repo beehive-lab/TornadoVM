@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.tile.TileContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
@@ -993,7 +994,7 @@ public class TornadoVMInterpreter {
     private int transferHostToDeviceOnce(StringBuilder logBuilder, final int objectIndex, final long offset, final int eventId, final long sizeBatch, final int[] eventWaitList) {
         Object object = objects.get(objectIndex);
 
-        if (isObjectKernelContext(object)) {
+        if (isHostOnlyContext(object)) {
             return -1;
         }
 
@@ -1038,7 +1039,7 @@ public class TornadoVMInterpreter {
     private int transferHostToDeviceAlways(StringBuilder logBuilder, final int objectIndex, final long offset, final int eventId, final long sizeBatch, final int[] eventWaitList) {
         Object object = objects.get(objectIndex);
 
-        if (isObjectKernelContext(object)) {
+        if (isHostOnlyContext(object)) {
             return -1;
         }
 
@@ -1079,7 +1080,7 @@ public class TornadoVMInterpreter {
     private int transferDeviceToHost(StringBuilder logBuilder, final int objectIndex, final long offset, final int eventId, final long sizeBatch, final int[] eventWaitList) {
         Object object = objects.get(objectIndex);
 
-        if (isObjectKernelContext(object)) {
+        if (isHostOnlyContext(object)) {
             return 0;
         }
 
@@ -1134,7 +1135,7 @@ public class TornadoVMInterpreter {
 
         Object object = objects.get(objectIndex);
 
-        if (isObjectKernelContext(object)) {
+        if (isHostOnlyContext(object)) {
             return;
         }
 
@@ -1346,7 +1347,7 @@ public class TornadoVMInterpreter {
                 stackFrame.addCallArgument(constants.get(argIndex), false);
             } else if (argType == TornadoVMBytecodes.PUSH_REFERENCE_ARGUMENT.value()) {
 
-                if (isObjectKernelContext(objects.get(argIndex))) {
+                if (isHostOnlyContext(objects.get(argIndex))) {
                     // Mark a kernel context
                     stackFrame.addCallArgument(new KernelStackFrame.KernelContextArgument(), false);
                     continue;
@@ -1561,8 +1562,16 @@ public class TornadoVMInterpreter {
         return dataObjectStates[index].getDeviceBufferState(interpreterDevice);
     }
 
-    private boolean isObjectKernelContext(Object object) {
-        return (object instanceof KernelContext);
+    /**
+     * Contexts that exist only on the host: they are intrinsified by the backend and have no
+     * device representation, so they must neither be allocated a device buffer nor consume a
+     * kernel argument slot. A TileContext is host-only for exactly the same reason a
+     * KernelContext is, and missing it here is silent: the generated kernel drops the parameter
+     * while the launch still pushes one, so every later argument shifts by a slot and the kernel
+     * reads the wrong pointers.
+     */
+    private boolean isHostOnlyContext(Object object) {
+        return (object instanceof KernelContext) || (object instanceof TileContext);
     }
 
     private boolean isNotObjectAtomic(Object object) {

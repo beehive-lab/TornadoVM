@@ -56,6 +56,7 @@ import tornado.graal.compiler.phases.util.Providers;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.tile.TileContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoRuntime;
@@ -1668,7 +1669,10 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     private boolean isArgumentIgnorable(Object parameter) {
+        // TileContext, like KernelContext, exists to be intrinsified by the backend: it has no
+        // device representation, so it is never transferred and must not be demanded here.
         return parameter instanceof Number || parameter instanceof Boolean || parameter instanceof KernelContext || //
+                parameter instanceof TileContext || //
                 parameter instanceof IntArray || parameter instanceof FloatArray || //
                 parameter instanceof DoubleArray || parameter instanceof LongArray || //
                 parameter instanceof ShortArray || parameter instanceof HalfFloatArray || //

@@ -44,6 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceTileNotSupported;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDABuildStatus;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDADeviceType;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAInstalledCode;
@@ -117,7 +118,7 @@ public class CUDACodeCache {
      * driver, and the compiler flags. A cubin is architecture-specific, so a cache hit on a different
      * GPU or after a toolkit upgrade must be impossible.
      */
-    private String moduleCacheKey(byte[] source, String compilerFlags) {
+    private String moduleCacheKey(byte[] source, String compilerFlags, boolean isTileSource) {
         try {
             final MessageDigest digest = MessageDigest.getInstance("SHA-256");
             digest.update(source);
@@ -127,6 +128,7 @@ public class CUDACodeCache {
                     .append(device.getVersion()).append('|') //
                     .append(device.getDriverVersion()).append('|') //
                     .append(CUDAProgram.getNvrtcVersion()).append('|') //
+                    .append(isTileSource ? "tile:" + CUDATileCompiler.toolchainIdentity() : "simt").append('|') //
                     .append(compilerFlags == null ? "" : compilerFlags);
             digest.update(identity.toString().getBytes(StandardCharsets.UTF_8));
             final byte[] hash = digest.digest();
@@ -235,13 +237,16 @@ public class CUDACodeCache {
         logger.info("Installing code for %s into code cache", entryPoint);
 
         boolean isSPIRVBinary = isInputSourceSPIRVBinary(source);
+        // A CUDA Tile kernel is compiled by nvcc rather than NVRTC, so it takes a third route
+        // here alongside source and SPIR-V, and its cache identity records a different toolchain.
+        boolean isTileSource = CUDATileCompiler.isTileSource(source);
         final String compilerFlags = meta.getCompilerFlags(TornadoVMBackendType.CUDA);
 
         // Try the on-disk module cache first: a hit skips NVRTC entirely.
         Path moduleCacheFile = null;
         CUDAProgram program = null;
         if (CUDA_CODE_CACHE_ENABLE && !isSPIRVBinary) {
-            final String key = moduleCacheKey(source, compilerFlags);
+            final String key = moduleCacheKey(source, compilerFlags, isTileSource);
             if (key != null) {
                 moduleCacheFile = resolveModuleCacheDirectory().resolve(entryPoint + "-" + key + CUBIN_SUFFIX);
                 if (Files.exists(moduleCacheFile)) {
@@ -250,9 +255,25 @@ public class CUDACodeCache {
             }
         }
 
+        // Before compiling, not after: a tile kernel is compiled by an external process, and a
+        // failure there is much easier to read next to the source that produced it.
+        if (meta.isPrintKernelEnabled()) {
+            RuntimeUtilities.dumpKernel(source);
+        }
+
         final boolean loadedFromCache = program != null;
         if (program == null) {
-            if (isSPIRVBinary) {
+            if (isTileSource) {
+                // Compute capability comes from the concrete device: CUDATargetDevice is also
+                // implemented by the virtual device, which has no capability to report.
+                if (!(deviceContext.getDevice() instanceof CUDADevice tileDevice)) {
+                    throw new TornadoDeviceTileNotSupported("A CUDA Tile kernel needs a physical CUDA device to select "
+                            + "its target architecture, but this context reports "
+                            + deviceContext.getDevice().getClass().getName() + ".");
+                }
+                final byte[] cubin = CUDATileCompiler.compile(source, tileDevice.getComputeCapabilityMajor(), tileDevice.getComputeCapabilityMinor(), compilerFlags);
+                program = deviceContext.createProgramWithBinary(cubin, new long[] { cubin.length });
+            } else if (isSPIRVBinary) {
                 program = deviceContext.createProgramWithIL(source, new long[] { source.length });
             } else {
                 program = deviceContext.createProgramWithSource(source, new long[] { source.length });
@@ -273,9 +294,6 @@ public class CUDACodeCache {
             appendSourceToFile(source, entryPoint);
         }
 
-        if (meta.isPrintKernelEnabled()) {
-            RuntimeUtilities.dumpKernel(source);
-        }
         logger.debug("\tOpenCL compiler flags = %s", compilerFlags);
         program.build(compilerFlags);
         final CUDABuildStatus status = program.getStatus(deviceContext.getDeviceId());
@@ -298,7 +316,7 @@ public class CUDACodeCache {
             storeCachedModule(moduleCacheFile, program, entryPoint);
         }
 
-        final CUDAInstalledCode code = new CUDAInstalledCode(entryPoint, source, (CUDADeviceContext) deviceContext, program, kernel, isSPIRVBinary);
+        final CUDAInstalledCode code = new CUDAInstalledCode(entryPoint, source, (CUDADeviceContext) deviceContext, program, kernel, isSPIRVBinary, isTileSource);
         if (status == CL_BUILD_SUCCESS) {
             logger.debug("\tOpenCL Kernel id = 0x%x", kernel.getOclKernelID());
             installCodeInCodeCache(program, id, entryPoint, code);

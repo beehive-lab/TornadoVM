@@ -46,6 +46,7 @@ open module tornado.unittests {
     exports uk.ac.manchester.tornado.unittests.slam;
     exports uk.ac.manchester.tornado.unittests.tasks;
     exports uk.ac.manchester.tornado.unittests.temporary.values;
+    exports uk.ac.manchester.tornado.unittests.tile;
     exports uk.ac.manchester.tornado.unittests.tools;
     exports uk.ac.manchester.tornado.unittests.vectortypes;
     exports uk.ac.manchester.tornado.unittests.virtualization;

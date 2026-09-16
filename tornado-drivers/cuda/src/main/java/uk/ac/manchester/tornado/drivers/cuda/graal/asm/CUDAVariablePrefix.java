@@ -82,7 +82,11 @@ public enum CUDAVariablePrefix {
     MMA_FRAG_ACC_F32("mma_frag_acc_f32", "mma_acc_f_"),
     MMA_FRAG_ACC_S32("mma_frag_acc_s32", "mma_acc_s_"),
     MMA_FRAG_A_S8("mma_frag_a_s8", "mma_a_s8_"),
-    MMA_FRAG_B_S8("mma_frag_b_s8", "mma_b_s8_");
+    MMA_FRAG_B_S8("mma_frag_b_s8", "mma_b_s8_"),
+    // CUDA Tile values. Both are declared by the statement that defines them rather than in the
+    // prologue, so these prefixes only have to be unique, not descriptive of a C++ type.
+    TILE("tile", "tile_"),
+    TILE_VIEW("tile_view", "tview_");
 
     // @formatter:on
 
