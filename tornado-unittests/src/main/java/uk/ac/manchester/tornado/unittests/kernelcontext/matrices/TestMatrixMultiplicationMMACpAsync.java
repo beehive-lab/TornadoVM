@@ -59,6 +59,12 @@ public class TestMatrixMultiplicationMMACpAsync extends TornadoTestBase {
     static final int WMMA_K    = 16;
     static final int WARP_SIZE = 32;
 
+    /** N of a single m16n8k16 tile, used by the shared fp16 tile tests below. */
+    static final int MMA_N  = 8;
+    static final float A_VALUE = 0.25f;
+    static final float SCALE   = 0.5f;
+    static final float BIAS    = 1.0f;
+
     /**
      * Same GEMM as TestMatrixMultiplicationMMA#gemmMMA, but every packed b32 tile slot
      * is filled by a cp.async copy of the two adjacent fp16 source elements instead of
@@ -254,6 +260,159 @@ public class TestMatrixMultiplicationMMACpAsync extends TornadoTestBase {
                         ref.get(idx), c.get(idx), tol);
             }
         }
+    }
+
+    // -----------------------------------------------------------------------
+    // Shared fp16 tile: cuda_fp16.h include selection
+    // -----------------------------------------------------------------------
+
+    /**
+     * A shared fp16 tile filled from a run-time value and consumed only through
+     * ldmatrix/mma, so the kernel never materialises a {@code __half} register and its
+     * only fp16 constructs are the {@code __shared__} tile declaration and the
+     * {@code ((__half *) tile)[...]} swizzled store. The CUDA backend has to recognise
+     * those and emit {@code #include <cuda_fp16.h>}; when the include scan only looked
+     * for the {@code __half} / {@code half2} / {@code 2half} spellings this kernel
+     * reached NVRTC without the header and failed to compile with
+     * {@code identifier "half" is undefined}.
+     *
+     * <p>The stored value must be computed at run time: a compile-time constant is
+     * folded into {@code __float2half(...)}, which the scan already matched and which
+     * therefore hides the defect.
+     */
+    public static void sharedHalfTileNoFp16Spelling(KernelContext ctx, HalfFloatArray a,
+                                                    FloatArray scale, FloatArray out) {
+        int lane = ctx.localIdx;
+        int[] aTile = ctx.allocateIntLocalArray(WMMA_M * WMMA_K / 2);
+        HalfFloat[] bTile = ctx.allocateHalfFloatLocalArray(MMA_N * WMMA_K);
+
+        // A is filled by cp.async, so no fp16 element is ever read into a register.
+        for (int slot = 0; slot < 4; slot++) {
+            int i = lane + slot * WARP_SIZE;
+            int row = i >>> 3;
+            int kk = (i & 7) << 1;
+            ctx.asyncCopyToLocal(aTile, i, a, row * WMMA_K + kk);
+        }
+
+        for (int t = 0; t < 4; t++) {
+            int row = (lane & 3) * 4 + t;
+            int col = lane >> 2;
+            ctx.mmaStoreBSwizzled(bTile, row, col, MMA_N, new HalfFloat(scale.get(0) + t), 0);
+        }
+
+        ctx.asyncCopyCommit();
+        ctx.asyncCopyWaitGroup(0);
+        ctx.localBarrier();
+
+        float[] acc = ctx.mmaFragment(0.0f);
+        acc = ctx.mma(ctx.mmaLoadA(aTile, WMMA_K, 0), ctx.mmaLoadBSwizzled(bTile, WMMA_K, 0), acc,
+                MMAShape.M16N8K16);
+        ctx.mmaStore(acc, out, 0, 0, MMA_N);
+    }
+
+    /**
+     * {@link #sharedHalfTileNoFp16Spelling} plus one half-to-float conversion, which
+     * emits {@code __half2float} and so trips the include scan on its own. This is the
+     * path that already worked; it is kept next to the probe so a future change to the
+     * scan cannot fix one case by breaking the other.
+     */
+    public static void sharedHalfTileWithFp16Spelling(KernelContext ctx, HalfFloatArray a,
+                                                      FloatArray scale, HalfFloatArray bias,
+                                                      FloatArray out) {
+        int lane = ctx.localIdx;
+        int[] aTile = ctx.allocateIntLocalArray(WMMA_M * WMMA_K / 2);
+        HalfFloat[] bTile = ctx.allocateHalfFloatLocalArray(MMA_N * WMMA_K);
+
+        for (int slot = 0; slot < 4; slot++) {
+            int i = lane + slot * WARP_SIZE;
+            int row = i >>> 3;
+            int kk = (i & 7) << 1;
+            ctx.asyncCopyToLocal(aTile, i, a, row * WMMA_K + kk);
+        }
+
+        for (int t = 0; t < 4; t++) {
+            int row = (lane & 3) * 4 + t;
+            int col = lane >> 2;
+            ctx.mmaStoreBSwizzled(bTile, row, col, MMA_N, new HalfFloat(scale.get(0) + t), 0);
+        }
+
+        ctx.asyncCopyCommit();
+        ctx.asyncCopyWaitGroup(0);
+        ctx.localBarrier();
+
+        float[] acc = ctx.mmaFragment(0.0f);
+        acc = ctx.mma(ctx.mmaLoadA(aTile, WMMA_K, 0), ctx.mmaLoadBSwizzled(bTile, WMMA_K, 0), acc,
+                MMAShape.M16N8K16);
+        ctx.mmaStore(acc, out, 0, 0, MMA_N);
+        if (lane == 0) {
+            out.set(0, out.get(0) + bias.get(0).getFloat32());
+        }
+    }
+
+    @Test
+    public void testSharedHalfTileWithoutFp16Spelling() throws TornadoExecutionPlanException {
+        FloatArray out = runSharedHalfTile(false);
+        for (int i = 0; i < WMMA_M * MMA_N; i++) {
+            assertEquals("out[" + i + "]", sharedHalfTileReference(), out.get(i), 0.01f);
+        }
+    }
+
+    @Test
+    public void testSharedHalfTileWithFp16Spelling() throws TornadoExecutionPlanException {
+        FloatArray out = runSharedHalfTile(true);
+        assertEquals("out[0]", sharedHalfTileReference() + BIAS, out.get(0), 0.01f);
+        for (int i = 1; i < WMMA_M * MMA_N; i++) {
+            assertEquals("out[" + i + "]", sharedHalfTileReference(), out.get(i), 0.01f);
+        }
+    }
+
+    /**
+     * Host oracle for both kernels: A is {@value #A_VALUE} everywhere and the B tile
+     * holds {@code SCALE + (k % 4)} in every column, so every output element is the
+     * same dot product over K.
+     */
+    private static float sharedHalfTileReference() {
+        float sum = 0.0f;
+        for (int k = 0; k < WMMA_K; k++) {
+            sum += A_VALUE * (SCALE + (k % 4));
+        }
+        return sum;
+    }
+
+    private FloatArray runSharedHalfTile(boolean withFp16Spelling) throws TornadoExecutionPlanException {
+        assumeCpAsyncSupported();
+
+        HalfFloatArray a = new HalfFloatArray(WMMA_M * WMMA_K);
+        for (int i = 0; i < WMMA_M * WMMA_K; i++) {
+            a.set(i, new HalfFloat(A_VALUE));
+        }
+        HalfFloatArray bias = new HalfFloatArray(1);
+        bias.set(0, new HalfFloat(BIAS));
+        FloatArray scale = new FloatArray(1);
+        scale.set(0, SCALE);
+        FloatArray out = new FloatArray(WMMA_M * MMA_N);
+        out.init(0.0f);
+
+        WorkerGrid1D workerGrid = new WorkerGrid1D(WARP_SIZE);
+        workerGrid.setLocalWork(WARP_SIZE, 1, 1);
+        GridScheduler gridScheduler = new GridScheduler("half_tile_test.mma", workerGrid);
+
+        KernelContext ctx = new KernelContext();
+        TaskGraph tg = new TaskGraph("half_tile_test")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, bias, scale, out);
+        if (withFp16Spelling) {
+            tg.task("mma", TestMatrixMultiplicationMMACpAsync::sharedHalfTileWithFp16Spelling,
+                    ctx, a, scale, bias, out);
+        } else {
+            tg.task("mma", TestMatrixMultiplicationMMACpAsync::sharedHalfTileNoFp16Spelling,
+                    ctx, a, scale, out);
+        }
+        tg.transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
+            plan.withGridScheduler(gridScheduler).execute();
+        }
+        return out;
     }
 
     private static HalfFloatArray randomFP16(int size) {
