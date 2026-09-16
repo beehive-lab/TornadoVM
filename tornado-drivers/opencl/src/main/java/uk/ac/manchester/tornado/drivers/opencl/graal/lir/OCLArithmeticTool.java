@@ -28,6 +28,7 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCL
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.Value;
@@ -144,7 +145,8 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitFloatConvert: (%s) %s", floatConvert, input);
         switch (floatConvert) {
             case I2D:
-                return emitUnaryAssign(OCLUnaryOp.CAST_TO_DOUBLE, LIRKind.value(OCLKind.DOUBLE), asSignedOperand(input, 32));
+                // I2D reads its operand as a Java int, so the signed reinterpretation is 32-bit wide.
+                return emitUnaryAssign(OCLUnaryOp.CAST_TO_DOUBLE, LIRKind.value(OCLKind.DOUBLE), asSignedOperand(input, JavaKind.Int.getBitCount()));
             default:
                 unimplemented("float convert %s", floatConvert);
         }

@@ -28,6 +28,7 @@ import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler.CUDA
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.Value;
@@ -144,7 +145,8 @@ public class CUDAArithmeticTool extends ArithmeticLIRGenerator {
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitFloatConvert: (%s) %s", floatConvert, input);
         switch (floatConvert) {
             case I2D:
-                return emitUnaryAssign(CUDAUnaryOp.CAST_TO_DOUBLE, LIRKind.value(CUDAKind.DOUBLE), asSignedOperand(input, 32));
+                // I2D reads its operand as a Java int, so the signed reinterpretation is 32-bit wide.
+                return emitUnaryAssign(CUDAUnaryOp.CAST_TO_DOUBLE, LIRKind.value(CUDAKind.DOUBLE), asSignedOperand(input, JavaKind.Int.getBitCount()));
             default:
                 unimplemented("float convert %s", floatConvert);
         }
