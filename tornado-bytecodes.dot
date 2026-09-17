@@ -1,0 +1,27 @@
+digraph tornado_bytecodes {
+  rankdir=LR;
+  node [fontname="monospace", fontsize=10];
+  edge [fontname="monospace", fontsize=9];
+  buf_IntArray_2b43529a [label="IntArray@2b43529a\n528 B", shape=ellipse];
+  subgraph cluster_0 {
+    label="task-graph s0";
+    color=blue;
+    task_task_s0_t0___addAccumulator [label="task s0.t0 - addAccumulator", shape=box, style=rounded];
+    task_task_s0_t1___addAccumulator [label="task s0.t1 - addAccumulator", shape=box, style=rounded];
+    task_task_s0_t2___addAccumulator [label="task s0.t2 - addAccumulator", shape=box, style=rounded];
+    task_task_s0_t3___addAccumulator [label="task s0.t3 - addAccumulator", shape=box, style=rounded];
+    task_task_s0_t4___addAccumulator [label="task s0.t4 - addAccumulator", shape=box, style=rounded];
+    task_task_s0_t5___addAccumulator [label="task s0.t5 - addAccumulator", shape=box, style=rounded];
+    task_task_s0_t6___addAccumulator [label="task s0.t6 - addAccumulator", shape=box, style=rounded];
+    task_task_s0_t7___addAccumulator [label="task s0.t7 - addAccumulator", shape=box, style=rounded];
+  }
+  buf_IntArray_2b43529a -> task_task_s0_t0___addAccumulator;
+  task_task_s0_t0___addAccumulator -> task_task_s0_t1___addAccumulator [style=dotted, color=gray, label="order"];
+  task_task_s0_t1___addAccumulator -> task_task_s0_t2___addAccumulator [style=dotted, color=gray, label="order"];
+  task_task_s0_t2___addAccumulator -> task_task_s0_t3___addAccumulator [style=dotted, color=gray, label="order"];
+  task_task_s0_t3___addAccumulator -> task_task_s0_t4___addAccumulator [style=dotted, color=gray, label="order"];
+  task_task_s0_t4___addAccumulator -> task_task_s0_t5___addAccumulator [style=dotted, color=gray, label="order"];
+  task_task_s0_t5___addAccumulator -> task_task_s0_t6___addAccumulator [style=dotted, color=gray, label="order"];
+  task_task_s0_t6___addAccumulator -> task_task_s0_t7___addAccumulator [style=dotted, color=gray, label="order"];
+  task_task_s0_t7___addAccumulator -> buf_IntArray_2b43529a;
+}
