@@ -182,6 +182,7 @@
                 <include>io.github.beehive-lab:tornado-cufft</include>
                 <include>io.github.beehive-lab:tornado-cudnn</include>
                 <include>io.github.beehive-lab:tornado-cusparse</include>
+                <include>io.github.beehive-lab:tornado-cudf</include>
                 <include>io.github.beehive-lab:tornado-cutlass</include>
             </includes>
             <binaries>

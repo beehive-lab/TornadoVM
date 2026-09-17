@@ -133,6 +133,11 @@
                 </dependency>
                 <dependency>
                     <groupId>${project.groupId}</groupId>
+                    <artifactId>tornado-cudf</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
                     <artifactId>tornado-cutlass</artifactId>
                     <version>${project.version}</version>
                 </dependency>

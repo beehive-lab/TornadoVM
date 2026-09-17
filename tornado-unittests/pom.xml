@@ -56,6 +56,12 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>tornado-cudf</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>tornado-cutlass</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
