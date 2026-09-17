@@ -2426,6 +2426,44 @@ public class CUDALIRStmt {
         }
     }
 
+    /**
+     * {@code result = frag[index]}: one element of an MMA accumulator fragment (a C local array
+     * in the generated source) copied into a scalar register. Emitted by
+     * {@link uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAFragmentElementReadNode}.
+     */
+    @Opcode("MMA_FRAGMENT_ELEMENT_READ")
+    public static class MMAFragmentElementReadStmt extends AbstractInstruction implements PureRegisterComputation {
+        public static final LIRInstructionClass<MMAFragmentElementReadStmt> TYPE = LIRInstructionClass.create(MMAFragmentElementReadStmt.class);
+        @Def protected Value result;
+        @Use protected Value fragment;
+        private final int index;
+
+        public MMAFragmentElementReadStmt(Value result, Value fragment, int index) {
+            super(TYPE);
+            this.result = result;
+            this.fragment = fragment;
+            this.index = index;
+        }
+
+        @Override
+        public Value getDefinedValue() {
+            return result;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emitValue(crb, fragment);
+            asm.emit("[%d]", index);
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
     @Opcode("SWIZZLED_STORE_FP16_STRIDE_32")
     public static class SwizzledStoreFP16Stride32Stmt extends AbstractInstruction {
         public static final LIRInstructionClass<SwizzledStoreFP16Stride32Stmt> TYPE =
