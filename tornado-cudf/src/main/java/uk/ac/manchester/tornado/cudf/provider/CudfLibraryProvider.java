@@ -81,6 +81,8 @@ public final class CudfLibraryProvider implements TornadoLibraryProvider {
         int status = switch (functionName) {
             case "sortPairs" -> CudfNativeLib.sortPairs(stream, invocation.getDevicePointer(1), invocation.getDevicePointer(2), (Integer) invocation.getArg(0), invocation.getDevicePointer(3),
                     invocation.getDevicePointer(4));
+            case "sortedOrder" -> CudfNativeLib.sortedOrder(stream, invocation.getDevicePointer(1), (Integer) invocation.getArg(0), (Integer) invocation.getArg(2),
+                    invocation.getDevicePointer(3));
             case "groupSum" -> CudfNativeLib.groupSum(stream, invocation.getDevicePointer(1), invocation.getDevicePointer(2), (Integer) invocation.getArg(0), invocation.getDevicePointer(3),
                     invocation.getDevicePointer(4), invocation.getDevicePointer(5));
             case "runningSum" -> CudfNativeLib.runningSum(stream, invocation.getDevicePointer(1), (Integer) invocation.getArg(0), invocation.getDevicePointer(2));

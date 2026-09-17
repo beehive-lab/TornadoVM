@@ -83,6 +83,27 @@ public final class Cudf {
     }
 
     /**
+     * The permutation that sorts {@code keys} ascending, as row positions rather than sorted data.
+     *
+     * <p>What a SQL {@code ORDER BY} needs, and not what {@link #sortPairs} gives it: sorting
+     * key/value pairs reorders one carried column, where a query's rows have arbitrary columns of
+     * arbitrary types and most of them are of no interest to a device. Handing back the
+     * permutation lets the caller reorder whatever it is holding, so nothing but the key crosses
+     * the interconnect and no payload column has to be expressible on a device at all.
+     *
+     * <p>{@code outOrder} holds {@code n} positions. Stable over equal keys, like {@link
+     * #sortPairs}. {@code nullsFirst} chooses where absent keys go, which SQL lets a query state.
+     */
+    public static LibraryTaskDescriptor sortedOrder(int n, IntArray keys, int nullsFirst, IntArray outOrder) {
+        Access[] access = new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY };
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("sortedOrder") //
+                .withParameters(new Object[] { n, keys, nullsFirst, outOrder }) //
+                .withAccess(access);
+    }
+
+    /**
      * Sums {@code values} per distinct key, writing one row per group.
      *
      * <p>

@@ -18,6 +18,7 @@
 package uk.ac.manchester.tornado.unittests.cudf;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
@@ -103,6 +104,52 @@ public class TestCudf extends TornadoTestBase {
         Arrays.sort(expected);
         for (int i = 0; i < n; i++) {
             assertEquals(expected[i], outKeys.get(i));
+        }
+    }
+
+    /**
+     * The permutation, which is what an ORDER BY needs rather than sorted key/value pairs.
+     *
+     * <p>Asserted by applying it: a permutation that is the identity, or reversed, or off by one,
+     * all look like plausible index arrays. What says it is right is that the values gathered
+     * through it come out ascending, and that equal keys keep the order they arrived in.
+     */
+    @Test
+    public void testSortedOrder() throws TornadoExecutionPlanException {
+        final int n = 4096;
+        IntArray keys = new IntArray(n);
+        // Deliberately few distinct keys, so most comparisons are ties and stability is exercised
+        // on nearly every element rather than on a handful.
+        for (int i = 0; i < n; i++) {
+            keys.set(i, random.nextInt(16));
+        }
+        IntArray order = new IntArray(n);
+
+        TaskGraph graph = new TaskGraph("cudf") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, keys) //
+                .libraryTask("order", Cudf::sortedOrder, n, keys, 0, order) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, order);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+
+        boolean[] seen = new boolean[n];
+        int previousKey = Integer.MIN_VALUE;
+        int previousPosition = -1;
+        for (int i = 0; i < n; i++) {
+            int position = order.get(i);
+            assertTrue("position " + position + " out of range", position >= 0 && position < n);
+            assertFalse("position " + position + " appears twice", seen[position]);
+            seen[position] = true;
+
+            int key = keys.get(position);
+            assertTrue("keys are not ascending at " + i, key >= previousKey);
+            if (key == previousKey) {
+                assertTrue("equal keys were reordered; the sort is not stable", position > previousPosition);
+            }
+            previousKey = key;
+            previousPosition = position;
         }
     }
 

@@ -51,6 +51,7 @@ final class CudfNativeLib {
     private static final SymbolLookup LIBTORNADO_CUDF = FFMSupport.loadLibrary("libtornado-cudf.so", "tornado-cudf.dll", "libtornado-cudf.dylib");
 
     private static final MethodHandle SORT_PAIRS;
+    private static final MethodHandle SORTED_ORDER;
     private static final MethodHandle GROUP_SUM;
     private static final MethodHandle RUNNING_SUM;
     private static final MethodHandle INNER_JOIN;
@@ -58,6 +59,7 @@ final class CudfNativeLib {
 
     static {
         MethodHandle sortPairs = null;
+        MethodHandle sortedOrder = null;
         MethodHandle groupSum = null;
         MethodHandle runningSum = null;
         MethodHandle innerJoin = null;
@@ -66,12 +68,15 @@ final class CudfNativeLib {
             // int (*)(void* stream, const int* keys, const double* values, int n,
             //         int* outKeys, double* outValues)
             sortPairs = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_LONG, C_INT, C_LONG, C_LONG), "tornado_cudf_sort_pairs");
+            // int (*)(void* stream, const int* keys, int n, int nullsFirst, int* outOrder)
+            sortedOrder = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_INT, C_INT, C_LONG), "tornado_cudf_sorted_order");
             groupSum = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_LONG, C_INT, C_LONG, C_LONG, C_LONG), "tornado_cudf_group_sum");
             runningSum = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_INT, C_LONG), "tornado_cudf_running_sum");
             innerJoin = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_INT, C_LONG, C_INT, C_INT, C_LONG, C_LONG, C_LONG), "tornado_cudf_inner_join");
             lastError = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_POINTER), "tornado_cudf_last_error");
         }
         SORT_PAIRS = sortPairs;
+        SORTED_ORDER = sortedOrder;
         GROUP_SUM = groupSum;
         RUNNING_SUM = runningSum;
         INNER_JOIN = innerJoin;
@@ -83,7 +88,7 @@ final class CudfNativeLib {
 
     /** Whether the shim is present and exports everything this module calls. */
     static boolean isAvailable() {
-        return LIBTORNADO_CUDF != null && SORT_PAIRS != null && GROUP_SUM != null && RUNNING_SUM != null && INNER_JOIN != null;
+        return LIBTORNADO_CUDF != null && SORT_PAIRS != null && SORTED_ORDER != null && GROUP_SUM != null && RUNNING_SUM != null && INNER_JOIN != null;
     }
 
     static void load() {
@@ -119,6 +124,14 @@ final class CudfNativeLib {
             return (int) SORT_PAIRS.invokeExact(stream, keys, values, n, outKeys, outValues);
         } catch (Throwable t) {
             throw new TornadoRuntimeException("[ERROR] cuDF sortPairs: " + t.getMessage());
+        }
+    }
+
+    static int sortedOrder(long stream, long keys, int n, int nullsFirst, long outOrder) {
+        try {
+            return (int) SORTED_ORDER.invokeExact(stream, keys, n, nullsFirst, outOrder);
+        } catch (Throwable t) {
+            throw new TornadoRuntimeException("[ERROR] cuDF sortedOrder: " + t.getMessage());
         }
     }
 

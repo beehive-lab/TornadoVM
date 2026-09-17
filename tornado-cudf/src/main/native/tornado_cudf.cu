@@ -120,6 +120,38 @@ int tornado_cudf_sort_pairs(void* stream, const void* keys, const void* values, 
 }
 
 /**
+ * The permutation that sorts n keys ascending, written as row positions rather than as sorted data.
+ *
+ * This is what a SQL ORDER BY actually needs. Sorting key/value pairs reorders one carried column;
+ * a query's rows have arbitrary columns of arbitrary types, and most of them are of no interest to
+ * a device. Returning the permutation lets the caller reorder whatever it is holding, so nothing
+ * but the key ever crosses the interconnect and no payload column has to be device-expressible.
+ *
+ * Stable, for the same reason sortPairs is: SQL's ORDER BY is stable over equal keys.
+ */
+int tornado_cudf_sorted_order(void* stream, const void* keys, int32_t n, int32_t nulls_first, void* out_order) {
+    try {
+        auto view = rmm::cuda_stream_view{static_cast<cudaStream_t>(stream)};
+        cudf::column_view key_col = view_of<int32_t>(keys, n, cudf::type_id::INT32);
+        cudf::table_view table{{key_col}};
+
+        auto order = cudf::stable_sorted_order(table, {cudf::order::ASCENDING}, {nulls_first ? cudf::null_order::BEFORE : cudf::null_order::AFTER}, view);
+
+        cudaStream_t raw = static_cast<cudaStream_t>(stream);
+        cudaError_t rc = copy_out(out_order, order->view().data<int32_t>(), static_cast<size_t>(n) * sizeof(int32_t), raw);
+        if (rc != cudaSuccess) {
+            g_last_error = std::string("sortedOrder copy-out: ") + cudaGetErrorString(rc);
+            return 3;
+        }
+        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+    } catch (const std::exception& e) {
+        return fail("sortedOrder", e);
+    } catch (...) {
+        return fail("sortedOrder");
+    }
+}
+
+/**
  * SUM of values grouped by key. Writes one row per distinct key, and the number of groups to
  * element 0 of out_groups -- which the caller cannot know in advance.
  */
