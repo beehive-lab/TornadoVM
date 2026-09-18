@@ -36,12 +36,12 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt;
 
 /**
- * Reinterprets the raw bit pattern of an f16 value as an unsigned 32-bit
- * integer (zero-extended). Used to pack two f16 values into a single int32
- * for ldmatrix-based shared-memory tiles.
+ * Reinterprets the raw bit pattern of an f16 value as a signed Java short,
+ * sign-extended to the int stack kind used by Java bytecode. Callers packing
+ * unsigned half bits can explicitly mask the result with {@code 0xFFFF}.
  *
  * <p>CUDA C emitted (via CUDALIRStmt.HalfBitsToIntStmt):
- * <pre>u32_result = (unsigned) __half_as_ushort(half_value);</pre>
+ * <pre>s32_result = (int) __half_as_short(half_value);</pre>
  */
 @NodeInfo
 public class CUDAConvertHalfBitsToIntNode extends ValueNode implements LIRLowerable {
@@ -53,14 +53,14 @@ public class CUDAConvertHalfBitsToIntNode extends ValueNode implements LIRLowera
     private ValueNode halfValueNode;
 
     public CUDAConvertHalfBitsToIntNode(ValueNode halfValueNode) {
-        super(TYPE, StampFactory.forKind(JavaKind.Int));
+        super(TYPE, StampFactory.forKind(JavaKind.Short));
         this.halfValueNode = halfValueNode;
     }
 
     @Override
     public void generate(NodeLIRBuilderTool generator) {
         LIRGeneratorTool tool = generator.getLIRGeneratorTool();
-        Variable result = tool.newVariable(LIRKind.value(CUDAKind.UINT));
+        Variable result = tool.newVariable(LIRKind.value(CUDAKind.INT));
         Value halfValue = generator.operand(halfValueNode);
         tool.append(new CUDALIRStmt.HalfBitsToIntStmt(result, halfValue));
         generator.setResult(this, result);

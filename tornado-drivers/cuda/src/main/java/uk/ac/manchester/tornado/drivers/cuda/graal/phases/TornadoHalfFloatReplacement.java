@@ -337,10 +337,10 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
     }
 
     private static boolean isWriteHalfFloat(JavaWriteNode javaWrite) {
-        if (javaWrite.value() instanceof HalfFloatPlaceholder) {
-            return true;
-        }
-        return false;
+        // A placeholder also represents getHalfFloatValue() used as a Java short.
+        // Only a 16-bit destination can be replaced by a half store; an int write
+        // must retain its width and receive the sign-extended bits instead.
+        return javaWrite.getWriteKind() == JavaKind.Short && javaWrite.value() instanceof HalfFloatPlaceholder;
     }
 
     private static void replaceFixed(Node n, Node other) {
@@ -507,13 +507,16 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
                     // if the result of an operation or a stored value is written
                     writingValue = placeholder.getInput();
                 }
-                placeholder.replaceAtUsages(writingValue);
-                placeholder.safeDelete();
+                // Replace only this 16-bit store. Other consumers still need the
+                // placeholder to become signed bits (or a half-to-float conversion).
                 AddressNode writingAddress = javaWrite.getAddress();
                 WriteHalfFloatNode writeHalfFloatNode = new WriteHalfFloatNode(writingAddress, writingValue);
                 graph.addWithoutUnique(writeHalfFloatNode);
                 replaceFixed(javaWrite, writeHalfFloatNode);
                 deleteFixed(javaWrite);
+                if (placeholder.hasNoUsages()) {
+                    placeholder.safeDelete();
+                }
             }
         }
 

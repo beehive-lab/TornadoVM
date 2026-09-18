@@ -35,6 +35,8 @@ import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
 
@@ -416,5 +418,120 @@ public class TestHalfFloatValueConversion extends TornadoTestBase {
     /** True for a binary16 NaN: maximum exponent and a non-zero significand. */
     private static boolean isQuietNaN(short bits) {
         return (bits & 0x7C00) == 0x7C00 && (bits & 0x03FF) != 0;
+    }
+
+    /** The short accessor must sign-extend when its result is stored as an int. */
+    public static void signedBitsOfComputed(KernelContext ctx, FloatArray in, IntArray out) {
+        int i = ctx.globalIdx;
+        out.set(i, new HalfFloat(in.get(i) * 2.0f).getHalfFloatValue());
+    }
+
+    public static void signedBitsOfLoad(KernelContext ctx, FloatArray in, IntArray out) {
+        int i = ctx.globalIdx;
+        out.set(i, new HalfFloat(in.get(i)).getHalfFloatValue());
+    }
+
+    /** Widening, comparisons and arithmetic shifts must consume a signed short value. */
+    public static void signedBitsWidening(KernelContext ctx, FloatArray in, LongArray longs,
+                                          FloatArray floats, IntArray shifts) {
+        int i = ctx.globalIdx;
+        short bits = new HalfFloat(in.get(i)).getHalfFloatValue();
+        longs.set(i, bits);
+        floats.set(i, bits);
+        shifts.set(i, (bits >> 8) + (bits < 0 ? 1 : 0));
+    }
+
+    @Test
+    public void testSignedBitsOfComputed() throws TornadoExecutionPlanException {
+        assumeCudaBackend();
+        FloatArray in = signedInput();
+        IntArray out = new IntArray(SIZE);
+        out.init(0x5A5A5A5A);
+        TaskGraph graph = new TaskGraph("signed_computed")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, in, out)
+                .task("t0", TestHalfFloatValueConversion::signedBitsOfComputed, new KernelContext(), in, out)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        execute(graph, "signed_computed");
+        for (int i = 0; i < SIZE; i++) {
+            assertEquals("signed computed bits[" + i + "]",
+                    (int) Float.floatToFloat16(in.get(i) * 2.0f), out.get(i));
+        }
+    }
+
+    @Test
+    public void testSignedBitsOfLoad() throws TornadoExecutionPlanException {
+        assumeCudaBackend();
+        FloatArray in = signedInput();
+        IntArray out = new IntArray(SIZE);
+        out.init(0x5A5A5A5A);
+        TaskGraph graph = new TaskGraph("signed_load")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, in, out)
+                .task("t0", TestHalfFloatValueConversion::signedBitsOfLoad, new KernelContext(), in, out)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        execute(graph, "signed_load");
+        for (int i = 0; i < SIZE; i++) {
+            assertEquals("signed loaded bits[" + i + "]", (int) Float.floatToFloat16(in.get(i)), out.get(i));
+        }
+    }
+
+    @Test
+    public void testSignedBitsWidening() throws TornadoExecutionPlanException {
+        assumeCudaBackend();
+        FloatArray in = signedInput();
+        LongArray longs = new LongArray(SIZE);
+        FloatArray floats = new FloatArray(SIZE);
+        IntArray shifts = new IntArray(SIZE);
+        TaskGraph graph = new TaskGraph("signed_widening")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, in)
+                .task("t0", TestHalfFloatValueConversion::signedBitsWidening,
+                        new KernelContext(), in, longs, floats, shifts)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, longs, floats, shifts);
+        execute(graph, "signed_widening");
+        for (int i = 0; i < SIZE; i++) {
+            short expected = Float.floatToFloat16(in.get(i));
+            assertEquals("long bits[" + i + "]", (long) expected, longs.get(i));
+            assertEquals("float bits[" + i + "]", (float) expected, floats.get(i), 0.0f);
+            assertEquals("signed shift/comparison[" + i + "]",
+                    (expected >> 8) + (expected < 0 ? 1 : 0), shifts.get(i));
+        }
+    }
+
+    private static FloatArray signedInput() {
+        float[] values = { -8.0f, 8.0f, -0.0f, 0.0f, -1.0f, 1.0f,
+                -65504.0f, 65504.0f, -5.9604645e-8f, 5.9604645e-8f,
+                Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY };
+        FloatArray in = new FloatArray(SIZE);
+        for (int i = 0; i < SIZE; i++) {
+            in.set(i, values[i % values.length]);
+        }
+        return in;
+    }
+
+    public static void signedBitsSharedConsumers(KernelContext ctx, FloatArray in,
+                                                 ShortArray shorts, IntArray ints) {
+        int i = ctx.globalIdx;
+        short bits = new HalfFloat(in.get(i)).getHalfFloatValue();
+        shorts.set(i, bits);
+        ints.set(i, bits);
+    }
+
+    @Test
+    public void testSignedBitsSharedConsumers() throws TornadoExecutionPlanException {
+        assumeCudaBackend();
+        FloatArray in = signedInput();
+        ShortArray shorts = new ShortArray(SIZE);
+        IntArray ints = new IntArray(SIZE);
+        ints.init(0x5A5A5A5A);
+        TaskGraph graph = new TaskGraph("signed_shared")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, in, ints)
+                .task("t0", TestHalfFloatValueConversion::signedBitsSharedConsumers,
+                        new KernelContext(), in, shorts, ints)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, shorts, ints);
+        execute(graph, "signed_shared");
+        for (int i = 0; i < SIZE; i++) {
+            short expected = Float.floatToFloat16(in.get(i));
+            assertEquals("short bits[" + i + "]", expected, shorts.get(i));
+            assertEquals("shared int bits[" + i + "]", (int) expected, ints.get(i));
+        }
     }
 }
