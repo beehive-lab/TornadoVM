@@ -14,13 +14,19 @@ name: Build & Test
 #              and later; the build JDK is an implementation detail and is pinned below.
 # Each SDK records its own contract in etc/tornado.jdk, and bin/tornado enforces it.
 
-# Scope of the JDK matrix per event (see the plan job):
-#   pull request            floor and newest only, because the GPU runners serialise
+# Scope per event (see the plan job, which computes all of it):
+#   pull request            Linux: floor and newest JDK, both backends, full device tests
+#                           macOS: BUILDS ONLY -- one runner cannot serve ten jobs per run
+#                           sample apps: once per (platform, backend), on the newest JDK
 #   push to develop         same subset: a merge is not a reason to occupy both machines for an
 #                           hour, and the nightly covers the rest a few hours later
-#   + ci-full-jdk-sweep     label on the PR -> every JDK, for the run before you merge
-#   schedule (nightly)      every JDK
-#   workflow_dispatch       every JDK unless full_jdk_sweep is set to false
+#   + ci-full-jdk-sweep     label on the PR -> every JDK, macOS tests, apps on every leg
+#   schedule (nightly)      everything
+#   workflow_dispatch       everything unless full_jdk_sweep is set to false
+#
+# The subset exists because this is three self-hosted runners taking one job at a time, not an
+# elastic pool: what a wider matrix buys in coverage it pays for in queue, and the queue is
+# shared with every other open pull request.
 on:
   pull_request:
     branches: [develop]
@@ -41,6 +47,20 @@ on:
         default: true
   schedule:
     - cron: "0 2 * * *"
+
+# One live run per branch. Without this every push to a pull request left its predecessor in the
+# queue, and the queue is the whole cost here: this workflow is 21 jobs on three self-hosted
+# runners that take one job at a time, so a superseded run does not just linger, it delays every
+# other pull request behind it. On 2026-09-18 the repository held 32 unfinished runs and 212
+# unfinished jobs, five of those runs being five different pushes to one branch; jobs sat queued
+# for hours and one leg of #1094 waited 43 hours before it was cancelled by hand, never having
+# been given a runner. None of that showed as a failure -- the checks simply never resolved.
+#
+# Pull requests cancel; pushes to develop do not. A merge is a commit whose result someone will
+# want to look up later, and there is only ever one run in flight per merge anyway.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   code-quality:
@@ -77,6 +97,7 @@ jobs:
       test_linux: ${{ steps.matrices.outputs.test_linux }}
       build_macos: ${{ steps.matrices.outputs.build_macos }}
       test_macos: ${{ steps.matrices.outputs.test_macos }}
+      test_macos_enabled: ${{ steps.matrices.outputs.test_macos_enabled }}
     steps:
       - id: matrices
         env:
@@ -146,16 +167,40 @@ jobs:
               for sdk in ("jdk21", "jdk22plus"):
                   build[platform].append(dict(platform=platform, backend=backend,
                                               runner=runner, sdk=sdk))
+              legs = []
               # jdk21 SDK: preview-compiled, so JDK 21 and nothing else.
-              test[platform].append(dict(platform=platform, backend=backend, runner=runner,
-                                         sdk="jdk21", jdk="jdk21"))
+              legs.append(dict(platform=platform, backend=backend, runner=runner,
+                               sdk="jdk21", jdk="jdk21", apps=full))
               for jdk in jdk22plus_runtimes:
-                  test[platform].append(dict(platform=platform, backend=backend, runner=runner,
-                                             sdk="jdk22plus", jdk=jdk))
+                  legs.append(dict(platform=platform, backend=backend, runner=runner,
+                                   sdk="jdk22plus", jdk=jdk, apps=full))
+              # The downstream sample apps (TornadoVM-Ray-Tracer, KFusion) are a git clone and a
+              # full Maven build each, and they run INSIDE the GPU-serialised test slot, so on a
+              # subset run that is three legs per backend rebuilding the same two applications
+              # against the same SDK, for a large part of each leg's wall time. What they
+              # actually guard is the API surface the SDK ships -- kernel entries resolved through
+              # the compiler-generated SerializedLambda -- which is a property of the artifact and
+              # not of the JDK underneath it, so once per (platform, backend) is the honest
+              # frequency. The newest JDK is the leg chosen because it is the one where a build
+              # plugin or a source-release default is most likely to give way first. A full sweep
+              # still runs them everywhere.
+              if not full:
+                  legs[-1]["apps"] = True
+              test[platform].extend(legs)
 
           for platform in ("linux", "macos"):
               print(f"build_{platform}=" + json.dumps({"include": build[platform]}))
               print(f"test_{platform}=" + json.dumps({"include": test[platform]}))
+          # macOS has ONE runner for what is ten jobs per run, and it is the binding constraint on
+          # the whole queue: four builds and six tests, strictly serialised, is about fifty minutes
+          # of that machine per run against an arrival rate several times higher. Its tests are
+          # therefore reserved for the nightly sweep and for the ci-full-jdk-sweep label, and a
+          # pull request gets the four macOS BUILDS only -- which is what catches the things a
+          # macOS-blind change breaks in practice: the Metal and OpenCL native compile, the
+          # aarch64 toolchain, and the SDK assembly. Linux keeps its full test matrix on every
+          # pull request, on two runners, so no backend loses its device coverage.
+          # Put ci-full-jdk-sweep on the pull request to get the macOS tests before you merge.
+          print(f"test_macos_enabled={json.dumps(full)}")
           EOF
 
   # ---------------------------------------------------------------------------------------
@@ -180,3 +225,4 @@ jobs:
       platform: macos
       build_matrix: ${{ needs.plan.outputs.build_macos }}
       test_matrix: ${{ needs.plan.outputs.test_macos }}
+      run_tests: ${{ fromJSON(needs.plan.outputs.test_macos_enabled || 'false') }}

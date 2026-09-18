@@ -38,6 +38,14 @@ on:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
 
+# As in build-test.yml: one live run per branch, and a superseded pull request run is cancelled.
+# These are GitHub-hosted rather than self-hosted, so the cost is not a blocked queue, but seven
+# ubuntu-latest jobs per push adds up and the result of a run against an overwritten commit is
+# read by nobody.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   reflection-unit-tests:
     runs-on: ubuntu-latest
