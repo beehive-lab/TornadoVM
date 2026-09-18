@@ -105,7 +105,8 @@ public class CUDABinary {
                 // Java masks shift distances; an out-of-range C shift is undefined.
                 asm.emit("(");
                 asm.emitValueOrOp(crb, y);
-                asm.emit(kind == CUDAKind.INT ? " & 31)" : " & 63)");
+                int shiftMask = kind == CUDAKind.INT ? Integer.SIZE - 1 : Long.SIZE - 1;
+                asm.emit(" & " + shiftMask + ")");
             } else {
                 asm.emitValueOrOp(crb, y);
             }
