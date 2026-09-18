@@ -118,7 +118,11 @@ public class TestCudaCodegenRegressions extends TornadoTestBase {
     }
 
     @Test
-    @Ignore("Open CUDA backend crash (tornado-fuzz seed 189): `(INT_MIN / (b|1)) / (i|1)` throws GraalError 'unhandled node in reassociation with constants' during code generation.")
+    @Ignore("Not a backend bug and not CUDA-specific: Graal's ReassociationPhase throws "
+            + "'unhandled node in reassociation with constants: div_node' on this division chain, on CUDA and "
+            + "OpenCL alike (tornado-fuzz seed 189). The phase comes from the vendored Graal jar, so it cannot be "
+            + "fixed from this repository; -Dgraal.ReassociateExpressions=false compiles the kernel and produces "
+            + "the correct result, which pins the phase as the cause.")
     public void testIntMinDivChain() throws Exception {
         int[] in = { 1, 2, 3, 4, 5, 6, 7, 8 };
         run(TestCudaCodegenRegressions::intMinDivChain, in, in, (a, b, i) -> (Integer.MIN_VALUE / (b | 1)) / (i | 1));
