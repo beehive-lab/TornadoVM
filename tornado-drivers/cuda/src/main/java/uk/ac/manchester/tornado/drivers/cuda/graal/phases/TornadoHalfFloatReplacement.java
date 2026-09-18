@@ -179,8 +179,14 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             HalfFloatConstantNode halfFloatConstantNode = new HalfFloatConstantNode(floatValue);
             graph.addWithoutUnique(halfFloatConstantNode);
             return halfFloatConstantNode;
-        } else if (halfFloatValue instanceof JavaReadNode javaReadNode && javaReadNode.getReadKind() == JavaKind.Float) {
-            CUDAConvertFloatToHalf convertFloatToHalf = new CUDAConvertFloatToHalf(javaReadNode);
+        } else if (halfFloatValue.getStackKind() == JavaKind.Float) {
+            // Any float-valued constructor argument, not just a read: `new HalfFloat(a.get(i) * s)`
+            // hands over the multiply, and without this the half value would be represented by a
+            // float register. That is invisible while the only consumer is a store (the write casts
+            // the destination to __half and C++ converts on assignment), but once the value is read
+            // back - `new HalfFloat(v).getHalfFloatValue()` - it would reach __half_as_ushort as a
+            // float and depend on an implicit cuda_fp16.h conversion to mean anything.
+            CUDAConvertFloatToHalf convertFloatToHalf = new CUDAConvertFloatToHalf(halfFloatValue);
             graph.addWithoutUnique(convertFloatToHalf);
             return convertFloatToHalf;
         } else {
