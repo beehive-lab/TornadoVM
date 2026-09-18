@@ -31,6 +31,8 @@ import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task4;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -170,5 +172,85 @@ public class TestCudaCodegenRegressions extends TornadoTestBase {
             arr.set(i, data[i]);
         }
         return arr;
+    }
+
+    public static void wrapIntBoundaries(IntArray a, IntArray b, IntArray out) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            int x = a.get(i);
+            int y = b.get(i);
+            out.set(i * 5, x + y);
+            out.set(i * 5 + 1, x - y);
+            out.set(i * 5 + 2, x * y);
+            out.set(i * 5 + 3, -x);
+            out.set(i * 5 + 4, x << y);
+        }
+    }
+
+    @Test
+    public void testIntWrapAndShiftBoundaries() throws Exception {
+        int[] edges = { Integer.MIN_VALUE, Integer.MAX_VALUE, -1, 0, 1, 31, 32, 33, -33, 46341, 65536 };
+        int n = edges.length * edges.length;
+        IntArray a = new IntArray(n);
+        IntArray b = new IntArray(n);
+        IntArray out = new IntArray(n * 5);
+        for (int i = 0; i < n; i++) {
+            a.set(i, edges[i / edges.length]);
+            b.set(i, edges[i % edges.length]);
+        }
+        TaskGraph graph = new TaskGraph("wrapInt")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
+                .task("t", TestCudaCodegenRegressions::wrapIntBoundaries, a, b, out)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+        for (int i = 0; i < n; i++) {
+            int x = a.get(i);
+            int y = b.get(i);
+            int[] expected = { x + y, x - y, x * y, -x, x << y };
+            for (int op = 0; op < expected.length; op++) {
+                assertEquals("input " + i + " operation " + op, expected[op], out.get(i * 5 + op));
+            }
+        }
+    }
+
+    public static void wrapLongBoundaries(LongArray a, LongArray b, LongArray out) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            long x = a.get(i);
+            long y = b.get(i);
+            out.set(i * 5, x + y);
+            out.set(i * 5 + 1, x - y);
+            out.set(i * 5 + 2, x * y);
+            out.set(i * 5 + 3, -x);
+            out.set(i * 5 + 4, x << y);
+        }
+    }
+
+    @Test
+    public void testLongWrapAndShiftBoundaries() throws Exception {
+        long[] edges = { Long.MIN_VALUE, Long.MAX_VALUE, -1, 0, 1, 63, 64, 65, -65, 3037000500L, 1L << 32 };
+        int n = edges.length * edges.length;
+        LongArray a = new LongArray(n);
+        LongArray b = new LongArray(n);
+        LongArray out = new LongArray(n * 5);
+        for (int i = 0; i < n; i++) {
+            a.set(i, edges[i / edges.length]);
+            b.set(i, edges[i % edges.length]);
+        }
+        TaskGraph graph = new TaskGraph("wrapLong")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
+                .task("t", TestCudaCodegenRegressions::wrapLongBoundaries, a, b, out)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+        for (int i = 0; i < n; i++) {
+            long x = a.get(i);
+            long y = b.get(i);
+            long[] expected = { x + y, x - y, x * y, -x, x << y };
+            for (int op = 0; op < expected.length; op++) {
+                assertEquals("input " + i + " operation " + op, expected[op], out.get(i * 5 + op));
+            }
+        }
     }
 }

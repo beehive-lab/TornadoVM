@@ -101,7 +101,14 @@ public class OCLBinary {
             asm.space();
             asm.emit(opcode.toString());
             asm.space();
-            asm.emitValueOrOp(crb, y);
+            if (opcode == OCLAssembler.OCLBinaryOp.BITWISE_LEFT_SHIFT) {
+                // Java masks shift distances; an out-of-range C shift is undefined.
+                asm.emit("(");
+                asm.emitValueOrOp(crb, y);
+                asm.emit(kind == OCLKind.INT ? " & 31)" : " & 63)");
+            } else {
+                asm.emitValueOrOp(crb, y);
+            }
             asm.emit(")");
         }
 
