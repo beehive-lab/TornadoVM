@@ -653,7 +653,7 @@ public class CUDALoweringProvider extends DefaultJavaLoweringProvider {
     private void lowerPrivateNewArray(StructuredGraph graph, int size, NewArrayNonVirtualizableNode newArray) {
         FixedArrayNode fixedArrayNode;
         final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
-        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(CUDAArchitecture.privateSpace, newArray.elementType(), newLengthNode));
+        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(CUDAArchitecture.privateSpace, newArray.elementType(), newLengthNode, newArray.fillContents()));
         newArray.replaceAtUsages(fixedArrayNode);
     }
 

@@ -585,7 +585,7 @@ public class TornadoCUDAIntrinsicsReplacements extends BasePhase<TornadoHighTier
         FixedArrayNode fixedArrayNode;
         final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
         ResolvedJavaType elementType = metaAccess.lookupJavaType(elementKind.toJavaClass());
-        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(CUDAArchitecture.privateSpace, elementType, newLengthNode));
+        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(CUDAArchitecture.privateSpace, elementType, newLengthNode, false));
         newArray.replaceAtUsages(fixedArrayNode);
     }
 
