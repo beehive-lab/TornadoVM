@@ -110,8 +110,7 @@ public class TestMMAInt8FragmentElementRead extends TornadoTestBase {
 
     /**
      * Two K blocks, each with its own scale: {@code out = (float) dot0 * s0 + (float) dot1 * s1},
-     * the block products scaled before they are combined. The fragment is loop-carried through
-     * the block loop, so its element reads go through a phi.
+     * with a fresh fragment per block and the scaled products accumulated in FP32.
      */
     public static void blockScaled(KernelContext ctx, ByteArray a, ByteArray b, FloatArray scales, FloatArray out) {
         int lane = ctx.localIdx;
@@ -264,6 +263,56 @@ public class TestMMAInt8FragmentElementRead extends TornadoTestBase {
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
                 assertEquals("C[" + i + "][" + j + "]", dot(a, b, M * K, K * N, i, j), out.get(i * N + j));
+            }
+        }
+    }
+
+    /** Keeps the fragment live across a runtime-controlled loop and its exit proxy. */
+    public static void loopExitReads(KernelContext ctx, ByteArray a, ByteArray b,
+                                      IntArray iterations, IntArray out) {
+        int lane = ctx.localIdx;
+        int[] aTile = ctx.allocateIntLocalArray(M * K / 4);
+        int[] bTile = ctx.allocateIntLocalArray(K * N / 4);
+        stageA(ctx, a, aTile, 0, lane);
+        stageB(ctx, b, bTile, 0, lane);
+        ctx.localBarrier();
+        byte[] fragA = ctx.mmaLoadAInt8(aTile, K);
+        byte[] fragB = ctx.mmaLoadBInt8(bTile, K);
+        int[] acc = ctx.mmaFragmentInt(1);
+        for (int k = 0; k < iterations.get(0); k++) {
+            acc = ctx.mmaInt8(fragA, fragB, acc, MMAShape.M16N8K32);
+        }
+        out.set(lane * 4, acc[0]);
+        out.set(lane * 4 + 1, acc[1]);
+        out.set(lane * 4 + 2, acc[2]);
+        out.set(lane * 4 + 3, acc[3]);
+    }
+
+    @Test
+    public void testFragmentReadsAfterLoopExit() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.METAL);
+        ByteArray a = randomBytes(M * K, 7);
+        ByteArray b = randomBytes(K * N, 8);
+        IntArray iterations = new IntArray(1);
+        IntArray out = new IntArray(M * N);
+        TaskGraph graph = new TaskGraph("exit_reads")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, iterations)
+                .task("t", TestMMAInt8FragmentElementRead::loopExitReads, new KernelContext(), a, b, iterations, out)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.withGridScheduler(oneWarp("exit_reads.t"));
+            for (int count : new int[] { 0, 1, 3 }) {
+                iterations.set(0, count);
+                plan.execute();
+                for (int lane = 0; lane < WARP_SIZE; lane++) {
+                    for (int i = 0; i < 4; i++) {
+                        int row = lane / 4 + 8 * (i / 2);
+                        int col = (lane % 4) * 2 + i % 2;
+                        assertEquals("iterations " + count + " lane " + lane + " element " + i,
+                                1 + count * dot(a, b, 0, 0, row, col), out.get(lane * 4 + i));
+                    }
+                }
             }
         }
     }

@@ -46,6 +46,8 @@ import tornado.graal.compiler.nodes.AbstractDeoptimizeNode;
 import tornado.graal.compiler.nodes.CompressionNode;
 import tornado.graal.compiler.nodes.ConstantNode;
 import tornado.graal.compiler.nodes.ValuePhiNode;
+import tornado.graal.compiler.nodes.PiNode;
+import tornado.graal.compiler.nodes.ValueProxyNode;
 import tornado.graal.compiler.nodes.FieldLocationIdentity;
 import tornado.graal.compiler.nodes.FixedNode;
 import tornado.graal.compiler.nodes.Invoke;
@@ -415,6 +417,12 @@ public class CUDALoweringProvider extends DefaultJavaLoweringProvider {
      * fragment, which the backend already emits as a C array). Nothing else qualifies.
      */
     private static boolean isMMAFragmentValue(ValueNode value, java.util.Set<ValueNode> visiting) {
+        if (value instanceof PiNode pi) {
+            return isMMAFragmentValue(pi.object(), visiting);
+        }
+        if (value instanceof ValueProxyNode proxy) {
+            return isMMAFragmentValue(proxy.value(), visiting);
+        }
         if (value instanceof CUDAMMAFragmentNode || value instanceof CUDAMMAComputeNode) {
             return true;
         }
@@ -434,6 +442,12 @@ public class CUDALoweringProvider extends DefaultJavaLoweringProvider {
 
     /** Whether the fragment is an int32 accumulator (from {@code mmaFragmentInt} / an int8 MMA). */
     private static boolean isIntMMAFragment(ValueNode value, java.util.Set<ValueNode> visiting) {
+        if (value instanceof PiNode pi) {
+            return isIntMMAFragment(pi.object(), visiting);
+        }
+        if (value instanceof ValueProxyNode proxy) {
+            return isIntMMAFragment(proxy.value(), visiting);
+        }
         if (value instanceof CUDAMMAFragmentNode fragment) {
             return fragment.isInt8();
         }
