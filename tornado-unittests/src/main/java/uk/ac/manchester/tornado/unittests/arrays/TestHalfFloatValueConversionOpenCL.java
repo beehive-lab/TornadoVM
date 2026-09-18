@@ -348,4 +348,75 @@ public class TestHalfFloatValueConversionOpenCL extends TornadoTestBase {
         float v1 = w.getHalfFloat(off1).getFloat32() * w.get(off1 + 2 + kIn);
         return (Float.floatToFloat16(v0) & 0xFFFF) | ((Float.floatToFloat16(v1) & 0xFFFF) << 16);
     }
+
+    // -----------------------------------------------------------------------
+    // IEEE 754 binary16 conformance of the conversion
+    // -----------------------------------------------------------------------
+
+    /**
+     * Values that pin down the rounding rule rather than the arithmetic: exact ties (which must
+     * round to even), the subnormal range (which must not be flushed to zero), the overflow
+     * boundary, and the signed zeroes and infinities.
+     */
+    private static final float[] IEEE_CASES = { //
+            2049.0f, 2051.0f, -2049.0f,                       // ties between representable halves
+            1.0009765625f, 1.00048828125f, 1.0014648437f,     // ties around 1.0
+            6.0975552e-5f, 5.9604645e-8f, 4.4703484e-8f,      // subnormals, incl. the smallest
+            2.9802322e-8f, 1.0e-10f,                          // below half the smallest: to zero
+            65504.0f, 65519.0f, 65520.0f, 131008.0f,          // max finite, and the overflow tie
+            -65504.0f, -131008.0f, //
+            0.0f, -0.0f, Float.MAX_VALUE, //
+            Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY, Float.NaN };
+
+    /** Converts each input to half precision and stores it. */
+    public static void ieeeConvert(KernelContext ctx, FloatArray in, HalfFloatArray out) {
+        int i = ctx.globalIdx;
+        out.set(i, new HalfFloat(in.get(i)));
+    }
+
+    /**
+     * The conversion must be IEEE 754 binary16 with round-to-nearest-even - the same rule
+     * {@link Float#floatToFloat16} implements - so the comparison is bit-exact rather than
+     * approximate. A GPU that flushed subnormals to zero, truncated instead of rounding, or
+     * overflowed at the wrong boundary would show up here and nowhere else in this class.
+     *
+     * <p>NaN is compared as a class, not a bit pattern: IEEE leaves the payload unspecified and
+     * the device returns a different quiet NaN than Java does.
+     */
+    @Test
+    public void testIeee754Binary16Rounding() throws TornadoExecutionPlanException {
+        assumeOpenCLBackend();
+        int n = IEEE_CASES.length;
+        FloatArray in = new FloatArray(n);
+        for (int i = 0; i < n; i++) {
+            in.set(i, IEEE_CASES[i]);
+        }
+        HalfFloatArray out = new HalfFloatArray(n);
+
+        WorkerGrid1D worker = new WorkerGrid1D(n);
+        worker.setLocalWork(1, 1, 1);
+        GridScheduler grid = new GridScheduler("ieee.t0", worker);
+
+        TaskGraph tg = new TaskGraph("ieee").transferToDevice(DataTransferMode.EVERY_EXECUTION, in, out) //
+                .task("t0", TestHalfFloatValueConversionOpenCL::ieeeConvert, new KernelContext(), in, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
+            plan.withGridScheduler(grid).execute();
+        }
+
+        for (int i = 0; i < n; i++) {
+            short expected = Float.floatToFloat16(IEEE_CASES[i]);
+            short actual = out.get(i).getHalfFloatValue();
+            if (isQuietNaN(expected) && isQuietNaN(actual)) {
+                continue;
+            }
+            assertEquals(String.format("half(%s): expected 0x%04X, got 0x%04X", IEEE_CASES[i], expected, actual), //
+                    expected, actual);
+        }
+    }
+
+    /** True for a binary16 NaN: maximum exponent and a non-zero significand. */
+    private static boolean isQuietNaN(short bits) {
+        return (bits & 0x7C00) == 0x7C00 && (bits & 0x03FF) != 0;
+    }
 }
