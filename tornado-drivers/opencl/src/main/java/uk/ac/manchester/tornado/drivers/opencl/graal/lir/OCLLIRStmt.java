@@ -217,6 +217,41 @@ public class OCLLIRStmt {
 
     }
 
+    @Opcode("INT_BITS_TO_HALF")
+    public static class IntBitsToHalfStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<IntBitsToHalfStmt> TYPE = LIRInstructionClass.create(IntBitsToHalfStmt.class);
+
+        @Def
+        protected Value halfValue;
+        @Use
+        protected Value bits;
+
+        public IntBitsToHalfStmt(Value halfValue, Value bits) {
+            super(TYPE);
+            this.halfValue = halfValue;
+            this.bits = bits;
+        }
+
+        @Override
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            // { ushort __hbits = (ushort) bits; half_value = *((__private half *) &__hbits); }
+            //
+            // The inverse of HalfBitsToIntStmt, through a pointer for the same reason: as_half() has
+            // no unambiguous overload for an integer argument on every implementation. The cast to
+            // ushort drops the sign extension a short picks up on the Java operand stack, so a half
+            // with the sign bit set keeps its bit pattern.
+            String temporary = "__hbits_" + asm.getStringValue(crb, halfValue);
+            asm.indent();
+            asm.emit("{ ushort " + temporary + " = (ushort) ");
+            asm.emitValueOrOp(crb, bits);
+            asm.emit("; ");
+            asm.emitValue(crb, halfValue);
+            asm.emit(" = *((__private half *) &" + temporary + "); }");
+            asm.eol();
+        }
+    }
+
     @Opcode("HALF_BITS_TO_INT")
     public static class HalfBitsToIntStmt extends AbstractInstruction {
 

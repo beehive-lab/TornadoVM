@@ -27,6 +27,7 @@ import jdk.vm.ci.meta.RawConstant;
 import tornado.graal.compiler.core.common.type.StampFactory;
 import tornado.graal.compiler.graph.Node;
 import tornado.graal.compiler.nodes.ConstantNode;
+import tornado.graal.compiler.nodes.NodeView;
 import tornado.graal.compiler.nodes.FixedGuardNode;
 import tornado.graal.compiler.nodes.FixedNode;
 import tornado.graal.compiler.nodes.GraphState;
@@ -56,6 +57,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.MultHalfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLConvertFloatToHalf;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLConvertHalfBitsToIntNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLConvertIntBitsToHalfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLConvertHalfToFloat;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ReadHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.SubHalfNode;
@@ -167,7 +169,30 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
      *         The Structured Graph.
      * @return The half float value, either as is, or in the form of the {@code HalfFloatConstantNode}.
      */
+    /**
+     * Whether {@code value} is the raw f16 bit pattern handed to {@code new HalfFloat(short)},
+     * rather than a float to convert or a value that already is a half.
+     *
+     * <p>A {@code short} argument reaches here with the {@code int} stack kind Java promotes it to,
+     * which is why the test is on the stack kind. Values that already carry the synthetic
+     * {@link HalfFloatStamp} are excluded: those are halves in their own right (a read from a
+     * HalfFloatArray, the result of half arithmetic) and must not be reinterpreted again.
+     */
+    private static boolean isHalfBits(ValueNode value) {
+        return value.getStackKind() == JavaKind.Int && !(value.stamp(NodeView.DEFAULT) instanceof HalfFloatStamp);
+    }
+
     private static ValueNode getHalfFloatValue(ValueNode halfFloatValue, StructuredGraph graph) {
+        if (isHalfBits(halfFloatValue)) {
+            // `new HalfFloat(short)` stores the short as the half's raw bits - it does not convert a
+            // number to half precision - so the value has to be reinterpreted, not assigned. Without
+            // this the dead-allocation cleanup above would let such a store compile for the first
+            // time and then write a numerically converted value: the bits of -8.0 (0xC800) stored as
+            // -14336.0.
+            OCLConvertIntBitsToHalfNode bitsToHalf = new OCLConvertIntBitsToHalfNode(halfFloatValue);
+            graph.addWithoutUnique(bitsToHalf);
+            return bitsToHalf;
+        }
         if (halfFloatValue instanceof ConstantNode) {
             ConstantNode floatValue = (ConstantNode) halfFloatValue;
             HalfFloatConstantNode halfFloatConstantNode = new HalfFloatConstantNode(floatValue);
