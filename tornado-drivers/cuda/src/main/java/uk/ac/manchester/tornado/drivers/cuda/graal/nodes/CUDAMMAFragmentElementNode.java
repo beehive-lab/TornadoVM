@@ -79,11 +79,10 @@ public class CUDAMMAFragmentElementNode extends FixedWithNextNode implements LIR
     public void generate(NodeLIRBuilderTool gen) {
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
         Value fragmentValue = gen.operand(fragment);
-        if (!(fragmentValue.getPlatformKind() instanceof CUDAKind fragmentKind) || !fragmentKind.isMMAFragment()) {
-            throw new TornadoBailoutRuntimeException(
-                    "MMA fragment element read applied to a non-fragment value: " + fragmentValue);
-        }
-        Variable result = tool.newVariable(LIRKind.value(fragmentKind.getElementKind()));
+        // Lowering has validated the fragment and index. Fragment phis retain an
+        // object-derived ULONG kind until the backend recovers their declarations.
+        // The read stamp already carries the scalar float/int result type.
+        Variable result = tool.newVariable(tool.getLIRKind(stamp));
         tool.append(new CUDALIRStmt.MMAFragmentElementStmt(result, fragmentValue, index));
         gen.setResult(this, result);
     }
