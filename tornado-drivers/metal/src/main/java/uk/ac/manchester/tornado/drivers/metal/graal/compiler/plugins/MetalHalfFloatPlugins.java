@@ -24,6 +24,7 @@
 package uk.ac.manchester.tornado.drivers.metal.graal.compiler.plugins;
 
 import tornado.graal.compiler.nodes.NodeView;
+import tornado.graal.compiler.graph.Node;
 import tornado.graal.compiler.nodes.ValueNode;
 import tornado.graal.compiler.nodes.ValuePhiNode;
 import tornado.graal.compiler.nodes.ValueProxyNode;
@@ -34,6 +35,8 @@ import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import tornado.graal.compiler.nodes.graphbuilderconf.NodePlugin;
 
 import jdk.vm.ci.meta.JavaKind;
+import tornado.graal.compiler.nodes.java.NewInstanceNode;
+import uk.ac.manchester.tornado.api.internal.annotations.HalfType;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.drivers.metal.graal.HalfFloatStamp;
@@ -70,8 +73,48 @@ public class MetalHalfFloatPlugins {
             return true;
         }
         ValueNode unproxified = receiverValue instanceof ValueProxyNode proxy ? proxy.value() : receiverValue;
+        // A freshly constructed `new HalfFloat(x)` - either the allocation as the parser still has it on
+        // the stack, or the NewHalfFloatInstance the <init> node plugin substitutes for it.
+        // TornadoHalfFloatReplacement dissolves that allocation into the half value it wraps, so a field
+        // read inlined against it ends up addressing a half register rather than an object, and address
+        // lowering refuses the result with "address origin unimplemented".
+        if (unproxified instanceof NewHalfFloatInstance || isHalfFloatAllocation(unproxified)) {
+            return true;
+        }
         return unproxified instanceof ValuePhiNode || unproxified instanceof AddHalfFloatNode || unproxified instanceof SubHalfFloatNode || unproxified instanceof MultHalfFloatNode
                 || unproxified instanceof DivHalfFloatNode;
+    }
+
+    /**
+     * True for the {@code NewInstanceNode} of a {@code new HalfFloat(float)}.
+     *
+     * <p>Scoped to the float constructor, because that is the one
+     * {@code TornadoHalfFloatReplacement} turns into a real half value. {@code new HalfFloat(short)}
+     * takes a raw bit pattern, which this backend has no reinterpretation for on the store path, so
+     * intercepting it here would hand the half-bits reader a plain short and silently produce a
+     * numerically converted value. Those receivers are left to inline exactly as before.
+     */
+    private static boolean isHalfFloatAllocation(ValueNode node) {
+        if (!(node instanceof NewInstanceNode newInstance) || newInstance.instanceClass() == null //
+                || newInstance.instanceClass().getAnnotation(HalfType.class) == null) {
+            return false;
+        }
+        NewHalfFloatInstance instance = succeedingHalfFloatInstance(newInstance);
+        return instance != null && instance.getValue() != null && instance.getValue().getStackKind() == JavaKind.Float;
+    }
+
+    /**
+     * The {@link NewHalfFloatInstance} the {@code HalfFloat.<init>} node plugin appended for
+     * {@code allocation}. It is not always the allocation's immediate successor - a computed
+     * constructor argument emits its own fixed nodes in between - so walk the straight-line fixed
+     * chain forward, bounded, the way TornadoHalfFloatReplacement does when it looks for the same node.
+     */
+    private static NewHalfFloatInstance succeedingHalfFloatInstance(NewInstanceNode allocation) {
+        Node cursor = allocation.successors().isNotEmpty() ? allocation.successors().first() : null;
+        for (int hops = 0; cursor != null && !(cursor instanceof NewHalfFloatInstance) && !(cursor instanceof NewInstanceNode) && hops < 16; hops++) {
+            cursor = cursor.successors().isNotEmpty() ? cursor.successors().first() : null;
+        }
+        return cursor instanceof NewHalfFloatInstance instance ? instance : null;
     }
 
     private static void registerHalfFloatInit(GraphBuilderConfiguration.Plugins ps, InvocationPlugins plugins) {
