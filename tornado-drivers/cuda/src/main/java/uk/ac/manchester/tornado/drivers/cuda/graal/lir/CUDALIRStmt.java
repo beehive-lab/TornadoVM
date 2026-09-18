@@ -2656,6 +2656,42 @@ public class CUDALIRStmt {
         }
     }
 
+    @Opcode("INT_BITS_TO_HALF")
+    public static class IntBitsToHalfStmt extends AbstractInstruction implements PureRegisterComputation {
+
+        public static final LIRInstructionClass<IntBitsToHalfStmt> TYPE = LIRInstructionClass.create(IntBitsToHalfStmt.class);
+
+        @Def
+        protected Value halfValue;
+        @Use
+        protected Value bits;
+
+        public IntBitsToHalfStmt(Value halfValue, Value bits) {
+            super(TYPE);
+            this.halfValue = halfValue;
+            this.bits = bits;
+        }
+
+        @Override
+        public Value getDefinedValue() {
+            return halfValue;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            // half_value = __ushort_as_half((unsigned short) bits);
+            // The cast drops the sign extension a short picks up on the Java operand stack, so a
+            // half with the sign bit set keeps its bit pattern instead of wrapping to another value.
+            asm.indent();
+            asm.emitValue(crb, halfValue);
+            asm.emit(" = __ushort_as_half((unsigned short) ");
+            asm.emitValue(crb, bits);
+            asm.emit(")");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
     @Opcode("SWIZZLED_LOAD_FP16_STRIDE_32")
     public static class SwizzledLoadFP16Stride32Stmt extends AbstractInstruction {
         public static final LIRInstructionClass<SwizzledLoadFP16Stride32Stmt> TYPE =

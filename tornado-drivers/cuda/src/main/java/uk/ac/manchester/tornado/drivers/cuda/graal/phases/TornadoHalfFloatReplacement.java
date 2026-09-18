@@ -61,6 +61,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.MultHalfNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAConvertFloatToHalf;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAConvertHalfToFloat;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAConvertIntBitsToHalfNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASwizzledLoadFP16Stride32Node;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.ReadHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.SubHalfNode;
@@ -165,6 +166,19 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
     }
 
     /**
+     * Whether {@code value} is the raw f16 bit pattern handed to {@code new HalfFloat(short)},
+     * rather than a float to convert or a value that already is a half.
+     *
+     * <p>A {@code short} argument reaches here with the {@code int} stack kind Java promotes it to,
+     * which is why the test is on the stack kind. Values that already carry the synthetic
+     * {@link HalfFloatStamp} are excluded: those are halves in their own right (a read from a
+     * HalfFloatArray, the result of half arithmetic) and must not be reinterpreted again.
+     */
+    private static boolean isHalfBits(ValueNode value) {
+        return value.getStackKind() == JavaKind.Int && !(value.stamp(NodeView.DEFAULT) instanceof HalfFloatStamp);
+    }
+
+    /**
      * This function receives a half float value and, if it is a constant, it encapsulates it in a {@code HalfFloatConstantNode}. Otherwise, the input value is returned.
      *
      * @param halfFloatValue
@@ -174,7 +188,15 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
      * @return The half float value, either as is, or in the form of the {@code HalfFloatConstantNode}.
      */
     private static ValueNode getHalfFloatValue(ValueNode halfFloatValue, StructuredGraph graph) {
-        if (halfFloatValue instanceof ConstantNode) {
+        if (isHalfBits(halfFloatValue)) {
+            // `new HalfFloat(short)` stores the short as the half's raw bits - it does not convert a
+            // number to half precision - so the value has to be reinterpreted, not assigned. Letting
+            // it through as an integer made the destination's __half assignment convert it
+            // numerically instead: the bits of -8.0 (0xC800) were stored as -14336.0.
+            CUDAConvertIntBitsToHalfNode bitsToHalf = new CUDAConvertIntBitsToHalfNode(halfFloatValue);
+            graph.addWithoutUnique(bitsToHalf);
+            return bitsToHalf;
+        } else if (halfFloatValue instanceof ConstantNode) {
             ConstantNode floatValue = (ConstantNode) halfFloatValue;
             HalfFloatConstantNode halfFloatConstantNode = new HalfFloatConstantNode(floatValue);
             graph.addWithoutUnique(halfFloatConstantNode);
