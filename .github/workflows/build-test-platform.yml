@@ -241,7 +241,7 @@ jobs:
             echo "  installed io.github.beehive-lab:$art:$VERSION"
           done
 
-      # Once per (platform, backend) on a subset run, everywhere on a full sweep. See the apps
+      # Once per (platform, backend, SDK) on a subset run, everywhere on a full sweep. See the apps
       # flag in build-test.yml's plan job for why: these rebuild the same two applications
       # against the same artifact on every leg, inside a slot that holds the GPU while it does.
       - name: Build & run TornadoVM-Ray-Tracer (regression)

@@ -43,7 +43,7 @@ on:
 # ubuntu-latest jobs per push adds up and the result of a run against an overwritten commit is
 # read by nobody.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:

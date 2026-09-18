@@ -17,7 +17,7 @@ name: Build & Test
 # Scope per event (see the plan job, which computes all of it):
 #   pull request            Linux: floor and newest JDK, both backends, full device tests
 #                           macOS: BUILDS ONLY -- one runner cannot serve ten jobs per run
-#                           sample apps: once per (platform, backend), on the newest JDK
+#                           sample apps: once per (platform, backend, SDK), on each SDK's newest JDK
 #   push to develop         same subset: a merge is not a reason to occupy both machines for an
 #                           hour, and the nightly covers the rest a few hours later
 #   + ci-full-jdk-sweep     label on the PR -> every JDK, macOS tests, apps on every leg
@@ -59,7 +59,12 @@ on:
 # Pull requests cancel; pushes to develop do not. A merge is a commit whose result someone will
 # want to look up later, and there is only ever one run in flight per merge anyway.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # Skipped label events must not replace real checks. Non-PR runs stay independent,
+  # since cancel-in-progress: false still replaces pending runs in a shared group.
+  group: >-
+    ${{ github.workflow }}-${{ github.event_name == 'pull_request' &&
+    (github.event.action != 'labeled' || github.event.label.name == 'ci-full-jdk-sweep') &&
+    github.ref || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
@@ -67,7 +72,7 @@ jobs:
     if: >-
       github.repository == 'beehive-lab/TornadoVM' &&
       (github.event.action != 'labeled' ||
-       contains(github.event.pull_request.labels.*.name, 'ci-full-jdk-sweep'))
+       github.event.label.name == 'ci-full-jdk-sweep')
     runs-on: [self-hosted, Linux, x64]
     env:
       JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
@@ -89,7 +94,7 @@ jobs:
     if: >-
       github.repository == 'beehive-lab/TornadoVM' &&
       (github.event.action != 'labeled' ||
-       contains(github.event.pull_request.labels.*.name, 'ci-full-jdk-sweep'))
+       github.event.label.name == 'ci-full-jdk-sweep')
     runs-on: [self-hosted, Linux, x64]
     timeout-minutes: 2
     outputs:
@@ -170,20 +175,14 @@ jobs:
               legs = []
               # jdk21 SDK: preview-compiled, so JDK 21 and nothing else.
               legs.append(dict(platform=platform, backend=backend, runner=runner,
-                               sdk="jdk21", jdk="jdk21", apps=full))
+                               sdk="jdk21", jdk="jdk21", apps=True))
               for jdk in jdk22plus_runtimes:
                   legs.append(dict(platform=platform, backend=backend, runner=runner,
                                    sdk="jdk22plus", jdk=jdk, apps=full))
-              # The downstream sample apps (TornadoVM-Ray-Tracer, KFusion) are a git clone and a
-              # full Maven build each, and they run INSIDE the GPU-serialised test slot, so on a
-              # subset run that is three legs per backend rebuilding the same two applications
-              # against the same SDK, for a large part of each leg's wall time. What they
-              # actually guard is the API surface the SDK ships -- kernel entries resolved through
-              # the compiler-generated SerializedLambda -- which is a property of the artifact and
-              # not of the JDK underneath it, so once per (platform, backend) is the honest
-              # frequency. The newest JDK is the leg chosen because it is the one where a build
-              # plugin or a source-release default is most likely to give way first. A full sweep
-              # still runs them everywhere.
+              # Test each distinct SDK artifact: jdk21 on its only supported runtime,
+              # jdk22plus on the newest runtime. A full sweep exercises every runtime.
+              # Sharing one app run across SDKs would leave the preview JDK 21 artifact
+              # without downstream integration coverage.
               if not full:
                   legs[-1]["apps"] = True
               test[platform].extend(legs)
@@ -198,7 +197,7 @@ jobs:
           # pull request gets the four macOS BUILDS only -- which is what catches the things a
           # macOS-blind change breaks in practice: the Metal and OpenCL native compile, the
           # aarch64 toolchain, and the SDK assembly. Linux keeps its full test matrix on every
-          # pull request, on two runners, so no backend loses its device coverage.
+          # pull request, on two runners. Metal device coverage moves to full sweeps.
           # Put ci-full-jdk-sweep on the pull request to get the macOS tests before you merge.
           print(f"test_macos_enabled={json.dumps(full)}")
           EOF
