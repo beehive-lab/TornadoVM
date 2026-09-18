@@ -270,13 +270,13 @@ public class OCLLIRStmt {
 
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-            // { half __hbits = <half value>; u32_result = (uint) *((__private ushort *) &__hbits); }
+            // { half __hbits = <half value>; s32_result = (int) *((__private short *) &__hbits); }
             //
             // A reinterpretation, not a conversion: the 16 bits are kept as they are, where a cast
             // would renumber them. It goes through a pointer rather than as_ushort() because the
             // half overload of as_ushort() is not universally provided - NVIDIA's OpenCL rejects
             // `as_ushort(half)` as ambiguous between its short and ushort overloads - while reading
-            // the object back through a ushort pointer is plain OpenCL C that every implementation
+            // the object back through a short pointer is plain OpenCL C that every implementation
             // accepts. The temporary gives the value an address, so this also works when the operand
             // is an inlined expression rather than a variable; the enclosing block keeps its name
             // from colliding with another statement's.
@@ -286,7 +286,7 @@ public class OCLLIRStmt {
             asm.emitValueOrOp(crb, halfValue);
             asm.emit("; ");
             asm.emitValue(crb, result);
-            asm.emit(" = (uint) *((__private ushort *) &" + temporary + "); }");
+            asm.emit(" = (int) *((__private short *) &" + temporary + "); }");
             asm.eol();
         }
     }

@@ -38,14 +38,14 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 
 /**
- * Reinterprets the bit pattern of an f16 value as an unsigned 32-bit integer
- * (zero-extended), which is what {@code HalfFloat.getHalfFloatValue()} returns.
+ * Reinterprets the bit pattern of an f16 value as a signed short widened to the Java int
+ * stack kind, matching what {@code HalfFloat.getHalfFloatValue()} returns.
  *
  * <p>OpenCL C emitted (via OCLLIRStmt.HalfBitsToIntStmt):
- * <pre>u32_result = (uint) as_ushort(half_value);</pre>
+ * <pre>{ half h = half_value; result = (int) *((__private short *) &amp;h); }</pre>
  *
- * <p>{@code as_ushort} is a reinterpretation, not a conversion: it keeps the 16 bits as they
- * are, where a cast would renumber them.
+ * <p>The pointer access reinterprets the bits as a signed short; widening to int
+ * preserves the Java accessor semantics. Explicit {@code & 0xFFFF} still yields unsigned bits.
  */
 @NodeInfo
 public class OCLConvertHalfBitsToIntNode extends ValueNode implements LIRLowerable {
@@ -56,14 +56,14 @@ public class OCLConvertHalfBitsToIntNode extends ValueNode implements LIRLowerab
     private ValueNode halfValueNode;
 
     public OCLConvertHalfBitsToIntNode(ValueNode halfValueNode) {
-        super(TYPE, StampFactory.forKind(JavaKind.Int));
+        super(TYPE, StampFactory.forKind(JavaKind.Short));
         this.halfValueNode = halfValueNode;
     }
 
     @Override
     public void generate(NodeLIRBuilderTool generator) {
         LIRGeneratorTool tool = generator.getLIRGeneratorTool();
-        Variable result = tool.newVariable(LIRKind.value(OCLKind.UINT));
+        Variable result = tool.newVariable(LIRKind.value(OCLKind.INT));
         Value halfValue = generator.operand(halfValueNode);
         tool.append(new OCLLIRStmt.HalfBitsToIntStmt(result, halfValue));
         generator.setResult(this, result);
