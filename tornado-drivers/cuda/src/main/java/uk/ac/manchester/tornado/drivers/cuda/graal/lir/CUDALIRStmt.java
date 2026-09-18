@@ -2645,10 +2645,10 @@ public class CUDALIRStmt {
 
         @Override
         public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
-            // u32_result = (unsigned) __half_as_ushort(half_value);
+            // Preserve the signed short returned by HalfFloat.getHalfFloatValue().
             asm.indent();
             asm.emitValue(crb, result);
-            asm.emit(" = (unsigned) __half_as_ushort(");
+            asm.emit(" = (int) __half_as_short(");
             asm.emitValue(crb, halfValue);
             asm.emit(")");
             asm.delimiter();
