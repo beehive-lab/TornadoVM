@@ -2497,7 +2497,7 @@ public class CUDALIRStmt {
 
             // half element write into shared memory (local arrays carry no header).
             asm.indent();
-            asm.emit("((half *) " + arr + ")[__bo >> 1] = ");
+            asm.emit("((__half *) " + arr + ")[__bo >> 1] = ");
             asm.emitValue(crb, value);
             asm.delimiter();
             asm.eol();
@@ -2682,7 +2682,7 @@ public class CUDALIRStmt {
             //   lin     = row * stride + column
             //   byteOff = lin << 1
             //   byteOff ^= (((byteOff >> 7) & 0b111) << 4)
-            //   result = ((half *) tile)[byteOff >> 1]
+            //   result = ((__half *) tile)[byteOff >> 1]
             String arr = asm.getStringValue(crb, localArray);
 
             asm.indent();
@@ -2710,10 +2710,10 @@ public class CUDALIRStmt {
             asm.delimiter();
             asm.eol();
 
-            // result = ((half *) tile)[byteOff >> 1]
+            // result = ((__half *) tile)[byteOff >> 1]
             asm.indent();
             asm.emitValue(crb, result);
-            asm.emit(" = ((half *) " + arr + ")[__bo >> 1]");
+            asm.emit(" = ((__half *) " + arr + ")[__bo >> 1]");
             asm.delimiter();
             asm.eol();
 

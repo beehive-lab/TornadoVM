@@ -31,6 +31,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.vectors.Half2;
@@ -52,6 +53,10 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
  * Compiles kernels that use the packed half2 API and asserts the generated CUDA C
  * actually contains the packed 32-bit accesses and cuda_fp16.h intrinsics, so the
  * codegen cannot silently regress to scalar half code.
+ *
+ * <p>It also covers the other direction: a kernel whose only fp16 construct is a
+ * {@code __shared__} tile written from a run-time value must still carry the
+ * cuda_fp16.h include, which is the case the include scan used to miss.
  */
 public class TestHalf2PackedCodegen {
 
@@ -85,6 +90,24 @@ public class TestHalf2PackedCodegen {
         Half2 pair = kTile[localId];
         Half2 qPair = q.getHalf2(localId * 2);
         out.set(context.globalIdx, Half2.lowFloat(pair) * Half2.lowFloat(qPair) + Half2.highFloat(pair) * Half2.highFloat(qPair));
+    }
+
+
+    /**
+     * A __shared__ fp16 tile written from a run-time value, and nothing else fp16 in the kernel:
+     * no half register is materialised, no conversion intrinsic is emitted, so the only fp16
+     * constructs are the tile declaration and the pointer cast the swizzled store goes through.
+     * That is the shape whose cuda_fp16.h include the source scan used to miss, and NVRTC then
+     * rejected the kernel with {@code identifier "half" is undefined}. The value must be computed
+     * at run time: a compile-time constant folds to {@code __float2half(...)}, which the scan
+     * always matched.
+     */
+    public static void sharedHalfTileFromComputedValue(KernelContext context, FloatArray scale, FloatArray out, int tileSize) {
+        HalfFloat[] tile = context.allocateHalfFloatLocalArray(tileSize);
+        int localId = context.localIdx;
+        context.swizzleStoreFp16Stride32(tile, localId, 0, 8, new HalfFloat(scale.get(0) + localId));
+        context.localBarrier();
+        out.set(context.globalIdx, scale.get(0));
     }
 
     private static String compileToSource(String methodName, Object... parameters) {
@@ -154,6 +177,12 @@ public class TestHalf2PackedCodegen {
                 "__shared__ __half2", //
                 "__low2float(", //
                 "__high2float(");
+
+        String sharedTileSource = compileToSource("sharedHalfTileFromComputedValue", new KernelContext(), result, result, 64);
+        ok &= assertContains(sharedTileSource, "sharedHalfTileFromComputedValue", //
+                "#include <cuda_fp16.h>", //
+                "__shared__ __half", //
+                "((__half *)");
 
         if (!ok) {
             System.out.println("Test failed");
