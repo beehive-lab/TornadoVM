@@ -524,4 +524,59 @@ public class TestMatrixMultiplicationMMAInt8 extends TornadoTestBase {
         }
         return out;
     }
+
+    /** Reads an s32 accumulator after a runtime-controlled MMA loop. */
+    public static void readLoopCarriedIntFragment(KernelContext ctx, ByteArray a,
+                                                  ByteArray b, IntArray iterations, IntArray out) {
+        int lane = ctx.localIdx;
+        int[] aTile = ctx.allocateIntLocalArray(WMMA_M * WMMA_K / 2);
+        int[] bTile = ctx.allocateIntLocalArray(WMMA_K * MMA_N / 4);
+        loadInt8Tiles(ctx, a, b, aTile, bTile, lane);
+        byte[] fragA = ctx.mmaLoadAInt8(aTile, WMMA_K);
+        byte[] fragB = ctx.mmaLoadBInt8(bTile, WMMA_K);
+        int[] acc = ctx.mmaFragmentInt(1);
+        for (int k = 0; k < iterations.get(0); k++) {
+            acc = ctx.mmaInt8(fragA, fragB, acc, MMAShape.M16N8K32);
+        }
+        out.set(lane * 4, acc[0] * 2);
+        out.set(lane * 4 + 1, acc[1] * 2);
+        out.set(lane * 4 + 2, acc[2] * 2);
+        out.set(lane * 4 + 3, acc[3] * 2);
+    }
+
+    @Test
+    public void testLoopCarriedIntFragmentElementReads() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.METAL);
+        ByteArray a = randomInt8Array(WMMA_M * WMMA_K);
+        ByteArray b = randomInt8Array(WMMA_K * MMA_N);
+        IntArray iterations = new IntArray(1);
+        IntArray out = new IntArray(WARP_SIZE * 4);
+        WorkerGrid1D worker = new WorkerGrid1D(WARP_SIZE);
+        worker.setLocalWork(WARP_SIZE, 1, 1);
+        TaskGraph graph = new TaskGraph("mma_int_loop_read")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, iterations)
+                .task("k", TestMatrixMultiplicationMMAInt8::readLoopCarriedIntFragment,
+                        new KernelContext(), a, b, iterations, out)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.withGridScheduler(new GridScheduler("mma_int_loop_read.k", worker));
+            for (int count : new int[] { 0, 1, 3 }) {
+                iterations.set(0, count);
+                plan.execute();
+                for (int lane = 0; lane < WARP_SIZE; lane++) {
+                    for (int i = 0; i < 4; i++) {
+                        int m = lane / 4 + 8 * (i / 2);
+                        int n = (lane % 4) * 2 + i % 2;
+                        int dot = 0;
+                        for (int k = 0; k < WMMA_K; k++) {
+                            dot += a.get(m * WMMA_K + k) * b.get(k * MMA_N + n);
+                        }
+                        assertEquals("iterations " + count + " lane " + lane + " element " + i,
+                                2 * (1 + count * dot), out.get(lane * 4 + i));
+                    }
+                }
+            }
+        }
+    }
 }

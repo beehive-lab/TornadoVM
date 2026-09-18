@@ -819,7 +819,7 @@ public class KernelContext implements ExecutionContext {
      * fragment out with {@link #mmaStore(float[], FloatArray, int, int, int)}. Which value of
      * the tile each element holds is fixed by the PTX m16n8 C/D layout: for lane {@code L},
      * element {@code i} is row {@code L / 4 + 8 * (i / 2)}, column {@code (L % 4) * 2 + i % 2}
-     * of the tile. Every lane holds a quarter of the tile, so code reading the fragment has to
+     * of the tile. Each lane holds four of the tile's 128 elements, so code reading the fragment has to
      * stay warp-uniform, exactly as the {@code mma} that produced it does.
      *
      * <p>A run-time index, and a write through an index, are both rejected at compile time: the

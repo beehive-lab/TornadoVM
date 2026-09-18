@@ -32,6 +32,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -1216,5 +1217,67 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
             plan.withGridScheduler(gridScheduler).execute();
         }
         return out;
+    }
+
+    /** Keeps the accumulator in a loop phi, including the zero-iteration path. */
+    public static void readLoopCarriedFragment(KernelContext ctx, HalfFloatArray a,
+                                               HalfFloatArray b, IntArray iterations, FloatArray out) {
+        int lane = ctx.localIdx;
+        int[] aTile = ctx.allocateIntLocalArray(WMMA_M * WMMA_K / 2);
+        HalfFloat[] bTile = ctx.allocateHalfFloatLocalArray(MMA_N * WMMA_K);
+        loadFragmentTiles(ctx, a, b, aTile, bTile, lane);
+        HalfFloat[] fragA = ctx.mmaLoadA(aTile, WMMA_K);
+        HalfFloat[] fragB = ctx.mmaLoadBSwizzled(bTile, WMMA_K);
+        float[] acc = ctx.mmaFragment(1.0f);
+        for (int k = 0; k < iterations.get(0); k++) {
+            acc = ctx.mma(fragA, fragB, acc, MMAShape.M16N8K16);
+        }
+        out.set(lane * 4, acc[0] * 2.0f);
+        out.set(lane * 4 + 1, acc[1] * 2.0f);
+        out.set(lane * 4 + 2, acc[2] * 2.0f);
+        out.set(lane * 4 + 3, acc[3] * 2.0f);
+    }
+
+    @Test
+    public void testLoopCarriedFragmentElementReads() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.METAL);
+        HalfFloatArray a = new HalfFloatArray(WMMA_M * WMMA_K);
+        HalfFloatArray b = new HalfFloatArray(MMA_N * WMMA_K);
+        float[] aHost = new float[a.getSize()];
+        float[] bHost = new float[b.getSize()];
+        for (int i = 0; i < a.getSize(); i++) {
+            aHost[i] = ((i * 7) % 13 - 6) * 0.25f;
+            a.set(i, new HalfFloat(aHost[i]));
+        }
+        for (int i = 0; i < b.getSize(); i++) {
+            bHost[i] = ((i * 5) % 11 - 5) * 0.5f;
+            b.set(i, new HalfFloat(bHost[i]));
+        }
+        IntArray iterations = new IntArray(1);
+        FloatArray out = new FloatArray(WARP_SIZE * 4);
+        WorkerGrid1D worker = new WorkerGrid1D(WARP_SIZE);
+        worker.setLocalWork(WARP_SIZE, 1, 1);
+        TaskGraph graph = new TaskGraph("mma_loop_read")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, iterations)
+                .task("k", TestMatrixMultiplicationMMA::readLoopCarriedFragment,
+                        new KernelContext(), a, b, iterations, out)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.withGridScheduler(new GridScheduler("mma_loop_read.k", worker));
+            for (int count : new int[] { 0, 1, 3 }) {
+                iterations.set(0, count);
+                plan.execute();
+                for (int lane = 0; lane < WARP_SIZE; lane++) {
+                    for (int i = 0; i < 4; i++) {
+                        int m = lane / 4 + 8 * (i / 2);
+                        int n = (lane % 4) * 2 + i % 2;
+                        float expected = 2.0f * (1.0f + count * fragmentReference(aHost, bHost, m, n));
+                        assertEquals("iterations " + count + " lane " + lane + " element " + i,
+                                expected, out.get(lane * 4 + i), 0.01f);
+                    }
+                }
+            }
+        }
     }
 }
