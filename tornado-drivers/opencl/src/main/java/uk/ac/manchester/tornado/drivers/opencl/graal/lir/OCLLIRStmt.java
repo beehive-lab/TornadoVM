@@ -217,6 +217,45 @@ public class OCLLIRStmt {
 
     }
 
+    @Opcode("HALF_BITS_TO_INT")
+    public static class HalfBitsToIntStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<HalfBitsToIntStmt> TYPE = LIRInstructionClass.create(HalfBitsToIntStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value halfValue;
+
+        public HalfBitsToIntStmt(Value result, Value halfValue) {
+            super(TYPE);
+            this.result = result;
+            this.halfValue = halfValue;
+        }
+
+        @Override
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            // { half __hbits = <half value>; u32_result = (uint) *((__private ushort *) &__hbits); }
+            //
+            // A reinterpretation, not a conversion: the 16 bits are kept as they are, where a cast
+            // would renumber them. It goes through a pointer rather than as_ushort() because the
+            // half overload of as_ushort() is not universally provided - NVIDIA's OpenCL rejects
+            // `as_ushort(half)` as ambiguous between its short and ushort overloads - while reading
+            // the object back through a ushort pointer is plain OpenCL C that every implementation
+            // accepts. The temporary gives the value an address, so this also works when the operand
+            // is an inlined expression rather than a variable; the enclosing block keeps its name
+            // from colliding with another statement's.
+            String temporary = "__hbits_" + asm.getStringValue(crb, result);
+            asm.indent();
+            asm.emit("{ half " + temporary + " = ");
+            asm.emitValueOrOp(crb, halfValue);
+            asm.emit("; ");
+            asm.emitValue(crb, result);
+            asm.emit(" = (uint) *((__private ushort *) &" + temporary + "); }");
+            asm.eol();
+        }
+    }
+
     @Opcode("CONVERT_FLOAT_TO_HALF")
     public static class ConvertFloatToHalfStmt extends AbstractInstruction {
 

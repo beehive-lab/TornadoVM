@@ -55,6 +55,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.HalfFloatConstantNode
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.MultHalfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLConvertFloatToHalf;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLConvertHalfBitsToIntNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLConvertHalfToFloat;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ReadHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.SubHalfNode;
@@ -78,6 +79,21 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContext> {
+
+    /**
+     * Finds the {@link NewHalfFloatInstance} that the {@code OCLHalfFloatPlugins} node plugin inserted at the
+     * {@code HalfFloat.<init>} call site for this allocation. It is not always the allocation's immediate fixed
+     * successor: a computed constructor argument (e.g. an array read, {@code new HalfFloat(a.get(i) * 2.0f)})
+     * emits its own fixed nodes between the {@code new} and the {@code <init>} it feeds, so this walks the
+     * straight-line fixed chain forward (bounded, since argument evaluation cannot branch) looking for it.
+     */
+    private static Node findSucceedingHalfFloatInstance(NewInstanceNode newInstanceNode) {
+        Node cursor = newInstanceNode.successors().isNotEmpty() ? newInstanceNode.successors().first() : null;
+        for (int hops = 0; cursor != null && !(cursor instanceof NewHalfFloatInstance) && !(cursor instanceof NewInstanceNode) && hops < 16; hops++) {
+            cursor = cursor.successors().isNotEmpty() ? cursor.successors().first() : null;
+        }
+        return cursor instanceof NewHalfFloatInstance ? cursor : null;
+    }
 
     private static void replaceFieldAccess(LoadFieldNode loadFieldNode) {
         // remove the FixGuardNode associated with the loading of the field
@@ -157,8 +173,14 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             HalfFloatConstantNode halfFloatConstantNode = new HalfFloatConstantNode(floatValue);
             graph.addWithoutUnique(halfFloatConstantNode);
             return halfFloatConstantNode;
-        } else if (halfFloatValue instanceof JavaReadNode javaReadNode && javaReadNode.getReadKind() == JavaKind.Float) {
-            OCLConvertFloatToHalf convertFloatToHalf = new OCLConvertFloatToHalf(javaReadNode);
+        } else if (halfFloatValue.getStackKind() == JavaKind.Float) {
+            // Any float-valued constructor argument, not just a read: `new HalfFloat(a.get(i) * s)`
+            // hands over the multiply, and without this the half value would be represented by a
+            // float register. That is invisible while the only consumer is a store (the write casts
+            // the destination to half and the C conversion happens on assignment), but once the
+            // value is read back - `new HalfFloat(v).getHalfFloatValue()` - it would carry a float
+            // where a half is expected.
+            OCLConvertFloatToHalf convertFloatToHalf = new OCLConvertFloatToHalf(halfFloatValue);
             graph.addWithoutUnique(convertFloatToHalf);
             return convertFloatToHalf;
         } else {
@@ -418,8 +440,7 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
 
         for (NewInstanceNode newInstanceNode : graph.getNodes().filter(NewInstanceNode.class)) {
             if (newInstanceNode.instanceClass().getAnnotation(HalfType.class) != null) {
-                if (newInstanceNode.successors().first() instanceof NewHalfFloatInstance) {
-                    NewHalfFloatInstance newHalfFloatInstance = (NewHalfFloatInstance) newInstanceNode.successors().first();
+                if (findSucceedingHalfFloatInstance(newInstanceNode) instanceof NewHalfFloatInstance newHalfFloatInstance) {
                     ValueNode valueInput = getHalfFloatValue(newHalfFloatInstance.getValue(), graph);
                     newInstanceNode.replaceAtUsages(valueInput);
                     deleteFixed(newInstanceNode);
@@ -442,17 +463,26 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
                 // This casting is safe to do as it is already checked by the isWriteHalfFloat function
                 HalfFloatPlaceholder placeholder = (HalfFloatPlaceholder) javaWrite.value();
                 ValueNode writingValue;
-                if (javaWrite.predecessor() instanceof NewHalfFloatInstance) {
-                    // if a new HalfFloat instance is written
-                    NewHalfFloatInstance newHalfFloatInstance = (NewHalfFloatInstance) javaWrite.predecessor();
+                // A written HalfFloat that comes from `new HalfFloat(x)` shows up as a
+                // NewHalfFloatInstance, either as the write's control-flow predecessor (simple
+                // read argument) or, when the ctor argument is a computed expression that
+                // reorders the fixed nodes, only as the placeholder's data input. Handle both,
+                // and drop the instance unconditionally: leaving it (as happened when the
+                // NewInstanceNode was not adjacent) makes it reach LIR with
+                // "node is not LIRLowerable: NewHalfFloatInstance".
+                NewHalfFloatInstance newHalfFloatInstance = null;
+                if (javaWrite.predecessor() instanceof NewHalfFloatInstance predInstance) {
+                    newHalfFloatInstance = predInstance;
+                } else if (placeholder.getInput() instanceof NewHalfFloatInstance inputInstance) {
+                    newHalfFloatInstance = inputInstance;
+                }
+                if (newHalfFloatInstance != null) {
                     writingValue = newHalfFloatInstance.getValue();
-                    if (newHalfFloatInstance.predecessor() instanceof NewInstanceNode) {
-                        NewInstanceNode newInstanceNode = (NewInstanceNode) newHalfFloatInstance.predecessor();
-                        if (newInstanceNode.instanceClass().toString().contains("HalfFloat")) {
-                            deleteFixed(newInstanceNode);
-                            deleteFixed(newHalfFloatInstance);
-                        }
+                    if (newHalfFloatInstance.predecessor() instanceof NewInstanceNode newInstanceNode //
+                            && newInstanceNode.instanceClass().toString().contains("HalfFloat")) {
+                        deleteFixed(newInstanceNode);
                     }
+                    deleteFixed(newHalfFloatInstance);
                 } else {
                     // if the result of an operation or a stored value is written
                     writingValue = placeholder.getInput();
@@ -464,6 +494,16 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
                 graph.addWithoutUnique(writeHalfFloatNode);
                 replaceFixed(javaWrite, writeHalfFloatNode);
                 deleteFixed(javaWrite);
+            }
+        }
+
+        // A `new HalfFloat(computedExpr)` leaves the HalfFloat allocation (NewInstanceNode) in the
+        // fixed control flow when the computed argument breaks the adjacency the matching above
+        // relies on. Once its usages have been rewired it is a dead allocation that would otherwise
+        // lower as an (unsupported) on-device object allocation, so remove any leftover.
+        for (NewInstanceNode newInstanceNode : graph.getNodes().filter(NewInstanceNode.class)) {
+            if (newInstanceNode.instanceClass().getAnnotation(HalfType.class) != null && newInstanceNode.hasNoUsages()) {
+                deleteFixed(newInstanceNode);
             }
         }
 
@@ -531,7 +571,15 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             }
             if (placeholder.hasNoUsages()) {
                 placeholder.safeDelete();
+                continue;
             }
+            // What is left is getHalfFloatValue() used as a number - `a.get(i).getHalfFloatValue() & 0xFFFF`
+            // when bit-packing, or reading back a half just built from a float. That is the half's bit
+            // pattern, so it is a reinterpretation of the value rather than a conversion of it.
+            OCLConvertHalfBitsToIntNode bitsNode = new OCLConvertHalfBitsToIntNode(placeholder.getInput());
+            graph.addWithoutUnique(bitsNode);
+            placeholder.replaceAtUsages(bitsNode);
+            placeholder.safeDelete();
         }
     }
 
