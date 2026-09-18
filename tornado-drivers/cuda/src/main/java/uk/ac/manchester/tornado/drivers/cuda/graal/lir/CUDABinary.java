@@ -57,7 +57,52 @@ public class CUDABinary {
 
         @Override
         public void emit(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
-            opcode.emit(crb, x, y);
+            if (wrapsOnOverflow()) {
+                emitWrapping(crb, asm);
+            } else {
+                opcode.emit(crb, x, y);
+            }
+        }
+
+        /**
+         * Whether this operation has to be emitted with wrap-around semantics.
+         *
+         * <p>Java defines {@code +}, {@code -}, {@code *} and {@code <<} on {@code int} and
+         * {@code long} to wrap; C leaves signed overflow undefined, and the device compilers act on
+         * that. {@code a * a} for {@code a = 46341} came back as if the product had not overflowed,
+         * and {@code a << 31} - which Graal canonicalises to {@code -(a << 31)}, equal under
+         * wrap-around - was folded to zero because negating {@code INT_MIN} is undefined too.
+         * Only the signed integer kinds are affected: unsigned arithmetic already wraps in C, and
+         * float overflow is defined.
+         */
+        private boolean wrapsOnOverflow() {
+            if (opcode != CUDAAssembler.CUDABinaryOp.ADD && opcode != CUDAAssembler.CUDABinaryOp.SUB //
+                    && opcode != CUDAAssembler.CUDABinaryOp.MUL && opcode != CUDAAssembler.CUDABinaryOp.BITWISE_LEFT_SHIFT) {
+                return false;
+            }
+            CUDAKind kind = getCUDAPlatformKind();
+            return kind == CUDAKind.INT || kind == CUDAKind.LONG;
+        }
+
+        /**
+         * Emits {@code (int) ((unsigned int) x OP y)}, the C idiom for a wrapping signed operation.
+         * Casting the left operand is enough: the usual arithmetic conversions make the whole
+         * expression unsigned, and for a shift only the shifted value can overflow anyway.
+         *
+         * <p>The narrowing back to the signed kind is implementation-defined in C rather than
+         * undefined, and every target TornadoVM runs on defines it as the two's-complement
+         * reinterpretation Java specifies.
+         */
+        private void emitWrapping(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            CUDAKind kind = getCUDAPlatformKind();
+            String unsigned = (kind == CUDAKind.INT ? CUDAKind.UINT : CUDAKind.ULONG).toString();
+            asm.emit("(" + kind + ") ((" + unsigned + ") ");
+            asm.emitValueOrOp(crb, x);
+            asm.space();
+            asm.emit(opcode.toString());
+            asm.space();
+            asm.emitValueOrOp(crb, y);
+            asm.emit(")");
         }
 
         public Value getX() {

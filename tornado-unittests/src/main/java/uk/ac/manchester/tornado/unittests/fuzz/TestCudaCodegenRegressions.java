@@ -34,16 +34,23 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
- * Regression tests distilled from tornado-fuzz generative findings on the CUDA
- * backend. Each test is the auto-shrunk minimal integer expression that diverged
+ * Regression tests distilled from tornado-fuzz generative findings, which ran
+ * against the CUDA backend. Each test is the auto-shrunk minimal integer expression that diverged
  * from Java semantics (or crashed the compiler), with a tiny hand-picked input
  * that triggers it. Every kernel is a plain {@link KernelContext} elementwise
  * expression; the expected values are the exact Java result.
  *
  * <p>These assert the correct (Java) semantics, so they FAIL / ERROR while the
- * underlying CUDA code-generator bug is open. When a bug is fixed, its test turns
- * green and becomes a permanent guard against regression. Findings referenced by
- * their fuzz seed under phase-2 generation.
+ * underlying code-generator bug is open. When a bug is fixed, its test turns green
+ * and becomes a permanent guard against regression. Findings referenced by their
+ * fuzz seed under phase-2 generation.
+ *
+ * <p>The four integer-overflow findings were labelled as CUDA bugs because that is
+ * the backend the fuzzer ran against, but every one of them reproduced identically
+ * on OpenCL: Java's wrapping arithmetic was emitted as plain signed C arithmetic,
+ * whose overflow is undefined. They are fixed in all backends and now run as
+ * ordinary regression tests. The remaining {@code @Ignore} is a compiler crash in a
+ * shared Graal phase, which is a separate defect.
  *
  * <p>Run: {@code tornado-test -V uk.ac.manchester.tornado.unittests.fuzz.TestCudaCodegenRegressions}
  * (add {@code --jvm="-Dtornado.cuda.priority=100"} on a multi-backend build).
@@ -87,28 +94,24 @@ public class TestCudaCodegenRegressions extends TornadoTestBase {
     // ---- tests ----
 
     @Test
-    @Ignore("Open CUDA backend bug (tornado-fuzz seed 529/232): `a << 31` yields 0 instead of a<<31; shift count 31 mishandled.")
     public void testShiftBy31() throws Exception {
         int[] in = { 0, 1, 2, 3, -1, -2, Integer.MAX_VALUE, Integer.MIN_VALUE };
         run(TestCudaCodegenRegressions::shiftBy31, in, in, (a, b, i) -> a << 31);
     }
 
     @Test
-    @Ignore("Open CUDA backend bug (tornado-fuzz seed 629): `Integer.MIN_VALUE * b` yields 0 instead of the wrapped product.")
     public void testIntMinMul() throws Exception {
         int[] in = { 0, 1, 2, 3, -1, -2, 7, Integer.MAX_VALUE };
         run(TestCudaCodegenRegressions::intMinMul, in, in, (a, b, i) -> Integer.MIN_VALUE * b);
     }
 
     @Test
-    @Ignore("Open CUDA backend bug (tornado-fuzz seed 221): `-(a & Integer.MIN_VALUE)` yields 0 instead of INT_MIN when the sign bit is set.")
     public void testSignBitNegate() throws Exception {
         int[] in = { 0, 1, -1, -2, Integer.MAX_VALUE, Integer.MIN_VALUE, 12345, -12345 };
         run(TestCudaCodegenRegressions::signBitNegate, in, in, (a, b, i) -> -(a & Integer.MIN_VALUE));
     }
 
     @Test
-    @Ignore("Open CUDA backend bug (tornado-fuzz seed 167): `(a*a) >> 20` emitted as a logical shift, dropping the sign (returns +2048 where Java gives -2048).")
     public void testSignedShiftProduct() throws Exception {
         int[] in = { 0, 100000, 46341, -46341, 65536, 3, -3, 1 << 20 };
         run(TestCudaCodegenRegressions::signedShiftProduct, in, in, (a, b, i) -> (a * a) >> 20);

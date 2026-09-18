@@ -57,7 +57,39 @@ public class MetalBinary {
 
         @Override
         public void emit(MetalCompilationResultBuilder crb, MetalAssembler asm) {
-            opcode.emit(crb, x, y);
+            if (wrapsOnOverflow()) {
+                emitWrapping(crb, asm);
+            } else {
+                opcode.emit(crb, x, y);
+            }
+        }
+
+        /**
+         * Whether this operation has to be emitted with wrap-around semantics. Java defines
+         * {@code +}, {@code -}, {@code *} and {@code <<} on {@code int} and {@code long} to wrap;
+         * C++ leaves signed overflow undefined and the device compiler acts on it. Only the signed
+         * integer kinds are affected: unsigned arithmetic already wraps, float overflow is defined.
+         */
+        private boolean wrapsOnOverflow() {
+            if (opcode != MetalAssembler.MetalBinaryOp.ADD && opcode != MetalAssembler.MetalBinaryOp.SUB //
+                    && opcode != MetalAssembler.MetalBinaryOp.MUL && opcode != MetalAssembler.MetalBinaryOp.BITWISE_LEFT_SHIFT) {
+                return false;
+            }
+            MetalKind kind = getMetalPlatformKind();
+            return kind == MetalKind.INT || kind == MetalKind.LONG;
+        }
+
+        /** Emits {@code (int) ((uint) x OP y)}; the left cast makes the whole expression unsigned. */
+        private void emitWrapping(MetalCompilationResultBuilder crb, MetalAssembler asm) {
+            MetalKind kind = getMetalPlatformKind();
+            String unsigned = (kind == MetalKind.INT ? MetalKind.UINT : MetalKind.ULONG).toString();
+            asm.emit("(" + kind + ") ((" + unsigned + ") ");
+            asm.emitValueOrOp(crb, x);
+            asm.space();
+            asm.emit(opcode.toString());
+            asm.space();
+            asm.emitValueOrOp(crb, y);
+            asm.emit(")");
         }
 
         public MetalBinaryOp getOpcode() {
