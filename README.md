@@ -20,6 +20,38 @@ TornadoVM is a GPU programming framework for Java that works with JDK 21+ (curre
 
 ## This is the whole programming model
 
+### 🧩 CUDA Tile: a tile is the unit of work
+
+*CUDA backend only; on `develop`, not in 6.1.0.* A task whose kernel takes a **`TileContext`** is compiled through **NVIDIA CUDA Tile** (`nvcc -tilecubin --tile-only`) instead of the SIMT path. You write what **one tile block** does; the tile compiler decides how many threads back it, which tensor-core instruction to issue, and how tiles move through shared memory. **Nothing in the API names a thread, a warp or a fragment.**
+
+```java
+// C = A x B, FP16 in, FP32 accumulate. No thread index, no shared memory,
+// no barrier, and no instruction shape — the tile compiler chooses them.
+public static void tiles(TileContext tc, HalfFloatArray a, HalfFloatArray b, FloatArray c,
+                         int m, int n, int k) {
+    PartitionView aView = tc.partition(tc.view(a, m, k), TILE, TILE);
+    PartitionView bView = tc.partition(tc.view(b, k, n), TILE, TILE);
+    PartitionView cView = tc.partition(tc.view(c, m, n), TILE, TILE);
+
+    Tile acc = tc.zeros(DType.F32, TILE, TILE);
+    for (int step = 0; step < k / TILE; step++) {
+        acc = tc.mma(aView.load(tc.bidX(), step), bView.load(step, tc.bidY()), acc);
+    }
+    cView.store(acc, tc.bidX(), tc.bidY());
+}
+
+WorkerGrid2D worker = new WorkerGrid2D(n / TILE, n / TILE);   // TILE BLOCKS, not threads
+```
+
+- **It composes with everything else.** A `@Parallel` kernel, a `KernelContext` kernel, a `TileContext` kernel and a native cuBLAS call sit in one `TaskGraph`, share device buffers on one stream, and are captured into **a single CUDA Graph** replayed with one launch — see [`TestTileChaining`](tornado-unittests/src/main/java/uk/ac/manchester/tornado/unittests/tile/TestTileChaining.java).
+- **It is still ordinary Java.** Every `TileContext` operation has a JVM implementation, so the same method runs and debugs on the CPU.
+- **Tile shapes are compile-time constants; extents are not.** The shape specialises the kernel, the problem size does not.
+- **Requirements:** CUDA Toolkit **13.3+** (a userspace `pip install 'cuda-tile[tileiras]'` is enough), compute capability **8.0+**, and a driver new enough to load a CUDA 13 cubin (**R580+**). An unsupported device or toolkit fails with `TornadoDeviceTileNotSupported` naming the missing requirement *before* code generation, not as an opaque compiler error.
+
+[Tile API guide →](docs/source/tile-api.rst) · [runnable examples](tornado-examples/src/main/java/uk/ac/manchester/tornado/examples/tile) (matmul three ways, softmax, attention, quantized projection)
+
+### A thread is the unit of work: the Kernel API
+
 Write the kernel in Java with the same thread-indexing model you'd use in CUDA — then build a task graph and execute. TornadoVM JIT-compiles the bytecode to a GPU kernel at runtime and manages all host↔device data transfers for you. On NVIDIA GPUs that kernel is emitted as **CUDA PTX** and compiled through NVRTC to a native cubin.
 
 <table>
@@ -127,7 +159,7 @@ On NVIDIA hardware, TornadoVM is more than a PTX code generator — it's an open
 | **cuDNN** library tasks | Deep-learning primitives through the cuDNN graph API, including fused scaled-dot-product (flash) attention via cudnn-frontend. |
 | **Tensor Core MMA intrinsics** | `mma.sync` exposed through `KernelContext` (`mmaLoadA/B`, `mma`, `mmaStore`) — FP16 (`m16n8k16` → FP32) and INT8 (`m16n8k32` → INT32), with swizzled shared-memory staging. Not a binding: real CUDA generated from Java. |
 | **CUDA Graphs** | `executionPlan.withCUDAGraph()` records kernels, library calls, and transfers into a captured graph and replays them with a single `cuGraphLaunch`. |
-| **CUDA Tile** (`TileContext`) 🆕 | A second compilation path: kernels written over *tiles* go through `nvcc -tilecubin`, and the tile compiler picks the threads, the tensor-core instruction, and the shared-memory staging. [Below](#-cuda-tile-a-tile-is-the-unit-of-work). |
+| **CUDA Tile** (`TileContext`) 🆕 | A second compilation path: kernels written over *tiles* go through `nvcc -tilecubin`, and the tile compiler picks the threads, the tensor-core instruction, and the shared-memory staging. [Details](#-cuda-tile-a-tile-is-the-unit-of-work). |
 
 Mixing your own kernels with NVIDIA's tuned libraries looks like this:
 
@@ -146,37 +178,6 @@ try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
 ```
 
 Library bindings are discovered via Java `ServiceLoader` — implement `TornadoLibraryProvider`, bind the calls through `java.lang.foreign` (a JNI module only if the library genuinely needs compiled C/C++), and any native library joins the graph with no core runtime changes. TornadoVM is a member of the **NVIDIA Inception Program** and has presented this work at **NVIDIA GTC**. [Hybrid API guide →](https://tornadovm.readthedocs.io/en/latest/)
-
-### 🧩 CUDA Tile: a tile is the unit of work
-
-*On `develop`, not in 6.1.0.* A task whose kernel takes a **`TileContext`** is compiled through **NVIDIA CUDA Tile** (`nvcc -tilecubin --tile-only`) instead of the SIMT path. You write what **one tile block** does; the tile compiler decides how many threads back it, which tensor-core instruction to issue, and how tiles move through shared memory. **Nothing in the API names a thread, a warp or a fragment.**
-
-```java
-// C = A x B, FP16 in, FP32 accumulate. No thread index, no shared memory,
-// no barrier, and no instruction shape — the tile compiler chooses them.
-public static void tiles(TileContext tc, HalfFloatArray a, HalfFloatArray b, FloatArray c,
-                         int m, int n, int k) {
-    PartitionView aView = tc.partition(tc.view(a, m, k), TILE, TILE);
-    PartitionView bView = tc.partition(tc.view(b, k, n), TILE, TILE);
-    PartitionView cView = tc.partition(tc.view(c, m, n), TILE, TILE);
-
-    Tile acc = tc.zeros(DType.F32, TILE, TILE);
-    for (int step = 0; step < k / TILE; step++) {
-        acc = tc.mma(aView.load(tc.bidX(), step), bView.load(step, tc.bidY()), acc);
-    }
-    cView.store(acc, tc.bidX(), tc.bidY());
-}
-
-WorkerGrid2D worker = new WorkerGrid2D(n / TILE, n / TILE);   // TILE BLOCKS, not threads
-```
-
-- **It composes with everything else.** A `@Parallel` kernel, a `KernelContext` kernel, a `TileContext` kernel and a native cuBLAS call sit in one `TaskGraph`, share device buffers on one stream, and are captured into **a single CUDA Graph** replayed with one launch — see [`TestTileChaining`](tornado-unittests/src/main/java/uk/ac/manchester/tornado/unittests/tile/TestTileChaining.java).
-- **It is still ordinary Java.** Every `TileContext` operation has a JVM implementation, so the same method runs and debugs on the CPU.
-- **Tile shapes are compile-time constants; extents are not.** The shape specialises the kernel, the problem size does not.
-- **Requirements:** CUDA Toolkit **13.3+** (a userspace `pip install 'cuda-tile[tileiras]'` is enough), compute capability **8.0+**, and a driver new enough to load a CUDA 13 cubin (**R580+**). An unsupported device or toolkit fails with `TornadoDeviceTileNotSupported` naming the missing requirement *before* code generation, not as an opaque compiler error.
-
-[Tile API guide →](docs/source/tile-api.rst) · [runnable examples](tornado-examples/src/main/java/uk/ac/manchester/tornado/examples/tile) (matmul three ways, softmax, attention, quantized projection)
-
 
 ---
 
