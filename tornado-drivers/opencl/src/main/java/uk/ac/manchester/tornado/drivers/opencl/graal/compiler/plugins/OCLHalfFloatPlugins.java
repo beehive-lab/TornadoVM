@@ -23,6 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins;
 
+import tornado.graal.compiler.graph.Node;
 import tornado.graal.compiler.nodes.NodeView;
 import tornado.graal.compiler.nodes.ValueNode;
 import tornado.graal.compiler.nodes.ValuePhiNode;
@@ -32,8 +33,10 @@ import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import tornado.graal.compiler.nodes.graphbuilderconf.NodePlugin;
+import tornado.graal.compiler.nodes.java.NewInstanceNode;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.api.internal.annotations.HalfType;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.drivers.opencl.graal.HalfFloatStamp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLConvertHalfToFloat;
@@ -69,8 +72,51 @@ public class OCLHalfFloatPlugins {
             return true;
         }
         ValueNode unproxified = receiverValue instanceof ValueProxyNode proxy ? proxy.value() : receiverValue;
+        // A freshly constructed `new HalfFloat(x)` - either the allocation as the parser still has it on
+        // the stack, or the NewHalfFloatInstance the <init> node plugin substitutes for it.
+        // TornadoHalfFloatReplacement dissolves that allocation into the half value it wraps, so a field
+        // read inlined against it ends up addressing a half register rather than an object, and address
+        // lowering refuses the result: "address origin unimplemented: OCLConvertFloatToHalf", or the
+        // arithmetic feeding it when there is any.
+        if (unproxified instanceof NewHalfFloatInstance || isHalfFloatAllocation(unproxified)) {
+            return true;
+        }
         return unproxified instanceof ValuePhiNode || unproxified instanceof AddHalfFloatNode || unproxified instanceof SubHalfFloatNode || unproxified instanceof MultHalfFloatNode
                 || unproxified instanceof DivHalfFloatNode;
+    }
+
+    /**
+     * True for the {@code NewInstanceNode} of a {@code new HalfFloat(float)}.
+     *
+     * <p>Scoped to the float constructor, because that is the one
+     * {@code TornadoHalfFloatReplacement} turns into a real half value (a conversion of the
+     * argument). {@code new HalfFloat(short)} takes a raw bit pattern, which this backend has no
+     * reinterpretation for, so intercepting it here would hand the half-bits reader a plain short
+     * and silently produce a numerically converted value. Those receivers are left to inline
+     * exactly as before.
+     */
+    private static boolean isHalfFloatAllocation(ValueNode node) {
+        if (!(node instanceof NewInstanceNode newInstance) || newInstance.instanceClass() == null //
+                || newInstance.instanceClass().getAnnotation(HalfType.class) == null) {
+            return false;
+        }
+        NewHalfFloatInstance instance = succeedingHalfFloatInstance(newInstance);
+        return instance != null && instance.getValue() != null && instance.getValue().getStackKind() == JavaKind.Float;
+    }
+
+    /**
+     * The {@link NewHalfFloatInstance} the {@code HalfFloat.<init>} node plugin above appended for
+     * {@code allocation}. It is not always the allocation's immediate successor - a computed
+     * constructor argument emits its own fixed nodes in between - so walk the straight-line fixed
+     * chain forward, bounded. A different allocation on the way means this one's {@code <init>} has
+     * not been parsed yet, which cannot be the case for a receiver, but stops the walk safely.
+     */
+    private static NewHalfFloatInstance succeedingHalfFloatInstance(NewInstanceNode allocation) {
+        Node cursor = allocation.successors().isNotEmpty() ? allocation.successors().first() : null;
+        for (int hops = 0; cursor != null && !(cursor instanceof NewHalfFloatInstance) && !(cursor instanceof NewInstanceNode) && hops < 16; hops++) {
+            cursor = cursor.successors().isNotEmpty() ? cursor.successors().first() : null;
+        }
+        return cursor instanceof NewHalfFloatInstance instance ? instance : null;
     }
 
     private static void registerHalfFloatInit(GraphBuilderConfiguration.Plugins ps, InvocationPlugins plugins) {
