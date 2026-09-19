@@ -85,9 +85,9 @@ a JVM implementation as well as a lowering, so a tile kernel also runs as ordina
 
 That dual life is worth knowing when a test passes unexpectedly. If a tile kernel fails to
 compile and ``tornado.recover.bailout`` is enabled, the task quietly runs the JVM implementation
-on the host and produces the right answer, so nothing fails. ``tornado-test`` sets
-``-Dtornado.recover.bailout=False`` for this reason; outside it, confirm with ``--printKernel``
-that a kernel was generated at all.
+on the host and produces the right answer, so nothing fails. That option is **off by default**,
+and ``tornado-test`` sets ``-Dtornado.recover.bailout=False`` explicitly as well; if you turn it
+back on, confirm with ``--printKernel`` that a kernel was generated at all.
 
 Block indices
 =============
@@ -558,6 +558,15 @@ Element types
 ``S8``, ``S32`` and the comparison-only ``PRED``. Buffers that can be viewed:
 ``FloatArray``, ``HalfFloatArray``, ``BFloat16Array``, ``IntArray``, ``Int8Array``,
 ``DoubleArray`` and ``FP8Array`` (whose view takes the format as an argument).
+
+FP8 elementwise arithmetic, math functions, reductions and scans compute in ``F32``:
+CUDA Tile C++ provides no direct arithmetic overloads for FP8 tiles. Each operation converts
+its result back to the original FP8 format, preserving the API's tile type and rounding at
+each operation boundary, not only when stored. Reductions and scans use FP32 intermediates
+and convert their final outputs to FP8. To retain FP32 results across several operations,
+explicitly cast the input tile to ``F32`` first. ``scale`` still converts its scalar to the
+tile's element type before multiplication. Loads, stores, casts and shape operations keep
+their existing types; ``mma`` and ``matmul`` retain their existing accumulation rules.
 
 An ``mma`` validates its operand and accumulator pair against the CUDA Tile ``mmaf``/``mmai``
 tables, where the accumulator type must equal the result type. Observed lowerings on Ada

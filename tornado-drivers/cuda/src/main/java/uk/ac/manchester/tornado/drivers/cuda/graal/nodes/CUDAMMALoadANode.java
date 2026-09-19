@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt;
 
 @NodeInfo
-public class CUDAMMALoadANode extends FixedWithNextNode implements LIRLowerable {
+public class CUDAMMALoadANode extends FixedWithNextNode implements LIRLowerable, MarkMMAFragment {
 
     public static final NodeClass<CUDAMMALoadANode> TYPE = NodeClass.create(CUDAMMALoadANode.class);
 
@@ -61,5 +61,11 @@ public class CUDAMMALoadANode extends FixedWithNextNode implements LIRLowerable 
         tool.append(new CUDALIRStmt.LdmatrixStmt(
                 CUDALIRStmt.LdmatrixStmt.Variant.X4, fragA, tileVal, rowStride, off));
         gen.setResult(this, fragA);
+    }
+
+    @Override
+    public boolean isAccumulatorFragment() {
+        // A/B operand fragments hold packed b32 lanes, not addressable elements.
+        return false;
     }
 }

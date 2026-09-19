@@ -2153,6 +2153,35 @@ public class CUDALIRStmt {
         }
     }
 
+    @Opcode("MMA_FRAGMENT_ELEMENT")
+    public static class MMAFragmentElementStmt extends AbstractInstruction {
+        public static final LIRInstructionClass<MMAFragmentElementStmt> TYPE =
+                LIRInstructionClass.create(MMAFragmentElementStmt.class);
+
+        @Def protected Value result;
+        @Use protected Value fragment;
+        private final int index;
+
+        public MMAFragmentElementStmt(Value result, Value fragment, int index) {
+            super(TYPE);
+            this.result = result; this.fragment = fragment; this.index = index;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            // result = frag[i];  the fragment is the thread's own C array, so this is a
+            // register move rather than a memory access. The index is a compile-time
+            // constant (enforced when the access is lowered) so that nvcc can keep the
+            // fragment in registers instead of spilling it to local memory.
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.emit(" = ");
+            frag(crb, asm, fragment, index);
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
     @Opcode("LDMATRIX")
     public static class LdmatrixStmt extends AbstractInstruction {
 
@@ -2650,6 +2679,42 @@ public class CUDALIRStmt {
             asm.emitValue(crb, result);
             asm.emit(" = (int) __half_as_short(");
             asm.emitValue(crb, halfValue);
+            asm.emit(")");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
+    @Opcode("INT_BITS_TO_HALF")
+    public static class IntBitsToHalfStmt extends AbstractInstruction implements PureRegisterComputation {
+
+        public static final LIRInstructionClass<IntBitsToHalfStmt> TYPE = LIRInstructionClass.create(IntBitsToHalfStmt.class);
+
+        @Def
+        protected Value halfValue;
+        @Use
+        protected Value bits;
+
+        public IntBitsToHalfStmt(Value halfValue, Value bits) {
+            super(TYPE);
+            this.halfValue = halfValue;
+            this.bits = bits;
+        }
+
+        @Override
+        public Value getDefinedValue() {
+            return halfValue;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            // half_value = __ushort_as_half((unsigned short) bits);
+            // The cast drops the sign extension a short picks up on the Java operand stack, so a
+            // half with the sign bit set keeps its bit pattern instead of wrapping to another value.
+            asm.indent();
+            asm.emitValue(crb, halfValue);
+            asm.emit(" = __ushort_as_half((unsigned short) ");
+            asm.emitValue(crb, bits);
             asm.emit(")");
             asm.delimiter();
             asm.eol();

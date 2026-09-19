@@ -49,7 +49,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDACompilationResul
  * {@link TileValued#getTileCppType()}.
  * </p>
  */
-public class CUDATileStmt {
+public final class CUDATileStmt {
 
     private CUDATileStmt() {
     }
@@ -91,6 +91,24 @@ public class CUDATileStmt {
          */
         static String tileType(DType dtype, int[] shape) {
             return DType.tileCppType(dtype, shape);
+        }
+
+        private static boolean isFP8(DType dtype) {
+            return dtype == DType.FP8_E4M3 || dtype == DType.FP8_E5M2;
+        }
+
+        /** CUDA Tile has no FP8 arithmetic overloads; widen operands without losing bits. */
+        static String arithmeticOperand(DType dtype, String value) {
+            return isFP8(dtype) ? "ct::element_cast<float>(" + value + ")" : value;
+        }
+
+        /**
+         * Keep the API's FP8 result type and round after each operation, including reductions.
+         * Delaying this conversion until a store would change chained operations and disagree
+         * with the concrete type used for loop-carried tiles.
+         */
+        static String arithmeticResult(DType dtype, String expression) {
+            return isFP8(dtype) ? "ct::element_cast<" + dtype.getCppType() + ">(" + expression + ")" : expression;
         }
 
         /**
@@ -211,7 +229,7 @@ public class CUDATileStmt {
     }
 
     /**
-     * Creates a tile filled with a constant: {@code auto v = ct::full<ct::tile<...>>(0.0f);}
+     * Creates a tile filled with a constant: {@code auto v = ct::full<ct::tile<...>>(0.0f);}.
      */
     public static class TileCreateStmt extends AbstractTileInstruction implements TileValued {
 
@@ -337,7 +355,7 @@ public class CUDATileStmt {
     }
 
     /**
-     * Stores one tile through a partition view: {@code view.store(tile, bx, by);}
+     * Stores one tile through a partition view: {@code view.store(tile, bx, by);}.
      */
     public static class TileStoreStmt extends AbstractTileInstruction {
 
@@ -492,7 +510,7 @@ public class CUDATileStmt {
 
     /**
      * Elementwise arithmetic over whole tiles, with the broadcasting CUDA Tile already defines
-     * for its operators: {@code auto v = a + b;}
+     * for its operators: {@code auto v = a + b;}.
      */
     public static class TileBinaryStmt extends AbstractTileInstruction implements TileValued {
 
@@ -532,15 +550,16 @@ public class CUDATileStmt {
         @Override
         public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
             asm.indent();
-            asm.emit("auto " + asm.getStringValue(crb, result) + " = " + asm.getStringValue(crb, left) + " " + operator
-                    + " " + asm.getStringValue(crb, right));
+            String expression = arithmeticOperand(dtype, asm.getStringValue(crb, left)) + " " + operator + " "
+                    + arithmeticOperand(dtype, asm.getStringValue(crb, right));
+            asm.emit("auto " + asm.getStringValue(crb, result) + " = " + arithmeticResult(dtype, expression));
             asm.delimiter();
             asm.eol();
         }
     }
 
     /**
-     * A two-operand tile op spelled as a call: {@code auto v = ct::max(a, b);}
+     * A two-operand tile op spelled as a call: {@code auto v = ct::max(a, b);}.
      */
     public static class TileBinaryCallStmt extends AbstractTileInstruction implements TileValued {
 
@@ -580,8 +599,9 @@ public class CUDATileStmt {
         @Override
         public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
             asm.indent();
-            asm.emit("auto " + asm.getStringValue(crb, result) + " = ct::" + function + "("
-                    + asm.getStringValue(crb, left) + ", " + asm.getStringValue(crb, right) + ")");
+            String expression = "ct::" + function + "(" + arithmeticOperand(dtype, asm.getStringValue(crb, left))
+                    + ", " + arithmeticOperand(dtype, asm.getStringValue(crb, right)) + ")";
+            asm.emit("auto " + asm.getStringValue(crb, result) + " = " + arithmeticResult(dtype, expression));
             asm.delimiter();
             asm.eol();
         }
@@ -589,7 +609,7 @@ public class CUDATileStmt {
 
     /**
      * Reduces along one axis, keeping the reduced dimension as CUDA Tile C++ does:
-     * {@code auto v = ct::sum(a, 1_ic);}
+     * {@code auto v = ct::sum(a, 1_ic);}.
      */
     public static class TileReduceStmt extends AbstractTileInstruction implements TileValued {
 
@@ -628,8 +648,9 @@ public class CUDATileStmt {
         @Override
         public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
             asm.indent();
-            asm.emit("auto " + asm.getStringValue(crb, result) + " = ct::" + reduction + "("
-                    + asm.getStringValue(crb, tile) + ", " + constant(axis) + ")");
+            String expression = "ct::" + reduction + "(" + arithmeticOperand(dtype, asm.getStringValue(crb, tile))
+                    + ", " + constant(axis) + ")";
+            asm.emit("auto " + asm.getStringValue(crb, result) + " = " + arithmeticResult(dtype, expression));
             asm.delimiter();
             asm.eol();
         }
@@ -684,15 +705,20 @@ public class CUDATileStmt {
             asm.indent();
             // A one-character function name is a prefix operator: CUDA Tile spells predicate
             // negation "!mask" and bitwise complement "~tile", not as named functions.
-            if (function.length() == 1) {
-                asm.emit("auto " + asm.getStringValue(crb, result) + " = " + function + asm.getStringValue(crb, tile));
-            } else {
-                asm.emit("auto " + asm.getStringValue(crb, result) + " = ct::" + function);
-                if (templateArgument != null) {
-                    asm.emit("<" + templateArgument + ">");
-                }
-                asm.emit("(" + asm.getStringValue(crb, tile) + ")");
+            boolean arithmetic = templateArgument == null && !function.equals("transpose");
+            String operand = asm.getStringValue(crb, tile);
+            if (arithmetic) {
+                operand = arithmeticOperand(dtype, operand);
             }
+            String expression;
+            if (function.length() == 1) {
+                expression = function + operand;
+            } else {
+                String template = templateArgument == null ? "" : "<" + templateArgument + ">";
+                expression = "ct::" + function + template + "(" + operand + ")";
+            }
+            asm.emit("auto " + asm.getStringValue(crb, result) + " = "
+                    + (arithmetic ? arithmeticResult(dtype, expression) : expression));
             asm.delimiter();
             asm.eol();
         }
@@ -739,8 +765,12 @@ public class CUDATileStmt {
         @Override
         public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
             asm.indent();
-            asm.emit("auto " + asm.getStringValue(crb, result) + " = " + asm.getStringValue(crb, tile) + " * ("
-                    + dtype.getCppType() + ") " + asm.getStringValue(crb, scalar));
+            String factor = "(" + dtype.getCppType() + ") " + asm.getStringValue(crb, scalar);
+            if (dtype == DType.FP8_E4M3 || dtype == DType.FP8_E5M2) {
+                factor = "(float) (" + factor + ")";
+            }
+            String expression = arithmeticOperand(dtype, asm.getStringValue(crb, tile)) + " * " + factor;
+            asm.emit("auto " + asm.getStringValue(crb, result) + " = " + arithmeticResult(dtype, expression));
             asm.delimiter();
             asm.eol();
         }
@@ -748,7 +778,7 @@ public class CUDATileStmt {
 
     /**
      * Index of this tile block, or the size of the grid of tile blocks:
-     * {@code v = ct::bid().x;} and {@code v = ct::num_blocks().y;}
+     * {@code v = ct::bid().x;} and {@code v = ct::num_blocks().y;}.
      */
     public static class TileBlockIdStmt extends AbstractTileInstruction {
 
@@ -820,8 +850,18 @@ public class CUDATileStmt {
         @Override
         public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
             asm.indent();
-            asm.emit("auto " + asm.getStringValue(crb, result) + " = ct::" + function + "(" + asm.getStringValue(crb, first) + ", " //
-                    + asm.getStringValue(crb, second) + ", " + asm.getStringValue(crb, third) + ")");
+            String a = asm.getStringValue(crb, first);
+            String b = asm.getStringValue(crb, second);
+            String c = asm.getStringValue(crb, third);
+            // select preserves its values and predicate; only fma performs arithmetic.
+            if (function.equals("fma")) {
+                a = arithmeticOperand(dtype, a);
+                b = arithmeticOperand(dtype, b);
+                c = arithmeticOperand(dtype, c);
+            }
+            String expression = "ct::" + function + "(" + a + ", " + b + ", " + c + ")";
+            asm.emit("auto " + asm.getStringValue(crb, result) + " = "
+                    + (function.equals("fma") ? arithmeticResult(dtype, expression) : expression));
             asm.delimiter();
             asm.eol();
         }
