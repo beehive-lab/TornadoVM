@@ -2426,6 +2426,44 @@ public class CUDALIRStmt {
         }
     }
 
+    /**
+     * {@code result = frag[index]}: one element of an MMA accumulator fragment (a C local array
+     * in the generated source) copied into a scalar register. Emitted by
+     * {@link uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAFragmentElementReadNode}.
+     */
+    @Opcode("MMA_FRAGMENT_ELEMENT_READ")
+    public static class MMAFragmentElementReadStmt extends AbstractInstruction implements PureRegisterComputation {
+        public static final LIRInstructionClass<MMAFragmentElementReadStmt> TYPE = LIRInstructionClass.create(MMAFragmentElementReadStmt.class);
+        @Def protected Value result;
+        @Use protected Value fragment;
+        private final int index;
+
+        public MMAFragmentElementReadStmt(Value result, Value fragment, int index) {
+            super(TYPE);
+            this.result = result;
+            this.fragment = fragment;
+            this.index = index;
+        }
+
+        @Override
+        public Value getDefinedValue() {
+            return result;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emitValue(crb, fragment);
+            asm.emit("[%d]", index);
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
     @Opcode("SWIZZLED_STORE_FP16_STRIDE_32")
     public static class SwizzledStoreFP16Stride32Stmt extends AbstractInstruction {
         public static final LIRInstructionClass<SwizzledStoreFP16Stride32Stmt> TYPE =
@@ -2650,6 +2688,42 @@ public class CUDALIRStmt {
             asm.emitValue(crb, result);
             asm.emit(" = (int) __half_as_short(");
             asm.emitValue(crb, halfValue);
+            asm.emit(")");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
+    @Opcode("INT_BITS_TO_HALF")
+    public static class IntBitsToHalfStmt extends AbstractInstruction implements PureRegisterComputation {
+
+        public static final LIRInstructionClass<IntBitsToHalfStmt> TYPE = LIRInstructionClass.create(IntBitsToHalfStmt.class);
+
+        @Def
+        protected Value halfValue;
+        @Use
+        protected Value bits;
+
+        public IntBitsToHalfStmt(Value halfValue, Value bits) {
+            super(TYPE);
+            this.halfValue = halfValue;
+            this.bits = bits;
+        }
+
+        @Override
+        public Value getDefinedValue() {
+            return halfValue;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            // half_value = __ushort_as_half((unsigned short) bits);
+            // The cast drops the sign extension a short picks up on the Java operand stack, so a
+            // half with the sign bit set keeps its bit pattern instead of wrapping to another value.
+            asm.indent();
+            asm.emitValue(crb, halfValue);
+            asm.emit(" = __ushort_as_half((unsigned short) ");
+            asm.emitValue(crb, bits);
             asm.emit(")");
             asm.delimiter();
             asm.eol();

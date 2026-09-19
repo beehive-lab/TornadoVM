@@ -915,6 +915,22 @@ public class KernelContext implements ExecutionContext {
     }
 
     /**
+     * {@link #mmaLoadAInt8(int[], int)} from the sub-tile at byte offset {@code byteOffset} of the
+     * shared tile, the int8 counterpart of {@link #mmaLoadA(int[], int, int)}.
+     */
+    public byte[] mmaLoadAInt8(int[] aTile, int tileK, int byteOffset) {
+        return mmaLoadAInt8(aTile, tileK);
+    }
+
+    /**
+     * {@link #mmaLoadBInt8(int[], int)} from the sub-tile at byte offset {@code byteOffset} of the
+     * shared tile, the int8 counterpart of {@link #mmaLoadB(int[], int, int)}.
+     */
+    public byte[] mmaLoadBInt8(int[] bTile, int tileK, int byteOffset) {
+        return mmaLoadBInt8(bTile, tileK);
+    }
+
+    /**
      * Warp-collective int8 MMA: D = A*B + C.
      */
     public int[] mmaInt8(byte[] fragA, byte[] fragB, int[] fragC, MMAShape shape) {
