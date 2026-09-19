@@ -35,6 +35,7 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -494,10 +495,13 @@ public class TestMatrixMultiplicationMMAInt8 extends TornadoTestBase {
     }
 
     /** Only the accumulator fragment is indexable; an A/B fragment is refused by name. */
-    @Test(expected = TornadoBailoutRuntimeException.class)
+    @Test
     public void testOperandFragmentIndexIsRejected() throws TornadoExecutionPlanException {
-        runFragmentKernel(TestMatrixMultiplicationMMAInt8::readOperandFragment,
-                randomInt8Array(WMMA_M * WMMA_K), randomInt8Array(WMMA_K * MMA_N));
+        // Unsupported backends must reach the test runner without an exception assertion wrapping them.
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.METAL);
+        assertThrows(TornadoBailoutRuntimeException.class, () -> runFragmentKernel(TestMatrixMultiplicationMMAInt8::readOperandFragment,
+                randomInt8Array(WMMA_M * WMMA_K), randomInt8Array(WMMA_K * MMA_N)));
     }
 
     /** Runs {@code kernel} over a single warp on one 16x32 by 32x8 tile pair. */

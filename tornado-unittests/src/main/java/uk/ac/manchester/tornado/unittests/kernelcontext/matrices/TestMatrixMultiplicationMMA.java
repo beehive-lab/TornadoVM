@@ -37,6 +37,7 @@ import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 /**
  * <p>
@@ -1166,10 +1167,13 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
     }
 
     /** A run-time fragment index is refused with an actionable message, not an internal error. */
-    @Test(expected = TornadoBailoutRuntimeException.class)
+    @Test
     public void testDynamicFragmentIndexIsRejected() throws TornadoExecutionPlanException {
-        runFragmentKernel(TestMatrixMultiplicationMMA::dynamicFragmentIndex,
-                new float[WMMA_M * WMMA_K], new float[MMA_N * WMMA_K]);
+        // Unsupported backends must reach the test runner without an exception assertion wrapping them.
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.METAL);
+        assertThrows(TornadoBailoutRuntimeException.class, () -> runFragmentKernel(TestMatrixMultiplicationMMA::dynamicFragmentIndex,
+                new float[WMMA_M * WMMA_K], new float[MMA_N * WMMA_K]));
     }
 
     /** B is column-major in the tile, so the product is over the shared K dimension. */
