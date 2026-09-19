@@ -826,6 +826,28 @@ public class CUDAGraphBuilderPlugins {
             }
         });
 
+        // --- mmaLoadAInt8(int[], int, int) -> byte[] : byte-offset form ---
+        r.register(new InvocationPlugin("mmaLoadAInt8",
+                InvocationPlugin.Receiver.class, int[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode tileK, ValueNode byteOffset) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDAMMALoadAInt8Node(tile, tileK, byteOffset));
+                return true;
+            }
+        });
+        // --- mmaLoadBInt8(int[], int, int) -> byte[] : byte-offset form ---
+        r.register(new InvocationPlugin("mmaLoadBInt8",
+                InvocationPlugin.Receiver.class, int[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode tileK, ValueNode byteOffset) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDAMMALoadBInt8Node(tile, tileK, byteOffset));
+                return true;
+            }
+        });
         // --- mmaLoadBSwizzled(HalfFloat[], int, int) -> HalfFloat[] ---
         r.register(new InvocationPlugin("mmaLoadBSwizzled",
                 InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class) {
