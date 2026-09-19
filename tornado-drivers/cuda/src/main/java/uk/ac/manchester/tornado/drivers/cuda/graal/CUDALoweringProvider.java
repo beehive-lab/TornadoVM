@@ -45,9 +45,6 @@ import tornado.graal.compiler.graph.NodeInputList;
 import tornado.graal.compiler.nodes.AbstractDeoptimizeNode;
 import tornado.graal.compiler.nodes.CompressionNode;
 import tornado.graal.compiler.nodes.ConstantNode;
-import tornado.graal.compiler.nodes.ValuePhiNode;
-import tornado.graal.compiler.nodes.PiNode;
-import tornado.graal.compiler.nodes.ValueProxyNode;
 import tornado.graal.compiler.nodes.FieldLocationIdentity;
 import tornado.graal.compiler.nodes.FixedNode;
 import tornado.graal.compiler.nodes.Invoke;
@@ -96,20 +93,20 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.cuda.CUDATargetDescription;
-import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAComputeNode;
-import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAFragmentElementReadNode;
-import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAFragmentNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDADecompressedReadFieldNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.AtomicAddNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAFragmentElementNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CastNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GlobalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GroupIdNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalArrayNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.MarkMMAFragment;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.ReadHalf2Node;
@@ -411,87 +408,14 @@ public class CUDALoweringProvider extends DefaultJavaLoweringProvider {
         return false;
     }
 
-    /**
-     * Whether {@code value} is an MMA accumulator fragment: the result of {@code mmaFragment} /
-     * {@code mmaFragmentInt}, of an MMA compute, or a phi whose every input is one (a loop-carried
-     * fragment, which the backend already emits as a C array). Nothing else qualifies.
-     */
-    private static boolean isMMAFragmentValue(ValueNode value, java.util.Set<ValueNode> visiting) {
-        if (value instanceof PiNode pi) {
-            return isMMAFragmentValue(pi.object(), visiting);
-        }
-        if (value instanceof ValueProxyNode proxy) {
-            return isMMAFragmentValue(proxy.value(), visiting);
-        }
-        if (value instanceof CUDAMMAFragmentNode || value instanceof CUDAMMAComputeNode) {
-            return true;
-        }
-        if (value instanceof ValuePhiNode phi) {
-            if (!visiting.add(phi)) {
-                return true;
-            }
-            for (ValueNode input : phi.values()) {
-                if (!isMMAFragmentValue(input, visiting)) {
-                    return false;
-                }
-            }
-            return phi.values().count() > 0;
-        }
-        return false;
-    }
-
-    /** Whether the fragment is an int32 accumulator (from {@code mmaFragmentInt} / an int8 MMA). */
-    private static boolean isIntMMAFragment(ValueNode value, java.util.Set<ValueNode> visiting) {
-        if (value instanceof PiNode pi) {
-            return isIntMMAFragment(pi.object(), visiting);
-        }
-        if (value instanceof ValueProxyNode proxy) {
-            return isIntMMAFragment(proxy.value(), visiting);
-        }
-        if (value instanceof CUDAMMAFragmentNode fragment) {
-            return fragment.isInt8();
-        }
-        if (value instanceof CUDAMMAComputeNode compute) {
-            return compute.getOperand() == CUDALIRStmt.MMAComputeStmt.MMAOperand.S8;
-        }
-        if (value instanceof ValuePhiNode phi) {
-            if (!visiting.add(phi)) {
-                return true;
-            }
-            for (ValueNode input : phi.values()) {
-                if (!isIntMMAFragment(input, visiting)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        return false;
-    }
-
     @Override
     public void lowerLoadIndexedNode(LoadIndexedNode loadIndexed, LoweringTool tool) {
         StructuredGraph graph = loadIndexed.graph();
         JavaKind elementKind = loadIndexed.elementKind();
         AddressNode address;
 
-        // An element read of an MMA accumulator fragment is a register access, not a memory
-        // load: the fragment is a C local array in the generated source and has no address.
-        // Supported: int32 fragments, constant index 0..3. Anything else on a fragment is refused
-        // here rather than left for the address lowering to reject obscurely.
-        if (isMMAFragmentValue(loadIndexed.array(), new java.util.HashSet<>())) {
-            if (!isIntMMAFragment(loadIndexed.array(), new java.util.HashSet<>())) {
-                throw new TornadoInternalError("reading an element of a float MMA fragment is not supported; only int32 accumulator fragments can be read in the kernel");
-            }
-            if (!(loadIndexed.index() instanceof ConstantNode constant) || constant.asJavaConstant() == null || !constant.asJavaConstant().getJavaKind().isNumericInteger()) {
-                throw new TornadoInternalError("an MMA fragment element index must be a compile-time constant");
-            }
-            int index = constant.asJavaConstant().asInt();
-            if (index < 0 || index > 3) {
-                throw new TornadoInternalError("MMA fragment element index out of range: " + index + " (0..3)");
-            }
-            CUDAMMAFragmentElementReadNode read = graph.add(new CUDAMMAFragmentElementReadNode(loadIndexed.array(), index));
-            loadIndexed.replaceAtUsages(read);
-            graph.replaceFixed(loadIndexed, read);
+        if (MarkMMAFragment.isFragment(loadIndexed.array())) {
+            lowerMMAFragmentRead(loadIndexed);
             return;
         }
 
@@ -520,10 +444,61 @@ public class CUDALoweringProvider extends DefaultJavaLoweringProvider {
         }
     }
 
+    /**
+     * Replaces {@code frag[i]} on an {@code mma.sync} accumulator with a read of that
+     * register, instead of letting it lower to a read of an address.
+     *
+     * <p>A fragment is a per-lane register tuple the code generator emits as a C array; it has
+     * no base pointer, so the generic array path produces an address whose origin address
+     * lowering cannot name and the compilation dies with "address origin unimplemented". The
+     * two shapes that cannot be served are rejected here instead, where the kernel source that
+     * caused them is still identifiable: a non-constant index (which would force nvcc to spill
+     * the fragment to local memory, quietly costing far more than the read is worth) and an
+     * index into an A/B operand fragment (whose Java element type does not describe the packed
+     * b32 lanes it actually holds).
+     */
+    private void lowerMMAFragmentRead(LoadIndexedNode loadIndexed) {
+        StructuredGraph graph = loadIndexed.graph();
+        MarkMMAFragment fragment = MarkMMAFragment.accumulatorFragmentOf(loadIndexed.array());
+        if (fragment == null) {
+            throw new TornadoBailoutRuntimeException(
+                    "Only the accumulator fragment returned by KernelContext.mma*/mmaFragment* can be indexed; "
+                            + "the A and B fragments hold packed b32 operand lanes, whose elements do not correspond "
+                            + "to the Java array's elements. Consume them with KernelContext.mma instead.");
+        }
+        ValueNode index = loadIndexed.index();
+        if (!index.isJavaConstant()) {
+            throw new TornadoBailoutRuntimeException(
+                    "An MMA accumulator fragment can only be indexed with a compile-time constant: the fragment "
+                            + "lives in registers, and a run-time index would force it into local memory. Unroll the "
+                            + "access, or write the fragment out with KernelContext.mmaStore and index the result.");
+        }
+        int element = index.asJavaConstant().asInt();
+        if (element < 0 || element >= MarkMMAFragment.ACCUMULATOR_FRAGMENT_LENGTH) {
+            throw new TornadoBailoutRuntimeException(
+                    "MMA accumulator fragment index " + element + " is out of bounds; a fragment holds "
+                            + MarkMMAFragment.ACCUMULATOR_FRAGMENT_LENGTH + " elements per lane.");
+        }
+        CUDAMMAFragmentElementNode read = graph.add(new CUDAMMAFragmentElementNode(
+                loadIndexed.stamp(NodeView.DEFAULT), loadIndexed.array(), element));
+        loadIndexed.replaceAtUsages(read);
+        graph.replaceFixed(loadIndexed, read);
+    }
+
     @Override
     public void lowerStoreIndexedNode(StoreIndexedNode storeIndexed, LoweringTool tool) {
         StructuredGraph graph = storeIndexed.graph();
         JavaKind elementKind = storeIndexed.elementKind();
+        if (MarkMMAFragment.isFragment(storeIndexed.array())) {
+            // Writing an element back would have to preserve the fragment's lane mapping and
+            // the warp-uniform participation mma.sync requires of it, and nothing in the API
+            // expresses that yet. Say so here rather than letting it fail as an unnameable
+            // address origin later on.
+            throw new TornadoBailoutRuntimeException(
+                    "An MMA fragment cannot be written through an index: it is a per-lane register tuple, not an "
+                            + "array in memory. Build the accumulator with KernelContext.mmaFragment/mma, or write it "
+                            + "out with KernelContext.mmaStore and modify the result there.");
+        }
         ValueNode value = storeIndexed.value();
         ValueNode array = storeIndexed.array();
         AddressNode address = createArrayAddress(graph, array, (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE, elementKind, storeIndexed.index());
