@@ -224,11 +224,25 @@ public class TornadoOptions {
     public static final boolean DUMP_LOW_TIER_WITH_IGV = getBooleanValue("tornado.debug.lowtier", FALSE);
     /**
      * In the case of a TornadoVM runtime, JIT compiler or driver failure (OpenCL
-     * or CUDA), this option allows users to automatically execute the code
-     * with plain Java if an exception occurs when compiling or running the parallel
-     * code. This option is True by default.
+     * or CUDA), this option silently re-runs the task as plain sequential Java
+     * instead of propagating the exception.
+     *
+     * <p>
+     * This option is <b>False by default</b>. When it is enabled, a task that fails to
+     * compile or launch still produces the correct answer, on the CPU, with no signal that
+     * the accelerator was never used - so a wholly broken device path is indistinguishable
+     * from a working one by the program's own output, and any timing taken around it
+     * measures sequential Java. Both first-party harnesses already disable it for exactly
+     * that reason ({@code tornado-test} and {@code tornado-benchmarks.py} hardcode
+     * {@code -Dtornado.recover.bailout=False}), as does the CUDA Tile documentation.
+     * </p>
+     *
+     * <p>
+     * Re-enable it with {@code -Dtornado.recover.bailout=True} where a silent CPU fallback
+     * is genuinely wanted in preference to a failure.
+     * </p>
      */
-    public static final boolean RECOVER_BAILOUT = getBooleanValue("tornado.recover.bailout", TRUE);
+    public static final boolean RECOVER_BAILOUT = getBooleanValue("tornado.recover.bailout", FALSE);
     /**
      * Option to log the IP of the current machine on the profiler logs.
      */

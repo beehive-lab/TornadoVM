@@ -85,9 +85,9 @@ a JVM implementation as well as a lowering, so a tile kernel also runs as ordina
 
 That dual life is worth knowing when a test passes unexpectedly. If a tile kernel fails to
 compile and ``tornado.recover.bailout`` is enabled, the task quietly runs the JVM implementation
-on the host and produces the right answer, so nothing fails. ``tornado-test`` sets
-``-Dtornado.recover.bailout=False`` for this reason; outside it, confirm with ``--printKernel``
-that a kernel was generated at all.
+on the host and produces the right answer, so nothing fails. That option is **off by default**,
+and ``tornado-test`` sets ``-Dtornado.recover.bailout=False`` explicitly as well; if you turn it
+back on, confirm with ``--printKernel`` that a kernel was generated at all.
 
 Block indices
 =============
