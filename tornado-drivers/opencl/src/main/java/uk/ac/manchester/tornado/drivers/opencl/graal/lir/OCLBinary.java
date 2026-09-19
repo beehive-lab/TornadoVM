@@ -57,7 +57,60 @@ public class OCLBinary {
 
         @Override
         public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-            opcode.emit(crb, x, y);
+            if (wrapsOnOverflow()) {
+                emitWrapping(crb, asm);
+            } else {
+                opcode.emit(crb, x, y);
+            }
+        }
+
+        /**
+         * Whether this operation has to be emitted with wrap-around semantics.
+         *
+         * <p>Java defines {@code +}, {@code -}, {@code *} and {@code <<} on {@code int} and
+         * {@code long} to wrap; C leaves signed overflow undefined, and the device compilers act on
+         * that. {@code a * a} for {@code a = 46341} came back as if the product had not overflowed,
+         * and {@code a << 31} - which Graal canonicalises to {@code -(a << 31)}, equal under
+         * wrap-around - was folded to zero because negating {@code INT_MIN} is undefined too.
+         * Only the signed integer kinds are affected: unsigned arithmetic already wraps in C, and
+         * float overflow is defined.
+         */
+        private boolean wrapsOnOverflow() {
+            if (opcode != OCLBinaryOp.ADD && opcode != OCLBinaryOp.SUB && opcode != OCLBinaryOp.MUL //
+                    && opcode != OCLBinaryOp.BITWISE_LEFT_SHIFT) {
+                return false;
+            }
+            OCLKind kind = getOCLPlatformKind();
+            return kind == OCLKind.INT || kind == OCLKind.LONG;
+        }
+
+        /**
+         * Emits {@code (int) ((uint) x OP y)}, the C idiom for a wrapping signed operation. Casting
+         * the left operand is enough: the usual arithmetic conversions make the whole expression
+         * unsigned, and for a shift only the shifted value can overflow anyway.
+         *
+         * <p>The narrowing back to the signed kind is implementation-defined in C rather than
+         * undefined, and every target TornadoVM runs on defines it as the two's-complement
+         * reinterpretation Java specifies.
+         */
+        private void emitWrapping(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            OCLKind kind = getOCLPlatformKind();
+            String unsigned = (kind == OCLKind.INT ? OCLKind.UINT : OCLKind.ULONG).toString();
+            asm.emit("(" + kind + ") ((" + unsigned + ") ");
+            asm.emitValueOrOp(crb, x);
+            asm.space();
+            asm.emit(opcode.toString());
+            asm.space();
+            if (opcode == OCLAssembler.OCLBinaryOp.BITWISE_LEFT_SHIFT) {
+                // Java masks shift distances; an out-of-range C shift is undefined.
+                asm.emit("(");
+                asm.emitValueOrOp(crb, y);
+                int shiftMask = kind == OCLKind.INT ? Integer.SIZE - 1 : Long.SIZE - 1;
+                asm.emit(" & " + shiftMask + ")");
+            } else {
+                asm.emitValueOrOp(crb, y);
+            }
+            asm.emit(")");
         }
 
         public Value getX() {
