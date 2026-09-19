@@ -559,6 +559,15 @@ Element types
 ``FloatArray``, ``HalfFloatArray``, ``BFloat16Array``, ``IntArray``, ``Int8Array``,
 ``DoubleArray`` and ``FP8Array`` (whose view takes the format as an argument).
 
+FP8 elementwise arithmetic, math functions, reductions and scans compute in ``F32``:
+CUDA Tile C++ provides no direct arithmetic overloads for FP8 tiles. Each operation converts
+its result back to the original FP8 format, preserving the API's tile type and rounding at
+each operation boundary, not only when stored. Reductions and scans use FP32 intermediates
+and convert their final outputs to FP8. To retain FP32 results across several operations,
+explicitly cast the input tile to ``F32`` first. ``scale`` still converts its scalar to the
+tile's element type before multiplication. Loads, stores, casts and shape operations keep
+their existing types; ``mma`` and ``matmul`` retain their existing accumulation rules.
+
 An ``mma`` validates its operand and accumulator pair against the CUDA Tile ``mmaf``/``mmai``
 tables, where the accumulator type must equal the result type. Observed lowerings on Ada
 (sm_89): fp16 operands with an fp32 accumulator give ``HMMA.16816.F32``, int8 operands with an
