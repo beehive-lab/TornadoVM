@@ -143,6 +143,65 @@ public class MetalLIRStmt {
 
     }
 
+    @Opcode("CONVERT_FLOAT_TO_HALF")
+    public static class ConvertFloatToHalfStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<ConvertFloatToHalfStmt> TYPE = LIRInstructionClass.create(ConvertFloatToHalfStmt.class);
+
+        @Use
+        protected Value floatValue;
+        @Def
+        protected Value halfValue;
+
+        public ConvertFloatToHalfStmt(Value floatValue, Value halfValue) {
+            super(TYPE);
+            this.floatValue = floatValue;
+            this.halfValue = halfValue;
+        }
+
+        @Override
+        public void emitCode(MetalCompilationResultBuilder crb, MetalAssembler asm) {
+            // half_value = (half) float_value;
+            asm.indent();
+            asm.emitValue(crb, halfValue);
+            asm.emit(" = (half)(");
+            asm.emitValue(crb, floatValue);
+            asm.emit(")");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
+    @Opcode("HALF_BITS_TO_INT")
+    public static class HalfBitsToIntStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<HalfBitsToIntStmt> TYPE = LIRInstructionClass.create(HalfBitsToIntStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value halfValue;
+
+        public HalfBitsToIntStmt(Value result, Value halfValue) {
+            super(TYPE);
+            this.result = result;
+            this.halfValue = halfValue;
+        }
+
+        @Override
+        public void emitCode(MetalCompilationResultBuilder crb, MetalAssembler asm) {
+            // u32_result = (uint) as_type<ushort>(half_value);
+            // as_type reinterprets the 16 bits; a cast would renumber them.
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.emit(" = (uint) as_type<ushort>(");
+            asm.emitValue(crb, halfValue);
+            asm.emit(")");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
     @Opcode("VADD_HALF")
     public static class VectorAddHalfStmt extends AbstractInstruction {
 

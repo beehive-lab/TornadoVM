@@ -58,6 +58,8 @@ import uk.ac.manchester.tornado.drivers.metal.graal.nodes.DivHalfNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.HalfFloatConstantNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MultHalfNode;
+import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalConvertFloatToHalf;
+import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalConvertHalfBitsToIntNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalConvertHalfToFloat;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.ReadHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.SubHalfNode;
@@ -180,7 +182,11 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
         }
 
         // Clean up any remaining HalfFloatPlaceholder nodes not consumed by a JavaWriteNode.
-        for (HalfFloatPlaceholder placeholder : graph.getNodes().filter(HalfFloatPlaceholder.class)) {
+        // Snapshot: the loop now adds nodes to the graph, which a live node iterator does not allow.
+        for (HalfFloatPlaceholder placeholder : graph.getNodes().filter(HalfFloatPlaceholder.class).snapshot()) {
+            if (placeholder.isDeleted()) {
+                continue;
+            }
             ValueNode input = placeholder.getInput();
             // FloatConvertNode on a HalfFloat value causes getOp() == null; replace with MetalConvertHalfToFloat.
             for (FloatConvertNode floatConvertNode : placeholder.usages().filter(FloatConvertNode.class).snapshot()) {
@@ -189,7 +195,18 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
                 floatConvertNode.replaceAtUsages(convertNode);
                 floatConvertNode.safeDelete();
             }
-            placeholder.replaceAtUsages(input);
+            if (placeholder.hasNoUsages()) {
+                placeholder.safeDelete();
+                continue;
+            }
+            // What is left is getHalfFloatValue() used as a number - `a.get(i).getHalfFloatValue() & 0xFFFF`
+            // when bit-packing, or reading back a half just built from a float. That is the half's bit
+            // pattern, so it is a reinterpretation of the value rather than the value itself: replacing the
+            // placeholder with its input handed the half straight to integer arithmetic, which MSL
+            // converts numerically.
+            MetalConvertHalfBitsToIntNode bitsNode = new MetalConvertHalfBitsToIntNode(input);
+            graph.addWithoutUnique(bitsNode);
+            placeholder.replaceAtUsages(bitsNode);
             placeholder.safeDelete();
         }
 
@@ -322,6 +339,15 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             HalfFloatConstantNode halfFloatConstantNode = new HalfFloatConstantNode(floatValue);
             graph.addWithoutUnique(halfFloatConstantNode);
             return halfFloatConstantNode;
+        } else if (halfFloatValue.getStackKind() == JavaKind.Float) {
+            // The constructor argument is a float, so the half it stands for has to be rounded to
+            // half precision rather than carried on as a float register. That is invisible while the
+            // only consumer is a store (the write target is a half and MSL converts on assignment),
+            // but once the value is read back - `new HalfFloat(v).getHalfFloatValue()` - it would
+            // reinterpret a float where a half is expected.
+            MetalConvertFloatToHalf convertFloatToHalf = new MetalConvertFloatToHalf(halfFloatValue);
+            graph.addWithoutUnique(convertFloatToHalf);
+            return convertFloatToHalf;
         } else {
             return halfFloatValue;
         }
