@@ -45,9 +45,6 @@ import tornado.graal.compiler.graph.NodeInputList;
 import tornado.graal.compiler.nodes.AbstractDeoptimizeNode;
 import tornado.graal.compiler.nodes.CompressionNode;
 import tornado.graal.compiler.nodes.ConstantNode;
-import tornado.graal.compiler.nodes.ValuePhiNode;
-import tornado.graal.compiler.nodes.PiNode;
-import tornado.graal.compiler.nodes.ValueProxyNode;
 import tornado.graal.compiler.nodes.FieldLocationIdentity;
 import tornado.graal.compiler.nodes.FixedNode;
 import tornado.graal.compiler.nodes.Invoke;
@@ -98,9 +95,6 @@ import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.cuda.CUDATargetDescription;
-import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAComputeNode;
-import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAFragmentElementReadNode;
-import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAFragmentNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDADecompressedReadFieldNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
@@ -410,63 +404,6 @@ public class CUDALoweringProvider extends DefaultJavaLoweringProvider {
         }
         if (node instanceof InvokeNode invoke && invoke.callTarget() != null && invoke.callTarget().targetName() != null) {
             return invoke.callTarget().targetName().contains("allocateHalf2LocalArray");
-        }
-        return false;
-    }
-
-    /**
-     * Whether {@code value} is an MMA accumulator fragment: the result of {@code mmaFragment} /
-     * {@code mmaFragmentInt}, of an MMA compute, or a phi whose every input is one (a loop-carried
-     * fragment, which the backend already emits as a C array). Nothing else qualifies.
-     */
-    private static boolean isMMAFragmentValue(ValueNode value, java.util.Set<ValueNode> visiting) {
-        if (value instanceof PiNode pi) {
-            return isMMAFragmentValue(pi.object(), visiting);
-        }
-        if (value instanceof ValueProxyNode proxy) {
-            return isMMAFragmentValue(proxy.value(), visiting);
-        }
-        if (value instanceof CUDAMMAFragmentNode || value instanceof CUDAMMAComputeNode) {
-            return true;
-        }
-        if (value instanceof ValuePhiNode phi) {
-            if (!visiting.add(phi)) {
-                return true;
-            }
-            for (ValueNode input : phi.values()) {
-                if (!isMMAFragmentValue(input, visiting)) {
-                    return false;
-                }
-            }
-            return phi.values().count() > 0;
-        }
-        return false;
-    }
-
-    /** Whether the fragment is an int32 accumulator (from {@code mmaFragmentInt} / an int8 MMA). */
-    private static boolean isIntMMAFragment(ValueNode value, java.util.Set<ValueNode> visiting) {
-        if (value instanceof PiNode pi) {
-            return isIntMMAFragment(pi.object(), visiting);
-        }
-        if (value instanceof ValueProxyNode proxy) {
-            return isIntMMAFragment(proxy.value(), visiting);
-        }
-        if (value instanceof CUDAMMAFragmentNode fragment) {
-            return fragment.isInt8();
-        }
-        if (value instanceof CUDAMMAComputeNode compute) {
-            return compute.getOperand() == CUDALIRStmt.MMAComputeStmt.MMAOperand.S8;
-        }
-        if (value instanceof ValuePhiNode phi) {
-            if (!visiting.add(phi)) {
-                return true;
-            }
-            for (ValueNode input : phi.values()) {
-                if (!isIntMMAFragment(input, visiting)) {
-                    return false;
-                }
-            }
-            return true;
         }
         return false;
     }
