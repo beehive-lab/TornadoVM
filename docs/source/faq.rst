@@ -69,7 +69,7 @@ e.g. Python, R, Ruby, Javascript, Node.js, use TornadoVM <= 5.2.0).
 
 No, TornadoVM is not a DSL. It compiles a subset of Java code to OpenCL C, NVIDIA CUDA C, and Apple Metal.
 
-To express parallelism, TornadoVM offers the :ref:`Loop Parallel API <loop-parallel-api>` (``@Parallel`` and ``@Reduce`` annotations) and the lower-level :ref:`Kernel API <kernel-context-api>` (``KernelContext``), plus an API to:
+To express parallelism, TornadoVM offers the :ref:`Loop Parallel API <loop-parallel-api>` (``@Parallel`` and ``@Reduce`` annotations) and the lower-level :ref:`KernelContext API <kernel-context-api>` (``KernelContext``), plus an API to:
 
 a) Create and define task-graphs with the :ref:`Task-Graph API <task-graph-api>` (groups of Java methods to be accelerated by TornadoVM, and the data involved).
 b) Define :ref:`execution plans <execution-plan>`.
