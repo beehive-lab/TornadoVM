@@ -22,6 +22,11 @@
  * symbols are mangled. FFM can call none of that, which is why every other library TornadoVM
  * binds -- cuBLAS, cuFFT, cuDNN, cuSPARSE -- needs no shim and this one does.
  *
+ * Plain C++, not CUDA: it declares no __global__ kernel of its own -- every kernel it runs is
+ * already compiled inside libcudf -- and touches the CUDA runtime only for stream copies and a
+ * synchronise. So a host compiler builds it and nvcc is not needed, which is also why this module
+ * does not enable the CUDA language and cannot break a CUDA build that has no usable nvcc.
+ *
  * Two rules the whole file obeys:
  *
  *   1. It allocates no caller-visible memory. Every operand is a device pointer TornadoVM already

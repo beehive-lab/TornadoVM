@@ -37,11 +37,12 @@ make BACKEND=cuda
 Confirm it was built, rather than skipped, from the CMake line in the build output:
 
 ```
--- TornadoVM cuDF: arch=75-real;80-real;90-virtual; nvcc=...; libcudf=...; rmm=...; cccl=...
+-- TornadoVM cuDF: libcudf=...; rmm=...; cccl=...; cudart=...
 ```
 
-(`70-real` in place of `75-real` on a CUDA 12 toolkit: CUDA 13 dropped Volta and
-rejects `compute_70`. Override the whole list with `CUDA_ARCH`.)
+No `nvcc` in that line, and none needed: the shim declares no kernel of its own -- every
+kernel it runs is already compiled inside libcudf -- and touches the CUDA runtime only for
+stream copies and a synchronise. A host C++ compiler builds it, like `cudnn-jni`'s.
 
 RMM's headers are searched for separately, because librmm installs as its own wheel beside
 libcudf rather than under it; set `RMM_HOME` if they are somewhere else again. RMM, CCCL and
