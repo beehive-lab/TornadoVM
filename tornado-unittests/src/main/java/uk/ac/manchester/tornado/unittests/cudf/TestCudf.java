@@ -60,6 +60,15 @@ public class TestCudf extends TornadoTestBase {
 
     @Before
     public void cudfMustBeAvailable() {
+        // The shim first, because it costs nothing. CudfLibraryProvider.isAvailable() is an FFM
+        // symbol lookup and touches no device, while getDefaultDevice() acquires one -- so asking
+        // in the other order makes every test on a host without libcudf acquire a device and then
+        // abandon it. That is most hosts, and with 23 tests in this class it was 23 acquire-and-
+        // abort cycles per CUDA test run: enough device churn to leave the next test class unable
+        // to allocate. Cheapest refusal first, and nothing here needs a device to decide.
+        if (!CudfLibraryProvider.isAvailable()) {
+            throw new TornadoVMCUDANotSupported("the cuDF shim (libtornado-cudf.so) is not built on this host");
+        }
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
         if (backendType != TornadoVMBackendType.CUDA) {
             String message = "cuDF library tasks require the CUDA backend (default device is " + backendType + ")";
@@ -67,9 +76,6 @@ public class TestCudf extends TornadoTestBase {
                 case OPENCL, METAL -> assertNotBackend(backendType, message);
                 default -> throw new TornadoVMCUDANotSupported(message);
             }
-        }
-        if (!CudfLibraryProvider.isAvailable()) {
-            throw new TornadoVMCUDANotSupported("the cuDF shim (libtornado-cudf.so) is not built on this host");
         }
     }
 
