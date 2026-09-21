@@ -45,10 +45,11 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
  * shim over cuDF whose source ships in {@code src/main/native}.
  *
  * <p>
- * The shim is <em>not</em> built by {@code make}, because building it needs libcudf and almost
- * nobody has it. Without it this module loads, reports itself unavailable, and costs nothing --
- * the same thing cuSPARSE does on a machine with no CUDA toolkit. See the module README for how
- * to build it.
+ * The shim is built by {@code tornado-drivers/cudf-jni} under the {@code cuda-backend} profile,
+ * as the CUTLASS and cuDNN shims are. Building it needs libcudf, which almost nobody has, so the
+ * build skips it with a warning rather than failing when it is absent -- and without it this
+ * module loads, reports itself unavailable, and costs nothing, the same thing cuSPARSE does on a
+ * machine with no CUDA toolkit. See the module README for how to install libcudf.
  *
  * <h2>What is bound, and what is not</h2>
  *

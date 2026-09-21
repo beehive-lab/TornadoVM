@@ -17,21 +17,40 @@ task sit in the same task graph as a generated kernel and read what it wrote.
 
 ## Building the shim
 
-**It is not built by `make`.** Building it needs libcudf, which almost nobody has, and a TornadoVM
-build must not start depending on it. Without the shim this module loads, reports itself
-unavailable, and costs nothing — the same thing cuSPARSE does with no CUDA toolkit installed.
+The `cuda-backend` profile builds it, in `tornado-drivers/cudf-jni`, the same way it builds the
+CUTLASS and cuDNN shims. It needs RAPIDS libcudf, and **the build skips it rather than failing
+when libcudf is absent** -- which is most machines. You then get a warning, no
+`libtornado-cudf.so`, and a module that loads, reports itself unavailable and costs nothing, the
+same thing cuSPARSE does with no CUDA toolkit installed.
 
-The quickest way to get a libcudf without building cuDF from source is the RAPIDS wheel, which
-ships headers and the library together:
+So the only thing to do is install libcudf and point `CUDF_HOME` at it. The build searches
+`$CUDF_HOME`, `$CONDA_PREFIX` and `/usr/local`. The quickest way to get a libcudf without building
+cuDF from source is the RAPIDS wheel, which ships headers and the library together:
 
 ```bash
 python3 -m venv /tmp/cudfenv
 /tmp/cudfenv/bin/pip install --extra-index-url=https://pypi.nvidia.com libcudf-cu12
-CUDF_HOME=$(echo /tmp/cudfenv/lib/python3.*/site-packages/libcudf) \
-    tornado-cudf/src/main/native/build.sh
+export CUDF_HOME=$(echo /tmp/cudfenv/lib/python3.*/site-packages/libcudf)
+make BACKEND=cuda
 ```
 
-Then put the resulting `libtornado-cudf.so` on `LD_LIBRARY_PATH`, along with libcudf itself.
+Confirm it was built, rather than skipped, from the CMake line in the build output:
+
+```
+-- TornadoVM cuDF: arch=75-real;80-real;90-virtual; nvcc=...; libcudf=...; rmm=...; cccl=...
+```
+
+(`70-real` in place of `75-real` on a CUDA 12 toolkit: CUDA 13 dropped Volta and
+rejects `compute_70`. Override the whole list with `CUDA_ARCH`.)
+
+RMM's headers are searched for separately, because librmm installs as its own wheel beside
+libcudf rather than under it; set `RMM_HOME` if they are somewhere else again. RMM, CCCL and
+libcudf are versioned together by RAPIDS, which is why none of them is fetched from git the way
+`cutlass-jni` fetches CUTLASS -- a CCCL that does not match the installed libcudf does not
+compile.
+
+The SDK assembly unpacks `libtornado-cudf.so` into its own `lib/`, so nothing needs to go on
+`LD_LIBRARY_PATH` except libcudf itself.
 
 ## Using it
 

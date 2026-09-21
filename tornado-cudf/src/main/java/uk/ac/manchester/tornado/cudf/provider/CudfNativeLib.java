@@ -43,12 +43,18 @@ final class CudfNativeLib {
      * The shim, not cuDF itself.
      *
      * <p>
-     * Absent on any machine that has not built it, which is most of them, and that is not an
-     * error: {@link #isAvailable()} reports it and the provider declines. Loading libcudf directly
-     * would not help -- it exports mangled C++ symbols returning {@code std::unique_ptr}, which
-     * FFM cannot call.
+     * Built by {@code tornado-drivers/cudf-jni} when RAPIDS libcudf is installed and skipped when
+     * it is not, so it is absent on any machine without libcudf. That is not an error:
+     * {@link #isAvailable()} reports it and the provider declines. Loading libcudf directly would
+     * not help -- it exports mangled C++ symbols returning {@code std::unique_ptr}, which FFM
+     * cannot call.
+     *
+     * <p>
+     * Looked up with {@link FFMSupport#loadBundledLibrary}, not {@code loadLibrary}: this is a
+     * library the SDK ships in its own {@code lib/} rather than one the system provides, so it is
+     * on {@code java.library.path} and not on the loader's path.
      */
-    private static final SymbolLookup LIBTORNADO_CUDF = FFMSupport.loadLibrary("libtornado-cudf.so", "tornado-cudf.dll", "libtornado-cudf.dylib");
+    private static final SymbolLookup LIBTORNADO_CUDF = FFMSupport.loadBundledLibrary("libtornado-cudf.so", "tornado-cudf.dll", "libtornado-cudf.dylib");
 
     private static final MethodHandle SORT_PAIRS;
     private static final MethodHandle SORTED_ORDER;
