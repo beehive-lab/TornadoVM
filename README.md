@@ -7,7 +7,7 @@
 
 TornadoVM is a GPU programming framework for Java that works with JDK 21+ (currently JDK 21-27). It JIT-compiles Java bytecode into **NVIDIA CUDA, OpenCL C, and Apple Metal (MSL)** at runtime, so your existing Java code runs on **NVIDIA GPUs (via CUDA)**, AMD, Intel, and Apple Silicon GPUs, integrated GPUs, and multi-core CPUs. 
 
-On NVIDIA hardware it goes further: beyond generating CUDA, TornadoVM now calls straight into the **NVIDIA library ecosystem (cuBLAS, cuFFT, cuDNN) and exposes Tensor Core `mma.sync` instructions from pure Java**. No CUDA C. No JNI bindings to maintain. No native toolchain in your application. In addition, it has support for Tile Programming [cuTile](https://developer.nvidia.com/cuda/tile) via its **TileContext API**.
+On NVIDIA hardware it goes further: beyond generating CUDA, TornadoVM now calls straight into the **NVIDIA library ecosystem (cuBLAS, cuFFT, cuDNN, cuDF) and exposes Tensor Core `mma.sync` instructions from pure Java**. No CUDA C. No JNI bindings to maintain. No native toolchain in your application. In addition, it has support for Tile Programming [cuTile](https://developer.nvidia.com/cuda/tile) via its **TileContext API**.
 
 [![Build & Test](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test.yml/badge.svg)](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test.yml)
 [![Tornado API](https://img.shields.io/maven-central/v/io.github.beehive-lab/tornado-api?logo=apache-maven&color=blue&label=Tornado%20API)](https://central.sonatype.com/artifact/io.github.beehive-lab/tornado-api)
@@ -147,6 +147,7 @@ On NVIDIA hardware, TornadoVM is an open-source on-ramp to the whole CUDA softwa
 | **cuBLAS / cuBLASLt** library tasks | SGEMV, SGEMM, strided-batched, TF32 and FP16 GemmEx on Tensor Cores, and cuBLASLt with plan caching and fused `BIAS` / `GELU_BIAS` epilogues — one library task replaces a GEMM plus a separate activation kernel. |
 | **cuFFT** library tasks | C2C, R2C / C2R, and Z2Z transforms (1D and 2D) with capture-safe plan caching; FFT-filter pipelines mix with JIT kernels in one graph. |
 | **cuDNN** library tasks | Deep-learning primitives through the cuDNN graph API, including fused scaled-dot-product (flash) attention via cudnn-frontend. |
+| **cuDF** library tasks | RAPIDS relational primitives — sort order, grouped `SUM`, inclusive scan and inner join — the cross-row operations no `@Parallel` loop expresses. A generated projection can feed a cuDF group-by in one graph, with the intermediate never leaving the device. |
 | **Tensor Core MMA intrinsics** | `mma.sync` exposed through `KernelContext` (`mmaLoadA/B`, `mma`, `mmaStore`) — FP16 (`m16n8k16` → FP32) and INT8 (`m16n8k32` → INT32), with swizzled shared-memory staging. Not a binding: real CUDA generated from Java. |
 | **CUDA Graphs** | `executionPlan.withCUDAGraph()` records kernels, library calls, and transfers into a captured graph and replays them with a single `cuGraphLaunch`. |
 | **CUDA Tile** (`TileContext`) 🆕 | A second compilation path: kernels written over *tiles* go through `nvcc -tilecubin`, and the tile compiler picks the threads, the tensor-core instruction, and the shared-memory staging. [Details](#tilecontext-api-cutile). |
@@ -194,7 +195,7 @@ TornadoVM is used to accelerate machine learning and deep learning, computer vis
 
 - min **JDK 21** — `JAVA_HOME` must point to it
 - GCC/G++ ≥ 13, plus the driver for your target (OpenCL runtime, CUDA Toolkit, or macOS for Metal)
-- For the NVIDIA library tasks (cuBLAS / cuFFT / cuDNN): the **CUDA Toolkit** with the corresponding libraries; on systems with multiple toolkits, `/usr/local/cuda` (or `$CUDA_PATH`) is preferred
+- For the NVIDIA library tasks (cuBLAS / cuFFT / cuDNN): the **CUDA Toolkit** with the corresponding libraries; for cuDF, RAPIDS libcudf (see `tornado-cudf/README.md`); on systems with multiple toolkits, `/usr/local/cuda` (or `$CUDA_PATH`) is preferred
 
 ### Install via SDKMAN!
 
@@ -207,7 +208,7 @@ Pick a backend-specific build if you prefer a smaller install. Candidate version
 | Backend | SDKMAN! version | Targets |
 |---|---|---|
 | OpenCL *(default)* | `6.1.0-opencl` | NVIDIA / AMD / Intel GPUs, multi-core CPUs, FPGAs |
-| CUDA | `6.1.0-cuda` | **NVIDIA GPUs (CUDA) — codegen, Tensor Cores, cuBLAS/cuFFT/cuDNN library tasks** |
+| CUDA | `6.1.0-cuda` | **NVIDIA GPUs (CUDA) — codegen, Tensor Cores, cuBLAS/cuFFT/cuDNN/cuDF library tasks** |
 | Metal 🆕 | `6.1.0-metal` | Apple Silicon GPUs (M1–M4), natively via MSL |
 | All backends | `6.1.0-full` | Everything above |
 
@@ -264,7 +265,7 @@ Maven Central coordinates are per-JDK — pin the `-jdk21` / `-jdk22plus` versio
 <details>
 <summary><b>What can TornadoVM do on NVIDIA GPUs specifically?</b></summary>
 
-On NVIDIA hardware TornadoVM JIT-compiles your Java kernels to **CUDA PTX** and compiles them through NVRTC to native cubins. On top of that, it integrates the NVIDIA software ecosystem directly into the `TaskGraph`: **cuBLAS / cuBLASLt** (including TF32 and FP16 GemmEx on Tensor Cores and fused epilogues), **cuFFT**, and **cuDNN** (including fused flash attention) are available as *library tasks* that share device buffers and a CUDA stream with your generated kernels. You can also target **Tensor Cores** directly from Java via `mma.sync` intrinsics (FP16 and INT8), and capture the whole pipeline into a **CUDA Graph** for single-launch replay. On `develop` there is a second compilation path as well: a kernel taking a **`TileContext`** is compiled through **NVIDIA CUDA Tile**, where a tile rather than a thread is the unit of work. See [The NVIDIA ecosystem, native to Java](#-the-nvidia-ecosystem-native-to-java).
+On NVIDIA hardware TornadoVM JIT-compiles your Java kernels to **CUDA PTX** and compiles them through NVRTC to native cubins. On top of that, it integrates the NVIDIA software ecosystem directly into the `TaskGraph`: **cuBLAS / cuBLASLt** (including TF32 and FP16 GemmEx on Tensor Cores and fused epilogues), **cuFFT**, **cuDNN** (including fused flash attention) and **cuDF** (RAPIDS relational primitives) are available as *library tasks* that share device buffers and a CUDA stream with your generated kernels. You can also target **Tensor Cores** directly from Java via `mma.sync` intrinsics (FP16 and INT8), and capture the whole pipeline into a **CUDA Graph** for single-launch replay. On `develop` there is a second compilation path as well: a kernel taking a **`TileContext`** is compiled through **NVIDIA CUDA Tile**, where a tile rather than a thread is the unit of work. See [The NVIDIA ecosystem, native to Java](#-the-nvidia-ecosystem-native-to-java).
 </details>
 
 <details>

@@ -4,7 +4,8 @@ Hybrid API: Native Library Tasks
 ================================
 
 The hybrid API lets a :code:`TaskGraph` mix JIT-compiled Java tasks with calls
-into vendor-optimized native libraries (e.g., NVIDIA cuBLAS, cuFFT, cuDNN).
+into vendor-optimized native libraries (e.g., NVIDIA cuBLAS, cuFFT, cuDNN,
+and RAPIDS cuDF).
 Library tasks share TornadoVM-managed device buffers with regular tasks, so
 data produced by a JIT kernel can feed a library call (and vice versa)
 without extra copies or special memory management, and everything runs on
@@ -81,6 +82,55 @@ buffers, and cross-validates the results:
 ``cuDNN`` also exposes ``cudnnSoftmax``, ``cudnnRelu``/``cudnnSigmoid``/``cudnnTanh``,
 ``cudnnMaxPool2d``, and fused FP16 scaled-dot-product (flash) attention via
 ``sdpaForward`` — see the full provider catalog linked below.
+
+Example: cuDF (relational primitives)
+--------------------------------------------
+
+``cuDF`` binds the operations that need cross-row cooperation, which is what no
+``@Parallel`` loop expresses: ``sortedOrder`` (a stable sort returning the
+permutation), ``groupSum``, ``runningSum`` (inclusive scan) and ``innerJoin``
+(returning matched index pairs). The per-row work around them is exactly what
+TornadoVM compiles well, so the two halves belong in one graph:
+
+.. code:: java
+
+   TaskGraph cudfGraph = new TaskGraph("cudf")
+       .transferToDevice(DataTransferMode.EVERY_EXECUTION, keys, values)
+       .task("scale", MyKernels::scale, values, scaled)                // JIT-compiled kernel
+       .libraryTask("agg", Cudf::groupSum,                             // native cuDF call
+               n, keys, scaled, outKeys, outSums, outGroups)
+       .transferToHost(DataTransferMode.EVERY_EXECUTION, outKeys, outSums, outGroups);
+
+``scaled`` is never copied to the host: the generated kernel writes it and the
+group-by reads it, on the same device buffer and the same stream. The reverse
+direction composes too — a kernel can consume what a library task produced,
+which is how an ``ORDER BY`` is assembled from ``sortedOrder`` plus a gather:
+
+.. code:: java
+
+   TaskGraph orderGraph = new TaskGraph("order")
+       .transferToDevice(DataTransferMode.EVERY_EXECUTION, keys, values)
+       .libraryTask("order", Cudf::sortedOrder, n, keys, order)        // cuDF permutation
+       .task("gather", MyKernels::gather, order, values, sorted)       // JIT-compiled gather
+       .transferToHost(DataTransferMode.EVERY_EXECUTION, sorted);
+
+Only the key column crosses to the device for the ordering, so the payload may
+carry types no kernel could express. ``outGroups`` element 0 receives the number
+of groups the aggregate actually produced, which the caller cannot know in
+advance; ``innerJoin`` reports its pair count the same way and fails rather than
+truncating when the result exceeds the ``capacity`` it was given.
+
+Operands are dense and non-null: keys are ``INT32``, values ``FP64``, sorting is
+ascending over a single key column, and no column carries a validity mask.
+Widening any of those is more entry points rather than a different design.
+
+.. code:: bash
+
+   tornado-test -V uk.ac.manchester.tornado.unittests.cudf.TestCudf
+
+Unlike the other providers, cuDF needs RAPIDS ``libcudf`` rather than a CUDA
+Toolkit component — see ``tornado-cudf/README.md`` for the install recipe. Without
+it the module loads, reports itself unavailable, and the tests skip.
 
 Performance
 -----------
@@ -163,20 +213,24 @@ Scope and roadmap
 Implemented today, via the same provider SPI: **cuBLAS** and **cuBLASLt**
 (dense linear algebra, fused-epilogue GEMM), **cuFFT** (FFTs), **cuDNN**
 (deep-learning primitives, including fused FP16 flash attention), **cuSPARSE**
-(CSR SpMV/SpMM), and **CUTLASS** (open-template FP32/FP16/BF16 GEMM with fused
-epilogues), each a ``tornado-<lib>`` API module with per-(plan, device)
+(CSR SpMV/SpMM), **CUTLASS** (open-template FP32/FP16/BF16 GEMM with fused
+epilogues), and **cuDF** (relational primitives: sort order, grouped ``SUM``,
+inclusive scan, inner join), each a ``tornado-<lib>`` API module with per-(plan, device)
 contexts for cached descriptors and plans. cuBLAS, cuBLASLt, cuFFT and
 cuSPARSE bind their native calls directly through ``java.lang.foreign`` —
 no native module, nothing gated behind the ``cuda-backend`` Maven profile
 beyond the module itself. cuDNN keeps a small native module
-(``cudnn-jni``) for the cudnn-frontend C++ SDPA shim, and CUTLASS
-(``cutlass-jni``) compiles device code with ``nvcc``, so both still need a
-C++ toolchain. Either way it is self-guarding — if the library/toolkit
+(``cudnn-jni``) for the cudnn-frontend C++ SDPA shim, CUTLASS
+(``cutlass-jni``) compiles device code with ``nvcc``, and cuDF
+(``cudf-jni``) carries an ``extern "C"`` shim because libcudf is C++ and
+returns ``std::unique_ptr`` by value, so those three still need a C++
+toolchain. Either way it is self-guarding — if the library/toolkit
 isn't installed, the ``SymbolLookup`` (or the native build) comes back
 empty and that provider reports ``UNSUPPORTED`` at runtime rather than
 failing the build. Some libraries need an extra runtime dependency (e.g.,
 cuDNN needs ``libcudnn9``); see the full guide linked below for per-library
-install requirements.
+install requirements, and cuDF needs RAPIDS ``libcudf``, which is not a CUDA
+Toolkit component.
 
 When :code:`beta != 0` in a cuBLAS GEMM/GEMV call, the output operand is also
 read; the binding marks it ``READ_WRITE`` automatically (include it in
