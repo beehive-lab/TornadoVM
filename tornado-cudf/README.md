@@ -1,7 +1,7 @@
 # tornado-cudf
 
-RAPIDS cuDF relational primitives as TornadoVM library tasks: sort, grouped aggregation, running
-sum and inner join.
+RAPIDS cuDF relational primitives as TornadoVM library tasks: sort order, grouped aggregation,
+running sum and inner join.
 
 ## Why this one has a shim
 
@@ -71,10 +71,12 @@ while the per-row work around them is exactly what TornadoVM compiles well.
 
 | function | cuDF | shape |
 |---|---|---|
-| `sortPairs` | `stable_sort_by_key` | `ORDER BY` |
+| `sortedOrder` | `stable_sorted_order` | `ORDER BY`, returns the permutation |
 | `groupSum` | `groupby::aggregate` with `SUM` | `GROUP BY k` |
 | `runningSum` | `scan` inclusive | `SUM(x) OVER (...)` |
 | `innerJoin` | `inner_join` | equi-join, returns index pairs |
 
-Keys are 32-bit and values FP64, which is what a SQL planner produces. Widening that is more
-entry points rather than a different design.
+Keys are 32-bit and values FP64, which is what a SQL planner produces, and no column carries a
+validity mask, so every operand is dense and non-null. Widening either is more entry points rather
+than a different design; null support is the one that changes signatures, since it has to carry a
+mask per column, and it is deliberately left out rather than half-offered.

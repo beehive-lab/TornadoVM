@@ -20,8 +20,8 @@ package uk.ac.manchester.tornado.unittests.cudf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -43,7 +43,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
 
 /**
- * cuDF library tasks: sort, grouped aggregation, running sum and inner join.
+ * cuDF library tasks: sort order, grouped aggregation, running sum and inner join.
  *
  * <p>
  * Skipped unless the {@code libtornado-cudf.so} shim has been built, which is the usual case --
@@ -76,39 +76,8 @@ public class TestCudf extends TornadoTestBase {
         }
     }
 
-    @Test
-    public void testSortPairs() throws TornadoExecutionPlanException {
-        final int n = 4096;
-        IntArray keys = new IntArray(n);
-        DoubleArray values = new DoubleArray(n);
-        for (int i = 0; i < n; i++) {
-            keys.set(i, random.nextInt(1000));
-            values.set(i, random.nextDouble());
-        }
-        IntArray outKeys = new IntArray(n);
-        DoubleArray outValues = new DoubleArray(n);
-
-        TaskGraph graph = new TaskGraph("cudf") //
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, keys, values) //
-                .libraryTask("sort", Cudf::sortPairs, n, keys, values, outKeys, outValues) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, outKeys, outValues);
-
-        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
-            plan.execute();
-        }
-
-        int[] expected = new int[n];
-        for (int i = 0; i < n; i++) {
-            expected[i] = keys.get(i);
-        }
-        Arrays.sort(expected);
-        for (int i = 0; i < n; i++) {
-            assertEquals(expected[i], outKeys.get(i));
-        }
-    }
-
     /**
-     * The permutation, which is what an ORDER BY needs rather than sorted key/value pairs.
+     * The permutation, which is what an ORDER BY needs rather than sorted rows.
      *
      * <p>Asserted by applying it: a permutation that is the identity, or reversed, or off by one,
      * all look like plausible index arrays. What says it is right is that the values gathered
@@ -127,7 +96,7 @@ public class TestCudf extends TornadoTestBase {
 
         TaskGraph graph = new TaskGraph("cudf") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, keys) //
-                .libraryTask("order", Cudf::sortedOrder, n, keys, 0, order) //
+                .libraryTask("order", Cudf::sortedOrder, n, keys, order) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, order);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
@@ -256,6 +225,205 @@ public class TestCudf extends TornadoTestBase {
         assertEquals(expected, matched);
         for (int i = 0; i < matched; i++) {
             assertEquals(left.get(outLeft.get(i)), right.get(outRight.get(i)));
+        }
+    }
+
+    /**
+     * One row, for each primitive that scans: the degenerate input every scan gets wrong in a
+     * different way -- an off-by-one loop bound reads nothing, a prefix sum seeded with the first
+     * element doubles it -- and which a random 4096-row input can never distinguish.
+     */
+    @Test
+    public void testSortedOrderSingleRow() throws TornadoExecutionPlanException {
+        IntArray keys = new IntArray(1);
+        keys.set(0, 7);
+        IntArray order = new IntArray(1);
+
+        TaskGraph graph = new TaskGraph("cudf") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, keys) //
+                .libraryTask("order", Cudf::sortedOrder, 1, keys, order) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, order);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+
+        assertEquals("the only permutation of one row is the identity", 0, order.get(0));
+    }
+
+    @Test
+    public void testRunningSumSingleRow() throws TornadoExecutionPlanException {
+        DoubleArray values = new DoubleArray(1);
+        values.set(0, 3.5);
+        DoubleArray out = new DoubleArray(1);
+
+        TaskGraph graph = new TaskGraph("cudf") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, values) //
+                .libraryTask("scan", Cudf::runningSum, 1, values, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+
+        assertEquals("an inclusive scan of one row is that row", 3.5, out.get(0), 1e-9);
+    }
+
+    /**
+     * Every key the same. The group count collapses to one, which is where a grouped aggregation
+     * that secretly emits one row per input row still produces the right sums and only the count
+     * gives it away.
+     */
+    @Test
+    public void testGroupSumSingleGroup() throws TornadoExecutionPlanException {
+        final int n = 4096;
+        IntArray keys = new IntArray(n);
+        DoubleArray values = new DoubleArray(n);
+        double total = 0.0;
+        for (int i = 0; i < n; i++) {
+            double value = random.nextInt(100);
+            keys.set(i, 11);
+            values.set(i, value);
+            total += value;
+        }
+        IntArray outKeys = new IntArray(n);
+        DoubleArray outSums = new DoubleArray(n);
+        IntArray outGroups = new IntArray(1);
+
+        TaskGraph graph = new TaskGraph("cudf") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, keys, values) //
+                .libraryTask("agg", Cudf::groupSum, n, keys, values, outKeys, outSums, outGroups) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outKeys, outSums, outGroups);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+
+        assertEquals("one distinct key is one group", 1, outGroups.get(0));
+        assertEquals(11, outKeys.get(0));
+        assertEquals(total, outSums.get(0), 1e-9);
+    }
+
+    /**
+     * Every key distinct -- the other end of the same axis, where the number of groups equals the
+     * number of rows and each sum is a single value passed through.
+     */
+    @Test
+    public void testGroupSumAllDistinctKeys() throws TornadoExecutionPlanException {
+        final int n = 2048;
+        IntArray keys = new IntArray(n);
+        DoubleArray values = new DoubleArray(n);
+        Map<Integer, Double> reference = new HashMap<>();
+        for (int i = 0; i < n; i++) {
+            double value = random.nextInt(100);
+            keys.set(i, i);
+            values.set(i, value);
+            reference.put(i, value);
+        }
+        IntArray outKeys = new IntArray(n);
+        DoubleArray outSums = new DoubleArray(n);
+        IntArray outGroups = new IntArray(1);
+
+        TaskGraph graph = new TaskGraph("cudf") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, keys, values) //
+                .libraryTask("agg", Cudf::groupSum, n, keys, values, outKeys, outSums, outGroups) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outKeys, outSums, outGroups);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+
+        assertEquals("n distinct keys are n groups", n, outGroups.get(0));
+        for (int i = 0; i < n; i++) {
+            Double expected = reference.get(outKeys.get(i));
+            assertTrue("unexpected group key " + outKeys.get(i), expected != null);
+            assertEquals(expected, outSums.get(i), 1e-9);
+        }
+    }
+
+    /**
+     * Maximum fan-out: one key on both sides, so the result is the full cartesian product. The
+     * random join above exercises duplicate keys statistically; this one pins the bound-pair
+     * arithmetic, which is where a join that takes lower bound for upper emits leftCount pairs
+     * instead of leftCount * rightCount and still looks like a join.
+     */
+    @Test
+    public void testInnerJoinAllKeysEqual() throws TornadoExecutionPlanException {
+        final int leftCount = 64;
+        final int rightCount = 32;
+        final int capacity = leftCount * rightCount;
+        IntArray left = new IntArray(leftCount);
+        IntArray right = new IntArray(rightCount);
+        for (int i = 0; i < leftCount; i++) {
+            left.set(i, 5);
+        }
+        for (int i = 0; i < rightCount; i++) {
+            right.set(i, 5);
+        }
+        IntArray outLeft = new IntArray(capacity);
+        IntArray outRight = new IntArray(capacity);
+        IntArray outCount = new IntArray(1);
+
+        TaskGraph graph = new TaskGraph("cudf") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, left, right) //
+                .libraryTask("join", Cudf::innerJoin, leftCount, left, rightCount, right, capacity, outLeft, outRight, outCount) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outLeft, outRight, outCount);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+
+        assertEquals("every left row matches every right row", capacity, outCount.get(0));
+        boolean[][] seen = new boolean[leftCount][rightCount];
+        for (int i = 0; i < capacity; i++) {
+            int l = outLeft.get(i);
+            int r = outRight.get(i);
+            assertFalse("pair (" + l + "," + r + ") appears twice", seen[l][r]);
+            seen[l][r] = true;
+        }
+    }
+
+    /**
+     * A join too large for the buffers it was given must fail, not truncate: a short join is a
+     * wrong answer that no row count catches, because the caller reads the count the join wrote.
+     *
+     * <p>Also the only test of the error path as a whole -- the shim stores the message, returns a
+     * non-zero status, and the binding reads it back through {@code tornado_cudf_last_error} to
+     * build the exception. Asserting the message reached Java is what says the whole chain works.
+     */
+    @Test
+    public void testInnerJoinCapacityExceeded() {
+        final int leftCount = 64;
+        final int rightCount = 32;
+        // Room for a hundredth of the 2048 pairs this join produces.
+        final int capacity = 16;
+        IntArray left = new IntArray(leftCount);
+        IntArray right = new IntArray(rightCount);
+        for (int i = 0; i < leftCount; i++) {
+            left.set(i, 5);
+        }
+        for (int i = 0; i < rightCount; i++) {
+            right.set(i, 5);
+        }
+        IntArray outLeft = new IntArray(capacity);
+        IntArray outRight = new IntArray(capacity);
+        IntArray outCount = new IntArray(1);
+        outCount.set(0, -1);
+
+        TaskGraph graph = new TaskGraph("cudf") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, left, right) //
+                .libraryTask("join", Cudf::innerJoin, leftCount, left, rightCount, right, capacity, outLeft, outRight, outCount) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outLeft, outRight, outCount);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+            fail("a join of " + (leftCount * rightCount) + " pairs into a buffer of " + capacity + " must not report success");
+        } catch (Exception expected) {
+            String chain = "";
+            for (Throwable t = expected; t != null; t = t.getCause()) {
+                chain += String.valueOf(t.getMessage()) + " ";
+            }
+            assertTrue("the shim's own message should reach Java, not just a status code; got: " + chain, chain.contains("capacity"));
         }
     }
 }

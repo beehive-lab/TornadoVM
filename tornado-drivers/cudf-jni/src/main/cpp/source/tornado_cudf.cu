@@ -89,37 +89,6 @@ const char* tornado_cudf_last_error() {
 }
 
 /**
- * Stable ascending sort of n key/value pairs.
- *
- * Stable because SQL's ORDER BY is, and a caller sorting twice on different columns depends on it.
- */
-int tornado_cudf_sort_pairs(void* stream, const void* keys, const void* values, int32_t n, void* out_keys, void* out_values) {
-    try {
-        auto view = rmm::cuda_stream_view{static_cast<cudaStream_t>(stream)};
-        cudf::column_view key_col = view_of<int32_t>(keys, n, cudf::type_id::INT32);
-        cudf::column_view val_col = view_of<double>(values, n, cudf::type_id::FLOAT64);
-        cudf::table_view table{{key_col, val_col}};
-
-        auto sorted = cudf::stable_sort_by_key(table, cudf::table_view{{key_col}}, {cudf::order::ASCENDING}, {cudf::null_order::AFTER}, view);
-
-        auto result = sorted->view();
-        cudaError_t rc = copy_out(out_keys, result.column(0).data<int32_t>(), static_cast<size_t>(n) * sizeof(int32_t), static_cast<cudaStream_t>(stream));
-        if (rc == cudaSuccess) {
-            rc = copy_out(out_values, result.column(1).data<double>(), static_cast<size_t>(n) * sizeof(double), static_cast<cudaStream_t>(stream));
-        }
-        if (rc != cudaSuccess) {
-            g_last_error = std::string("sortPairs copy-out: ") + cudaGetErrorString(rc);
-            return 3;
-        }
-        return cudaStreamSynchronize(static_cast<cudaStream_t>(stream)) == cudaSuccess ? 0 : 4;
-    } catch (const std::exception& e) {
-        return fail("sortPairs", e);
-    } catch (...) {
-        return fail("sortPairs");
-    }
-}
-
-/**
  * The permutation that sorts n keys ascending, written as row positions rather than as sorted data.
  *
  * This is what a SQL ORDER BY actually needs. Sorting key/value pairs reorders one carried column;
@@ -127,15 +96,19 @@ int tornado_cudf_sort_pairs(void* stream, const void* keys, const void* values, 
  * a device. Returning the permutation lets the caller reorder whatever it is holding, so nothing
  * but the key ever crosses the interconnect and no payload column has to be device-expressible.
  *
- * Stable, for the same reason sortPairs is: SQL's ORDER BY is stable over equal keys.
+ * Stable: SQL's ORDER BY is stable over equal keys, and a caller that sorts twice on different
+ * columns is relying on it.
  */
-int tornado_cudf_sorted_order(void* stream, const void* keys, int32_t n, int32_t nulls_first, void* out_order) {
+int tornado_cudf_sorted_order(void* stream, const void* keys, int32_t n, void* out_order) {
     try {
         auto view = rmm::cuda_stream_view{static_cast<cudaStream_t>(stream)};
         cudf::column_view key_col = view_of<int32_t>(keys, n, cudf::type_id::INT32);
         cudf::table_view table{{key_col}};
 
-        auto order = cudf::stable_sorted_order(table, {cudf::order::ASCENDING}, {nulls_first ? cudf::null_order::BEFORE : cudf::null_order::AFTER}, view);
+        // The null order is immaterial: view_of builds every column with no validity mask, so no
+        // column reaching this shim can contain a null. Exposing a choice the data cannot exercise
+        // would be an API that lies, so the parameter is not offered.
+        auto order = cudf::stable_sorted_order(table, {cudf::order::ASCENDING}, {cudf::null_order::AFTER}, view);
 
         cudaStream_t raw = static_cast<cudaStream_t>(stream);
         cudaError_t rc = copy_out(out_order, order->view().data<int32_t>(), static_cast<size_t>(n) * sizeof(int32_t), raw);

@@ -54,9 +54,10 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
  * <h2>What is bound, and what is not</h2>
  *
  * <p>
- * Four primitives, chosen because each is a Flink batch operator with a measured headroom and no
- * other route onto a device. Keys are 32-bit and values are FP64, which is what the SQL side
- * produces; widening that is a matter of more shim entry points rather than a different design.
+ * Four primitives, chosen because each is a relational operator with no other route onto a device.
+ * Keys are 32-bit and values are FP64, and no column carries a validity mask, so every operand is
+ * dense and non-null; widening either is a matter of more shim entry points rather than a
+ * different design.
  */
 public final class Cudf {
 
@@ -67,40 +68,28 @@ public final class Cudf {
     }
 
     /**
-     * Sorts {@code n} key/value pairs by key, ascending, writing the result to {@code outKeys} and
-     * {@code outValues}.
-     *
-     * <p>
-     * A stable sort, because SQL's {@code ORDER BY} is stable over equal keys and a caller that
-     * sorts twice on different columns is relying on it.
-     */
-    public static LibraryTaskDescriptor sortPairs(int n, IntArray keys, DoubleArray values, IntArray outKeys, DoubleArray outValues) {
-        Access[] access = new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY, Access.WRITE_ONLY };
-        return new LibraryTaskDescriptor() //
-                .withLibrary(LIBRARY_NAME) //
-                .withFunction("sortPairs") //
-                .withParameters(new Object[] { n, keys, values, outKeys, outValues }) //
-                .withAccess(access);
-    }
-
-    /**
      * The permutation that sorts {@code keys} ascending, as row positions rather than sorted data.
      *
-     * <p>What a SQL {@code ORDER BY} needs, and not what {@link #sortPairs} gives it: sorting
-     * key/value pairs reorders one carried column, where a query's rows have arbitrary columns of
-     * arbitrary types and most of them are of no interest to a device. Handing back the
-     * permutation lets the caller reorder whatever it is holding, so nothing but the key crosses
-     * the interconnect and no payload column has to be expressible on a device at all.
+     * <p>What a SQL {@code ORDER BY} needs. A sort that reorders the key column with one carried
+     * payload column serves only a caller whose rows are exactly that shape; a query's rows have
+     * arbitrary columns of arbitrary types, and most of them are of no interest to a device.
+     * Handing back the permutation lets the caller reorder whatever it is holding, so nothing but
+     * the key crosses the interconnect and no payload column has to be expressible on a device at
+     * all.
      *
-     * <p>{@code outOrder} holds {@code n} positions. Stable over equal keys, like {@link
-     * #sortPairs}. {@code nullsFirst} chooses where absent keys go, which SQL lets a query state.
+     * <p>{@code outOrder} holds {@code n} positions. Stable over equal keys, because SQL's
+     * {@code ORDER BY} is and a caller that sorts twice on different columns relies on it.
+     *
+     * <p>No null ordering is offered: columns reaching this binding carry no validity mask, so no
+     * key can be absent and a parameter choosing where absent keys go would be one the data can
+     * never exercise. It belongs with null support, not before it.
      */
-    public static LibraryTaskDescriptor sortedOrder(int n, IntArray keys, int nullsFirst, IntArray outOrder) {
-        Access[] access = new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY };
+    public static LibraryTaskDescriptor sortedOrder(int n, IntArray keys, IntArray outOrder) {
+        Access[] access = new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY };
         return new LibraryTaskDescriptor() //
                 .withLibrary(LIBRARY_NAME) //
                 .withFunction("sortedOrder") //
-                .withParameters(new Object[] { n, keys, nullsFirst, outOrder }) //
+                .withParameters(new Object[] { n, keys, outOrder }) //
                 .withAccess(access);
     }
 
