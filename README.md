@@ -108,7 +108,7 @@ Pick the one that matches how much control you need: `@Parallel` when TornadoVM 
 
 The simplest of the three models. You just annotate the parallel loops with `@Parallel` and TornadoVM infers the whole launch configuration (global bounds, local work size) for you. Because the annotation is the only GPU-specific part, the same method also runs unmodified on the plain sequential JVM path, which makes it the easiest style to write and debug first.
 
-Full runnable example: [MatrixMultiplication2D.java](tornado-examples/src/main/java/uk/ac/manchester/tornado/examples/compute/MatrixMultiplication2D.java). [Programming guide →](https://tornadovm.readthedocs.io/en/latest/programming.html)
+Full runnable example: [MatrixMultiplication2D.java](tornado-examples/src/main/java/uk/ac/manchester/tornado/examples/compute/MatrixMultiplication2D.java). [Programming guide →](https://tornadovm.readthedocs.io/en/latest/programming.html#loop-parallel-api)
 
 ---
 
