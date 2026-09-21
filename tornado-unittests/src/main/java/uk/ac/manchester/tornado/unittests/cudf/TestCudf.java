@@ -37,9 +37,11 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.cudf.Cudf;
+import uk.ac.manchester.tornado.cudf.enums.CudfAggregation;
 import uk.ac.manchester.tornado.cudf.provider.CudfLibraryProvider;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
@@ -89,6 +91,13 @@ public class TestCudf extends TornadoTestBase {
     public static void gather(IntArray order, DoubleArray values, DoubleArray out) {
         for (@Parallel int i = 0; i < order.getSize(); i++) {
             out.set(i, values.get(order.get(i)));
+        }
+    }
+
+    /** A predicate as a per-row map, which is the half of a filter a kernel can do. */
+    public static void positive(DoubleArray in, ByteArray mask) {
+        for (@Parallel int i = 0; i < in.getSize(); i++) {
+            mask.set(i, in.get(i) > 0.0 ? (byte) 1 : (byte) 0);
         }
     }
 
@@ -554,5 +563,417 @@ public class TestCudf extends TornadoTestBase {
             assertEquals("the second kernel gathered the wrong value at " + i, values.get(hostOrder[i]), gathered.get(i), 1e-9);
             assertEquals("the third kernel read what the second wrote at " + i, values.get(hostOrder[i]) + 1.0, shifted.get(i), 1e-9);
         }
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // groupAggregate: the general form of groupSum.
+    // ---------------------------------------------------------------------------------------
+
+    /** Runs one groupAggregate and hands back {outKeys, outResults, groupCount}. */
+    private Object[] groupAggregate(int n, int columns, CudfAggregation aggregation, IntArray keys, DoubleArray values) throws TornadoExecutionPlanException {
+        IntArray outKeys = new IntArray(n);
+        DoubleArray outResults = new DoubleArray(columns * n);
+        IntArray outGroups = new IntArray(1);
+
+        TaskGraph graph = new TaskGraph("cudf") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, keys, values) //
+                .libraryTask("agg", Cudf::groupAggregate, n, columns, aggregation.code(), keys, values, outKeys, outResults, outGroups) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outKeys, outResults, outGroups);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+        return new Object[] { outKeys, outResults, outGroups.get(0) };
+    }
+
+    /**
+     * Three value columns in one pass, which is the shape a k-means iteration needs: d coordinate
+     * sums per cluster, not d separate group-bys over the same keys.
+     *
+     * <p>Each column is given a different scale, so a packing mistake -- reading column 1 where
+     * column 2 was meant, or striding by the group count instead of by n -- produces the wrong
+     * totals rather than plausible ones.
+     */
+    @Test
+    public void testGroupAggregateMultipleColumns() throws TornadoExecutionPlanException {
+        final int n = 4096;
+        final int columns = 3;
+        IntArray keys = new IntArray(n);
+        DoubleArray values = new DoubleArray(columns * n);
+        Map<Integer, double[]> reference = new HashMap<>();
+        for (int i = 0; i < n; i++) {
+            int key = random.nextInt(32);
+            keys.set(i, key);
+            double[] totals = reference.computeIfAbsent(key, k -> new double[columns]);
+            for (int c = 0; c < columns; c++) {
+                double value = random.nextInt(50) * (c + 1);
+                values.set(c * n + i, value);
+                totals[c] += value;
+            }
+        }
+
+        Object[] out = groupAggregate(n, columns, CudfAggregation.SUM, keys, values);
+        IntArray outKeys = (IntArray) out[0];
+        DoubleArray outResults = (DoubleArray) out[1];
+        int groups = (Integer) out[2];
+
+        assertEquals("one row per distinct key", reference.size(), groups);
+        for (int i = 0; i < groups; i++) {
+            double[] expected = reference.get(outKeys.get(i));
+            assertTrue("unexpected group key " + outKeys.get(i), expected != null);
+            for (int c = 0; c < columns; c++) {
+                assertEquals("column " + c + " of group " + outKeys.get(i), expected[c], outResults.get(c * n + i), 1e-9);
+            }
+        }
+    }
+
+    /**
+     * MIN, MAX, MEAN and COUNT over the same data, each against a host reference.
+     *
+     * <p>All four share one dispatch path and differ only in the aggregation object the shim builds,
+     * so the thing worth testing is that the code selects the one it claims -- a MIN that quietly
+     * computed MAX would pass any test that only checked the shape of the output.
+     */
+    @Test
+    public void testGroupAggregateMinMaxMeanCount() throws TornadoExecutionPlanException {
+        final int n = 4096;
+        IntArray keys = new IntArray(n);
+        DoubleArray values = new DoubleArray(n);
+        Map<Integer, Double> mins = new HashMap<>();
+        Map<Integer, Double> maxes = new HashMap<>();
+        Map<Integer, Double> sums = new HashMap<>();
+        Map<Integer, Integer> counts = new HashMap<>();
+        for (int i = 0; i < n; i++) {
+            int key = random.nextInt(32);
+            double value = random.nextInt(1000) - 500;
+            keys.set(i, key);
+            values.set(i, value);
+            mins.merge(key, value, Math::min);
+            maxes.merge(key, value, Math::max);
+            sums.merge(key, value, Double::sum);
+            counts.merge(key, 1, Integer::sum);
+        }
+
+        for (CudfAggregation aggregation : new CudfAggregation[] { CudfAggregation.MIN, CudfAggregation.MAX, CudfAggregation.MEAN, CudfAggregation.COUNT }) {
+            Object[] out = groupAggregate(n, 1, aggregation, keys, values);
+            IntArray outKeys = (IntArray) out[0];
+            DoubleArray outResults = (DoubleArray) out[1];
+            int groups = (Integer) out[2];
+            assertEquals(aggregation + ": one row per distinct key", mins.size(), groups);
+
+            for (int i = 0; i < groups; i++) {
+                int key = outKeys.get(i);
+                double actual = outResults.get(i);
+                switch (aggregation) {
+                    case MIN -> assertEquals("MIN of group " + key, mins.get(key), actual, 1e-9);
+                    case MAX -> assertEquals("MAX of group " + key, maxes.get(key), actual, 1e-9);
+                    case MEAN -> assertEquals("MEAN of group " + key, sums.get(key) / counts.get(key), actual, 1e-9);
+                    case COUNT -> assertEquals("COUNT of group " + key, counts.get(key).doubleValue(), actual, 1e-9);
+                    default -> fail("unreachable");
+                }
+            }
+        }
+    }
+
+    /**
+     * The general form and the narrow one have to agree, or one of them is wrong and nothing else
+     * would say which.
+     */
+    @Test
+    public void testGroupAggregateAgreesWithGroupSum() throws TornadoExecutionPlanException {
+        final int n = 4096;
+        IntArray keys = new IntArray(n);
+        DoubleArray values = new DoubleArray(n);
+        for (int i = 0; i < n; i++) {
+            keys.set(i, random.nextInt(32));
+            values.set(i, random.nextInt(100));
+        }
+
+        IntArray narrowKeys = new IntArray(n);
+        DoubleArray narrowSums = new DoubleArray(n);
+        IntArray narrowGroups = new IntArray(1);
+        TaskGraph graph = new TaskGraph("cudf") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, keys, values) //
+                .libraryTask("agg", Cudf::groupSum, n, keys, values, narrowKeys, narrowSums, narrowGroups) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, narrowKeys, narrowSums, narrowGroups);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+
+        Object[] out = groupAggregate(n, 1, CudfAggregation.SUM, keys, values);
+        IntArray generalKeys = (IntArray) out[0];
+        DoubleArray generalSums = (DoubleArray) out[1];
+        int groups = (Integer) out[2];
+
+        assertEquals(narrowGroups.get(0), groups);
+        Map<Integer, Double> narrow = new HashMap<>();
+        for (int i = 0; i < groups; i++) {
+            narrow.put(narrowKeys.get(i), narrowSums.get(i));
+        }
+        for (int i = 0; i < groups; i++) {
+            assertEquals("groupAggregate disagrees with groupSum on key " + generalKeys.get(i), narrow.get(generalKeys.get(i)), generalSums.get(i), 1e-9);
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // reduce: the whole-column shape, which is not a group-by.
+    // ---------------------------------------------------------------------------------------
+
+    @Test
+    public void testReduce() throws TornadoExecutionPlanException {
+        final int n = 4096;
+        DoubleArray values = new DoubleArray(n);
+        double sum = 0.0;
+        double min = Double.MAX_VALUE;
+        double max = -Double.MAX_VALUE;
+        for (int i = 0; i < n; i++) {
+            double value = random.nextInt(2000) - 1000;
+            values.set(i, value);
+            sum += value;
+            min = Math.min(min, value);
+            max = Math.max(max, value);
+        }
+
+        double[] expected = { sum, min, max, sum / n };
+        CudfAggregation[] operations = { CudfAggregation.SUM, CudfAggregation.MIN, CudfAggregation.MAX, CudfAggregation.MEAN };
+        for (int op = 0; op < operations.length; op++) {
+            DoubleArray out = new DoubleArray(1);
+            TaskGraph graph = new TaskGraph("cudf") //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, values) //
+                    .libraryTask("reduce", Cudf::reduce, n, operations[op].code(), values, out) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+            try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+                plan.execute();
+            }
+            assertEquals(operations[op].toString(), expected[op], out.get(0), 1e-6);
+        }
+    }
+
+    /**
+     * COUNT over a whole column is n, which the caller already holds, so the shim refuses rather
+     * than launching work to return a number the call site knows.
+     */
+    @Test
+    public void testReduceRefusesCount() {
+        final int n = 64;
+        DoubleArray values = new DoubleArray(n);
+        DoubleArray out = new DoubleArray(1);
+        TaskGraph graph = new TaskGraph("cudf") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, values) //
+                .libraryTask("reduce", Cudf::reduce, n, CudfAggregation.COUNT.code(), values, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+            fail("an ungrouped COUNT should be refused, not answered");
+        } catch (Exception expected) {
+            assertTrue("the refusal should say why; got: " + causeChain(expected), causeChain(expected).contains("COUNT"));
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // selectedIndices: stream compaction, the filter a kernel cannot finish.
+    // ---------------------------------------------------------------------------------------
+
+    /**
+     * A generated kernel computes the predicate and cuDF compacts it, which is the whole argument
+     * for the module in one graph: the map half is what TornadoVM compiles well, and moving the
+     * survivors together is the half no @Parallel loop expresses.
+     */
+    @Test
+    public void testSelectedIndices() throws TornadoExecutionPlanException {
+        final int n = 4096;
+        DoubleArray values = new DoubleArray(n);
+        for (int i = 0; i < n; i++) {
+            values.set(i, random.nextInt(200) - 100);
+        }
+        ByteArray mask = new ByteArray(n);
+        IntArray indices = new IntArray(n);
+        IntArray count = new IntArray(1);
+
+        TaskGraph graph = new TaskGraph("cudf") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, values) //
+                .task("predicate", TestCudf::positive, values, mask) //
+                .libraryTask("filter", Cudf::selectedIndices, n, n, mask, indices, count) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, mask, indices, count);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+
+        int expected = 0;
+        for (int i = 0; i < n; i++) {
+            boolean keep = values.get(i) > 0.0;
+            assertEquals("the kernel's own mask at " + i, keep ? 1 : 0, mask.get(i));
+            if (keep) {
+                expected++;
+            }
+        }
+        assertEquals("survivor count", expected, count.get(0));
+
+        int previous = -1;
+        int seen = 0;
+        for (int i = 0; i < count.get(0); i++) {
+            int position = indices.get(i);
+            assertTrue("positions must ascend; " + position + " followed " + previous, position > previous);
+            assertTrue("kept a row the predicate rejected: " + position, values.get(position) > 0.0);
+            previous = position;
+            seen++;
+        }
+        assertEquals(expected, seen);
+    }
+
+    /** Nothing survives, and nothing survives is not the same as nothing happened. */
+    @Test
+    public void testSelectedIndicesKeepsNone() throws TornadoExecutionPlanException {
+        final int n = 256;
+        ByteArray mask = new ByteArray(n);
+        IntArray indices = new IntArray(n);
+        IntArray count = new IntArray(1);
+        count.set(0, -1);
+        for (int i = 0; i < n; i++) {
+            mask.set(i, (byte) 0);
+        }
+
+        TaskGraph graph = new TaskGraph("cudf") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, mask) //
+                .libraryTask("filter", Cudf::selectedIndices, n, n, mask, indices, count) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, indices, count);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+        assertEquals("an all-zero mask keeps nothing", 0, count.get(0));
+    }
+
+    /** Too many survivors for the buffer must fail, for the same reason a short join must. */
+    @Test
+    public void testSelectedIndicesCapacityExceeded() {
+        final int n = 256;
+        final int capacity = 8;
+        ByteArray mask = new ByteArray(n);
+        IntArray indices = new IntArray(capacity);
+        IntArray count = new IntArray(1);
+        for (int i = 0; i < n; i++) {
+            mask.set(i, (byte) 1);
+        }
+
+        TaskGraph graph = new TaskGraph("cudf") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, mask) //
+                .libraryTask("filter", Cudf::selectedIndices, n, capacity, mask, indices, count) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, indices, count);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+            fail("keeping " + n + " rows in a buffer of " + capacity + " must not report success");
+        } catch (Exception expected) {
+            assertTrue("the shim's message should reach Java; got: " + causeChain(expected), causeChain(expected).contains("capacity"));
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // sortedOrderMulti: several keys, either direction.
+    // ---------------------------------------------------------------------------------------
+
+    /**
+     * Descending over one key, which sortedOrder cannot express at all.
+     *
+     * <p>Reversing a stable ascending sort on the host is not the same answer -- it reverses the
+     * ties too -- so this checks descending keys with ties keeping their arrival order, which is
+     * what a SQL ORDER BY ... DESC means.
+     */
+    @Test
+    public void testSortedOrderMultiDescending() throws TornadoExecutionPlanException {
+        final int n = 2048;
+        IntArray keys = new IntArray(n);
+        for (int i = 0; i < n; i++) {
+            keys.set(i, random.nextInt(16));
+        }
+        IntArray order = new IntArray(n);
+
+        TaskGraph graph = new TaskGraph("cudf") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, keys) //
+                .libraryTask("order", Cudf::sortedOrderMulti, n, 1, 0b1, keys, order) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, order);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+
+        int previousKey = Integer.MAX_VALUE;
+        int previousPosition = -1;
+        for (int i = 0; i < n; i++) {
+            int position = order.get(i);
+            int key = keys.get(position);
+            assertTrue("keys are not descending at " + i, key <= previousKey);
+            if (key == previousKey) {
+                assertTrue("equal keys were reordered; a descending sort is still stable", position > previousPosition);
+            }
+            previousKey = key;
+            previousPosition = position;
+        }
+    }
+
+    /** Two keys, the first ascending and the second descending -- the ORDER BY a, b DESC shape. */
+    @Test
+    public void testSortedOrderMultiTwoKeys() throws TornadoExecutionPlanException {
+        final int n = 2048;
+        IntArray keys = new IntArray(2 * n);
+        for (int i = 0; i < n; i++) {
+            keys.set(i, random.nextInt(8));          // primary, ascending
+            keys.set(n + i, random.nextInt(8));      // secondary, descending
+        }
+        IntArray order = new IntArray(n);
+
+        TaskGraph graph = new TaskGraph("cudf") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, keys) //
+                .libraryTask("order", Cudf::sortedOrderMulti, n, 2, 0b10, keys, order) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, order);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+
+        Integer[] hostOrder = new Integer[n];
+        for (int i = 0; i < n; i++) {
+            hostOrder[i] = i;
+        }
+        Arrays.sort(hostOrder, Comparator.<Integer> comparingInt(a -> keys.get(a)).thenComparing(Comparator.<Integer> comparingInt(a -> keys.get(n + a)).reversed()));
+
+        for (int i = 0; i < n; i++) {
+            assertEquals("two-key ordering differs from a stable host sort at " + i, hostOrder[i].intValue(), order.get(i));
+        }
+    }
+
+    /** With one ascending key the general form has to be the narrow one, or one of them is wrong. */
+    @Test
+    public void testSortedOrderMultiAgreesWithSortedOrder() throws TornadoExecutionPlanException {
+        final int n = 2048;
+        IntArray keys = new IntArray(n);
+        for (int i = 0; i < n; i++) {
+            keys.set(i, random.nextInt(16));
+        }
+        IntArray narrow = new IntArray(n);
+        IntArray general = new IntArray(n);
+
+        TaskGraph graph = new TaskGraph("cudf") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, keys) //
+                .libraryTask("narrow", Cudf::sortedOrder, n, keys, narrow) //
+                .libraryTask("general", Cudf::sortedOrderMulti, n, 1, 0, keys, general) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, narrow, general);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+
+        for (int i = 0; i < n; i++) {
+            assertEquals("sortedOrderMulti disagrees with sortedOrder at " + i, narrow.get(i), general.get(i));
+        }
+    }
+
+    /** Flattens an exception chain, since a schedule-time failure reaches the caller wrapped. */
+    private static String causeChain(Throwable t) {
+        StringBuilder chain = new StringBuilder();
+        for (Throwable current = t; current != null; current = current.getCause()) {
+            chain.append(current.getMessage()).append(' ');
+        }
+        return chain.toString();
     }
 }
