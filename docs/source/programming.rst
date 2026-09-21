@@ -439,8 +439,92 @@ device buffers with ``@Parallel`` tasks, with ``KernelContext`` tasks and with n
 so the intermediate results never leave the device. Every ``TileContext`` operation also has a JVM implementation,
 which means that the same Java method runs and can be debugged on the CPU.
 
-A full description of the API (block indices, views and partitions, tile creation, elementwise arithmetic,
-reductions, scans, matrix multiply, element types, launch hints and the known limitations) is documented in the
+TileContext Operations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following table presents the main operations that the TileContext API exposes in Java, along with the CUDA Tile
+C++ they are compiled to. Every operation also has a JVM implementation, which is what runs when the same kernel is
+executed as ordinary Java.
+
+.. code:: java
+
+   // Note:
+   tc = new TileContext();          // the tile context
+   pv = tc.partition(view, ...);    // a partition view over a tensor
+
+.. list-table::
+   :widths: 36 28 36
+   :header-rows: 1
+
+   * - TornadoVM TileContext
+     - CUDA Tile C++
+     - Notes
+   * - ``tc.view(array, extents...)``
+     - ``ct::tensor_span``
+     - 1, 2 or 3 extents; the extents may be runtime values
+   * - ``tc.partition(view, tile...)``
+     - ``ct::partition_view``
+     - splits a view into tiles; each tile extent is a power-of-two constant
+   * - ``tc.bidX() tc.bidY() tc.bidZ()``
+     - ``ct::bid().x/.y/.z``
+     - the index of this tile block
+   * - ``tc.numBlocksX() tc.numBlocksY() tc.numBlocksZ()``
+     - ``ct::num_blocks().x/.y/.z``
+     - the grid size, counted in tile blocks
+   * - ``pv.load(blocks...)`` / ``pv.loadMasked(blocks...)``
+     - ``view.load(...)`` / ``view.load_masked(...)``
+     - the masked form zero-pads a partial tile
+   * - ``pv.store(tile, blocks...)`` / ``pv.storeMasked(tile, blocks...)``
+     - ``view.store(...)`` / ``view.store_masked(...)``
+     - the masked form writes only the in-bounds elements
+   * - ``pv.atomicAdd(tile, blocks...)``, ``atomicMin``, ``atomicMax``, ``atomicExchange``, ...
+     - ``ct::atomic_add`` ...
+     - relaxed order, device scope; used to accumulate into a view from many blocks
+   * - ``tc.zeros(dtype, shape...)`` ``ones`` ``full`` ``iota``
+     - ``ct::zeros ct::ones ct::full ct::iota``
+     - create a tile; the ``full`` fill value must be a compile-time constant
+   * - ``tc.add(a, b)`` ``sub`` ``mul`` ``div``
+     - ``+ - * /``
+     - elementwise, with broadcasting: a dimension of extent 1 stretches
+   * - ``tc.scale(tile, s)``
+     - ``tile * (E) s``
+     - no named function in CUDA Tile; unlike a ``full`` fill, ``s`` may be a runtime value
+   * - ``tc.fma(a, b, c)``
+     - ``ct::fma``
+     - elementwise, unlike ``mma``
+   * - ``tc.mma(a, b, acc)``
+     - ``ct::mma``
+     - ``a * b + acc`` on the Tensor Cores; the instruction is the tile compiler's choice
+   * - ``tc.matmul(a, b)``
+     - ``ct::matmul``
+     - ``a * b`` with no accumulator; the result type is inferred from the operands
+   * - ``tc.sum(tile, axis)`` ``prod`` ``allOf`` ``anyOf``
+     - ``ct::sum ct::prod ct::all_of ct::any_of``
+     - reductions over one axis of a rank-2 tile
+   * - ``tc.max(tile, axis)`` / ``tc.min(tile, axis)``
+     - ``ct::reduce_max`` / ``ct::reduce_min``
+     - note the spelling: ``ct::max`` is the elementwise two-operand form
+   * - ``tc.maximum(a, b)`` / ``tc.minimum(a, b)``
+     - ``ct::max`` / ``ct::min``
+     - two operands, elementwise - these are not reductions
+   * - ``tc.exp`` ``exp2`` ``log`` ``log2`` ``sqrt`` ``rsqrt`` ``tanh`` ``sin`` ``cos`` ``abs`` ...
+     - ``ct::exp ct::exp2 ct::log`` ...
+     - elementwise, shape preserved
+   * - ``tc.lessThan`` ``greaterThan`` ``equalTo`` ... and ``tc.select(mask, a, b)``
+     - ``< > ==`` ... and ``ct::select``
+     - a comparison yields a ``DType.PRED`` tile, and ``select`` is its only consumer
+   * - ``tc.transpose(tile)`` ``reshape`` ``broadcast`` ``concat`` ``extract``
+     - ``ct::transpose ct::reshape ct::broadcast ct::cat ct::extract``
+     - shape manipulation; ``reshape`` is the only way to change the rank
+   * - ``tc.cast(tile, dtype)`` / ``tc.bitcast(tile, dtype)``
+     - ``ct::element_cast<E>`` / ``ct::element_bitcast``
+     - there is no ``ct::cast``; a float to integer cast truncates towards zero
+   * - a counted ``for`` loop
+     - ``ct::irange``
+     - write an ordinary Java loop; there is no iterator API, which would allocate in the kernel
+
+The full surface (the remaining math and bitwise operations, the scans, the strided and raw-byte views, the
+element types, the rank supported per operation, the launch hints and the known limitations) is documented in the
 :ref:`CUDA Tile Programming guide <tile_api>`.
 You can see more examples on
 `GitHub <https://github.com/beehive-lab/TornadoVM/tree/master/tornado-examples/src/main/java/uk/ac/manchester/tornado/examples/tile>`__.
