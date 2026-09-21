@@ -1,7 +1,7 @@
 # tornado-cudf
 
-RAPIDS cuDF relational primitives as TornadoVM library tasks: sort order, grouped aggregation,
-running sum and inner join.
+RAPIDS cuDF relational primitives as TornadoVM library tasks: ordering, grouping, scanning,
+joining and filtering.
 
 ## Why this one has a shim
 
@@ -73,9 +73,22 @@ while the per-row work around them is exactly what TornadoVM compiles well.
 | function | cuDF | shape |
 |---|---|---|
 | `sortedOrder` | `stable_sorted_order` | `ORDER BY`, returns the permutation |
+| `sortedOrderMulti` | `stable_sorted_order` | `ORDER BY a, b DESC` -- several keys, either direction |
 | `groupSum` | `groupby::aggregate` with `SUM` | `GROUP BY k` |
+| `groupAggregate` | `groupby::aggregate` | `GROUP BY k` -- `SUM`/`MIN`/`MAX`/`MEAN`/`COUNT` over several value columns at once |
+| `reduce` | `reduce` | `SELECT MIN(x)` -- one aggregation over a whole column |
 | `runningSum` | `scan` inclusive | `SUM(x) OVER (...)` |
 | `innerJoin` | `inner_join` | equi-join, returns index pairs |
+| `selectedIndices` | `apply_boolean_mask` | `WHERE` -- stream compaction, returns the surviving positions |
+
+`sortedOrder` and `groupSum` are the narrow cases of `sortedOrderMulti` and `groupAggregate`; they
+stay because they are what most callers want to read.
+
+Three of these return *positions* rather than rows -- the permutation, the join's index pairs, the
+filter's survivors -- so the caller gathers whatever columns it holds with a generated kernel and no
+payload column has to be expressible on a device. Where the output size cannot be known in advance
+the count comes back in element 0 of an output buffer, and a result larger than the `capacity` the
+caller gave fails rather than truncating.
 
 Keys are 32-bit and values FP64, which is what a SQL planner produces, and no column carries a
 validity mask, so every operand is dense and non-null. Widening either is more entry points rather

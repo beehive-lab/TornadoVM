@@ -87,10 +87,15 @@ Example: cuDF (relational primitives)
 --------------------------------------------
 
 ``cuDF`` binds the operations that need cross-row cooperation, which is what no
-``@Parallel`` loop expresses: ``sortedOrder`` (a stable sort returning the
-permutation), ``groupSum``, ``runningSum`` (inclusive scan) and ``innerJoin``
-(returning matched index pairs). The per-row work around them is exactly what
-TornadoVM compiles well, so the two halves belong in one graph:
+``@Parallel`` loop expresses: ``sortedOrder`` and ``sortedOrderMulti`` (stable
+sorts returning the permutation, the second over several keys in either
+direction), ``groupSum`` and ``groupAggregate`` (the second taking
+``SUM``/``MIN``/``MAX``/``MEAN``/``COUNT`` over several value columns in one
+pass), ``reduce`` (one aggregation over a whole column), ``runningSum``
+(inclusive scan), ``innerJoin`` (returning matched index pairs) and
+``selectedIndices`` (stream compaction, returning the surviving positions). The
+per-row work around them is exactly what TornadoVM compiles well, so the two
+halves belong in one graph:
 
 .. code:: java
 
@@ -117,8 +122,27 @@ which is how an ``ORDER BY`` is assembled from ``sortedOrder`` plus a gather:
 Only the key column crosses to the device for the ordering, so the payload may
 carry types no kernel could express. ``outGroups`` element 0 receives the number
 of groups the aggregate actually produced, which the caller cannot know in
-advance; ``innerJoin`` reports its pair count the same way and fails rather than
-truncating when the result exceeds the ``capacity`` it was given.
+advance; ``innerJoin`` and ``selectedIndices`` report their counts the same way
+and fail rather than truncating when the result exceeds the ``capacity`` they
+were given.
+
+Filtering splits the same way, and is the clearest case for the whole
+arrangement: a generated kernel computes the predicate a row at a time, and the
+compaction that follows is cross-row and has nowhere else to go.
+
+.. code:: java
+
+   TaskGraph filterGraph = new TaskGraph("filter")
+       .transferToDevice(DataTransferMode.EVERY_EXECUTION, values)
+       .task("predicate", MyKernels::positive, values, mask)          // JIT-compiled kernel
+       .libraryTask("filter", Cudf::selectedIndices,                  // native cuDF call
+               n, n, mask, indices, count)
+       .transferToHost(DataTransferMode.EVERY_EXECUTION, indices, count);
+
+``groupAggregate`` and ``sortedOrderMulti`` pack their columns with a stride of
+``n``, so column *c* starts at element ``c * n``; ``groupAggregate`` writes its
+results the same way, and bit *c* of ``sortedOrderMulti``'s mask makes column
+*c* descending. Aggregations are named by :code:`CudfAggregation`.
 
 Operands are dense and non-null: keys are ``INT32``, values ``FP64``, sorting is
 ascending over a single key column, and no column carries a validity mask.
@@ -214,8 +238,9 @@ Implemented today, via the same provider SPI: **cuBLAS** and **cuBLASLt**
 (dense linear algebra, fused-epilogue GEMM), **cuFFT** (FFTs), **cuDNN**
 (deep-learning primitives, including fused FP16 flash attention), **cuSPARSE**
 (CSR SpMV/SpMM), **CUTLASS** (open-template FP32/FP16/BF16 GEMM with fused
-epilogues), and **cuDF** (relational primitives: sort order, grouped ``SUM``,
-inclusive scan, inner join), each a ``tornado-<lib>`` API module with per-(plan, device)
+epilogues), and **cuDF** (relational primitives: ordering,
+grouped aggregation, whole-column reduction, inclusive scan, inner join and
+stream compaction), each a ``tornado-<lib>`` API module with per-(plan, device)
 contexts for cached descriptors and plans. cuBLAS, cuBLASLt, cuFFT and
 cuSPARSE bind their native calls directly through ``java.lang.foreign`` —
 no native module, nothing gated behind the ``cuda-backend`` Maven profile
