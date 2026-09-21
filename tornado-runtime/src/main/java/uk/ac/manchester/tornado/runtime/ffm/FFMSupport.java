@@ -93,16 +93,9 @@ public final class FFMSupport {
     }
 
     /**
-     * Opens a library TornadoVM ships itself, looking under {@code java.library.path} before
-     * falling back to the loader's own search.
-     *
-     * <p>
-     * {@link #loadLibrary} is for libraries the system provides -- {@code libcublas.so.12} and the
-     * rest of the CUDA toolkit -- which dlopen finds because the driver installation put them on
-     * the loader path. A shim built by one of the {@code tornado-drivers/*-jni} modules is not on
-     * that path: the assembly unpacks it into the SDK's {@code lib/}, and the launcher names that
-     * directory in {@code java.library.path}, which dlopen does not read. {@code System.loadLibrary}
-     * does read it, which is why the JNI shims have never needed this; an FFM one does.
+     * Opens a library TornadoVM ships itself, searching {@code java.library.path} before falling
+     * back to {@link #loadLibrary}. dlopen does not read that property, so a shim unpacked into
+     * the SDK's {@code lib/} is not found by soname alone.
      *
      * @return the lookup, or {@code null} if none of the candidates could be loaded.
      */
@@ -120,8 +113,7 @@ public final class FFMSupport {
                     }
                     return SymbolLookup.libraryLookup(candidate, GLOBAL);
                 } catch (IllegalArgumentException e) {
-                    // InvalidPathException is an IllegalArgumentException, so a malformed entry lands here too.
-                    // Not loadable from here; fall through to the next candidate.
+                    // Also catches InvalidPathException, a subclass. Try the next candidate.
                 }
             }
         }
