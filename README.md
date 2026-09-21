@@ -7,7 +7,7 @@
 
 TornadoVM is a GPU programming framework for Java that works with > JDK 21+ (currently JDK 21-27). It JIT-compiles Java bytecode into **NVIDIA CUDA, OpenCL C, and Apple Metal (MSL)** at runtime, so your existing Java code runs on **NVIDIA GPUs (via CUDA)**, AMD, Intel, and Apple Silicon GPUs, integrated GPUs, and multi-core CPUs. 
 
-On NVIDIA hardware it goes further: beyond generating CUDA, TornadoVM now calls straight into the **NVIDIA library ecosystem — cuBLAS, cuFFT, cuDNN — and exposes Tensor Core `mma.sync` instructions from pure Java**. No CUDA C. No JNI bindings to maintain. No native toolchain in your application. In addition, it has support for Tile Programming [cuTile](https://developer.nvidia.com/cuda/tile) via its **TileContext API**.
+On NVIDIA hardware it goes further: beyond generating CUDA, TornadoVM now calls straight into the **NVIDIA library ecosystem (cuBLAS, cuFFT, cuDNN) and exposes Tensor Core `mma.sync` instructions from pure Java**. No CUDA C. No JNI bindings to maintain. No native toolchain in your application. In addition, it has support for Tile Programming [cuTile](https://developer.nvidia.com/cuda/tile) via its **TileContext API**.
 
 [![Build & Test](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test.yml/badge.svg)](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test.yml)
 [![Tornado API](https://img.shields.io/maven-central/v/io.github.beehive-lab/tornado-api?logo=apache-maven&color=blue&label=Tornado%20API)](https://central.sonatype.com/artifact/io.github.beehive-lab/tornado-api)
@@ -22,7 +22,7 @@ On NVIDIA hardware it goes further: beyond generating CUDA, TornadoVM now calls 
 
 ## This is the whole programming model
 
-TornadoVM gives you three Java APIs for writing GPU kernels, from the least to the most explicit about how work maps onto the hardware. All three build the same `TaskGraph`, run through the same `TornadoExecutionPlan`, and can be mixed in a single graph. Here's one computation — dense matrix multiplication, `C = A × B` — written all three ways:
+TornadoVM gives you three Java APIs for writing GPU kernels, from the least to the most explicit about how work maps onto the hardware. All three build the same `TaskGraph`, run through the same `TornadoExecutionPlan`, and can be mixed in a single graph. Here's one computation, dense matrix multiplication, `C = A × B`  written all three ways:
 
 <table>
 <tr>
@@ -114,7 +114,7 @@ Full runnable example: [MatrixMultiplication2D.java](tornado-examples/src/main/j
 
 ## KernelContext API
 
-Write the kernel in Java with the same thread-indexing model you'd use in CUDA — global/local thread IDs, local memory, and barriers, with identical semantics across CUDA, OpenCL, and SYCL. TornadoVM still JIT-compiles the bytecode to a GPU kernel at runtime and manages all host↔device data transfers for you; on NVIDIA GPUs that kernel is emitted as **CUDA PTX** and compiled through NVRTC to a native cubin.
+Write the kernel in Java with the same thread-indexing model you'd use in CUDA: global/local thread IDs, local memory, and barriers, with identical semantics across CUDA, OpenCL, and SYCL. TornadoVM still JIT-compiles the bytecode to a GPU kernel at runtime and manages all host↔device data transfers for you; on NVIDIA GPUs that kernel is emitted as **CUDA PTX** and compiled through NVRTC to a native cubin.
 
 `KernelContext` gives you the full GPU programming model while TornadoVM handles memory management and runs the *identical* code across all four backends. Don't need that control? Drop `KernelContext` and use the Loop Parallel API above instead — both styles combine in the same `TaskGraph`. Full runnable example: [MatrixMultiplication2DV1.java](tornado-examples/src/main/java/uk/ac/manchester/tornado/examples/kernelcontext/compute/MatrixMultiplication2DV1.java). [Programming guide →](https://tornadovm.readthedocs.io/en/latest/programming.html)
 
@@ -139,7 +139,7 @@ WorkerGrid2D worker = new WorkerGrid2D(n / TILE, n / TILE);   // TILE BLOCKS, no
 
 ## 🟩 The NVIDIA ecosystem, native to Java
 
-On NVIDIA hardware, TornadoVM is more than a PTX code generator — it's an open-source on-ramp to the whole CUDA software stack, callable from the same `TaskGraph` you already use. Generated kernels and native library calls **share TornadoVM-managed device buffers on one CUDA stream**, so a JIT-compiled kernel can feed a cuBLAS call and consume its output with no extra copies and no host synchronization.
+On NVIDIA hardware, TornadoVM is an open-source on-ramp to the whole CUDA software stack, callable from the same `TaskGraph` you already use. Generated kernels and native library calls **share TornadoVM-managed device buffers on one CUDA stream**, so a JIT-compiled kernel can feed a cuBLAS call and consume its output with no extra copies and no host synchronization.
 
 | Capability | What it gives Java developers |
 |---|---|
@@ -167,7 +167,7 @@ try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
 }
 ```
 
-Library bindings are discovered via Java `ServiceLoader` — implement `TornadoLibraryProvider`, bind the calls through `java.lang.foreign` (a JNI module only if the library genuinely needs compiled C/C++), and any native library joins the graph with no core runtime changes. TornadoVM is a member of the **NVIDIA Inception Program** and has presented this work at **NVIDIA GTC**. [Hybrid API guide →](https://tornadovm.readthedocs.io/en/latest/)
+Library bindings are discovered via Java `ServiceLoader`, bind the calls through `java.lang.foreign` (a JNI module only if the library genuinely needs compiled C/C++), and any native library joins the graph with no core runtime changes. TornadoVM is a member of the **NVIDIA Inception Program** and has presented this work at **NVIDIA GTC**. [Hybrid API guide →](https://tornadovm.readthedocs.io/en/latest/)
 
 
 ---
@@ -192,7 +192,7 @@ TornadoVM is used to accelerate machine learning and deep learning, computer vis
 
 ### Prerequisites
 
-- **JDK 21** (or GraalVM based on JDK 21) — `JAVA_HOME` must point to it
+- min **JDK 21** — `JAVA_HOME` must point to it
 - GCC/G++ ≥ 13, plus the driver for your target (OpenCL runtime, CUDA Toolkit, or macOS for Metal)
 - For the NVIDIA library tasks (cuBLAS / cuFFT / cuDNN): the **CUDA Toolkit** with the corresponding libraries; on systems with multiple toolkits, `/usr/local/cuda` (or `$CUDA_PATH`) is preferred
 
