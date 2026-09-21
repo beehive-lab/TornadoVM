@@ -22,6 +22,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -73,6 +75,27 @@ public class TestCudf extends TornadoTestBase {
     public static void scale(DoubleArray in, DoubleArray out) {
         for (@Parallel int i = 0; i < in.getSize(); i++) {
             out.set(i, in.get(i) * 2.0);
+        }
+    }
+
+    /** The same, over keys: doubling preserves the order, so a sort of the result is still checkable. */
+    public static void doubleKeys(IntArray in, IntArray out) {
+        for (@Parallel int i = 0; i < in.getSize(); i++) {
+            out.set(i, in.get(i) * 2);
+        }
+    }
+
+    /** Applies a permutation, which is the per-row half of an ORDER BY and reads what cuDF wrote. */
+    public static void gather(IntArray order, DoubleArray values, DoubleArray out) {
+        for (@Parallel int i = 0; i < order.getSize(); i++) {
+            out.set(i, values.get(order.get(i)));
+        }
+    }
+
+    /** Reads what cuDF wrote and writes somewhere else, to close the round trip. */
+    public static void shift(DoubleArray in, DoubleArray out) {
+        for (@Parallel int i = 0; i < in.getSize(); i++) {
+            out.set(i, in.get(i) + 1.0);
         }
     }
 
@@ -424,6 +447,112 @@ public class TestCudf extends TornadoTestBase {
                 chain += String.valueOf(t.getMessage()) + " ";
             }
             assertTrue("the shim's own message should reach Java, not just a status code; got: " + chain, chain.contains("capacity"));
+        }
+    }
+
+    /**
+     * Generated kernel then cuDF, asserting the buffer between them.
+     *
+     * <p>The composition is the reason for the module, and it is also the thing most likely to be
+     * quietly wrong: if the library task read a stale host copy rather than what the kernel had
+     * just written on the device, a doubling would simply be missing and the sums would still look
+     * like sums. So the intermediate comes back too and is checked against what the kernel owed,
+     * separately from the aggregation over it.
+     */
+    @Test
+    public void testJitThenCudf() throws TornadoExecutionPlanException {
+        final int n = 8192;
+        IntArray keys = new IntArray(n);
+        DoubleArray values = new DoubleArray(n);
+        Map<Integer, Double> reference = new HashMap<>();
+        for (int i = 0; i < n; i++) {
+            int key = random.nextInt(64);
+            double value = random.nextInt(100);
+            keys.set(i, key);
+            values.set(i, value);
+            reference.merge(key, value * 2.0, Double::sum);
+        }
+        DoubleArray scaled = new DoubleArray(n);
+        IntArray outKeys = new IntArray(n);
+        DoubleArray outSums = new DoubleArray(n);
+        IntArray outGroups = new IntArray(1);
+
+        TaskGraph graph = new TaskGraph("cudf") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, keys, values) //
+                .task("scale", TestCudf::scale, values, scaled) //
+                .libraryTask("agg", Cudf::groupSum, n, keys, scaled, outKeys, outSums, outGroups) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, scaled, outKeys, outSums, outGroups);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+
+        for (int i = 0; i < n; i++) {
+            assertEquals("the kernel's own output at " + i, values.get(i) * 2.0, scaled.get(i), 1e-9);
+        }
+
+        int groups = outGroups.get(0);
+        assertEquals("one row per distinct key", reference.size(), groups);
+        for (int i = 0; i < groups; i++) {
+            Double expected = reference.get(outKeys.get(i));
+            assertTrue("unexpected group key " + outKeys.get(i), expected != null);
+            assertEquals("cuDF summed what the kernel wrote", expected, outSums.get(i), 1e-9);
+        }
+    }
+
+    /**
+     * Generated kernel, cuDF, generated kernel -- the round trip, with every buffer between them
+     * asserted.
+     *
+     * <p>The middle stage writes a permutation and the stage after it reads that permutation as
+     * indices, so this exercises the direction the test above does not: a kernel consuming what a
+     * library task produced. Ordering doubled keys and gathering the values through the result has
+     * to agree, row for row, with the host sorting the same rows by the same keys.
+     */
+    @Test
+    public void testJitThenCudfThenJit() throws TornadoExecutionPlanException {
+        final int n = 4096;
+        IntArray keys = new IntArray(n);
+        DoubleArray values = new DoubleArray(n);
+        for (int i = 0; i < n; i++) {
+            // Few distinct keys again, so the gather has to respect a stable order rather than a
+            // total one.
+            keys.set(i, random.nextInt(16));
+            values.set(i, random.nextDouble());
+        }
+        IntArray doubled = new IntArray(n);
+        IntArray order = new IntArray(n);
+        DoubleArray gathered = new DoubleArray(n);
+        DoubleArray shifted = new DoubleArray(n);
+
+        TaskGraph graph = new TaskGraph("cudf") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, keys, values) //
+                .task("double", TestCudf::doubleKeys, keys, doubled) //
+                .libraryTask("order", Cudf::sortedOrder, n, doubled, order) //
+                .task("gather", TestCudf::gather, order, values, gathered) //
+                .task("shift", TestCudf::shift, gathered, shifted) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, doubled, order, gathered, shifted);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+
+        for (int i = 0; i < n; i++) {
+            assertEquals("the first kernel's output at " + i, keys.get(i) * 2, doubled.get(i));
+        }
+
+        // What the host would have produced: a stable sort of the rows by key, which is the order
+        // the permutation has to describe.
+        Integer[] hostOrder = new Integer[n];
+        for (int i = 0; i < n; i++) {
+            hostOrder[i] = i;
+        }
+        Arrays.sort(hostOrder, Comparator.comparingInt(a -> keys.get(a)));
+
+        for (int i = 0; i < n; i++) {
+            assertEquals("permutation differs from a stable host sort at " + i, hostOrder[i].intValue(), order.get(i));
+            assertEquals("the second kernel gathered the wrong value at " + i, values.get(hostOrder[i]), gathered.get(i), 1e-9);
+            assertEquals("the third kernel read what the second wrote at " + i, values.get(hostOrder[i]) + 1.0, shifted.get(i), 1e-9);
         }
     }
 }
