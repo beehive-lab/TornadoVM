@@ -3,6 +3,7 @@ open module tornado.cudf {
     requires tornado.runtime;
 
     exports uk.ac.manchester.tornado.cudf;
+    exports uk.ac.manchester.tornado.cudf.enums;
     exports uk.ac.manchester.tornado.cudf.provider;
 
     provides uk.ac.manchester.tornado.runtime.library.spi.TornadoLibraryProvider with //

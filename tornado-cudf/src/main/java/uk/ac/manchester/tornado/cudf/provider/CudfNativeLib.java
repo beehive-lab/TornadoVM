@@ -60,6 +60,10 @@ final class CudfNativeLib {
     private static final MethodHandle GROUP_SUM;
     private static final MethodHandle RUNNING_SUM;
     private static final MethodHandle INNER_JOIN;
+    private static final MethodHandle GROUP_AGGREGATE;
+    private static final MethodHandle REDUCE;
+    private static final MethodHandle SELECTED_INDICES;
+    private static final MethodHandle SORTED_ORDER_MULTI;
     private static final MethodHandle LAST_ERROR;
 
     static {
@@ -67,6 +71,10 @@ final class CudfNativeLib {
         MethodHandle groupSum = null;
         MethodHandle runningSum = null;
         MethodHandle innerJoin = null;
+        MethodHandle groupAggregate = null;
+        MethodHandle reduce = null;
+        MethodHandle selectedIndices = null;
+        MethodHandle sortedOrderMulti = null;
         MethodHandle lastError = null;
         if (LIBTORNADO_CUDF != null) {
             // int (*)(void* stream, const int* keys, int n, int* outOrder)
@@ -74,12 +82,26 @@ final class CudfNativeLib {
             groupSum = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_LONG, C_INT, C_LONG, C_LONG, C_LONG), "tornado_cudf_group_sum");
             runningSum = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_INT, C_LONG), "tornado_cudf_running_sum");
             innerJoin = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_INT, C_LONG, C_INT, C_INT, C_LONG, C_LONG, C_LONG), "tornado_cudf_inner_join");
+            // int (*)(void* stream, const int* keys, const double* values, int n, int columns,
+            //         int agg, int* outKeys, double* outResults, int* outGroups)
+            groupAggregate = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_LONG, C_INT, C_INT, C_INT, C_LONG, C_LONG, C_LONG),
+                    "tornado_cudf_group_aggregate");
+            // int (*)(void* stream, const double* values, int n, int op, double* out)
+            reduce = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_INT, C_INT, C_LONG), "tornado_cudf_reduce");
+            // int (*)(void* stream, const signed char* mask, int n, int capacity, int* outIndices, int* outCount)
+            selectedIndices = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_INT, C_INT, C_LONG, C_LONG), "tornado_cudf_selected_indices");
+            // int (*)(void* stream, const int* keys, int n, int keyColumns, int descendingMask, int* outOrder)
+            sortedOrderMulti = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_INT, C_INT, C_INT, C_LONG), "tornado_cudf_sorted_order_multi");
             lastError = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_POINTER), "tornado_cudf_last_error");
         }
         SORTED_ORDER = sortedOrder;
         GROUP_SUM = groupSum;
         RUNNING_SUM = runningSum;
         INNER_JOIN = innerJoin;
+        GROUP_AGGREGATE = groupAggregate;
+        REDUCE = reduce;
+        SELECTED_INDICES = selectedIndices;
+        SORTED_ORDER_MULTI = sortedOrderMulti;
         LAST_ERROR = lastError;
     }
 
@@ -88,7 +110,8 @@ final class CudfNativeLib {
 
     /** Whether the shim is present and exports everything this module calls. */
     static boolean isAvailable() {
-        return LIBTORNADO_CUDF != null && SORTED_ORDER != null && GROUP_SUM != null && RUNNING_SUM != null && INNER_JOIN != null;
+        return LIBTORNADO_CUDF != null && SORTED_ORDER != null && GROUP_SUM != null && RUNNING_SUM != null && INNER_JOIN != null //
+                && GROUP_AGGREGATE != null && REDUCE != null && SELECTED_INDICES != null && SORTED_ORDER_MULTI != null;
     }
 
     static void load() {
@@ -148,6 +171,38 @@ final class CudfNativeLib {
             return (int) INNER_JOIN.invokeExact(stream, leftKeys, leftCount, rightKeys, rightCount, capacity, outLeft, outRight, outCount);
         } catch (Throwable t) {
             throw new TornadoRuntimeException("[ERROR] cuDF innerJoin: " + t.getMessage());
+        }
+    }
+
+    static int groupAggregate(long stream, long keys, long values, int n, int columns, int agg, long outKeys, long outResults, long outGroups) {
+        try {
+            return (int) GROUP_AGGREGATE.invokeExact(stream, keys, values, n, columns, agg, outKeys, outResults, outGroups);
+        } catch (Throwable t) {
+            throw new TornadoRuntimeException("[ERROR] cuDF groupAggregate: " + t.getMessage());
+        }
+    }
+
+    static int reduce(long stream, long values, int n, int op, long out) {
+        try {
+            return (int) REDUCE.invokeExact(stream, values, n, op, out);
+        } catch (Throwable t) {
+            throw new TornadoRuntimeException("[ERROR] cuDF reduce: " + t.getMessage());
+        }
+    }
+
+    static int selectedIndices(long stream, long mask, int n, int capacity, long outIndices, long outCount) {
+        try {
+            return (int) SELECTED_INDICES.invokeExact(stream, mask, n, capacity, outIndices, outCount);
+        } catch (Throwable t) {
+            throw new TornadoRuntimeException("[ERROR] cuDF selectedIndices: " + t.getMessage());
+        }
+    }
+
+    static int sortedOrderMulti(long stream, long keys, int n, int keyColumns, int descendingMask, long outOrder) {
+        try {
+            return (int) SORTED_ORDER_MULTI.invokeExact(stream, keys, n, keyColumns, descendingMask, outOrder);
+        } catch (Throwable t) {
+            throw new TornadoRuntimeException("[ERROR] cuDF sortedOrderMulti: " + t.getMessage());
         }
     }
 }

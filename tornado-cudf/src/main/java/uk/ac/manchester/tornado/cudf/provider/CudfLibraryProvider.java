@@ -85,6 +85,13 @@ public final class CudfLibraryProvider implements TornadoLibraryProvider {
             case "runningSum" -> CudfNativeLib.runningSum(stream, invocation.getDevicePointer(1), (Integer) invocation.getArg(0), invocation.getDevicePointer(2));
             case "innerJoin" -> CudfNativeLib.innerJoin(stream, invocation.getDevicePointer(1), (Integer) invocation.getArg(0), invocation.getDevicePointer(3), (Integer) invocation.getArg(2),
                     (Integer) invocation.getArg(4), invocation.getDevicePointer(5), invocation.getDevicePointer(6), invocation.getDevicePointer(7));
+            case "groupAggregate" -> CudfNativeLib.groupAggregate(stream, invocation.getDevicePointer(3), invocation.getDevicePointer(4), (Integer) invocation.getArg(0),
+                    (Integer) invocation.getArg(1), (Integer) invocation.getArg(2), invocation.getDevicePointer(5), invocation.getDevicePointer(6), invocation.getDevicePointer(7));
+            case "reduce" -> CudfNativeLib.reduce(stream, invocation.getDevicePointer(2), (Integer) invocation.getArg(0), (Integer) invocation.getArg(1), invocation.getDevicePointer(3));
+            case "selectedIndices" -> CudfNativeLib.selectedIndices(stream, invocation.getDevicePointer(2), (Integer) invocation.getArg(0), (Integer) invocation.getArg(1),
+                    invocation.getDevicePointer(3), invocation.getDevicePointer(4));
+            case "sortedOrderMulti" -> CudfNativeLib.sortedOrderMulti(stream, invocation.getDevicePointer(3), (Integer) invocation.getArg(0), (Integer) invocation.getArg(1),
+                    (Integer) invocation.getArg(2), invocation.getDevicePointer(4));
             default -> throw new TornadoRuntimeException("[ERROR] cuDF function not supported: " + functionName);
         };
         CudfNativeLib.checkStatus(status, functionName);

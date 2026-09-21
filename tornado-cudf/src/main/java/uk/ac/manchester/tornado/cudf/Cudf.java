@@ -21,8 +21,10 @@ import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.cudf.enums.CudfAggregation;
 
 /**
  * RAPIDS cuDF relational primitives as TornadoVM library tasks.
@@ -54,7 +56,13 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
  * <h2>What is bound, and what is not</h2>
  *
  * <p>
- * Four primitives, chosen because each is a relational operator with no other route onto a device.
+ * Eight entry points over five relational shapes -- ordering, grouping, scanning, joining and
+ * filtering -- each one an operator with no other route onto a device. Four of them are the general
+ * form of another: {@link #groupAggregate} is {@link #groupSum} over several columns and any
+ * aggregation, {@link #sortedOrderMulti} is {@link #sortedOrder} over several keys in either
+ * direction, and the narrow pair stay because they are what most callers want to read.
+ *
+ * <p>
  * Keys are 32-bit and values are FP64, and no column carries a validity mask, so every operand is
  * dense and non-null; widening either is a matter of more shim entry points rather than a
  * different design.
@@ -147,6 +155,122 @@ public final class Cudf {
                 .withLibrary(LIBRARY_NAME) //
                 .withFunction("innerJoin") //
                 .withParameters(new Object[] { leftCount, leftKeys, rightCount, rightKeys, capacity, outLeft, outRight, outCount }) //
+                .withAccess(access);
+    }
+
+    /**
+     * {@link #groupSum} generalised: one aggregation over several value columns, in one pass.
+     *
+     * <p>
+     * Doing it column by column re-hashes the same keys once per column, which for a k-means
+     * iteration summing <em>d</em> coordinates per cluster is <em>d</em> times the grouping work for
+     * no reason. cuDF takes a vector of aggregation requests and this hands it one per column.
+     *
+     * <p>
+     * Columns are packed with a stride of {@code n}: column <em>c</em> of {@code values} starts at
+     * element {@code c * n}, and its results at {@code outResults[c * n]}, of which the first
+     * {@code outGroups[0]} entries are live. The stride is {@code n} and not the group count because
+     * the caller has to size the buffer before the device can say how many groups there are.
+     *
+     * <p>
+     * {@code outKeys} holds one key per group. {@link CudfAggregation#COUNT} arrives as a
+     * {@code double} like the rest, so one output buffer serves every aggregation.
+     *
+     * @param n
+     *     rows in each column.
+     * @param columns
+     *     how many value columns {@code values} holds.
+     * @param aggregation
+     *     the code from {@link CudfAggregation#code()}.
+     */
+    public static LibraryTaskDescriptor groupAggregate(int n, int columns, int aggregation, IntArray keys, DoubleArray values, IntArray outKeys, DoubleArray outResults,
+            IntArray outGroups) {
+        Access[] access = new Access[8];
+        Arrays.fill(access, Access.READ_ONLY);
+        access[5] = Access.WRITE_ONLY; // outKeys
+        access[6] = Access.WRITE_ONLY; // outResults
+        access[7] = Access.WRITE_ONLY; // outGroups
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("groupAggregate") //
+                .withParameters(new Object[] { n, columns, aggregation, keys, values, outKeys, outResults, outGroups }) //
+                .withAccess(access);
+    }
+
+    /**
+     * One aggregation over a whole column, written to {@code out[0]}.
+     *
+     * <p>
+     * The shape that is not a group-by and cannot be faked as one without inventing a key: scaling
+     * a feature needs the column's own minimum and maximum, and "has any centroid moved further
+     * than epsilon" is a maximum over a column of deltas.
+     *
+     * <p>
+     * {@link CudfAggregation#COUNT} is refused, because ungrouped it is {@code n} and the caller
+     * already has that. An empty column is refused too, rather than reporting a value it does not
+     * have.
+     *
+     * @param operation
+     *     the code from {@link CudfAggregation#code()}, excluding {@code COUNT}.
+     */
+    public static LibraryTaskDescriptor reduce(int n, int operation, DoubleArray values, DoubleArray out) {
+        Access[] access = new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY };
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("reduce") //
+                .withParameters(new Object[] { n, operation, values, out }) //
+                .withAccess(access);
+    }
+
+    /**
+     * The positions where {@code mask} is non-zero, in order -- a stream compaction.
+     *
+     * <p>
+     * The filter, and the one operation here that a generated kernel genuinely cannot do. Computing
+     * a predicate per row is a map and TornadoVM compiles it well; moving the survivors together is
+     * cross-row, and no {@code @Parallel} loop states it.
+     *
+     * <p>
+     * Positions rather than compacted rows, for the same reason {@link #sortedOrder} returns a
+     * permutation: the caller gathers whatever columns it holds, and none of them has to be
+     * expressible on a device. {@code outCount[0]} receives how many survived, and a result larger
+     * than {@code capacity} fails rather than truncating -- a short filter is a wrong answer that no
+     * row count catches, because the caller reads the count the filter wrote.
+     *
+     * @param mask
+     *     one byte a row, zero to drop and non-zero to keep.
+     * @param capacity
+     *     rows {@code outIndices} can hold; sizing it to {@code n} is always safe.
+     */
+    public static LibraryTaskDescriptor selectedIndices(int n, int capacity, ByteArray mask, IntArray outIndices, IntArray outCount) {
+        Access[] access = new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY, Access.WRITE_ONLY };
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("selectedIndices") //
+                .withParameters(new Object[] { n, capacity, mask, outIndices, outCount }) //
+                .withAccess(access);
+    }
+
+    /**
+     * {@link #sortedOrder} generalised: several key columns, each ascending or descending.
+     *
+     * <p>
+     * Key columns are packed with a stride of {@code n}, so column <em>c</em> starts at element
+     * {@code c * n}, and bit <em>c</em> of {@code descendingMask} makes that column descending.
+     * Still stable, so a caller can rely on ties keeping the order they arrived in.
+     *
+     * @param keyColumns
+     *     1 to 31, since the mask carries one bit each.
+     * @param descendingMask
+     *     bit <em>c</em> set means column <em>c</em> sorts descending; 0 is all ascending and is
+     *     what {@link #sortedOrder} does.
+     */
+    public static LibraryTaskDescriptor sortedOrderMulti(int n, int keyColumns, int descendingMask, IntArray keys, IntArray outOrder) {
+        Access[] access = new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY };
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("sortedOrderMulti") //
+                .withParameters(new Object[] { n, keyColumns, descendingMask, keys, outOrder }) //
                 .withAccess(access);
     }
 }
