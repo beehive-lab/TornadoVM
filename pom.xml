@@ -820,6 +820,7 @@
         <module>tornado-cufft</module>
         <module>tornado-cudnn</module>
         <module>tornado-cusparse</module>
+        <module>tornado-cudf</module>
         <module>tornado-cutlass</module>
     </modules>
 </project>

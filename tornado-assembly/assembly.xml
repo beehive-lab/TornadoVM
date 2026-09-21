@@ -182,6 +182,7 @@
                 <include>io.github.beehive-lab:tornado-cufft</include>
                 <include>io.github.beehive-lab:tornado-cudnn</include>
                 <include>io.github.beehive-lab:tornado-cusparse</include>
+                <include>io.github.beehive-lab:tornado-cudf</include>
                 <include>io.github.beehive-lab:tornado-cutlass</include>
             </includes>
             <binaries>
@@ -210,6 +211,7 @@
                 <include>io.github.beehive-lab:tornado-drivers-cublas-jni:jar:libs</include>
                 <include>io.github.beehive-lab:tornado-drivers-cufft-jni:jar:libs</include>
                 <include>io.github.beehive-lab:tornado-drivers-cudnn-jni:jar:libs</include>
+                <include>io.github.beehive-lab:tornado-drivers-cudf-jni:jar:libs</include>
                 <include>io.github.beehive-lab:tornado-drivers-cusparse-jni:jar:libs</include>
                 <include>io.github.beehive-lab:tornado-drivers-cutlass-jni:jar:libs</include>
             </includes>

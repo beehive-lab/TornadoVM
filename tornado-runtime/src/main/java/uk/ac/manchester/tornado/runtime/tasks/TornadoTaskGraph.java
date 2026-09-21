@@ -1737,8 +1737,24 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     private void bailout() {
+        bailout(null);
+    }
+
+    /**
+     * Falls back to sequential Java, or reports that it was not allowed to.
+     *
+     * <p>
+     * {@code cause} is the exception that forced this, where there was one, and it is attached
+     * rather than dropped. Without it every failure inside {@code scheduleInner} -- a compilation
+     * bailout, a device allocation that could not be met, a library task rejecting its own
+     * arguments -- arrives at the caller as the same sentence with nothing behind it, and the
+     * only way to find out which had happened was to re-run with {@code
+     * -Dtornado.recover.bailout=False} and read the log. The message is unchanged; the cause is
+     * new.
+     */
+    private void bailout(Exception cause) {
         if (!TornadoOptions.RECOVER_BAILOUT) {
-            throw new TornadoBailoutRuntimeException("[TornadoVM] Error - Recover option disabled");
+            throw new TornadoBailoutRuntimeException("[TornadoVM] Error - Recover option disabled", cause);
         } else {
             runAllTasksJavaSequential();
         }
@@ -1784,7 +1800,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             scheduleInner();
             cleanUp();
         } catch (TornadoRuntimeException e) {
-            bailout();
+            bailout(e);
         }
         return this;
     }
