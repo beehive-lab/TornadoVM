@@ -195,6 +195,14 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
                 floatConvertNode.replaceAtUsages(convertNode);
                 floatConvertNode.safeDelete();
             }
+            // getFloat32() arrives as MetalConvertHalfToFloat(placeholder): the plugin builds that node
+            // over the placeholder rather than over a FloatConvertNode, so the loop above never sees it.
+            // It asks for the half's numerical value, so it takes the half itself. Leaving it to the
+            // raw-bit replacement below produced (float)((uint) as_type<ushort>(h)) - 15360.0f for half
+            // 1.0 - which is what corrupted every FP16 weight and Q8_0 block scale read on Metal.
+            for (MetalConvertHalfToFloat convertNode : placeholder.usages().filter(MetalConvertHalfToFloat.class).snapshot()) {
+                convertNode.replaceFirstInput(placeholder, input);
+            }
             if (placeholder.hasNoUsages()) {
                 placeholder.safeDelete();
                 continue;

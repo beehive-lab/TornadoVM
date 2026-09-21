@@ -305,6 +305,224 @@ public class TestHalfFloatValueConversionMetal extends TornadoTestBase {
     }
 
     // -----------------------------------------------------------------------
+    // Numeric reads: getFloat32() on a half that was loaded, not constructed
+    // -----------------------------------------------------------------------
+
+    /**
+     * Halves whose numerical value the device must reproduce exactly: unit values of both signs, a
+     * fraction, both signed zeroes, the finite limits, the smallest normal, and both ends of the
+     * subnormal range. Every one is representable in binary16, so {@code getFloat32()} is exact and
+     * the comparison needs no tolerance.
+     *
+     * <p>Half {@code 1.0} is the case that names the defect: its encoding is {@code 0x3C00}, so a
+     * numeric read lowered through the raw-bit reinterpretation returns {@code 15360.0f}.
+     */
+    private static final float[] NUMERIC_CASES = { //
+            1.0f, -1.0f, 2.0f, -2.5f, 0.5f, 0.125f, //
+            0.0f, -0.0f, //
+            65504.0f, -65504.0f,                              // max finite, both signs
+            6.1035156e-5f,                                    // smallest normal
+            6.0975552e-5f, 5.9604645e-8f, -5.9604645e-8f };   // largest and smallest subnormal
+
+    /** Written into every output slot before execution, so an unwritten slot cannot pass. */
+    private static final float FLOAT_POISON = -1.2345678e30f;
+    private static final int INT_POISON = Integer.MIN_VALUE;
+
+    public static void float32OfHalfArray(KernelContext ctx, HalfFloatArray in, FloatArray out) {
+        int i = ctx.globalIdx;
+        out.set(i, in.get(i).getFloat32());
+    }
+
+    public static void float32OfByteArray(KernelContext ctx, ByteArray in, FloatArray out) {
+        int i = ctx.globalIdx;
+        out.set(i, in.getHalfFloat(i * 2).getFloat32());
+    }
+
+    public static void bitsOfHalfArray(KernelContext ctx, HalfFloatArray in, IntArray out) {
+        int i = ctx.globalIdx;
+        out.set(i, in.get(i).getHalfFloatValue() & 0xFFFF);
+    }
+
+    /** Both reads of the same loaded half in one kernel: they must not collapse onto one lowering. */
+    public static void numericAndBitsOfHalfArray(KernelContext ctx, HalfFloatArray in, FloatArray numeric, IntArray bits) {
+        int i = ctx.globalIdx;
+        HalfFloat h = in.get(i);
+        numeric.set(i, h.getFloat32());
+        bits.set(i, h.getHalfFloatValue() & 0xFFFF);
+    }
+
+    /** Both reads of a half built from a float - #1103's own case, with the numeric read added. */
+    public static void newHalfBothReads(KernelContext ctx, FloatArray in, FloatArray numeric, IntArray bits) {
+        int i = ctx.globalIdx;
+        HalfFloat h = new HalfFloat(in.get(i));
+        numeric.set(i, h.getFloat32());
+        bits.set(i, h.getHalfFloatValue() & 0xFFFF);
+    }
+
+    /**
+     * {@code HalfFloatArray.get(i).getFloat32()} - how jllm reads an FP16 weight. Lowering this
+     * through {@code (float)((uint) as_type<ushort>(h))} returned the encoding as a number
+     * (15360.0f for half 1.0), which is what corrupted generated text on Metal.
+     */
+    @Test
+    public void testFloat32OfHalfArray() throws TornadoExecutionPlanException {
+        assumeMetalBackend();
+        int n = NUMERIC_CASES.length;
+        HalfFloatArray in = numericHalves();
+        FloatArray out = poisonedFloats(n);
+
+        TaskGraph tg = new TaskGraph("nh").transferToDevice(DataTransferMode.EVERY_EXECUTION, in, out) //
+                .task("t0", TestHalfFloatValueConversionMetal::float32OfHalfArray, new KernelContext(), in, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        executeOver(tg, "nh", n);
+
+        for (int i = 0; i < n; i++) {
+            assertNumeric(i, NUMERIC_CASES[i], out.get(i));
+        }
+    }
+
+    /**
+     * {@code ByteArray.getHalfFloat(offset).getFloat32()} - how jllm reads a quantized block scale.
+     * A different read node reaches the same placeholder, so it is covered separately.
+     */
+    @Test
+    public void testFloat32OfByteArray() throws TornadoExecutionPlanException {
+        assumeMetalBackend();
+        int n = NUMERIC_CASES.length;
+        ByteArray in = numericHalvesAsBytes();
+        FloatArray out = poisonedFloats(n);
+
+        TaskGraph tg = new TaskGraph("nb").transferToDevice(DataTransferMode.EVERY_EXECUTION, in, out) //
+                .task("t0", TestHalfFloatValueConversionMetal::float32OfByteArray, new KernelContext(), in, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        executeOver(tg, "nb", n);
+
+        for (int i = 0; i < n; i++) {
+            assertNumeric(i, NUMERIC_CASES[i], out.get(i));
+        }
+    }
+
+    /** The raw-bit read of a loaded half, which #1103 fixed and this change must leave alone. */
+    @Test
+    public void testBitsOfHalfArray() throws TornadoExecutionPlanException {
+        assumeMetalBackend();
+        int n = NUMERIC_CASES.length;
+        HalfFloatArray in = numericHalves();
+        IntArray out = poisonedInts(n);
+
+        TaskGraph tg = new TaskGraph("bh").transferToDevice(DataTransferMode.EVERY_EXECUTION, in, out) //
+                .task("t0", TestHalfFloatValueConversionMetal::bitsOfHalfArray, new KernelContext(), in, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        executeOver(tg, "bh", n);
+
+        for (int i = 0; i < n; i++) {
+            assertEquals("bits[" + i + "] of " + NUMERIC_CASES[i], Float.floatToFloat16(NUMERIC_CASES[i]) & 0xFFFF, out.get(i));
+        }
+    }
+
+    /**
+     * Both reads of one loaded half in one kernel. The numeric read must widen the value and the
+     * raw read must reinterpret it, from the same placeholder, in the same graph.
+     */
+    @Test
+    public void testNumericAndBitsOfHalfArray() throws TornadoExecutionPlanException {
+        assumeMetalBackend();
+        int n = NUMERIC_CASES.length;
+        HalfFloatArray in = numericHalves();
+        FloatArray numeric = poisonedFloats(n);
+        IntArray bits = poisonedInts(n);
+
+        TaskGraph tg = new TaskGraph("nx").transferToDevice(DataTransferMode.EVERY_EXECUTION, in, numeric, bits) //
+                .task("t0", TestHalfFloatValueConversionMetal::numericAndBitsOfHalfArray, new KernelContext(), in, numeric, bits) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, numeric, bits);
+        executeOver(tg, "nx", n);
+
+        for (int i = 0; i < n; i++) {
+            assertNumeric(i, NUMERIC_CASES[i], numeric.get(i));
+            assertEquals("bits[" + i + "] of " + NUMERIC_CASES[i], Float.floatToFloat16(NUMERIC_CASES[i]) & 0xFFFF, bits.get(i));
+        }
+    }
+
+    /** The same pair of reads over a half constructed from a float, preserving #1103's intent. */
+    @Test
+    public void testNewHalfBothReads() throws TornadoExecutionPlanException {
+        assumeMetalBackend();
+        int n = NUMERIC_CASES.length;
+        FloatArray in = new FloatArray(n);
+        for (int i = 0; i < n; i++) {
+            in.set(i, NUMERIC_CASES[i]);
+        }
+        FloatArray numeric = poisonedFloats(n);
+        IntArray bits = poisonedInts(n);
+
+        TaskGraph tg = new TaskGraph("nn").transferToDevice(DataTransferMode.EVERY_EXECUTION, in, numeric, bits) //
+                .task("t0", TestHalfFloatValueConversionMetal::newHalfBothReads, new KernelContext(), in, numeric, bits) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, numeric, bits);
+        executeOver(tg, "nn", n);
+
+        for (int i = 0; i < n; i++) {
+            assertNumeric(i, NUMERIC_CASES[i], numeric.get(i));
+            assertEquals("bits[" + i + "] of " + NUMERIC_CASES[i], Float.floatToFloat16(NUMERIC_CASES[i]) & 0xFFFF, bits.get(i));
+        }
+    }
+
+    /**
+     * Exact, sign-aware comparison against the value the encoding stands for. {@code -0.0f} is
+     * distinguished from {@code 0.0f} by its bits, which {@code assertEquals(float, float, 0.0f)}
+     * does not do.
+     */
+    private static void assertNumeric(int i, float value, float actual) {
+        float expected = Float.float16ToFloat(Float.floatToFloat16(value));
+        assertEquals(String.format("out[%d] for half %s: expected %s, got %s", i, value, expected, actual), //
+                Float.floatToRawIntBits(expected), Float.floatToRawIntBits(actual));
+    }
+
+    private static HalfFloatArray numericHalves() {
+        HalfFloatArray halves = new HalfFloatArray(NUMERIC_CASES.length);
+        for (int i = 0; i < NUMERIC_CASES.length; i++) {
+            halves.set(i, new HalfFloat(Float.floatToFloat16(NUMERIC_CASES[i])));
+        }
+        return halves;
+    }
+
+    /** The same halves laid out little-endian, as a GGUF tensor or a Q8_0 block scale has them. */
+    private static ByteArray numericHalvesAsBytes() {
+        ByteArray bytes = new ByteArray(NUMERIC_CASES.length * 2);
+        for (int i = 0; i < NUMERIC_CASES.length; i++) {
+            short bits = Float.floatToFloat16(NUMERIC_CASES[i]);
+            bytes.set(2 * i, (byte) (bits & 0xFF));
+            bytes.set(2 * i + 1, (byte) ((bits >> 8) & 0xFF));
+        }
+        return bytes;
+    }
+
+    private static FloatArray poisonedFloats(int n) {
+        FloatArray out = new FloatArray(n);
+        for (int i = 0; i < n; i++) {
+            out.set(i, FLOAT_POISON);
+        }
+        return out;
+    }
+
+    private static IntArray poisonedInts(int n) {
+        IntArray out = new IntArray(n);
+        for (int i = 0; i < n; i++) {
+            out.set(i, INT_POISON);
+        }
+        return out;
+    }
+
+    /** One thread per element, for the short case arrays these tests use. */
+    private void executeOver(TaskGraph tg, String name, int n) throws TornadoExecutionPlanException {
+        WorkerGrid1D worker = new WorkerGrid1D(n);
+        worker.setLocalWork(1, 1, 1);
+        GridScheduler grid = new GridScheduler(name + ".t0", worker);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
+            plan.withGridScheduler(grid).execute();
+        }
+    }
+
+    // -----------------------------------------------------------------------
     // Fixtures
     // -----------------------------------------------------------------------
 
