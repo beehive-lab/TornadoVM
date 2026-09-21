@@ -5,7 +5,9 @@
 
 ## Write Java. Run on GPUs. Fast.
 
-TornadoVM is a GPU programming framework for Java that works with JDK 21+ (currently JDK 21, JDK 25, JDK 26, and JDK 27). It JIT-compiles Java bytecode into **NVIDIA CUDA, OpenCL C, and Apple Metal (MSL)** at runtime, so your existing Java code runs on **NVIDIA GPUs (via CUDA)**, AMD, Intel, and Apple Silicon GPUs, integrated GPUs, and multi-core CPUs. On NVIDIA hardware it goes further: beyond generating CUDA, TornadoVM now calls straight into the **NVIDIA library ecosystem — cuBLAS, cuFFT, cuDNN — and exposes Tensor Core `mma.sync` instructions from pure Java**. No CUDA C. No JNI bindings to maintain. No native toolchain in your application.
+TornadoVM is a GPU programming framework for Java that works with > JDK 21+ (currently JDK 21-27). It JIT-compiles Java bytecode into **NVIDIA CUDA, OpenCL C, and Apple Metal (MSL)** at runtime, so your existing Java code runs on **NVIDIA GPUs (via CUDA)**, AMD, Intel, and Apple Silicon GPUs, integrated GPUs, and multi-core CPUs. 
+
+On NVIDIA hardware it goes further: beyond generating CUDA, TornadoVM now calls straight into the **NVIDIA library ecosystem — cuBLAS, cuFFT, cuDNN — and exposes Tensor Core `mma.sync` instructions from pure Java**. No CUDA C. No JNI bindings to maintain. No native toolchain in your application. In addition, it has support for Tile Programming via its **TileContext API**.
 
 [![Build & Test](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test.yml/badge.svg)](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test.yml)
 [![Tornado API](https://img.shields.io/maven-central/v/io.github.beehive-lab/tornado-api?logo=apache-maven&color=blue&label=Tornado%20API)](https://central.sonatype.com/artifact/io.github.beehive-lab/tornado-api)
@@ -106,27 +108,6 @@ Pick the one that matches how much control you need: `@Parallel` when TornadoVM 
 
 The simplest of the three models. Annotate the parallel loops with `@Parallel` and TornadoVM infers the whole launch configuration — global bounds, local work size — for you. Because the annotation is the only GPU-specific part, the same method also runs unmodified on the plain sequential JVM path, which makes it the easiest style to write and debug first.
 
-<details>
-<summary><b>…and the host side — wrap data, build the task graph, execute (click to expand)</b></summary>
-
-```java
-Matrix2DFloat A = new Matrix2DFloat(size, size);
-Matrix2DFloat B = new Matrix2DFloat(size, size);
-Matrix2DFloat C = new Matrix2DFloat(size, size);
-// ...fill A and B...
-
-TaskGraph tg = new TaskGraph("compute")
-    .transferToDevice(DataTransferMode.FIRST_EXECUTION, A, B)
-    .task("matmul", Kernels::matmul, A, B, C, size)
-    .transferToHost(DataTransferMode.EVERY_EXECUTION, C);
-
-try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
-    plan.execute();   // JIT-compiled to your GPU — no grid to configure
-}
-```
-
-</details>
-
 No `WorkerGrid` or `GridScheduler` needed — TornadoVM derives the launch configuration straight from the loop bounds, and the same code path runs across all four backends. Full runnable example: [MatrixMultiplication2D.java](tornado-examples/src/main/java/uk/ac/manchester/tornado/examples/compute/MatrixMultiplication2D.java). [Programming guide →](https://tornadovm.readthedocs.io/en/latest/programming.html)
 
 ---
@@ -134,61 +115,6 @@ No `WorkerGrid` or `GridScheduler` needed — TornadoVM derives the launch confi
 ## KernelContext API
 
 Write the kernel in Java with the same thread-indexing model you'd use in CUDA — global/local thread IDs, local memory, and barriers, with identical semantics across CUDA, OpenCL, and SYCL. TornadoVM still JIT-compiles the bytecode to a GPU kernel at runtime and manages all host↔device data transfers for you; on NVIDIA GPUs that kernel is emitted as **CUDA PTX** and compiled through NVRTC to a native cubin.
-
-<table>
-<tr>
-<th>Same kernel, no CUDA C boilerplate</th>
-</tr>
-<tr>
-<td>
-
-```c
-__global__ void matmul(const float *A, const float *B, float *C, int size) {
-    int row = blockIdx.x * blockDim.x + threadIdx.x;
-    int col = blockIdx.y * blockDim.y + threadIdx.y;
-    float sum = 0.f;
-    for (int k = 0; k < size; k++)
-        sum += A[k*size+row] * B[col*size+k];
-    C[col*size+row] = sum;
-}
-
-// ...and on the host you STILL write:
-//   cudaMalloc/cudaMemcpy per buffer
-//   grid/block dims, launch, sync
-//   cudaMemcpy back, then cudaFree
-//   nvcc build + per-GPU binaries
-//   + a rewrite for non-NVIDIA GPUs
-```
-
-</td>
-</tr>
-</table>
-
-<details>
-<summary><b>…and the host side — wrap data, map a thread grid, execute (click to expand)</b></summary>
-
-```java
-FloatArray A = new FloatArray(size * size);
-FloatArray B = new FloatArray(size * size);
-FloatArray C = new FloatArray(size * size);
-// ...fill A and B...
-
-WorkerGrid worker  = new WorkerGrid2D(size, size);
-worker.setLocalWork(16, 16, 1);
-GridScheduler grid = new GridScheduler("compute.matmul", worker);
-KernelContext ctx  = new KernelContext();
-
-TaskGraph tg = new TaskGraph("compute")
-    .transferToDevice(DataTransferMode.FIRST_EXECUTION, A, B)
-    .task("matmul", Kernels::matmul, ctx, A, B, C, size)
-    .transferToHost(DataTransferMode.EVERY_EXECUTION, C);
-
-try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
-    plan.withGridScheduler(grid).execute();   // JIT-compiled to your GPU
-}
-```
-
-</details>
 
 `KernelContext` gives you the full GPU programming model while TornadoVM handles memory management and runs the *identical* code across all four backends. Don't need that control? Drop `KernelContext` and use the Loop Parallel API above instead — both styles combine in the same `TaskGraph`. Full runnable example: [MatrixMultiplication2DV1.java](tornado-examples/src/main/java/uk/ac/manchester/tornado/examples/kernelcontext/compute/MatrixMultiplication2DV1.java). [Programming guide →](https://tornadovm.readthedocs.io/en/latest/programming.html)
 
@@ -335,11 +261,6 @@ Maven Central coordinates are per-JDK — pin the `-jdk21` / `-jdk22plus` versio
 
 ## ❓ FAQ
 
-<details>
-<summary><b>How does TornadoVM relate to OpenJDK's Project Babylon / HAT?</b></summary>
-
-[Project Babylon](https://openjdk.org/projects/babylon/) is OpenJDK's exploratory work on code reflection, with HAT (Heterogeneous Accelerator Toolkit) as a research vehicle for GPU programming. We think it validates the direction TornadoVM has pursued since 2018 — and the projects are complementary rather than competing. The practical difference today: **TornadoVM is usable now**, with three production backends (OpenCL, CUDA, Metal), a profiler, dynamic reconfiguration, Maven Central artifacts, and years of hardening across vendor hardware — and it runs on standard JDK 21/25 releases. We follow Babylon closely and expect the ecosystems to converge over time.
-</details>
 
 <details>
 <summary><b>What can TornadoVM do on NVIDIA GPUs specifically?</b></summary>
