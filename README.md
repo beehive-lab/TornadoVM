@@ -116,14 +116,14 @@ Full runnable example: [MatrixMultiplication2D.java](tornado-examples/src/main/j
 
 Write the kernel in Java with the same thread-indexing model you'd use in CUDA: global/local thread IDs, local memory, and barriers, with identical semantics across CUDA, OpenCL, and SYCL. TornadoVM still JIT-compiles the bytecode to a GPU kernel at runtime and manages all host↔device data transfers for you; on NVIDIA GPUs that kernel is emitted as **CUDA PTX** and compiled through NVRTC to a native cubin.
 
-`KernelContext` gives you the full GPU programming model while TornadoVM handles memory management and runs the *identical* code across all four backends. Don't need that control? Drop `KernelContext` and use the Loop Parallel API above instead — both styles combine in the same `TaskGraph`. Full runnable example: [MatrixMultiplication2DV1.java](tornado-examples/src/main/java/uk/ac/manchester/tornado/examples/kernelcontext/compute/MatrixMultiplication2DV1.java). [Programming guide →](https://tornadovm.readthedocs.io/en/latest/programming.html)
+`KernelContext` gives you the full GPU programming model while TornadoVM handles memory management and runs the *identical* code across all four backends. Don't need that control? Drop `KernelContext` and use the Loop Parallel API above instead — both styles can be combined in the same `TaskGraph`. Full runnable example: [MatrixMultiplication2DV1.java](tornado-examples/src/main/java/uk/ac/manchester/tornado/examples/kernelcontext/compute/MatrixMultiplication2DV1.java). [Programming guide →](https://tornadovm.readthedocs.io/en/latest/programming.html#kernel-api)
 
 ---
 
 <a id="tilecontext-api-cutile"></a>
 ## TileContext API (CuTile) 🆕
 
-*CUDA backend only; lives on `develop`, not yet in the 6.0.0 release.* A task whose kernel takes a **`TileContext`** is compiled through **NVIDIA CUDA Tile** (`nvcc -tilecubin --tile-only`) instead of the SIMT path. You write what **one tile block** does; the tile compiler decides how many threads back it, which tensor-core instruction to issue, and how tiles move through shared memory. **Nothing in the API names a thread, a warp or a fragment.**
+A task whose kernel takes a **`TileContext`** is compiled through **NVIDIA CUDA Tile** (`nvcc -tilecubin --tile-only`) instead of the SIMT path. You write what **one tile block** does; the tile compiler decides how many threads back it, which tensor-core instruction to issue, and how tiles move through shared memory. **Nothing in the API names a thread, a warp or a fragment.**
 
 ```java
 WorkerGrid2D worker = new WorkerGrid2D(n / TILE, n / TILE);   // TILE BLOCKS, not threads
