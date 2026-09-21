@@ -20,54 +20,134 @@ TornadoVM is a GPU programming framework for Java that works with JDK 21+ (curre
 
 ## This is the whole programming model
 
-Write the kernel in Java with the same thread-indexing model you'd use in CUDA — then build a task graph and execute. TornadoVM JIT-compiles the bytecode to a GPU kernel at runtime and manages all host↔device data transfers for you. On NVIDIA GPUs that kernel is emitted as **CUDA PTX** and compiled through NVRTC to a native cubin.
+TornadoVM gives you three Java APIs for writing GPU kernels, from the least to the most explicit about how work maps onto the hardware. All three build the same `TaskGraph`, run through the same `TornadoExecutionPlan`, and can be mixed in a single graph. Here's one computation — dense matrix multiplication, `C = A × B` — written all three ways:
 
 <table>
 <tr>
-<th>Java + TornadoVM (Kernel API)</th>
-<th>The same kernel in CUDA C</th>
+<th>Loop Parallel API (<code>@Parallel</code>)</th>
+<th>KernelContext API</th>
+<th>TileContext API (CuTile) 🆕</th>
 </tr>
 <tr>
 <td>
 
 ```java
-void mxv(KernelContext ctx,
-         FloatArray m,
-         FloatArray v,
-         FloatArray out,
-         int rows, int cols) {
-  int i = ctx.globalIdx;
-  if (i < rows) {
-    float sum = 0f;
-    for (int j=0; j<cols; j++)
-      sum += m.get(i*cols+j)*v.get(j);
-    out.set(i, sum);
+void matmul(Matrix2DFloat A,
+     Matrix2DFloat B,
+     Matrix2DFloat C, int size) {
+  for (@Parallel int i=0; i<size; i++) {
+    for (@Parallel int j=0; j<size; j++) {
+      float sum = 0f;
+      for (int k=0; k<size; k++)
+        sum += A.get(i,k)*B.get(k,j);
+      C.set(i, j, sum);
+    }
   }
 }
 
-// TornadoVM auto-manages device
-// memory + kernel dispatch via a
-// TaskGraph — no host plumbing,
-// runs unchanged on all 4 backends.
+// TornadoVM infers the thread
+// mapping from the @Parallel loops.
 ```
 
 </td>
 <td>
 
+```java
+void matmul(KernelContext ctx,
+     FloatArray A, FloatArray B,
+     FloatArray C, int size) {
+  int row = ctx.globalIdx;
+  int col = ctx.globalIdy;
+  float sum = 0f;
+  for (int k=0; k<size; k++)
+    sum += A.get(k*size+row)
+         * B.get(col*size+k);
+  C.set(col*size+row, sum);
+}
+
+// You name the thread; TornadoVM
+// still owns memory + dispatch.
+```
+
+</td>
+<td>
+
+```java
+void matmul(TileContext tc,
+     HalfFloatArray A, HalfFloatArray B,
+     FloatArray C, int m, int n, int k) {
+  var aV = tc.partition(tc.view(A,m,k), TILE, TILE);
+  var bV = tc.partition(tc.view(B,k,n), TILE, TILE);
+  var cV = tc.partition(tc.view(C,m,n), TILE, TILE);
+
+  Tile acc = tc.zeros(DType.F32, TILE, TILE);
+  for (int s=0; s<k/TILE; s++)
+    acc = tc.mma(aV.load(tc.bidX(),s),
+                  bV.load(s,tc.bidY()), acc);
+  cV.store(acc, tc.bidX(), tc.bidY());
+}
+
+// No thread index, no shared memory,
+// no barrier — the tile compiler
+// picks them. CUDA backend only.
+```
+
+</td>
+</tr>
+</table>
+
+Pick the one that matches how much control you need: `@Parallel` when TornadoVM should infer the thread mapping for you, `KernelContext` when you want CUDA/OpenCL/SYCL-style explicit thread indexing, and `TileContext` when you'd rather program in **tiles** than threads and let the tile compiler pick the tensor-core instructions. Each is covered in depth below. [Programming guide →](https://tornadovm.readthedocs.io/en/latest/programming.html)
+
+---
+
+## Loop Parallel API (`@Parallel`)
+
+The simplest of the three models. Annotate the parallel loops with `@Parallel` and TornadoVM infers the whole launch configuration — global bounds, local work size — for you. Because the annotation is the only GPU-specific part, the same method also runs unmodified on the plain sequential JVM path, which makes it the easiest style to write and debug first.
+
+<details>
+<summary><b>…and the host side — wrap data, build the task graph, execute (click to expand)</b></summary>
+
+```java
+Matrix2DFloat A = new Matrix2DFloat(size, size);
+Matrix2DFloat B = new Matrix2DFloat(size, size);
+Matrix2DFloat C = new Matrix2DFloat(size, size);
+// ...fill A and B...
+
+TaskGraph tg = new TaskGraph("compute")
+    .transferToDevice(DataTransferMode.FIRST_EXECUTION, A, B)
+    .task("matmul", Kernels::matmul, A, B, C, size)
+    .transferToHost(DataTransferMode.EVERY_EXECUTION, C);
+
+try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
+    plan.execute();   // JIT-compiled to your GPU — no grid to configure
+}
+```
+
+</details>
+
+No `WorkerGrid` or `GridScheduler` needed — TornadoVM derives the launch configuration straight from the loop bounds, and the same code path runs across all four backends. Full runnable example: [MatrixMultiplication2D.java](tornado-examples/src/main/java/uk/ac/manchester/tornado/examples/compute/MatrixMultiplication2D.java). [Programming guide →](https://tornadovm.readthedocs.io/en/latest/programming.html)
+
+---
+
+## KernelContext API
+
+Write the kernel in Java with the same thread-indexing model you'd use in CUDA — global/local thread IDs, local memory, and barriers, with identical semantics across CUDA, OpenCL, and SYCL. TornadoVM still JIT-compiles the bytecode to a GPU kernel at runtime and manages all host↔device data transfers for you; on NVIDIA GPUs that kernel is emitted as **CUDA PTX** and compiled through NVRTC to a native cubin.
+
+<table>
+<tr>
+<th>Same kernel, no CUDA C boilerplate</th>
+</tr>
+<tr>
+<td>
+
 ```c
-__global__ void mxv(
-    const float *m,
-    const float *v,
-    float *out,
-    int rows, int cols) {
-  int i = blockIdx.x*blockDim.x
-        + threadIdx.x;
-  if (i < rows) {
+__global__ void matmul(const float *A, const float *B, float *C, int size) {
+    int row = blockIdx.x * blockDim.x + threadIdx.x;
+    int col = blockIdx.y * blockDim.y + threadIdx.y;
     float sum = 0.f;
-    for (int j=0; j<cols; j++)
-      sum += m[i*cols+j]*v[j];
-    out[i] = sum;
-  }
+    for (int k = 0; k < size; k++)
+        sum += A[k*size+row] * B[col*size+k];
+    C[col*size+row] = sum;
 }
 
 // ...and on the host you STILL write:
@@ -82,26 +162,24 @@ __global__ void mxv(
 </tr>
 </table>
 
-
-
 <details>
-<summary><h2>…and the host side — wrap data, map a thread grid, execute (click to expand)</h2></summary>
+<summary><b>…and the host side — wrap data, map a thread grid, execute (click to expand)</b></summary>
 
 ```java
-// TornadoVM off-heap arrays (flat, row-major)
-FloatArray m   = new FloatArray(rows * cols);
-FloatArray v   = new FloatArray(cols);
-FloatArray out = new FloatArray(rows);
-// ...fill m and v...
+FloatArray A = new FloatArray(size * size);
+FloatArray B = new FloatArray(size * size);
+FloatArray C = new FloatArray(size * size);
+// ...fill A and B...
 
+WorkerGrid worker  = new WorkerGrid2D(size, size);
+worker.setLocalWork(16, 16, 1);
+GridScheduler grid = new GridScheduler("compute.matmul", worker);
 KernelContext ctx  = new KernelContext();
-WorkerGrid worker  = new WorkerGrid1D(rows);
-GridScheduler grid = new GridScheduler("compute.mxv", worker);
 
 TaskGraph tg = new TaskGraph("compute")
-    .transferToDevice(DataTransferMode.FIRST_EXECUTION, m, v)
-    .task("mxv", Kernels::mxv, ctx, m, v, out, rows, cols)
-    .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+    .transferToDevice(DataTransferMode.FIRST_EXECUTION, A, B)
+    .task("matmul", Kernels::matmul, ctx, A, B, C, size)
+    .transferToHost(DataTransferMode.EVERY_EXECUTION, C);
 
 try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
     plan.withGridScheduler(grid).execute();   // JIT-compiled to your GPU
@@ -110,8 +188,25 @@ try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
 
 </details>
 
-`KernelContext` gives you the full GPU programming model — global/local thread IDs, local memory, and barriers, the same semantics as CUDA/OpenCL/SYCL — while TornadoVM handles memory management and runs the *identical* code across all four backends. Don't need that control? Drop `KernelContext` and just annotate the loop with `@Parallel` — TornadoVM infers the thread mapping for you. Both styles combine in the same `TaskGraph`. [Programming guide →](https://tornadovm.readthedocs.io/en/latest/programming.html)
+`KernelContext` gives you the full GPU programming model while TornadoVM handles memory management and runs the *identical* code across all four backends. Don't need that control? Drop `KernelContext` and use the Loop Parallel API above instead — both styles combine in the same `TaskGraph`. Full runnable example: [MatrixMultiplication2DV1.java](tornado-examples/src/main/java/uk/ac/manchester/tornado/examples/kernelcontext/compute/MatrixMultiplication2DV1.java). [Programming guide →](https://tornadovm.readthedocs.io/en/latest/programming.html)
 
+---
+
+<a id="tilecontext-api-cutile"></a>
+## TileContext API (CuTile) 🆕
+
+*CUDA backend only; lives on `develop`, not yet in the 6.0.0 release.* A task whose kernel takes a **`TileContext`** is compiled through **NVIDIA CUDA Tile** (`nvcc -tilecubin --tile-only`) instead of the SIMT path. You write what **one tile block** does; the tile compiler decides how many threads back it, which tensor-core instruction to issue, and how tiles move through shared memory. **Nothing in the API names a thread, a warp or a fragment.**
+
+```java
+WorkerGrid2D worker = new WorkerGrid2D(n / TILE, n / TILE);   // TILE BLOCKS, not threads
+```
+
+- **It composes with everything else.** A `@Parallel` kernel, a `KernelContext` kernel, a `TileContext` kernel and a native cuBLAS call sit in one `TaskGraph`, share device buffers on one stream, and are captured into **a single CUDA Graph** replayed with one launch — see [`TestTileChaining`](tornado-unittests/src/main/java/uk/ac/manchester/tornado/unittests/tile/TestTileChaining.java).
+- **It is still ordinary Java.** Every `TileContext` operation has a JVM implementation, so the same method runs and debugs on the CPU.
+- **Tile shapes are compile-time constants; extents are not.** The shape specialises the kernel, the problem size does not.
+- **It trades precision for throughput by design.** The example above takes FP16 inputs and accumulates in FP32 to feed the Tensor Cores — the Loop Parallel and KernelContext versions work over plain FP32.
+
+[Tile API guide →](docs/source/tile-api.rst) · [runnable examples](tornado-examples/src/main/java/uk/ac/manchester/tornado/examples/tile) (matmul three ways, softmax, attention, quantized projection)
 
 ---
 
@@ -127,6 +222,7 @@ On NVIDIA hardware, TornadoVM is more than a PTX code generator — it's an open
 | **cuDNN** library tasks | Deep-learning primitives through the cuDNN graph API, including fused scaled-dot-product (flash) attention via cudnn-frontend. |
 | **Tensor Core MMA intrinsics** | `mma.sync` exposed through `KernelContext` (`mmaLoadA/B`, `mma`, `mmaStore`) — FP16 (`m16n8k16` → FP32) and INT8 (`m16n8k32` → INT32), with swizzled shared-memory staging. Not a binding: real CUDA generated from Java. |
 | **CUDA Graphs** | `executionPlan.withCUDAGraph()` records kernels, library calls, and transfers into a captured graph and replays them with a single `cuGraphLaunch`. |
+| **CUDA Tile** (`TileContext`) 🆕 | A second compilation path: kernels written over *tiles* go through `nvcc -tilecubin`, and the tile compiler picks the threads, the tensor-core instruction, and the shared-memory staging. [Details](#tilecontext-api-cutile). |
 
 Mixing your own kernels with NVIDIA's tuned libraries looks like this:
 
@@ -246,7 +342,7 @@ Maven Central coordinates are per-JDK — pin the `-jdk21` / `-jdk22plus` versio
 <details>
 <summary><b>What can TornadoVM do on NVIDIA GPUs specifically?</b></summary>
 
-On NVIDIA hardware TornadoVM JIT-compiles your Java kernels to **CUDA PTX** and compiles them through NVRTC to native cubins. On top of that, it integrates the NVIDIA software ecosystem directly into the `TaskGraph`: **cuBLAS / cuBLASLt** (including TF32 and FP16 GemmEx on Tensor Cores and fused epilogues), **cuFFT**, and **cuDNN** (including fused flash attention) are available as *library tasks* that share device buffers and a CUDA stream with your generated kernels. You can also target **Tensor Cores** directly from Java via `mma.sync` intrinsics (FP16 and INT8), and capture the whole pipeline into a **CUDA Graph** for single-launch replay. See [The NVIDIA ecosystem, native to Java](#-the-nvidia-ecosystem-native-to-java).
+On NVIDIA hardware TornadoVM JIT-compiles your Java kernels to **CUDA PTX** and compiles them through NVRTC to native cubins. On top of that, it integrates the NVIDIA software ecosystem directly into the `TaskGraph`: **cuBLAS / cuBLASLt** (including TF32 and FP16 GemmEx on Tensor Cores and fused epilogues), **cuFFT**, and **cuDNN** (including fused flash attention) are available as *library tasks* that share device buffers and a CUDA stream with your generated kernels. You can also target **Tensor Cores** directly from Java via `mma.sync` intrinsics (FP16 and INT8), and capture the whole pipeline into a **CUDA Graph** for single-launch replay. On `develop` there is a second compilation path as well: a kernel taking a **`TileContext`** is compiled through **NVIDIA CUDA Tile**, where a tile rather than a thread is the unit of work. See [The NVIDIA ecosystem, native to Java](#-the-nvidia-ecosystem-native-to-java).
 </details>
 
 <details>
