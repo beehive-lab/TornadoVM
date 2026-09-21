@@ -7,7 +7,7 @@
 
 TornadoVM is a GPU programming framework for Java that works with > JDK 21+ (currently JDK 21-27). It JIT-compiles Java bytecode into **NVIDIA CUDA, OpenCL C, and Apple Metal (MSL)** at runtime, so your existing Java code runs on **NVIDIA GPUs (via CUDA)**, AMD, Intel, and Apple Silicon GPUs, integrated GPUs, and multi-core CPUs. 
 
-On NVIDIA hardware it goes further: beyond generating CUDA, TornadoVM now calls straight into the **NVIDIA library ecosystem — cuBLAS, cuFFT, cuDNN — and exposes Tensor Core `mma.sync` instructions from pure Java**. No CUDA C. No JNI bindings to maintain. No native toolchain in your application. In addition, it has support for Tile Programming via its **TileContext API**.
+On NVIDIA hardware it goes further: beyond generating CUDA, TornadoVM now calls straight into the **NVIDIA library ecosystem — cuBLAS, cuFFT, cuDNN — and exposes Tensor Core `mma.sync` instructions from pure Java**. No CUDA C. No JNI bindings to maintain. No native toolchain in your application. In addition, it has support for Tile Programming [cuTile](https://developer.nvidia.com/cuda/tile) via its **TileContext API**.
 
 [![Build & Test](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test.yml/badge.svg)](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test.yml)
 [![Tornado API](https://img.shields.io/maven-central/v/io.github.beehive-lab/tornado-api?logo=apache-maven&color=blue&label=Tornado%20API)](https://central.sonatype.com/artifact/io.github.beehive-lab/tornado-api)
@@ -106,9 +106,9 @@ Pick the one that matches how much control you need: `@Parallel` when TornadoVM 
 
 ## Loop Parallel API (`@Parallel`)
 
-The simplest of the three models. Annotate the parallel loops with `@Parallel` and TornadoVM infers the whole launch configuration — global bounds, local work size — for you. Because the annotation is the only GPU-specific part, the same method also runs unmodified on the plain sequential JVM path, which makes it the easiest style to write and debug first.
+The simplest of the three models. You just annotate the parallel loops with `@Parallel` and TornadoVM infers the whole launch configuration (global bounds, local work size) for you. Because the annotation is the only GPU-specific part, the same method also runs unmodified on the plain sequential JVM path, which makes it the easiest style to write and debug first.
 
-No `WorkerGrid` or `GridScheduler` needed — TornadoVM derives the launch configuration straight from the loop bounds, and the same code path runs across all four backends. Full runnable example: [MatrixMultiplication2D.java](tornado-examples/src/main/java/uk/ac/manchester/tornado/examples/compute/MatrixMultiplication2D.java). [Programming guide →](https://tornadovm.readthedocs.io/en/latest/programming.html)
+Full runnable example: [MatrixMultiplication2D.java](tornado-examples/src/main/java/uk/ac/manchester/tornado/examples/compute/MatrixMultiplication2D.java). [Programming guide →](https://tornadovm.readthedocs.io/en/latest/programming.html)
 
 ---
 
@@ -132,7 +132,6 @@ WorkerGrid2D worker = new WorkerGrid2D(n / TILE, n / TILE);   // TILE BLOCKS, no
 - **It composes with everything else.** A `@Parallel` kernel, a `KernelContext` kernel, a `TileContext` kernel and a native cuBLAS call sit in one `TaskGraph`, share device buffers on one stream, and are captured into **a single CUDA Graph** replayed with one launch — see [`TestTileChaining`](tornado-unittests/src/main/java/uk/ac/manchester/tornado/unittests/tile/TestTileChaining.java).
 - **It is still ordinary Java.** Every `TileContext` operation has a JVM implementation, so the same method runs and debugs on the CPU.
 - **Tile shapes are compile-time constants; extents are not.** The shape specialises the kernel, the problem size does not.
-- **It trades precision for throughput by design.** The example above takes FP16 inputs and accumulates in FP32 to feed the Tensor Cores — the Loop Parallel and KernelContext versions work over plain FP32.
 
 [Tile API guide →](docs/source/tile-api.rst) · [runnable examples](tornado-examples/src/main/java/uk/ac/manchester/tornado/examples/tile) (matmul three ways, softmax, attention, quantized projection)
 
