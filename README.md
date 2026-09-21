@@ -24,12 +24,11 @@ TornadoVM gives you three Java APIs for writing GPU kernels, from the least to t
 
 <table>
 <tr>
-<th>Loop Parallel API (<code>@Parallel</code>)</th>
-<th>KernelContext API</th>
-<th>TileContext API (CuTile) 🆕</th>
+<th width="50%">Loop Parallel API (<code>@Parallel</code>)</th>
+<th width="50%">KernelContext API</th>
 </tr>
 <tr>
-<td>
+<td valign="top">
 
 ```java
 void matmul(Matrix2DFloat A,
@@ -50,7 +49,7 @@ void matmul(Matrix2DFloat A,
 ```
 
 </td>
-<td>
+<td valign="top">
 
 ```java
 void matmul(KernelContext ctx,
@@ -70,26 +69,29 @@ void matmul(KernelContext ctx,
 ```
 
 </td>
-<td>
+</tr>
+<tr>
+<th colspan="2">TileContext API (CuTile) 🆕 — CUDA backend only</th>
+</tr>
+<tr>
+<td colspan="2">
 
 ```java
-void matmul(TileContext tc,
-     HalfFloatArray A, HalfFloatArray B,
-     FloatArray C, int m, int n, int k) {
-  var aV = tc.partition(tc.view(A,m,k), TILE, TILE);
-  var bV = tc.partition(tc.view(B,k,n), TILE, TILE);
-  var cV = tc.partition(tc.view(C,m,n), TILE, TILE);
+void matmul(TileContext tc, HalfFloatArray A, HalfFloatArray B, FloatArray C,
+            int m, int n, int k) {
+  PartitionView aView = tc.partition(tc.view(A, m, k), TILE, TILE);
+  PartitionView bView = tc.partition(tc.view(B, k, n), TILE, TILE);
+  PartitionView cView = tc.partition(tc.view(C, m, n), TILE, TILE);
 
   Tile acc = tc.zeros(DType.F32, TILE, TILE);
-  for (int s=0; s<k/TILE; s++)
-    acc = tc.mma(aV.load(tc.bidX(),s),
-                  bV.load(s,tc.bidY()), acc);
-  cV.store(acc, tc.bidX(), tc.bidY());
+  for (int step = 0; step < k / TILE; step++) {
+    acc = tc.mma(aView.load(tc.bidX(), step), bView.load(step, tc.bidY()), acc);
+  }
+  cView.store(acc, tc.bidX(), tc.bidY());
 }
 
-// No thread index, no shared memory,
-// no barrier — the tile compiler
-// picks them. CUDA backend only.
+// No thread index, no shared memory, no barrier, no instruction shape —
+// the tile compiler picks them.
 ```
 
 </td>
