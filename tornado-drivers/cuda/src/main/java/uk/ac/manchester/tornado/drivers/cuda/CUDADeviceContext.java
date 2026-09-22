@@ -386,7 +386,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      * Multi-queue issue is disabled while the plan's stream is capturing into a CUDA graph:
      * capture records a single stream, and touching other streams would invalidate it.
      */
-    private boolean isMultiStreamEnabled(long executionPlanId) {
+    public boolean isMultiStreamEnabled(long executionPlanId) {
         return intraPlanConcurrencyPlans.contains(executionPlanId) && !isStreamCapturing(executionPlanId);
     }
 

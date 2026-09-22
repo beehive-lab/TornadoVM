@@ -66,7 +66,15 @@ public class CodeAnalysis {
     private static final AtomicInteger codeAnalysisId = new AtomicInteger(0);
 
     public static StructuredGraph buildHighLevelGraalGraph(Object taskInputCode) {
-        Method methodToCompile = TaskUtils.resolveMethodHandle(taskInputCode);
+        return buildHighLevelGraalGraph(TaskUtils.resolveMethodHandle(taskInputCode));
+    }
+
+    /**
+     * As {@link #buildHighLevelGraalGraph(Object)}, but for a kernel already identified by a
+     * {@link Method} -- a task added through
+     * {@code TaskGraph.task(String, Method, Object...)}, where there is no lambda to resolve.
+     */
+    public static StructuredGraph buildHighLevelGraalGraph(Method methodToCompile) {
 
         final Providers providers;
         final ResolvedJavaMethod resolvedJavaMethod;

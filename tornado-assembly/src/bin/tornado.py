@@ -71,9 +71,11 @@ __CUDA_MODULE__ = "tornado.drivers.cuda"
 __ENABLE_NATIVE_ACCESS__ = "--enable-native-access="
 __FFM_MODULE__ = "tornado.runtime"
 __CUBLAS_MODULE__ = "tornado.cublas"
+__CURAND_MODULE__ = "tornado.curand"
 __CUFFT_MODULE__ = "tornado.cufft"
 __CUDNN_MODULE__ = "tornado.cudnn"
 __CUSPARSE_MODULE__ = "tornado.cusparse"
+__CUDF_MODULE__ = "tornado.cudf"
 __CUTLASS_MODULE__ = "tornado.cutlass"
 
 # ########################################################
@@ -1333,7 +1335,7 @@ class TornadoVMRunnerTool():
             tornadoAddModules = tornadoAddModules + "," + __METAL_MODULE__
         if ("cuda-backend" in self.listOfBackends):
             javaFlags = javaFlags + "@" + cuda + " "
-            tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__ + "," + __CUBLAS_MODULE__ + "," + __CUFFT_MODULE__ + "," + __CUDNN_MODULE__ + "," + __CUSPARSE_MODULE__ + "," + __CUTLASS_MODULE__
+            tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__ + "," + __CUBLAS_MODULE__ + "," + __CURAND_MODULE__ + "," + __CUFFT_MODULE__ + "," + __CUDNN_MODULE__ + "," + __CUSPARSE_MODULE__ + "," + __CUTLASS_MODULE__ + "," + __CUDF_MODULE__
 
         javaFlags = javaFlags + tornadoAddModules + " "
 

@@ -358,4 +358,149 @@ public class TestCusparse extends TornadoTestBase {
             }
         }
     }
+
+    // ---- alpha / beta scaling ----
+
+    /** y = alpha * A * x with beta = 0: pure scaling of the product. */
+    @Test
+    public void testSpMVAlphaScaling() throws TornadoExecutionPlanException {
+        final float alpha = 2.5f;
+        Csr a = randomCsr(256, 256, 0.05);
+        FloatArray x = randomVector(256);
+        FloatArray y = new FloatArray(256);
+
+        TaskGraph g = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a.rowOffsets, a.colInd, a.values, x) //
+                .libraryTask("spmv", Cusparse::cusparseSpMV, a.rows, a.cols, a.nnz, alpha, a.rowOffsets, a.colInd, a.values, x, 0.0f, y) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(g.snapshot())) {
+            plan.execute();
+        }
+
+        FloatArray base = spmvReference(a, x);
+        FloatArray expected = new FloatArray(256);
+        for (int i = 0; i < 256; i++) {
+            expected.set(i, alpha * base.get(i));
+        }
+        assertClose(256, expected, y);
+    }
+
+    /**
+     * y = alpha * A * x + beta * y with beta != 0. This is the case the
+     * single-argument form cannot express: the prior contents of y take part in
+     * the result, so y must reach the device as READ_WRITE.
+     */
+    @Test
+    public void testSpMVAlphaBeta() throws TornadoExecutionPlanException {
+        final float alpha = 1.5f;
+        final float beta = 0.75f;
+        final int n = 256;
+        Csr a = randomCsr(n, n, 0.05);
+        FloatArray x = randomVector(n);
+        FloatArray y = randomVector(n);
+
+        FloatArray base = spmvReference(a, x);
+        FloatArray expected = new FloatArray(n);
+        for (int i = 0; i < n; i++) {
+            expected.set(i, alpha * base.get(i) + beta * y.get(i));
+        }
+
+        TaskGraph g = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a.rowOffsets, a.colInd, a.values, x, y) //
+                .libraryTask("spmv", Cusparse::cusparseSpMV, a.rows, a.cols, a.nnz, alpha, a.rowOffsets, a.colInd, a.values, x, beta, y) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(g.snapshot())) {
+            plan.execute();
+        }
+        assertClose(n, expected, y);
+    }
+
+    /**
+     * beta = 1 turns SpMV into an accumulation. Repeated executions must sum,
+     * which only holds if y survives on the device between calls.
+     */
+    @Test
+    public void testSpMVBetaAccumulates() throws TornadoExecutionPlanException {
+        final int n = 128;
+        final int iterations = 4;
+        Csr a = randomCsr(n, n, 0.05);
+        FloatArray x = randomVector(n);
+        FloatArray y = new FloatArray(n); // starts at zero
+
+        TaskGraph g = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a.rowOffsets, a.colInd, a.values, x, y) //
+                .libraryTask("spmv", Cusparse::cusparseSpMV, a.rows, a.cols, a.nnz, 1.0f, a.rowOffsets, a.colInd, a.values, x, 1.0f, y) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(g.snapshot())) {
+            for (int it = 0; it < iterations; it++) {
+                plan.execute();
+            }
+        }
+
+        FloatArray base = spmvReference(a, x);
+        FloatArray expected = new FloatArray(n);
+        for (int i = 0; i < n; i++) {
+            expected.set(i, iterations * base.get(i));
+        }
+        assertClose(n, expected, y);
+    }
+
+    /** The short form must stay identical to the long form with alpha=1, beta=0. */
+    @Test
+    public void testSpMVShortFormMatchesLongForm() throws TornadoExecutionPlanException {
+        final int n = 256;
+        Csr a = randomCsr(n, n, 0.05);
+        FloatArray x = randomVector(n);
+        FloatArray shortForm = new FloatArray(n);
+        FloatArray longForm = new FloatArray(n);
+
+        runSpMV(a, x, shortForm);
+
+        TaskGraph g = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a.rowOffsets, a.colInd, a.values, x) //
+                .libraryTask("spmv", Cusparse::cusparseSpMV, a.rows, a.cols, a.nnz, 1.0f, a.rowOffsets, a.colInd, a.values, x, 0.0f, longForm) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, longForm);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(g.snapshot())) {
+            plan.execute();
+        }
+        assertClose(n, shortForm, longForm);
+    }
+
+    /** C = alpha * A * B + beta * C, the SpMM counterpart. */
+    @Test
+    public void testSpMMAlphaBeta() throws TornadoExecutionPlanException {
+        final float alpha = 2.0f;
+        final float beta = 0.5f;
+        final int rows = 128;
+        final int k = 128;
+        final int n = 32;
+        Csr a = randomCsr(rows, k, 0.05);
+        FloatArray b = randomVector(k * n);
+        FloatArray c = randomVector(rows * n);
+
+        float[] prior = new float[rows * n];
+        for (int i = 0; i < rows * n; i++) {
+            prior[i] = c.get(i);
+        }
+
+        FloatArray expected = new FloatArray(rows * n);
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < n; j++) {
+                float sum = 0.0f;
+                for (int kk = 0; kk < k; kk++) {
+                    sum += a.dense[i * k + kk] * b.get(kk * n + j);
+                }
+                expected.set(i * n + j, alpha * sum + beta * prior[i * n + j]);
+            }
+        }
+
+        TaskGraph g = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a.rowOffsets, a.colInd, a.values, b, c) //
+                .libraryTask("spmm", Cusparse::cusparseSpMM, rows, k, n, a.nnz, alpha, a.rowOffsets, a.colInd, a.values, b, beta, c) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(g.snapshot())) {
+            plan.execute();
+        }
+        assertClose(rows * n, expected, c);
+    }
 }

@@ -26,6 +26,19 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.asm;
 public class CUDAAssemblerConstants {
 
     public static final String KERNEL_MODIFIER = "extern \"C\" __global__";
+
+    /**
+     * Entry point of a CUDA Tile kernel. extern "C" is kept deliberately: without it the entry
+     * symbol is C++ mangled, and the runtime looks kernels up by their plain name.
+     */
+    public static final String TILE_KERNEL_MODIFIER = "extern \"C\" __tile_global__";
+
+    /**
+     * A device function callable from a tile kernel. CUDA Tile forbids calling one of these from
+     * a plain __global__ or __device__ function, which is why a helper shared between a tile task
+     * and a SIMT task has to be compiled twice.
+     */
+    public static final String TILE_DEVICE_MODIFIER = "__tile__";
     public static final String DEVICE_MODIFIER = "__device__";
     public static final String EOL = "\n";
     public static final String GLOBAL_MEM_MODIFIER = "";

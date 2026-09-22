@@ -81,6 +81,13 @@ public interface TaskGraphInterface {
      *     Reference to an existing Java method with one argument
      * @return {@link TaskGraphInterface}
      */
+    /**
+     * Adds a task whose kernel is named by a {@link java.lang.reflect.Method} rather than by a
+     * method reference. See {@link TaskGraph#task(String, java.lang.reflect.Method, Object...)}
+     * for the requirements the method must satisfy.
+     */
+    TaskGraphInterface task(String id, java.lang.reflect.Method method, Object... args);
+
     TaskGraphInterface task(String id, Task code);
 
     /**

@@ -58,6 +58,7 @@ import jdk.vm.ci.code.Register;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.backend.CUDAPreamble;
@@ -241,23 +242,32 @@ public class CUDACompilationResultBuilder extends CompilationResultBuilder {
     public void finish() {
         byte[] code = asm.close(true);
 
-        // Inject the half-precision header when the emitted kernel actually references
-        // CUDA fp16 constructs. Deciding this from the generated source is deliberate:
-        // a half value can appear only as a pointer cast (*(__half *) ...) or a constant
-        // conversion (__float2half(...)) that carries no HALF-typed LIR operand, so
-        // scanning the LIR operands misses those kernels and the missing #include causes
-        // NVRTC to fail with "__half is undefined". Keying off the source text catches
-        // every spelling (__half, half2 vectors, __float2half / __half2float). See
-        // CUDAPreamble for why the header is not emitted unconditionally.
+        // Inject the optional headers the emitted kernel actually references. Deciding this
+        // from the generated source is deliberate: a half value can appear only as a pointer
+        // cast (((__half *) tile)[...]) or a constant conversion (__float2half(...)) that
+        // carries no HALF-typed LIR operand, so scanning the LIR operands misses those kernels
+        // and the missing #include makes NVRTC reject the kernel. The predicates live in
+        // CUDAPreamble, next to the headers they gate, and match whole identifiers so that
+        // every spelling counts - including a __shared__ fp16 tile, whose declaration and
+        // casts are the only fp16 constructs in such a kernel. See CUDAPreamble for why the
+        // includes are not unconditional.
         String source = new String(code);
         // cuda_fp8.h before the fp16 check: the fp8 include is emitted together with the
         // fp16 one (its conversions produce __half values), and both prepends keep the
         // fp16 include first because cuda_fp8.h builds on cuda_fp16.h types.
-        if ((source.contains("__nv_fp8") || source.contains("__nv_cvt_fp8") || source.contains("cvt_float_to_fp8")) && !source.contains("cuda_fp8.h")) {
+        if (CUDAPreamble.needsFp8Header(source)) {
             source = CUDAPreamble.FP8_PREAMBLE + source;
         }
-        if ((source.contains("__half") || source.contains("half2") || source.contains("2half")) && !source.contains("cuda_fp16.h")) {
+        if (CUDAPreamble.needsBf16Header(source)) {
+            source = CUDAPreamble.BF16_PREAMBLE + source;
+        }
+        if (CUDAPreamble.needsFp16Header(source)) {
             source = CUDAPreamble.PREAMBLE + source;
+        }
+        // The tile header last, so it ends up first in the file: cuda_tile.h is compiled with
+        // --enable-tile and pulls in the ct:: namespace the emitted kernel body refers to.
+        if ((source.contains("__tile_global__") || source.contains("ct::")) && !source.contains("cuda_tile.h")) {
+            source = CUDAPreamble.TILE_PREAMBLE + source;
         }
         code = source.getBytes();
 
@@ -306,7 +316,11 @@ public class CUDACompilationResultBuilder extends CompilationResultBuilder {
         LIRInstruction breakInst = null;
 
         boolean relocatableInstruction = false;
-        for (LIRInstruction op : lir.getLIRforBlock(block)) {
+        List<LIRInstruction> instructions = lir.getLIRforBlock(block);
+        if (TornadoOptions.CUDA_BATCH_GLOBAL_LOADS) {
+            instructions = CUDAGlobalLoadBatching.reorder(instructions);
+        }
+        for (LIRInstruction op : instructions) {
             if (op instanceof CUDALIRStmt.MarkRelocateInstruction) {
                 relocatableInstruction = true;
             }

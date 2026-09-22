@@ -56,13 +56,15 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable {
     protected MetalBinaryTemplate arrayTemplate;
     protected MetalBinaryTemplate pointerTemplate;
 
-    public FixedArrayNode(MetalMemoryBase memoryRegister, ResolvedJavaType elementType, ConstantNode length) {
+    public FixedArrayNode(MetalMemoryBase memoryRegister, ResolvedJavaType elementType, ConstantNode length, boolean fillContents) {
         super(TYPE, StampFactory.objectNonNull(TypeReference.createTrustedWithoutAssumptions(elementType.getArrayClass())));
         this.memoryRegister = memoryRegister;
         this.length = length;
         this.elementType = elementType;
         this.elementKind = MetalKind.fromResolvedJavaType(elementType);
-        this.arrayTemplate = MetalKind.resolvePrivateTemplateType(elementType);
+        // Java zero-initializes `new T[n]`; only NewArrayNode.newUninitializedArray opts out.
+        final MetalBinaryTemplate declaration = MetalKind.resolvePrivateTemplateType(elementType);
+        this.arrayTemplate = fillContents ? declaration.withZeroInitializer() : declaration;
         this.pointerTemplate = MetalKind.resolvePrivatePointerTemplate(elementType);
     }
 

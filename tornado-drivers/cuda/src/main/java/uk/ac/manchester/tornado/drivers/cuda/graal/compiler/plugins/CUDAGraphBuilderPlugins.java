@@ -168,6 +168,9 @@ public class CUDAGraphBuilderPlugins {
         // Register Atomics
         registerKernelContextPlugins(plugins);
 
+        // CUDA Tile: a task whose kernel takes a TileContext compiles through the tile path.
+        CUDATileGraphBuilderPlugins.registerTileContextPlugins(plugins);
+
         CUDAMathPlugins.registerTornadoMathPlugins(plugins);
         registerOpenCLBuiltinPlugins(plugins);
         CUDAVectorPlugins.registerPlugins(ps, plugins);
@@ -823,6 +826,28 @@ public class CUDAGraphBuilderPlugins {
             }
         });
 
+        // --- mmaLoadAInt8(int[], int, int) -> byte[] : byte-offset form ---
+        r.register(new InvocationPlugin("mmaLoadAInt8",
+                InvocationPlugin.Receiver.class, int[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode tileK, ValueNode byteOffset) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDAMMALoadAInt8Node(tile, tileK, byteOffset));
+                return true;
+            }
+        });
+        // --- mmaLoadBInt8(int[], int, int) -> byte[] : byte-offset form ---
+        r.register(new InvocationPlugin("mmaLoadBInt8",
+                InvocationPlugin.Receiver.class, int[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode tile, ValueNode tileK, ValueNode byteOffset) {
+                receiver.get(true);
+                b.addPush(JavaKind.Object, new CUDAMMALoadBInt8Node(tile, tileK, byteOffset));
+                return true;
+            }
+        });
         // --- mmaLoadBSwizzled(HalfFloat[], int, int) -> HalfFloat[] ---
         r.register(new InvocationPlugin("mmaLoadBSwizzled",
                 InvocationPlugin.Receiver.class, HalfFloat[].class, int.class, int.class) {
@@ -857,53 +882,12 @@ public class CUDAGraphBuilderPlugins {
     }
 
     /**
-     * Resolves an MMAShape enum ValueNode to its compile-time constant.
-     *
-     * Enum references in bytecode appear as getstatic loads (LoadFieldNode) that
-     * are only constant-folded in a later phase. We read the static field directly
-     * via ConstantReflectionProvider.
-     *
-     * We can't use SnippetReflection.asObject() because TornadoVM's implementation
-     * throws unimplemented(). Instead, we read the enum's ordinal field and index
-     * into MMAShape.values().
+     * Resolves an MMAShape enum ValueNode to its compile-time constant. See
+     * {@link CUDAEnumFolding} for why an enum argument needs resolving at all.
      */
     private static MMAShape resolveShape(GraphBuilderContext b, ValueNode shapeNode) {
-        JavaConstant constant = shapeNode.asJavaConstant();
-
-        // Enum constants usually reach the plugin as a LoadFieldNode — resolve
-        // the static-final field directly if it hasn't been folded yet.
-        if (constant == null && shapeNode instanceof LoadFieldNode) {
-            LoadFieldNode load = (LoadFieldNode) shapeNode;
-            if (load.field().isStatic()) {
-                constant = b.getConstantReflection().readFieldValue(load.field(), null);
-            }
-        }
-
-        if (constant == null || constant.isNull()) {
-            throw new IllegalStateException(
-                    "MMAShape argument to ctx.mma() must be a compile-time constant");
-        }
-
-        // Read the `ordinal` field inherited from java.lang.Enum to identify
-        // which MMAShape constant this is, then look it up in values().
-        ResolvedJavaType enumType = b.getMetaAccess().lookupJavaType(MMAShape.class);
-        ResolvedJavaField ordinalField = null;
-        for (ResolvedJavaField f : enumType.getInstanceFields(true)) {
-            if (f.getName().equals("ordinal")) {
-                ordinalField = f;
-                break;
-            }
-        }
-        if (ordinalField == null) {
-            throw new IllegalStateException("Cannot locate Enum.ordinal field on MMAShape");
-        }
-
-        JavaConstant ordinalConst = b.getConstantReflection().readFieldValue(ordinalField, constant);
-        if (ordinalConst == null) {
-            throw new IllegalStateException("Failed to read ordinal of MMAShape constant");
-        }
-
-        return MMAShape.values()[ordinalConst.asInt()];
+        return CUDAEnumFolding.resolveEnumConstant(b, shapeNode, MMAShape.class,
+                "MMAShape argument to ctx.mma() must be a compile-time constant");
     }
 
     private static void registerSIMDPlugins(Registration r) {

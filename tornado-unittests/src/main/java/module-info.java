@@ -2,9 +2,11 @@ open module tornado.unittests {
     requires transitive junit;
     requires transitive tornado.api;
     requires tornado.cublas;
+    requires tornado.curand;
     requires tornado.cufft;
     requires tornado.cudnn;
     requires tornado.cusparse;
+    requires tornado.cudf;
     requires tornado.cutlass;
     requires lucene.core;
     requires java.desktop;
@@ -19,10 +21,12 @@ open module tornado.unittests {
     exports uk.ac.manchester.tornado.unittests.branching;
     exports uk.ac.manchester.tornado.unittests.common;
     exports uk.ac.manchester.tornado.unittests.cublas;
+    exports uk.ac.manchester.tornado.unittests.curand;
     exports uk.ac.manchester.tornado.unittests.nvtx;
     exports uk.ac.manchester.tornado.unittests.cufft;
     exports uk.ac.manchester.tornado.unittests.cudnn;
     exports uk.ac.manchester.tornado.unittests.cusparse;
+    exports uk.ac.manchester.tornado.unittests.cudf;
     exports uk.ac.manchester.tornado.unittests.cutlass;
     exports uk.ac.manchester.tornado.unittests.fields;
     exports uk.ac.manchester.tornado.unittests.flatmap;
@@ -44,6 +48,7 @@ open module tornado.unittests {
     exports uk.ac.manchester.tornado.unittests.slam;
     exports uk.ac.manchester.tornado.unittests.tasks;
     exports uk.ac.manchester.tornado.unittests.temporary.values;
+    exports uk.ac.manchester.tornado.unittests.tile;
     exports uk.ac.manchester.tornado.unittests.tools;
     exports uk.ac.manchester.tornado.unittests.vectortypes;
     exports uk.ac.manchester.tornado.unittests.virtualization;

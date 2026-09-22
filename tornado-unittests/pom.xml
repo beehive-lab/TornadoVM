@@ -32,6 +32,12 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>tornado-curand</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>tornado-cufft</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
@@ -45,6 +51,12 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>tornado-cusparse</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>tornado-cudf</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>

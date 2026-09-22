@@ -78,7 +78,12 @@ public class CUDALIRStmt {
     }
 
     @Opcode("ASSIGN")
-    public static class AssignStmt extends AbstractInstruction {
+    public static class AssignStmt extends AbstractInstruction implements PureRegisterComputation {
+
+        @Override
+        public Value getDefinedValue() {
+            return lhs;
+        }
 
         public static final LIRInstructionClass<AssignStmt> TYPE = LIRInstructionClass.create(AssignStmt.class);
 
@@ -200,7 +205,12 @@ public class CUDALIRStmt {
     }
 
     @Opcode("DECOMPRESS_POINTER")
-    public static class DecompressPointerStmt extends AbstractInstruction {
+    public static class DecompressPointerStmt extends AbstractInstruction implements PureRegisterComputation {
+
+        @Override
+        public Value getDefinedValue() {
+            return decompressed;
+        }
         public static final LIRInstructionClass<DecompressPointerStmt> TYPE = LIRInstructionClass.create(DecompressPointerStmt.class);
         @Def
         protected Value decompressed;
@@ -362,7 +372,12 @@ public class CUDALIRStmt {
      * over packed half2 / float operands.
      */
     @Opcode("HALF2_INTRINSIC")
-    public static class Half2IntrinsicStmt extends AbstractInstruction {
+    public static class Half2IntrinsicStmt extends AbstractInstruction implements PureRegisterComputation {
+
+        @Override
+        public Value getDefinedValue() {
+            return result;
+        }
 
         public static final LIRInstructionClass<Half2IntrinsicStmt> TYPE = LIRInstructionClass.create(Half2IntrinsicStmt.class);
 
@@ -402,7 +417,12 @@ public class CUDALIRStmt {
     }
 
     @Opcode("CONVERT_HALF")
-    public static class ConvertHalfToFloatStmt extends AbstractInstruction {
+    public static class ConvertHalfToFloatStmt extends AbstractInstruction implements PureRegisterComputation {
+
+        @Override
+        public Value getDefinedValue() {
+            return floatValue;
+        }
 
         public static final LIRInstructionClass<ConvertHalfToFloatStmt> TYPE = LIRInstructionClass.create(ConvertHalfToFloatStmt.class);
 
@@ -434,7 +454,12 @@ public class CUDALIRStmt {
     }
 
     @Opcode("CONVERT_FP8_TO_FLOAT")
-    public static class ConvertFP8ToFloatStmt extends AbstractInstruction {
+    public static class ConvertFP8ToFloatStmt extends AbstractInstruction implements PureRegisterComputation {
+
+        @Override
+        public Value getDefinedValue() {
+            return floatValue;
+        }
 
         public static final LIRInstructionClass<ConvertFP8ToFloatStmt> TYPE = LIRInstructionClass.create(ConvertFP8ToFloatStmt.class);
 
@@ -471,7 +496,12 @@ public class CUDALIRStmt {
     }
 
     @Opcode("CONVERT_BF16_TO_FLOAT")
-    public static class ConvertBF16ToFloatStmt extends AbstractInstruction {
+    public static class ConvertBF16ToFloatStmt extends AbstractInstruction implements PureRegisterComputation {
+
+        @Override
+        public Value getDefinedValue() {
+            return floatValue;
+        }
 
         public static final LIRInstructionClass<ConvertBF16ToFloatStmt> TYPE = LIRInstructionClass.create(ConvertBF16ToFloatStmt.class);
 
@@ -508,7 +538,12 @@ public class CUDALIRStmt {
     }
 
     @Opcode("CONVERT_FLOAT_TO_BF16")
-    public static class ConvertFloatToBF16Stmt extends AbstractInstruction {
+    public static class ConvertFloatToBF16Stmt extends AbstractInstruction implements PureRegisterComputation {
+
+        @Override
+        public Value getDefinedValue() {
+            return bf16Bits;
+        }
 
         public static final LIRInstructionClass<ConvertFloatToBF16Stmt> TYPE = LIRInstructionClass.create(ConvertFloatToBF16Stmt.class);
 
@@ -551,7 +586,12 @@ public class CUDALIRStmt {
     }
 
     @Opcode("CONVERT_FLOAT_TO_HALF")
-    public static class ConvertFloatToHalfStmt extends AbstractInstruction {
+    public static class ConvertFloatToHalfStmt extends AbstractInstruction implements PureRegisterComputation {
+
+        @Override
+        public Value getDefinedValue() {
+            return halfValue;
+        }
 
         public static final LIRInstructionClass<ConvertFloatToHalfStmt> TYPE = LIRInstructionClass.create(ConvertFloatToHalfStmt.class);
 
@@ -583,7 +623,12 @@ public class CUDALIRStmt {
     }
 
     @Opcode("VADD_HALF")
-    public static class VectorAddHalfStmt extends AbstractInstruction {
+    public static class VectorAddHalfStmt extends AbstractInstruction implements PureRegisterComputation {
+
+        @Override
+        public Value getDefinedValue() {
+            return result;
+        }
 
         public static final LIRInstructionClass<VectorAddHalfStmt> TYPE = LIRInstructionClass.create(VectorAddHalfStmt.class);
 
@@ -630,7 +675,12 @@ public class CUDALIRStmt {
     }
 
     @Opcode("ADD_HALF")
-    public static class AddHalfStmt extends AbstractInstruction {
+    public static class AddHalfStmt extends AbstractInstruction implements PureRegisterComputation {
+
+        @Override
+        public Value getDefinedValue() {
+            return result;
+        }
 
         public static final LIRInstructionClass<AddHalfStmt> TYPE = LIRInstructionClass.create(AddHalfStmt.class);
 
@@ -667,7 +717,12 @@ public class CUDALIRStmt {
     }
 
     @Opcode("SUB_HALF")
-    public static class SubHalfStmt extends AbstractInstruction {
+    public static class SubHalfStmt extends AbstractInstruction implements PureRegisterComputation {
+
+        @Override
+        public Value getDefinedValue() {
+            return result;
+        }
 
         public static final LIRInstructionClass<SubHalfStmt> TYPE = LIRInstructionClass.create(SubHalfStmt.class);
 
@@ -704,7 +759,12 @@ public class CUDALIRStmt {
     }
 
     @Opcode("VSUB_HALF")
-    public static class VectorSubHalfStmt extends AbstractInstruction {
+    public static class VectorSubHalfStmt extends AbstractInstruction implements PureRegisterComputation {
+
+        @Override
+        public Value getDefinedValue() {
+            return result;
+        }
 
         public static final LIRInstructionClass<VectorSubHalfStmt> TYPE = LIRInstructionClass.create(VectorSubHalfStmt.class);
 
@@ -751,7 +811,12 @@ public class CUDALIRStmt {
     }
 
     @Opcode("MULT_HALF")
-    public static class MultHalfStmt extends AbstractInstruction {
+    public static class MultHalfStmt extends AbstractInstruction implements PureRegisterComputation {
+
+        @Override
+        public Value getDefinedValue() {
+            return result;
+        }
 
         public static final LIRInstructionClass<MultHalfStmt> TYPE = LIRInstructionClass.create(MultHalfStmt.class);
 
@@ -788,7 +853,12 @@ public class CUDALIRStmt {
     }
 
     @Opcode("VMULT_HALF")
-    public static class VectorMultHalfStmt extends AbstractInstruction {
+    public static class VectorMultHalfStmt extends AbstractInstruction implements PureRegisterComputation {
+
+        @Override
+        public Value getDefinedValue() {
+            return result;
+        }
 
         public static final LIRInstructionClass<VectorMultHalfStmt> TYPE = LIRInstructionClass.create(VectorMultHalfStmt.class);
 
@@ -835,7 +905,12 @@ public class CUDALIRStmt {
     }
 
     @Opcode("DIV_HALF")
-    public static class DivHalfStmt extends AbstractInstruction {
+    public static class DivHalfStmt extends AbstractInstruction implements PureRegisterComputation {
+
+        @Override
+        public Value getDefinedValue() {
+            return result;
+        }
 
         public static final LIRInstructionClass<DivHalfStmt> TYPE = LIRInstructionClass.create(DivHalfStmt.class);
 
@@ -1073,7 +1148,12 @@ public class CUDALIRStmt {
     }
 
     @Opcode("MOVE")
-    public static class MoveStmt extends AbstractInstruction {
+    public static class MoveStmt extends AbstractInstruction implements PureRegisterComputation {
+
+        @Override
+        public Value getDefinedValue() {
+            return lhs;
+        }
 
         public static final LIRInstructionClass<MoveStmt> TYPE = LIRInstructionClass.create(MoveStmt.class);
 
@@ -1181,7 +1261,7 @@ public class CUDALIRStmt {
          *
          * @return boolean This returns if the memory base is private or local.
          */
-        private boolean isLocalOrPrivateLoad() {
+        public boolean isLocalOrPrivateLoad() {
             return this.cast.getMemorySpace().getBase().getMemorySpace() == CUDAMemorySpace.LOCAL || this.cast.getMemorySpace().getBase().getMemorySpace() == CUDAMemorySpace.PRIVATE;
         }
 
@@ -1195,6 +1275,10 @@ public class CUDALIRStmt {
 
         public MemoryAccess getAddress() {
             return address;
+        }
+
+        public Value getIndex() {
+            return index;
         }
     }
 
@@ -1399,7 +1483,7 @@ public class CUDALIRStmt {
          *
          * @return It returns true if the memory base is private or local.
          */
-        private boolean isLocalOrPrivateStore() {
+        public boolean isLocalOrPrivateStore() {
             return this.cast.getMemorySpace().getBase().getMemorySpace() == CUDAMemorySpace.LOCAL || this.cast.getMemorySpace().getBase().getMemorySpace() == CUDAMemorySpace.PRIVATE;
         }
 
@@ -1413,6 +1497,10 @@ public class CUDALIRStmt {
 
         public MemoryAccess getAddress() {
             return address;
+        }
+
+        public Value getIndex() {
+            return index;
         }
     }
 
@@ -2065,6 +2153,35 @@ public class CUDALIRStmt {
         }
     }
 
+    @Opcode("MMA_FRAGMENT_ELEMENT")
+    public static class MMAFragmentElementStmt extends AbstractInstruction {
+        public static final LIRInstructionClass<MMAFragmentElementStmt> TYPE =
+                LIRInstructionClass.create(MMAFragmentElementStmt.class);
+
+        @Def protected Value result;
+        @Use protected Value fragment;
+        private final int index;
+
+        public MMAFragmentElementStmt(Value result, Value fragment, int index) {
+            super(TYPE);
+            this.result = result; this.fragment = fragment; this.index = index;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            // result = frag[i];  the fragment is the thread's own C array, so this is a
+            // register move rather than a memory access. The index is a compile-time
+            // constant (enforced when the access is lowered) so that nvcc can keep the
+            // fragment in registers instead of spilling it to local memory.
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.emit(" = ");
+            frag(crb, asm, fragment, index);
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
     @Opcode("LDMATRIX")
     public static class LdmatrixStmt extends AbstractInstruction {
 
@@ -2409,7 +2526,7 @@ public class CUDALIRStmt {
 
             // half element write into shared memory (local arrays carry no header).
             asm.indent();
-            asm.emit("((half *) " + arr + ")[__bo >> 1] = ");
+            asm.emit("((__half *) " + arr + ")[__bo >> 1] = ");
             asm.emitValue(crb, value);
             asm.delimiter();
             asm.eol();
@@ -2537,7 +2654,12 @@ public class CUDALIRStmt {
     }
 
     @Opcode("HALF_BITS_TO_INT")
-    public static class HalfBitsToIntStmt extends AbstractInstruction {
+    public static class HalfBitsToIntStmt extends AbstractInstruction implements PureRegisterComputation {
+
+        @Override
+        public Value getDefinedValue() {
+            return result;
+        }
         public static final LIRInstructionClass<HalfBitsToIntStmt> TYPE =
                 LIRInstructionClass.create(HalfBitsToIntStmt.class);
 
@@ -2552,11 +2674,47 @@ public class CUDALIRStmt {
 
         @Override
         public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
-            // u32_result = (unsigned) __half_as_ushort(half_value);
+            // Preserve the signed short returned by HalfFloat.getHalfFloatValue().
             asm.indent();
             asm.emitValue(crb, result);
-            asm.emit(" = (unsigned) __half_as_ushort(");
+            asm.emit(" = (int) __half_as_short(");
             asm.emitValue(crb, halfValue);
+            asm.emit(")");
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
+    @Opcode("INT_BITS_TO_HALF")
+    public static class IntBitsToHalfStmt extends AbstractInstruction implements PureRegisterComputation {
+
+        public static final LIRInstructionClass<IntBitsToHalfStmt> TYPE = LIRInstructionClass.create(IntBitsToHalfStmt.class);
+
+        @Def
+        protected Value halfValue;
+        @Use
+        protected Value bits;
+
+        public IntBitsToHalfStmt(Value halfValue, Value bits) {
+            super(TYPE);
+            this.halfValue = halfValue;
+            this.bits = bits;
+        }
+
+        @Override
+        public Value getDefinedValue() {
+            return halfValue;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            // half_value = __ushort_as_half((unsigned short) bits);
+            // The cast drops the sign extension a short picks up on the Java operand stack, so a
+            // half with the sign bit set keeps its bit pattern instead of wrapping to another value.
+            asm.indent();
+            asm.emitValue(crb, halfValue);
+            asm.emit(" = __ushort_as_half((unsigned short) ");
+            asm.emitValue(crb, bits);
             asm.emit(")");
             asm.delimiter();
             asm.eol();
@@ -2589,7 +2747,7 @@ public class CUDALIRStmt {
             //   lin     = row * stride + column
             //   byteOff = lin << 1
             //   byteOff ^= (((byteOff >> 7) & 0b111) << 4)
-            //   result = ((half *) tile)[byteOff >> 1]
+            //   result = ((__half *) tile)[byteOff >> 1]
             String arr = asm.getStringValue(crb, localArray);
 
             asm.indent();
@@ -2617,10 +2775,10 @@ public class CUDALIRStmt {
             asm.delimiter();
             asm.eol();
 
-            // result = ((half *) tile)[byteOff >> 1]
+            // result = ((__half *) tile)[byteOff >> 1]
             asm.indent();
             asm.emitValue(crb, result);
-            asm.emit(" = ((half *) " + arr + ")[__bo >> 1]");
+            asm.emit(" = ((__half *) " + arr + ")[__bo >> 1]");
             asm.delimiter();
             asm.eol();
 

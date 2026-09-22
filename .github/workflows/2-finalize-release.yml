@@ -256,7 +256,12 @@ jobs:
         run: |
           NEXT="${{ steps.next_version.outputs.next_version }}"
 
-          ./mvnw versions:set -DnewVersion=${NEXT} -DgenerateBackupPoms=false
+          # Restore the CI-friendly ${revision} scheme on develop: every pom back to
+          # <version>${revision}</version>, root <revision> = ${NEXT%-dev}-jdk21-dev and the
+          # jdk22plus profile override = ${NEXT%-dev}-jdk22plus-dev. `mvn versions:set` would
+          # instead bake a hard-coded literal into every pom and every build would then stamp
+          # the same JDK-less version regardless of the active profile.
+          python3 scripts/set-maven-version.py dev ${NEXT}
 
           sed -i "s/__VERSION__ = \"[0-9]\+\.[0-9]\+\.[0-9]\+\(-[a-zA-Z0-9-]*\)\?\"/__VERSION__ = \"${NEXT}\"/" tornado-assembly/src/bin/tornado-test
           sed -i "s/__VERSION__ = \"v[0-9]\+\.[0-9]\+\.[0-9]\+\(-[a-zA-Z0-9-]*\)\?\"/__VERSION__ = \"v${NEXT}\"/" bin/tornadovm-installer

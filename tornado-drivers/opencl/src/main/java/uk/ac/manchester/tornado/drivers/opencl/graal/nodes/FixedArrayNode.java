@@ -55,13 +55,15 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable {
     protected OCLBinaryTemplate arrayTemplate;
     protected OCLBinaryTemplate pointerTemplate;
 
-    public FixedArrayNode(OCLMemoryBase memoryRegister, ResolvedJavaType elementType, ConstantNode length) {
+    public FixedArrayNode(OCLMemoryBase memoryRegister, ResolvedJavaType elementType, ConstantNode length, boolean fillContents) {
         super(TYPE, StampFactory.objectNonNull(TypeReference.createTrustedWithoutAssumptions(elementType.getArrayClass())));
         this.memoryRegister = memoryRegister;
         this.length = length;
         this.elementType = elementType;
         this.elementKind = OCLKind.fromResolvedJavaType(elementType);
-        this.arrayTemplate = OCLKind.resolvePrivateTemplateType(elementType);
+        // Java zero-initializes `new T[n]`; only NewArrayNode.newUninitializedArray opts out.
+        final OCLBinaryTemplate declaration = OCLKind.resolvePrivateTemplateType(elementType);
+        this.arrayTemplate = fillContents ? declaration.withZeroInitializer() : declaration;
         this.pointerTemplate = OCLKind.resolvePrivatePointerTemplate(elementType);
     }
 

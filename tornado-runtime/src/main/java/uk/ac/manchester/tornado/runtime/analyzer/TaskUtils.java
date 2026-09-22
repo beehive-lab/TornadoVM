@@ -183,6 +183,26 @@ public class TaskUtils {
         };
     }
 
+    /**
+     * Creates a task for a kernel named directly by a {@link Method}, with no lambda involved.
+     *
+     * <p>Captured-variable extraction is skipped because there is nothing to capture: a
+     * {@link Method} carries no receiver and no enclosing state, so {@code args} is the complete
+     * argument list. This is the same path {@link #scalaTask} already uses.
+     *
+     * @param meta
+     *     {@link ScheduleContext}
+     * @param id
+     *     Task-id
+     * @param method
+     *     the kernel; must be static
+     * @param args
+     *     arguments to the kernel, in declaration order
+     */
+    public static CompilableTask createMethodTask(ScheduleContext meta, String id, Method method, Object... args) {
+        return createTask(meta, id, method, null, false, args);
+    }
+
     public static CompilableTask createTask(Method method, ScheduleContext meta, String id, Task code) {
         return createTask(meta, id, method, code, true);
     }

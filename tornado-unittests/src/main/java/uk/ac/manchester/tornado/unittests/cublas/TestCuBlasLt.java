@@ -83,6 +83,15 @@ public class TestCuBlasLt extends TornadoTestBase {
      * (per row of C_cm) is per column of the row-major C.
      */
     private static void reference(FloatArray a, FloatArray b, FloatArray c, float[] bias, boolean gelu, int size) {
+        reference(a, b, c, bias, gelu ? Activation.GELU : Activation.NONE, size);
+    }
+
+    /** The epilogue activations exercised by these tests. */
+    private enum Activation {
+        NONE, RELU, GELU
+    }
+
+    private static void reference(FloatArray a, FloatArray b, FloatArray c, float[] bias, Activation activation, int size) {
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
                 float sum = 0.0f;
@@ -92,7 +101,11 @@ public class TestCuBlasLt extends TornadoTestBase {
                 if (bias != null) {
                     sum += bias[j];
                 }
-                c.set(i * size + j, gelu ? geluTanh(sum) : sum);
+                c.set(i * size + j, switch (activation) {
+                    case NONE -> sum;
+                    case RELU -> Math.max(0.0f, sum);
+                    case GELU -> geluTanh(sum);
+                });
             }
         }
     }
@@ -308,6 +321,113 @@ public class TestCuBlasLt extends TornadoTestBase {
         reference(matrixA, matrixB, expected, null, false, SIZE);
         for (int i = 0; i < SIZE * SIZE; i++) {
             assertEquals(expected.get(i), matrixC.get(i), 0.01f * Math.max(1.0f, Math.abs(expected.get(i))));
+        }
+    }
+
+    // ---- epilogues declared in CuBlasLtEpilogue that previously had no factory ----
+
+    /** C = ReLU(A * B), the bias-free ReLU epilogue. */
+    @Test
+    public void testLtMatmulReluFP16() throws TornadoExecutionPlanException {
+        HalfFloatArray matrixA = new HalfFloatArray(SIZE * SIZE);
+        HalfFloatArray matrixB = new HalfFloatArray(SIZE * SIZE);
+        HalfFloatArray matrixC = new HalfFloatArray(SIZE * SIZE);
+        FloatArray aF = new FloatArray(SIZE * SIZE);
+        FloatArray bF = new FloatArray(SIZE * SIZE);
+        FloatArray expected = new FloatArray(SIZE * SIZE);
+        for (int i = 0; i < SIZE * SIZE; i++) {
+            matrixA.set(i, new HalfFloat(random.nextFloat() - 0.5f));
+            matrixB.set(i, new HalfFloat(random.nextFloat() - 0.5f));
+            aF.set(i, matrixA.get(i).getFloat32());
+            bF.set(i, matrixB.get(i).getFloat32());
+        }
+
+        TaskGraph taskGraph = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, matrixA, matrixB) //
+                .libraryTask("lt", CuBlasLt::ltMatmulReluFP16, //
+                        CuBlasOperation.CUBLAS_OP_N.operation(), CuBlasOperation.CUBLAS_OP_N.operation(), //
+                        SIZE, SIZE, SIZE, 1.0f, matrixB, SIZE, matrixA, SIZE, 0.0f, matrixC, SIZE) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixC);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.execute();
+        }
+
+        reference(aF, bF, expected, null, Activation.RELU, SIZE);
+        for (int i = 0; i < SIZE * SIZE; i++) {
+            assertEquals(expected.get(i), matrixC.get(i).getFloat32(), 2e-2f * Math.max(0.1f, Math.abs(expected.get(i))));
+        }
+    }
+
+    /** C = GELU(A * B), the bias-free GELU epilogue. */
+    @Test
+    public void testLtMatmulGeluFP16() throws TornadoExecutionPlanException {
+        HalfFloatArray matrixA = new HalfFloatArray(SIZE * SIZE);
+        HalfFloatArray matrixB = new HalfFloatArray(SIZE * SIZE);
+        HalfFloatArray matrixC = new HalfFloatArray(SIZE * SIZE);
+        FloatArray aF = new FloatArray(SIZE * SIZE);
+        FloatArray bF = new FloatArray(SIZE * SIZE);
+        FloatArray expected = new FloatArray(SIZE * SIZE);
+        for (int i = 0; i < SIZE * SIZE; i++) {
+            matrixA.set(i, new HalfFloat(random.nextFloat() - 0.5f));
+            matrixB.set(i, new HalfFloat(random.nextFloat() - 0.5f));
+            aF.set(i, matrixA.get(i).getFloat32());
+            bF.set(i, matrixB.get(i).getFloat32());
+        }
+
+        TaskGraph taskGraph = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, matrixA, matrixB) //
+                .libraryTask("lt", CuBlasLt::ltMatmulGeluFP16, //
+                        CuBlasOperation.CUBLAS_OP_N.operation(), CuBlasOperation.CUBLAS_OP_N.operation(), //
+                        SIZE, SIZE, SIZE, 1.0f, matrixB, SIZE, matrixA, SIZE, 0.0f, matrixC, SIZE) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixC);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.execute();
+        }
+
+        reference(aF, bF, expected, null, Activation.GELU, SIZE);
+        for (int i = 0; i < SIZE * SIZE; i++) {
+            assertEquals(expected.get(i), matrixC.get(i).getFloat32(), 2e-2f * Math.max(0.1f, Math.abs(expected.get(i))));
+        }
+    }
+
+    /** C = ReLU(A * B + bias), the ReLU counterpart of the GELU_BIAS epilogue. */
+    @Test
+    public void testLtMatmulReluBiasFP16() throws TornadoExecutionPlanException {
+        HalfFloatArray matrixA = new HalfFloatArray(SIZE * SIZE);
+        HalfFloatArray matrixB = new HalfFloatArray(SIZE * SIZE);
+        HalfFloatArray matrixC = new HalfFloatArray(SIZE * SIZE);
+        HalfFloatArray bias = new HalfFloatArray(SIZE);
+        FloatArray aF = new FloatArray(SIZE * SIZE);
+        FloatArray bF = new FloatArray(SIZE * SIZE);
+        float[] biasF = new float[SIZE];
+        FloatArray expected = new FloatArray(SIZE * SIZE);
+        for (int i = 0; i < SIZE * SIZE; i++) {
+            matrixA.set(i, new HalfFloat(random.nextFloat() - 0.5f));
+            matrixB.set(i, new HalfFloat(random.nextFloat() - 0.5f));
+            aF.set(i, matrixA.get(i).getFloat32());
+            bF.set(i, matrixB.get(i).getFloat32());
+        }
+        for (int i = 0; i < SIZE; i++) {
+            bias.set(i, new HalfFloat(random.nextFloat() - 0.5f));
+            biasF[i] = bias.get(i).getFloat32();
+        }
+
+        TaskGraph taskGraph = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, matrixA, matrixB, bias) //
+                .libraryTask("lt", CuBlasLt::ltMatmulReluBiasFP16, //
+                        CuBlasOperation.CUBLAS_OP_N.operation(), CuBlasOperation.CUBLAS_OP_N.operation(), //
+                        SIZE, SIZE, SIZE, 1.0f, matrixB, SIZE, matrixA, SIZE, 0.0f, matrixC, SIZE, bias) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixC);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.execute();
+        }
+
+        reference(aF, bF, expected, biasF, Activation.RELU, SIZE);
+        for (int i = 0; i < SIZE * SIZE; i++) {
+            assertEquals(expected.get(i), matrixC.get(i).getFloat32(), 2e-2f * Math.max(0.1f, Math.abs(expected.get(i))));
         }
     }
 }

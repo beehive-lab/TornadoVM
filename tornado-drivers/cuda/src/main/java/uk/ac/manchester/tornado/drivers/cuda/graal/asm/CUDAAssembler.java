@@ -1067,7 +1067,7 @@ public final class CUDAAssembler extends Assembler {
         public static final CUDABinaryTemplate NEW_LOCAL_LONG_ARRAY = new CUDABinaryTemplate("local memory array long", "__shared__ long %s[%s]");
         public static final CUDABinaryTemplate NEW_LOCAL_SHORT_ARRAY = new CUDABinaryTemplate("local memory array short", "__shared__ short %s[%s]");
         public static final CUDABinaryTemplate NEW_LOCAL_CHAR_ARRAY = new CUDABinaryTemplate("local memory array char", "__shared__ char %s[%s]");
-        public static final CUDABinaryTemplate NEW_LOCAL_HALF_FLOAT_ARRAY = new CUDABinaryTemplate("local memory array half", "__shared__ half %s[%s]");
+        public static final CUDABinaryTemplate NEW_LOCAL_HALF_FLOAT_ARRAY = new CUDABinaryTemplate("local memory array half", "__shared__ __half %s[%s]");
         public static final CUDABinaryTemplate NEW_LOCAL_HALF2_ARRAY = new CUDABinaryTemplate("local memory array half2", "__shared__ __half2 %s[%s]");
         // @formatter:on
         private final String template;
@@ -1075,6 +1075,16 @@ public final class CUDAAssembler extends Assembler {
         protected CUDABinaryTemplate(String opcode, String template) {
             super(opcode);
             this.template = template;
+        }
+
+        /**
+         * Returns this declaration template with a zero initializer appended, so a private array
+         * declared from an ordinary Java {@code new T[n]} starts out zeroed as the language
+         * requires. The device compiler drops the initializer again wherever it can prove every
+         * element is written before it is read.
+         */
+        public CUDABinaryTemplate withZeroInitializer() {
+            return new CUDABinaryTemplate(opcode + " (zeroed)", template + " = {0}");
         }
 
         @Override

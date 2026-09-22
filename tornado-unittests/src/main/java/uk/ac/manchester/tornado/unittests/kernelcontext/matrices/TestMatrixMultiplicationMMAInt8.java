@@ -26,6 +26,8 @@ import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.MMAShape;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
@@ -33,6 +35,7 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -55,6 +58,8 @@ public class TestMatrixMultiplicationMMAInt8 extends TornadoTestBase {
     static final int WMMA_N    = 16;   // covered by two m16n8k32 calls
     static final int WMMA_K    = 32;   // K=32 for int8 MMA
     static final int WARP_SIZE = 32;
+    /** N of a single m16n8k32 tile, used by the accumulator fragment tests. */
+    static final int MMA_N     = 8;
 
     // -----------------------------------------------------------------------
     // Kernel
@@ -396,5 +401,186 @@ public class TestMatrixMultiplicationMMAInt8 extends TornadoTestBase {
             arr.set(i, (byte) (rng.nextInt(7) - 3));  // -3 to 3
         }
         return arr;
+    }
+
+    // -----------------------------------------------------------------------
+    // Reading the s32 accumulator fragment in registers
+    // -----------------------------------------------------------------------
+
+    /**
+     * The int8 counterpart of the fp16 fragment reads in {@link TestMatrixMultiplicationMMA}:
+     * each lane scales its four s32 accumulator elements and writes them out itself instead of
+     * handing the fragment to {@code mmaStoreInt}. Output is in fragment order,
+     * {@code out[lane * 4 + i]}, so the test pins the lane mapping as well as the values.
+     */
+    public static void scaleIntFragmentInRegisters(KernelContext ctx, ByteArray a, ByteArray b,
+                                                   IntArray out) {
+        int lane = ctx.localIdx;
+        int[] aTile = ctx.allocateIntLocalArray(WMMA_M * WMMA_K / 2);
+        int[] bTile = ctx.allocateIntLocalArray(WMMA_K * MMA_N / 4);
+
+        loadInt8Tiles(ctx, a, b, aTile, bTile, lane);
+
+        int[] acc = ctx.mmaFragmentInt(0);
+        acc = ctx.mmaInt8(ctx.mmaLoadAInt8(aTile, WMMA_K), ctx.mmaLoadBInt8(bTile, WMMA_K), acc,
+                MMAShape.M16N8K32);
+
+        out.set(lane * 4, acc[0] * 2);
+        out.set(lane * 4 + 1, acc[1] * 2);
+        out.set(lane * 4 + 2, acc[2] * 2);
+        out.set(lane * 4 + 3, acc[3] * 2);
+    }
+
+    /**
+     * Indexing an A operand fragment. Its Java {@code byte[]} element type does not describe
+     * the packed b32 lanes it holds, so the access is refused rather than compiled into
+     * something that reads the wrong thing.
+     */
+    public static void readOperandFragment(KernelContext ctx, ByteArray a, ByteArray b,
+                                           IntArray out) {
+        int lane = ctx.localIdx;
+        int[] aTile = ctx.allocateIntLocalArray(WMMA_M * WMMA_K / 2);
+        int[] bTile = ctx.allocateIntLocalArray(WMMA_K * MMA_N / 4);
+
+        loadInt8Tiles(ctx, a, b, aTile, bTile, lane);
+
+        byte[] fragA = ctx.mmaLoadAInt8(aTile, WMMA_K);
+        out.set(lane, fragA[0]);
+    }
+
+    /** Cooperative load of one 16x32 A tile and one 32x8 B panel, in the packed b32 layout. */
+    private static void loadInt8Tiles(KernelContext ctx, ByteArray a, ByteArray b,
+                                      int[] aTile, int[] bTile, int lane) {
+        for (int idx = lane; idx < (WMMA_M * WMMA_K) / 4; idx += WARP_SIZE) {
+            int elemBase = idx * 4;
+            int r = elemBase / WMMA_K;
+            int kk = elemBase % WMMA_K;
+            int base = r * WMMA_K + kk;
+            aTile[r * (WMMA_K / 4) + kk / 4] = (a.get(base) & 0xFF)
+                    | ((a.get(base + 1) & 0xFF) << 8)
+                    | ((a.get(base + 2) & 0xFF) << 16)
+                    | ((a.get(base + 3) & 0xFF) << 24);
+        }
+        for (int idx = lane; idx < 64; idx += WARP_SIZE) {
+            int k_row = idx / 4;
+            int j_pair = idx % 4;
+            int j_base = j_pair * 2;
+            int k_base = 2 * k_row;
+            int b0 = b.get(k_base * MMA_N + j_base) & 0xFF;
+            int b1 = b.get((k_base + 1) * MMA_N + j_base) & 0xFF;
+            int b2 = b.get(k_base * MMA_N + j_base + 1) & 0xFF;
+            int b3 = b.get((k_base + 1) * MMA_N + j_base + 1) & 0xFF;
+            bTile[k_row * 4 + j_pair] = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
+        }
+        ctx.localBarrier();
+    }
+
+    @Test
+    public void testIntFragmentElementReads() throws TornadoExecutionPlanException {
+        ByteArray a = randomInt8Array(WMMA_M * WMMA_K);
+        ByteArray b = randomInt8Array(WMMA_K * MMA_N);
+        IntArray out = runFragmentKernel(TestMatrixMultiplicationMMAInt8::scaleIntFragmentInRegisters, a, b);
+
+        for (int lane = 0; lane < WARP_SIZE; lane++) {
+            for (int i = 0; i < 4; i++) {
+                int m = lane / 4 + 8 * (i / 2);
+                int n = (lane % 4) * 2 + (i % 2);
+                int expected = 0;
+                for (int k = 0; k < WMMA_K; k++) {
+                    expected += a.get(m * WMMA_K + k) * b.get(k * MMA_N + n);
+                }
+                assertEquals("lane " + lane + " element " + i, 2 * expected, out.get(lane * 4 + i));
+            }
+        }
+    }
+
+    /** Only the accumulator fragment is indexable; an A/B fragment is refused by name. */
+    @Test
+    public void testOperandFragmentIndexIsRejected() throws TornadoExecutionPlanException {
+        // Unsupported backends must reach the test runner without an exception assertion wrapping them.
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.METAL);
+        assertThrows(TornadoBailoutRuntimeException.class, () -> runFragmentKernel(TestMatrixMultiplicationMMAInt8::readOperandFragment,
+                randomInt8Array(WMMA_M * WMMA_K), randomInt8Array(WMMA_K * MMA_N)));
+    }
+
+    /** Runs {@code kernel} over a single warp on one 16x32 by 32x8 tile pair. */
+    private IntArray runFragmentKernel(
+            TornadoFunctions.Task4<KernelContext, ByteArray, ByteArray, IntArray> kernel,
+            ByteArray a, ByteArray b) throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
+        IntArray out = new IntArray(WMMA_M * MMA_N);
+        out.init(0);
+
+        WorkerGrid1D workerGrid = new WorkerGrid1D(WARP_SIZE);
+        workerGrid.setLocalWork(WARP_SIZE, 1, 1);
+        GridScheduler gridScheduler = new GridScheduler("mma_int8_frag_test.k", workerGrid);
+
+        TaskGraph tg = new TaskGraph("mma_int8_frag_test")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, out)
+                .task("k", kernel, new KernelContext(), a, b, out)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
+            plan.withGridScheduler(gridScheduler).execute();
+        }
+        return out;
+    }
+
+    /** Reads an s32 accumulator after a runtime-controlled MMA loop. */
+    public static void readLoopCarriedIntFragment(KernelContext ctx, ByteArray a,
+                                                  ByteArray b, IntArray iterations, IntArray out) {
+        int lane = ctx.localIdx;
+        int[] aTile = ctx.allocateIntLocalArray(WMMA_M * WMMA_K / 2);
+        int[] bTile = ctx.allocateIntLocalArray(WMMA_K * MMA_N / 4);
+        loadInt8Tiles(ctx, a, b, aTile, bTile, lane);
+        byte[] fragA = ctx.mmaLoadAInt8(aTile, WMMA_K);
+        byte[] fragB = ctx.mmaLoadBInt8(bTile, WMMA_K);
+        int[] acc = ctx.mmaFragmentInt(1);
+        for (int k = 0; k < iterations.get(0); k++) {
+            acc = ctx.mmaInt8(fragA, fragB, acc, MMAShape.M16N8K32);
+        }
+        out.set(lane * 4, acc[0] * 2);
+        out.set(lane * 4 + 1, acc[1] * 2);
+        out.set(lane * 4 + 2, acc[2] * 2);
+        out.set(lane * 4 + 3, acc[3] * 2);
+    }
+
+    @Test
+    public void testLoopCarriedIntFragmentElementReads() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.METAL);
+        ByteArray a = randomInt8Array(WMMA_M * WMMA_K);
+        ByteArray b = randomInt8Array(WMMA_K * MMA_N);
+        IntArray iterations = new IntArray(1);
+        IntArray out = new IntArray(WARP_SIZE * 4);
+        WorkerGrid1D worker = new WorkerGrid1D(WARP_SIZE);
+        worker.setLocalWork(WARP_SIZE, 1, 1);
+        TaskGraph graph = new TaskGraph("mma_int_loop_read")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, iterations)
+                .task("k", TestMatrixMultiplicationMMAInt8::readLoopCarriedIntFragment,
+                        new KernelContext(), a, b, iterations, out)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.withGridScheduler(new GridScheduler("mma_int_loop_read.k", worker));
+            for (int count : new int[] { 0, 1, 3 }) {
+                iterations.set(0, count);
+                plan.execute();
+                for (int lane = 0; lane < WARP_SIZE; lane++) {
+                    for (int i = 0; i < 4; i++) {
+                        int m = lane / 4 + 8 * (i / 2);
+                        int n = (lane % 4) * 2 + i % 2;
+                        int dot = 0;
+                        for (int k = 0; k < WMMA_K; k++) {
+                            dot += a.get(m * WMMA_K + k) * b.get(k * MMA_N + n);
+                        }
+                        assertEquals("iterations " + count + " lane " + lane + " element " + i,
+                                2 * (1 + count * dot), out.get(lane * 4 + i));
+                    }
+                }
+            }
+        }
     }
 }

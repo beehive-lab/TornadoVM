@@ -21,9 +21,11 @@ import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.cublas.enums.CuBlasMathMode;
 
 /**
@@ -63,6 +65,18 @@ public final class CuBlas {
     }
 
     /**
+     * Double-precision counterpart of {@link #readOnlyExcept(int, int, float)}. Comparing the
+     * double directly matters: narrowing to float first would round a small non-zero beta to
+     * 0.0f and mark an operand WRITE_ONLY that cuBLAS is going to read.
+     */
+    private static Access[] readOnlyExcept(int numArgs, int outputIndex, double beta) {
+        Access[] accesses = new Access[numArgs];
+        Arrays.fill(accesses, Access.READ_ONLY);
+        accesses[outputIndex] = (beta != 0.0d) ? Access.READ_WRITE : Access.WRITE_ONLY;
+        return accesses;
+    }
+
+    /**
      * Matrix-vector multiplication: {@code y = alpha * op(A) * x + beta * y}.
      *
      * <p>
@@ -94,6 +108,99 @@ public final class CuBlas {
      *     Stride between consecutive elements of y.
      * @return {@link LibraryTaskDescriptor}
      */
+    /**
+     * Dot product {@code result[0] = x . y} over {@code n} elements.
+     *
+     * <p>The result is written to a device-resident {@link FloatArray} rather than returned, so it
+     * never leaves the GPU: a following task can consume it directly. This is what makes the
+     * routine usable inside a CUDA Graph. cuBLAS is put into {@code CUBLAS_POINTER_MODE_DEVICE}
+     * for the call and restored afterwards; in the default host pointer mode cuBLAS would have to
+     * synchronise the stream to deliver the value, which stalls the pipeline and is illegal during
+     * graph capture.</p>
+     *
+     * @param result
+     *            single-element device buffer receiving the dot product.
+     */
+    public static LibraryTaskDescriptor cublasSdot(int n, FloatArray x, int incx, FloatArray y, int incy, FloatArray result) {
+        Access[] access = new Access[6];
+        Arrays.fill(access, Access.READ_ONLY);
+        access[5] = Access.WRITE_ONLY; // result
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cublasSdot") //
+                .withParameters(new Object[] { n, x, incx, y, incy, result }) //
+                .withAccess(access);
+    }
+
+    /**
+     * Euclidean norm {@code result[0] = ||x||_2} over {@code n} elements, written to a
+     * device-resident single-element buffer. See {@link #cublasSdot} for why the result stays on
+     * the device.
+     */
+    public static LibraryTaskDescriptor cublasSnrm2(int n, FloatArray x, int incx, FloatArray result) {
+        Access[] access = new Access[4];
+        Arrays.fill(access, Access.READ_ONLY);
+        access[3] = Access.WRITE_ONLY; // result
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cublasSnrm2") //
+                .withParameters(new Object[] { n, x, incx, result }) //
+                .withAccess(access);
+    }
+
+    /**
+     * Sum of absolute values {@code result[0] = sum(|x_i|)} over {@code n} elements, written to a
+     * device-resident single-element buffer. See {@link #cublasSdot} for why the result stays on
+     * the device.
+     */
+    public static LibraryTaskDescriptor cublasSasum(int n, FloatArray x, int incx, FloatArray result) {
+        Access[] access = new Access[4];
+        Arrays.fill(access, Access.READ_ONLY);
+        access[3] = Access.WRITE_ONLY; // result
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cublasSasum") //
+                .withParameters(new Object[] { n, x, incx, result }) //
+                .withAccess(access);
+    }
+
+    /**
+     * Index of the element of {@code x} with the largest absolute value, written to a
+     * device-resident single-element {@link IntArray}.
+     *
+     * <p><b>The index is 1-based</b>, following the BLAS convention that cuBLAS preserves: for a
+     * vector whose largest element sits at Java index {@code i}, this writes {@code i + 1}.</p>
+     *
+     * <p>Like {@link #cublasSdot} the result stays on the device, so a following task can consume
+     * it and the call is legal inside a CUDA Graph.</p>
+     */
+    public static LibraryTaskDescriptor cublasIsamax(int n, FloatArray x, int incx, IntArray result) {
+        Access[] access = new Access[4];
+        Arrays.fill(access, Access.READ_ONLY);
+        access[3] = Access.WRITE_ONLY; // result
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cublasIsamax") //
+                .withParameters(new Object[] { n, x, incx, result }) //
+                .withAccess(access);
+    }
+
+    /**
+     * Index of the element of {@code x} with the smallest absolute value, written to a
+     * device-resident single-element {@link IntArray}. <b>1-based</b>, as for
+     * {@link #cublasIsamax}.
+     */
+    public static LibraryTaskDescriptor cublasIsamin(int n, FloatArray x, int incx, IntArray result) {
+        Access[] access = new Access[4];
+        Arrays.fill(access, Access.READ_ONLY);
+        access[3] = Access.WRITE_ONLY; // result
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cublasIsamin") //
+                .withParameters(new Object[] { n, x, incx, result }) //
+                .withAccess(access);
+    }
+
     public static LibraryTaskDescriptor cublasSgemv(int operation, //
             int m, //
             int n, //
@@ -164,6 +271,24 @@ public final class CuBlas {
         return new LibraryTaskDescriptor() //
                 .withLibrary(LIBRARY_NAME) //
                 .withFunction("cublasSgemm") //
+                .withParameters(new Object[] { transa, transb, m, n, k, alpha, matrixA, lda, matrixB, ldb, beta, matrixC, ldc }) //
+                .withAccess(readOnlyExcept(13, 11, beta));
+    }
+
+    /**
+     * FP64 matrix-matrix product via {@code cublasDgemm}:
+     * C = alpha * op(A) * op(B) + beta * C, with all operands {@link DoubleArray}.
+     *
+     * <p>The double-precision counterpart of {@link #cublasSgemm}. cuBLAS is column-major, so a
+     * row-major C = A * B is expressed by swapping the operands (C_cm = B_cm * A_cm), exactly as
+     * for the FP32 form.</p>
+     */
+    public static LibraryTaskDescriptor cublasDgemm(int transa, int transb, int m, int n, int k, //
+            double alpha, DoubleArray matrixA, int lda, DoubleArray matrixB, int ldb, //
+            double beta, DoubleArray matrixC, int ldc) {
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cublasDgemm") //
                 .withParameters(new Object[] { transa, transb, m, n, k, alpha, matrixA, lda, matrixB, ldb, beta, matrixC, ldc }) //
                 .withAccess(readOnlyExcept(13, 11, beta));
     }

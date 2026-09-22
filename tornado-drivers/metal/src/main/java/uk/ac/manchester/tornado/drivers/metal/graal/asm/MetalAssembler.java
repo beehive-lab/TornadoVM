@@ -1186,6 +1186,16 @@ public final class MetalAssembler extends Assembler {
             this.template = template;
         }
 
+        /**
+         * Returns this declaration template with a zero initializer appended, so a private array
+         * declared from an ordinary Java {@code new T[n]} starts out zeroed as the language
+         * requires. The device compiler drops the initializer again wherever it can prove every
+         * element is written before it is read.
+         */
+        public MetalBinaryTemplate withZeroInitializer() {
+            return new MetalBinaryTemplate(opcode + " (zeroed)", template + " = {0}");
+        }
+
         @Override
         public void emit(MetalCompilationResultBuilder crb, Value x, Value y) {
             final MetalAssembler asm = crb.getAssembler();

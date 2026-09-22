@@ -32,6 +32,8 @@ import java.lang.foreign.SymbolLookup;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  * Shared plumbing for the Panama (java.lang.foreign) bindings, which replace the
@@ -88,6 +90,34 @@ public final class FFMSupport {
             }
         }
         return null;
+    }
+
+    /**
+     * Opens a library TornadoVM ships itself, searching {@code java.library.path} before falling
+     * back to {@link #loadLibrary}. dlopen does not read that property, so a shim unpacked into
+     * the SDK's {@code lib/} is not found by soname alone.
+     *
+     * @return the lookup, or {@code null} if none of the candidates could be loaded.
+     */
+    public static SymbolLookup loadBundledLibrary(String... sonames) {
+        String libraryPath = System.getProperty("java.library.path", "");
+        for (String directory : libraryPath.split(java.io.File.pathSeparator)) {
+            if (directory.isEmpty()) {
+                continue;
+            }
+            for (String soname : sonames) {
+                try {
+                    Path candidate = Path.of(directory, soname);
+                    if (!Files.isRegularFile(candidate)) {
+                        continue;
+                    }
+                    return SymbolLookup.libraryLookup(candidate, GLOBAL);
+                } catch (IllegalArgumentException e) {
+                    // Also catches InvalidPathException, a subclass. Try the next candidate.
+                }
+            }
+        }
+        return loadLibrary(sonames);
     }
 
     /**

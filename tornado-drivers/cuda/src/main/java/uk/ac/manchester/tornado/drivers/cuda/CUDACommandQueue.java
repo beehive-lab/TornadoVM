@@ -244,6 +244,7 @@ public class CUDACommandQueue extends CommandQueue {
      */
     private static long recordEvent(CUDAHandles.Queue queue) throws CUDAException {
         long event = createEvent(eventFlags(), "cuEventCreate");
+        queue.markPending();
         int result = CUDADriverAPI.cuEventRecord(event, queue.stream());
         if (result != CUDADriverAPI.CUDA_SUCCESS) {
             CUDADriverAPI.cuEventDestroy(event);
@@ -271,6 +272,7 @@ public class CUDACommandQueue extends CommandQueue {
             return 0;
         }
         long start = createEvent(CU_EVENT_DEFAULT, "cuEventCreate(start)");
+        queue.markPending();
         int result = CUDADriverAPI.cuEventRecord(start, queue.stream());
         if (result != CUDADriverAPI.CUDA_SUCCESS) {
             CUDADriverAPI.cuEventDestroy(start);
@@ -293,6 +295,7 @@ public class CUDACommandQueue extends CommandQueue {
             destroyEvent(start);
             throw e;
         }
+        queue.markPending();
         int result = CUDADriverAPI.cuEventRecord(end, queue.stream());
         if (result != CUDADriverAPI.CUDA_SUCCESS) {
             destroyEvent(start);
@@ -333,6 +336,7 @@ public class CUDACommandQueue extends CommandQueue {
         for (int i = 0; i < count; i++) {
             CUDAHandles.Event event = CUDAHandles.resolve(events[i + 1], CUDAHandles.Event.class);
             if (event != null) {
+                queue.markPending();
                 CUDADriverAPI.cuStreamWaitEvent(queue.stream(), event.event(), 0);
             }
         }
@@ -451,6 +455,7 @@ public class CUDACommandQueue extends CommandQueue {
             CUDADriverAPI.cuCtxSetCurrent(queue.context());
             waitEvents(queue, events);
             long start = beginEvent(queue);
+            queue.markPending();
             int result = CUDADriverAPI.cuLaunchKernel(kernel.function, grid[0], grid[1], grid[2], block[0], block[1], block[2], 0, queue.stream(), kernelParameters(arena, kernel),
                     MemorySegment.NULL);
             long launchEvent = endEvent(start, queue);
@@ -504,9 +509,15 @@ public class CUDACommandQueue extends CommandQueue {
             CUDADriverAPI.cuCtxSetCurrent(queue.context());
             waitEvents(queue, events);
             long start = beginEvent(queue);
+            queue.markPending();
             int result = CUDADriverAPI.cuMemcpyHtoDAsync(devicePointer + deviceOffset, hostPointer + hostOffset, numBytes, queue.stream());
-            result = syncIfNeeded(queue, result, syncAfter);
+            // Record the completion event BEFORE draining, not after. Recording afterwards puts
+            // fresh work on the stream and re-arms `pending`, so the flush that follows an
+            // execution synchronises an otherwise idle stream. With this order the drain covers the
+            // event record too and the stream is genuinely clear afterwards. The event still marks
+            // the end of the copy either way -- it is recorded on the stream after it.
             long event = endEvent(start, queue);
+            result = syncIfNeeded(queue, result, syncAfter);
             if (result != CUDADriverAPI.CUDA_SUCCESS) {
                 discardEvent(event);
                 throw new CUDAException(CUDADriverAPI.describe("cuMemcpyHtoDAsync", result));
@@ -525,9 +536,15 @@ public class CUDACommandQueue extends CommandQueue {
             CUDADriverAPI.cuCtxSetCurrent(queue.context());
             waitEvents(queue, events);
             long start = beginEvent(queue);
+            queue.markPending();
             int result = CUDADriverAPI.cuMemcpyDtoHAsync(hostPointer + hostOffset, devicePointer + deviceOffset, numBytes, queue.stream());
-            result = syncIfNeeded(queue, result, syncAfter);
+            // Record the completion event BEFORE draining, not after. Recording afterwards puts
+            // fresh work on the stream and re-arms `pending`, so the flush that follows an
+            // execution synchronises an otherwise idle stream. With this order the drain covers the
+            // event record too and the stream is genuinely clear afterwards. The event still marks
+            // the end of the copy either way -- it is recorded on the stream after it.
             long event = endEvent(start, queue);
+            result = syncIfNeeded(queue, result, syncAfter);
             if (result != CUDADriverAPI.CUDA_SUCCESS) {
                 discardEvent(event);
                 throw new CUDAException(CUDADriverAPI.describe("cuMemcpyDtoHAsync", result));
@@ -543,8 +560,33 @@ public class CUDACommandQueue extends CommandQueue {
         if (!syncAfter || isCapturing(queue)) {
             return copyResult;
         }
-        int sync = CUDADriverAPI.cuStreamSynchronize(queue.stream());
+        int sync = drain(queue);
         return copyResult != CUDADriverAPI.CUDA_SUCCESS ? copyResult : sync;
+    }
+
+    /**
+     * Synchronises the stream, unless nothing has been enqueued since it was last drained.
+     *
+     * <p>
+     * A task-graph execution ends with a blocking read-back, then a flush, then a wait: three
+     * {@code cuStreamSynchronize} calls, of which the last two are issued against a stream the
+     * read-back already emptied. The driver round trip for those buys nothing, and on a
+     * dispatch-bound plan it is a measurable share of the per-execution cost.
+     *
+     * <p>
+     * The flag is only ever cleared after the driver reports success, so a failed synchronise
+     * leaves the queue marked pending and the next caller tries again rather than assuming the
+     * stream drained.
+     */
+    private static int drain(CUDAHandles.Queue queue) {
+        if (!queue.isPending()) {
+            return CUDADriverAPI.CUDA_SUCCESS;
+        }
+        int result = CUDADriverAPI.cuStreamSynchronize(queue.stream());
+        if (result == CUDADriverAPI.CUDA_SUCCESS) {
+            queue.clearPending();
+        }
+        return result;
     }
 
     /**
@@ -716,7 +758,7 @@ public class CUDACommandQueue extends CommandQueue {
         if (queue == null) {
             return;
         }
-        int result = CUDADriverAPI.cuStreamSynchronize(queue.stream());
+        int result = drain(queue);
         if (result != CUDADriverAPI.CUDA_SUCCESS) {
             throw new CUDAException(CUDADriverAPI.describe("cuStreamSynchronize", result));
         }
@@ -796,6 +838,7 @@ public class CUDACommandQueue extends CommandQueue {
             return CUDA_ERROR_INVALID_VALUE;
         }
         CUDADriverAPI.cuCtxSetCurrent(queue.context());
+        queue.markPending();
         return CUDADriverAPI.cuGraphLaunch(graphExecHandle, queue.stream());
     }
 
@@ -809,9 +852,23 @@ public class CUDACommandQueue extends CommandQueue {
 
     /* ---- Native interop (external libraries, e.g. cuBLAS) ---- */
 
+    /**
+     * Hands the raw stream to an external library (cuBLAS, cuDNN, cuFFT, CUTLASS, ...).
+     *
+     * <p>
+     * Those libraries enqueue on it without going through this class, so the queue is marked
+     * pending here: we cannot see what they do, and skipping a later synchronise because our own
+     * bookkeeping says the stream is idle would read their results before they land. Marking on
+     * handing out the pointer is deliberately conservative -- a library task simply never takes the
+     * skip -- and it costs one flag write per dispatch, not per operation.
+     */
     private static long getStreamPointer(long queueId) {
         CUDAHandles.Queue queue = CUDAHandles.resolve(queueId, CUDAHandles.Queue.class);
-        return queue == null ? 0 : queue.stream();
+        if (queue == null) {
+            return 0;
+        }
+        queue.markPending();
+        return queue.stream();
     }
 
     private static long getContextPointer(long queueId) {

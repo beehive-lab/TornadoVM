@@ -45,9 +45,42 @@ import uk.ac.manchester.tornado.runtime.common.exceptions.TornadoUnsupportedErro
 public class CUDAMemorySegmentWrapper implements XPUBuffer {
 
     private static final int INIT_VALUE = -1;
+
+    /**
+     * Alignment, in bytes, that the first data element of a native array is placed on.
+     *
+     * <p>
+     * A warp reads 32 x 4 = 128 contiguous bytes and the L1-to-L2 path is addressed in 32-byte sectors, so an aligned
+     * warp-wide access is served by exactly 4 sectors. {@code cuMemAlloc} returns a suitably aligned base, but the
+     * generated kernel reaches the data at {@code base + ARRAY_HEADER} -- 16 bytes in -- and that sub-sector offset
+     * makes every warp-wide access straddle a fifth sector: 5 transactions instead of 4.
+     * </p>
+     *
+     * <p>
+     * Only sub-sector misalignment costs anything, so <b>32 bytes is sufficient</b> and is the default. Measured on an
+     * RTX 4090 (sm_89) by sweeping the base offset of a single compiled kernel, varying nothing else: a payload on a
+     * 32-, 64- or 128-byte boundary all give 4.00 sectors per request, while the current 16-byte offset gives 5.00.
+     * Aligning to 128 instead would pad every buffer by 112 bytes rather than 16 for the same sector count.
+     * </p>
+     */
+    private static final long PAYLOAD_ALIGNMENT = Long.getLong("tornado.cuda.payloadAlignment", 32L);
+
+    /**
+     * Bytes prepended to the device allocation so that {@code base + HEADER_PAD + ARRAY_HEADER} is
+     * {@link #PAYLOAD_ALIGNMENT}-aligned. The kernel is handed the padded pointer and still indexes at
+     * {@code + ARRAY_HEADER}, so the generated code and any pre-built kernel are unchanged -- only where the buffer
+     * starts moves.
+     */
+    private static final long HEADER_PAD = PAYLOAD_ALIGNMENT <= 0 ? 0 : Math.floorMod(-TornadoNativeArray.ARRAY_HEADER, PAYLOAD_ALIGNMENT);
+
     private final CUDADeviceContext deviceContext;
     private final long batchSize;
     private long bufferId;
+    /**
+     * The address the buffer provider handed out, which is what has to be given back on release. {@link #bufferId} is
+     * this plus {@link #HEADER_PAD} whenever this wrapper owns its allocation.
+     */
+    private long bufferIdBase;
     private long bufferOffset;
     private long bufferSize;
 
@@ -63,6 +96,7 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
         this.batchSize = batchSize;
         this.bufferSize = bufferSize;
         this.bufferId = INIT_VALUE;
+        this.bufferIdBase = INIT_VALUE;
         this.bufferOffset = 0;
         this.access = access;
         this.sizeOfType = sizeOfType;
@@ -91,7 +125,10 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
 
     @Override
     public void setBuffer(XPUBufferWrapper bufferWrapper) {
+        // A buffer handed over by someone else: it is not ours to pad or to release, so bufferIdBase tracks it
+        // unchanged and no alignment padding is applied.
         this.bufferId = bufferWrapper.buffer;
+        this.bufferIdBase = bufferWrapper.buffer;
         this.bufferOffset = bufferWrapper.bufferOffset;
 
         bufferWrapper.bufferOffset += bufferSize;
@@ -201,11 +238,19 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
         segment = getSegmentWithHeader(reference);
 
         if (batchSize <= 0) {
+            // HEADER_PAD extra bytes are requested and skipped over, so that the data the kernel reaches at
+            // base + ARRAY_HEADER starts on a PAYLOAD_ALIGNMENT boundary. Every transfer below is expressed relative
+            // to toBuffer(), so shifting the base shifts the header and the payload together.
             bufferSize = segment.byteSize();
-            bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize, access);
+            bufferIdBase = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize + HEADER_PAD, access);
+            bufferId = bufferIdBase + HEADER_PAD;
         } else {
+            // Batched slots are not padded. The slot size is chosen by the user (e.g. withBatch("300MB")) and is
+            // checked against the device heap, so growing the request by HEADER_PAD would turn an allocation that
+            // exactly fits into one that does not.
             bufferSize = batchSize;
-            bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize + TornadoNativeArray.ARRAY_HEADER, access);
+            bufferIdBase = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize + TornadoNativeArray.ARRAY_HEADER, access);
+            bufferId = bufferIdBase;
         }
 
         // Pin the full host segment so async H2D/D2H transfers DMA directly (no driver
@@ -252,8 +297,9 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
             pinnedHostPointer = 0;
         }
 
-        deviceContext.getBufferProvider().markBufferReleased(bufferId, access);
+        deviceContext.getBufferProvider().markBufferReleased(bufferIdBase, access);
         bufferId = INIT_VALUE;
+        bufferIdBase = INIT_VALUE;
         bufferSize = INIT_VALUE;
 
         if (TornadoOptions.FULL_DEBUG) {
@@ -293,6 +339,9 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
         final long sizeSource = oclMemorySegmentWrapper.bufferSize;
         final long sizeDest = bufferSize;
         this.bufferId = deviceContext.mapOnDeviceMemoryRegion(executionPlanId, this.bufferId, oclMemorySegmentWrapper.bufferId, offset, sizeOfType, sizeSource, sizeDest);
+        // The mapped region replaces this wrapper's allocation; keep release behaviour exactly as it was before the
+        // alignment padding was introduced, i.e. hand back whatever bufferId now points at.
+        this.bufferIdBase = this.bufferId;
     }
 
     @Override

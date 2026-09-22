@@ -986,6 +986,16 @@ public final class OCLAssembler extends Assembler {
             this.template = template;
         }
 
+        /**
+         * Returns this declaration template with a zero initializer appended, so a private array
+         * declared from an ordinary Java {@code new T[n]} starts out zeroed as the language
+         * requires. The device compiler drops the initializer again wherever it can prove every
+         * element is written before it is read.
+         */
+        public OCLBinaryTemplate withZeroInitializer() {
+            return new OCLBinaryTemplate(opcode + " (zeroed)", template + " = {0}");
+        }
+
         @Override
         public void emit(OCLCompilationResultBuilder crb, Value x, Value y) {
             final OCLAssembler asm = crb.getAssembler();

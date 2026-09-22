@@ -1,0 +1,177 @@
+/*
+ * Copyright (c) 2026, APT Group, Department of Computer Science,
+ * The University of Manchester.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+package uk.ac.manchester.tornado.api.tile;
+
+import uk.ac.manchester.tornado.api.types.HalfFloat;
+import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
+import uk.ac.manchester.tornado.api.types.arrays.FP8Array;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+
+/**
+ * A multi-dimensional view over a device buffer: shape and strides attached to a pointer,
+ * the analogue of {@code ct::tensor_span}.
+ *
+ * <p>
+ * Extents may be runtime values. Only the tile shape of a {@link PartitionView} has to be
+ * a compile-time constant, so problem size does not specialise a kernel.
+ * </p>
+ */
+public final class TensorView {
+
+    private final Object buffer;
+    private final DType dtype;
+    private final int[] extents;
+
+    /** Element offset of the view's first element within the buffer. */
+    private final int elementOffset;
+
+    /**
+     * Elements between the start of one row and the next, or 0 for a contiguous view.
+     *
+     * <p>
+     * An interleaved format needs this: GGUF's Q4_0 block is {@code [fp16 scale][16 nibble
+     * bytes]}, so the scales are every ninth {@code __half} and the nibbles are 16 usable bytes
+     * of every 18 starting at byte 2. Both are one strided view over the same allocation.
+     * </p>
+     */
+    private final int rowStride;
+
+    TensorView(Object buffer, DType dtype, int[] extents) {
+        this(buffer, dtype, extents, 0, 0);
+    }
+
+    TensorView(Object buffer, DType dtype, int[] extents, int elementOffset, int rowStride) {
+        this.buffer = buffer;
+        this.dtype = dtype;
+        this.extents = extents;
+        this.elementOffset = elementOffset;
+        this.rowStride = rowStride;
+    }
+
+    public int getElementOffset() {
+        return elementOffset;
+    }
+
+    /** @return the row pitch in elements, or 0 when the view is contiguous */
+    public int getRowStride() {
+        return rowStride;
+    }
+
+    /**
+     * Maps a row-major position within the view to a linear index in the buffer, applying the
+     * offset and the row pitch.
+     */
+    int linearIndexOf(int row, int column) {
+        int pitch = rowStride > 0 ? rowStride : (extents.length == 2 ? extents[1] : 1);
+        return elementOffset + row * pitch + column;
+    }
+
+    public DType getDType() {
+        return dtype;
+    }
+
+    public int getRank() {
+        return extents.length;
+    }
+
+    public int getExtent(int axis) {
+        return extents[axis];
+    }
+
+    int[] getExtents() {
+        return extents;
+    }
+
+    Object getBuffer() {
+        return buffer;
+    }
+
+    /**
+     * Reads one element by linear index. JVM fallback only; on the accelerator the whole
+     * enclosing tile load becomes a single tile-level operation.
+     */
+    double readLinear(int index) {
+        if (buffer instanceof FloatArray floatArray) {
+            return floatArray.get(index);
+        } else if (buffer instanceof HalfFloatArray halfFloatArray) {
+            return halfFloatArray.get(index).getFloat32();
+        } else if (buffer instanceof BFloat16Array bfloatArray) {
+            return bfloatArray.getFloat(index);
+        } else if (buffer instanceof IntArray intArray) {
+            return intArray.get(index);
+        } else if (buffer instanceof Int8Array int8Array) {
+            return int8Array.get(index);
+        } else if (buffer instanceof DoubleArray doubleArray) {
+            return doubleArray.get(index);
+        } else if (buffer instanceof FP8Array fp8Array) {
+            // The format lives on the view, not the buffer, so the JVM path reads the raw byte
+            // through whichever accessor the view's element type names.
+            return dtype == DType.FP8_E5M2 ? fp8Array.getE5M2(index) : fp8Array.getE4M3(index);
+        } else if (buffer instanceof ByteArray byteArray) {
+            // A ByteArray is a raw buffer, so the view's element type decides how to read it and
+            // the index is in units of that type - which is what lets one packed buffer be read
+            // as bytes and as halves by two views.
+            return dtype == DType.F16 ? byteArray.getHalfFloat(index * 2).getFloat32() : byteArray.get(index);
+        }
+        throw new UnsupportedOperationException(unsupported());
+    }
+
+    /**
+     * Writes one element by linear index. JVM fallback only.
+     */
+    void writeLinear(int index, double value) {
+        if (buffer instanceof FloatArray floatArray) {
+            floatArray.set(index, (float) value);
+        } else if (buffer instanceof HalfFloatArray halfFloatArray) {
+            halfFloatArray.set(index, new HalfFloat((float) value));
+        } else if (buffer instanceof BFloat16Array bfloatArray) {
+            bfloatArray.setFloat(index, (float) value);
+        } else if (buffer instanceof IntArray intArray) {
+            intArray.set(index, (int) value);
+        } else if (buffer instanceof Int8Array int8Array) {
+            int8Array.set(index, (byte) value);
+        } else if (buffer instanceof DoubleArray doubleArray) {
+            doubleArray.set(index, value);
+        } else if (buffer instanceof FP8Array fp8Array) {
+            if (dtype == DType.FP8_E5M2) {
+                fp8Array.setE5M2(index, (float) value);
+            } else {
+                fp8Array.setE4M3(index, (float) value);
+            }
+        } else if (buffer instanceof ByteArray byteArray) {
+            if (dtype == DType.F16) {
+                byteArray.setHalfFloat(index * 2, new HalfFloat((float) value));
+            } else {
+                byteArray.set(index, (byte) value);
+            }
+        } else {
+            throw new UnsupportedOperationException(unsupported());
+        }
+    }
+
+    private String unsupported() {
+        return "[TileContext] The JVM fallback path does not model " + buffer.getClass().getName()
+                + " yet. Supported today: FloatArray, HalfFloatArray, BFloat16Array, IntArray, Int8Array, DoubleArray,"
+                + " FP8Array, ByteArray. The accelerator path is unaffected.";
+    }
+}

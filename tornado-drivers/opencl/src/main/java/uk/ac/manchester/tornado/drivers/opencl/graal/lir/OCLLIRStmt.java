@@ -217,6 +217,80 @@ public class OCLLIRStmt {
 
     }
 
+    @Opcode("INT_BITS_TO_HALF")
+    public static class IntBitsToHalfStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<IntBitsToHalfStmt> TYPE = LIRInstructionClass.create(IntBitsToHalfStmt.class);
+
+        @Def
+        protected Value halfValue;
+        @Use
+        protected Value bits;
+
+        public IntBitsToHalfStmt(Value halfValue, Value bits) {
+            super(TYPE);
+            this.halfValue = halfValue;
+            this.bits = bits;
+        }
+
+        @Override
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            // { ushort __hbits = (ushort) bits; half_value = *((__private half *) &__hbits); }
+            //
+            // The inverse of HalfBitsToIntStmt, through a pointer for the same reason: as_half() has
+            // no unambiguous overload for an integer argument on every implementation. The cast to
+            // ushort drops the sign extension a short picks up on the Java operand stack, so a half
+            // with the sign bit set keeps its bit pattern.
+            String temporary = "__hbits_" + asm.getStringValue(crb, halfValue);
+            asm.indent();
+            asm.emit("{ ushort " + temporary + " = (ushort) ");
+            asm.emitValueOrOp(crb, bits);
+            asm.emit("; ");
+            asm.emitValue(crb, halfValue);
+            asm.emit(" = *((__private half *) &" + temporary + "); }");
+            asm.eol();
+        }
+    }
+
+    @Opcode("HALF_BITS_TO_INT")
+    public static class HalfBitsToIntStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<HalfBitsToIntStmt> TYPE = LIRInstructionClass.create(HalfBitsToIntStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value halfValue;
+
+        public HalfBitsToIntStmt(Value result, Value halfValue) {
+            super(TYPE);
+            this.result = result;
+            this.halfValue = halfValue;
+        }
+
+        @Override
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            // { half __hbits = <half value>; s32_result = (int) *((__private short *) &__hbits); }
+            //
+            // A reinterpretation, not a conversion: the 16 bits are kept as they are, where a cast
+            // would renumber them. It goes through a pointer rather than as_ushort() because the
+            // half overload of as_ushort() is not universally provided - NVIDIA's OpenCL rejects
+            // `as_ushort(half)` as ambiguous between its short and ushort overloads - while reading
+            // the object back through a short pointer is plain OpenCL C that every implementation
+            // accepts. The temporary gives the value an address, so this also works when the operand
+            // is an inlined expression rather than a variable; the enclosing block keeps its name
+            // from colliding with another statement's.
+            String temporary = "__hbits_" + asm.getStringValue(crb, result);
+            asm.indent();
+            asm.emit("{ half " + temporary + " = ");
+            asm.emitValueOrOp(crb, halfValue);
+            asm.emit("; ");
+            asm.emitValue(crb, result);
+            asm.emit(" = (int) *((__private short *) &" + temporary + "); }");
+            asm.eol();
+        }
+    }
+
     @Opcode("CONVERT_FLOAT_TO_HALF")
     public static class ConvertFloatToHalfStmt extends AbstractInstruction {
 

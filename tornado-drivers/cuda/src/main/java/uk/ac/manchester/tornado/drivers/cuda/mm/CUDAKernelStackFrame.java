@@ -57,6 +57,19 @@ public class CUDAKernelStackFrame extends CUDAByteBuffer implements KernelStackF
     /** Off-heap host buffer backing {@code buffer}, or 0 when allocation fell back to heap. */
     private long hostPointer;
 
+    /**
+     * Snapshot of the frame slots as they currently sit in device memory, and the execution plan
+     * that put them there. The frame is re-uploaded on every launch even though its contents are
+     * identical across iterations for the common case (no {@code KernelContext}, so all slots are
+     * zero), which costs a {@code cuMemcpyHtoDAsync} plus an event pair per launch. Comparing the
+     * host slots against this snapshot lets an unchanged frame skip the transfer entirely.
+     */
+    private final long[] deviceSlots = new long[RESERVED_SLOTS];
+
+    private boolean deviceSlotsValid;
+
+    private long deviceSlotsPlanId;
+
     CUDAKernelStackFrame(long bufferId, int numArgs, CUDADeviceContext device) {
         super(device, bufferId, 0, FRAME_BYTES);
         this.callArguments = new ArrayList<>(numArgs);
@@ -90,6 +103,7 @@ public class CUDAKernelStackFrame extends CUDAByteBuffer implements KernelStackF
     @Override
     public void invalidate() {
         isValid = false;
+        deviceSlotsValid = false;
         if (hostPointer != 0) {
             // Unregister (native side synchronises the context first) BEFORE freeing, so
             // no stale pin can survive the host buffer.
@@ -100,13 +114,22 @@ public class CUDAKernelStackFrame extends CUDAByteBuffer implements KernelStackF
         deviceContext.getPlatformContext().releaseBuffer(toBuffer());
     }
 
-    /** Async device write from the off-heap (pinned) host frame: no per-launch stream sync. */
+    /**
+     * Async device write from the off-heap (pinned) host frame: no per-launch stream sync.
+     * Returns {@code -1} when the device copy already holds these slots and the transfer was
+     * skipped; that value is the established "no event" marker in dependency lists.
+     */
     @Override
     public int enqueueWrite(long executionPlanId, final int[] events) {
         if (hostPointer == 0) {
             return super.enqueueWrite(executionPlanId, events);
         }
-        return deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), getOffset(), FRAME_BYTES, hostPointer, 0, events);
+        if (deviceCopyIsUpToDate(executionPlanId)) {
+            return -1;
+        }
+        int event = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), getOffset(), FRAME_BYTES, hostPointer, 0, events);
+        snapshotDeviceCopy(executionPlanId);
+        return event;
     }
 
     /** Blocking device write from the off-heap host frame (used by the CUDA-graph capture flush). */
@@ -117,6 +140,32 @@ public class CUDAKernelStackFrame extends CUDAByteBuffer implements KernelStackF
             return;
         }
         deviceContext.writeBuffer(executionPlanId, toBuffer(), getOffset(), FRAME_BYTES, hostPointer, 0, events);
+        snapshotDeviceCopy(executionPlanId);
+    }
+
+    /**
+     * Whether the device copy already matches the host frame. Only claimed for a plan that issues
+     * on a single stream: under intra-plan concurrency the launch may run on a different queue from
+     * the one that carried the write, and skipping would drop the ordering the write event provides.
+     */
+    private boolean deviceCopyIsUpToDate(long executionPlanId) {
+        if (!deviceSlotsValid || deviceSlotsPlanId != executionPlanId || deviceContext.isMultiStreamEnabled(executionPlanId)) {
+            return false;
+        }
+        for (int i = 0; i < RESERVED_SLOTS; i++) {
+            if (buffer.getLong(i << 3) != deviceSlots[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void snapshotDeviceCopy(long executionPlanId) {
+        for (int i = 0; i < RESERVED_SLOTS; i++) {
+            deviceSlots[i] = buffer.getLong(i << 3);
+        }
+        deviceSlotsValid = true;
+        deviceSlotsPlanId = executionPlanId;
     }
 
     @Override

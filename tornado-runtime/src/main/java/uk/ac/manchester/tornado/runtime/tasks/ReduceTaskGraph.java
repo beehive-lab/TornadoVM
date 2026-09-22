@@ -40,6 +40,7 @@ import tornado.graal.compiler.nodes.StructuredGraph;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.tile.TileContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
@@ -544,7 +545,11 @@ class ReduceTaskGraph {
             // (computation)
             for (int i = 1; i < (taskParameters.length - 1); i++) {
                 Object parameter = taskParameters[i];
-                if (parameter instanceof Number || parameter instanceof KernelContext) {
+                // TileContext is host-side only for the same reason KernelContext is: it exists
+                // to be intrinsified and is never transferred. This check is separate from the
+                // one in TornadoTaskGraph, so a graph that mixes a tile task with a reduction
+                // reaches this one instead and needs the same exemption.
+                if (parameter instanceof Number || parameter instanceof KernelContext || parameter instanceof TileContext) {
                     continue;
                 }
                 if (!rewrittenTaskGraph.getArgumentsLookup().contains(parameter)) {

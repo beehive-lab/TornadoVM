@@ -109,7 +109,15 @@ RED    = "\033[91m"
 
 
 def _print(prefix_color, prefix, msg):
-    print(f"{prefix_color}{prefix}{RESET} {msg}")
+    line = f"{prefix_color}{prefix}{RESET} {msg}"
+    try:
+        print(line)
+    except UnicodeEncodeError:
+        # The console's active code page (e.g. cp1252/cp437 on Windows) may not
+        # cover every character we print (e.g. the U+2192 arrow). Don't let a
+        # cosmetic log line crash an otherwise-successful build.
+        encoding = sys.stdout.encoding or "ascii"
+        print(line.encode(encoding, errors="replace").decode(encoding))
 
 def info(msg):  _print(CYAN,   "[INFO]",  msg)
 def ok(msg):    _print(GREEN,  "[OK]",    msg)

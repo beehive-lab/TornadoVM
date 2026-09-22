@@ -28,6 +28,7 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCL
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.Value;
@@ -144,7 +145,8 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitFloatConvert: (%s) %s", floatConvert, input);
         switch (floatConvert) {
             case I2D:
-                return emitUnaryAssign(OCLUnaryOp.CAST_TO_DOUBLE, LIRKind.value(OCLKind.DOUBLE), input);
+                // I2D reads its operand as a Java int, so the signed reinterpretation is 32-bit wide.
+                return emitUnaryAssign(OCLUnaryOp.CAST_TO_DOUBLE, LIRKind.value(OCLKind.DOUBLE), asSignedOperand(input, JavaKind.Int.getBitCount()));
             default:
                 unimplemented("float convert %s", floatConvert);
         }
@@ -224,11 +226,25 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
         return emitUnaryAssign(getSignExtendOp(toBits), lirKind, x);
     }
 
+    /**
+     * Reinterprets {@code x} as a signed {@code bits}-wide value when the backend holds it
+     * in an unsigned variable. A zero extension such as {@code b & 0xFF} is emitted as an
+     * {@code unsigned int} and the signed arithmetic applied afterwards keeps that kind
+     * even once the value crosses zero, so widening it without the reinterpretation would
+     * turn -8 into 4294967288. Values that already carry a signed kind are left alone.
+     */
+    private Value asSignedOperand(Value x, int bits) {
+        if (x.getValueKind() == null || !(x.getPlatformKind() instanceof OCLKind kind) || !kind.isUnsigned()) {
+            return x;
+        }
+        return genUnaryExpr(getSignExtendOp(bits), getGen().getLIRKindTool().getIntegerKind(bits), x);
+    }
+
     @Override
     public Value emitSignExtend(Value x, int fromBits, int toBits) {
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitSignExtend: %s, %d, %d", x, fromBits, toBits);
         LIRKind lirKind = getGen().getLIRKindTool().getIntegerKind(toBits);
-        return emitUnaryAssign(getSignExtendOp(toBits), lirKind, x);
+        return emitUnaryAssign(getSignExtendOp(toBits), lirKind, asSignedOperand(x, fromBits));
     }
 
     @Override

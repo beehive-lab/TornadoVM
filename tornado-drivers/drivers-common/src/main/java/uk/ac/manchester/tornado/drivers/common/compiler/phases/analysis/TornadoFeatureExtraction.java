@@ -67,6 +67,7 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkFloatingPoint
 import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkGlobalThreadID;
 import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkIntIntrinsicNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkLocalArray;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkReadNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkWriteNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkVectorLoad;
 import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkVectorValueNode;
@@ -103,7 +104,7 @@ public class TornadoFeatureExtraction extends Phase {
                 updateWithType(irFeatures, node);
             } else if (node instanceof MarkWriteNode || node instanceof WriteNode) {
                 updateMemoryAccesses(irFeatures, node, false);
-            } else if (node instanceof FloatingReadNode || node instanceof ReadNode) {
+            } else if (node instanceof FloatingReadNode || node instanceof ReadNode || node instanceof MarkReadNode) {
                 updateMemoryAccesses(irFeatures, node, true);
             } else if (node instanceof LoopBeginNode) {
                 updateCounter(irFeatures, ProfilerCodeFeatures.LOOPS);

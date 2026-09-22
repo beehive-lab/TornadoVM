@@ -107,6 +107,11 @@
                 </dependency>
                 <dependency>
                     <groupId>${project.groupId}</groupId>
+                    <artifactId>tornado-curand</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
                     <artifactId>tornado-cufft</artifactId>
                     <version>${project.version}</version>
                 </dependency>
@@ -125,6 +130,17 @@
                     <groupId>${project.groupId}</groupId>
                     <artifactId>tornado-cusparse</artifactId>
                     <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>tornado-cudf</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>tornado-drivers-cudf-jni</artifactId>
+                    <version>${project.version}</version>
+                    <classifier>libs</classifier>
                 </dependency>
                 <dependency>
                     <groupId>${project.groupId}</groupId>

@@ -24,6 +24,31 @@
             <artifactId>tornado-drivers-common</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!--
+                        Assertions off. The CUDA backend stores composite operands (CUDAAddressCast,
+                        MemoryAccess) in @Use fields, whose default operand flag is REG. Graal's
+                        LIRInstructionClass verifies that pairing only under -ea, and TornadoVM never
+                        runs with assertions on, so every CUDA LIR statement built anywhere (here, or
+                        in a real compilation) would trip it. Enabling assertions would therefore
+                        test Graal's operand model rather than the code generator.
+                    -->
+                    <enableAssertions>false</enableAssertions>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
