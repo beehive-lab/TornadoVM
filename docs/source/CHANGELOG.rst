@@ -7,6 +7,43 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 
 CHANGELOG
 
+TornadoVM 7.0.0
+---------------
+22/09/26
+
+Compatibility
+~~~~~~~~~~~~
+
+- `#1112 <https://github.com/beehive-lab/TornadoVM/pull/1112>`_: [docs] Document the TileContext API in the programming guide and rename the Kernel API section to KernelContext API
+
+Bug Fixes
+~~~~~~~~~~~~
+
+- `#1098 <https://github.com/beehive-lab/TornadoVM/pull/1098>`_: [cuda] Let a converted half be read back as a value, not only stored
+
+Other Changes
+~~~~~~~~~~~~
+
+- `#1092 <https://github.com/beehive-lab/TornadoVM/pull/1092>`_: Zero-initialize private arrays allocated with new T[n]
+- `#1113 <https://github.com/beehive-lab/TornadoVM/pull/1113>`_: [metal] Read a half numerically for getFloat32(), not as its bit pattern
+- `#1110 <https://github.com/beehive-lab/TornadoVM/pull/1110>`_: Add a cuDF library-task provider
+- `#1111 <https://github.com/beehive-lab/TornadoVM/pull/1111>`_: Feature/readme
+- `#1103 <https://github.com/beehive-lab/TornadoVM/pull/1103>`_: [metal] Let a converted half be read back as a value, not only stored (untested: needs a macOS run)
+- `#1094 <https://github.com/beehive-lab/TornadoVM/pull/1094>`_: [cuda] Support constant-index reads of an MMA accumulator fragment
+- `#1102 <https://github.com/beehive-lab/TornadoVM/pull/1102>`_: [opencl] Let a converted half be stored and read back as a value
+- `#1107 <https://github.com/beehive-lab/TornadoVM/pull/1107>`_: Make recover.bailout off by default
+- `#1109 <https://github.com/beehive-lab/TornadoVM/pull/1109>`_: [test] Register four unittest classes that tornado-test never ran
+- `#1101 <https://github.com/beehive-lab/TornadoVM/pull/1101>`_: [cuda] In-kernel reads of int32 MMA accumulator elements and byte-offset int8 fragment loads
+- `#1108 <https://github.com/beehive-lab/TornadoVM/pull/1108>`_: [cuda] Compile FP8 tile arithmetic through FP32
+- `#1099 <https://github.com/beehive-lab/TornadoVM/pull/1099>`_: [cuda] Reinterpret the bits a HalfFloat(short) carries, instead of converting them
+- `#1106 <https://github.com/beehive-lab/TornadoVM/pull/1106>`_: [ci] Stop pull requests queueing behind each other on the self-hosted runners
+- `#1093 <https://github.com/beehive-lab/TornadoVM/pull/1093>`_: [cuda] Include cuda_fp16.h for kernels whose only fp16 use is a shared half tile
+- `#1091 <https://github.com/beehive-lab/TornadoVM/pull/1091>`_: Fix signed integer conversion of unsigned intermediates
+- `#1083 <https://github.com/beehive-lab/TornadoVM/pull/1083>`_: [cuTile] Java CUDA Tile (cuTile) execution path to the CUDA backend as TileContext  API
+- `#1086 <https://github.com/beehive-lab/TornadoVM/pull/1086>`_: Fix CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES on register-heavy 1D kernels
+- `#1085 <https://github.com/beehive-lab/TornadoVM/pull/1085>`_: Add a Method-based task API so kernels generated at run time can be used
+
+
 TornadoVM 6.1.0
 ---------------
 10/09/26
