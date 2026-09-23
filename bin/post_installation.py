@@ -145,23 +145,46 @@ def update_backend_file(selected_backends_str):
             print(f"  Actual:   {actual_content.strip()}")
 
 
+# Which jars out of graalJars/ belong in which SDK directory. These MUST stay in step with
+# the two ../graalJars filesets in tornado-assembly/assembly.xml: graalJars/ is a staging area
+# that also holds the raw GraalVM downloads (compiler, truffle-api, polyglot, graal-sdk,
+# compiler-management) which the relocation step supersedes, so copying it wholesale ships jars
+# the launcher must never see. share/java/graalJars goes on --upgrade-module-path as a WHOLE:
+# a stray jvmci-*.jar there is a module named jdk.internal.vm.ci, and upgrading a module that
+# java.base records a hash for aborts the JVM at boot-layer creation with
+# "Hash of jdk.internal.vm.ci ... differs to expected hash recorded in java.base".
+GRAAL_JARS_SDK_LAYOUT = (
+    # (SDK subdirectory under share/java, filename prefixes to copy there)
+    ("graalJars", ("tornado-graal-", "truffle-compiler-", "collections-", "word-")),
+    # Vendored jdk.internal.vm.ci: a separate directory because the launcher adds it to the
+    # module-path only on JDK 27+, and --patch-module's it on 22-26.
+    ("jvmci", ("jvmci-",)),
+)
+
+
 def copy_graal_jars():
     """
-    Copy GraalVM JAR files to the Tornado SDK.
+    Copy the vendored GraalVM JAR files to the Tornado SDK.
 
-    This function checks the Java version and copies GraalVM JAR files to the Tornado SDK's 'share/java/graalJars'
-    directory if the Java environment is not GraalVM.
+    This function checks the Java version and, if the Java environment is not GraalVM, copies
+    the jars staged in 'graalJars' into the Tornado SDK, filtered and split across
+    'share/java/graalJars' and 'share/java/jvmci' exactly as the Maven assembly does.
     """
     tornado_sdk_path = os.environ.get("TORNADOVM_HOME")
     java_version_output = subprocess.check_output(
         ["java", "-version"], stderr=subprocess.STDOUT, universal_newlines=True
     )
 
-    if "GraalVM" not in java_version_output:
-        graal_jars_dir = os.path.join(os.getcwd(), "graalJars")
-        destination_dir = os.path.join(tornado_sdk_path, "share", "java", "graalJars")
+    if "GraalVM" in java_version_output:
+        return
+
+    graal_jars_dir = os.path.join(os.getcwd(), "graalJars")
+    for subdirectory, prefixes in GRAAL_JARS_SDK_LAYOUT:
+        destination_dir = os.path.join(tornado_sdk_path, "share", "java", subdirectory)
         os.makedirs(destination_dir, exist_ok=True)
         for filename in os.listdir(graal_jars_dir):
+            if not filename.startswith(prefixes) or not filename.endswith(".jar"):
+                continue
             source_file = os.path.join(graal_jars_dir, filename)
             destination_file = os.path.join(destination_dir, filename)
             if os.path.isfile(source_file):

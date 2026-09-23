@@ -35,6 +35,7 @@ Usage:
 """
 
 import os
+import re
 import subprocess
 import sys
 
@@ -44,17 +45,78 @@ def is_win_or_bat():
     return os.name == 'nt'
 
 
-def get_java_profile():
+def query_java_version(java_home):
     """
-    Determine the Java profile based on JAVA_HOME.
+    Run `$JAVA_HOME/bin/java -version` and return its output.
+
+    Args:
+        java_home: Path to the JDK to interrogate.
 
     Returns:
-        str: "graal-jdk-21" if using GraalVM, "jdk21" otherwise.
+        str: The `java -version` output, or "" if it could not be run.
+    """
+    java_cmd = os.path.join(java_home, "bin", "java")
+    try:
+        return subprocess.check_output(
+            [java_cmd, "-version"], stderr=subprocess.STDOUT, universal_newlines=True
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return ""
+
+
+def parse_major_version(java_version_output):
+    """
+    Extract the JDK feature/major version from `java -version` output, e.g.
+    'openjdk version "21.0.2" ...' -> 21, 'openjdk version "27-ea" ...' -> 27.
+
+    Returns:
+        int: The major version, or None if it could not be parsed.
+    """
+    match = re.search(r'version "(\d+)', java_version_output)
+    return int(match.group(1)) if match else None
+
+
+def get_java_profile():
+    """
+    Determine the Java profile from the JDK that JAVA_HOME actually points at.
+
+    The version has to be detected rather than assumed: the profile selects compiler
+    flags and JVMCI dependencies, and -Pjdk21 compiles with --enable-preview plus the
+    JDK's own jdk.internal.vm.ci exports. Those are wrong for any newer JDK -- and on
+    JDK 27, where that module no longer exists, they do not even compile. One
+    jdk22plus profile covers every JDK from 22 up (see the Makefile's jdk22plus
+    comment); graal-jdk-21 is the only profile that takes Graal from the JDK itself,
+    so a GraalVM at 22+ still builds as jdk22plus with vendored Graal jars.
+
+    Returns:
+        str: "jdk21", "graal-jdk-21" or "jdk22plus".
     """
     java_home = os.environ.get("JAVA_HOME", "")
-    if "graal" in java_home.lower():
-        return "graal-jdk-21"
-    return "jdk21"
+    if not java_home:
+        print("[WARNING] JAVA_HOME is not set; assuming the jdk21 profile.")
+        return "jdk21"
+
+    java_version_output = query_java_version(java_home)
+    major = parse_major_version(java_version_output)
+    if major is None:
+        print(f"[WARNING] Could not determine the JDK version of {java_home}; "
+              "assuming the jdk21 profile.")
+        return "jdk21"
+
+    if major < 21:
+        # `java -version` reports JDK 8 as "1.8.0_x", so quote the version line itself
+        # rather than the parsed major, which would read as a bare "JDK 1".
+        version_line = java_version_output.strip().splitlines()[0]
+        print("[ERROR] TornadoVM requires JDK 21 or newer, but JAVA_HOME is older:")
+        print(f"  {java_home}")
+        print(f"  {version_line}")
+        sys.exit(1)
+
+    if major >= 22:
+        return "jdk22plus"
+
+    is_graal = "graalvm" in java_version_output.lower() or "graal" in java_home.lower()
+    return "graal-jdk-21" if is_graal else "jdk21"
 
 
 def compute_tornado_backend_variant(backends):
@@ -117,6 +179,7 @@ def run_maven(backends):
     print("=" * 70)
     print(f"Backends:        {', '.join(backends)}")
     print(f"Java Profile:    {java_profile}")
+    print(f"JAVA_HOME:       {os.environ.get('JAVA_HOME', '<unset>')}")
     print(f"Tornado Backend: {tornado_backend}")
     print(f"Maven Command:   {' '.join(maven_args)}")
     print("=" * 70)
