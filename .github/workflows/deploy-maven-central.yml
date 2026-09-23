@@ -8,8 +8,13 @@ name: 4 - Deploy Maven Central [auto]
 # are even built). Explicit dispatch also lets draft_release_test be passed
 # straight through instead of having to guess it from the triggering run.
 #
-# tornado-api/tornado-runtime/tornado-matrices are portable pure-Java modules
-# (no JDK-native backend code), but are still deployed once PER JDK PROFILE
+# The deployed modules are portable pure-Java: tornado-api (including the
+# cuTile TileContext API), tornado-runtime, tornado-matrices, the CUDA backend
+# tornado-drivers-cuda (which compiles cuTile kernels) with its parent and
+# tornado-drivers-common, and the CUDA library bindings tornado-cublas/-cudnn/
+# -cufft/-curand/-cusparse/-cudf/-cutlass. The bindings load the NVIDIA libraries
+# through java.lang.foreign at run time; the native *-jni shims some of them use
+# are built per platform and ship only in the SDK. Each module is still deployed once PER JDK PROFILE
 # under 2 distinct Maven Central coordinates (X.Y.Z-jdk21/-jdk22plus) — the
 # jdk21 and jdk22plus Maven profiles are the only ones left (see bin/compile's
 # SDK_JDK_CONTRACT); jdk22plus covers every JDK from 22 up in one coordinate —
@@ -152,9 +157,11 @@ jobs:
       - name: Deploy to Maven Central
         if: ${{ inputs.draft_release_test != true }}
         run: |
+          # cuda-backend only puts tornado-drivers/cuda in the reactor; -pl keeps the native
+          # *-jni shims (CMake, need the CUDA toolkit) out, and they stay in the SDK.
           mvn clean deploy \
-            -P${{ matrix.jdk }},release \
-            -pl tornado-api,tornado-runtime,tornado-matrices \
+            -P${{ matrix.jdk }},cuda-backend,release \
+            -pl tornado-api,tornado-runtime,tornado-matrices,tornado-drivers/cuda,tornado-cublas,tornado-cudnn,tornado-cufft,tornado-curand,tornado-cusparse,tornado-cudf,tornado-cutlass \
             -am \
             -DskipTests \
             --batch-mode
