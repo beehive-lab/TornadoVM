@@ -33,3 +33,7 @@ OpenCL-Headers/
 tornado-assembly/src/etc/tornado.backend
 tornado-assembly/src/etc/tornado.jdk
 hs_err_pid*.log
+
+# IntelliJ run configurations are machine-local: the IDE rewrites them with
+# absolute, user-specific paths on every edit.
+.run/
