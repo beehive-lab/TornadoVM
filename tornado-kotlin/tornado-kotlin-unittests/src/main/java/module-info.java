@@ -20,10 +20,13 @@
  */
 open module tornado.kotlin.unittests {
     requires junit;
+    requires tornado.cublas;
     requires tornado.kotlin.api;
+    requires tornado.runtime;
     requires tornado.unittests;
 
     exports uk.ac.manchester.tornado.kotlin.unittests.api;
     exports uk.ac.manchester.tornado.kotlin.unittests.compiler;
+    exports uk.ac.manchester.tornado.kotlin.unittests.hybrid;
     exports uk.ac.manchester.tornado.kotlin.unittests.loops;
 }

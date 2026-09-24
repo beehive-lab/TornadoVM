@@ -134,6 +134,26 @@ tornado -m tornado.kotlin.benchmarks/uk.ac.manchester.tornado.kotlin.benchmarks.
 `--compareJava` (`-Dtornado.kotlin.benchmarks.compareJava=True`) runs the Java benchmark of the
 same name, with the same arguments, after each Kotlin one.
 
+## Hybrid API (library tasks)
+
+Native library tasks (`libraryTask`, e.g. cuBLAS) work from Kotlin like any other Java API: pass
+the provider's factory (`CuBlas::cublasSgemm`) or a factory written in Kotlin, and mix them with
+Kotlin JIT kernels in one graph:
+
+```kotlin
+taskGraph("hybrid") {
+    transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
+    task("addOne", ::addOne, a)                                           // Kotlin kernel
+    libraryTask("sgemm", CuBlas::cublasSgemm, op, op, n, n, n, 1f, b, n, a, n, 0f, c, n)
+    task("scale", ::scaleByTwo, c, d)                                     // Kotlin kernel
+    transferToHost(DataTransferMode.EVERY_EXECUTION, d)
+}
+```
+
+As in Java, executing library tasks needs the CUDA backend; on OpenCL and Metal the tests report
+them as `UNSUPPORTED`. A module that calls `CuBlasLibraryProvider` directly must also
+`requires tornado.runtime`, because kotlinc resolves the provider's supertypes.
+
 ## Testing
 
 ```bash
