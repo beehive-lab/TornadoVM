@@ -175,6 +175,40 @@ same graph. As in Java, executing library tasks needs the CUDA backend.
 A Kotlin module that calls ``CuBlasLibraryProvider`` (or another provider class) directly must also
 ``requires tornado.runtime``, because kotlinc resolves the provider's supertypes.
 
+CUDA Tile (TileContext)
+***********************
+
+Tile kernels take the ``TileContext`` as first parameter, as in Java (see :ref:`tile_api`). Inside
+``with(tc) { ... }`` the Kotlin API adds operators and functions on ``Tile``: ``+ - * /``,
+``* scalar``, unary ``-``, ``matmul``, the comparisons ``lt le gt ge`` with ``select``, the math
+functions (``exp``, ``log``, ``sqrt``, ``rsqrt``, ``tanh``, ``sin``, ``cos``, ``abs``, ``maximum``,
+``minimum``, ``fma``) and the ``sum``/``max``/``min`` reductions. They receive the context as a
+Kotlin context parameter and are inline, so ``a + b`` compiles to exactly ``tc.add(a, b)`` and the
+CUDA Tile compiler sees the same calls as for a Java kernel. Tile shapes must be compile-time
+constants: use literals or ``const val``.
+
+.. code-block:: kotlin
+
+   const val WIDTH = 1024
+
+   fun softmax(tc: TileContext, input: TFloatArray, output: TFloatArray, rows: Int) = with(tc) {
+       val row = bidX()
+       val values = partition(view(input, rows, WIDTH), 1, WIDTH).load(row, 0)
+       val shifted = exp(values - values.max(1))
+       partition(view(output, rows, WIDTH), 1, WIDTH).store(shifted / shifted.sum(1), row, 0)
+   }
+
+   taskGraph("s0") {
+       transferToDevice(DataTransferMode.FIRST_EXECUTION, input)
+       task("softmax", ::softmax, TileContext(), input, output, rows)
+       transferToHost(DataTransferMode.EVERY_EXECUTION, output)
+   }.toExecutionPlan().use { it.withGridScheduler(tileGrid("s0.softmax", rows)).execute() }
+
+``tileGrid(...)`` builds a grid that counts tile blocks, and ``tc.runOnHost(blocksX, blocksY) { ... }``
+runs a tile kernel on the JVM. Tile tasks need the CUDA backend; the examples ``TileVectorAdd``,
+``TileMatrixMultiply`` and ``TileSoftmax`` (package ``uk.ac.manchester.tornado.kotlin.examples.tile``)
+fall back to the JVM elsewhere.
+
 Examples, benchmarks and tests
 ******************************
 

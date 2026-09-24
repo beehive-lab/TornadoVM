@@ -154,6 +154,45 @@ As in Java, executing library tasks needs the CUDA backend; on OpenCL and Metal 
 them as `UNSUPPORTED`. A module that calls `CuBlasLibraryProvider` directly must also
 `requires tornado.runtime`, because kotlinc resolves the provider's supertypes.
 
+## CUDA Tile (TileContext)
+
+Tile kernels are written as in Java, with the `TileContext` as first parameter. Inside
+`with(tc) { ... }` the API adds operators and functions on `Tile` (`+ - * /`, `* scalar`, unary
+`-`, `matmul`, `lt le gt ge`, `select`, `exp log sqrt rsqrt tanh sin cos abs maximum minimum fma`,
+and the `sum`/`max`/`min` reductions). They take the context as a Kotlin context parameter and are
+inline, so `a + b` compiles to exactly `tc.add(a, b)`: the CUDA Tile compiler sees the same calls
+as for a Java kernel.
+
+```kotlin
+const val TILE = 256            // tile shapes are compile-time constants, as in Java
+
+fun vectorAdd(tc: TileContext, a: TFloatArray, b: TFloatArray, c: TFloatArray, n: Int) = with(tc) {
+    val block = bidX()
+    partition(view(c, n), TILE).store(partition(view(a, n), TILE).load(block) + partition(view(b, n), TILE).load(block), block)
+}
+
+fun softmax(tc: TileContext, input: TFloatArray, output: TFloatArray, rows: Int) = with(tc) {
+    val row = bidX()
+    val values = partition(view(input, rows, WIDTH), 1, WIDTH).load(row, 0)
+    val shifted = exp(values - values.max(1))
+    partition(view(output, rows, WIDTH), 1, WIDTH).store(shifted / shifted.sum(1), row, 0)
+}
+```
+
+- `tileGrid("graph.task", blocksX, blocksY)` builds the grid scheduler; it counts tile blocks and
+  sets no local work size.
+- `tc.runOnHost(blocksX, blocksY) { kernel(it, ...) }` runs a tile kernel on the JVM, through the
+  JVM implementation of every tile operation.
+- As in Java, tile tasks need the CUDA backend (CUDA 13.3+, driver R580+, compute capability 8.0+).
+  On other backends, adding a tile task to a graph fails, so check the backend first; the examples
+  fall back to `runOnHost`.
+
+```bash
+tornado -m tornado.kotlin.examples/uk.ac.manchester.tornado.kotlin.examples.tile.TileVectorAdd
+tornado -m tornado.kotlin.examples/uk.ac.manchester.tornado.kotlin.examples.tile.TileMatrixMultiply [n]
+tornado -m tornado.kotlin.examples/uk.ac.manchester.tornado.kotlin.examples.tile.TileSoftmax [rows]
+```
+
 ## Testing
 
 ```bash

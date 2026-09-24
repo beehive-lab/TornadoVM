@@ -22,4 +22,5 @@ open module tornado.kotlin.examples {
     requires tornado.kotlin.api;
 
     exports uk.ac.manchester.tornado.kotlin.examples;
+    exports uk.ac.manchester.tornado.kotlin.examples.tile;
 }
