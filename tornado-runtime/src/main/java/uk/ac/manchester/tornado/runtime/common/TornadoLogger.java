@@ -51,7 +51,9 @@ public class TornadoLogger {
     }
 
     public void debug(final String pattern, final Object... args) {
-        debug(String.format(pattern, args));
+        if (isLogOptionEnabled) {
+            debug(String.format(pattern, args));
+        }
     }
 
     public void error(final String msg) {
@@ -75,7 +77,9 @@ public class TornadoLogger {
     }
 
     public void fatal(final String pattern, final Object... args) {
-        fatal(String.format(pattern, args));
+        if (isLogOptionEnabled) {
+            fatal(String.format(pattern, args));
+        }
     }
 
     public void info(final String msg) {
@@ -86,7 +90,9 @@ public class TornadoLogger {
     }
 
     public void info(final String pattern, final Object... args) {
-        info(String.format(pattern, args));
+        if (isLogOptionEnabled) {
+            info(String.format(pattern, args));
+        }
     }
 
     public void trace(final String msg) {
@@ -97,7 +103,9 @@ public class TornadoLogger {
     }
 
     public void trace(final String pattern, final Object... args) {
-        trace(String.format(pattern, args));
+        if (isLogOptionEnabled) {
+            trace(String.format(pattern, args));
+        }
     }
 
     public void warn(final String msg) {
@@ -108,6 +116,8 @@ public class TornadoLogger {
     }
 
     public void warn(final String msg, final Object... args) {
-        trace(String.format(msg, args));
+        if (isLogOptionEnabled) {
+            trace(String.format(msg, args));
+        }
     }
 }
