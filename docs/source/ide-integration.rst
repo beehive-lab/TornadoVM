@@ -254,7 +254,7 @@ The output will differ depending on the backends you've built. For example, if y
       <path-to-TornadoVM-directory>/etc/dependencies/TornadoVM-graal-jdk-21/graalvm-community-openjdk-21.0.1+12.1/bin/java
       -server -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseCompressedClassPointers --enable-preview -Djava.library.path=<path-to-TornadoVM-directory>/bin/sdk/lib  --module-path .:<path-to-TornadoVM-directory>/bin/sdk/share/java/tornado
       -Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph -Dtornado.load.runtime.implementation=uk.ac.manchester.tornado.runtime.TornadoCoreRuntime -Dtornado.load.tornado.implementation=uk.ac.manchester.tornado.runtime.common.Tornado
-      -Dtornado.load.annotation.implementation=uk.ac.manchester.tornado.annotation.ASMClassVisitor -Dtornado.load.annotation.parallel=uk.ac.manchester.tornado.api.annotations.Parallel  -XX:+UseParallelGC
+      -Dtornado.load.annotation.implementation=uk.ac.manchester.tornado.annotation.ASMClassVisitor -Dtornado.load.annotation.parallel=uk.ac.manchester.tornado.api.annotations.Parallel
       @<path-to-TornadoVM-directory>/bin/sdk/etc/exportLists/common-exports
       @<path-to-TornadoVM-directory>/bin/sdk/etc/exportLists/opencl-exports
       @<path-to-TornadoVM-directory>/bin/sdk/etc/exportLists/cuda-exports --add-modules ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.common,tornado.drivers.opencl,tornado.drivers.opencl,tornado.drivers.cuda
