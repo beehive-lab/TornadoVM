@@ -70,6 +70,17 @@
             </plugins>
         </pluginManagement>
         <plugins>
+            <!-- Install the flattened pom (concrete version instead of ${revision}) for this
+                 pom-packaged parent too. flatten-maven-plugin only does so by default for jar
+                 modules, and without it projects outside this build cannot resolve the parent of
+                 tornado-kotlin-api. -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+                <configuration>
+                    <updatePomFile>true</updatePomFile>
+                </configuration>
+            </plugin>
             <!-- Kotlin compiles first (process-sources) and sees module-info.java; javac then only
                  compiles module-info.java against the Kotlin classes. -->
             <plugin>
