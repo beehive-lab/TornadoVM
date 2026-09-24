@@ -49,6 +49,7 @@ import tornado.graal.compiler.nodes.PhiNode;
 import tornado.graal.compiler.nodes.StartNode;
 import tornado.graal.compiler.nodes.StructuredGraph;
 import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.ValuePhiNode;
 import tornado.graal.compiler.nodes.calc.AddNode;
 import tornado.graal.compiler.nodes.calc.BinaryArithmeticNode;
 import tornado.graal.compiler.nodes.calc.BinaryNode;
@@ -69,6 +70,7 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceAddNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.WriteAtomicNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkFloatingPointIntrinsicsNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkIntIntrinsicNode;
+import uk.ac.manchester.tornado.runtime.kotlin.KotlinSupport;
 
 /**
  * Code analysis class for reductions in TornadoVM.
@@ -257,7 +259,7 @@ public class ReduceCodeAnalysis {
         return graph.getNodes().filter(ParameterNode.class).count();
     }
 
-    private static void obtainLoopBoundForPanamaRegions(Node aux, ArrayList<ValueNode> loopBound) {
+    private static void obtainLoopBoundForPanamaRegions(Node aux, ArrayList<ValueNode> loopBound, boolean kotlin) {
         LoopBeginNode loopBegin = null;
         ValueNode loopBoundNode = null;
 
@@ -289,9 +291,37 @@ public class ReduceCodeAnalysis {
             loopBoundNode = inspectConstantNode(aux);
         }
 
+        // Kotlin's parallelFor(start, end) evaluates `end` (e.g. input.size) once, before the loop, so the
+        // getSize() call is not inside the loop as it is for a Java for-loop condition. Read it from the loop test.
+        if (loopBoundNode == null && kotlin && loopBegin != null) {
+            loopBoundNode = inspectLoopConditionBound(loopBegin);
+        }
+
         if (loopBegin != null) {
             loopBound.add(Objects.requireNonNull(loopBoundNode));
         }
+    }
+
+    /**
+     * Kotlin code only: the upper bound of a loop {@code i < bound}, taken from the loop condition. For a bound computed by
+     * {@code array.getSize()} it returns the array, as the in-loop search does; for a constant bound it returns the
+     * constant.
+     */
+    private static ValueNode inspectLoopConditionBound(LoopBeginNode loopBegin) {
+        for (ValuePhiNode phi : loopBegin.valuePhis()) {
+            for (IntegerLessThanNode condition : phi.usages().filter(IntegerLessThanNode.class)) {
+                if (condition.getX() != phi) {
+                    continue;
+                }
+                ValueNode bound = condition.getY();
+                if (bound instanceof Invoke invoke && invoke.getTargetMethod().getName().equals("getSize")) {
+                    return invoke.callTarget().arguments().first();
+                } else if (bound instanceof ConstantNode) {
+                    return bound;
+                }
+            }
+        }
+        return null;
     }
 
     private static void obtainLoopBoundForOnHeapArrays(Node aux, ArrayList<ValueNode> loopBound) {
@@ -335,7 +365,7 @@ public class ReduceCodeAnalysis {
         }
     }
 
-    private static void getInputRageForReductionNode(ParameterNode parameterNode, ArrayList<ValueNode> loopBound) {
+    private static void getInputRageForReductionNode(ParameterNode parameterNode, ArrayList<ValueNode> loopBound, boolean kotlin) {
         // Get Input-Range for the reduction loop
         for (Node node : parameterNode.usages()) {
             if (node instanceof MethodCallTargetNode methodCallTargetNode) {
@@ -348,7 +378,7 @@ public class ReduceCodeAnalysis {
                 if (!panamaStoreNode.getTargetMethod().getName().equals("set")) {
                     continue;
                 }
-                obtainLoopBoundForPanamaRegions((Node) panamaStoreNode, loopBound);
+                obtainLoopBoundForPanamaRegions((Node) panamaStoreNode, loopBound, kotlin);
             } else if (node instanceof StoreIndexedNode) {
                 obtainLoopBoundForOnHeapArrays(node, loopBound);
             }
@@ -375,7 +405,7 @@ public class ReduceCodeAnalysis {
                 continue;
             }
             ParameterNode parameterNode = graph.getParameter(paramIndex);
-            getInputRageForReductionNode(parameterNode, loopBoundNodes);
+            getInputRageForReductionNode(parameterNode, loopBoundNodes, KotlinSupport.isKotlinMethod(graph.method()));
         }
         return loopBoundNodes;
     }
@@ -407,7 +437,7 @@ public class ReduceCodeAnalysis {
                     : CodeAnalysis.buildHighLevelGraalGraph(taskMetadata.getTaskParameters()[0]);
 
             assert graph != null;
-            Annotation[][] annotations = graph.method().getParameterAnnotations();
+            Annotation[][] annotations = KotlinSupport.getParameterAnnotations(graph.method());
             ArrayList<Integer> reduceIndices = new ArrayList<>();
 
             for (int paramIndex = 0; paramIndex < annotations.length; paramIndex++) {

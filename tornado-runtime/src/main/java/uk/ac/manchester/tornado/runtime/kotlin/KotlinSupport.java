@@ -27,8 +27,13 @@ import java.lang.annotation.Annotation;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import tornado.graal.compiler.bytecode.BytecodeStream;
+import tornado.graal.compiler.bytecode.Bytecodes;
+
+import jdk.vm.ci.meta.JavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.Signature;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 /**
@@ -49,6 +54,8 @@ public final class KotlinSupport {
 
     private static final String KOTLIN_METADATA = "kotlin.Metadata";
 
+    private static final String KOTLIN_INTRINSICS = "kotlin.jvm.internal.Intrinsics";
+
     private static final Map<ResolvedJavaType, Boolean> KOTLIN_TYPES = new ConcurrentHashMap<>();
 
     private KotlinSupport() {
@@ -61,6 +68,101 @@ public final class KotlinSupport {
      */
     public static boolean isKotlinMethod(ResolvedJavaMethod method) {
         return TornadoOptions.KOTLIN_SUPPORT && method != null && isKotlinType(method.getDeclaringClass());
+    }
+
+    /**
+     * Parameter annotations of a task method, such as {@code @Reduce}.
+     *
+     * <p>
+     * A Kotlin function reference passed as a task ({@code task("t0", ::reduce, ...)}) is compiled to a synthetic static
+     * method that only forwards its arguments to the referenced function, and that does not copy the function's
+     * parameter annotations. For such a forwarding method this returns the annotations of the function it calls. For
+     * any other method, and for all Java methods, it returns {@code method.getParameterAnnotations()}.
+     * </p>
+     *
+     * @param method
+     *     the task method.
+     * @return the parameter annotations that apply to {@code method}.
+     */
+    public static Annotation[][] getParameterAnnotations(ResolvedJavaMethod method) {
+        Annotation[][] annotations = method.getParameterAnnotations();
+        if (!isKotlinMethod(method) || hasAnyAnnotation(annotations)) {
+            return annotations;
+        }
+        ResolvedJavaMethod target = getForwardingTarget(method);
+        return target != null ? target.getParameterAnnotations() : annotations;
+    }
+
+    /**
+     * The method whose code a task actually runs. For a Kotlin forwarding method (see
+     * {@link #getParameterAnnotations}), that is the function it forwards to; for any other method, and for all Java
+     * methods, it is {@code method} itself.
+     *
+     * @param method
+     *     the task method.
+     * @return the method to analyse in place of {@code method}.
+     */
+    public static ResolvedJavaMethod resolveForwardedMethod(ResolvedJavaMethod method) {
+        if (!isKotlinMethod(method) || hasAnyAnnotation(method.getParameterAnnotations())) {
+            return method;
+        }
+        ResolvedJavaMethod target = getForwardingTarget(method);
+        return target != null ? target : method;
+    }
+
+    private static boolean hasAnyAnnotation(Annotation[][] annotations) {
+        for (Annotation[] parameterAnnotations : annotations) {
+            if (parameterAnnotations.length > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @return the static method that {@code method} forwards its arguments to, if {@code method} is static and its only
+     *     call (other than kotlinc's null checks) is to a static method with the same parameter types; otherwise null.
+     */
+    private static ResolvedJavaMethod getForwardingTarget(ResolvedJavaMethod method) {
+        byte[] code = method.getCode();
+        if (!method.isStatic() || code == null) {
+            return null;
+        }
+        ResolvedJavaMethod target = null;
+        BytecodeStream stream = new BytecodeStream(code);
+        while (stream.currentBC() != Bytecodes.END) {
+            int opcode = stream.currentBC();
+            if (opcode == Bytecodes.INVOKESTATIC) {
+                JavaMethod callee = method.getConstantPool().lookupMethod(stream.readCPI(), opcode, method);
+                if (!(callee instanceof ResolvedJavaMethod resolvedCallee)) {
+                    return null;
+                }
+                if (!KOTLIN_INTRINSICS.equals(resolvedCallee.getDeclaringClass().toJavaName())) {
+                    if (target != null) {
+                        return null;
+                    }
+                    target = resolvedCallee;
+                }
+            } else if (opcode == Bytecodes.INVOKEVIRTUAL || opcode == Bytecodes.INVOKESPECIAL || opcode == Bytecodes.INVOKEINTERFACE || opcode == Bytecodes.INVOKEDYNAMIC) {
+                return null;
+            }
+            stream.next();
+        }
+        return target != null && sameParameterTypes(method, target) ? target : null;
+    }
+
+    private static boolean sameParameterTypes(ResolvedJavaMethod a, ResolvedJavaMethod b) {
+        Signature sa = a.getSignature();
+        Signature sb = b.getSignature();
+        if (sa.getParameterCount(false) != sb.getParameterCount(false)) {
+            return false;
+        }
+        for (int i = 0; i < sa.getParameterCount(false); i++) {
+            if (!sa.getParameterType(i, null).getName().equals(sb.getParameterType(i, null).getName())) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static boolean isKotlinType(ResolvedJavaType type) {
