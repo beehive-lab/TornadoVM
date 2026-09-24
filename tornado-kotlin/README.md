@@ -64,6 +64,7 @@ fun main() {
 | `context.globalIdX`, `localIdX`, `groupIdX`, `globalSizeX`, `localSizeX` (and `Y`, `Z`) | `KernelContext` thread indices as `Int` |
 | `TFloatArray`, `TIntArray`, ... | Aliases for TornadoVM's off-heap arrays, which share their names with Kotlin's arrays |
 | `TFloatArray(n) { init }`, `tFloatArrayOf(...)`, `toTornado()`, `toFloatArray()` | Creation and conversion helpers |
+| `parallelFor(start, end) { i -> ... }` | A parallel loop, the Kotlin equivalent of a `@Parallel` loop variable |
 
 TornadoVM arrays support `a[i]`, `a[i] = v` and `a.size` directly, because Kotlin maps the Java
 `get`/`set`/`getSize` methods to them.
@@ -77,8 +78,17 @@ TornadoVM arrays support `a[i]`, `a[i] = v` and `a.size` directly, because Kotli
   kotlinc adds (`Intrinsics.checkNotNull*`), and accepts `KernelContext` indices whether they are
   read as `context.globalIdx` (a boxed `Integer`) or through the `Int` accessors
   (`context.globalIdX`). The `Int` accessors are preferred: they produce the same code as Java.
-- **Loop-parallel kernels (`@Parallel`) are not supported from Kotlin**: `kotlinc` does not keep
-  the annotation, so the loop runs sequentially. Use `KernelContext` kernels.
+- **Loop-parallel kernels use `parallelFor`** instead of `@Parallel`, which kotlinc does not keep:
+
+  ```kotlin
+  fun vectorAdd(a: TFloatArray, b: TFloatArray, c: TFloatArray) {
+      parallelFor(0, c.size) { i -> c[i] = a[i] + b[i] }
+  }
+  ```
+
+  Nest two or three `parallelFor` calls for 2D and 3D kernels. As with `@Parallel` in Java, the
+  start of the loop must be a constant. Reductions work as in Java, with `@Reduce` on the output
+  parameter.
 
 ## Runtime support
 
@@ -91,6 +101,9 @@ never affected. They can be switched off with `-Dtornado.kotlin.support=false`.
 | Drop `kotlin.jvm.internal.Intrinsics` null checks | `KotlinGraphBuilderPlugins` (bytecode parsing) |
 | Turn `Number.intValue()` and friends on a boxed value into a plain unbox | `KotlinGraphBuilderPlugins` (bytecode parsing) |
 | Lower a `KernelContext` index that is unboxed several times | `TornadoKernelContextReplacement` (sketcher) |
+| Turn `parallelFor` loops into parallel loops (`ParallelLoops.parallelIndex` marker) | `KotlinGraphBuilderPlugins`, `TornadoApiReplacement` |
+| Read `@Reduce` through the forwarding method kotlinc generates for `::kernel` task references | `KotlinSupport`, `ReduceCodeAnalysis`, `TornadoReduceReplacement` |
+| Find a reduction's input size when the loop bound is evaluated before the loop | `ReduceCodeAnalysis` |
 
 ## Testing
 

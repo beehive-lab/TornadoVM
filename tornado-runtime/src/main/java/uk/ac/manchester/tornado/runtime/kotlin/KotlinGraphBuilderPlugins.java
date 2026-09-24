@@ -46,6 +46,8 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  * <li>{@code Number.intValue()} (and the other {@code xxxValue()} methods) on a boxed value of the matching type, which
  * kotlinc emits to unbox a platform-typed {@code Integer}, becomes the same unboxing node as javac's
  * {@code Integer.intValue()}.</li>
+ * <li>{@code ParallelLoops.parallelIndex(i)}, which the Kotlin API's {@code parallelFor} places on its loop index,
+ * becomes a {@link KotlinParallelIndexNode} that marks the loop as parallel.</li>
  * </ul>
  */
 public final class KotlinGraphBuilderPlugins {
@@ -53,6 +55,8 @@ public final class KotlinGraphBuilderPlugins {
     private static final String KOTLIN_INTRINSICS = "kotlin.jvm.internal.Intrinsics";
 
     private static final String NUMBER = "java.lang.Number";
+
+    private static final String PARALLEL_LOOPS = "uk.ac.manchester.tornado.kotlin.api.ParallelLoops";
 
     private static final Map<String, JavaKind> BOXED_TYPES = Map.of("java.lang.Integer", JavaKind.Int, //
             "java.lang.Long", JavaKind.Long, //
@@ -86,6 +90,10 @@ public final class KotlinGraphBuilderPlugins {
                 || name.equals("checkReturnedValueIsNotNull");
     }
 
+    static boolean isParallelIndexMarker(ResolvedJavaMethod method) {
+        return method.getName().equals("parallelIndex") && PARALLEL_LOOPS.equals(method.getDeclaringClass().toJavaName()) && method.getSignature().getParameterCount(false) == 1;
+    }
+
     /**
      * @return the kind to unbox to if {@code method} is {@code Number.xxxValue()} called on a boxed value of that same
      *     kind (e.g. {@code intValue()} on an {@code Integer}), otherwise null.
@@ -113,6 +121,10 @@ public final class KotlinGraphBuilderPlugins {
             }
             if (isNullCheckIntrinsic(method)) {
                 // Returning true without pushing a value removes the (void) call from the graph.
+                return true;
+            }
+            if (isParallelIndexMarker(method)) {
+                b.addPush(JavaKind.Int, new KotlinParallelIndexNode(args[0]));
                 return true;
             }
             if (args.length == 1) {
