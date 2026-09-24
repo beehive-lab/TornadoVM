@@ -24,7 +24,6 @@
 package uk.ac.manchester.tornado.runtime;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -106,7 +105,9 @@ public class TornadoVM {
     public Event execute(boolean isParallel, TornadoProfiler profiler) {
         // Set the profiler for all interpreters
         this.timeProfiler = profiler;
-        Arrays.stream(tornadoVMInterpreters).forEach(tornadoVMInterpreter -> tornadoVMInterpreter.setTimeProfiler(timeProfiler));
+        for (TornadoVMInterpreter tornadoVMInterpreter : tornadoVMInterpreters) {
+            tornadoVMInterpreter.setTimeProfiler(timeProfiler);
+        }
 
         if (shouldInterpreterRunInParallel(isParallel)) {
             return executeInterpreterThreadManager(isParallel);
@@ -124,7 +125,9 @@ public class TornadoVM {
     }
 
     private Event executeInterpreterSingleThreaded() {
-        Arrays.stream(tornadoVMInterpreters).forEach(TornadoVMInterpreter::execute);
+        for (TornadoVMInterpreter tornadoVMInterpreter : tornadoVMInterpreters) {
+            tornadoVMInterpreter.execute();
+        }
         return new EmptyEvent();
     }
 
@@ -178,7 +181,9 @@ public class TornadoVM {
     }
 
     public void executeActionOnInterpreters(Consumer<TornadoVMInterpreter> action) {
-        Arrays.stream(tornadoVMInterpreters).forEach(action::accept);
+        for (TornadoVMInterpreter tornadoVMInterpreter : tornadoVMInterpreters) {
+            action.accept(tornadoVMInterpreter);
+        }
     }
 
     /**
@@ -214,7 +219,9 @@ public class TornadoVM {
     }
 
     public void setGridScheduler(GridScheduler gridScheduler) {
-        Arrays.stream(tornadoVMInterpreters).forEach(interpreter -> interpreter.setGridScheduler(gridScheduler));
+        for (TornadoVMInterpreter interpreter : tornadoVMInterpreters) {
+            interpreter.setGridScheduler(gridScheduler);
+        }
     }
 
 }
