@@ -73,13 +73,24 @@ TornadoVM arrays support `a[i]`, `a[i] = v` and `a.size` directly, because Kotli
 - **Kernels must be static methods.** Write them as top-level functions, and pass them as direct
   references (`::vectorAdd`) or lambdas at the `task` call site. A function reference stored in a
   variable first is wrapped by Kotlin and cannot be compiled.
-- **Use the `Int` accessors of `KernelContext`** (`context.globalIdX`, not `context.globalIdx`).
-  The Java fields are boxed `Integer`s, and a boxed index used several times does not compile.
-- **Compile kernels without Kotlin's null-check assertions**:
-  `-Xno-param-assertions -Xno-call-assertions -Xno-receiver-assertions`. The modules here already
-  do this.
+- **Kotlin's default compiler flags are fine.** The runtime removes the null-check calls that
+  kotlinc adds (`Intrinsics.checkNotNull*`), and accepts `KernelContext` indices whether they are
+  read as `context.globalIdx` (a boxed `Integer`) or through the `Int` accessors
+  (`context.globalIdX`). The `Int` accessors are preferred: they produce the same code as Java.
 - **Loop-parallel kernels (`@Parallel`) are not supported from Kotlin**: `kotlinc` does not keep
   the annotation, so the loop runs sequentially. Use `KernelContext` kernels.
+
+## Runtime support
+
+The runtime recognises Kotlin kernels by the `kotlin.Metadata` annotation that kotlinc puts on
+every class. All Kotlin-specific compiler rewrites only apply to such methods, so Java kernels are
+never affected. They can be switched off with `-Dtornado.kotlin.support=false`.
+
+| Rewrite | Where |
+|---|---|
+| Drop `kotlin.jvm.internal.Intrinsics` null checks | `KotlinGraphBuilderPlugins` (bytecode parsing) |
+| Turn `Number.intValue()` and friends on a boxed value into a plain unbox | `KotlinGraphBuilderPlugins` (bytecode parsing) |
+| Lower a `KernelContext` index that is unboxed several times | `TornadoKernelContextReplacement` (sketcher) |
 
 ## Testing
 

@@ -24,4 +24,5 @@ open module tornado.kotlin.unittests {
     requires tornado.unittests;
 
     exports uk.ac.manchester.tornado.kotlin.unittests.api;
+    exports uk.ac.manchester.tornado.kotlin.unittests.compiler;
 }
