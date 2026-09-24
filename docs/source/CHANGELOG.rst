@@ -7,6 +7,18 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 
 CHANGELOG
 
+TornadoVM 7.0.1
+---------------
+24/09/26
+
+Other Changes
+~~~~~~~~~~~~
+
+- `#1116 <https://github.com/beehive-lab/TornadoVM/pull/1116>`_: Deploy the CUDA backend (cuTile) and all CUDA library bindings to Maven Central
+- `#1117 <https://github.com/beehive-lab/TornadoVM/pull/1117>`_: Guard FloatAtomicFail on CUDA and drop a stray javac argfile
+- `#1115 <https://github.com/beehive-lab/TornadoVM/pull/1115>`_: Fix the IntelliJ build path so it produces a runnable SDK
+
+
 TornadoVM 7.0.0
 ---------------
 22/09/26
