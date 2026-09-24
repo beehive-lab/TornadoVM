@@ -1,0 +1,94 @@
+<?xml version="1.0"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+         xmlns="http://maven.apache.org/POM/4.0.0">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.github.beehive-lab</groupId>
+        <artifactId>tornado</artifactId>
+        <version>${revision}</version>
+    </parent>
+    <artifactId>tornado-kotlin</artifactId>
+    <packaging>pom</packaging>
+    <name>tornado-kotlin</name>
+    <description>TornadoVM Kotlin support: Kotlin API, examples, benchmarks and unit tests</description>
+
+    <properties>
+        <kotlin.version>2.4.20</kotlin.version>
+        <!-- Matches the bytecode level of the jdk21 profile; raised to 22 for the jdk22plus build below. -->
+        <kotlin.jvm.target>21</kotlin.jvm.target>
+        <checkstyle.skip>true</checkstyle.skip>
+    </properties>
+
+    <modules>
+        <module>tornado-kotlin-api</module>
+        <module>tornado-kotlin-unittests</module>
+    </modules>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib</artifactId>
+            <version>${kotlin.version}</version>
+        </dependency>
+    </dependencies>
+
+    <profiles>
+        <profile>
+            <id>kotlin-jdk22plus</id>
+            <activation>
+                <jdk>[22,)</jdk>
+            </activation>
+            <properties>
+                <kotlin.jvm.target>22</kotlin.jvm.target>
+            </properties>
+        </profile>
+    </profiles>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.jetbrains.kotlin</groupId>
+                    <artifactId>kotlin-maven-plugin</artifactId>
+                    <version>${kotlin.version}</version>
+                    <configuration>
+                        <jvmTarget>${kotlin.jvm.target}</jvmTarget>
+                        <args>
+                            <!-- kotlinc inserts kotlin.jvm.internal.Intrinsics null checks into every
+                                 public function. They cannot be compiled for an accelerator, and the
+                                 inline helpers of the Kotlin API are copied into user kernels, so
+                                 keep them out of everything built here. -->
+                            <arg>-Xno-param-assertions</arg>
+                            <arg>-Xno-call-assertions</arg>
+                            <arg>-Xno-receiver-assertions</arg>
+                        </args>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        <plugins>
+            <!-- Kotlin compiles first (process-sources) and sees module-info.java; javac then only
+                 compiles module-info.java against the Kotlin classes. -->
+            <plugin>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>kotlin-compile</id>
+                        <phase>process-sources</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirs>
+                                <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
+                                <sourceDir>${project.basedir}/src/main/java</sourceDir>
+                            </sourceDirs>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

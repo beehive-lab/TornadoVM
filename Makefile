@@ -24,6 +24,11 @@ ifneq ($(UNSUPPORTED_BACKENDS),)
 $(error [ERROR] Unsupported backends specified in BACKEND: $(subst $(SPACE),$(COMMA)$(SPACE),$(UNSUPPORTED_BACKENDS)). Supported backends: $(subst $(SPACE),$(COMMA)$(SPACE),$(SUPPORTED_BACKENDS)))
 endif
 
+# Opt-in Kotlin support: `make KOTLIN=1 BACKEND=...` also builds the tornado-kotlin modules
+# (Kotlin API, unit tests) and ships them, with kotlin-stdlib, in the SDK. Off by default.
+KOTLIN ?= 0
+KOTLIN_ARG = $(if $(filter 1 true yes,$(KOTLIN)),--kotlin,)
+
 # JDK profile used by the `sdk`, `test-reflection` and `test-reflection-only` targets
 # { jdk21, jdk22plus }, derived from JAVA_HOME rather than hardcoded.
 #
@@ -42,46 +47,46 @@ JDK ?= $(shell v=$$("$${JAVA_HOME:-/nonexistent}/bin/java" -version 2>&1 | sed -
 JDK_PROFILE = $(if $(filter jdk21 graal-jdk-21,$(JDK)),$(JDK),jdk22plus)
 
 build jdk21:
-	bin/compile --jdk jdk21 --backend $(BACKEND)
+	bin/compile --jdk jdk21 --backend $(BACKEND) $(KOTLIN_ARG)
 
 rebuild-deps-jdk21:
-	bin/compile --jdk jdk21 --rebuild --backend $(BACKEND)
+	bin/compile --jdk jdk21 --rebuild --backend $(BACKEND) $(KOTLIN_ARG)
 
 # One SDK for every JDK from 22 up. jdk25/jdk26/jdk27 are kept as aliases so existing
 # scripts and muscle memory keep working; they all produce the same artifact.
 jdk22plus jdk25 jdk26 jdk27:
-	bin/compile --jdk jdk22plus --backend $(BACKEND)
+	bin/compile --jdk jdk22plus --backend $(BACKEND) $(KOTLIN_ARG)
 
 rebuild-deps-jdk22plus rebuild-deps-jdk25 rebuild-deps-jdk26 rebuild-deps-jdk27:
-	bin/compile --jdk jdk22plus --rebuild --backend $(BACKEND)
+	bin/compile --jdk jdk22plus --rebuild --backend $(BACKEND) $(KOTLIN_ARG)
 
 graal-jdk-21:
-	bin/compile --jdk graal-jdk-21 --backend $(BACKEND)
+	bin/compile --jdk graal-jdk-21 --backend $(BACKEND) $(KOTLIN_ARG)
 
 mvn-single-threaded-jdk21:
-	bin/compile --jdk jdk21 --backend $(BACKEND) --mvn_single_threaded
+	bin/compile --jdk jdk21 --backend $(BACKEND) --mvn_single_threaded $(KOTLIN_ARG)
 
 mvn-single-threaded-jdk22plus:
-	bin/compile --jdk jdk22plus --backend $(BACKEND) --mvn_single_threaded
+	bin/compile --jdk jdk22plus --backend $(BACKEND) --mvn_single_threaded $(KOTLIN_ARG)
 
 mvn-single-threaded-graal-jdk-21:
-	bin/compile --jdk graal-jdk-21 --backend $(BACKEND) --mvn_single_threaded
+	bin/compile --jdk graal-jdk-21 --backend $(BACKEND) --mvn_single_threaded $(KOTLIN_ARG)
 
 
 metal:
-	bin/compile --jdk jdk21 --backend metal,opencl
+	bin/compile --jdk jdk21 --backend metal,opencl $(KOTLIN_ARG)
 
 cuda:
-	bin/compile --jdk jdk21 --backend cuda
+	bin/compile --jdk jdk21 --backend cuda $(KOTLIN_ARG)
 
 sdk:
-	bin/compile --jdk $(JDK_PROFILE) --sdk --backend $(BACKEND)
+	bin/compile --jdk $(JDK_PROFILE) --sdk --backend $(BACKEND) $(KOTLIN_ARG)
 
 sdk-jdk21:
-	bin/compile --jdk jdk21 --sdk --backend $(BACKEND)
+	bin/compile --jdk jdk21 --sdk --backend $(BACKEND) $(KOTLIN_ARG)
 
 sdk-jdk22plus:
-	bin/compile --jdk jdk22plus --sdk --backend $(BACKEND)
+	bin/compile --jdk jdk22plus --sdk --backend $(BACKEND) $(KOTLIN_ARG)
 
 checkstyle:
 	./mvnw checkstyle:check
