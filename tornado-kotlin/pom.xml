@@ -22,7 +22,9 @@
 
     <modules>
         <module>tornado-kotlin-api</module>
+        <module>tornado-kotlin-examples</module>
         <module>tornado-kotlin-unittests</module>
+        <module>tornado-kotlin-benchmarks</module>
     </modules>
 
     <dependencies>

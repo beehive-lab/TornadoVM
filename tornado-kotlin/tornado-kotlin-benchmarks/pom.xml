@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+         xmlns="http://maven.apache.org/POM/4.0.0">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.github.beehive-lab</groupId>
+        <artifactId>tornado-kotlin</artifactId>
+        <version>${revision}</version>
+    </parent>
+    <artifactId>tornado-kotlin-benchmarks</artifactId>
+    <name>tornado-kotlin-benchmarks</name>
+    <description>TornadoVM benchmarks written in Kotlin, on the tornado-benchmarks harness</description>
+    <dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>tornado-kotlin-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>tornado-benchmarks</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
+</project>
