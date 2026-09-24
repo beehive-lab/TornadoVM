@@ -101,6 +101,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicN
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.PrintfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerNode;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.kotlin.KotlinGraphBuilderPlugins;
 
 import java.util.function.Supplier;
 
@@ -129,6 +130,9 @@ public class OCLGraphBuilderPlugins {
         if (TornadoOptions.INLINE_DURING_BYTECODE_PARSING) {
             ps.appendInlineInvokePlugin(new InlineDuringParsingPlugin());
         }
+
+        // Kotlin kernels only: see KotlinGraphBuilderPlugins
+        KotlinGraphBuilderPlugins.registerPlugins(ps);
 
         registerFP16ConversionPlugins(plugins);
         registerTornadoVMIntrinsicsPlugins(plugins);

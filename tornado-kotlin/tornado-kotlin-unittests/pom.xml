@@ -28,4 +28,17 @@
             <version>4.13.2</version>
         </dependency>
     </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-maven-plugin</artifactId>
+                <configuration>
+                    <!-- The tests are compiled like user code, with kotlinc's default null-check
+                         assertions, so every test kernel also exercises their removal by the runtime. -->
+                    <args combine.self="override"/>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
