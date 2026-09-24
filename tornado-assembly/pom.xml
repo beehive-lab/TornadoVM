@@ -156,6 +156,37 @@
             </dependencies>
         </profile>
 
+        <profile>
+            <!-- Kotlin support: only with -Pkotlin (make KOTLIN=1). Pulls the tornado-kotlin modules
+                 and kotlin-stdlib into the SDK's share/java/tornado. -->
+            <id>kotlin</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>tornado-kotlin-api</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>tornado-kotlin-unittests</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>tornado-kotlin-benchmarks</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>tornado-kotlin-examples</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+
     </profiles>
 
     <build>

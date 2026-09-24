@@ -52,6 +52,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCompilerIdentifier;
+import uk.ac.manchester.tornado.runtime.kotlin.KotlinSupport;
 
 public class CodeAnalysis {
 
@@ -87,7 +88,8 @@ public class CodeAnalysis {
         // parser), and keeps IntArray.set / ArrayLength as high-level nodes that the reduce loop-bound +
         // operator analysis relies on.
         providers = TornadoCoreRuntime.getTornadoRuntime().getBackend(0).getProviders();
-        resolvedJavaMethod = providers.getMetaAccess().lookupJavaMethod(methodToCompile);
+        // A Kotlin function reference passed as a task is a method that forwards to the function: analyse the function.
+        resolvedJavaMethod = KotlinSupport.resolveForwardedMethod(providers.getMetaAccess().lookupJavaMethod(methodToCompile));
         compilationIdentifier = new TornadoCompilerIdentifier("code-analysis-" + resolvedJavaMethod.getName(), codeAnalysisId.getAndIncrement());
         speculationLog = null;
         options = getOptions();
