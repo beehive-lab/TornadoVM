@@ -20,6 +20,8 @@ built and added to the SDK's `share/java/tornado`, together with `kotlin-stdlib`
 | Module | JPMS module | Contents |
 |---|---|---|
 | `tornado-kotlin-api` | `tornado.kotlin.api` | Kotlin API over `tornado-api` |
+| `tornado-kotlin-examples` | `tornado.kotlin.examples` | Runnable examples |
+| `tornado-kotlin-benchmarks` | `tornado.kotlin.benchmarks` | Kotlin ports of seven Java benchmarks, on the `tornado-benchmarks` harness |
 | `tornado-kotlin-unittests` | `tornado.kotlin.unittests` | Kotlin unit tests, run through `tornado-test` |
 
 ## Using the API
@@ -90,6 +92,9 @@ TornadoVM arrays support `a[i]`, `a[i] = v` and `a.size` directly, because Kotli
   start of the loop must be a constant. Reductions work as in Java, with `@Reduce` on the output
   parameter.
 
+- **Modules that contain kernels must be `open`** (or open their kernel packages), as for Java:
+  TornadoVM finds the kernel behind a task lambda through reflection.
+
 ## Runtime support
 
 The runtime recognises Kotlin kernels by the `kotlin.Metadata` annotation that kotlinc puts on
@@ -104,6 +109,30 @@ never affected. They can be switched off with `-Dtornado.kotlin.support=false`.
 | Turn `parallelFor` loops into parallel loops (`ParallelLoops.parallelIndex` marker) | `KotlinGraphBuilderPlugins`, `TornadoApiReplacement` |
 | Read `@Reduce` through the forwarding method kotlinc generates for `::kernel` task references | `KotlinSupport`, `ReduceCodeAnalysis`, `TornadoReduceReplacement` |
 | Find a reduction's input size when the loop bound is evaluated before the loop | `ReduceCodeAnalysis` |
+
+## Examples
+
+```bash
+tornado -m tornado.kotlin.examples/uk.ac.manchester.tornado.kotlin.examples.VectorAdd
+tornado -m tornado.kotlin.examples/uk.ac.manchester.tornado.kotlin.examples.MatrixMultiplication [size]
+tornado -m tornado.kotlin.examples/uk.ac.manchester.tornado.kotlin.examples.Reduction
+```
+
+## Benchmarks
+
+saxpy, sgemm, blackscholes, nbody, mandelbrot, dft and montecarlo, ported statement by statement
+from the Java benchmarks (`parallelFor` in place of `@Parallel`). They use the Java harness, so
+they print the same `Performance: bm=...` lines, with `bm=kotlin-<name>-...`.
+
+```bash
+tornado-benchmarks.py --kotlin                                  # all, default sizes
+tornado-benchmarks.py --kotlin --benchmark sgemm                # one benchmark
+tornado-benchmarks.py --kotlin --compareJava --skipSerial       # Kotlin vs Java kernels on each device
+tornado -m tornado.kotlin.benchmarks/uk.ac.manchester.tornado.kotlin.benchmarks.KotlinBenchmarkRunner saxpy 101 16777216
+```
+
+`--compareJava` (`-Dtornado.kotlin.benchmarks.compareJava=True`) runs the Java benchmark of the
+same name, with the same arguments, after each Kotlin one.
 
 ## Testing
 
