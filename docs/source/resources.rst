@@ -20,7 +20,7 @@ The up-to-date list of articles and blog posts is kept on the official website, 
 Demos & Artefacts
 -----------------
 
--  GPU-accelerated LLM Inference in Java: `link <https://gpullama3.dev>`__.
+-  GPU-accelerated LLM Inference in Java: `link <https://beehive-lab.github.io/jitllm/>`__.
 
 -  TornadoVM Examples: `link <https://github.com/jjfumero/tornadovm-examples>`__.
 

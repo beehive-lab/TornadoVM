@@ -393,7 +393,7 @@ public class TestStreamsPerformance extends TornadoTestBase {
     public void testFirstExecutionUpload() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
 
-        // GPULlama-like shape: the model's weights are many separate read-only tensors, each
+        // jitllm-like shape: the model's weights are many separate read-only tensors, each
         // uploaded once on first execution (the direct path pays one cuMemHostRegister per tensor).
         final int layers = 8;
         final int layerSize = 128 * 1024 * 1024 / 4; // 128 MB per tensor -> 1 GB total
@@ -407,7 +407,7 @@ public class TestStreamsPerformance extends TornadoTestBase {
         // cold=true leaves the weight pages untouched (zero-fill-on-demand): the upload is then the
         // FIRST touch, so both modes additionally pay the page faults - serially inside
         // cuMemHostRegister on the direct path, inside the (parallel, DMA-overlapped) fill on the
-        // staged path. This models the mmap'd-weights case (GPULlama) minus the disk read.
+        // staged path. This models the mmap'd-weights case (jitllm) minus the disk read.
         final boolean cold = Boolean.getBoolean("tornado.test.upload.cold");
 
         FloatArray[] weights = new FloatArray[layers];
