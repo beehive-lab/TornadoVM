@@ -121,6 +121,21 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     }
 
     /**
+     * Factory equivalent of {@link #TornadoExecutionPlan(ImmutableTaskGraph...)}. Languages that
+     * cannot invoke the constructor of a sealed class, such as Kotlin, create execution plans
+     * through this method.
+     *
+     * @param immutableTaskGraphs
+     *     {@link ImmutableTaskGraph}
+     * @return a new {@link TornadoExecutionPlan}
+     *
+     * @since 7.0.2
+     */
+    public static TornadoExecutionPlan of(ImmutableTaskGraph... immutableTaskGraphs) {
+        return new TornadoExecutionPlan(immutableTaskGraphs);
+    }
+
+    /**
      * If the {@code TornadoExecutionPlan} consists of multiple task-graphs, this function
      * updates the access type of the input and output data of each task-graph, as necessary.
      *
