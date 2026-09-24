@@ -81,7 +81,6 @@ __CUTLASS_MODULE__ = "tornado.cutlass"
 # ########################################################
 # JAVA FLAGS
 # ########################################################
-__JAVA_GC__ = "-XX:+UseParallelGC "
 __JAVA_BASE_OPTIONS__ = "-server -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI "
 # Only an SDK compiled with enable-preview needs it at run time (the jdk21 profiles: FFM was a
 # preview API before JDK 22). Appending it unconditionally would switch preview APIs on JVM-wide
@@ -1313,8 +1312,6 @@ class TornadoVMRunnerTool():
         # "FindException: Module tornado.graal not found, required by tornado.runtime".
         # Verified end to end: jdk22plus SDK on JDK 25/26/27 and jdk21 SDK on JDK 21 all compile and
         # execute kernels with graalJars reachable only from --upgrade-module-path.
-
-        javaFlags = javaFlags + __JAVA_GC__
 
         common = self.sdk + __COMMON_EXPORTS__
         opencl = self.sdk + __OPENCL_EXPORTS__
