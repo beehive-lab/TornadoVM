@@ -22,7 +22,6 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import java.util.Arrays;
 
 import uk.ac.manchester.tornado.drivers.common.GridInfo;
 
@@ -38,8 +37,14 @@ public class OCLGridInfo implements GridInfo {
     @Override
     public boolean checkGridDimensions() {
         long[] blockMaxWorkGroupSize = deviceContext.getDevice().getDeviceMaxWorkGroupSize();
-        long maxWorkGroupSize = Arrays.stream(blockMaxWorkGroupSize).sum();
-        long totalThreads = Arrays.stream(localWork).reduce(1, (a, b) -> a * b);
+        long maxWorkGroupSize = 0;
+        for (long dimension : blockMaxWorkGroupSize) {
+            maxWorkGroupSize += dimension;
+        }
+        long totalThreads = 1;
+        for (long dimension : localWork) {
+            totalThreads *= dimension;
+        }
 
         return totalThreads <= maxWorkGroupSize;
     }
