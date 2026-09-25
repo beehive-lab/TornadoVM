@@ -23,11 +23,19 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda;
 
+import java.util.List;
+
 public interface TornadoPlatformInterface {
 
     void cleanup();
 
     CUDAContextInterface createContext();
+
+    /**
+     * Devices of this platform. They are known before any context is created, and are the devices
+     * that {@link #createContext()} returns in {@link CUDAContextInterface#devices()}.
+     */
+    List<CUDATargetDevice> getDevices();
 
     String getName();
 

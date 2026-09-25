@@ -285,6 +285,18 @@ public class CUDAContext implements CUDAContextInterface {
         return cuMemHostUnregister(contextID, hostPointer);
     }
 
+    /**
+     * Makes this context current on the calling thread. {@code cuCtxCreate} makes a context
+     * current only on the thread that creates it, which may be a helper thread (see
+     * {@link CUDABackendImpl}).
+     */
+    void makeCurrent() {
+        CUDAHandles.Context context = CUDAHandles.resolve(contextID, CUDAHandles.Context.class);
+        if (context != null) {
+            CUDADriverAPI.cuCtxSetCurrent(context.context());
+        }
+    }
+
     public int getNumDevices() {
         return devices.size();
     }
