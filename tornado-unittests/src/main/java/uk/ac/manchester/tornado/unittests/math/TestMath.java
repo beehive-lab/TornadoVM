@@ -19,6 +19,7 @@
 package uk.ac.manchester.tornado.unittests.math;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Random;
 import java.util.stream.IntStream;
@@ -738,6 +739,81 @@ public class TestMath extends TornadoTestBase {
         testRemainder(a, seq);
         for (int i = 0; i < size; i++) {
             assertEquals(b.get(i), seq.get(i), 0.01);
+        }
+    }
+
+    /**
+     * {@code a*b + c} with nothing else in it, so the only thing the result can report is how many
+     * times the device rounded.
+     */
+    private static void mulAddCancellation(DoubleArray a, DoubleArray b, DoubleArray c, DoubleArray out) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            out.set(i, a.get(i) * b.get(i) + c.get(i));
+        }
+    }
+
+    /**
+     * Whether the device rounds a multiply and an add separately, as the host does, or fuses them.
+     *
+     * <p>
+     * A cancellation rather than a tolerance. {@code c} is exactly minus the <em>rounded</em>
+     * product, computed on the host, so a device that rounds the multiply and then the add
+     * subtracts the same value it just produced and returns exactly {@code 0.0}. A device that
+     * fuses keeps the product at full precision, rounds once, and returns the product's rounding
+     * error instead. There is no third answer and no epsilon to choose, which is what makes this
+     * worth asserting exactly where {@link #testFMA} asserts to 0.01 and would pass either way.
+     *
+     * <p>
+     * The expected direction follows {@code tornado.enable.fma}, and that is the point: the option
+     * has to mean what its name says. Turning it off stops {@code CUDAFMAPhase} emitting a literal
+     * {@code fma()} call, but NVRTC will contract the separated multiply and add straight back
+     * together unless it is also told {@code --fmad=false} -- so with the two untied, this test
+     * fails in the strict configuration and the option is a decoration. Run it both ways:
+     *
+     * <code>
+     * tornado-test -V uk.ac.manchester.tornado.unittests.math.TestMath#testMultiplyAddRounding
+     * tornado-test -V -J"-Dtornado.enable.fma=false" uk.ac.manchester.tornado.unittests.math.TestMath#testMultiplyAddRounding
+     * </code>
+     */
+    @Test
+    public void testMultiplyAddRounding() throws TornadoExecutionPlanException {
+        // Pairs whose exact product is not representable, so the rounding error is non-zero and a
+        // fused result is distinguishable from a separated one.
+        final double[][] cases = { { 1.0000000001, 1.0000000003 }, { 3.0000000000000004, 7.000000000000001 }, { 1.4142135623730951, 1.4142135623730951 }, { 0.1, 0.3 }, { 1e8 + 1, 1e8 + 3 },
+                { 2.718281828459045, 3.141592653589793 } };
+
+        final int size = cases.length;
+        DoubleArray a = new DoubleArray(size);
+        DoubleArray b = new DoubleArray(size);
+        DoubleArray c = new DoubleArray(size);
+        DoubleArray out = new DoubleArray(size);
+        for (int i = 0; i < size; i++) {
+            a.set(i, cases[i][0]);
+            b.set(i, cases[i][1]);
+            c.set(i, -(cases[i][0] * cases[i][1]));
+            out.set(i, Double.NaN);
+        }
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, c) //
+                .task("t0", TestMath::mulAddCancellation, a, b, c, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        boolean fmaEnabled = Boolean.parseBoolean(System.getProperty("tornado.enable.fma", "true"));
+        if (fmaEnabled) {
+            boolean anyFused = false;
+            for (int i = 0; i < size && !anyFused; i++) {
+                anyFused = out.get(i) != 0.0;
+            }
+            assertTrue("expected fused multiply-add with tornado.enable.fma=true, but every case rounded separately", anyFused);
+        } else {
+            for (int i = 0; i < size; i++) {
+                assertEquals("tornado.enable.fma=false must round the multiply and the add separately, as the host does; case " + i + " did not", 0.0, out.get(i), 0.0);
+            }
         }
     }
 

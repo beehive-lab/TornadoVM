@@ -46,15 +46,66 @@ public class TornadoOptions {
     public static final String DEFAULT_METAL_COMPILER_FLAGS = getProperty("tornado.metal.compiler.flags", "");
 
     /**
+     * Enable/Disable FMA Optimizations. True by default.
+     *
+     * <p>
+     * Declared here, above {@link #DEFAULT_CUDA_COMPILER_FLAGS}, because that field is derived from
+     * it: a static initialiser reading a field declared further down sees the default value rather
+     * than the configured one, silently.
+     */
+    public static final boolean ENABLE_FMA = getBooleanValue("tornado.enable.fma", TRUE);
+
+    /**
      * Named NVRTC option bundle for the CUDA backend: default|fast|debug|repro.
      */
     public static final CudaCompileProfile CUDA_COMPILE_PROFILE = CudaCompileProfile.parse(getProperty("tornado.cuda.compile.profile", "default"));
 
     /**
+     * What {@code tornado.enable.fma=false} has to add to the NVRTC options to mean what it says.
+     *
+     * <p>
+     * The CUDA backend fuses a multiply and an add at two independent stages, and turning off
+     * either one alone leaves the other in place. {@code enable.fma=false} stops
+     * {@code CUDAFMAPhase} emitting a literal {@code fma()} call into the generated CUDA C, which
+     * {@code --fmad} cannot undo -- a function call cannot be decontracted. {@code --fmad=false}
+     * stops NVRTC contracting the separated multiply and add back into one {@code fma.rn.f64} on
+     * the way to PTX, which the phase being off does not prevent.
+     *
+     * <p>
+     * Measured, all four combinations, on an RTX 4070: only {@code enable.fma=false} together with
+     * {@code --fmad=false} computes {@code a*b+c} with two roundings, the way the host does. So a
+     * caller asking for the first without knowing to ask for the second got fused arithmetic and no
+     * indication of it. Tying them means the option does what its name says.
+     *
+     * <p>
+     * Added only when nothing has already spoken for {@code --fmad}, because NVRTC rejects the
+     * option outright when it is given twice -- {@code nvrtc: error: --fmad (-fmad) defined more
+     * than once} -- and the {@code repro} profile sets it. {@code enable.fma=false} together with
+     * {@code profile=repro} is the combination a caller wanting reproducible arithmetic reaches
+     * for first, so adding it unconditionally would break exactly the case this exists to serve.
+     * Whoever states it explicitly wins; this only fills the gap.
+     *
+     * <p>
+     * {@code --fmad=false} takes precedence over {@code --use_fast_math} whichever order the two
+     * appear in, so the {@code fast} profile and this are not in conflict.
+     */
+    private static String fmaContractionFlag(String alreadySpecified) {
+        if (ENABLE_FMA || alreadySpecified.contains("-fmad")) {
+            return "";
+        }
+        return "--fmad=false";
+    }
+
+    /**
      * Default CUDA (NVRTC) Compiler Flags. Passed to NVRTC when compiling the generated CUDA C source.
      * The profile's flags come first so that anything set explicitly here wins.
      */
-    public static final String DEFAULT_CUDA_COMPILER_FLAGS = (CUDA_COMPILE_PROFILE.getFlags() + " " + getProperty("tornado.cuda.compiler.flags", "")).trim();
+    public static final String DEFAULT_CUDA_COMPILER_FLAGS = defaultCudaCompilerFlags();
+
+    private static String defaultCudaCompilerFlags() {
+        String stated = (CUDA_COMPILE_PROFILE.getFlags() + " " + getProperty("tornado.cuda.compiler.flags", "")).trim();
+        return (stated + " " + fmaContractionFlag(stated)).trim().replaceAll("\\s+", " ");
+    }
 
     /**
      * Use internal timers for profiling in ns if enabled, in ms if disabled. Default is ns (enabled).
@@ -177,11 +228,6 @@ public class TornadoOptions {
      * Option to enable profiler-feature extractions.
      */
     public static final boolean FEATURE_EXTRACTION = getBooleanValue("tornado.feature.extraction", FALSE);
-    /**
-     * Enable/Disable FMA Optimizations. True by default.
-     */
-    public static final boolean ENABLE_FMA = getBooleanValue("tornado.enable.fma", TRUE);
-
     /**
      * Enable/Disable Fix Reads Optimization. True by default.
      */

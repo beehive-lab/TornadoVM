@@ -47,7 +47,7 @@ Debugging and Logging
    ``-Dtornado.fullDebug=true``                      Enables full debug output including bytecode and runtime internals.
    ``-Dtornado.printKernel=true``                    Prints generated OpenCL/CUDA kernels.
    ``-Dtornado.print.kernel.dir=FILENAME``           Saves generated kernels to the specified file.
-   ``-Dtornado.cuda.compile.profile=PROFILE``        Named NVRTC option bundle for the CUDA backend: ``default`` (no extra options), ``fast`` (``--use_fast_math --extra-device-vectorization``), ``debug`` (``-lineinfo``, so Nsight can attribute samples to the generated CUDA C) or ``repro`` (``--fmad=false``). Flags in ``tornado.cuda.compiler.flags`` are appended after the profile and win.
+   ``-Dtornado.cuda.compile.profile=PROFILE``        Named NVRTC option bundle for the CUDA backend: ``default`` (no extra options), ``fast`` (``--use_fast_math --extra-device-vectorization``), ``debug`` (``-lineinfo``, so Nsight can attribute samples to the generated CUDA C) or ``repro`` (``--fmad=false``). Flags in ``tornado.cuda.compiler.flags`` are appended after the profile and win. Note that ``repro`` covers only NVRTC's half of multiply-add fusion; ``-Dtornado.enable.fma=false`` is needed as well to stop the compiler phase emitting an ``fma()`` call, and setting that now implies ``--fmad=false`` so the two combine without conflicting.
    ``-Dtornado.threadInfo=true``                     Displays the number of threads used.
    ``-Dtornado.print.bytecodes=true``                Prints TornadoVM Internal Bytecodes to stdout.
    ``-Dtornado.dump.bytecodes.dir=FILENAME``         Dumps TornadoVM Internal Bytecodes to the specified file.
@@ -115,7 +115,7 @@ Optimizations
    ================================================================  ===================================================================================================
    Flag                                                              Description
    ================================================================  ===================================================================================================
-   ``-Dtornado.enable.fma=true``                                     Enables fused multiply-add (default: true). May cause issues on some platforms.
+   ``-Dtornado.enable.fma=true``                                     Enables fused multiply-add (default: true). May cause issues on some platforms. On the CUDA backend, setting it to ``false`` also passes ``--fmad=false`` to NVRTC, because disabling the compiler phase alone does not stop fusion: the phase emits a literal ``fma()`` call that ``--fmad`` cannot undo, and without ``--fmad=false`` NVRTC contracts the separated multiply and add back into one instruction. Both are needed for ``a*b+c`` to round twice, as the host does. If ``--fmad`` is already set -- by ``tornado.cuda.compiler.flags`` or by the ``repro`` profile -- that setting is left alone.
    ``-Dtornado.enable.mathOptimizations=true``                       Enables math simplifications (e.g., ``1/sqrt(x)`` → ``rsqrt``) (default: true).
    ``-Dtornado.enable.fastMathOptimizations=true``                   Enables more aggressive fast-math optimizations (default: true).
    ``-Dtornado.experimental.partial.unroll=true``                    Enables loop partial unrolling (default: false). Use ``-Dtornado.unroll.factor=FACTOR`` (default: 4).
