@@ -308,6 +308,11 @@ TornadoViz (bytecode visualizer)
 
 Feed it the bytecode log produced by running with ``--printBytecodes``.
 
+.. note::
+   TornadoViz parses the bytecode log textually. It has not yet been updated for the
+   ``compact``/``full``/``trace`` formats, so use ``--printBytecodes`` together with ``--dumpBC`` and the
+   format TornadoViz expects when driving it.
+
 Third-Party Profilers
 -------------------------
 
