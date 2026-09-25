@@ -71,7 +71,27 @@ public class MetalUnary {
 
         @Override
         public void emit(MetalCompilationResultBuilder crb, MetalAssembler asm) {
+            if (negatesSignedInteger()) {
+                // Java's unary minus wraps, so negating INT_MIN gives INT_MIN back; in C++ that is
+                // undefined. Negating through the unsigned kind is defined, and the narrowing back
+                // is the two's-complement reinterpretation Java specifies.
+                MetalKind kind = getMetalPlatformKind();
+                String unsigned = (kind == MetalKind.INT ? MetalKind.UINT : MetalKind.ULONG).toString();
+                asm.emit("(" + kind + ") (-(" + unsigned + ") ");
+                asm.emitValueOrOp(crb, value);
+                asm.emit(")");
+                return;
+            }
             opcode.emit(crb, value);
+        }
+
+        /** True for {@code -x} on a signed {@code int} or {@code long}. */
+        private boolean negatesSignedInteger() {
+            if (opcode != MetalAssembler.MetalUnaryOp.NEGATE) {
+                return false;
+            }
+            MetalKind kind = getMetalPlatformKind();
+            return kind == MetalKind.INT || kind == MetalKind.LONG;
         }
 
         @Override
