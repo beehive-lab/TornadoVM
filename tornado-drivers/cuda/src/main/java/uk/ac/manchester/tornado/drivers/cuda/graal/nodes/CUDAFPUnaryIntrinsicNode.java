@@ -43,7 +43,6 @@ import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAArithmeticTool;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDABuiltinTool;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt.AssignStmt;
@@ -74,11 +73,11 @@ public class CUDAFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIR
 
         if (value.isConstant()) {
             if (kind == JavaKind.Double) {
-                double ret = doCompute(value.asJavaConstant().asDouble(), op);
-                result = ConstantNode.forDouble(ret);
+                Double ret = doCompute(value.asJavaConstant().asDouble(), op);
+                result = ret == null ? null : ConstantNode.forDouble(ret);
             } else if (kind == JavaKind.Float) {
-                float ret = doCompute(value.asJavaConstant().asFloat(), op);
-                result = ConstantNode.forFloat(ret);
+                Float ret = doCompute(value.asJavaConstant().asFloat(), op);
+                result = ret == null ? null : ConstantNode.forFloat(ret);
             }
         }
         return result;
@@ -100,7 +99,7 @@ public class CUDAFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIR
         return (float) Math.log(value + Math.sqrt(value * value + 1));
     }
 
-    private static double doCompute(double value, Operation op) {
+    private static Double doCompute(double value, Operation op) {
         return switch (op) {
             case ASIN -> Math.asin(value);
             case ASINH -> computeAsinh(value);
@@ -111,12 +110,22 @@ public class CUDAFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIR
             case SQRT -> Math.sqrt(value);
             case FLOOR -> Math.floor(value);
             case LOG -> Math.log(value);
-            default -> throw new TornadoInternalError("unable to compute op %s", op);
+            case ATAN -> Math.atan(value);
+            case CEIL -> Math.ceil(value);
+            case COS -> Math.cos(value);
+            case SIN -> Math.sin(value);
+            case TAN -> Math.tan(value);
+            case TANH -> Math.tanh(value);
+            // An operation this switch has no arm for is one the fold cannot perform - not an
+            // error. Declining leaves the node in place so `generate` emits the call, which is what
+            // the same expression on a non-constant argument already does. Throwing here aborted
+            // the whole compilation for e.g. cos() of a compile-time-constant angle.
+            default -> null;
         };
     }
     // @formatter:on
 
-    private static float doCompute(float value, Operation op) {
+    private static Float doCompute(float value, Operation op) {
         return switch (op) {
             case ASIN -> (float) Math.asin(value);
             case ASINH -> computeAsinh(value);
@@ -127,7 +136,17 @@ public class CUDAFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIR
             case SQRT -> (float) Math.sqrt(value);
             case FLOOR -> (float) Math.floor(value);
             case LOG -> (float) Math.log(value);
-            default -> throw new TornadoInternalError("unable to compute op %s", op);
+            case ATAN -> (float) Math.atan(value);
+            case CEIL -> (float) Math.ceil(value);
+            case COS -> (float) Math.cos(value);
+            case SIN -> (float) Math.sin(value);
+            case TAN -> (float) Math.tan(value);
+            case TANH -> (float) Math.tanh(value);
+            // An operation this switch has no arm for is one the fold cannot perform - not an
+            // error. Declining leaves the node in place so `generate` emits the call, which is what
+            // the same expression on a non-constant argument already does. Throwing here aborted
+            // the whole compilation for e.g. cos() of a compile-time-constant angle.
+            default -> null;
         };
     }
 
