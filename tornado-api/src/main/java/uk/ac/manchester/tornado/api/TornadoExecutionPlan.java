@@ -17,8 +17,6 @@
  */
 package uk.ac.manchester.tornado.api;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -99,7 +97,17 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      */
     protected TornadoExecutionPlan parentLink;
 
-    protected List<TornadoExecutionResult> planResults;
+    /**
+     * Result of the most recent {@link #execute()}. A result is a live view of the executor, so
+     * only the latest one is kept: keeping every result would grow the heap by one entry per
+     * execution for the lifetime of the plan.
+     */
+    protected TornadoExecutionResult lastPlanResult;
+
+    /**
+     * Number of times {@link #execute()} has been called on this plan.
+     */
+    protected long numPlanResults;
 
     /**
      * Create an Execution Plan: Object to create and optimize an execution plan for
@@ -117,7 +125,6 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         executionFrame = new ExecutorFrame(id);
         updateAccess(immutableTaskGraphs);
         rootNode = this;
-        planResults = new ArrayList<>();
     }
 
     /**
@@ -184,7 +191,8 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         tornadoExecutor.execute(executionFrame);
         TornadoProfilerResult profilerResult = new TornadoProfilerResult(tornadoExecutor, this::getTraceExecutionPlan);
         TornadoExecutionResult executionResult = new TornadoExecutionResult(profilerResult);
-        planResults.add(executionResult);
+        lastPlanResult = executionResult;
+        numPlanResults++;
         tornadoExecutor.updateLastExecutedTaskGraph();
         return executionResult;
     }
@@ -565,11 +573,24 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         return tornadoExecutor.getCurrentDeviceMemoryUsage();
     }
 
+    /**
+     * Returns the result of an execution of this plan. Every {@link TornadoExecutionResult} is a
+     * live view of the plan's executor: its profiler reads the executor's current timers, not a
+     * snapshot taken at that execution. Past results therefore carry no information that the
+     * latest one does not, and the plan keeps only the latest. Any index of an execution that
+     * has taken place returns that result.
+     *
+     * @param index
+     *     Index of the execution, starting at 0.
+     * @return {@link TornadoExecutionResult}
+     * @throws TornadoRuntimeException
+     *     if no execution with that index has taken place.
+     */
     public TornadoExecutionResult getPlanResult(int index) {
-        if (index >= planResults.size()) {
+        if (index < 0 || index >= numPlanResults) {
             throw new TornadoRuntimeException("[ERROR] Execution result not found");
         }
-        return planResults.get(index);
+        return lastPlanResult;
     }
 
     /**

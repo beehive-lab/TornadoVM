@@ -19,6 +19,8 @@ package uk.ac.manchester.tornado.unittests.executor;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 
 import java.util.Arrays;
@@ -38,6 +40,7 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.TestHello;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -400,6 +403,49 @@ public class TestExecutor extends TornadoTestBase {
             for (int i = 0; i < c.getSize(); i++) {
                 assertEquals((a.get(i) + b.get(i)) * 2, c.get(i));
             }
+        }
+    }
+
+    /**
+     * Test that a plan keeps only the latest execution result, while every index of an
+     * execution that has taken place still resolves. Past results used to accumulate, one
+     * per {@code execute()}, for the lifetime of the plan.
+     */
+    @Test
+    public void test08() throws TornadoExecutionPlanException {
+        int numElements = 16;
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
+
+        a.init(1);
+        b.init(2);
+
+        TaskGraph tg = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestHello::add, a, b, c) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(tg.snapshot())) {
+
+            assertThrows(TornadoRuntimeException.class, () -> executionPlan.getPlanResult(0));
+
+            final int numExecutions = 5;
+            TornadoExecutionResult lastResult = null;
+            for (int i = 0; i < numExecutions; i++) {
+                lastResult = executionPlan.execute();
+            }
+
+            for (int i = 0; i < numExecutions; i++) {
+                assertSame(lastResult, executionPlan.getPlanResult(i));
+            }
+            assertThrows(TornadoRuntimeException.class, () -> executionPlan.getPlanResult(numExecutions));
+            assertThrows(TornadoRuntimeException.class, () -> executionPlan.getPlanResult(-1));
+            assertNotNull(executionPlan.getPlanResult(0).getProfilerResult());
+        }
+
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals(a.get(i) + b.get(i), c.get(i));
         }
     }
 
