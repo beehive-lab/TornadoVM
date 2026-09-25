@@ -17,6 +17,8 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -27,6 +29,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.plan.types.OffConcurrentDevices;
 import uk.ac.manchester.tornado.api.plan.types.OffMemoryLimit;
+import uk.ac.manchester.tornado.api.plan.types.OffPlanResultsHistory;
 import uk.ac.manchester.tornado.api.plan.types.OffPrintKernel;
 import uk.ac.manchester.tornado.api.plan.types.OffProfiler;
 import uk.ac.manchester.tornado.api.plan.types.OffThreadInfo;
@@ -44,6 +47,7 @@ import uk.ac.manchester.tornado.api.plan.types.WithGridScheduler;
 import uk.ac.manchester.tornado.api.plan.types.WithIntraPlanConcurrency;
 import uk.ac.manchester.tornado.api.plan.types.WithStagedTransfers;
 import uk.ac.manchester.tornado.api.plan.types.WithMemoryLimit;
+import uk.ac.manchester.tornado.api.plan.types.WithPlanResultsHistory;
 import uk.ac.manchester.tornado.api.plan.types.WithPreCompilation;
 import uk.ac.manchester.tornado.api.plan.types.WithPrintKernel;
 import uk.ac.manchester.tornado.api.plan.types.WithProfiler;
@@ -98,9 +102,8 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     protected TornadoExecutionPlan parentLink;
 
     /**
-     * Result of the most recent {@link #execute()}. A result is a live view of the executor, so
-     * only the latest one is kept: keeping every result would grow the heap by one entry per
-     * execution for the lifetime of the plan.
+     * Result of the most recent {@link #execute()} of this plan. Like the fields below, it is
+     * only used on the root node, so that every node of the plan chain shares it.
      */
     protected TornadoExecutionResult lastPlanResult;
 
@@ -108,6 +111,18 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * Number of times {@link #execute()} has been called on this plan.
      */
     protected long numPlanResults;
+
+    /**
+     * Every result since {@link #withPlanResultsHistory()} was enabled, or {@code null} when only
+     * the latest result is kept (the default). Keeping every result grows the heap by one entry
+     * per execution for as long as the history is enabled.
+     */
+    protected List<TornadoExecutionResult> planResultsHistory;
+
+    /**
+     * Index of the execution stored at position 0 of {@link #planResultsHistory}.
+     */
+    protected long planResultsHistoryStart;
 
     /**
      * Create an Execution Plan: Object to create and optimize an execution plan for
@@ -191,8 +206,12 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         tornadoExecutor.execute(executionFrame);
         TornadoProfilerResult profilerResult = new TornadoProfilerResult(tornadoExecutor, this::getTraceExecutionPlan);
         TornadoExecutionResult executionResult = new TornadoExecutionResult(profilerResult);
-        lastPlanResult = executionResult;
-        numPlanResults++;
+        TornadoExecutionPlan root = rootNode;
+        root.lastPlanResult = executionResult;
+        if (root.planResultsHistory != null) {
+            root.planResultsHistory.add(executionResult);
+        }
+        root.numPlanResults++;
         tornadoExecutor.updateLastExecutedTaskGraph();
         return executionResult;
     }
@@ -514,6 +533,43 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     }
 
     /**
+     * Keep the result of every execution from now on, so that {@link #getPlanResult(int)} returns
+     * the object that each {@link #execute()} call returned. By default, only the latest result is
+     * kept.
+     *
+     * <p>
+     * The history grows by one entry per execution until it is disabled with
+     * {@link #withoutPlanResultsHistory()} or the plan is released, so avoid it on plans that
+     * execute many times.
+     * </p>
+     *
+     * @since 7.0.2
+     *
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan withPlanResultsHistory() {
+        TornadoExecutionPlan root = rootNode;
+        if (root.planResultsHistory == null) {
+            root.planResultsHistory = new ArrayList<>();
+            root.planResultsHistoryStart = root.numPlanResults;
+        }
+        return new WithPlanResultsHistory(this);
+    }
+
+    /**
+     * Keep only the latest execution result (the default), and release the history recorded by
+     * {@link #withPlanResultsHistory()}.
+     *
+     * @since 7.0.2
+     *
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan withoutPlanResultsHistory() {
+        rootNode.planResultsHistory = null;
+        return new OffPlanResultsHistory(this);
+    }
+
+    /**
      * Enable printing of the generated kernels for each task in a task-graph.
      *
      * @since 1.0.2
@@ -574,11 +630,21 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     }
 
     /**
-     * Returns the result of an execution of this plan. Every {@link TornadoExecutionResult} is a
-     * live view of the plan's executor: its profiler reads the executor's current timers, not a
-     * snapshot taken at that execution. Past results therefore carry no information that the
-     * latest one does not, and the plan keeps only the latest. Any index of an execution that
-     * has taken place returns that result.
+     * Returns the result of an execution of this plan.
+     *
+     * <p>
+     * By default the plan keeps only the latest result, and any index of an execution that has
+     * taken place returns it. With {@link #withPlanResultsHistory()} enabled, the plan keeps every
+     * result from that point on, and an index recorded in the history returns the result of that
+     * execution.
+     * </p>
+     *
+     * <p>
+     * Every {@link TornadoExecutionResult} is a live view of the plan's executor: its profiler
+     * reads the executor's current timers, not a snapshot taken at that execution. A result kept
+     * in the history is therefore the object returned by that {@code execute()} call, but its
+     * timers report the latest execution.
+     * </p>
      *
      * @param index
      *     Index of the execution, starting at 0.
@@ -587,10 +653,14 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      *     if no execution with that index has taken place.
      */
     public TornadoExecutionResult getPlanResult(int index) {
-        if (index < 0 || index >= numPlanResults) {
+        TornadoExecutionPlan root = rootNode;
+        if (index < 0 || index >= root.numPlanResults) {
             throw new TornadoRuntimeException("[ERROR] Execution result not found");
         }
-        return lastPlanResult;
+        if (root.planResultsHistory != null && index >= root.planResultsHistoryStart) {
+            return root.planResultsHistory.get((int) (index - root.planResultsHistoryStart));
+        }
+        return root.lastPlanResult;
     }
 
     /**

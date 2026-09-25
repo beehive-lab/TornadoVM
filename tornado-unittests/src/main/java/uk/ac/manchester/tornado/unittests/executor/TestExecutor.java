@@ -19,6 +19,7 @@ package uk.ac.manchester.tornado.unittests.executor;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
@@ -442,6 +443,62 @@ public class TestExecutor extends TornadoTestBase {
             assertThrows(TornadoRuntimeException.class, () -> executionPlan.getPlanResult(numExecutions));
             assertThrows(TornadoRuntimeException.class, () -> executionPlan.getPlanResult(-1));
             assertNotNull(executionPlan.getPlanResult(0).getProfilerResult());
+        }
+
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals(a.get(i) + b.get(i), c.get(i));
+        }
+    }
+
+    /**
+     * Test that {@code withPlanResultsHistory()} keeps the result of every execution from the
+     * point it is enabled, that the history is shared by every node of the plan chain, and that
+     * {@code withoutPlanResultsHistory()} goes back to keeping only the latest result.
+     */
+    @Test
+    public void test09() throws TornadoExecutionPlanException {
+        int numElements = 16;
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
+
+        a.init(1);
+        b.init(2);
+
+        TaskGraph tg = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestHello::add, a, b, c) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(tg.snapshot())) {
+
+            // Execution 0 happens before the history is enabled
+            executionPlan.execute();
+
+            // Enable the history through the chain, and execute through a chain node
+            TornadoExecutionPlan node = executionPlan.withPlanResultsHistory().withDevice(TornadoExecutionPlan.DEFAULT_DEVICE);
+            final int numExecutions = 3;
+            TornadoExecutionResult[] results = new TornadoExecutionResult[numExecutions];
+            for (int i = 0; i < numExecutions; i++) {
+                results[i] = node.execute();
+            }
+
+            // Executions 1..3 are in the history, and every node of the chain sees them
+            for (int i = 0; i < numExecutions; i++) {
+                assertSame(results[i], executionPlan.getPlanResult(i + 1));
+                assertSame(results[i], node.getPlanResult(i + 1));
+            }
+            assertNotSame(results[0], results[numExecutions - 1]);
+
+            // Execution 0 was not recorded, so it resolves to the latest result
+            assertSame(results[numExecutions - 1], executionPlan.getPlanResult(0));
+            assertThrows(TornadoRuntimeException.class, () -> executionPlan.getPlanResult(numExecutions + 1));
+
+            // Back to keeping only the latest result
+            TornadoExecutionResult last = executionPlan.withoutPlanResultsHistory().execute();
+            for (int i = 0; i <= numExecutions + 1; i++) {
+                assertSame(last, executionPlan.getPlanResult(i));
+            }
         }
 
         for (int i = 0; i < c.getSize(); i++) {
