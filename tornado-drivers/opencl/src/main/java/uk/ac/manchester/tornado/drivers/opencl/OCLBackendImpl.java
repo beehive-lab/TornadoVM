@@ -31,6 +31,9 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -59,6 +62,12 @@ public final class OCLBackendImpl implements TornadoAcceleratorBackend {
             OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR, //
             OCLDeviceType.CL_DEVICE_TYPE_CUSTOM);
     private final OCLBackend[][] backends;
+    /**
+     * Create each platform's OpenCL context on a helper thread, overlapping it with building the
+     * compiler (see {@link #createContext(TornadoPlatformInterface)}).
+     */
+    private static final boolean ASYNC_CONTEXT_CREATION = Boolean.parseBoolean(System.getProperty("tornado.opencl.context.async", "True"));
+
     private final List<OCLContextInterface> contexts;
     private OCLBackend[] flatBackends;
     private volatile List<TornadoDevice> devices;
@@ -203,33 +212,101 @@ public final class OCLBackendImpl implements TornadoAcceleratorBackend {
         }
     }
 
-    private OCLBackend createOCLJITCompiler(final OptionValues options, TornadoVMConfigAccess vmConfig, final OCLContextInterface context,
-            final int deviceIndex) {
-        final OCLTargetDevice device = context.devices().get(deviceIndex);
+    private OCLBackend createOCLJITCompiler(final OptionValues options, TornadoVMConfigAccess vmConfig, final Supplier<OCLContextInterface> context,
+            final OCLTargetDevice device) {
         logger.info("Creating backend for %s", device.getDeviceName());
         return OCLHotSpotBackendFactory.createJITCompiler(options, vmConfig, context, device);
     }
 
-    private void installDevices(int platformIndex, TornadoPlatformInterface platform, final OptionValues options, TornadoVMConfigAccess vmConfig) {
+    private void installDevices(int platformIndex, TornadoPlatformInterface platform, final Supplier<OCLContextInterface> context, final OptionValues options,
+            TornadoVMConfigAccess vmConfig) {
         logger.info("OpenCL[%d]: Platform %s", platformIndex, platform.getName());
-        final OCLContextInterface context = platform.createContext();
-        assert context != null : "OpenCL context is null";
-        contexts.add(context);
-        final int numDevices = context.getNumDevices();
+        final List<OCLTargetDevice> devices = platform.getDevices();
+        final int numDevices = devices.size();
         logger.info("OpenCL[%d]: Has %d devices...", platformIndex, numDevices);
         backends[platformIndex] = new OCLBackend[numDevices];
         for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
-            final OCLTargetDevice device = context.devices().get(deviceIndex);
+            final OCLTargetDevice device = devices.get(deviceIndex);
             logger.info("OpenCL[%d]: device=%s", platformIndex, device.getDeviceName());
-            backends[platformIndex][deviceIndex] = createOCLJITCompiler(options, vmConfig, context, deviceIndex);
+            backends[platformIndex][deviceIndex] = createOCLJITCompiler(options, vmConfig, context, device);
         }
+        final OCLContextInterface platformContext = context.get();
+        assert platformContext != null : "OpenCL context is null";
+        contexts.add(platformContext);
     }
 
     private void discoverDevices(final OptionValues options, TornadoVMConfigAccess vmConfig) {
-        IntStream.range(0, OpenCL.getNumPlatforms()).forEach(i -> {
-            final TornadoPlatformInterface platform = OpenCL.getPlatform(i);
-            installDevices(i, platform, options, vmConfig);
-        });
+        final int numPlatforms = OpenCL.getNumPlatforms();
+        final List<Supplier<OCLContextInterface>> platformContexts = new ArrayList<>(numPlatforms);
+        for (int i = 0; i < numPlatforms; i++) {
+            platformContexts.add(createContext(OpenCL.getPlatform(i)));
+        }
+        for (int i = 0; i < numPlatforms; i++) {
+            installDevices(i, OpenCL.getPlatform(i), platformContexts.get(i), options, vmConfig);
+        }
+    }
+
+    /**
+     * Starts creating the platform's context and returns a supplier that waits for it.
+     *
+     * <p>
+     * Creating the context ({@code clCreateContext}) is a driver call, and the first part of building
+     * each device's compiler (lowering, replacements, graph-builder plugins) does not need a context.
+     * The context is therefore created on a helper thread while the compiler is built, and joined
+     * just before the device context is created. The helper thread only creates the context: device
+     * contexts, command queues and every device query stay on the calling thread, as before.
+     * </p>
+     *
+     * <p>
+     * Disable with {@code -Dtornado.opencl.context.async=False} to create the context inline.
+     * </p>
+     */
+    private static Supplier<OCLContextInterface> createContext(TornadoPlatformInterface platform) {
+        if (!ASYNC_CONTEXT_CREATION) {
+            final OCLContextInterface context = platform.createContext();
+            return () -> context;
+        }
+        final FutureTask<OCLContextInterface> task = new FutureTask<>(platform::createContext);
+        final Thread thread = new Thread(task, "TornadoVM-OpenCL-Context-Init");
+        thread.setDaemon(true);
+        thread.start();
+        return new Supplier<>() {
+            private OCLContextInterface context;
+
+            @Override
+            public OCLContextInterface get() {
+                if (context == null) {
+                    context = awaitContext(task);
+                }
+                return context;
+            }
+        };
+    }
+
+    private static OCLContextInterface awaitContext(FutureTask<OCLContextInterface> task) {
+        boolean interrupted = false;
+        try {
+            while (true) {
+                try {
+                    return task.get();
+                } catch (InterruptedException e) {
+                    interrupted = true;
+                } catch (ExecutionException e) {
+                    final Throwable cause = e.getCause();
+                    if (cause instanceof RuntimeException runtimeException) {
+                        throw runtimeException;
+                    }
+                    if (cause instanceof Error error) {
+                        throw error;
+                    }
+                    throw new TornadoBailoutRuntimeException("[OpenCL] Context creation failed: " + cause);
+                }
+            }
+        } finally {
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     public OCLBackend getBackend(int platform, int device) {

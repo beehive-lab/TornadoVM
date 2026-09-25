@@ -32,6 +32,9 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 import tornado.graal.compiler.options.OptionValues;
@@ -59,6 +62,12 @@ public final class CUDABackendImpl implements TornadoAcceleratorBackend {
             CUDADeviceType.CL_DEVICE_TYPE_ACCELERATOR, //
             CUDADeviceType.CL_DEVICE_TYPE_CUSTOM);
     private final CUDABackend[][] backends;
+    /**
+     * Create each platform's CUDA context on a helper thread, overlapping it with building the
+     * compiler (see {@link #createContext(TornadoPlatformInterface)}).
+     */
+    private static final boolean ASYNC_CONTEXT_CREATION = Boolean.parseBoolean(System.getProperty("tornado.cuda.context.async", "True"));
+
     private final List<CUDAContextInterface> contexts;
     private CUDABackend[] flatBackends;
     private volatile List<TornadoDevice> devices;
@@ -203,33 +212,108 @@ public final class CUDABackendImpl implements TornadoAcceleratorBackend {
         }
     }
 
-    private CUDABackend createCUDAJITCompiler(final OptionValues options, TornadoVMConfigAccess vmConfig, final CUDAContextInterface context,
-            final int deviceIndex) {
-        final CUDATargetDevice device = context.devices().get(deviceIndex);
+    private CUDABackend createCUDAJITCompiler(final OptionValues options, TornadoVMConfigAccess vmConfig, final Supplier<CUDAContextInterface> context,
+            final CUDATargetDevice device) {
         logger.info("Creating backend for %s", device.getDeviceName());
         return CUDAHotSpotBackendFactory.createJITCompiler(options, vmConfig, context, device);
     }
 
-    private void installDevices(int platformIndex, TornadoPlatformInterface platform, final OptionValues options, TornadoVMConfigAccess vmConfig) {
+    private void installDevices(int platformIndex, TornadoPlatformInterface platform, final Supplier<CUDAContextInterface> context, final OptionValues options,
+            TornadoVMConfigAccess vmConfig) {
         logger.info("CUDADriver[%d]: Platform %s", platformIndex, platform.getName());
-        final CUDAContextInterface context = platform.createContext();
-        assert context != null : "CUDADriver context is null";
-        contexts.add(context);
-        final int numDevices = context.getNumDevices();
+        final List<CUDATargetDevice> devices = platform.getDevices();
+        final int numDevices = devices.size();
         logger.info("CUDADriver[%d]: Has %d devices...", platformIndex, numDevices);
         backends[platformIndex] = new CUDABackend[numDevices];
         for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
-            final CUDATargetDevice device = context.devices().get(deviceIndex);
+            final CUDATargetDevice device = devices.get(deviceIndex);
             logger.info("CUDADriver[%d]: device=%s", platformIndex, device.getDeviceName());
-            backends[platformIndex][deviceIndex] = createCUDAJITCompiler(options, vmConfig, context, deviceIndex);
+            backends[platformIndex][deviceIndex] = createCUDAJITCompiler(options, vmConfig, context, device);
         }
+        final CUDAContextInterface platformContext = context.get();
+        assert platformContext != null : "CUDADriver context is null";
+        contexts.add(platformContext);
     }
 
     private void discoverDevices(final OptionValues options, TornadoVMConfigAccess vmConfig) {
-        IntStream.range(0, CUDADriver.getNumPlatforms()).forEach(i -> {
-            final TornadoPlatformInterface platform = CUDADriver.getPlatform(i);
-            installDevices(i, platform, options, vmConfig);
-        });
+        final int numPlatforms = CUDADriver.getNumPlatforms();
+        final List<Supplier<CUDAContextInterface>> platformContexts = new ArrayList<>(numPlatforms);
+        for (int i = 0; i < numPlatforms; i++) {
+            platformContexts.add(createContext(CUDADriver.getPlatform(i)));
+        }
+        for (int i = 0; i < numPlatforms; i++) {
+            installDevices(i, CUDADriver.getPlatform(i), platformContexts.get(i), options, vmConfig);
+        }
+    }
+
+    /**
+     * Starts creating the platform's context and returns a supplier that waits for it.
+     *
+     * <p>
+     * {@code cuCtxCreate} is a pure driver call that takes 80-110 ms on an RTX 5070 Ti, and the
+     * first part of building each device's compiler (lowering, replacements, graph-builder plugins)
+     * does not need a context. The context is therefore created on a helper thread while the
+     * compiler is built, and joined just before the device context is created. The helper thread
+     * only creates the context: device contexts, command queues and every device query stay on the
+     * calling thread, as before.
+     * </p>
+     *
+     * <p>
+     * Disable with {@code -Dtornado.cuda.context.async=False} to create the context inline.
+     * </p>
+     */
+    private static Supplier<CUDAContextInterface> createContext(TornadoPlatformInterface platform) {
+        if (!ASYNC_CONTEXT_CREATION) {
+            final CUDAContextInterface context = platform.createContext();
+            return () -> context;
+        }
+        final FutureTask<CUDAContextInterface> task = new FutureTask<>(platform::createContext);
+        final Thread thread = new Thread(task, "TornadoVM-CUDA-Context-Init");
+        thread.setDaemon(true);
+        thread.start();
+        return new Supplier<>() {
+            private CUDAContextInterface context;
+
+            @Override
+            public CUDAContextInterface get() {
+                if (context == null) {
+                    context = awaitContext(task);
+                }
+                return context;
+            }
+        };
+    }
+
+    private static CUDAContextInterface awaitContext(FutureTask<CUDAContextInterface> task) {
+        boolean interrupted = false;
+        try {
+            while (true) {
+                try {
+                    final CUDAContextInterface context = task.get();
+                    if (context instanceof CUDAContext cudaContext) {
+                        // A context is current only on the thread that created it: make it
+                        // current here too, as it was when the context was created inline.
+                        cudaContext.makeCurrent();
+                    }
+                    return context;
+                } catch (InterruptedException e) {
+                    interrupted = true;
+                } catch (ExecutionException e) {
+                    final Throwable cause = e.getCause();
+                    if (cause instanceof RuntimeException runtimeException) {
+                        throw runtimeException;
+                    }
+                    if (cause instanceof Error error) {
+                        throw error;
+                    }
+                    throw new TornadoBailoutRuntimeException("[CUDA] Context creation failed: " + cause);
+                }
+            }
+        } finally {
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     public CUDABackend getBackend(int platform, int device) {

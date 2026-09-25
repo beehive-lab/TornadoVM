@@ -26,6 +26,8 @@ package uk.ac.manchester.tornado.drivers.opencl.graal;
 import static jdk.vm.ci.common.InitTimer.timer;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
+import java.util.function.Supplier;
+
 import tornado.graal.compiler.api.replacements.SnippetReflectionProvider;
 import tornado.graal.compiler.core.common.spi.MetaAccessExtensionProvider;
 import tornado.graal.compiler.hotspot.meta.HotSpotStampProvider;
@@ -76,6 +78,16 @@ public class OCLHotSpotBackendFactory {
     private static final OCLAddressLowering addressLowering = new OCLAddressLowering();
 
     public static OCLBackend createJITCompiler(OptionValues options, TornadoVMConfigAccess config, OCLContextInterface tornadoContext, OCLTargetDevice device) {
+        return createJITCompiler(options, config, () -> tornadoContext, device);
+    }
+
+    /**
+     * Builds the compiler backend for a device, asking {@code contextSupplier} for the OpenCL context
+     * only once the part of the compiler that does not depend on it (lowering, replacements and
+     * graph-builder plugins) has been built. This lets the caller create the context, a driver
+     * call, concurrently with that work.
+     */
+    public static OCLBackend createJITCompiler(OptionValues options, TornadoVMConfigAccess config, Supplier<OCLContextInterface> contextSupplier, OCLTargetDevice device) {
         // Type/constant metadata is served by the reflection + Unsafe providers on every JDK.
         MetaAccessProvider metaAccess = new TornadoMetaAccessProvider();
         ConstantReflectionProvider constantReflection = new TornadoConstantReflectionProvider(snippetReflection);
@@ -92,7 +104,7 @@ public class OCLHotSpotBackendFactory {
         OCLArchitecture arch = new OCLArchitecture(wordKind, device.getByteOrder());
         OCLTargetDescription target = new OCLTargetDescription(arch, device.isDeviceDoubleFPSupported(), device.getDeviceExtensions());
         OCLCodeProvider codeCache = new OCLCodeProvider(target);
-        OCLDeviceContextInterface oclDeviceContextImpl = (OCLDeviceContextInterface) tornadoContext.createDeviceContext(device.getIndex());
+        OCLDeviceContextInterface oclDeviceContextImpl;
 
         OCLProviders providers;
         OCLLoweringProvider lowerer;
@@ -114,6 +126,9 @@ public class OCLHotSpotBackendFactory {
             plugins = createGraphBuilderPlugins(metaAccess, replacements, snippetReflection, lowerer);
 
             replacements.setGraphBuilderPlugins(plugins);
+
+            // Everything above is independent of the OpenCL context; from here on the device context is needed
+            oclDeviceContextImpl = (OCLDeviceContextInterface) contextSupplier.get().createDeviceContext(device.getIndex());
 
             suites = new OCLSuitesProvider(options, oclDeviceContextImpl, plugins, metaAccess, compilerConfiguration, addressLowering);
 
