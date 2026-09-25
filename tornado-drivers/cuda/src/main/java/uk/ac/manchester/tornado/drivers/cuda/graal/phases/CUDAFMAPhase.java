@@ -28,12 +28,13 @@ import tornado.graal.compiler.nodes.StructuredGraph;
 import tornado.graal.compiler.nodes.ValueNode;
 import tornado.graal.compiler.nodes.calc.AddNode;
 import tornado.graal.compiler.nodes.calc.MulNode;
-import tornado.graal.compiler.phases.Phase;
+import tornado.graal.compiler.phases.BasePhase;
 
 import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAFMANode;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLowTierContext;
 
-public class CUDAFMAPhase extends Phase {
+public class CUDAFMAPhase extends BasePhase<TornadoLowTierContext> {
 
     /**
      * Instrinsics in CUDADriver:
@@ -66,7 +67,14 @@ public class CUDAFMAPhase extends Phase {
     }
 
     @Override
-    protected void run(StructuredGraph graph) {
+    protected void run(StructuredGraph graph, TornadoLowTierContext context) {
+        // A task may require the host's rounding. Fusing computes a*b+c with one rounding instead
+        // of two, which is more accurate and different, and a caller that asked for agreement
+        // rather than accuracy must not get it. Checked here rather than by leaving the phase out
+        // of the suite, because the suite is built once per backend and this is per task.
+        if (context != null && context.getMeta() != null && context.getMeta().isStrictFloatingPoint()) {
+            return;
+        }
 
         graph.getNodes().filter(AddNode.class).forEach(addNode -> {
             MulNode mulNode = null;

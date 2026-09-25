@@ -1201,6 +1201,7 @@ public class TornadoVMInterpreter {
 
     private void updateMeta(TaskContextInterface meta) {
         meta.setPrintKernelFlag(graphExecutionContext.meta().isPrintKernelEnabled());
+        meta.setStrictFloatingPoint(graphExecutionContext.meta().isStrictFloatingPoint());
         // Every backend, not just OpenCL. withCompilerFlags() writes into the execution
         // context's meta, and each backend's code cache reads the *task's* meta -- so a flag
         // that is not copied down here never reaches the compiler. OCLCodeCache was the only

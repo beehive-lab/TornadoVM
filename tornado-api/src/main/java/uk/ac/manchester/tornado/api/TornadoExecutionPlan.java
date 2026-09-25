@@ -38,6 +38,7 @@ import uk.ac.manchester.tornado.api.plan.types.WithCUDAGraph;
 import uk.ac.manchester.tornado.api.plan.types.WithCUDAPendingLaunchCount;
 import uk.ac.manchester.tornado.api.plan.types.WithClearProfiles;
 import uk.ac.manchester.tornado.api.plan.types.WithCompilerFlags;
+import uk.ac.manchester.tornado.api.plan.types.WithStrictFloatingPoint;
 import uk.ac.manchester.tornado.api.plan.types.WithConcurrentDevices;
 import uk.ac.manchester.tornado.api.plan.types.WithDefaultScheduler;
 import uk.ac.manchester.tornado.api.plan.types.WithDevice;
@@ -543,6 +544,40 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     public TornadoExecutionPlan withCompilerFlags(TornadoVMBackendType backend, String compilerFlags) {
         tornadoExecutor.withCompilerFlags(backend, compilerFlags);
         return new WithCompilerFlags(this, compilerFlags);
+    }
+
+    /**
+     * Requires this plan's kernels to round floating-point arithmetic the way the host does.
+     *
+     * <p>
+     * A device computes {@code a * b + c} as one fused operation with a single rounding. That is a
+     * <em>more</em> accurate answer than the host's two roundings and a <em>different</em> one, and
+     * a caller comparing device results against host results, or filtering on a computed value,
+     * needs them to agree rather than to be individually defensible. This asks for agreement, at
+     * the cost of the fused instruction.
+     *
+     * <p>
+     * One switch rather than two, because there are two independent places the CUDA backend fuses
+     * and turning off either alone leaves the other: the compiler phase emits a literal
+     * {@code fma()} call that {@code --fmad} cannot undo, and NVRTC contracts a separated multiply
+     * and add back together unless told not to. A caller reaching for "the FMA flag" picks one and
+     * gets fused arithmetic anyway, which is why this is named for the guarantee instead.
+     *
+     * <p>
+     * Scoped to this plan. It can only make a task stricter, never less strict, so it composes with
+     * {@code -Dtornado.enable.fma=false} rather than fighting it.
+     *
+     * <p>
+     * Implemented for the CUDA backend. On a backend that does not implement it the call is
+     * accepted and has no effect, so check the backend before relying on it for a correctness
+     * guarantee.
+     *
+     * @since 7.0.2
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan withStrictFloatingPoint() {
+        tornadoExecutor.withStrictFloatingPoint();
+        return new WithStrictFloatingPoint(this);
     }
 
     /**
