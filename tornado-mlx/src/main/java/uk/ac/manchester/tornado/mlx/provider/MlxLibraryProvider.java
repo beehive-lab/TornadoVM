@@ -603,10 +603,12 @@ public final class MlxLibraryProvider implements TornadoLibraryProvider {
             throw new TornadoRuntimeException("[ERROR] Unknown MLX function: " + functionName);
         }
         MlxContext ctx = (MlxContext) invocation.getContext();
-        MlxOptions.Device device = CPU_ONLY.contains(functionName) ? MlxOptions.Device.CPU
-                : (invocation.getTuning() instanceof MlxOptions options) ? options.getDevice() : MlxOptions.Device.GPU;
-        boolean inPlace = !(invocation.getTuning() instanceof MlxOptions options) || options.isInPlaceKernels();
-        if (device == MlxOptions.Device.GPU && inPlace && MlxKernelRoutes.dispatch(functionName, invocation)) {
+        MlxOptions options = invocation.getTuning() instanceof MlxOptions tuning ? tuning : defaultOptions;
+        MlxOptions.Device device = CPU_ONLY.contains(functionName) ? MlxOptions.Device.CPU : options.getDevice();
+        lastDevice = device;
+        lastInPlace = false;
+        if (device == MlxOptions.Device.GPU && options.isInPlaceKernels() && MlxKernelRoutes.dispatch(functionName, invocation)) {
+            lastInPlace = true;
             return;
         }
         synchronized (ctx) {
@@ -617,6 +619,26 @@ public final class MlxLibraryProvider implements TornadoLibraryProvider {
     }
 
     // ---------------------------------------------------------------- MLX kernels in place
+
+    /** Options for calls that carry none, normally the GPU with in-place kernels; benchmarks change it to compare paths. */
+    private static volatile MlxOptions defaultOptions = MlxOptions.gpu();
+    private static volatile MlxOptions.Device lastDevice = MlxOptions.Device.GPU;
+    private static volatile boolean lastInPlace;
+
+    /** Sets the options used by MLX tasks that have no tuning of their own (null restores the GPU default). */
+    public static void setDefaultOptions(MlxOptions options) {
+        defaultOptions = options == null ? MlxOptions.gpu() : options;
+    }
+
+    /** The device the most recent MLX call ran on (CPU for operations MLX only implements there). */
+    public static MlxOptions.Device lastDevice() {
+        return lastDevice;
+    }
+
+    /** Whether the most recent MLX call ran as an in-place MLX kernel. */
+    public static boolean lastInPlace() {
+        return lastInPlace;
+    }
 
     /** How many operations ran as in-place MLX kernels rather than through the C API. */
     public static long kernelDispatches() {

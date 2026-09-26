@@ -136,28 +136,28 @@ final class Tier3Cases {
 
     // ---------------------------------------------------------------- comparisons and logic
 
-    private static void comparison(String op, LibraryTask3<FloatArray, FloatArray, ByteArray> mlx, int code) {
+    private static void comparison(String op, LibraryTask3<FloatArray, FloatArray, ByteArray> mlx, int code, JavaTierReferences.Compare java) {
         for (int n : SIZES) {
             FloatArray a = uniform(n, -5, 5, 1);
             FloatArray b = uniform(n, -5, 5, 2);
             ByteArray out = new ByteArray(n);
             compare("logic", op, Integer.toString(n), regime(n), "f32", "JitLogic#compare", new Object[] { a, b }, new Object[] { out }, //
                     (g, gs, gn, t) -> g.libraryTask(t, mlx, a, b, out), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitLogic::compare, new KernelContext(), a, b, out, n, code)), 9.0 * n, n);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitLogic::compare, new KernelContext(), a, b, out, n, code)), 9.0 * n, n, () -> java.run(a, b, out));
         }
     }
 
-    private static void classification(String op, LibraryTask2<FloatArray, ByteArray> mlx, int kind) {
+    private static void classification(String op, LibraryTask2<FloatArray, ByteArray> mlx, int kind, JavaTierReferences.Classify java) {
         for (int n : SIZES) {
             FloatArray a = specials(n, 3);
             ByteArray out = new ByteArray(n);
             compare("logic", op, Integer.toString(n), regime(n), "f32", "JitLogic#classify", new Object[] { a }, new Object[] { out }, //
                     (g, gs, gn, t) -> g.libraryTask(t, mlx, a, out), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitLogic::classify, new KernelContext(), a, out, n, kind)), 5.0 * n, n);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitLogic::classify, new KernelContext(), a, out, n, kind)), 5.0 * n, n, () -> java.run(a, out));
         }
     }
 
-    private static void bitwise(String op, LibraryTask3<IntArray, IntArray, IntArray> mlx, int code, boolean shift) {
+    private static void bitwise(String op, LibraryTask3<IntArray, IntArray, IntArray> mlx, int code, boolean shift, JavaTierReferences.Bitwise java) {
         for (int n : SIZES) {
             IntArray a = randomInts(n, 4);
             IntArray b = randomInts(n, 5);
@@ -169,7 +169,7 @@ final class Tier3Cases {
             IntArray out = new IntArray(n);
             compare("logic", op, Integer.toString(n), regime(n), "i32", "JitLogic#bitwise", new Object[] { a, b }, new Object[] { out }, //
                     (g, gs, gn, t) -> g.libraryTask(t, mlx, a, b, out), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitLogic::bitwise, new KernelContext(), a, b, out, n, code)), 12.0 * n, n);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitLogic::bitwise, new KernelContext(), a, b, out, n, code)), 12.0 * n, n, () -> java.run(a, b, out));
         }
     }
 
@@ -177,22 +177,22 @@ final class Tier3Cases {
         if (!wants("logic")) {
             return;
         }
-        comparison("equal", MlxLogic::equal, JitLogic.EQUAL);
-        comparison("notEqual", MlxLogic::notEqual, JitLogic.NOT_EQUAL);
-        comparison("greater", MlxLogic::greater, JitLogic.GREATER);
-        comparison("greaterEqual", MlxLogic::greaterEqual, JitLogic.GREATER_EQUAL);
-        comparison("less", MlxLogic::less, JitLogic.LESS);
-        comparison("lessEqual", MlxLogic::lessEqual, JitLogic.LESS_EQUAL);
-        classification("isfinite", MlxLogic::isfinite, JitLogic.FINITE);
-        classification("isinf", MlxLogic::isinf, JitLogic.INF);
-        classification("isnan", MlxLogic::isnan, JitLogic.NAN);
-        classification("isneginf", MlxLogic::isneginf, JitLogic.NEG_INF);
-        classification("isposinf", MlxLogic::isposinf, JitLogic.POS_INF);
-        bitwise("bitwiseAnd", MlxLogic::bitwiseAnd, JitLogic.AND, false);
-        bitwise("bitwiseOr", MlxLogic::bitwiseOr, JitLogic.OR, false);
-        bitwise("bitwiseXor", MlxLogic::bitwiseXor, JitLogic.XOR, false);
-        bitwise("leftShift", MlxLogic::leftShift, JitLogic.LEFT_SHIFT, true);
-        bitwise("rightShift", MlxLogic::rightShift, JitLogic.RIGHT_SHIFT, true);
+        comparison("equal", MlxLogic::equal, JitLogic.EQUAL, JavaTierReferences::equal);
+        comparison("notEqual", MlxLogic::notEqual, JitLogic.NOT_EQUAL, JavaTierReferences::notEqual);
+        comparison("greater", MlxLogic::greater, JitLogic.GREATER, JavaTierReferences::greater);
+        comparison("greaterEqual", MlxLogic::greaterEqual, JitLogic.GREATER_EQUAL, JavaTierReferences::greaterEqual);
+        comparison("less", MlxLogic::less, JitLogic.LESS, JavaTierReferences::less);
+        comparison("lessEqual", MlxLogic::lessEqual, JitLogic.LESS_EQUAL, JavaTierReferences::lessEqual);
+        classification("isfinite", MlxLogic::isfinite, JitLogic.FINITE, JavaTierReferences::isfinite);
+        classification("isinf", MlxLogic::isinf, JitLogic.INF, JavaTierReferences::isinf);
+        classification("isnan", MlxLogic::isnan, JitLogic.NAN, JavaTierReferences::isnan);
+        classification("isneginf", MlxLogic::isneginf, JitLogic.NEG_INF, JavaTierReferences::isneginf);
+        classification("isposinf", MlxLogic::isposinf, JitLogic.POS_INF, JavaTierReferences::isposinf);
+        bitwise("bitwiseAnd", MlxLogic::bitwiseAnd, JitLogic.AND, false, JavaTierReferences::bitwiseAnd);
+        bitwise("bitwiseOr", MlxLogic::bitwiseOr, JitLogic.OR, false, JavaTierReferences::bitwiseOr);
+        bitwise("bitwiseXor", MlxLogic::bitwiseXor, JitLogic.XOR, false, JavaTierReferences::bitwiseXor);
+        bitwise("leftShift", MlxLogic::leftShift, JitLogic.LEFT_SHIFT, true, JavaTierReferences::leftShift);
+        bitwise("rightShift", MlxLogic::rightShift, JitLogic.RIGHT_SHIFT, true, JavaTierReferences::rightShift);
         closeCases();
         logicalCases();
         valueCases();
@@ -210,7 +210,8 @@ final class Tier3Cases {
             String shape = Integer.toString(n);
             compare("logic", "isclose", shape, regime(n), "f32", "JitLogic#isclose", new Object[] { a, b }, new Object[] { mask }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxLogic::isclose, a, b, mask, rtol, atol, false), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitLogic::isclose, new KernelContext(), a, b, mask, n, rtol, atol, 0)), 9.0 * n, 4.0 * n);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitLogic::isclose, new KernelContext(), a, b, mask, n, rtol, atol, 0)), 9.0 * n, 4.0 * n, //
+                    () -> JavaTierReferences.isclose(a, b, mask, rtol, atol, false));
             compare("logic", "allclose", shape, regime(n), "f32", "JitLogic#setFlag+allcloseCheck", new Object[] { a, b }, new Object[] { flag }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxLogic::allclose, a, b, flag, rtol, atol, false), //
                     (g, gs, gn, t) -> {
@@ -218,7 +219,7 @@ final class Tier3Cases {
                         gs.addWorkerGrid(gn + "." + t + "s", grid1D(1));
                         g.task(t + "c", JitLogic::allcloseCheck, new KernelContext(), a, b, flag, n, rtol, atol, 0);
                         gs.addWorkerGrid(gn + "." + t + "c", grid1D(n));
-                    }, 8.0 * n, 4.0 * n);
+                    }, 8.0 * n, 4.0 * n, () -> JavaTierReferences.allclose(a, b, flag, rtol, atol, false));
             compare("logic", "arrayEqual", shape, regime(n), "f32", "JitLogic#setFlag+arrayEqualCheck", new Object[] { a, b }, new Object[] { flag }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxLogic::arrayEqual, a, b, flag, false), //
                     (g, gs, gn, t) -> {
@@ -226,7 +227,7 @@ final class Tier3Cases {
                         gs.addWorkerGrid(gn + "." + t + "s", grid1D(1));
                         g.task(t + "c", JitLogic::arrayEqualCheck, new KernelContext(), a, b, flag, n, 0);
                         gs.addWorkerGrid(gn + "." + t + "c", grid1D(n));
-                    }, 8.0 * n, n);
+                    }, 8.0 * n, n, () -> JavaTierReferences.arrayEqual(a, b, flag));
         }
     }
 
@@ -238,13 +239,16 @@ final class Tier3Cases {
             String shape = Integer.toString(n);
             compare("logic", "logicalAnd", shape, regime(n), "bool", "JitLogic#logical", new Object[] { a, b }, new Object[] { out }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxLogic::logicalAnd, a, b, out), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitLogic::logical, new KernelContext(), a, b, out, n, JitLogic.AND)), 3.0 * n, n);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitLogic::logical, new KernelContext(), a, b, out, n, JitLogic.AND)), 3.0 * n, n, //
+                    () -> JavaTierReferences.logicalAnd(a, b, out));
             compare("logic", "logicalOr", shape, regime(n), "bool", "JitLogic#logical", new Object[] { a, b }, new Object[] { out }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxLogic::logicalOr, a, b, out), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitLogic::logical, new KernelContext(), a, b, out, n, JitLogic.OR)), 3.0 * n, n);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitLogic::logical, new KernelContext(), a, b, out, n, JitLogic.OR)), 3.0 * n, n, //
+                    () -> JavaTierReferences.logicalOr(a, b, out));
             compare("logic", "logicalNot", shape, regime(n), "bool", "JitLogic#logicalNot", new Object[] { a }, new Object[] { out }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxLogic::logicalNot, a, out), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitLogic::logicalNot, new KernelContext(), a, out, n)), 2.0 * n, n);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitLogic::logicalNot, new KernelContext(), a, out, n)), 2.0 * n, n, //
+                    () -> JavaTierReferences.logicalNot(a, out));
         }
     }
 
@@ -255,12 +259,14 @@ final class Tier3Cases {
             IntArray io = new IntArray(n);
             compare("logic", "bitwiseInvert", shape, regime(n), "i32", "JitLogic#invert", new Object[] { ia }, new Object[] { io }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxLogic::bitwiseInvert, ia, io), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitLogic::invert, new KernelContext(), ia, io, n)), 8.0 * n, n);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitLogic::invert, new KernelContext(), ia, io, n)), 8.0 * n, n, //
+                    () -> JavaTierReferences.bitwiseInvert(ia, io));
             FloatArray x = specials(n, 10);
             FloatArray y = new FloatArray(n);
             compare("logic", "nanToNum", shape, regime(n), "f32", "JitLogic#nanToNum", new Object[] { x }, new Object[] { y }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxLogic::nanToNum, x, y, 0.5f, 1e30f, -1e30f), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitLogic::nanToNum, new KernelContext(), x, y, n, 0.5f, 1e30f, -1e30f)), 8.0 * n, n);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitLogic::nanToNum, new KernelContext(), x, y, n, 0.5f, 1e30f, -1e30f)), 8.0 * n, n, //
+                    () -> JavaTierReferences.nanToNum(x, y, 0.5f, 1e30f, -1e30f));
             // n complex values, interleaved (re, im).
             FloatArray z = uniform(2 * n, -3, 3, 11);
             FloatArray part = new FloatArray(n);
@@ -268,13 +274,16 @@ final class Tier3Cases {
             String cshape = n + " complex";
             compare("logic", "real", cshape, regime(n), "c64", "JitLogic#complexPart", new Object[] { z }, new Object[] { part }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxLogic::real, z, part), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitLogic::complexPart, new KernelContext(), z, part, n, 0)), 12.0 * n, 0);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitLogic::complexPart, new KernelContext(), z, part, n, 0)), 12.0 * n, 0, //
+                    () -> JavaTierReferences.complexPart(z, part, 0));
             compare("logic", "imag", cshape, regime(n), "c64", "JitLogic#complexPart", new Object[] { z }, new Object[] { part }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxLogic::imag, z, part), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitLogic::complexPart, new KernelContext(), z, part, n, 1)), 12.0 * n, 0);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitLogic::complexPart, new KernelContext(), z, part, n, 1)), 12.0 * n, 0, //
+                    () -> JavaTierReferences.complexPart(z, part, 1));
             compare("logic", "conjugate", cshape, regime(n), "c64", "JitLogic#conjugate", new Object[] { z }, new Object[] { conj }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxLogic::conjugate, z, conj), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitLogic::conjugate, new KernelContext(), z, conj, n)), 16.0 * n, n);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitLogic::conjugate, new KernelContext(), z, conj, n)), 16.0 * n, n, //
+                    () -> JavaTierReferences.conjugate(z, conj));
         }
     }
 
@@ -401,7 +410,8 @@ final class Tier3Cases {
             FloatArray x = uniform(n, -1, 1, 31);
             FloatArray out = new FloatArray(n);
             compare("shape", op, Integer.toString(n), regime(n), "f32", "JitShape#copy", new Object[] { x }, new Object[] { out }, mlx.of(x, out, n), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::copy, new KernelContext(), x, out, n)), 8.0 * n, 0);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::copy, new KernelContext(), x, out, n)), 8.0 * n, 0, //
+                    () -> JavaTierReferences.copy(x, out));
         }
     }
 
@@ -434,7 +444,8 @@ final class Tier3Cases {
     private static void permute(String op, int n, FloatArray x, FloatArray out, TaskAdder mlx, int p0, int p1, int p2) {
         int c = cube(n);
         compare("shape", op, c + "x" + c + "x" + c + " (" + p0 + "," + p1 + "," + p2 + ")", regime(n), "f32", "JitShape#permute3", new Object[] { x }, new Object[] { out }, mlx, //
-                jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::permute3, new KernelContext(), x, out, c, c, c, p0, p1, p2)), 8.0 * n, 0);
+                jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::permute3, new KernelContext(), x, out, c, c, c, p0, p1, p2)), 8.0 * n, 0, //
+                () -> JavaTierReferences.permute3(x, out, c, c, c, p0, p1, p2));
     }
 
     private static void permuteCases() {
@@ -458,17 +469,20 @@ final class Tier3Cases {
             FloatArray ob = new FloatArray(n);
             compare("shape", "broadcastTo", s + " to " + shape, regime(n), "f32", "JitShape#broadcastRows", new Object[] { row }, new Object[] { oa }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxShape::broadcastTo, row, oa, s, s), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::broadcastRows, new KernelContext(), row, oa, s, s)), 4.0 * n, 0);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::broadcastRows, new KernelContext(), row, oa, s, s)), 4.0 * n, 0, //
+                    () -> JavaTierReferences.broadcastTo(row, oa, s, s));
             compare("shape", "broadcastArrays", s + " and " + s + " to " + shape, regime(n), "f32", "JitShape#broadcastPair", new Object[] { row, col }, new Object[] { oa, ob }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxShape::broadcastArrays, row, col, oa, ob, s, s), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::broadcastPair, new KernelContext(), row, col, oa, ob, s, s)), 8.0 * n, 0);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::broadcastPair, new KernelContext(), row, col, oa, ob, s, s)), 8.0 * n, 0, //
+                    () -> JavaTierReferences.broadcastArrays(row, col, oa, ob, s, s));
             // Every other row and column of x [s, s].
             int h = s / 2;
             FloatArray x = uniform(n, -1, 1, 35);
             FloatArray strided = new FloatArray(h * h);
             compare("shape", "asStrided", shape + " [::2, ::2]", regime(n), "f32", "JitShape#asStrided", new Object[] { x }, new Object[] { strided }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxShape::asStrided, x, strided, h, h, 2 * s, 2, 0), //
-                    jit(() -> grid1D(h * h), (g, gs, gn, t) -> g.task(t, JitShape::asStrided, new KernelContext(), x, strided, h, h, 2 * s, 2, 0)), 8.0 * h * h, 0);
+                    jit(() -> grid1D(h * h), (g, gs, gn, t) -> g.task(t, JitShape::asStrided, new KernelContext(), x, strided, h, h, 2 * s, 2, 0)), 8.0 * h * h, 0, //
+                    () -> JavaTierReferences.asStrided(x, strided, h, h, 2 * s, 2, 0));
         }
     }
 
@@ -482,10 +496,12 @@ final class Tier3Cases {
             int c = cube(n);
             compare("shape", "astype", shape + " to f16", regime(n), "f32", "JitShape#toHalf", new Object[] { x }, new Object[] { half }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxShape::astype, x, half), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::toHalf, new KernelContext(), x, half, n)), 6.0 * n, n);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::toHalf, new KernelContext(), x, half, n)), 6.0 * n, n, //
+                    () -> JavaTierReferences.astype(x, half));
             compare("shape", "view", shape + " as i32", regime(n), "f32", "JitShape#viewAsInt", new Object[] { x }, new Object[] { bits }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxShape::view, x, bits), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::viewAsInt, new KernelContext(), x, bits, n)), 8.0 * n, 0);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::viewAsInt, new KernelContext(), x, bits, n)), 8.0 * n, 0, //
+                    () -> JavaTierReferences.view(x, bits));
             compare("shape", "numberOfElements", c + "x" + c + "x" + c, regime(n), "f32", "JitShape#writeInt", new Object[] { x }, new Object[] { count }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxShape::numberOfElements, x, count, c, c, c), //
                     jit(() -> grid1D(1), (g, gs, gn, t) -> g.task(t, JitShape::writeInt, new KernelContext(), count, c * c)), 4.0, 0);
@@ -502,16 +518,20 @@ final class Tier3Cases {
             String shape = "2 x " + h;
             compare("shape", "concatenate", shape, regime(n), "f32", "JitShape#concat", new Object[] { a, b }, new Object[] { out }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxShape::concatenate, a, b, out), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::concat, new KernelContext(), a, b, out, 1, h, h)), 8.0 * n, 0);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::concat, new KernelContext(), a, b, out, 1, h, h)), 8.0 * n, 0, //
+                    () -> JavaTierReferences.concatenate(a, b, out));
             compare("shape", "concatenateAxis", "2 x " + s + "x" + s / 2 + " (axis 1)", regime(n), "f32", "JitShape#concat", new Object[] { a, b }, new Object[] { out }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxShape::concatenateAxis, a, b, out, s, s / 2, s / 2), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::concat, new KernelContext(), a, b, out, s, s / 2, s / 2)), 8.0 * n, 0);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::concat, new KernelContext(), a, b, out, s, s / 2, s / 2)), 8.0 * n, 0, //
+                    () -> JavaTierReferences.concatenateAxis(a, b, out, s, s / 2, s / 2));
             compare("shape", "stack", shape, regime(n), "f32", "JitShape#concat", new Object[] { a, b }, new Object[] { out }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxShape::stack, a, b, out), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::concat, new KernelContext(), a, b, out, 1, h, h)), 8.0 * n, 0);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::concat, new KernelContext(), a, b, out, 1, h, h)), 8.0 * n, 0, //
+                    () -> JavaTierReferences.concatenate(a, b, out));
             compare("shape", "stackAxis", shape + " (axis 1)", regime(n), "f32", "JitShape#interleave", new Object[] { a, b }, new Object[] { out }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxShape::stackAxis, a, b, out), //
-                    jit(() -> grid1D(h), (g, gs, gn, t) -> g.task(t, JitShape::interleave, new KernelContext(), a, b, out, h)), 8.0 * n, 0);
+                    jit(() -> grid1D(h), (g, gs, gn, t) -> g.task(t, JitShape::interleave, new KernelContext(), a, b, out, h)), 8.0 * n, 0, //
+                    () -> JavaTierReferences.stackAxis(a, b, out));
         }
     }
 
@@ -527,10 +547,12 @@ final class Tier3Cases {
             String shape = s + "x" + s;
             compare("shape", "split", shape + " in halves", regime(n), "f32", "JitShape#split", new Object[] { x }, new Object[] { f1, f2 }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxShape::split, x, f1, f2, s, s), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::split, new KernelContext(), x, f1, f2, s, s, s / 2)), 8.0 * n, 0);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::split, new KernelContext(), x, f1, f2, s, s, s / 2)), 8.0 * n, 0, //
+                    () -> JavaTierReferences.splitSections(x, f1, f2, s, s, s / 2));
             compare("shape", "splitSections", shape + " at " + q, regime(n), "f32", "JitShape#split", new Object[] { x }, new Object[] { s1, s2 }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxShape::splitSections, x, s1, s2, s, s, q), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::split, new KernelContext(), x, s1, s2, s, s, q)), 8.0 * n, 0);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::split, new KernelContext(), x, s1, s2, s, s, q)), 8.0 * n, 0, //
+                    () -> JavaTierReferences.splitSections(x, s1, s2, s, s, q));
         }
     }
 
@@ -543,13 +565,16 @@ final class Tier3Cases {
             FloatArray out = new FloatArray(n);
             compare("shape", "repeat", n / 2 + " x2", regime(n), "f32", "JitShape#repeatRows", new Object[] { xh }, new Object[] { out }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxShape::repeat, xh, out, 2), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::repeatRows, new KernelContext(), xh, out, n / 2, 1, 2)), 6.0 * n, 0);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::repeatRows, new KernelContext(), xh, out, n / 2, 1, 2)), 6.0 * n, 0, //
+                    () -> JavaTierReferences.repeat(xh, out, 2));
             compare("shape", "repeatAxis", h + "x" + s + " x2 (axis 0)", regime(n), "f32", "JitShape#repeatRows", new Object[] { xh }, new Object[] { out }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxShape::repeatAxis, xh, out, h, s, 2), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::repeatRows, new KernelContext(), xh, out, h, s, 2)), 6.0 * n, 0);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::repeatRows, new KernelContext(), xh, out, h, s, 2)), 6.0 * n, 0, //
+                    () -> JavaTierReferences.repeatAxis(xh, out, h, s, 2));
             compare("shape", "tile", h + "x" + h + " x(2, 2)", regime(n), "f32", "JitShape#tile", new Object[] { xq }, new Object[] { out }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxShape::tile, xq, out, h, h, 2, 2), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::tile, new KernelContext(), xq, out, h, h, 2, 2)), 5.0 * n, 0);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::tile, new KernelContext(), xq, out, h, h, 2, 2)), 5.0 * n, 0, //
+                    () -> JavaTierReferences.tile(xq, out, h, h, 2, 2));
         }
     }
 
@@ -563,20 +588,25 @@ final class Tier3Cases {
             String shape = s + "x" + s;
             compare("shape", "roll", n + " by " + shift, regime(n), "f32", "JitShape#roll", new Object[] { x }, new Object[] { out }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxShape::roll, x, out, shift), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::roll, new KernelContext(), x, out, 1, n, 0, shift)), 8.0 * n, 0);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::roll, new KernelContext(), x, out, 1, n, 0, shift)), 8.0 * n, 0, //
+                    () -> JavaTierReferences.roll(x, out, shift));
             compare("shape", "rollAxis", shape + " by 3 (axis 1)", regime(n), "f32", "JitShape#roll", new Object[] { x }, new Object[] { out }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxShape::rollAxis, x, out, s, s, 3), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::roll, new KernelContext(), x, out, s, s, 0, 3)), 8.0 * n, 0);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::roll, new KernelContext(), x, out, s, s, 0, 3)), 8.0 * n, 0, //
+                    () -> JavaTierReferences.rollAxes(x, out, s, s, 0, 3));
             compare("shape", "rollAxes", shape + " by (1, 3)", regime(n), "f32", "JitShape#roll", new Object[] { x }, new Object[] { out }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxShape::rollAxes, x, out, s, s, 1, 3), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::roll, new KernelContext(), x, out, s, s, 1, 3)), 8.0 * n, 0);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitShape::roll, new KernelContext(), x, out, s, s, 1, 3)), 8.0 * n, 0, //
+                    () -> JavaTierReferences.rollAxes(x, out, s, s, 1, 3));
             int p = padded.getSize();
             compare("shape", "pad", shape + " +1 each side", regime(n), "f32", "JitShape#pad", new Object[] { x }, new Object[] { padded }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxShape::pad, x, padded, s, s, 1, 1, 1, 1, 0.0f), //
-                    jit(() -> grid1D(p), (g, gs, gn, t) -> g.task(t, JitShape::pad, new KernelContext(), x, padded, s, s, 1, 1, s + 2, s + 2, 0.0f)), 4.0 * (n + p), 0);
+                    jit(() -> grid1D(p), (g, gs, gn, t) -> g.task(t, JitShape::pad, new KernelContext(), x, padded, s, s, 1, 1, s + 2, s + 2, 0.0f)), 4.0 * (n + p), 0, //
+                    () -> JavaTierReferences.pad(x, padded, s, s, 1, 1, 1, 1, 0.0f));
             compare("shape", "padSymmetric", shape + " +1 each side", regime(n), "f32", "JitShape#pad", new Object[] { x }, new Object[] { padded }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxShape::padSymmetric, x, padded, s, s, 1, 0.0f), //
-                    jit(() -> grid1D(p), (g, gs, gn, t) -> g.task(t, JitShape::pad, new KernelContext(), x, padded, s, s, 1, 1, s + 2, s + 2, 0.0f)), 4.0 * (n + p), 0);
+                    jit(() -> grid1D(p), (g, gs, gn, t) -> g.task(t, JitShape::pad, new KernelContext(), x, padded, s, s, 1, 1, s + 2, s + 2, 0.0f)), 4.0 * (n + p), 0, //
+                    () -> JavaTierReferences.pad(x, padded, s, s, 1, 1, 1, 1, 0.0f));
         }
     }
 
@@ -611,7 +641,7 @@ final class Tier3Cases {
             compare("products", "einsum", "bij,bjk->bik " + batch + "x" + m + "x" + k + "x" + n, "batched", "f32", "JitProducts#batchedGemm", new Object[] { a, b },
                     new Object[] { c }, (g, gs, gn, t) -> g.libraryTask(t, MlxProducts::einsumBatchedMatmul, a, b, c, batch, m, k, n), //
                     jit(() -> groups(batch * gemmGroups(m, n), JitBlas.GEMM_THREADS), (g, gs, gn, t) -> g.task(t, JitProducts::batchedGemm, new KernelContext(), a, b, c, m, n, k)),
-                    4.0 * batch * (m * k + k * n + m * n), 2.0 * batch * m * n * k);
+                    4.0 * batch * (m * k + k * n + m * n), 2.0 * batch * m * n * k, () -> JavaTierReferences.batchedMatmul(a, b, c, batch, m, k, n));
         }
     }
 
@@ -629,9 +659,11 @@ final class Tier3Cases {
             double flops = 2.0 * m * n * k;
             TaskAdder j = jit(() -> groups(gemmGroups(m, n), JitBlas.GEMM_THREADS), (g, gs, gn, t) -> g.task(t, JitBlas::gemm, new KernelContext(), a, b, c, m, n, k));
             compare("products", "tensordot", m + "x" + k1 + "x" + k2 + " . " + k1 + "x" + k2 + "x" + n, "prefill", "f32", "JitBlas#gemm", new Object[] { a, b }, new Object[] { c }, //
-                    (g, gs, gn, t) -> g.libraryTask(t, MlxProducts::tensordot, a, b, c, m, k1, k2, n), j, bytes, flops);
+                    (g, gs, gn, t) -> g.libraryTask(t, MlxProducts::tensordot, a, b, c, m, k1, k2, n), j, bytes, flops, //
+                    () -> JavaTierReferences.matmul(a, b, c, m, k, n));
             compare("products", "tensordotAxis", m + "x" + k + "x" + n, "prefill", "f32", "JitBlas#gemm", new Object[] { a, b }, new Object[] { c }, //
-                    (g, gs, gn, t) -> g.libraryTask(t, MlxProducts::tensordotAxis, a, b, c, m, k, n), j, bytes, flops);
+                    (g, gs, gn, t) -> g.libraryTask(t, MlxProducts::tensordotAxis, a, b, c, m, k, n), j, bytes, flops, //
+                    () -> JavaTierReferences.matmul(a, b, c, m, k, n));
         }
     }
 
@@ -648,7 +680,7 @@ final class Tier3Cases {
                         gs.addWorkerGrid(gn + "." + t + "p", groups(JitReduce.PARTIAL_GROUPS, T));
                         g.task(t + "m", JitReduce::reduceRows, new KernelContext(), partials, dot, JitReduce.PARTIAL_GROUPS, JitReduce.SUM, 1.0f);
                         gs.addWorkerGrid(gn + "." + t + "m", groups(1, T));
-                    }, 8.0 * n, 2.0 * n);
+                    }, 8.0 * n, 2.0 * n, () -> JavaTierReferences.inner(a, b, dot));
         }
         for (int s : SIDES) {
             int n = s * s;
@@ -657,14 +689,16 @@ final class Tier3Cases {
             FloatArray out = new FloatArray(n);
             compare("products", "outer", s + " x " + s, regime(n), "f32", "JitProducts#outer", new Object[] { a, b }, new Object[] { out }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxProducts::outer, a, b, out), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitProducts::outer, new KernelContext(), a, b, out, s, s)), 4.0 * n, n);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitProducts::outer, new KernelContext(), a, b, out, s, s)), 4.0 * n, n, //
+                    () -> JavaTierReferences.outer(a, b, out));
             // kron of two r x r matrices, r * r = s, into [s, s].
             int r = (int) Math.round(Math.sqrt(s));
             FloatArray ka = uniform(r * r, -1, 1, 59);
             FloatArray kb = uniform(r * r, -1, 1, 60);
             compare("products", "kron", r + "x" + r + " (x) " + r + "x" + r, regime(n), "f32", "JitProducts#kron", new Object[] { ka, kb }, new Object[] { out }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxProducts::kron, ka, kb, out, r, r, r, r), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitProducts::kron, new KernelContext(), ka, kb, out, r, r, r, r)), 4.0 * n, n);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitProducts::kron, new KernelContext(), ka, kb, out, r, r, r, r)), 4.0 * n, n, //
+                    () -> JavaTierReferences.kron(ka, kb, out, r, r, r, r));
         }
     }
 
@@ -681,7 +715,7 @@ final class Tier3Cases {
             compare("products", "blockMaskedMm", d + "x" + d + "x" + d + " bs" + bs, "prefill", "f32", "JitProducts#blockMaskedGemm", new Object[] { a, b, maskOut, maskLhs,
                     maskRhs }, new Object[] { c }, (g, gs, gn, t) -> g.libraryTask(t, MlxProducts::blockMaskedMm, a, b, maskOut, maskLhs, maskRhs, c, d, d, d, bs), //
                     jit(() -> groups(gemmGroups(d, d), JitBlas.GEMM_THREADS), (g, gs, gn, t) -> g.task(t, JitProducts::blockMaskedGemm, new KernelContext(), a, b, maskOut, maskLhs,
-                            maskRhs, c, d, d, d)), 12.0 * d * d, 2.0 * d * d * d);
+                            maskRhs, c, d, d, d)), 12.0 * d * d, 2.0 * d * d * d, () -> JavaTierReferences.blockMaskedMm(a, b, maskOut, maskLhs, maskRhs, c, d, d, d, bs));
         }
         for (int[] s : new int[][] { { 128, 1024, 128, 4 }, { 512, 4096, 512, 8 } }) {
             int m = s[0];
@@ -699,7 +733,7 @@ final class Tier3Cases {
             compare("products", "segmentedMm", m + "x" + k + "x" + n + ", " + count + " segments", "prefill", "f32", "JitProducts#segmentedGemm", new Object[] { a, b, segments },
                     new Object[] { out }, (g, gs, gn, t) -> g.libraryTask(t, MlxProducts::segmentedMm, a, b, segments, out, m, k, n), //
                     jit(() -> grid1D(count * m * n), (g, gs, gn, t) -> g.task(t, JitProducts::segmentedGemm, new KernelContext(), a, b, segments, out, count, m, n, k)),
-                    4.0 * (m * k + k * n + count * m * n), 2.0 * m * n * k);
+                    4.0 * (m * k + k * n + count * m * n), 2.0 * m * n * k, () -> JavaTierReferences.segmentedMm(a, b, segments, out, m, k, n));
         }
     }
 

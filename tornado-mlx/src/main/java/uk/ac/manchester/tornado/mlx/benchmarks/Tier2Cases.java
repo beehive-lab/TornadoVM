@@ -99,25 +99,26 @@ final class Tier2Cases {
 
     // ---------------------------------------------------------------- element-wise math
 
-    private static void unary(String op, float lo, float hi, LibraryTask2<FloatArray, FloatArray> mlx, Task4<KernelContext, FloatArray, FloatArray, Integer> jit) {
+    private static void unary(String op, float lo, float hi, LibraryTask2<FloatArray, FloatArray> mlx, Task4<KernelContext, FloatArray, FloatArray, Integer> jit,
+            JavaTierReferences.Unary java) {
         for (int n : new int[] { 4096, LARGE }) {
             FloatArray a = uniform(n, lo, hi, 11);
             FloatArray out = new FloatArray(n);
             compare("math", op, Integer.toString(n), regime(n), "f32", "JitMath#" + op, new Object[] { a }, new Object[] { out }, //
                     (g, gs, gn, t) -> g.libraryTask(t, mlx, a, out), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, jit, new KernelContext(), a, out, n)), 8.0 * n, n);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, jit, new KernelContext(), a, out, n)), 8.0 * n, n, () -> java.run(a, out));
         }
     }
 
     private static void binary(String op, float lo, float hi, float bLo, float bHi, LibraryTask3<FloatArray, FloatArray, FloatArray> mlx,
-            Task5<KernelContext, FloatArray, FloatArray, FloatArray, Integer> jit) {
+            Task5<KernelContext, FloatArray, FloatArray, FloatArray, Integer> jit, JavaTierReferences.Binary java) {
         for (int n : new int[] { 4096, LARGE }) {
             FloatArray a = uniform(n, lo, hi, 12);
             FloatArray b = uniform(n, bLo, bHi, 13);
             FloatArray c = new FloatArray(n);
             compare("math", op, Integer.toString(n), regime(n), "f32", "JitMath#" + op, new Object[] { a, b }, new Object[] { c }, //
                     (g, gs, gn, t) -> g.libraryTask(t, mlx, a, b, c), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, jit, new KernelContext(), a, b, c, n)), 12.0 * n, n);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, jit, new KernelContext(), a, b, c, n)), 12.0 * n, n, () -> java.run(a, b, c));
         }
     }
 
@@ -125,35 +126,35 @@ final class Tier2Cases {
         if (!wants("math")) {
             return;
         }
-        unary("abs", -10, 10, MlxMath::abs, JitMath::abs);
-        unary("arccos", -1, 1, MlxMath::arccos, JitMath::arccos);
-        unary("arccosh", 1, 10, MlxMath::arccosh, JitMath::arccosh);
-        unary("arcsin", -1, 1, MlxMath::arcsin, JitMath::arcsin);
-        unary("arcsinh", -10, 10, MlxMath::arcsinh, JitMath::arcsinh);
-        unary("arctan", -10, 10, MlxMath::arctan, JitMath::arctan);
-        unary("arctanh", -0.99f, 0.99f, MlxMath::arctanh, JitMath::arctanh);
-        unary("ceil", -10, 10, MlxMath::ceil, JitMath::ceil);
-        unary("cos", -10, 10, MlxMath::cos, JitMath::cos);
-        unary("cosh", -5, 5, MlxMath::cosh, JitMath::cosh);
-        unary("degrees", -10, 10, MlxMath::degrees, JitMath::degrees);
-        unary("erfinv", -0.99f, 0.99f, MlxMath::erfinv, JitMath::erfinv);
-        unary("expm1", -5, 5, MlxMath::expm1, JitMath::expm1);
-        unary("floor", -10, 10, MlxMath::floor, JitMath::floor);
-        unary("log", 0.01f, 10, MlxMath::log, JitMath::log);
-        unary("log10", 0.01f, 10, MlxMath::log10, JitMath::log10);
-        unary("log1p", -0.9f, 10, MlxMath::log1p, JitMath::log1p);
-        unary("log2", 0.01f, 10, MlxMath::log2, JitMath::log2);
-        unary("radians", -10, 10, MlxMath::radians, JitMath::radians);
-        unary("reciprocal", 0.5f, 10, MlxMath::reciprocal, JitMath::reciprocal);
-        unary("sign", -10, 10, MlxMath::sign, JitMath::sign);
-        unary("sin", -10, 10, MlxMath::sin, JitMath::sin);
-        unary("sinh", -5, 5, MlxMath::sinh, JitMath::sinh);
-        unary("tan", -1.5f, 1.5f, MlxMath::tan, JitMath::tan);
-        binary("arctan2", -10, 10, -10, 10, MlxMath::arctan2, JitMath::arctan2);
-        binary("floor_divide", -10, 10, 0.5f, 10, MlxMath::floorDivide, JitMath::floorDivide);
-        binary("logaddexp", -10, 10, -10, 10, MlxMath::logaddexp, JitMath::logaddexp);
-        binary("power", 0.1f, 5, -3, 3, MlxMath::power, JitMath::power);
-        binary("remainder", -10, 10, 0.5f, 10, MlxMath::remainder, JitMath::remainder);
+        unary("abs", -10, 10, MlxMath::abs, JitMath::abs, JavaTierReferences::abs);
+        unary("arccos", -1, 1, MlxMath::arccos, JitMath::arccos, JavaTierReferences::arccos);
+        unary("arccosh", 1, 10, MlxMath::arccosh, JitMath::arccosh, JavaTierReferences::arccosh);
+        unary("arcsin", -1, 1, MlxMath::arcsin, JitMath::arcsin, JavaTierReferences::arcsin);
+        unary("arcsinh", -10, 10, MlxMath::arcsinh, JitMath::arcsinh, JavaTierReferences::arcsinh);
+        unary("arctan", -10, 10, MlxMath::arctan, JitMath::arctan, JavaTierReferences::arctan);
+        unary("arctanh", -0.99f, 0.99f, MlxMath::arctanh, JitMath::arctanh, JavaTierReferences::arctanh);
+        unary("ceil", -10, 10, MlxMath::ceil, JitMath::ceil, JavaTierReferences::ceil);
+        unary("cos", -10, 10, MlxMath::cos, JitMath::cos, JavaTierReferences::cos);
+        unary("cosh", -5, 5, MlxMath::cosh, JitMath::cosh, JavaTierReferences::cosh);
+        unary("degrees", -10, 10, MlxMath::degrees, JitMath::degrees, JavaTierReferences::degrees);
+        unary("erfinv", -0.99f, 0.99f, MlxMath::erfinv, JitMath::erfinv, JavaTierReferences::erfinv);
+        unary("expm1", -5, 5, MlxMath::expm1, JitMath::expm1, JavaTierReferences::expm1);
+        unary("floor", -10, 10, MlxMath::floor, JitMath::floor, JavaTierReferences::floor);
+        unary("log", 0.01f, 10, MlxMath::log, JitMath::log, JavaTierReferences::log);
+        unary("log10", 0.01f, 10, MlxMath::log10, JitMath::log10, JavaTierReferences::log10);
+        unary("log1p", -0.9f, 10, MlxMath::log1p, JitMath::log1p, JavaTierReferences::log1p);
+        unary("log2", 0.01f, 10, MlxMath::log2, JitMath::log2, JavaTierReferences::log2);
+        unary("radians", -10, 10, MlxMath::radians, JitMath::radians, JavaTierReferences::radians);
+        unary("reciprocal", 0.5f, 10, MlxMath::reciprocal, JitMath::reciprocal, JavaTierReferences::reciprocal);
+        unary("sign", -10, 10, MlxMath::sign, JitMath::sign, JavaTierReferences::sign);
+        unary("sin", -10, 10, MlxMath::sin, JitMath::sin, JavaTierReferences::sin);
+        unary("sinh", -5, 5, MlxMath::sinh, JitMath::sinh, JavaTierReferences::sinh);
+        unary("tan", -1.5f, 1.5f, MlxMath::tan, JitMath::tan, JavaTierReferences::tan);
+        binary("arctan2", -10, 10, -10, 10, MlxMath::arctan2, JitMath::arctan2, JavaTierReferences::arctan2);
+        binary("floor_divide", -10, 10, 0.5f, 10, MlxMath::floorDivide, JitMath::floorDivide, JavaTierReferences::floorDivide);
+        binary("logaddexp", -10, 10, -10, 10, MlxMath::logaddexp, JitMath::logaddexp, JavaTierReferences::logaddexp);
+        binary("power", 0.1f, 5, -3, 3, MlxMath::power, JitMath::power, JavaTierReferences::power);
+        binary("remainder", -10, 10, 0.5f, 10, MlxMath::remainder, JitMath::remainder, JavaTierReferences::remainder);
         for (int n : new int[] { 4096, LARGE }) {
             FloatArray a = uniform(n, -100, 100, 14);
             FloatArray b = uniform(n, 0.5f, 10, 15);
@@ -165,16 +166,20 @@ final class Tier2Cases {
             }
             compare("math", "round", Integer.toString(n), regime(n), "f32", "JitMath#round", new Object[] { a }, new Object[] { o1 }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxMath::round, a, o1, 2), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitMath::round, new KernelContext(), a, o1, n, 2)), 8.0 * n, 3.0 * n);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitMath::round, new KernelContext(), a, o1, n, 2)), 8.0 * n, 3.0 * n, //
+                    () -> JavaTierReferences.round(a, o1, 2));
             compare("math", "divmod", Integer.toString(n), regime(n), "f32", "JitMath#divmod", new Object[] { a, b }, new Object[] { o1, o2 }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxMath::divmod, a, b, o1, o2), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitMath::divmod, new KernelContext(), a, b, o1, o2, n)), 16.0 * n, 3.0 * n);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitMath::divmod, new KernelContext(), a, b, o1, o2, n)), 16.0 * n, 3.0 * n, //
+                    () -> JavaTierReferences.divmod(a, b, o1, o2));
             compare("math", "clip", Integer.toString(n), regime(n), "f32", "JitMath#clip", new Object[] { a }, new Object[] { o1 }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxMath::clip, a, o1, -20f, 30f), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitMath::clip, new KernelContext(), a, o1, n, -20f, 30f)), 8.0 * n, 2.0 * n);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitMath::clip, new KernelContext(), a, o1, n, -20f, 30f)), 8.0 * n, 2.0 * n, //
+                    () -> JavaTierReferences.clip(a, o1, -20f, 30f));
             compare("math", "where", Integer.toString(n), regime(n), "f32", "JitMath#where", new Object[] { cond, a, b }, new Object[] { o1 }, //
                     (g, gs, gn, t) -> g.libraryTask(t, MlxMath::where, cond, a, b, o1), //
-                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitMath::where, new KernelContext(), cond, a, b, o1, n)), 13.0 * n, n);
+                    jit(() -> grid1D(n), (g, gs, gn, t) -> g.task(t, JitMath::where, new KernelContext(), cond, a, b, o1, n)), 13.0 * n, n, //
+                    () -> JavaTierReferences.where(cond, a, b, o1));
         }
     }
 
@@ -260,9 +265,9 @@ final class Tier2Cases {
         return jit(() -> groups(outputs, T), (g, gs, gn, t) -> g.task(t, JitReduce::allAny, new KernelContext(), x, out, len, inner, op));
     }
 
-    private static void reduceCase(String op, String kernel, int[] s, FloatArray x, Object out, TaskAdder mlx, TaskAdder jit) {
+    private static void reduceCase(String op, String kernel, int[] s, FloatArray x, Object out, TaskAdder mlx, TaskAdder jit, Runnable java) {
         int n = s[1] * s[2] * s[3] * s[4];
-        compare("reduce", op, reduceShape(s), reduceRegime(s), "f32", kernel, new Object[] { x }, new Object[] { out }, mlx, jit, 4.0 * n, n);
+        compare("reduce", op, reduceShape(s), reduceRegime(s), "f32", kernel, new Object[] { x }, new Object[] { out }, mlx, jit, 4.0 * n, n, java);
     }
 
     private static void reduce() {
@@ -300,28 +305,40 @@ final class Tier2Cases {
                             : s[0] == 1 ? (g, gs, gn, t) -> g.libraryTask(t, MlxReduce::meanAxis, x, out, outer, len, inner)
                                     : (g, gs, gn, t) -> g.libraryTask(t, MlxReduce::meanAxes, x, out, s[1], s[2], s[3], s[4]);
                 };
-                reduceCase(op, "JitReduce#reduce", s, x, out, mlx, jitReduce(x, out, outer, len, inner, code, mean));
+                Runnable java = switch (op) {
+                    case "sum" -> () -> JavaTierReferences.sum(x, out, outer, len, inner);
+                    case "prod" -> () -> JavaTierReferences.prod(x, out, outer, len, inner);
+                    case "max" -> () -> JavaTierReferences.max(x, out, outer, len, inner);
+                    case "min" -> () -> JavaTierReferences.min(x, out, outer, len, inner);
+                    default -> () -> JavaTierReferences.mean(x, out, outer, len, inner);
+                };
+                reduceCase(op, "JitReduce#reduce", s, x, out, mlx, jitReduce(x, out, outer, len, inner, code, mean), java);
             }
             TaskAdder lse = s[0] == 0 ? (g, gs, gn, t) -> g.libraryTask(t, MlxReduce::logsumexp, x, out)
                     : s[0] == 1 ? (g, gs, gn, t) -> g.libraryTask(t, MlxReduce::logsumexpAxis, x, out, outer, len, inner)
                             : (g, gs, gn, t) -> g.libraryTask(t, MlxReduce::logsumexpAxes, x, out, s[1], s[2], s[3], s[4]);
-            reduceCase("logsumexp", "JitReduce#logsumexp", s, x, out, lse, jitLogsumexp(x, out, outer, len, inner));
+            reduceCase("logsumexp", "JitReduce#logsumexp", s, x, out, lse, jitLogsumexp(x, out, outer, len, inner), //
+                    () -> JavaTierReferences.logsumexp(x, out, outer, len, inner));
             TaskAdder var = s[0] == 0 ? (g, gs, gn, t) -> g.libraryTask(t, MlxReduce::var, x, out, 0)
                     : s[0] == 1 ? (g, gs, gn, t) -> g.libraryTask(t, MlxReduce::varAxis, x, out, outer, len, inner, 0)
                             : (g, gs, gn, t) -> g.libraryTask(t, MlxReduce::varAxes, x, out, s[1], s[2], s[3], s[4], 0);
-            reduceCase("var", "JitReduce#variance", s, x, out, var, jitVariance(x, out, outer, len, inner, false));
+            reduceCase("var", "JitReduce#variance", s, x, out, var, jitVariance(x, out, outer, len, inner, false), //
+                    () -> JavaTierReferences.var(x, out, outer, len, inner, 0));
             TaskAdder std = s[0] == 0 ? (g, gs, gn, t) -> g.libraryTask(t, MlxReduce::std, x, out, 0)
                     : s[0] == 1 ? (g, gs, gn, t) -> g.libraryTask(t, MlxReduce::stdAxis, x, out, outer, len, inner, 0)
                             : (g, gs, gn, t) -> g.libraryTask(t, MlxReduce::stdAxes, x, out, s[1], s[2], s[3], s[4], 0);
-            reduceCase("std", "JitReduce#variance", s, x, out, std, jitVariance(x, out, outer, len, inner, true));
+            reduceCase("std", "JitReduce#variance", s, x, out, std, jitVariance(x, out, outer, len, inner, true), //
+                    () -> JavaTierReferences.std(x, out, outer, len, inner, 0));
             TaskAdder all = s[0] == 0 ? (g, gs, gn, t) -> g.libraryTask(t, MlxReduce::all, x, bytes)
                     : s[0] == 1 ? (g, gs, gn, t) -> g.libraryTask(t, MlxReduce::allAxis, x, bytes, outer, len, inner)
                             : (g, gs, gn, t) -> g.libraryTask(t, MlxReduce::allAxes, x, bytes, s[1], s[2], s[3], s[4]);
-            reduceCase("all", "JitReduce#allAny", s, x, bytes, all, jitAllAny(x, bytes, outer, len, inner, JitReduce.ALL));
+            reduceCase("all", "JitReduce#allAny", s, x, bytes, all, jitAllAny(x, bytes, outer, len, inner, JitReduce.ALL), //
+                    () -> JavaTierReferences.all(x, bytes, outer, len, inner));
             TaskAdder any = s[0] == 0 ? (g, gs, gn, t) -> g.libraryTask(t, MlxReduce::any, x, bytes)
                     : s[0] == 1 ? (g, gs, gn, t) -> g.libraryTask(t, MlxReduce::anyAxis, x, bytes, outer, len, inner)
                             : (g, gs, gn, t) -> g.libraryTask(t, MlxReduce::anyAxes, x, bytes, s[1], s[2], s[3], s[4]);
-            reduceCase("any", "JitReduce#allAny", s, x, bytes, any, jitAllAny(x, bytes, outer, len, inner, JitReduce.ANY));
+            reduceCase("any", "JitReduce#allAny", s, x, bytes, any, jitAllAny(x, bytes, outer, len, inner, JitReduce.ANY), //
+                    () -> JavaTierReferences.any(x, bytes, outer, len, inner));
             if (s[0] != 2) {
                 // argmin has no axes form; the JIT baseline reduces each output in one threadgroup.
                 int aLen = s[0] == 0 ? 151936 : len;
@@ -330,7 +347,7 @@ final class Tier2Cases {
                 TaskAdder am = s[0] == 0 ? (g, gs, gn, t) -> g.libraryTask(t, MlxReduce::argmin, xa, idx)
                         : (g, gs, gn, t) -> g.libraryTask(t, MlxReduce::argminAxis, xa, idx, outer, len, inner);
                 reduceCase("argmin", "JitReduce#argmin", as, xa, idx, am, jit(() -> groups(s[0] == 0 ? 1 : outer * inner, T), (g, gs, gn, t) -> g.task(t, JitReduce::argmin,
-                        new KernelContext(), xa, idx, aLen, s[0] == 0 ? 1 : inner)));
+                        new KernelContext(), xa, idx, aLen, s[0] == 0 ? 1 : inner)), () -> JavaTierReferences.argmin(xa, idx, s[0] == 0 ? 1 : outer, aLen, s[0] == 0 ? 1 : inner));
             }
         }
         for (int[] s : new int[][] { { 1, 512, 1024, 1, 1 }, { 2, 64, 256, 1, 64 } }) {
@@ -342,7 +359,7 @@ final class Tier2Cases {
             compare("reduce", "median", s[0] == 1 ? outer + "x" + len : outer + "x" + len + "x" + inner, s[0] == 1 ? "rows" : "strided", "f32", "JitReduce#median", new Object[] { x },
                     new Object[] { out }, (g, gs, gn, t) -> g.libraryTask(t, MlxReduce::median, x, out, outer, len, inner), //
                     jit(() -> groups(outer * inner, T), (g, gs, gn, t) -> g.task(t, JitReduce::median, new KernelContext(), x, out, len, inner, nextPowerOfTwo(len))), 4.0 * x.getSize(),
-                    x.getSize());
+                    x.getSize(), () -> JavaTierReferences.median(x, out, outer, len, inner));
         }
     }
 
@@ -375,8 +392,15 @@ final class Tier2Cases {
                 TaskAdder j = inner == 1 //
                         ? jit(() -> groups(outer, JitScan.THREADS), (g, gs, gn, t) -> g.task(t, JitScan::scanRows, new KernelContext(), x, out, len, code, 0, 1)) //
                         : jit(() -> grid1D(outer * inner), (g, gs, gn, t) -> g.task(t, JitScan::scanColumns, new KernelContext(), x, out, outer * inner, len, inner, code, 0, 1));
+                Runnable java = switch (op) {
+                    case "cumsum" -> () -> JavaTierReferences.cumsum(x, out, outer, len, inner);
+                    case "cumprod" -> () -> JavaTierReferences.cumprod(x, out, outer, len, inner);
+                    case "cummax" -> () -> JavaTierReferences.cummax(x, out, outer, len, inner);
+                    case "cummin" -> () -> JavaTierReferences.cummin(x, out, outer, len, inner);
+                    default -> () -> JavaTierReferences.logcumsumexp(x, out, outer, len, inner);
+                };
                 compare("scan", op, shape, regime, "f32", inner == 1 ? "JitScan#scanRows" : "JitScan#scanColumns", new Object[] { x }, new Object[] { out }, mlx, j, 8.0 * x.getSize(),
-                        x.getSize());
+                        x.getSize(), java);
             }
         }
     }
@@ -431,13 +455,17 @@ final class Tier2Cases {
         TaskAdder ji = jit(() -> groups(rows, JitSort.THREADS), (g, gs, gn, t) -> g.task(t, JitSort::sortSlices, new KernelContext(), x, dummyValues, idx, len, 1, len, 0, 1));
         double bytes = 8.0 * x.getSize();
         compare("sort", "sortAxis", shape, "rows", "f32", "JitSort#sortSlices", new Object[] { x }, new Object[] { vals }, //
-                (g, gs, gn, t) -> g.libraryTask(t, MlxSort::sortAxis, x, vals, rows, len, 1), jv, bytes, x.getSize());
+                (g, gs, gn, t) -> g.libraryTask(t, MlxSort::sortAxis, x, vals, rows, len, 1), jv, bytes, x.getSize(), //
+                () -> JavaTierReferences.sortAxis(x, vals, rows, len, 1));
         compare("sort", "argsortAxis", shape, "rows", "f32", "JitSort#sortSlices", new Object[] { x }, new Object[] { idx }, //
-                (g, gs, gn, t) -> g.libraryTask(t, MlxSort::argsortAxis, x, idx, rows, len, 1), ji, bytes, x.getSize());
+                (g, gs, gn, t) -> g.libraryTask(t, MlxSort::argsortAxis, x, idx, rows, len, 1), ji, bytes, x.getSize(), //
+                () -> JavaTierReferences.argsortAxis(x, idx, rows, len, 1));
         compare("sort", "partitionAxis", shape, "rows", "f32", "JitSort#sortSlices", new Object[] { x }, new Object[] { vals }, //
-                (g, gs, gn, t) -> g.libraryTask(t, MlxSort::partitionAxis, x, vals, rows, len, 1, len / 2), jv, bytes, x.getSize());
+                (g, gs, gn, t) -> g.libraryTask(t, MlxSort::partitionAxis, x, vals, rows, len, 1, len / 2), jv, bytes, x.getSize(), //
+                () -> JavaTierReferences.partitionAxis(x, vals, rows, len, 1, len / 2));
         compare("sort", "argpartitionAxis", shape, "rows", "f32", "JitSort#sortSlices", new Object[] { x }, new Object[] { idx }, //
-                (g, gs, gn, t) -> g.libraryTask(t, MlxSort::argpartitionAxis, x, idx, rows, len, 1, len / 2), ji, bytes, x.getSize());
+                (g, gs, gn, t) -> g.libraryTask(t, MlxSort::argpartitionAxis, x, idx, rows, len, 1, len / 2), ji, bytes, x.getSize(), //
+                () -> JavaTierReferences.argpartitionAxis(x, idx, rows, len, 1, len / 2));
     }
 
     private static void sortCases() {
@@ -449,13 +477,17 @@ final class Tier2Cases {
         IntArray dummyIndices = new IntArray(1);
         String shape = Integer.toString(n);
         compare("sort", "sort", shape, "whole", "f32", "JitSort#global", new Object[] { x }, new Object[] { vals }, //
-                (g, gs, gn, t) -> g.libraryTask(t, MlxSort::sort, x, vals), jitGlobalSort(x, vals, dummyIndices, n, true, false), 8.0 * n, n, 2);
+                (g, gs, gn, t) -> g.libraryTask(t, MlxSort::sort, x, vals), jitGlobalSort(x, vals, dummyIndices, n, true, false), 8.0 * n, n, 2, //
+                () -> JavaTierReferences.sort(x, vals));
         compare("sort", "argsort", shape, "whole", "f32", "JitSort#global", new Object[] { x }, new Object[] { idx }, //
-                (g, gs, gn, t) -> g.libraryTask(t, MlxSort::argsort, x, idx), jitGlobalSort(x, dummyValues, idx, n, false, true), 8.0 * n, n, 2);
+                (g, gs, gn, t) -> g.libraryTask(t, MlxSort::argsort, x, idx), jitGlobalSort(x, dummyValues, idx, n, false, true), 8.0 * n, n, 2, //
+                () -> JavaTierReferences.argsort(x, idx));
         compare("sort", "partition", shape, "whole", "f32", "JitSort#global", new Object[] { x }, new Object[] { vals }, //
-                (g, gs, gn, t) -> g.libraryTask(t, MlxSort::partition, x, vals, n / 2), jitGlobalSort(x, vals, dummyIndices, n, true, false), 8.0 * n, n, 2);
+                (g, gs, gn, t) -> g.libraryTask(t, MlxSort::partition, x, vals, n / 2), jitGlobalSort(x, vals, dummyIndices, n, true, false), 8.0 * n, n, 2, //
+                () -> JavaTierReferences.partition(x, vals, n / 2));
         compare("sort", "argpartition", shape, "whole", "f32", "JitSort#global", new Object[] { x }, new Object[] { idx }, //
-                (g, gs, gn, t) -> g.libraryTask(t, MlxSort::argpartition, x, idx, n / 2), jitGlobalSort(x, dummyValues, idx, n, false, true), 8.0 * n, n, 2);
+                (g, gs, gn, t) -> g.libraryTask(t, MlxSort::argpartition, x, idx, n / 2), jitGlobalSort(x, dummyValues, idx, n, false, true), 8.0 * n, n, 2, //
+                () -> JavaTierReferences.argpartition(x, idx, n / 2));
     }
 
     // ---------------------------------------------------------------- indexing
@@ -628,14 +660,15 @@ final class Tier2Cases {
         compare("index", "slice", rows + "x" + cols + " [::2, ::2]", "large", "f32", "JitIndex#slice", new Object[] { x }, new Object[] { s }, //
                 (g, gs, gn, t) -> g.libraryTask(t, MlxIndex::slice, x, s, rows, cols, 0, rows, 2, 0, cols, 2), //
                 jit(() -> grid1D(outRows * outCols), (g, gs, gn, t) -> g.task(t, JitIndex::slice, new KernelContext(), x, s, cols, 0, 2, 0, 2, outRows, outCols)), 8.0 * s.getSize(),
-                0);
+                0, () -> JavaTierReferences.slice(x, s, cols, 0, rows, 2, 0, cols, 2));
         // KV cache read and write at a position held on the device.
         final int kvRows = 1024;
         IntArray pos = IntArray.fromElements(2000);
         FloatArray kv = new FloatArray(kvRows * cols);
         compare("index", "sliceRowsAt", kvRows + " rows of " + rows + "x" + cols, "decode", "f32", "JitIndex#sliceRowsAt", new Object[] { x, pos }, new Object[] { kv }, //
                 (g, gs, gn, t) -> g.libraryTask(t, MlxIndex::sliceRowsAt, x, pos, kv, rows, cols, kvRows), //
-                jit(() -> grid1D(kvRows * cols), (g, gs, gn, t) -> g.task(t, JitIndex::sliceRowsAt, new KernelContext(), x, pos, kv, cols, kvRows)), 8.0 * kv.getSize(), 0);
+                jit(() -> grid1D(kvRows * cols), (g, gs, gn, t) -> g.task(t, JitIndex::sliceRowsAt, new KernelContext(), x, pos, kv, cols, kvRows)), 8.0 * kv.getSize(), 0, //
+                () -> JavaTierReferences.sliceRowsAt(x, pos, kv, cols, kvRows));
         FloatArray row = uniform(cols, -1, 1, 59);
         compare("index", "sliceUpdateRowsAt", "1 row into " + rows + "x" + cols, "decode", "f32", "JitIndex#copy+sliceUpdateRowsAt", new Object[] { x, row, pos },
                 new Object[] { out }, (g, gs, gn, t) -> g.libraryTask(t, MlxIndex::sliceUpdateRowsAt, x, row, pos, out, rows, cols, 1), //
