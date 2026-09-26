@@ -1113,7 +1113,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private void prepareForDataTransfers(ExecutorFrame executionPackage) {
         setupProfiler();
-        getDevice().getDeviceContext().setResetToFalse();
+        getDevice().getDeviceContext().setResetToFalse(executionPackage.getExecutionPlanId());
         timeProfiler.clean();
 
         compileComputeGraphToTornadoVMBytecode();
@@ -1348,7 +1348,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     @Override
     public void withPreCompilation(ExecutorFrame executionPackage) {
         setupProfiler();
-        getDevice().getDeviceContext().setResetToFalse();
+        getDevice().getDeviceContext().setResetToFalse(executionPackage.getExecutionPlanId());
         timeProfiler.clean();
 
         compileComputeGraphToTornadoVMBytecode();

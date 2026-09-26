@@ -64,7 +64,8 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
     private final MetalMemoryManager memoryManager;
     private final Map<Long, MetalEventPool> metalEventPool;
     private final TornadoBufferProvider bufferProvider;
-    private boolean wasReset;
+    /** Execution plans whose device state has been torn down; see TornadoDeviceContext. */
+    private final java.util.Set<Long> resetPlans = java.util.concurrent.ConcurrentHashMap.newKeySet();
     private final Set<Long> executionIDs;
 
     /**
@@ -519,7 +520,7 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
         MetalCodeCache metalCodeCache = getMetalCodeCache(executionPlanId);
         metalCodeCache.reset();
         codeCache.remove(executionPlanId);
-        wasReset = true;
+        resetPlans.add(executionPlanId);
     }
 
     public MetalTornadoDevice toDevice() {
@@ -549,13 +550,13 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
     }
 
     @Override
-    public boolean wasReset() {
-        return wasReset;
+    public boolean wasReset(long executionPlanId) {
+        return resetPlans.contains(executionPlanId);
     }
 
     @Override
-    public void setResetToFalse() {
-        wasReset = false;
+    public void setResetToFalse(long executionPlanId) {
+        resetPlans.remove(executionPlanId);
     }
 
     @Override

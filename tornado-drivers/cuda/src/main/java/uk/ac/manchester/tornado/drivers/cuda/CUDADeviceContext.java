@@ -69,7 +69,8 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     private final CUDAMemoryManager memoryManager;
     private final Map<Long, CUDAEventPool> oclEventPool;
     private final TornadoBufferProvider bufferProvider;
-    private boolean wasReset;
+    /** Execution plans whose device state has been torn down; see TornadoDeviceContext. */
+    private final java.util.Set<Long> resetPlans = java.util.concurrent.ConcurrentHashMap.newKeySet();
     private final Set<Long> executionIDs;
 
     /**
@@ -883,7 +884,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
         // running, which would leave host pins behind - the stale-pin hazard. Drain all
         // owned pins here; live segments degrade to pageable until their next allocate.
         context.getPinnedMemoryRegistry().unpinAll();
-        wasReset = true;
+        resetPlans.add(executionPlanId);
     }
 
     public CUDATornadoDevice toDevice() {
@@ -913,13 +914,13 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     }
 
     @Override
-    public boolean wasReset() {
-        return wasReset;
+    public boolean wasReset(long executionPlanId) {
+        return resetPlans.contains(executionPlanId);
     }
 
     @Override
-    public void setResetToFalse() {
-        wasReset = false;
+    public void setResetToFalse(long executionPlanId) {
+        resetPlans.remove(executionPlanId);
     }
 
     @Override
