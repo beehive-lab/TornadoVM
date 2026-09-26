@@ -70,13 +70,25 @@ final class MlxNativeLib {
     private static final AtomicLong RELEASES = new AtomicLong();
     private static final MemorySegment COUNTING_DELETER;
 
+    /**
+     * The last MLX error on this thread. mlx-c's default error handler prints the message and calls {@code exit}, which
+     * would end the JVM on any MLX error (an operation MLX does not implement on the CPU, a shape it rejects); the
+     * handler installed here records the message instead, so the call returns its failure status and {@link #check}
+     * turns it into an exception.
+     */
+    private static final ThreadLocal<String> LAST_ERROR = new ThreadLocal<>();
+
     static {
         MemorySegment deleter = null;
         if (MlxC.isLoaded()) {
             try {
                 MethodHandle target = MethodHandles.lookup().findStatic(MlxNativeLib.class, "onRelease", MethodType.methodType(void.class, MemorySegment.class));
                 deleter = FFMSupport.upcallStub(target, FunctionDescriptor.ofVoid(C_POINTER), Arena.global());
-            } catch (ReflectiveOperationException e) {
+                SymbolLookup mlxc = FFMSupport.loadLibrary("libmlxc.dylib", "/opt/homebrew/opt/mlx-c/lib/libmlxc.dylib", "/usr/local/opt/mlx-c/lib/libmlxc.dylib", "libmlxc.so");
+                MethodHandle setHandler = FFMSupport.downcall(mlxc, FunctionDescriptor.ofVoid(C_POINTER, C_POINTER, C_POINTER), "mlx_set_error_handler");
+                MethodHandle onError = MethodHandles.lookup().findStatic(MlxNativeLib.class, "onError", MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class));
+                setHandler.invokeExact(FFMSupport.upcallStub(onError, FunctionDescriptor.ofVoid(C_POINTER, C_POINTER), Arena.global()), MemorySegment.NULL, MemorySegment.NULL);
+            } catch (Throwable e) {
                 throw new ExceptionInInitializerError(e);
             }
         }
@@ -88,6 +100,10 @@ final class MlxNativeLib {
 
     private static void onRelease(MemorySegment data) {
         RELEASES.incrementAndGet();
+    }
+
+    private static void onError(MemorySegment message, MemorySegment data) {
+        LAST_ERROR.set(FFMSupport.readCString(message));
     }
 
     /** Where MLX installs its compiled kernel library, next to {@code libmlx.dylib}; null if not found. */
@@ -109,7 +125,9 @@ final class MlxNativeLib {
 
     static void check(int status, String call) {
         if (status != 0) {
-            throw new TornadoRuntimeException("[ERROR] " + call + " failed with status " + status);
+            String error = LAST_ERROR.get();
+            LAST_ERROR.remove();
+            throw new TornadoRuntimeException("[ERROR] " + call + " failed with status " + status + (error == null ? "" : ": " + error));
         }
     }
 
