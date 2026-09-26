@@ -38,6 +38,7 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix2DInt;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -734,6 +735,77 @@ public class TestConditionals extends TornadoTestBase {
             for (int col = 0; col < cols; col++) {
                 assertEquals(mtxSequential.get(row, col), mtxTornado.get(row, col));
             }
+        }
+    }
+
+    private static final int ROWS_PER_GROUP = 4;
+
+    /**
+     * Kernel whose inner guard becomes a compile-time constant: after the early
+     * return, {@code first + r < active} is provably true for {@code r = 0}, so once
+     * the constant-trip loop is unrolled the corresponding {@code IfNode} has a
+     * {@code LogicConstantNode} as its condition. This used to fail on the OpenCL
+     * backend with {@code TornadoRuntimeException: logic node (class=...LogicConstantNode)}.
+     * See https://github.com/beehive-lab/TornadoVM/issues/1131.
+     */
+    private static void provablyTrueGuard(KernelContext context, FloatArray x, FloatArray out, int active) {
+        int first = context.groupIdx * ROWS_PER_GROUP;
+        if (first >= active) {
+            return;
+        }
+        for (int r = 0; r < ROWS_PER_GROUP; r++) {
+            if (first + r < active) {
+                out.set(first + r, x.get(first + r) * 2.0f);
+            }
+        }
+    }
+
+    private static void provablyTrueGuardSequential(FloatArray x, FloatArray out, int active, int numGroups) {
+        for (int group = 0; group < numGroups; group++) {
+            int first = group * ROWS_PER_GROUP;
+            if (first >= active) {
+                continue;
+            }
+            for (int r = 0; r < ROWS_PER_GROUP; r++) {
+                if (first + r < active) {
+                    out.set(first + r, x.get(first + r) * 2.0f);
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testIfConditionFoldedToConstant() throws TornadoExecutionPlanException {
+        final int numGroups = 16;
+        final int size = numGroups * ROWS_PER_GROUP;
+        final int active = 10;
+
+        FloatArray x = new FloatArray(size);
+        FloatArray outTornado = new FloatArray(size);
+        FloatArray outSequential = new FloatArray(size);
+        for (int i = 0; i < size; i++) {
+            x.set(i, i + 1.0f);
+        }
+
+        WorkerGrid workerGrid = new WorkerGrid1D(numGroups);
+        workerGrid.setLocalWork(1, 1, 1);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
+        KernelContext context = new KernelContext();
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, x, outTornado) //
+                .task("t0", TestConditionals::provablyTrueGuard, context, x, outTornado, active) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outTornado);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler).execute();
+        }
+
+        provablyTrueGuardSequential(x, outSequential, active, numGroups);
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(outSequential.get(i), outTornado.get(i), 0.0f);
         }
     }
 }
