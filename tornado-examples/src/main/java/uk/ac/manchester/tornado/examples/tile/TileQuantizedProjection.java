@@ -40,7 +40,7 @@ import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
  *
  * <p>
  * The kernel this is modelled on is {@code Qwen35MMAKernels.projectionMMAQ4_0} from
- * <a href="https://github.com/beehive-lab/GPULlama3.java/pull/150">GPULlama3.java#150</a>. That
+ * <a href="https://github.com/beehive-lab/jitllm/pull/150">jitllm#150</a>. That
  * one reaches tensor cores by hand: a lane owns eight consecutive weights, nibbles are unpacked
  * per lane, the B panel is staged into shared memory through a swizzle, two barriers bracket each
  * Q4_0 block, and two {@code mma.sync} calls are issued per staging round against

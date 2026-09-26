@@ -37,3 +37,6 @@ hs_err_pid*.log
 # IntelliJ run configurations are machine-local: the IDE rewrites them with
 # absolute, user-specific paths on every edit.
 .run/
+
+# javac argument files dumped by failed Maven compiles
+javac.*.args

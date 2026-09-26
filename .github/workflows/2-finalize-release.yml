@@ -302,6 +302,6 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "### Automatic next steps:" >> $GITHUB_STEP_SUMMARY
             echo "1. build-release-sdks.yml builds jdk21+jdk25+jdk26+jdk27 SDKs and uploads them to this Release" >> $GITHUB_STEP_SUMMARY
-            echo "2. deploy-maven-central.yml deploys tornado-api/tornado-runtime/tornado-matrices (one deploy per JDK)" >> $GITHUB_STEP_SUMMARY
+            echo "2. deploy-maven-central.yml deploys tornado-api/-runtime/-matrices, tornado-drivers-cuda (cuTile) and the CUDA library bindings (one deploy per JDK)" >> $GITHUB_STEP_SUMMARY
             echo "3. publish-archives-to-sdkman.yml publishes every SDK variant to SDKMAN" >> $GITHUB_STEP_SUMMARY
           fi

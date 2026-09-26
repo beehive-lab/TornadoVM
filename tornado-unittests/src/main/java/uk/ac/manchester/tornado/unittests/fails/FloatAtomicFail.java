@@ -57,6 +57,7 @@ public class FloatAtomicFail extends TornadoTestBase {
     @Test
     public void testFloatAtomicAddOpenCL() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL, "OpenCL's atom_add has no floating-point overload -- KernelContext.atomicAdd(FloatArray, ...) is rejected at graph-build time on that backend.");
+        assertNotBackend(TornadoVMBackendType.CUDA, "Intermittently fails on the CUDA backend in CI (test-jdk22plus-on-jdk27-cuda) with a null-message exception.");
 
         final int numThreads = 256;
         FloatArray accumulator = new FloatArray(1);

@@ -59,7 +59,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  *   <li>{@link #testMultipleIterations()} - repeated execution: event-registry reset and stream reuse.</li>
  *   <li>{@link #testSingleStreamGraphReplay()} - single-stream CUDA-graph capture/replay.</li>
  *   <li>{@link #testMultiStreamGraphReplay()} - multi-stream (fork/join) CUDA-graph capture/replay.</li>
- *   <li>{@link #testDecodeLoopConcurrent()} - a GPULlama3-shaped decode loop: {@code FIRST_EXECUTION}
+ *   <li>{@link #testDecodeLoopConcurrent()} - a jitllm-shaped decode loop: {@code FIRST_EXECUTION}
  *       resident weights + a serial per-token forward chain.</li>
  * </ol>
  *
@@ -85,7 +85,7 @@ public class TestCUDAStreams extends TornadoTestBase {
     private static final int GRAPH_N = 8192;       // CUDA-graph capture/replay arrays
     private static final int GRAPH_REPLAYS = 8;
 
-    private static final int LLAMA_DIM = 2048;     // GPULlama3-shaped decode loop
+    private static final int LLAMA_DIM = 2048;     // jitllm-shaped decode loop
     private static final int LLAMA_LAYERS = 6;
     private static final int LLAMA_TOKENS = 16;
     private static final float LLAMA_DELTA = 0.05f;
@@ -505,7 +505,7 @@ public class TestCUDAStreams extends TornadoTestBase {
     }
 
     // -------------------------------------------------------------------------
-    // GPULlama3-shaped decode loop (FIRST_EXECUTION resident weights + serial chain)
+    // jitllm-shaped decode loop (FIRST_EXECUTION resident weights + serial chain)
     // -------------------------------------------------------------------------
 
     /** 8. Decode loop with intra-plan concurrency (H2D / COMPUTE / D2H role streams). */

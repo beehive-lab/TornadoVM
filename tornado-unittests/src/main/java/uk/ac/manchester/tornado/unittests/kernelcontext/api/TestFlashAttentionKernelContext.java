@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
- * Standalone reproducer for the GPULlama3 Flash-Attention kernel that fails to compile under the TornadoVM OpenCL backend.
+ * Standalone reproducer for the jitllm Flash-Attention kernel that fails to compile under the TornadoVM OpenCL backend.
  *
  * <p>
  * The kernel uses one work-group per attention head ({@code groupIdx == head}) and {@code localSize} cooperative threads per
