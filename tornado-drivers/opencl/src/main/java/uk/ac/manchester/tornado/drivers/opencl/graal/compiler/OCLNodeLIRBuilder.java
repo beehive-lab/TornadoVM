@@ -350,6 +350,9 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             final Value x = operand(testNode.getX());
             final Value y = operand(testNode.getY());
             result = getGen().getArithmetic().genTestNegateBinaryExpr(OCLBinaryOp.BITWISE_AND, boolLirKind, x, y);
+        } else if (node instanceof LogicConstantNode logicConstant) {
+            // Negated constant-folded condition: emit the inverted trivial relation (0 != 0 / 0 == 0).
+            result = emitTrivialRelation(!logicConstant.getValue(), intLirKind, boolLirKind);
         } else {
             throw new TornadoRuntimeException(String.format("logic node (class=%s)", node.getClass().getName()));
         }
@@ -409,11 +412,22 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             final Value x = operand(integerTestNode.getX());
             final Value y = operand(integerTestNode.getY());
             result = getGen().getArithmetic().genTestBinaryExpr(OCLBinaryOp.BITWISE_AND, boolLirKind, x, y);
+        } else if (node instanceof LogicConstantNode logicConstant) {
+            // A condition folded to a constant (e.g. a guard made provably true by an earlier early return in an
+            // unrolled loop): emit a trivially true/false relation (0 == 0 / 0 != 0), so that it is still a
+            // boolean OCLLIROp that can be used as a branch or loop condition.
+            result = emitTrivialRelation(logicConstant.getValue(), intLirKind, boolLirKind);
         } else {
             throw new TornadoRuntimeException(String.format("logic node (class=%s)", node.getClass().getName()));
         }
         setResult(node, result);
         return (OCLLIROp) result;
+    }
+
+    private Value emitTrivialRelation(boolean value, LIRKind intLirKind, LIRKind boolLirKind) {
+        final Value zero = gen.emitConstant(intLirKind, JavaConstant.forInt(0));
+        final OCLBinaryOp op = value ? OCLBinaryOp.RELATIONAL_EQ : OCLBinaryOp.RELATIONAL_NE;
+        return getGen().getArithmetic().genBinaryExpr(op, boolLirKind, zero, zero);
     }
 
     private Value negatedOperand(ValueNode value) {
