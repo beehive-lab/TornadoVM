@@ -51,6 +51,7 @@ import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.enums.DeviceLaunchMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDADeviceLaunchNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.runtime.analyzer.TaskUtils;
 import uk.ac.manchester.tornado.runtime.jvmci.TornadoObjectConstant;
 
@@ -254,6 +255,10 @@ final class CUDADeviceLaunchPlugins {
             }
             if (next >= arguments.length) {
                 throw new TornadoRuntimeException(mismatch(child, arguments.length));
+            }
+            if (GraphUtil.unproxify(arguments[next]) instanceof LocalArrayNode) {
+                throw new TornadoRuntimeException("Argument " + next + " of the launch of " + child.format("%H.%n")
+                        + " is a local-memory array (KernelContext.allocate*LocalArray). Local memory belongs to the launching thread block and is not visible to a kernel it launches; pass a global array instead.");
             }
             JavaKind expected = signature.getParameterKind(i).getStackKind();
             JavaKind actual = arguments[next].getStackKind();
