@@ -82,6 +82,14 @@ public final class CUDACompiler {
     public static void build(CUDAHandles.Program program, int device, String userOptions) {
         List<String> options = splitOptions(userOptions);
 
+        // A kernel that launches kernels from the device (CUDA Dynamic Parallelism) must be
+        // compiled as relocatable device code and linked against the device runtime before it can
+        // be loaded. Every other kernel keeps the single compile-and-load step.
+        boolean deviceLaunch = program.binary.length == 0 && usesDeviceLaunch(program.source);
+        if (deviceLaunch) {
+            options.add(0, "-rdc=true");
+        }
+
         // Hoisted so the module-load failure branch can explain an NVRTC/GPU-arch mismatch. The
         // defaults suit the pre-built-image path, which loads a cubin directly with no PTX JIT.
         int gpuArch = 0;          // device compute capability, e.g. cc 12.0 -> 120
@@ -171,11 +179,16 @@ public final class CUDACompiler {
                 program.buildStatus = CUDAHandles.Program.BUILD_SUCCESS;
             } else if (!compile(program, arch, options, useCubin)) {
                 return;
+            } else if (deviceLaunch && !linkDeviceRuntime(program, useCubin)) {
+                return;
             } else {
                 IMAGE_CACHE.putIfAbsent(cacheKey, program.binary);
             }
         }
 
+        if (deviceLaunch) {
+            applyPendingLaunchLimit(program);
+        }
         loadModule(program, gpuArch, maxSupportedArch, fallbackArch, useCubin, archKnown);
     }
 
@@ -259,6 +272,125 @@ public final class CUDACompiler {
         program.binary = attempt.image;
         program.buildStatus = CUDAHandles.Program.BUILD_SUCCESS;
         return true;
+    }
+
+    /**
+     * Whether the source launches a kernel from device code. The CUDA backend emits a device-side
+     * launch as a triple-chevron call, which appears nowhere else in generated code; checking the
+     * source rather than a compiler flag also covers hand-written (pre-built) CUDA C.
+     */
+    static boolean usesDeviceLaunch(String source) {
+        return source != null && source.contains("<<<");
+    }
+
+    /**
+     * Links the relocatable image NVRTC produced against the device runtime ({@code libcudadevrt}),
+     * replacing the program's binary with the linked, loadable cubin.
+     */
+    private static boolean linkDeviceRuntime(CUDAHandles.Program program, boolean useCubin) {
+        String deviceRuntime = deviceRuntimeLibrary();
+        if (deviceRuntime == null) {
+            program.buildStatus = CUDAHandles.Program.BUILD_ERROR;
+            program.log = "This kernel launches kernels from the device (CUDA Dynamic Parallelism), which needs the CUDA device runtime library libcudadevrt.a, but it was not found "
+                    + "(checked -Dtornado.cuda.devrt.path and lib64/, lib/, targets/*/lib/ under $CUDA_PATH/$CUDA_HOME/$CUDA_ROOT and /usr/local/cuda*). "
+                    + "Install the CUDA toolkit or point -Dtornado.cuda.devrt.path at libcudadevrt.a.";
+            System.out.println(LOG_PREFIX + program.log);
+            return false;
+        }
+        if (program.context != 0) {
+            CUDADriverAPI.cuCtxSetCurrent(program.context);
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment stateOut = FFMSupport.allocatePointer(arena);
+            int result = CUDADriverAPI.cuLinkCreate(0, MemorySegment.NULL, MemorySegment.NULL, stateOut);
+            if (result != CUDADriverAPI.CUDA_SUCCESS) {
+                return linkFailed(program, "cuLinkCreate", result);
+            }
+            long state = stateOut.get(FFMSupport.C_POINTER, 0).address();
+            try {
+                MemorySegment image = arena.allocate(program.binary.length, 1);
+                MemorySegment.copy(program.binary, 0, image, FFMSupport.C_CHAR, 0, program.binary.length);
+                int inputType = useCubin ? CUDADriverAPI.CU_JIT_INPUT_CUBIN : CUDADriverAPI.CU_JIT_INPUT_PTX;
+                result = CUDADriverAPI.cuLinkAddData(state, inputType, image, program.binary.length, FFMSupport.allocateCString(arena, "tornado_kernel"), 0, MemorySegment.NULL, MemorySegment.NULL);
+                if (result != CUDADriverAPI.CUDA_SUCCESS) {
+                    return linkFailed(program, "cuLinkAddData", result);
+                }
+                result = CUDADriverAPI.cuLinkAddFile(state, CUDADriverAPI.CU_JIT_INPUT_LIBRARY, FFMSupport.allocateCString(arena, deviceRuntime), 0, MemorySegment.NULL, MemorySegment.NULL);
+                if (result != CUDADriverAPI.CUDA_SUCCESS) {
+                    return linkFailed(program, "cuLinkAddFile(" + deviceRuntime + ")", result);
+                }
+                MemorySegment cubinOut = FFMSupport.allocatePointer(arena);
+                MemorySegment sizeOut = FFMSupport.allocateLong(arena);
+                result = CUDADriverAPI.cuLinkComplete(state, cubinOut, sizeOut);
+                if (result != CUDADriverAPI.CUDA_SUCCESS) {
+                    return linkFailed(program, "cuLinkComplete", result);
+                }
+                // The linked image is owned by the link state, so copy it out before destroying it.
+                long size = sizeOut.get(FFMSupport.C_LONG, 0);
+                MemorySegment linked = FFMSupport.asSegment(cubinOut.get(FFMSupport.C_POINTER, 0).address(), size);
+                program.binary = linked.toArray(FFMSupport.C_CHAR);
+                return true;
+            } finally {
+                CUDADriverAPI.cuLinkDestroy(state);
+            }
+        }
+    }
+
+    private static boolean linkFailed(CUDAHandles.Program program, String step, int result) {
+        program.buildStatus = CUDAHandles.Program.BUILD_ERROR;
+        String message = CUDADriverAPI.errorString(result);
+        program.log = "Linking the device runtime for CUDA Dynamic Parallelism failed: " + step + " returned " + (message == null ? String.valueOf(result) : message);
+        System.out.println(LOG_PREFIX + program.log);
+        return false;
+    }
+
+    /**
+     * Location of {@code libcudadevrt.a}: {@code -Dtornado.cuda.devrt.path} when set, otherwise the
+     * first toolkit root that has it. {@code null} when there is none.
+     */
+    static String deviceRuntimeLibrary() {
+        String override = System.getProperty("tornado.cuda.devrt.path");
+        if (override != null && !override.isBlank()) {
+            return new File(override).isFile() ? override : null;
+        }
+        String[] subdirectories = { "lib64", "lib", "lib" + File.separator + "x64", "targets" + File.separator + "x86_64-linux" + File.separator + "lib",
+                "targets" + File.separator + "sbsa-linux" + File.separator + "lib", "lib" + File.separator + "x86_64-linux-gnu", "lib" + File.separator + "aarch64-linux-gnu" };
+        for (String root : NVRTCAPI.toolkitRoots()) {
+            for (String subdirectory : subdirectories) {
+                for (String name : new String[] { "libcudadevrt.a", "cudadevrt.lib" }) {
+                    File candidate = new File(root + File.separator + subdirectory, name);
+                    if (candidate.isFile()) {
+                        return candidate.getAbsolutePath();
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Applies {@code -Dtornado.cuda.dp.pendingLaunchCount} to the context before the first module
+     * that launches kernels from the device is loaded. Left unset, the driver default applies.
+     */
+    private static void applyPendingLaunchLimit(CUDAHandles.Program program) {
+        String value = System.getProperty("tornado.cuda.dp.pendingLaunchCount");
+        if (value == null || value.isBlank()) {
+            return;
+        }
+        long count;
+        try {
+            count = Long.parseLong(value.trim());
+        } catch (NumberFormatException e) {
+            System.out.println(LOG_PREFIX + "WARNING: ignoring -Dtornado.cuda.dp.pendingLaunchCount=" + value + ": not a number.");
+            return;
+        }
+        if (program.context != 0) {
+            CUDADriverAPI.cuCtxSetCurrent(program.context);
+        }
+        int result = CUDADriverAPI.cuCtxSetLimit(CUDADriverAPI.CU_LIMIT_DEV_RUNTIME_PENDING_LAUNCH_COUNT, count);
+        if (result != CUDADriverAPI.CUDA_SUCCESS) {
+            System.out.println(LOG_PREFIX + "WARNING: cuCtxSetLimit(CU_LIMIT_DEV_RUNTIME_PENDING_LAUNCH_COUNT, " + count + ") failed: " + CUDADriverAPI.errorString(result));
+        }
     }
 
     private record NvrtcResult(boolean success, byte[] image, String log) {

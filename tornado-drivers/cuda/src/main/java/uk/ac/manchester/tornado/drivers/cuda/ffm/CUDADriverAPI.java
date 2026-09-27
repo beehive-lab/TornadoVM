@@ -84,6 +84,14 @@ public final class CUDADriverAPI {
     public static final int CU_JIT_ERROR_LOG_BUFFER = 5;
     public static final int CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES = 6;
 
+    /** CUjitInputType values used when linking a relocatable image against the device runtime. */
+    public static final int CU_JIT_INPUT_CUBIN = 0;
+    public static final int CU_JIT_INPUT_PTX = 1;
+    public static final int CU_JIT_INPUT_LIBRARY = 4;
+
+    /** CUlimit: how many device-side launches may be outstanding before one fails. */
+    public static final int CU_LIMIT_DEV_RUNTIME_PENDING_LAUNCH_COUNT = 0x04;
+
     /** CUstreamCaptureStatus / CUstreamCaptureMode values used by the CUDA-graph path. */
     public static final int CU_STREAM_CAPTURE_STATUS_NONE = 0;
     public static final int CU_STREAM_CAPTURE_STATUS_ACTIVE = 1;
@@ -136,6 +144,13 @@ public final class CUDADriverAPI {
     private static final MethodHandle CU_LAUNCH_KERNEL;
     private static final MethodHandle CU_OCCUPANCY_MAX_POTENTIAL_BLOCK_SIZE;
 
+    private static final MethodHandle CU_LINK_CREATE;
+    private static final MethodHandle CU_LINK_ADD_DATA;
+    private static final MethodHandle CU_LINK_ADD_FILE;
+    private static final MethodHandle CU_LINK_COMPLETE;
+    private static final MethodHandle CU_LINK_DESTROY;
+    private static final MethodHandle CU_CTX_SET_LIMIT;
+
     private static final MethodHandle CU_STREAM_BEGIN_CAPTURE;
     private static final MethodHandle CU_STREAM_END_CAPTURE;
     private static final MethodHandle CU_STREAM_IS_CAPTURING;
@@ -185,6 +200,12 @@ public final class CUDADriverAPI {
             CU_MODULE_UNLOAD = null;
             CU_LAUNCH_KERNEL = null;
             CU_OCCUPANCY_MAX_POTENTIAL_BLOCK_SIZE = null;
+            CU_LINK_CREATE = null;
+            CU_LINK_ADD_DATA = null;
+            CU_LINK_ADD_FILE = null;
+            CU_LINK_COMPLETE = null;
+            CU_LINK_DESTROY = null;
+            CU_CTX_SET_LIMIT = null;
             CU_STREAM_BEGIN_CAPTURE = null;
             CU_STREAM_END_CAPTURE = null;
             CU_STREAM_IS_CAPTURING = null;
@@ -240,6 +261,15 @@ public final class CUDADriverAPI {
             CU_MODULE_UNLOAD = downcall(LIBCUDA, FunctionDescriptor.of(C_INT, C_LONG), "cuModuleUnload");
             CU_LAUNCH_KERNEL = downcall(LIBCUDA, FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_INT, C_INT, C_INT, C_INT, C_INT, C_INT, C_LONG, C_POINTER, C_POINTER), "cuLaunchKernel");
             CU_OCCUPANCY_MAX_POTENTIAL_BLOCK_SIZE = downcall(LIBCUDA, FunctionDescriptor.of(C_INT, C_POINTER, C_POINTER, C_LONG, C_LONG, C_LONG, C_INT), "cuOccupancyMaxPotentialBlockSize");
+
+            // Linker, used only for modules that launch kernels from the device: their relocatable
+            // image has to be linked against libcudadevrt before it can be loaded.
+            CU_LINK_CREATE = downcall(LIBCUDA, FunctionDescriptor.of(C_INT, C_INT, C_POINTER, C_POINTER, C_POINTER), "cuLinkCreate_v2", "cuLinkCreate");
+            CU_LINK_ADD_DATA = downcall(LIBCUDA, FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_POINTER, C_LONG, C_POINTER, C_INT, C_POINTER, C_POINTER), "cuLinkAddData_v2", "cuLinkAddData");
+            CU_LINK_ADD_FILE = downcall(LIBCUDA, FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_POINTER, C_INT, C_POINTER, C_POINTER), "cuLinkAddFile_v2", "cuLinkAddFile");
+            CU_LINK_COMPLETE = downcall(LIBCUDA, FunctionDescriptor.of(C_INT, C_LONG, C_POINTER, C_POINTER), "cuLinkComplete");
+            CU_LINK_DESTROY = downcall(LIBCUDA, FunctionDescriptor.of(C_INT, C_LONG), "cuLinkDestroy");
+            CU_CTX_SET_LIMIT = downcall(LIBCUDA, FunctionDescriptor.of(C_INT, C_INT, C_LONG), "cuCtxSetLimit");
 
             CU_STREAM_BEGIN_CAPTURE = downcall(LIBCUDA, FunctionDescriptor.of(C_INT, C_LONG, C_INT), "cuStreamBeginCapture_v2", "cuStreamBeginCapture");
             CU_STREAM_END_CAPTURE = downcall(LIBCUDA, FunctionDescriptor.of(C_INT, C_LONG, C_POINTER), "cuStreamEndCapture");
@@ -537,6 +567,54 @@ public final class CUDADriverAPI {
     public static int cuModuleLoadDataEx(MemorySegment module, MemorySegment image, int numOptions, MemorySegment options, MemorySegment optionValues) {
         try {
             return (int) CU_MODULE_LOAD_DATA_EX.invokeExact(module, image, numOptions, options, optionValues);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    public static int cuLinkCreate(int numOptions, MemorySegment options, MemorySegment optionValues, MemorySegment stateOut) {
+        try {
+            return (int) CU_LINK_CREATE.invokeExact(numOptions, options, optionValues, stateOut);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    public static int cuLinkAddData(long state, int type, MemorySegment data, long size, MemorySegment name, int numOptions, MemorySegment options, MemorySegment optionValues) {
+        try {
+            return (int) CU_LINK_ADD_DATA.invokeExact(state, type, data, size, name, numOptions, options, optionValues);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    public static int cuLinkAddFile(long state, int type, MemorySegment path, int numOptions, MemorySegment options, MemorySegment optionValues) {
+        try {
+            return (int) CU_LINK_ADD_FILE.invokeExact(state, type, path, numOptions, options, optionValues);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    public static int cuLinkComplete(long state, MemorySegment cubinOut, MemorySegment sizeOut) {
+        try {
+            return (int) CU_LINK_COMPLETE.invokeExact(state, cubinOut, sizeOut);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    public static int cuLinkDestroy(long state) {
+        try {
+            return (int) CU_LINK_DESTROY.invokeExact(state);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    public static int cuCtxSetLimit(int limit, long value) {
+        try {
+            return (int) CU_CTX_SET_LIMIT.invokeExact(limit, value);
         } catch (Throwable t) {
             throw rethrow(t);
         }
