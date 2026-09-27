@@ -36,6 +36,8 @@ import uk.ac.manchester.tornado.api.enums.DeviceLaunchMode;
 import uk.ac.manchester.tornado.api.enums.MMAShape;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAArchitecture;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAUtils;
+import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAKernelStackFrame;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler.CUDABinaryIntrinsic;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler.CUDATernaryIntrinsic;
@@ -2642,19 +2644,24 @@ public class CUDALIRStmt {
 
         @Override
         public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
-            crb.addDeviceLaunchedKernel(target);
+            crb.addDeviceLaunchedKernel(target, mode.name());
+            final String child = target.format("%h.%n");
 
-            String[] grid = new String[3];
-            String[] block = new String[3];
+            String[] global = new String[3];
+            String[] local = new String[3];
             for (int i = 0; i < 3; i++) {
-                String global = asm.getStringValue(crb, globalSizes[i]);
-                String local = asm.getStringValue(crb, localSizes[i]);
-                block[i] = "(unsigned) (" + local + ")";
-                grid[i] = "(unsigned) (((" + global + ") + (" + local + ") - 1) / (" + local + "))";
+                global[i] = "(unsigned) (" + asm.getStringValue(crb, globalSizes[i]) + ")";
+                local[i] = "(unsigned) (" + asm.getStringValue(crb, localSizes[i]) + ")";
             }
 
+            asm.emitLine("{");
+            asm.pushIndent();
+            asm.emitLine("unsigned _dp_global[3] = { " + String.join(", ", global) + " };");
+            asm.emitLine("dim3 _dp_block(" + String.join(", ", local) + ");");
+            asm.emitLine("dim3 _dp_grid((_dp_global[0] + _dp_block.x - 1) / _dp_block.x, (_dp_global[1] + _dp_block.y - 1) / _dp_block.y, (_dp_global[2] + _dp_block.z - 1) / _dp_block.z);");
+
             StringBuilder call = new StringBuilder();
-            call.append(CUDAUtils.makeDeviceKernelName(target)).append("<<<dim3(").append(String.join(", ", grid)).append("), dim3(").append(String.join(", ", block)).append(")");
+            call.append(CUDAUtils.makeDeviceKernelName(target)).append("<<<_dp_grid, _dp_block");
             switch (mode) {
                 case TAIL -> call.append(", 0, cudaStreamTailLaunch");
                 case FIRE_AND_FORGET -> call.append(", 0, cudaStreamFireAndForget");
@@ -2668,12 +2675,32 @@ public class CUDALIRStmt {
                 // Arrays live in the parent as integer addresses; the child declares them as byte pointers.
                 call.append(pointerArguments[i] ? "(unsigned char *) (" + value + ")" : value);
             }
-            call.append(")");
+            call.append(");");
+            asm.emitLine(call.toString());
 
-            asm.indent();
-            asm.emit(call.toString());
-            asm.delimiter();
-            asm.eol();
+            // A device launch that fails (invalid configuration, too many pending launches) does not
+            // run the child and reports nothing on its own; the error is only visible here.
+            asm.emitLine("cudaError_t _dp_error = cudaGetLastError();");
+            asm.emitLine("if (_dp_error != cudaSuccess) printf(\"[TornadoVM-CUDA] device launch of " + child + " failed: %s\\n\", cudaGetErrorString(_dp_error));");
+
+            // --threadInfo: only the device knows a child's grid, so the launching thread reports it,
+            // in the format the host uses for the kernels it launches. The flag is a kernel-context
+            // slot the host sets on every launch.
+            TaskDataContext meta = crb.getTaskMetaData();
+            String taskId = meta != null ? meta.getId() : "?";
+            asm.emitLine("if (_kernel_context[" + CUDAKernelStackFrame.DEVICE_LAUNCH_INFO_INDEX + "]) printf(\"Task info: " + taskId + " -> " + child + " (device launch, " + mode + ")\\n\"");
+            asm.pushIndent();
+            asm.emitLine("\"\\tLaunched by       : block [%u, %u, %u] thread [%u, %u, %u]\\n\"");
+            asm.emitLine("\"\\tGlobal work size  : [%u, %u, %u]\\n\"");
+            asm.emitLine("\"\\tLocal  work size  : [%u, %u, %u]\\n\"");
+            asm.emitLine("\"\\tNumber of workgroups  : [%u, %u, %u]\\n\\n\",");
+            asm.emitLine("blockIdx.x, blockIdx.y, blockIdx.z, threadIdx.x, threadIdx.y, threadIdx.z,");
+            asm.emitLine("_dp_global[0], _dp_global[1], _dp_global[2],");
+            asm.emitLine("_dp_block.x, _dp_block.y, _dp_block.z,");
+            asm.emitLine("_dp_grid.x, _dp_grid.y, _dp_grid.z);");
+            asm.popIndent();
+            asm.popIndent();
+            asm.emitLine("}");
         }
     }
 

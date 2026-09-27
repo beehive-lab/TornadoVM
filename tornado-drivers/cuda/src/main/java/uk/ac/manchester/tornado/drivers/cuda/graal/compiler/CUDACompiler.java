@@ -40,6 +40,11 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import tornado.graal.compiler.code.CompilationResult;
@@ -80,6 +85,7 @@ import jdk.vm.ci.meta.TriState;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAUtils;
+import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.cuda.CUDATargetDescription;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAProviders;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDASuitesProvider;
@@ -295,6 +301,7 @@ public class CUDACompiler {
 
             compilationResult.setNonInlinedMethods(crb.getNonInlinedMethods());
             compilationResult.setDeviceLaunchedKernels(crb.getDeviceLaunchedKernels());
+            compilationResult.setDeviceLaunches(crb.getDeviceLaunches());
             crb.finish();
 
             if (getDebugContext().isCountEnabled()) {
@@ -410,6 +417,9 @@ public class CUDACompiler {
         final Set<PendingMethod> nonInlinedCompiledMethods = new HashSet<>();
         final Deque<PendingMethod> workList = new ArrayDeque<>();
         addPendingMethods(workList, kernelCompResult);
+        final List<String> deviceKernelNames = new ArrayList<>();
+        final Map<ResolvedJavaMethod, List<CUDACompilationResult.DeviceLaunch>> launchesByKernel = new HashMap<>();
+        launchesByKernel.put(resolvedMethod, kernelCompResult.getDeviceLaunches());
         while (!workList.isEmpty()) {
             final PendingMethod pending = workList.pop();
             final ResolvedJavaMethod currentMethod = pending.method();
@@ -421,6 +431,7 @@ public class CUDACompiler {
 
             String subKernelName = pending.deviceKernel() ? CUDAUtils.makeDeviceKernelName(currentMethod) : CUDADeviceContext.checkKernelName(currentMethod.getName());
             final CUDACompilationResult compResult = new CUDACompilationResult(task.getId(), subKernelName, taskMeta, backend);
+            compResult.setDeviceLaunched(pending.deviceKernel());
 
             Request<CUDACompilationResult> methodCompilationRequest = new Request<>(graph, currentMethod, //
                     null, null, providers, backend, suitesProvider.getGraphBuilderSuite(), //
@@ -436,6 +447,17 @@ public class CUDACompiler {
             }
 
             kernelCompResult.addCompiledMethodCode(compResult.getTargetCode());
+            if (pending.deviceKernel()) {
+                deviceKernelNames.add(subKernelName);
+                launchesByKernel.put(currentMethod, compResult.getDeviceLaunches());
+            }
+        }
+
+        if (!deviceKernelNames.isEmpty()) {
+            List<String> tree = new ArrayList<>();
+            describeDeviceLaunches(resolvedMethod, launchesByKernel, 1, new ArrayDeque<>(List.of(resolvedMethod)), tree);
+            kernelCompResult.setDeviceLaunchTree(tree);
+            kernelCompResult.addCompiledMethodCode(deviceKernelDeclarations(new String(kernelCompResult.getTargetCode(), StandardCharsets.UTF_8), deviceKernelNames));
         }
 
         if (DUMP_COMPILED_METHODS) {
@@ -471,6 +493,49 @@ public class CUDACompiler {
      * or a kernel launched from the device.
      */
     private record PendingMethod(ResolvedJavaMethod method, boolean deviceKernel) {
+    }
+
+    /**
+     * One line per device launch below {@code kernel}, indented by depth. A launch back into a kernel
+     * already on the path (a launch cycle) is shown once and not expanded.
+     */
+    private static void describeDeviceLaunches(ResolvedJavaMethod kernel, Map<ResolvedJavaMethod, List<CUDACompilationResult.DeviceLaunch>> launchesByKernel, int depth,
+            Deque<ResolvedJavaMethod> path, List<String> lines) {
+        for (CUDACompilationResult.DeviceLaunch launch : launchesByKernel.getOrDefault(kernel, List.of())) {
+            boolean cycle = path.contains(launch.kernel());
+            lines.add("  ".repeat(depth) + "-> " + launch.kernel().format("%h.%n") + " [" + launch.mode() + "]" + (cycle ? " (recursive)" : ""));
+            if (!cycle) {
+                path.push(launch.kernel());
+                describeDeviceLaunches(launch.kernel(), launchesByKernel, depth + 1, path, lines);
+                path.pop();
+            }
+        }
+    }
+
+    /**
+     * Forward declarations of the kernels launched from the device, placed ahead of all code (after
+     * the headers their signatures may need). Children are emitted before their launchers, which is
+     * enough for a tree of launches, but not for a cycle (A launches B, B launches A).
+     */
+    private static byte[] deviceKernelDeclarations(String source, List<String> names) {
+        StringBuilder header = new StringBuilder();
+        Set<String> includes = new LinkedHashSet<>();
+        for (String line : source.split("\n")) {
+            if (line.startsWith("#include")) {
+                includes.add(line);
+            }
+        }
+        includes.forEach(line -> header.append(line).append('\n'));
+        for (String name : names) {
+            String signatureStart = CUDAAssemblerConstants.KERNEL_MODIFIER + " void " + name + "(";
+            int start = source.indexOf(signatureStart);
+            if (start < 0) {
+                continue;
+            }
+            int end = source.indexOf('\n', start);
+            header.append(source, start, end < 0 ? source.length() : end).append(";\n");
+        }
+        return header.toString().getBytes(StandardCharsets.UTF_8);
     }
 
     private static void addPendingMethods(Deque<PendingMethod> workList, CUDACompilationResult result) {

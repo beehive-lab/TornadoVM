@@ -33,8 +33,10 @@ import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoExec
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -57,6 +59,7 @@ import tornado.graal.compiler.phases.common.DeadCodeEliminationPhase;
 import tornado.graal.compiler.phases.tiers.HighTierContext;
 import tornado.graal.compiler.phases.util.Providers;
 
+import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
@@ -143,7 +146,7 @@ public class TornadoSketcher {
 
     @SuppressWarnings("checkstyle:LineLength")
     private static Sketch buildSketch(ResolvedJavaMethod resolvedMethod, Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, TornadoSketchTier sketchTier, int backendIndex,
-            int deviceIndex) {
+            int deviceIndex, Set<ResolvedJavaMethod> launchAncestors) {
         logger.info("Building sketch of %s::%s", resolvedMethod.getDeclaringClass().getName(), resolvedMethod.getName());
         TornadoCompilerIdentifier id = new TornadoCompilerIdentifier("sketch-" + resolvedMethod.getName(), sketchId.getAndIncrement());
         Builder builder = new Builder(getOptions(), getDebugContext(), AllowAssumptions.YES);
@@ -186,13 +189,21 @@ public class TornadoSketcher {
                     });
 
             // Kernels launched from the device are compiled into the same compilation unit too. A
-            // launch is not an invoke, so its child is sketched here explicitly. A kernel that
-            // launches itself is already being sketched and must not wait on its own sketch.
+            // launch is not an invoke, so its child is sketched here explicitly. A child that is
+            // already being sketched further up the launch chain (a kernel launching itself, or
+            // A -> B -> A) cannot be waited on: that sketch is waiting on this one.
+            Set<ResolvedJavaMethod> launchChain = new HashSet<>(launchAncestors);
+            launchChain.add(resolvedMethod);
             List<DeviceKernelLaunch> deviceLaunches = new ArrayList<>();
+            List<DeviceKernelLaunch> cyclicLaunches = new ArrayList<>();
             for (var node : graph.getNodes()) {
-                if (node instanceof DeviceKernelLaunch launch && !launch.getTargetMethod().equals(resolvedMethod)) {
-                    deviceLaunches.add(launch);
-                    buildSketch(new SketchRequest(launch.getTargetMethod(), providers, graphBuilderSuite, sketchTier, backendIndex, deviceIndex));
+                if (node instanceof DeviceKernelLaunch launch) {
+                    if (launchChain.contains(launch.getTargetMethod())) {
+                        cyclicLaunches.add(launch);
+                    } else {
+                        deviceLaunches.add(launch);
+                        buildSketch(new SketchRequest(launch.getTargetMethod(), providers, graphBuilderSuite, sketchTier, backendIndex, deviceIndex, launchChain));
+                    }
                 }
             }
 
@@ -202,6 +213,15 @@ public class TornadoSketcher {
             for (DeviceKernelLaunch launch : deviceLaunches) {
                 Sketch sketch = lookup(launch.getTargetMethod(), backendIndex, deviceIndex);
                 mergeAccesses(highTierAccesses, launch.getChildParameterValues(), sketch.getArgumentsAccess());
+            }
+            // The accesses of a child in a launch cycle are not known yet: assume it reads and writes
+            // every array it is given.
+            for (DeviceKernelLaunch launch : cyclicLaunches) {
+                for (ValueNode value : launch.getChildParameterValues()) {
+                    if (value instanceof ParameterNode param && param.getStackKind() == JavaKind.Object) {
+                        highTierAccesses[param.index()] = Access.READ_WRITE;
+                    }
+                }
             }
             graph.getInvokes().forEach(invoke -> {
                 ResolvedJavaMethod targetMethod = invoke.callTarget().targetMethod();
@@ -322,7 +342,7 @@ public class TornadoSketcher {
         @Override
         public Sketch call() {
             try (DebugContext.Scope ignored = getDebugContext().scope("SketchCompiler")) {
-                return buildSketch(request.resolvedMethod, request.providers, request.graphBuilderSuite, request.sketchTier, request.driverIndex, request.deviceIndex);
+                return buildSketch(request.resolvedMethod, request.providers, request.graphBuilderSuite, request.sketchTier, request.driverIndex, request.deviceIndex, request.launchAncestors);
             } catch (Throwable e) {
                 if (e instanceof TornadoInliningException) {
                     throw (TornadoInliningException) e;

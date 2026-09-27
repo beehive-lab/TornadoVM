@@ -1390,6 +1390,7 @@ public class TornadoVMInterpreter {
         if (TornadoOptions.LOG_BYTECODES()) {
             logBuilder.append(captureIndent());
             DebugInterpreter.logLaunchTask(task, interpreterDevice, batchThreads, offset, eventId, logBuilder);
+            DebugInterpreter.logDeviceLaunches(installedCode.getDeviceLaunchTree(), captureIndent(), logBuilder);
         }
 
         if (task.meta() instanceof TaskDataContext dataContext) {

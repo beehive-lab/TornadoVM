@@ -46,7 +46,13 @@ import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 public class CUDAKernelStackFrame extends CUDAByteBuffer implements KernelStackFrame {
 
     public static final int RETURN_VALUE_INDEX = 0;
-    public static final int RESERVED_SLOTS = 3;
+    /**
+     * Set (1) when --threadInfo is on, so that kernels launched from the device report their grids.
+     * Read on the device as {@code _kernel_context[DEVICE_LAUNCH_INFO_INDEX]}; a runtime flag rather
+     * than a compile-time one, so toggling thread info on a plan needs no recompilation.
+     */
+    public static final int DEVICE_LAUNCH_INFO_INDEX = 3;
+    public static final int RESERVED_SLOTS = 4;
     private static final int FRAME_BYTES = RESERVED_SLOTS << 3;
     private static final long HOST_BUFFER_ALIGNMENT = 64;
 
@@ -171,6 +177,10 @@ public class CUDAKernelStackFrame extends CUDAByteBuffer implements KernelStackF
     @Override
     public List<CallArgument> getCallArguments() {
         return callArguments;
+    }
+
+    public void setDeviceLaunchInfo(boolean enabled) {
+        buffer.putLong(DEVICE_LAUNCH_INFO_INDEX << 3, enabled ? 1L : 0L);
     }
 
     @Override
