@@ -83,8 +83,8 @@ public class CUDADynamicParallelismSupportPhase extends Phase {
         }
         int driver = driverVersion();
         if (driver >= 0 && driver < CDP2_VERSION_MIN) {
-            throw new TornadoDeviceDynamicParallelismNotSupported("Launching kernels from the device (KernelContext.launch) needs a CUDA 12.0 or newer driver (CUDA Dynamic Parallelism 2); the driver supports CUDA "
-                    + (driver / 1000) + "." + (driver % 1000 / 10) + ".");
+            throw new TornadoDeviceDynamicParallelismNotSupported("Launching kernels from the device (KernelContext.launch) needs a CUDA 12.0 or newer driver "
+                    + "(CUDA Dynamic Parallelism 2); the driver supports CUDA " + (driver / 1000) + "." + (driver % 1000 / 10) + ".");
         }
     }
 

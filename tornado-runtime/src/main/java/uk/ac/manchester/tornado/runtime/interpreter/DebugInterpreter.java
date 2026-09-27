@@ -155,8 +155,10 @@ class DebugInterpreter {
     /** The kernels a launched task launches from the device (CUDA Dynamic Parallelism), under its LAUNCH line. */
     public static void logDeviceLaunches(java.util.List<String> tree, String indent, StringBuilder logBuilder) {
         for (String line : tree) {
-            appendLogBuilder(indent + "bc: " + InterpreterUtilities.debugHighLightBC("  DEVICE_LAUNCH") + line.stripLeading().replaceFirst("^-> ", "") + "  (depth " + (line.length() - line.stripLeading().length()) / 2
-                    + ", grid set on the device)", logBuilder);
+            String launch = line.stripLeading();
+            int depth = (line.length() - launch.length()) / 2;
+            String description = launch.replaceFirst("^-> ", "") + "  (depth " + depth + ", grid set on the device)";
+            appendLogBuilder(indent + "bc: " + InterpreterUtilities.debugHighLightBC("  DEVICE_LAUNCH") + description, logBuilder);
         }
     }
 

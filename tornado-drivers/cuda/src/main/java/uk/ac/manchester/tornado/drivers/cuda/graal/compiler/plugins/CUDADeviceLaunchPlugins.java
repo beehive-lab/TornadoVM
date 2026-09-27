@@ -71,6 +71,11 @@ final class CUDADeviceLaunchPlugins {
     private static final String FIELD_REQUIREMENT = "The DeviceKernel passed to KernelContext.launch must be read from a static final field, "
             + "e.g. static final DeviceKernel CHILD = DeviceKernel.of(MyKernels::child);";
 
+    private static final String MODE_REQUIREMENT = "The DeviceLaunchMode passed to KernelContext.launch must be a constant, e.g. DeviceLaunchMode.TAIL.";
+
+    private static final String LOCAL_ARRAY_REJECTION = " is a local-memory array (KernelContext.allocate*LocalArray). Local memory belongs to the launching thread block "
+            + "and is not visible to a kernel it launches; pass a global array instead.";
+
     private CUDADeviceLaunchPlugins() {
     }
 
@@ -115,9 +120,7 @@ final class CUDADeviceLaunchPlugins {
 
             int next = 0;
             ResolvedJavaMethod child = resolveChild(b, actual[next++]);
-            DeviceLaunchMode mode = hasMode
-                    ? CUDAEnumFolding.resolveEnumConstant(b, actual[next++], DeviceLaunchMode.class, "The DeviceLaunchMode passed to KernelContext.launch must be a constant, e.g. DeviceLaunchMode.TAIL.")
-                    : DeviceLaunchMode.DEFAULT;
+            DeviceLaunchMode mode = hasMode ? CUDAEnumFolding.resolveEnumConstant(b, actual[next++], DeviceLaunchMode.class, MODE_REQUIREMENT) : DeviceLaunchMode.DEFAULT;
 
             ValueNode one = ConstantNode.forInt(1, b.getGraph());
             ValueNode[] sizes;
@@ -257,8 +260,7 @@ final class CUDADeviceLaunchPlugins {
                 throw new TornadoRuntimeException(mismatch(child, arguments.length));
             }
             if (GraphUtil.unproxify(arguments[next]) instanceof LocalArrayNode) {
-                throw new TornadoRuntimeException("Argument " + next + " of the launch of " + child.format("%H.%n")
-                        + " is a local-memory array (KernelContext.allocate*LocalArray). Local memory belongs to the launching thread block and is not visible to a kernel it launches; pass a global array instead.");
+                throw new TornadoRuntimeException("Argument " + next + " of the launch of " + child.format("%H.%n") + LOCAL_ARRAY_REJECTION);
             }
             JavaKind expected = signature.getParameterKind(i).getStackKind();
             JavaKind actual = arguments[next].getStackKind();
