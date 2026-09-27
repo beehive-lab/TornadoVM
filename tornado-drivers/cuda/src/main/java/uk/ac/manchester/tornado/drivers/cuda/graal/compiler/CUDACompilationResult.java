@@ -34,6 +34,8 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 public class CUDACompilationResult extends CompilationResult {
 
     private Set<ResolvedJavaMethod> nonInlinedMethods;
+
+    private Set<ResolvedJavaMethod> deviceLaunchedKernels = Set.of();
     private TaskDataContext meta;
     private CUDABackend backend;
     private String id;
@@ -51,6 +53,15 @@ public class CUDACompilationResult extends CompilationResult {
 
     public void setNonInlinedMethods(Set<ResolvedJavaMethod> value) {
         nonInlinedMethods = value;
+    }
+
+    /** Kernels this code launches from the device (CUDA Dynamic Parallelism). */
+    public Set<ResolvedJavaMethod> getDeviceLaunchedKernels() {
+        return deviceLaunchedKernels;
+    }
+
+    public void setDeviceLaunchedKernels(Set<ResolvedJavaMethod> value) {
+        deviceLaunchedKernels = value;
     }
 
     public void addCompiledMethodCode(byte[] code) {

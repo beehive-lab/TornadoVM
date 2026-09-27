@@ -70,6 +70,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCompilerIdentifier;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.DeviceKernelLaunch;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
 
 public class TornadoSketcher {
@@ -184,7 +185,24 @@ public class TornadoSketcher {
                         buildSketch(newRequest);
                     });
 
+            // Kernels launched from the device are compiled into the same compilation unit too. A
+            // launch is not an invoke, so its child is sketched here explicitly. A kernel that
+            // launches itself is already being sketched and must not wait on its own sketch.
+            List<DeviceKernelLaunch> deviceLaunches = new ArrayList<>();
+            for (var node : graph.getNodes()) {
+                if (node instanceof DeviceKernelLaunch launch && !launch.getTargetMethod().equals(resolvedMethod)) {
+                    deviceLaunches.add(launch);
+                    buildSketch(new SketchRequest(launch.getTargetMethod(), providers, graphBuilderSuite, sketchTier, backendIndex, deviceIndex));
+                }
+            }
+
             Access[] highTierAccesses = highTierContext.getAccesses();
+            // Whatever the child reads or writes through a parent parameter, the parent does too:
+            // without this, an array only the child writes would never be copied back to the host.
+            for (DeviceKernelLaunch launch : deviceLaunches) {
+                Sketch sketch = lookup(launch.getTargetMethod(), backendIndex, deviceIndex);
+                mergeAccesses(highTierAccesses, launch.getChildParameterValues(), sketch.getArgumentsAccess());
+            }
             graph.getInvokes().forEach(invoke -> {
                 ResolvedJavaMethod targetMethod = invoke.callTarget().targetMethod();
                 // Skipped above (no bytecode), so there is no sketch to merge.
@@ -253,6 +271,22 @@ public class TornadoSketcher {
             Access calleeAcc = calleeAccesses[index];
             Access callerAcc = callerAccesses[paramIndex];
 
+            callerAccesses[paramIndex] = Access.asArray()[callerAcc.position | calleeAcc.position];
+        }
+    }
+
+    /**
+     * Merges the parameter accesses of a kernel launched from the device into its parent's.
+     * {@code childValues[i]} is the value the parent passes for the child's parameter {@code i}.
+     */
+    private static void mergeAccesses(Access[] callerAccesses, ValueNode[] childValues, Access[] calleeAccesses) {
+        for (int index = 0; index < childValues.length && index < calleeAccesses.length; index++) {
+            if (!(childValues[index] instanceof ParameterNode param)) {
+                continue;
+            }
+            int paramIndex = param.index();
+            Access calleeAcc = calleeAccesses[index];
+            Access callerAcc = callerAccesses[paramIndex];
             callerAccesses[paramIndex] = Access.asArray()[callerAcc.position | calleeAcc.position];
         }
     }

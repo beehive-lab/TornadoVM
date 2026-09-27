@@ -79,6 +79,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.TriState;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
+import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAUtils;
 import uk.ac.manchester.tornado.drivers.cuda.CUDATargetDescription;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAProviders;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDASuitesProvider;
@@ -293,6 +294,7 @@ public class CUDACompiler {
             }
 
             compilationResult.setNonInlinedMethods(crb.getNonInlinedMethods());
+            compilationResult.setDeviceLaunchedKernels(crb.getDeviceLaunchedKernels());
             crb.finish();
 
             if (getDebugContext().isCountEnabled()) {
@@ -400,28 +402,33 @@ public class CUDACompiler {
          * We use hash set below to prevent this.
          */
         // @formatter:on
-        final Set<ResolvedJavaMethod> nonInlinedCompiledMethods = new HashSet<>();
-        final Deque<ResolvedJavaMethod> workList = new ArrayDeque<>(kernelCompResult.getNonInlinedMethods());
+        //
+        // Kernels launched from the device (CUDA Dynamic Parallelism) join the same work list, but
+        // are compiled as __global__ entry points under their own name: a method can be both a
+        // __device__ helper and a device-launched kernel in one compilation unit. Each is prepended,
+        // so a child always precedes the code that launches it.
+        final Set<PendingMethod> nonInlinedCompiledMethods = new HashSet<>();
+        final Deque<PendingMethod> workList = new ArrayDeque<>();
+        addPendingMethods(workList, kernelCompResult);
         while (!workList.isEmpty()) {
-            final ResolvedJavaMethod currentMethod = workList.pop();
-            if (nonInlinedCompiledMethods.contains(currentMethod)) {
+            final PendingMethod pending = workList.pop();
+            final ResolvedJavaMethod currentMethod = pending.method();
+            if (!nonInlinedCompiledMethods.add(pending)) {
                 continue;
-            } else {
-                nonInlinedCompiledMethods.add(currentMethod);
             }
             Sketch currentSketch = TornadoSketcher.lookup(currentMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
             final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().copy(getDebugContext());
 
-            String subKernelName = CUDADeviceContext.checkKernelName(currentMethod.getName());
+            String subKernelName = pending.deviceKernel() ? CUDAUtils.makeDeviceKernelName(currentMethod) : CUDADeviceContext.checkKernelName(currentMethod.getName());
             final CUDACompilationResult compResult = new CUDACompilationResult(task.getId(), subKernelName, taskMeta, backend);
 
             Request<CUDACompilationResult> methodCompilationRequest = new Request<>(graph, currentMethod, //
                     null, null, providers, backend, suitesProvider.getGraphBuilderSuite(), //
                     optimisticOpts, profilingInfo, suitesProvider.getSuites(), suitesProvider.getLIRSuites(), //
-                    compResult, factory, false, false, new BatchCompilationConfig(0, 0, 0), profiler);
+                    compResult, factory, pending.deviceKernel(), false, new BatchCompilationConfig(0, 0, 0), profiler);
 
             methodCompilationRequest.execute();
-            workList.addAll(compResult.getNonInlinedMethods());
+            addPendingMethods(workList, compResult);
 
             if (DUMP_COMPILED_METHODS) {
                 methods.add(graph.method());
@@ -459,6 +466,22 @@ public class CUDACompiler {
     }
 
     // FIXME <REFACTOR> Remove the inheritance
+    /**
+     * A method still to be compiled into the kernel's compilation unit: a {@code __device__} helper,
+     * or a kernel launched from the device.
+     */
+    private record PendingMethod(ResolvedJavaMethod method, boolean deviceKernel) {
+    }
+
+    private static void addPendingMethods(Deque<PendingMethod> workList, CUDACompilationResult result) {
+        for (ResolvedJavaMethod method : result.getNonInlinedMethods()) {
+            workList.add(new PendingMethod(method, false));
+        }
+        for (ResolvedJavaMethod method : result.getDeviceLaunchedKernels()) {
+            workList.add(new PendingMethod(method, true));
+        }
+    }
+
     public static class Request<T extends CUDACompilationResult> {
 
         public final StructuredGraph graph;

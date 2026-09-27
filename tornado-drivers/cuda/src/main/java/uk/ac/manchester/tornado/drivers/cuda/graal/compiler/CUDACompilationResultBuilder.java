@@ -73,6 +73,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 public class CUDACompilationResultBuilder extends CompilationResultBuilder {
 
     private final Set<ResolvedJavaMethod> nonInlinedMethods;
+    private final Set<ResolvedJavaMethod> deviceLaunchedKernels = new HashSet<>();
     protected LIR lir;
     private int currentBlockIndex;
     private boolean isKernel;
@@ -206,6 +207,18 @@ public class CUDACompilationResultBuilder extends CompilationResultBuilder {
 
     public CUDAAssembler getAssembler() {
         return (CUDAAssembler) asm;
+    }
+
+    /**
+     * Records a kernel this code launches from the device, so that it is compiled as a
+     * {@code __global__} entry point into the same compilation unit.
+     */
+    public void addDeviceLaunchedKernel(ResolvedJavaMethod method) {
+        deviceLaunchedKernels.add(method);
+    }
+
+    public Set<ResolvedJavaMethod> getDeviceLaunchedKernels() {
+        return deviceLaunchedKernels;
     }
 
     public void addNonInlinedMethod(ResolvedJavaMethod method) {
