@@ -31,6 +31,7 @@ import tornado.graal.compiler.nodes.ConstantNode;
 import tornado.graal.compiler.nodes.FixedWithNextNode;
 import tornado.graal.compiler.nodes.ValueNode;
 import tornado.graal.compiler.nodes.extended.BoxNode;
+import tornado.graal.compiler.nodes.extended.UnboxNode;
 import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
@@ -54,6 +55,11 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDADeviceLaunchNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.runtime.analyzer.TaskUtils;
 import uk.ac.manchester.tornado.runtime.jvmci.TornadoObjectConstant;
+import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.GlobalGroupSizeFixedWithNextNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.LocalGroupSizeFixedWithNextNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadIdFixedWithNextNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadLocalIdFixedWithNextNode;
 
 /**
  * Intrinsifies {@code KernelContext.launch} and {@code launch3D} (CUDA Dynamic Parallelism) into a
@@ -136,11 +142,13 @@ final class CUDADeviceLaunchPlugins {
 
             NewArrayNode varargs = varargsArray(actual[next]);
             ValueNode[] launchArguments = varargsValues(varargs);
+            ValueNode[] originals = launchArguments.clone();
             int kernelContextIndex = checkSignature(b, child, launchArguments);
             b.add(new CUDADeviceLaunchNode(child, mode, sizes, launchArguments, kernelContextIndex));
             // Only now that the launch is in the graph: the builder appends after its last fixed
             // node, which until then is one of the array stores removed here.
             removeVarargs(varargs);
+            removeKernelContextLoads(originals);
             return true;
         }
     }
@@ -263,6 +271,9 @@ final class CUDADeviceLaunchPlugins {
                 throw new TornadoRuntimeException("Argument " + next + " of the launch of " + child.format("%H.%n") + LOCAL_ARRAY_REJECTION);
             }
             JavaKind expected = signature.getParameterKind(i).getStackKind();
+            if (expected.isPrimitive() && arguments[next].getStackKind() == JavaKind.Object) {
+                arguments[next] = unboxed(b, arguments[next], signature.getParameterKind(i));
+            }
             JavaKind actual = arguments[next].getStackKind();
             if (expected != actual) {
                 throw new TornadoRuntimeException("Argument " + next + " of the launch of " + child.format("%H.%n") + " is a " + actual.getJavaName() + " but parameter "
@@ -274,6 +285,63 @@ final class CUDADeviceLaunchPlugins {
             throw new TornadoRuntimeException(mismatch(child, arguments.length));
         }
         return kernelContextIndex;
+    }
+
+    /**
+     * A boxed value passed for a primitive parameter. The {@code KernelContext} thread indices
+     * ({@code context.localIdx}, ...) are {@code Integer} fields: they are replaced here by the
+     * thread-id node itself, as {@code TornadoKernelContextReplacement} does for loads that are
+     * unboxed on the spot, and the load is removed later (see {@link #removeKernelContextLoads}).
+     * Any other box is unboxed.
+     */
+    private static ValueNode unboxed(GraphBuilderContext b, ValueNode value, JavaKind kind) {
+        if (value instanceof LoadFieldNode load && isKernelContextIndex(load)) {
+            return b.add(threadIndexNode(load));
+        }
+        if (value instanceof BoxNode box) {
+            return box.getValue();
+        }
+        return b.add(UnboxNode.create(b.getMetaAccess(), b.getConstantReflection(), value, kind));
+    }
+
+    private static FixedWithNextNode threadIndexNode(LoadFieldNode load) {
+        String name = load.field().getName();
+        int dimension = name.charAt(name.length() - 1) - 'X';
+        if (dimension < 0 || dimension > 2) {
+            dimension = name.charAt(name.length() - 1) - 'x';
+        }
+        ValueNode context = load.object();
+        if (name.startsWith("globalId")) {
+            return new ThreadIdFixedWithNextNode(context, dimension);
+        } else if (name.startsWith("localId")) {
+            return new ThreadLocalIdFixedWithNextNode(context, dimension);
+        } else if (name.startsWith("groupId")) {
+            return new GetGroupIdFixedWithNextNode(context, dimension);
+        } else if (name.startsWith("globalGroupSize")) {
+            return new GlobalGroupSizeFixedWithNextNode(context, dimension);
+        } else if (name.startsWith("localGroupSize")) {
+            return new LocalGroupSizeFixedWithNextNode(context, dimension);
+        }
+        throw new TornadoRuntimeException("KernelContext." + name + " cannot be passed to KernelContext.launch.");
+    }
+
+    /**
+     * Removes the {@code KernelContext} index loads whose values were replaced by thread-id nodes.
+     * Left in the graph, {@code TornadoKernelContextReplacement} would treat the node after each one
+     * as the null check of an unboxing and delete it.
+     */
+    private static void removeKernelContextLoads(ValueNode[] originals) {
+        for (ValueNode original : originals) {
+            if (original instanceof LoadFieldNode load && isKernelContextIndex(load) && load.isAlive() && load.hasNoUsages()) {
+                GraphUtil.unlinkFixedNode(load);
+                load.clearInputs();
+                load.safeDelete();
+            }
+        }
+    }
+
+    private static boolean isKernelContextIndex(ValueNode value) {
+        return value instanceof LoadFieldNode load && load.field().getDeclaringClass().toJavaName().equals(KernelContext.class.getName()) && !load.field().isStatic();
     }
 
     private static String mismatch(ResolvedJavaMethod child, int given) {
