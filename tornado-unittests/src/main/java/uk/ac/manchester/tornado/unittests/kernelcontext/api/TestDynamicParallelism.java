@@ -24,6 +24,8 @@
 package uk.ac.manchester.tornado.unittests.kernelcontext.api;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import org.junit.Test;
 
@@ -62,6 +64,9 @@ public class TestDynamicParallelism extends TornadoTestBase {
     private static final DeviceKernel SUM = DeviceKernel.of(TestDynamicParallelism::sumChild);
     private static final DeviceKernel FILL = DeviceKernel.of(TestDynamicParallelism::fillChild);
     private static final DeviceKernel SCALE = DeviceKernel.of(TestDynamicParallelism::scaleChild);
+    private static final DeviceKernel LOCAL_CHILD = DeviceKernel.of(TestDynamicParallelism::localChild);
+    private static final DeviceKernel PING = DeviceKernel.of(TestDynamicParallelism::ping);
+    private static final DeviceKernel PONG = DeviceKernel.of(TestDynamicParallelism::pong);
 
     // ---------------------------------------------------------------- child kernels
 
@@ -133,7 +138,44 @@ public class TestDynamicParallelism extends TornadoTestBase {
         }
     }
 
+    private static void localChild(KernelContext context, int[] local, IntArray out) {
+        out.set(context.globalIdx, local[context.globalIdx]);
+    }
+
+    /** Ping and pong launch each other (a launch cycle) until {@code depth} reaches zero. */
+    private static void ping(KernelContext context, IntArray trace, int depth) {
+        if (context.globalIdx == 0) {
+            trace.set(depth, 1);
+            if (depth > 0) {
+                context.launch(PONG, 1, 1, trace, depth - 1);
+            }
+        }
+    }
+
+    private static void pong(KernelContext context, IntArray trace, int depth) {
+        if (context.globalIdx == 0) {
+            trace.set(depth, 2);
+            if (depth > 0) {
+                context.launch(PING, 1, 1, trace, depth - 1);
+            }
+        }
+    }
+
     // ---------------------------------------------------------------- parent kernels
+
+    /** A block of 2048 threads exceeds every device's limit: the launch fails and the child never runs. */
+    private static void invalidLaunchParent(KernelContext context, IntArray out, int n) {
+        if (context.globalIdx == 0) {
+            context.launch(FILL, n, 2048, out, 5, n);
+        }
+    }
+
+    private static void localArrayParent(KernelContext context, IntArray out, int n) {
+        int[] local = context.allocateIntLocalArray(64);
+        if (context.globalIdx == 0) {
+            context.launch(LOCAL_CHILD, 64, 64, local, out);
+        }
+    }
 
     private static void singleLaunchParent(KernelContext context, IntArray a, int n) {
         if (context.globalIdx == 0) {
@@ -378,6 +420,94 @@ public class TestDynamicParallelism extends TornadoTestBase {
         }
         for (int i = 0; i < n; i++) {
             assertEquals(16, a.get(i));
+        }
+    }
+
+    /** Kernels that launch each other: A -> B -> A -> ... */
+    @Test
+    public void testLaunchCycle() throws TornadoExecutionPlanException {
+        assumeDynamicParallelism();
+        final int depth = 7;
+        IntArray trace = new IntArray(depth + 1);
+        TaskGraph taskGraph = new TaskGraph("dp") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, trace) //
+                .task("t0", TestDynamicParallelism::ping, new KernelContext(), trace, depth) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, trace);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.withGridScheduler(grid("t0", 32, 32)).execute();
+        }
+        for (int d = depth; d >= 0; d--) {
+            // ping writes 1 at the top level, pong 2 one level down, and so on.
+            assertEquals((depth - d) % 2 == 0 ? 1 : 2, trace.get(d));
+        }
+    }
+
+    /**
+     * A launch the device rejects does not run the child and does not fail the parent: the kernel
+     * completes (the error is reported on the device's stdout).
+     */
+    @Test
+    public void testInvalidLaunchDoesNotRunChild() throws TornadoExecutionPlanException {
+        assumeDynamicParallelism();
+        final int n = 64;
+        IntArray out = new IntArray(n);
+        out.init(-1);
+        TaskGraph taskGraph = new TaskGraph("dp") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, out) //
+                .task("t0", TestDynamicParallelism::invalidLaunchParent, new KernelContext(), out, n) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.withGridScheduler(grid("t0", 32, 32)).execute();
+        }
+        for (int i = 0; i < n; i++) {
+            assertEquals(-1, out.get(i));
+        }
+    }
+
+    /** Local memory belongs to the launching block, so it cannot be handed to a child. */
+    @Test
+    public void testLocalArrayArgumentRejected() {
+        assumeDynamicParallelism();
+        final int n = 64;
+        IntArray out = new IntArray(n);
+        // The kernel is sketched, and rejected, as soon as the task is added to the graph.
+        try {
+            TaskGraph taskGraph = new TaskGraph("dp") //
+                    .task("t0", TestDynamicParallelism::localArrayParent, new KernelContext(), out, n) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+            try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+                plan.withGridScheduler(grid("t0", 64, 64)).execute();
+            }
+        } catch (Throwable e) {
+            StringBuilder messages = new StringBuilder();
+            for (Throwable t = e; t != null; t = t.getCause()) {
+                messages.append(t.getMessage()).append('\n');
+            }
+            assertTrue(messages.toString(), messages.toString().contains("local-memory array"));
+            return;
+        }
+        fail("A local-memory array passed to KernelContext.launch must be rejected");
+    }
+
+    /** The parent is captured into a CUDA graph and replayed; its device launches run on every replay. */
+    @Test
+    public void testLaunchUnderCUDAGraph() throws TornadoExecutionPlanException {
+        assumeDynamicParallelism();
+        final int n = 512;
+        IntArray a = new IntArray(n);
+        a.init(1);
+        TaskGraph taskGraph = new TaskGraph("dp") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestDynamicParallelism::singleLaunchParent, new KernelContext(), a, n) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.withGridScheduler(grid("t0", 32, 32)).withCUDAGraph();
+            for (int iteration = 0; iteration < 3; iteration++) {
+                plan.execute();
+            }
+        }
+        for (int i = 0; i < n; i++) {
+            assertEquals(8, a.get(i));
         }
     }
 }
