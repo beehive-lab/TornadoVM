@@ -186,7 +186,8 @@ public final class CUDACompiler {
             }
         }
 
-        if (deviceLaunch) {
+        // Also for a pre-built or cached image, which never went through the compile above.
+        if (deviceLaunch || linksDeviceRuntime(program.binary)) {
             applyPendingLaunchLimit(program);
         }
         loadModule(program, gpuArch, maxSupportedArch, fallbackArch, useCubin, archKnown);
@@ -279,8 +280,28 @@ public final class CUDACompiler {
      * launch as a triple-chevron call, which appears nowhere else in generated code; checking the
      * source rather than a compiler flag also covers hand-written (pre-built) CUDA C.
      */
-    static boolean usesDeviceLaunch(String source) {
+    public static boolean usesDeviceLaunch(String source) {
         return source != null && source.contains("<<<");
+    }
+
+    /** Symbol every image linked against the CDP2 device runtime carries. */
+    private static final byte[] DEVICE_RUNTIME_SYMBOL = "__cudaCDP2LaunchDevice".getBytes(java.nio.charset.StandardCharsets.US_ASCII);
+
+    /** Whether a loadable image was linked against the device runtime, i.e. launches kernels from the device. */
+    static boolean linksDeviceRuntime(byte[] image) {
+        if (image == null) {
+            return false;
+        }
+        outer:
+        for (int i = 0; i <= image.length - DEVICE_RUNTIME_SYMBOL.length; i++) {
+            for (int j = 0; j < DEVICE_RUNTIME_SYMBOL.length; j++) {
+                if (image[i + j] != DEVICE_RUNTIME_SYMBOL[j]) {
+                    continue outer;
+                }
+            }
+            return true;
+        }
+        return false;
     }
 
     /**
