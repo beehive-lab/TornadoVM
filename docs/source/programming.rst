@@ -88,6 +88,40 @@ The main methods that the off-heap types expose to manage the Memory Segment of 
    
 **NOTE:** The methods ``init()`` and ``clear()`` are essential because, contrary to their counterpart primitive arrays which are initialized by default with 0, the new types contain garbage values when first created.
 
+Host memory: pageable, pinned and mapped arrays
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Arrays created with a constructor (``new FloatArray(n)``) live in ordinary, *pageable* host memory.
+Every array type can also be created in page-locked memory, with ``allocate``:
+
+.. code:: java
+
+    FloatArray input  = FloatArray.allocate(n, HostMemoryType.PINNED);   // page-locked
+    FloatArray stream = FloatArray.allocate(n, HostMemoryType.MAPPED);   // page-locked and mapped (zero-copy)
+
+- ``PAGEABLE``: ordinary memory, the same as the constructor. The CUDA backend page-locks it when it is
+  first used on the device (``-Dtornado.cuda.host.pinning``).
+- ``PINNED``: page-locked from the start. Transfers run at full DMA speed and asynchronously, with nothing
+  to lock on first use.
+- ``MAPPED``: page-locked and mapped into the device's address space. Kernels read and write the host
+  memory in place, over the bus, so the array is never copied: its transfers cost nothing, and host
+  writes between executions are seen by the next launch without a transfer.
+
+When to use which (measured on an RTX 4090 over PCIe 4.0 x16, with the numbers matching the equivalent
+native CUDA program compiled with ``nvcc``; see ``tornado-benchmarks/src/main/cuda/README.md``):
+
+- ``PINNED`` for data that moves every execution: about 20 GB/s to and from the device, against 16/15 GB/s
+  from memory that is never page-locked.
+- ``MAPPED`` when a kernel touches only part of a large array, or streams through it once and the copy
+  would not overlap anything: reading 1/1024 of a 1 GB array takes 2 ms mapped against 54 ms copying it.
+  Every access crosses the bus (about 22 GB/s at best), so data a kernel reads several times, or with
+  little parallelism, is much faster copied to device memory first.
+
+Page-locked memory is a limited system resource and slow to allocate, so allocate such arrays once and
+reuse them; they are freed when unreachable. The types take effect on the CUDA backend. Elsewhere, or
+when page-locked memory cannot be allocated, ``allocate`` returns an ordinary array that behaves the
+same, only without the speed-up. A ``MAPPED`` array cannot be used in batch processing.
+
 2. Expressing Parallelism within Java Methods
 ------------------------------------------------
 
