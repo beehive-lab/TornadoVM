@@ -706,6 +706,11 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
     }
 
     @Override
+    public void setDevicePendingLaunchCount(int count) {
+        getDeviceContext().setDevicePendingLaunchCount(count);
+    }
+
+    @Override
     public boolean isIntraPlanConcurrencySupported() {
         return true;
     }

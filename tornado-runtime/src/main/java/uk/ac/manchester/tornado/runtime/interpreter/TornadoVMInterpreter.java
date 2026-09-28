@@ -330,6 +330,12 @@ public class TornadoVMInterpreter {
         // staged buffer skips the whole-segment host pin, which is settled at allocation time.
         interpreterDevice.setStagedTransfers(graphExecutionContext.isStagedTransfersEnabled());
 
+        // The pending-launch limit for kernels launched from the device: set before any bytecode,
+        // and so before a CUDA-graph capture, during which the context limit cannot be changed.
+        if (graphExecutionContext.getCUDAPendingLaunchCount() > 0) {
+            interpreterDevice.setDevicePendingLaunchCount(graphExecutionContext.getCUDAPendingLaunchCount());
+        }
+
         // Recompute here (not just in the constructor): plan-level withIntraPlanConcurrency() is
         // applied after this interpreter is built, so latching it at construction misses it and the
         // dependency DAG (waitList -> cross-stream events) would never engage for concurrent plans.

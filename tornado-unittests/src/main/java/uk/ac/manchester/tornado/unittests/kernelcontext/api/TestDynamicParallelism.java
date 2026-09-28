@@ -510,4 +510,39 @@ public class TestDynamicParallelism extends TornadoTestBase {
             assertEquals(8, a.get(i));
         }
     }
+
+    /**
+     * 8192 parent blocks each launch a child: more launches than the driver's default pending-launch
+     * limit (2048) can be outstanding at once. The plan raises the limit with
+     * withCUDAPendingLaunchCount, so every child runs.
+     */
+    @Test
+    public void testPendingLaunchCountFromPlan() throws TornadoExecutionPlanException {
+        assumeDynamicParallelism();
+        final int blocks = 8192;
+        final int segment = 300;
+        IntArray a = new IntArray(blocks * segment);
+        a.init(-1);
+        TaskGraph taskGraph = new TaskGraph("dp") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
+                .task("t0", TestDynamicParallelism::perBlockParent, new KernelContext(), a, segment) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.withGridScheduler(grid("t0", blocks * 32, 32)).withCUDAPendingLaunchCount(2 * blocks).execute();
+        }
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals(i * 3, a.get(i));
+        }
+    }
+
+    @Test
+    public void testPendingLaunchCountMustBePositive() {
+        TaskGraph taskGraph = new TaskGraph("dp").task("t0", TestDynamicParallelism::singleLaunchParent, new KernelContext(), new IntArray(1), 1);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.withCUDAPendingLaunchCount(0);
+            fail("withCUDAPendingLaunchCount(0) must be rejected");
+        } catch (IllegalArgumentException | TornadoExecutionPlanException expected) {
+            // rejected
+        }
+    }
 }

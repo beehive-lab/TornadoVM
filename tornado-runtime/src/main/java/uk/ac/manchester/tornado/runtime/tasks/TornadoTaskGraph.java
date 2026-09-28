@@ -431,6 +431,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
+    public void withCUDAPendingLaunchCount(int count) {
+        executionContext.setCUDAPendingLaunchCount(count);
+    }
+
+    @Override
     public void withThreadInfo() {
         meta().enableThreadInfo();
     }

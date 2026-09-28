@@ -67,6 +67,12 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     void withCUDAGraph();
 
+    /**
+     * Sets the number of device-side kernel launches that may be pending at once (CUDA Dynamic
+     * Parallelism). See {@code TornadoExecutionPlan.withCUDAPendingLaunchCount}.
+     */
+    void withCUDAPendingLaunchCount(int count);
+
     void withMemoryLimit(String memoryLimit);
 
     void withoutMemoryLimit();

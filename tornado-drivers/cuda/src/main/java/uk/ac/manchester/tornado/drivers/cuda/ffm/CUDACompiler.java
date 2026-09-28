@@ -389,13 +389,17 @@ public final class CUDACompiler {
         return null;
     }
 
+    /** The pending-launch limit last set on each CUDA context, keyed by the context handle. */
+    private static final Map<Long, Long> PENDING_LAUNCH_COUNT = new ConcurrentHashMap<>();
+
     /**
      * Applies {@code -Dtornado.cuda.dp.pendingLaunchCount} to the context before the first module
-     * that launches kernels from the device is loaded. Left unset, the driver default applies.
+     * that launches kernels from the device is loaded, unless a plan already set the limit with
+     * {@code withCUDAPendingLaunchCount}. Left unset, the driver default applies.
      */
     private static void applyPendingLaunchLimit(CUDAHandles.Program program) {
         String value = System.getProperty("tornado.cuda.dp.pendingLaunchCount");
-        if (value == null || value.isBlank()) {
+        if (value == null || value.isBlank() || program.context == 0 || PENDING_LAUNCH_COUNT.containsKey(program.context)) {
             return;
         }
         long count;
@@ -405,11 +409,31 @@ public final class CUDACompiler {
             System.out.println(LOG_PREFIX + "WARNING: ignoring -Dtornado.cuda.dp.pendingLaunchCount=" + value + ": not a number.");
             return;
         }
-        if (program.context != 0) {
-            CUDADriverAPI.cuCtxSetCurrent(program.context);
+        setLimit(program.context, count);
+    }
+
+    /**
+     * Sets {@code CU_LIMIT_DEV_RUNTIME_PENDING_LAUNCH_COUNT} on a context, as requested by a plan.
+     * Takes precedence over {@code -Dtornado.cuda.dp.pendingLaunchCount}; the driver is only called
+     * when the value changes.
+     *
+     * @param contextHandle
+     *     the TornadoVM handle of the CUDA context
+     */
+    public static void setPendingLaunchCount(long contextHandle, long count) {
+        long context = CUDAHandles.resolve(contextHandle, CUDAHandles.Context.class).context();
+        Long current = PENDING_LAUNCH_COUNT.get(context);
+        if (current == null || current != count) {
+            setLimit(context, count);
         }
+    }
+
+    private static void setLimit(long context, long count) {
+        CUDADriverAPI.cuCtxSetCurrent(context);
         int result = CUDADriverAPI.cuCtxSetLimit(CUDADriverAPI.CU_LIMIT_DEV_RUNTIME_PENDING_LAUNCH_COUNT, count);
-        if (result != CUDADriverAPI.CUDA_SUCCESS) {
+        if (result == CUDADriverAPI.CUDA_SUCCESS) {
+            PENDING_LAUNCH_COUNT.put(context, count);
+        } else {
             System.out.println(LOG_PREFIX + "WARNING: cuCtxSetLimit(CU_LIMIT_DEV_RUNTIME_PENDING_LAUNCH_COUNT, " + count + ") failed: " + CUDADriverAPI.errorString(result));
         }
     }

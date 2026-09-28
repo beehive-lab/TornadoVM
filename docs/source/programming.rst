@@ -291,6 +291,10 @@ too, including each other. The main points:
 - A launch that the device rejects (for example an invalid block size, or
   too many pending launches) does not run the child. The error is printed on
   the device's standard output.
+- At most 2048 device-side launches may be pending at once by default. A plan
+  that launches more (for example one child per thread block of a large grid)
+  raises the limit with ``executionPlan.withCUDAPendingLaunchCount(n)``, or,
+  for all plans, with ``-Dtornado.cuda.dp.pendingLaunchCount=n``.
 
 See ``tornado-examples/.../kernelcontext/compute/DynamicParallelismRouting.java``
 for a mixture-of-experts style example.
