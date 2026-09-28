@@ -281,7 +281,42 @@ public class MetalArithmeticTool extends ArithmeticLIRGenerator {
     @Override
     public Value emitUShr(Value x, Value y) {
         Logger.traceBuildLIR(Logger.BACKEND.Metal, "emitUShr: %s >>> %s", x, y);
-        return emitBinaryAssign(MetalBinaryOp.BITWISE_RIGHT_SHIFT, LIRKind.combine(x, y), x, y);
+        // MSL's >> is an arithmetic shift on signed types, while Java's >>> shifts in zeros. Shift
+        // the unsigned view of the value and convert the result back to the signed kind.
+        MetalKind kind = (MetalKind) x.getPlatformKind();
+        final MetalUnaryOp toUnsigned;
+        final MetalUnaryOp toSigned;
+        final MetalKind unsignedKind;
+        switch (kind) {
+            case CHAR -> {
+                toUnsigned = MetalUnaryOp.CAST_TO_UCHAR;
+                toSigned = MetalUnaryOp.CAST_TO_BYTE;
+                unsignedKind = MetalKind.UCHAR;
+            }
+            case SHORT -> {
+                toUnsigned = MetalUnaryOp.CAST_TO_USHORT;
+                toSigned = MetalUnaryOp.CAST_TO_SHORT;
+                unsignedKind = MetalKind.USHORT;
+            }
+            case INT -> {
+                toUnsigned = MetalUnaryOp.CAST_TO_UINT;
+                toSigned = MetalUnaryOp.CAST_TO_INT;
+                unsignedKind = MetalKind.UINT;
+            }
+            case LONG -> {
+                toUnsigned = MetalUnaryOp.CAST_TO_ULONG_VALUE;
+                toSigned = MetalUnaryOp.CAST_TO_LONG;
+                unsignedKind = MetalKind.ULONG;
+            }
+            default -> {
+                // Already unsigned: >> is a logical shift.
+                return emitBinaryAssign(MetalBinaryOp.BITWISE_RIGHT_SHIFT, LIRKind.combine(x, y), x, y);
+            }
+        }
+        LIRKind unsignedLIRKind = LIRKind.value(unsignedKind);
+        Variable unsignedValue = emitUnaryAssign(toUnsigned, unsignedLIRKind, x);
+        Variable shifted = emitBinaryAssign(MetalBinaryOp.BITWISE_RIGHT_SHIFT, unsignedLIRKind, unsignedValue, y);
+        return emitUnaryAssign(toSigned, LIRKind.combine(x, y), shifted);
     }
 
     @Override

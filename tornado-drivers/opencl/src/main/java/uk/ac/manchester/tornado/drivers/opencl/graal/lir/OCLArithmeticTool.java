@@ -274,7 +274,42 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
     @Override
     public Value emitUShr(Value x, Value y) {
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitUShr: %s >>> %s", x, y);
-        return emitBinaryAssign(OCLBinaryOp.BITWISE_RIGHT_SHIFT, LIRKind.combine(x, y), x, y);
+        // OpenCL C's >> is an arithmetic shift on signed types, while Java's >>> shifts in zeros.
+        // Shift the unsigned view of the value and convert the result back to the signed kind.
+        OCLKind kind = (OCLKind) x.getPlatformKind();
+        final OCLUnaryOp toUnsigned;
+        final OCLUnaryOp toSigned;
+        final OCLKind unsignedKind;
+        switch (kind) {
+            case CHAR -> {
+                toUnsigned = OCLUnaryOp.CAST_TO_UCHAR;
+                toSigned = OCLUnaryOp.CAST_TO_BYTE;
+                unsignedKind = OCLKind.UCHAR;
+            }
+            case SHORT -> {
+                toUnsigned = OCLUnaryOp.CAST_TO_USHORT;
+                toSigned = OCLUnaryOp.CAST_TO_SHORT;
+                unsignedKind = OCLKind.USHORT;
+            }
+            case INT -> {
+                toUnsigned = OCLUnaryOp.CAST_TO_UINT;
+                toSigned = OCLUnaryOp.CAST_TO_INT;
+                unsignedKind = OCLKind.UINT;
+            }
+            case LONG -> {
+                toUnsigned = OCLUnaryOp.CAST_TO_ULONG;
+                toSigned = OCLUnaryOp.CAST_TO_LONG;
+                unsignedKind = OCLKind.ULONG;
+            }
+            default -> {
+                // Already unsigned: >> is a logical shift.
+                return emitBinaryAssign(OCLBinaryOp.BITWISE_RIGHT_SHIFT, LIRKind.combine(x, y), x, y);
+            }
+        }
+        LIRKind unsignedLIRKind = LIRKind.value(unsignedKind);
+        Variable unsignedValue = emitUnaryAssign(toUnsigned, unsignedLIRKind, x);
+        Variable shifted = emitBinaryAssign(OCLBinaryOp.BITWISE_RIGHT_SHIFT, unsignedLIRKind, unsignedValue, y);
+        return emitUnaryAssign(toSigned, LIRKind.combine(x, y), shifted);
     }
 
     @Override

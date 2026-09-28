@@ -274,7 +274,42 @@ public class CUDAArithmeticTool extends ArithmeticLIRGenerator {
     @Override
     public Value emitUShr(Value x, Value y) {
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitUShr: %s >>> %s", x, y);
-        return emitBinaryAssign(CUDABinaryOp.BITWISE_RIGHT_SHIFT, LIRKind.combine(x, y), x, y);
+        // CUDA C's >> is an arithmetic shift on signed types, while Java's >>> shifts in zeros.
+        // Shift the unsigned view of the value and convert the result back to the signed kind.
+        CUDAKind kind = (CUDAKind) x.getPlatformKind();
+        final CUDAUnaryOp toUnsigned;
+        final CUDAUnaryOp toSigned;
+        final CUDAKind unsignedKind;
+        switch (kind) {
+            case CHAR -> {
+                toUnsigned = CUDAUnaryOp.CAST_TO_UCHAR;
+                toSigned = CUDAUnaryOp.CAST_TO_BYTE;
+                unsignedKind = CUDAKind.UCHAR;
+            }
+            case SHORT -> {
+                toUnsigned = CUDAUnaryOp.CAST_TO_USHORT;
+                toSigned = CUDAUnaryOp.CAST_TO_SHORT;
+                unsignedKind = CUDAKind.USHORT;
+            }
+            case INT -> {
+                toUnsigned = CUDAUnaryOp.CAST_TO_UINT;
+                toSigned = CUDAUnaryOp.CAST_TO_INT;
+                unsignedKind = CUDAKind.UINT;
+            }
+            case LONG -> {
+                toUnsigned = CUDAUnaryOp.CAST_TO_ULONG;
+                toSigned = CUDAUnaryOp.CAST_TO_LONG;
+                unsignedKind = CUDAKind.ULONG;
+            }
+            default -> {
+                // Already unsigned: >> is a logical shift.
+                return emitBinaryAssign(CUDABinaryOp.BITWISE_RIGHT_SHIFT, LIRKind.combine(x, y), x, y);
+            }
+        }
+        LIRKind unsignedLIRKind = LIRKind.value(unsignedKind);
+        Variable unsignedValue = emitUnaryAssign(toUnsigned, unsignedLIRKind, x);
+        Variable shifted = emitBinaryAssign(CUDABinaryOp.BITWISE_RIGHT_SHIFT, unsignedLIRKind, unsignedValue, y);
+        return emitUnaryAssign(toSigned, LIRKind.combine(x, y), shifted);
     }
 
     @Override

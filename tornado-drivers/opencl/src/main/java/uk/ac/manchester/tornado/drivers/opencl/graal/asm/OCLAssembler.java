@@ -640,6 +640,10 @@ public final class OCLAssembler extends Assembler {
         public static final OCLUnaryOp CAST_TO_FLOAT = new OCLUnaryOp("(float) ", true);
         public static final OCLUnaryOp CAST_TO_BYTE = new OCLUnaryOp("(char) ", true);
         public static final OCLUnaryOp CAST_TO_DOUBLE = new OCLUnaryOp("(double) ", true);
+        // Unsigned value casts, used to lower Java's >>> (OpenCL C's >> is arithmetic on signed types).
+        public static final OCLUnaryOp CAST_TO_UCHAR = new OCLUnaryOp("(uchar) ", true);
+        public static final OCLUnaryOp CAST_TO_USHORT = new OCLUnaryOp("(ushort) ", true);
+        public static final OCLUnaryOp CAST_TO_UINT = new OCLUnaryOp("(uint) ", true);
 
         public static final OCLUnaryOp CAST_TO_INT_PTR = new OCLUnaryOp("(int *) ", true);
         public static final OCLUnaryOp CAST_TO_SHORT_PTR = new OCLUnaryOp("(short *) ", true);
