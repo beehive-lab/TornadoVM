@@ -159,7 +159,7 @@ Metal Specific
    ``-Dtornado.metal.threadgroupHint=true``                          Emits a ``max_total_threads_per_threadgroup`` attribute when the local work-group size is statically known, to help the Metal compiler tune occupancy (default: false).
    ``-Dtornado.metal.profiling.enable=false``                        Disables Metal profiling (default: true).
    ``-Dtornado.metal.compiler.flags=FLAGS``                          Passes additional flags to the Metal compiler (default: none).
-   ``-Dtornado.metal.dispatch.spinWait=false``                       Waits for each synchronous Metal launch with ``waitUntilCompleted`` instead of polling a shared event the command buffer signals. Polling returns as soon as the GPU has finished, which cuts the latency of short kernels, at the cost of keeping a CPU core busy for up to 1 ms per launch (default: true).
+   ``-Dtornado.metal.dispatch.spinWait=false``                       Waits for each synchronous Metal launch with ``waitUntilCompleted`` instead of polling a shared event the command buffer signals. Polling returns as soon as the GPU has finished, which cuts the latency of short kernels, at the cost of keeping a CPU core busy for up to 1 ms per launch. After a wait longer than that, the next launch on the queue blocks right away (default: true).
    ================================================================  ==================================================================================================================
 
 Notes
