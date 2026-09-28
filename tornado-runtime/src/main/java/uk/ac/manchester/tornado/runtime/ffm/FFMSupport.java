@@ -323,6 +323,14 @@ public final class FFMSupport {
         }
     }
 
+    /**
+     * Turns a raw address into a segment of the given size, owned by {@code arena}: {@code cleanup} runs
+     * when the arena closes (for an automatic arena, once the segment is unreachable).
+     */
+    public static MemorySegment asSegment(long address, long byteSize, Arena arena, java.util.function.Consumer<MemorySegment> cleanup) {
+        return MemorySegment.ofAddress(address).reinterpret(byteSize, arena, cleanup);
+    }
+
     /** Turns a raw address into a segment of the given size that can be read and written. */
     public static MemorySegment asSegment(long address, long byteSize) {
         return MemorySegment.ofAddress(address).reinterpret(byteSize);

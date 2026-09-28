@@ -25,6 +25,8 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -42,14 +44,19 @@ import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceNotFound;
+import uk.ac.manchester.tornado.api.memory.HostMemoryType;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDADeviceType;
+import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDADriverAPI;
+import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDAHandles;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAHotSpotBackendFactory;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDASuitesProvider;
 import uk.ac.manchester.tornado.drivers.cuda.graal.backend.CUDABackend;
+import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAHostAllocations;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorBackend;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
+import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 
 public final class CUDABackendImpl implements TornadoAcceleratorBackend {
 
@@ -280,5 +287,61 @@ public final class CUDABackendImpl implements TornadoAcceleratorBackend {
 
     public TornadoDeviceType getTypeDefaultDevice() {
         return getDefaultDevice().getDeviceType();
+    }
+
+    /** Warn once when page-locked memory cannot be allocated, then keep falling back quietly. */
+    private static volatile boolean hostAllocationFailureReported;
+
+    /**
+     * Allocates page-locked host memory with {@code cuMemHostAlloc}: portable to every context, and for
+     * {@link HostMemoryType#MAPPED} also mapped into the device address space. Returns {@code null} (so
+     * the caller falls back to ordinary memory) when the backend has no physical CUDA context or the
+     * allocation fails. The memory is freed when the returned segment becomes unreachable.
+     */
+    @Override
+    public MemorySegment allocateHostMemory(long byteSize, HostMemoryType type) {
+        if (type == HostMemoryType.PAGEABLE || contexts.isEmpty() || !(contexts.get(0) instanceof CUDAContext)) {
+            return null;
+        }
+        final long context = CUDAHandles.resolve(contexts.get(0).getContextId(), CUDAHandles.Context.class).context();
+        final boolean mapped = type == HostMemoryType.MAPPED;
+        int flags = CUDADriverAPI.CU_MEMHOSTALLOC_PORTABLE | (mapped ? CUDADriverAPI.CU_MEMHOSTALLOC_DEVICEMAP : 0);
+        long hostPointer;
+        long devicePointer = 0;
+        try (Arena arena = Arena.ofConfined()) {
+            CUDADriverAPI.cuCtxSetCurrent(context);
+            MemorySegment out = FFMSupport.allocatePointer(arena);
+            int result = CUDADriverAPI.cuMemHostAlloc(out, byteSize, flags);
+            if (result != CUDADriverAPI.CUDA_SUCCESS) {
+                reportHostAllocationFailure(byteSize, type, result);
+                return null;
+            }
+            hostPointer = out.get(FFMSupport.C_POINTER, 0).address();
+            if (mapped) {
+                MemorySegment device = FFMSupport.allocateLong(arena);
+                result = CUDADriverAPI.cuMemHostGetDevicePointer(device, hostPointer, 0);
+                if (result != CUDADriverAPI.CUDA_SUCCESS) {
+                    CUDADriverAPI.cuMemFreeHost(hostPointer);
+                    reportHostAllocationFailure(byteSize, type, result);
+                    return null;
+                }
+                devicePointer = device.get(FFMSupport.C_LONG, 0);
+            }
+        }
+        CUDAHostAllocations.register(new CUDAHostAllocations.Allocation(hostPointer, byteSize, type, devicePointer));
+        final long pointer = hostPointer;
+        return FFMSupport.asSegment(pointer, byteSize, Arena.ofAuto(), segment -> {
+            CUDAHostAllocations.remove(pointer);
+            CUDADriverAPI.cuCtxSetCurrent(context);
+            CUDADriverAPI.cuMemFreeHost(pointer);
+        });
+    }
+
+    private static void reportHostAllocationFailure(long byteSize, HostMemoryType type, int result) {
+        if (!hostAllocationFailureReported) {
+            hostAllocationFailureReported = true;
+            System.out.println("[TornadoVM-CUDA] WARNING: could not allocate " + byteSize + " bytes of " + type + " host memory (" + CUDADriverAPI.errorString(result)
+                    + "); using pageable memory instead.");
+        }
     }
 }

@@ -31,6 +31,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.memory.HostMemoryType;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.types.collections.TornadoCollectionInterface;
@@ -90,6 +91,13 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
 
     /** Base address of the host segment this wrapper holds pinned, or 0 when not pinned. */
     private long pinnedHostPointer;
+
+    /**
+     * Whether the host segment is mapped page-locked memory ({@code HostMemoryType.MAPPED}): the kernel
+     * then uses it in place through its device address, there is no device buffer, and transfers only
+     * order the host against the device.
+     */
+    private boolean mapped;
 
     public CUDAMemorySegmentWrapper(long bufferSize, CUDADeviceContext deviceContext, long batchSize, Access access, int sizeOfType) {
         this.deviceContext = deviceContext;
@@ -157,6 +165,10 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
 
     @Override
     public int read(long executionPlanId, final Object reference, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
+        if (mapped) {
+            // Nothing to copy: the kernel wrote the host memory itself. Wait until it has.
+            return synchronizeMapped(executionPlanId, useDeps, true);
+        }
         MemorySegment segment;
         segment = getSegmentWithHeader(reference);
         final int returnEvent;
@@ -181,6 +193,10 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
     @Override
 
     public void write(long executionPlanId, Object reference) {
+        if (mapped) {
+            // The device reads the host memory itself.
+            return;
+        }
         MemorySegment segment;
         segment = getSegmentWithHeader(reference);
         if (batchSize <= 0) {
@@ -192,6 +208,9 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
 
     @Override
     public int enqueueRead(long executionPlanId, Object reference, long hostOffset, int[] events, boolean useDeps) {
+        if (mapped) {
+            return synchronizeMapped(executionPlanId, useDeps, false);
+        }
         MemorySegment segment;
         segment = getSegmentWithHeader(reference);
 
@@ -207,6 +226,11 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
     @Override
     public List<Integer> enqueueWrite(long executionPlanId, Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps) {
         List<Integer> returnEvents = new ArrayList<>();
+        if (mapped) {
+            // The device reads the host memory itself: nothing to upload, and no event to wait for.
+            returnEvents.add(-1);
+            return returnEvents;
+        }
         MemorySegment segment;
         segment = getSegmentWithHeader(reference);
 
@@ -237,6 +261,25 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
         MemorySegment segment;
         segment = getSegmentWithHeader(reference);
 
+        // Arrays created page-locked (HostMemoryType.PINNED / MAPPED) need no registration, and mapped
+        // ones need no device buffer either: the kernel is given their device address.
+        CUDAHostAllocations.Allocation hostAllocation = segment == null ? null : CUDAHostAllocations.find(segment.address(), segment.byteSize());
+        if (hostAllocation != null && hostAllocation.type() == HostMemoryType.MAPPED) {
+            if (batchSize > 0) {
+                throw new TornadoUnsupportedError("[UNSUPPORTED] batch processing of an array in MAPPED host memory: it is never copied, so there is nothing to split into batches.");
+            }
+            releasePin();
+            mapped = true;
+            bufferSize = segment.byteSize();
+            bufferId = hostAllocation.devicePointer() + (segment.address() - hostAllocation.base());
+            bufferIdBase = bufferId;
+            if (TornadoOptions.FULL_DEBUG) {
+                new TornadoLogger().info("mapped host memory in place: %s", toString());
+            }
+            return;
+        }
+        mapped = false;
+
         if (batchSize <= 0) {
             // HEADER_PAD extra bytes are requested and skipped over, so that the data the kernel reaches at
             // base + ARRAY_HEADER starts on a PAYLOAD_ALIGNMENT boundary. Every transfer below is expressed relative
@@ -262,7 +305,10 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
         // pin: registering synchronously pages in and pins the entire (possibly cold, mmap'd)
         // segment - exactly the upfront cost the staging ring exists to avoid - and the ring's
         // own pinned slots already make the chunked H2D DMA async.
-        if (useStagedTransfer() && access == Access.READ_ONLY) {
+        if (hostAllocation != null) {
+            // Already page-locked (HostMemoryType.PINNED): transfers DMA directly without registering it.
+            releasePin();
+        } else if (useStagedTransfer() && access == Access.READ_ONLY) {
             if (TornadoOptions.FULL_DEBUG) {
                 new TornadoLogger().info("skipping host pinning (staged transfers): %s", toString());
             }
@@ -290,11 +336,18 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
     public void markAsFreeBuffer() throws TornadoMemoryException {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
 
-        // Release this wrapper's hold on the host pin before recycling; the registry
-        // unregisters (after a context sync) only when the last holder releases.
-        if (pinnedHostPointer != 0) {
-            deviceContext.getPlatformContext().getPinnedMemoryRegistry().unpin(pinnedHostPointer);
-            pinnedHostPointer = 0;
+        // Release this wrapper's hold on the host pin before recycling. The registry keeps the
+        // registration cached for the next allocation of the same segment; it is unregistered when
+        // the address is reused by another segment or when the plan's device state is reset.
+        releasePin();
+
+        if (mapped) {
+            // No device buffer was allocated: the kernel used the host memory in place.
+            mapped = false;
+            bufferId = INIT_VALUE;
+            bufferIdBase = INIT_VALUE;
+            bufferSize = INIT_VALUE;
+            return;
         }
 
         deviceContext.getBufferProvider().markBufferReleased(bufferIdBase, access);
@@ -305,6 +358,29 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
         if (TornadoOptions.FULL_DEBUG) {
             new TornadoLogger().info("deallocated: %s", toString());
         }
+    }
+
+    private void releasePin() {
+        if (pinnedHostPointer != 0) {
+            deviceContext.getPlatformContext().getPinnedMemoryRegistry().unpin(pinnedHostPointer);
+            pinnedHostPointer = 0;
+        }
+    }
+
+    /**
+     * The copy-out of a mapped array: there is nothing to copy, only the kernels writing it must have
+     * finished. Returns an event after them when dependencies are tracked; a blocking read waits for
+     * them. Inside a CUDA-graph capture neither is allowed, and the graph launch is waited for anyway.
+     */
+    private int synchronizeMapped(long executionPlanId, boolean useDeps, boolean blocking) {
+        if (deviceContext.isStreamCapturing(executionPlanId)) {
+            return -1;
+        }
+        if (blocking) {
+            deviceContext.sync(executionPlanId);
+            return -1;
+        }
+        return useDeps ? deviceContext.enqueueMarker(executionPlanId) : -1;
     }
 
     @Override
