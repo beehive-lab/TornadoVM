@@ -272,6 +272,10 @@ public final class MetalObjects {
     }
 
     public static void releaseCommandQueue(long queue) {
+        QueueEvent queueEvent = QUEUE_EVENTS.remove(queue);
+        if (queueEvent != null && queueEvent.event != 0) {
+            ObjCRuntime.release(queueEvent.event);
+        }
         ObjCRuntime.release(queue);
     }
 
@@ -642,11 +646,14 @@ public final class MetalObjects {
             return;
         }
         long value;
+        // Take the value and commit under one lock, so that command buffers are committed in the order
+        // of their values. Otherwise a thread sharing the queue could commit a higher value first, and a
+        // waiter for a lower value would return before its own buffer had finished.
         synchronized (queueEvent) {
             value = ++queueEvent.value;
+            MetalAPI.encodeSignalEvent(commandBuffer, queueEvent.event, value);
+            MetalAPI.commit(commandBuffer);
         }
-        MetalAPI.encodeSignalEvent(commandBuffer, queueEvent.event, value);
-        MetalAPI.commit(commandBuffer);
         long start = System.nanoTime();
         int polls = 0;
         while (MetalAPI.sharedEventSignaledValue(queueEvent.event) < value) {
