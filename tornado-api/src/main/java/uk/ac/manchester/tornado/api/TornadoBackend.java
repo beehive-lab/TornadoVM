@@ -17,6 +17,10 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import java.lang.foreign.MemorySegment;
+
+import uk.ac.manchester.tornado.api.memory.HostMemoryType;
+
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -109,4 +113,16 @@ public interface TornadoBackend {
      */
     TornadoVMBackendType getBackendType();
 
+    /**
+     * Allocates host memory of the given type for a TornadoVM array, or returns {@code null} when this
+     * backend cannot provide it. The segment is freed when it becomes unreachable.
+     *
+     * @param byteSize
+     *     the size in bytes, array header included
+     * @param type
+     *     the kind of host memory
+     */
+    default MemorySegment allocateHostMemory(long byteSize, HostMemoryType type) {
+        return null;
+    }
 }

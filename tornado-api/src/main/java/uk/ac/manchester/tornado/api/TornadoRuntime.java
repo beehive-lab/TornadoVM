@@ -17,6 +17,11 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+
+import uk.ac.manchester.tornado.api.memory.HostMemoryType;
+
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 
@@ -51,4 +56,25 @@ public interface TornadoRuntime {
      * @return the power metric as a long value, representing the current power consumption in Watts.
      */
     long getPowerMetric();
+
+    /**
+     * Allocates host memory of the given type for a TornadoVM array: from the first backend that can
+     * provide it, otherwise ordinary memory. The segment is freed when it becomes unreachable.
+     *
+     * @param byteSize
+     *     the size in bytes, array header included
+     * @param type
+     *     the kind of host memory
+     */
+    default MemorySegment allocateHostMemory(long byteSize, HostMemoryType type) {
+        if (type != HostMemoryType.PAGEABLE) {
+            for (int i = 0; i < getNumBackends(); i++) {
+                MemorySegment segment = getBackend(i).allocateHostMemory(byteSize, type);
+                if (segment != null) {
+                    return segment;
+                }
+            }
+        }
+        return Arena.ofAuto().allocate(byteSize, 1);
+    }
 }
