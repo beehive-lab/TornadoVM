@@ -632,6 +632,8 @@ public final class OCLAssembler extends Assembler {
         public static final OCLUnaryOp LOGICAL_NOT = new OCLUnaryOp("!", true);
 
         public static final OCLUnaryOp BITWISE_NOT = new OCLUnaryOp("~", true);
+        /** Bit-for-bit reinterpretation as another type of the same size, emitted as {@code as_<type>(x)}. */
+        public static final OCLUnaryOp AS_TYPE = new OCLUnaryOp("as_type", true);
 
         public static final OCLUnaryOp CAST_TO_INT = new OCLUnaryOp("(int) ", true);
         public static final OCLUnaryOp CAST_TO_SHORT = new OCLUnaryOp("(short) ", true);

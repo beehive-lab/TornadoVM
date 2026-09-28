@@ -87,6 +87,29 @@ public class OCLUnary {
 
     }
 
+    /**
+     * The bits of a value read as another type of the same size ({@code Float.floatToRawIntBits},
+     * {@code Float.intBitsToFloat} and the long and double pair): OpenCL C {@code as_<type>(x)}.
+     */
+    public static class Reinterpret extends UnaryConsumer {
+
+        public Reinterpret(LIRKind lirKind, Value value) {
+            super(OCLUnaryOp.AS_TYPE, lirKind, value);
+        }
+
+        @Override
+        public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.emit("as_" + getPlatformKind() + "(");
+            asm.emitValueOrOp(crb, value);
+            asm.emit(")");
+        }
+
+        @Override
+        public String toString() {
+            return String.format("as_%s(%s)", getPlatformKind(), value);
+        }
+    }
+
     public static class Intrinsic extends UnaryConsumer {
 
         public Intrinsic(OCLUnaryOp opcode, LIRKind lirKind, Value value) {
