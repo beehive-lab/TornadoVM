@@ -321,6 +321,7 @@ public class TornadoVMGraphCompiler {
         }
 
         while (scheduled.cardinality() < dependencies.length) {
+            final int scheduledBefore = scheduled.cardinality();
             for (int i = 0; i < dependencies.length; i++) {
                 if (!scheduled.get(i)) {
                     final BitSet outstandingDeps = new BitSet(nodes.length());
@@ -351,6 +352,9 @@ public class TornadoVMGraphCompiler {
                         nodes.set(nodeIds[i]);
                     }
                 }
+            }
+            if (scheduled.cardinality() == scheduledBefore) {
+                throw new TornadoRuntimeException(unschedulableNodesMessage(graph, nodeIds, dependencies, scheduled, nodes));
             }
         }
     }
