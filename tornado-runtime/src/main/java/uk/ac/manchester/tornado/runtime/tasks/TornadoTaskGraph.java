@@ -200,12 +200,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private Access[] accesses;
 
     /**
-     * Task Schedule implementation that uses GPU and multicore backends. This constructor must be public. It is invoked using the reflection API.
-     *
-     * @param taskScheduleName
-     *     Task-Schedule name
-     */
-    /**
      * Makes room in the high-level graph description for one more task with {@code numArgs}
      * arguments (CONTEXT, ARG_LIST, one load per argument and LAUNCH), doubling the buffer when it
      * is full so that graphs with many tasks can be recorded.
@@ -221,6 +215,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
     }
 
+    /**
+     * Task Schedule implementation that uses GPU and multicore backends. This constructor must be public. It is invoked using the reflection API.
+     *
+     * @param taskScheduleName
+     *     Task-Schedule name
+     */
     public TornadoTaskGraph(String taskScheduleName) {
         executionContext = new TornadoExecutionContext(taskScheduleName);
         hlBuffer = ByteBuffer.wrap(highLevelCode);
