@@ -69,6 +69,8 @@ public class StoreAtomicIndexedNodeExtension extends FloatingNode {
     }
 
     public void setExtraOperation(ValueNode extraOperation) {
+        // Keep the usage lists consistent: the node is already in the graph.
+        updateUsages(this.extraOperation, extraOperation);
         this.extraOperation = extraOperation;
     }
 }

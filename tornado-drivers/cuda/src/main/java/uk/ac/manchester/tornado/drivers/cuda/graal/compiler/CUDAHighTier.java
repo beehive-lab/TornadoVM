@@ -36,6 +36,7 @@ import tornado.graal.compiler.phases.common.inlining.InliningPhase;
 import tornado.graal.compiler.phases.schedule.SchedulePhase;
 import tornado.graal.compiler.virtual.phases.ea.PartialEscapePhase;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
+import uk.ac.manchester.tornado.drivers.common.compiler.phases.loops.TornadoReductionAccumulation;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.analysis.TornadoShapeAnalysis;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.guards.ExceptionSuppression;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.guards.TornadoValueTypeCleanup;
@@ -104,6 +105,7 @@ public class CUDAHighTier extends TornadoHighTier {
         appendPhase(new TornadoShapeAnalysis());
         appendPhase(canonicalizer);
         appendPhase(new TornadoParallelScheduler());
+        appendPhase(new TornadoReductionAccumulation());
 
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.EARLIEST));
 

@@ -73,6 +73,7 @@ public class TaskDataContext extends AbstractRTContext {
 
         // Set the number of threads to run (subset of the input space)
         setNumThreads(scheduleMetaData.getNumThreads());
+        setReductionPaddedThreads(scheduleMetaData.getReductionPaddedThreads());
     }
 
     public TaskDataContext(ScheduleContext scheduleMetaData, String id) {
