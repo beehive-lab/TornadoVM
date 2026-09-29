@@ -177,10 +177,12 @@ public final class MetalBackendImpl implements TornadoAcceleratorBackend {
         if (devices == null) {
             synchronized (this) {
                 if (devices == null) {
-                    devices = new ArrayList<>();
+                    // Fill a local list and publish it only when complete: readers skip the lock once the field is set
+                    List<TornadoDevice> allDevices = new ArrayList<>();
                     for (int deviceIndex = 0; deviceIndex < getNumDevices(); deviceIndex++) {
-                        devices.add(getDevice(deviceIndex));
+                        allDevices.add(getDevice(deviceIndex));
                     }
+                    devices = Collections.unmodifiableList(allDevices);
                 }
             }
         }
