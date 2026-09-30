@@ -12,7 +12,7 @@ name: 4 - Deploy Maven Central [auto]
 # cuTile TileContext API), tornado-runtime, tornado-matrices, the CUDA backend
 # tornado-drivers-cuda (which compiles cuTile kernels) with its parent and
 # tornado-drivers-common, and the CUDA library bindings tornado-cublas/-cudnn/
-# -cufft/-curand/-cusparse/-cudf/-cutlass. The bindings load the NVIDIA libraries
+# -cufft/-curand/-cusparse/-cudf/-cutlass/-cuvs. The bindings load the NVIDIA libraries
 # through java.lang.foreign at run time; the native *-jni shims some of them use
 # are built per platform and ship only in the SDK. Each module is still deployed once PER JDK PROFILE
 # under 2 distinct Maven Central coordinates (X.Y.Z-jdk21/-jdk22plus) — the
@@ -161,7 +161,7 @@ jobs:
           # *-jni shims (CMake, need the CUDA toolkit) out, and they stay in the SDK.
           mvn clean deploy \
             -P${{ matrix.jdk }},cuda-backend,release \
-            -pl tornado-api,tornado-runtime,tornado-matrices,tornado-drivers/cuda,tornado-cublas,tornado-cudnn,tornado-cufft,tornado-curand,tornado-cusparse,tornado-cudf,tornado-cutlass \
+            -pl tornado-api,tornado-runtime,tornado-matrices,tornado-drivers/cuda,tornado-cublas,tornado-cudnn,tornado-cufft,tornado-curand,tornado-cusparse,tornado-cudf,tornado-cutlass,tornado-cuvs \
             -am \
             -DskipTests \
             --batch-mode
