@@ -55,6 +55,14 @@ public final class CuVS {
     }
 
     /**
+     * Whether the cuVS C library ({@code libcuvs_c}) can be loaded on this host. Code that only uses this class
+     * can check it without depending on the TornadoVM runtime.
+     */
+    public static boolean isAvailable() {
+        return CuVSLibraryProvider.isAvailable();
+    }
+
+    /**
      * Exact k nearest neighbours of every query among the dataset rows ({@code cuvsBruteForceBuild} +
      * {@code cuvsBruteForceSearch}).
      *
