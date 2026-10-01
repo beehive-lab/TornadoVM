@@ -62,7 +62,9 @@ import uk.ac.manchester.tornado.drivers.cuda.CUDAContext;
  *       as {@code external} and this registry never unregisters it.</li>
  *   <li><b>Drain on plan teardown</b> ({@link #unpinAll()}): bulk buffer releases
  *       bypass per-buffer free hooks, so the device context drains the registry on
- *       {@code reset()}; cached-but-stale pins are also reclaimed there.</li>
+ *       {@code reset()} once no execution plan is left ({@link #unpinAll()}), and while
+ *       other plans are alive drops only the pins no live buffer holds
+ *       ({@link #unpinUnheld()}); cached-but-stale pins are reclaimed either way.</li>
  * </ul>
  *
  * <p>A cached pin whose segment has died is never a transfer hazard: user-segment DMA
@@ -153,6 +155,27 @@ public final class CUDAPinnedMemoryRegistry {
         Registration entry = registrations.get(hostPointer);
         if (entry != null && entry.refCount > 0) {
             entry.refCount--;
+        }
+    }
+
+    /**
+     * Drops the owned pins that no live buffer holds: cached pins (refcount 0) and pins whose
+     * segment has been collected. Pins still held stay registered. Called on the teardown of
+     * one execution plan while others are alive ({@code CUDADeviceContext#reset}): their
+     * captured CUDA graphs copy from the pinned host buffers they hold, and unregistering
+     * those under them crashes the next graph launch.
+     */
+    public synchronized void unpinUnheld() {
+        var it = registrations.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<Long, Registration> entry = it.next();
+            Registration registration = entry.getValue();
+            if (registration.refCount == 0 || registration.segmentRef.get() == null) {
+                if (!registration.external) {
+                    context.unregisterPinnedMemory(entry.getKey());
+                }
+                it.remove();
+            }
         }
     }
 
