@@ -124,4 +124,19 @@ public class XPUDeviceBufferState implements DeviceBufferState {
         xpuDeviceBufferState.setLockBuffer(this.isLockedBuffer());
         return xpuDeviceBufferState;
     }
+
+    /**
+     * Whether the task-graph transfers this object between host and device on every execution
+     * ({@code EVERY_EXECUTION} uploads and downloads). Set before the buffer is allocated, so a
+     * backend can decide how to back the transfers (e.g., pinned host memory).
+     */
+    private boolean transferredEveryExecution;
+
+    public boolean isTransferredEveryExecution() {
+        return transferredEveryExecution;
+    }
+
+    public void setTransferredEveryExecution(boolean transferredEveryExecution) {
+        this.transferredEveryExecution = transferredEveryExecution;
+    }
 }
