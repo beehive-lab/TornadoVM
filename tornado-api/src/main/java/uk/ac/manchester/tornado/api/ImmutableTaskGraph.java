@@ -94,6 +94,10 @@ public class ImmutableTaskGraph {
         taskGraph.syncRuntimeTransferToHost(object, offset, partialCopySize);
     }
 
+    boolean takesAsParameter(Object object) {
+        return taskGraph.getArgumentsLookup().contains(object);
+    }
+
     TaskGraph getTaskGraph() {
         return taskGraph;
     }

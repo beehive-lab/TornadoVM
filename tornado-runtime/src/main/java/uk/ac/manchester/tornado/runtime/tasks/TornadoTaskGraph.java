@@ -1442,15 +1442,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
     }
 
-    private boolean holdsObject(Object object) {
-        for (Object o : executionContext.getObjects()) {
-            if (o == object) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private void syncField(Object object) {
         // Clean the profiler: it avoids the possibility of reporting
         // the `execute` profiling information twice.
@@ -1556,11 +1547,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             }
             // Check if it is an argument captured by the scope (not in the parameter list).
             if (!argumentsLookUp.contains(object)) {
-                // In a multi-graph plan every graph receives the request: a graph that does not
-                // hold the object must not sync (copy out) its whole context.
-                if (holdsObject(object)) {
-                    syncField(object);
-                }
+                syncField(object);
             } else {
                 Event eventParameter = syncParameter(object);
                 events.add(eventParameter);
@@ -1608,9 +1595,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         // Check if it is an argument captured by the scope (not in the parameter list).
         if (!argumentsLookUp.contains(object)) {
-            if (holdsObject(object)) {
-                syncField(object);
-            }
+            syncField(object);
         } else {
             event = syncParameter(object, offset, partialCopySize);
         }
