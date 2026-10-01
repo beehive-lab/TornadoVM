@@ -551,6 +551,9 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
         TornadoInternalError.guarantee(deviceObjectState.isAtomicRegionPresent() || !deviceObjectState.hasObjectBuffer() || batchSize != 0, "A device memory leak might be occurring.");
         buffer = createDeviceBuffer(object.getClass(), object, (CUDADeviceContext) getDeviceContext(), batchSize, access);
         deviceObjectState.setXPUBuffer(buffer);
+        if (buffer instanceof CUDAMemorySegmentWrapper segmentWrapper && deviceObjectState instanceof XPUDeviceBufferState xpuState) {
+            segmentWrapper.setTransferredEveryExecution(xpuState.isTransferredEveryExecution());
+        }
         buffer.allocate(object, batchSize, access);
         return buffer;
     }

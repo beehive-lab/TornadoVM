@@ -225,6 +225,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestNativeArrayLayouts"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestOnDemandCopyIn"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestCopyInPipelines"),
+    TestEntry("uk.ac.manchester.tornado.unittests.api.TestPinnedTransfers"),
     TestEntry("uk.ac.manchester.tornado.unittests.executor.TestExecutor"),
     TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGrid"),
     TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGridScheduler"),

@@ -75,6 +75,15 @@ public final class CUDAPinnedMemoryRegistry {
     /** Kill switch: {@code -Dtornado.cuda.host.pinning=false} disables pinning (pageable transfers). */
     public static final boolean HOST_PINNING_ENABLED = Boolean.parseBoolean(System.getProperty("tornado.cuda.host.pinning", "True"));
 
+    /**
+     * {@code -Dtornado.cuda.host.pinning.all=true} pins the host memory of every device buffer. By
+     * default only the buffers a task-graph transfers on every execution are pinned: one-shot
+     * uploads (weights, inputs set once) and device-only working buffers gain nothing from it,
+     * and pinning gigabytes of them per plan makes the driver fail allocations and copies when
+     * plans are created and closed often.
+     */
+    public static final boolean PIN_ALL_BUFFERS = Boolean.parseBoolean(System.getProperty("tornado.cuda.host.pinning.all", "False"));
+
     private static final class Registration {
         long numBytes;
         int refCount;
