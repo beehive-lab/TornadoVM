@@ -97,6 +97,15 @@ public final class CuVS {
     }
 
     /**
+     * {@link #allNeighbors(FloatArray, int, int, int, int, int, LongArray, FloatArray)} with NN-Descent tuning.
+     *
+     * @param options NN-Descent parameters (ignored by {@link CuVSAllNeighborsAlgo#BRUTE_FORCE})
+     */
+    public static LibraryTaskDescriptor allNeighbors(FloatArray dataset, int nRows, int dim, int k, int algo, int metric, LongArray neighbors, FloatArray distances, CuVSAllNeighborsOptions options) {
+        return allNeighbors(dataset, nRows, dim, k, algo, metric, neighbors, distances).withTuning(options);
+    }
+
+    /**
      * k-means clustering ({@code cuvsKMeansFit}, k-means++ initialisation).
      *
      * @param data      {@code nRows x dim} vectors

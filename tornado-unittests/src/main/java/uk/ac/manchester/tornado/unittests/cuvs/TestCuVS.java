@@ -37,6 +37,7 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.cuvs.CuVS;
 import uk.ac.manchester.tornado.cuvs.CuVSAllNeighborsAlgo;
+import uk.ac.manchester.tornado.cuvs.CuVSAllNeighborsOptions;
 import uk.ac.manchester.tornado.cuvs.CuVSDistance;
 import uk.ac.manchester.tornado.cuvs.provider.CuVSLibraryProvider;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -221,6 +222,31 @@ public class TestCuVS extends TornadoTestBase {
 
         int[][] exact = exactKnn(dataset, nRows, dataset, nRows, dim, k);
         assertTrue("k-NN graph overlap with the exact CPU result", overlap(exact, neighbors, k) >= 0.99);
+    }
+
+    @Test
+    public void testAllNeighborsNNDescentWithOptions() throws TornadoExecutionPlanException {
+        final int nRows = 2048;
+        final int dim = 32;
+        final int k = 8;
+        FloatArray dataset = randomMatrix(nRows, dim, 6);
+        LongArray neighbors = new LongArray(nRows * k);
+        FloatArray distances = new FloatArray(nRows * k);
+        CuVSAllNeighborsOptions options = new CuVSAllNeighborsOptions() //
+                .withIntermediateGraphDegree(32) //
+                .withMaxIterations(20);
+
+        TaskGraph taskGraph = new TaskGraph("cuvsNND") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, dataset) //
+                .libraryTask("graph", CuVS::allNeighbors, dataset, nRows, dim, k, CuVSAllNeighborsAlgo.NN_DESCENT.value(), CuVSDistance.L2_EXPANDED.value(), neighbors, distances, options) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, neighbors, distances);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.execute();
+        }
+
+        // approximate, but NN-Descent on a small dataset finds almost all exact neighbours
+        int[][] exact = exactKnn(dataset, nRows, dataset, nRows, dim, k);
+        assertTrue("NN-Descent k-NN graph overlap with the exact CPU result", overlap(exact, neighbors, k) >= 0.9);
     }
 
     @Test

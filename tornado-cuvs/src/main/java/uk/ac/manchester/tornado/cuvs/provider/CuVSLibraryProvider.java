@@ -23,6 +23,7 @@ import java.util.Map;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.cuvs.CuVS;
+import uk.ac.manchester.tornado.cuvs.CuVSAllNeighborsOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.library.spi.LibraryContext;
 import uk.ac.manchester.tornado.runtime.library.spi.LibraryInvocation;
@@ -138,7 +139,8 @@ public final class CuVSLibraryProvider implements TornadoLibraryProvider {
         MemorySegment dataset = floats(ctx, inv, arena, 0, nRows, dim);
         MemorySegment neighbors = CuVSNativeLib.deviceTensor(arena, inv.getDevicePointer(6), ctx.deviceId, CuVSNativeLib.DL_INT, 64, nRows, k);
         MemorySegment distances = floats(ctx, inv, arena, 7, nRows, k);
-        CuVSNativeLib.allNeighbors(ctx.resources, dataset, algo, metric, neighbors, distances);
+        CuVSNativeLib.allNeighbors(ctx.resources, dataset, algo, metric, k, neighbors, distances, //
+                inv.getTuning() instanceof CuVSAllNeighborsOptions options ? options : null);
     }
 
     /** (data, nRows, dim, nClusters, maxIter, centroids). */

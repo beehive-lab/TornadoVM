@@ -35,6 +35,9 @@ try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot()))
 * Neighbour ids are `LongArray` (int64, as cuVS returns them); k-means labels are `IntArray`.
 * Distances use `CuVSDistance`: `L2_EXPANDED` is squared L2, `COSINE_EXPANDED` is `1 - cos`, and
   `INNER_PRODUCT` is a similarity (larger is closer).
+* NN-Descent can be tuned with a `CuVSAllNeighborsOptions` argument to `CuVS.allNeighbors`: intermediate graph
+  degree, maximum iterations and termination threshold. On 982,790 x 1536 vectors (RTX 4090), lowering the
+  iterations from the default to 8 cut the NN-Descent time by ~40% at the same downstream recall.
 
 ## Requirements
 

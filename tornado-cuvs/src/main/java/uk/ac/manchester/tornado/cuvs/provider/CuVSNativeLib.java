@@ -33,6 +33,7 @@ import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.cuvs.CuVSAllNeighborsOptions;
 import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 
 /**
@@ -84,6 +85,14 @@ final class CuVSNativeLib {
     private static final long ALL_NEIGHBORS_OVERLAP = 8;
     private static final long ALL_NEIGHBORS_N_CLUSTERS = 16;
     private static final long ALL_NEIGHBORS_METRIC = 24;
+    private static final long ALL_NEIGHBORS_NN_DESCENT_PARAMS = 40;
+
+    // cuvsNNDescentIndexParams field offsets (metric, metric_arg, graph_degree, intermediate_graph_degree, ...)
+    private static final long NND_METRIC = 0;
+    private static final long NND_GRAPH_DEGREE = 8;
+    private static final long NND_INTERMEDIATE_GRAPH_DEGREE = 16;
+    private static final long NND_MAX_ITERATIONS = 24;
+    private static final long NND_TERMINATION_THRESHOLD = 32;
 
     private static final MethodHandle RESOURCES_CREATE;
     private static final MethodHandle RESOURCES_DESTROY;
@@ -97,6 +106,7 @@ final class CuVSNativeLib {
     private static final MethodHandle ALL_NEIGHBORS_PARAMS_CREATE;
     private static final MethodHandle ALL_NEIGHBORS_PARAMS_DESTROY;
     private static final MethodHandle ALL_NEIGHBORS_BUILD;
+    private static final MethodHandle NN_DESCENT_PARAMS_CREATE;
     private static final MethodHandle KMEANS_PARAMS_CREATE;
     private static final MethodHandle KMEANS_PARAMS_DESTROY;
     private static final MethodHandle KMEANS_FIT;
@@ -116,6 +126,7 @@ final class CuVSNativeLib {
             ALL_NEIGHBORS_PARAMS_CREATE = null;
             ALL_NEIGHBORS_PARAMS_DESTROY = null;
             ALL_NEIGHBORS_BUILD = null;
+            NN_DESCENT_PARAMS_CREATE = null;
             KMEANS_PARAMS_CREATE = null;
             KMEANS_PARAMS_DESTROY = null;
             KMEANS_FIT = null;
@@ -136,6 +147,7 @@ final class CuVSNativeLib {
             ALL_NEIGHBORS_PARAMS_DESTROY = FFMSupport.downcall(LIBCUVS, FunctionDescriptor.of(C_INT, C_LONG), "cuvsAllNeighborsIndexParamsDestroy");
             // (res, params, dataset, indices, distances, core_distances, alpha)
             ALL_NEIGHBORS_BUILD = FFMSupport.downcall(LIBCUVS, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_POINTER, C_POINTER, C_POINTER, C_POINTER, C_FLOAT), "cuvsAllNeighborsBuild");
+            NN_DESCENT_PARAMS_CREATE = FFMSupport.downcall(LIBCUVS, FunctionDescriptor.of(C_INT, C_POINTER), "cuvsNNDescentIndexParamsCreate");
             KMEANS_PARAMS_CREATE = FFMSupport.downcall(LIBCUVS, FunctionDescriptor.of(C_INT, C_POINTER), "cuvsKMeansParamsCreate");
             KMEANS_PARAMS_DESTROY = FFMSupport.downcall(LIBCUVS, FunctionDescriptor.of(C_INT, C_LONG), "cuvsKMeansParamsDestroy");
             // (res, params, X, sample_weight, centroids, double* inertia, int* n_iter)
@@ -253,18 +265,37 @@ final class CuVSNativeLib {
 
     // ---- all-neighbors ----
 
-    static void allNeighbors(long res, MemorySegment dataset, int algo, int metric, MemorySegment neighbors, MemorySegment distances) {
+    static void allNeighbors(long res, MemorySegment dataset, int algo, int metric, long k, MemorySegment neighbors, MemorySegment distances, CuVSAllNeighborsOptions options) {
         long params = 0;
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment out = arena.allocate(C_LONG);
             check((int) ALL_NEIGHBORS_PARAMS_CREATE.invokeExact(out), "cuvsAllNeighborsIndexParamsCreate");
             params = out.get(C_LONG, 0);
-            MemorySegment p = FFMSupport.asSegment(params, 32);
+            MemorySegment p = FFMSupport.asSegment(params, 48);
             p.set(C_INT, ALL_NEIGHBORS_ALGO, algo);
             // a device-resident dataset is processed as one batch: n_clusters must be 1
             p.set(C_LONG, ALL_NEIGHBORS_OVERLAP, 1L);
             p.set(C_LONG, ALL_NEIGHBORS_N_CLUSTERS, 1L);
             p.set(C_INT, ALL_NEIGHBORS_METRIC, metric);
+            if (options != null) {
+                // the all-neighbors params own an optional NN-Descent params struct (null = cuVS defaults);
+                // cuvsAllNeighborsIndexParamsDestroy frees it
+                check((int) NN_DESCENT_PARAMS_CREATE.invokeExact(out), "cuvsNNDescentIndexParamsCreate");
+                long nnd = out.get(C_LONG, 0);
+                p.set(C_LONG, ALL_NEIGHBORS_NN_DESCENT_PARAMS, nnd);
+                MemorySegment q = FFMSupport.asSegment(nnd, 48);
+                // the conversion copies every field, so the metric and degree must match the call
+                q.set(C_INT, NND_METRIC, metric);
+                q.set(C_LONG, NND_GRAPH_DEGREE, k);
+                long intermediate = options.getIntermediateGraphDegree() > 0 ? options.getIntermediateGraphDegree() : Math.max(q.get(C_LONG, NND_INTERMEDIATE_GRAPH_DEGREE), k);
+                q.set(C_LONG, NND_INTERMEDIATE_GRAPH_DEGREE, Math.max(intermediate, k));
+                if (options.getMaxIterations() > 0) {
+                    q.set(C_LONG, NND_MAX_ITERATIONS, options.getMaxIterations());
+                }
+                if (options.getTerminationThreshold() > 0) {
+                    q.set(C_FLOAT, NND_TERMINATION_THRESHOLD, options.getTerminationThreshold());
+                }
+            }
             check((int) ALL_NEIGHBORS_BUILD.invokeExact(res, params, dataset, neighbors, distances, MemorySegment.NULL, 1.0f), "cuvsAllNeighborsBuild");
         } catch (Throwable t) {
             throw rethrow(t);

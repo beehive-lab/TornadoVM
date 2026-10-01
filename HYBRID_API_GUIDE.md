@@ -298,7 +298,8 @@ its own scratch memory, so cuVS tasks cannot be captured in a CUDA graph. All ma
 | `kmeansFit(data, nRows, dim, nClusters, maxIter, centroids)` | k-means++ / Lloyd |
 | `kmeansPredict(data, nRows, dim, centroids, nClusters, labels)` | nearest centroid of each row |
 
-`metric` is a `CuVSDistance` value (`L2_EXPANDED`, `COSINE_EXPANDED`, `INNER_PRODUCT`, ...).
+`metric` is a `CuVSDistance` value (`L2_EXPANDED`, `COSINE_EXPANDED`, `INNER_PRODUCT`, ...). NN-Descent can be tuned
+with an extra `CuVSAllNeighborsOptions` argument (intermediate graph degree, max iterations, termination threshold).
 
 ```java
 new TaskGraph("knn")
