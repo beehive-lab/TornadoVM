@@ -20,6 +20,8 @@ package uk.ac.manchester.tornado.unittests.cuvs;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -52,6 +54,9 @@ import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
  * </code>
  */
 public class TestCuVS extends TornadoTestBase {
+
+    /** Batched builds lose some neighbours across cluster borders (random data has no cluster structure). */
+    private static final double OVERLAP_BATCHED = 0.8;
 
     /**
      * cuVS library tasks require the CUDA backend and the cuVS C library (libcuvs_c). Unavailable configurations
@@ -247,6 +252,29 @@ public class TestCuVS extends TornadoTestBase {
         // approximate, but NN-Descent on a small dataset finds almost all exact neighbours
         int[][] exact = exactKnn(dataset, nRows, dataset, nRows, dim, k);
         assertTrue("NN-Descent k-NN graph overlap with the exact CPU result", overlap(exact, neighbors, k) >= 0.9);
+    }
+
+    @Test
+    public void testAllNeighborsOnHostBatched() {
+        final int nRows = 4096;
+        final int dim = 16;
+        final int k = 8;
+        FloatArray dataset = randomMatrix(nRows, dim, 7);
+        try (Arena arena = Arena.ofConfined()) {
+            // host-resident input and outputs, built in 4 overlapping batches
+            MemorySegment data = arena.allocate((long) nRows * dim * Float.BYTES, 64);
+            MemorySegment.copy(dataset.getSegment(), 0, data, 0, data.byteSize());
+            MemorySegment ids = arena.allocate((long) nRows * k * Long.BYTES, 64);
+            MemorySegment dists = arena.allocate((long) nRows * k * Float.BYTES, 64);
+            CuVSAllNeighborsOptions options = new CuVSAllNeighborsOptions().withClusters(4, 2);
+            CuVS.allNeighborsOnHost(data, nRows, dim, k, CuVSAllNeighborsAlgo.NN_DESCENT, CuVSDistance.L2_EXPANDED, ids, dists, options);
+
+            LongArray neighbors = new LongArray(nRows * k);
+            MemorySegment.copy(ids, 0, neighbors.getSegment(), 0, ids.byteSize());
+            int[][] exact = exactKnn(dataset, nRows, dataset, nRows, dim, k);
+            double found = overlap(exact, neighbors, k);
+            assertTrue("batched host k-NN graph overlap with the exact CPU result: " + found, found >= OVERLAP_BATCHED);
+        }
     }
 
     @Test

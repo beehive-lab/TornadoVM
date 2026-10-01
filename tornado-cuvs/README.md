@@ -28,6 +28,7 @@ try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot()))
 |---|---|---|
 | `CuVS.bruteForceKnn` | `cuvsBruteForceBuild` + `cuvsBruteForceSearch` | exact k nearest dataset rows of every query |
 | `CuVS.allNeighbors` | `cuvsAllNeighborsBuild` | k-NN graph of the whole dataset: `BRUTE_FORCE` (exact) or `NN_DESCENT` (approximate) |
+| `CuVS.allNeighborsOnHost` | `cuvsAllNeighborsBuild` (host dataset) | k-NN graph of a host-resident dataset larger than device memory, built in batches (direct call, not a task) |
 | `CuVS.kmeansFit` | `cuvsKMeansFit` | k-means (k-means++ initialisation, Lloyd iterations) |
 | `CuVS.kmeansPredict` | `cuvsKMeansPredict` | nearest centroid of every row |
 
@@ -38,6 +39,23 @@ try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot()))
 * NN-Descent can be tuned with a `CuVSAllNeighborsOptions` argument to `CuVS.allNeighbors`: intermediate graph
   degree, maximum iterations and termination threshold. On 982,790 x 1536 vectors (RTX 4090), lowering the
   iterations from the default to 8 cut the NN-Descent time by ~40% at the same downstream recall.
+
+## Datasets larger than device memory
+
+`CuVS.allNeighborsOnHost` takes the dataset as a `MemorySegment` in host memory, for example a memory-mapped
+file. It is a direct, synchronous call, not a task: a TornadoVM array holds at most `Integer.MAX_VALUE` elements
+(#1156). With `new CuVSAllNeighborsOptions().withClusters(nClusters, overlapFactor)`, cuVS splits the rows into
+`nClusters` clusters, puts every row in its `overlapFactor` nearest ones, builds each cluster on the device, and
+merges the results. The outputs are host segments too.
+
+```java
+try (Arena arena = Arena.ofShared(); FileChannel ch = FileChannel.open(path)) {
+    MemorySegment data = ch.map(FileChannel.MapMode.READ_ONLY, 0, rows * dim * 4L, arena);
+    MemorySegment ids = arena.allocate(rows * k * 8L, 64), dists = arena.allocate(rows * k * 4L, 64);
+    CuVS.allNeighborsOnHost(data, rows, dim, k, CuVSAllNeighborsAlgo.NN_DESCENT, CuVSDistance.INNER_PRODUCT,
+            ids, dists, new CuVSAllNeighborsOptions().withClusters(10, 2));
+}
+```
 
 ## Requirements
 
@@ -59,8 +77,7 @@ The module binds to `libcuvs_c` through `java.lang.foreign`; there is no JNI shi
 * **Memory:** cuVS allocates its scratch memory itself (through RMM), so cuVS tasks cannot be captured in a
   CUDA graph. The provider throws if asked to.
 * **Parameters:** for device-resident data, `allNeighbors` builds the graph in a single batch (cuVS's
-  `n_clusters = 1`). Very large datasets that do not fit in device memory need cuVS's host-dataset path,
-  which is not exposed yet.
+  `n_clusters = 1`). For datasets that do not fit in device memory, use `allNeighborsOnHost`.
 
 ## Tests and benchmark
 

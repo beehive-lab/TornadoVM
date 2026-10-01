@@ -52,6 +52,7 @@ final class CuVSNativeLib {
     private static final SymbolLookup LIBCUVS = FFMSupport.loadLibrary("libcuvs_c.so", "libcuvs_c.so.26", "cuvs_c.dll");
 
     // DLPack (dlpack.h): device types, data type codes and the DLManagedTensor layout
+    static final int DL_CPU = 1;
     static final int DL_CUDA = 2;
     static final byte DL_INT = 0;
     static final byte DL_UINT = 1;
@@ -175,12 +176,21 @@ final class CuVSNativeLib {
      * The tensor does not own the memory: {@code manager_ctx} and {@code deleter} are null.
      */
     static MemorySegment deviceTensor(Arena arena, long devicePointer, int deviceId, byte code, int bits, long rows, long cols) {
+        return tensor(arena, devicePointer, DL_CUDA, deviceId, code, bits, rows, cols);
+    }
+
+    /** {@link #deviceTensor} over host memory. */
+    static MemorySegment hostTensor(Arena arena, MemorySegment memory, byte code, int bits, long rows, long cols) {
+        return tensor(arena, memory.address(), DL_CPU, 0, code, bits, rows, cols);
+    }
+
+    private static MemorySegment tensor(Arena arena, long pointer, int deviceType, int deviceId, byte code, int bits, long rows, long cols) {
         MemorySegment t = arena.allocate(DL_MANAGED_TENSOR);
         int ndim = cols == 0 ? 1 : 2;
         // FFMSupport keeps this portable: on JDK 21 Arena.allocate(C_LONG, n) allocates ONE long of value n
         MemorySegment shape = FFMSupport.allocateLongArray(arena, ndim == 2 ? new long[] { rows, cols } : new long[] { rows });
-        t.set(C_POINTER, offset("data"), MemorySegment.ofAddress(devicePointer));
-        t.set(C_INT, offset("device_type"), DL_CUDA);
+        t.set(C_POINTER, offset("data"), MemorySegment.ofAddress(pointer));
+        t.set(C_INT, offset("device_type"), deviceType);
         t.set(C_INT, offset("device_id"), deviceId);
         t.set(C_INT, offset("ndim"), ndim);
         t.set(ValueLayout.JAVA_BYTE, offset("dtype_code"), code);
@@ -266,6 +276,31 @@ final class CuVSNativeLib {
     // ---- all-neighbors ----
 
     static void allNeighbors(long res, MemorySegment dataset, int algo, int metric, long k, MemorySegment neighbors, MemorySegment distances, CuVSAllNeighborsOptions options) {
+        // a device-resident dataset is processed as one batch: n_clusters must be 1
+        allNeighbors(res, dataset, algo, metric, k, neighbors, distances, options, 1L, 1L);
+    }
+
+    /**
+     * Host-resident {@code dataset} and outputs: cuVS partitions the rows into {@code nClusters} clusters, assigns
+     * each row to its {@code overlap} nearest ones and builds the graph cluster by cluster on the device.
+     */
+    static void allNeighborsOnHost(MemorySegment dataset, long rows, long dim, int algo, int metric, long k, MemorySegment neighbors, MemorySegment distances,
+            CuVSAllNeighborsOptions options) {
+        long res = resourcesCreate();
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment data = hostTensor(arena, dataset, DL_FLOAT, 32, rows, dim);
+            MemorySegment ids = hostTensor(arena, neighbors, DL_INT, 64, rows, k);
+            MemorySegment dist = hostTensor(arena, distances, DL_FLOAT, 32, rows, k);
+            long clusters = options != null && options.getClusters() > 0 ? options.getClusters() : 1L;
+            long overlap = options != null && options.getOverlapFactor() > 0 ? options.getOverlapFactor() : 1L;
+            allNeighbors(res, data, algo, metric, k, ids, dist, options, clusters, overlap);
+        } finally {
+            resourcesDestroy(res);
+        }
+    }
+
+    private static void allNeighbors(long res, MemorySegment dataset, int algo, int metric, long k, MemorySegment neighbors, MemorySegment distances, CuVSAllNeighborsOptions options,
+            long clusters, long overlap) {
         long params = 0;
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment out = arena.allocate(C_LONG);
@@ -273,9 +308,8 @@ final class CuVSNativeLib {
             params = out.get(C_LONG, 0);
             MemorySegment p = FFMSupport.asSegment(params, 48);
             p.set(C_INT, ALL_NEIGHBORS_ALGO, algo);
-            // a device-resident dataset is processed as one batch: n_clusters must be 1
-            p.set(C_LONG, ALL_NEIGHBORS_OVERLAP, 1L);
-            p.set(C_LONG, ALL_NEIGHBORS_N_CLUSTERS, 1L);
+            p.set(C_LONG, ALL_NEIGHBORS_OVERLAP, overlap);
+            p.set(C_LONG, ALL_NEIGHBORS_N_CLUSTERS, clusters);
             p.set(C_INT, ALL_NEIGHBORS_METRIC, metric);
             if (options != null) {
                 // the all-neighbors params own an optional NN-Descent params struct (null = cuVS defaults);

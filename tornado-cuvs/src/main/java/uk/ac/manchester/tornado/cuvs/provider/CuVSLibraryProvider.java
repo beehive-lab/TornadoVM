@@ -72,6 +72,13 @@ public final class CuVSLibraryProvider implements TornadoLibraryProvider {
         }
     }
 
+    /** Direct, synchronous host-dataset all-neighbors build; see {@link CuVS#allNeighborsOnHost}. */
+    public static void allNeighborsOnHost(MemorySegment dataset, long rows, int dim, int k, int algo, int metric, MemorySegment neighbors, MemorySegment distances,
+            CuVSAllNeighborsOptions options) {
+        CuVSNativeLib.load();
+        CuVSNativeLib.allNeighborsOnHost(dataset, rows, dim, algo, metric, k, neighbors, distances, options);
+    }
+
     @Override
     public String libraryName() {
         return CuVS.LIBRARY_NAME;

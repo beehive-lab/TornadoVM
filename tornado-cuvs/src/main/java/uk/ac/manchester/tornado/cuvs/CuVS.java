@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.cuvs;
 
+import java.lang.foreign.MemorySegment;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.common.Access;
@@ -24,6 +25,7 @@ import uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.cuvs.provider.CuVSLibraryProvider;
 
 /**
  * NVIDIA cuVS vector-search routines as TornadoVM library tasks.
@@ -103,6 +105,34 @@ public final class CuVS {
      */
     public static LibraryTaskDescriptor allNeighbors(FloatArray dataset, int nRows, int dim, int k, int algo, int metric, LongArray neighbors, FloatArray distances, CuVSAllNeighborsOptions options) {
         return allNeighbors(dataset, nRows, dim, k, algo, metric, neighbors, distances).withTuning(options);
+    }
+
+    /**
+     * The k-NN graph of a host-resident dataset, which may be larger than device memory ({@code cuvsAllNeighborsBuild}
+     * with a host dataset). With {@link CuVSAllNeighborsOptions#withClusters} cuVS builds it in batches: it partitions
+     * the rows into clusters, assigns each row to its nearest {@code overlapFactor} clusters, builds each cluster's
+     * graph on the device and merges the results. Without, the whole dataset is one batch.
+     * <p>
+     * Unlike the other operations this is a direct, synchronous call, not a task: the dataset is a
+     * {@link MemorySegment} (e.g. a memory-mapped file), as it may hold more than {@code Integer.MAX_VALUE} floats.
+     * It runs on the current CUDA device with its own cuVS resources.
+     *
+     * @param dataset   {@code nRows x dim} row-major float32 vectors in host memory
+     * @param nRows     number of rows
+     * @param dim       dimensionality
+     * @param k         neighbours per row (each row's own id is included, as cuVS returns it)
+     * @param algo      {@link CuVSAllNeighborsAlgo#NN_DESCENT} or {@link CuVSAllNeighborsAlgo#BRUTE_FORCE}
+     * @param metric    the distance
+     * @param neighbors output, {@code nRows x k} int64 row ids in host memory, nearest first
+     * @param distances output, {@code nRows x k} float32 distances in host memory
+     * @param options   NN-Descent parameters and batching, or null
+     */
+    public static void allNeighborsOnHost(MemorySegment dataset, long nRows, int dim, int k, CuVSAllNeighborsAlgo algo, CuVSDistance metric, MemorySegment neighbors,
+            MemorySegment distances, CuVSAllNeighborsOptions options) {
+        if (dataset.byteSize() < nRows * dim * Float.BYTES || neighbors.byteSize() < nRows * k * Long.BYTES || distances.byteSize() < nRows * k * Float.BYTES) {
+            throw new IllegalArgumentException("segment smaller than nRows x dim (dataset) or nRows x k (outputs)");
+        }
+        CuVSLibraryProvider.allNeighborsOnHost(dataset, nRows, dim, k, algo.value(), metric.value(), neighbors, distances, options);
     }
 
     /**

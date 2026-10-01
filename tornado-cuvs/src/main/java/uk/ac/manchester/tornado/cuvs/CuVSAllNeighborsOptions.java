@@ -27,6 +27,8 @@ public final class CuVSAllNeighborsOptions {
     private long intermediateGraphDegree;
     private long maxIterations;
     private float terminationThreshold;
+    private long clusters;
+    private long overlapFactor;
 
     /** Degree of the intermediate graph NN-Descent refines (larger: better recall, slower). */
     public CuVSAllNeighborsOptions withIntermediateGraphDegree(long degree) {
@@ -44,6 +46,25 @@ public final class CuVSAllNeighborsOptions {
     public CuVSAllNeighborsOptions withTerminationThreshold(float threshold) {
         this.terminationThreshold = threshold;
         return this;
+    }
+
+    /**
+     * Batched build of a host-resident dataset ({@link CuVS#allNeighborsOnHost}): the rows are partitioned into
+     * {@code clusters} clusters, and each row joins its {@code overlapFactor} nearest ones (must be smaller than
+     * {@code clusters}). Each cluster is built on the device in turn, so the dataset can exceed device memory.
+     */
+    public CuVSAllNeighborsOptions withClusters(long clusters, long overlapFactor) {
+        this.clusters = clusters;
+        this.overlapFactor = overlapFactor;
+        return this;
+    }
+
+    public long getClusters() {
+        return clusters;
+    }
+
+    public long getOverlapFactor() {
+        return overlapFactor;
     }
 
     public long getIntermediateGraphDegree() {
