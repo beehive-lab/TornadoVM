@@ -143,7 +143,8 @@ class TornadoExecutor {
     }
 
     void freeDeviceMemory() {
-        immutableTaskGraphList.forEach(ImmutableTaskGraph::freeDeviceMemory);
+        // every task-graph of the plan, not only the ones a withGraph(i) has currently selected
+        allTaskGraphs().forEach(ImmutableTaskGraph::freeDeviceMemory);
     }
 
     void transferToHost(Object... objects) {
@@ -290,7 +291,7 @@ class TornadoExecutor {
     }
 
     long getCurrentDeviceMemoryUsage() {
-        return immutableTaskGraphList.stream().mapToLong(ImmutableTaskGraph::getCurrentDeviceMemoryUsage).sum();
+        return allTaskGraphs().stream().mapToLong(ImmutableTaskGraph::getCurrentDeviceMemoryUsage).sum();
     }
 
     void selectGraph(int graphIndex) {
