@@ -26,6 +26,8 @@ package uk.ac.manchester.tornado.drivers.cuda.graal;
 import static jdk.vm.ci.common.InitTimer.timer;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
+import java.util.function.Supplier;
+
 import tornado.graal.compiler.api.replacements.SnippetReflectionProvider;
 import tornado.graal.compiler.core.common.spi.MetaAccessExtensionProvider;
 import tornado.graal.compiler.hotspot.meta.HotSpotStampProvider;
@@ -76,6 +78,16 @@ public class CUDAHotSpotBackendFactory {
     private static final CUDAAddressLowering addressLowering = new CUDAAddressLowering();
 
     public static CUDABackend createJITCompiler(OptionValues options, TornadoVMConfigAccess config, CUDAContextInterface tornadoContext, CUDATargetDevice device) {
+        return createJITCompiler(options, config, () -> tornadoContext, device);
+    }
+
+    /**
+     * Builds the compiler backend for a device, asking {@code contextSupplier} for the CUDA context
+     * only once the part of the compiler that does not depend on it (lowering, replacements and
+     * graph-builder plugins) has been built. This lets the caller create the context, a slow driver
+     * call, concurrently with that work.
+     */
+    public static CUDABackend createJITCompiler(OptionValues options, TornadoVMConfigAccess config, Supplier<CUDAContextInterface> contextSupplier, CUDATargetDevice device) {
         MetaAccessProvider metaAccess = new TornadoMetaAccessProvider();
         ConstantReflectionProvider constantReflection = new TornadoConstantReflectionProvider(snippetReflection);
 
@@ -91,7 +103,7 @@ public class CUDAHotSpotBackendFactory {
         CUDAArchitecture arch = new CUDAArchitecture(wordKind, device.getByteOrder());
         CUDATargetDescription target = new CUDATargetDescription(arch, device.isDeviceDoubleFPSupported(), device.getDeviceExtensions());
         CUDACodeProvider codeCache = new CUDACodeProvider(target);
-        CUDADeviceContextInterface oclDeviceContextImpl = (CUDADeviceContextInterface) tornadoContext.createDeviceContext(device.getIndex());
+        CUDADeviceContextInterface oclDeviceContextImpl;
 
         CUDAProviders providers;
         CUDALoweringProvider lowerer;
@@ -113,6 +125,9 @@ public class CUDAHotSpotBackendFactory {
             plugins = createGraphBuilderPlugins(metaAccess, replacements, snippetReflection, lowerer);
 
             replacements.setGraphBuilderPlugins(plugins);
+
+            // Everything above is independent of the CUDA context; from here on the device context is needed
+            oclDeviceContextImpl = (CUDADeviceContextInterface) contextSupplier.get().createDeviceContext(device.getIndex());
 
             suites = new CUDASuitesProvider(options, oclDeviceContextImpl, plugins, metaAccess, compilerConfiguration, addressLowering);
 

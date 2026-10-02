@@ -23,6 +23,8 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.virtual;
 
+import java.util.List;
+
 import uk.ac.manchester.tornado.drivers.cuda.CUDAContextInterface;
 import uk.ac.manchester.tornado.drivers.cuda.CUDATargetDevice;
 import uk.ac.manchester.tornado.drivers.cuda.TornadoPlatformInterface;
@@ -41,6 +43,11 @@ public class VirtualCUDAPlatform implements TornadoPlatformInterface {
     public CUDAContextInterface createContext() {
         context = new VirtualCUDAContext(this, device);
         return context;
+    }
+
+    @Override
+    public List<CUDATargetDevice> getDevices() {
+        return List.of(device);
     }
 
     public void cleanup() {
