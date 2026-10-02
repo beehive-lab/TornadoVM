@@ -109,7 +109,6 @@
                         <argument>-Dtornado.load.tornado.implementation=uk.ac.manchester.tornado.runtime.common.Tornado</argument>
                         <argument>-Dtornado.load.annotation.implementation=uk.ac.manchester.tornado.annotation.ASMClassVisitor</argument>
                         <argument>-Dtornado.load.annotation.parallel=uk.ac.manchester.tornado.api.annotations.Parallel</argument>
-                        <argument>-XX:+UseParallelGC</argument>
                         <argument>@${tornado.sdk}/etc/exportLists/common-exports</argument>
                         <argument>@${tornado.sdk}/etc/exportLists/opencl-exports</argument>
                         <argument>--add-modules</argument>
