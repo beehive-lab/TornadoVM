@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.api.types.arrays;
 
+import uk.ac.manchester.tornado.api.memory.HostMemoryType;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 
@@ -139,6 +140,22 @@ public final class FloatArray extends TornadoNativeArray {
         FloatArray floatArray = new FloatArray(numElements);
         MemorySegment.copy(segment, 0, floatArray.segment.getSegment(), (long) floatArray.baseIndex * FLOAT_BYTES, byteSize);
         return floatArray;
+    }
+
+    /**
+     * Creates a {@link FloatArray} of {@code numberOfElements} elements in host memory of the given type:
+     * pageable, page-locked ({@link HostMemoryType#PINNED}) for full-speed transfers, or mapped into the
+     * device's address space ({@link HostMemoryType#MAPPED}) for zero-copy access. Falls back to
+     * pageable memory where the type is not available.
+     *
+     * @param numberOfElements
+     *         The number of elements in the array.
+     * @param type
+     *         The kind of host memory.
+     * @return A new {@link FloatArray}.
+     */
+    public static FloatArray allocate(int numberOfElements, HostMemoryType type) {
+        return fromSegmentShallow(allocateHostSegment(numberOfElements, FLOAT_BYTES, type));
     }
 
     /**

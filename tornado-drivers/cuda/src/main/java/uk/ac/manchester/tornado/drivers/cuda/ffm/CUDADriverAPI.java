@@ -80,6 +80,10 @@ public final class CUDADriverAPI {
     public static final int CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR = 75;
     public static final int CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR = 76;
 
+    /** CU_MEMHOSTALLOC_* flags for cuMemHostAlloc. */
+    public static final int CU_MEMHOSTALLOC_PORTABLE = 0x01;
+    public static final int CU_MEMHOSTALLOC_DEVICEMAP = 0x02;
+
     /** CUjit_option values used to capture the driver's JIT diagnostics on a module load. */
     public static final int CU_JIT_ERROR_LOG_BUFFER = 5;
     public static final int CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES = 6;
@@ -123,6 +127,8 @@ public final class CUDADriverAPI {
     private static final MethodHandle CU_MEM_FREE;
     private static final MethodHandle CU_MEM_ALLOC_HOST;
     private static final MethodHandle CU_MEM_FREE_HOST;
+    private static final MethodHandle CU_MEM_HOST_ALLOC;
+    private static final MethodHandle CU_MEM_HOST_GET_DEVICE_POINTER;
     private static final MethodHandle CU_MEM_HOST_REGISTER;
     private static final MethodHandle CU_MEM_HOST_UNREGISTER;
     private static final MethodHandle CU_MEMCPY_HTOD_ASYNC;
@@ -174,6 +180,8 @@ public final class CUDADriverAPI {
             CU_MEM_FREE = null;
             CU_MEM_ALLOC_HOST = null;
             CU_MEM_FREE_HOST = null;
+            CU_MEM_HOST_ALLOC = null;
+            CU_MEM_HOST_GET_DEVICE_POINTER = null;
             CU_MEM_HOST_REGISTER = null;
             CU_MEM_HOST_UNREGISTER = null;
             CU_MEMCPY_HTOD_ASYNC = null;
@@ -228,6 +236,8 @@ public final class CUDADriverAPI {
             CU_MEM_FREE = downcall(LIBCUDA, FunctionDescriptor.of(C_INT, C_LONG), "cuMemFree_v2", "cuMemFree");
             CU_MEM_ALLOC_HOST = downcall(LIBCUDA, FunctionDescriptor.of(C_INT, C_POINTER, C_LONG), "cuMemAllocHost_v2", "cuMemAllocHost");
             CU_MEM_FREE_HOST = downcall(LIBCUDA, FunctionDescriptor.of(C_INT, C_LONG), "cuMemFreeHost");
+            CU_MEM_HOST_ALLOC = downcall(LIBCUDA, FunctionDescriptor.of(C_INT, C_POINTER, C_LONG, C_INT), "cuMemHostAlloc");
+            CU_MEM_HOST_GET_DEVICE_POINTER = downcall(LIBCUDA, FunctionDescriptor.of(C_INT, C_POINTER, C_LONG, C_INT), "cuMemHostGetDevicePointer_v2", "cuMemHostGetDevicePointer");
             CU_MEM_HOST_REGISTER = downcall(LIBCUDA, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_INT), "cuMemHostRegister_v2", "cuMemHostRegister");
             CU_MEM_HOST_UNREGISTER = downcall(LIBCUDA, FunctionDescriptor.of(C_INT, C_LONG), "cuMemHostUnregister");
             CU_MEMCPY_HTOD_ASYNC = downcall(LIBCUDA, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_LONG, C_LONG), "cuMemcpyHtoDAsync_v2", "cuMemcpyHtoDAsync");
@@ -473,6 +483,22 @@ public final class CUDADriverAPI {
     public static int cuMemAllocHost(MemorySegment hostPointer, long byteSize) {
         try {
             return (int) CU_MEM_ALLOC_HOST.invokeExact(hostPointer, byteSize);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    public static int cuMemHostAlloc(MemorySegment hostPointerOut, long byteSize, int flags) {
+        try {
+            return (int) CU_MEM_HOST_ALLOC.invokeExact(hostPointerOut, byteSize, flags);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    public static int cuMemHostGetDevicePointer(MemorySegment devicePointerOut, long hostPointer, int flags) {
+        try {
+            return (int) CU_MEM_HOST_GET_DEVICE_POINTER.invokeExact(devicePointerOut, hostPointer, flags);
         } catch (Throwable t) {
             throw rethrow(t);
         }

@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.api.types.arrays;
 
+import uk.ac.manchester.tornado.api.memory.HostMemoryType;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 import uk.ac.manchester.tornado.api.types.BFloat16;
@@ -139,6 +140,22 @@ public final class BFloat16Array extends TornadoNativeArray {
         BFloat16Array bfloat16Array = new BFloat16Array(numElements);
         MemorySegment.copy(segment, 0, bfloat16Array.segment.getSegment(), (long) bfloat16Array.baseIndex * BF16_BYTES, byteSize);
         return bfloat16Array;
+    }
+
+    /**
+     * Creates a {@link BFloat16Array} of {@code numberOfElements} elements in host memory of the given type:
+     * pageable, page-locked ({@link HostMemoryType#PINNED}) for full-speed transfers, or mapped into the
+     * device's address space ({@link HostMemoryType#MAPPED}) for zero-copy access. Falls back to
+     * pageable memory where the type is not available.
+     *
+     * @param numberOfElements
+     *         The number of elements in the array.
+     * @param type
+     *         The kind of host memory.
+     * @return A new {@link BFloat16Array}.
+     */
+    public static BFloat16Array allocate(int numberOfElements, HostMemoryType type) {
+        return fromSegmentShallow(allocateHostSegment(numberOfElements, BF16_BYTES, type));
     }
 
     /**

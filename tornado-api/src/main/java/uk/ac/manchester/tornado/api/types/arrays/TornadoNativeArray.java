@@ -17,6 +17,10 @@
  */
 package uk.ac.manchester.tornado.api.types.arrays;
 
+import java.lang.foreign.Arena;
+import uk.ac.manchester.tornado.api.memory.HostMemoryType;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
+
 import java.lang.foreign.MemorySegment;
 import java.lang.management.ManagementFactory;
 import java.util.List;
@@ -56,6 +60,21 @@ public abstract sealed class TornadoNativeArray //
     /**
      * Checks that the byte size is a multiple of the element size.
      */
+    /**
+     * A segment for an array of {@code numberOfElements} elements of {@code elementBytes} bytes, header
+     * included, in host memory of the given type.
+     */
+    static MemorySegment allocateHostSegment(int numberOfElements, int elementBytes, HostMemoryType type) {
+        if (numberOfElements < 0) {
+            throw new IllegalArgumentException("Negative number of elements: " + numberOfElements);
+        }
+        long byteSize = (long) numberOfElements * elementBytes + ARRAY_HEADER;
+        if (type == HostMemoryType.PAGEABLE) {
+            return Arena.ofAuto().allocate(byteSize, 1);
+        }
+        return TornadoRuntimeProvider.getTornadoRuntime().allocateHostMemory(byteSize, type);
+    }
+
     static void ensureMultipleOfElementSize(long byteSize, long elementSize) {
         if (byteSize % elementSize != 0) {
             throw new IllegalArgumentException(format("The byte size (%d) is not a multiple of the element size (%d)", byteSize, elementSize));

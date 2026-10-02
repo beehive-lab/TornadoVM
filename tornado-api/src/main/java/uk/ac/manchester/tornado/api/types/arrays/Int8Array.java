@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.api.types.arrays;
 
+import uk.ac.manchester.tornado.api.memory.HostMemoryType;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 
@@ -132,6 +133,22 @@ public final class Int8Array extends TornadoNativeArray {
         Int8Array int8Array = new Int8Array(numElements);
         MemorySegment.copy(segment, 0, int8Array.segment.getSegment(), (long) int8Array.baseIndex, numElements);
         return int8Array;
+    }
+
+    /**
+     * Creates a {@link Int8Array} of {@code numberOfElements} elements in host memory of the given type:
+     * pageable, page-locked ({@link HostMemoryType#PINNED}) for full-speed transfers, or mapped into the
+     * device's address space ({@link HostMemoryType#MAPPED}) for zero-copy access. Falls back to
+     * pageable memory where the type is not available.
+     *
+     * @param numberOfElements
+     *         The number of elements in the array.
+     * @param type
+     *         The kind of host memory.
+     * @return A new {@link Int8Array}.
+     */
+    public static Int8Array allocate(int numberOfElements, HostMemoryType type) {
+        return fromSegmentShallow(allocateHostSegment(numberOfElements, INT8_BYTES, type));
     }
 
     /**

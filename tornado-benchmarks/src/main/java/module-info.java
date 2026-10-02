@@ -35,6 +35,7 @@ open module tornado.benchmarks {
     exports uk.ac.manchester.tornado.benchmarks.dotvector;
     exports uk.ac.manchester.tornado.benchmarks.euler;
     exports uk.ac.manchester.tornado.benchmarks.hilbert;
+    exports uk.ac.manchester.tornado.benchmarks.hostmemory;
     exports uk.ac.manchester.tornado.benchmarks.mandelbrot;
     exports uk.ac.manchester.tornado.benchmarks.montecarlo;
     exports uk.ac.manchester.tornado.benchmarks.nbody;
