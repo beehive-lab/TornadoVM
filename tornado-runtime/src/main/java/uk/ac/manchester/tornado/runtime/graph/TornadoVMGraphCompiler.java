@@ -192,6 +192,7 @@ public class TornadoVMGraphCompiler {
         }
 
         while (scheduled.cardinality() < dependencies.length) {
+            final int scheduledBefore = scheduled.cardinality();
             for (int i = 0; i < dependencies.length; i++) {
                 if (!scheduled.get(i)) {
                     final BitSet outstandingDeps = new BitSet(nodes.length());
@@ -234,7 +235,24 @@ public class TornadoVMGraphCompiler {
                     }
                 }
             }
+            if (scheduled.cardinality() == scheduledBefore) {
+                throw new TornadoRuntimeException(unschedulableNodesMessage(graph, nodeIds, dependencies, scheduled, nodes));
+            }
         }
+    }
+
+    /**
+     * Describes the nodes left when a scheduling pass makes no progress: each one still waits for a
+     * dependency that can never be scheduled (a cycle, or a node missing from the graph).
+     */
+    private static String unschedulableNodesMessage(TornadoGraph graph, int[] nodeIds, BitSet[] dependencies, BitSet scheduled, BitSet nodes) {
+        StringBuilder message = new StringBuilder("[ERROR] Unable to schedule the task graph: the following nodes wait on dependencies that can never be satisfied:");
+        for (int i = scheduled.nextClearBit(0); i < dependencies.length; i = scheduled.nextClearBit(i + 1)) {
+            BitSet outstanding = (BitSet) dependencies[i].clone();
+            outstanding.andNot(nodes);
+            message.append("\n  node ").append(nodeIds[i]).append(" (").append(graph.getNode(nodeIds[i])).append(") waits on ").append(outstanding);
+        }
+        return message.toString();
     }
 
     private static boolean shouldGenerateSingleBytecode(TornadoExecutionContext executionContext) {
@@ -303,6 +321,7 @@ public class TornadoVMGraphCompiler {
         }
 
         while (scheduled.cardinality() < dependencies.length) {
+            final int scheduledBefore = scheduled.cardinality();
             for (int i = 0; i < dependencies.length; i++) {
                 if (!scheduled.get(i)) {
                     final BitSet outstandingDeps = new BitSet(nodes.length());
@@ -333,6 +352,9 @@ public class TornadoVMGraphCompiler {
                         nodes.set(nodeIds[i]);
                     }
                 }
+            }
+            if (scheduled.cardinality() == scheduledBefore) {
+                throw new TornadoRuntimeException(unschedulableNodesMessage(graph, nodeIds, dependencies, scheduled, nodes));
             }
         }
     }
