@@ -56,6 +56,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDALIRGenerator;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt.AssignStmt;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt.LoadStmt;
+import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt.ReinterpretStmt;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt.StoreAtomicAddFloatStmt;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt.StoreAtomicAddStmt;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt.StoreAtomicMulStmt;
@@ -186,8 +187,10 @@ public class CUDAArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitReinterpret(LIRKind lirKind, Value x) {
-        unimplemented();
-        return null;
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitReinterpret: %s as %s", x, lirKind);
+        final Variable result = getGen().newVariable(lirKind);
+        getGen().append(new ReinterpretStmt(result, x));
+        return result;
     }
 
     @Override

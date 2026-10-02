@@ -95,7 +95,10 @@ public final class MetalPreamble {
         "inline int isequal   (float a, float b) { return (int)(a == b); }\n" +
         "inline int isnotequal(float a, float b) { return (int)(a != b); }\n" +
         "inline int isgreater (float a, float b) { return (int)(a >  b); }\n" +
-        "inline int isless    (float a, float b) { return (int)(a <  b); }\n";
+        "inline int isless    (float a, float b) { return (int)(a <  b); }\n" +
+        "inline int isgreaterequal(float a, float b) { return (int)(a >= b); }\n" +
+        "inline int islessequal(float a, float b) { return (int)(a <= b); }\n" +
+        "inline int islessgreater(float a, float b) { return (int)(a < b || a > b); }\n";
 
     // signum: Java Math.signum(NaN)==NaN but MSL sign(NaN)==0
     private static final String SIGNUM =
@@ -264,7 +267,7 @@ public final class MetalPreamble {
     }
 
     private static final Section[] SECTIONS = { //
-            new Section(RELATIONAL, "isequal", "isnotequal", "isgreater", "isless"), //
+            new Section(RELATIONAL, "isequal", "isnotequal", "isgreater", "isless", "isgreaterequal", "islessequal", "islessgreater"), //
             new Section(SIGNUM, "signum_f"), //
             new Section(ATOMIC_ADD_FLOAT, "tornado_atomic_add_float"), //
             new Section(VLOAD_STORE_2_3_4, "vload2", "vload3", "vload4", "vstore2", "vstore3", "vstore4"), //

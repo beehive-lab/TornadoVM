@@ -186,8 +186,10 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitReinterpret(LIRKind lirKind, Value x) {
-        unimplemented();
-        return null;
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitReinterpret: %s as %s", x, lirKind);
+        final Variable result = getGen().newVariable(lirKind);
+        getGen().append(new AssignStmt(result, new OCLUnary.Reinterpret(lirKind, x)));
+        return result;
     }
 
     @Override

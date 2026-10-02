@@ -188,8 +188,10 @@ public class MetalArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitReinterpret(LIRKind lirKind, Value x) {
-        unimplemented();
-        return null;
+        Logger.traceBuildLIR(Logger.BACKEND.Metal, "emitReinterpret: %s as %s", x, lirKind);
+        final Variable result = getGen().newVariable(lirKind);
+        getGen().append(new AssignStmt(result, new MetalUnary.Reinterpret(lirKind, x)));
+        return result;
     }
 
     @Override

@@ -713,6 +713,8 @@ public final class MetalAssembler extends Assembler {
         public static final MetalUnaryOp LOGICAL_NOT = new MetalUnaryOp("!", true);
 
         public static final MetalUnaryOp BITWISE_NOT = new MetalUnaryOp("~", true);
+        /** Bit-for-bit reinterpretation as another type of the same size, emitted as {@code as_type<T>(x)}. */
+        public static final MetalUnaryOp AS_TYPE = new MetalUnaryOp("as_type", true);
 
         public static final MetalUnaryOp CAST_TO_INT = new MetalUnaryOp("(int) ", true);
         public static final MetalUnaryOp CAST_TO_SHORT = new MetalUnaryOp("(short) ", true);
