@@ -41,6 +41,7 @@ open module tornado.runtime {
     exports uk.ac.manchester.tornado.runtime.graal.phases.sketcher;
     exports uk.ac.manchester.tornado.runtime.graal.nodes.interfaces;
     exports uk.ac.manchester.tornado.runtime.jvmci;
+    exports uk.ac.manchester.tornado.runtime.kotlin;
 
     uses TornadoBackendProvider;
     uses TornadoLibraryProvider;

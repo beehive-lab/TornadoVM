@@ -74,6 +74,20 @@ __ENABLE_PROFILER__ = " --enableProfiler "
 ## ========================================================================================
 ## Include here benchmarks to run
 ## ========================================================================================
+## Kotlin benchmarks (tornado-kotlin/tornado-kotlin-benchmarks): only present in an SDK built with
+## `make KOTLIN=1`. Selected with --kotlin; --compareJava also runs the Java benchmark of the same name.
+__KOTLIN_RUNNER__ = " -m tornado.kotlin.benchmarks/uk.ac.manchester.tornado.kotlin.benchmarks.KotlinBenchmarkRunner "
+__KOTLIN_COMPARE_JAVA__ = " -Dtornado.kotlin.benchmarks.compareJava=True "
+__KOTLIN_BENCHMARKS__ = [
+    "saxpy",
+    "sgemm",
+    "blackscholes",
+    "nbody",
+    "mandelbrot",
+    "dft",
+    "montecarlo",
+]
+
 __BENCHMARKS__ = [
     "saxpy",
     "addImage",
@@ -211,6 +225,8 @@ def composeAllOptions(args):
         tornado_options = tornado_options + __ENABLE_PROFILER__ + args.profiler + " "
     if args.jvmFlags != None:
         jvm_options = jvm_options + args.jvmFlags + " "
+    if args.kotlin and args.compare_java:
+        jvm_options = jvm_options + __KOTLIN_COMPARE_JAVA__ + " "
     return jvm_options, tornado_options
 
 
@@ -324,6 +340,20 @@ def runDefaultSizePerBenchmark(args):
 def parseArguments():
     parser = argparse.ArgumentParser(
         description="""Tool to execute benchmarks in TornadoVM. With no options, it runs all benchmarks with the default size"""
+    )
+    parser.add_argument(
+        "--kotlin",
+        action="store_true",
+        dest="kotlin",
+        default=False,
+        help="Run the Kotlin benchmarks (requires an SDK built with make KOTLIN=1)",
+    )
+    parser.add_argument(
+        "--compareJava",
+        action="store_true",
+        dest="compare_java",
+        default=False,
+        help="With --kotlin: also run the Java benchmark of the same name, for comparison",
     )
     parser.add_argument(
         "--validate",
@@ -447,8 +477,28 @@ def printProperties():
             print(f"{benchmark}, dims={dims}, size={size}")
 
 
+def useKotlinBenchmarks():
+    """ Switch the default-size run over to the Kotlin benchmarks. """
+    jars = os.path.join(os.environ["TORNADOVM_HOME"], "share", "java", "tornado")
+    if not any(f.startswith("tornado-kotlin-benchmarks") for f in os.listdir(jars)):
+        print("[ERROR] The Kotlin benchmarks are not part of this TornadoVM build.")
+        print("        Rebuild with Kotlin support enabled, e.g.: make KOTLIN=1 BACKEND=<backends>")
+        sys.exit(1)
+    global __RUNNER__, __BENCHMARKS__
+    __RUNNER__ = __KOTLIN_RUNNER__
+    __BENCHMARKS__ = __KOTLIN_BENCHMARKS__
+
+
 def main():
     args = parseArguments()
+    if args.compare_java and not args.kotlin:
+        print("[ERROR] --compareJava is only available with --kotlin")
+        sys.exit(1)
+    if args.kotlin:
+        if args.full or args.medium or args.jmh:
+            print("[ERROR] --kotlin runs the default size of each benchmark (optionally --benchmark <name>)")
+            sys.exit(1)
+        useKotlinBenchmarks()
     global ITERATIONS
     if args.iterations > 0:
         ITERATIONS = args.iterations

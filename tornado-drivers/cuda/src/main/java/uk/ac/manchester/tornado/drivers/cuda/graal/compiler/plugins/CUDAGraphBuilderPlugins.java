@@ -129,6 +129,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDASwizzledStoreFP16St
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.PrintfNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.TornadoAtomicIntegerNode;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.kotlin.KotlinGraphBuilderPlugins;
 
 import java.lang.reflect.Field;
 import java.util.function.Supplier;
@@ -158,6 +159,9 @@ public class CUDAGraphBuilderPlugins {
         if (TornadoOptions.INLINE_DURING_BYTECODE_PARSING) {
             ps.appendInlineInvokePlugin(new InlineDuringParsingPlugin());
         }
+
+        // Kotlin kernels only: see KotlinGraphBuilderPlugins
+        KotlinGraphBuilderPlugins.registerPlugins(ps);
 
         registerFP16ConversionPlugins(plugins);
         registerNativeArrayAccessPlugins(plugins);

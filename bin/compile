@@ -307,7 +307,11 @@ def build_tornadovm(args, backend_profiles):
         if args.mavenSingleThreaded:
             process.append("-T1")
 
-        process.append(f"-P{args.jdk},{backend_profiles}")
+        profiles = f"{args.jdk},{backend_profiles}"
+        # Opt-in Kotlin support: builds the tornado-kotlin modules and adds them to the SDK.
+        if args.kotlin:
+            profiles += ",kotlin"
+        process.append(f"-P{profiles}")
 
         # Determine backend variant for SDKMAN-compliant archive naming
         backend_list = args.backend.split(",")
@@ -497,6 +501,13 @@ def parse_args():
         dest="rebuild",
         default=False,
         help="Enable pull and rebuild of the external dependencies."
+    )
+    parser.add_argument(
+        "--kotlin",
+        action="store_true",
+        dest="kotlin",
+        default=False,
+        help="Also build the Kotlin support modules (tornado-kotlin) and include them in the SDK."
     )
     parser.add_argument(
         "--sdk",

@@ -55,6 +55,7 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelStrideNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
+import uk.ac.manchester.tornado.runtime.kotlin.KotlinParallelIndexNode;
 
 public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
 
@@ -95,8 +96,49 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
 
     private void replaceLocalAnnotations(StructuredGraph graph, TornadoSketchTierContext context) throws TornadoCompilationException {
         Map<Node, ParallelAnnotationProvider> parallelNodes = getAnnotatedNodes(graph, context);
+        // Markers are only created while parsing Kotlin methods, which may also be inlined into a Java kernel.
+        if (TornadoOptions.KOTLIN_SUPPORT) {
+            parallelNodes.putAll(getKotlinParallelLoops(graph));
+        }
         addParallelProcessingNodes(graph, parallelNodes, context.getDevice());
     }
+
+    /**
+     * Kotlin code only. kotlinc does not keep {@code @Parallel} on local variables, so the Kotlin API's
+     * {@code parallelFor} marks its loop index with {@link KotlinParallelIndexNode} instead. Each marker is replaced by
+     * the index it wraps, and that index (the loop's induction variable) is returned as a parallel node, exactly as if
+     * the loop variable had been annotated with {@code @Parallel}.
+     */
+    private Map<Node, ParallelAnnotationProvider> getKotlinParallelLoops(StructuredGraph graph) {
+        Map<Node, ParallelAnnotationProvider> parallelNodes = new HashMap<>();
+        for (KotlinParallelIndexNode marker : graph.getNodes().filter(KotlinParallelIndexNode.class).snapshot()) {
+            ValueNode index = marker.index();
+            parallelNodes.putIfAbsent(index, KOTLIN_PARALLEL_LOOP);
+            marker.replaceAtUsages(index);
+            marker.safeDelete();
+        }
+        return parallelNodes;
+    }
+
+    /**
+     * Stands in for the {@code @Parallel} annotation of a Kotlin {@code parallelFor} loop. Only its presence is used.
+     */
+    private static final ParallelAnnotationProvider KOTLIN_PARALLEL_LOOP = new ParallelAnnotationProvider() {
+        @Override
+        public int getStart() {
+            return 0;
+        }
+
+        @Override
+        public int getLength() {
+            return 0;
+        }
+
+        @Override
+        public int getIndex() {
+            return -1;
+        }
+    };
 
     private Map<Node, ParallelAnnotationProvider> getAnnotatedNodes(StructuredGraph graph, TornadoSketchTierContext context) {
         Map<ResolvedJavaMethod, ParallelAnnotationProvider[]> methodToAnnotations = new HashMap<>();

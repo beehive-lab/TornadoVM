@@ -79,6 +79,13 @@ public class TornadoOptions {
     public static final boolean TORNADO_LOOP_INTERCHANGE = getBooleanValue("tornado.loop.interchange", "True");
 
     /**
+     * Enable/disable the compiler support for kernels written in Kotlin. It only applies to methods of classes compiled by
+     * kotlinc (classes annotated with {@code kotlin.Metadata}); Java kernels are never affected. Enabled by default. See
+     * {@link uk.ac.manchester.tornado.runtime.kotlin.KotlinSupport}.
+     */
+    public static final boolean KOTLIN_SUPPORT = getBooleanValue("tornado.kotlin.support", TRUE);
+
+    /**
      * Option to batch the global loads of a shared-memory staging sequence in the CUDA
      * backend, so that independent loads issue back to back instead of one per shared
      * store. Only reorders across provably disjoint address spaces.
