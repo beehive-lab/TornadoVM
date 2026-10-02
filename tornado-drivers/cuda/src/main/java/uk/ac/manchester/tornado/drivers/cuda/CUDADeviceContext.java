@@ -882,8 +882,14 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
         codeCache.remove(executionPlanId);
         // Plan teardown may bulk-release device buffers without the per-buffer free hook
         // running, which would leave host pins behind - the stale-pin hazard. Drain all
-        // owned pins here; live segments degrade to pageable until their next allocate.
-        context.getPinnedMemoryRegistry().unpinAll();
+        // owned pins here once no execution plan is left. While other plans are alive, drop
+        // only the pins no live buffer holds: a live plan's captured CUDA graphs copy from the
+        // pinned host buffers it holds, and unregistering them under it crashes its next launch.
+        if (executionIDs.isEmpty()) {
+            context.getPinnedMemoryRegistry().unpinAll();
+        } else {
+            context.getPinnedMemoryRegistry().unpinUnheld();
+        }
         resetPlans.add(executionPlanId);
     }
 

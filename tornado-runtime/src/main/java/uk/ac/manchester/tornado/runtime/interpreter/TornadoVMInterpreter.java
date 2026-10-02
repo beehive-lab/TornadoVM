@@ -76,6 +76,7 @@ import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
 import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
 import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.LibraryTask;
+import uk.ac.manchester.tornado.runtime.tasks.LocalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
@@ -888,6 +889,8 @@ public class TornadoVMInterpreter {
                 objects[allocCounter] = this.objects.get(arg);
                 objectStates[allocCounter] = resolveObjectState(arg);
                 accesses[allocCounter] = this.objectAccesses.get(objects[allocCounter]);
+                LocalObjectState localState = graphExecutionContext.getLocalStateObject(objects[allocCounter], accesses[allocCounter]);
+                objectStates[allocCounter].setTransferredEveryExecution(localState.isStreamIn() || localState.isStreamOut());
                 allocCounter++;
             } else {
                 XPUDeviceBufferState state = resolveObjectState(arg);
