@@ -713,6 +713,8 @@ public final class MetalAssembler extends Assembler {
         public static final MetalUnaryOp LOGICAL_NOT = new MetalUnaryOp("!", true);
 
         public static final MetalUnaryOp BITWISE_NOT = new MetalUnaryOp("~", true);
+        /** Bit-for-bit reinterpretation as another type of the same size, emitted as {@code as_type<T>(x)}. */
+        public static final MetalUnaryOp AS_TYPE = new MetalUnaryOp("as_type", true);
 
         public static final MetalUnaryOp CAST_TO_INT = new MetalUnaryOp("(int) ", true);
         public static final MetalUnaryOp CAST_TO_SHORT = new MetalUnaryOp("(short) ", true);
@@ -722,6 +724,11 @@ public final class MetalAssembler extends Assembler {
         public static final MetalUnaryOp CAST_TO_FLOAT = new MetalUnaryOp("(float) ", true);
         public static final MetalUnaryOp CAST_TO_BYTE = new MetalUnaryOp("(char) ", true);
         public static final MetalUnaryOp CAST_TO_DOUBLE = new MetalUnaryOp("(double) ", true);
+        // Unsigned value casts, used to lower Java's >>> (MSL's >> is arithmetic on signed types).
+        public static final MetalUnaryOp CAST_TO_UCHAR = new MetalUnaryOp("(uchar) ", true);
+        public static final MetalUnaryOp CAST_TO_USHORT = new MetalUnaryOp("(ushort) ", true);
+        public static final MetalUnaryOp CAST_TO_UINT = new MetalUnaryOp("(uint) ", true);
+        public static final MetalUnaryOp CAST_TO_ULONG_VALUE = new MetalUnaryOp("(ulong) ", true);
 
         public static final MetalUnaryOp CAST_TO_INT_PTR = new MetalUnaryOp("(device int *) ", true);
         public static final MetalUnaryOp CAST_TO_SHORT_PTR = new MetalUnaryOp("(device short *) ", true);

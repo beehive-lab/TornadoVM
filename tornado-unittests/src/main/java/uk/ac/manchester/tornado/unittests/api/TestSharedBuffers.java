@@ -22,9 +22,13 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
@@ -96,6 +100,20 @@ public class TestSharedBuffers extends TornadoTestBase {
     public static void increment(IntArray array) {
         for (@Parallel int i = 0; i < array.getSize(); i++) {
             array.set(i, array.get(i) + 1);
+        }
+    }
+
+    public static void incrementWithContext(KernelContext context, IntArray array, int size) {
+        int i = context.globalIdx;
+        if (i < size) {
+            array.set(i, array.get(i) + 1);
+        }
+    }
+
+    public static void addOneWithContext(KernelContext context, IntArray source, IntArray destination, int size) {
+        int i = context.globalIdx;
+        if (i < size) {
+            destination.set(i, source.get(i) + 1);
         }
     }
 
@@ -692,6 +710,55 @@ public class TestSharedBuffers extends TornadoTestBase {
             }
 
             assertTrue("Output array should have non-zero values", hasNonZeroOutput);
+        }
+    }
+
+    /**
+     * An under-demand copy-out in a multi-graph plan touches only the graph that holds the object.
+     *
+     * <p>
+     * {@code TornadoExecutionResult.transferToHost} is forwarded to every graph of the plan. A graph that
+     * does not hold the requested object must ignore it: syncing its execution context instead copies
+     * out all of its persisted buffers, overwriting their host copies and costing a full transfer.
+     * </p>
+     */
+    @Test
+    public void testUnderDemandCopyOutLeavesOtherGraphsAlone() throws TornadoExecutionPlanException {
+        IntArray persisted = new IntArray(numElements);
+        IntArray output = new IntArray(numElements);
+        persisted.init(0);
+        output.init(0);
+
+        TaskGraph producer = new TaskGraph("producer") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, persisted) //
+                .task("increment", TestSharedBuffers::incrementWithContext, new KernelContext(), persisted, numElements) //
+                .persistOnDevice(persisted);
+
+        TaskGraph consumer = new TaskGraph("consumer") //
+                .consumeFromDevice("producer", persisted) //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, output) //
+                .task("addOne", TestSharedBuffers::addOneWithContext, new KernelContext(), persisted, output, numElements) //
+                .transferToHost(DataTransferMode.UNDER_DEMAND, output);
+
+        WorkerGrid producerGrid = new WorkerGrid1D(numElements);
+        producerGrid.setLocalWork(numElements, 1, 1);
+        WorkerGrid consumerGrid = new WorkerGrid1D(numElements);
+        consumerGrid.setLocalWork(numElements, 1, 1);
+        GridScheduler gridScheduler = new GridScheduler("producer.increment", producerGrid);
+        gridScheduler.addWorkerGrid("consumer.addOne", consumerGrid);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(producer.snapshot(), consumer.snapshot())) {
+            TornadoExecutionResult result = plan.withGridScheduler(gridScheduler).execute();
+
+            // The device copy of persisted is now 1. Its host copy must stay as set here, since
+            // nothing requested it.
+            persisted.init(-7);
+            result.transferToHost(output);
+
+            for (int i = 0; i < numElements; i++) {
+                assertEquals(2, output.get(i));
+                assertEquals(-7, persisted.get(i));
+            }
         }
     }
 }

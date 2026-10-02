@@ -446,6 +446,29 @@ public final class MetalAPI {
         ObjCRuntime.sendVoid(commandBuffer, "waitUntilCompleted");
     }
 
+    /** {@code -[MTLCommandBuffer status]}: {@link #MTL_COMMAND_BUFFER_STATUS_COMPLETED} or {@link #MTL_COMMAND_BUFFER_STATUS_ERROR} once finished. */
+    public static long commandBufferStatus(long commandBuffer) {
+        return ObjCRuntime.send(commandBuffer, "status");
+    }
+
+    public static final long MTL_COMMAND_BUFFER_STATUS_COMPLETED = 4;
+    public static final long MTL_COMMAND_BUFFER_STATUS_ERROR = 5;
+
+    /** {@code -[MTLDevice newSharedEvent]}. Owned by the caller. */
+    public static long newSharedEvent(long device) {
+        return ObjCRuntime.send(device, "newSharedEvent");
+    }
+
+    /** {@code -[MTLCommandBuffer encodeSignalEvent:value:]}: sets the event to {@code value} once the work encoded before it has finished. */
+    public static void encodeSignalEvent(long commandBuffer, long event, long value) {
+        ObjCRuntime.send(commandBuffer, "encodeSignalEvent:value:", event, value);
+    }
+
+    /** {@code -[MTLSharedEvent signaledValue]}, read from memory the CPU shares with the GPU. */
+    public static long sharedEventSignaledValue(long event) {
+        return ObjCRuntime.send(event, "signaledValue");
+    }
+
     /** Alias documenting the wait used by the synchronous transfer path. */
     public static void commandBufferWaitUntilCompleted(long commandBuffer) {
         waitUntilCompleted(commandBuffer);

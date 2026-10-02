@@ -64,6 +64,10 @@ class TornadoExecutor {
         immutableTaskGraphList.forEach(ImmutableTaskGraph::withCUDAGraph);
     }
 
+    void withCUDAPendingLaunchCount(int count) {
+        immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withCUDAPendingLaunchCount(count));
+    }
+
     public void withIntraPlanConcurrency() {
         immutableTaskGraphList.forEach(ImmutableTaskGraph::withIntraPlanConcurrency);
     }
@@ -143,17 +147,54 @@ class TornadoExecutor {
     }
 
     void freeDeviceMemory() {
-        immutableTaskGraphList.forEach(ImmutableTaskGraph::freeDeviceMemory);
+        // every task-graph of the plan, not only the ones a withGraph(i) has currently selected
+        allTaskGraphs().forEach(ImmutableTaskGraph::freeDeviceMemory);
     }
 
     void transferToHost(Object... objects) {
-        immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.transferToHost(objects));
+        if (immutableTaskGraphList.size() == 1) {
+            immutableTaskGraphList.getFirst().transferToHost(objects);
+            return;
+        }
+        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
+            List<Object> objectsForGraph = new ArrayList<>(objects.length);
+            for (Object object : objects) {
+                if (isTransferredBy(immutableTaskGraph, object)) {
+                    objectsForGraph.add(object);
+                }
+            }
+            if (!objectsForGraph.isEmpty()) {
+                immutableTaskGraph.transferToHost(objectsForGraph.toArray());
+            }
+        }
     }
 
     void partialTransferToHost(DataRange dataRange) {
         // At this point we compute the offsets and the total size in bytes.
         dataRange.materialize();
-        immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.transferToHost(dataRange.getArray(), dataRange.getOffset(), dataRange.getPartialSize()));
+        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
+            if (immutableTaskGraphList.size() == 1 || isTransferredBy(immutableTaskGraph, dataRange.getArray())) {
+                immutableTaskGraph.transferToHost(dataRange.getArray(), dataRange.getOffset(), dataRange.getPartialSize());
+            }
+        }
+    }
+
+    /**
+     * In a plan with several task-graphs, an object that some graph takes as a task parameter is
+     * copied out only by the graphs that take it. Any other object may be a field captured by a
+     * graph (for example, of the receiver of an instance-method task), so every graph syncs it, which
+     * copies out that graph's whole context.
+     */
+    private boolean isTransferredBy(ImmutableTaskGraph immutableTaskGraph, Object object) {
+        if (immutableTaskGraph.takesAsParameter(object)) {
+            return true;
+        }
+        for (ImmutableTaskGraph other : immutableTaskGraphList) {
+            if (other.takesAsParameter(object)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     void transferDataToDevice(ExecutorFrame executionPackage) {
@@ -290,7 +331,7 @@ class TornadoExecutor {
     }
 
     long getCurrentDeviceMemoryUsage() {
-        return immutableTaskGraphList.stream().mapToLong(ImmutableTaskGraph::getCurrentDeviceMemoryUsage).sum();
+        return allTaskGraphs().stream().mapToLong(ImmutableTaskGraph::getCurrentDeviceMemoryUsage).sum();
     }
 
     void selectGraph(int graphIndex) {

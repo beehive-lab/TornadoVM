@@ -23,7 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.metal.scheduler;
 
-import java.util.Arrays;
 
 import uk.ac.manchester.tornado.drivers.metal.MetalDeviceContext;
 import uk.ac.manchester.tornado.drivers.metal.MetalTargetDevice;
@@ -110,8 +109,14 @@ public class MetalAppleGPUScheduler extends MetalKernelScheduler {
             return;
         }
         long[] maxGroupSize = deviceContext.getDevice().getDeviceMaxWorkGroupSize();
-        long maxTotal = Arrays.stream(maxGroupSize).sum();
-        long total = Arrays.stream(localWork).reduce(1, (a, b) -> a * b);
+        long maxTotal = 0;
+        for (long dimension : maxGroupSize) {
+            maxTotal += dimension;
+        }
+        long total = 1;
+        for (long dimension : localWork) {
+            total *= dimension;
+        }
         if (total > maxTotal) {
             localWork[0] = maxTotal;
         }

@@ -3,11 +3,12 @@
 #pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable  
 __kernel void maxReduction(__global long *_kernel_context, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics, __global uchar *arg0, __global uchar *arg1)
 {
-  ulong ul_0, ul_1, ul_11, ul_32; 
-  int i_3, i_4, i_5, i_6, i_7, i_13, i_14, i_15, i_16, i_17, i_20, i_23, i_24, i_27, i_28, i_33; 
-  long l_8, l_9, l_10, l_29, l_30, l_31; 
-  float f_12, f_19, f_21, f_22, f_26; 
-  bool b_18, b_25; 
+  ulong ul_0, ul_1, ul_11, ul_36; 
+  int i_3, i_4, i_5, i_6, i_7, i_15, i_16, i_17, i_18, i_21, i_24, i_27, i_28, i_31, i_32, i_37; 
+  long l_8, l_9, l_10, l_33, l_34, l_35; 
+  float f_12, f_23, f_25, f_26, f_30; 
+  uint ui_13, ui_14, ui_19, ui_20; 
+  bool b_22, b_29; 
 
   // BLOCK 0
   ul_0  =  (ulong) arg0;
@@ -28,57 +29,61 @@ __kernel void maxReduction(__global long *_kernel_context, __constant uchar *_co
     ul_11  =  ul_0 + l_10;
     f_12  =  *((__global float *) ul_11);
     adf_2[i_6]  =  f_12;
-    i_13  =  i_7 >> 31;
-    i_14  =  i_13 + i_7;
-    i_15  =  i_14 >> 1;
+    ui_13  =  (uint) i_7;
+    ui_14  =  ui_13 >> 31;
+    i_15  =  (int) ui_14;
+    i_16  =  i_15 + i_7;
+    i_17  =  i_16 >> 1;
     // BLOCK 3 MERGES [2 7 ]
-    i_16  =  i_15;
-    for(;i_16 >= 1;)
+    i_18  =  i_17;
+    for(;i_18 >= 1;)
     {
       // BLOCK 4
       barrier(CLK_LOCAL_MEM_FENCE);
-      i_17  =  i_16 >> 1;
-      b_18  =  i_6 < i_16;
-      if(b_18)
+      ui_19  =  (uint) i_18;
+      ui_20  =  ui_19 >> 1;
+      i_21  =  (int) ui_20;
+      b_22  =  i_6 < i_18;
+      if(b_22)
       {
         // BLOCK 5
-        f_19  =  adf_2[i_6];
-        i_20  =  i_16 + i_6;
-        f_21  =  adf_2[i_20];
-        f_22  =  fmax(f_19, f_21);
-        adf_2[i_6]  =  f_22;
+        f_23  =  adf_2[i_6];
+        i_24  =  i_18 + i_6;
+        f_25  =  adf_2[i_24];
+        f_26  =  fmax(f_23, f_25);
+        adf_2[i_6]  =  f_26;
       }  // B4
       else
       {
         // BLOCK 6
       }  // B4
       // BLOCK 7 MERGES [6 5 ]
-      i_23  =  i_17;
-      i_16  =  i_23;
+      i_27  =  i_21;
+      i_18  =  i_27;
     }  // B3
     // BLOCK 8
     barrier(CLK_GLOBAL_MEM_FENCE);
-    i_24  =  i_3 + i_5;
-    b_25  =  i_6 == 0;
-    if(b_25)
+    i_28  =  i_3 + i_5;
+    b_29  =  i_6 == 0;
+    if(b_29)
     {
       // BLOCK 9
-      f_26  =  adf_2[0];
-      i_27  =  get_group_id(0);
-      i_28  =  i_27 + 1;
-      l_29  =  (long) i_28;
-      l_30  =  l_29 << 2;
-      l_31  =  l_30 + 16L;
-      ul_32  =  ul_1 + l_31;
-      *((__global float *) ul_32)  =  f_26;
+      f_30  =  adf_2[0];
+      i_31  =  get_group_id(0);
+      i_32  =  i_31 + 1;
+      l_33  =  (long) i_32;
+      l_34  =  l_33 << 2;
+      l_35  =  l_34 + 16L;
+      ul_36  =  ul_1 + l_35;
+      *((__global float *) ul_36)  =  f_30;
     }  // B8
     else
     {
       // BLOCK 10
     }  // B8
     // BLOCK 11 MERGES [10 9 ]
-    i_33  =  i_24;
-    i_5  =  i_33;
+    i_37  =  i_28;
+    i_5  =  i_37;
   }  // B1
   // BLOCK 12
   return;

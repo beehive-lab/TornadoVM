@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.common.Access;
-import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -288,7 +287,10 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
 
     @Override
     public void markAsFreeBuffer() throws TornadoMemoryException {
-        TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
+        if (bufferId == INIT_VALUE) {
+            // already released, e.g. by another task-graph of the plan that shares this buffer
+            return;
+        }
 
         // Release this wrapper's hold on the host pin before recycling; the registry
         // unregisters (after a context sync) only when the last holder releases.

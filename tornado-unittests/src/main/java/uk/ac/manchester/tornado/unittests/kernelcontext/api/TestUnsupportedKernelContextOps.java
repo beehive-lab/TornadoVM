@@ -27,6 +27,7 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.DeviceKernel;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
@@ -187,6 +188,31 @@ public class TestUnsupportedKernelContextOps extends TornadoTestBase {
         assertRejected(SIMD_MESSAGE, () -> run("simdBroadcast", (taskGraph, context, id) -> taskGraph //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, in) //
                 .task(id, TestUnsupportedKernelContextOps::simdBroadcastFirstKernel, context, in, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out)));
+    }
+
+    // --- device-side kernel launch: CUDA-only -----------------------------
+
+    private static final String DEVICE_LAUNCH_MESSAGE = "Device-side kernel launches";
+
+    private static final DeviceKernel CHILD = DeviceKernel.of(TestUnsupportedKernelContextOps::launchedChild);
+
+    private static void launchedChild(KernelContext context, IntArray out) {
+        out.set(context.globalIdx, 1);
+    }
+
+    private static void deviceLaunchKernel(KernelContext context, IntArray out) {
+        if (context.globalIdx == 0) {
+            context.launch(CHILD, SIZE, 64, out);
+        }
+    }
+
+    @Test
+    public void testDeviceLaunchRejectedOnNonCuda() {
+        assertNotBackend(TornadoVMBackendType.CUDA);
+        IntArray out = new IntArray(SIZE);
+        assertRejected(DEVICE_LAUNCH_MESSAGE, () -> run("deviceLaunch", (taskGraph, context, id) -> taskGraph //
+                .task(id, TestUnsupportedKernelContextOps::deviceLaunchKernel, context, out) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out)));
     }
 

@@ -134,6 +134,41 @@ public class PrebuiltTests extends TornadoTestBase {
 
     }
 
+    /**
+     * A pre-built CUDA kernel that launches kernels from the device (CUDA Dynamic Parallelism): one
+     * parent thread launches a child grid that doubles every element and a tail-launched grid that
+     * then adds one. Exercises the relocatable compile and the device-runtime link.
+     */
+    @Test
+    public void testPrebuiltDynamicParallelism() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
+        final int numElements = 1024;
+        IntArray a = new IntArray(numElements);
+        for (int i = 0; i < numElements; i++) {
+            a.set(i, i);
+        }
+
+        AccessorParameters accessorParameters = new AccessorParameters(1);
+        accessorParameters.set(0, a, Access.READ_WRITE);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
+                .prebuiltTask("t0", "dp", getPrebuiltKernelPath("dp"), accessorParameters) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", new WorkerGrid1D(numElements));
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .withDevice(defaultDevice) //
+                    .execute();
+        }
+        for (int i = 0; i < numElements; i++) {
+            assertEquals(2 * i + 1, a.get(i));
+        }
+    }
+
     @Test
     public void testPrebuilt01MultiIterations() throws TornadoExecutionPlanException {
 

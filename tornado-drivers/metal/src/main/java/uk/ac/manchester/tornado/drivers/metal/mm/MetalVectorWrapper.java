@@ -105,7 +105,10 @@ public class MetalVectorWrapper implements XPUBuffer {
 
     @Override
     public void markAsFreeBuffer() {
-        TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
+        if (bufferId == INIT_VALUE) {
+            // already released, e.g. by another task-graph of the plan that shares this buffer
+            return;
+        }
 
         deviceContext.getBufferProvider().markBufferReleased(bufferId, access);
         bufferId = INIT_VALUE;
