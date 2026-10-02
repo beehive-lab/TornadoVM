@@ -483,6 +483,7 @@ public class CUDAGraphBuilderPlugins {
         registerSIMDPlugins(r);
         registerMMAPlugins(r);
         registerCpAsyncPlugins(r);
+        CUDADeviceLaunchPlugins.register(r);
         registerSwizzledLocalAccessesPlugins(r);
         registerUnsupportedSimdgroupMatrixPlugins(r);
     }

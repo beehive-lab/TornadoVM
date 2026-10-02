@@ -296,6 +296,7 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
             profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
             // Compile the code
             CUDAInstalledCode installedCode = deviceContext.installCode(executionPlanId, result);
+            installedCode.setDeviceLaunchTree(result.getDeviceLaunchTree());
             profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
             profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
 
@@ -707,6 +708,11 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
     @Override
     public void setStagedTransfers(boolean enabled) {
         getDeviceContext().setStagedTransfers(enabled);
+    }
+
+    @Override
+    public void setDevicePendingLaunchCount(int count) {
+        getDeviceContext().setDevicePendingLaunchCount(count);
     }
 
     @Override

@@ -29,6 +29,15 @@ public final class CUDAUtils {
 
     private static final AtomicInteger id = new AtomicInteger(0);
 
+    /**
+     * Name of the {@code __global__} entry point a kernel gets when it is launched from device code.
+     * Distinct from {@link #makeMethodName}, so the same method can also be compiled as a
+     * {@code __device__} helper in the same compilation unit.
+     */
+    public static String makeDeviceKernelName(ResolvedJavaMethod method) {
+        return makeMethodName(method).replace('$', '_') + "_dp";
+    }
+
     public static String makeMethodName(ResolvedJavaMethod method) {
         if (method != null) {
             final String declaringClass = method.getDeclaringClass().toJavaName().replace(".", "_");

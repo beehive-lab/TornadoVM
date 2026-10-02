@@ -58,6 +58,10 @@ public class ImmutableTaskGraph {
         taskGraph.withCUDAGraph();
     }
 
+    void withCUDAPendingLaunchCount(int count) {
+        taskGraph.withCUDAPendingLaunchCount(count);
+    }
+
     void withIntraPlanConcurrency() {
         taskGraph.withIntraPlanConcurrency();
     }

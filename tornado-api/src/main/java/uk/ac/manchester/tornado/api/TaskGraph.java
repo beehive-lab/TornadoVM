@@ -1101,6 +1101,10 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.withCUDAGraph();
     }
 
+    void withCUDAPendingLaunchCount(int count) {
+        taskGraphImpl.withCUDAPendingLaunchCount(count);
+    }
+
     void withIntraPlanConcurrency() {
         taskGraphImpl.withIntraPlanConcurrency();
     }

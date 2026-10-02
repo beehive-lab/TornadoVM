@@ -152,6 +152,16 @@ class DebugInterpreter {
         appendLogBuilder(verbose, logBuilder);
     }
 
+    /** The kernels a launched task launches from the device (CUDA Dynamic Parallelism), under its LAUNCH line. */
+    public static void logDeviceLaunches(java.util.List<String> tree, String indent, StringBuilder logBuilder) {
+        for (String line : tree) {
+            String launch = line.stripLeading();
+            int depth = (line.length() - launch.length()) / 2;
+            String description = launch.replaceFirst("^-> ", "") + "  (depth " + depth + ", grid set on the device)";
+            appendLogBuilder(indent + "bc: " + InterpreterUtilities.debugHighLightBC("  DEVICE_LAUNCH") + description, logBuilder);
+        }
+    }
+
     public static void logStreamInAtomic(Object bufferAtomics, TornadoXPUDevice interpreterDevice, int eventId, StringBuilder logBuilder) {
         String verbose = String.format("bc: " //
                 + InterpreterUtilities.debugHighLightBC("STREAM_IN") //

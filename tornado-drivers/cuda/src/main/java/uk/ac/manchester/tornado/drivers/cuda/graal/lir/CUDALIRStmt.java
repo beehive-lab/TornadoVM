@@ -32,7 +32,13 @@ import tornado.graal.compiler.lir.asm.CompilationResultBuilder;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.Value;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.api.enums.DeviceLaunchMode;
 import uk.ac.manchester.tornado.api.enums.MMAShape;
+import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAArchitecture;
+import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAUtils;
+import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAKernelStackFrame;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler.CUDABinaryIntrinsic;
@@ -2669,6 +2675,95 @@ public class CUDALIRStmt {
             asm.indent();
             asm.emit("}");
             asm.eol();
+        }
+    }
+
+    /**
+     * A kernel launch from device code (CUDA Dynamic Parallelism):
+     * {@code child<<<grid, block, 0, stream>>>(ABI..., args...)}. The grid is the global size rounded
+     * up to whole blocks. The four ABI pointers are passed through, so the child sees the same kernel
+     * context, constant, local and atomics regions as its parent.
+     */
+    @Opcode("DEVICE_LAUNCH")
+    public static class DeviceLaunchStmt extends AbstractInstruction {
+        public static final LIRInstructionClass<DeviceLaunchStmt> TYPE = LIRInstructionClass.create(DeviceLaunchStmt.class);
+
+        @Use protected Value[] globalSizes;
+        @Use protected Value[] localSizes;
+        @Use protected Value[] arguments;
+        private final boolean[] pointerArguments;
+        private final ResolvedJavaMethod target;
+        private final DeviceLaunchMode mode;
+
+        public DeviceLaunchStmt(ResolvedJavaMethod target, DeviceLaunchMode mode, Value[] globalSizes, Value[] localSizes, Value[] arguments, boolean[] pointerArguments) {
+            super(TYPE);
+            this.target = target;
+            this.mode = mode;
+            this.globalSizes = globalSizes;
+            this.localSizes = localSizes;
+            this.arguments = arguments;
+            this.pointerArguments = pointerArguments;
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            crb.addDeviceLaunchedKernel(target, mode.name());
+            final String child = target.format("%h.%n");
+
+            String[] global = new String[3];
+            String[] local = new String[3];
+            for (int i = 0; i < 3; i++) {
+                global[i] = "(unsigned) (" + asm.getStringValue(crb, globalSizes[i]) + ")";
+                local[i] = "(unsigned) (" + asm.getStringValue(crb, localSizes[i]) + ")";
+            }
+
+            asm.emitLine("{");
+            asm.pushIndent();
+            asm.emitLine("unsigned _dp_global[3] = { " + String.join(", ", global) + " };");
+            asm.emitLine("dim3 _dp_block(" + String.join(", ", local) + ");");
+            asm.emitLine("dim3 _dp_grid((_dp_global[0] + _dp_block.x - 1) / _dp_block.x, (_dp_global[1] + _dp_block.y - 1) / _dp_block.y, (_dp_global[2] + _dp_block.z - 1) / _dp_block.z);");
+
+            StringBuilder call = new StringBuilder();
+            call.append(CUDAUtils.makeDeviceKernelName(target)).append("<<<_dp_grid, _dp_block");
+            switch (mode) {
+                case TAIL -> call.append(", 0, cudaStreamTailLaunch");
+                case FIRE_AND_FORGET -> call.append(", 0, cudaStreamFireAndForget");
+                default -> {
+                }
+            }
+            call.append(">>>(").append(((CUDAArchitecture) crb.target.arch).getCallingConvention());
+            for (int i = 0; i < arguments.length; i++) {
+                call.append(", ");
+                String value = asm.getStringValue(crb, arguments[i]);
+                // Arrays live in the parent as integer addresses; the child declares them as byte pointers.
+                call.append(pointerArguments[i] ? "(unsigned char *) (" + value + ")" : value);
+            }
+            call.append(");");
+            asm.emitLine(call.toString());
+
+            // A device launch that fails (invalid configuration, too many pending launches) does not
+            // run the child and reports nothing on its own; the error is only visible here.
+            asm.emitLine("cudaError_t _dp_error = cudaGetLastError();");
+            asm.emitLine("if (_dp_error != cudaSuccess) printf(\"[TornadoVM-CUDA] device launch of " + child + " failed: %s\\n\", cudaGetErrorString(_dp_error));");
+
+            // --threadInfo: only the device knows a child's grid, so the launching thread reports it,
+            // in the format the host uses for the kernels it launches. The flag is a kernel-context
+            // slot the host sets on every launch.
+            TaskDataContext meta = crb.getTaskMetaData();
+            String taskId = meta != null ? meta.getId() : "?";
+            asm.emitLine("if (_kernel_context[" + CUDAKernelStackFrame.DEVICE_LAUNCH_INFO_INDEX + "]) printf(\"Task info: " + taskId + " -> " + child + " (device launch, " + mode + ")\\n\"");
+            asm.pushIndent();
+            asm.emitLine("\"\\tLaunched by       : block [%u, %u, %u] thread [%u, %u, %u]\\n\"");
+            asm.emitLine("\"\\tGlobal work size  : [%u, %u, %u]\\n\"");
+            asm.emitLine("\"\\tLocal  work size  : [%u, %u, %u]\\n\"");
+            asm.emitLine("\"\\tNumber of workgroups  : [%u, %u, %u]\\n\\n\",");
+            asm.emitLine("blockIdx.x, blockIdx.y, blockIdx.z, threadIdx.x, threadIdx.y, threadIdx.z,");
+            asm.emitLine("_dp_global[0], _dp_global[1], _dp_global[2],");
+            asm.emitLine("_dp_block.x, _dp_block.y, _dp_block.z,");
+            asm.emitLine("_dp_grid.x, _dp_grid.y, _dp_grid.z);");
+            asm.popIndent();
+            asm.popIndent();
+            asm.emitLine("}");
         }
     }
 

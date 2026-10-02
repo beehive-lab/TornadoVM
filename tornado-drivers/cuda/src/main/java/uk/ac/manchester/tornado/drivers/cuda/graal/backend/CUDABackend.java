@@ -461,6 +461,9 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
             String kernelModifier = CUDATileKernels.isTileKernel(method)
                     ? CUDAAssemblerConstants.TILE_KERNEL_MODIFIER + tileLaunchHints()
                     : CUDAAssemblerConstants.KERNEL_MODIFIER;
+            if (((CUDACompilationResult) crb.compilationResult).isDeviceLaunched()) {
+                asm.emitLine("// Launched from the device (KernelContext.launch): " + method.format("%H.%n"));
+            }
             asm.emit("%s void %s(%s", kernelModifier, methodName, architecture.getABI());
             emitMethodParameters(asm, method, incomingArguments, true);
             asm.emitLine(")");

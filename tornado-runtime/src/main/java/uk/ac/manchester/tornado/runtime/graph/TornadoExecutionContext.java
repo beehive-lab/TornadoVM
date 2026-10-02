@@ -99,6 +99,8 @@ public class TornadoExecutionContext {
     private boolean isExecutionGraphEnabled;
     private boolean isIntraPlanConcurrencyEnabled;
     private boolean isStagedTransfersEnabled;
+    /** CU_LIMIT_DEV_RUNTIME_PENDING_LAUNCH_COUNT requested with withCUDAPendingLaunchCount, 0 when unset. */
+    private int cudaPendingLaunchCount;
 
     public TornadoExecutionContext(String id) {
         name = id;
@@ -713,6 +715,7 @@ public class TornadoExecutionContext {
         newExecutionContext.isExecutionGraphEnabled = this.isExecutionGraphEnabled;
         newExecutionContext.isIntraPlanConcurrencyEnabled = this.isIntraPlanConcurrencyEnabled;
         newExecutionContext.isStagedTransfersEnabled = this.isStagedTransfersEnabled;
+        newExecutionContext.cudaPendingLaunchCount = this.cudaPendingLaunchCount;
 
         return newExecutionContext;
     }
@@ -764,6 +767,14 @@ public class TornadoExecutionContext {
 
     public boolean isStagedTransfersEnabled() {
         return this.isStagedTransfersEnabled;
+    }
+
+    public void setCUDAPendingLaunchCount(int count) {
+        this.cudaPendingLaunchCount = count;
+    }
+
+    public int getCUDAPendingLaunchCount() {
+        return this.cudaPendingLaunchCount;
     }
 
 }

@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2026 APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -19,28 +19,26 @@
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
  */
-package uk.ac.manchester.tornado.runtime.common;
+package uk.ac.manchester.tornado.runtime.graal.nodes.interfaces;
 
-import uk.ac.manchester.tornado.api.memory.XPUBuffer;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
+import tornado.graal.compiler.nodes.ValueNode;
 
-public interface TornadoInstalledCode {
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 
-    int launchWithDependencies(long executionPlanId, KernelStackFrame callWrapper, XPUBuffer atomicSpace, TaskDataContext meta, long batchThreads, int[] waitEvents);
+/**
+ * A kernel launch from device code (CUDA Dynamic Parallelism). The sketcher uses it to sketch the
+ * child kernel and to fold the child's parameter accesses into the parent's, because the launch is
+ * not an invoke and would otherwise hide the child's reads and writes from data-transfer analysis.
+ */
+public interface DeviceKernelLaunch {
 
-    int launchWithoutDependencies(long executionPlanId, KernelStackFrame callWrapper, XPUBuffer atomicSpace, TaskDataContext meta, long batchThreads);
-
-    boolean isValid();
-
-    void invalidate();
+    /** The child kernel. */
+    ResolvedJavaMethod getTargetMethod();
 
     /**
-     * The kernels this code launches from the device, as a tree: one line per launch, indented by
-     * nesting depth. Empty for code that launches nothing from the device.
+     * The value passed for each of the child's parameters, indexed by parameter position. The entry
+     * for a parameter that receives no value (the child's KernelContext) is {@code null}.
      */
-    default java.util.List<String> getDeviceLaunchTree() {
-        return java.util.List.of();
-    }
+    ValueNode[] getChildParameterValues();
 }
