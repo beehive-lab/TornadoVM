@@ -145,6 +145,10 @@ public class MetalDevice implements MetalTargetDevice {
         return MetalObjects.deviceGlobalMemorySize(id);
     }
 
+    static long mtGetDeviceMaxBufferLength(long id) {
+        return MetalObjects.deviceMaxBufferLength(id);
+    }
+
     static long mtGetDeviceLocalMemorySize(long id) {
         return MetalObjects.deviceLocalMemorySize(id);
     }
@@ -235,7 +239,14 @@ public class MetalDevice implements MetalTargetDevice {
             return maxAllocationSize;
         }
 
-        // Try to base the maximum allocation size on the global memory size when available.
+        // The device reports the largest buffer it can allocate.
+        long maxBufferLength = mtGetDeviceMaxBufferLength(devicePtr);
+        if (maxBufferLength > 0) {
+            maxAllocationSize = maxBufferLength;
+            return maxAllocationSize;
+        }
+
+        // Otherwise, base the maximum allocation size on the global memory size when available.
         long global = getDeviceGlobalMemorySize();
         if (global > 0) {
             // OpenCL often reports max allocation as 1/4 of global memory; use that as a conservative default
