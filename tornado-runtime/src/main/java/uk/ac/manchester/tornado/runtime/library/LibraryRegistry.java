@@ -34,6 +34,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.library.spi.LibraryContext;
 import uk.ac.manchester.tornado.runtime.library.spi.TornadoLibraryProvider;
+import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
 
 /**
  * Discovers {@link TornadoLibraryProvider} implementations via
@@ -86,7 +87,13 @@ public final class LibraryRegistry {
                 "[ERROR] No provider found for library `" + libraryName + "`. Ensure the corresponding TornadoVM library module (e.g., tornado-cublas) is on the module path.");
     }
 
+    /**
+     * Returns the native context of a library for the given device and plan, creating it on first
+     * use. The device's native context is made current first, so both the creation and the
+     * {@code prepare}/{@code dispatch} calls that follow target that device.
+     */
     public static LibraryContext getOrCreateContext(TornadoLibraryProvider provider, TornadoXPUDevice device, long executionPlanId) {
+        makeCurrent(device);
         return CONTEXTS.computeIfAbsent(new ContextKey(provider.libraryName(), device, executionPlanId), key -> provider.createContext(device, executionPlanId));
     }
 
@@ -100,12 +107,19 @@ public final class LibraryRegistry {
             if (entry.getKey().executionPlanId() == executionPlanId) {
                 for (TornadoLibraryProvider provider : getProviders()) {
                     if (provider.libraryName().equals(entry.getKey().libraryName())) {
+                        makeCurrent(entry.getKey().device());
                         provider.destroyContext(entry.getValue());
                         break;
                     }
                 }
                 iterator.remove();
             }
+        }
+    }
+
+    private static void makeCurrent(TornadoXPUDevice device) {
+        if (device instanceof TornadoNativeStreamSupport nativeDevice) {
+            nativeDevice.makeNativeContextCurrent();
         }
     }
 }
