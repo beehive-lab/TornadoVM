@@ -51,15 +51,19 @@
 #include <cudf/unary.hpp>
 
 #include <rmm/cuda_stream_view.hpp>
+#include <rmm/mr/cuda_memory_resource.hpp>
+#include <rmm/mr/per_device_resource.hpp>
+#include <rmm/mr/cuda_async_memory_resource.hpp>
 #include <rmm/device_uvector.hpp>
 
 #include <cuda_runtime.h>
 
 #include <cstdint>
+#include <string>
 #include <cstring>
+#include <cstdlib>
 #include <exception>
 #include <string>
-#include <vector>
 
 namespace {
 
@@ -111,6 +115,41 @@ std::unique_ptr<cudf::reduce_aggregation> reduce_agg_for(int32_t code) {
     }
 }
 
+/**
+ * Installs an RMM pool the first time anything here touches the device.
+ *
+ * Without this, cuDF allocates through RMM's default resource, which is a raw cudaMalloc/cudaFree
+ * per allocation -- and a Parquet read makes many: one per column, per page, plus decompression
+ * scratch. Every one of those synchronises. spark-rapids treats the pool as mandatory and has a
+ * whole GpuDeviceManager to size it; this module had none at all, which is why its read ran at
+ * 2.2 GB/s against a page cache that delivers the same file at 13.7 GB/s.
+ *
+ * Sized from free device memory so it coexists with TornadoVM's own allocations rather than
+ * claiming the card. TORNADO_CUDF_POOL_MB overrides the initial size; 0 disables pooling.
+ */
+void ensure_pool() {
+    static bool installed = false;
+    if (installed) {
+        return;
+    }
+    installed = true;
+    try {
+        if (const char* env = std::getenv("TORNADO_CUDF_POOL_MB")) {
+            if (std::strtoul(env, nullptr, 10) == 0) {
+                return;  // an escape hatch for measuring what the pool is worth
+            }
+        }
+        // CUDA's own stream-ordered pool, via cudaMallocAsync. A pool_memory_resource would do
+        // the same and needs an initial and a maximum size chosen up front; this one grows and
+        // returns memory on its own, which matters because TornadoVM allocates from the same card
+        // and a fixed reservation would have to be tuned against it.
+        static rmm::mr::cuda_async_memory_resource async_mr;
+        rmm::mr::set_current_device_resource(async_mr);
+    } catch (...) {
+        // A pool is an optimisation; the default resource still works without it.
+    }
+}
+
 int fail(const char* what, const std::exception& e) {
     g_last_error = std::string(what) + ": " + e.what();
     return 1;
@@ -147,6 +186,7 @@ const char* tornado_cudf_last_error() {
  * columns is relying on it.
  */
 int tornado_cudf_sorted_order(void* stream, const void* keys, int32_t n, void* out_order) {
+    ensure_pool();
     try {
         auto view = rmm::cuda_stream_view{static_cast<cudaStream_t>(stream)};
         cudf::column_view key_col = view_of<int32_t>(keys, n, cudf::type_id::INT32);
@@ -176,6 +216,7 @@ int tornado_cudf_sorted_order(void* stream, const void* keys, int32_t n, void* o
  * element 0 of out_groups -- which the caller cannot know in advance.
  */
 int tornado_cudf_group_sum(void* stream, const void* keys, const void* values, int32_t n, void* out_keys, void* out_sums, void* out_groups) {
+    ensure_pool();
     try {
         auto view = rmm::cuda_stream_view{static_cast<cudaStream_t>(stream)};
         cudf::column_view key_col = view_of<int32_t>(keys, n, cudf::type_id::INT32);
@@ -216,6 +257,7 @@ int tornado_cudf_group_sum(void* stream, const void* keys, const void* values, i
 
 /** Inclusive running total -- SUM(x) OVER (ORDER BY ... ROWS UNBOUNDED PRECEDING). */
 int tornado_cudf_running_sum(void* stream, const void* values, int32_t n, void* out) {
+    ensure_pool();
     try {
         auto view = rmm::cuda_stream_view{static_cast<cudaStream_t>(stream)};
         cudf::column_view val_col = view_of<double>(values, n, cudf::type_id::FLOAT64);
@@ -245,6 +287,7 @@ int tornado_cudf_running_sum(void* stream, const void* values, int32_t n, void* 
  */
 int tornado_cudf_inner_join(void* stream, const void* left_keys, int32_t left_count, const void* right_keys, int32_t right_count, int32_t capacity, void* out_left, void* out_right,
         void* out_count) {
+    ensure_pool();
     try {
         auto view = rmm::cuda_stream_view{static_cast<cudaStream_t>(stream)};
         cudf::column_view left_col = view_of<int32_t>(left_keys, left_count, cudf::type_id::INT32);
@@ -296,6 +339,7 @@ int tornado_cudf_inner_join(void* stream, const void* left_keys, int32_t left_co
  */
 int tornado_cudf_group_aggregate(void* stream, const void* keys, const void* values, int32_t n, int32_t columns, int32_t agg, void* out_keys, void* out_results,
         void* out_groups) {
+    ensure_pool();
     try {
         auto view = rmm::cuda_stream_view{static_cast<cudaStream_t>(stream)};
         if (columns < 1) {
@@ -366,6 +410,7 @@ int tornado_cudf_group_aggregate(void* stream, const void* keys, const void* val
  * group by.
  */
 int tornado_cudf_reduce(void* stream, const void* values, int32_t n, int32_t op, void* out) {
+    ensure_pool();
     try {
         auto view = rmm::cuda_stream_view{static_cast<cudaStream_t>(stream)};
         auto aggregation = reduce_agg_for(op);
@@ -409,6 +454,7 @@ int tornado_cudf_reduce(void* stream, const void* values, int32_t n, int32_t op,
  * than truncating.
  */
 int tornado_cudf_selected_indices(void* stream, const void* mask, int32_t n, int32_t capacity, void* out_indices, void* out_count) {
+    ensure_pool();
     try {
         auto view = rmm::cuda_stream_view{static_cast<cudaStream_t>(stream)};
         cudf::column_view mask_col = view_of<int8_t>(mask, n, cudf::type_id::BOOL8);
@@ -453,6 +499,7 @@ int tornado_cudf_selected_indices(void* stream, const void* mask, int32_t n, int
  * still rely on ties keeping their arrival order.
  */
 int tornado_cudf_sorted_order_multi(void* stream, const void* keys, int32_t n, int32_t key_columns, int32_t descending_mask, void* out_order) {
+    ensure_pool();
     try {
         auto view = rmm::cuda_stream_view{static_cast<cudaStream_t>(stream)};
         if (key_columns < 1 || key_columns > 31) {
@@ -486,5 +533,4 @@ int tornado_cudf_sorted_order_multi(void* stream, const void* keys, int32_t n, i
         return fail("sortedOrderMulti");
     }
 }
-
 }  // extern "C"
