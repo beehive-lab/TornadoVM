@@ -37,6 +37,8 @@
  *      returns a status. The message is kept for tornado_cudf_last_error.
  */
 #include <cudf/aggregation.hpp>
+#include <cudf/io/parquet.hpp>
+#include <cudf/io/types.hpp>
 #include <cudf/column/column.hpp>
 #include <cudf/column/column_view.hpp>
 #include <cudf/groupby.hpp>
@@ -60,10 +62,12 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 #include <cstring>
 #include <cstdlib>
 #include <exception>
 #include <string>
+#include <vector>
 
 namespace {
 
@@ -531,6 +535,229 @@ int tornado_cudf_sorted_order_multi(void* stream, const void* keys, int32_t n, i
         return fail("sortedOrderMulti", e);
     } catch (...) {
         return fail("sortedOrderMulti");
+    }
+}
+
+/**
+ * Parquet footer metadata, without reading a single column of data.
+ *
+ * Sizing has to come before allocation: every other entry point here writes into a buffer the
+ * caller already owns, and a caller cannot own a buffer for a file whose row count it does not
+ * know. libcudf reads the footer on its own, so this costs a seek and a parse rather than a scan.
+ *
+ * out_counts receives, in order: total rows, row-group count, column count.
+ */
+int tornado_cudf_parquet_metadata(const char* path, int64_t* out_counts) {
+    try {
+        if (path == nullptr || out_counts == nullptr) {
+            g_last_error = "parquetMetadata: null path or output";
+            return 5;
+        }
+        auto source = cudf::io::source_info{std::string(path)};
+        auto metadata = cudf::io::read_parquet_metadata(source);
+        out_counts[0] = static_cast<int64_t>(metadata.num_rows());
+        out_counts[1] = static_cast<int64_t>(metadata.num_rowgroups());
+        out_counts[2] = static_cast<int64_t>(metadata.schema().root().num_children());
+        return 0;
+    } catch (const std::exception& e) {
+        return fail("parquetMetadata", e);
+    } catch (...) {
+        return fail("parquetMetadata");
+    }
+}
+
+/**
+ * The rows in each row group, so a caller can turn Flink's split assignment into a row-group range
+ * and size the buffer for exactly the rows it will read.
+ *
+ * A capacity smaller than the row-group count is refused rather than partly filled: a short answer
+ * here is a buffer too small for the read that follows, which is a corruption rather than an error
+ * anyone would notice.
+ */
+int tornado_cudf_parquet_rowgroup_rows(const char* path, int32_t capacity, int64_t* out_rows) {
+    try {
+        if (path == nullptr || out_rows == nullptr) {
+            g_last_error = "parquetRowGroupRows: null path or output";
+            return 5;
+        }
+        auto source = cudf::io::source_info{std::string(path)};
+        auto metadata = cudf::io::read_parquet_metadata(source);
+        const auto groups = metadata.num_rowgroups();
+        if (static_cast<int64_t>(capacity) < static_cast<int64_t>(groups)) {
+            g_last_error = "parquetRowGroupRows: capacity " + std::to_string(capacity) +
+                           " is smaller than the row-group count " + std::to_string(groups);
+            return 6;
+        }
+        // rowgroup_metadata() gives one map a row group, keyed by the names Parquet's own footer
+        // uses, so this reads what the file says rather than what a reader inferred.
+        const auto per_group = metadata.rowgroup_metadata();
+        for (size_t i = 0; i < per_group.size(); i++) {
+            const auto found = per_group[i].find("num_rows");
+            if (found == per_group[i].end()) {
+                g_last_error = "parquetRowGroupRows: row group " + std::to_string(i) +
+                               " has no num_rows in its footer";
+                return 7;
+            }
+            out_rows[i] = static_cast<int64_t>(found->second);
+        }
+        return 0;
+    } catch (const std::exception& e) {
+        return fail("parquetRowGroupRows", e);
+    } catch (...) {
+        return fail("parquetRowGroupRows");
+    }
+}
+
+/**
+ * Reads a row-group range of a Parquet file straight onto the device.
+ *
+ * This is the point of the whole exercise. Without it a row reaches a device by being decoded on
+ * the CPU, turned into a Flink row, handed to an operator and staged field by field into a
+ * TornadoVM array: measured at ~17.3 ns a field for the decode and ~17.0 ns a field for the
+ * staging, against ~57 ms of actual device work for 8M rows of 31 columns. With it, neither
+ * happens.
+ *
+ * Column selection is by index into the file's schema, resolved to names here because that is what
+ * cuDF's reader takes. Indices rather than names in the ABI because the caller is a planner that
+ * has already decided which columns the query needs, and it knows them positionally.
+ *
+ * The operand contract is this module's usual one, and it is checked rather than assumed: the key
+ * column is INT32, the value columns are FP64, and no column may contain a null. A file that
+ * breaks it is refused -- reading a nullable column as dense would return whatever the padding
+ * held wherever a value was absent, and a row count of the right length would agree with it.
+ *
+ * out_values is packed with a stride of `rows`, so column c starts at element c * rows -- the same
+ * convention tornado_cudf_sorted_order_multi already uses for its key columns.
+ *
+ * One device-to-device copy is paid per column: cuDF allocates the table from its own memory
+ * resource, and TornadoVM owns the buffers a task graph operates on. Handing cuDF's allocation
+ * over directly would need TornadoVM to adopt an rmm buffer, which is a larger change than this.
+ */
+// value_width is the caller's buffer element width in bytes: 8 for a DoubleArray of FP64 columns,
+// 4 for a FloatArray of FP32 ones. It is declared rather than inferred because the shim cannot see
+// the element type of the buffer it was handed, and guessing from the file's column type would
+// write FP64 values into a half-sized buffer whenever the two disagreed.
+//
+// A mismatch between the declared width and the file's column type is refused rather than cast. A
+// cast is a change of value, and which side of it a query should land on is a decision for the
+// planner that typed the query, not for the reader.
+int tornado_cudf_read_parquet(void* stream, const char* path, int32_t row_group_start, int32_t row_group_count, int32_t int_column, int32_t double_column_count,
+        const int32_t* double_columns, int64_t rows, void* out_keys, void* out_values, int32_t value_width) {
+    ensure_pool();
+    try {
+        if (path == nullptr || (double_column_count > 0 && double_columns == nullptr)) {
+            g_last_error = "readParquet: null path or column list";
+            return 5;
+        }
+        if (double_column_count > 0 && value_width != 4 && value_width != 8) {
+            g_last_error = "readParquet: value width must be 4 or 8 bytes, not " + std::to_string(value_width);
+            return 5;
+        }
+        if (int_column < 0 && double_column_count == 0) {
+            g_last_error = "readParquet: no columns requested";
+            return 5;
+        }
+
+        auto source = cudf::io::source_info{std::string(path)};
+        auto metadata = cudf::io::read_parquet_metadata(source);
+        const auto& root = metadata.schema().root();
+        const int32_t schema_columns = static_cast<int32_t>(root.num_children());
+
+        // Resolve indices to names, and keep the order the caller asked for so that the copy-out
+        // loop below can address its outputs positionally.
+        std::vector<std::string> names;
+        if (int_column >= 0) {
+            if (int_column >= schema_columns) {
+                g_last_error = "readParquet: key column " + std::to_string(int_column) + " is beyond the file's " + std::to_string(schema_columns) + " columns";
+                return 6;
+            }
+            names.push_back(root.child(int_column).name());
+        }
+        for (int32_t c = 0; c < double_column_count; c++) {
+            const int32_t index = double_columns[c];
+            if (index < 0 || index >= schema_columns) {
+                g_last_error = "readParquet: value column " + std::to_string(index) + " is beyond the file's " + std::to_string(schema_columns) + " columns";
+                return 6;
+            }
+            names.push_back(root.child(index).name());
+        }
+
+        auto options = cudf::io::parquet_reader_options::builder(source).columns(names).build();
+        if (row_group_count > 0) {
+            std::vector<cudf::size_type> groups;
+            for (int32_t g = 0; g < row_group_count; g++) {
+                groups.push_back(static_cast<cudf::size_type>(row_group_start + g));
+            }
+            options.set_row_groups({groups});
+        }
+
+        auto view = rmm::cuda_stream_view{static_cast<cudaStream_t>(stream)};
+        auto result = cudf::io::read_parquet(options, view);
+        const auto table = result.tbl->view();
+
+        if (static_cast<int64_t>(table.num_rows()) != rows) {
+            g_last_error = "readParquet: file gave " + std::to_string(table.num_rows()) + " rows where the caller sized for " + std::to_string(rows);
+            return 7;
+        }
+
+        cudaStream_t raw = static_cast<cudaStream_t>(stream);
+        int32_t column = 0;
+
+        if (int_column >= 0) {
+            const auto col = table.column(column++);
+            if (col.type().id() != cudf::type_id::INT32) {
+                g_last_error = "readParquet: key column is not INT32";
+                return 8;
+            }
+            if (col.null_count() != 0) {
+                g_last_error = "readParquet: key column contains nulls; declare it NOT NULL or use a provider that reads validity masks";
+                return 9;
+            }
+            if (out_keys == nullptr) {
+                g_last_error = "readParquet: a key column was requested with no buffer to put it in";
+                return 5;
+            }
+            cudaError_t rc = copy_out(out_keys, col.data<int32_t>(), static_cast<size_t>(rows) * sizeof(int32_t), raw);
+            if (rc != cudaSuccess) {
+                g_last_error = std::string("readParquet key copy-out: ") + cudaGetErrorString(rc);
+                return 3;
+            }
+        }
+
+        const bool narrow = value_width == 4;
+        const cudf::type_id expected = narrow ? cudf::type_id::FLOAT32 : cudf::type_id::FLOAT64;
+        for (int32_t c = 0; c < double_column_count; c++) {
+            const auto col = table.column(column++);
+            if (col.type().id() != expected) {
+                g_last_error = "readParquet: value column " + std::to_string(c) + " is not " + (narrow ? "FP32" : "FP64")
+                        + "; the file's column and the buffer the caller sized must agree, and this reader does not cast between them";
+                return 8;
+            }
+            if (col.null_count() != 0) {
+                g_last_error = "readParquet: value column " + std::to_string(c) + " contains nulls; declare it NOT NULL or use a provider that reads validity masks";
+                return 9;
+            }
+            // Column-major, one column after another at the caller's stride, which is what both
+            // the packed kernel input and the existing DoubleArray callers expect.
+            const size_t offset = static_cast<size_t>(c) * static_cast<size_t>(rows);
+            cudaError_t rc;
+            if (narrow) {
+                rc = copy_out(static_cast<float*>(out_values) + offset, col.data<float>(), static_cast<size_t>(rows) * sizeof(float), raw);
+            } else {
+                rc = copy_out(static_cast<double*>(out_values) + offset, col.data<double>(), static_cast<size_t>(rows) * sizeof(double), raw);
+            }
+            if (rc != cudaSuccess) {
+                g_last_error = std::string("readParquet value copy-out: ") + cudaGetErrorString(rc);
+                return 3;
+            }
+        }
+
+        // The table is freed when result goes out of scope, so the copies have to have landed.
+        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+    } catch (const std::exception& e) {
+        return fail("readParquet", e);
+    } catch (...) {
+        return fail("readParquet");
     }
 }
 }  // extern "C"
