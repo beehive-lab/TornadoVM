@@ -30,6 +30,7 @@ import tornado.graal.compiler.lir.Opcode;
 import tornado.graal.compiler.lir.asm.CompilationResultBuilder;
 
 import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.enums.DeviceLaunchMode;
@@ -38,6 +39,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAArchitecture;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAUtils;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAKernelStackFrame;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler.CUDABinaryIntrinsic;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler.CUDATernaryIntrinsic;
@@ -249,6 +251,67 @@ public class CUDALIRStmt {
             asm.emitValue(crb, compressed);
             asm.space();
             asm.emit("<< 3)"); // this 3 is standard for the decompression - this code is generated only for coops
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
+    /**
+     * Reads the bits of a 32- or 64-bit value as another type of the same size
+     * ({@code Float.floatToRawIntBits}, {@code Float.intBitsToFloat} and the long and double
+     * pair) with an inline PTX {@code mov}:
+     *
+     * <pre>{@code asm("mov.b32 %0, %1;" : "=r"(result) : "f"(value));}</pre>
+     *
+     * The {@code __float_as_int} family is not used because NVCC rewrites
+     * {@code __float_as_int(x) ^ 0x80000000} as {@code neg.f32}, which returns a canonical NaN
+     * and drops the sign bit that Java keeps. The inline PTX is opaque to that rewrite.
+     */
+    @Opcode("REINTERPRET")
+    public static class ReinterpretStmt extends AbstractInstruction implements PureRegisterComputation {
+
+        public static final LIRInstructionClass<ReinterpretStmt> TYPE = LIRInstructionClass.create(ReinterpretStmt.class);
+
+        @Def
+        protected AllocatableValue result;
+        @Use
+        protected Value value;
+
+        public ReinterpretStmt(AllocatableValue result, Value value) {
+            super(TYPE);
+            this.result = result;
+            this.value = value;
+        }
+
+        @Override
+        public Value getDefinedValue() {
+            return result;
+        }
+
+        private static String constraint(PlatformKind kind) {
+            if (kind == CUDAKind.FLOAT) {
+                return "f";
+            } else if (kind == CUDAKind.DOUBLE) {
+                return "d";
+            } else if (kind == CUDAKind.INT || kind == CUDAKind.UINT) {
+                return "r";
+            } else if (kind == CUDAKind.LONG || kind == CUDAKind.ULONG) {
+                return "l";
+            }
+            throw new TornadoInternalError("unsupported kind for a bit reinterpretation: %s", kind);
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            PlatformKind to = result.getPlatformKind();
+            PlatformKind from = value.getPlatformKind();
+            String width = to.getSizeInBytes() == 8 ? "b64" : "b32";
+            asm.indent();
+            asm.emit("asm(\"mov." + width + " %0, %1;\" : \"=" + constraint(to) + "\"(");
+            asm.emitValue(crb, result);
+            asm.emit(") : \"" + constraint(from) + "\"(");
+            asm.emitValueOrOp(crb, value);
+            asm.emit("))");
             asm.delimiter();
             asm.eol();
         }

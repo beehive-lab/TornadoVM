@@ -34,6 +34,7 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task4;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
@@ -806,6 +807,230 @@ public class TestConditionals extends TornadoTestBase {
 
         for (int i = 0; i < size; i++) {
             assertEquals(outSequential.get(i), outTornado.get(i), 0.0f);
+        }
+    }
+
+    // --- short-circuit conditions with an else branch (#1137) ------------------------------
+    //
+    // `if (A || B) { X } else { Y }` is lowered to two ifs whose then-paths meet in a partial merge
+    // before X, while Y goes straight to the real join. When the join was guessed as that partial
+    // merge, Y fell through into X. Every thread gets its own operands, so each launch takes both
+    // branches; the loop in X makes a fall-through visible in the result.
+
+    private static int shortCircuitOrReference(int a, int b) {
+        int acc = 0;
+        if (a <= 32 || b >= 16) {
+            for (int k = 0; k < a; k++) {
+                acc += k;
+            }
+        } else {
+            acc = -1000;
+        }
+        return acc;
+    }
+
+    private static int shortCircuitAndReference(int a, int b) {
+        int acc = 0;
+        if (a > 32 && b < 16) {
+            acc = -1000;
+        } else {
+            for (int k = 0; k < a; k++) {
+                acc += k;
+            }
+        }
+        return acc;
+    }
+
+    private static int shortCircuitTripleOrReference(int a, int b) {
+        int acc = 0;
+        if (a <= 16 || b >= 24 || a == b) {
+            for (int k = 0; k < a; k++) {
+                acc += k;
+            }
+        } else {
+            acc = -1000 - b;
+        }
+        return acc;
+    }
+
+    private static void shortCircuitOr(KernelContext context, IntArray inA, IntArray inB, IntArray out) {
+        int i = context.globalIdx;
+        int a = inA.get(i);
+        int b = inB.get(i);
+        int acc = 0;
+        if (a <= 32 || b >= 16) {
+            for (int k = 0; k < a; k++) {
+                acc += k;
+            }
+        } else {
+            acc = -1000;
+        }
+        out.set(i, acc);
+    }
+
+    private static void shortCircuitAnd(KernelContext context, IntArray inA, IntArray inB, IntArray out) {
+        int i = context.globalIdx;
+        int a = inA.get(i);
+        int b = inB.get(i);
+        int acc = 0;
+        if (a > 32 && b < 16) {
+            acc = -1000;
+        } else {
+            for (int k = 0; k < a; k++) {
+                acc += k;
+            }
+        }
+        out.set(i, acc);
+    }
+
+    private static void shortCircuitTripleOr(KernelContext context, IntArray inA, IntArray inB, IntArray out) {
+        int i = context.globalIdx;
+        int a = inA.get(i);
+        int b = inB.get(i);
+        int acc = 0;
+        if (a <= 16 || b >= 24 || a == b) {
+            for (int k = 0; k < a; k++) {
+                acc += k;
+            }
+        } else {
+            acc = -1000 - b;
+        }
+        out.set(i, acc);
+    }
+
+    /** The shape of the original report: the whole if/else sits inside an outer if and ends the kernel. */
+    private static void shortCircuitOrNested(KernelContext context, IntArray inA, IntArray inB, IntArray out) {
+        int i = context.globalIdx;
+        if (i < out.getSize()) {
+            int a = inA.get(i);
+            int b = inB.get(i);
+            if (a <= 32 || b >= 16) {
+                int acc = 0;
+                for (int k = 0; k < a; k++) {
+                    acc += k;
+                }
+                out.set(i, acc);
+            } else {
+                out.set(i, -1000);
+            }
+        }
+    }
+
+    private static void shortCircuitAndNested(KernelContext context, IntArray inA, IntArray inB, IntArray out) {
+        int i = context.globalIdx;
+        if (i < out.getSize()) {
+            int a = inA.get(i);
+            int b = inB.get(i);
+            if (a > 32 && b < 16) {
+                out.set(i, -1000);
+            } else {
+                int acc = 0;
+                for (int k = 0; k < a; k++) {
+                    acc += k;
+                }
+                out.set(i, acc);
+            }
+        }
+    }
+
+    private static void shortCircuitTripleOrNested(KernelContext context, IntArray inA, IntArray inB, IntArray out) {
+        int i = context.globalIdx;
+        if (i < out.getSize()) {
+            int a = inA.get(i);
+            int b = inB.get(i);
+            if (a <= 16 || b >= 24 || a == b) {
+                int acc = 0;
+                for (int k = 0; k < a; k++) {
+                    acc += k;
+                }
+                out.set(i, acc);
+            } else {
+                out.set(i, -1000 - b);
+            }
+        }
+    }
+
+    private static IntArray runShortCircuit(String name, Task4<KernelContext, IntArray, IntArray, IntArray> kernel, IntArray inA, IntArray inB)
+            throws TornadoExecutionPlanException {
+        IntArray out = new IntArray(inA.getSize());
+        out.init(Integer.MIN_VALUE);
+        WorkerGrid worker = new WorkerGrid1D(inA.getSize());
+        worker.setLocalWork(32, 1, 1);
+        TaskGraph taskGraph = new TaskGraph("sc") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, inA, inB) //
+                .task(name, kernel, new KernelContext(), inA, inB, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.withGridScheduler(new GridScheduler("sc." + name, worker)).execute();
+        }
+        return out;
+    }
+
+    /** Operands covering every combination of the two conditions: a in [0, 64), b in [0, 32). */
+    private static IntArray[] shortCircuitOperands() {
+        final int size = 64 * 32;
+        IntArray inA = new IntArray(size);
+        IntArray inB = new IntArray(size);
+        for (int i = 0; i < size; i++) {
+            inA.set(i, i / 32);
+            inB.set(i, i % 32);
+        }
+        return new IntArray[] { inA, inB };
+    }
+
+    @Test
+    public void testShortCircuitOrElse() throws TornadoExecutionPlanException {
+        IntArray[] in = shortCircuitOperands();
+        IntArray out = runShortCircuit("or", TestConditionals::shortCircuitOr, in[0], in[1]);
+        for (int i = 0; i < out.getSize(); i++) {
+            assertEquals("a=" + in[0].get(i) + " b=" + in[1].get(i), shortCircuitOrReference(in[0].get(i), in[1].get(i)), out.get(i));
+        }
+    }
+
+    @Test
+    public void testShortCircuitAndElse() throws TornadoExecutionPlanException {
+        IntArray[] in = shortCircuitOperands();
+        IntArray out = runShortCircuit("and", TestConditionals::shortCircuitAnd, in[0], in[1]);
+        for (int i = 0; i < out.getSize(); i++) {
+            assertEquals("a=" + in[0].get(i) + " b=" + in[1].get(i), shortCircuitAndReference(in[0].get(i), in[1].get(i)), out.get(i));
+        }
+    }
+
+    @Test
+    public void testShortCircuitTripleOrElse() throws TornadoExecutionPlanException {
+        IntArray[] in = shortCircuitOperands();
+        IntArray out = runShortCircuit("or3", TestConditionals::shortCircuitTripleOr, in[0], in[1]);
+        for (int i = 0; i < out.getSize(); i++) {
+            assertEquals("a=" + in[0].get(i) + " b=" + in[1].get(i), shortCircuitTripleOrReference(in[0].get(i), in[1].get(i)), out.get(i));
+        }
+    }
+
+    @Test
+    public void testShortCircuitOrElseNested() throws TornadoExecutionPlanException {
+        IntArray[] in = shortCircuitOperands();
+        IntArray out = runShortCircuit("orNested", TestConditionals::shortCircuitOrNested, in[0], in[1]);
+        for (int i = 0; i < out.getSize(); i++) {
+            int a = in[0].get(i);
+            int b = in[1].get(i);
+            assertEquals("a=" + a + " b=" + b, (a <= 32 || b >= 16) ? a * (a - 1) / 2 : -1000, out.get(i));
+        }
+    }
+
+    @Test
+    public void testShortCircuitAndElseNested() throws TornadoExecutionPlanException {
+        IntArray[] in = shortCircuitOperands();
+        IntArray out = runShortCircuit("andNested", TestConditionals::shortCircuitAndNested, in[0], in[1]);
+        for (int i = 0; i < out.getSize(); i++) {
+            assertEquals("a=" + in[0].get(i) + " b=" + in[1].get(i), shortCircuitAndReference(in[0].get(i), in[1].get(i)), out.get(i));
+        }
+    }
+
+    @Test
+    public void testShortCircuitTripleOrElseNested() throws TornadoExecutionPlanException {
+        IntArray[] in = shortCircuitOperands();
+        IntArray out = runShortCircuit("or3Nested", TestConditionals::shortCircuitTripleOrNested, in[0], in[1]);
+        for (int i = 0; i < out.getSize(); i++) {
+            assertEquals("a=" + in[0].get(i) + " b=" + in[1].get(i), shortCircuitTripleOrReference(in[0].get(i), in[1].get(i)), out.get(i));
         }
     }
 }

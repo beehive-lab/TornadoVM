@@ -27,7 +27,6 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
-import java.util.Arrays;
 
 public class OCLNVIDIAGPUScheduler extends OCLKernelScheduler {
 
@@ -109,8 +108,14 @@ public class OCLNVIDIAGPUScheduler extends OCLKernelScheduler {
 
     private long[] checkAndAdaptLocalDimensions(long[] localWorkGroups) {
         long[] blockMaxWorkGroupSize = deviceContext.getDevice().getDeviceMaxWorkGroupSize();
-        long maxWorkGroupSize = Arrays.stream(blockMaxWorkGroupSize).sum();
-        long totalThreads = Arrays.stream(localWorkGroups).reduce(1, (a, b) -> a * b);
+        long maxWorkGroupSize = 0;
+        for (long dimension : blockMaxWorkGroupSize) {
+            maxWorkGroupSize += dimension;
+        }
+        long totalThreads = 1;
+        for (long dimension : localWorkGroups) {
+            totalThreads *= dimension;
+        }
 
         if (totalThreads > maxWorkGroupSize) {
             //Get the remaining valid number of local work-items

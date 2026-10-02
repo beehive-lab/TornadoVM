@@ -90,6 +90,11 @@ public class TornadoVMBytecodeBuilder {
         return 1024 + (taskCount * 256) + (objectCount * 128);
     }
 
+    /** Size in bytes of the bytecode buffer. */
+    public int getCapacity() {
+        return code.length;
+    }
+
     public boolean isSingleContext() {
         return isSingleContext;
     }
