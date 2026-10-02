@@ -19,6 +19,7 @@ package uk.ac.manchester.tornado.api;
 
 import uk.ac.manchester.tornado.api.plan.types.OffConcurrentDevices;
 import uk.ac.manchester.tornado.api.plan.types.OffMemoryLimit;
+import uk.ac.manchester.tornado.api.plan.types.OffPlanResultsHistory;
 import uk.ac.manchester.tornado.api.plan.types.OffPrintKernel;
 import uk.ac.manchester.tornado.api.plan.types.OffProfiler;
 import uk.ac.manchester.tornado.api.plan.types.OffThreadInfo;
@@ -35,6 +36,7 @@ import uk.ac.manchester.tornado.api.plan.types.WithGraph;
 import uk.ac.manchester.tornado.api.plan.types.WithGridScheduler;
 import uk.ac.manchester.tornado.api.plan.types.WithIntraPlanConcurrency;
 import uk.ac.manchester.tornado.api.plan.types.WithMemoryLimit;
+import uk.ac.manchester.tornado.api.plan.types.WithPlanResultsHistory;
 import uk.ac.manchester.tornado.api.plan.types.WithPreCompilation;
 import uk.ac.manchester.tornado.api.plan.types.WithPrintKernel;
 import uk.ac.manchester.tornado.api.plan.types.WithProfiler;
@@ -50,7 +52,7 @@ public abstract sealed class ExecutionPlanType extends TornadoExecutionPlan //
         WithConcurrentDevices, WithDefaultScheduler, WithDevice,  //
         WithFreeDeviceMemory, WithGraph, WithGridScheduler, WithMemoryLimit, WithPrintKernel, WithProfiler, //
         WithResetDevice, WithThreadInfo, WithWarmUpIterations, WithWarmUpTime, WithCUDAGraph, WithIntraPlanConcurrency, //
-        WithStagedTransfers { //
+        WithStagedTransfers, WithPlanResultsHistory, OffPlanResultsHistory { //
 
     public ExecutionPlanType(TornadoExecutionPlan parentNode) {
 
