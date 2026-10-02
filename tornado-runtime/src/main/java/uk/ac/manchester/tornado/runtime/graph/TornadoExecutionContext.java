@@ -68,7 +68,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleContext;
 public class TornadoExecutionContext {
 
     public static int INIT_VALUE = -1;
-    private final int MAX_TASKS = 256;
+    private static final int INITIAL_TASK_CAPACITY = 256;
     private final int INITIAL_DEVICE_CAPACITY = 16;
     private final String name;
     private ScheduleContext meta;
@@ -112,8 +112,8 @@ public class TornadoExecutionContext {
         objectState = new ArrayList<>();
         persistedTaskToObjectsMap =  new HashMap<>();
         devices = new ArrayList<>(INITIAL_DEVICE_CAPACITY);
-        kernelStackFrame = new KernelStackFrame[MAX_TASKS];
-        taskToDeviceMapTable = new TornadoXPUDevice[MAX_TASKS];
+        kernelStackFrame = new KernelStackFrame[INITIAL_TASK_CAPACITY];
+        taskToDeviceMapTable = new TornadoXPUDevice[INITIAL_TASK_CAPACITY];
         Arrays.fill(taskToDeviceMapTable, null);
         nextTask = 0;
         batchSize = INIT_VALUE;
@@ -286,8 +286,22 @@ public class TornadoExecutionContext {
         if (index == -1) {
             index = tasks.size();
             tasks.add(task);
+            ensureTaskCapacity(tasks.size());
         }
         return index;
+    }
+
+    /**
+     * Grows the per-task tables (kernel stack frames and the task-to-device map) to hold at least
+     * {@code taskCount} tasks. They are sized for the task list as it is built, before the
+     * interpreter takes a reference to the stack frames.
+     */
+    private void ensureTaskCapacity(int taskCount) {
+        if (taskCount > taskToDeviceMapTable.length) {
+            int capacity = Math.max(taskCount, 2 * taskToDeviceMapTable.length);
+            kernelStackFrame = Arrays.copyOf(kernelStackFrame, capacity);
+            taskToDeviceMapTable = Arrays.copyOf(taskToDeviceMapTable, capacity);
+        }
     }
 
     public void addPersistedObject(Object object) {

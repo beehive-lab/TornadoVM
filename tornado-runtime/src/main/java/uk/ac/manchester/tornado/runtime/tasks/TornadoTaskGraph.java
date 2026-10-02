@@ -200,6 +200,22 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private Access[] accesses;
 
     /**
+     * Makes room in the high-level graph description for one more task with {@code numArgs}
+     * arguments (CONTEXT, ARG_LIST, one load per argument and LAUNCH), doubling the buffer when it
+     * is full so that graphs with many tasks can be recorded.
+     */
+    private void ensureHighLevelCodeCapacity(int numArgs) {
+        final int needed = 1 + 2 * Integer.BYTES + 1 + Integer.BYTES + numArgs * (1 + Integer.BYTES) + 1;
+        if (hlBuffer.remaining() < needed) {
+            final int position = hlBuffer.position();
+            highLevelCode = Arrays.copyOf(highLevelCode, Math.max(2 * highLevelCode.length, position + needed));
+            hlBuffer = ByteBuffer.wrap(highLevelCode);
+            hlBuffer.order(ByteOrder.LITTLE_ENDIAN);
+            hlBuffer.position(position);
+        }
+    }
+
+    /**
      * Task Schedule implementation that uses GPU and multicore backends. This constructor must be public. It is invoked using the reflection API.
      *
      * @param taskScheduleName
@@ -835,6 +851,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
 
         // Prepare Initial Graph before the TornadoVM bytecode generation
+        ensureHighLevelCodeCapacity(task.getArguments().length);
         hlBuffer.put(TornadoGraphBitcodes.CONTEXT.index());
         int globalTaskId = executionContext.getTaskCountAndIncrement();
         hlBuffer.putInt(globalTaskId);
