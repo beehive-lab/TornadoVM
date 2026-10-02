@@ -756,19 +756,12 @@ public class TestMath extends TornadoTestBase {
      * Whether the device rounds a multiply and an add separately, as the host does, or fuses them.
      *
      * <p>
-     * A cancellation rather than a tolerance. {@code c} is exactly minus the <em>rounded</em>
-     * product, computed on the host, so a device that rounds the multiply and then the add
-     * subtracts the same value it just produced and returns exactly {@code 0.0}. A device that
-     * fuses keeps the product at full precision, rounds once, and returns the product's rounding
-     * error instead. There is no third answer and no epsilon to choose, which is what makes this
-     * worth asserting exactly where {@link #testFMA} asserts to 0.01 and would pass either way.
+     * A cancellation rather than a tolerance: {@code c} is exactly minus the host-rounded product,
+     * so a device that rounds twice returns exactly {@code 0.0}, and one that fuses returns the
+     * product's rounding error. No epsilon to choose, unlike {@link #testFMA}.
      *
      * <p>
-     * The expected direction follows {@code tornado.enable.fma}, and that is the point: the option
-     * has to mean what its name says. Turning it off stops {@code CUDAFMAPhase} emitting a literal
-     * {@code fma()} call, but NVRTC will contract the separated multiply and add straight back
-     * together unless it is also told {@code --fmad=false} -- so with the two untied, this test
-     * fails in the strict configuration and the option is a decoration. Run it both ways:
+     * The expected direction follows {@code tornado.enable.fma}. Run it both ways:
      *
      * <code>
      * tornado-test -V uk.ac.manchester.tornado.unittests.math.TestMath#testMultiplyAddRounding

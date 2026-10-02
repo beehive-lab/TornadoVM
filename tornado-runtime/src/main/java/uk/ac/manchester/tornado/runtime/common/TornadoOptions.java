@@ -64,30 +64,14 @@ public class TornadoOptions {
      * What {@code tornado.enable.fma=false} has to add to the NVRTC options to mean what it says.
      *
      * <p>
-     * The CUDA backend fuses a multiply and an add at two independent stages, and turning off
-     * either one alone leaves the other in place. {@code enable.fma=false} stops
-     * {@code CUDAFMAPhase} emitting a literal {@code fma()} call into the generated CUDA C, which
-     * {@code --fmad} cannot undo -- a function call cannot be decontracted. {@code --fmad=false}
-     * stops NVRTC contracting the separated multiply and add back into one {@code fma.rn.f64} on
-     * the way to PTX, which the phase being off does not prevent.
+     * The CUDA backend fuses a multiply and an add at two independent stages, so turning off one
+     * leaves the other. {@code enable.fma=false} stops {@code CUDAFMAPhase} emitting an
+     * {@code fma()} call; {@code --fmad=false} stops NVRTC re-contracting the separated multiply
+     * and add on the way to PTX. Both are needed to get the host's two roundings.
      *
      * <p>
-     * Measured, all four combinations, on an RTX 4070: only {@code enable.fma=false} together with
-     * {@code --fmad=false} computes {@code a*b+c} with two roundings, the way the host does. So a
-     * caller asking for the first without knowing to ask for the second got fused arithmetic and no
-     * indication of it. Tying them means the option does what its name says.
-     *
-     * <p>
-     * Added only when nothing has already spoken for {@code --fmad}, because NVRTC rejects the
-     * option outright when it is given twice -- {@code nvrtc: error: --fmad (-fmad) defined more
-     * than once} -- and the {@code repro} profile sets it. {@code enable.fma=false} together with
-     * {@code profile=repro} is the combination a caller wanting reproducible arithmetic reaches
-     * for first, so adding it unconditionally would break exactly the case this exists to serve.
-     * Whoever states it explicitly wins; this only fills the gap.
-     *
-     * <p>
-     * {@code --fmad=false} takes precedence over {@code --use_fast_math} whichever order the two
-     * appear in, so the {@code fast} profile and this are not in conflict.
+     * Only added when nothing has already specified {@code --fmad}: NVRTC rejects it when given
+     * twice, and the {@code repro} profile sets it. An explicit setting wins.
      */
     private static String fmaContractionFlag(String alreadySpecified) {
         if (ENABLE_FMA || alreadySpecified.contains("-fmad")) {

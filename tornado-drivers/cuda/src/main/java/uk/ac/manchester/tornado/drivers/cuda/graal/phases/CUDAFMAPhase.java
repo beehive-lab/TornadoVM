@@ -68,10 +68,8 @@ public class CUDAFMAPhase extends BasePhase<TornadoLowTierContext> {
 
     @Override
     protected void run(StructuredGraph graph, TornadoLowTierContext context) {
-        // A task may require the host's rounding. Fusing computes a*b+c with one rounding instead
-        // of two, which is more accurate and different, and a caller that asked for agreement
-        // rather than accuracy must not get it. Checked here rather than by leaving the phase out
-        // of the suite, because the suite is built once per backend and this is per task.
+        // Fusing rounds a*b+c once instead of twice: more accurate, but not what the host does.
+        // Checked per task rather than by omitting the phase, as the suite is built per backend.
         if (context != null && context.getMeta() != null && context.getMeta().isStrictFloatingPoint()) {
             return;
         }

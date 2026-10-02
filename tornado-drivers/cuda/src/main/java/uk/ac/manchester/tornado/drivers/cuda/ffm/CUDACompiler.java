@@ -170,19 +170,10 @@ public final class CUDACompiler {
             }
             archKnown = true;
 
-            // Identical source, for the same architecture, compiled with the same options yields
-            // an identical image, so reuse a previously compiled one rather than invoking NVRTC
-            // again.
-            //
-            // The options belong in the key and were missing from it. Without them the first
-            // compilation of a given source wins for the lifetime of the JVM, and every later
-            // request for that source is served the earlier image whatever flags it asked for --
-            // so withCompilerFlags() appeared to do nothing on the second and subsequent calls.
-            // The on-disk cache in CUDACodeCache keys on the flags correctly, which made this
-            // hard to see: it wrote two differently named cubins whose contents were identical,
-            // because both came from this one image. A kernel compiled --fmad=false and the same
-            // kernel compiled without it are not interchangeable, and that is the whole point of
-            // asking.
+            // Reuse a previously compiled image for the same source, architecture and options.
+            // The options must be in the key: without them the first compilation of a source wins
+            // for the lifetime of the JVM and later requests are served it whatever flags they
+            // asked for, which made withCompilerFlags() a no-op after the first call.
             String cacheKey = arch + "\n" + String.join(" ", options) + "\n" + program.source;
             byte[] cached = IMAGE_CACHE.get(cacheKey);
             if (cached != null) {

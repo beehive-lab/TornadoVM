@@ -36,25 +36,14 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * Whether {@link TornadoExecutionPlan#withCompilerFlags} actually reaches the backend compiler.
  *
  * <p>
- * It did not, for every backend but OpenCL. {@code withCompilerFlags} writes into the execution
- * context's meta, and each backend's code cache reads the flags from the <em>task's</em> meta;
- * {@code TornadoVMInterpreter.updateMeta} copied only {@code OPENCL} between the two. So
- * {@code withCompilerFlags(CUDA, ...)} and {@code withCompilerFlags(METAL, ...)} were accepted by
- * the API, stored, and then silently ignored -- which is worse than an unsupported operation,
- * because the caller has every reason to believe the flag took effect.
+ * It did not, for every backend but OpenCL: {@code TornadoVMInterpreter.updateMeta} copied only
+ * {@code OPENCL} flags from the execution context's meta to the task's meta, which is where each
+ * backend's code cache reads them.
  *
  * <p>
- * The test for "did it arrive" is a flag that changes what the device computes. An unknown flag
- * would have been simpler, but NVRTC accepts unrecognised options silently, so that proves nothing.
- * Fast-math does change the answer -- {@code div.rn.f32} becomes {@code div.approx.ftz.f32} -- and
- * a flag that is dropped on the way cannot change it. That is the assertion here that cannot be
- * satisfied by doing nothing.
- *
- * <h3>How to run</h3>
- *
- * <code>
- * tornado-test -V uk.ac.manchester.tornado.unittests.api.TestCompilerFlags
- * </code>
+ * The assertion uses fast-math, which changes the computed result ({@code div.rn.f32} becomes
+ * {@code div.approx.ftz.f32}), rather than an unknown flag: NVRTC accepts unrecognised options
+ * silently, so an unknown flag would pass even when dropped.
  */
 public class TestCompilerFlags extends TornadoTestBase {
 
