@@ -153,6 +153,7 @@ public class OCLPlatform implements TornadoPlatformInterface {
         }
     }
 
+    @Override
     public List<OCLTargetDevice> getDevices() {
         return devices;
     }
