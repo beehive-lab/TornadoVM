@@ -180,6 +180,7 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
         }
 
         allocateTornadoVMBuffersOnDevice();
+        deviceContext.warmUp();
         backEndInitialized = true;
     }
 
