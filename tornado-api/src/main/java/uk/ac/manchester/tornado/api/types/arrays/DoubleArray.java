@@ -24,7 +24,7 @@ import java.lang.foreign.MemorySegment;
 import java.nio.DoubleBuffer;
 import java.util.Arrays;
 
-import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 /**
  * This class represents an array of doubles stored in native memory. The double data is stored in a {@link MemorySegment}, which represents a contiguous region of off-heap memory. The class also
@@ -34,7 +34,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 public final class DoubleArray extends TornadoNativeArray {
     private static final int DOUBLE_BYTES = 8;
     private TornadoMemorySegment segment;
-    private int numberOfElements;
+    private long numberOfElements;
 
     private int arrayHeaderSize;
 
@@ -49,7 +49,18 @@ public final class DoubleArray extends TornadoNativeArray {
      *         The number of elements in the array.
      */
     public DoubleArray(int numberOfElements) {
-        this.numberOfElements = numberOfElements;
+        this((long) numberOfElements);
+    }
+
+    /**
+     * Constructs a new instance of the {@link DoubleArray} that will store a user-specified number of elements. The number of elements can exceed
+     * {@link Integer#MAX_VALUE}; access such arrays with the {@code long}-index accessors.
+     *
+     * @param numberOfElements
+     *         The number of elements in the array.
+     */
+    public DoubleArray(long numberOfElements) {
+        this.numberOfElements = checkNumElements(numberOfElements);
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         assert arrayHeaderSize >= 8;
         baseIndex = arrayHeaderSize / DOUBLE_BYTES;
@@ -69,13 +80,12 @@ public final class DoubleArray extends TornadoNativeArray {
 
         // Calculate number of elements from segment size
         long dataSize = existingSegment.byteSize() - arrayHeaderSize;
-        ensureMultipleOfElementSize(dataSize, DOUBLE_BYTES);
-        this.numberOfElements = (int) (dataSize / DOUBLE_BYTES);
+        this.numberOfElements = toNumElements(dataSize, DOUBLE_BYTES);
 
         // Set up the segment and initialize header
         this.segmentByteSize = existingSegment.byteSize();
         this.segment = new TornadoMemorySegment(existingSegment);
-        this.segment.getSegment().setAtIndex(JAVA_INT, 0, numberOfElements);
+        this.segment.getSegment().setAtIndex(JAVA_LONG, 0, numberOfElements);
     }
 
     /**
@@ -134,8 +144,7 @@ public final class DoubleArray extends TornadoNativeArray {
      */
     public static DoubleArray fromSegment(MemorySegment segment) {
         long byteSize = segment.byteSize();
-        int numElements = (int) (byteSize / DOUBLE_BYTES);
-        ensureMultipleOfElementSize(byteSize, DOUBLE_BYTES);
+        long numElements = toNumElements(byteSize, DOUBLE_BYTES);
         DoubleArray doubleArray = new DoubleArray(numElements);
         MemorySegment.copy(segment, 0, doubleArray.segment.getSegment(), (long) doubleArray.baseIndex * DOUBLE_BYTES, byteSize);
         return doubleArray;
@@ -188,7 +197,7 @@ public final class DoubleArray extends TornadoNativeArray {
      * @return A new {@link DoubleArray} instance containing all the elements of the input arrays, concatenated in the order they were provided.
      */
     public static DoubleArray concat(DoubleArray... arrays) {
-        int newSize = Arrays.stream(arrays).mapToInt(DoubleArray::getSize).sum();
+        long newSize = checkNumElements(Arrays.stream(arrays).mapToLong(DoubleArray::getSizeLong).sum());
         DoubleArray concatArray = new DoubleArray(newSize);
         long currentPositionBytes = 0;
         for (DoubleArray array : arrays) {
@@ -224,6 +233,18 @@ public final class DoubleArray extends TornadoNativeArray {
     }
 
     /**
+     * Sets the double value at a specified index of the {@link DoubleArray} instance.
+     *
+     * @param index
+     *         The index at which to set the double value.
+     * @param value
+     *         The double value to store at the specified index.
+     */
+    public void set(long index, double value) {
+        segment.setAtIndex(index, value, baseIndex);
+    }
+
+    /**
      * Gets the double value stored at the specified index of the {@link DoubleArray} instance.
      *
      * @param index
@@ -231,6 +252,17 @@ public final class DoubleArray extends TornadoNativeArray {
      * @return
      */
     public double get(int index) {
+        return segment.getDoubleAtIndex(index, baseIndex);
+    }
+
+    /**
+     * Gets the double value stored at the specified index of the {@link DoubleArray} instance.
+     *
+     * @param index
+     *         The index of which to retrieve the double value.
+     * @return
+     */
+    public double get(long index) {
         return segment.getDoubleAtIndex(index, baseIndex);
     }
 
@@ -254,7 +286,7 @@ public final class DoubleArray extends TornadoNativeArray {
      *         The double value to initialize the {@link DoubleArray} instance with.
      */
     public void init(double value) {
-        for (int i = 0; i < getSize(); i++) {
+        for (long i = 0; i < numberOfElements; i++) {
             segment.setAtIndex(i, value, baseIndex);
         }
     }
@@ -266,6 +298,11 @@ public final class DoubleArray extends TornadoNativeArray {
      */
     @Override
     public int getSize() {
+        return toIntSize(numberOfElements);
+    }
+
+    @Override
+    public long getSizeLong() {
         return numberOfElements;
     }
 
@@ -321,7 +358,14 @@ public final class DoubleArray extends TornadoNativeArray {
      *         if the specified slice is out of the bounds of the original array.
      */
     public DoubleArray slice(int offset, int length) {
-        if (offset < 0 || length < 0 || offset + length > getSize()) {
+        return slice((long) offset, (long) length);
+    }
+
+    /**
+     * Extracts a slice of elements using {@code long} bounds. See {@link #slice(int, int)}.
+     */
+    public DoubleArray slice(long offset, long length) {
+        if (offset < 0 || length < 0 || offset > numberOfElements - length) {
             throw new IllegalArgumentException("Slice out of bounds");
         }
 

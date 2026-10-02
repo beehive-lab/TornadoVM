@@ -66,6 +66,39 @@ The main methods that the off-heap types expose to manage the Memory Segment of 
    
 **NOTE:** The methods ``init()`` and ``clear()`` are essential because, contrary to their counterpart primitive arrays which are initialized by default with 0, the new types contain garbage values when first created.
 
+Arrays with more than ``Integer.MAX_VALUE`` elements
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Every native array type can hold more than ``Integer.MAX_VALUE`` (2^31 - 1) elements, e.g., a ``HalfFloatArray`` of 10 billion elements (20 GB).
+Such arrays are created with the ``long`` constructor and accessed with the ``long`` overloads, on the host and inside kernels:
+
+.. code:: java
+
+   public FloatArray(long numberOfElements) // allocates an array that can exceed Integer.MAX_VALUE elements
+   public void set(long index, float value)
+   public float get(long index)
+   public long getSizeLong() // returns the number of elements as a long
+   public FloatArray slice(long offset, long length)
+
+``getSize()`` keeps returning an ``int``. On the host it throws an ``IllegalStateException`` for arrays whose size does not fit in an ``int``; use ``getSizeLong()`` for those.
+``toHeapArray()`` also requires the size to fit in a Java array.
+
+Thread indices (e.g., ``KernelContext.globalIdx``) are ``int``, so a kernel that reaches elements beyond ``Integer.MAX_VALUE`` builds a ``long`` index from them:
+
+.. code:: java
+
+   public static void scaleRows(KernelContext context, HalfFloatArray data, int rowLength) {
+       int row = context.globalIdx;
+       long start = (long) row * rowLength;
+       if (start < data.getSizeLong()) {
+           for (int j = 0; j < rowLength; j++) {
+               data.set(start + j, HalfFloat.mult(data.get(start + j), new HalfFloat(0.5f)));
+           }
+       }
+   }
+
+The device must allow an allocation of the array's size (e.g., ``CL_DEVICE_MAX_MEM_ALLOC_SIZE`` on OpenCL), and the TornadoVM device heap must be large enough, which can be set with ``-Dtornado.device.memory=<size>``.
+
 2. Example: Migrating from On-heap to Off-heap Data Types
 -------------------------------------------------------------------
 
