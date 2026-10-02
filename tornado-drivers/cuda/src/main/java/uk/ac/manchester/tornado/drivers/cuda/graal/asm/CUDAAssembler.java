@@ -645,6 +645,10 @@ public final class CUDAAssembler extends Assembler {
         public static final CUDAUnaryOp CAST_TO_FLOAT = new CUDAUnaryOp("(float) ", true);
         public static final CUDAUnaryOp CAST_TO_BYTE = new CUDAUnaryOp("(char) ", true);
         public static final CUDAUnaryOp CAST_TO_DOUBLE = new CUDAUnaryOp("(double) ", true);
+        // Unsigned value casts, used to lower Java's >>> (CUDA C's >> is arithmetic on signed types).
+        public static final CUDAUnaryOp CAST_TO_UCHAR = new CUDAUnaryOp("(unsigned char) ", true);
+        public static final CUDAUnaryOp CAST_TO_USHORT = new CUDAUnaryOp("(unsigned short) ", true);
+        public static final CUDAUnaryOp CAST_TO_UINT = new CUDAUnaryOp("(unsigned int) ", true);
 
         public static final CUDAUnaryOp CAST_TO_INT_PTR = new CUDAUnaryOp("(int *) ", true);
         public static final CUDAUnaryOp CAST_TO_SHORT_PTR = new CUDAUnaryOp("(short *) ", true);
