@@ -320,11 +320,20 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         } else if (node instanceof FloatEqualsNode floatEqualsNode) {
             final Value x = operand(floatEqualsNode.getX());
             final Value y = operand(floatEqualsNode.getY());
-            result = getGen().getArithmetic().genBinaryExpr(OCLBinaryIntrinsicCmp.FLOAT_IS_NOT_EQUAL, intLirKind, x, y);
+            // !(x == y || unordered) is x < y || x > y; !(x == y) is true when either operand is NaN.
+            OCLBinaryIntrinsicCmp op = floatEqualsNode.unorderedIsTrue() ? OCLBinaryIntrinsicCmp.FLOAT_IS_LESSGREATER : OCLBinaryIntrinsicCmp.FLOAT_IS_NOT_EQUAL;
+            result = getGen().getArithmetic().genBinaryExpr(op, intLirKind, x, y);
         } else if (node instanceof FloatLessThanNode floatLessThanNode) {
             final Value x = operand(floatLessThanNode.getX());
             final Value y = operand(floatLessThanNode.getY());
-            result = getGen().getArithmetic().genBinaryExpr(OCLBinaryIntrinsicCmp.FLOAT_IS_GREATEREQUAL, intLirKind, x, y);
+            if (floatLessThanNode.unorderedIsTrue()) {
+                // !(x < y || unordered) is x >= y, which is false when either operand is NaN.
+                result = getGen().getArithmetic().genBinaryExpr(OCLBinaryIntrinsicCmp.FLOAT_IS_GREATEREQUAL, intLirKind, x, y);
+            } else {
+                // !(x < y), which is true when either operand is NaN (x >= y would be false).
+                Value less = getGen().getArithmetic().genBinaryExpr(OCLBinaryIntrinsicCmp.FLOAT_IS_LESS, intLirKind, x, y);
+                result = getGen().getArithmetic().genUnaryExpr(OCLUnaryOp.LOGICAL_NOT, boolLirKind, less);
+            }
         } else if (node instanceof IntegerBelowNode integerBelowNode) {
             final Value x = operand(integerBelowNode.getX());
             final Value y = operand(integerBelowNode.getY());
@@ -350,6 +359,9 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             final Value x = operand(testNode.getX());
             final Value y = operand(testNode.getY());
             result = getGen().getArithmetic().genTestNegateBinaryExpr(OCLBinaryOp.BITWISE_AND, boolLirKind, x, y);
+        } else if (node instanceof LogicConstantNode logicConstant) {
+            // Negated constant-folded condition: emit the inverted trivial relation (0 != 0 / 0 == 0).
+            result = emitTrivialRelation(!logicConstant.getValue(), intLirKind, boolLirKind);
         } else {
             throw new TornadoRuntimeException(String.format("logic node (class=%s)", node.getClass().getName()));
         }
@@ -379,11 +391,23 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         } else if (node instanceof FloatEqualsNode floatEqualsNode) {
             final Value x = operand(floatEqualsNode.getX());
             final Value y = operand(floatEqualsNode.getY());
-            result = getGen().getArithmetic().genBinaryExpr(OCLBinaryIntrinsicCmp.FLOAT_IS_EQUAL, intLirKind, x, y);
+            if (floatEqualsNode.unorderedIsTrue()) {
+                // x == y || unordered is !(x < y || x > y).
+                Value lessGreater = getGen().getArithmetic().genBinaryExpr(OCLBinaryIntrinsicCmp.FLOAT_IS_LESSGREATER, intLirKind, x, y);
+                result = getGen().getArithmetic().genUnaryExpr(OCLUnaryOp.LOGICAL_NOT, boolLirKind, lessGreater);
+            } else {
+                result = getGen().getArithmetic().genBinaryExpr(OCLBinaryIntrinsicCmp.FLOAT_IS_EQUAL, intLirKind, x, y);
+            }
         } else if (node instanceof FloatLessThanNode floatLessThanNode) {
             final Value x = operand(floatLessThanNode.getX());
             final Value y = operand(floatLessThanNode.getY());
-            result = getGen().getArithmetic().genBinaryExpr(OCLBinaryIntrinsicCmp.FLOAT_IS_LESS, intLirKind, x, y);
+            if (floatLessThanNode.unorderedIsTrue()) {
+                // x < y || unordered is !(x >= y): the branch Java's x >= y skips on NaN.
+                Value greaterEqual = getGen().getArithmetic().genBinaryExpr(OCLBinaryIntrinsicCmp.FLOAT_IS_GREATEREQUAL, intLirKind, x, y);
+                result = getGen().getArithmetic().genUnaryExpr(OCLUnaryOp.LOGICAL_NOT, boolLirKind, greaterEqual);
+            } else {
+                result = getGen().getArithmetic().genBinaryExpr(OCLBinaryIntrinsicCmp.FLOAT_IS_LESS, intLirKind, x, y);
+            }
         } else if (node instanceof IntegerBelowNode integerBelowNode) {
             final Value x = operand(integerBelowNode.getX());
             final Value y = operand(integerBelowNode.getY());
@@ -409,11 +433,22 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             final Value x = operand(integerTestNode.getX());
             final Value y = operand(integerTestNode.getY());
             result = getGen().getArithmetic().genTestBinaryExpr(OCLBinaryOp.BITWISE_AND, boolLirKind, x, y);
+        } else if (node instanceof LogicConstantNode logicConstant) {
+            // A condition folded to a constant (e.g. a guard made provably true by an earlier early return in an
+            // unrolled loop): emit a trivially true/false relation (0 == 0 / 0 != 0), so that it is still a
+            // boolean OCLLIROp that can be used as a branch or loop condition.
+            result = emitTrivialRelation(logicConstant.getValue(), intLirKind, boolLirKind);
         } else {
             throw new TornadoRuntimeException(String.format("logic node (class=%s)", node.getClass().getName()));
         }
         setResult(node, result);
         return (OCLLIROp) result;
+    }
+
+    private Value emitTrivialRelation(boolean value, LIRKind intLirKind, LIRKind boolLirKind) {
+        final Value zero = gen.emitConstant(intLirKind, JavaConstant.forInt(0));
+        final OCLBinaryOp op = value ? OCLBinaryOp.RELATIONAL_EQ : OCLBinaryOp.RELATIONAL_NE;
+        return getGen().getArithmetic().genBinaryExpr(op, boolLirKind, zero, zero);
     }
 
     private Value negatedOperand(ValueNode value) {

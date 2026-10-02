@@ -145,7 +145,7 @@ head dim multiple of 8, ≤256 on Hopper/Ada; softmax stats FP32; last stride mu
 1. **Install + validate v1** (pending `libcudnn9` install): run `TestCuDnn`,
    `BenchmarkConv2d`, commit branch
 2. **C0 + C1 — SDPA forward FP16**: the flagship; benchmark vs unfused
-   cuBLAS+softmax chain and JIT attention (GPULlama3 headline)
+   cuBLAS+softmax chain and JIT attention (jitllm headline)
 3. **D1 — RMSNorm/LayerNorm**: completes the Llama block (SDPA + RMSNorm + Lt MLP)
 4. **B2 + B1 — FP16 conv + autotuning**: the CNN story on Tensor Cores
 5. **A4 + D2 — bias / ConvBiasAct**: fused CNN block benchmark vs the unfused pipeline

@@ -43,6 +43,7 @@ import uk.ac.manchester.tornado.drivers.common.compiler.phases.memalloc.TornadoF
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.memalloc.TornadoLocalMemoryAllocation;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.memalloc.TornadoNewArrayDevirtualizationReplacement;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.memalloc.TornadoPrivateArrayPiRemoval;
+import uk.ac.manchester.tornado.drivers.cuda.graal.phases.CUDAKernelContextNullCheckElimination;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.TornadoBatchGlobalIndexOffset;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.TornadoHalfFloatReplacement;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.TornadoCUDAIntrinsicsReplacements;
@@ -77,6 +78,7 @@ public class CUDAHighTier extends TornadoHighTier {
                 appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, false));
             }
         }
+        appendPhase(new CUDAKernelContextNullCheckElimination());
         appendPhase(new TornadoTaskSpecialisation(canonicalizer));
         appendPhase(new TornadoBatchGlobalIndexOffset());
         appendPhase(new TornadoFieldAccessFixup());

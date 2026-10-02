@@ -136,6 +136,8 @@ TornadoVM's **CUDA C** backend targets NVIDIA GPUs: it emits CUDA C, compiled to
    Flag                                                              Description
    ================================================================  ==================================================================================================================
    ``-Dtornado.cuda.compiler.flags=FLAGS``                           Passes additional flags to NVRTC when compiling the generated CUDA C source (default: none).
+   ``-Dtornado.cuda.devrt.path=PATH``                                Location of the CUDA device runtime library (``libcudadevrt.a``) linked into kernels that launch kernels from the device (``KernelContext.launch``). Default: searched under ``$CUDA_PATH``/``$CUDA_HOME``/``$CUDA_ROOT`` and ``/usr/local/cuda*``.
+   ``-Dtornado.cuda.dp.pendingLaunchCount=N``                        Maximum number of device-side kernel launches that may be outstanding at once (``CU_LIMIT_DEV_RUNTIME_PENDING_LAUNCH_COUNT``). A launch beyond it fails and its child does not run. A plan's ``withCUDAPendingLaunchCount(n)`` takes precedence. Default: the driver's (2048).
    ``-Dtornado.cuda.host.pinning=false``                             Disables pinning host memory for faster host↔device transfers (default: true).
    ``-Dtornado.cuda.payloadAlignment=N``                             Byte boundary that a native array's first data element is aligned to, by prepending ``N``-byte-aligned padding to the device allocation (default: 32). The 16-byte array header otherwise offsets the payload half of a 32-byte L2 sector, so every warp-wide access fetches 5 sectors instead of 4; aligning to 32 restores 4-sector loads at a cost of 16 bytes per buffer. Set to ``0`` to disable the padding and restore the previous layout. Applies to non-batched allocations only; the generated kernel is byte-identical either way.
    ================================================================  ==================================================================================================================
@@ -159,6 +161,7 @@ Metal Specific
    ``-Dtornado.metal.threadgroupHint=true``                          Emits a ``max_total_threads_per_threadgroup`` attribute when the local work-group size is statically known, to help the Metal compiler tune occupancy (default: false).
    ``-Dtornado.metal.profiling.enable=false``                        Disables Metal profiling (default: true).
    ``-Dtornado.metal.compiler.flags=FLAGS``                          Passes additional flags to the Metal compiler (default: none).
+   ``-Dtornado.metal.dispatch.spinWait=false``                       Waits for each synchronous Metal launch with ``waitUntilCompleted`` instead of polling a shared event the command buffer signals. Polling returns as soon as the GPU has finished, which cuts the latency of short kernels, at the cost of keeping a CPU core busy for up to 1 ms per launch. After a wait longer than that, the next launch on the queue blocks right away (default: true).
    ================================================================  ==================================================================================================================
 
 Notes

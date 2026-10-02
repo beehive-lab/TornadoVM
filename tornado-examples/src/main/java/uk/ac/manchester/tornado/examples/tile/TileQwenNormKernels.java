@@ -35,7 +35,7 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 /**
  * Three kernels from the Qwen3 port in
- * <a href="https://github.com/beehive-lab/GPULlama3.java/pull/150">GPULlama3.java#150</a>, each
+ * <a href="https://github.com/beehive-lab/jitllm/pull/150">jitllm#150</a>, each
  * written twice: as the thread-level kernel that PR uses, and against {@code TileContext}.
  *
  * <p>
@@ -306,7 +306,7 @@ public class TileQwenNormKernels {
         }
 
         System.out.printf("Qwen3 norm and quantisation kernels: %d heads of %d, %d iterations%n", heads, HEAD_DIM, iterations);
-        System.out.println("each written as the thread-level kernel from GPULlama3.java#150 and against TileContext");
+        System.out.println("each written as the thread-level kernel from jitllm#150 and against TileContext");
         System.out.println();
 
         String only = System.getProperty("tile.example.only", "");

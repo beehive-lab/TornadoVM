@@ -85,7 +85,12 @@ public class CUDAGenTool {
 
         Variable result = (oclKind.isVector()) ? gen.newVariable(LIRKind.value(oclTarget.getCUDAKind(JavaKind.Object))) : gen.newVariable(lirKind);
         String parameterName = getParameterName(local);
-        gen.append(new AssignStmt(result, new CUDANullary.Parameter(CUDAUnaryOp.CAST_TO_ULONG + parameterName, lirKind)));
+        // A reference parameter arrives as a byte pointer and is used as an integer address. A
+        // primitive arrives by value and must not go through that cast: it would truncate a float
+        // or double. (Scalar kernel arguments are usually folded to constants, so this only shows
+        // for kernels compiled without them, such as kernels launched from the device.)
+        String load = local.getType().getJavaKind().isPrimitive() ? parameterName : CUDAUnaryOp.CAST_TO_ULONG + parameterName;
+        gen.append(new AssignStmt(result, new CUDANullary.Parameter(load, lirKind)));
         parameterToVariable.put(paramNode, result);
 
         if (oclKind.isVector()) {

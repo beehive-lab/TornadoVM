@@ -43,7 +43,7 @@ import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
  *   - MMA with B in [K, N] row-major (standard layout)
  *   - MMA with cp.async tile loads, B in [K, N] (CUDA backend, sm_80+)
  *   - MMA with bf16 operands, B in [K, N] (CUDA backend, sm_80+)
- *   - MMA with B in [N, K] row-major (matches GPULlama3 weight layout)
+ *   - MMA with B in [N, K] row-major (matches jitllm weight layout)
  *   - MMA + swizzled shared memory, B in [K, N]
  *
  * Usage:
@@ -407,7 +407,7 @@ public class MatrixMultiplicationMMA {
     }
 
     // KERNEL 2b: multi-warp MMA non-swizzled, B in [N, K] row-major
-    // (matches GPULlama3 W1/W3 layout: weights stored as [output_dim, input_dim])
+    // (matches jitllm W1/W3 layout: weights stored as [output_dim, input_dim])
     public static void gemmMMA_NK(KernelContext ctx,
                                   HalfFloatArray A, HalfFloatArray B, FloatArray C,
                                   int M, int N, int K) {

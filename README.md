@@ -177,7 +177,7 @@ Library bindings are discovered via Java `ServiceLoader`, bind the calls through
 
 | Project | What it shows |
 |---|---|
-| 🦙 [**GPULlama3.java**](https://github.com/beehive-lab/GPULlama3.java) | LLM inference (Llama 3, Qwen 3, Mistral, Phi-3, Granite, DeepSeek distills) in pure Java — **117 tok/s on an RTX 5090**, official GPU engine for [LangChain4j](https://docs.langchain4j.dev/integrations/language-models/gpullama3-java) and [Quarkus](https://docs.quarkiverse.io/quarkus-langchain4j/dev/gpullama3-chat-model.html) |
+| 🦙 [**jitllm**](https://github.com/beehive-lab/jitllm) | LLM inference (Llama 3, Qwen 3, Mistral, Phi-3, Granite, DeepSeek distills) in pure Java — **117 tok/s on an RTX 5090**, official GPU engine for [LangChain4j](https://docs.langchain4j.dev/integrations/language-models/gpullama3-java) and [Quarkus](https://docs.quarkiverse.io/quarkus-langchain4j/dev/gpullama3-chat-model.html) |
 | 🔆 [**TornadoVM-Ray-Tracer**](https://github.com/Vinhixus/TornadoVM-Ray-Tracer) | Real-time ray tracing in Java, interactive frame rates on consumer GPUs |
 | 📷 [**kfusion-tornadovm**](https://github.com/beehive-lab/kfusion-tornadovm) | KinectFusion 3D reconstruction — a full computer-vision pipeline on integrated and discrete GPUs |
 | 📷 Gaia Mission (ESA) | High-performance algorithms for space exploration at the European Space Agency use TornadoVM |
@@ -289,7 +289,7 @@ Multi-core CPUs; dedicated GPUs from NVIDIA, AMD, and Intel; and integrated GPUs
 <details>
 <summary><b>How fast is it?</b></summary>
 
-It depends on the workload — data-parallel kernels with enough arithmetic intensity see order-of-magnitude speedups over sequential Java; see the [benchmarking guide](https://tornadovm.readthedocs.io/en/latest/benchmarking.html) and the [GPULlama3.java performance tables](https://github.com/beehive-lab/GPULlama3.java#-performance) for end-to-end numbers on real applications (e.g. **117 tok/s for Llama-3 inference on an RTX 5090**). For compute-bound linear algebra, the cuBLAS library tasks reach the tuned vendor throughput — including full FP16 Tensor Core rates — from Java.
+It depends on the workload — data-parallel kernels with enough arithmetic intensity see order-of-magnitude speedups over sequential Java; see the [benchmarking guide](https://tornadovm.readthedocs.io/en/latest/benchmarking.html) and the [jitllm project](https://github.com/beehive-lab/jitllm) for end-to-end numbers on real applications (e.g. **117 tok/s for Llama-3 inference on an RTX 5090**). For compute-bound linear algebra, the cuBLAS library tasks reach the tuned vendor throughput — including full FP16 Tensor Core rates — from Java.
 </details>
 
 ---

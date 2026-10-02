@@ -52,6 +52,7 @@ import uk.ac.manchester.tornado.drivers.cuda.power.CUDAEmptyPowerMetricHandler;
 import uk.ac.manchester.tornado.drivers.cuda.power.CUDANvidiaPowerMetricHandler;
 import uk.ac.manchester.tornado.drivers.cuda.runtime.CUDABufferProvider;
 import uk.ac.manchester.tornado.drivers.cuda.runtime.CUDATornadoDevice;
+import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDACompiler;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
@@ -175,6 +176,15 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     @Override
     public Set<Long> getRegisteredPlanIds() {
         return executionIDs;
+    }
+
+    /**
+     * Sets {@code CU_LIMIT_DEV_RUNTIME_PENDING_LAUNCH_COUNT} on this device's context, as requested
+     * with {@code withCUDAPendingLaunchCount}. The driver is called only when the value changes.
+     */
+    @Override
+    public void setDevicePendingLaunchCount(int count) {
+        CUDACompiler.setPendingLaunchCount(getPlatformContext().getContextId(), count);
     }
 
     @Override

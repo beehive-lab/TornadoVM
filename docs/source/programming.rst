@@ -225,9 +225,79 @@ fallback, which would run without complaint and produce a wrong result.
 +-----------------------------------------------------------------+------------+--------+-------+
 | ``simdgroupMatrix*``, ``matrixMultiply8x8``                     | no         | no     | yes   |
 +-----------------------------------------------------------------+------------+--------+-------+
+| ``launch``, ``launch3D`` (kernels launched from the device)     | yes        | no     | no    |
++-----------------------------------------------------------------+------------+--------+-------+
 
 ``local only`` means the operation is supported when the array was allocated
 with ``KernelContext.allocateIntLocalArray(int)``; a global array is rejected.
+
+Launching kernels from the device (CUDA Dynamic Parallelism)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+On the CUDA backend a kernel can launch other kernels from the device with
+``KernelContext.launch``. This lets a kernel size follow-up work from data that
+only exists on the GPU (a count, a frontier size, a routing decision) without a
+round trip to the host. TornadoVM generates CUDA Dynamic Parallelism 2 code, so
+it needs CUDA 12.0 or newer.
+
+The child kernel is a static ``KernelContext``-style method. It is named with a
+``DeviceKernel`` held in a ``static final`` field, so the JIT compiler can
+resolve it while compiling the parent:
+
+.. code:: java
+
+    static final DeviceKernel CHILD = DeviceKernel.of(MyKernels::child);
+
+    static void parent(KernelContext context, IntArray a, int n) {
+        if (context.globalIdx == 0) {
+            // n threads in blocks of 256; then the child's arguments after its KernelContext
+            context.launch(CHILD, n, 256, a, n);
+        }
+    }
+
+    static void child(KernelContext context, IntArray a, int n) {
+        int i = context.globalIdx;
+        if (i < n) {
+            a.set(i, a.get(i) * 2);
+        }
+    }
+
+The child is compiled into the parent's CUDA module, and the module is linked
+against the CUDA device runtime (``libcudadevrt``). Children can launch kernels
+too, including each other. The main points:
+
+- Every thread that reaches ``launch`` launches its own grid, so guard the call.
+- Sizes are the global size in threads and the block size. The grid is rounded
+  up to whole blocks, so the child must bounds-check its thread index.
+  ``launch3D`` takes three global and three local sizes.
+- Arguments are global arrays and primitives, in the order of the child's
+  parameters after its ``KernelContext``. Local-memory arrays are rejected:
+  local memory belongs to the launching block.
+- ``DeviceLaunchMode`` selects the stream:
+
+  - ``DEFAULT``: the launching block's stream. The child may run while the
+    rest of the parent grid is still running. It sees the launching thread's
+    writes, but not necessarily those of other threads.
+  - ``TAIL``: the child runs once the parent grid has completed, and sees
+    every write the parent grid made.
+  - ``FIRE_AND_FORGET``: the child runs independently.
+
+- A parent cannot wait for its children. The whole tree of launches has
+  completed by the time the host sees the task complete, and arrays the child
+  writes are copied back like any other output.
+- ``--printKernel`` prints the whole module, children included.
+  ``--threadInfo`` also reports every device launch from the device, with the
+  thread that launched it and its global size, local size and number of blocks.
+- A launch that the device rejects (for example an invalid block size, or
+  too many pending launches) does not run the child. The error is printed on
+  the device's standard output.
+- At most 2048 device-side launches may be pending at once by default. A plan
+  that launches more (for example one child per thread block of a large grid)
+  raises the limit with ``executionPlan.withCUDAPendingLaunchCount(n)``, or,
+  for all plans, with ``-Dtornado.cuda.dp.pendingLaunchCount=n``.
+
+See ``tornado-examples/.../kernelcontext/compute/DynamicParallelismRouting.java``
+for a mixture-of-experts style example.
 
 Example
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

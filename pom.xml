@@ -833,5 +833,6 @@
         <module>tornado-cusparse</module>
         <module>tornado-cudf</module>
         <module>tornado-cutlass</module>
+        <module>tornado-cuvs</module>
     </modules>
 </project>

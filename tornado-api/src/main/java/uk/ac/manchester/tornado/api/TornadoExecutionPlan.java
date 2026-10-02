@@ -35,6 +35,7 @@ import uk.ac.manchester.tornado.api.plan.types.OffThreadInfo;
 import uk.ac.manchester.tornado.api.plan.types.WithAllGraphs;
 import uk.ac.manchester.tornado.api.plan.types.WithBatch;
 import uk.ac.manchester.tornado.api.plan.types.WithCUDAGraph;
+import uk.ac.manchester.tornado.api.plan.types.WithCUDAPendingLaunchCount;
 import uk.ac.manchester.tornado.api.plan.types.WithClearProfiles;
 import uk.ac.manchester.tornado.api.plan.types.WithCompilerFlags;
 import uk.ac.manchester.tornado.api.plan.types.WithConcurrentDevices;
@@ -691,6 +692,32 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     public TornadoExecutionPlan transferToDevice(Object... objects) {
         tornadoExecutor.transferDataToDevice(executionFrame, objects);
         return this;
+    }
+
+    /**
+     * Sets how many kernel launches from device code ({@link KernelContext#launch}, CUDA Dynamic
+     * Parallelism) may be pending at once on the device this plan runs on. A device-side launch
+     * beyond the limit fails and its kernel does not run (the failure is printed from the device).
+     * Raise it for kernels that launch many children, for example one per thread block or a deep
+     * recursion.
+     *
+     * <p>
+     * It sets {@code CU_LIMIT_DEV_RUNTIME_PENDING_LAUNCH_COUNT} on the device's CUDA context before
+     * the plan runs, so it holds for everything that runs on that device from then on. Without it,
+     * {@code -Dtornado.cuda.dp.pendingLaunchCount} applies, or else the driver's default (2048).
+     * CUDA backend only; a no-op on other backends.
+     * </p>
+     *
+     * @param count
+     *     the maximum number of pending device-side launches; must be positive
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan withCUDAPendingLaunchCount(int count) {
+        if (count <= 0) {
+            throw new IllegalArgumentException("The pending device-side launch count must be positive, got " + count);
+        }
+        tornadoExecutor.withCUDAPendingLaunchCount(count);
+        return new WithCUDAPendingLaunchCount(this);
     }
 
     public TornadoExecutionPlan withCUDAGraph() {
