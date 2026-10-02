@@ -332,6 +332,49 @@ public final class Cudf {
      *
      * @return total rows, row-group count, column count, in that order
      */
+    /**
+     * Reads a STRING column of a Parquet file into a TornadoVM offsets array and byte blob.
+     *
+     * <p>The two buffers are a cuDF strings column as libcudf lays one out, and they are
+     * TornadoVM's: a generated kernel can read the bytes, and {@link #containsRe} rebuilds a
+     * column over them without copying. That is the point -- the strings are read once and every
+     * pattern after that matches the same device memory.
+     *
+     * <p>{@code charsCapacity} is what the caller sized the blob for. A Parquet footer gives the
+     * row count but not the decoded byte count, so a caller sizes from the file and is told, rather
+     * than left to overrun, when it sized too small.
+     */
+    public static LibraryTaskDescriptor readParquetStrings(StringBuilder pathHolder, int rowGroupStart, int rowGroupCount, int column, long rows, IntArray outOffsets,
+            ByteArray outChars, long charsCapacity) {
+        Access[] access = new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY, Access.WRITE_ONLY,
+                Access.READ_ONLY };
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("readParquetStrings") //
+                .withParameters(new Object[] { pathHolder, rowGroupStart, rowGroupCount, column, rows, outOffsets, outChars, charsCapacity }) //
+                .withAccess(access);
+    }
+
+    /**
+     * One regular expression against a strings column, one byte of answer a row.
+     *
+     * <p>Nothing is copied. The column is rebuilt over {@code offsets} and {@code chars} for the
+     * call, so matching reads the same device memory {@link #readParquetStrings} wrote, and a
+     * second pattern over the same data is a second task on the same buffers rather than a second
+     * read. The compiled program is cached by pattern in the shim.
+     *
+     * <p>The pattern is a {@link StringBuilder} for the reason the path is: TornadoVM marshals
+     * array parameters to the device and refuses an array of String, and a value captured when the
+     * graph is built cannot change between executions.
+     */
+    public static LibraryTaskDescriptor containsRe(long rows, IntArray offsets, ByteArray chars, long charsBytes, StringBuilder pattern, ByteArray outMask) {
+        Access[] access = new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY };
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("containsRe") //
+                .withParameters(new Object[] { rows, offsets, chars, charsBytes, pattern, outMask }) //
+                .withAccess(access);
+    }
 
     public static long[] parquetMetadata(String path) {
         return CudfNativeLib.parquetMetadata(path);

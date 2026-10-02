@@ -50,6 +50,9 @@
 #include <cudf/table/table.hpp>
 #include <cudf/table/table_view.hpp>
 #include <cudf/types.hpp>
+#include <cudf/strings/contains.hpp>
+#include <cudf/strings/regex/regex_program.hpp>
+#include <cudf/strings/strings_column_view.hpp>
 #include <cudf/unary.hpp>
 
 #include <rmm/cuda_stream_view.hpp>
@@ -61,6 +64,7 @@
 #include <cuda_runtime.h>
 
 #include <cstdint>
+#include <map>
 #include <string>
 #include <vector>
 #include <cstring>
@@ -760,4 +764,145 @@ int tornado_cudf_read_parquet(void* stream, const char* path, int32_t row_group_
         return fail("readParquet");
     }
 }
+
+/**
+ * Reads a STRING column of a Parquet file into TornadoVM-owned buffers.
+ *
+ * The two buffers are the two halves of a cuDF strings column as libcudf lays it out: an INT32
+ * offsets array of `rows + 1` entries and a byte blob the offsets index into. Copying them out
+ * rather than keeping cuDF's own column is what lets everything after the read be an ordinary
+ * TornadoVM buffer -- a generated kernel can read the bytes, and tornado_cudf_contains_re
+ * rebuilds a column_view over them without owning anything.
+ *
+ * `out_chars_bytes` reports the decoded size, which the caller cannot know from the footer: a
+ * Parquet column chunk's uncompressed size bounds it but does not give it. A caller that sized
+ * too small is told so rather than overrun, and `chars_capacity` is what it sized.
+ */
+int tornado_cudf_read_parquet_strings(void* stream, const char* path, int32_t row_group_start, int32_t row_group_count, int32_t column, int64_t rows,
+        void* out_offsets, void* out_chars, int64_t chars_capacity, int64_t* out_chars_bytes) {
+    ensure_pool();
+    try {
+        if (path == nullptr || out_offsets == nullptr || out_chars == nullptr) {
+            g_last_error = "readParquetStrings: null path or buffer";
+            return 5;
+        }
+        auto source = cudf::io::source_info{std::string(path)};
+        auto metadata = cudf::io::read_parquet_metadata(source);
+        const auto& root = metadata.schema().root();
+        const int32_t schema_columns = static_cast<int32_t>(root.num_children());
+        if (column < 0 || column >= schema_columns) {
+            g_last_error = "readParquetStrings: column " + std::to_string(column) + " is beyond the file's " + std::to_string(schema_columns) + " columns";
+            return 6;
+        }
+        auto options = cudf::io::parquet_reader_options::builder(source).columns({root.child(column).name()}).build();
+        if (row_group_count > 0) {
+            std::vector<cudf::size_type> groups;
+            for (int32_t g = 0; g < row_group_count; g++) {
+                groups.push_back(row_group_start + g);
+            }
+            options.set_row_groups({groups});
+        }
+
+        auto view = rmm::cuda_stream_view{static_cast<cudaStream_t>(stream)};
+        auto result = cudf::io::read_parquet(options, view);
+        const auto table = result.tbl->view();
+        if (static_cast<int64_t>(table.num_rows()) != rows) {
+            g_last_error = "readParquetStrings: file gave " + std::to_string(table.num_rows()) + " rows where the caller sized for " + std::to_string(rows);
+            return 7;
+        }
+        const auto col = table.column(0);
+        if (col.type().id() != cudf::type_id::STRING) {
+            g_last_error = "readParquetStrings: column " + std::to_string(column) + " is not a STRING column";
+            return 8;
+        }
+        if (col.null_count() != 0) {
+            g_last_error = "readParquetStrings: the column contains nulls; declare it NOT NULL or use a provider that reads validity masks";
+            return 9;
+        }
+
+        cudf::strings_column_view scv(col);
+        const int64_t chars_bytes = scv.chars_size(view);
+        if (out_chars_bytes != nullptr) {
+            *out_chars_bytes = chars_bytes;
+        }
+        if (chars_bytes > chars_capacity) {
+            g_last_error = "readParquetStrings: the column decodes to " + std::to_string(chars_bytes) + " bytes and the caller sized " + std::to_string(chars_capacity);
+            return 6;
+        }
+
+        cudaStream_t raw = static_cast<cudaStream_t>(stream);
+        const auto offsets = scv.offsets();
+        if (offsets.type().id() != cudf::type_id::INT32) {
+            g_last_error = "readParquetStrings: the offsets child is not INT32, which this binding's buffer layout assumes";
+            return 8;
+        }
+        cudaError_t rc = copy_out(out_offsets, offsets.data<int32_t>(), static_cast<size_t>(rows + 1) * sizeof(int32_t), raw);
+        if (rc != cudaSuccess) {
+            g_last_error = std::string("readParquetStrings offsets copy-out: ") + cudaGetErrorString(rc);
+            return 3;
+        }
+        if (chars_bytes > 0) {
+            rc = copy_out(out_chars, scv.chars_begin(view), static_cast<size_t>(chars_bytes), raw);
+            if (rc != cudaSuccess) {
+                g_last_error = std::string("readParquetStrings chars copy-out: ") + cudaGetErrorString(rc);
+                return 3;
+            }
+        }
+        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+    } catch (const std::exception& e) {
+        return fail("readParquetStrings", e);
+    } catch (...) {
+        return fail("readParquetStrings");
+    }
+}
+
+/**
+ * Matches a regex against a strings column held in TornadoVM buffers, writing one byte a row.
+ *
+ * Nothing is owned here. A `column_view` is a non-owning descriptor, so the strings column is
+ * rebuilt over the caller's offsets and chars for the duration of the call and the match reads
+ * the same device memory the reader wrote -- no copy between the read and the match.
+ *
+ * The compiled program is cached by pattern. `regex_program::create` parses and compiles, which is
+ * host work proportional to the pattern and not to the data, so doing it per batch would show up
+ * as a per-file cost that has nothing to do with the query.
+ */
+int tornado_cudf_contains_re(void* stream, int64_t rows, const void* offsets, const void* chars, int64_t chars_bytes, const char* pattern, void* out_mask) {
+    ensure_pool();
+    try {
+        if (offsets == nullptr || chars == nullptr || pattern == nullptr || out_mask == nullptr) {
+            g_last_error = "containsRe: null buffer or pattern";
+            return 5;
+        }
+        static std::map<std::string, std::unique_ptr<cudf::strings::regex_program>> programs;
+        const std::string key(pattern);
+        auto found = programs.find(key);
+        if (found == programs.end()) {
+            found = programs.emplace(key, cudf::strings::regex_program::create(key)).first;
+        }
+
+        auto view = rmm::cuda_stream_view{static_cast<cudaStream_t>(stream)};
+        cudf::column_view offsets_view(cudf::data_type{cudf::type_id::INT32}, static_cast<cudf::size_type>(rows + 1), offsets, nullptr, 0);
+        cudf::column_view strings_view(cudf::data_type{cudf::type_id::STRING}, static_cast<cudf::size_type>(rows), chars, nullptr, 0, 0, {offsets_view});
+        cudf::strings_column_view scv(strings_view);
+
+        auto mask = cudf::strings::contains_re(scv, *found->second, view);
+        if (mask->type().id() != cudf::type_id::BOOL8) {
+            g_last_error = "containsRe: contains_re did not return BOOL8";
+            return 8;
+        }
+        cudaStream_t raw = static_cast<cudaStream_t>(stream);
+        cudaError_t rc = copy_out(out_mask, mask->view().data<int8_t>(), static_cast<size_t>(rows), raw);
+        if (rc != cudaSuccess) {
+            g_last_error = std::string("containsRe copy-out: ") + cudaGetErrorString(rc);
+            return 3;
+        }
+        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+    } catch (const std::exception& e) {
+        return fail("containsRe", e);
+    } catch (...) {
+        return fail("containsRe");
+    }
+}
+
 }  // extern "C"
