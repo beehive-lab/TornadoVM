@@ -1411,7 +1411,7 @@ public class CUDALIRStmt {
                 return;
             }
             StringBuilder sb = new StringBuilder();
-            sb.append("make_").append(elem).append(n).append("(");
+            sb.append("make_").append(vectorKind.getElementKind().getVectorElementName()).append(n).append("(");
             for (int i = 0; i < n; i++) {
                 if (i > 0) {
                     sb.append(", ");
