@@ -82,6 +82,17 @@ public final class CudfLibraryProvider implements TornadoLibraryProvider {
             case "readParquet" -> CudfNativeLib.readParquet(stream, pathOf(invocation.getArg(0)), (Integer) invocation.getArg(1), (Integer) invocation.getArg(2),
                     (Integer) invocation.getArg(3), (int[]) invocation.getArg(4), (Long) invocation.getArg(5), invocation.getDevicePointer(6), invocation.getDevicePointer(7),
                     (Integer) invocation.getArg(8));
+            case "readParquetStrings" -> {
+                // The decoded byte count is reported back through the caller's own dims buffer
+                // rather than returned, because a library task has no return value. The status is
+                // what the interpreter checks, so success is 0 here and the size is a side effect.
+                CudfNativeLib.readParquetStrings(stream, pathOf(invocation.getArg(0)), (Integer) invocation.getArg(1), (Integer) invocation.getArg(2),
+                        (Integer) invocation.getArg(3), (Long) invocation.getArg(4), invocation.getDevicePointer(5), invocation.getDevicePointer(6),
+                        (Long) invocation.getArg(7));
+                yield 0;
+            }
+            case "containsRe" -> CudfNativeLib.containsRe(stream, (Long) invocation.getArg(0), invocation.getDevicePointer(1), invocation.getDevicePointer(2),
+                    (Long) invocation.getArg(3), pathOf(invocation.getArg(4)), invocation.getDevicePointer(5));
             case "sortedOrder" -> CudfNativeLib.sortedOrder(stream, invocation.getDevicePointer(1), (Integer) invocation.getArg(0), invocation.getDevicePointer(2));
             case "groupSum" -> CudfNativeLib.groupSum(stream, invocation.getDevicePointer(1), invocation.getDevicePointer(2), (Integer) invocation.getArg(0), invocation.getDevicePointer(3),
                     invocation.getDevicePointer(4), invocation.getDevicePointer(5));
