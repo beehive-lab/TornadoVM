@@ -369,9 +369,17 @@ try (NcclCommunicator comm = NcclCommunicator.create(gpus)) {
 and receives in the same step (a ring shift, a halo exchange), use `sendRecv`: issued as separate
 tasks, two ranks that each send to the other first would both wait in their send forever.
 
-Executing the plans one after the other on one thread hangs at the first collective. NCCL tasks are
-not captured in CUDA graphs yet. `BenchmarkNcclAllReduce` and `BenchmarkNcclSendRecv` compare a step
-with an NCCL all-reduce or ring exchange against handing the buffers on through the host.
+Executing the plans one after the other on one thread hangs at the first collective.
+
+**CUDA graphs:** NCCL tasks are captured like any other library task. Call `withCUDAGraph()` on every
+rank's plan: the first `NcclPlanGroup.execute()` captures each rank's graph (kernels, transfers and
+NCCL calls) and runs it, and later steps replay it. NCCL sets up its connections inside the capture
+on its own, so no warm-up is needed. Close the plans before the communicator: a captured graph
+refers to it.
+
+`BenchmarkNcclAllReduce` and `BenchmarkNcclSendRecv` compare a step with an NCCL all-reduce or ring
+exchange against handing the buffers on through the host (`-Dtornado.nccl.benchmark.cudaGraph=true`
+runs every plan as a CUDA graph).
 
 > **cuTENSOR** (`nvidia/cutensor`, tensor contractions / einsum) is implemented
 > on branch `hybrid-cutensor` but is **not part of this build**.

@@ -58,13 +58,23 @@ import uk.ac.manchester.tornado.nccl.provider.NcclNativeLib;
  * How to run?
  * </p>
  * <code>
- * tornado -m tornado.nccl/uk.ac.manchester.tornado.nccl.tests.BenchmarkNcclSendRecv [elements,elements,...] [iterations]
+ * tornado [--jvm="-Dtornado.nccl.benchmark.cudaGraph=true"] -m tornado.nccl/uk.ac.manchester.tornado.nccl.tests.BenchmarkNcclSendRecv [elements,elements,...] [iterations]
  * </code>
  */
 public class BenchmarkNcclSendRecv {
 
     private static final int WARMUP_ITERATIONS = 5;
     private static final int LOCAL_SIZE = 256;
+
+    /** With {@code -Dtornado.nccl.benchmark.cudaGraph=true}, every plan is captured into a CUDA graph and replayed. */
+    private static final boolean CUDA_GRAPH = Boolean.getBoolean("tornado.nccl.benchmark.cudaGraph");
+
+    private static TornadoExecutionPlan graphIfRequested(TornadoExecutionPlan plan) {
+        if (CUDA_GRAPH) {
+            plan.withCUDAGraph();
+        }
+        return plan;
+    }
 
     public static void produce(KernelContext context, FloatArray array, float value) {
         int id = context.globalIdx;
@@ -108,6 +118,9 @@ public class BenchmarkNcclSendRecv {
 
     private static void closeAll(TornadoExecutionPlan... plans) {
         for (TornadoExecutionPlan plan : plans) {
+            if (plan == null) {
+                continue;
+            }
             try {
                 plan.close();
             } catch (TornadoExecutionPlanException e) {
@@ -123,42 +136,46 @@ public class BenchmarkNcclSendRecv {
         FloatArray[] recvs = new FloatArray[ranks];
         TornadoExecutionPlan[] plans = new TornadoExecutionPlan[ranks];
         long[] times = new long[iterations];
+        // The plans are closed before the communicator: a captured CUDA graph refers to it, and
+        // destroying a communicator that an instantiated graph still uses blocks.
         try (NcclCommunicator communicator = NcclCommunicator.create(devices)) {
-            for (int rank = 0; rank < ranks; rank++) {
-                String name = "nccl" + rank;
-                sends[rank] = new FloatArray(size);
-                recvs[rank] = new FloatArray(size);
-                TaskGraph graph = new TaskGraph(name);
-                if (withKernels) {
-                    graph.task("produce", BenchmarkNcclSendRecv::produce, new KernelContext(), sends[rank], rank + 1.0f);
-                }
-                graph.libraryTask("shift", Nccl::sendRecv, communicator, sends[rank], (rank + 1) % ranks, recvs[rank], (rank - 1 + ranks) % ranks);
-                if (withKernels) {
-                    graph.task("consume", BenchmarkNcclSendRecv::consume, new KernelContext(), recvs[rank]);
-                }
-                graph.transferToHost(DataTransferMode.UNDER_DEMAND, recvs[rank]);
-                plans[rank] = new TornadoExecutionPlan(graph.snapshot());
-                plans[rank].withDevice(devices[rank]);
-                if (withKernels) {
-                    plans[rank].withGridScheduler(grid(name, size, "produce", "consume"));
-                }
-            }
-            try (NcclPlanGroup group = new NcclPlanGroup(plans)) {
-                TornadoExecutionResult[] results = null;
-                for (int i = 0; i < WARMUP_ITERATIONS + iterations; i++) {
-                    long start = System.nanoTime();
-                    results = group.execute();
-                    if (i >= WARMUP_ITERATIONS) {
-                        times[i - WARMUP_ITERATIONS] = System.nanoTime() - start;
+            try {
+                for (int rank = 0; rank < ranks; rank++) {
+                    String name = "nccl" + rank;
+                    sends[rank] = new FloatArray(size);
+                    recvs[rank] = new FloatArray(size);
+                    TaskGraph graph = new TaskGraph(name);
+                    if (withKernels) {
+                        graph.task("produce", BenchmarkNcclSendRecv::produce, new KernelContext(), sends[rank], rank + 1.0f);
+                    }
+                    graph.libraryTask("shift", Nccl::sendRecv, communicator, sends[rank], (rank + 1) % ranks, recvs[rank], (rank - 1 + ranks) % ranks);
+                    if (withKernels) {
+                        graph.task("consume", BenchmarkNcclSendRecv::consume, new KernelContext(), recvs[rank]);
+                    }
+                    graph.transferToHost(DataTransferMode.UNDER_DEMAND, recvs[rank]);
+                    plans[rank] = graphIfRequested(new TornadoExecutionPlan(graph.snapshot()));
+                    plans[rank].withDevice(devices[rank]);
+                    if (withKernels) {
+                        plans[rank].withGridScheduler(grid(name, size, "produce", "consume"));
                     }
                 }
-                for (int rank = 0; rank < ranks && withKernels; rank++) {
-                    results[rank].transferToHost(recvs[rank]);
-                    check("NCCL", recvs[rank], rank, ranks);
+                try (NcclPlanGroup group = new NcclPlanGroup(plans)) {
+                    TornadoExecutionResult[] results = null;
+                    for (int i = 0; i < WARMUP_ITERATIONS + iterations; i++) {
+                        long start = System.nanoTime();
+                        results = group.execute();
+                        if (i >= WARMUP_ITERATIONS) {
+                            times[i - WARMUP_ITERATIONS] = System.nanoTime() - start;
+                        }
+                    }
+                    for (int rank = 0; rank < ranks && withKernels; rank++) {
+                        results[rank].transferToHost(recvs[rank]);
+                        check("NCCL", recvs[rank], rank, ranks);
+                    }
                 }
+            } finally {
+                closeAll(plans);
             }
-        } finally {
-            closeAll(plans);
         }
         return median(times);
     }
@@ -179,7 +196,7 @@ public class BenchmarkNcclSendRecv {
                 TaskGraph produceGraph = new TaskGraph(producer) //
                         .task("produce", BenchmarkNcclSendRecv::produce, new KernelContext(), sends[rank], rank + 1.0f) //
                         .transferToHost(DataTransferMode.EVERY_EXECUTION, sends[rank]);
-                producers[rank] = new TornadoExecutionPlan(produceGraph.snapshot());
+                producers[rank] = graphIfRequested(new TornadoExecutionPlan(produceGraph.snapshot()));
                 producers[rank].withDevice(devices[rank]).withGridScheduler(grid(producer, size, "produce"));
 
                 String consumer = "consumer" + rank;
@@ -187,7 +204,7 @@ public class BenchmarkNcclSendRecv {
                         .transferToDevice(DataTransferMode.EVERY_EXECUTION, recvs[rank]) //
                         .task("consume", BenchmarkNcclSendRecv::consume, new KernelContext(), recvs[rank]) //
                         .transferToHost(DataTransferMode.UNDER_DEMAND, recvs[rank]);
-                consumers[rank] = new TornadoExecutionPlan(consumeGraph.snapshot());
+                consumers[rank] = graphIfRequested(new TornadoExecutionPlan(consumeGraph.snapshot()));
                 consumers[rank].withDevice(devices[rank]).withGridScheduler(grid(consumer, size, "consume"));
             }
             try (NcclPlanGroup produce = new NcclPlanGroup(producers); NcclPlanGroup consume = new NcclPlanGroup(consumers)) {
@@ -228,7 +245,8 @@ public class BenchmarkNcclSendRecv {
             names.append(i == 0 ? "" : ", ").append(devices[i].getPhysicalDevice().getDeviceName());
         }
         int version = NcclNativeLib.version();
-        System.out.printf("NCCL %d.%d.%d, %d rank(s) in a ring: %s, %d iterations (median)%n", version / 10000, (version / 100) % 100, version % 100, numDevices, names, iterations);
+        String mode = CUDA_GRAPH ? ", CUDA graphs" : "";
+        System.out.printf("NCCL %d.%d.%d, %d rank(s) in a ring: %s, %d iterations (median)%s%n", version / 10000, (version / 100) % 100, version % 100, numDevices, names, iterations, mode);
         System.out.printf("%12s %10s | %16s %12s %9s | %16s %14s%n", "elements", "MiB/rank", "step host-staged", "step NCCL", "speedup", "exchange only", "GB/s per rank");
         for (int size : sizes) {
             double staged = hostStaged(devices, size, iterations);
