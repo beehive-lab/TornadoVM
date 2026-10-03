@@ -759,6 +759,11 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
     }
 
     @Override
+    public void abortExecutionGraphCapture(long executionPlanId) {
+        getDeviceContext().abortExecutionGraphCapture(executionPlanId);
+    }
+
+    @Override
     public long getNativeStream(long executionPlanId) {
         return getDeviceContext().getNativeStream(executionPlanId);
     }

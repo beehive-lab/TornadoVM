@@ -229,6 +229,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestOnDemandCopyIn"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestCopyInPipelines"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestCudaGraphPlanTeardown"),
+    TestEntry("uk.ac.manchester.tornado.unittests.runtime.TestFailedCudaGraphCapture"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestPinnedTransfers"),
     TestEntry("uk.ac.manchester.tornado.unittests.executor.TestExecutor"),
     TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGrid"),
