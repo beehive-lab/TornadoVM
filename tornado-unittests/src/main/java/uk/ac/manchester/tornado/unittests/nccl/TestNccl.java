@@ -606,6 +606,64 @@ public class TestNccl extends TornadoTestBase {
         checkPipeline(received, step[0]);
     }
 
+    /**
+     * Every rank's plan holds two graphs, chained on the device and captured into CUDA graphs. Freeing
+     * and closing the plans must release every captured graph: one that leaks still holds the
+     * communicator, and ncclCommDestroy then waits for it forever.
+     */
+    @Test
+    public void testMultiGraphPlanWithCudaGraphReleasesCommunicator() throws Exception {
+        TornadoDevice[] devices = cudaDevices();
+        if (devices.length < 2) {
+            throw new TornadoVMMultiDeviceNotSupported("This test needs at least 2 CUDA devices");
+        }
+        TornadoDevice[] pair = { devices[0], devices[1] };
+        FloatArray[] buffers = new FloatArray[2];
+        TornadoExecutionPlan[] plans = new TornadoExecutionPlan[2];
+        NcclCommunicator communicator = NcclCommunicator.create(pair);
+        try {
+            for (int rank = 0; rank < 2; rank++) {
+                buffers[rank] = new FloatArray(SIZE);
+                String name = "split" + rank;
+                TaskGraph fill = new TaskGraph(name + "a") //
+                        .task("k0", TestNccl::fillFloat, new KernelContext(), buffers[rank], rank) //
+                        .persistOnDevice(buffers[rank]);
+                TaskGraph sum = new TaskGraph(name + "b") //
+                        .consumeFromDevice(name + "a", buffers[rank]) //
+                        .libraryTask("sum", Nccl::allReduceInPlace, communicator, buffers[rank], NcclRedOp.SUM) //
+                        .task("k0", TestNccl::addOne, new KernelContext(), buffers[rank]) //
+                        .transferToHost(DataTransferMode.EVERY_EXECUTION, buffers[rank]);
+                GridScheduler gridScheduler = new GridScheduler();
+                gridScheduler.addWorkerGrid(name + "a.k0", worker(SIZE));
+                gridScheduler.addWorkerGrid(name + "b.k0", worker(SIZE));
+                plans[rank] = new TornadoExecutionPlan(fill.snapshot(), sum.snapshot());
+                plans[rank].withDevice(pair[rank]).withGridScheduler(gridScheduler).withCUDAGraph();
+            }
+            try (NcclPlanGroup ranks = new NcclPlanGroup(plans)) {
+                for (int step = 0; step < 3; step++) {
+                    ranks.execute();
+                }
+            }
+            for (int rank = 0; rank < 2; rank++) {
+                for (int i = 0; i < SIZE; i++) {
+                    assertEquals(3.0f * (i % 7 + 1) + 1.0f, buffers[rank].get(i), 0.0f);
+                }
+            }
+        } finally {
+            for (TornadoExecutionPlan plan : plans) {
+                if (plan != null) {
+                    plan.freeDeviceMemory();
+                    plan.close();
+                }
+            }
+        }
+        Thread closer = new Thread(communicator::close, "nccl-close");
+        closer.setDaemon(true);
+        closer.start();
+        closer.join(60_000);
+        assertTrue("ncclCommDestroy did not return: a CUDA graph of a closed plan still holds the communicator", !closer.isAlive());
+    }
+
     private static void checkPipeline(FloatArray received, int step) {
         for (int i = 0; i < SIZE; i++) {
             assertEquals("step " + step, 2.0f * (step * 10 + i % 9) + 1.0f, received.get(i), 0.0f);
