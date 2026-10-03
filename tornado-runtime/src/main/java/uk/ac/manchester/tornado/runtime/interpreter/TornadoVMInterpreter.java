@@ -761,8 +761,10 @@ public class TornadoVMInterpreter {
             if (isWarmup) {
                 return lastEvent;
             }
-            insideCaptureRegion = false;
+            // Still inside the region until the graph is instantiated: if that fails, the failure
+            // handler abandons the capture and drops its deferred writes.
             executeGraphEndCapture(logBuilder, graphId);
+            insideCaptureRegion = false;
         return lastEvent;
     }
 
@@ -1652,7 +1654,29 @@ public class TornadoVMInterpreter {
     }
 
     public Event execute() {
-        return execute(false);
+        try {
+            return execute(false);
+        } catch (RuntimeException | Error e) {
+            abortCaptureAfterFailure();
+            throw e;
+        }
+    }
+
+    /**
+     * Called when an execution fails inside a CUDA-graph capture region. The capture is abandoned,
+     * so the device stream is not left capturing and nothing from the failed capture is flushed
+     * into the next one on the same device.
+     */
+    private void abortCaptureAfterFailure() {
+        if (!insideCaptureRegion) {
+            return;
+        }
+        insideCaptureRegion = false;
+        try {
+            interpreterDevice.abortExecutionGraphCapture(graphExecutionContext.getExecutionPlanId());
+        } catch (RuntimeException suppressed) {
+            // The failure being reported is the execution's, not the clean-up's.
+        }
     }
 
     /**
