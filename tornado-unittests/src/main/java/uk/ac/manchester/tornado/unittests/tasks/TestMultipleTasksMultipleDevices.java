@@ -24,6 +24,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -111,7 +112,13 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
         assertAvailableDevices();
         setDefaultDevices();
         System.setProperty("tornado.concurrent.devices", "True");
+    }
 
+    /**
+     * Tests update the arrays in place: start each test from fresh data.
+     */
+    @Before
+    public void initData() {
         a = new IntArray(NUM_ELEMENTS);
         b = new IntArray(NUM_ELEMENTS);
         c = new IntArray(NUM_ELEMENTS);
@@ -124,7 +131,6 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
             c.set(i, 120 + i);
             e.set(i, i);
         });
-
     }
 
     private static void assertAvailableDevices() {
