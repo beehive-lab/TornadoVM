@@ -131,6 +131,12 @@ public class TestNccl extends TornadoTestBase {
      * kernel task in it is called {@code "k0"}, {@code "k1"}, ... and runs over {@code threads}.
      */
     private static void runRanks(TornadoDevice[] devices, int threads, int kernels, int steps, BiFunction<Integer, String, TaskGraph> graphOfRank, Runnable beforeEachStep) {
+        runRanks(devices, threads, kernels, steps, graphOfRank, beforeEachStep, false);
+    }
+
+    /** As above; with {@code cudaGraph}, every plan is captured into a CUDA graph on its first execution and replayed after. */
+    private static void runRanks(TornadoDevice[] devices, int threads, int kernels, int steps, BiFunction<Integer, String, TaskGraph> graphOfRank, Runnable beforeEachStep,
+            boolean cudaGraph) {
         TornadoExecutionPlan[] plans = new TornadoExecutionPlan[devices.length];
         try {
             for (int rank = 0; rank < devices.length; rank++) {
@@ -141,6 +147,9 @@ public class TestNccl extends TornadoTestBase {
                 }
                 plans[rank] = new TornadoExecutionPlan(graphOfRank.apply(rank, name).snapshot());
                 plans[rank].withDevice(devices[rank]).withGridScheduler(gridScheduler);
+                if (cudaGraph) {
+                    plans[rank].withCUDAGraph();
+                }
             }
             try (NcclPlanGroup ranks = new NcclPlanGroup(plans)) {
                 for (int step = 0; step < steps; step++) {
@@ -416,6 +425,136 @@ public class TestNccl extends TornadoTestBase {
             assertThrows(TornadoRuntimeException.class, () -> Nccl.recv(communicator, floats, -1));
             assertThrows(TornadoRuntimeException.class, () -> Nccl.sendRecv(communicator, floats, 0, new FloatArray(SIZE / 2), 0));
             assertThrows(TornadoRuntimeException.class, () -> Nccl.sendRecv(communicator, floats, 0, new IntArray(SIZE), 0));
+        }
+    }
+
+    /**
+     * Kernel, all-reduce and kernel captured into one CUDA graph per rank on the first execution and
+     * replayed with new host input on every step after.
+     */
+    @Test
+    public void testAllReduceWithCudaGraph() {
+        TornadoDevice[] devices = cudaDevices();
+        int n = devices.length;
+        final int steps = 4;
+        FloatArray[] inputs = new FloatArray[n];
+        FloatArray[] buffers = new FloatArray[n];
+        int[] step = { -1 };
+        try (NcclCommunicator communicator = NcclCommunicator.create(devices)) {
+            runRanks(devices, SIZE, 2, steps, (rank, name) -> {
+                inputs[rank] = new FloatArray(SIZE);
+                buffers[rank] = new FloatArray(SIZE);
+                return new TaskGraph(name) //
+                        .transferToDevice(DataTransferMode.EVERY_EXECUTION, inputs[rank]) //
+                        .task("k0", TestNccl::twice, new KernelContext(), inputs[rank], buffers[rank]) //
+                        .libraryTask("sum", Nccl::allReduceInPlace, communicator, buffers[rank], NcclRedOp.SUM) //
+                        .task("k1", TestNccl::addOne, new KernelContext(), buffers[rank]) //
+                        .transferToHost(DataTransferMode.EVERY_EXECUTION, buffers[rank]);
+            }, () -> {
+                if (step[0] >= 0) {
+                    checkSum(buffers, n, step[0]);
+                }
+                step[0]++;
+                for (int rank = 0; rank < n; rank++) {
+                    for (int i = 0; i < SIZE; i++) {
+                        inputs[rank].set(i, rank + step[0] + i % 3);
+                    }
+                }
+            }, true);
+        }
+        checkSum(buffers, n, step[0]);
+    }
+
+    private static void checkSum(FloatArray[] buffers, int n, int step) {
+        for (int rank = 0; rank < n; rank++) {
+            for (int i = 0; i < SIZE; i++) {
+                float sum = 2.0f * (n * (n - 1) / 2.0f + n * (step + i % 3));
+                assertEquals("step " + step, sum + 1.0f, buffers[rank].get(i), 1e-3f);
+            }
+        }
+    }
+
+    /** The send/recv ring captured into one CUDA graph per rank and replayed with new input. */
+    @Test
+    public void testRingShiftWithCudaGraph() {
+        TornadoDevice[] devices = cudaDevices();
+        int n = devices.length;
+        final int steps = 4;
+        FloatArray[] inputs = new FloatArray[n];
+        FloatArray[] sends = new FloatArray[n];
+        FloatArray[] recvs = new FloatArray[n];
+        int[] step = { -1 };
+        try (NcclCommunicator communicator = NcclCommunicator.create(devices)) {
+            runRanks(devices, SIZE, 1, steps, (rank, name) -> {
+                inputs[rank] = new FloatArray(SIZE);
+                sends[rank] = new FloatArray(SIZE);
+                recvs[rank] = new FloatArray(SIZE);
+                return new TaskGraph(name) //
+                        .transferToDevice(DataTransferMode.EVERY_EXECUTION, inputs[rank]) //
+                        .task("k0", TestNccl::twice, new KernelContext(), inputs[rank], sends[rank]) //
+                        .libraryTask("shift", Nccl::sendRecv, communicator, sends[rank], (rank + 1) % n, recvs[rank], (rank - 1 + n) % n) //
+                        .transferToHost(DataTransferMode.EVERY_EXECUTION, recvs[rank]);
+            }, () -> {
+                if (step[0] >= 0) {
+                    checkShift(recvs, n, step[0]);
+                }
+                step[0]++;
+                for (int rank = 0; rank < n; rank++) {
+                    for (int i = 0; i < SIZE; i++) {
+                        inputs[rank].set(i, rank * 100 + step[0] * 10 + i % 5);
+                    }
+                }
+            }, true);
+        }
+        checkShift(recvs, n, step[0]);
+    }
+
+    private static void checkShift(FloatArray[] recvs, int n, int step) {
+        for (int rank = 0; rank < n; rank++) {
+            int previous = (rank - 1 + n) % n;
+            for (int i = 0; i < SIZE; i++) {
+                assertEquals("step " + step, 2.0f * (previous * 100 + step * 10 + i % 5), recvs[rank].get(i), 0.0f);
+            }
+        }
+    }
+
+    /** The two-stage send/recv pipeline, each stage captured into a CUDA graph and replayed. */
+    @Test
+    public void testPipelineWithCudaGraph() {
+        TornadoDevice[] devices = cudaDevices();
+        if (devices.length < 2) {
+            throw new TornadoVMMultiDeviceNotSupported("This test needs at least 2 CUDA devices");
+        }
+        TornadoDevice[] stages = { devices[0], devices[1] };
+        FloatArray input = new FloatArray(SIZE);
+        FloatArray produced = new FloatArray(SIZE);
+        FloatArray received = new FloatArray(SIZE);
+        int[] step = { -1 };
+        try (NcclCommunicator communicator = NcclCommunicator.create(devices)) {
+            runRanks(stages, SIZE, 1, 4, (rank, name) -> rank == 0 //
+                    ? new TaskGraph(name) //
+                            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                            .task("k0", TestNccl::twice, new KernelContext(), input, produced) //
+                            .libraryTask("send", Nccl::send, communicator, produced, 1) //
+                    : new TaskGraph(name) //
+                            .libraryTask("recv", Nccl::recv, communicator, received, 0) //
+                            .task("k0", TestNccl::addOne, new KernelContext(), received) //
+                            .transferToHost(DataTransferMode.EVERY_EXECUTION, received), () -> {
+                                if (step[0] >= 0) {
+                                    checkPipeline(received, step[0]);
+                                }
+                                step[0]++;
+                                for (int i = 0; i < SIZE; i++) {
+                                    input.set(i, step[0] * 10 + i % 9);
+                                }
+                            }, true);
+        }
+        checkPipeline(received, step[0]);
+    }
+
+    private static void checkPipeline(FloatArray received, int step) {
+        for (int i = 0; i < SIZE; i++) {
+            assertEquals("step " + step, 2.0f * (step * 10 + i % 9) + 1.0f, received.get(i), 0.0f);
         }
     }
 

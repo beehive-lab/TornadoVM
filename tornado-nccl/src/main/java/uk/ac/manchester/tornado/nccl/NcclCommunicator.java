@@ -129,7 +129,9 @@ public final class NcclCommunicator implements AutoCloseable {
 
     /**
      * Destroys the communicator. No plan that uses it may still be executing; plans that use it
-     * fail after this.
+     * fail after this. Close plans captured into CUDA graphs <b>before</b> the communicator: NCCL
+     * waits in {@code ncclCommDestroy} for every instantiated graph that still uses the
+     * communicator, so the wrong order blocks here.
      */
     @Override
     public void close() {

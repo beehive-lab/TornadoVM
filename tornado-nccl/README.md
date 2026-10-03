@@ -57,6 +57,13 @@ would both wait in their send forever. A rank may send to and receive from itsel
   also keeps it on the same TornadoVM command queue) and returns once all of them have finished.
   Executing the plans one after the other on one thread hangs at the first collective.
 
+## CUDA graphs
+
+NCCL tasks can be captured into CUDA graphs. Call `withCUDAGraph()` on the plan of every rank; the
+first `NcclPlanGroup.execute()` captures each rank's graph and runs it, and later steps replay it
+with the new host input. Close the plans before closing the communicator, because the captured
+graphs refer to it.
+
 ## Requirements
 
 - CUDA backend (`make BACKEND=cuda`), one or more NVIDIA GPUs. A single GPU gives a one-rank
@@ -72,6 +79,8 @@ tornado -m tornado.nccl/uk.ac.manchester.tornado.nccl.tests.BenchmarkNcclAllRedu
 tornado -m tornado.nccl/uk.ac.manchester.tornado.nccl.tests.BenchmarkNcclSendRecv [elements,...] [iterations]
 ```
 
+Add `--jvm="-Dtornado.nccl.benchmark.cudaGraph=true"` to run every plan of a benchmark as a CUDA graph.
+
 The benchmarks run one step of a multi-GPU pipeline (kernel, communication, kernel) with NCCL and
 with the alternative TornadoVM offers without it: copy every rank's buffer to the host, combine or
 hand them on there, and copy the result back. `BenchmarkNcclAllReduce` sums across the GPUs;
@@ -79,6 +88,5 @@ hand them on there, and copy the result back. `BenchmarkNcclAllReduce` sums acro
 
 ## Not supported yet
 
-- Capture in CUDA graphs.
 - Group calls spanning several tasks (only `sendRecv` groups its send and receive).
 - Communicators across processes (`ncclCommInitRank` with a unique id exchanged by the application).
