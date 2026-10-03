@@ -1252,6 +1252,10 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.withCompilerFlags(backendType, compilerFlags);
     }
 
+    void withStrictFloatingPoint() {
+        taskGraphImpl.withStrictFloatingPoint();
+    }
+
     void withGridScheduler(GridScheduler gridScheduler) {
         taskGraphImpl.withGridScheduler(gridScheduler);
     }

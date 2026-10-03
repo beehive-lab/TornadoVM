@@ -1204,7 +1204,20 @@ public class TornadoVMInterpreter {
 
     private void updateMeta(TaskContextInterface meta) {
         meta.setPrintKernelFlag(graphExecutionContext.meta().isPrintKernelEnabled());
-        meta.setCompilerFlags(TornadoVMBackendType.OPENCL, graphExecutionContext.meta().getCompilerFlags(TornadoVMBackendType.OPENCL));
+        meta.setStrictFloatingPoint(graphExecutionContext.meta().isStrictFloatingPoint());
+        // Every backend, not just OpenCL. withCompilerFlags() writes into the execution
+        // context's meta, and each backend's code cache reads the *task's* meta -- so a flag
+        // that is not copied down here never reaches the compiler. OCLCodeCache was the only
+        // one being served; CUDACodeCache and MetalCodeCache read the same way and got nothing,
+        // which made withCompilerFlags(CUDA, ...) and withCompilerFlags(METAL, ...) silently
+        // do nothing at all. Looping over the backends keeps that from recurring when one is
+        // added.
+        for (TornadoVMBackendType backendType : TornadoVMBackendType.values()) {
+            String compilerFlags = graphExecutionContext.meta().getCompilerFlags(backendType);
+            if (compilerFlags != null) {
+                meta.setCompilerFlags(backendType, compilerFlags);
+            }
+        }
     }
 
     private XPUExecutionFrame compileTaskFromBytecodeToBinary(final int callWrapperIndex, final int numArgs, final int eventId, final int taskIndex, final long batchThreads) {
