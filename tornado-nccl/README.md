@@ -5,6 +5,7 @@ library tasks, for running one task graph per GPU and combining or exchanging th
 leaving the devices. NCCL works on the TornadoVM-managed device buffers directly and runs on the
 execution plan's CUDA stream, so every transfer is ordered with the JIT-compiled kernels around it.
 The module binds `libnccl` through `java.lang.foreign`; there is no native module to build.
+For the design and the full API reference see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ```java
 try (NcclCommunicator comm = NcclCommunicator.create(gpu0, gpu1)) {        // one rank per GPU

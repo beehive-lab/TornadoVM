@@ -315,11 +315,12 @@ new TaskGraph("knn")
 
 ### 3.8 NCCL — multi-GPU collectives and point-to-point (`nvidia/nccl`)
 
-Collectives and point-to-point transfers across the GPUs of one process with [NCCL](https://github.com/NVIDIA/nccl). An
+Collectives and point-to-point transfers across GPUs, in one process or several, with [NCCL](https://github.com/NVIDIA/nccl). An
 `NcclCommunicator` has one rank per CUDA device; each rank runs its own execution plan on its own
 device, and the collective is a library task in every rank's task graph. NCCL reads and writes the
 TornadoVM buffers directly, on the plan's stream, so the data stays on the GPUs between the kernels
-around it.
+around it. The design and the full API are described in
+[`tornado-nccl/ARCHITECTURE.md`](tornado-nccl/ARCHITECTURE.md).
 
 | Factory | Operation |
 |---|---|
