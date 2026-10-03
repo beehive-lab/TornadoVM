@@ -140,6 +140,10 @@ public interface CUDADeviceContextInterface extends TornadoDeviceContext {
         // no-op by default
     }
 
+    default void abortExecutionGraphCapture(long executionPlanId) {
+        // no-op by default
+    }
+
     /* ---- Native interop (external libraries, e.g. cuBLAS) ---- */
 
     default long getNativeStream(long executionPlanId) {
@@ -148,6 +152,14 @@ public interface CUDADeviceContextInterface extends TornadoDeviceContext {
 
     default long getNativeContext(long executionPlanId) {
         throw new UnsupportedOperationException("Native context interop is not supported on this device context");
+    }
+
+    /** Warms up the device's transfer path before its first execution; no-op without a native context. */
+    default void warmUp() {
+    }
+
+    /** Makes this device's context current on the calling thread; no-op without a native context. */
+    default void makeCurrent() {
     }
 
 }

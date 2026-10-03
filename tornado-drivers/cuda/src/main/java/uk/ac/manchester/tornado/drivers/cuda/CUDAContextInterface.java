@@ -33,7 +33,7 @@ public interface CUDAContextInterface {
 
     List<CUDATargetDevice> devices();
 
-    long getContextId();
+    long getContextId(int deviceIndex);
 
     TornadoDeviceContext createDeviceContext(int deviceIndex);
 

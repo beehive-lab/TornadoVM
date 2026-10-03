@@ -116,9 +116,10 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      * frame holds device buffer addresses and grid metadata that are constant
      * across graph replays, so it is written once outside the captured graph
      * rather than recorded as a graph node (which would pin a transient Java
-     * heap array). Flushed when capture ends, before the first graph launch.
+     * heap array). Flushed when capture ends, before the first graph launch. Kept per execution plan,
+     * so that plans capturing on the same device do not flush, or drop, each other's writes.
      */
-    private final java.util.List<uk.ac.manchester.tornado.drivers.cuda.mm.CUDAKernelStackFrame> pendingKernelContextWrites = new java.util.ArrayList<>();
+    private final java.util.Map<Long, java.util.List<uk.ac.manchester.tornado.drivers.cuda.mm.CUDAKernelStackFrame>> pendingKernelContextWrites = new java.util.concurrent.ConcurrentHashMap<>();
 
     /**
      * Map table to represent the compiled-code per execution plan. Each entry in the execution plan has its own
@@ -185,7 +186,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      */
     @Override
     public void setDevicePendingLaunchCount(int count) {
-        CUDACompiler.setPendingLaunchCount(getPlatformContext().getContextId(), count);
+        CUDACompiler.setPendingLaunchCount(getPlatformContext().getContextId(getDeviceIndex()), count);
     }
 
     @Override
@@ -475,7 +476,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     private CUDACommandQueue createQueue(String nvtxName) {
         CUDATargetDevice targetDevice = context.devices().get(getDeviceIndex());
         try {
-            long queuePtr = context.clCreateCommandQueue(context.getContextId(), targetDevice.getDevicePointer(), context.getProperties());
+            long queuePtr = context.clCreateCommandQueue(context.getContextId(getDeviceIndex()), targetDevice.getDevicePointer(), context.getProperties());
             CUDACommandQueue queue = new CUDACommandQueue(queuePtr, context.getProperties(), targetDevice.deviceVersion());
             queue.nameStream(nvtxName);
             return queue;
@@ -537,6 +538,8 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
         if (stagedRingPtr == 0L) {
             stagedChunkSize = TornadoOptions.STAGED_TRANSFER_CHUNK_SIZE;
             stagedRingDepth = Math.max(2, TornadoOptions.STAGED_TRANSFER_RING_DEPTH);
+            // Pinned host memory belongs to the context current at allocation time.
+            context.makeCurrent(getDeviceIndex());
             stagedRingPtr = CUDACommandQueue.cuMemAllocHost(stagedChunkSize * stagedRingDepth);
             if (stagedRingPtr == 0L) {
                 throw new uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException("[CUDA] cuMemAllocHost failed: could not allocate " + (stagedChunkSize * stagedRingDepth) + " bytes of pinned host memory for the staging ring");
@@ -570,6 +573,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
                 stagedSlotEvents[slot] = 0;
             }
         }
+        makeCurrent();
         CUDACommandQueue.cuMemFreeHost(stagedRingPtr);
         stagedRingPtr = 0L;
         stagedSlotEvents = null;
@@ -1054,15 +1058,29 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
         if (!isStreamCapturing(executionPlanId)) {
             return false;
         }
-        pendingKernelContextWrites.add(kernelArgs);
+        pendingKernelContextWrites.computeIfAbsent(executionPlanId, id -> new java.util.ArrayList<>()).add(kernelArgs);
         return true;
     }
 
     private void flushPendingKernelContextWrites(long executionPlanId) {
-        for (uk.ac.manchester.tornado.drivers.cuda.mm.CUDAKernelStackFrame kernelArgs : pendingKernelContextWrites) {
+        java.util.List<uk.ac.manchester.tornado.drivers.cuda.mm.CUDAKernelStackFrame> pending = pendingKernelContextWrites.remove(executionPlanId);
+        if (pending == null) {
+            return;
+        }
+        for (uk.ac.manchester.tornado.drivers.cuda.mm.CUDAKernelStackFrame kernelArgs : pending) {
             kernelArgs.write(executionPlanId);
         }
-        pendingKernelContextWrites.clear();
+    }
+
+    /**
+     * Abandons the capture of a plan whose execution failed inside its capture region: the stream
+     * stops capturing and the writes deferred for that capture are dropped, so neither leaks into
+     * the next capture on this device.
+     */
+    @Override
+    public void abortExecutionGraphCapture(long executionPlanId) {
+        pendingKernelContextWrites.remove(executionPlanId);
+        getCommandQueue(executionPlanId).abortGraphCapture();
     }
 
     /**
@@ -1101,6 +1119,17 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      */
     public long getNativeStream(long executionPlanId) {
         return getCommandQueue(executionPlanId).getNativeStream();
+    }
+
+    @Override
+    public void warmUp() {
+        context.warmUp(getDeviceIndex());
+    }
+
+    /** Makes this device's context current on the calling thread. */
+    @Override
+    public void makeCurrent() {
+        context.makeCurrent(getDeviceIndex());
     }
 
     /**
