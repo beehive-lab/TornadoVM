@@ -1222,7 +1222,7 @@ public class TornadoVMInterpreter {
 
     private XPUExecutionFrame compileTaskFromBytecodeToBinary(final int callWrapperIndex, final int numArgs, final int eventId, final int taskIndex, final long batchThreads) {
 
-        if (interpreterDevice.getDeviceContext().wasReset() && finishedWarmup) {
+        if (interpreterDevice.getDeviceContext().wasReset(graphExecutionContext.getExecutionPlanId()) && finishedWarmup) {
             throw new TornadoFailureException("[ERROR] reset() was called after warmup() on device: " + interpreterDevice + "!");
         }
 
