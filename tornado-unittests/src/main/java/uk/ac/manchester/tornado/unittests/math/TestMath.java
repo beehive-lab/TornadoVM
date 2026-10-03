@@ -19,6 +19,7 @@
 package uk.ac.manchester.tornado.unittests.math;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Random;
 import java.util.stream.IntStream;
@@ -738,6 +739,151 @@ public class TestMath extends TornadoTestBase {
         testRemainder(a, seq);
         for (int i = 0; i < size; i++) {
             assertEquals(b.get(i), seq.get(i), 0.01);
+        }
+    }
+
+    /**
+     * {@code a*b + c} with nothing else in it, so the only thing the result can report is how many
+     * times the device rounded.
+     */
+    private static void mulAddCancellation(DoubleArray a, DoubleArray b, DoubleArray c, DoubleArray out) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            out.set(i, a.get(i) * b.get(i) + c.get(i));
+        }
+    }
+
+    /**
+     * Whether the device rounds a multiply and an add separately, as the host does, or fuses them.
+     *
+     * <p>
+     * A cancellation rather than a tolerance: {@code c} is exactly minus the host-rounded product,
+     * so a device that rounds twice returns exactly {@code 0.0}, and one that fuses returns the
+     * product's rounding error. No epsilon to choose, unlike {@link #testFMA}.
+     *
+     * <p>
+     * The expected direction follows {@code tornado.enable.fma}. Run it both ways:
+     *
+     * <code>
+     * tornado-test -V uk.ac.manchester.tornado.unittests.math.TestMath#testMultiplyAddRounding
+     * tornado-test -V -J"-Dtornado.enable.fma=false" uk.ac.manchester.tornado.unittests.math.TestMath#testMultiplyAddRounding
+     * </code>
+     */
+    @Test
+    public void testMultiplyAddRounding() throws TornadoExecutionPlanException {
+        // Pairs whose exact product is not representable, so the rounding error is non-zero and a
+        // fused result is distinguishable from a separated one.
+        final double[][] cases = { { 1.0000000001, 1.0000000003 }, { 3.0000000000000004, 7.000000000000001 }, { 1.4142135623730951, 1.4142135623730951 }, { 0.1, 0.3 }, { 1e8 + 1, 1e8 + 3 },
+                { 2.718281828459045, 3.141592653589793 } };
+
+        final int size = cases.length;
+        DoubleArray a = new DoubleArray(size);
+        DoubleArray b = new DoubleArray(size);
+        DoubleArray c = new DoubleArray(size);
+        DoubleArray out = new DoubleArray(size);
+        for (int i = 0; i < size; i++) {
+            a.set(i, cases[i][0]);
+            b.set(i, cases[i][1]);
+            c.set(i, -(cases[i][0] * cases[i][1]));
+            out.set(i, Double.NaN);
+        }
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, c) //
+                .task("t0", TestMath::mulAddCancellation, a, b, c, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        boolean fmaEnabled = Boolean.parseBoolean(System.getProperty("tornado.enable.fma", "true"));
+        if (fmaEnabled) {
+            boolean anyFused = false;
+            for (int i = 0; i < size && !anyFused; i++) {
+                anyFused = out.get(i) != 0.0;
+            }
+            assertTrue("expected fused multiply-add with tornado.enable.fma=true, but every case rounded separately", anyFused);
+        } else {
+            for (int i = 0; i < size; i++) {
+                assertEquals("tornado.enable.fma=false must round the multiply and the add separately, as the host does; case " + i + " did not", 0.0, out.get(i), 0.0);
+            }
+        }
+    }
+
+    /** Builds the cancellation: c is exactly minus the rounded product of a and b. */
+    private static DoubleArray[] cancellationInputs() {
+        final double[][] cases = { { 1.0000000001, 1.0000000003 }, { 3.0000000000000004, 7.000000000000001 }, { 1.4142135623730951, 1.4142135623730951 }, { 0.1, 0.3 }, { 1e8 + 1, 1e8 + 3 },
+                { 2.718281828459045, 3.141592653589793 } };
+        final int size = cases.length;
+        DoubleArray a = new DoubleArray(size);
+        DoubleArray b = new DoubleArray(size);
+        DoubleArray c = new DoubleArray(size);
+        DoubleArray out = new DoubleArray(size);
+        for (int i = 0; i < size; i++) {
+            a.set(i, cases[i][0]);
+            b.set(i, cases[i][1]);
+            c.set(i, -(cases[i][0] * cases[i][1]));
+            out.set(i, Double.NaN);
+        }
+        return new DoubleArray[] { a, b, c, out };
+    }
+
+    private static TaskGraph cancellationGraph(DoubleArray a, DoubleArray b, DoubleArray c, DoubleArray out) {
+        return new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, c) //
+                .task("t0", TestMath::mulAddCancellation, a, b, c, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+    }
+
+    /**
+     * The per-plan strict switch, asserted both ways in one JVM.
+     *
+     * <p>
+     * Two plans over the same kernel and the same data: one plain, one
+     * {@code withStrictFloatingPoint()}. The plain one must fuse and the strict one must not, and
+     * the difference has to survive both code caches -- the in-memory image cache keyed on
+     * architecture, source and options, and the on-disk cubin cache keyed on the source digest and
+     * the flags. If either ignored the request, the second plan would be served the first plan's
+     * binary and the two results would be identical, which is exactly what this fails on.
+     *
+     * <p>
+     * A cancellation rather than a tolerance: c is exactly minus the rounded product, so separate
+     * rounding returns exactly 0.0 and fusion returns the product's rounding error. No epsilon, and
+     * no third answer.
+     */
+    @Test
+    public void testStrictFloatingPointIsPerPlan() throws TornadoExecutionPlanException {
+        TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
+        if (backendType != TornadoVMBackendType.CUDA) {
+            // Implemented for CUDA; elsewhere the call is accepted and does nothing, and asserting
+            // a guarantee the backend does not make would be asserting a lie.
+            return;
+        }
+        boolean fmaEnabledGlobally = Boolean.parseBoolean(System.getProperty("tornado.enable.fma", "true"));
+        if (!fmaEnabledGlobally) {
+            // Nothing to distinguish: the JVM-wide option already removed the phase, so both arms
+            // are strict and agreeing tells us nothing about the switch.
+            return;
+        }
+
+        DoubleArray[] loose = cancellationInputs();
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(cancellationGraph(loose[0], loose[1], loose[2], loose[3]).snapshot())) {
+            plan.execute();
+        }
+
+        DoubleArray[] strict = cancellationInputs();
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(cancellationGraph(strict[0], strict[1], strict[2], strict[3]).snapshot())) {
+            plan.withStrictFloatingPoint().execute();
+        }
+
+        boolean anyFused = false;
+        for (int i = 0; i < loose[3].getSize(); i++) {
+            anyFused |= loose[3].get(i) != 0.0;
+        }
+        assertTrue("the unrestricted plan did not fuse, so this test cannot tell the two apart", anyFused);
+
+        for (int i = 0; i < strict[3].getSize(); i++) {
+            assertEquals("withStrictFloatingPoint() must round the multiply and the add separately, as the host does; case " + i + " did not", 0.0, strict[3].get(i), 0.0);
         }
     }
 

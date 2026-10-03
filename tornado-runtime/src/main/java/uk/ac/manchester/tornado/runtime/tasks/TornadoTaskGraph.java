@@ -488,6 +488,23 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
+    /**
+     * Both halves of it, together, which is the reason this exists as one call.
+     *
+     * <p>
+     * The meta flag suppresses the compiler's fusion phase for this task; the NVRTC option stops
+     * the backend compiler contracting the separated multiply and add back together. Either alone
+     * leaves the device fusing, so a caller must not be able to ask for one of them.
+     */
+    public void withStrictFloatingPoint() {
+        executionContext.meta().setStrictFloatingPoint(true);
+        String existing = executionContext.meta().getCompilerFlags(TornadoVMBackendType.CUDA);
+        if (existing == null || !existing.contains("-fmad")) {
+            String combined = (existing == null || existing.isBlank()) ? "--fmad=false" : existing + " --fmad=false";
+            executionContext.meta().setCompilerFlags(TornadoVMBackendType.CUDA, combined);
+        }
+    }
+
     public void withCompilerFlags(TornadoVMBackendType backendType, String compilerFlags) {
         executionContext.meta().setCompilerFlags(backendType, compilerFlags);
     }

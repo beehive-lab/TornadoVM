@@ -66,6 +66,18 @@ public abstract class AbstractRTContext implements TaskContextInterface {
 
     private boolean threadInfoEnabled;
     private boolean printKernel;
+
+    /**
+     * Whether this task must round floating-point arithmetic the way the host does.
+     *
+     * <p>
+     * Not read from a system property, deliberately. The whole point of the switch is that it is a
+     * property of one execution plan rather than of the JVM: a caller whose query needs the device
+     * and the host to agree can ask for it, and a caller who does not care keeps the faster
+     * arithmetic. A JVM-wide option cannot express that, and one read into a {@code static final}
+     * cannot even be verified to have taken effect.
+     */
+    private boolean strictFloatingPoint;
     private boolean resetThreads;
 
     private final boolean isOpenclGpuBlockXDefined;
@@ -213,6 +225,16 @@ public abstract class AbstractRTContext implements TaskContextInterface {
 
     public boolean isDebug() {
         return TornadoOptions.DEBUG;
+    }
+
+    @Override
+    public boolean isStrictFloatingPoint() {
+        return strictFloatingPoint;
+    }
+
+    @Override
+    public void setStrictFloatingPoint(boolean strict) {
+        this.strictFloatingPoint = strict;
     }
 
     public String getCompilerFlags(TornadoVMBackendType backendType) {

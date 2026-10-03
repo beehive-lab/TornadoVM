@@ -46,15 +46,50 @@ public class TornadoOptions {
     public static final String DEFAULT_METAL_COMPILER_FLAGS = getProperty("tornado.metal.compiler.flags", "");
 
     /**
+     * Enable/Disable FMA Optimizations. True by default.
+     *
+     * <p>
+     * Declared here, above {@link #DEFAULT_CUDA_COMPILER_FLAGS}, because that field is derived from
+     * it: a static initialiser reading a field declared further down sees the default value rather
+     * than the configured one, silently.
+     */
+    public static final boolean ENABLE_FMA = getBooleanValue("tornado.enable.fma", TRUE);
+
+    /**
      * Named NVRTC option bundle for the CUDA backend: default|fast|debug|repro.
      */
     public static final CudaCompileProfile CUDA_COMPILE_PROFILE = CudaCompileProfile.parse(getProperty("tornado.cuda.compile.profile", "default"));
 
     /**
+     * What {@code tornado.enable.fma=false} has to add to the NVRTC options to mean what it says.
+     *
+     * <p>
+     * The CUDA backend fuses a multiply and an add at two independent stages, so turning off one
+     * leaves the other. {@code enable.fma=false} stops {@code CUDAFMAPhase} emitting an
+     * {@code fma()} call; {@code --fmad=false} stops NVRTC re-contracting the separated multiply
+     * and add on the way to PTX. Both are needed to get the host's two roundings.
+     *
+     * <p>
+     * Only added when nothing has already specified {@code --fmad}: NVRTC rejects it when given
+     * twice, and the {@code repro} profile sets it. An explicit setting wins.
+     */
+    private static String fmaContractionFlag(String alreadySpecified) {
+        if (ENABLE_FMA || alreadySpecified.contains("-fmad")) {
+            return "";
+        }
+        return "--fmad=false";
+    }
+
+    /**
      * Default CUDA (NVRTC) Compiler Flags. Passed to NVRTC when compiling the generated CUDA C source.
      * The profile's flags come first so that anything set explicitly here wins.
      */
-    public static final String DEFAULT_CUDA_COMPILER_FLAGS = (CUDA_COMPILE_PROFILE.getFlags() + " " + getProperty("tornado.cuda.compiler.flags", "")).trim();
+    public static final String DEFAULT_CUDA_COMPILER_FLAGS = defaultCudaCompilerFlags();
+
+    private static String defaultCudaCompilerFlags() {
+        String stated = (CUDA_COMPILE_PROFILE.getFlags() + " " + getProperty("tornado.cuda.compiler.flags", "")).trim();
+        return (stated + " " + fmaContractionFlag(stated)).trim().replaceAll("\\s+", " ");
+    }
 
     /**
      * Use internal timers for profiling in ns if enabled, in ms if disabled. Default is ns (enabled).
@@ -177,11 +212,6 @@ public class TornadoOptions {
      * Option to enable profiler-feature extractions.
      */
     public static final boolean FEATURE_EXTRACTION = getBooleanValue("tornado.feature.extraction", FALSE);
-    /**
-     * Enable/Disable FMA Optimizations. True by default.
-     */
-    public static final boolean ENABLE_FMA = getBooleanValue("tornado.enable.fma", TRUE);
-
     /**
      * Enable/Disable Fix Reads Optimization. True by default.
      */
