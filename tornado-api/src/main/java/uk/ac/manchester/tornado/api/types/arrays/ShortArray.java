@@ -24,7 +24,7 @@ import java.lang.foreign.MemorySegment;
 import java.nio.ShortBuffer;
 import java.util.Arrays;
 
-import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 /**
  * This class represents an array of shorts stored in native memory. The short data is stored in a {@link MemorySegment}, which represents a contiguous region of off-heap memory. The class also
@@ -34,7 +34,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 public final class ShortArray extends TornadoNativeArray {
     private static final int SHORT_BYTES = 2;
     private TornadoMemorySegment segment;
-    private int numberOfElements;
+    private long numberOfElements;
     private int arrayHeaderSize;
 
     private int baseIndex;
@@ -48,7 +48,18 @@ public final class ShortArray extends TornadoNativeArray {
      *         The number of elements in the array.
      */
     public ShortArray(int numberOfElements) {
-        this.numberOfElements = numberOfElements;
+        this((long) numberOfElements);
+    }
+
+    /**
+     * Constructs a new instance of the {@link ShortArray} that will store a user-specified number of elements. The number of elements can exceed
+     * {@link Integer#MAX_VALUE}; access such arrays with the {@code long}-index accessors.
+     *
+     * @param numberOfElements
+     *         The number of elements in the array.
+     */
+    public ShortArray(long numberOfElements) {
+        this.numberOfElements = checkNumElements(numberOfElements);
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         assert arrayHeaderSize >= 4;
         baseIndex = arrayHeaderSize / SHORT_BYTES;
@@ -68,13 +79,12 @@ public final class ShortArray extends TornadoNativeArray {
 
         // Calculate number of elements from segment size
         long dataSize = existingSegment.byteSize() - arrayHeaderSize;
-        ensureMultipleOfElementSize(dataSize, SHORT_BYTES);
-        this.numberOfElements = (int) (dataSize / SHORT_BYTES);
+        this.numberOfElements = toNumElements(dataSize, SHORT_BYTES);
 
         // Set up the segment and initialize header
         this.segmentByteSize = existingSegment.byteSize();
         this.segment = new TornadoMemorySegment(existingSegment);
-        this.segment.getSegment().setAtIndex(JAVA_INT, 0, numberOfElements);
+        this.segment.getSegment().setAtIndex(JAVA_LONG, 0, numberOfElements);
 
     }
 
@@ -134,8 +144,7 @@ public final class ShortArray extends TornadoNativeArray {
      */
     public static ShortArray fromSegment(MemorySegment segment) {
         long byteSize = segment.byteSize();
-        int numElements = (int) (byteSize / SHORT_BYTES);
-        ensureMultipleOfElementSize(byteSize, SHORT_BYTES);
+        long numElements = toNumElements(byteSize, SHORT_BYTES);
         ShortArray shortArray = new ShortArray(numElements);
         MemorySegment.copy(segment, 0, shortArray.segment.getSegment(), (long) shortArray.baseIndex * SHORT_BYTES, byteSize);
         return shortArray;
@@ -188,7 +197,7 @@ public final class ShortArray extends TornadoNativeArray {
      * @return A new {@link ShortArray} instance containing all the elements of the input arrays, concatenated in the order they were provided.
      */
     public static ShortArray concat(ShortArray... arrays) {
-        int newSize = Arrays.stream(arrays).mapToInt(ShortArray::getSize).sum();
+        long newSize = checkNumElements(Arrays.stream(arrays).mapToLong(ShortArray::getSizeLong).sum());
         ShortArray concatArray = new ShortArray(newSize);
         long currentPositionBytes = 0;
         for (ShortArray array : arrays) {
@@ -224,6 +233,18 @@ public final class ShortArray extends TornadoNativeArray {
     }
 
     /**
+     * Sets the short value at a specified index of the {@link ShortArray} instance.
+     *
+     * @param index
+     *         The index at which to set the short value.
+     * @param value
+     *         The short value to store at the specified index.
+     */
+    public void set(long index, short value) {
+        segment.setAtIndex(index, value, baseIndex);
+    }
+
+    /**
      * Gets the short value stored at the specified index of the {@link ShortArray} instance.
      *
      * @param index
@@ -231,6 +252,17 @@ public final class ShortArray extends TornadoNativeArray {
      * @return
      */
     public short get(int index) {
+        return segment.getShortAtIndex(index, baseIndex);
+    }
+
+    /**
+     * Gets the short value stored at the specified index of the {@link ShortArray} instance.
+     *
+     * @param index
+     *         The index of which to retrieve the short value.
+     * @return
+     */
+    public short get(long index) {
         return segment.getShortAtIndex(index, baseIndex);
     }
 
@@ -254,7 +286,7 @@ public final class ShortArray extends TornadoNativeArray {
      *         The short value to initialize the {@link ShortArray} instance with.
      */
     public void init(short value) {
-        for (int i = 0; i < getSize(); i++) {
+        for (long i = 0; i < numberOfElements; i++) {
             segment.setAtIndex(i, value, baseIndex);
         }
     }
@@ -266,6 +298,11 @@ public final class ShortArray extends TornadoNativeArray {
      */
     @Override
     public int getSize() {
+        return toIntSize(numberOfElements);
+    }
+
+    @Override
+    public long getSizeLong() {
         return numberOfElements;
     }
 
@@ -321,7 +358,14 @@ public final class ShortArray extends TornadoNativeArray {
      *         if the specified slice is out of the bounds of the original array.
      */
     public ShortArray slice(int offset, int length) {
-        if (offset < 0 || length < 0 || offset + length > getSize()) {
+        return slice((long) offset, (long) length);
+    }
+
+    /**
+     * Extracts a slice of elements using {@code long} bounds. See {@link #slice(int, int)}.
+     */
+    public ShortArray slice(long offset, long length) {
+        if (offset < 0 || length < 0 || offset > numberOfElements - length) {
             throw new IllegalArgumentException("Slice out of bounds");
         }
 

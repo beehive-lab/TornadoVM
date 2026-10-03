@@ -239,6 +239,10 @@ public final class MetalObjects {
         return MetalAPI.deviceRecommendedMaxWorkingSetSize(device);
     }
 
+    public static long deviceMaxBufferLength(long device) {
+        return MetalAPI.deviceMaxBufferLength(device);
+    }
+
     public static long deviceLocalMemorySize(long device) {
         return MetalAPI.deviceMaxThreadgroupMemoryLength(device);
     }

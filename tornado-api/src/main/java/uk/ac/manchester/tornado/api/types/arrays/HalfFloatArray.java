@@ -25,7 +25,7 @@ import uk.ac.manchester.tornado.api.types.vectors.Half2;
 import java.lang.foreign.MemorySegment;
 import java.util.Arrays;
 
-import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 /**
  * This class represents an array of half floats (float16 types) stored in native memory. The half float data is stored in a {@link MemorySegment}, which represents a contiguous region of off-heap
@@ -37,7 +37,7 @@ public final class HalfFloatArray extends TornadoNativeArray {
     private static final int HALF_FLOAT_BYTES = 2;
     private TornadoMemorySegment segment;
 
-    private int numberOfElements;
+    private long numberOfElements;
 
     private int arrayHeaderSize;
 
@@ -52,7 +52,18 @@ public final class HalfFloatArray extends TornadoNativeArray {
      *         The number of elements in the array.
      */
     public HalfFloatArray(int numberOfElements) {
-        this.numberOfElements = numberOfElements;
+        this((long) numberOfElements);
+    }
+
+    /**
+     * Constructs a new instance of the {@link HalfFloatArray} that will store a user-specified number of elements. The number of elements can exceed
+     * {@link Integer#MAX_VALUE}; access such arrays with the {@code long}-index accessors.
+     *
+     * @param numberOfElements
+     *         The number of elements in the array.
+     */
+    public HalfFloatArray(long numberOfElements) {
+        this.numberOfElements = checkNumElements(numberOfElements);
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / HALF_FLOAT_BYTES;
         segmentByteSize = (long) numberOfElements * HALF_FLOAT_BYTES + arrayHeaderSize;
@@ -71,13 +82,12 @@ public final class HalfFloatArray extends TornadoNativeArray {
 
         // Calculate number of elements from segment size
         long dataSize = existingSegment.byteSize() - arrayHeaderSize;
-        ensureMultipleOfElementSize(dataSize, HALF_FLOAT_BYTES);
-        this.numberOfElements = (int) (dataSize / HALF_FLOAT_BYTES);
+        this.numberOfElements = toNumElements(dataSize, HALF_FLOAT_BYTES);
 
         // Set up the segment and initialize header
         this.segmentByteSize = existingSegment.byteSize();
         this.segment = new TornadoMemorySegment(existingSegment);
-        this.segment.getSegment().setAtIndex(JAVA_INT, 0, numberOfElements);
+        this.segment.getSegment().setAtIndex(JAVA_LONG, 0, numberOfElements);
     }
 
     /**
@@ -136,8 +146,7 @@ public final class HalfFloatArray extends TornadoNativeArray {
      */
     public static HalfFloatArray fromSegment(MemorySegment segment) {
         long byteSize = segment.byteSize();
-        int numElements = (int) (byteSize / HALF_FLOAT_BYTES);
-        ensureMultipleOfElementSize(byteSize, HALF_FLOAT_BYTES);
+        long numElements = toNumElements(byteSize, HALF_FLOAT_BYTES);
         HalfFloatArray halfFloatArray = new HalfFloatArray(numElements);
         MemorySegment.copy(segment, 0, halfFloatArray.segment.getSegment(), (long) halfFloatArray.baseIndex * HALF_FLOAT_BYTES, byteSize);
         return halfFloatArray;
@@ -176,7 +185,7 @@ public final class HalfFloatArray extends TornadoNativeArray {
      * @return A new {@link HalfFloatArray} instance containing all the elements of the input arrays, concatenated in the order they were provided.
      */
     public static HalfFloatArray concat(HalfFloatArray... arrays) {
-        int newSize = Arrays.stream(arrays).mapToInt(HalfFloatArray::getSize).sum();
+        long newSize = checkNumElements(Arrays.stream(arrays).mapToLong(HalfFloatArray::getSizeLong).sum());
         HalfFloatArray concatArray = new HalfFloatArray(newSize);
         long currentPositionBytes = 0;
         for (HalfFloatArray array : arrays) {
@@ -226,6 +235,18 @@ public final class HalfFloatArray extends TornadoNativeArray {
     }
 
     /**
+     * Sets the {@link HalfFloat} value at a specified index of the {@link HalfFloatArray} instance.
+     *
+     * @param index
+     *         The index at which to set the {@link HalfFloat} value.
+     * @param value
+     *         The {@link HalfFloat} value to store at the specified index.
+     */
+    public void set(long index, HalfFloat value) {
+        segment.setAtIndex(index, value.getHalfFloatValue(), baseIndex);
+    }
+
+    /**
      * Gets the {@link HalfFloat} value stored at the specified index of the {@link HalfFloatArray} instance.
      *
      * @param index
@@ -233,6 +254,18 @@ public final class HalfFloatArray extends TornadoNativeArray {
      * @return
      */
     public HalfFloat get(int index) {
+        short halfFloatValue = segment.getShortAtIndex(index, baseIndex);
+        return new HalfFloat(halfFloatValue);
+    }
+
+    /**
+     * Gets the {@link HalfFloat} value stored at the specified index of the {@link HalfFloatArray} instance.
+     *
+     * @param index
+     *         The index of which to retrieve the {@link HalfFloat} value.
+     * @return
+     */
+    public HalfFloat get(long index) {
         short halfFloatValue = segment.getShortAtIndex(index, baseIndex);
         return new HalfFloat(halfFloatValue);
     }
@@ -252,6 +285,20 @@ public final class HalfFloatArray extends TornadoNativeArray {
     }
 
     /**
+     * Gets two consecutive {@link HalfFloat} values starting at the specified element index as a packed {@link Half2}.
+     * On backends with packed half2 support this maps to a single 32-bit load; {@code index} must be even so the
+     * access is 4-byte aligned.
+     *
+     * @param index
+     *         The element index of the first lane; must be even.
+     * @return A {@link Half2} holding elements {@code index} and {@code index + 1}.
+     */
+    public Half2 getHalf2(long index) {
+        // Unchecked, like get(int)/set(int): device kernels cannot throw. Callers guarantee bounds.
+        return new Half2(get(index), get(index + 1));
+    }
+
+    /**
      * Stores a {@link Half2} into two consecutive elements starting at the specified element index.
      * On backends with packed half2 support this maps to a single 32-bit store; {@code index} must be even so the
      * access is 4-byte aligned.
@@ -262,6 +309,22 @@ public final class HalfFloatArray extends TornadoNativeArray {
      *         The {@link Half2} whose lanes are stored at {@code index} and {@code index + 1}.
      */
     public void setHalf2(int index, Half2 value) {
+        // Unchecked, like get(int)/set(int): device kernels cannot throw. Callers guarantee bounds.
+        set(index, value.getX());
+        set(index + 1, value.getY());
+    }
+
+    /**
+     * Stores a {@link Half2} into two consecutive elements starting at the specified element index.
+     * On backends with packed half2 support this maps to a single 32-bit store; {@code index} must be even so the
+     * access is 4-byte aligned.
+     *
+     * @param index
+     *         The element index of the first lane; must be even.
+     * @param value
+     *         The {@link Half2} whose lanes are stored at {@code index} and {@code index + 1}.
+     */
+    public void setHalf2(long index, Half2 value) {
         // Unchecked, like get(int)/set(int): device kernels cannot throw. Callers guarantee bounds.
         set(index, value.getX());
         set(index + 1, value.getY());
@@ -287,7 +350,7 @@ public final class HalfFloatArray extends TornadoNativeArray {
      *         The {@link HalfFloat} value to initialize the {@link HalfFloatArray} instance with.
      */
     public void init(HalfFloat value) {
-        for (int i = 0; i < getSize(); i++) {
+        for (long i = 0; i < numberOfElements; i++) {
             segment.setAtIndex(i, value.getHalfFloatValue(), baseIndex);
         }
     }
@@ -299,6 +362,11 @@ public final class HalfFloatArray extends TornadoNativeArray {
      */
     @Override
     public int getSize() {
+        return toIntSize(numberOfElements);
+    }
+
+    @Override
+    public long getSizeLong() {
         return numberOfElements;
     }
 
@@ -354,7 +422,14 @@ public final class HalfFloatArray extends TornadoNativeArray {
      *         if the specified slice is out of the bounds of the original array.
      */
     public HalfFloatArray slice(int offset, int length) {
-        if (offset < 0 || length < 0 || offset + length > getSize()) {
+        return slice((long) offset, (long) length);
+    }
+
+    /**
+     * Extracts a slice of elements using {@code long} bounds. See {@link #slice(int, int)}.
+     */
+    public HalfFloatArray slice(long offset, long length) {
+        if (offset < 0 || length < 0 || offset > numberOfElements - length) {
             throw new IllegalArgumentException("Slice out of bounds");
         }
 
