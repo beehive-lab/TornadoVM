@@ -335,7 +335,7 @@ public class ReduceCodeAnalysis {
         }
     }
 
-    private static void getInputRageForReductionNode(ParameterNode parameterNode, ArrayList<ValueNode> loopBound) {
+    private static void getInputRageForReductionNode(ParameterNode parameterNode, ArrayList<ValueNode> loopBound, ArrayList<FixedNode> stores) {
         // Get Input-Range for the reduction loop
         for (Node node : parameterNode.usages()) {
             if (node instanceof MethodCallTargetNode methodCallTargetNode) {
@@ -349,10 +349,67 @@ public class ReduceCodeAnalysis {
                     continue;
                 }
                 obtainLoopBoundForPanamaRegions((Node) panamaStoreNode, loopBound);
-            } else if (node instanceof StoreIndexedNode) {
+                stores.add((FixedNode) panamaStoreNode.asNode());
+            } else if (node instanceof StoreIndexedNode store) {
                 obtainLoopBoundForOnHeapArrays(node, loopBound);
+                stores.add(store);
             }
         }
+    }
+
+    /**
+     * The loop of a reduction that can be launched on a padded, power-of-two grid, or null. Every
+     * reduction store must run on every iteration of the same single loop (see
+     * {@link ReductionLoops}), and every operation must have a neutral element (sum, product, min,
+     * max), which threads past the loop bound contribute.
+     */
+    private static LoopBeginNode paddableReductionLoop(StructuredGraph graph, ArrayList<Integer> reduceIndices, ArrayList<FixedNode> stores) {
+        // Only the stores in the loop reduce; the initialisation of the result before it does not.
+        List<FixedNode> loopStores = stores.stream().filter(ReduceCodeAnalysis::checkIfVarIsInLoop).toList();
+        if (loopStores.isEmpty()) {
+            return null;
+        }
+        try {
+            if (getReduceOperation(graph, reduceIndices).size() != loopStores.size()) {
+                return null;
+            }
+        } catch (TornadoRuntimeException unsupportedOperation) {
+            return null;
+        }
+        LoopBeginNode loop = null;
+        for (FixedNode store : loopStores) {
+            LoopBeginNode storeLoop = ReductionLoops.loopRunningOnEveryIteration(graph, store);
+            if (storeLoop == null || (loop != null && storeLoop != loop)) {
+                return null;
+            }
+            loop = storeLoop;
+        }
+        return loop;
+    }
+
+    /**
+     * First index of a reduction loop {@code for (int i = start; i < bound; i++)}: the entry value of
+     * the induction variable, i.e. the phi that is compared against the bound and advanced by one on
+     * the back edge. Returns 0 when the start is not a positive constant or the step is not +1.
+     */
+    static int findLoopStart(LoopBeginNode loopBegin) {
+        for (PhiNode phi : loopBegin.phis()) {
+            if (phi.valueCount() != 2 || !(phi.valueAt(0) instanceof ConstantNode init) || !init.getStackKind().isNumericInteger()) {
+                continue;
+            }
+            boolean comparedWithBound = phi.usages().filter(IntegerLessThanNode.class).filter(n -> ((IntegerLessThanNode) n).getX() == phi).isNotEmpty();
+            if (!comparedWithBound) {
+                continue;
+            }
+            boolean stepOne = phi.valueAt(1) instanceof AddNode add && ((add.getX() == phi && isConstantOne(add.getY())) || (add.getY() == phi && isConstantOne(add.getX())));
+            int start = init.asJavaConstant().asInt();
+            return (stepOne && start > 0) ? start : 0;
+        }
+        return 0;
+    }
+
+    private static boolean isConstantOne(ValueNode node) {
+        return node instanceof ConstantNode constant && constant.getStackKind().isNumericInteger() && constant.asJavaConstant().asLong() == 1;
     }
 
     /**
@@ -365,7 +422,7 @@ public class ReduceCodeAnalysis {
      *     List of reduce indexes within the method parameter list
      * @return ArrayList<ValueNode>
      */
-    private static ArrayList<ValueNode> findLoopUpperBoundNode(StructuredGraph graph, ArrayList<Integer> reduceIndexes) {
+    private static ArrayList<ValueNode> findLoopUpperBoundNode(StructuredGraph graph, ArrayList<Integer> reduceIndexes, ArrayList<FixedNode> stores) {
         ArrayList<ValueNode> loopBoundNodes = new ArrayList<>();
         for (Integer paramIndex : reduceIndexes) {
             if (!graph.method().isStatic()) {
@@ -375,7 +432,7 @@ public class ReduceCodeAnalysis {
                 continue;
             }
             ParameterNode parameterNode = graph.getParameter(paramIndex);
-            getInputRageForReductionNode(parameterNode, loopBoundNodes);
+            getInputRageForReductionNode(parameterNode, loopBoundNodes, stores);
         }
         return loopBoundNodes;
     }
@@ -424,7 +481,10 @@ public class ReduceCodeAnalysis {
             }
 
             // Perform Partial Evaluation (PE) to obtain the value of the upper-bound loop
-            ArrayList<ValueNode> loopBound = findLoopUpperBoundNode(graph, reduceIndices);
+            ArrayList<FixedNode> stores = new ArrayList<>();
+            ArrayList<ValueNode> loopBound = findLoopUpperBoundNode(graph, reduceIndices, stores);
+            LoopBeginNode reductionLoop = paddableReductionLoop(graph, reduceIndices, stores);
+            int loopStart = reductionLoop != null ? findLoopStart(reductionLoop) : 0;
             for (int i = 0; i < graph.method().getParameters().length; i++) {
                 for (ValueNode valueNode : loopBound) {
                     int position = !graph.method().isStatic() ? i + 1 : i;
@@ -442,7 +502,7 @@ public class ReduceCodeAnalysis {
                     }
                 }
             }
-            MetaReduceTasks reduceTasks = new MetaReduceTasks(taskIndex, graph, reduceIndices, inputSize);
+            MetaReduceTasks reduceTasks = new MetaReduceTasks(taskIndex, graph, reduceIndices, inputSize, loopStart, reductionLoop != null);
             tableMetaDataReduce.put(taskIndex, reduceTasks);
             taskIndex++;
         }

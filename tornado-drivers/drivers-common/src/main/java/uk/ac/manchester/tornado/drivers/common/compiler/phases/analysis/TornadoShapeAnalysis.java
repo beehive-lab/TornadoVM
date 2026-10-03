@@ -97,7 +97,15 @@ public class TornadoShapeAnalysis extends BasePhase<TornadoHighTierContext> {
             final int index = range.index();
             if (index != lastIndex && getIntegerValue(range.offset().value()) != Integer.MIN_VALUE && getIntegerValue(range.stride().value()) != Integer.MIN_VALUE && getIntegerValue(range
                     .value()) != Integer.MIN_VALUE) {
-                domainTree.set(index, new IntDomain(getIntegerValue(range.offset().value()), getIntegerValue(range.stride().value()), getIntegerValue(range.value())));
+                int length = getIntegerValue(range.value());
+                // A reduction launched on a padded grid (see TornadoReductionAccumulation) runs on
+                // a power-of-two number of threads; those past the loop bound contribute the
+                // neutral element.
+                final int paddedThreads = context.getMeta().getReductionPaddedThreads();
+                if (paddedThreads > 0 && dimensions == 1) {
+                    length = paddedThreads;
+                }
+                domainTree.set(index, new IntDomain(getIntegerValue(range.offset().value()), getIntegerValue(range.stride().value()), length));
             } else {
                 valid = false;
                 logger.info("unsupported multiple parallel loops");
