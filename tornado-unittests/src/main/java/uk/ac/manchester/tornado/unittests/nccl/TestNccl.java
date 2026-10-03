@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
+import java.time.Duration;
 import java.util.function.BiFunction;
 
 import org.junit.Before;
@@ -144,6 +145,12 @@ public class TestNccl extends TornadoTestBase {
     /** As above; {@code suffix} is appended to the task-graph names the grid scheduler refers to. */
     private static void runRanks(TornadoDevice[] devices, int threads, int kernels, int steps, BiFunction<Integer, String, TaskGraph> graphOfRank, Runnable beforeEachStep,
             boolean cudaGraph, String suffix) {
+        runRanks(devices, threads, kernels, steps, graphOfRank, beforeEachStep, cudaGraph, suffix, null);
+    }
+
+    /** As above; a non-null {@code stepTimeout} bounds every step of the plan group. */
+    private static void runRanks(TornadoDevice[] devices, int threads, int kernels, int steps, BiFunction<Integer, String, TaskGraph> graphOfRank, Runnable beforeEachStep,
+            boolean cudaGraph, String suffix, Duration stepTimeout) {
         TornadoExecutionPlan[] plans = new TornadoExecutionPlan[devices.length];
         try {
             for (int rank = 0; rank < devices.length; rank++) {
@@ -159,6 +166,9 @@ public class TestNccl extends TornadoTestBase {
                 }
             }
             try (NcclPlanGroup ranks = new NcclPlanGroup(plans)) {
+                if (stepTimeout != null) {
+                    ranks.withStepTimeout(stepTimeout);
+                }
                 for (int step = 0; step < steps; step++) {
                     beforeEachStep.run();
                     ranks.execute();
@@ -623,6 +633,64 @@ public class TestNccl extends TornadoTestBase {
     @Test
     public void testRankFailureAbortsCommunicatorWithCudaGraph() {
         checkRankFailureAborts(true);
+    }
+
+    /**
+     * Rank 0 sends to rank 1, which never posts the matching receive: no rank fails, the step just
+     * never finishes. With a step timeout, the group must abort the communicator, throw naming
+     * rank 0, and leave the process able to run NCCL with a new communicator.
+     */
+    private void checkUnmatchedSendTimesOut(boolean cudaGraph) {
+        TornadoDevice[] devices = cudaDevices();
+        if (devices.length < 2) {
+            throw new TornadoVMMultiDeviceNotSupported("This test needs at least 2 CUDA devices");
+        }
+        TornadoDevice[] pair = { devices[0], devices[1] };
+        FloatArray sent = new FloatArray(SIZE);
+        FloatArray other = new FloatArray(SIZE);
+        NcclCommunicator communicator = NcclCommunicator.create(pair);
+        long start = System.nanoTime();
+        TornadoRuntimeException failure = assertThrows(TornadoRuntimeException.class, () -> runRanks(pair, SIZE, 1, 1, (rank, name) -> rank == 0 //
+                ? new TaskGraph(name) //
+                        .task("k0", TestNccl::fillFloat, new KernelContext(), sent, 0) //
+                        .libraryTask("send", Nccl::send, communicator, sent, 1) //
+                : new TaskGraph(name) //
+                        .task("k0", TestNccl::fillFloat, new KernelContext(), other, 1) //
+                        .transferToHost(DataTransferMode.EVERY_EXECUTION, other), () -> {
+                        }, cudaGraph, "", Duration.ofSeconds(5)));
+        long seconds = (System.nanoTime() - start) / 1_000_000_000L;
+        assertTrue("the group took " + seconds + " s to give up", seconds < 60);
+        assertTrue(failure.getMessage(), failure.getMessage().contains("did not finish within") && failure.getMessage().contains("[0]"));
+        assertTrue("the communicator rank 0 was waiting on must be aborted", communicator.isAborted());
+        communicator.close();
+
+        // NCCL still works in this process, also with a step timeout that is not reached.
+        FloatArray[] sums = new FloatArray[2];
+        try (NcclCommunicator fresh = NcclCommunicator.create(pair)) {
+            runRanks(pair, SIZE, 1, 2, (rank, name) -> {
+                sums[rank] = new FloatArray(SIZE);
+                return new TaskGraph(name + "again") //
+                        .task("k0", TestNccl::fillFloat, new KernelContext(), sums[rank], rank) //
+                        .libraryTask("sum", Nccl::allReduceInPlace, fresh, sums[rank], NcclRedOp.SUM) //
+                        .transferToHost(DataTransferMode.EVERY_EXECUTION, sums[rank]);
+            }, () -> {
+            }, cudaGraph, "again", Duration.ofSeconds(60));
+        }
+        for (int rank = 0; rank < 2; rank++) {
+            for (int i = 0; i < SIZE; i++) {
+                assertEquals(3.0f * (i % 7 + 1), sums[rank].get(i), 0.0f);
+            }
+        }
+    }
+
+    @Test
+    public void testUnmatchedSendTimesOut() {
+        checkUnmatchedSendTimesOut(false);
+    }
+
+    @Test
+    public void testUnmatchedSendTimesOutWithCudaGraph() {
+        checkUnmatchedSendTimesOut(true);
     }
 
     @Test

@@ -64,6 +64,19 @@ aborts the communicators its ranks have used (`NcclCommunicator.abort()`): the w
 and `execute()` throws the failure of the rank that failed first. An aborted communicator cannot be
 used again (`isAborted()` tells), so create a new communicator and new plans to carry on.
 
+A step can also hang without any rank failing, for example on a `send` that no rank receives.
+`withStepTimeout(Duration)` bounds every step of the group:
+
+```java
+try (NcclPlanGroup ranks = new NcclPlanGroup(plans).withStepTimeout(Duration.ofSeconds(30))) {
+    ranks.execute();   // throws, naming the ranks still running, if the step takes longer
+}
+```
+
+When the timeout runs out, the communicators are aborted as for a failed rank. If a rank does not
+return even then (stuck in something NCCL cannot interrupt), `execute()` still throws after a second
+timeout period and the group refuses further steps.
+
 ## CUDA graphs
 
 NCCL tasks can be captured into CUDA graphs. Call `withCUDAGraph()` on the plan of every rank; the

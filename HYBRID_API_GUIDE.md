@@ -375,6 +375,10 @@ Executing the plans one after the other on one thread hangs at the first collect
 the communicators its ranks have used (`NcclCommunicator.abort()`), which makes the waiting ranks
 return, and `execute()` throws the failure of the rank that failed first. An aborted communicator
 cannot be used again: create a new communicator and new plans; NCCL keeps working in the process.
+A step can also hang with no rank failing (a `send` that no rank receives, collectives posted in a
+different order on each rank). `ranks.withStepTimeout(Duration.ofSeconds(30))` bounds every step:
+when it runs out, the group aborts the communicators in the same way and `execute()` throws, naming
+the ranks that were still running.
 
 **CUDA graphs:** NCCL tasks are captured like any other library task. Call `withCUDAGraph()` on every
 rank's plan: the first `NcclPlanGroup.execute()` captures each rank's graph (kernels, transfers and

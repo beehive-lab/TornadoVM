@@ -17,10 +17,12 @@
  */
 package uk.ac.manchester.tornado.nccl;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
 
@@ -60,6 +62,12 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
  * </p>
  *
  * <p>
+ * A step can also hang without any rank failing, for instance on a {@code send} that no rank
+ * receives. {@link #withStepTimeout(Duration)} bounds a step: when it runs out, the group aborts
+ * the communicators in the same way and {@link #execute()} throws, naming the ranks still running.
+ * </p>
+ *
+ * <p>
  * Closing the group stops its threads; it does not close the plans.
  * </p>
  */
@@ -87,6 +95,13 @@ public final class NcclPlanGroup implements AutoCloseable {
     private volatile Thread caller;
     private volatile boolean closed;
 
+    /** Longest a step may take before the group gives up on it; 0 waits forever. */
+    private volatile long stepTimeoutNanos;
+    /** Ranks that have finished the current step (1) or not (0), for the timeout message. */
+    private final AtomicIntegerArray finished;
+    /** Set when ranks never returned, even after their communicators were aborted. */
+    private volatile String unusableReason;
+
     public NcclPlanGroup(TornadoExecutionPlan... plans) {
         if (plans == null || plans.length == 0) {
             throw new TornadoRuntimeException("[ERROR] An NCCL plan group needs at least one plan");
@@ -94,6 +109,7 @@ public final class NcclPlanGroup implements AutoCloseable {
         this.plans = plans.clone();
         this.results = new TornadoExecutionResult[plans.length];
         this.failures = new Throwable[plans.length];
+        this.finished = new AtomicIntegerArray(plans.length);
         this.threads = new Thread[plans.length];
         for (int rank = 0; rank < plans.length; rank++) {
             final int r = rank;
@@ -124,6 +140,7 @@ public final class NcclPlanGroup implements AutoCloseable {
                     LockSupport.unpark(caller);
                 }
             }
+            finished.set(rank, 1);
             if (running.decrementAndGet() == 0) {
                 LockSupport.unpark(caller);
             }
@@ -145,46 +162,100 @@ public final class NcclPlanGroup implements AutoCloseable {
     }
 
     /**
+     * Bounds every step: if the plans of all ranks have not finished {@code timeout} after
+     * {@link #execute()} started them, the group aborts the communicators its ranks have used and
+     * {@code execute()} throws. Without a timeout (the default), a step that hangs without any rank
+     * failing, such as a {@code send} that no rank receives, waits forever.
+     */
+    public NcclPlanGroup withStepTimeout(Duration timeout) {
+        if (timeout == null || timeout.isNegative() || timeout.isZero()) {
+            throw new TornadoRuntimeException("[ERROR] The step timeout of an NCCL plan group must be positive");
+        }
+        stepTimeoutNanos = timeout.toNanos();
+        return this;
+    }
+
+    /**
      * Executes every plan once, concurrently, and returns when all of them have finished, with the
-     * result of each plan in rank order. If any plan fails, the first failure is rethrown after the
-     * others have finished. Steps of one group must not be executed from several threads at once.
+     * result of each plan in rank order. If any plan fails, or the step runs past its timeout, the
+     * communicators the ranks have used are aborted and the failure is thrown once the ranks have
+     * returned. Steps of one group must not be executed from several threads at once.
      */
     public TornadoExecutionResult[] execute() {
         if (closed) {
             throw new TornadoRuntimeException("[ERROR] The NCCL plan group is closed");
         }
+        if (unusableReason != null) {
+            throw new TornadoRuntimeException("[ERROR] The NCCL plan group cannot run any more: " + unusableReason);
+        }
         caller = Thread.currentThread();
         Arrays.fill(failures, null);
         firstFailure.set(-1);
+        for (int rank = 0; rank < plans.length; rank++) {
+            finished.set(rank, 0);
+        }
         running.set(plans.length);
+        final long timeout = stepTimeoutNanos;
+        final long start = System.nanoTime();
         step.incrementAndGet();
         for (Thread thread : threads) {
             LockSupport.unpark(thread);
         }
 
-        long spinUntil = System.nanoTime() + SPIN_WAIT_NANOS;
+        String timedOutRanks = null;
+        long abortedAt = 0;
+        long spinUntil = start + SPIN_WAIT_NANOS;
         while (running.get() != 0) {
-            if (firstFailure.get() >= 0) {
+            long now = System.nanoTime();
+            if (firstFailure.get() >= 0 || timedOutRanks != null) {
                 // Release the ranks waiting for the failed one. A rank still running may only now
                 // reach a communicator, so keep aborting what the ranks have used until all return.
                 abortUsed();
+                if (abortedAt == 0) {
+                    abortedAt = now;
+                } else if (timeout > 0 && now - abortedAt > timeout) {
+                    unusableReason = "ranks " + unfinishedRanks() + " did not return even after their NCCL communicators were aborted";
+                    throw new TornadoRuntimeException("[ERROR] NCCL step abandoned: " + unusableReason + ". Their threads are still running; create a new plan group.");
+                }
                 LockSupport.parkNanos(this, ABORT_POLL_NANOS);
-            } else if (System.nanoTime() < spinUntil) {
+            } else if (timeout > 0 && now - start > timeout) {
+                timedOutRanks = unfinishedRanks();
+            } else if (now < spinUntil) {
                 Thread.onSpinWait();
+            } else if (timeout > 0) {
+                LockSupport.parkNanos(this, timeout - (now - start));
             } else {
                 LockSupport.park(this);
             }
         }
 
         int rank = firstFailure.get();
+        boolean anyAborted = used.stream().anyMatch(NcclCommunicator::isAborted);
+        String aborted = anyAborted ? " The NCCL communicators of this group were aborted; create new ones and new plans." : "";
+        if (timedOutRanks != null) {
+            TornadoRuntimeException failure = new TornadoRuntimeException(
+                    "[ERROR] NCCL step did not finish within " + Duration.ofNanos(timeout).toMillis() + " ms; ranks still running: " + timedOutRanks + "." + aborted);
+            if (rank >= 0) {
+                failure.initCause(failures[rank]);
+            }
+            throw failure;
+        }
         if (rank >= 0) {
-            boolean anyAborted = used.stream().anyMatch(NcclCommunicator::isAborted);
-            String aborted = anyAborted ? " The NCCL communicators of this group were aborted; create new ones and new plans." : "";
             TornadoRuntimeException failure = new TornadoRuntimeException("[ERROR] Plan of NCCL rank " + rank + " failed: " + failures[rank].getMessage() + "." + aborted);
             failure.initCause(failures[rank]);
             throw failure;
         }
         return results.clone();
+    }
+
+    private String unfinishedRanks() {
+        StringBuilder ranks = new StringBuilder("[");
+        for (int rank = 0; rank < plans.length; rank++) {
+            if (finished.get(rank) == 0) {
+                ranks.append(ranks.length() > 1 ? ", " : "").append(rank);
+            }
+        }
+        return ranks.append("]").toString();
     }
 
     private void abortUsed() {
