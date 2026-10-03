@@ -140,6 +140,12 @@ public class TestCompilerFlagsAPI extends TornadoTestBase {
      */
     @Test
     public void testFastMathFlagChangesWhatTheDeviceComputes() throws Exception {
+        // What this asserts is a CUDA property: --use_fast_math lowers the divide to
+        // div.approx.ftz.f32, whose flush-to-zero changes the denormal case below. Other backends
+        // accept their own fast-math flag without any guarantee that it alters this kernel, so the
+        // assertion would be testing the driver rather than the flag reaching the compiler.
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.METAL);
         String fastMath = fastMathFlagFor(backend());
         if (fastMath == null) {
             return;
