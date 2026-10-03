@@ -17,7 +17,7 @@ call (and vice-versa) with **no extra copies and no manual memory management**.
 
 1. [Quick start](#1-quick-start)
 2. [Core concepts](#2-core-concepts)
-3. [Provider catalog](#3-provider-catalog) — cuBLAS · cuBLASLt · cuFFT · cuDNN · CUTLASS · cuSPARSE · cuVS
+3. [Provider catalog](#3-provider-catalog) — cuBLAS · cuBLASLt · cuFFT · cuDNN · CUTLASS · cuSPARSE · cuVS · NCCL
 4. [Composition patterns](#4-composition-patterns)
 5. [CUDA Graphs](#5-cuda-graphs)
 6. [Execution-plan controls](#6-execution-plan-controls)
@@ -118,6 +118,7 @@ Each provider registers a unique id, matched by the factory:
 | `nvidia/cusparse` | `tornado-cusparse` |
 | `nvidia/cutlass` | `tornado-cutlass` |
 | `nvidia/cuvs` | `tornado-cuvs` |
+| `nvidia/nccl` | `tornado-nccl` |
 
 ---
 
@@ -312,6 +313,59 @@ new TaskGraph("knn")
     .transferToHost(DataTransferMode.EVERY_EXECUTION, ids, distances);
 ```
 
+### 3.8 NCCL — multi-GPU collectives (`nvidia/nccl`)
+
+Collectives across the GPUs of one process with [NCCL](https://github.com/NVIDIA/nccl). An
+`NcclCommunicator` has one rank per CUDA device; each rank runs its own execution plan on its own
+device, and the collective is a library task in every rank's task graph. NCCL reads and writes the
+TornadoVM buffers directly, on the plan's stream, so the data stays on the GPUs between the kernels
+around it.
+
+| Factory | Operation |
+|---|---|
+| `allReduce(comm, send, recv, op)` | `recv = op(send of every rank)` on every rank |
+| `allReduceInPlace(comm, buffer, op)` | the same, in place |
+| `broadcast(comm, buffer, root)` | `buffer` of rank `root` to every rank, in place |
+| `reduce(comm, send, recv, op, root)` | `recv = op(send of every rank)` on rank `root` only |
+| `allGather(comm, send, recv)` | `send` of every rank, concatenated in rank order (`recv` is `size()` times larger) |
+| `reduceScatter(comm, send, recv, op)` | reduce, then rank `r` keeps block `r` (`send` is `size()` times larger) |
+
+`op` is an `NcclRedOp` (`SUM`, `PROD`, `MAX`, `MIN`, `AVG`). Element types: `FloatArray`,
+`DoubleArray`, `HalfFloatArray`, `BFloat16Array`, `IntArray`, `LongArray`, `Int8Array`, `ByteArray`.
+
+A collective completes only when every rank has enqueued it, so the plans of the ranks must execute
+**together**. `NcclPlanGroup` runs each plan on a thread of its own (always the same one) and waits for
+all of them:
+
+```java
+TornadoDevice[] gpus = { TornadoExecutionPlan.getDevice(0, 0), TornadoExecutionPlan.getDevice(0, 1) };
+try (NcclCommunicator comm = NcclCommunicator.create(gpus)) {
+    TornadoExecutionPlan[] plans = new TornadoExecutionPlan[gpus.length];
+    for (int r = 0; r < gpus.length; r++) {
+        TaskGraph graph = new TaskGraph("rank" + r)
+            .task("grad", MyKernels::gradient, new KernelContext(), weights[r], grads[r])   // Java kernel
+            .libraryTask("sum", Nccl::allReduceInPlace, comm, grads[r], NcclRedOp.AVG)     // NCCL, same buffer and stream
+            .task("step", MyKernels::update, new KernelContext(), weights[r], grads[r])     // Java kernel
+            .transferToHost(DataTransferMode.UNDER_DEMAND, weights[r]);
+        WorkerGrid worker = new WorkerGrid1D(n);
+        worker.setLocalWork(256, 1, 1);
+        GridScheduler grid = new GridScheduler("rank" + r + ".grad", worker);
+        grid.addWorkerGrid("rank" + r + ".step", worker);
+        plans[r] = new TornadoExecutionPlan(graph.snapshot());
+        plans[r].withDevice(gpus[r]).withGridScheduler(grid);
+    }
+    try (NcclPlanGroup ranks = new NcclPlanGroup(plans)) {
+        for (int step = 0; step < steps; step++) {
+            ranks.execute();
+        }
+    }
+}
+```
+
+Executing the plans one after the other on one thread hangs at the first collective. NCCL tasks are
+not captured in CUDA graphs yet. `BenchmarkNcclAllReduce` compares a step with an NCCL all-reduce
+against copying every rank's buffer to the host, summing there and copying it back.
+
 > **cuTENSOR** (`nvidia/cutensor`, tensor contractions / einsum) is implemented
 > on branch `hybrid-cutensor` but is **not part of this build**.
 
@@ -481,6 +535,7 @@ CUDA backend is present:
 | CUTLASS | header-only, **CUDA 12+** | fetched by CMake `FetchContent` (v3.5.1); no install |
 | cuSPARSE | in the CUDA toolkit | nothing |
 | cuVS | `libcuvs_c` (cuVS 26.08) | `pip install libcuvs-cu12` (or conda `libcuvs`), then add its `lib64` to `LD_LIBRARY_PATH` |
+| NCCL | `libnccl.so.2` (NCCL 2.x) | `apt install libnccl2` or `pip install nvidia-nccl-cu13` (then add its `nvidia/nccl/lib` to `LD_LIBRARY_PATH`) |
 
 The CUTLASS kernel arch defaults to
 `sm_80` SASS + `compute_80` PTX (runs on all Ampere/Ada, JITs for Hopper);
