@@ -159,8 +159,17 @@ public final class CUDAHandles {
      * {@code cuEventElapsedTime(start, event)} yields the operation's device time. {@code start} is
      * {@code 0} for events that do not bracket a timed operation, such as markers and barriers, and
      * their elapsed time is reported as zero.
+     *
+     * <p>
+     * {@code dispatchTime} is the host time, in nanoseconds, the driver took to accept the
+     * operation: CUDA has no queued/start timestamps to derive it from on the device. It is
+     * {@code 0} when timing is off and for events that do not bracket an operation.
      */
-    public record Event(long event, long start) {
+    public record Event(long event, long start, long dispatchTime) {
+
+        public Event(long event, long start) {
+            this(event, start, 0);
+        }
     }
 
     /** A program: CUDA C source, the image NVRTC produced for it, and the module it was loaded as. */
