@@ -140,6 +140,10 @@ public interface CUDADeviceContextInterface extends TornadoDeviceContext {
         // no-op by default
     }
 
+    default void abortExecutionGraphCapture(long executionPlanId) {
+        // no-op by default
+    }
+
     /* ---- Native interop (external libraries, e.g. cuBLAS) ---- */
 
     default long getNativeStream(long executionPlanId) {
