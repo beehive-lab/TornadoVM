@@ -930,6 +930,21 @@ public class CUDACommandQueue extends CommandQueue {
         return graphExecHandle;
     }
 
+    /**
+     * Abandons a capture that failed part-way: ends it if the stream is still capturing and throws
+     * the partial graph away, so that the stream can be used again.
+     */
+    public void abortGraphCapture() {
+        if (!capturing) {
+            return;
+        }
+        capturing = false;
+        long graphHandle = cuStreamEndCapture(commandQueuePtr);
+        if (graphHandle != 0) {
+            cuGraphDestroy(graphHandle);
+        }
+    }
+
     public boolean isCapturing() {
         return capturing;
     }
