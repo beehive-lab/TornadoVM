@@ -19,9 +19,9 @@ name: Build & Test
 #                           macOS: BUILDS ONLY -- one runner cannot serve ten jobs per run
 #                           sample apps: once per (platform, backend, SDK), on each SDK's newest JDK
 #   push to develop         same subset: a merge is not a reason to occupy both machines for an
-#                           hour, and the nightly covers the rest a few hours later
+#                           hour, and the weekly sweep covers the rest
 #   + ci-full-jdk-sweep     label on the PR -> every JDK, macOS tests, apps on every leg
-#   schedule (nightly)      everything
+#   schedule (weekly)       everything, Saturday 22:00 UTC
 #   workflow_dispatch       everything unless full_jdk_sweep is set to false
 #
 # The subset exists because this is three self-hosted runners taking one job at a time, not an
@@ -30,14 +30,13 @@ name: Build & Test
 on:
   pull_request:
     branches: [develop]
-    # `labeled` is here so adding ci-full-jdk-sweep starts a run immediately. Re-running an
-    # existing run would not do: a re-run replays the original event payload, which predates the
-    # label. Runs triggered by any OTHER label are skipped by the job guard below, so this costs
-    # nothing when someone tags a PR "documentation".
+    # `labeled` is here so adding a label starts a run immediately with the PR's current labels
+    # (e.g. ci-full-jdk-sweep). Re-running an existing run would not do: a re-run replays the
+    # original event payload, which predates the label.
     types: [opened, synchronize, reopened, labeled]
   push:
     # Merges into develop are verified, but with the same subset a pull request gets: the full
-    # sweep is reserved for the nightly and for explicit requests.
+    # sweep is reserved for the weekly run and for explicit requests.
     branches: [develop]
   workflow_dispatch:
     inputs:
@@ -46,7 +45,8 @@ on:
         type: boolean
         default: true
   schedule:
-    - cron: "0 2 * * *"
+    # Full sweep once a week, Saturday night, when the runners are otherwise idle.
+    - cron: "0 22 * * 6"
 
 # One live run per branch. Without this every push to a pull request left its predecessor in the
 # queue, and the queue is the whole cost here: this workflow is 21 jobs on three self-hosted
@@ -59,20 +59,15 @@ on:
 # Pull requests cancel; pushes to develop do not. A merge is a commit whose result someone will
 # want to look up later, and there is only ever one run in flight per merge anyway.
 concurrency:
-  # Skipped label events must not replace real checks. Non-PR runs stay independent,
-  # since cancel-in-progress: false still replaces pending runs in a shared group.
+  # Non-PR runs stay independent, since cancel-in-progress: false still replaces pending runs
+  # in a shared group.
   group: >-
-    ${{ github.workflow }}-${{ github.event_name == 'pull_request' &&
-    (github.event.action != 'labeled' || github.event.label.name == 'ci-full-jdk-sweep') &&
-    github.ref || github.run_id }}
+    ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   code-quality:
-    if: >-
-      github.repository == 'beehive-lab/TornadoVM' &&
-      (github.event.action != 'labeled' ||
-       github.event.label.name == 'ci-full-jdk-sweep')
+    if: github.repository == 'beehive-lab/TornadoVM'
     runs-on: [self-hosted, Linux, x64]
     env:
       JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
@@ -89,12 +84,9 @@ jobs:
   # cross product: the jdk21 SDK is paired with JDK 21 alone, while the jdk22plus SDK fans out
   # across every JDK from the floor up. A full sweep is 6 legs per backend and the runners
   # serialise on one GPU each, so pull requests get the two ends of the supported range (the
-  # class-file floor and the JVMCI-absent extreme) and the nightly run gets everything.
+  # class-file floor and the JVMCI-absent extreme) and the weekly run gets everything.
   plan:
-    if: >-
-      github.repository == 'beehive-lab/TornadoVM' &&
-      (github.event.action != 'labeled' ||
-       github.event.label.name == 'ci-full-jdk-sweep')
+    if: github.repository == 'beehive-lab/TornadoVM'
     runs-on: [self-hosted, Linux, x64]
     timeout-minutes: 2
     outputs:
@@ -136,7 +128,7 @@ jobs:
               ("macos", "metal",  ["self-hosted", "macOS", "arm64"]),
           ]
           # The full sweep is opt-in or scheduled, never automatic: a manual dispatch decides for
-          # itself, the nightly always takes it, and a pull request can ask for it by carrying the
+          # itself, the weekly run always takes it, and a pull request can ask for it by carrying the
           # ci-full-jdk-sweep label -- which is how to get full coverage on the run before a merge.
           # Everything else, including merges into develop, runs the subset; 28 legs across two
           # serialising GPU machines is roughly an hour each, too much to spend on every merge.
@@ -160,7 +152,7 @@ jobs:
           # with --enable-preview"). That is a defect in those apps, not here, and it makes a 22 leg
           # permanently red until they are fixed. 25 and 27 keep the two shapes that matter on a
           # pull request -- platform jvmci patched at run time, and jvmci absent entirely -- and the
-          # nightly sweep still covers 22-24 so the app fix shows up the moment it lands. Restore
+          # weekly sweep still covers 22-24 so the app fix shows up the moment it lands. Restore
           # "jdk22" as the low end once the sample apps handle it.
           jdk22plus_runtimes = ["jdk22", "jdk23", "jdk24", "jdk25", "jdk26", "jdk27"] if full \
                                else ["jdk25", "jdk27"]
@@ -193,7 +185,7 @@ jobs:
           # macOS has ONE runner for what is ten jobs per run, and it is the binding constraint on
           # the whole queue: four builds and six tests, strictly serialised, is about fifty minutes
           # of that machine per run against an arrival rate several times higher. Its tests are
-          # therefore reserved for the nightly sweep and for the ci-full-jdk-sweep label, and a
+          # therefore reserved for the weekly sweep and for the ci-full-jdk-sweep label, and a
           # pull request gets the four macOS BUILDS only -- which is what catches the things a
           # macOS-blind change breaks in practice: the Metal and OpenCL native compile, the
           # aarch64 toolchain, and the SDK assembly. Linux keeps its full test matrix on every

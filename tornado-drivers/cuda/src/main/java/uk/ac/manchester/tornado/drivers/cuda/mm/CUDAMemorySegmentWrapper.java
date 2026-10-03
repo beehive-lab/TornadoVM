@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.common.Access;
-import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -90,6 +89,13 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
 
     /** Base address of the host segment this wrapper holds pinned, or 0 when not pinned. */
     private long pinnedHostPointer;
+
+    /** Whether the owning task-graph transfers this buffer on every execution (set before allocate). */
+    private boolean transferredEveryExecution;
+
+    public void setTransferredEveryExecution(boolean transferredEveryExecution) {
+        this.transferredEveryExecution = transferredEveryExecution;
+    }
 
     public CUDAMemorySegmentWrapper(long bufferSize, CUDADeviceContext deviceContext, long batchSize, Access access, int sizeOfType) {
         this.deviceContext = deviceContext;
@@ -253,26 +259,28 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
             bufferId = bufferIdBase;
         }
 
-        // Pin the full host segment so async H2D/D2H transfers DMA directly (no driver
-        // staging copy, true transfer/compute overlap). Ownership, aliasing and pin
-        // caching are handled by the central CUDAPinnedMemoryRegistry (refcounted,
-        // stale-pin safe). Any hold from a previous allocate is released first, so the
-        // refcount stays balanced across alloc/free cycles.
+        // Pin the full host segment of a buffer the task-graph transfers on every execution, so its
+        // async H2D/D2H transfers DMA directly (no driver staging copy, true transfer/compute overlap).
+        // Pinning happens here, at allocation, so it precedes any CUDA graph capture of the transfers.
+        // Buffers uploaded once or never transferred stay pageable (see PIN_ALL_BUFFERS). Ownership,
+        // aliasing and pin caching are handled by the central CUDAPinnedMemoryRegistry (refcounted,
+        // stale-pin safe). Any hold from a previous allocate is released first, so the refcount stays
+        // balanced across alloc/free cycles.
         // For large read-only segments served by the staged-transfer ring, skip the whole-segment
         // pin: registering synchronously pages in and pins the entire (possibly cold, mmap'd)
         // segment - exactly the upfront cost the staging ring exists to avoid - and the ring's
         // own pinned slots already make the chunked H2D DMA async.
+        if (segment != null && pinnedHostPointer != 0) {
+            deviceContext.getPlatformContext().getPinnedMemoryRegistry().unpin(pinnedHostPointer);
+            pinnedHostPointer = 0;
+        }
+        boolean pin = CUDAPinnedMemoryRegistry.PIN_ALL_BUFFERS || transferredEveryExecution;
         if (useStagedTransfer() && access == Access.READ_ONLY) {
             if (TornadoOptions.FULL_DEBUG) {
                 new TornadoLogger().info("skipping host pinning (staged transfers): %s", toString());
             }
-        } else if (segment != null) {
-            CUDAPinnedMemoryRegistry pinRegistry = deviceContext.getPlatformContext().getPinnedMemoryRegistry();
-            if (pinnedHostPointer != 0) {
-                pinRegistry.unpin(pinnedHostPointer);
-                pinnedHostPointer = 0;
-            }
-            if (pinRegistry.pin(segment, segment.byteSize())) {
+        } else if (segment != null && pin) {
+            if (deviceContext.getPlatformContext().getPinnedMemoryRegistry().pin(segment, segment.byteSize())) {
                 pinnedHostPointer = segment.address();
             }
         }
@@ -288,7 +296,10 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
 
     @Override
     public void markAsFreeBuffer() throws TornadoMemoryException {
-        TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
+        if (bufferId == INIT_VALUE) {
+            // already released, e.g. by another task-graph of the plan that shares this buffer
+            return;
+        }
 
         // Release this wrapper's hold on the host pin before recycling; the registry
         // unregisters (after a context sync) only when the last holder releases.

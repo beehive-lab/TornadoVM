@@ -89,6 +89,29 @@ public class MetalUnary {
 
     }
 
+    /**
+     * The bits of a value read as another type of the same size ({@code Float.floatToRawIntBits},
+     * {@code Float.intBitsToFloat} and the long and double pair): MSL {@code as_type<T>(x)}.
+     */
+    public static class Reinterpret extends UnaryConsumer {
+
+        public Reinterpret(LIRKind lirKind, Value value) {
+            super(MetalUnaryOp.AS_TYPE, lirKind, value);
+        }
+
+        @Override
+        public void emit(MetalCompilationResultBuilder crb, MetalAssembler asm) {
+            asm.emit("as_type<" + getPlatformKind() + ">(");
+            asm.emitValueOrOp(crb, value);
+            asm.emit(")");
+        }
+
+        @Override
+        public String toString() {
+            return String.format("as_type<%s>(%s)", getPlatformKind(), value);
+        }
+    }
+
     public static class Intrinsic extends UnaryConsumer {
 
         public Intrinsic(MetalUnaryOp opcode, LIRKind lirKind, Value value) {

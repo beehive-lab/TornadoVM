@@ -23,8 +23,10 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.cudf.enums.CudfAggregation;
+import uk.ac.manchester.tornado.cudf.provider.CudfNativeLib;
 
 /**
  * RAPIDS cuDF relational primitives as TornadoVM library tasks.
@@ -272,5 +274,160 @@ public final class Cudf {
                 .withFunction("sortedOrderMulti") //
                 .withParameters(new Object[] { n, keyColumns, descendingMask, keys, outOrder }) //
                 .withAccess(access);
+    }
+
+    /**
+     * {@link #readParquet} with the path in a mutable holder, so one plan can read many files.
+     *
+     * <p>The reason this overload exists is the dominant cost of a device read, and it is not the
+     * read. Building a {@code TornadoExecutionPlan} allocates and frees the column buffers: on 4M
+     * rows of 6 columns that is ~90 ms against ~28 ms for the same read from a plan that already
+     * exists -- the read itself runs at ~7.4 GB/s, which is the PCIe ceiling. A plan is worth
+     * keeping, and a plan is only worth keeping if it is not welded to one file.
+     *
+     * <p>{@code LibraryInvocation.getArg} hands back the original Java reference, so the holder's
+     * contents are read when the task runs rather than when the graph is built. Replace the holder's contents with
+     * the next path and execute again. A StringBuilder rather than a String[] because TornadoVM
+     * marshals arrays to the device and refuses one of String. The same trick the row count uses, for the same
+     * reason: a value captured at build time cannot change between executions.
+     */
+    public static LibraryTaskDescriptor readParquet(StringBuilder pathHolder, int rowGroupStart, int rowGroupCount, int intColumn, int[] doubleColumns, long rows, IntArray outKeys,
+            DoubleArray outValues) {
+        return readParquet(pathHolder, rowGroupStart, rowGroupCount, intColumn, doubleColumns, rows, outKeys, outValues, Double.BYTES);
+    }
+
+    /**
+     * The same read into a {@link FloatArray}, for FP32 columns.
+     *
+     * <p>The file's columns must already be FP32. A FP64 column is refused rather than narrowed:
+     * narrowing changes the value, and which side of that a query lands on is the planner's
+     * decision, made when it typed the query, not the reader's.
+     */
+    public static LibraryTaskDescriptor readParquet(StringBuilder pathHolder, int rowGroupStart, int rowGroupCount, int intColumn, int[] doubleColumns, long rows, IntArray outKeys,
+            FloatArray outValues) {
+        return readParquet(pathHolder, rowGroupStart, rowGroupCount, intColumn, doubleColumns, rows, outKeys, outValues, Float.BYTES);
+    }
+
+    private static LibraryTaskDescriptor readParquet(Object pathOrHolder, int rowGroupStart, int rowGroupCount, int intColumn, int[] doubleColumns, long rows, IntArray outKeys,
+            Object outValues, int valueWidth) {
+        Access[] access = new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY,
+                Access.WRITE_ONLY, Access.READ_ONLY };
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("readParquet") //
+                .withParameters(new Object[] { pathOrHolder, rowGroupStart, rowGroupCount, intColumn, doubleColumns, rows, outKeys, outValues, valueWidth }) //
+                .withAccess(access);
+    }
+
+    /**
+     * What a Parquet file's footer says, without reading a column of it.
+     *
+     * <p>Sizing has to precede allocation. Every other entry point here writes into a buffer the
+     * caller already owns, and a caller cannot own a buffer for a file whose row count it does not
+     * know -- so a device read of a file begins here, on the host, with a seek and a footer parse.
+     *
+     * <p>Not a {@link LibraryTaskDescriptor}: there is no task graph, no stream and no device
+     * memory involved. Presenting it as one would suggest it can be scheduled alongside a kernel,
+     * and it cannot -- its answer is needed before the graph that reads the file can be built.
+     *
+     * @return total rows, row-group count, column count, in that order
+     */
+    /**
+     * Reads a STRING column of a Parquet file into a TornadoVM offsets array and byte blob.
+     *
+     * <p>The two buffers are a cuDF strings column as libcudf lays one out, and they are
+     * TornadoVM's: a generated kernel can read the bytes, and {@link #containsRe} rebuilds a
+     * column over them without copying. That is the point -- the strings are read once and every
+     * pattern after that matches the same device memory.
+     *
+     * <p>{@code charsCapacity} is what the caller sized the blob for. A Parquet footer gives the
+     * row count but not the decoded byte count, so a caller sizes from the file and is told, rather
+     * than left to overrun, when it sized too small.
+     */
+    public static LibraryTaskDescriptor readParquetStrings(StringBuilder pathHolder, int rowGroupStart, int rowGroupCount, int column, long rows, IntArray outOffsets,
+            ByteArray outChars, long charsCapacity) {
+        Access[] access = new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY, Access.WRITE_ONLY,
+                Access.READ_ONLY };
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("readParquetStrings") //
+                .withParameters(new Object[] { pathHolder, rowGroupStart, rowGroupCount, column, rows, outOffsets, outChars, charsCapacity }) //
+                .withAccess(access);
+    }
+
+    /**
+     * One regular expression against a strings column, one byte of answer a row.
+     *
+     * <p>Nothing is copied. The column is rebuilt over {@code offsets} and {@code chars} for the
+     * call, so matching reads the same device memory {@link #readParquetStrings} wrote, and a
+     * second pattern over the same data is a second task on the same buffers rather than a second
+     * read. The compiled program is cached by pattern in the shim.
+     *
+     * <p>The pattern is a {@link StringBuilder} for the reason the path is: TornadoVM marshals
+     * array parameters to the device and refuses an array of String, and a value captured when the
+     * graph is built cannot change between executions.
+     */
+    public static LibraryTaskDescriptor containsRe(long rows, IntArray offsets, ByteArray chars, long charsBytes, StringBuilder pattern, ByteArray outMask) {
+        Access[] access = new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY };
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("containsRe") //
+                .withParameters(new Object[] { rows, offsets, chars, charsBytes, pattern, outMask }) //
+                .withAccess(access);
+    }
+
+    public static long[] parquetMetadata(String path) {
+        return CudfNativeLib.parquetMetadata(path);
+    }
+
+    /**
+     * The number of rows in each row group.
+     *
+     * <p>What turns a byte range -- which is how Flink hands a reader its share of a file -- into
+     * the row-group range a Parquet reader can act on. A reader that guessed would read a row
+     * twice or not at all, and a row count of the right total would not show it.
+     */
+    public static long[] parquetRowGroupRows(String path, int rowGroups) {
+        return CudfNativeLib.parquetRowGroupRows(path, rowGroups);
+    }
+
+    /** Whether the shim on this machine exports the Parquet reader. */
+    public static boolean isParquetAvailable() {
+        return CudfNativeLib.isParquetAvailable();
+    }
+
+    /**
+     * Reads a row-group range of a Parquet file straight into device arrays.
+     *
+     * <p>The reason the rest of this module exists in the shape it does. Every other primitive
+     * here operates on rows that are already resident; this is how they get there without a host
+     * round trip. Measured on 8M rows of 31 columns, the route it replaces costs ~17.3 ns a field
+     * to decode on the CPU and ~17.0 ns a field to stage into a TornadoVM array, against ~57 ms of
+     * device execution for the work itself.
+     *
+     * <p>Columns are named by index into the file's schema, because the caller is a planner that
+     * decided positionally which columns the query needs. The operand contract is the module's
+     * usual one and is <em>checked</em>: the key column is INT32, value columns are FP64, and a
+     * null anywhere is refused rather than read as dense.
+     *
+     * <p>{@code outValues} is packed with a stride of {@code rows} -- column <em>c</em> starts at
+     * element {@code c * rows} -- the same convention {@link #sortedOrderMulti} uses for its keys.
+     *
+     * @param rowGroupCount 0 reads the whole file; otherwise the range beginning at
+     *     {@code rowGroupStart}, which is how a Flink split becomes a read
+     * @param intColumn the key column's schema index, or -1 for none
+     * @param rows how many rows the range holds, from {@link #parquetRowGroupRows}; the read is
+     *     refused if the file disagrees, because a buffer sized for one row count and filled from
+     *     another is a corruption no row count catches
+     */
+    public static LibraryTaskDescriptor readParquet(String path, int rowGroupStart, int rowGroupCount, int intColumn, int[] doubleColumns, long rows, IntArray outKeys,
+            DoubleArray outValues) {
+        return readParquet(path, rowGroupStart, rowGroupCount, intColumn, doubleColumns, rows, outKeys, outValues, Double.BYTES);
+    }
+
+    /** The same read into a {@link FloatArray}, for FP32 columns. */
+    public static LibraryTaskDescriptor readParquet(String path, int rowGroupStart, int rowGroupCount, int intColumn, int[] doubleColumns, long rows, IntArray outKeys,
+            FloatArray outValues) {
+        return readParquet(path, rowGroupStart, rowGroupCount, intColumn, doubleColumns, rows, outKeys, outValues, Float.BYTES);
     }
 }

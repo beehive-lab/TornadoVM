@@ -67,6 +67,12 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     void withCUDAGraph();
 
+    /**
+     * Sets the number of device-side kernel launches that may be pending at once (CUDA Dynamic
+     * Parallelism). See {@code TornadoExecutionPlan.withCUDAPendingLaunchCount}.
+     */
+    void withCUDAPendingLaunchCount(int count);
+
     void withMemoryLimit(String memoryLimit);
 
     void withoutMemoryLimit();
@@ -150,6 +156,9 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
     Map<String, List<Object>> getPersistedTaskToObjectsMap();
 
     void withCompilerFlags(TornadoVMBackendType backendType, String compilerFlags);
+
+    /** Require the host's floating-point rounding for every task in this graph. */
+    void withStrictFloatingPoint();
 
     void mapOnDeviceMemoryRegion(Object destArray, Object srcArray, long offset, TornadoTaskGraphInterface taskGraphSrc);
 

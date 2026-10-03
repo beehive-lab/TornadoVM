@@ -62,7 +62,9 @@ import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import org.graalvm.word.LocationIdentity;
+import uk.ac.manchester.tornado.api.DeviceKernel;
 import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.enums.DeviceLaunchMode;
 import uk.ac.manchester.tornado.api.enums.MMAShape;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -447,6 +449,29 @@ public class OCLGraphBuilderPlugins {
         registerUnsupportedSimdgroupMatrixPlugins(r);
         registerUnsupportedSimdPlugins(r);
         registerUnsupportedAtomicRmwPlugins(r);
+        registerUnsupportedDeviceLaunchPlugins(r);
+    }
+
+    /**
+     * Launching a kernel from the device ({@link uk.ac.manchester.tornado.api.KernelContext} {@code launch},
+     * {@code launch3D}) is CUDA Dynamic Parallelism, which has no equivalent on this backend. The
+     * {@code KernelContext} bodies throw, so reject the kernel when it is compiled instead.
+     */
+    private static void registerUnsupportedDeviceLaunchPlugins(Registration r) {
+        final String message = "Device-side kernel launches (KernelContext.launch/launch3D) are only supported on the CUDA backend.";
+        final Class<?>[][] signatures = { //
+                { Receiver.class, DeviceKernel.class, int.class, int.class, Object[].class }, //
+                { Receiver.class, DeviceKernel.class, DeviceLaunchMode.class, int.class, int.class, Object[].class }, //
+                { Receiver.class, DeviceKernel.class, DeviceLaunchMode.class, int.class, int.class, int.class, int.class, int.class, int.class, Object[].class } };
+        for (Class<?>[] signature : signatures) {
+            r.register(new InvocationPlugin(signature.length > 6 ? "launch3D" : "launch", signature) {
+                @Override
+                public boolean defaultHandler(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode... args) {
+                    unimplemented(message);
+                    return false;
+                }
+            });
+        }
     }
 
     /**

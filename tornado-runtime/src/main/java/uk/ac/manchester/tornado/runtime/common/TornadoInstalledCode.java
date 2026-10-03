@@ -35,4 +35,12 @@ public interface TornadoInstalledCode {
     boolean isValid();
 
     void invalidate();
+
+    /**
+     * The kernels this code launches from the device, as a tree: one line per launch, indented by
+     * nesting depth. Empty for code that launches nothing from the device.
+     */
+    default java.util.List<String> getDeviceLaunchTree() {
+        return java.util.List.of();
+    }
 }

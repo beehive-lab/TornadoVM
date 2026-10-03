@@ -58,6 +58,10 @@ public class ImmutableTaskGraph {
         taskGraph.withCUDAGraph();
     }
 
+    void withCUDAPendingLaunchCount(int count) {
+        taskGraph.withCUDAPendingLaunchCount(count);
+    }
+
     void withIntraPlanConcurrency() {
         taskGraph.withIntraPlanConcurrency();
     }
@@ -92,6 +96,10 @@ public class ImmutableTaskGraph {
 
     void transferToHost(Object object, long offset, long partialCopySize) {
         taskGraph.syncRuntimeTransferToHost(object, offset, partialCopySize);
+    }
+
+    boolean takesAsParameter(Object object) {
+        return taskGraph.getArgumentsLookup().contains(object);
     }
 
     TaskGraph getTaskGraph() {
@@ -224,6 +232,10 @@ public class ImmutableTaskGraph {
 
     void withoutPrintKernel() {
         taskGraph.withoutPrintKernel();
+    }
+
+    void withStrictFloatingPoint() {
+        taskGraph.withStrictFloatingPoint();
     }
 
     void withCompilerFlags(TornadoVMBackendType backendType, String compilerFlags) {

@@ -76,12 +76,12 @@ __CUFFT_MODULE__ = "tornado.cufft"
 __CUDNN_MODULE__ = "tornado.cudnn"
 __CUSPARSE_MODULE__ = "tornado.cusparse"
 __CUDF_MODULE__ = "tornado.cudf"
+__CUVS_MODULE__ = "tornado.cuvs"
 __CUTLASS_MODULE__ = "tornado.cutlass"
 
 # ########################################################
 # JAVA FLAGS
 # ########################################################
-__JAVA_GC__ = "-XX:+UseParallelGC "
 __JAVA_BASE_OPTIONS__ = "-server -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI "
 # Only an SDK compiled with enable-preview needs it at run time (the jdk21 profiles: FFM was a
 # preview API before JDK 22). Appending it unconditionally would switch preview APIs on JVM-wide
@@ -1314,8 +1314,6 @@ class TornadoVMRunnerTool():
         # Verified end to end: jdk22plus SDK on JDK 25/26/27 and jdk21 SDK on JDK 21 all compile and
         # execute kernels with graalJars reachable only from --upgrade-module-path.
 
-        javaFlags = javaFlags + __JAVA_GC__
-
         common = self.sdk + __COMMON_EXPORTS__
         opencl = self.sdk + __OPENCL_EXPORTS__
         metal = self.sdk + __METAL_EXPORTS__
@@ -1335,7 +1333,7 @@ class TornadoVMRunnerTool():
             tornadoAddModules = tornadoAddModules + "," + __METAL_MODULE__
         if ("cuda-backend" in self.listOfBackends):
             javaFlags = javaFlags + "@" + cuda + " "
-            tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__ + "," + __CUBLAS_MODULE__ + "," + __CURAND_MODULE__ + "," + __CUFFT_MODULE__ + "," + __CUDNN_MODULE__ + "," + __CUSPARSE_MODULE__ + "," + __CUTLASS_MODULE__ + "," + __CUDF_MODULE__
+            tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__ + "," + __CUBLAS_MODULE__ + "," + __CURAND_MODULE__ + "," + __CUFFT_MODULE__ + "," + __CUDNN_MODULE__ + "," + __CUSPARSE_MODULE__ + "," + __CUTLASS_MODULE__ + "," + __CUDF_MODULE__ + "," + __CUVS_MODULE__
 
         javaFlags = javaFlags + tornadoAddModules + " "
 

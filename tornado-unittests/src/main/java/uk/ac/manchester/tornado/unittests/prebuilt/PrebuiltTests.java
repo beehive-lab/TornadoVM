@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.stream.IntStream;
 
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -53,15 +54,24 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  */
 public class PrebuiltTests extends TornadoTestBase {
     private static final String TORNADOVM_HOME = "TORNADOVM_HOME";
-    private static TornadoDevice defaultDevice;
-    private static TornadoVMBackendType backendType;
     private static boolean coops;
+    private TornadoDevice defaultDevice;
+    private TornadoVMBackendType backendType;
 
     @BeforeClass
     public static void init() {
-        backendType = TornadoRuntimeProvider.getTornadoRuntime().getBackendType(0);
-        defaultDevice = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getDevice(0);
         coops = TornadoNativeArray.ARRAY_HEADER == 16;
+    }
+
+    /**
+     * Resolves the device and backend after {@link TornadoTestBase#before()} has applied
+     * {@code tornado.unittests.device}, so the tests run on, and load kernels for, the selected
+     * backend rather than whichever backend happens to be first.
+     */
+    @Before
+    public void selectDevice() {
+        backendType = TornadoRuntimeProvider.getTornadoRuntime().getBackendType(0);
+        defaultDevice = TornadoRuntimeProvider.getTornadoRuntime().getDefaultDevice();
     }
 
     private String getPrebuiltKernelPath(String kernelName) {
@@ -132,6 +142,41 @@ public class PrebuiltTests extends TornadoTestBase {
             assertEquals(a.get(j) + b.get(j), c.get(j));
         }
 
+    }
+
+    /**
+     * A pre-built CUDA kernel that launches kernels from the device (CUDA Dynamic Parallelism): one
+     * parent thread launches a child grid that doubles every element and a tail-launched grid that
+     * then adds one. Exercises the relocatable compile and the device-runtime link.
+     */
+    @Test
+    public void testPrebuiltDynamicParallelism() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.METAL);
+
+        final int numElements = 1024;
+        IntArray a = new IntArray(numElements);
+        for (int i = 0; i < numElements; i++) {
+            a.set(i, i);
+        }
+
+        AccessorParameters accessorParameters = new AccessorParameters(1);
+        accessorParameters.set(0, a, Access.READ_WRITE);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
+                .prebuiltTask("t0", "dp", getPrebuiltKernelPath("dp"), accessorParameters) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", new WorkerGrid1D(numElements));
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .withDevice(defaultDevice) //
+                    .execute();
+        }
+        for (int i = 0; i < numElements; i++) {
+            assertEquals(2 * i + 1, a.get(i));
+        }
     }
 
     @Test

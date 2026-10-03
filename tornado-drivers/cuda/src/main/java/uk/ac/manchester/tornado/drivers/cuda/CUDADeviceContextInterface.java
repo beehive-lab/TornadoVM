@@ -100,6 +100,14 @@ public interface CUDADeviceContextInterface extends TornadoDeviceContext {
     }
 
     /**
+     * Sets how many kernel launches from device code may be pending at once on this device
+     * ({@code withCUDAPendingLaunchCount}). No-op by default.
+     */
+    default void setDevicePendingLaunchCount(int count) {
+        // no-op by default
+    }
+
+    /**
      * Whether large one-shot H2D uploads are routed through the pinned staging ring.
      */
     default boolean isStagedTransfersEnabled() {

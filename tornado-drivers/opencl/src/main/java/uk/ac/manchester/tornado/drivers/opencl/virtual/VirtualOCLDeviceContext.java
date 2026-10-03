@@ -46,7 +46,8 @@ public class VirtualOCLDeviceContext implements OCLDeviceContextInterface {
     private final OCLTargetDevice device;
     private final VirtualOCLContext context;
     private final OCLCodeCache codeCache;
-    private boolean wasReset;
+    /** Execution plans whose device state has been torn down; see TornadoDeviceContext. */
+    private final java.util.Set<Long> resetPlans = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
     protected VirtualOCLDeviceContext(OCLTargetDevice device, VirtualOCLContext context) {
         this.device = device;
@@ -148,7 +149,7 @@ public class VirtualOCLDeviceContext implements OCLDeviceContextInterface {
 
     @Override
     public void reset(long executionPlanId) {
-        wasReset = true;
+        resetPlans.add(executionPlanId);
     }
 
     @Override
@@ -169,13 +170,13 @@ public class VirtualOCLDeviceContext implements OCLDeviceContextInterface {
     }
 
     @Override
-    public boolean wasReset() {
-        return wasReset;
+    public boolean wasReset(long executionPlanId) {
+        return resetPlans.contains(executionPlanId);
     }
 
     @Override
-    public void setResetToFalse() {
-        wasReset = false;
+    public void setResetToFalse(long executionPlanId) {
+        resetPlans.remove(executionPlanId);
     }
 
     @Override

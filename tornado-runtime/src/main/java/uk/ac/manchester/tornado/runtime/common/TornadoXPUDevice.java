@@ -236,6 +236,18 @@ public interface TornadoXPUDevice extends TornadoDevice {
     }
 
     /**
+     * Sets how many kernel launches from device code may be pending at once on this device, as
+     * requested with {@code withCUDAPendingLaunchCount}. Called by the interpreter before issuing a
+     * plan's bytecodes, so it is in place before any launch or CUDA-graph capture. No-op by
+     * default; the CUDA backend overrides it.
+     *
+     * @param count the maximum number of pending device-side launches
+     */
+    default void setDevicePendingLaunchCount(int count) {
+        // no-op by default
+    }
+
+    /**
      * Returns whether this device supports execution graph capture and replay.
      * When false, the graph compiler will not emit graph bytecodes for this device,
      * and the interpreter will reject them at runtime as a safety net.

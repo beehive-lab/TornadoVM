@@ -29,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -111,7 +112,11 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
 
     private static MetalBackendImpl driver = null;
     private static final Pattern NAME_PATTERN = Pattern.compile("^Metal (\\d)\\.(\\d).*");
+    private static final Access[] ACCESS_TYPES = Access.values();
+
     private final MetalTargetDevice device;
+    /** Scratch for {@link #countObjectsPerAccess}, indexed by {@link Access#ordinal()}. */
+    private final int[] objectsPerAccess = new int[ACCESS_TYPES.length];
     private final int deviceIndex;
     private final int platformIndex;
     private final String platformName;
@@ -498,26 +503,26 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
         return result;
     }
 
-    private HashMap<Access, Integer> getNumOfDistinctAccess(Access[] accesses) {
-        HashMap<Access, Integer> distinctAccesses = new HashMap<>();
+    /**
+     * Counts the objects of each access type, indexed by {@link Access#ordinal()}. The array is a
+     * field reused on every call rather than a fresh map: this runs on every execution, and
+     * {@link #allocateObjects} (its only caller) is synchronized.
+     */
+    private int[] countObjectsPerAccess(Access[] accesses) {
+        Arrays.fill(objectsPerAccess, 0);
         for (Access access : accesses) {
-            if (distinctAccesses.containsKey(access)) {
-                int numOfAccesses = distinctAccesses.get(access);
-                distinctAccesses.replace(access, numOfAccesses, numOfAccesses + 1);
-            } else {
-                distinctAccesses.put(access, 1);
-            }
+            objectsPerAccess[access.ordinal()]++;
         }
-        return distinctAccesses;
+        return objectsPerAccess;
     }
 
     @Override
     public synchronized long allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states, Access[] accesses) {
         TornadoBufferProvider bufferProvider = getDeviceContext().getBufferProvider();
-        HashMap<Access, Integer> distinctAccesses = getNumOfDistinctAccess(accesses);
-        for (Access access : distinctAccesses.keySet()) {
-            int numOfObjectsForAccessType = distinctAccesses.get(access);
-            if (!bufferProvider.isNumFreeBuffersAvailable(numOfObjectsForAccessType, access)) {
+        int[] distinctAccesses = countObjectsPerAccess(accesses);
+        for (Access access : ACCESS_TYPES) {
+            int numOfObjectsForAccessType = distinctAccesses[access.ordinal()];
+            if (numOfObjectsForAccessType > 0 && !bufferProvider.isNumFreeBuffersAvailable(numOfObjectsForAccessType, access)) {
                 bufferProvider.resetBuffers(access);
             }
         }
@@ -538,7 +543,7 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
         return allocatedSpace;
     }
 
-    private boolean reuseBatchBuffer(long batchSize, Access access, TornadoBufferProvider bufferProvider, HashMap<Access, Integer> distinctAccesses, DeviceBufferState state) {
+    private boolean reuseBatchBuffer(long batchSize, Access access, TornadoBufferProvider bufferProvider, int[] distinctAccesses, DeviceBufferState state) {
         // A state with no buffer of its own has nothing to reuse: reuseBufferForBatchProcessing()
         // answers the global question "is a buffer of this size and access already in use", which is
         // true as soon as any other object of the same access type holds one. Treating that as "this
@@ -546,7 +551,7 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
         // dereferences a null device buffer - which is what a batched graph with more than one
         // output used to do on its second chunk.
         if (batchSize != 0 && state.hasObjectBuffer()) {
-            int numberOfBuffersForAccessType = distinctAccesses.get(access);
+            int numberOfBuffersForAccessType = distinctAccesses[access.ordinal()];
             // if there is a buffer available in the used-list with the same access type, reuse it
             if (bufferProvider.reuseBufferForBatchProcessing(batchSize, access, numberOfBuffersForAccessType)) {
                 state.markBufferAsReused();
@@ -617,11 +622,19 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
     @Override
     public int streamOut(long executionPlanId, Object object, long offset, DeviceBufferState state, int[] events) {
         TornadoInternalError.guarantee(state.hasObjectBuffer(), "invalid variable");
-        int event = state.getXPUBuffer().enqueueRead(executionPlanId, object, offset, events, events != null);
-        if (events != null) {
-            return event;
-        }
-        return -1;
+        final boolean returnEvent = returnCopyOutEvent(events);
+        int event = state.getXPUBuffer().enqueueRead(executionPlanId, object, offset, events, returnEvent);
+        return returnEvent ? event : -1;
+    }
+
+    /**
+     * A copy-out hands its event back when the caller tracks dependencies, and also when
+     * profiling: the interpreter can only record COPY_OUT_TIME for a read that returns an
+     * event to time. The wait list itself is still applied only when {@code events} is
+     * non-null, so the profiler does not change the ordering of the read.
+     */
+    private static boolean returnCopyOutEvent(int[] events) {
+        return events != null || TornadoOptions.isProfilerEnabled();
     }
 
     @Override

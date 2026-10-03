@@ -149,6 +149,11 @@
                 </dependency>
                 <dependency>
                     <groupId>${project.groupId}</groupId>
+                    <artifactId>tornado-cuvs</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
                     <artifactId>tornado-drivers-cutlass-jni</artifactId>
                     <version>${project.version}</version>
                     <classifier>libs</classifier>

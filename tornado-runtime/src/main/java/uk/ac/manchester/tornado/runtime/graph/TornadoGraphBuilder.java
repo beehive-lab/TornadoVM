@@ -24,6 +24,7 @@
 package uk.ac.manchester.tornado.runtime.graph;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 import java.util.Objects;
@@ -138,6 +139,9 @@ public class TornadoGraphBuilder {
 
         final List<LocalObjectState> states = executionContext.getObjectStates();
 
+        // The node each object was bound to for its first appearance in the current task's argument list.
+        final AbstractNode[] argNodeInTask = new AbstractNode[objects.size()];
+
         boolean shouldExit = false;
         while (!shouldExit && buffer.hasRemaining()) {
             final byte op = buffer.get();
@@ -147,8 +151,18 @@ public class TornadoGraphBuilder {
                 args = new AbstractNode[size];
                 argIndex = 0;
                 taskNode = new TaskNode(context, taskIndex, args);
+                Arrays.fill(argNodeInTask, null);
             } else if (op == TornadoGraphBitcodes.LOAD_REF.index()) {
                 final int variableIndex = buffer.getInt();
+
+                // An object this task has already written, passed again to the same task (aliased
+                // arguments): bind it to the node of its first appearance. Its latest access node is
+                // the task's own write, so using that would make the task depend on itself.
+                if (objectNodes[variableIndex] instanceof DependentReadNode ownWrite && ownWrite.getDependent() == taskNode) {
+                    args[argIndex] = argNodeInTask[variableIndex];
+                    argIndex++;
+                    continue;
+                }
 
                 final AbstractNode arg = objectNodes[variableIndex];
                 if (!(arg instanceof ContextOpNode)) {
@@ -209,6 +223,9 @@ public class TornadoGraphBuilder {
                     nextAccessNode = args[argIndex];
                 }
 
+                if (argNodeInTask[variableIndex] == null) {
+                    argNodeInTask[variableIndex] = args[argIndex];
+                }
                 objectNodes[variableIndex] = nextAccessNode;
                 argIndex++;
 

@@ -643,15 +643,19 @@ public final class CUDAAssembler extends Assembler {
         public static final CUDAUnaryOp CAST_TO_LONG = new CUDAUnaryOp("(long long) ", true);
         public static final CUDAUnaryOp CAST_TO_ULONG = new CUDAUnaryOp("(unsigned long long) ", true);
         public static final CUDAUnaryOp CAST_TO_FLOAT = new CUDAUnaryOp("(float) ", true);
-        public static final CUDAUnaryOp CAST_TO_BYTE = new CUDAUnaryOp("(char) ", true);
+        public static final CUDAUnaryOp CAST_TO_BYTE = new CUDAUnaryOp("(signed char) ", true);
         public static final CUDAUnaryOp CAST_TO_DOUBLE = new CUDAUnaryOp("(double) ", true);
+        // Unsigned value casts, used to lower Java's >>> (CUDA C's >> is arithmetic on signed types).
+        public static final CUDAUnaryOp CAST_TO_UCHAR = new CUDAUnaryOp("(unsigned char) ", true);
+        public static final CUDAUnaryOp CAST_TO_USHORT = new CUDAUnaryOp("(unsigned short) ", true);
+        public static final CUDAUnaryOp CAST_TO_UINT = new CUDAUnaryOp("(unsigned int) ", true);
 
         public static final CUDAUnaryOp CAST_TO_INT_PTR = new CUDAUnaryOp("(int *) ", true);
         public static final CUDAUnaryOp CAST_TO_SHORT_PTR = new CUDAUnaryOp("(short *) ", true);
         public static final CUDAUnaryOp CAST_TO_LONG_PTR = new CUDAUnaryOp("(long long *) ", true);
         public static final CUDAUnaryOp CAST_TO_ULONG_PTR = new CUDAUnaryOp("(unsigned long long *) ", true);
         public static final CUDAUnaryOp CAST_TO_FLOAT_PTR = new CUDAUnaryOp("(float *) ", true);
-        public static final CUDAUnaryOp CAST_TO_BYTE_PTR = new CUDAUnaryOp("(char *) ", true);
+        public static final CUDAUnaryOp CAST_TO_BYTE_PTR = new CUDAUnaryOp("(signed char *) ", true);
         // @formatter:on
 
         private final boolean prefix;
@@ -1029,7 +1033,7 @@ public final class CUDAAssembler extends Assembler {
         // @formatter:off
 
         public static final CUDABinaryTemplate DECLARE_BYTE_ARRAY = new CUDABinaryTemplate("DECLARE_ARRAY", "byte %s[%s]");
-        public static final CUDABinaryTemplate DECLARE_CHAR_ARRAY = new CUDABinaryTemplate("DECLARE_ARRAY", "char %s[%s]");
+        public static final CUDABinaryTemplate DECLARE_CHAR_ARRAY = new CUDABinaryTemplate("DECLARE_ARRAY", "signed char %s[%s]");
         public static final CUDABinaryTemplate DECLARE_SHORT_ARRAY = new CUDABinaryTemplate("DECLARE_ARRAY", "short %s[%s]");
         public static final CUDABinaryTemplate DECLARE_INT_ARRAY = new CUDABinaryTemplate("DECLARE_ARRAY", "int %s[%s]");
         public static final CUDABinaryTemplate DECLARE_LONG_ARRAY = new CUDABinaryTemplate("DECLARE_ARRAY", "long %s[%s]");
@@ -1037,7 +1041,7 @@ public final class CUDAAssembler extends Assembler {
         public static final CUDABinaryTemplate DECLARE_DOUBLE_ARRAY = new CUDABinaryTemplate("DECLARE_ARRAY", "double %s[%s]");
         public static final CUDABinaryTemplate ARRAY_INDEX = new CUDABinaryTemplate("index", "%s[%s]");
 
-        public static final CUDABinaryTemplate NEW_PRIVATE_CHAR_ARRAY = new CUDABinaryTemplate("new private array char", "char %s[%s]");
+        public static final CUDABinaryTemplate NEW_PRIVATE_CHAR_ARRAY = new CUDABinaryTemplate("new private array char", "signed char %s[%s]");
         public static final CUDABinaryTemplate NEW_PRIVATE_FLOAT_ARRAY = new CUDABinaryTemplate("new private array float", "float %s[%s]");
         public static final CUDABinaryTemplate NEW_PRIVATE_INT_ARRAY = new CUDABinaryTemplate("new private array int", "int %s[%s]");
         public static final CUDABinaryTemplate NEW_PRIVATE_DOUBLE_ARRAY = new CUDABinaryTemplate("new private array double", "double %s[%s]");
@@ -1046,7 +1050,7 @@ public final class CUDAAssembler extends Assembler {
         public static final CUDABinaryTemplate NEW_PRIVATE_BYTE_ARRAY = new CUDABinaryTemplate("new private array byte", "byte %s[%s]");
 
         public static final CUDABinaryTemplate PRIVATE_INT_ARRAY_PTR = new CUDABinaryTemplate("private pointer array int", "int* %s = %s");
-        public static final CUDABinaryTemplate PRIVATE_CHAR_ARRAY_PTR = new CUDABinaryTemplate("private pointer array char", "char* %s = %s");
+        public static final CUDABinaryTemplate PRIVATE_CHAR_ARRAY_PTR = new CUDABinaryTemplate("private pointer array char", "signed char* %s = %s");
         public static final CUDABinaryTemplate PRIVATE_FLOAT_ARRAY_PTR = new CUDABinaryTemplate("private pointer array float", "float* %s = %s");
         public static final CUDABinaryTemplate PRIVATE_DOUBLE_ARRAY_PTR = new CUDABinaryTemplate("private pointer array double", "double* %s = %s");
         public static final CUDABinaryTemplate PRIVATE_LONG_ARRAY_PTR = new CUDABinaryTemplate("private pointer array long", "long* %s = %s");
@@ -1054,7 +1058,7 @@ public final class CUDAAssembler extends Assembler {
         public static final CUDABinaryTemplate PRIVATE_BYTE_ARRAY_PTR = new CUDABinaryTemplate("private pointer array byte", "byte* %s = %s");
 
         public static final CUDABinaryTemplate PRIVATE_INT_ARRAY_PTR_COPY = new CUDABinaryTemplate("private pointer copy array int", "int* %s = ((int *) %s)");
-        public static final CUDABinaryTemplate PRIVATE_CHAR_ARRAY_PTR_COPY = new CUDABinaryTemplate("private pointer copy array char", "char* %s = ((char *) %s)");
+        public static final CUDABinaryTemplate PRIVATE_CHAR_ARRAY_PTR_COPY = new CUDABinaryTemplate("private pointer copy array char", "signed char* %s = ((signed char *) %s)");
         public static final CUDABinaryTemplate PRIVATE_FLOAT_ARRAY_PTR_COPY = new CUDABinaryTemplate("private pointer copy array float", "float* %s = ((float *) %s)");
         public static final CUDABinaryTemplate PRIVATE_DOUBLE_ARRAY_PTR_COPY = new CUDABinaryTemplate("private pointer copy array double", "double* %s = ((double *) %s)");
         public static final CUDABinaryTemplate PRIVATE_LONG_ARRAY_PTR_COPY = new CUDABinaryTemplate("private pointer copy array long", "long* %s = ((long *) %s)");
@@ -1066,7 +1070,7 @@ public final class CUDAAssembler extends Assembler {
         public static final CUDABinaryTemplate NEW_LOCAL_DOUBLE_ARRAY = new CUDABinaryTemplate("local memory array double", "__shared__ double %s[%s]");
         public static final CUDABinaryTemplate NEW_LOCAL_LONG_ARRAY = new CUDABinaryTemplate("local memory array long", "__shared__ long %s[%s]");
         public static final CUDABinaryTemplate NEW_LOCAL_SHORT_ARRAY = new CUDABinaryTemplate("local memory array short", "__shared__ short %s[%s]");
-        public static final CUDABinaryTemplate NEW_LOCAL_CHAR_ARRAY = new CUDABinaryTemplate("local memory array char", "__shared__ char %s[%s]");
+        public static final CUDABinaryTemplate NEW_LOCAL_CHAR_ARRAY = new CUDABinaryTemplate("local memory array char", "__shared__ signed char %s[%s]");
         public static final CUDABinaryTemplate NEW_LOCAL_HALF_FLOAT_ARRAY = new CUDABinaryTemplate("local memory array half", "__shared__ __half %s[%s]");
         public static final CUDABinaryTemplate NEW_LOCAL_HALF2_ARRAY = new CUDABinaryTemplate("local memory array half2", "__shared__ __half2 %s[%s]");
         // @formatter:on
