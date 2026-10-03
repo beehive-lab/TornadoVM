@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.nccl.provider;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.nccl.Nccl;
 import uk.ac.manchester.tornado.nccl.NcclCommunicator;
+import uk.ac.manchester.tornado.nccl.NcclGroup;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.library.spi.LibraryContext;
 import uk.ac.manchester.tornado.runtime.library.spi.LibraryInvocation;
@@ -93,7 +94,51 @@ public final class NcclLibraryProvider implements TornadoLibraryProvider {
             case "recv" -> NcclNativeLib.recv(invocation.getDevicePointer(1), (long) invocation.getArg(4), (int) invocation.getArg(3), (int) invocation.getArg(2), comm, stream);
             case "sendRecv" -> NcclNativeLib.sendRecv(invocation.getDevicePointer(1), (int) invocation.getArg(2), invocation.getDevicePointer(3), (int) invocation.getArg(4),
                     (long) invocation.getArg(6), (int) invocation.getArg(5), comm, stream);
+            case "group" -> dispatchGroup(invocation, comm, stream);
             default -> throw new TornadoRuntimeException("[ERROR] NCCL function not supported: " + functionName);
+        }
+    }
+
+    /** Issues the operations encoded by {@link Nccl#group} between ncclGroupStart and ncclGroupEnd. */
+    private static void dispatchGroup(LibraryInvocation invocation, long comm, long stream) {
+        int operations = (int) invocation.getArg(1);
+        RuntimeException failure = null;
+        NcclNativeLib.groupStart();
+        try {
+            int index = 2;
+            for (int n = 0; n < operations; n++) {
+                NcclGroup.Kind kind = NcclGroup.Kind.values()[(int) invocation.getArg(index)];
+                int a = (int) invocation.getArg(index + 1);
+                int b = (int) invocation.getArg(index + 2);
+                int dataType = (int) invocation.getArg(index + 3);
+                long count = (long) invocation.getArg(index + 4);
+                long first = invocation.getDevicePointer(index + 5);
+                long second = kind.buffers() == 2 ? invocation.getDevicePointer(index + 6) : 0;
+                index += 5 + kind.buffers();
+                switch (kind) {
+                    case ALL_REDUCE -> NcclNativeLib.allReduce(first, second, count, dataType, a, comm, stream);
+                    case ALL_REDUCE_IN_PLACE -> NcclNativeLib.allReduce(first, first, count, dataType, a, comm, stream);
+                    case BROADCAST -> NcclNativeLib.broadcast(first, first, count, dataType, a, comm, stream);
+                    case REDUCE -> NcclNativeLib.reduce(first, second, count, dataType, a, b, comm, stream);
+                    case ALL_GATHER -> NcclNativeLib.allGather(first, second, count, dataType, comm, stream);
+                    case REDUCE_SCATTER -> NcclNativeLib.reduceScatter(first, second, count, dataType, a, comm, stream);
+                    case SEND -> NcclNativeLib.send(first, count, dataType, a, comm, stream);
+                    case RECV -> NcclNativeLib.recv(first, count, dataType, a, comm, stream);
+                }
+            }
+        } catch (RuntimeException e) {
+            failure = e;
+            throw e;
+        } finally {
+            // The group is closed whatever happened inside it, or the thread stays in group mode;
+            // an error of the close itself is only reported when nothing failed before it.
+            try {
+                NcclNativeLib.groupEnd();
+            } catch (RuntimeException e) {
+                if (failure == null) {
+                    throw e;
+                }
+            }
         }
     }
 
