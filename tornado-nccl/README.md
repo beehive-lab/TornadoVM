@@ -33,6 +33,7 @@ try (NcclCommunicator comm = NcclCommunicator.create(gpu0, gpu1)) {        // on
 | `send(comm, buffer, peer)` | `ncclSend` | send `buffer` to rank `peer`, which adds a matching `recv` |
 | `recv(comm, buffer, peer)` | `ncclRecv` | receive `buffer` from rank `peer`, which adds a matching `send` |
 | `sendRecv(comm, send, toPeer, recv, fromPeer)` | `ncclSend` + `ncclRecv` in one group | send and receive in one step |
+| `group(NcclGroup)` | any of the above between `ncclGroupStart`/`ncclGroupEnd` | several operations progressed together, in one task |
 
 Element types: `FloatArray`, `DoubleArray`, `HalfFloatArray`, `BFloat16Array`, `IntArray`,
 `LongArray`, `Int8Array`, `ByteArray`. Reduction ops (`NcclRedOp`): `SUM`, `PROD`, `MAX`, `MIN`,
@@ -42,6 +43,23 @@ For point-to-point, sender and receiver use the same type and number of elements
 suit a one-way pipeline; a rank that both sends and receives in the same step (ring shift, halo
 exchange) uses `sendRecv`, because two ranks that each send to the other first, as separate tasks,
 would both wait in their send forever. A rank may send to and receive from itself with `sendRecv`.
+
+### Groups
+
+`NcclGroup` collects several operations of one communicator, and `Nccl.group` issues them together
+as one NCCL group in a single task. Use it for exchanges with several peers, which would deadlock
+as separate tasks, and to fuse several collectives into one launch:
+
+```java
+NcclGroup allToAll = NcclGroup.on(comm);
+for (int peer = 0; peer < comm.size(); peer++) {
+    allToAll.send(outgoing[peer], peer).recv(incoming[peer], peer);
+}
+graph.libraryTask("alltoall", Nccl::group, allToAll);
+```
+
+A buffer may appear only once in a group. `BenchmarkNcclGroup` compares several all-reduces as one
+group with the same all-reduces as separate tasks.
 
 ## How it fits together
 
@@ -134,7 +152,3 @@ The benchmarks run one step of a multi-GPU pipeline (kernel, communication, kern
 with the alternative TornadoVM offers without it: copy every rank's buffer to the host, combine or
 hand them on there, and copy the result back. `BenchmarkNcclAllReduce` sums across the GPUs;
 `BenchmarkNcclSendRecv` passes every buffer to the next GPU in a ring.
-
-## Not supported yet
-
-- Group calls spanning several tasks (only `sendRecv` groups its send and receive).

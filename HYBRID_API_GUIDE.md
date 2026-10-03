@@ -365,6 +365,21 @@ try (NcclCommunicator comm = NcclCommunicator.create(gpus)) {
 }
 ```
 
+**Groups:** `Nccl.group(NcclGroup)` issues several operations of one communicator together, as one
+NCCL group, in a single task: exchanges with several peers (an all-to-all, a halo exchange in more
+than one direction, which would deadlock as separate tasks) and several collectives fused into one
+launch.
+
+```java
+NcclGroup halo = NcclGroup.on(comm)
+        .send(toLeft, left).recv(fromLeft, left)
+        .send(toRight, right).recv(fromRight, right);
+graph.libraryTask("halo", Nccl::group, halo);
+```
+
+A group holds any of the operations above; a buffer may appear only once in it. Kernels go before or
+after the group task, never inside it, so they stay ordered with the NCCL operations.
+
 `send` and `recv` suit a one-way pipeline (stage `r` sends to stage `r + 1`). When a rank both sends
 and receives in the same step (a ring shift, a halo exchange), use `sendRecv`: issued as separate
 tasks, two ranks that each send to the other first would both wait in their send forever.

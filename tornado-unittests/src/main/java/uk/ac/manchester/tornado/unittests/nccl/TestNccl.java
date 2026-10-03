@@ -42,6 +42,7 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.nccl.Nccl;
 import uk.ac.manchester.tornado.nccl.NcclCommunicator;
+import uk.ac.manchester.tornado.nccl.NcclGroup;
 import uk.ac.manchester.tornado.nccl.NcclPlanGroup;
 import uk.ac.manchester.tornado.nccl.NcclRedOp;
 import uk.ac.manchester.tornado.nccl.NcclUniqueId;
@@ -96,6 +97,13 @@ public class TestNccl extends TornadoTestBase {
         int id = context.globalIdx;
         if (id < array.getSize()) {
             array.set(id, rank * 1000 + id);
+        }
+    }
+
+    public static void fillBlock(KernelContext context, IntArray array, int rank, int peer) {
+        int id = context.globalIdx;
+        if (id < array.getSize()) {
+            array.set(id, rank * 1000 + peer * 100 + id % 7);
         }
     }
 
@@ -720,6 +728,148 @@ public class TestNccl extends TornadoTestBase {
     @Test
     public void testUnmatchedSendTimesOutWithCudaGraph() {
         checkUnmatchedSendTimesOut(true);
+    }
+
+    /**
+     * All-to-all: every rank sends a block to every rank (itself included) and receives one from
+     * each, as one NCCL group. As separate tasks the sends would wait for receives not yet posted.
+     */
+    @Test
+    public void testGroupedAllToAll() {
+        TornadoDevice[] devices = cudaDevices();
+        int n = devices.length;
+        IntArray[][] sends = new IntArray[n][n];
+        IntArray[][] recvs = new IntArray[n][n];
+        try (NcclCommunicator communicator = NcclCommunicator.create(devices)) {
+            runRanks(devices, COUNT, n, 2, (rank, name) -> {
+                TaskGraph graph = new TaskGraph(name);
+                NcclGroup allToAll = NcclGroup.on(communicator);
+                for (int peer = 0; peer < n; peer++) {
+                    sends[rank][peer] = new IntArray(COUNT);
+                    recvs[rank][peer] = new IntArray(COUNT);
+                    graph.task("k" + peer, TestNccl::fillBlock, new KernelContext(), sends[rank][peer], rank, peer);
+                    allToAll.send(sends[rank][peer], peer).recv(recvs[rank][peer], peer);
+                }
+                graph.libraryTask("alltoall", Nccl::group, allToAll);
+                for (int peer = 0; peer < n; peer++) {
+                    graph.transferToHost(DataTransferMode.EVERY_EXECUTION, recvs[rank][peer]);
+                }
+                return graph;
+            }, () -> {
+            });
+        }
+        for (int rank = 0; rank < n; rank++) {
+            for (int from = 0; from < n; from++) {
+                for (int i = 0; i < COUNT; i++) {
+                    assertEquals(from * 1000 + rank * 100 + i % 7, recvs[rank][from].get(i));
+                }
+            }
+        }
+    }
+
+    /** Two all-reduces of different types and operations fused into one group. */
+    @Test
+    public void testGroupedAllReduces() {
+        TornadoDevice[] devices = cudaDevices();
+        int n = devices.length;
+        FloatArray[] sums = new FloatArray[n];
+        IntArray[] sends = new IntArray[n];
+        IntArray[] maxima = new IntArray[n];
+        try (NcclCommunicator communicator = NcclCommunicator.create(devices)) {
+            runRanks(devices, SIZE, 2, 1, (rank, name) -> {
+                sums[rank] = new FloatArray(SIZE);
+                sends[rank] = new IntArray(SIZE);
+                maxima[rank] = new IntArray(SIZE);
+                NcclGroup fused = NcclGroup.on(communicator) //
+                        .allReduceInPlace(sums[rank], NcclRedOp.SUM) //
+                        .allReduce(sends[rank], maxima[rank], NcclRedOp.MAX);
+                return new TaskGraph(name) //
+                        .task("k0", TestNccl::fillFloat, new KernelContext(), sums[rank], rank) //
+                        .task("k1", TestNccl::fillInt, new KernelContext(), sends[rank], rank) //
+                        .libraryTask("fused", Nccl::group, fused) //
+                        .transferToHost(DataTransferMode.EVERY_EXECUTION, sums[rank], maxima[rank]);
+            }, () -> {
+            });
+        }
+        float ranksSum = n * (n + 1) / 2.0f;
+        for (int rank = 0; rank < n; rank++) {
+            for (int i = 0; i < SIZE; i++) {
+                assertEquals(ranksSum * (i % 7 + 1), sums[rank].get(i), 0.0f);
+                assertEquals((n - 1) * 1000 + i, maxima[rank].get(i));
+            }
+        }
+    }
+
+    /**
+     * Kernels around a group (all-reduce and all-gather), over several executions with new input;
+     * with {@code cudaGraph}, captured into a CUDA graph and replayed.
+     */
+    private void checkGroupBetweenKernels(boolean cudaGraph) {
+        TornadoDevice[] devices = cudaDevices();
+        int n = devices.length;
+        final int steps = 4;
+        FloatArray[] inputs = new FloatArray[n];
+        FloatArray[] buffers = new FloatArray[n];
+        IntArray[] blocks = new IntArray[n];
+        IntArray[] gathered = new IntArray[n];
+        int[] step = { -1 };
+        try (NcclCommunicator communicator = NcclCommunicator.create(devices)) {
+            runRanks(devices, SIZE, 3, steps, (rank, name) -> {
+                inputs[rank] = new FloatArray(SIZE);
+                buffers[rank] = new FloatArray(SIZE);
+                blocks[rank] = new IntArray(SIZE);
+                gathered[rank] = new IntArray(n * SIZE);
+                NcclGroup group = NcclGroup.on(communicator) //
+                        .allReduceInPlace(buffers[rank], NcclRedOp.SUM) //
+                        .allGather(blocks[rank], gathered[rank]);
+                return new TaskGraph(name) //
+                        .transferToDevice(DataTransferMode.EVERY_EXECUTION, inputs[rank]) //
+                        .task("k0", TestNccl::twice, new KernelContext(), inputs[rank], buffers[rank]) //
+                        .task("k1", TestNccl::fillInt, new KernelContext(), blocks[rank], rank) //
+                        .libraryTask("group", Nccl::group, group) //
+                        .task("k2", TestNccl::addOne, new KernelContext(), buffers[rank]) //
+                        .transferToHost(DataTransferMode.EVERY_EXECUTION, buffers[rank], gathered[rank]);
+            }, () -> {
+                if (step[0] >= 0) {
+                    checkSum(buffers, n, step[0]);
+                }
+                step[0]++;
+                for (int rank = 0; rank < n; rank++) {
+                    for (int i = 0; i < SIZE; i++) {
+                        inputs[rank].set(i, rank + step[0] + i % 3);
+                    }
+                }
+            }, cudaGraph);
+        }
+        checkSum(buffers, n, step[0]);
+        for (int rank = 0; rank < n; rank++) {
+            for (int from = 0; from < n; from++) {
+                for (int i = 0; i < SIZE; i++) {
+                    assertEquals(from * 1000 + i, gathered[rank].get(from * SIZE + i));
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testGroupBetweenKernels() {
+        checkGroupBetweenKernels(false);
+    }
+
+    @Test
+    public void testGroupWithCudaGraph() {
+        checkGroupBetweenKernels(true);
+    }
+
+    @Test
+    public void testGroupChecks() {
+        TornadoDevice[] devices = cudaDevices();
+        try (NcclCommunicator communicator = NcclCommunicator.create(devices)) {
+            FloatArray buffer = new FloatArray(SIZE);
+            assertThrows(TornadoRuntimeException.class, () -> NcclGroup.on(communicator).send(buffer, 0).recv(buffer, 0));
+            assertThrows(TornadoRuntimeException.class, () -> NcclGroup.on(communicator).send(buffer, devices.length));
+            assertThrows(TornadoRuntimeException.class, () -> Nccl.group(NcclGroup.on(communicator)));
+        }
     }
 
     @Test

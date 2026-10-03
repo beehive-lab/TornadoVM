@@ -17,6 +17,9 @@
  */
 package uk.ac.manchester.tornado.nccl;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -145,6 +148,40 @@ public final class Nccl {
                 Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY);
     }
 
+    /**
+     * Issues every operation of {@code group} together, as one NCCL group: all of them start, and
+     * the task completes once all of them have. Use it for exchanges with several peers (an
+     * all-to-all, a halo exchange in more than one direction) and to fuse several collectives into
+     * one launch. All ranks add the matching group.
+     */
+    public static LibraryTaskDescriptor group(NcclGroup group) {
+        if (group.size() == 0) {
+            throw new TornadoRuntimeException("[ERROR] An NCCL group needs at least one operation");
+        }
+        List<Object> parameters = new ArrayList<>();
+        List<Access> access = new ArrayList<>();
+        parameters.add(group.communicator().handle());
+        parameters.add(group.size());
+        access.add(Access.READ_ONLY);
+        access.add(Access.READ_ONLY);
+        // Per operation: kind, a, b, data type, count, then its buffers.
+        for (NcclGroup.Operation operation : group.operations()) {
+            parameters.add(operation.kind().ordinal());
+            parameters.add(operation.a());
+            parameters.add(operation.b());
+            parameters.add(operation.dataType());
+            parameters.add(operation.count());
+            for (int i = 0; i < 5; i++) {
+                access.add(Access.READ_ONLY);
+            }
+            for (int i = 0; i < operation.buffers().length; i++) {
+                parameters.add(operation.buffers()[i]);
+                access.add(operation.access()[i]);
+            }
+        }
+        return describe("group", parameters.toArray(), access.toArray(new Access[0]));
+    }
+
     private static LibraryTaskDescriptor describe(String function, Object[] parameters, Access... access) {
         return new LibraryTaskDescriptor() //
                 .withLibrary(LIBRARY_NAME) //
@@ -175,7 +212,7 @@ public final class Nccl {
     }
 
     /** Checks that {@code larger} has the type of {@code smaller} and {@code factor} times its elements. */
-    private static void requireSameShape(TornadoNativeArray larger, TornadoNativeArray smaller, int factor, String function) {
+    static void requireSameShape(TornadoNativeArray larger, TornadoNativeArray smaller, int factor, String function) {
         if (larger.getClass() != smaller.getClass()) {
             String types = larger.getClass().getSimpleName() + " and " + smaller.getClass().getSimpleName();
             throw new TornadoRuntimeException("[ERROR] NCCL " + function + ": buffers must have the same type (" + types + ")");
@@ -185,7 +222,7 @@ public final class Nccl {
         }
     }
 
-    private static void requireRank(NcclCommunicator communicator, int rank, String function) {
+    static void requireRank(NcclCommunicator communicator, int rank, String function) {
         if (rank < 0 || rank >= communicator.size()) {
             throw new TornadoRuntimeException("[ERROR] NCCL " + function + ": " + rank + " is not a rank of a " + communicator.size() + "-rank communicator");
         }
