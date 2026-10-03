@@ -30,7 +30,8 @@ on:
         description: >-
           Whether to run this platform's device tests at all. macOS passes false on a pull
           request: one runner cannot serve that matrix without blocking every other pull
-          request behind it, so its builds run per pull request and its tests run nightly.
+          request behind it, so its builds run per pull request and its tests run in the
+          weekly sweep.
         required: false
         default: true
         type: boolean
