@@ -23,8 +23,11 @@ import static uk.ac.manchester.tornado.runtime.ffm.FFMSupport.C_POINTER;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.StructLayout;
 import java.lang.foreign.SymbolLookup;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -51,6 +54,12 @@ public final class NcclNativeLib {
     public static final int NCCL_FLOAT64 = 8;
     public static final int NCCL_BFLOAT16 = 9;
 
+    /** {@code NCCL_UNIQUE_ID_BYTES}. */
+    public static final int UNIQUE_ID_BYTES = 128;
+
+    /** {@code ncclUniqueId}: a struct holding {@code char internal[128]}, passed by value to {@code ncclCommInitRank}. */
+    private static final StructLayout UNIQUE_ID = MemoryLayout.structLayout(MemoryLayout.sequenceLayout(UNIQUE_ID_BYTES, ValueLayout.JAVA_BYTE).withName("internal"));
+
     private static final SymbolLookup LIBNCCL = FFMSupport.loadLibrary("libnccl.so.2", "libnccl.so");
 
     /**
@@ -62,6 +71,8 @@ public final class NcclNativeLib {
     private static final MethodHandle NCCL_GET_VERSION;
     private static final MethodHandle NCCL_GET_ERROR_STRING;
     private static final MethodHandle NCCL_COMM_INIT_ALL;
+    private static final MethodHandle NCCL_GET_UNIQUE_ID;
+    private static final MethodHandle NCCL_COMM_INIT_RANK;
     private static final MethodHandle NCCL_COMM_DESTROY;
     private static final MethodHandle NCCL_COMM_ABORT;
     private static final MethodHandle NCCL_ALL_REDUCE;
@@ -80,6 +91,8 @@ public final class NcclNativeLib {
             NCCL_GET_VERSION = null;
             NCCL_GET_ERROR_STRING = null;
             NCCL_COMM_INIT_ALL = null;
+            NCCL_GET_UNIQUE_ID = null;
+            NCCL_COMM_INIT_RANK = null;
             NCCL_COMM_DESTROY = null;
             NCCL_COMM_ABORT = null;
             NCCL_ALL_REDUCE = null;
@@ -96,6 +109,9 @@ public final class NcclNativeLib {
             NCCL_GET_VERSION = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT, C_POINTER), "ncclGetVersion");
             NCCL_GET_ERROR_STRING = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_POINTER, C_INT), "ncclGetErrorString");
             NCCL_COMM_INIT_ALL = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT, C_POINTER, C_INT, C_POINTER), "ncclCommInitAll");
+            NCCL_GET_UNIQUE_ID = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT, C_POINTER), "ncclGetUniqueId");
+            // (comm*, nranks, ncclUniqueId passed by value, rank)
+            NCCL_COMM_INIT_RANK = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT, C_POINTER, C_INT, UNIQUE_ID, C_INT), "ncclCommInitRank");
             NCCL_COMM_DESTROY = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT, C_LONG), "ncclCommDestroy");
             NCCL_COMM_ABORT = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT, C_LONG), "ncclCommAbort");
             // (sendbuff, recvbuff, count, datatype, op, comm, stream)
@@ -184,6 +200,53 @@ public final class NcclNativeLib {
                 result[i] = comms.getAtIndex(C_LONG, i);
             }
             return result;
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    /** A new NCCL unique id: the 128 bytes every process of a communicator must be given. */
+    public static byte[] getUniqueId() {
+        load();
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment id = arena.allocate(UNIQUE_ID);
+            check((int) NCCL_GET_UNIQUE_ID.invokeExact(id), "ncclGetUniqueId");
+            return id.toArray(ValueLayout.JAVA_BYTE);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    /**
+     * Creates the communicator of one rank of a communicator spanning several processes, on the
+     * CUDA device current on the calling thread. Blocks until every rank has joined. Several ranks
+     * of one process are created inside {@link #groupStart()}/{@link #groupEnd()}, the calls then
+     * returning without waiting.
+     */
+    public static long commInitRank(int worldSize, byte[] uniqueId, int rank) {
+        load();
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment comm = FFMSupport.allocateLong(arena);
+            MemorySegment id = arena.allocate(UNIQUE_ID);
+            MemorySegment.copy(uniqueId, 0, id, ValueLayout.JAVA_BYTE, 0, UNIQUE_ID_BYTES);
+            check((int) NCCL_COMM_INIT_RANK.invokeExact(comm, worldSize, id, rank), "ncclCommInitRank");
+            return comm.get(C_LONG, 0);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    public static void groupStart() {
+        try {
+            check((int) NCCL_GROUP_START.invokeExact(), "ncclGroupStart");
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    public static void groupEnd() {
+        try {
+            check((int) NCCL_GROUP_END.invokeExact(), "ncclGroupEnd");
         } catch (Throwable t) {
             throw rethrow(t);
         }

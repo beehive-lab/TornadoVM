@@ -44,6 +44,7 @@ import uk.ac.manchester.tornado.nccl.Nccl;
 import uk.ac.manchester.tornado.nccl.NcclCommunicator;
 import uk.ac.manchester.tornado.nccl.NcclPlanGroup;
 import uk.ac.manchester.tornado.nccl.NcclRedOp;
+import uk.ac.manchester.tornado.nccl.NcclUniqueId;
 import uk.ac.manchester.tornado.nccl.provider.NcclLibraryProvider;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
@@ -193,6 +194,34 @@ public class TestNccl extends TornadoTestBase {
         int n = devices.length;
         FloatArray[] buffers = new FloatArray[n];
         try (NcclCommunicator communicator = NcclCommunicator.create(devices)) {
+            runRanks(devices, SIZE, 1, 1, (rank, name) -> {
+                buffers[rank] = new FloatArray(SIZE);
+                return new TaskGraph(name) //
+                        .task("k0", TestNccl::fillFloat, new KernelContext(), buffers[rank], rank) //
+                        .libraryTask("sum", Nccl::allReduceInPlace, communicator, buffers[rank], NcclRedOp.SUM) //
+                        .transferToHost(DataTransferMode.EVERY_EXECUTION, buffers[rank]);
+            }, () -> {
+            });
+        }
+        float ranksSum = n * (n + 1) / 2.0f;
+        for (int rank = 0; rank < n; rank++) {
+            for (int i = 0; i < SIZE; i++) {
+                assertEquals(ranksSum * (i % 7 + 1), buffers[rank].get(i), 0.0f);
+            }
+        }
+    }
+
+    /**
+     * The communicator of all local GPUs created from a unique id, as one process of a multi-process
+     * job would (here the job is this process only): its ranks are initialised together.
+     */
+    @Test
+    public void testAllReduceWithCommunicatorFromUniqueId() {
+        TornadoDevice[] devices = cudaDevices();
+        int n = devices.length;
+        FloatArray[] buffers = new FloatArray[n];
+        try (NcclCommunicator communicator = NcclCommunicator.create(NcclUniqueId.create(), n, 0, devices)) {
+            assertEquals(n, communicator.size());
             runRanks(devices, SIZE, 1, 1, (rank, name) -> {
                 buffers[rank] = new FloatArray(SIZE);
                 return new TaskGraph(name) //
