@@ -57,6 +57,35 @@ would both wait in their send forever. A rank may send to and receive from itsel
   also keeps it on the same TornadoVM command queue) and returns once all of them have finished.
   Executing the plans one after the other on one thread hangs at the first collective.
 
+## Several processes
+
+A communicator can span several processes, on one or more machines:
+
+```java
+// rank 0: create the id and hand it to the other processes (socket, MPI, file, environment...)
+NcclUniqueId id = NcclUniqueId.create();
+publish(id.toBase64());
+NcclCommunicator comm = NcclCommunicator.create(id, worldSize, 0, TornadoExecutionPlan.getDevice(0, 0));
+
+// rank r, in its own process
+NcclUniqueId id = NcclUniqueId.fromBase64(received);
+NcclCommunicator comm = NcclCommunicator.create(id, worldSize, r, TornadoExecutionPlan.getDevice(0, localGpu));
+```
+
+`create` blocks until every rank has joined. A process may own several ranks:
+`create(id, worldSize, firstRank, gpu0, gpu1)` gives its GPUs ranks `firstRank` and `firstRank + 1`.
+Each process runs an `NcclPlanGroup` over the plans of its own ranks; `size()` is the world size,
+so collectives and peers are checked against the whole job. The process that created the id must
+keep running until all ranks have joined, because NCCL's bootstrap listener lives in it.
+
+`NcclMultiProcessWorker` is a runnable example: start rank 0 with `new` (it prints the id), then
+every other rank with that id.
+
+```bash
+tornado -m tornado.nccl/uk.ac.manchester.tornado.nccl.tests.NcclMultiProcessWorker new 2 0 0      # prints NCCL-ID <id>
+tornado -m tornado.nccl/uk.ac.manchester.tornado.nccl.tests.NcclMultiProcessWorker <id> 2 1 1
+```
+
 ## When a rank fails
 
 If the plan of one rank throws, the other ranks would wait for it inside NCCL forever. `NcclPlanGroup`
@@ -109,4 +138,3 @@ hand them on there, and copy the result back. `BenchmarkNcclAllReduce` sums acro
 ## Not supported yet
 
 - Group calls spanning several tasks (only `sendRecv` groups its send and receive).
-- Communicators across processes (`ncclCommInitRank` with a unique id exchanged by the application).

@@ -29,8 +29,10 @@ import uk.ac.manchester.tornado.nccl.provider.NcclNativeLib;
 import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
 
 /**
- * An NCCL communicator over a set of CUDA devices in this process, one rank per device: rank
- * {@code i} is {@code devices[i]}. Collectives on the communicator are added to task graphs with
+ * An NCCL communicator: one rank per CUDA device. {@link #create(TornadoDevice...)} puts all ranks
+ * in this process (rank {@code i} is {@code devices[i]});
+ * {@link #create(NcclUniqueId, int, int, TornadoDevice...)} creates this process's ranks of a
+ * communicator that spans several processes, possibly on several machines. Collectives on the communicator are added to task graphs with
  * the {@link Nccl} factories; each rank runs its own execution plan on its own device, and the
  * plans of all ranks have to execute concurrently (see {@link NcclPlanGroup}), because a
  * collective only completes once every rank has enqueued it.
@@ -46,8 +48,12 @@ public final class NcclCommunicator implements AutoCloseable {
     private static final Map<Long, NcclCommunicator> COMMUNICATORS = new ConcurrentHashMap<>();
 
     private final long handle;
+    /** CUDA runtime ordinal, {@code ncclComm_t} and global rank of each of this process's ranks. */
     private final int[] ordinals;
     private final long[] comms;
+    private final int[] ranks;
+    /** Number of ranks across all processes. */
+    private final int size;
     private volatile boolean closed;
     private volatile boolean aborted;
 
@@ -57,10 +63,12 @@ public final class NcclCommunicator implements AutoCloseable {
      */
     private static final ThreadLocal<Set<NcclCommunicator>> USED_ON_THIS_THREAD = new ThreadLocal<>();
 
-    private NcclCommunicator(int[] ordinals, long[] comms) {
+    private NcclCommunicator(int[] ordinals, long[] comms, int[] ranks, int size) {
         this.handle = NEXT_HANDLE.getAndIncrement();
         this.ordinals = ordinals;
         this.comms = comms;
+        this.ranks = ranks;
+        this.size = size;
     }
 
     /**
@@ -72,6 +80,60 @@ public final class NcclCommunicator implements AutoCloseable {
             throw new TornadoRuntimeException("[ERROR] An NCCL communicator needs at least one device");
         }
         NcclNativeLib.load();
+        int[] ordinals = distinctOrdinals(devices);
+        int[] ranks = new int[devices.length];
+        Arrays.setAll(ranks, i -> i);
+        return register(new NcclCommunicator(ordinals, NcclNativeLib.commInitAll(ordinals), ranks, devices.length));
+    }
+
+    /**
+     * Creates this process's ranks of a communicator that spans several processes: the devices
+     * get the global ranks {@code firstRank}, {@code firstRank + 1}, ... of a communicator of
+     * {@code worldSize} ranks. Every process passes the same {@code id} (created once, see
+     * {@link NcclUniqueId}) and its own ranks, and the call blocks until all {@code worldSize} ranks
+     * have joined.
+     */
+    public static NcclCommunicator create(NcclUniqueId id, int worldSize, int firstRank, TornadoDevice... devices) {
+        if (id == null) {
+            throw new TornadoRuntimeException("[ERROR] A multi-process NCCL communicator needs the unique id shared by its processes");
+        }
+        if (devices == null || devices.length == 0) {
+            throw new TornadoRuntimeException("[ERROR] An NCCL communicator needs at least one device");
+        }
+        if (worldSize < 1 || firstRank < 0 || firstRank + devices.length > worldSize) {
+            throw new TornadoRuntimeException("[ERROR] Ranks " + firstRank + " to " + (firstRank + devices.length - 1) + " do not fit a communicator of " + worldSize + " ranks");
+        }
+        NcclNativeLib.load();
+        int[] ordinals = distinctOrdinals(devices);
+        int[] ranks = new int[devices.length];
+        long[] comms = new long[devices.length];
+        if (devices.length == 1) {
+            ranks[0] = firstRank;
+            // ncclCommInitRank works on the CUDA device current on the calling thread.
+            cudaOrdinal(devices[0]);
+            comms[0] = NcclNativeLib.commInitRank(worldSize, id.bytes(), firstRank);
+        } else {
+            NcclNativeLib.groupStart();
+            try {
+                for (int i = 0; i < devices.length; i++) {
+                    ranks[i] = firstRank + i;
+                    cudaOrdinal(devices[i]);
+                    comms[i] = NcclNativeLib.commInitRank(worldSize, id.bytes(), firstRank + i);
+                }
+            } finally {
+                NcclNativeLib.groupEnd();
+            }
+        }
+        return register(new NcclCommunicator(ordinals, comms, ranks, worldSize));
+    }
+
+    private static NcclCommunicator register(NcclCommunicator communicator) {
+        COMMUNICATORS.put(communicator.handle, communicator);
+        return communicator;
+    }
+
+    /** The CUDA ordinals of the devices, which must all be different. */
+    private static int[] distinctOrdinals(TornadoDevice[] devices) {
         int[] ordinals = new int[devices.length];
         for (int i = 0; i < devices.length; i++) {
             ordinals[i] = cudaOrdinal(devices[i]);
@@ -81,9 +143,7 @@ public final class NcclCommunicator implements AutoCloseable {
                 }
             }
         }
-        NcclCommunicator communicator = new NcclCommunicator(ordinals, NcclNativeLib.commInitAll(ordinals));
-        COMMUNICATORS.put(communicator.handle, communicator);
-        return communicator;
+        return ordinals;
     }
 
     /**
@@ -103,9 +163,14 @@ public final class NcclCommunicator implements AutoCloseable {
         return handle;
     }
 
-    /** Number of ranks. */
+    /** Number of ranks, across all the processes of the communicator. */
     public int size() {
-        return comms.length;
+        return size;
+    }
+
+    /** The global ranks of this process, in the order of the devices it was created with. */
+    public int[] localRanks() {
+        return ranks.clone();
     }
 
     /** Looks up a live communicator by its {@link #handle()}. */
@@ -117,10 +182,6 @@ public final class NcclCommunicator implements AutoCloseable {
         return communicator;
     }
 
-    /** Number of ranks of the communicator behind {@code handle}. */
-    static int sizeOf(long handle) {
-        return fromHandle(handle).size();
-    }
 
     /** Records, for the {@link NcclPlanGroup} rank thread calling it, the communicators it uses. */
     static void trackUsesOnThisThread(Set<NcclCommunicator> uses) {
@@ -210,6 +271,6 @@ public final class NcclCommunicator implements AutoCloseable {
 
     @Override
     public String toString() {
-        return "NcclCommunicator[handle=" + handle + ", devices=" + Arrays.toString(ordinals) + "]";
+        return "NcclCommunicator[handle=" + handle + ", size=" + size + ", ranks=" + Arrays.toString(ranks) + " on devices " + Arrays.toString(ordinals) + "]";
     }
 }

@@ -183,6 +183,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.cuvs.TestCuVS"),
     TestEntry("uk.ac.manchester.tornado.unittests.cufft.TestCuFft"),
     TestEntry("uk.ac.manchester.tornado.unittests.nccl.TestNccl"),
+    TestEntry("uk.ac.manchester.tornado.unittests.nccl.TestNcclMultiProcess"),
     TestEntry("uk.ac.manchester.tornado.unittests.cudnn.TestCuDnn"),
     TestEntry("uk.ac.manchester.tornado.unittests.nvtx.TestNvtx"),
     TestEntry("uk.ac.manchester.tornado.unittests.cusparse.TestCusparse"),

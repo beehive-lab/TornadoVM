@@ -380,6 +380,23 @@ different order on each rank). `ranks.withStepTimeout(Duration.ofSeconds(30))` b
 when it runs out, the group aborts the communicators in the same way and `execute()` throws, naming
 the ranks that were still running.
 
+**Several processes:** a communicator can span processes (and machines). One process creates an
+`NcclUniqueId` and the application hands it to the others (socket, MPI, shared file, environment
+variable; `toBase64()`/`fromBase64()` help). Each process then creates its own ranks with
+`NcclCommunicator.create(id, worldSize, firstRank, localGpus...)`, which blocks until all ranks have
+joined, and runs an `NcclPlanGroup` over the plans of its local ranks. `size()` is the world size, so
+peers and shapes are checked against the whole job. The process that created the id must keep
+running until every rank has joined: NCCL's bootstrap listener lives in it.
+
+```java
+// rank 0
+NcclUniqueId id = NcclUniqueId.create();
+publish(id.toBase64());                                         // however the job reaches its processes
+NcclCommunicator comm = NcclCommunicator.create(id, worldSize, 0, gpu);
+// every other process
+NcclCommunicator comm = NcclCommunicator.create(NcclUniqueId.fromBase64(received), worldSize, myRank, gpu);
+```
+
 **CUDA graphs:** NCCL tasks are captured like any other library task. Call `withCUDAGraph()` on every
 rank's plan: the first `NcclPlanGroup.execute()` captures each rank's graph (kernels, transfers and
 NCCL calls) and runs it, and later steps replay it. NCCL sets up its connections inside the capture
