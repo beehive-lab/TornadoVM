@@ -371,6 +371,11 @@ tasks, two ranks that each send to the other first would both wait in their send
 
 Executing the plans one after the other on one thread hangs at the first collective.
 
+**When a rank fails:** the other ranks would wait for it inside NCCL forever. `NcclPlanGroup` aborts
+the communicators its ranks have used (`NcclCommunicator.abort()`), which makes the waiting ranks
+return, and `execute()` throws the failure of the rank that failed first. An aborted communicator
+cannot be used again: create a new communicator and new plans; NCCL keeps working in the process.
+
 **CUDA graphs:** NCCL tasks are captured like any other library task. Call `withCUDAGraph()` on every
 rank's plan: the first `NcclPlanGroup.execute()` captures each rank's graph (kernels, transfers and
 NCCL calls) and runs it, and later steps replay it. NCCL sets up its connections inside the capture

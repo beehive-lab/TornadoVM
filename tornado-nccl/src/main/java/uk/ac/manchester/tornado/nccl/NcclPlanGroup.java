@@ -18,6 +18,8 @@
 package uk.ac.manchester.tornado.nccl;
 
 import java.util.Arrays;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
@@ -51,6 +53,13 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
  * </p>
  *
  * <p>
+ * If the plan of one rank fails, the other ranks would wait for it forever inside NCCL. The group
+ * therefore aborts the communicators its ranks have used ({@link NcclCommunicator#abort()}), which
+ * makes the waiting ranks return, and {@link #execute()} throws the failure of the rank that failed
+ * first. Aborted communicators cannot be used again: create a new communicator and new plans.
+ * </p>
+ *
+ * <p>
  * Closing the group stops its threads; it does not close the plans.
  * </p>
  */
@@ -58,10 +67,18 @@ public final class NcclPlanGroup implements AutoCloseable {
 
     private static final long SPIN_WAIT_NANOS = Long.getLong("tornado.nccl.spinWaitMicros", 1000L) * 1000L;
 
+    /** How often the caller re-aborts, after a rank failed, while other ranks have not returned yet. */
+    private static final long ABORT_POLL_NANOS = 1_000_000L;
+
     private final TornadoExecutionPlan[] plans;
     private final Thread[] threads;
     private final TornadoExecutionResult[] results;
     private final Throwable[] failures;
+
+    /** Communicators the NCCL tasks of the rank threads have used; aborted if a rank fails. */
+    private final Set<NcclCommunicator> used = ConcurrentHashMap.newKeySet();
+    /** The rank whose plan failed first in the current step, or -1. */
+    private final AtomicInteger firstFailure = new AtomicInteger(-1);
 
     /** Incremented for every step; a rank thread runs its plan once per new value. */
     private final AtomicLong step = new AtomicLong();
@@ -87,6 +104,7 @@ public final class NcclPlanGroup implements AutoCloseable {
     }
 
     private void runRank(int rank) {
+        NcclCommunicator.trackUsesOnThisThread(used);
         long done = 0;
         while (true) {
             long next = awaitStep(done);
@@ -98,6 +116,13 @@ public final class NcclPlanGroup implements AutoCloseable {
                 results[rank] = plans[rank].execute();
             } catch (Throwable t) {
                 failures[rank] = t;
+                if (firstFailure.compareAndSet(-1, rank)) {
+                    // The other ranks may be waiting for this one inside NCCL. The caller aborts
+                    // the communicators: this thread may have failed in the middle of capturing a
+                    // CUDA graph, and its stream is then still capturing, which NCCL's abort
+                    // cannot work from.
+                    LockSupport.unpark(caller);
+                }
             }
             if (running.decrementAndGet() == 0) {
                 LockSupport.unpark(caller);
@@ -130,6 +155,7 @@ public final class NcclPlanGroup implements AutoCloseable {
         }
         caller = Thread.currentThread();
         Arrays.fill(failures, null);
+        firstFailure.set(-1);
         running.set(plans.length);
         step.incrementAndGet();
         for (Thread thread : threads) {
@@ -138,21 +164,37 @@ public final class NcclPlanGroup implements AutoCloseable {
 
         long spinUntil = System.nanoTime() + SPIN_WAIT_NANOS;
         while (running.get() != 0) {
-            if (System.nanoTime() < spinUntil) {
+            if (firstFailure.get() >= 0) {
+                // Release the ranks waiting for the failed one. A rank still running may only now
+                // reach a communicator, so keep aborting what the ranks have used until all return.
+                abortUsed();
+                LockSupport.parkNanos(this, ABORT_POLL_NANOS);
+            } else if (System.nanoTime() < spinUntil) {
                 Thread.onSpinWait();
             } else {
                 LockSupport.park(this);
             }
         }
 
-        for (int rank = 0; rank < failures.length; rank++) {
-            if (failures[rank] != null) {
-                TornadoRuntimeException failure = new TornadoRuntimeException("[ERROR] Plan of NCCL rank " + rank + " failed: " + failures[rank].getMessage());
-                failure.initCause(failures[rank]);
-                throw failure;
-            }
+        int rank = firstFailure.get();
+        if (rank >= 0) {
+            boolean anyAborted = used.stream().anyMatch(NcclCommunicator::isAborted);
+            String aborted = anyAborted ? " The NCCL communicators of this group were aborted; create new ones and new plans." : "";
+            TornadoRuntimeException failure = new TornadoRuntimeException("[ERROR] Plan of NCCL rank " + rank + " failed: " + failures[rank].getMessage() + "." + aborted);
+            failure.initCause(failures[rank]);
+            throw failure;
         }
         return results.clone();
+    }
+
+    private void abortUsed() {
+        for (NcclCommunicator communicator : used) {
+            try {
+                communicator.abort();
+            } catch (RuntimeException e) {
+                // Best effort: the failure being reported is the rank's, not the abort's.
+            }
+        }
     }
 
     @Override
