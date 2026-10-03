@@ -27,7 +27,7 @@ import uk.ac.manchester.tornado.runtime.library.spi.TornadoLibraryProvider;
 import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
 
 /**
- * {@link TornadoLibraryProvider} for NVIDIA NCCL collectives. A task refers to its communicator by
+ * {@link TornadoLibraryProvider} for NVIDIA NCCL collectives and point-to-point transfers. A task refers to its communicator by
  * handle; the provider picks the rank of the communicator that lives on the task's device and
  * enqueues the collective on the plan's stream, with the TornadoVM buffers as send and receive
  * buffers.
@@ -89,6 +89,10 @@ public final class NcclLibraryProvider implements TornadoLibraryProvider {
             case "allGather" -> NcclNativeLib.allGather(invocation.getDevicePointer(1), invocation.getDevicePointer(2), (long) invocation.getArg(4), (int) invocation.getArg(3), comm, stream);
             case "reduceScatter" -> NcclNativeLib.reduceScatter(invocation.getDevicePointer(1), invocation.getDevicePointer(2), (long) invocation.getArg(5), (int) invocation.getArg(4),
                     (int) invocation.getArg(3), comm, stream);
+            case "send" -> NcclNativeLib.send(invocation.getDevicePointer(1), (long) invocation.getArg(4), (int) invocation.getArg(3), (int) invocation.getArg(2), comm, stream);
+            case "recv" -> NcclNativeLib.recv(invocation.getDevicePointer(1), (long) invocation.getArg(4), (int) invocation.getArg(3), (int) invocation.getArg(2), comm, stream);
+            case "sendRecv" -> NcclNativeLib.sendRecv(invocation.getDevicePointer(1), (int) invocation.getArg(2), invocation.getDevicePointer(3), (int) invocation.getArg(4),
+                    (long) invocation.getArg(6), (int) invocation.getArg(5), comm, stream);
             default -> throw new TornadoRuntimeException("[ERROR] NCCL function not supported: " + functionName);
         }
     }

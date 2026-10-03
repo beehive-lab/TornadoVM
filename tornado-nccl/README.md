@@ -1,10 +1,10 @@
-# TornadoVM Hybrid API — NCCL Collectives
+# TornadoVM Hybrid API — NCCL Collectives and Point-to-Point
 
-NVIDIA [NCCL](https://github.com/NVIDIA/nccl) collectives as TornadoVM library tasks, for running one
-task graph per GPU and combining their results without leaving the devices. NCCL works on the
-TornadoVM-managed device buffers directly and runs on the execution plan's CUDA stream, so a
-collective is ordered with the JIT-compiled kernels around it. The module binds `libnccl` through
-`java.lang.foreign`; there is no native module to build.
+NVIDIA [NCCL](https://github.com/NVIDIA/nccl) collectives and point-to-point transfers as TornadoVM
+library tasks, for running one task graph per GPU and combining or exchanging their data without
+leaving the devices. NCCL works on the TornadoVM-managed device buffers directly and runs on the
+execution plan's CUDA stream, so every transfer is ordered with the JIT-compiled kernels around it.
+The module binds `libnccl` through `java.lang.foreign`; there is no native module to build.
 
 ```java
 try (NcclCommunicator comm = NcclCommunicator.create(gpu0, gpu1)) {        // one rank per GPU
@@ -30,10 +30,18 @@ try (NcclCommunicator comm = NcclCommunicator.create(gpu0, gpu1)) {        // on
 | `reduce(comm, send, recv, op, root)` | `ncclReduce` | `recv = op(send of every rank)` on rank `root` only |
 | `allGather(comm, send, recv)` | `ncclAllGather` | every rank receives all `send` buffers in rank order |
 | `reduceScatter(comm, send, recv, op)` | `ncclReduceScatter` | reduce, then rank `r` keeps block `r` |
+| `send(comm, buffer, peer)` | `ncclSend` | send `buffer` to rank `peer`, which adds a matching `recv` |
+| `recv(comm, buffer, peer)` | `ncclRecv` | receive `buffer` from rank `peer`, which adds a matching `send` |
+| `sendRecv(comm, send, toPeer, recv, fromPeer)` | `ncclSend` + `ncclRecv` in one group | send and receive in one step |
 
 Element types: `FloatArray`, `DoubleArray`, `HalfFloatArray`, `BFloat16Array`, `IntArray`,
 `LongArray`, `Int8Array`, `ByteArray`. Reduction ops (`NcclRedOp`): `SUM`, `PROD`, `MAX`, `MIN`,
 `AVG`.
+
+For point-to-point, sender and receiver use the same type and number of elements. `send`/`recv`
+suit a one-way pipeline; a rank that both sends and receives in the same step (ring shift, halo
+exchange) uses `sendRecv`, because two ranks that each send to the other first, as separate tasks,
+would both wait in their send forever. A rank may send to and receive from itself with `sendRecv`.
 
 ## How it fits together
 
@@ -61,14 +69,16 @@ Element types: `FloatArray`, `DoubleArray`, `HalfFloatArray`, `BFloat16Array`, `
 ```bash
 tornado-test -V uk.ac.manchester.tornado.unittests.nccl.TestNccl
 tornado -m tornado.nccl/uk.ac.manchester.tornado.nccl.tests.BenchmarkNcclAllReduce [elements,...] [iterations]
+tornado -m tornado.nccl/uk.ac.manchester.tornado.nccl.tests.BenchmarkNcclSendRecv [elements,...] [iterations]
 ```
 
-The benchmark runs one step of a data-parallel pipeline (kernel, sum across GPUs, kernel) with an
-NCCL all-reduce and with the alternative TornadoVM offers without NCCL: copy every rank's buffer to
-the host, add them up there, and copy the sum back.
+The benchmarks run one step of a multi-GPU pipeline (kernel, communication, kernel) with NCCL and
+with the alternative TornadoVM offers without it: copy every rank's buffer to the host, combine or
+hand them on there, and copy the result back. `BenchmarkNcclAllReduce` sums across the GPUs;
+`BenchmarkNcclSendRecv` passes every buffer to the next GPU in a ring.
 
 ## Not supported yet
 
 - Capture in CUDA graphs.
-- Point-to-point `ncclSend`/`ncclRecv` and group calls.
+- Group calls spanning several tasks (only `sendRecv` groups its send and receive).
 - Communicators across processes (`ncclCommInitRank` with a unique id exchanged by the application).

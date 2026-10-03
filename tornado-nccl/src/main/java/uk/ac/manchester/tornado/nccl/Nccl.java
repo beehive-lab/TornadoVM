@@ -32,7 +32,7 @@ import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.nccl.provider.NcclNativeLib;
 
 /**
- * NCCL collectives as TornadoVM library tasks. Each factory describes the call one rank makes; the
+ * NCCL collectives and point-to-point transfers as TornadoVM library tasks. Each factory describes the call one rank makes; the
  * task graph of every rank of the communicator adds the same collective, and the plans of all ranks
  * execute concurrently:
  *
@@ -113,6 +113,38 @@ public final class Nccl {
                 Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY);
     }
 
+    /**
+     * Sends {@code buffer} to rank {@code peer}, which must add a {@link #recv} from this rank with
+     * the same type and number of elements. Use {@link #sendRecv} when a rank also receives in the
+     * same step: a lone send waits until its receive has been posted.
+     */
+    public static LibraryTaskDescriptor send(NcclCommunicator communicator, TornadoNativeArray buffer, int peer) {
+        requireRank(communicator, peer, "send");
+        return describe("send", new Object[] { communicator.handle(), buffer, peer, dataType(buffer), (long) buffer.getSize() }, //
+                Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY);
+    }
+
+    /** Receives {@code buffer} from rank {@code peer}, which must add a {@link #send} to this rank. */
+    public static LibraryTaskDescriptor recv(NcclCommunicator communicator, TornadoNativeArray buffer, int peer) {
+        requireRank(communicator, peer, "recv");
+        return describe("recv", new Object[] { communicator.handle(), buffer, peer, dataType(buffer), (long) buffer.getSize() }, //
+                Access.READ_ONLY, Access.WRITE_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY);
+    }
+
+    /**
+     * Sends {@code send} to rank {@code toPeer} and receives {@code recv} from rank {@code fromPeer}
+     * in one step, as one NCCL group, so that ranks exchanging data with each other (a ring shift, a
+     * halo exchange) do not wait on each other. {@code send} and {@code recv} have the same type and
+     * size; a rank may send to and receive from itself.
+     */
+    public static LibraryTaskDescriptor sendRecv(NcclCommunicator communicator, TornadoNativeArray send, int toPeer, TornadoNativeArray recv, int fromPeer) {
+        requireSameShape(send, recv, 1, "sendRecv");
+        requireRank(communicator, toPeer, "sendRecv");
+        requireRank(communicator, fromPeer, "sendRecv");
+        return describe("sendRecv", new Object[] { communicator.handle(), send, toPeer, recv, fromPeer, dataType(send), (long) send.getSize() }, //
+                Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY);
+    }
+
     private static LibraryTaskDescriptor describe(String function, Object[] parameters, Access... access) {
         return new LibraryTaskDescriptor() //
                 .withLibrary(LIBRARY_NAME) //
@@ -155,7 +187,7 @@ public final class Nccl {
 
     private static void requireRank(NcclCommunicator communicator, int rank, String function) {
         if (rank < 0 || rank >= communicator.size()) {
-            throw new TornadoRuntimeException("[ERROR] NCCL " + function + ": root " + rank + " is not a rank of a " + communicator.size() + "-rank communicator");
+            throw new TornadoRuntimeException("[ERROR] NCCL " + function + ": " + rank + " is not a rank of a " + communicator.size() + "-rank communicator");
         }
     }
 }
