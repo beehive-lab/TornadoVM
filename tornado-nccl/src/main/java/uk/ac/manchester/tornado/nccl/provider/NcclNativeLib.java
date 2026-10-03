@@ -68,6 +68,10 @@ public final class NcclNativeLib {
     private static final MethodHandle NCCL_REDUCE;
     private static final MethodHandle NCCL_ALL_GATHER;
     private static final MethodHandle NCCL_REDUCE_SCATTER;
+    private static final MethodHandle NCCL_SEND;
+    private static final MethodHandle NCCL_RECV;
+    private static final MethodHandle NCCL_GROUP_START;
+    private static final MethodHandle NCCL_GROUP_END;
     private static final MethodHandle CUDA_GET_DEVICE;
 
     static {
@@ -81,6 +85,10 @@ public final class NcclNativeLib {
             NCCL_REDUCE = null;
             NCCL_ALL_GATHER = null;
             NCCL_REDUCE_SCATTER = null;
+            NCCL_SEND = null;
+            NCCL_RECV = null;
+            NCCL_GROUP_START = null;
+            NCCL_GROUP_END = null;
             CUDA_GET_DEVICE = null;
         } else {
             NCCL_GET_VERSION = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT, C_POINTER), "ncclGetVersion");
@@ -97,6 +105,11 @@ public final class NcclNativeLib {
             NCCL_ALL_GATHER = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_LONG, C_INT, C_LONG, C_LONG), "ncclAllGather");
             // (sendbuff, recvbuff, recvcount, datatype, op, comm, stream)
             NCCL_REDUCE_SCATTER = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_LONG, C_INT, C_INT, C_LONG, C_LONG), "ncclReduceScatter");
+            // (buff, count, datatype, peer, comm, stream)
+            NCCL_SEND = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_INT, C_INT, C_LONG, C_LONG), "ncclSend");
+            NCCL_RECV = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_INT, C_INT, C_LONG, C_LONG), "ncclRecv");
+            NCCL_GROUP_START = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT), "ncclGroupStart");
+            NCCL_GROUP_END = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT), "ncclGroupEnd");
             CUDA_GET_DEVICE = FFMSupport.downcall(LIBCUDART, FunctionDescriptor.of(C_INT, C_POINTER), "cudaGetDevice");
         }
     }
@@ -216,6 +229,43 @@ public final class NcclNativeLib {
     static void reduceScatter(long send, long recv, long recvCount, int dataType, int op, long comm, long stream) {
         try {
             check((int) NCCL_REDUCE_SCATTER.invokeExact(send, recv, recvCount, dataType, op, comm, stream), "ncclReduceScatter");
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    static void send(long buffer, long count, int dataType, int peer, long comm, long stream) {
+        try {
+            check((int) NCCL_SEND.invokeExact(buffer, count, dataType, peer, comm, stream), "ncclSend");
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    static void recv(long buffer, long count, int dataType, int peer, long comm, long stream) {
+        try {
+            check((int) NCCL_RECV.invokeExact(buffer, count, dataType, peer, comm, stream), "ncclRecv");
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    /**
+     * A send and a receive that progress together, as one NCCL group. Issued separately, two ranks
+     * that each send to the other before receiving would both wait in their send forever.
+     */
+    static void sendRecv(long send, int toPeer, long recv, int fromPeer, long count, int dataType, long comm, long stream) {
+        try {
+            check((int) NCCL_GROUP_START.invokeExact(), "ncclGroupStart");
+            int result;
+            try {
+                check((int) NCCL_SEND.invokeExact(send, count, dataType, toPeer, comm, stream), "ncclSend");
+                check((int) NCCL_RECV.invokeExact(recv, count, dataType, fromPeer, comm, stream), "ncclRecv");
+            } finally {
+                // The group has to be closed whatever happened inside it, or the thread stays in group mode.
+                result = (int) NCCL_GROUP_END.invokeExact();
+            }
+            check(result, "ncclGroupEnd");
         } catch (Throwable t) {
             throw rethrow(t);
         }

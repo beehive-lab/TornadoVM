@@ -313,9 +313,9 @@ new TaskGraph("knn")
     .transferToHost(DataTransferMode.EVERY_EXECUTION, ids, distances);
 ```
 
-### 3.8 NCCL — multi-GPU collectives (`nvidia/nccl`)
+### 3.8 NCCL — multi-GPU collectives and point-to-point (`nvidia/nccl`)
 
-Collectives across the GPUs of one process with [NCCL](https://github.com/NVIDIA/nccl). An
+Collectives and point-to-point transfers across the GPUs of one process with [NCCL](https://github.com/NVIDIA/nccl). An
 `NcclCommunicator` has one rank per CUDA device; each rank runs its own execution plan on its own
 device, and the collective is a library task in every rank's task graph. NCCL reads and writes the
 TornadoVM buffers directly, on the plan's stream, so the data stays on the GPUs between the kernels
@@ -329,6 +329,9 @@ around it.
 | `reduce(comm, send, recv, op, root)` | `recv = op(send of every rank)` on rank `root` only |
 | `allGather(comm, send, recv)` | `send` of every rank, concatenated in rank order (`recv` is `size()` times larger) |
 | `reduceScatter(comm, send, recv, op)` | reduce, then rank `r` keeps block `r` (`send` is `size()` times larger) |
+| `send(comm, buffer, peer)` | send `buffer` to rank `peer`, which adds a matching `recv` |
+| `recv(comm, buffer, peer)` | receive `buffer` from rank `peer`, which adds a matching `send` |
+| `sendRecv(comm, send, toPeer, recv, fromPeer)` | send and receive in one step, as one NCCL group |
 
 `op` is an `NcclRedOp` (`SUM`, `PROD`, `MAX`, `MIN`, `AVG`). Element types: `FloatArray`,
 `DoubleArray`, `HalfFloatArray`, `BFloat16Array`, `IntArray`, `LongArray`, `Int8Array`, `ByteArray`.
@@ -362,9 +365,13 @@ try (NcclCommunicator comm = NcclCommunicator.create(gpus)) {
 }
 ```
 
+`send` and `recv` suit a one-way pipeline (stage `r` sends to stage `r + 1`). When a rank both sends
+and receives in the same step (a ring shift, a halo exchange), use `sendRecv`: issued as separate
+tasks, two ranks that each send to the other first would both wait in their send forever.
+
 Executing the plans one after the other on one thread hangs at the first collective. NCCL tasks are
-not captured in CUDA graphs yet. `BenchmarkNcclAllReduce` compares a step with an NCCL all-reduce
-against copying every rank's buffer to the host, summing there and copying it back.
+not captured in CUDA graphs yet. `BenchmarkNcclAllReduce` and `BenchmarkNcclSendRecv` compare a step
+with an NCCL all-reduce or ring exchange against handing the buffers on through the host.
 
 > **cuTENSOR** (`nvidia/cutensor`, tensor contractions / einsum) is implemented
 > on branch `hybrid-cutensor` but is **not part of this build**.

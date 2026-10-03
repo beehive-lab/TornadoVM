@@ -349,6 +349,76 @@ public class TestNccl extends TornadoTestBase {
         }
     }
 
+    /**
+     * Every rank sends to the next one and receives from the previous one in a single grouped task.
+     * With two ranks this is an exchange in both directions; with one rank, a send to itself.
+     */
+    @Test
+    public void testRingShiftSendRecv() {
+        TornadoDevice[] devices = cudaDevices();
+        int n = devices.length;
+        IntArray[] sends = new IntArray[n];
+        IntArray[] recvs = new IntArray[n];
+        try (NcclCommunicator communicator = NcclCommunicator.create(devices)) {
+            runRanks(devices, SIZE, 1, 2, (rank, name) -> {
+                sends[rank] = new IntArray(SIZE);
+                recvs[rank] = new IntArray(SIZE);
+                return new TaskGraph(name) //
+                        .task("k0", TestNccl::fillInt, new KernelContext(), sends[rank], rank) //
+                        .libraryTask("shift", Nccl::sendRecv, communicator, sends[rank], (rank + 1) % n, recvs[rank], (rank - 1 + n) % n) //
+                        .transferToHost(DataTransferMode.EVERY_EXECUTION, recvs[rank]);
+            }, () -> {
+            });
+        }
+        for (int rank = 0; rank < n; rank++) {
+            int previous = (rank - 1 + n) % n;
+            for (int i = 0; i < SIZE; i++) {
+                assertEquals(previous * 1000 + i, recvs[rank].get(i));
+            }
+        }
+    }
+
+    /**
+     * A two-stage pipeline: a kernel on the first GPU produces a buffer and sends it, the second GPU
+     * receives it and a kernel there consumes it, over several executions.
+     */
+    @Test
+    public void testPipelineSendThenRecv() {
+        TornadoDevice[] devices = cudaDevices();
+        if (devices.length < 2) {
+            throw new TornadoVMMultiDeviceNotSupported("This test needs at least 2 CUDA devices");
+        }
+        TornadoDevice[] stages = { devices[0], devices[1] };
+        FloatArray produced = new FloatArray(SIZE);
+        FloatArray received = new FloatArray(SIZE);
+        try (NcclCommunicator communicator = NcclCommunicator.create(devices)) {
+            runRanks(stages, SIZE, 1, 3, (rank, name) -> rank == 0 //
+                    ? new TaskGraph(name) //
+                            .task("k0", TestNccl::fillFloat, new KernelContext(), produced, 0) //
+                            .libraryTask("send", Nccl::send, communicator, produced, 1) //
+                    : new TaskGraph(name) //
+                            .libraryTask("recv", Nccl::recv, communicator, received, 0) //
+                            .task("k0", TestNccl::addOne, new KernelContext(), received) //
+                            .transferToHost(DataTransferMode.EVERY_EXECUTION, received), () -> {
+                    });
+        }
+        for (int i = 0; i < SIZE; i++) {
+            assertEquals((i % 7 + 1) + 1.0f, received.get(i), 0.0f);
+        }
+    }
+
+    @Test
+    public void testPointToPointArgumentsChecked() {
+        TornadoDevice[] devices = cudaDevices();
+        try (NcclCommunicator communicator = NcclCommunicator.create(devices)) {
+            FloatArray floats = new FloatArray(SIZE);
+            assertThrows(TornadoRuntimeException.class, () -> Nccl.send(communicator, floats, devices.length));
+            assertThrows(TornadoRuntimeException.class, () -> Nccl.recv(communicator, floats, -1));
+            assertThrows(TornadoRuntimeException.class, () -> Nccl.sendRecv(communicator, floats, 0, new FloatArray(SIZE / 2), 0));
+            assertThrows(TornadoRuntimeException.class, () -> Nccl.sendRecv(communicator, floats, 0, new IntArray(SIZE), 0));
+        }
+    }
+
     @Test
     public void testRanksMustBeDistinctDevices() {
         TornadoDevice device = cudaDevices()[0];
