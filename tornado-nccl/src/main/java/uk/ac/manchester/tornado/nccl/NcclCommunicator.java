@@ -19,6 +19,7 @@ package uk.ac.manchester.tornado.nccl;
 
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -48,6 +49,13 @@ public final class NcclCommunicator implements AutoCloseable {
     private final int[] ordinals;
     private final long[] comms;
     private volatile boolean closed;
+    private volatile boolean aborted;
+
+    /**
+     * Communicators used by the NCCL tasks run on the current thread, when the thread belongs to an
+     * {@link NcclPlanGroup}: the group aborts them if one of its ranks fails.
+     */
+    private static final ThreadLocal<Set<NcclCommunicator>> USED_ON_THIS_THREAD = new ThreadLocal<>();
 
     private NcclCommunicator(int[] ordinals, long[] comms) {
         this.handle = NEXT_HANDLE.getAndIncrement();
@@ -114,10 +122,25 @@ public final class NcclCommunicator implements AutoCloseable {
         return fromHandle(handle).size();
     }
 
-    /** The {@code ncclComm_t} of the rank that runs on the CUDA device with the given ordinal. */
+    /** Records, for the {@link NcclPlanGroup} rank thread calling it, the communicators it uses. */
+    static void trackUsesOnThisThread(Set<NcclCommunicator> uses) {
+        USED_ON_THIS_THREAD.set(uses);
+    }
+
+    /**
+     * The {@code ncclComm_t} of the rank that runs on the CUDA device with the given ordinal. Called
+     * by the provider on the thread that runs the task, before the NCCL call.
+     */
     public long commForOrdinal(int ordinal) {
+        if (aborted) {
+            throw new TornadoRuntimeException("[ERROR] NCCL communicator " + handle + " was aborted after a rank failed; create a new communicator and new plans");
+        }
         if (closed) {
             throw new TornadoRuntimeException("[ERROR] NCCL communicator " + handle + " is closed");
+        }
+        Set<NcclCommunicator> uses = USED_ON_THIS_THREAD.get();
+        if (uses != null) {
+            uses.add(this);
         }
         for (int rank = 0; rank < ordinals.length; rank++) {
             if (ordinals[rank] == ordinal) {
@@ -134,15 +157,55 @@ public final class NcclCommunicator implements AutoCloseable {
      * communicator, so the wrong order blocks here.
      */
     @Override
-    public void close() {
+    public synchronized void close() {
         if (closed) {
             return;
         }
         closed = true;
         COMMUNICATORS.remove(handle);
+        if (aborted) {
+            return; // ncclCommAbort has already freed the communicators
+        }
         for (long comm : comms) {
             NcclNativeLib.commDestroy(comm);
         }
+    }
+
+    /**
+     * Aborts the communicator: NCCL stops its operations still running on the device, so ranks
+     * waiting for a peer that failed return instead of waiting forever, and frees it. The
+     * communicator cannot be used after this; tasks that use it fail with a clear error.
+     * {@link NcclPlanGroup} calls this when a rank fails.
+     *
+     * <p>
+     * Returns straight away: the abort runs on a thread of its own, because NCCL only finishes
+     * freeing the communicator once no instantiated CUDA graph refers to it any more, which happens
+     * when the plans that captured it are closed. Closing an aborted communicator only forgets it.
+     * </p>
+     */
+    public void abort() {
+        synchronized (this) {
+            if (closed || aborted) {
+                return;
+            }
+            aborted = true;
+        }
+        Thread aborter = new Thread(() -> {
+            for (long comm : comms) {
+                try {
+                    NcclNativeLib.commAbort(comm);
+                } catch (RuntimeException e) {
+                    // Keep aborting the other ranks: a rank left running would keep its peers waiting.
+                }
+            }
+        }, "tornado-nccl-abort-" + handle);
+        aborter.setDaemon(true);
+        aborter.start();
+    }
+
+    /** Whether the communicator was aborted, by {@link #abort()} or after a rank failure. */
+    public boolean isAborted() {
+        return aborted;
     }
 
     @Override

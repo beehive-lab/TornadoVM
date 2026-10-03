@@ -63,6 +63,7 @@ public final class NcclNativeLib {
     private static final MethodHandle NCCL_GET_ERROR_STRING;
     private static final MethodHandle NCCL_COMM_INIT_ALL;
     private static final MethodHandle NCCL_COMM_DESTROY;
+    private static final MethodHandle NCCL_COMM_ABORT;
     private static final MethodHandle NCCL_ALL_REDUCE;
     private static final MethodHandle NCCL_BROADCAST;
     private static final MethodHandle NCCL_REDUCE;
@@ -80,6 +81,7 @@ public final class NcclNativeLib {
             NCCL_GET_ERROR_STRING = null;
             NCCL_COMM_INIT_ALL = null;
             NCCL_COMM_DESTROY = null;
+            NCCL_COMM_ABORT = null;
             NCCL_ALL_REDUCE = null;
             NCCL_BROADCAST = null;
             NCCL_REDUCE = null;
@@ -95,6 +97,7 @@ public final class NcclNativeLib {
             NCCL_GET_ERROR_STRING = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_POINTER, C_INT), "ncclGetErrorString");
             NCCL_COMM_INIT_ALL = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT, C_POINTER, C_INT, C_POINTER), "ncclCommInitAll");
             NCCL_COMM_DESTROY = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT, C_LONG), "ncclCommDestroy");
+            NCCL_COMM_ABORT = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT, C_LONG), "ncclCommAbort");
             // (sendbuff, recvbuff, count, datatype, op, comm, stream)
             NCCL_ALL_REDUCE = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_LONG, C_INT, C_INT, C_LONG, C_LONG), "ncclAllReduce");
             // (sendbuff, recvbuff, count, datatype, root, comm, stream)
@@ -189,6 +192,18 @@ public final class NcclNativeLib {
     public static void commDestroy(long comm) {
         try {
             check((int) NCCL_COMM_DESTROY.invokeExact(comm), "ncclCommDestroy");
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    /**
+     * Frees a communicator and aborts its operations still running on the device, so that ranks
+     * waiting for a peer that will never arrive return. Safe to call from another thread.
+     */
+    public static void commAbort(long comm) {
+        try {
+            check((int) NCCL_COMM_ABORT.invokeExact(comm), "ncclCommAbort");
         } catch (Throwable t) {
             throw rethrow(t);
         }

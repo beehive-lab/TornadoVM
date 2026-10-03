@@ -57,6 +57,13 @@ would both wait in their send forever. A rank may send to and receive from itsel
   also keeps it on the same TornadoVM command queue) and returns once all of them have finished.
   Executing the plans one after the other on one thread hangs at the first collective.
 
+## When a rank fails
+
+If the plan of one rank throws, the other ranks would wait for it inside NCCL forever. `NcclPlanGroup`
+aborts the communicators its ranks have used (`NcclCommunicator.abort()`): the waiting ranks return,
+and `execute()` throws the failure of the rank that failed first. An aborted communicator cannot be
+used again (`isAborted()` tells), so create a new communicator and new plans to carry on.
+
 ## CUDA graphs
 
 NCCL tasks can be captured into CUDA graphs. Call `withCUDAGraph()` on the plan of every rank; the

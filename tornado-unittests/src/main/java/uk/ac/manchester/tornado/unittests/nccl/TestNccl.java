@@ -19,6 +19,7 @@ package uk.ac.manchester.tornado.unittests.nccl;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 import java.util.function.BiFunction;
 
@@ -137,13 +138,19 @@ public class TestNccl extends TornadoTestBase {
     /** As above; with {@code cudaGraph}, every plan is captured into a CUDA graph on its first execution and replayed after. */
     private static void runRanks(TornadoDevice[] devices, int threads, int kernels, int steps, BiFunction<Integer, String, TaskGraph> graphOfRank, Runnable beforeEachStep,
             boolean cudaGraph) {
+        runRanks(devices, threads, kernels, steps, graphOfRank, beforeEachStep, cudaGraph, "");
+    }
+
+    /** As above; {@code suffix} is appended to the task-graph names the grid scheduler refers to. */
+    private static void runRanks(TornadoDevice[] devices, int threads, int kernels, int steps, BiFunction<Integer, String, TaskGraph> graphOfRank, Runnable beforeEachStep,
+            boolean cudaGraph, String suffix) {
         TornadoExecutionPlan[] plans = new TornadoExecutionPlan[devices.length];
         try {
             for (int rank = 0; rank < devices.length; rank++) {
                 String name = "rank" + rank;
                 GridScheduler gridScheduler = new GridScheduler();
                 for (int k = 0; k < kernels; k++) {
-                    gridScheduler.addWorkerGrid(name + ".k" + k, worker(threads));
+                    gridScheduler.addWorkerGrid(name + suffix + ".k" + k, worker(threads));
                 }
                 plans[rank] = new TornadoExecutionPlan(graphOfRank.apply(rank, name).snapshot());
                 plans[rank].withDevice(devices[rank]).withGridScheduler(gridScheduler);
@@ -556,6 +563,66 @@ public class TestNccl extends TornadoTestBase {
         for (int i = 0; i < SIZE; i++) {
             assertEquals("step " + step, 2.0f * (step * 10 + i % 9) + 1.0f, received.get(i), 0.0f);
         }
+    }
+
+    /**
+     * Rank 1 fails while rank 0 waits for it in an all-reduce: rank 1's task refers to a
+     * communicator that is already closed. The group must abort the communicator so rank 0 returns,
+     * report rank 1's failure, and leave the process able to run NCCL with a new communicator.
+     */
+    private void checkRankFailureAborts(boolean cudaGraph) {
+        TornadoDevice[] devices = cudaDevices();
+        if (devices.length < 2) {
+            throw new TornadoVMMultiDeviceNotSupported("This test needs at least 2 CUDA devices");
+        }
+        TornadoDevice[] pair = { devices[0], devices[1] };
+        FloatArray[] buffers = new FloatArray[2];
+        NcclCommunicator communicator = NcclCommunicator.create(pair);
+        NcclCommunicator closed = NcclCommunicator.create(pair);
+        closed.close();
+        long start = System.nanoTime();
+        TornadoRuntimeException failure = assertThrows(TornadoRuntimeException.class, () -> runRanks(pair, SIZE, 1, 2, (rank, name) -> {
+            buffers[rank] = new FloatArray(SIZE);
+            return new TaskGraph(name) //
+                    .task("k0", TestNccl::fillFloat, new KernelContext(), buffers[rank], rank) //
+                    .libraryTask("sum", Nccl::allReduceInPlace, rank == 0 ? communicator : closed, buffers[rank], NcclRedOp.SUM) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, buffers[rank]);
+        }, () -> {
+        }, cudaGraph));
+        long seconds = (System.nanoTime() - start) / 1_000_000_000L;
+        assertTrue("the group took " + seconds + " s to give up", seconds < 60);
+        assertTrue(failure.getMessage(), failure.getMessage().contains("rank 1"));
+        assertTrue("the communicator rank 0 was waiting on must be aborted", communicator.isAborted());
+        assertThrows(TornadoRuntimeException.class, () -> communicator.commForOrdinal(0));
+        communicator.close();
+
+        // NCCL still works in this process with a new communicator and new plans.
+        FloatArray[] sums = new FloatArray[2];
+        try (NcclCommunicator fresh = NcclCommunicator.create(pair)) {
+            runRanks(pair, SIZE, 1, 1, (rank, name) -> {
+                sums[rank] = new FloatArray(SIZE);
+                return new TaskGraph(name + "again") //
+                        .task("k0", TestNccl::fillFloat, new KernelContext(), sums[rank], rank) //
+                        .libraryTask("sum", Nccl::allReduceInPlace, fresh, sums[rank], NcclRedOp.SUM) //
+                        .transferToHost(DataTransferMode.EVERY_EXECUTION, sums[rank]);
+            }, () -> {
+            }, cudaGraph, "again");
+        }
+        for (int rank = 0; rank < 2; rank++) {
+            for (int i = 0; i < SIZE; i++) {
+                assertEquals(3.0f * (i % 7 + 1), sums[rank].get(i), 0.0f);
+            }
+        }
+    }
+
+    @Test
+    public void testRankFailureAbortsCommunicator() {
+        checkRankFailureAborts(false);
+    }
+
+    @Test
+    public void testRankFailureAbortsCommunicatorWithCudaGraph() {
+        checkRankFailureAborts(true);
     }
 
     @Test
