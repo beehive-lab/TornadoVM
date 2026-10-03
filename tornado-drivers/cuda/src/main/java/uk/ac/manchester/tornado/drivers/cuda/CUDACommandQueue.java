@@ -243,6 +243,8 @@ public class CUDACommandQueue extends CommandQueue {
      * bracket a timed operation.
      */
     private static long recordEvent(CUDAHandles.Queue queue) throws CUDAException {
+        // An event can only be recorded on a stream of the context it was created in.
+        CUDADriverAPI.cuCtxSetCurrent(queue.context());
         long event = createEvent(eventFlags(), "cuEventCreate");
         queue.markPending();
         int result = CUDADriverAPI.cuEventRecord(event, queue.stream());
