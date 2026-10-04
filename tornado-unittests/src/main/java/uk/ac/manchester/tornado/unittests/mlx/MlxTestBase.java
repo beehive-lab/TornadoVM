@@ -37,13 +37,13 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMMetalNotSupported;
 
 /**
- * Common set-up for the MLX library-task tests: the Metal/mlx-c guard, graph execution, input
+ * Common set-up for the MLX library-task tests: the Metal/MLX guard, graph execution, input
  * generation and tolerance checks.
  */
 public abstract class MlxTestBase extends TornadoTestBase {
 
     /**
-     * MLX tasks need the Metal backend and mlx-c. Unavailable configurations throw the typed
+     * MLX tasks need the Metal backend and MLX's mlx.metallib. Unavailable configurations throw the typed
      * *NotSupported exceptions that TornadoTestRunner reports as [UNSUPPORTED].
      */
     @Before
@@ -53,7 +53,7 @@ public abstract class MlxTestBase extends TornadoTestBase {
             assertNotBackend(backend, "MLX library tasks require the Metal backend (default device is " + backend + ")");
         }
         if (!MlxLibraryProvider.isAvailable()) {
-            throw new TornadoVMMetalNotSupported("mlx-c is not available on this host");
+            throw new TornadoVMMetalNotSupported("mlx.metallib is not available on this host");
         }
     }
 

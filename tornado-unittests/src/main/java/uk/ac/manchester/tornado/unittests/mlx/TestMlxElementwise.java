@@ -17,14 +17,11 @@
  */
 package uk.ac.manchester.tornado.unittests.mlx;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.util.Random;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.DoubleUnaryOperator;
-import java.util.function.IntBinaryOperator;
-import java.util.function.IntUnaryOperator;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -41,7 +38,6 @@ import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.mlx.Mlx;
 import uk.ac.manchester.tornado.mlx.provider.MlxLibraryProvider;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -69,7 +65,7 @@ public class TestMlxElementwise extends TornadoTestBase {
             assertNotBackend(backend, "MLX library tasks require the Metal backend (default device is " + backend + ")");
         }
         if (!MlxLibraryProvider.isAvailable()) {
-            throw new TornadoVMMetalNotSupported("mlx-c is not available on this host");
+            throw new TornadoVMMetalNotSupported("mlx.metallib is not available on this host");
         }
     }
 
@@ -108,7 +104,7 @@ public class TestMlxElementwise extends TornadoTestBase {
     // ---------------------------------------------------------------- binary
 
     private static void binary(String name, LibraryTask3<FloatArray, FloatArray, FloatArray> f32, LibraryTask3<HalfFloatArray, HalfFloatArray, HalfFloatArray> f16,
-            LibraryTask3<BFloat16Array, BFloat16Array, BFloat16Array> bf16, LibraryTask3<IntArray, IntArray, IntArray> i32, DoubleBinaryOperator ref, IntBinaryOperator intRef,
+            LibraryTask3<BFloat16Array, BFloat16Array, BFloat16Array> bf16, DoubleBinaryOperator ref,
             float lo, float hi) throws TornadoExecutionPlanException {
         for (int n : new int[] { 1, N, 1 << 20 }) {
             float[] av = values(n, lo, hi, 1);
@@ -144,52 +140,36 @@ public class TestMlxElementwise extends TornadoTestBase {
             double bref = ref.applyAsDouble(BFloat16.bf16ToFloat(ba.get(i)), BFloat16.bf16ToFloat(bb.get(i)));
             close(name + " bfloat16", i, bref, BFloat16.bf16ToFloat(bc.get(i)), 8e-3, 8e-3);
         }
-
-        IntArray ia = new IntArray(N);
-        IntArray ib = new IntArray(N);
-        IntArray ic = new IntArray(N);
-        Random random = new Random(5);
-        for (int i = 0; i < N; i++) {
-            ia.set(i, random.nextInt(2001) - 1000);
-            int bi = random.nextInt(2001) - 1000;
-            ib.set(i, bi == 0 ? 7 : bi);
-        }
-        run(new TaskGraph("i32").transferToDevice(DataTransferMode.FIRST_EXECUTION, ia, ib).libraryTask("t", i32, ia, ib, ic).transferToHost(DataTransferMode.EVERY_EXECUTION, ic));
-        for (int i = 0; i < N; i++) {
-            assertEquals(name + " int32 element " + i, intRef.applyAsInt(ia.get(i), ib.get(i)), ic.get(i));
-        }
     }
 
     @Test
     public void testAdd() throws TornadoExecutionPlanException {
-        binary("add", Mlx::add, Mlx::add, Mlx::add, Mlx::add, (x, y) -> x + y, (x, y) -> x + y, -10, 10);
+        binary("add", Mlx::add, Mlx::add, Mlx::add, (x, y) -> x + y, -10, 10);
     }
 
     @Test
     public void testSubtract() throws TornadoExecutionPlanException {
-        binary("subtract", Mlx::subtract, Mlx::subtract, Mlx::subtract, Mlx::subtract, (x, y) -> x - y, (x, y) -> x - y, -10, 10);
+        binary("subtract", Mlx::subtract, Mlx::subtract, Mlx::subtract, (x, y) -> x - y, -10, 10);
     }
 
     @Test
     public void testMultiply() throws TornadoExecutionPlanException {
-        binary("multiply", Mlx::multiply, Mlx::multiply, Mlx::multiply, Mlx::multiply, (x, y) -> x * y, (x, y) -> x * y, -10, 10);
+        binary("multiply", Mlx::multiply, Mlx::multiply, Mlx::multiply, (x, y) -> x * y, -10, 10);
     }
 
     @Test
     public void testDivide() throws TornadoExecutionPlanException {
-        // MLX divides integers as floating point; the result is converted back to int32, which
-        // truncates toward zero like Java's integer division.
-        binary("divide", Mlx::divide, Mlx::divide, Mlx::divide, Mlx::divide, (x, y) -> x / y, (x, y) -> x / y, 0.5f, 10);
+        binary("divide", Mlx::divide, Mlx::divide, Mlx::divide, (x, y) -> x / y, 0.5f, 10);
     }
 
     @Test
     public void testMaximum() throws TornadoExecutionPlanException {
-        binary("maximum", Mlx::maximum, Mlx::maximum, Mlx::maximum, Mlx::maximum, Math::max, Math::max, -10, 10);
+        binary("maximum", Mlx::maximum, Mlx::maximum, Mlx::maximum, Math::max, -10, 10);
     }
 
     @Test
     public void testMinimum() throws TornadoExecutionPlanException {
-        binary("minimum", Mlx::minimum, Mlx::minimum, Mlx::minimum, Mlx::minimum, Math::min, Math::min, -10, 10);
+        binary("minimum", Mlx::minimum, Mlx::minimum, Mlx::minimum, Math::min, -10, 10);
     }
 
     // ---------------------------------------------------------------- unary
@@ -222,23 +202,9 @@ public class TestMlxElementwise extends TornadoTestBase {
         }
     }
 
-    private static void unaryInt(String name, LibraryTask2<IntArray, IntArray> i32, IntUnaryOperator ref) throws TornadoExecutionPlanException {
-        IntArray a = new IntArray(N);
-        IntArray out = new IntArray(N);
-        Random random = new Random(13);
-        for (int i = 0; i < N; i++) {
-            a.set(i, random.nextInt(20001) - 10000);
-        }
-        run(new TaskGraph("i32").transferToDevice(DataTransferMode.FIRST_EXECUTION, a).libraryTask("t", i32, a, out).transferToHost(DataTransferMode.EVERY_EXECUTION, out));
-        for (int i = 0; i < N; i++) {
-            assertEquals(name + " int32 element " + i, ref.applyAsInt(a.get(i)), out.get(i));
-        }
-    }
-
     @Test
     public void testNegative() throws TornadoExecutionPlanException {
         unary("negative", Mlx::negative, Mlx::negative, Mlx::negative, x -> -x, -10, 10);
-        unaryInt("negative", Mlx::negative, x -> -x);
     }
 
     @Test
@@ -274,6 +240,5 @@ public class TestMlxElementwise extends TornadoTestBase {
     @Test
     public void testSquare() throws TornadoExecutionPlanException {
         unary("square", Mlx::square, Mlx::square, Mlx::square, x -> x * x, -10, 10);
-        unaryInt("square", Mlx::square, x -> x * x);
     }
 }

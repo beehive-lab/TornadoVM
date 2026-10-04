@@ -33,7 +33,6 @@ import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.mlx.MlxRandom;
-import uk.ac.manchester.tornado.mlx.jit.JitLinalg;
 import uk.ac.manchester.tornado.mlx.jit.JitRandom;
 import uk.ac.manchester.tornado.mlx.jit.JitSort;
 
@@ -359,23 +358,21 @@ public class TestJitRandom extends MlxTestBase {
             sum += Math.exp(l);
         }
         int chunks = 7;
-        IntArray outMlx = new IntArray(samples);
         IntArray outJit = new IntArray(samples);
         FloatArray partialValue = new FloatArray(samples * chunks);
         IntArray partialClass = new IntArray(samples * chunks);
         IntArray outChunked = new IntArray(samples);
         TaskGraph g = new TaskGraph("catw").transferToDevice(DataTransferMode.FIRST_EXECUTION, logits) //
-                .libraryTask("m", MlxRandom::categoricalSamples, logits, outMlx, 1, classes, samples, SEED) //
                 .task("j", JitRandom::categorical, new KernelContext(), logits, outJit, 1, classes, samples, SEED) //
                 .task("p", JitRandom::categoricalChunked, new KernelContext(), logits, partialValue, partialClass, 1, classes, chunks, SEED) //
                 .task("r", JitRandom::categoricalMerge, new KernelContext(), partialValue, partialClass, outChunked, samples, chunks, classes) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, outMlx, outJit, outChunked);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outJit, outChunked);
         execute(g, "j", TestJitReduce.groups(samples, JitRandom.THREADS), "p", TestJitReduce.groups(samples * chunks, JitRandom.THREADS), "r", TestJitElementwise.grid1D(samples));
         for (int i = 0; i < samples; i++) {
             assertEquals("chunked draw " + i, outJit.get(i), outChunked.get(i));
         }
-        for (IntArray out : new IntArray[] { outMlx, outJit }) {
-            String who = out == outMlx ? "MLX" : "JIT";
+        for (IntArray out : new IntArray[] { outJit }) {
+            String who = "JIT";
             int[] counts = new int[hot.length + 1];
             for (int i = 0; i < samples; i++) {
                 int v = out.get(i);
@@ -394,41 +391,26 @@ public class TestJitRandom extends MlxTestBase {
     }
 
     @Test
-    public void testMultivariateNormal() throws TornadoExecutionPlanException {
-        int d = 3;
-        int count = N;
-        float[] mv = { 1, -2, 0.5f };
-        float[] cv = { 2.0f, 0.6f, -0.4f, 0.6f, 1.0f, 0.3f, -0.4f, 0.3f, 0.5f };
-        FloatArray mean = FloatArray.fromArray(mv);
-        FloatArray cov = FloatArray.fromArray(cv);
-        FloatArray chol = new FloatArray(d * d);
-        FloatArray outMlx = new FloatArray(count * d);
-        FloatArray outJit = new FloatArray(count * d);
-        TaskGraph g = new TaskGraph("mvn").transferToDevice(DataTransferMode.FIRST_EXECUTION, mean, cov) //
-                .libraryTask("m", MlxRandom::multivariateNormal, mean, cov, outMlx, count, d, SEED) //
-                .task("c", JitLinalg::cholesky, new KernelContext(), cov, chol, d, 0) //
-                .task("j", JitRandom::multivariateNormal, new KernelContext(), mean, chol, outJit, count, d, SEED) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, outMlx, outJit);
-        execute(g, "c", TestJitReduce.groups(1, JitLinalg.THREADS), "j", TestJitElementwise.grid1D(count));
-        for (FloatArray out : new FloatArray[] { outMlx, outJit }) {
-            String who = out == outMlx ? "MLX" : "JIT";
-            double[] m = new double[d];
-            for (int s = 0; s < count; s++) {
-                for (int r = 0; r < d; r++) {
-                    m[r] += out.get(s * d + r) / count;
-                }
-            }
-            for (int r = 0; r < d; r++) {
-                assertEquals(who + " mean " + r, mv[r], m[r], 0.06);
-                for (int c = 0; c < d; c++) {
-                    double s2 = 0;
-                    for (int s = 0; s < count; s++) {
-                        s2 += (out.get(s * d + r) - m[r]) * (out.get(s * d + c) - m[c]);
-                    }
-                    assertEquals(who + " covariance " + r + "," + c, cv[r * d + c], s2 / (count - 1), 0.08);
-                }
-            }
+    public void testPermutation() throws TornadoExecutionPlanException {
+        int n = 2000;
+        IntArray arangeMlx = new IntArray(n);
+        FloatArray keys = new FloatArray(n);
+        FloatArray values = new FloatArray(n);
+        IntArray indicesJit = new IntArray(n);
+        TaskGraph g = new TaskGraph("perm") //
+                .libraryTask("m2", MlxRandom::permutationArange, arangeMlx, SEED) //
+                .task("k", JitRandom::sortKeys, new KernelContext(), keys, n, SEED) //
+                .task("s", JitSort::sortSlices, new KernelContext(), keys, values, indicesJit, n, 1, TestJitReduce.nextPowerOfTwo(n), 0, 1) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, arangeMlx, indicesJit);
+        execute(g, "k", TestJitElementwise.grid1D(n), "s", TestJitReduce.groups(1, JitSort.THREADS));
+        int[] b = new int[n];
+        int[] c = new int[n];
+        for (int i = 0; i < n; i++) {
+            b[i] = arangeMlx.get(i);
+            c[i] = indicesJit.get(i);
         }
+        assertPermutation("permutationArange MLX", b, n);
+        assertPermutation("permutation JIT", c, n);
     }
 
     private static void assertPermutation(String what, int[] v, int n) {
@@ -441,38 +423,6 @@ public class TestJitRandom extends MlxTestBase {
         }
         // A random permutation has one fixed point on average.
         assertTrue(what + " has " + fixed + " fixed points", fixed < 10);
-    }
-
-    @Test
-    public void testPermutation() throws TornadoExecutionPlanException {
-        int n = 2000;
-        FloatArray x = new FloatArray(n);
-        for (int i = 0; i < n; i++) {
-            x.set(i, i);
-        }
-        FloatArray permMlx = new FloatArray(n);
-        IntArray arangeMlx = new IntArray(n);
-        FloatArray keys = new FloatArray(n);
-        FloatArray values = new FloatArray(n);
-        IntArray indicesJit = new IntArray(n);
-        TaskGraph g = new TaskGraph("perm").transferToDevice(DataTransferMode.FIRST_EXECUTION, x) //
-                .libraryTask("m1", MlxRandom::permutation, x, permMlx, SEED) //
-                .libraryTask("m2", MlxRandom::permutationArange, arangeMlx, SEED) //
-                .task("k", JitRandom::sortKeys, new KernelContext(), keys, n, SEED) //
-                .task("s", JitSort::sortSlices, new KernelContext(), keys, values, indicesJit, n, 1, TestJitReduce.nextPowerOfTwo(n), 0, 1) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, permMlx, arangeMlx, indicesJit);
-        execute(g, "k", TestJitElementwise.grid1D(n), "s", TestJitReduce.groups(1, JitSort.THREADS));
-        int[] a = new int[n];
-        int[] b = new int[n];
-        int[] c = new int[n];
-        for (int i = 0; i < n; i++) {
-            a[i] = (int) permMlx.get(i);
-            b[i] = arangeMlx.get(i);
-            c[i] = indicesJit.get(i);
-        }
-        assertPermutation("permutation MLX", a, n);
-        assertPermutation("permutationArange MLX", b, n);
-        assertPermutation("permutation JIT", c, n);
     }
 
     @Test

@@ -33,7 +33,6 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.mlx.Mlx;
 import uk.ac.manchester.tornado.mlx.provider.MlxLibraryProvider;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -52,7 +51,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoVMMetalNotSupported;
 public class TestMlx extends TornadoTestBase {
 
     /**
-     * MLX tasks need the Metal backend and mlx-c. Unavailable configurations throw the typed
+     * MLX tasks need the Metal backend and MLX's mlx.metallib. Unavailable configurations throw the typed
      * *NotSupported exceptions that TornadoTestRunner reports as [UNSUPPORTED].
      */
     @Before
@@ -62,7 +61,7 @@ public class TestMlx extends TornadoTestBase {
             assertNotBackend(backend, "MLX library tasks require the Metal backend (default device is " + backend + ")");
         }
         if (!MlxLibraryProvider.isAvailable()) {
-            throw new TornadoVMMetalNotSupported("mlx-c is not available on this host");
+            throw new TornadoVMMetalNotSupported("mlx.metallib is not available on this host");
         }
     }
 
@@ -92,7 +91,7 @@ public class TestMlx extends TornadoTestBase {
         FloatArray b = randomFloats(n, random);
         FloatArray c = new FloatArray(n);
 
-        long fallbacks = MlxLibraryProvider.copyFallbacks();
+        long dispatches = MlxLibraryProvider.kernelDispatches();
         TaskGraph taskGraph = new TaskGraph("mlxAdd") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .libraryTask("add", Mlx::add, a, b, c) //
@@ -103,7 +102,7 @@ public class TestMlx extends TornadoTestBase {
         for (int i = 0; i < n; i++) {
             assertEquals(a.get(i) + b.get(i), c.get(i), 0.0f);
         }
-        assertEquals("MLX copied an input instead of adopting TornadoVM's buffer", fallbacks, MlxLibraryProvider.copyFallbacks());
+        assertEquals("the task did not run as an in-place MLX kernel", dispatches + 1, MlxLibraryProvider.kernelDispatches());
     }
 
     @Test
@@ -147,28 +146,6 @@ public class TestMlx extends TornadoTestBase {
         for (int i = 0; i < n; i++) {
             float expected = new HalfFloat(a.get(i).getFloat32() + b.get(i).getFloat32()).getFloat32();
             assertEquals(expected, c.get(i).getFloat32(), 0.0f);
-        }
-    }
-
-    @Test
-    public void testAddInt() throws TornadoExecutionPlanException {
-        final int n = 513;
-        IntArray a = new IntArray(n);
-        IntArray b = new IntArray(n);
-        IntArray c = new IntArray(n);
-        for (int i = 0; i < n; i++) {
-            a.set(i, i * 3);
-            b.set(i, -i + 7);
-        }
-        TaskGraph taskGraph = new TaskGraph("mlxAddInt") //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
-                .libraryTask("add", Mlx::add, a, b, c) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
-        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
-            executionPlan.execute();
-        }
-        for (int i = 0; i < n; i++) {
-            assertEquals(a.get(i) + b.get(i), c.get(i));
         }
     }
 

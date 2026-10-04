@@ -26,8 +26,8 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 /**
  * MLX tensor products and special matrix products (Tier 3) as TornadoVM library tasks: einsum (as
- * a batched matmul), inner, outer and Kronecker products, tensordot, block-masked and segmented
- * matmuls, the Hadamard transform, 8-bit float conversion and the quantized-quantized matmul.
+ * a batched matmul), inner, outer and Kronecker products, tensordot, the segmented matmul and the
+ * quantized-quantized matmul.
  */
 public final class MlxProducts {
 
@@ -143,36 +143,12 @@ public final class MlxProducts {
     }
 
     /**
-     * {@code out[m, n] = a[m, k] @ b[k, n]} computed only where the block masks allow: blocks of
-     * {@code blockSize} (32 or 64) of {@code a}, {@code b} and {@code out} are skipped (zero) where
-     * {@code maskLhs[m / bs, k / bs]}, {@code maskRhs[k / bs, n / bs]} or {@code maskOut[m / bs, n / bs]}
-     * is 0.
-     */
-    @MlxOp("mlx_block_masked_mm")
-    public static LibraryTaskDescriptor blockMaskedMm(FloatArray a, FloatArray b, ByteArray maskOut, ByteArray maskLhs, ByteArray maskRhs, FloatArray out, int m, int k,
-            int n, int blockSize) {
-        return Mlx.task("block_masked_mm", 5, a, b, maskOut, maskLhs, maskRhs, out, m, k, n, blockSize);
-    }
-
-    /**
      * {@code out[s] = a[:, k0 : k1] @ b[k0 : k1, :]} for each segment {@code s}, with
      * {@code segments[s] = (k0, k1)}: {@code a[m, k]}, {@code b[k, n]}, {@code out[segments, m, n]}.
      */
     @MlxOp("mlx_segmented_mm")
     public static LibraryTaskDescriptor segmentedMm(FloatArray a, FloatArray b, IntArray segments, FloatArray out, int m, int k, int n) {
         return Mlx.task("segmented_mm", 3, a, b, segments, out, m, k, n);
-    }
-
-    /**
-     * {@code out[m, n] = a[m, k] @ b[k, n]} computed only where the block masks allow: blocks of
-     * {@code blockSize} (32 or 64) of {@code a}, {@code b} and {@code out} are skipped (zero) where
-     * {@code maskLhs[m / bs, k / bs]}, {@code maskRhs[k / bs, n / bs]} or {@code maskOut[m / bs, n / bs]}
-     * is 0.
-     */
-    @MlxOp("mlx_block_masked_mm")
-    public static LibraryTaskDescriptor blockMaskedMm(HalfFloatArray a, HalfFloatArray b, ByteArray maskOut, ByteArray maskLhs, ByteArray maskRhs, HalfFloatArray out, int m,
-            int k, int n, int blockSize) {
-        return Mlx.task("block_masked_mm", 5, a, b, maskOut, maskLhs, maskRhs, out, m, k, n, blockSize);
     }
 
     /**
@@ -185,54 +161,12 @@ public final class MlxProducts {
     }
 
     /**
-     * {@code out[m, n] = a[m, k] @ b[k, n]} computed only where the block masks allow: blocks of
-     * {@code blockSize} (32 or 64) of {@code a}, {@code b} and {@code out} are skipped (zero) where
-     * {@code maskLhs[m / bs, k / bs]}, {@code maskRhs[k / bs, n / bs]} or {@code maskOut[m / bs, n / bs]}
-     * is 0.
-     */
-    @MlxOp("mlx_block_masked_mm")
-    public static LibraryTaskDescriptor blockMaskedMm(BFloat16Array a, BFloat16Array b, ByteArray maskOut, ByteArray maskLhs, ByteArray maskRhs, BFloat16Array out, int m,
-            int k, int n, int blockSize) {
-        return Mlx.task("block_masked_mm", 5, a, b, maskOut, maskLhs, maskRhs, out, m, k, n, blockSize);
-    }
-
-    /**
      * {@code out[s] = a[:, k0 : k1] @ b[k0 : k1, :]} for each segment {@code s}, with
      * {@code segments[s] = (k0, k1)}: {@code a[m, k]}, {@code b[k, n]}, {@code out[segments, m, n]}.
      */
     @MlxOp("mlx_segmented_mm")
     public static LibraryTaskDescriptor segmentedMm(BFloat16Array a, BFloat16Array b, IntArray segments, BFloat16Array out, int m, int k, int n) {
         return Mlx.task("segmented_mm", 3, a, b, segments, out, m, k, n);
-    }
-
-    /** The Walsh-Hadamard transform of each row of {@code x[rows, n]} ({@code n} a power of two), scaled by {@code scale}. */
-    @MlxOp("mlx_hadamard_transform")
-    public static LibraryTaskDescriptor hadamardTransform(FloatArray x, FloatArray out, int rows, int n, float scale) {
-        return Mlx.task("hadamard_transform", 1, x, out, rows, n, scale);
-    }
-
-    /** The Walsh-Hadamard transform of each row of {@code x[rows, n]} ({@code n} a power of two), scaled by {@code scale}. */
-    @MlxOp("mlx_hadamard_transform")
-    public static LibraryTaskDescriptor hadamardTransform(HalfFloatArray x, HalfFloatArray out, int rows, int n, float scale) {
-        return Mlx.task("hadamard_transform", 1, x, out, rows, n, scale);
-    }
-
-    /** The Walsh-Hadamard transform of each row of {@code x[rows, n]} ({@code n} a power of two), scaled by {@code scale}. */
-    @MlxOp("mlx_hadamard_transform")
-    public static LibraryTaskDescriptor hadamardTransform(BFloat16Array x, BFloat16Array out, int rows, int n, float scale) {
-        return Mlx.task("hadamard_transform", 1, x, out, rows, n, scale);
-    }
-
-    /** {@code x} converted to 8-bit floats (E4M3), one byte per element. */
-    @MlxOp("mlx_to_fp8")
-    public static LibraryTaskDescriptor toFp8(FloatArray x, ByteArray out) {
-        return Mlx.task("to_fp8", 1, x, out);
-    }
-
-    /** 8-bit floats (E4M3) in {@code x} converted to float32. */
-    @MlxOp("mlx_from_fp8")
-    public static LibraryTaskDescriptor fromFp8(ByteArray x, FloatArray out) {
-        return Mlx.task("from_fp8", 1, x, out);
     }
 
     /**

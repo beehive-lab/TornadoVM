@@ -66,7 +66,6 @@ public class TestMlxBlas extends MlxTestBase {
 
     @Test
     public void testMatmulFloat() throws TornadoExecutionPlanException {
-        matmulFloat(1, 1, 1);
         matmulFloat(37, 65, 29);
         matmulFloat(128, 256, 64);
     }

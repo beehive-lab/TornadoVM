@@ -44,8 +44,6 @@ public final class JitReduce {
     public static final int THREADS = 256;
     /** Threadgroups of the partial pass of a whole-array reduction. */
     public static final int PARTIAL_GROUPS = 256;
-    /** Largest reduced length {@link #median} supports. */
-    public static final int MEDIAN_MAX = 4096;
 
     public static final int SUM = 0;
     public static final int PROD = 1;
@@ -491,42 +489,4 @@ public final class JitReduce {
         }
     }
 
-    /**
-     * out[o, j] = median(x[o, :, j]) (the mean of the two middle values for even lengths), one
-     * threadgroup per output: the values are sorted in threadgroup memory with a bitonic network
-     * of {@code size} (a power of two, at least len and at most {@link #MEDIAN_MAX}) padded with
-     * +infinity.
-     */
-    @JitBaseline(value = "mlx_median", source = "written (bitonic network as in tornado-unittests/.../kernelcontext/sort/TestBitonicSort.java)")
-    public static void median(KernelContext ctx, FloatArray x, FloatArray out, int len, int inner, int size) {
-        float[] s = ctx.allocateFloatLocalArray(MEDIAN_MAX);
-        int idx = ctx.groupIdx;
-        int tid = ctx.localIdx;
-        int base = (idx / inner) * len * inner + idx % inner;
-        for (int i = tid; i < size; i += THREADS) {
-            s[i] = i < len ? x.get(base + i * inner) : Float.POSITIVE_INFINITY;
-        }
-        ctx.localBarrier();
-        for (int k = 2; k <= size; k <<= 1) {
-            for (int j = k >> 1; j > 0; j >>= 1) {
-                for (int t = tid; t < size; t += THREADS) {
-                    int partner = t ^ j;
-                    if (partner > t) {
-                        boolean ascending = (t & k) == 0;
-                        float a = s[t];
-                        float b = s[partner];
-                        if (ascending ? a > b : a < b) {
-                            s[t] = b;
-                            s[partner] = a;
-                        }
-                    }
-                }
-                ctx.localBarrier();
-            }
-        }
-        if (tid == 0) {
-            int mid = len / 2;
-            out.set(idx, (len & 1) == 1 ? s[mid] : 0.5f * (s[mid - 1] + s[mid]));
-        }
-    }
 }

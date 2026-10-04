@@ -305,7 +305,7 @@ public final class JitRandom {
     }
 
     /** Random sort keys, uniform in [0, 1): sorting them gives a random permutation. */
-    @JitBaseline({ "mlx_random_permutation", "mlx_random_permutation_arange" })
+    @JitBaseline("mlx_random_permutation_arange")
     public static void sortKeys(KernelContext ctx, FloatArray keys, int n, int seed) {
         int i = ctx.globalIdx;
         if (i < n) {
@@ -313,18 +313,4 @@ public final class JitRandom {
         }
     }
 
-    /** out[s] = mean + L z for standard normal z: L [d, d] a Cholesky factor (lower); one thread per sample. */
-    @JitBaseline("mlx_random_multivariate_normal")
-    public static void multivariateNormal(KernelContext ctx, FloatArray mean, FloatArray chol, FloatArray out, int count, int d, int seed) {
-        int s = ctx.globalIdx;
-        if (s < count) {
-            for (int r = 0; r < d; r++) {
-                float acc = mean.get(r);
-                for (int c = 0; c <= r; c++) {
-                    acc += chol.get(r * d + c) * standardNormal(seed, s * d + c);
-                }
-                out.set(s * d + r, acc);
-            }
-        }
-    }
 }

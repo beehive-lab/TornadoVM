@@ -36,9 +36,8 @@ import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 
 /**
  * Runs MLX's own Metal kernels, from its {@code mlx.metallib}, on TornadoVM's command queue with
- * TornadoVM's buffers bound in place, the way JIT-compiled kernels run. MLX's C API always allocates
- * a new array for a result, which then has to be copied into the TornadoVM buffer; here the kernel
- * writes the TornadoVM buffer directly, so there is no MLX array and no copy.
+ * TornadoVM's buffers bound in place, the way JIT-compiled kernels run. The kernel writes the
+ * TornadoVM buffer directly, so there is no MLX array and no copy.
  *
  * <p>
  * Only kernels whose launch is simple enough to reproduce exactly are used: the contiguous
@@ -73,12 +72,22 @@ final class MlxMetalKernels {
     /** One shared event per command queue, signalled at the end of each command buffer. */
     private static final Map<Long, long[]> QUEUE_EVENTS = new ConcurrentHashMap<>();
 
-    private static final String METALLIB = System.getProperty("tornado.mlx.metallib", MlxNativeLib.metallibPath());
+    private static final String METALLIB = System.getProperty("tornado.mlx.metallib", installedMetallib());
 
     private MlxMetalKernels() {
     }
 
     /** Whether MLX's kernel library can be found. */
+    /** Where MLX installs its compiled kernel library, next to {@code libmlx.dylib}; null if not found. */
+    private static String installedMetallib() {
+        for (String candidate : new String[] { "/opt/homebrew/opt/mlx/lib/mlx.metallib", "/usr/local/opt/mlx/lib/mlx.metallib" }) {
+            if (Files.isReadable(Path.of(candidate))) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
     static boolean isAvailable() {
         return LIBOBJC != null && FOUNDATION != null && METALLIB != null && Files.isReadable(Path.of(METALLIB));
     }
@@ -86,31 +95,31 @@ final class MlxMetalKernels {
     /** MLX's type suffix for a kernel name, or null for a type MLX's kernels do not take. */
     static String typeName(int dtype) {
         return switch (dtype) {
-            case MlxNativeLib.MLX_BOOL -> "bool_";
-            case MlxNativeLib.MLX_UINT8 -> "uint8";
-            case MlxNativeLib.MLX_UINT16 -> "uint16";
-            case MlxNativeLib.MLX_UINT32 -> "uint32";
-            case MlxNativeLib.MLX_INT8 -> "int8";
-            case MlxNativeLib.MLX_INT16 -> "int16";
-            case MlxNativeLib.MLX_INT32 -> "int32";
-            case MlxNativeLib.MLX_INT64 -> "int64";
-            case MlxNativeLib.MLX_FLOAT16 -> "float16";
-            case MlxNativeLib.MLX_FLOAT32 -> "float32";
-            case MlxNativeLib.MLX_BFLOAT16 -> "bfloat16";
-            case MlxNativeLib.MLX_COMPLEX64 -> "complex64";
+            case MlxTypes.MLX_BOOL -> "bool_";
+            case MlxTypes.MLX_UINT8 -> "uint8";
+            case MlxTypes.MLX_UINT16 -> "uint16";
+            case MlxTypes.MLX_UINT32 -> "uint32";
+            case MlxTypes.MLX_INT8 -> "int8";
+            case MlxTypes.MLX_INT16 -> "int16";
+            case MlxTypes.MLX_INT32 -> "int32";
+            case MlxTypes.MLX_INT64 -> "int64";
+            case MlxTypes.MLX_FLOAT16 -> "float16";
+            case MlxTypes.MLX_FLOAT32 -> "float32";
+            case MlxTypes.MLX_BFLOAT16 -> "bfloat16";
+            case MlxTypes.MLX_COMPLEX64 -> "complex64";
             default -> null;
         };
     }
 
     static boolean isFloating(int dtype) {
-        return dtype == MlxNativeLib.MLX_FLOAT32 || dtype == MlxNativeLib.MLX_FLOAT16 || dtype == MlxNativeLib.MLX_BFLOAT16;
+        return dtype == MlxTypes.MLX_FLOAT32 || dtype == MlxTypes.MLX_FLOAT16 || dtype == MlxTypes.MLX_BFLOAT16;
     }
 
     static int itemSize(int dtype) {
         return switch (dtype) {
-            case MlxNativeLib.MLX_BOOL, MlxNativeLib.MLX_UINT8, MlxNativeLib.MLX_INT8 -> 1;
-            case MlxNativeLib.MLX_UINT16, MlxNativeLib.MLX_INT16, MlxNativeLib.MLX_FLOAT16, MlxNativeLib.MLX_BFLOAT16 -> 2;
-            case MlxNativeLib.MLX_INT64, MlxNativeLib.MLX_COMPLEX64 -> 8;
+            case MlxTypes.MLX_BOOL, MlxTypes.MLX_UINT8, MlxTypes.MLX_INT8 -> 1;
+            case MlxTypes.MLX_UINT16, MlxTypes.MLX_INT16, MlxTypes.MLX_FLOAT16, MlxTypes.MLX_BFLOAT16 -> 2;
+            case MlxTypes.MLX_INT64, MlxTypes.MLX_COMPLEX64 -> 8;
             default -> 4;
         };
     }
@@ -459,7 +468,7 @@ final class MlxMetalKernels {
             }
 
             Launch f32(int index, float value) {
-                return bytes(index, scalarBytes(MlxNativeLib.MLX_FLOAT32, value));
+                return bytes(index, scalarBytes(MlxTypes.MLX_FLOAT32, value));
             }
 
             /** {@code dispatchThreads} over (x, y, z) threads in groups of (gx, gy, gz). */
@@ -539,14 +548,14 @@ final class MlxMetalKernels {
     static byte[] scalarBytes(int dtype, double value) {
         java.nio.ByteBuffer b = java.nio.ByteBuffer.allocate(8).order(java.nio.ByteOrder.LITTLE_ENDIAN);
         switch (dtype) {
-            case MlxNativeLib.MLX_FLOAT32 -> b.putFloat((float) value);
-            case MlxNativeLib.MLX_FLOAT16 -> b.putShort(Float.floatToFloat16((float) value));
-            case MlxNativeLib.MLX_BFLOAT16 -> b.putShort(floatToBFloat16((float) value));
-            case MlxNativeLib.MLX_INT32, MlxNativeLib.MLX_UINT32 -> b.putInt((int) value);
-            case MlxNativeLib.MLX_INT64 -> b.putLong((long) value);
-            case MlxNativeLib.MLX_INT16, MlxNativeLib.MLX_UINT16 -> b.putShort((short) value);
-            case MlxNativeLib.MLX_INT8, MlxNativeLib.MLX_UINT8, MlxNativeLib.MLX_BOOL -> b.put((byte) value);
-            case MlxNativeLib.MLX_COMPLEX64 -> b.putFloat((float) value).putFloat(0.0f);
+            case MlxTypes.MLX_FLOAT32 -> b.putFloat((float) value);
+            case MlxTypes.MLX_FLOAT16 -> b.putShort(Float.floatToFloat16((float) value));
+            case MlxTypes.MLX_BFLOAT16 -> b.putShort(floatToBFloat16((float) value));
+            case MlxTypes.MLX_INT32, MlxTypes.MLX_UINT32 -> b.putInt((int) value);
+            case MlxTypes.MLX_INT64 -> b.putLong((long) value);
+            case MlxTypes.MLX_INT16, MlxTypes.MLX_UINT16 -> b.putShort((short) value);
+            case MlxTypes.MLX_INT8, MlxTypes.MLX_UINT8, MlxTypes.MLX_BOOL -> b.put((byte) value);
+            case MlxTypes.MLX_COMPLEX64 -> b.putFloat((float) value).putFloat(0.0f);
             default -> throw new TornadoRuntimeException("[ERROR] No scalar form for MLX dtype " + dtype);
         }
         byte[] out = new byte[itemSize(dtype)];
@@ -573,9 +582,9 @@ final class MlxMetalKernels {
     /** MLX's arange step, {@code T(start + step) - T(start)} evaluated in type {@code T}. */
     static byte[] arangeStep(int dtype, double start, double step) {
         return switch (dtype) {
-            case MlxNativeLib.MLX_FLOAT32 -> scalarBytes(dtype, (float) (start + step) - (float) start);
-            case MlxNativeLib.MLX_FLOAT16 -> scalarBytes(dtype, Float.float16ToFloat(Float.floatToFloat16((float) (start + step))) - Float.float16ToFloat(Float.floatToFloat16((float) start)));
-            case MlxNativeLib.MLX_BFLOAT16 -> scalarBytes(dtype, bf16ToFloat(floatToBFloat16((float) (start + step))) - bf16ToFloat(floatToBFloat16((float) start)));
+            case MlxTypes.MLX_FLOAT32 -> scalarBytes(dtype, (float) (start + step) - (float) start);
+            case MlxTypes.MLX_FLOAT16 -> scalarBytes(dtype, Float.float16ToFloat(Float.floatToFloat16((float) (start + step))) - Float.float16ToFloat(Float.floatToFloat16((float) start)));
+            case MlxTypes.MLX_BFLOAT16 -> scalarBytes(dtype, bf16ToFloat(floatToBFloat16((float) (start + step))) - bf16ToFloat(floatToBFloat16((float) start)));
             default -> scalarBytes(dtype, (long) (start + step) - (long) start);
         };
     }

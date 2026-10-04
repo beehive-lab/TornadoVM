@@ -93,36 +93,6 @@ public final class MlxConv {
     }
 
     /**
-     * 3D convolution: {@code x[n, d, h, w, cin]}, {@code weight[cout, kd, kh, kw, cin / groups]},
-     * {@code out[n, outD, outH, outW, cout]}.
-     */
-    @MlxOp("mlx_conv3d")
-    public static LibraryTaskDescriptor conv3d(FloatArray x, FloatArray weight, FloatArray out, int n, int d, int h, int w, int cin, int cout, int kd, int kh, int kw,
-            int stride, int padding, int dilation, int groups) {
-        return Mlx.task("conv3d", 2, x, weight, out, n, d, h, w, cin, cout, kd, kh, kw, stride, padding, dilation, groups);
-    }
-
-    /**
-     * 3D convolution: {@code x[n, d, h, w, cin]}, {@code weight[cout, kd, kh, kw, cin / groups]},
-     * {@code out[n, outD, outH, outW, cout]}.
-     */
-    @MlxOp("mlx_conv3d")
-    public static LibraryTaskDescriptor conv3d(HalfFloatArray x, HalfFloatArray weight, HalfFloatArray out, int n, int d, int h, int w, int cin, int cout, int kd, int kh,
-            int kw, int stride, int padding, int dilation, int groups) {
-        return Mlx.task("conv3d", 2, x, weight, out, n, d, h, w, cin, cout, kd, kh, kw, stride, padding, dilation, groups);
-    }
-
-    /**
-     * 3D convolution: {@code x[n, d, h, w, cin]}, {@code weight[cout, kd, kh, kw, cin / groups]},
-     * {@code out[n, outD, outH, outW, cout]}.
-     */
-    @MlxOp("mlx_conv3d")
-    public static LibraryTaskDescriptor conv3d(BFloat16Array x, BFloat16Array weight, BFloat16Array out, int n, int d, int h, int w, int cin, int cout, int kd, int kh,
-            int kw, int stride, int padding, int dilation, int groups) {
-        return Mlx.task("conv3d", 2, x, weight, out, n, d, h, w, cin, cout, kd, kh, kw, stride, padding, dilation, groups);
-    }
-
-    /**
      * 1D transposed convolution: {@code x[n, len, cin]}, {@code w[cout, k, cin / groups]}, {@code
      * out[n, (len - 1) * stride - 2 * padding + dilation * (k - 1) + outputPadding + 1, cout]}.
      */
@@ -180,36 +150,6 @@ public final class MlxConv {
     public static LibraryTaskDescriptor convTranspose2d(BFloat16Array x, BFloat16Array weight, BFloat16Array out, int n, int h, int w, int cin, int cout, int kh, int kw,
             int stride, int padding, int dilation, int outputPadding, int groups) {
         return Mlx.task("conv_transpose2d", 2, x, weight, out, n, h, w, cin, cout, kh, kw, stride, padding, dilation, outputPadding, groups);
-    }
-
-    /**
-     * 3D transposed convolution: {@code x[n, d, h, w, cin]}, {@code weight[cout, kd, kh, kw, cin /
-     * groups]}; each output axis as in {@link #convTranspose1d}.
-     */
-    @MlxOp("mlx_conv_transpose3d")
-    public static LibraryTaskDescriptor convTranspose3d(FloatArray x, FloatArray weight, FloatArray out, int n, int d, int h, int w, int cin, int cout, int kd, int kh,
-            int kw, int stride, int padding, int dilation, int outputPadding, int groups) {
-        return Mlx.task("conv_transpose3d", 2, x, weight, out, n, d, h, w, cin, cout, kd, kh, kw, stride, padding, dilation, outputPadding, groups);
-    }
-
-    /**
-     * 3D transposed convolution: {@code x[n, d, h, w, cin]}, {@code weight[cout, kd, kh, kw, cin /
-     * groups]}; each output axis as in {@link #convTranspose1d}.
-     */
-    @MlxOp("mlx_conv_transpose3d")
-    public static LibraryTaskDescriptor convTranspose3d(HalfFloatArray x, HalfFloatArray weight, HalfFloatArray out, int n, int d, int h, int w, int cin, int cout, int kd,
-            int kh, int kw, int stride, int padding, int dilation, int outputPadding, int groups) {
-        return Mlx.task("conv_transpose3d", 2, x, weight, out, n, d, h, w, cin, cout, kd, kh, kw, stride, padding, dilation, outputPadding, groups);
-    }
-
-    /**
-     * 3D transposed convolution: {@code x[n, d, h, w, cin]}, {@code weight[cout, kd, kh, kw, cin /
-     * groups]}; each output axis as in {@link #convTranspose1d}.
-     */
-    @MlxOp("mlx_conv_transpose3d")
-    public static LibraryTaskDescriptor convTranspose3d(BFloat16Array x, BFloat16Array weight, BFloat16Array out, int n, int d, int h, int w, int cin, int cout, int kd,
-            int kh, int kw, int stride, int padding, int dilation, int outputPadding, int groups) {
-        return Mlx.task("conv_transpose3d", 2, x, weight, out, n, d, h, w, cin, cout, kd, kh, kw, stride, padding, dilation, outputPadding, groups);
     }
 
     /**

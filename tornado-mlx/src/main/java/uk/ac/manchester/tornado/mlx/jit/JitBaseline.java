@@ -24,7 +24,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks a TornadoVM {@code KernelContext} kernel as the JIT counterpart of the mlx-c operation(s)
+ * Marks a TornadoVM {@code KernelContext} kernel as the JIT counterpart of the MLX operation(s)
  * it computes, e.g. {@code @JitBaseline("mlx_add")}. Every MLX operation the provider binds is
  * compared against such a kernel doing the same work (same dtype, same layout).
  * {@code tornado-mlx/scripts/update_coverage.py} records the baseline in the coverage manifest, and
@@ -35,7 +35,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 public @interface JitBaseline {
 
-    /** mlx-c function names, as in {@code mlx/c/*.h}. */
+    /** MLX operation names, spelled as mlx-c's {@code mlx/c/*.h} spell them. */
     String[] value();
 
     /**

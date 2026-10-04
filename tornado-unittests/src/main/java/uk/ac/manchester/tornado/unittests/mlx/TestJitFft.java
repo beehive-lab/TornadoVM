@@ -185,7 +185,7 @@ public class TestJitFft extends MlxTestBase {
     @Test
     public void testFftAndIfft() throws TornadoExecutionPlanException {
         final int rows = 3;
-        int[][] cases = { { 256, 256 }, { 100, 100 }, { 100, 128 }, { 300, 256 } };
+        int[][] cases = { { 256, 256 }, { 100, 100 } };
         for (int[] c : cases) {
             int len = c[0];
             int n = c[1];

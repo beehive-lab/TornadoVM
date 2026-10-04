@@ -89,7 +89,7 @@ public final class JitConv {
     }
 
     /** One output element per thread; launch with at least {@link #outputs} threads. */
-    @JitBaseline({ "mlx_conv1d", "mlx_conv2d", "mlx_conv3d", "mlx_conv_general", "mlx_conv_transpose1d", "mlx_conv_transpose2d", "mlx_conv_transpose3d" })
+    @JitBaseline({ "mlx_conv1d", "mlx_conv2d", "mlx_conv_general", "mlx_conv_transpose1d", "mlx_conv_transpose2d" })
     public static void conv(KernelContext ctx, FloatArray x, FloatArray w, FloatArray out, IntArray g, int outputs) {
         int t = ctx.globalIdx;
         if (t < outputs) {

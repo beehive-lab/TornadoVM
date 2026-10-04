@@ -38,8 +38,6 @@ public final class JitProducts {
     private static final int TILE = 8;
     private static final int SIMD = 32;
     private static final int THREADS = 256;
-    /** Largest row length {@link #hadamard} holds in threadgroup memory. */
-    public static final int HADAMARD_MAX = 4096;
 
     private JitProducts() {
     }
@@ -91,60 +89,6 @@ public final class JitProducts {
         ctx.simdgroupMatrixStore(acc01, c, cOff + cr0 * n + cc1, n);
         ctx.simdgroupMatrixStore(acc10, c, cOff + cr1 * n + cc0, n);
         ctx.simdgroupMatrixStore(acc11, c, cOff + cr1 * n + cc1, n);
-    }
-
-    /**
-     * c = a @ b for a [m, k], b [k, n], skipping every 32-wide k block whose lhs or rhs mask is 0 and
-     * zeroing output blocks whose out mask is 0 (block size 32: one threadgroup per output block).
-     */
-    @JitBaseline(value = "mlx_block_masked_mm", source = "tornado-examples/.../compute/MatrixMultiplySimdgroup.java#gemmTiled (block-masked)")
-    public static void blockMaskedGemm(KernelContext ctx, FloatArray a, FloatArray b, ByteArray maskOut, ByteArray maskLhs, ByteArray maskRhs, FloatArray c, int m, int n, int k) {
-        float[] as = ctx.allocateFloatLocalArray(256);
-        float[] bs = ctx.allocateFloatLocalArray(256);
-        int tilesPerRow = n / BLOCK;
-        int rowBlock = ctx.groupIdx / tilesPerRow;
-        int colBlock = ctx.groupIdx % tilesPerRow;
-        int rowBase = rowBlock * BLOCK;
-        int colBase = colBlock * BLOCK;
-        int kBlocks = k / BLOCK;
-        int tid = ctx.localIdx;
-        int sgRow = (tid / SIMD) / 2;
-        int sgCol = (tid / SIMD) % 2;
-        Matrix8x8Float acc00 = ctx.simdgroupMatrixZero();
-        Matrix8x8Float acc01 = ctx.simdgroupMatrixZero();
-        Matrix8x8Float acc10 = ctx.simdgroupMatrixZero();
-        Matrix8x8Float acc11 = ctx.simdgroupMatrixZero();
-        boolean outOn = maskOut.get(rowBlock * tilesPerRow + colBlock) != 0;
-        for (int kb = 0; kb < k; kb += TILE) {
-            int kBlock = kb / BLOCK;
-            boolean on = outOn && maskLhs.get(rowBlock * kBlocks + kBlock) != 0 && maskRhs.get(kBlock * tilesPerRow + colBlock) != 0;
-            if (on) {
-                for (int e = tid; e < 256; e += GEMM_THREADS) {
-                    as[e] = a.get((rowBase + e / TILE) * k + (kb + e % TILE));
-                }
-                for (int e = tid; e < 256; e += GEMM_THREADS) {
-                    bs[e] = b.get((kb + e / BLOCK) * n + (colBase + e % BLOCK));
-                }
-                ctx.localBarrier();
-                Matrix8x8Float a0 = ctx.simdgroupMatrixLoad(as, (sgRow * 2) * 64, TILE);
-                Matrix8x8Float a1 = ctx.simdgroupMatrixLoad(as, (sgRow * 2 + 1) * 64, TILE);
-                Matrix8x8Float b0 = ctx.simdgroupMatrixLoad(bs, (sgCol * 2) * TILE, BLOCK);
-                Matrix8x8Float b1 = ctx.simdgroupMatrixLoad(bs, (sgCol * 2 + 1) * TILE, BLOCK);
-                acc00 = ctx.simdgroupMatrixMultiplyAccumulate(a0, b0, acc00);
-                acc01 = ctx.simdgroupMatrixMultiplyAccumulate(a0, b1, acc01);
-                acc10 = ctx.simdgroupMatrixMultiplyAccumulate(a1, b0, acc10);
-                acc11 = ctx.simdgroupMatrixMultiplyAccumulate(a1, b1, acc11);
-                ctx.localBarrier();
-            }
-        }
-        int cr0 = rowBase + (sgRow * 2) * TILE;
-        int cr1 = rowBase + (sgRow * 2 + 1) * TILE;
-        int cc0 = colBase + (sgCol * 2) * TILE;
-        int cc1 = colBase + (sgCol * 2 + 1) * TILE;
-        ctx.simdgroupMatrixStore(acc00, c, cr0 * n + cc0, n);
-        ctx.simdgroupMatrixStore(acc01, c, cr0 * n + cc1, n);
-        ctx.simdgroupMatrixStore(acc10, c, cr1 * n + cc0, n);
-        ctx.simdgroupMatrixStore(acc11, c, cr1 * n + cc1, n);
     }
 
     /** out[s, i, j] = sum over k in [segments[2s], segments[2s + 1]) of a[i, k] * b[k, j]; one thread per output. */
@@ -206,32 +150,6 @@ public final class JitProducts {
         }
     }
 
-    /** Walsh-Hadamard transform of each row of x [rows, n] (n a power of two), times scale; one threadgroup per row. */
-    @JitBaseline("mlx_hadamard_transform")
-    public static void hadamard(KernelContext ctx, FloatArray x, FloatArray out, int n, float scale) {
-        float[] v = ctx.allocateFloatLocalArray(HADAMARD_MAX);
-        int row = ctx.groupIdx;
-        int tid = ctx.localIdx;
-        int base = row * n;
-        for (int i = tid; i < n; i += THREADS) {
-            v[i] = x.get(base + i);
-        }
-        ctx.localBarrier();
-        for (int h = 1; h < n; h <<= 1) {
-            for (int p = tid; p < n / 2; p += THREADS) {
-                int i = (p / h) * 2 * h + p % h;
-                float u = v[i];
-                float w = v[i + h];
-                v[i] = u + w;
-                v[i + h] = u - w;
-            }
-            ctx.localBarrier();
-        }
-        for (int i = tid; i < n; i += THREADS) {
-            out.set(base + i, v[i] * scale);
-        }
-    }
-
     /** E4M3 bits of x: round to nearest even, saturating at +/-448; NaN also saturates, as MLX's conversion does. */
     private static int encodeFp8(float x) {
         int bits = Float.floatToRawIntBits(x);
@@ -288,22 +206,6 @@ public final class JitProducts {
             mag = (1.0f + mant * 0.125f) * Float.intBitsToFloat((e - 7 + 127) << 23);
         }
         return (b & 0x80) != 0 ? -mag : mag;
-    }
-
-    @JitBaseline("mlx_to_fp8")
-    public static void toFp8(KernelContext ctx, FloatArray x, ByteArray out, int n) {
-        int i = ctx.globalIdx;
-        if (i < n) {
-            out.set(i, (byte) encodeFp8(x.get(i)));
-        }
-    }
-
-    @JitBaseline("mlx_from_fp8")
-    public static void fromFp8(KernelContext ctx, ByteArray x, FloatArray out, int n) {
-        int i = ctx.globalIdx;
-        if (i < n) {
-            out.set(i, decodeFp8(x.get(i) & 0xff));
-        }
     }
 
     /**

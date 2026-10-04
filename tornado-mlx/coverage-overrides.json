@@ -9,14 +9,6 @@
     "mlx_fast_rms_norm", "mlx_fast_layer_norm", "mlx_fast_rope", "mlx_fast_rope_dynamic", "mlx_fast_scaled_dot_product_attention",
     "mlx_softmax", "mlx_softmax_axis", "mlx_softmax_axes", "mlx_argmax", "mlx_argmax_axis", "mlx_topk", "mlx_topk_axis"
   ],
-  "cpuOnly": {
-    "reason": "MLX implements these linear-algebra decompositions on the CPU stream only",
-    "ops": [
-      "mlx_linalg_cholesky", "mlx_linalg_cholesky_inv", "mlx_linalg_eig", "mlx_linalg_eigh", "mlx_linalg_eigvals", "mlx_linalg_eigvalsh",
-      "mlx_linalg_inv", "mlx_linalg_lu", "mlx_linalg_lu_factor", "mlx_linalg_pinv", "mlx_linalg_qr", "mlx_linalg_solve",
-      "mlx_linalg_solve_triangular", "mlx_linalg_svd", "mlx_linalg_tri_inv"
-    ]
-  },
   "excluded": [
     {
       "reason": "CUDA custom-kernel builder; tornado-mlx targets the Metal backend, and TornadoVM already runs CUDA kernels natively",
@@ -35,7 +27,7 @@
       "ops": ["mlx_stop_gradient", "mlx_depends"]
     },
     {
-      "reason": "PRNG key management; the random factories derive keys from MlxOptions instead of exposing keys as tasks",
+      "reason": "PRNG key management; the random factories derive keys from a seed argument instead of exposing keys as tasks",
       "ops": ["mlx_random_key", "mlx_random_seed", "mlx_random_split", "mlx_random_split_num"]
     }
   ]

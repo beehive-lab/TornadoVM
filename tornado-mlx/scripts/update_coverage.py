@@ -19,7 +19,7 @@
 Builds tornado-mlx/coverage.json, the MLX operation coverage manifest.
 
 Inputs:
-  * mlx-c-api.json            every mlx-c operation (written by generate_bindings.py)
+  * mlx-c-api.json            the MLX operation catalog, as named in mlx-c's headers
   * coverage-overrides.json   hand-kept decisions: Tier 1 list, CPU-only ops, exclusions
   * sources, scanned:
       - bound:        Mlx factory methods annotated @MlxOp("mlx_...") in tornado-mlx
@@ -50,7 +50,6 @@ FACTORY_SOURCES = os.path.join(MODULE_DIR, "src/main/java/uk/ac/manchester/torna
 JIT_SOURCES = os.path.join(MODULE_DIR, "src/main/java/uk/ac/manchester/tornado/mlx/jit")
 TEST_SOURCES = os.path.join(REPO_DIR, "tornado-unittests/src/main/java/uk/ac/manchester/tornado/unittests/mlx")
 BENCHMARK_SOURCES = [
-    os.path.join(MODULE_DIR, "src/main/java/uk/ac/manchester/tornado/mlx/benchmarks"),
     os.path.join(REPO_DIR, "tornado-benchmarks/src/main/java"),
 ]
 

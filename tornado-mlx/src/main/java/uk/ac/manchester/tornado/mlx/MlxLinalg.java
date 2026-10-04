@@ -21,13 +21,10 @@ import uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor;
 import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 /**
- * MLX linear algebra (Tier 2) as TornadoVM library tasks. Matrices are batched,
- * {@code [batch, n, n]}. MLX runs the decompositions, inverses and solves on its CPU stream
- * (LAPACK, float32 only), which the provider selects automatically; cross products and norms run on
- * the GPU.
+ * MLX linear algebra (Tier 2) as TornadoVM library tasks: cross products and vector and matrix
+ * norms.
  */
 public final class MlxLinalg {
 
@@ -118,114 +115,4 @@ public final class MlxLinalg {
         return Mlx.task("linalg_norm_matrix", 1, x, out, batch, rows, cols);
     }
 
-    /** Cholesky factor of each symmetric positive-definite {@code a[b]} ({@code [batch, n, n]}): lower, or upper. */
-    @MlxOp("mlx_linalg_cholesky")
-    public static LibraryTaskDescriptor cholesky(FloatArray a, FloatArray out, int batch, int n, boolean upper) {
-        return Mlx.task("linalg_cholesky", 1, a, out, batch, n, upper);
-    }
-
-    /** {@code (L L^T)^-1} (or {@code (U^T U)^-1}) from each Cholesky factor {@code a[b]}. */
-    @MlxOp("mlx_linalg_cholesky_inv")
-    public static LibraryTaskDescriptor choleskyInv(FloatArray a, FloatArray out, int batch, int n, boolean upper) {
-        return Mlx.task("linalg_cholesky_inv", 1, a, out, batch, n, upper);
-    }
-
-    /** Inverse of each triangular {@code a[b]} (lower, or upper). */
-    @MlxOp("mlx_linalg_tri_inv")
-    public static LibraryTaskDescriptor triInv(FloatArray a, FloatArray out, int batch, int n, boolean upper) {
-        return Mlx.task("linalg_tri_inv", 1, a, out, batch, n, upper);
-    }
-
-    /** Inverse of each {@code a[b]} ({@code [batch, n, n]}). */
-    @MlxOp("mlx_linalg_inv")
-    public static LibraryTaskDescriptor inv(FloatArray a, FloatArray out, int batch, int n) {
-        return Mlx.task("linalg_inv", 1, a, out, batch, n);
-    }
-
-    /** {@code x[b] = a[b]^-1 rhs[b]} for {@code a[batch, n, n]} and {@code rhs}, {@code x} {@code [batch, n, nrhs]}. */
-    @MlxOp("mlx_linalg_solve")
-    public static LibraryTaskDescriptor solve(FloatArray a, FloatArray rhs, FloatArray x, int batch, int n, int nrhs) {
-        return Mlx.task("linalg_solve", 2, a, rhs, x, batch, n, nrhs);
-    }
-
-    /** {@link #solve} for triangular {@code a} (lower, or upper). */
-    @MlxOp("mlx_linalg_solve_triangular")
-    public static LibraryTaskDescriptor solveTriangular(FloatArray a, FloatArray rhs, FloatArray x, int batch, int n, int nrhs, boolean upper) {
-        return Mlx.task("linalg_solve_triangular", 2, a, rhs, x, batch, n, nrhs, upper);
-    }
-
-    /**
-     * LU factorisation with partial pivoting of each {@code a[b]} ({@code [batch, n, n]}):
-     * {@code l} unit lower triangular, {@code u} upper triangular, and {@code perm[b]} the row
-     * permutation, with {@code a[b][i, :] = (l u)[perm[i], :]}.
-     */
-    @MlxOp("mlx_linalg_lu")
-    public static LibraryTaskDescriptor lu(FloatArray a, IntArray perm, FloatArray l, FloatArray u, int batch, int n) {
-        return Mlx.task("linalg_lu", new int[] { 1, 2, 3 }, a, perm, l, u, batch, n);
-    }
-
-    /**
-     * Packed LU factorisation of each {@code a[b]}: {@code lu} holds L (unit lower, below the
-     * diagonal) and U, and {@code pivots[b][k]} is the row swapped with row {@code k} at step
-     * {@code k} (LAPACK getrf, 0-based).
-     */
-    @MlxOp("mlx_linalg_lu_factor")
-    public static LibraryTaskDescriptor luFactor(FloatArray a, FloatArray lu, IntArray pivots, int batch, int n) {
-        return Mlx.task("linalg_lu_factor", new int[] { 1, 2 }, a, lu, pivots, batch, n);
-    }
-
-    /** QR factorisation of each square {@code a[b]}: {@code q} orthogonal, {@code r} upper triangular. */
-    @MlxOp("mlx_linalg_qr")
-    public static LibraryTaskDescriptor qr(FloatArray a, FloatArray q, FloatArray r, int batch, int n) {
-        return Mlx.task("linalg_qr", new int[] { 1, 2 }, a, q, r, batch, n);
-    }
-
-    /**
-     * Eigenvalues (ascending) and eigenvectors (the columns of {@code vectors}) of each symmetric
-     * {@code a[b]} ({@code [batch, n, n]}), read from its lower (or upper) triangle.
-     */
-    @MlxOp("mlx_linalg_eigh")
-    public static LibraryTaskDescriptor eigh(FloatArray a, FloatArray values, FloatArray vectors, int batch, int n, boolean upper) {
-        return Mlx.task("linalg_eigh", new int[] { 1, 2 }, a, values, vectors, batch, n, upper);
-    }
-
-    /** Eigenvalues (ascending) of each symmetric {@code a[b]}, read from its lower (or upper) triangle. */
-    @MlxOp("mlx_linalg_eigvalsh")
-    public static LibraryTaskDescriptor eigvalsh(FloatArray a, FloatArray values, int batch, int n, boolean upper) {
-        return Mlx.task("linalg_eigvalsh", 1, a, values, batch, n, upper);
-    }
-
-    /** Singular value decomposition {@code a[b] = u diag(s) vt} of each square {@code a[b]}; {@code s} descending. */
-    @MlxOp("mlx_linalg_svd")
-    public static LibraryTaskDescriptor svd(FloatArray a, FloatArray u, FloatArray s, FloatArray vt, int batch, int n) {
-        return Mlx.task("linalg_svd", new int[] { 1, 2, 3 }, a, u, s, vt, batch, n);
-    }
-
-    /** Singular values (descending) of each square {@code a[b]}. */
-    @MlxOp("mlx_linalg_svd")
-    public static LibraryTaskDescriptor singularValues(FloatArray a, FloatArray s, int batch, int n) {
-        return Mlx.task("linalg_svd_values", 1, a, s, batch, n);
-    }
-
-    /** Moore-Penrose pseudo-inverse of each square {@code a[b]}. */
-    @MlxOp("mlx_linalg_pinv")
-    public static LibraryTaskDescriptor pinv(FloatArray a, FloatArray out, int batch, int n) {
-        return Mlx.task("linalg_pinv", 1, a, out, batch, n);
-    }
-
-    /**
-     * Eigenvalues and right eigenvectors of each real {@code a[b]} ({@code [batch, n, n]}), as
-     * complex numbers stored in (real, imaginary) pairs: {@code values[batch, n, 2]},
-     * {@code vectors[batch, n, n, 2]} with eigenvector {@code k} in column {@code k}.
-     */
-    @MlxOp("mlx_linalg_eig")
-    public static LibraryTaskDescriptor eig(FloatArray a, FloatArray values, FloatArray vectors, int batch, int n) {
-        return Mlx.task("linalg_eig", new int[] { 1, 2 }, a, values, vectors, batch, n);
-    }
-
-    /** Eigenvalues of each real {@code a[b]} as (real, imaginary) pairs, {@code values[batch, n, 2]}. */
-    @MlxOp("mlx_linalg_eigvals")
-    public static LibraryTaskDescriptor eigvals(FloatArray a, FloatArray values, int batch, int n) {
-        return Mlx.task("linalg_eigvals", 1, a, values, batch, n);
-    }
 }

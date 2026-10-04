@@ -24,7 +24,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Names the mlx-c operation(s) an {@link Mlx} factory method binds, e.g.
+ * Names the MLX operation(s) an {@link Mlx} factory method binds, e.g.
  * {@code @MlxOp("mlx_add")}. {@code tornado-mlx/scripts/update_coverage.py} reads these to build the
  * coverage manifest, and the build fails if a bound operation has no test.
  */
@@ -33,6 +33,6 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 public @interface MlxOp {
 
-    /** mlx-c function names, as in {@code mlx/c/*.h}. */
+    /** MLX operation names, spelled as mlx-c's {@code mlx/c/*.h} spell them. */
     String[] value();
 }

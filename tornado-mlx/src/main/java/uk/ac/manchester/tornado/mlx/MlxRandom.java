@@ -226,36 +226,6 @@ public final class MlxRandom {
         return Mlx.task("random_categorical_shape", 1, logits, out, rows, classes, samples, seed);
     }
 
-    /** {@code count} samples of the multivariate normal with mean {@code mean[d]} and covariance {@code cov[d, d]}: {@code out[count, d]}. */
-    @MlxOp("mlx_random_multivariate_normal")
-    public static LibraryTaskDescriptor multivariateNormal(FloatArray mean, FloatArray cov, FloatArray out, int count, int d, int seed) {
-        return Mlx.task("random_multivariate_normal", 2, mean, cov, out, count, d, seed);
-    }
-
-    /** A random permutation of the elements of {@code x}. */
-    @MlxOp("mlx_random_permutation")
-    public static LibraryTaskDescriptor permutation(FloatArray x, FloatArray out, int seed) {
-        return Mlx.task("random_permutation", 1, x, out, seed);
-    }
-
-    /** A random permutation of the elements of {@code x}. */
-    @MlxOp("mlx_random_permutation")
-    public static LibraryTaskDescriptor permutation(HalfFloatArray x, HalfFloatArray out, int seed) {
-        return Mlx.task("random_permutation", 1, x, out, seed);
-    }
-
-    /** A random permutation of the elements of {@code x}. */
-    @MlxOp("mlx_random_permutation")
-    public static LibraryTaskDescriptor permutation(BFloat16Array x, BFloat16Array out, int seed) {
-        return Mlx.task("random_permutation", 1, x, out, seed);
-    }
-
-    /** A random permutation of the elements of {@code x}. */
-    @MlxOp("mlx_random_permutation")
-    public static LibraryTaskDescriptor permutation(IntArray x, IntArray out, int seed) {
-        return Mlx.task("random_permutation", 1, x, out, seed);
-    }
-
     /** A random permutation of {@code 0 .. out.length - 1}. */
     @MlxOp("mlx_random_permutation_arange")
     public static LibraryTaskDescriptor permutationArange(IntArray out, int seed) {

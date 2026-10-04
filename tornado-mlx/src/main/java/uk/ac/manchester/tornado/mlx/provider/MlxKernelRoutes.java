@@ -20,11 +20,11 @@ package uk.ac.manchester.tornado.mlx.provider;
 import static java.util.Map.entry;
 import static uk.ac.manchester.tornado.mlx.provider.MlxMetalKernels.contiguousStrides;
 import static uk.ac.manchester.tornado.mlx.provider.MlxMetalKernels.scalarBytes;
-import static uk.ac.manchester.tornado.mlx.provider.MlxNativeLib.MLX_BOOL;
-import static uk.ac.manchester.tornado.mlx.provider.MlxNativeLib.MLX_COMPLEX64;
-import static uk.ac.manchester.tornado.mlx.provider.MlxNativeLib.MLX_FLOAT32;
-import static uk.ac.manchester.tornado.mlx.provider.MlxNativeLib.MLX_INT32;
-import static uk.ac.manchester.tornado.mlx.provider.MlxNativeLib.MLX_UINT8;
+import static uk.ac.manchester.tornado.mlx.provider.MlxTypes.MLX_BOOL;
+import static uk.ac.manchester.tornado.mlx.provider.MlxTypes.MLX_COMPLEX64;
+import static uk.ac.manchester.tornado.mlx.provider.MlxTypes.MLX_FLOAT32;
+import static uk.ac.manchester.tornado.mlx.provider.MlxTypes.MLX_INT32;
+import static uk.ac.manchester.tornado.mlx.provider.MlxTypes.MLX_UINT8;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -41,22 +41,15 @@ import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
  * ({@link MlxMetalKernels}), with how each maps onto MLX's kernels. Composite operations follow the
  * primitives MLX's {@code ops.cpp} builds them from, encoded into one command buffer; where an
  * intermediate needs its own storage it goes to a scratch buffer. A route declines (returns null)
- * when the arguments are outside what it reproduces exactly, and the operation then goes through the
- * C API as before.
+ * when the arguments are outside what it reproduces exactly, and the task then fails.
  */
 final class MlxKernelRoutes {
-
-    /**
-     * Whether routed operations run MLX's kernels in place rather than through the C API, which would
-     * allocate a result and copy it back. {@code -Dtornado.mlx.kernels=False} turns this off.
-     */
-    private static final boolean ENABLED = Boolean.parseBoolean(System.getProperty("tornado.mlx.kernels", "True")) && MlxMetalKernels.isAvailable();
 
     private static final AtomicLong DISPATCHES = new AtomicLong();
 
     private static final double INF = Double.POSITIVE_INFINITY;
 
-    /** Plans the kernels for one call, or returns null to leave it to the C API. */
+    /** Plans the kernels for one call, or returns null if it cannot run these arguments. */
     interface Route {
         Encoder plan(View v);
     }
@@ -83,7 +76,7 @@ final class MlxKernelRoutes {
         }
 
         int dtype(int i) {
-            return MlxCall.dtypeOf(invocation.getArg(i));
+            return MlxTypes.dtypeOf(invocation.getArg(i));
         }
 
         int size(int i) {
@@ -1003,12 +996,12 @@ final class MlxKernelRoutes {
         boolean integer = INTEGERS.contains(in);
         if (op.equals("sum") || op.equals("prod")) {
             if (in == MLX_BOOL) {
-                return new int[] { MlxNativeLib.MLX_INT8, MLX_INT32 };
+                return new int[] { MlxTypes.MLX_INT8, MLX_INT32 };
             }
             if (integer) {
                 return switch (in) {
-                    case MLX_UINT8, MlxNativeLib.MLX_UINT16, MlxNativeLib.MLX_UINT32 -> new int[] { in, MlxNativeLib.MLX_UINT32 };
-                    case MlxNativeLib.MLX_INT64 -> new int[] { in, in };
+                    case MLX_UINT8, MlxTypes.MLX_UINT16, MlxTypes.MLX_UINT32 -> new int[] { in, MlxTypes.MLX_UINT32 };
+                    case MlxTypes.MLX_INT64 -> new int[] { in, in };
                     default -> new int[] { in, MLX_INT32 };
                 };
             }
@@ -1020,9 +1013,9 @@ final class MlxKernelRoutes {
             }
             return switch (MlxMetalKernels.itemSize(in)) {
                 case 1 -> new int[] { MLX_BOOL, MLX_BOOL };
-                case 2 -> new int[] { MlxNativeLib.MLX_INT16, MLX_BOOL };
+                case 2 -> new int[] { MlxTypes.MLX_INT16, MLX_BOOL };
                 case 4 -> new int[] { MLX_INT32, MLX_BOOL };
-                default -> new int[] { MlxNativeLib.MLX_INT64, MLX_BOOL };
+                default -> new int[] { MlxTypes.MLX_INT64, MLX_BOOL };
             };
         }
         return new int[] { in, in };
@@ -1157,7 +1150,7 @@ final class MlxKernelRoutes {
     private static double castTo(int t, double value) {
         return switch (t) {
             case MLX_FLOAT32 -> (float) value;
-            case MlxNativeLib.MLX_FLOAT16 -> Float.float16ToFloat(Float.floatToFloat16((float) value));
+            case MlxTypes.MLX_FLOAT16 -> Float.float16ToFloat(Float.floatToFloat16((float) value));
             default -> Float.intBitsToFloat((Float.floatToRawIntBits((float) value) + 0x7fff + ((Float.floatToRawIntBits((float) value) >>> 16) & 1)) & 0xffff0000);
         };
     }
@@ -1215,7 +1208,7 @@ final class MlxKernelRoutes {
 
     /**
      * logsumexp of a whole array: MLX's fused LogSumExp kernel. (The axis forms reduce an inner axis
-     * of [outer, len, inner], for which MLX builds a composite instead, so they stay on the C API.)
+     * of [outer, len, inner], for which MLX builds a composite instead, so they are not routed.)
      */
     private static Encoder logsumexp(View v, String form) {
         Extent e = extent(v, form);
@@ -2090,8 +2083,8 @@ final class MlxKernelRoutes {
     private static String cType(int dtype) {
         return switch (dtype) {
             case MLX_FLOAT32 -> "float";
-            case MlxNativeLib.MLX_FLOAT16 -> "float16_t";
-            case MlxNativeLib.MLX_BFLOAT16 -> "bfloat16_t";
+            case MlxTypes.MLX_FLOAT16 -> "float16_t";
+            case MlxTypes.MLX_BFLOAT16 -> "bfloat16_t";
             default -> null;
         };
     }
@@ -2371,7 +2364,7 @@ final class MlxKernelRoutes {
                     .i32(7, (int) blocks).threadgroups(blocks, rows, 1, bn, 1, 1);
         }
         Ref sorted = argsort ? idxsOut : valsOut;
-        int sortedType = argsort ? MlxNativeLib.MLX_UINT32 : t;
+        int sortedType = argsort ? MlxTypes.MLX_UINT32 : t;
         int[] shape = { (int) outer, (int) len, (int) inner };
         p.generalCopy(sortedType, sortedType, shape, new long[] { len * inner, 1, len }, sorted, null, out, null);
     }
@@ -2431,7 +2424,7 @@ final class MlxKernelRoutes {
 
     private static final int F32 = MLX_FLOAT32;
 
-    /** MLX's random key for a seed: {seed >> 32, seed & 0xffffffff} as uint32, the seed widened as the C API receives it. */
+    /** MLX's random key for a seed: {seed >> 32, seed & 0xffffffff} as uint32, the seed widened to 64 bits. */
     private static byte[] randomKey(int seed) {
         long wide = seed;
         return MlxMetalKernels.intBytes(new int[] { (int) (wide >>> 32), (int) wide });
@@ -2452,7 +2445,7 @@ final class MlxKernelRoutes {
      */
     private static void uniform(Program p, int seed, int n, Ref low, Ref range, double lowValue, double rangeValue, Ref out, Ref scratch) {
         randomBits(p, seed, n, scratch);
-        p.copy(MlxNativeLib.MLX_UINT32, F32, n, scratch, out);
+        p.copy(MlxTypes.MLX_UINT32, F32, n, scratch, out);
         p.binaryScalarRight("Divide", F32, n, out, 4294967295.0, out);
         p.binaryScalarRight("Minimum", F32, n, out, Math.nextDown(1.0f), out);
         if (range != null) {
@@ -2533,7 +2526,7 @@ final class MlxKernelRoutes {
                 Ref threshold = p.scratch(4L * n);
                 randomBits(p, seedArg(v, 2), n, bits);
                 p.binaryScalarRight("Multiply", F32, n, v.ref(0), upper, threshold);
-                p.copy(MlxNativeLib.MLX_UINT32, F32, n, bits, bits);
+                p.copy(MlxTypes.MLX_UINT32, F32, n, bits, bits);
                 p.binary("Less", F32, n, bits, threshold, v.ref(1));
             };
         });
@@ -2623,7 +2616,7 @@ final class MlxKernelRoutes {
             return p -> {
                 Ref bits = p.scratch(4L * n);
                 randomBits(p, seedArg(v, 1), n, bits);
-                mergeSort(p, MlxNativeLib.MLX_UINT32, 1, n, 1, bits, v.ref(0), true);
+                mergeSort(p, MlxTypes.MLX_UINT32, 1, n, 1, bits, v.ref(0), true);
             };
         });
         // categorical: argmax of logits plus Gumbel noise (MLX's path when the logits have more than one row).
@@ -3454,7 +3447,7 @@ final class MlxKernelRoutes {
     /**
      * isclose(a, b, rtol, atol, equal_nan), float32: |a - b| <= atol + rtol * |b|, false where either
      * value is infinite unless both are infinite with the same sign, and optionally true where both
-     * are NaN. Other types promote through float32 in MLX and stay on the C API.
+     * are NaN. Other types promote through float32 in MLX and are not routed.
      */
     private static Encoder isclose(View v) {
         int t = v.sameType(FLOAT32, 0, 1);
@@ -3509,7 +3502,7 @@ final class MlxKernelRoutes {
         return DISPATCHES.get();
     }
 
-    /** Whether {@code functionName} has an in-place route (for reports). */
+    /** Whether {@code functionName} has an in-place route. */
     static boolean hasRoute(String functionName) {
         return ROUTES.containsKey(functionName);
     }
@@ -3517,7 +3510,7 @@ final class MlxKernelRoutes {
     /** Runs {@code functionName} in place if it has a route that takes these arguments; false otherwise. */
     static boolean dispatch(String functionName, LibraryInvocation invocation) {
         Route route = ROUTES.get(functionName);
-        if (!ENABLED || route == null || invocation.isCapturing() || !(invocation.getDevice() instanceof TornadoNativeStreamSupport streams)) {
+        if (route == null || invocation.isCapturing() || !(invocation.getDevice() instanceof TornadoNativeStreamSupport streams)) {
             return false;
         }
         Encoder encoder = route.plan(new View(invocation));

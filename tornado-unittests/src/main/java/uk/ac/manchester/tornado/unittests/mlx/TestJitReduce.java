@@ -60,7 +60,7 @@ public class TestJitReduce extends MlxTestBase {
     private static final int T = JitReduce.THREADS;
 
     /** {form, outer, len1, len2, inner}: the shapes every reduction is checked on. */
-    private static final int[][] CASES = { { WHOLE, 1, 1027, 1, 1 }, { WHOLE, 1, 1 << 20, 1, 1 }, { AXIS, 37, 513, 1, 1 }, { AXIS, 7, 65, 1, 33 }, { AXES, 5, 12, 9, 1 }, { AXES, 3, 6, 5, 17 } };
+    private static final int[][] CASES = { { WHOLE, 1, 1027, 1, 1 }, { WHOLE, 1, 1 << 20, 1, 1 }, { AXIS, 37, 513, 1, 1 }, { AXIS, 7, 65, 1, 1 }, { AXES, 5, 12, 9, 1 }, { AXES, 3, 6, 5, 1 } };
 
     interface MlxForms {
         void add(TaskGraph g, int form, FloatArray x, FloatArray out, int outer, int len1, int len2, int inner);
@@ -309,33 +309,6 @@ public class TestJitReduce extends MlxTestBase {
                     default -> g.libraryTask("mlx", MlxReduce::stdAxes, x, out, o, l1, l2, in, d);
                 }
             }, (g, gs, x, out, o, len, in) -> jitVariance(g, gs, x, out, o, len, in, d, true), v -> Math.sqrt(variance(v, d)), -2f, 2f, 1e-4, 1e-5);
-        }
-    }
-
-    @Test
-    public void testMedian() throws TornadoExecutionPlanException {
-        // Median lengths are limited by the JIT kernel's threadgroup sort, so the large whole-array case is skipped.
-        for (int[] c : CASES) {
-            int outer = c[1];
-            int len = c[2] * c[3];
-            int inner = c[4];
-            if (len > JitReduce.MEDIAN_MAX) {
-                continue;
-            }
-            float[] xv = values(outer * len * inner, -10, 10, 41L + len);
-            FloatArray x = FloatArray.fromArray(xv);
-            FloatArray outMlx = new FloatArray(outer * inner);
-            FloatArray outJit = new FloatArray(outer * inner);
-            TaskGraph g = new TaskGraph("md").transferToDevice(DataTransferMode.FIRST_EXECUTION, x) //
-                    .libraryTask("mlx", MlxReduce::median, x, outMlx, outer, len, inner) //
-                    .task("j", JitReduce::median, new KernelContext(), x, outJit, len, inner, nextPowerOfTwo(len)) //
-                    .transferToHost(DataTransferMode.EVERY_EXECUTION, outMlx, outJit);
-            try (TornadoExecutionPlan plan = new TornadoExecutionPlan(g.snapshot())) {
-                plan.withGridScheduler(new GridScheduler("md.j", groups(outer * inner, T))).execute();
-            }
-            double[] expected = reference(xv, outer, len, inner, TestJitReduce::median);
-            assertAllClose("median " + Arrays.toString(c) + " JIT", expected, outJit, 1e-6, 1e-6);
-            assertAllClose("median " + Arrays.toString(c) + " MLX", expected, outMlx, 1e-6, 1e-6);
         }
     }
 

@@ -28,7 +28,9 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
  * MLX reductions (Tier 2) as TornadoVM library tasks. Each comes in three forms: over the whole
  * array ({@code sum}), over one axis ({@code sumAxis}, with the input viewed as
  * {@code [outer, len, inner]} and the middle axis reduced), and over two adjacent axes
- * ({@code sumAxes}, input viewed as {@code [outer, len1, len2, inner]}). Outputs hold
+ * ({@code sumAxes}, input viewed as {@code [outer, len1, len2, inner]}). The axis forms of the
+ * reductions need {@code inner == 1} (the reduced axes trailing); argmin and the scans also take
+ * {@code inner > 1}. Outputs hold
  * {@code outer * inner} elements (one for a whole-array reduction). all and any write 0 or 1 into
  * a byte array; argmin writes int32 indices. The scans (cumsum ... logcumsumexp) keep the input's
  * shape and run along the middle axis of the same {@code [outer, len, inner]} view.
@@ -732,36 +734,6 @@ public final class MlxReduce {
     @MlxOp("mlx_argmin_axis")
     public static LibraryTaskDescriptor argminAxis(IntArray x, IntArray out, int outer, int len, int inner) {
         return Mlx.task("argmin_axis", 1, x, out, outer, len, inner);
-    }
-
-    /**
-     * {@code out[o, j]} = the median of {@code x[o, :, j]} (the mean of the two middle values for even
-     * {@code len}), with {@code x} viewed as {@code [outer, len, inner]}; {@code outer = inner = 1}
-     * gives the median of the whole array.
-     */
-    @MlxOp("mlx_median")
-    public static LibraryTaskDescriptor median(FloatArray x, FloatArray out, int outer, int len, int inner) {
-        return Mlx.task("median", 1, x, out, outer, len, inner);
-    }
-
-    /**
-     * {@code out[o, j]} = the median of {@code x[o, :, j]} (the mean of the two middle values for even
-     * {@code len}), with {@code x} viewed as {@code [outer, len, inner]}; {@code outer = inner = 1}
-     * gives the median of the whole array.
-     */
-    @MlxOp("mlx_median")
-    public static LibraryTaskDescriptor median(HalfFloatArray x, HalfFloatArray out, int outer, int len, int inner) {
-        return Mlx.task("median", 1, x, out, outer, len, inner);
-    }
-
-    /**
-     * {@code out[o, j]} = the median of {@code x[o, :, j]} (the mean of the two middle values for even
-     * {@code len}), with {@code x} viewed as {@code [outer, len, inner]}; {@code outer = inner = 1}
-     * gives the median of the whole array.
-     */
-    @MlxOp("mlx_median")
-    public static LibraryTaskDescriptor median(BFloat16Array x, BFloat16Array out, int outer, int len, int inner) {
-        return Mlx.task("median", 1, x, out, outer, len, inner);
     }
 
     /**

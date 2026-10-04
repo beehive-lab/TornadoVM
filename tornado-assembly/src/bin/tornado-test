@@ -195,7 +195,6 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxQuantized"),
     TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxFast"),
     TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxReductions"),
-    TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxMemory"),
     TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestJitElementwise"),
     TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestJitBlas"),
     TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestJitFast"),
@@ -925,7 +924,7 @@ def parseArguments():
     parser.add_argument('--quickPass', "-qp", action="store_true", dest="quickPass", default=False,
                         help="Quick pass without stress memory and output for logs in a file.")
     parser.add_argument('--mlx', action="store_true", dest="mlx", default=False,
-                        help="Run only the Apple MLX library-task tests (Metal backend with mlx-c installed)")
+                        help="Run only the Apple MLX library-task tests (Metal backend with MLX installed)")
     parser.add_argument('--device', dest="device", default=None, help="Set an specific device. E.g `s0.t0.device=0:1`")
     parser.add_argument('--printExec', dest="printExecution", action="store_true", default=False,
                         help="Print OpenCL Kernel Execution Time")

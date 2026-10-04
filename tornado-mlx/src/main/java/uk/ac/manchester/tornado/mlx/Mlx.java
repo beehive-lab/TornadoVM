@@ -35,9 +35,10 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
  * </pre>
  *
  * <p>
- * MLX reads TornadoVM's buffers in place (no copy on the way in). MLX operations always allocate
- * their own result, so the result is copied into the output array. Every factory is annotated
- * with the mlx-c operation it binds ({@link MlxOp}); the build checks each one has a test.
+ * Each task runs MLX's own Metal kernels in place on TornadoVM's buffers, with no MLX array and no
+ * copy. A task whose arguments those kernels do not cover (a shape or layout outside what a
+ * factory's documentation states) fails rather than falling back. Every factory is annotated with
+ * the MLX operation it binds ({@link MlxOp}); the build checks each one has a test.
  * </p>
  */
 public final class Mlx {
@@ -97,12 +98,6 @@ public final class Mlx {
         return task("add", 2, a, b, c);
     }
 
-    /** Element-wise {@code c = a + b}. */
-    @MlxOp("mlx_add")
-    public static LibraryTaskDescriptor add(IntArray a, IntArray b, IntArray c) {
-        return task("add", 2, a, b, c);
-    }
-
     /** Element-wise {@code c = a - b}. */
     @MlxOp("mlx_subtract")
     public static LibraryTaskDescriptor subtract(FloatArray a, FloatArray b, FloatArray c) {
@@ -118,12 +113,6 @@ public final class Mlx {
     /** Element-wise {@code c = a - b}. */
     @MlxOp("mlx_subtract")
     public static LibraryTaskDescriptor subtract(BFloat16Array a, BFloat16Array b, BFloat16Array c) {
-        return task("subtract", 2, a, b, c);
-    }
-
-    /** Element-wise {@code c = a - b}. */
-    @MlxOp("mlx_subtract")
-    public static LibraryTaskDescriptor subtract(IntArray a, IntArray b, IntArray c) {
         return task("subtract", 2, a, b, c);
     }
 
@@ -145,12 +134,6 @@ public final class Mlx {
         return task("multiply", 2, a, b, c);
     }
 
-    /** Element-wise {@code c = a * b}. */
-    @MlxOp("mlx_multiply")
-    public static LibraryTaskDescriptor multiply(IntArray a, IntArray b, IntArray c) {
-        return task("multiply", 2, a, b, c);
-    }
-
     /** Element-wise {@code c = a / b}. */
     @MlxOp("mlx_divide")
     public static LibraryTaskDescriptor divide(FloatArray a, FloatArray b, FloatArray c) {
@@ -166,12 +149,6 @@ public final class Mlx {
     /** Element-wise {@code c = a / b}. */
     @MlxOp("mlx_divide")
     public static LibraryTaskDescriptor divide(BFloat16Array a, BFloat16Array b, BFloat16Array c) {
-        return task("divide", 2, a, b, c);
-    }
-
-    /** Element-wise {@code c = a / b}. */
-    @MlxOp("mlx_divide")
-    public static LibraryTaskDescriptor divide(IntArray a, IntArray b, IntArray c) {
         return task("divide", 2, a, b, c);
     }
 
@@ -193,12 +170,6 @@ public final class Mlx {
         return task("maximum", 2, a, b, c);
     }
 
-    /** Element-wise {@code c = max(a, b)}. */
-    @MlxOp("mlx_maximum")
-    public static LibraryTaskDescriptor maximum(IntArray a, IntArray b, IntArray c) {
-        return task("maximum", 2, a, b, c);
-    }
-
     /** Element-wise {@code c = min(a, b)}. */
     @MlxOp("mlx_minimum")
     public static LibraryTaskDescriptor minimum(FloatArray a, FloatArray b, FloatArray c) {
@@ -214,12 +185,6 @@ public final class Mlx {
     /** Element-wise {@code c = min(a, b)}. */
     @MlxOp("mlx_minimum")
     public static LibraryTaskDescriptor minimum(BFloat16Array a, BFloat16Array b, BFloat16Array c) {
-        return task("minimum", 2, a, b, c);
-    }
-
-    /** Element-wise {@code c = min(a, b)}. */
-    @MlxOp("mlx_minimum")
-    public static LibraryTaskDescriptor minimum(IntArray a, IntArray b, IntArray c) {
         return task("minimum", 2, a, b, c);
     }
 
@@ -240,12 +205,6 @@ public final class Mlx {
     /** Element-wise {@code out = -a}. */
     @MlxOp("mlx_negative")
     public static LibraryTaskDescriptor negative(BFloat16Array a, BFloat16Array out) {
-        return task("negative", 1, a, out);
-    }
-
-    /** Element-wise {@code out = -a}. */
-    @MlxOp("mlx_negative")
-    public static LibraryTaskDescriptor negative(IntArray a, IntArray out) {
         return task("negative", 1, a, out);
     }
 
@@ -372,12 +331,6 @@ public final class Mlx {
     /** Element-wise {@code out = a * a}. */
     @MlxOp("mlx_square")
     public static LibraryTaskDescriptor square(BFloat16Array a, BFloat16Array out) {
-        return task("square", 1, a, out);
-    }
-
-    /** Element-wise {@code out = a * a}. */
-    @MlxOp("mlx_square")
-    public static LibraryTaskDescriptor square(IntArray a, IntArray out) {
         return task("square", 1, a, out);
     }
 

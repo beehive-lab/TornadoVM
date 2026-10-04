@@ -5,11 +5,11 @@
     "operations": 332,
     "excluded": 40,
     "inScope": 292,
-    "bound": 292,
-    "tested": 292,
-    "benchmarked": 292,
-    "jitBaselines": 292,
-    "remaining": 0,
+    "bound": 246,
+    "tested": 246,
+    "benchmarked": 0,
+    "jitBaselines": 246,
+    "remaining": 46,
     "byTier": {
       "1": {
         "inScope": 32,
@@ -17,11 +17,11 @@
       },
       "2": {
         "inScope": 148,
-        "bound": 148
+        "bound": 108
       },
       "3": {
         "inScope": 112,
-        "bound": 112
+        "bound": 106
       }
     }
   },
@@ -33,7 +33,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.abs"
@@ -46,8 +46,7 @@
       "dtypes": [
         "bfloat16",
         "float16",
-        "float32",
-        "int32"
+        "float32"
       ],
       "factories": [
         "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxMath.java"
@@ -60,7 +59,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitElementwise.add"
@@ -73,8 +72,7 @@
       "dtypes": [
         "bfloat16",
         "float16",
-        "float32",
-        "int32"
+        "float32"
       ],
       "factories": [
         "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/Mlx.java"
@@ -87,7 +85,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitBlas.addmm"
@@ -113,7 +111,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.allAny"
@@ -141,7 +139,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.allAny"
@@ -169,7 +167,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.allAny",
@@ -198,7 +196,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitLogic.allcloseCheck",
@@ -226,7 +224,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.allAny"
@@ -254,7 +252,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.allAny"
@@ -282,7 +280,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.allAny",
@@ -311,7 +309,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitCreate.arange"
@@ -338,7 +336,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.arccos"
@@ -364,7 +362,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.arccosh"
@@ -390,7 +388,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.arcsin"
@@ -416,7 +414,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.arcsinh"
@@ -442,7 +440,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.arctan"
@@ -468,7 +466,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.arctan2"
@@ -494,7 +492,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.arctanh"
@@ -520,7 +518,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReductions.argmaxRows"
@@ -547,7 +545,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReductions.argmaxRows"
@@ -574,7 +572,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.argmin"
@@ -601,7 +599,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.argmin"
@@ -628,7 +626,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitSort.sortSlices"
@@ -655,7 +653,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitSort.mergeBlocks",
@@ -688,7 +686,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitSort.sortSlices"
@@ -715,7 +713,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitSort.mergeBlocks",
@@ -748,7 +746,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitLogic.arrayEqualCheck",
@@ -777,7 +775,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.asStrided"
@@ -804,7 +802,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.toHalf"
@@ -831,7 +829,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.copy"
@@ -858,7 +856,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.copy"
@@ -885,7 +883,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.copy"
@@ -912,7 +910,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitCreate.window"
@@ -936,7 +934,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitLogic.bitwise"
@@ -960,7 +958,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitLogic.invert"
@@ -984,7 +982,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitLogic.bitwise"
@@ -1008,7 +1006,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitLogic.bitwise"
@@ -1032,7 +1030,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitCreate.window"
@@ -1054,27 +1052,9 @@
       "header": "ops.h",
       "tier": 3,
       "device": "gpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitProducts.blockMaskedGemm"
-        ],
-        "sources": [
-          "tornado-examples/.../compute/MatrixMultiplySimdgroup.java#gemmTiled (block-masked)"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "bfloat16",
-        "float16",
-        "float32",
-        "uint8"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxProducts.java"
-      ]
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_broadcast_arrays",
@@ -1083,7 +1063,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.broadcastPair"
@@ -1110,7 +1090,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.broadcastRows"
@@ -1137,7 +1117,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.ceil"
@@ -1163,7 +1143,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.clip"
@@ -1190,7 +1170,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.concat"
@@ -1217,7 +1197,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.concat"
@@ -1244,7 +1224,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitLogic.conjugate"
@@ -1268,7 +1248,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.copy"
@@ -1295,7 +1275,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitConv.conv"
@@ -1321,7 +1301,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitConv.conv"
@@ -1345,26 +1325,9 @@
       "header": "ops.h",
       "tier": 2,
       "device": "gpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitConv.conv"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "bfloat16",
-        "float16",
-        "float32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxConv.java"
-      ]
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_conv_general",
@@ -1373,7 +1336,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitConv.conv"
@@ -1399,7 +1362,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitConv.conv"
@@ -1425,7 +1388,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitConv.conv"
@@ -1449,26 +1412,9 @@
       "header": "ops.h",
       "tier": 2,
       "device": "gpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitConv.conv"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "bfloat16",
-        "float16",
-        "float32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxConv.java"
-      ]
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_copy",
@@ -1477,7 +1423,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.copy"
@@ -1504,7 +1450,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.cos"
@@ -1530,7 +1476,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.cosh"
@@ -1556,7 +1502,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitScan.scanColumns",
@@ -1584,7 +1530,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitScan.scanColumns",
@@ -1612,7 +1558,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitScan.scanColumns",
@@ -1640,7 +1586,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitScan.scanColumns",
@@ -1668,7 +1614,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.degrees"
@@ -1704,7 +1650,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitQuantized.dequantize"
@@ -1731,7 +1677,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitCreate.diag"
@@ -1758,7 +1704,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitCreate.diagonal"
@@ -1785,7 +1731,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitElementwise.divide"
@@ -1798,8 +1744,7 @@
       "dtypes": [
         "bfloat16",
         "float16",
-        "float32",
-        "int32"
+        "float32"
       ],
       "factories": [
         "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/Mlx.java"
@@ -1812,7 +1757,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.divmod"
@@ -1839,7 +1784,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitProducts.batchedGemm"
@@ -1865,7 +1810,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitLogic.compare"
@@ -1893,7 +1838,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitElementwise.erf"
@@ -1919,7 +1864,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.erfinv"
@@ -1945,7 +1890,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitElementwise.exp"
@@ -1971,7 +1916,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.copy"
@@ -1998,7 +1943,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.copy"
@@ -2025,7 +1970,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.expm1"
@@ -2051,7 +1996,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitCreate.eye"
@@ -2078,7 +2023,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.copy"
@@ -2105,7 +2050,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.floor"
@@ -2131,7 +2076,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.floorDivide"
@@ -2156,25 +2101,9 @@
       "header": "ops.h",
       "tier": 3,
       "device": "gpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitProducts.fromFp8"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "float32",
-        "uint8"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxProducts.java"
-      ]
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_full",
@@ -2183,7 +2112,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitCreate.fill"
@@ -2210,7 +2139,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitCreate.fill"
@@ -2235,54 +2164,18 @@
       "header": "ops.h",
       "tier": 2,
       "device": "gpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitIndex.gatherPoints"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "bfloat16",
-        "float16",
-        "float32",
-        "int32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxIndex.java"
-      ]
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_gather_single",
       "header": "ops.h",
       "tier": 2,
       "device": "gpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitIndex.gatherRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "bfloat16",
-        "float16",
-        "float32",
-        "int32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxIndex.java"
-      ]
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_gather_mm",
@@ -2291,7 +2184,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitIndex.gatherMm"
@@ -2318,7 +2211,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitQuantized.gatherQmm"
@@ -2345,7 +2238,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitLogic.compare"
@@ -2373,7 +2266,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitLogic.compare"
@@ -2399,26 +2292,9 @@
       "header": "ops.h",
       "tier": 3,
       "device": "gpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitProducts.hadamard"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "bfloat16",
-        "float16",
-        "float32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxProducts.java"
-      ]
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_hamming",
@@ -2427,7 +2303,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitCreate.window"
@@ -2451,7 +2327,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitCreate.window"
@@ -2475,7 +2351,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitCreate.eye"
@@ -2502,7 +2378,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitLogic.complexPart"
@@ -2526,7 +2402,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitProducts.dotPartial"
@@ -2552,7 +2428,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitLogic.isclose"
@@ -2579,7 +2455,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitLogic.classify"
@@ -2606,7 +2482,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitLogic.classify"
@@ -2633,7 +2509,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitLogic.classify"
@@ -2660,7 +2536,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitLogic.classify"
@@ -2687,7 +2563,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitLogic.classify"
@@ -2714,7 +2590,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitProducts.kron"
@@ -2740,7 +2616,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitLogic.bitwise"
@@ -2764,7 +2640,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitLogic.compare"
@@ -2792,7 +2668,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitLogic.compare"
@@ -2820,7 +2696,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitCreate.linspace"
@@ -2846,7 +2722,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.log"
@@ -2872,7 +2748,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.log10"
@@ -2898,7 +2774,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.log1p"
@@ -2924,7 +2800,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.log2"
@@ -2950,7 +2826,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.logaddexp"
@@ -2976,7 +2852,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitScan.scanColumns",
@@ -3003,7 +2879,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitLogic.logical"
@@ -3027,7 +2903,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitLogic.logicalNot"
@@ -3051,7 +2927,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitLogic.logical"
@@ -3075,7 +2951,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.logsumexp"
@@ -3101,7 +2977,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.logsumexp"
@@ -3127,7 +3003,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.logsumexp",
@@ -3153,29 +3029,9 @@
       "header": "ops.h",
       "tier": 2,
       "device": "gpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitIndex.maskPositions",
-          "JitIndex.maskedScatter"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "bfloat16",
-        "float16",
-        "float32",
-        "int32",
-        "uint8"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxIndex.java"
-      ]
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_matmul",
@@ -3184,7 +3040,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitBlas.gemm",
@@ -3218,7 +3074,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.reduceColumns",
@@ -3246,7 +3102,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.reduceColumns",
@@ -3274,7 +3130,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.reducePartial",
@@ -3302,7 +3158,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitElementwise.maximum"
@@ -3315,8 +3171,7 @@
       "dtypes": [
         "bfloat16",
         "float16",
-        "float32",
-        "int32"
+        "float32"
       ],
       "factories": [
         "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/Mlx.java"
@@ -3329,7 +3184,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.reduceColumns",
@@ -3356,7 +3211,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.reduceColumns",
@@ -3383,7 +3238,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.reducePartial",
@@ -3408,26 +3263,9 @@
       "header": "ops.h",
       "tier": 2,
       "device": "gpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.median"
-        ],
-        "sources": [
-          "written (bitonic network as in tornado-unittests/.../kernelcontext/sort/TestBitonicSort.java)"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "bfloat16",
-        "float16",
-        "float32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxReduce.java"
-      ]
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_meshgrid",
@@ -3436,7 +3274,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitCreate.meshgrid"
@@ -3463,7 +3301,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.reduceColumns",
@@ -3491,7 +3329,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.reduceColumns",
@@ -3519,7 +3357,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.reducePartial",
@@ -3547,7 +3385,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitElementwise.minimum"
@@ -3560,8 +3398,7 @@
       "dtypes": [
         "bfloat16",
         "float16",
-        "float32",
-        "int32"
+        "float32"
       ],
       "factories": [
         "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/Mlx.java"
@@ -3574,7 +3411,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.permute3"
@@ -3601,7 +3438,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitElementwise.multiply"
@@ -3614,8 +3451,7 @@
       "dtypes": [
         "bfloat16",
         "float16",
-        "float32",
-        "int32"
+        "float32"
       ],
       "factories": [
         "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/Mlx.java"
@@ -3628,7 +3464,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitLogic.nanToNum"
@@ -3654,7 +3490,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitElementwise.negative"
@@ -3667,8 +3503,7 @@
       "dtypes": [
         "bfloat16",
         "float16",
-        "float32",
-        "int32"
+        "float32"
       ],
       "factories": [
         "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/Mlx.java"
@@ -3681,7 +3516,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitLogic.compare"
@@ -3709,7 +3544,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.writeInt"
@@ -3736,7 +3571,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitCreate.fill"
@@ -3763,7 +3598,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitCreate.fill"
@@ -3790,7 +3625,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitProducts.outer"
@@ -3816,7 +3651,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.pad"
@@ -3843,7 +3678,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.pad"
@@ -3870,7 +3705,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitSort.sortSlices"
@@ -3897,7 +3732,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitSort.mergeBlocks",
@@ -3930,7 +3765,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.power"
@@ -3956,7 +3791,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.reduceColumns",
@@ -3984,7 +3819,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.reduceColumns",
@@ -4012,7 +3847,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.reducePartial",
@@ -4038,28 +3873,9 @@
       "header": "ops.h",
       "tier": 2,
       "device": "gpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitIndex.copy",
-          "JitIndex.putAlongAxis"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "bfloat16",
-        "float16",
-        "float32",
-        "int32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxIndex.java"
-      ]
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_qqmm",
@@ -4068,7 +3884,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitProducts.qqmm"
@@ -4094,7 +3910,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitQuantized.quantize"
@@ -4123,7 +3939,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitQuantized.quantizedMatmul"
@@ -4150,7 +3966,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.radians"
@@ -4176,7 +3992,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitLogic.complexPart"
@@ -4200,7 +4016,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.reciprocal"
@@ -4226,7 +4042,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.remainder"
@@ -4239,8 +4055,7 @@
       "dtypes": [
         "bfloat16",
         "float16",
-        "float32",
-        "int32"
+        "float32"
       ],
       "factories": [
         "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxMath.java"
@@ -4253,7 +4068,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.repeatRows"
@@ -4280,7 +4095,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.repeatRows"
@@ -4307,7 +4122,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.copy"
@@ -4334,7 +4149,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitLogic.bitwise"
@@ -4358,7 +4173,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.roll"
@@ -4385,7 +4200,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.roll"
@@ -4412,7 +4227,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.roll"
@@ -4439,7 +4254,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.round"
@@ -4465,7 +4280,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitElementwise.rsqrt"
@@ -4489,308 +4304,99 @@
       "header": "ops.h",
       "tier": 2,
       "device": "gpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitIndex.copy",
-          "JitIndex.scatterPoints"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "bfloat16",
-        "float16",
-        "float32",
-        "int32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxIndex.java"
-      ]
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_scatter_single",
       "header": "ops.h",
       "tier": 2,
       "device": "gpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitIndex.copy",
-          "JitIndex.scatterRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "bfloat16",
-        "float16",
-        "float32",
-        "int32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxIndex.java"
-      ]
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_scatter_add",
       "header": "ops.h",
       "tier": 2,
       "device": "gpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitIndex.copy",
-          "JitIndex.scatterPoints"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "bfloat16",
-        "float16",
-        "float32",
-        "int32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxIndex.java"
-      ]
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_scatter_add_single",
       "header": "ops.h",
       "tier": 2,
       "device": "gpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitIndex.copy",
-          "JitIndex.scatterRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "bfloat16",
-        "float16",
-        "float32",
-        "int32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxIndex.java"
-      ]
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_scatter_add_axis",
       "header": "ops.h",
       "tier": 2,
       "device": "gpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitIndex.copy",
-          "JitIndex.putAlongAxis"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "bfloat16",
-        "float16",
-        "float32",
-        "int32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxIndex.java"
-      ]
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_scatter_max",
       "header": "ops.h",
       "tier": 2,
       "device": "gpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitIndex.copy",
-          "JitIndex.scatterPoints"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "bfloat16",
-        "float16",
-        "float32",
-        "int32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxIndex.java"
-      ]
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_scatter_max_single",
       "header": "ops.h",
       "tier": 2,
       "device": "gpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitIndex.copy",
-          "JitIndex.scatterRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "bfloat16",
-        "float16",
-        "float32",
-        "int32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxIndex.java"
-      ]
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_scatter_min",
       "header": "ops.h",
       "tier": 2,
       "device": "gpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitIndex.copy",
-          "JitIndex.scatterPoints"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "bfloat16",
-        "float16",
-        "float32",
-        "int32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxIndex.java"
-      ]
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_scatter_min_single",
       "header": "ops.h",
       "tier": 2,
       "device": "gpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitIndex.copy",
-          "JitIndex.scatterRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "bfloat16",
-        "float16",
-        "float32",
-        "int32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxIndex.java"
-      ]
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_scatter_prod",
       "header": "ops.h",
       "tier": 2,
       "device": "gpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitIndex.copy",
-          "JitIndex.scatterPoints"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "bfloat16",
-        "float16",
-        "float32",
-        "int32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxIndex.java"
-      ]
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_scatter_prod_single",
       "header": "ops.h",
       "tier": 2,
       "device": "gpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitIndex.copy",
-          "JitIndex.scatterRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "bfloat16",
-        "float16",
-        "float32",
-        "int32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxIndex.java"
-      ]
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_segmented_mm",
@@ -4799,7 +4405,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitProducts.segmentedGemm"
@@ -4826,7 +4432,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitElementwise.sigmoid"
@@ -4852,7 +4458,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.sign"
@@ -4865,8 +4471,7 @@
       "dtypes": [
         "bfloat16",
         "float16",
-        "float32",
-        "int32"
+        "float32"
       ],
       "factories": [
         "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxMath.java"
@@ -4879,7 +4484,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.sin"
@@ -4905,7 +4510,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.sinh"
@@ -4931,7 +4536,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitIndex.slice"
@@ -4956,27 +4561,9 @@
       "header": "ops.h",
       "tier": 2,
       "device": "gpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitIndex.sliceRowsAt"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "bfloat16",
-        "float16",
-        "float32",
-        "int32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxIndex.java"
-      ]
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_slice_update",
@@ -4985,7 +4572,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitIndex.copy",
@@ -5011,28 +4598,9 @@
       "header": "ops.h",
       "tier": 2,
       "device": "gpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitIndex.copy",
-          "JitIndex.sliceUpdateRowsAt"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "bfloat16",
-        "float16",
-        "float32",
-        "int32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxIndex.java"
-      ]
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_slice_update_add",
@@ -5041,7 +4609,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitIndex.copy",
@@ -5067,56 +4635,18 @@
       "header": "ops.h",
       "tier": 2,
       "device": "gpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitIndex.copy",
-          "JitIndex.sliceUpdate"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "bfloat16",
-        "float16",
-        "float32",
-        "int32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxIndex.java"
-      ]
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_slice_update_min",
       "header": "ops.h",
       "tier": 2,
       "device": "gpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitIndex.copy",
-          "JitIndex.sliceUpdate"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "bfloat16",
-        "float16",
-        "float32",
-        "int32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxIndex.java"
-      ]
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_slice_update_prod",
@@ -5125,7 +4655,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitIndex.copy",
@@ -5153,7 +4683,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReductions.softmaxRows"
@@ -5179,7 +4709,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReductions.softmaxRows"
@@ -5205,7 +4735,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReductions.softmaxRows"
@@ -5231,7 +4761,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitSort.sortSlices"
@@ -5258,7 +4788,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitSort.mergeBlocks",
@@ -5291,7 +4821,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.split"
@@ -5318,7 +4848,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.split"
@@ -5345,7 +4875,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitElementwise.sqrt"
@@ -5371,7 +4901,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitElementwise.square"
@@ -5384,8 +4914,7 @@
       "dtypes": [
         "bfloat16",
         "float16",
-        "float32",
-        "int32"
+        "float32"
       ],
       "factories": [
         "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/Mlx.java"
@@ -5398,7 +4927,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.copy"
@@ -5425,7 +4954,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.copy"
@@ -5452,7 +4981,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.copy"
@@ -5479,7 +5008,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.interleave"
@@ -5506,7 +5035,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.concat"
@@ -5533,7 +5062,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.variance"
@@ -5559,7 +5088,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.variance"
@@ -5585,7 +5114,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.variance",
@@ -5623,7 +5152,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitElementwise.subtract"
@@ -5636,8 +5165,7 @@
       "dtypes": [
         "bfloat16",
         "float16",
-        "float32",
-        "int32"
+        "float32"
       ],
       "factories": [
         "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/Mlx.java"
@@ -5650,7 +5178,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.reduceColumns",
@@ -5678,7 +5206,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.reduceColumns",
@@ -5706,7 +5234,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.reducePartial",
@@ -5734,7 +5262,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.permute3"
@@ -5759,81 +5287,27 @@
       "header": "ops.h",
       "tier": 2,
       "device": "gpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitIndex.takeAxis"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "bfloat16",
-        "float16",
-        "float32",
-        "int32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxIndex.java"
-      ]
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_take",
       "header": "ops.h",
       "tier": 2,
       "device": "gpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitIndex.take"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "bfloat16",
-        "float16",
-        "float32",
-        "int32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxIndex.java"
-      ]
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_take_along_axis",
       "header": "ops.h",
       "tier": 2,
       "device": "gpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitIndex.takeAlongAxis"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "bfloat16",
-        "float16",
-        "float32",
-        "int32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxIndex.java"
-      ]
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_tan",
@@ -5842,7 +5316,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.tan"
@@ -5868,7 +5342,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitElementwise.tanh"
@@ -5894,7 +5368,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitBlas.gemm"
@@ -5920,7 +5394,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitBlas.gemm"
@@ -5946,7 +5420,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.tile"
@@ -5971,25 +5445,9 @@
       "header": "ops.h",
       "tier": 3,
       "device": "gpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitProducts.toFp8"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "float32",
-        "uint8"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxProducts.java"
-      ]
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_topk_axis",
@@ -5998,7 +5456,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReductions.topkRows"
@@ -6024,7 +5482,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReductions.topkRows"
@@ -6050,7 +5508,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitCreate.trace"
@@ -6077,7 +5535,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.permute3"
@@ -6104,7 +5562,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitBlas.gemmTransposed",
@@ -6136,7 +5594,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitCreate.eye"
@@ -6163,7 +5621,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitCreate.triangle"
@@ -6190,7 +5648,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitCreate.triangle"
@@ -6217,7 +5675,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.copy"
@@ -6244,7 +5702,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.variance"
@@ -6270,7 +5728,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.variance"
@@ -6296,7 +5754,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitReduce.variance",
@@ -6324,7 +5782,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitShape.viewAsInt"
@@ -6349,7 +5807,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitMath.where"
@@ -6377,7 +5835,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitCreate.fill"
@@ -6404,7 +5862,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitCreate.fill"
@@ -6561,7 +6019,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitFast.layerNorm"
@@ -6717,7 +6175,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitFast.rmsNorm"
@@ -6743,7 +6201,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitFast.rope"
@@ -6769,7 +6227,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitFast.ropeDynamic"
@@ -6796,7 +6254,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitFast.attentionDecode"
@@ -6819,49 +6277,19 @@
       "name": "mlx_linalg_cholesky",
       "header": "linalg.h",
       "tier": 2,
-      "device": "cpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitLinalg.cholesky"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "float32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxLinalg.java"
-      ]
+      "device": "gpu",
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_linalg_cholesky_inv",
       "header": "linalg.h",
       "tier": 2,
-      "device": "cpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitLinalg.choleskyInv"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "float32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxLinalg.java"
-      ]
+      "device": "gpu",
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_linalg_cross",
@@ -6870,7 +6298,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitLinalg.crossProduct"
@@ -6893,172 +6321,64 @@
       "name": "mlx_linalg_eig",
       "header": "linalg.h",
       "tier": 2,
-      "device": "cpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitLinalg.eig"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "float32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxLinalg.java"
-      ]
+      "device": "gpu",
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_linalg_eigh",
       "header": "linalg.h",
       "tier": 2,
-      "device": "cpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitLinalg.eigh"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "float32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxLinalg.java"
-      ]
+      "device": "gpu",
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_linalg_eigvals",
       "header": "linalg.h",
       "tier": 2,
-      "device": "cpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitLinalg.eig"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "float32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxLinalg.java"
-      ]
+      "device": "gpu",
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_linalg_eigvalsh",
       "header": "linalg.h",
       "tier": 2,
-      "device": "cpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitLinalg.eigh"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "float32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxLinalg.java"
-      ]
+      "device": "gpu",
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_linalg_inv",
       "header": "linalg.h",
       "tier": 2,
-      "device": "cpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitLinalg.inv"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "float32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxLinalg.java"
-      ]
+      "device": "gpu",
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_linalg_lu",
       "header": "linalg.h",
       "tier": 2,
-      "device": "cpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitLinalg.lu",
-          "JitLinalg.splitLu"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "float32",
-        "int32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxLinalg.java"
-      ]
+      "device": "gpu",
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_linalg_lu_factor",
       "header": "linalg.h",
       "tier": 2,
-      "device": "cpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitLinalg.lu"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "float32",
-        "int32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxLinalg.java"
-      ]
+      "device": "gpu",
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_linalg_norm",
@@ -7067,7 +6387,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitLinalg.normRows"
@@ -7093,7 +6413,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitLinalg.normRows"
@@ -7119,7 +6439,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitLinalg.normRows"
@@ -7142,146 +6462,55 @@
       "name": "mlx_linalg_pinv",
       "header": "linalg.h",
       "tier": 2,
-      "device": "cpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitLinalg.pinvFromSvd",
-          "JitLinalg.svd"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "float32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxLinalg.java"
-      ]
+      "device": "gpu",
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_linalg_qr",
       "header": "linalg.h",
       "tier": 2,
-      "device": "cpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitLinalg.qr"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "float32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxLinalg.java"
-      ]
+      "device": "gpu",
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_linalg_solve",
       "header": "linalg.h",
       "tier": 2,
-      "device": "cpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitLinalg.solve"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "float32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxLinalg.java"
-      ]
+      "device": "gpu",
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_linalg_solve_triangular",
       "header": "linalg.h",
       "tier": 2,
-      "device": "cpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitLinalg.solveTriangular"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "float32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxLinalg.java"
-      ]
+      "device": "gpu",
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_linalg_svd",
       "header": "linalg.h",
       "tier": 2,
-      "device": "cpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitLinalg.svd"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "float32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxLinalg.java"
-      ]
+      "device": "gpu",
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_linalg_tri_inv",
       "header": "linalg.h",
       "tier": 2,
-      "device": "cpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitLinalg.triInv"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "float32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxLinalg.java"
-      ]
+      "device": "gpu",
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_fft_fft",
@@ -7290,7 +6519,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitFft.dft",
@@ -7315,7 +6544,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitFft.dft",
@@ -7340,7 +6569,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitFft.frequencies"
@@ -7364,7 +6593,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitFft.dft",
@@ -7389,7 +6618,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitFft.roll"
@@ -7415,7 +6644,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitFft.dft",
@@ -7440,7 +6669,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitFft.dft",
@@ -7465,7 +6694,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitFft.dft",
@@ -7490,7 +6719,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitFft.roll"
@@ -7516,7 +6745,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitFft.dft",
@@ -7541,7 +6770,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitFft.dft",
@@ -7566,7 +6795,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitFft.dft",
@@ -7591,7 +6820,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitFft.dft",
@@ -7616,7 +6845,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitFft.dft",
@@ -7641,7 +6870,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitFft.frequencies"
@@ -7665,7 +6894,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitFft.dft",
@@ -7690,7 +6919,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitRandom.bernoulli"
@@ -7717,7 +6946,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitRandom.bits"
@@ -7741,7 +6970,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitRandom.categorical",
@@ -7770,7 +6999,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitRandom.categorical",
@@ -7799,7 +7028,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitRandom.categorical",
@@ -7828,7 +7057,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitRandom.gumbel"
@@ -7855,7 +7084,7 @@
       "bound": false,
       "tested": false,
       "benchmarked": false,
-      "excluded": "PRNG key management; the random factories derive keys from MlxOptions instead of exposing keys as tasks"
+      "excluded": "PRNG key management; the random factories derive keys from a seed argument instead of exposing keys as tasks"
     },
     {
       "name": "mlx_random_laplace",
@@ -7864,7 +7093,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitRandom.laplace"
@@ -7888,24 +7117,9 @@
       "header": "random.h",
       "tier": 3,
       "device": "gpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitRandom.multivariateNormal"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "float32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxRandom.java"
-      ]
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_random_normal_broadcast",
@@ -7914,7 +7128,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitRandom.normal"
@@ -7940,7 +7154,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitRandom.normal"
@@ -7964,27 +7178,9 @@
       "header": "random.h",
       "tier": 3,
       "device": "gpu",
-      "bound": true,
-      "tested": true,
-      "benchmarked": true,
-      "jitBaseline": {
-        "kernels": [
-          "JitRandom.sortKeys"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
-      "dtypes": [
-        "bfloat16",
-        "float16",
-        "float32",
-        "int32"
-      ],
-      "factories": [
-        "tornado-mlx/src/main/java/uk/ac/manchester/tornado/mlx/MlxRandom.java"
-      ]
+      "bound": false,
+      "tested": false,
+      "benchmarked": false
     },
     {
       "name": "mlx_random_permutation_arange",
@@ -7993,7 +7189,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitRandom.sortKeys"
@@ -8017,7 +7213,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitRandom.randint"
@@ -8042,7 +7238,7 @@
       "bound": false,
       "tested": false,
       "benchmarked": false,
-      "excluded": "PRNG key management; the random factories derive keys from MlxOptions instead of exposing keys as tasks"
+      "excluded": "PRNG key management; the random factories derive keys from a seed argument instead of exposing keys as tasks"
     },
     {
       "name": "mlx_random_split_num",
@@ -8052,7 +7248,7 @@
       "bound": false,
       "tested": false,
       "benchmarked": false,
-      "excluded": "PRNG key management; the random factories derive keys from MlxOptions instead of exposing keys as tasks"
+      "excluded": "PRNG key management; the random factories derive keys from a seed argument instead of exposing keys as tasks"
     },
     {
       "name": "mlx_random_split",
@@ -8062,7 +7258,7 @@
       "bound": false,
       "tested": false,
       "benchmarked": false,
-      "excluded": "PRNG key management; the random factories derive keys from MlxOptions instead of exposing keys as tasks"
+      "excluded": "PRNG key management; the random factories derive keys from a seed argument instead of exposing keys as tasks"
     },
     {
       "name": "mlx_random_truncated_normal",
@@ -8071,7 +7267,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitRandom.truncatedNormal"
@@ -8097,7 +7293,7 @@
       "device": "gpu",
       "bound": true,
       "tested": true,
-      "benchmarked": true,
+      "benchmarked": false,
       "jitBaseline": {
         "kernels": [
           "JitRandom.uniformRange"

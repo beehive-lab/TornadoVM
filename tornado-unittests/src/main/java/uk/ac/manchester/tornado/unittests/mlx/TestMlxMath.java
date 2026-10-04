@@ -141,17 +141,11 @@ public class TestMlxMath extends MlxTestBase {
     public void testIntUnary() throws TornadoExecutionPlanException {
         int[] av = ints(N, -1000, 1000, 26);
         IntArray a = IntArray.fromArray(av);
-        IntArray abs = new IntArray(N);
-        IntArray sign = new IntArray(N);
         IntArray clip = new IntArray(N);
         run(new TaskGraph("iu").transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
-                .libraryTask("abs", MlxMath::abs, a, abs) //
-                .libraryTask("sign", MlxMath::sign, a, sign) //
                 .libraryTask("clip", MlxMath::clip, a, clip, -100, 250) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, abs, sign, clip));
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, clip));
         for (int i = 0; i < N; i++) {
-            assertEquals("abs int32 " + i, Math.abs(av[i]), abs.get(i));
-            assertEquals("sign int32 " + i, Integer.signum(av[i]), sign.get(i));
             assertEquals("clip int32 " + i, Math.min(Math.max(av[i], -100), 250), clip.get(i));
         }
     }
@@ -166,18 +160,15 @@ public class TestMlxMath extends MlxTestBase {
         IntArray a = IntArray.fromArray(av);
         IntArray b = IntArray.fromArray(bv);
         IntArray floorDiv = new IntArray(N);
-        IntArray rem = new IntArray(N);
         IntArray q = new IntArray(N);
         IntArray r = new IntArray(N);
         run(new TaskGraph("id").transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .libraryTask("fd", MlxMath::floorDivide, a, b, floorDiv) //
-                .libraryTask("rem", MlxMath::remainder, a, b, rem) //
                 .libraryTask("dm", MlxMath::divmod, a, b, q, r) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, floorDiv, rem, q, r));
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, floorDiv, q, r));
         for (int i = 0; i < N; i++) {
             // MLX divides integers as C does (toward zero), so floor_divide truncates for int32.
             assertEquals("floor_divide int32 " + av[i] + " / " + bv[i], av[i] / bv[i], floorDiv.get(i));
-            assertEquals("remainder int32 " + av[i] + " % " + bv[i], Math.floorMod(av[i], bv[i]), rem.get(i));
             assertEquals("divmod quotient int32 " + av[i] + " / " + bv[i], av[i] / bv[i], q.get(i));
             assertEquals("divmod remainder int32 " + av[i] + " % " + bv[i], Math.floorMod(av[i], bv[i]), r.get(i));
         }

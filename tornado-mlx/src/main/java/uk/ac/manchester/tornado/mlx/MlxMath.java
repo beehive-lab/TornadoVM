@@ -52,12 +52,6 @@ public final class MlxMath {
         return Mlx.task("abs", 1, a, out);
     }
 
-    /** Element-wise {@code out = |a|}. */
-    @MlxOp("mlx_abs")
-    public static LibraryTaskDescriptor abs(IntArray a, IntArray out) {
-        return Mlx.task("abs", 1, a, out);
-    }
-
     /** Element-wise {@code out = arccos(a)}. */
     @MlxOp("mlx_arccos")
     public static LibraryTaskDescriptor arccos(FloatArray a, FloatArray out) {
@@ -418,12 +412,6 @@ public final class MlxMath {
         return Mlx.task("sign", 1, a, out);
     }
 
-    /** Element-wise {@code out = sign(a)}. */
-    @MlxOp("mlx_sign")
-    public static LibraryTaskDescriptor sign(IntArray a, IntArray out) {
-        return Mlx.task("sign", 1, a, out);
-    }
-
     /** Element-wise {@code out = sin(a)}. */
     @MlxOp("mlx_sin")
     public static LibraryTaskDescriptor sin(FloatArray a, FloatArray out) {
@@ -589,12 +577,6 @@ public final class MlxMath {
     /** Element-wise {@code c = a - b * floor(a / b) (sign of b)}. */
     @MlxOp("mlx_remainder")
     public static LibraryTaskDescriptor remainder(BFloat16Array a, BFloat16Array b, BFloat16Array c) {
-        return Mlx.task("remainder", 2, a, b, c);
-    }
-
-    /** Element-wise {@code c = a - b * floor(a / b) (sign of b)}. */
-    @MlxOp("mlx_remainder")
-    public static LibraryTaskDescriptor remainder(IntArray a, IntArray b, IntArray c) {
         return Mlx.task("remainder", 2, a, b, c);
     }
 

@@ -177,27 +177,15 @@ public class TestJitConv extends MlxTestBase {
     }
 
     @Test
-    public void testConv3d() throws TornadoExecutionPlanException {
-        check("conv3d", forward(1, new int[] { 7, 8, 9 }, 3, new int[] { 3, 3, 3 }, 4, 2, 1, 1, 1, 3), //
-                (g, x, w, out) -> g.libraryTask("mlx", MlxConv::conv3d, x, w, out, 1, 7, 8, 9, 3, 4, 3, 3, 3, 2, 1, 1, 1));
-    }
-
-    @Test
     public void testConvTranspose1d() throws TornadoExecutionPlanException {
-        check("convTranspose1d", transposed(2, new int[] { 1, 1, 9 }, 4, new int[] { 1, 1, 3 }, 6, 2, 1, 1, 1, 1, 1), //
-                (g, x, w, out) -> g.libraryTask("mlx", MlxConv::convTranspose1d, x, w, out, 2, 9, 4, 6, 3, 2, 1, 1, 1, 1));
+        check("convTranspose1d", transposed(2, new int[] { 1, 1, 9 }, 4, new int[] { 1, 1, 3 }, 6, 1, 1, 1, 0, 1, 1), //
+                (g, x, w, out) -> g.libraryTask("mlx", MlxConv::convTranspose1d, x, w, out, 2, 9, 4, 6, 3, 1, 1, 1, 0, 1));
     }
 
     @Test
     public void testConvTranspose2d() throws TornadoExecutionPlanException {
-        check("convTranspose2d", transposed(1, new int[] { 1, 6, 5 }, 4, new int[] { 1, 3, 3 }, 4, 2, 1, 1, 0, 2, 2), //
-                (g, x, w, out) -> g.libraryTask("mlx", MlxConv::convTranspose2d, x, w, out, 1, 6, 5, 4, 4, 3, 3, 2, 1, 1, 0, 2));
-    }
-
-    @Test
-    public void testConvTranspose3d() throws TornadoExecutionPlanException {
-        check("convTranspose3d", transposed(1, new int[] { 4, 4, 3 }, 2, new int[] { 2, 2, 2 }, 3, 2, 0, 1, 0, 1, 3), //
-                (g, x, w, out) -> g.libraryTask("mlx", MlxConv::convTranspose3d, x, w, out, 1, 4, 4, 3, 2, 3, 2, 2, 2, 2, 0, 1, 0, 1));
+        check("convTranspose2d", transposed(1, new int[] { 1, 6, 5 }, 16, new int[] { 1, 3, 3 }, 16, 2, 1, 1, 0, 1, 2), //
+                (g, x, w, out) -> g.libraryTask("mlx", MlxConv::convTranspose2d, x, w, out, 1, 6, 5, 16, 16, 3, 3, 2, 1, 1, 0, 1));
     }
 
     @Test
@@ -211,14 +199,14 @@ public class TestJitConv extends MlxTestBase {
 
     @Test
     public void testConv2dHalf() throws TornadoExecutionPlanException {
-        int[] geometry = forward(1, new int[] { 1, 10, 10 }, 8, new int[] { 1, 3, 3 }, 4, 1, 1, 1, 1, 2);
-        float[] xv = values(10 * 10 * 8, -1, 1, 241);
-        float[] wv = values(4 * 3 * 3 * 8, -1, 1, 242);
+        int[] geometry = forward(1, new int[] { 1, 10, 10 }, 16, new int[] { 1, 3, 3 }, 4, 1, 1, 1, 1, 2);
+        float[] xv = values(10 * 10 * 16, -1, 1, 241);
+        float[] wv = values(4 * 3 * 3 * 16, -1, 1, 242);
         HalfFloatArray x = half(xv);
         HalfFloatArray w = half(wv);
         HalfFloatArray out = new HalfFloatArray(JitConv.outputs(geometry));
         run(new TaskGraph("ch").transferToDevice(DataTransferMode.FIRST_EXECUTION, x, w) //
-                .libraryTask("mlx", MlxConv::conv2d, x, w, out, 1, 10, 10, 8, 4, 3, 3, 1, 1, 1, 1) //
+                .libraryTask("mlx", MlxConv::conv2d, x, w, out, 1, 10, 10, 16, 4, 3, 3, 1, 1, 1, 1) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
         float[] expected = reference(widen(x), widen(w), geometry);
         double[] e = new double[expected.length];

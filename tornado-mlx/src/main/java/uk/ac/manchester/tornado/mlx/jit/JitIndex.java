@@ -19,7 +19,6 @@ package uk.ac.manchester.tornado.mlx.jit;
 
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
-import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Float;
@@ -59,109 +58,11 @@ public final class JitIndex {
     }
 
     /** out[i] = x[i]: the first step of every operation that updates a copy. */
-    @JitBaseline({ "mlx_put_along_axis", "mlx_scatter_add_axis", "mlx_scatter", "mlx_scatter_add", "mlx_scatter_max", "mlx_scatter_min", "mlx_scatter_prod", "mlx_scatter_single",
-            "mlx_scatter_add_single", "mlx_scatter_max_single", "mlx_scatter_min_single", "mlx_scatter_prod_single", "mlx_slice_update", "mlx_slice_update_add", "mlx_slice_update_max",
-            "mlx_slice_update_min", "mlx_slice_update_prod", "mlx_slice_update_dynamic" })
+    @JitBaseline({ "mlx_slice_update", "mlx_slice_update_add", "mlx_slice_update_prod" })
     public static void copy(KernelContext ctx, FloatArray x, FloatArray out, int n) {
         int i = ctx.globalIdx;
         if (i < n) {
             out.set(i, x.get(i));
-        }
-    }
-
-    @JitBaseline("mlx_take")
-    public static void take(KernelContext ctx, FloatArray x, IntArray indices, FloatArray out, int count) {
-        int i = ctx.globalIdx;
-        if (i < count) {
-            out.set(i, x.get(indices.get(i)));
-        }
-    }
-
-    /** out[o, i, j] = x[o, indices[i], j]; outer * count * inner threads. */
-    @JitBaseline("mlx_take_axis")
-    public static void takeAxis(KernelContext ctx, FloatArray x, IntArray indices, FloatArray out, int outer, int len, int count, int inner) {
-        int t = ctx.globalIdx;
-        if (t < outer * count * inner) {
-            int o = t / (count * inner);
-            int i = (t / inner) % count;
-            int j = t % inner;
-            out.set(t, x.get((o * len + indices.get(i)) * inner + j));
-        }
-    }
-
-    /** out[o, i, j] = x[o, indices[o, i, j], j]; outer * m * inner threads. */
-    @JitBaseline("mlx_take_along_axis")
-    public static void takeAlongAxis(KernelContext ctx, FloatArray x, IntArray indices, FloatArray out, int outer, int len, int m, int inner) {
-        int t = ctx.globalIdx;
-        if (t < outer * m * inner) {
-            int o = t / (m * inner);
-            int j = t % inner;
-            out.set(t, x.get((o * len + indices.get(t)) * inner + j));
-        }
-    }
-
-    /** out[o, indices[o, i, j], j] = values[o, i, j] (SET) or += (ADD, atomic); after {@link #copy}. */
-    @JitBaseline({ "mlx_put_along_axis", "mlx_scatter_add_axis" })
-    public static void putAlongAxis(KernelContext ctx, IntArray indices, FloatArray values, FloatArray out, int outer, int len, int m, int inner, int op) {
-        int t = ctx.globalIdx;
-        if (t < outer * m * inner) {
-            int o = t / (m * inner);
-            int j = t % inner;
-            int p = (o * len + indices.get(t)) * inner + j;
-            if (op == ADD) {
-                ctx.atomicAdd(out, p, values.get(t));
-            } else {
-                out.set(p, values.get(t));
-            }
-        }
-    }
-
-    /** out[i] = x[rows[i] * cols + colIdx[i]]. */
-    @JitBaseline("mlx_gather")
-    public static void gatherPoints(KernelContext ctx, FloatArray x, IntArray rows, IntArray colIdx, FloatArray out, int cols, int count) {
-        int i = ctx.globalIdx;
-        if (i < count) {
-            out.set(i, x.get(rows.get(i) * cols + colIdx.get(i)));
-        }
-    }
-
-    /** out[i, r, c] = x[indices[i] + r, c]; count * sliceRows * cols threads. */
-    @JitBaseline("mlx_gather_single")
-    public static void gatherRows(KernelContext ctx, FloatArray x, IntArray indices, FloatArray out, int cols, int count, int sliceRows) {
-        int t = ctx.globalIdx;
-        if (t < count * sliceRows * cols) {
-            int i = t / (sliceRows * cols);
-            int r = (t / cols) % sliceRows;
-            int c = t % cols;
-            out.set(t, x.get((indices.get(i) + r) * cols + c));
-        }
-    }
-
-    /** out[rows[i], colIdx[i]] op= updates[i]; after {@link #copy}. */
-    @JitBaseline({ "mlx_scatter", "mlx_scatter_add", "mlx_scatter_max", "mlx_scatter_min", "mlx_scatter_prod" })
-    public static void scatterPoints(KernelContext ctx, IntArray rows, IntArray colIdx, FloatArray updates, FloatArray out, int cols, int count, int op) {
-        int i = ctx.globalIdx;
-        if (i < count) {
-            int p = rows.get(i) * cols + colIdx.get(i);
-            if (op == ADD) {
-                ctx.atomicAdd(out, p, updates.get(i));
-            } else {
-                out.set(p, apply(out.get(p), updates.get(i), op));
-            }
-        }
-    }
-
-    /** out[indices[i], c] op= updates[i, c]; count * cols threads; after {@link #copy}. */
-    @JitBaseline({ "mlx_scatter_single", "mlx_scatter_add_single", "mlx_scatter_max_single", "mlx_scatter_min_single", "mlx_scatter_prod_single" })
-    public static void scatterRows(KernelContext ctx, IntArray indices, FloatArray updates, FloatArray out, int cols, int count, int op) {
-        int t = ctx.globalIdx;
-        if (t < count * cols) {
-            int p = indices.get(t / cols) * cols + t % cols;
-            if (op == ADD) {
-                ctx.atomicAdd(out, p, updates.get(t));
-            } else {
-                out.set(p, apply(out.get(p), updates.get(t), op));
-            }
         }
     }
 
@@ -176,72 +77,14 @@ public final class JitIndex {
         }
     }
 
-    /** out[r, c] = x[start[0] + r, c]; sliceRows * cols threads. */
-    @JitBaseline("mlx_slice_dynamic")
-    public static void sliceRowsAt(KernelContext ctx, FloatArray x, IntArray start, FloatArray out, int cols, int sliceRows) {
-        int t = ctx.globalIdx;
-        if (t < sliceRows * cols) {
-            out.set(t, x.get(start.get(0) * cols + t));
-        }
-    }
-
     /** out[r0 + r, c0 + c] op= update[r, c]; updateRows * updateCols threads; after {@link #copy}. */
-    @JitBaseline({ "mlx_slice_update", "mlx_slice_update_add", "mlx_slice_update_max", "mlx_slice_update_min", "mlx_slice_update_prod" })
+    @JitBaseline({ "mlx_slice_update", "mlx_slice_update_add", "mlx_slice_update_prod" })
     public static void sliceUpdate(KernelContext ctx, FloatArray update, FloatArray out, int cols, int r0, int c0, int updateRows, int updateCols, int op) {
         int t = ctx.globalIdx;
         if (t < updateRows * updateCols) {
             int p = (r0 + t / updateCols) * cols + c0 + t % updateCols;
             float u = update.get(t);
             out.set(p, op == ADD ? out.get(p) + u : apply(out.get(p), u, op));
-        }
-    }
-
-    /** out[start[0] + r, c] = update[r, c]; updateRows * cols threads; after {@link #copy}. */
-    @JitBaseline("mlx_slice_update_dynamic")
-    public static void sliceUpdateRowsAt(KernelContext ctx, FloatArray update, IntArray start, FloatArray out, int cols, int updateRows) {
-        int t = ctx.globalIdx;
-        if (t < updateRows * cols) {
-            out.set(start.get(0) * cols + t, update.get(t));
-        }
-    }
-
-    /**
-     * positions[i] = the number of non-zero mask entries before i (an exclusive scan), one
-     * threadgroup of {@link JitScan#THREADS} threads scanning in chunks.
-     */
-    @JitBaseline("mlx_masked_scatter")
-    public static void maskPositions(KernelContext ctx, ByteArray mask, IntArray positions, int n) {
-        int[] buf = ctx.allocateIntLocalArray(JitScan.THREADS);
-        int tid = ctx.localIdx;
-        int carry = 0;
-        for (int start = 0; start < n; start += JitScan.THREADS) {
-            int i = start + tid;
-            int flag = i < n && mask.get(i) != 0 ? 1 : 0;
-            buf[tid] = flag;
-            ctx.localBarrier();
-            for (int offset = 1; offset < JitScan.THREADS; offset <<= 1) {
-                int v = buf[tid];
-                if (tid >= offset) {
-                    v += buf[tid - offset];
-                }
-                ctx.localBarrier();
-                buf[tid] = v;
-                ctx.localBarrier();
-            }
-            if (i < n) {
-                positions.set(i, carry + buf[tid] - flag);
-            }
-            carry += buf[JitScan.THREADS - 1];
-            ctx.localBarrier();
-        }
-    }
-
-    /** out[i] = mask[i] != 0 ? src[positions[i]] : x[i]. */
-    @JitBaseline("mlx_masked_scatter")
-    public static void maskedScatter(KernelContext ctx, FloatArray x, ByteArray mask, FloatArray src, IntArray positions, FloatArray out, int n) {
-        int i = ctx.globalIdx;
-        if (i < n) {
-            out.set(i, mask.get(i) != 0 ? src.get(positions.get(i)) : x.get(i));
         }
     }
 

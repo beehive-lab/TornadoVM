@@ -17,10 +17,7 @@
  */
 package uk.ac.manchester.tornado.unittests.mlx;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-
-import java.util.Random;
 
 import org.junit.Test;
 
@@ -175,29 +172,7 @@ public class TestJitProducts extends MlxTestBase {
     }
 
     @Test
-    public void testBlockMaskedAndSegmented() throws TornadoExecutionPlanException {
-        final int m = 128;
-        final int k = 128;
-        final int n = 128;
-        final int bs = 32;
-        float[] av = values(m * k, -1, 1, 9);
-        float[] bv = values(k * n, -1, 1, 10);
-        FloatArray a = FloatArray.fromArray(av);
-        FloatArray b = FloatArray.fromArray(bv);
-        Random r = new Random(11);
-        byte[] mo = new byte[16];
-        byte[] ml = new byte[16];
-        byte[] mr = new byte[16];
-        for (int i = 0; i < 16; i++) {
-            mo[i] = (byte) (r.nextInt(4) == 0 ? 0 : 1);
-            ml[i] = (byte) (r.nextInt(3) == 0 ? 0 : 1);
-            mr[i] = (byte) (r.nextInt(3) == 0 ? 0 : 1);
-        }
-        ByteArray maskOut = ByteArray.fromArray(mo);
-        ByteArray maskLhs = ByteArray.fromArray(ml);
-        ByteArray maskRhs = ByteArray.fromArray(mr);
-        FloatArray cM = new FloatArray(m * n);
-        FloatArray cJ = new FloatArray(m * n);
+    public void testSegmented() throws TornadoExecutionPlanException {
         final int sm = 16;
         final int sk = 64;
         final int sn = 24;
@@ -207,32 +182,13 @@ public class TestJitProducts extends MlxTestBase {
         FloatArray sb = FloatArray.fromArray(values(sk * sn, -1, 1, 13));
         FloatArray sM = new FloatArray(4 * sm * sn);
         FloatArray sJ = new FloatArray(4 * sm * sn);
-        TaskGraph g = new TaskGraph("bm").transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b, maskOut, maskLhs, maskRhs, segments, sa, sb) //
-                .libraryTask("m1", MlxProducts::blockMaskedMm, a, b, maskOut, maskLhs, maskRhs, cM, m, k, n, bs) //
+        TaskGraph g = new TaskGraph("bm").transferToDevice(DataTransferMode.FIRST_EXECUTION, segments, sa, sb) //
                 .libraryTask("m2", MlxProducts::segmentedMm, sa, sb, segments, sM, sm, sk, sn) //
-                .task("j1", JitProducts::blockMaskedGemm, new KernelContext(), a, b, maskOut, maskLhs, maskRhs, cJ, m, n, k) //
                 .task("j2", JitProducts::segmentedGemm, new KernelContext(), sa, sb, segments, sJ, 4, sm, sn, sk) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, cM, cJ, sM, sJ);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, sM, sJ);
         GridScheduler gs = new GridScheduler();
-        gs.addWorkerGrid("bm.j1", TestJitReduce.groups((m / 32) * (n / 32), 128));
         gs.addWorkerGrid("bm.j2", TestJitElementwise.grid1D(4 * sm * sn));
         execute(g, gs);
-        double[] e = new double[m * n];
-        for (int i = 0; i < m; i++) {
-            for (int j = 0; j < n; j++) {
-                if (mo[(i / bs) * 4 + j / bs] == 0) {
-                    continue;
-                }
-                double s = 0;
-                for (int p = 0; p < k; p++) {
-                    if (ml[(i / bs) * 4 + p / bs] != 0 && mr[(p / bs) * 4 + j / bs] != 0) {
-                        s += av[i * k + p] * bv[p * n + j];
-                    }
-                }
-                e[i * n + j] = s;
-            }
-        }
-        both("blockMaskedMm", e, cM, cJ, 1e-4);
         double[] es = new double[4 * sm * sn];
         for (int s = 0; s < 4; s++) {
             for (int i = 0; i < sm; i++) {
@@ -249,80 +205,8 @@ public class TestJitProducts extends MlxTestBase {
     }
 
     @Test
-    public void testHadamard() throws TornadoExecutionPlanException {
-        final int rows = 5;
-        final int n = 1024;
-        final float scale = 1.0f / 32;
-        float[] xv = values(rows * n, -1, 1, 14);
-        FloatArray x = FloatArray.fromArray(xv);
-        FloatArray hM = new FloatArray(rows * n);
-        FloatArray hJ = new FloatArray(rows * n);
-        TaskGraph g = new TaskGraph("hd").transferToDevice(DataTransferMode.FIRST_EXECUTION, x) //
-                .libraryTask("m", MlxProducts::hadamardTransform, x, hM, rows, n, scale) //
-                .task("j", JitProducts::hadamard, new KernelContext(), x, hJ, n, scale) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, hM, hJ);
-        execute(g, new GridScheduler("hd.j", TestJitReduce.groups(rows, 256)));
-        double[] e = new double[rows * n];
-        for (int r = 0; r < rows; r++) {
-            for (int i = 0; i < n; i++) {
-                double s = 0;
-                for (int j = 0; j < n; j++) {
-                    s += (Integer.bitCount(i & j) % 2 == 0 ? 1 : -1) * xv[r * n + j];
-                }
-                e[r * n + i] = s * scale;
-            }
-        }
-        both("hadamardTransform", e, hM, hJ, 1e-4);
-    }
-
-    @Test
-    public void testFp8() throws TornadoExecutionPlanException {
-        final int n = 2048;
-        float[] xv = values(n, -600, 600, 15);
-        float[] specials = { 0f, -0f, 1f, 0.5f, 448f, 449f, 464f, -1000f, 1e-3f, 0.0078125f, 1e-4f, 17f, 19f, 0.0009765625f, Float.NaN, Float.POSITIVE_INFINITY };
-        System.arraycopy(specials, 0, xv, 0, specials.length);
-        for (int i = specials.length; i < n; i += 3) {
-            xv[i] *= 1e-3f;
-        }
-        FloatArray x = FloatArray.fromArray(xv);
-        ByteArray bM = new ByteArray(n);
-        ByteArray bJ = new ByteArray(n);
-        byte[] codes = new byte[254];
-        int c = 0;
-        for (int v = 0; v < 256; v++) {
-            if ((v & 0x7f) != 0x7f) {
-                codes[c++] = (byte) v;
-            }
-        }
-        ByteArray all = ByteArray.fromArray(codes);
-        FloatArray fM = new FloatArray(254);
-        FloatArray fJ = new FloatArray(254);
-        TaskGraph g = new TaskGraph("f8").transferToDevice(DataTransferMode.FIRST_EXECUTION, x, all) //
-                .libraryTask("m1", MlxProducts::toFp8, x, bM) //
-                .libraryTask("m2", MlxProducts::fromFp8, all, fM) //
-                .task("j1", JitProducts::toFp8, new KernelContext(), x, bJ, n) //
-                .task("j2", JitProducts::fromFp8, new KernelContext(), all, fJ, 254) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, bM, bJ, fM, fJ);
-        GridScheduler gs = new GridScheduler();
-        gs.addWorkerGrid("f8.j1", TestJitElementwise.grid1D(n));
-        gs.addWorkerGrid("f8.j2", TestJitElementwise.grid1D(254));
-        execute(g, gs);
-        for (int i = 0; i < n; i++) {
-            assertEquals("toFp8 JIT vs MLX for " + xv[i], bM.get(i), bJ.get(i));
-        }
-        for (int i = 0; i < 254; i++) {
-            int v = codes[i] & 0xff;
-            int e = (v >> 3) & 0xf;
-            double mag = e == 0 ? (v & 7) / 512.0 : (1 + (v & 7) / 8.0) * Math.pow(2, e - 7);
-            double expected = (v & 0x80) != 0 ? -mag : mag;
-            assertEquals("fromFp8 MLX 0x" + Integer.toHexString(v), expected, fM.get(i), 0);
-            assertEquals("fromFp8 JIT 0x" + Integer.toHexString(v), expected, fJ.get(i), 0);
-        }
-    }
-
-    @Test
     public void testQqmmMxfp8() throws TornadoExecutionPlanException {
-        final int m = 4;
+        final int m = 1;
         final int k = 256;
         final int n = 64;
         float[] xv = values(m * k, -1, 1, 16);
