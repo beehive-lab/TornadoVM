@@ -3,7 +3,6 @@ open module tornado.mlx {
     requires tornado.runtime;
 
     exports uk.ac.manchester.tornado.mlx;
-    exports uk.ac.manchester.tornado.mlx.jit;
     exports uk.ac.manchester.tornado.mlx.provider;
 
     provides uk.ac.manchester.tornado.runtime.library.spi.TornadoLibraryProvider with //

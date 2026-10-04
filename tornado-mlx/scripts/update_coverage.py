@@ -47,7 +47,6 @@ OVERRIDES_FILE = os.path.join(MODULE_DIR, "coverage-overrides.json")
 COVERAGE_FILE = os.path.join(MODULE_DIR, "coverage.json")
 
 FACTORY_SOURCES = os.path.join(MODULE_DIR, "src/main/java/uk/ac/manchester/tornado/mlx")
-JIT_SOURCES = os.path.join(MODULE_DIR, "src/main/java/uk/ac/manchester/tornado/mlx/jit")
 TEST_SOURCES = os.path.join(REPO_DIR, "tornado-unittests/src/main/java/uk/ac/manchester/tornado/unittests/mlx")
 BENCHMARK_SOURCES = [
     os.path.join(REPO_DIR, "tornado-benchmarks/src/main/java"),
@@ -87,7 +86,6 @@ CATEGORIES = [
     ("Arithmetic", r"^mlx_"),
 ]
 
-JIT_RE = re.compile(r"@JitBaseline\(\s*(?:value\s*=\s*)?(\{[^}]*\}|\"[^\"]*\")(?:\s*,\s*source\s*=\s*\"([^\"]*)\")?\s*\)\s*public\s+static\s+\S+\s+(\w+)\s*\(", re.S)
 FACTORY_RE = re.compile(r"@MlxOp\(\s*(\{[^}]*\}|\"[^\"]*\")\s*\)\s*(?:@\w+(?:\([^)]*\))?\s*)*public\s+static\s+\S+\s+(\w+)\s*\(([^)]*)\)", re.S)
 
 
@@ -118,29 +116,6 @@ def scan_factories():
     return methods, dtypes, where
 
 
-def scan_jit_baselines():
-    """{kernel name: set(op)} and {op: [(class.kernel, source)]} from @JitBaseline-annotated kernels."""
-    kernels, baselines = {}, {}
-    for path in java_files([JIT_SOURCES]):
-        cls = os.path.splitext(os.path.basename(path))[0]
-        for m in JIT_RE.finditer(open(path).read()):
-            ops = re.findall(r"\"([^\"]+)\"", m.group(1))
-            source, name = m.group(2) or "written", m.group(3)
-            kernels.setdefault(cls + "::" + name, set()).update(ops)
-            for op in ops:
-                baselines.setdefault(op, []).append((cls + "." + name, source))
-    return kernels, baselines
-
-
-def scan_jit_references(roots, kernels):
-    """Ops whose JIT kernels are referenced (JitX::name or JitX.name) in the given sources."""
-    used = set()
-    for path in java_files(roots):
-        for cls, name in re.findall(r"\b(Jit\w+)\s*(?:::|\.)\s*(\w+)", open(path).read()):
-            used.update(kernels.get(cls + "::" + name, ()))
-    return used
-
-
 def scan_references(roots, methods):
     """Ops whose factories are referenced (MlxX::name or MlxX.name(), for any factory class MlxX) in the given sources."""
     used = set()
@@ -167,8 +142,6 @@ def build():
     overrides = load(OVERRIDES_FILE)
     methods, dtypes, where = scan_factories()
     tested = scan_references([TEST_SOURCES], methods)
-    jit_kernels, jit_baselines = scan_jit_baselines()
-    jit_tested = scan_jit_references([TEST_SOURCES], jit_kernels)
     benchmarked = scan_references(BENCHMARK_SOURCES, methods)
 
     known = {o["name"] for o in api["operations"]}
@@ -193,14 +166,6 @@ def build():
         reason = exclusion_of(name, overrides)
         if reason:
             entry["excluded"] = reason
-        if name in jit_baselines:
-            entry["jitBaseline"] = {
-                "kernels": sorted(k for k, _ in jit_baselines[name]),
-                "sources": sorted({src for _, src in jit_baselines[name]}),
-                "tested": name in jit_tested,
-            }
-        elif name in overrides.get("noJitBaseline", {}):
-            entry["jitBaseline"] = {"none": overrides["noJitBaseline"][name]}
         if name in dtypes:
             entry["dtypes"] = sorted(dtypes[name])
             entry["factories"] = sorted(where[name])
@@ -214,7 +179,6 @@ def build():
         "bound": sum(e["bound"] for e in in_scope),
         "tested": sum(e["tested"] for e in in_scope),
         "benchmarked": sum(e["benchmarked"] for e in in_scope),
-        "jitBaselines": sum(1 for e in in_scope if e.get("jitBaseline", {}).get("tested")),
         "remaining": sum(not e["bound"] for e in in_scope),
         "llm": {
             "inScope": sum(1 for e in in_scope if e["llm"]),
@@ -241,12 +205,6 @@ def build():
     for e in ops:
         if e["bound"] and not e["tested"]:
             problems.append("%s is bound (%s) but no MLX unit test uses it" % (e["name"], ", ".join(e.get("factories", []))))
-        if e["bound"]:
-            jit = e.get("jitBaseline")
-            if jit is None or ("none" not in jit and not jit["tested"]):
-                missing = "has no JIT baseline" if jit is None else "has a JIT baseline no MLX test uses"
-                message = "%s is bound but %s (a KernelContext kernel annotated @JitBaseline, or a noJitBaseline entry with a reason)" % (e["name"], missing)
-                (problems if overrides.get("requireJitBaseline") else warnings).append(message)
         if e["bound"] and "excluded" in e:
             problems.append("%s is bound but also excluded: %s" % (e["name"], e["excluded"]))
     return coverage, problems, warnings
@@ -263,8 +221,8 @@ def main():
 
     coverage, problems, warnings = build()
     s = coverage["summary"]
-    line = "[mlx coverage] %d/%d in-scope operations bound, %d tested, %d with a tested JIT baseline, %d benchmarked; %d excluded (LLM operations: %d/%d bound)" % (
-        s["bound"], s["inScope"], s["tested"], s["jitBaselines"], s["benchmarked"], s["excluded"], s["llm"]["bound"], s["llm"]["inScope"])
+    line = "[mlx coverage] %d/%d in-scope operations bound, %d tested, %d benchmarked; %d excluded (LLM operations: %d/%d bound)" % (
+        s["bound"], s["inScope"], s["tested"], s["benchmarked"], s["excluded"], s["llm"]["bound"], s["llm"]["inScope"])
     if args.check:
         current = open(COVERAGE_FILE).read() if os.path.exists(COVERAGE_FILE) else ""
         if current != render(coverage):

@@ -1,7 +1,5 @@
 {
   "comment": "Hand-maintained decisions merged into coverage.json by scripts/update_coverage.py. Categories are assigned by the rules in that script.",
-  "requireJitBaseline": true,
-  "noJitBaseline": {},
   "llmOperations": [
     "mlx_add", "mlx_subtract", "mlx_multiply", "mlx_divide", "mlx_negative", "mlx_maximum", "mlx_minimum",
     "mlx_exp", "mlx_tanh", "mlx_erf", "mlx_sigmoid", "mlx_sqrt", "mlx_rsqrt", "mlx_square",

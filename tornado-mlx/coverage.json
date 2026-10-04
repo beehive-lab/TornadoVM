@@ -8,7 +8,6 @@
     "bound": 246,
     "tested": 246,
     "benchmarked": 0,
-    "jitBaselines": 246,
     "remaining": 46,
     "llm": {
       "inScope": 32,
@@ -83,15 +82,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.abs"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -110,15 +100,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitElementwise.add"
-        ],
-        "sources": [
-          "tornado-unittests/.../kernelcontext/api/TestVectorAdditionKernelContext.java (pattern)"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -137,15 +118,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitBlas.addmm"
-        ],
-        "sources": [
-          "tornado-examples/.../compute/MatrixMultiplySimdgroup.java#gemmTiled (alpha/beta epilogue)"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -164,15 +136,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.allAny"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -193,15 +156,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.allAny"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -222,16 +176,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.allAny",
-          "JitReduce.reducePartial"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -252,16 +196,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitLogic.allcloseCheck",
-          "JitLogic.setFlag"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -281,15 +215,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.allAny"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -310,15 +235,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.allAny"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -339,16 +255,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.allAny",
-          "JitReduce.reducePartial"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -369,15 +275,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitCreate.arange"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -397,15 +294,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.arccos"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -424,15 +312,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.arccosh"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -451,15 +330,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.arcsin"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -478,15 +348,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.arcsinh"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -505,15 +366,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.arctan"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -532,15 +384,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.arctan2"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -559,15 +402,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.arctanh"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -586,15 +420,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReductions.argmaxRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -614,15 +439,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReductions.argmaxRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -642,15 +458,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.argmin"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -670,15 +477,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.argmin"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -698,15 +496,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitSort.sortSlices"
-        ],
-        "sources": [
-          "written (bitonic network as in tornado-unittests/.../kernelcontext/sort/TestBitonicSort.java)"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -726,21 +515,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitSort.mergeBlocks",
-          "JitSort.mergeGlobal",
-          "JitSort.pad",
-          "JitSort.sortBlocks",
-          "JitSort.sortSlices",
-          "JitSort.unpad"
-        ],
-        "sources": [
-          "written",
-          "written (bitonic network as in tornado-unittests/.../kernelcontext/sort/TestBitonicSort.java)"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -760,15 +534,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitSort.sortSlices"
-        ],
-        "sources": [
-          "written (bitonic network as in tornado-unittests/.../kernelcontext/sort/TestBitonicSort.java)"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -788,21 +553,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitSort.mergeBlocks",
-          "JitSort.mergeGlobal",
-          "JitSort.pad",
-          "JitSort.sortBlocks",
-          "JitSort.sortSlices",
-          "JitSort.unpad"
-        ],
-        "sources": [
-          "written",
-          "written (bitonic network as in tornado-unittests/.../kernelcontext/sort/TestBitonicSort.java)"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -822,16 +572,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitLogic.arrayEqualCheck",
-          "JitLogic.setFlag"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -852,15 +592,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.asStrided"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -880,15 +611,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.toHalf"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -908,15 +630,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.copy"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -936,15 +649,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.copy"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -964,15 +668,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.copy"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -992,15 +687,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitCreate.window"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "float32"
       ],
@@ -1017,15 +703,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitLogic.bitwise"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "int32"
       ],
@@ -1042,15 +719,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitLogic.invert"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "int32"
       ],
@@ -1067,15 +735,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitLogic.bitwise"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "int32"
       ],
@@ -1092,15 +751,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitLogic.bitwise"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "int32"
       ],
@@ -1117,15 +767,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitCreate.window"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "float32"
       ],
@@ -1152,15 +793,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.broadcastPair"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -1180,15 +812,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.broadcastRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -1208,15 +831,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.ceil"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -1235,15 +849,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.clip"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -1263,15 +868,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.concat"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -1291,15 +887,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.concat"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -1319,15 +906,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitLogic.conjugate"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "float32"
       ],
@@ -1344,15 +922,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.copy"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -1372,15 +941,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitConv.conv"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -1399,15 +959,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitConv.conv"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -1436,15 +987,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitConv.conv"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -1463,15 +1005,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitConv.conv"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -1490,15 +1023,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitConv.conv"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -1527,15 +1051,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.copy"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -1555,15 +1070,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.cos"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -1582,15 +1088,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.cosh"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -1609,16 +1106,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitScan.scanColumns",
-          "JitScan.scanRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -1638,16 +1125,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitScan.scanColumns",
-          "JitScan.scanRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -1667,16 +1144,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitScan.scanColumns",
-          "JitScan.scanRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -1696,16 +1163,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitScan.scanColumns",
-          "JitScan.scanRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -1725,15 +1182,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.degrees"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -1763,15 +1211,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitQuantized.dequantize"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -1791,15 +1230,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitCreate.diag"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -1819,15 +1249,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitCreate.diagonal"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -1847,15 +1268,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitElementwise.divide"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -1874,15 +1286,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.divmod"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -1902,15 +1305,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitProducts.batchedGemm"
-        ],
-        "sources": [
-          "tornado-examples/.../compute/MatrixMultiplySimdgroup.java#gemmTiled (batched)"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -1929,15 +1323,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitLogic.compare"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -1958,15 +1343,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitElementwise.erf"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -1985,15 +1361,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.erfinv"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -2012,15 +1379,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitElementwise.exp"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -2039,15 +1397,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.copy"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -2067,15 +1416,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.copy"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -2095,15 +1435,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.expm1"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -2122,15 +1453,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitCreate.eye"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -2150,15 +1472,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.copy"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -2178,15 +1491,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.floor"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -2205,15 +1509,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.floorDivide"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -2243,15 +1538,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitCreate.fill"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -2271,15 +1557,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitCreate.fill"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -2319,15 +1596,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitIndex.gatherMm"
-        ],
-        "sources": [
-          "tornado-examples/.../compute/MatrixMultiplySimdgroup.java#gemmTiled (gathered batches)"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -2347,15 +1615,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitQuantized.gatherQmm"
-        ],
-        "sources": [
-          "tornado-examples/.../compute/MatrixVectorSimdReduction.java#matvecSimd (MLX affine weights, gathered)"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -2375,15 +1634,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitLogic.compare"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -2404,15 +1654,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitLogic.compare"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -2443,15 +1684,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitCreate.window"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "float32"
       ],
@@ -2468,15 +1700,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitCreate.window"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "float32"
       ],
@@ -2493,15 +1716,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitCreate.eye"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -2521,15 +1735,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitLogic.complexPart"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "float32"
       ],
@@ -2546,15 +1751,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitProducts.dotPartial"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -2573,15 +1769,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitLogic.isclose"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -2601,15 +1788,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitLogic.classify"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -2629,15 +1807,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitLogic.classify"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -2657,15 +1826,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitLogic.classify"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -2685,15 +1845,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitLogic.classify"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -2713,15 +1864,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitLogic.classify"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -2741,15 +1883,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitProducts.kron"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -2768,15 +1901,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitLogic.bitwise"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "int32"
       ],
@@ -2793,15 +1917,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitLogic.compare"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -2822,15 +1937,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitLogic.compare"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -2851,15 +1957,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitCreate.linspace"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -2878,15 +1975,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.log"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -2905,15 +1993,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.log10"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -2932,15 +2011,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.log1p"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -2959,15 +2029,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.log2"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -2986,15 +2047,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.logaddexp"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3013,16 +2065,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitScan.scanColumns",
-          "JitScan.scanRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3041,15 +2083,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitLogic.logical"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "uint8"
       ],
@@ -3066,15 +2099,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitLogic.logicalNot"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "uint8"
       ],
@@ -3091,15 +2115,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitLogic.logical"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "uint8"
       ],
@@ -3116,15 +2131,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.logsumexp"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3143,15 +2149,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.logsumexp"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3170,17 +2167,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.logsumexp",
-          "JitReduce.logsumexpMerge",
-          "JitReduce.logsumexpPartial"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3209,23 +2195,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitBlas.gemm",
-          "JitBlas.gemmTransposed",
-          "JitBlas.gemmTransposedF16",
-          "JitBlas.gemv",
-          "JitBlas.gemvF16"
-        ],
-        "sources": [
-          "tornado-examples/.../compute/MatrixMultiplySimdgroup.java#gemmTiled",
-          "tornado-examples/.../compute/MatrixMultiplySimdgroup.java#gemmTiled (float16 operands, transposed B staging)",
-          "tornado-examples/.../compute/MatrixMultiplySimdgroup.java#gemmTiled (transposed B staging)",
-          "tornado-examples/.../compute/MatrixVectorSimdReduction.java#matvecSimd",
-          "tornado-examples/.../compute/MatrixVectorSimdReduction.java#matvecSimd (float16 operands)"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3244,16 +2213,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.reduceColumns",
-          "JitReduce.reduceRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3273,16 +2232,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.reduceColumns",
-          "JitReduce.reduceRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3302,16 +2251,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.reducePartial",
-          "JitReduce.reduceRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3331,15 +2270,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitElementwise.maximum"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3358,16 +2288,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.reduceColumns",
-          "JitReduce.reduceRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3386,16 +2306,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.reduceColumns",
-          "JitReduce.reduceRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3414,16 +2324,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.reducePartial",
-          "JitReduce.reduceRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3452,15 +2352,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitCreate.meshgrid"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3480,16 +2371,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.reduceColumns",
-          "JitReduce.reduceRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3509,16 +2390,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.reduceColumns",
-          "JitReduce.reduceRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3538,16 +2409,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.reducePartial",
-          "JitReduce.reduceRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3567,15 +2428,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitElementwise.minimum"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3594,15 +2446,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.permute3"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3622,15 +2465,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitElementwise.multiply"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3649,15 +2483,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitLogic.nanToNum"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3676,15 +2501,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitElementwise.negative"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3703,15 +2519,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitLogic.compare"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3732,15 +2539,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.writeInt"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3760,15 +2558,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitCreate.fill"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3788,15 +2577,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitCreate.fill"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3816,15 +2596,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitProducts.outer"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3843,15 +2614,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.pad"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3871,15 +2633,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.pad"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3899,15 +2652,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitSort.sortSlices"
-        ],
-        "sources": [
-          "written (bitonic network as in tornado-unittests/.../kernelcontext/sort/TestBitonicSort.java)"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3927,21 +2671,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitSort.mergeBlocks",
-          "JitSort.mergeGlobal",
-          "JitSort.pad",
-          "JitSort.sortBlocks",
-          "JitSort.sortSlices",
-          "JitSort.unpad"
-        ],
-        "sources": [
-          "written",
-          "written (bitonic network as in tornado-unittests/.../kernelcontext/sort/TestBitonicSort.java)"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3961,15 +2690,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.power"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -3988,16 +2708,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.reduceColumns",
-          "JitReduce.reduceRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -4017,16 +2727,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.reduceColumns",
-          "JitReduce.reduceRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -4046,16 +2746,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.reducePartial",
-          "JitReduce.reduceRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -4085,15 +2775,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitProducts.qqmm"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "float32",
         "int32",
@@ -4112,15 +2793,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitQuantized.quantize"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -4142,15 +2814,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitQuantized.quantizedMatmul"
-        ],
-        "sources": [
-          "tornado-examples/.../compute/MatrixVectorSimdReduction.java#matvecSimd (MLX affine weights)"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -4170,15 +2833,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.radians"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -4197,15 +2851,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitLogic.complexPart"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "float32"
       ],
@@ -4222,15 +2867,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.reciprocal"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -4249,15 +2885,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.remainder"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -4276,15 +2903,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.repeatRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -4304,15 +2922,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.repeatRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -4332,15 +2941,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.copy"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -4360,15 +2960,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitLogic.bitwise"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "int32"
       ],
@@ -4385,15 +2976,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.roll"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -4413,15 +2995,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.roll"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -4441,15 +3014,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.roll"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -4469,15 +3033,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.round"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -4496,15 +3051,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitElementwise.rsqrt"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -4633,15 +3179,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitProducts.segmentedGemm"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -4661,15 +3198,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitElementwise.sigmoid"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -4688,15 +3216,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.sign"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -4715,15 +3234,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.sin"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -4742,15 +3252,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.sinh"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -4769,15 +3270,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitIndex.slice"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -4807,16 +3299,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitIndex.copy",
-          "JitIndex.sliceUpdate"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -4846,16 +3328,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitIndex.copy",
-          "JitIndex.sliceUpdate"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -4895,16 +3367,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitIndex.copy",
-          "JitIndex.sliceUpdate"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -4924,15 +3386,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReductions.softmaxRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -4951,15 +3404,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReductions.softmaxRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -4978,15 +3422,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReductions.softmaxRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5005,15 +3440,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitSort.sortSlices"
-        ],
-        "sources": [
-          "written (bitonic network as in tornado-unittests/.../kernelcontext/sort/TestBitonicSort.java)"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5033,21 +3459,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitSort.mergeBlocks",
-          "JitSort.mergeGlobal",
-          "JitSort.pad",
-          "JitSort.sortBlocks",
-          "JitSort.sortSlices",
-          "JitSort.unpad"
-        ],
-        "sources": [
-          "written",
-          "written (bitonic network as in tornado-unittests/.../kernelcontext/sort/TestBitonicSort.java)"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5067,15 +3478,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.split"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5095,15 +3497,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.split"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5123,15 +3516,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitElementwise.sqrt"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5150,15 +3534,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitElementwise.square"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5177,15 +3552,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.copy"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5205,15 +3571,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.copy"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5233,15 +3590,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.copy"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5261,15 +3609,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.interleave"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5289,15 +3628,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.concat"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5317,15 +3647,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.variance"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5344,15 +3665,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.variance"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5371,17 +3683,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.variance",
-          "JitReduce.varianceMerge",
-          "JitReduce.variancePartial"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5411,15 +3712,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitElementwise.subtract"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5438,16 +3730,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.reduceColumns",
-          "JitReduce.reduceRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5467,16 +3749,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.reduceColumns",
-          "JitReduce.reduceRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5496,16 +3768,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.reducePartial",
-          "JitReduce.reduceRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5525,15 +3787,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.permute3"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5583,15 +3836,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.tan"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5610,15 +3854,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitElementwise.tanh"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5637,15 +3872,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitBlas.gemm"
-        ],
-        "sources": [
-          "tornado-examples/.../compute/MatrixMultiplySimdgroup.java#gemmTiled"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5664,15 +3890,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitBlas.gemm"
-        ],
-        "sources": [
-          "tornado-examples/.../compute/MatrixMultiplySimdgroup.java#gemmTiled"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5691,15 +3908,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.tile"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5729,15 +3937,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReductions.topkRows"
-        ],
-        "sources": [
-          "written (bitonic network as in tornado-unittests/.../kernelcontext/sort/TestBitonicSort.java)"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5756,15 +3955,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReductions.topkRows"
-        ],
-        "sources": [
-          "written (bitonic network as in tornado-unittests/.../kernelcontext/sort/TestBitonicSort.java)"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5783,15 +3973,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitCreate.trace"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5811,15 +3992,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.permute3"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5839,21 +4011,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitBlas.gemmTransposed",
-          "JitBlas.gemmTransposedF16",
-          "JitBlas.gemvF16",
-          "JitBlas.transpose"
-        ],
-        "sources": [
-          "tornado-examples/.../compute/MatrixMultiplySimdgroup.java#gemmTiled (float16 operands, transposed B staging)",
-          "tornado-examples/.../compute/MatrixMultiplySimdgroup.java#gemmTiled (transposed B staging)",
-          "tornado-examples/.../compute/MatrixVectorSimdReduction.java#matvecSimd (float16 operands)",
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5872,15 +4029,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitCreate.eye"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5900,15 +4048,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitCreate.triangle"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5928,15 +4067,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitCreate.triangle"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5956,15 +4086,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.copy"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -5984,15 +4105,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.variance"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -6011,15 +4123,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.variance"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -6038,17 +4141,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitReduce.variance",
-          "JitReduce.varianceMerge",
-          "JitReduce.variancePartial"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -6067,15 +4159,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitShape.viewAsInt"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "float32",
         "int32"
@@ -6093,15 +4176,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitMath.where"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -6122,15 +4196,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitCreate.fill"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -6150,15 +4215,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitCreate.fill"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -6321,15 +4377,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitFast.layerNorm"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -6491,15 +4538,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitFast.rmsNorm"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -6518,15 +4556,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitFast.rope"
-        ],
-        "sources": [
-          "tornado-unittests/.../compute/TransformerKernelsTest.java#ropeRotation (out of place, parametric base/scale/offset, both pairings)"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -6545,15 +4574,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitFast.ropeDynamic"
-        ],
-        "sources": [
-          "tornado-unittests/.../compute/TransformerKernelsTest.java#ropeRotation (position from device memory)"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -6573,15 +4593,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitFast.attentionDecode"
-        ],
-        "sources": [
-          "tornado-unittests/.../kernelcontext/api/TestFlashAttentionKernelContext.java#processHeadsFlashAttentionOptV2 (MLX layout, head dim 128, explicit scale)"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -6620,15 +4631,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitLinalg.crossProduct"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -6717,15 +4719,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitLinalg.normRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -6744,15 +4737,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitLinalg.normRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -6771,15 +4755,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitLinalg.normRows"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -6858,16 +4833,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitFft.dft",
-          "JitFft.fft"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "float32"
       ],
@@ -6884,16 +4849,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitFft.dft",
-          "JitFft.fft"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "float32"
       ],
@@ -6910,15 +4865,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitFft.frequencies"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "float32"
       ],
@@ -6935,16 +4881,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitFft.dft",
-          "JitFft.fft"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "float32"
       ],
@@ -6961,15 +4897,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitFft.roll"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -6988,16 +4915,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitFft.dft",
-          "JitFft.fft"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "float32"
       ],
@@ -7014,16 +4931,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitFft.dft",
-          "JitFft.fft"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "float32"
       ],
@@ -7040,16 +4947,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitFft.dft",
-          "JitFft.fft"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "float32"
       ],
@@ -7066,15 +4963,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitFft.roll"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -7093,16 +4981,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitFft.dft",
-          "JitFft.fft"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "float32"
       ],
@@ -7119,16 +4997,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitFft.dft",
-          "JitFft.fft"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "float32"
       ],
@@ -7145,16 +5013,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitFft.dft",
-          "JitFft.fft"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "float32"
       ],
@@ -7171,16 +5029,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitFft.dft",
-          "JitFft.fft"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "float32"
       ],
@@ -7197,16 +5045,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitFft.dft",
-          "JitFft.fft"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "float32"
       ],
@@ -7223,15 +5061,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitFft.frequencies"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "float32"
       ],
@@ -7248,16 +5077,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitFft.dft",
-          "JitFft.fft"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "float32"
       ],
@@ -7274,15 +5093,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitRandom.bernoulli"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -7302,15 +5112,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitRandom.bits"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "int32"
       ],
@@ -7327,17 +5128,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitRandom.categorical",
-          "JitRandom.categoricalChunked",
-          "JitRandom.categoricalMerge"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -7357,17 +5147,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitRandom.categorical",
-          "JitRandom.categoricalChunked",
-          "JitRandom.categoricalMerge"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -7387,17 +5166,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitRandom.categorical",
-          "JitRandom.categoricalChunked",
-          "JitRandom.categoricalMerge"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -7417,15 +5185,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitRandom.gumbel"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -7455,15 +5214,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitRandom.laplace"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -7492,15 +5242,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitRandom.normal"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -7519,15 +5260,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitRandom.normal"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -7556,15 +5288,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitRandom.sortKeys"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "int32"
       ],
@@ -7581,15 +5304,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitRandom.randint"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "int32"
       ],
@@ -7639,15 +5353,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitRandom.truncatedNormal"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
@@ -7666,15 +5371,6 @@
       "bound": true,
       "tested": true,
       "benchmarked": false,
-      "jitBaseline": {
-        "kernels": [
-          "JitRandom.uniformRange"
-        ],
-        "sources": [
-          "written"
-        ],
-        "tested": true
-      },
       "dtypes": [
         "bfloat16",
         "float16",
