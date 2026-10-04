@@ -470,6 +470,9 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     ## synchronize resolves it. Tracked separately for the CUDA backend.
     "uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles#testMultipleReductions",
 
+    ## Need two GPUs; the CI machines have one.
+    "uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentCudaGraphCapture#testPlansCaptureOnSeveralThreadsAtOnce",
+
 ]
 
 ## List of tests to be excluded when running with the quick pass argument as they cause delays
