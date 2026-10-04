@@ -41,13 +41,16 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
 
     private static final class CuDnnContext implements LibraryContext {
         private final long handle;
+        /** The stream the handle is bound to. */
+        private long stream;
         private final Map<String, Long> convPlanCache = new HashMap<>();
         private final Map<String, Long> sdpaPlanCache = new HashMap<>();
         private long workspacePtr;
         private long workspaceBytes;
 
-        private CuDnnContext(long handle) {
+        private CuDnnContext(long handle, long stream) {
             this.handle = handle;
+            this.stream = stream;
         }
 
         private void growWorkspace(long required) {
@@ -101,7 +104,7 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
             throw new TornadoRuntimeException("[ERROR] cudnnCreate failed");
         }
         CuDnnNativeLib.checkStatus(CuDnnNativeLib.cudnnSetStream(handle, stream), "cudnnSetStream");
-        return new CuDnnContext(handle);
+        return new CuDnnContext(handle, stream);
     }
 
     @Override
@@ -119,6 +122,14 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
     @Override
     public void dispatch(String functionName, LibraryInvocation invocation) {
         CuDnnContext context = (CuDnnContext) invocation.getContext();
+        // The stream belongs to the thread that runs the plan, which need not be the one that
+        // created this context: follow it, or the call runs on another thread's stream, unordered
+        // with the kernels that produce its inputs.
+        long stream = ((TornadoNativeStreamSupport) invocation.getDevice()).getNativeStream(invocation.getExecutionPlanId());
+        if (stream != context.stream) {
+            CuDnnNativeLib.checkStatus(CuDnnNativeLib.cudnnSetStream(context.handle, stream), "cudnnSetStream");
+            context.stream = stream;
+        }
         int status = switch (functionName) {
             // (input, output, rows, cols): per-row softmax as (n=rows, c=cols, 1, 1)
             case "cudnnSoftmax" -> CuDnnNativeLib.softmaxForward(context.handle, //
