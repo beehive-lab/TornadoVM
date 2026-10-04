@@ -460,6 +460,16 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 
     'uk.ac.manchester.tornado.unittests.pointers.TestCopyDevicePointers#testCopyDevicePointersMatrix',
 
+    ## NCCL tests that need two GPUs; the CI machines have one.
+    "uk.ac.manchester.tornado.unittests.nccl.TestNccl#testPipelineSendThenRecv",
+    "uk.ac.manchester.tornado.unittests.nccl.TestNccl#testPipelineWithCudaGraph",
+    "uk.ac.manchester.tornado.unittests.nccl.TestNccl#testRankFailureAbortsCommunicator",
+    "uk.ac.manchester.tornado.unittests.nccl.TestNccl#testRankFailureAbortsCommunicatorWithCudaGraph",
+    "uk.ac.manchester.tornado.unittests.nccl.TestNccl#testUnmatchedSendTimesOut",
+    "uk.ac.manchester.tornado.unittests.nccl.TestNccl#testUnmatchedSendTimesOutWithCudaGraph",
+    "uk.ac.manchester.tornado.unittests.nccl.TestNccl#testTwoRanksOnTwoGpus",
+    "uk.ac.manchester.tornado.unittests.nccl.TestNcclMultiProcess#testTwoProcesses",
+
     ## Test Devices: provided filters depend on the actual hardware installed.
     ## The fact that these tests fail, does not mean the API is wrong.
     'uk.ac.manchester.tornado.unittests.api.TestDevices#test04',
