@@ -262,6 +262,7 @@ when the task is added to a task graph.
 | `new NcclPlanGroup(TornadoExecutionPlan... plans)` | One fixed thread per plan (one plan per local rank). |
 | `withStepTimeout(Duration)` | Bounds every step; opt-in. |
 | `TornadoExecutionResult[] execute()` | Runs every plan once, concurrently. Throws after aborting the used communicators on a failure or timeout. Do not call it from several threads at once. |
+| `TornadoExecutionResult[] execute(RankStep step)` | As `execute()`, with each rank running `step.run(rank, plan)` on its own thread instead of the whole plan: for instance `plan.withGraph(i).execute()` over the graphs of one program in a plan that holds several. |
 | `close()` | Stops the threads; does not close the plans. |
 
 ### Properties

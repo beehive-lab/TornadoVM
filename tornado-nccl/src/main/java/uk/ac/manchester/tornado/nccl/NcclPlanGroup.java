@@ -95,6 +95,28 @@ public final class NcclPlanGroup implements AutoCloseable {
     private volatile Thread caller;
     private volatile boolean closed;
 
+    /**
+     * What each rank runs in the current step. Written before the step counter moves, so a rank
+     * thread that sees the new step sees this as well.
+     */
+    private volatile RankStep currentStep = WHOLE_PLAN;
+
+    /**
+     * The work of one rank in one step: by default the whole plan, or for instance a selected
+     * sequence of its graphs.
+     */
+    @FunctionalInterface
+    public interface RankStep {
+        /**
+         * Runs rank {@code rank}'s share of the step on its plan, on that rank's thread.
+         *
+         * @return the result to report for the rank, or {@code null}
+         */
+        TornadoExecutionResult run(int rank, TornadoExecutionPlan plan);
+    }
+
+    private static final RankStep WHOLE_PLAN = (rank, plan) -> plan.execute();
+
     /** Longest a step may take before the group gives up on it; 0 waits forever. */
     private volatile long stepTimeoutNanos;
     /** Ranks that have finished the current step (1) or not (0), for the timeout message. */
@@ -129,7 +151,7 @@ public final class NcclPlanGroup implements AutoCloseable {
             }
             done = next;
             try {
-                results[rank] = plans[rank].execute();
+                results[rank] = currentStep.run(rank, plans[rank]);
             } catch (Throwable t) {
                 failures[rank] = t;
                 if (firstFailure.compareAndSet(-1, rank)) {
@@ -182,6 +204,19 @@ public final class NcclPlanGroup implements AutoCloseable {
      * returned. Steps of one group must not be executed from several threads at once.
      */
     public TornadoExecutionResult[] execute() {
+        return execute(WHOLE_PLAN);
+    }
+
+    /**
+     * As {@link #execute()}, with each rank running {@code rankStep} on its plan instead of executing
+     * the whole plan. A rank can then run part of a plan that holds several programs, such as the
+     * prefill graphs or the decode graphs of a model, with {@code plan.withGraph(i).execute()} for
+     * each graph it needs. Failures and the step timeout are handled as for {@link #execute()}.
+     */
+    public TornadoExecutionResult[] execute(RankStep rankStep) {
+        if (rankStep == null) {
+            throw new TornadoRuntimeException("[ERROR] An NCCL plan group step needs something to run");
+        }
         if (closed) {
             throw new TornadoRuntimeException("[ERROR] The NCCL plan group is closed");
         }
@@ -195,6 +230,7 @@ public final class NcclPlanGroup implements AutoCloseable {
             finished.set(rank, 0);
         }
         running.set(plans.length);
+        currentStep = rankStep;
         final long timeout = stepTimeoutNanos;
         final long start = System.nanoTime();
         step.incrementAndGet();
