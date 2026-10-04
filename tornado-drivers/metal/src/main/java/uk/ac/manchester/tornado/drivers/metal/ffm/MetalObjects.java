@@ -571,6 +571,9 @@ public final class MetalObjects {
         }
 
         if (batching()) {
+            if (LAZY_SYNC) {
+                drainOtherQueuesUsing(queue, state);
+            }
             QueueBatch batch = BATCHES.computeIfAbsent(queue, q -> new QueueBatch());
             synchronized (batch) {
                 try (Arena arena = Arena.ofConfined(); ObjCRuntime.AutoreleasePool pool = new ObjCRuntime.AutoreleasePool()) {
@@ -671,6 +674,41 @@ public final class MetalObjects {
      * long batch while the CPU encodes the rest of it. {@code -Dtornado.metal.dispatch.batchSize}.
      */
     private static final int BATCH_COMMIT_INTERVAL = Math.max(1, Integer.getInteger("tornado.metal.dispatch.batchSize", 16));
+
+    /**
+     * Whether {@link #finish} commits the batch without waiting for it, so that {@code execute()} of
+     * a task graph returns once its work is queued rather than done. Nothing on the host can observe
+     * the difference: every host read or write of a buffer a pending dispatch uses, every event wait,
+     * library call and release drains first, and a dispatch on another queue that binds such a buffer
+     * drains that queue first. What moves is the wall-clock time of the wait, to the next of those.
+     * Off by default; {@code -Dtornado.metal.dispatch.lazySync=True}.
+     */
+    private static final boolean LAZY_SYNC = Boolean.parseBoolean(System.getProperty("tornado.metal.dispatch.lazySync", "False"));
+
+    /** Drains every other queue with a pending dispatch bound to one of {@code state}'s buffers. */
+    private static void drainOtherQueuesUsing(long queue, KernelState state) {
+        if (BATCHES.size() < 2) {
+            return;
+        }
+        for (Map.Entry<Long, QueueBatch> entry : BATCHES.entrySet()) {
+            if (entry.getKey() == queue) {
+                continue;
+            }
+            QueueBatch other = entry.getValue();
+            boolean pending = false;
+            synchronized (other) {
+                for (Arg arg : state.args) {
+                    if (arg != null && arg.kind == 0 && other.buffers.contains(arg.buffer)) {
+                        pending = true;
+                        break;
+                    }
+                }
+            }
+            if (pending) {
+                drain(entry.getKey());
+            }
+        }
+    }
 
     /** The open command buffer of a queue and the last one committed from it. */
     private static final class QueueBatch {
@@ -932,6 +970,15 @@ public final class MetalObjects {
 
     public static void finish(long queue) {
         if (queue == 0) {
+            return;
+        }
+        if (LAZY_SYNC && batching()) {
+            QueueBatch batch = BATCHES.get(queue);
+            if (batch != null) {
+                synchronized (batch) {
+                    commitOpen(queue, batch);
+                }
+            }
             return;
         }
         drain(queue);
