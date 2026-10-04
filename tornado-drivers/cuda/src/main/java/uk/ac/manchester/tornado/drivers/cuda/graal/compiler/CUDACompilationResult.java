@@ -23,6 +23,7 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.compiler;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 
 import tornado.graal.compiler.code.CompilationResult;
@@ -34,6 +35,8 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 public class CUDACompilationResult extends CompilationResult {
 
     private Set<ResolvedJavaMethod> nonInlinedMethods;
+
+    private Set<ResolvedJavaMethod> deviceLaunchedKernels = Set.of();
     private TaskDataContext meta;
     private CUDABackend backend;
     private String id;
@@ -51,6 +54,51 @@ public class CUDACompilationResult extends CompilationResult {
 
     public void setNonInlinedMethods(Set<ResolvedJavaMethod> value) {
         nonInlinedMethods = value;
+    }
+
+    private boolean deviceLaunched;
+
+    /** A launch from device code: the kernel launched and the stream mode it was launched into. */
+    public record DeviceLaunch(ResolvedJavaMethod kernel, String mode) {
+    }
+
+    private List<DeviceLaunch> deviceLaunches = List.of();
+    private List<String> deviceLaunchTree = List.of();
+
+    /** The launches this code makes from the device, in program order. */
+    public List<DeviceLaunch> getDeviceLaunches() {
+        return deviceLaunches;
+    }
+
+    public void setDeviceLaunches(List<DeviceLaunch> value) {
+        deviceLaunches = value;
+    }
+
+    /** The whole tree of device launches below the task's kernel, for --printBytecodes. */
+    public List<String> getDeviceLaunchTree() {
+        return deviceLaunchTree;
+    }
+
+    public void setDeviceLaunchTree(List<String> value) {
+        deviceLaunchTree = value;
+    }
+
+    /** Whether this is a kernel launched from device code rather than by the host. */
+    public boolean isDeviceLaunched() {
+        return deviceLaunched;
+    }
+
+    public void setDeviceLaunched(boolean value) {
+        deviceLaunched = value;
+    }
+
+    /** Kernels this code launches from the device (CUDA Dynamic Parallelism). */
+    public Set<ResolvedJavaMethod> getDeviceLaunchedKernels() {
+        return deviceLaunchedKernels;
+    }
+
+    public void setDeviceLaunchedKernels(Set<ResolvedJavaMethod> value) {
+        deviceLaunchedKernels = value;
     }
 
     public void addCompiledMethodCode(byte[] code) {

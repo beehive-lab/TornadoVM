@@ -21,6 +21,8 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.graal;
 
+import java.util.List;
+
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitive;
@@ -116,6 +118,17 @@ public class CUDAInstalledCode extends InstalledCode implements TornadoInstalled
         return null;
     }
 
+    private List<String> deviceLaunchTree = List.of();
+
+    public void setDeviceLaunchTree(List<String> tree) {
+        deviceLaunchTree = List.copyOf(tree);
+    }
+
+    @Override
+    public List<String> getDeviceLaunchTree() {
+        return deviceLaunchTree;
+    }
+
     @Override
     public byte[] getCode() {
         return code;
@@ -135,6 +148,7 @@ public class CUDAInstalledCode extends InstalledCode implements TornadoInstalled
      */
     private void setKernelArgs(final CUDAKernelStackFrame kernelArgs, final XPUBuffer atomicSpace, TaskDataContext meta) {
         int index = 0;
+        kernelArgs.setDeviceLaunchInfo(meta != null && meta.isThreadInfoEnabled());
 
         // kernel context
         buffer.clear();

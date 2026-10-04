@@ -274,9 +274,17 @@ public class CUDAEvent implements Event {
         return cuEventElapsedTime(oclEventID);
     }
 
+    /**
+     * CUDA events carry no queued/start timestamps, so the dispatch time is the host time the driver
+     * call that issued the operation took, measured when the operation was enqueued.
+     */
     @Override
     public long getDriverDispatchTime() {
-        return (getCLStartTime() - getCLQueuedTime());
+        if (!ENABLE_OPENCL_PROFILING) {
+            return 0;
+        }
+        CUDAHandles.Event event = CUDAHandles.resolve(oclEventID, CUDAHandles.Event.class);
+        return event == null ? 0 : event.dispatchTime();
     }
 
     @Override

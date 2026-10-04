@@ -22,11 +22,11 @@
  */
 package uk.ac.manchester.tornado.runtime.graph;
 
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 
 /**
@@ -79,8 +79,9 @@ public class TornadoGraph {
         node.setId(-node.getId());
     }
 
+    /** Doubles the node storage. The {@code valid} bit set grows on its own as bits are set. */
     private void resize() {
-        TornadoInternalError.unimplemented("Tornado Graph resize not implemented yet.");
+        nodes = Arrays.copyOf(nodes, 2 * nodes.length);
     }
 
     public <T extends AbstractNode> BitSet filter(Class<T> type) {

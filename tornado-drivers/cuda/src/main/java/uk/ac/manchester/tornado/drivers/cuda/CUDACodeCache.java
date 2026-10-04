@@ -44,6 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceDynamicParallelismNotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceTileNotSupported;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDABuildStatus;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDADeviceType;
@@ -303,6 +304,11 @@ public class CUDACodeCache {
             final String log = program.getBuildLog(deviceContext.getDeviceId());
             System.err.println("\n[ERROR] TornadoVM JIT Compiler - CUDADriver Build Error Log:\n\n" + log + "\n");
             dumpKernelSource(id, entryPoint, log, source);
+            if (log.contains("libcudadevrt")) {
+                // The kernel launches kernels from the device and the device runtime is missing:
+                // the configuration cannot run it, which is not a compiler error.
+                throw new TornadoDeviceDynamicParallelismNotSupported(log);
+            }
             throw new TornadoBailoutRuntimeException("Error during code compilation with the CUDADriver driver:\n" + log);
         }
 

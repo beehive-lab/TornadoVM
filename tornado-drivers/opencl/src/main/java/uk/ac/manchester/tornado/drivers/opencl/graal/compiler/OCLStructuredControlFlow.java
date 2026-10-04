@@ -32,6 +32,7 @@ import tornado.graal.compiler.nodes.IfNode;
 import tornado.graal.compiler.nodes.cfg.ControlFlowGraph;
 import tornado.graal.compiler.nodes.cfg.HIRBlock;
 import tornado.graal.compiler.nodes.extended.IntegerSwitchNode;
+import uk.ac.manchester.tornado.drivers.common.compiler.cfg.PostDominators;
 
 import jdk.vm.ci.meta.JavaConstant;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
@@ -110,6 +111,7 @@ public final class OCLStructuredControlFlow {
     private final OCLCompilationResultBuilder builder;
     private final OCLAssembler asm;
     private HIRBlock[] allBlocks;
+    private PostDominators postDominators;
 
     public OCLStructuredControlFlow(OCLCompilationResultBuilder builder) {
         this.builder = builder;
@@ -121,6 +123,7 @@ public final class OCLStructuredControlFlow {
             dump(cfg);
         }
         this.allBlocks = cfg.getBlocks();
+        this.postDominators = new PostDominators(allBlocks);
         Region root = structure(cfg.getStartBlock(), null, new HashSet<>(), new HashSet<>());
         emit(root);
     }
@@ -256,7 +259,12 @@ public final class OCLStructuredControlFlow {
      */
     private HIRBlock computeFollow(HIRBlock head, Loop<HIRBlock> loop) {
         HIRBlock follow = head.getPostdominator();
-        if (follow == null) {
+        if (follow == null && postDominators.reachesExit(head)) {
+            // Graal leaves this unset for many blocks, e.g. the heads of the ifs a short-circuit
+            // condition is lowered to. Guessing a merge there can pick a partial merge, which lets
+            // the else branch of `if (A || B)` fall through into the then branch (#1137).
+            follow = postDominators.immediatePostDominator(head);
+        } else if (follow == null) {
             for (HIRBlock candidate : allBlocks) {
                 if (candidate.getDominator() == head && candidate.getPredecessorCount() > 1) {
                     if (follow == null || candidate.getDominatorDepth() < follow.getDominatorDepth()) {

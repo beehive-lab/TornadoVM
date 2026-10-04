@@ -272,6 +272,10 @@ public final class MetalObjects {
     }
 
     public static void releaseCommandQueue(long queue) {
+        QueueEvent queueEvent = QUEUE_EVENTS.remove(queue);
+        if (queueEvent != null && queueEvent.event != 0) {
+            ObjCRuntime.release(queueEvent.event);
+        }
         ObjCRuntime.release(queue);
     }
 
@@ -606,7 +610,8 @@ public final class MetalObjects {
      * Wait for a committed command buffer by polling an {@code MTLSharedEvent} it signals, rather
      * than with {@code waitUntilCompleted}. The event is set as soon as the GPU finishes the encoded
      * work, while completion of the command buffer reaches the CPU some 60-90 us later on Apple
-     * silicon, so this takes that delay off every synchronous launch. Set
+     * silicon, so this takes that delay off every synchronous launch. A queue whose last wait took
+     * longer than {@link #SPIN_BUDGET_NS} blocks right away on the next one (see {@link QueueEvent#block}). Set
      * {@code -Dtornado.metal.dispatch.spinWait=False} to wait with {@code waitUntilCompleted}.
      */
     private static final boolean SPIN_WAIT = Boolean.parseBoolean(System.getProperty("tornado.metal.dispatch.spinWait", "True"));
@@ -625,6 +630,12 @@ public final class MetalObjects {
     private static final class QueueEvent {
         final long event;
         long value;
+        /**
+         * Whether the last wait on this queue took longer than {@link #SPIN_BUDGET_NS}. The next wait
+         * then blocks right away: for long kernels, polling cannot save a meaningful share of the time,
+         * and a busy CPU core can slow the GPU on a chip where they share power.
+         */
+        volatile boolean block;
 
         QueueEvent(long event) {
             this.event = event;
@@ -642,17 +653,26 @@ public final class MetalObjects {
             return;
         }
         long value;
+        // Take the value and commit under one lock, so that command buffers are committed in the order
+        // of their values. Otherwise a thread sharing the queue could commit a higher value first, and a
+        // waiter for a lower value would return before its own buffer had finished.
         synchronized (queueEvent) {
             value = ++queueEvent.value;
+            MetalAPI.encodeSignalEvent(commandBuffer, queueEvent.event, value);
+            MetalAPI.commit(commandBuffer);
         }
-        MetalAPI.encodeSignalEvent(commandBuffer, queueEvent.event, value);
-        MetalAPI.commit(commandBuffer);
         long start = System.nanoTime();
+        if (queueEvent.block) {
+            MetalAPI.waitUntilCompleted(commandBuffer);
+            queueEvent.block = System.nanoTime() - start > SPIN_BUDGET_NS;
+            return;
+        }
         int polls = 0;
         while (MetalAPI.sharedEventSignaledValue(queueEvent.event) < value) {
             if (++polls % STATUS_POLL_INTERVAL == 0) {
                 if (System.nanoTime() - start > SPIN_BUDGET_NS) {
                     MetalAPI.waitUntilCompleted(commandBuffer);
+                    queueEvent.block = true;
                     return;
                 }
                 if (MetalAPI.commandBufferStatus(commandBuffer) >= MetalAPI.MTL_COMMAND_BUFFER_STATUS_COMPLETED) {

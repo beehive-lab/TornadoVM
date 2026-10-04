@@ -41,7 +41,6 @@ import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalArithmeticTool;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalBuiltinTool;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalLIRStmt.AssignStmt;
@@ -86,20 +85,16 @@ public class MetalFPBinaryIntrinsicNode extends BinaryNode implements Arithmetic
     // @formatter:on
 
     /**
-     * The value of {@code op} at constants, or null when the operation has no exact Java
-     * equivalent; the node is then left for the device to compute. Float constants are folded in
-     * double precision and rounded once.
+     * The value of {@code op} at constants, or null when it is not folded; the node is then left in place
+     * and computed on the device, as for a non-constant argument. Float constants are folded in double
+     * precision and rounded once, as {@code TornadoMath} computes them.
      */
     private static Double fold(double x, double y, Operation op) {
         return switch (op) {
             case ATAN2 -> Math.atan2(x, y);
-            case COPYSIGN -> Math.copySign(x, y);
-            case FDIM -> x > y ? x - y : 0.0;
             case FMAX -> Math.max(x, y);
             case FMIN -> Math.min(x, y);
-            case FMOD -> x % y;
-            case HYPOT -> Math.hypot(x, y);
-            case POW, POWR -> Math.pow(x, y);
+            case POW -> Math.pow(x, y);
             default -> null;
         };
     }

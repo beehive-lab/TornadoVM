@@ -17,7 +17,7 @@ call (and vice-versa) with **no extra copies and no manual memory management**.
 
 1. [Quick start](#1-quick-start)
 2. [Core concepts](#2-core-concepts)
-3. [Provider catalog](#3-provider-catalog) — cuBLAS · cuBLASLt · cuFFT · cuDNN · CUTLASS · cuSPARSE
+3. [Provider catalog](#3-provider-catalog) — cuBLAS · cuBLASLt · cuFFT · cuDNN · CUTLASS · cuSPARSE · cuVS
 4. [Composition patterns](#4-composition-patterns)
 5. [CUDA Graphs](#5-cuda-graphs)
 6. [Execution-plan controls](#6-execution-plan-controls)
@@ -117,6 +117,7 @@ Each provider registers a unique id, matched by the factory:
 | `nvidia/cudnn` | `tornado-cudnn` |
 | `nvidia/cusparse` | `tornado-cusparse` |
 | `nvidia/cutlass` | `tornado-cutlass` |
+| `nvidia/cuvs` | `tornado-cuvs` |
 
 ---
 
@@ -284,6 +285,33 @@ more than that is rejected while capturing a CUDA graph, because the workspace
 cannot grow inside a capture region — run the graph once without CUDA graphs
 first, or reduce the problem size.
 
+### 3.7 cuVS — vector search (`nvidia/cuvs`)
+
+k-NN and clustering from [cuVS](https://github.com/rapidsai/cuvs), for vector databases and search libraries.
+TornadoVM arrays are passed zero-copy as DLPack tensors, and cuVS runs on the plan's stream. cuVS allocates
+its own scratch memory, so cuVS tasks cannot be captured in a CUDA graph. All matrices are row-major FP32.
+
+| Factory | Operation |
+|---|---|
+| `bruteForceKnn(dataset, nRows, dim, queries, nQueries, k, metric, neighbors, distances)` | exact k-NN of each query (`LongArray` ids) |
+| `allNeighbors(dataset, nRows, dim, k, algo, metric, neighbors, distances)` | k-NN graph of the whole dataset: `BRUTE_FORCE` (exact) or `NN_DESCENT` |
+| `kmeansFit(data, nRows, dim, nClusters, maxIter, centroids)` | k-means++ / Lloyd |
+| `kmeansPredict(data, nRows, dim, centroids, nClusters, labels)` | nearest centroid of each row |
+
+`metric` is a `CuVSDistance` value (`L2_EXPANDED`, `COSINE_EXPANDED`, `INNER_PRODUCT`, ...). NN-Descent can be tuned
+with an extra `CuVSAllNeighborsOptions` argument (intermediate graph degree, max iterations, termination threshold).
+For datasets larger than device memory, `CuVS.allNeighborsOnHost` takes a host `MemorySegment` (e.g. a memory-mapped
+file) and builds in batches (`CuVSAllNeighborsOptions.withClusters`). It is a direct call, not a task.
+
+```java
+new TaskGraph("knn")
+    .transferToDevice(DataTransferMode.FIRST_EXECUTION, vectors)
+    .task("normalise", MyKernels::normaliseRows, vectors, n, dim)            // Java kernel
+    .libraryTask("graph", CuVS::allNeighbors, vectors, n, dim, k,            // cuVS, same buffer and stream
+            CuVSAllNeighborsAlgo.BRUTE_FORCE.value(), CuVSDistance.INNER_PRODUCT.value(), ids, distances)
+    .transferToHost(DataTransferMode.EVERY_EXECUTION, ids, distances);
+```
+
 > **cuTENSOR** (`nvidia/cutensor`, tensor contractions / einsum) is implemented
 > on branch `hybrid-cutensor` but is **not part of this build**.
 
@@ -430,7 +458,7 @@ make BACKEND=cuda        # activates the cuda-backend Maven profile
 ```
 
 The Java modules (`tornado-cublas`, `tornado-cufft`, `tornado-cudnn`,
-`tornado-cusparse`, `tornado-cutlass`) always compile. `cublas`, `cufft` and
+`tornado-cusparse`, `tornado-cutlass`, `tornado-cuvs`) always compile. `cublas`, `cufft` and
 `cusparse` bind straight to the toolkit through `java.lang.foreign` — no
 native module at all. `cudnn` and `cutlass` still carry a native module
 (`cudnn-jni` for the cudnn-frontend SDPA shim, `cutlass-jni` for `nvcc`-compiled
@@ -441,7 +469,7 @@ runtime rather than failing the build.
 
 The launcher adds the provider modules to `--add-modules` automatically when the
 CUDA backend is present:
-`tornado.cublas, tornado.cufft, tornado.cudnn, tornado.cusparse, tornado.cutlass`.
+`tornado.cublas, tornado.cufft, tornado.cudnn, tornado.cusparse, tornado.cutlass, tornado.cuvs`.
 
 ### 8.2 Per-library install requirements
 
@@ -452,6 +480,7 @@ CUDA backend is present:
 | cuDNN | libcudnn 9 | `apt install libcudnn9-cuda-12 libcudnn9-dev-cuda-12` |
 | CUTLASS | header-only, **CUDA 12+** | fetched by CMake `FetchContent` (v3.5.1); no install |
 | cuSPARSE | in the CUDA toolkit | nothing |
+| cuVS | `libcuvs_c` (cuVS 26.08) | `pip install libcuvs-cu12` (or conda `libcuvs`), then add its `lib64` to `LD_LIBRARY_PATH` |
 
 The CUTLASS kernel arch defaults to
 `sm_80` SASS + `compute_80` PTX (runs on all Ampere/Ada, JITs for Hopper);
@@ -598,6 +627,6 @@ Key SPI types (in `tornado-runtime/.../runtime/library/spi/`):
 
 - `docs/source/hybrid-api.rst` — architecture reference (SPI internals).
 - Per-provider READMEs: `tornado-cublas/`, `tornado-cufft/`, `tornado-cudnn/`,
-  `tornado-cutlass/`, `tornado-cusparse/`.
+  `tornado-cutlass/`, `tornado-cusparse/`, `tornado-cuvs/`.
 - Unit tests double as worked examples:
-  `tornado-unittests/.../unittests/{cublas,cufft,cudnn,cusparse,cutlass}/`.
+  `tornado-unittests/.../unittests/{cublas,cufft,cudnn,cusparse,cutlass,cuvs}/`.

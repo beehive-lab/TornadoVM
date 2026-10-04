@@ -7,6 +7,52 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 
 CHANGELOG
 
+TornadoVM 7.1.0
+---------------
+04/10/26
+
+Compatibility
+~~~~~~~~~~~~
+
+- `#1170 <https://github.com/beehive-lab/TornadoVM/pull/1170>`_: Scope the device-reset flag to the execution plan that was reset
+
+Bug Fixes
+~~~~~~~~~~~~
+
+- `#1132 <https://github.com/beehive-lab/TornadoVM/pull/1132>`_: [opencl] Handle LogicConstantNode in branch and loop conditions
+
+Other Changes
+~~~~~~~~~~~~
+
+- `#1175 <https://github.com/beehive-lab/TornadoVM/pull/1175>`_: [cuda] Report driver dispatch time for kernel launches and data transfers
+- `#1174 <https://github.com/beehive-lab/TornadoVM/pull/1174>`_: [test] Run PrebuiltTests on the device selected by tornado.unittests.device
+- `#1169 <https://github.com/beehive-lab/TornadoVM/pull/1169>`_: [cudf] Bind STRING columns and cudf::strings::contains_re over them
+- `#1168 <https://github.com/beehive-lab/TornadoVM/pull/1168>`_: [cudf] Bind cudf::io::read_parquet, so a column reaches the device without the host
+- `#1167 <https://github.com/beehive-lab/TornadoVM/pull/1167>`_: [cudf] Allocate through an RMM pool instead of a raw cudaMalloc per call
+- `#1165 <https://github.com/beehive-lab/TornadoVM/pull/1165>`_: [profiler] Record COPY_OUT_TIME for copy-outs when dependency tracking is off
+- `#1164 <https://github.com/beehive-lab/TornadoVM/pull/1164>`_: [ci] Run Build & Test on every PR label event and the full sweep weekly
+- `#1171 <https://github.com/beehive-lab/TornadoVM/pull/1171>`_: Make withCompilerFlags reach the compiler, and add TornadoExecutionPlan.withStrictFloatingPoint()
+- `#1166 <https://github.com/beehive-lab/TornadoVM/pull/1166>`_: [unittests] Fix TestDynamicParallelism#testPendingLaunchCountMustBePositive on OpenCL and Metal
+- `#1172 <https://github.com/beehive-lab/TornadoVM/pull/1172>`_: [cuda] Emit signed char for Java bytes so negative values survive on AArch64 hosts
+- `#1162 <https://github.com/beehive-lab/TornadoVM/pull/1162>`_: Test task graphs at the initial capacity and growing twice
+- `#1160 <https://github.com/beehive-lab/TornadoVM/pull/1160>`_: [cuda] Fix host-memory pinning across execution plans: keep live plans' pins, pin only per-execution transfers
+- `#1159 <https://github.com/beehive-lab/TornadoVM/pull/1159>`_: [api] transferToHost on a multi-graph plan: only the graphs that take the object copy it out
+- `#1158 <https://github.com/beehive-lab/TornadoVM/pull/1158>`_: [runtime][opencl][cuda][metal] Free every task-graph of a plan on close and ignore double frees of shared buffers
+- `#1124 <https://github.com/beehive-lab/TornadoVM/pull/1124>`_: Skip String.format in TornadoLogger when logging is disabled
+- `#1126 <https://github.com/beehive-lab/TornadoVM/pull/1126>`_: Replace streams and per-execution collections on the dispatch path with loops and a reused count array
+- `#1127 <https://github.com/beehive-lab/TornadoVM/pull/1127>`_: Remove the hard-coded -XX:+UseParallelGC
+- `#1136 <https://github.com/beehive-lab/TornadoVM/pull/1136>`_: [cuda] Dynamic Parallelism: launch kernels from device code with KernelContext.launch
+- `#1140 <https://github.com/beehive-lab/TornadoVM/pull/1140>`_: [opencl][cuda][metal] Lower >>> as a logical shift
+- `#1141 <https://github.com/beehive-lab/TornadoVM/pull/1141>`_: [opencl][cuda][metal] Support float bit reinterpretation and honour unordered float comparisons in branch conditions
+- `#1143 <https://github.com/beehive-lab/TornadoVM/pull/1143>`_: Fix task graph hang when a task receives the same array in several written arguments
+- `#1142 <https://github.com/beehive-lab/TornadoVM/pull/1142>`_: Let task graphs grow past 256 tasks and 1024 graph nodes
+- `#1144 <https://github.com/beehive-lab/TornadoVM/pull/1144>`_: [opencl][cuda][metal] Fold binary math intrinsics of constants without aborting, and support constant branch conditions on Metal
+- `#1145 <https://github.com/beehive-lab/TornadoVM/pull/1145>`_: [metal] Pass global sizes with setBytes and wait for command buffers on a shared event
+- `#1155 <https://github.com/beehive-lab/TornadoVM/pull/1155>`_: [cuda] cuVS library provider: brute-force kNN, all-neighbors k-NN graph and k-means as library tasks
+- `#1146 <https://github.com/beehive-lab/TornadoVM/pull/1146>`_: [opencl][cuda][metal] Publish the backend device list only after it is filled
+- `#1138 <https://github.com/beehive-lab/TornadoVM/pull/1138>`_: [compiler] Fix 'if (A || B) {...} else {...}': else branch falling through (#1137)
+
+
 TornadoVM 7.0.1
 ---------------
 24/09/26

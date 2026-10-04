@@ -26,6 +26,8 @@ import tornado.graal.compiler.phases.PhaseSuite;
 import tornado.graal.compiler.phases.tiers.HighTierContext;
 import tornado.graal.compiler.phases.util.Providers;
 
+import java.util.Set;
+
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier;
 
@@ -37,8 +39,19 @@ public class SketchRequest {
     final Providers providers;
     final PhaseSuite<HighTierContext> graphBuilderSuite;
     final TornadoSketchTier sketchTier;
+    /**
+     * Kernels whose sketches are being built and that (transitively) launch this method from the
+     * device. Their sketches cannot be waited on from here: that would wait on itself.
+     */
+    final Set<ResolvedJavaMethod> launchAncestors;
 
     public SketchRequest(ResolvedJavaMethod resolvedMethod, Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, TornadoSketchTier sketchTier, int driverIndex, int deviceIndex) {
+        this(resolvedMethod, providers, graphBuilderSuite, sketchTier, driverIndex, deviceIndex, Set.of());
+    }
+
+    SketchRequest(ResolvedJavaMethod resolvedMethod, Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, TornadoSketchTier sketchTier, int driverIndex, int deviceIndex,
+            Set<ResolvedJavaMethod> launchAncestors) {
+        this.launchAncestors = launchAncestors;
         this.resolvedMethod = resolvedMethod;
         this.providers = providers;
         this.graphBuilderSuite = graphBuilderSuite;

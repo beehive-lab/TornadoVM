@@ -145,6 +145,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestHalfFloatValueConversionOpenCL"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestHalfFloatShortBitsOpenCL"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestHalfFloatShortBits"),
+    TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestSignedBytes"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestHalfFloatInPlaceUpdate"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestArrayCopies"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestJaggedArrays"),
@@ -180,6 +181,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.tile.TestTileRawBuffers"),
     TestEntry("uk.ac.manchester.tornado.unittests.cublas.TestCuBlas"),
     TestEntry("uk.ac.manchester.tornado.unittests.cublas.TestCuBlasLt"),
+    TestEntry("uk.ac.manchester.tornado.unittests.cuvs.TestCuVS"),
     TestEntry("uk.ac.manchester.tornado.unittests.cufft.TestCuFft"),
     TestEntry("uk.ac.manchester.tornado.unittests.cudnn.TestCuDnn"),
     TestEntry("uk.ac.manchester.tornado.unittests.nvtx.TestNvtx"),
@@ -218,10 +220,12 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestSingleTaskSingleDevice"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksSingleDevice"),
+    TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestLargeTaskGraphs"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestLibraryTaskArity"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestLibraryProviderSelection"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestLibraryNativeBuffers"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestManyArgumentTasks"),
+    TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestAliasedTaskArguments"),
     TestEntry("uk.ac.manchester.tornado.unittests.temporary.values.TestTemporaryValues"),
     TestEntry("uk.ac.manchester.tornado.unittests.images.TestImages"),
     TestEntry("uk.ac.manchester.tornado.unittests.images.TestResizeImage"),
@@ -254,6 +258,8 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestNativeArrayLayouts"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestOnDemandCopyIn"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestCopyInPipelines"),
+    TestEntry("uk.ac.manchester.tornado.unittests.api.TestCudaGraphPlanTeardown"),
+    TestEntry("uk.ac.manchester.tornado.unittests.api.TestPinnedTransfers"),
     TestEntry("uk.ac.manchester.tornado.unittests.executor.TestExecutor"),
     TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGrid"),
     TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGridScheduler"),
@@ -263,6 +269,9 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestVectorAdditionKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.KernelContextWorkGroupTests"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestAtomicRmw"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestDynamicParallelism"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestDynamicParallelismPipelines"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestCudaSamplesDynamicParallelism"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestUnsupportedKernelContextOps"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestAtomicRmw2D"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestGlobalBarrier"),
@@ -300,6 +309,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.functional.TestStreams"),
     TestEntry("uk.ac.manchester.tornado.unittests.flatmap.TestFlatMap"),
     TestEntry("uk.ac.manchester.tornado.unittests.logic.TestLogic"),
+    TestEntry("uk.ac.manchester.tornado.unittests.logic.TestShifts"),
     TestEntry("uk.ac.manchester.tornado.unittests.logic.TestEnumInKernel"),
     TestEntry("uk.ac.manchester.tornado.unittests.fields.TestFields"),
     TestEntry("uk.ac.manchester.tornado.unittests.fields.TestInheritedFields"),
@@ -329,8 +339,10 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.codegen.CodeGenTest"),
     TestEntry("uk.ac.manchester.tornado.unittests.codegen.TestDeepInliningChain"),
     TestEntry("uk.ac.manchester.tornado.unittests.codegen.TestShortCircuits"),
+    TestEntry("uk.ac.manchester.tornado.unittests.codegen.TestConstantFoldedIntrinsics"),
     TestEntry("uk.ac.manchester.tornado.unittests.codegen.TestSignedComparisonsCodegen"),
     TestEntry("uk.ac.manchester.tornado.unittests.codegen.TestPrivateArrayZeroInit"),
+    TestEntry("uk.ac.manchester.tornado.unittests.codegen.TestFloatBitsAndComparisons"),
     TestEntry("uk.ac.manchester.tornado.unittests.atomics.TestAtomics"),
     TestEntry("uk.ac.manchester.tornado.unittests.atomics.TestAtomicsWithReduction"),
     TestEntry("uk.ac.manchester.tornado.unittests.compute.ComputeTests"),
@@ -342,6 +354,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestSliceAliasing"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestBuildFromByteBuffers"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestSharedBuffers"),
+    TestEntry("uk.ac.manchester.tornado.unittests.api.TestFreeSelectedGraphs"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestChainedGraphsTypeChange"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestChainOfGridSchedulers"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions"),
@@ -530,7 +543,7 @@ else:
 
 ENABLE_ASSERTIONS = "-ea "
 
-__VERSION__ = "7.0.2-dev"
+__VERSION__ = "7.1.0"
 
 try:
     javaHome = os.environ["JAVA_HOME"]

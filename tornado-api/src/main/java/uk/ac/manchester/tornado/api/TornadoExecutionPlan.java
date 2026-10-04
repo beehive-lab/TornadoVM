@@ -35,8 +35,10 @@ import uk.ac.manchester.tornado.api.plan.types.OffThreadInfo;
 import uk.ac.manchester.tornado.api.plan.types.WithAllGraphs;
 import uk.ac.manchester.tornado.api.plan.types.WithBatch;
 import uk.ac.manchester.tornado.api.plan.types.WithCUDAGraph;
+import uk.ac.manchester.tornado.api.plan.types.WithCUDAPendingLaunchCount;
 import uk.ac.manchester.tornado.api.plan.types.WithClearProfiles;
 import uk.ac.manchester.tornado.api.plan.types.WithCompilerFlags;
+import uk.ac.manchester.tornado.api.plan.types.WithStrictFloatingPoint;
 import uk.ac.manchester.tornado.api.plan.types.WithConcurrentDevices;
 import uk.ac.manchester.tornado.api.plan.types.WithDefaultScheduler;
 import uk.ac.manchester.tornado.api.plan.types.WithDevice;
@@ -545,6 +547,31 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     }
 
     /**
+     * Requires this plan's kernels to round floating-point arithmetic the way the host does.
+     *
+     * <p>
+     * A device fuses {@code a * b + c} into one operation with a single rounding, which is more
+     * accurate than the host's two roundings and therefore a different answer. Use this when device
+     * and host results must agree. It disables both places the CUDA backend fuses -- the compiler
+     * phase and NVRTC's contraction -- since turning off either alone leaves the other.
+     *
+     * <p>
+     * Scoped to this plan, and can only make a task stricter, so it composes with
+     * {@code -Dtornado.enable.fma=false}.
+     *
+     * <p>
+     * Implemented for the CUDA backend. Elsewhere the call is accepted and has no effect, so check
+     * the backend before relying on it as a correctness guarantee.
+     *
+     * @since 7.0.2
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan withStrictFloatingPoint() {
+        tornadoExecutor.withStrictFloatingPoint();
+        return new WithStrictFloatingPoint(this);
+    }
+
+    /**
      * @since 1.0.4
      * 
      * @throws {@link
@@ -676,6 +703,32 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     public TornadoExecutionPlan transferToDevice(Object... objects) {
         tornadoExecutor.transferDataToDevice(executionFrame, objects);
         return this;
+    }
+
+    /**
+     * Sets how many kernel launches from device code ({@link KernelContext#launch}, CUDA Dynamic
+     * Parallelism) may be pending at once on the device this plan runs on. A device-side launch
+     * beyond the limit fails and its kernel does not run (the failure is printed from the device).
+     * Raise it for kernels that launch many children, for example one per thread block or a deep
+     * recursion.
+     *
+     * <p>
+     * It sets {@code CU_LIMIT_DEV_RUNTIME_PENDING_LAUNCH_COUNT} on the device's CUDA context before
+     * the plan runs, so it holds for everything that runs on that device from then on. Without it,
+     * {@code -Dtornado.cuda.dp.pendingLaunchCount} applies, or else the driver's default (2048).
+     * CUDA backend only; a no-op on other backends.
+     * </p>
+     *
+     * @param count
+     *     the maximum number of pending device-side launches; must be positive
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan withCUDAPendingLaunchCount(int count) {
+        if (count <= 0) {
+            throw new IllegalArgumentException("The pending device-side launch count must be positive, got " + count);
+        }
+        tornadoExecutor.withCUDAPendingLaunchCount(count);
+        return new WithCUDAPendingLaunchCount(this);
     }
 
     public TornadoExecutionPlan withCUDAGraph() {

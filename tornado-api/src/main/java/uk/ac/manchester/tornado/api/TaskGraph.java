@@ -1101,6 +1101,10 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.withCUDAGraph();
     }
 
+    void withCUDAPendingLaunchCount(int count) {
+        taskGraphImpl.withCUDAPendingLaunchCount(count);
+    }
+
     void withIntraPlanConcurrency() {
         taskGraphImpl.withIntraPlanConcurrency();
     }
@@ -1246,6 +1250,10 @@ public class TaskGraph implements TaskGraphInterface {
 
     void withCompilerFlags(TornadoVMBackendType backendType, String compilerFlags) {
         taskGraphImpl.withCompilerFlags(backendType, compilerFlags);
+    }
+
+    void withStrictFloatingPoint() {
+        taskGraphImpl.withStrictFloatingPoint();
     }
 
     void withGridScheduler(GridScheduler gridScheduler) {

@@ -27,7 +27,6 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shoul
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalKind.ILLEGAL;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-import uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalConstantValue;
 import uk.ac.manchester.tornado.runtime.common.MetalTokens;
 
 import java.util.Collection;
@@ -358,8 +357,8 @@ public class MetalNodeLIRBuilder extends NodeLIRBuilder {
             final Value y = operand(testNode.getY());
             result = getGen().getArithmetic().genTestNegateBinaryExpr(MetalBinaryOp.BITWISE_AND, boolLirKind, x, y);
         } else if (node instanceof LogicConstantNode logicConstant) {
-            // negated constant: true becomes 0, false becomes 1
-            result = new MetalConstantValue(logicConstant.getValue() ? "0" : "1");
+            // Negated constant-folded condition: emit the inverted trivial relation (0 != 0 / 0 == 0).
+            result = emitTrivialRelation(!logicConstant.getValue(), intLirKind, boolLirKind);
         } else {
             throw new TornadoRuntimeException(String.format("logic node (class=%s)", node.getClass().getName()));
         }
@@ -432,12 +431,21 @@ public class MetalNodeLIRBuilder extends NodeLIRBuilder {
             final Value y = operand(integerTestNode.getY());
             result = getGen().getArithmetic().genTestBinaryExpr(MetalBinaryOp.BITWISE_AND, boolLirKind, x, y);
         } else if (node instanceof LogicConstantNode logicConstant) {
-            result = new MetalConstantValue(logicConstant.getValue() ? "1" : "0");
+            // A condition folded to a constant (e.g. once scalar arguments are specialised): emit a trivially
+            // true/false relation (0 == 0 / 0 != 0), so that it is still a boolean MetalLIROp that can be used as a
+            // branch or loop condition. A bare constant has no Metal kind, and emitIf cannot hold it in a variable.
+            result = emitTrivialRelation(logicConstant.getValue(), intLirKind, boolLirKind);
         } else {
             throw new TornadoRuntimeException(String.format("logic node (class=%s)", node.getClass().getName()));
         }
         setResult(node, result);
         return (MetalLIROp) result;
+    }
+
+    private Value emitTrivialRelation(boolean value, LIRKind intLirKind, LIRKind boolLirKind) {
+        final Value zero = gen.emitConstant(intLirKind, JavaConstant.forInt(0));
+        final MetalBinaryOp op = value ? MetalBinaryOp.RELATIONAL_EQ : MetalBinaryOp.RELATIONAL_NE;
+        return getGen().getArithmetic().genBinaryExpr(op, boolLirKind, zero, zero);
     }
 
     private Value negatedOperand(ValueNode value) {

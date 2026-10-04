@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import uk.ac.manchester.tornado.api.enums.DeviceLaunchMode;
 import uk.ac.manchester.tornado.api.enums.MMAShape;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
@@ -1122,6 +1123,56 @@ public class KernelContext implements ExecutionContext {
     public void mmaStoreBSwizzled(HalfFloat[] arr, int row, int col, int stride,
                                          HalfFloat value, int byteOffset) {
         // CPU fallback: no-op (swizzle layout only matters on GPU).
+    }
+
+    /**
+     * Launches {@code kernel} from the device, as a 1D grid of {@code globalSizeX} threads in thread
+     * blocks of {@code localSizeX} (CUDA Dynamic Parallelism). The launch goes into the launching
+     * thread block's default stream; see {@link DeviceLaunchMode#DEFAULT}.
+     *
+     * <p>
+     * Every thread that reaches the call launches its own grid, so guard it (for example with
+     * {@code if (context.globalIdx == 0)}) to launch once. {@code args} are the child's parameters
+     * after its {@link KernelContext}, in order: arrays of the parent's global memory and primitives.
+     * Arrays allocated in local memory cannot be passed. The grid is rounded up to a whole number of
+     * blocks, so the child must bounds-check its thread index.
+     * </p>
+     *
+     * <p>
+     * The parent cannot wait for the child. Every kernel it launches has completed by the time the
+     * host sees the parent complete. {@code kernel} must be a {@code static final} field.
+     * </p>
+     *
+     * <p>
+     * Supported on the CUDA backend only (CUDA 12+, CDP2). Other backends reject the kernel at compile
+     * time.
+     * </p>
+     */
+    public void launch(DeviceKernel kernel, int globalSizeX, int localSizeX, Object... args) {
+        throw new UnsupportedOperationException("KernelContext.launch (device-side kernel launch) is only supported by the CUDA backend.");
+    }
+
+    /**
+     * Launches {@code kernel} from the device as a 1D grid, into the stream selected by {@code mode}.
+     * See {@link #launch(DeviceKernel, int, int, Object...)}. {@code mode} must be a constant.
+     */
+    public void launch(DeviceKernel kernel, DeviceLaunchMode mode, int globalSizeX, int localSizeX, Object... args) {
+        throw new UnsupportedOperationException("KernelContext.launch (device-side kernel launch) is only supported by the CUDA backend.");
+    }
+
+    /**
+     * Launches {@code kernel} from the device as a 3D grid of
+     * {@code globalSizeX * globalSizeY * globalSizeZ} threads in thread blocks of
+     * {@code localSizeX * localSizeY * localSizeZ}, into the stream selected by {@code mode}. See
+     * {@link #launch(DeviceKernel, int, int, Object...)}. Use 1 for unused dimensions.
+     *
+     * <p>
+     * Named apart from {@code launch} so that a 1D launch whose arguments are themselves integers can
+     * never resolve to this overload.
+     * </p>
+     */
+    public void launch3D(DeviceKernel kernel, DeviceLaunchMode mode, int globalSizeX, int globalSizeY, int globalSizeZ, int localSizeX, int localSizeY, int localSizeZ, Object... args) {
+        throw new UnsupportedOperationException("KernelContext.launch (device-side kernel launch) is only supported by the CUDA backend.");
     }
 
 }

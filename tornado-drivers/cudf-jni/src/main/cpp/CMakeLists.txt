@@ -103,6 +103,19 @@ if(EXISTS "${CUDF_INCLUDE_DIR}/rapids/cuda/std/version")
     set(CUDF_RAPIDS_INCLUDE_DIR "${CUDF_INCLUDE_DIR}/rapids")
 endif()
 
+# RMM's memory-resource headers include rapids_logger, which ships beside libcudf rather than
+# inside it. Only needed since the pool was added; absent in a conda layout, where it is merged.
+find_path(RAPIDS_LOGGER_INCLUDE_DIR rapids_logger/log_levels.h
+    HINTS
+        ${CUDF_INCLUDE_DIR}
+        ${CUDF_INCLUDE_DIR}/..
+        ${CUDF_INCLUDE_DIR}/../..
+        $ENV{HOME}/.local/share/rapids-libcudf/rapids_logger/include
+    NO_DEFAULT_PATH)
+if(NOT RAPIDS_LOGGER_INCLUDE_DIR)
+    set(RAPIDS_LOGGER_INCLUDE_DIR "")
+endif()
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -118,6 +131,7 @@ target_include_directories(tornado-cudf PRIVATE
     ${CUDF_RAPIDS_INCLUDE_DIR}
     ${CUDF_INCLUDE_DIR}
     ${RMM_INCLUDE_DIR}
+    ${RAPIDS_LOGGER_INCLUDE_DIR}
     ${CUDART_INCLUDE_DIR}
     source/
 )
