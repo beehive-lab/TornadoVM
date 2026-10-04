@@ -537,7 +537,7 @@ public class TestDynamicParallelism extends TornadoTestBase {
 
     @Test
     public void testPendingLaunchCountMustBePositive() {
-        TaskGraph taskGraph = new TaskGraph("dp").task("t0", TestDynamicParallelism::singleLaunchParent, new KernelContext(), new IntArray(1), 1);
+        TaskGraph taskGraph = new TaskGraph("dp").task("t0", TestDynamicParallelism::doubleChild, new KernelContext(), new IntArray(1), 1);
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
             plan.withCUDAPendingLaunchCount(0);
             fail("withCUDAPendingLaunchCount(0) must be rejected");

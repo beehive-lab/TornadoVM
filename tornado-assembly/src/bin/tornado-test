@@ -145,6 +145,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestHalfFloatValueConversionOpenCL"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestHalfFloatShortBitsOpenCL"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestHalfFloatShortBits"),
+    TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestSignedBytes"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestHalfFloatInPlaceUpdate"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestArrayCopies"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestJaggedArrays"),
@@ -227,6 +228,8 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestNativeArrayLayouts"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestOnDemandCopyIn"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestCopyInPipelines"),
+    TestEntry("uk.ac.manchester.tornado.unittests.api.TestCudaGraphPlanTeardown"),
+    TestEntry("uk.ac.manchester.tornado.unittests.api.TestPinnedTransfers"),
     TestEntry("uk.ac.manchester.tornado.unittests.executor.TestExecutor"),
     TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGrid"),
     TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGridScheduler"),
@@ -510,7 +513,7 @@ else:
 
 ENABLE_ASSERTIONS = "-ea "
 
-__VERSION__ = "7.0.2-dev"
+__VERSION__ = "7.1.1-dev"
 
 try:
     javaHome = os.environ["JAVA_HOME"]

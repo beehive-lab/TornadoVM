@@ -65,7 +65,8 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     private final OCLMemoryManager memoryManager;
     private final Map<Long, OCLEventPool> oclEventPool;
     private final TornadoBufferProvider bufferProvider;
-    private boolean wasReset;
+    /** Execution plans whose device state has been torn down; see TornadoDeviceContext. */
+    private final java.util.Set<Long> resetPlans = java.util.concurrent.ConcurrentHashMap.newKeySet();
     private final Set<Long> executionIDs;
 
     /**
@@ -528,7 +529,7 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
         OCLCodeCache oclCodeCache = getOCLCodeCache(executionPlanId);
         oclCodeCache.reset();
         codeCache.remove(executionPlanId);
-        wasReset = true;
+        resetPlans.add(executionPlanId);
     }
 
     public OCLTornadoDevice toDevice() {
@@ -558,13 +559,13 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     }
 
     @Override
-    public boolean wasReset() {
-        return wasReset;
+    public boolean wasReset(long executionPlanId) {
+        return resetPlans.contains(executionPlanId);
     }
 
     @Override
-    public void setResetToFalse() {
-        wasReset = false;
+    public void setResetToFalse(long executionPlanId) {
+        resetPlans.remove(executionPlanId);
     }
 
     @Override

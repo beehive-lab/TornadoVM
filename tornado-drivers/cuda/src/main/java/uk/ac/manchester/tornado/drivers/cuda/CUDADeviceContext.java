@@ -69,7 +69,8 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     private final CUDAMemoryManager memoryManager;
     private final Map<Long, CUDAEventPool> oclEventPool;
     private final TornadoBufferProvider bufferProvider;
-    private boolean wasReset;
+    /** Execution plans whose device state has been torn down; see TornadoDeviceContext. */
+    private final java.util.Set<Long> resetPlans = java.util.concurrent.ConcurrentHashMap.newKeySet();
     private final Set<Long> executionIDs;
 
     /**
@@ -881,9 +882,15 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
         codeCache.remove(executionPlanId);
         // Plan teardown may bulk-release device buffers without the per-buffer free hook
         // running, which would leave host pins behind - the stale-pin hazard. Drain all
-        // owned pins here; live segments degrade to pageable until their next allocate.
-        context.getPinnedMemoryRegistry().unpinAll();
-        wasReset = true;
+        // owned pins here once no execution plan is left. While other plans are alive, drop
+        // only the pins no live buffer holds: a live plan's captured CUDA graphs copy from the
+        // pinned host buffers it holds, and unregistering them under it crashes its next launch.
+        if (executionIDs.isEmpty()) {
+            context.getPinnedMemoryRegistry().unpinAll();
+        } else {
+            context.getPinnedMemoryRegistry().unpinUnheld();
+        }
+        resetPlans.add(executionPlanId);
     }
 
     public CUDATornadoDevice toDevice() {
@@ -913,13 +920,13 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     }
 
     @Override
-    public boolean wasReset() {
-        return wasReset;
+    public boolean wasReset(long executionPlanId) {
+        return resetPlans.contains(executionPlanId);
     }
 
     @Override
-    public void setResetToFalse() {
-        wasReset = false;
+    public void setResetToFalse(long executionPlanId) {
+        resetPlans.remove(executionPlanId);
     }
 
     @Override

@@ -76,6 +76,7 @@ import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
 import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
 import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.LibraryTask;
+import uk.ac.manchester.tornado.runtime.tasks.LocalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
@@ -888,6 +889,8 @@ public class TornadoVMInterpreter {
                 objects[allocCounter] = this.objects.get(arg);
                 objectStates[allocCounter] = resolveObjectState(arg);
                 accesses[allocCounter] = this.objectAccesses.get(objects[allocCounter]);
+                LocalObjectState localState = graphExecutionContext.getLocalStateObject(objects[allocCounter], accesses[allocCounter]);
+                objectStates[allocCounter].setTransferredEveryExecution(localState.isStreamIn() || localState.isStreamOut());
                 allocCounter++;
             } else {
                 XPUDeviceBufferState state = resolveObjectState(arg);
@@ -1201,12 +1204,25 @@ public class TornadoVMInterpreter {
 
     private void updateMeta(TaskContextInterface meta) {
         meta.setPrintKernelFlag(graphExecutionContext.meta().isPrintKernelEnabled());
-        meta.setCompilerFlags(TornadoVMBackendType.OPENCL, graphExecutionContext.meta().getCompilerFlags(TornadoVMBackendType.OPENCL));
+        meta.setStrictFloatingPoint(graphExecutionContext.meta().isStrictFloatingPoint());
+        // Every backend, not just OpenCL. withCompilerFlags() writes into the execution
+        // context's meta, and each backend's code cache reads the *task's* meta -- so a flag
+        // that is not copied down here never reaches the compiler. OCLCodeCache was the only
+        // one being served; CUDACodeCache and MetalCodeCache read the same way and got nothing,
+        // which made withCompilerFlags(CUDA, ...) and withCompilerFlags(METAL, ...) silently
+        // do nothing at all. Looping over the backends keeps that from recurring when one is
+        // added.
+        for (TornadoVMBackendType backendType : TornadoVMBackendType.values()) {
+            String compilerFlags = graphExecutionContext.meta().getCompilerFlags(backendType);
+            if (compilerFlags != null) {
+                meta.setCompilerFlags(backendType, compilerFlags);
+            }
+        }
     }
 
     private XPUExecutionFrame compileTaskFromBytecodeToBinary(final int callWrapperIndex, final int numArgs, final int eventId, final int taskIndex, final long batchThreads) {
 
-        if (interpreterDevice.getDeviceContext().wasReset() && finishedWarmup) {
+        if (interpreterDevice.getDeviceContext().wasReset(graphExecutionContext.getExecutionPlanId()) && finishedWarmup) {
             throw new TornadoFailureException("[ERROR] reset() was called after warmup() on device: " + interpreterDevice + "!");
         }
 

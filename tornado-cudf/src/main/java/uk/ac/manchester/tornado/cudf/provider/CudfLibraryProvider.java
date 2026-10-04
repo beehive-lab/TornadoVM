@@ -79,6 +79,20 @@ public final class CudfLibraryProvider implements TornadoLibraryProvider {
         CudfContext context = (CudfContext) invocation.getContext();
         long stream = context.stream;
         int status = switch (functionName) {
+            case "readParquet" -> CudfNativeLib.readParquet(stream, pathOf(invocation.getArg(0)), (Integer) invocation.getArg(1), (Integer) invocation.getArg(2),
+                    (Integer) invocation.getArg(3), (int[]) invocation.getArg(4), (Long) invocation.getArg(5), invocation.getDevicePointer(6), invocation.getDevicePointer(7),
+                    (Integer) invocation.getArg(8));
+            case "readParquetStrings" -> {
+                // The decoded byte count is reported back through the caller's own dims buffer
+                // rather than returned, because a library task has no return value. The status is
+                // what the interpreter checks, so success is 0 here and the size is a side effect.
+                CudfNativeLib.readParquetStrings(stream, pathOf(invocation.getArg(0)), (Integer) invocation.getArg(1), (Integer) invocation.getArg(2),
+                        (Integer) invocation.getArg(3), (Long) invocation.getArg(4), invocation.getDevicePointer(5), invocation.getDevicePointer(6),
+                        (Long) invocation.getArg(7));
+                yield 0;
+            }
+            case "containsRe" -> CudfNativeLib.containsRe(stream, (Long) invocation.getArg(0), invocation.getDevicePointer(1), invocation.getDevicePointer(2),
+                    (Long) invocation.getArg(3), pathOf(invocation.getArg(4)), invocation.getDevicePointer(5));
             case "sortedOrder" -> CudfNativeLib.sortedOrder(stream, invocation.getDevicePointer(1), (Integer) invocation.getArg(0), invocation.getDevicePointer(2));
             case "groupSum" -> CudfNativeLib.groupSum(stream, invocation.getDevicePointer(1), invocation.getDevicePointer(2), (Integer) invocation.getArg(0), invocation.getDevicePointer(3),
                     invocation.getDevicePointer(4), invocation.getDevicePointer(5));
@@ -101,5 +115,18 @@ public final class CudfLibraryProvider implements TornadoLibraryProvider {
     public void destroyContext(LibraryContext context) {
         // Nothing to release: the stream belongs to the execution plan and cuDF's own allocations
         // are freed inside the shim before it returns.
+    }
+
+    /**
+     * The path, whether it was captured directly or handed over in a one-element holder.
+     *
+     * <p>A holder is what lets one execution plan read many files: the argument reference is fixed
+     * when the graph is built, but its contents are read here, when the task runs.
+     */
+    private static String pathOf(Object arg) {
+        if (arg instanceof CharSequence && !(arg instanceof String)) {
+            return arg.toString();
+        }
+        return (String) arg;
     }
 }
