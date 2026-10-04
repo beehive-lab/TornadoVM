@@ -125,6 +125,20 @@ When the timeout runs out, the communicators are aborted as for a failed rank. I
 return even then (stuck in something NCCL cannot interrupt), `execute()` still throws after a second
 timeout period and the group refuses further steps.
 
+A plan can hold more than one program, for example the prefill graphs and the decode graphs of a
+model, which then share the device's buffers. `execute(step)` runs a step in which every rank runs
+its own share of its plan instead of the whole plan, with the same failure and timeout handling:
+
+```java
+int[][] graphsOfRank = { { 0, 1 }, { 0, 1 } };
+ranks.execute((rank, plan) -> {
+    for (int graph : graphsOfRank[rank]) {
+        plan.withGraph(graph).execute();
+    }
+    return null;
+});
+```
+
 ## CUDA graphs
 
 NCCL tasks can be captured into CUDA graphs. Call `withCUDAGraph()` on the plan of every rank; the

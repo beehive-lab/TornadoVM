@@ -664,6 +664,81 @@ public class TestNccl extends TornadoTestBase {
         assertTrue("ncclCommDestroy did not return: a CUDA graph of a closed plan still holds the communicator", !closer.isAlive());
     }
 
+    public static void poison(KernelContext context, FloatArray array) {
+        int id = context.globalIdx;
+        if (id < array.getSize()) {
+            array.set(id, -1.0f);
+        }
+    }
+
+    /**
+     * A step that runs a selected sequence of each rank's graphs rather than the whole plan: rank 0
+     * fills and sends but never runs the third graph of its plan, which would overwrite the buffer
+     * it sends; rank 1 receives and adds one. Three steps, the same result each time.
+     */
+    @Test
+    public void testStepRunsSelectedGraphs() throws Exception {
+        TornadoDevice[] devices = cudaDevices();
+        if (devices.length < 2) {
+            throw new TornadoVMMultiDeviceNotSupported("This test needs at least 2 CUDA devices");
+        }
+        TornadoDevice[] pair = { devices[0], devices[1] };
+        FloatArray sent = new FloatArray(SIZE);
+        FloatArray received = new FloatArray(SIZE);
+        TornadoExecutionPlan[] plans = new TornadoExecutionPlan[2];
+        try (NcclCommunicator communicator = NcclCommunicator.create(pair)) {
+            try {
+                TaskGraph fill = new TaskGraph("selFill") //
+                        .task("k0", TestNccl::fillFloat, new KernelContext(), sent, 0) //
+                        .persistOnDevice(sent);
+                TaskGraph send = new TaskGraph("selSend") //
+                        .consumeFromDevice("selFill", sent) //
+                        .libraryTask("send", Nccl::send, communicator, sent, 1) //
+                        .persistOnDevice(sent);
+                TaskGraph poisonGraph = new TaskGraph("selPoison") //
+                        .consumeFromDevice("selSend", sent) //
+                        .task("k0", TestNccl::poison, new KernelContext(), sent);
+                TaskGraph recv = new TaskGraph("selRecv") //
+                        .libraryTask("recv", Nccl::recv, communicator, received, 0) //
+                        .persistOnDevice(received);
+                TaskGraph add = new TaskGraph("selAdd") //
+                        .consumeFromDevice("selRecv", received) //
+                        .task("k0", TestNccl::addOne, new KernelContext(), received) //
+                        .transferToHost(DataTransferMode.EVERY_EXECUTION, received);
+
+                GridScheduler scheduler0 = new GridScheduler();
+                scheduler0.addWorkerGrid("selFill.k0", worker(SIZE));
+                scheduler0.addWorkerGrid("selPoison.k0", worker(SIZE));
+                GridScheduler scheduler1 = new GridScheduler();
+                scheduler1.addWorkerGrid("selAdd.k0", worker(SIZE));
+                plans[0] = new TornadoExecutionPlan(fill.snapshot(), send.snapshot(), poisonGraph.snapshot()).withDevice(pair[0]).withGridScheduler(scheduler0);
+                plans[1] = new TornadoExecutionPlan(recv.snapshot(), add.snapshot()).withDevice(pair[1]).withGridScheduler(scheduler1);
+
+                int[][] graphsOfRank = { { 0, 1 }, { 0, 1 } };
+                try (NcclPlanGroup ranks = new NcclPlanGroup(plans).withStepTimeout(Duration.ofSeconds(60))) {
+                    for (int step = 0; step < 3; step++) {
+                        received.init(0.0f);
+                        ranks.execute((rank, plan) -> {
+                            for (int graph : graphsOfRank[rank]) {
+                                plan.withGraph(graph).execute();
+                            }
+                            return null;
+                        });
+                        for (int i = 0; i < SIZE; i++) {
+                            assertEquals("step " + step, (i % 7 + 1) + 1.0f, received.get(i), 0.0f);
+                        }
+                    }
+                }
+            } finally {
+                for (TornadoExecutionPlan plan : plans) {
+                    if (plan != null) {
+                        plan.close();
+                    }
+                }
+            }
+        }
+    }
+
     private static void checkPipeline(FloatArray received, int step) {
         for (int i = 0; i < SIZE; i++) {
             assertEquals("step " + step, 2.0f * (step * 10 + i % 9) + 1.0f, received.get(i), 0.0f);

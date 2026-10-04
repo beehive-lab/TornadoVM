@@ -394,7 +394,8 @@ cannot be used again: create a new communicator and new plans; NCCL keeps workin
 A step can also hang with no rank failing (a `send` that no rank receives, collectives posted in a
 different order on each rank). `ranks.withStepTimeout(Duration.ofSeconds(30))` bounds every step:
 when it runs out, the group aborts the communicators in the same way and `execute()` throws, naming
-the ranks that were still running.
+the ranks that were still running. `ranks.execute((rank, plan) -> ...)` runs a step in which each rank
+runs part of its plan, such as one of several programs that share the device's buffers.
 
 **Several processes:** a communicator can span processes (and machines). One process creates an
 `NcclUniqueId` and the application hands it to the others (socket, MPI, shared file, environment
