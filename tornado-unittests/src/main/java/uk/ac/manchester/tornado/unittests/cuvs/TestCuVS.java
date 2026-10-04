@@ -28,6 +28,7 @@ import java.util.Random;
 import org.junit.Before;
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -42,6 +43,7 @@ import uk.ac.manchester.tornado.cuvs.CuVSAllNeighborsAlgo;
 import uk.ac.manchester.tornado.cuvs.CuVSAllNeighborsOptions;
 import uk.ac.manchester.tornado.cuvs.CuVSDistance;
 import uk.ac.manchester.tornado.cuvs.provider.CuVSLibraryProvider;
+import uk.ac.manchester.tornado.unittests.common.LibraryStreamPerThread;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
 
@@ -316,6 +318,50 @@ public class TestCuVS extends TornadoTestBase {
         // and its centroid is near the blob centre
         for (int c = 0; c < clusters; c++) {
             assertEquals(10.0f * c, centroids.get(labelOfBlob[c] * dim), 0.5f);
+        }
+    }
+
+    /**
+     * The same plan run from a second thread: TornadoVM gives each thread its own stream, and the
+     * cuVS call must follow the kernel that produces its queries on that thread's stream, not on the
+     * stream of the thread that first ran the plan. Row {@code r} of the dataset is all {@code r}, so
+     * the nearest row to a query that is all {@code v} is row {@code v}.
+     */
+    @Test
+    public void testBruteForceKnnFollowsKernelOnAnotherThread() throws Exception {
+        final int nRows = 8;
+        final int nQueries = 16;
+        final int dim = 16;
+        FloatArray dataset = new FloatArray(nRows * dim);
+        for (int i = 0; i < nRows * dim; i++) {
+            dataset.set(i, i / dim);
+        }
+        FloatArray queries = new FloatArray(nQueries * dim);
+        LongArray neighbors = new LongArray(nQueries);
+        FloatArray distances = new FloatArray(nQueries);
+        FloatArray value = new FloatArray(1);
+        value.set(0, 1.0f);
+
+        TaskGraph taskGraph = new TaskGraph("streamPerThread") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, dataset, queries) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, value) //
+                .task("fill", LibraryStreamPerThread::slowFill, new KernelContext(), queries, value, LibraryStreamPerThread.SPINS) //
+                .libraryTask("knn", CuVS::bruteForceKnn, dataset, nRows, dim, queries, nQueries, 1, CuVSDistance.L2_EXPANDED.value(), neighbors, distances) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, neighbors);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.withGridScheduler(LibraryStreamPerThread.gridScheduler("streamPerThread.fill")).execute();
+            for (int q = 0; q < nQueries; q++) {
+                assertEquals("query " + q, 1L, neighbors.get(q));
+            }
+            // The same plan from another thread, with a new value: a call that does not wait for
+            // the kernel on this thread's stream reads the first one.
+            value.set(0, 2.0f);
+            neighbors.init(-1L);
+            LibraryStreamPerThread.executeOnAnotherThread(plan);
+            for (int q = 0; q < nQueries; q++) {
+                assertEquals("query " + q, 2L, neighbors.get(q));
+            }
         }
     }
 }

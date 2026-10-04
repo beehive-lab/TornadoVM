@@ -32,8 +32,8 @@ import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
  * <p>
  * There is no handle to create and no workspace to size, which is the difference from cuSPARSE:
  * cuDF allocates through RMM per call and every buffer this module touches belongs to TornadoVM
- * already. The context therefore holds only the stream, and exists so that a task graph executed
- * twice concurrently does not share one.
+ * already. The context therefore holds nothing: each call takes the stream of the thread running
+ * the plan, which is looked up per call because a plan may run on different threads.
  *
  * <p>
  * {@link #canHandle} answers false when the shim is missing, which is the usual case. A provider
@@ -43,11 +43,6 @@ import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
 public final class CudfLibraryProvider implements TornadoLibraryProvider {
 
     private static final class CudfContext implements LibraryContext {
-        private final long stream;
-
-        private CudfContext(long stream) {
-            this.stream = stream;
-        }
     }
 
     /**
@@ -71,13 +66,15 @@ public final class CudfLibraryProvider implements TornadoLibraryProvider {
     @Override
     public LibraryContext createContext(TornadoXPUDevice device, long executionPlanId) {
         CudfNativeLib.load();
-        return new CudfContext(((TornadoNativeStreamSupport) device).getNativeStream(executionPlanId));
+        return new CudfContext();
     }
 
     @Override
     public void dispatch(String functionName, LibraryInvocation invocation) {
-        CudfContext context = (CudfContext) invocation.getContext();
-        long stream = context.stream;
+        // The stream belongs to the thread that runs the plan, which need not be the one that
+        // created this context: follow it, or the call runs on another thread's stream, unordered
+        // with the kernels that produce its inputs.
+        long stream = ((TornadoNativeStreamSupport) invocation.getDevice()).getNativeStream(invocation.getExecutionPlanId());
         int status = switch (functionName) {
             case "sortedOrder" -> CudfNativeLib.sortedOrder(stream, invocation.getDevicePointer(1), (Integer) invocation.getArg(0), invocation.getDevicePointer(2));
             case "groupSum" -> CudfNativeLib.groupSum(stream, invocation.getDevicePointer(1), invocation.getDevicePointer(2), (Integer) invocation.getArg(0), invocation.getDevicePointer(3),
@@ -99,7 +96,7 @@ public final class CudfLibraryProvider implements TornadoLibraryProvider {
 
     @Override
     public void destroyContext(LibraryContext context) {
-        // Nothing to release: the stream belongs to the execution plan and cuDF's own allocations
+        // Nothing to release: the streams belong to the execution plan and cuDF's own allocations
         // are freed inside the shim before it returns.
     }
 }

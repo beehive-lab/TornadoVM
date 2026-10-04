@@ -24,6 +24,7 @@ import java.util.Random;
 import org.junit.Before;
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -33,6 +34,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.cufft.CuFft;
+import uk.ac.manchester.tornado.unittests.common.LibraryStreamPerThread;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.cufft.provider.CuFftLibraryProvider;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
@@ -332,6 +334,42 @@ public class TestCuFft extends TornadoTestBase {
                 for (int i = 0; i < 2 * N; i++) {
                     assertEquals("iteration " + it, original.get(i), restored.get(i), 1e-3f);
                 }
+            }
+        }
+    }
+
+    /**
+     * The same plan run from a second thread: TornadoVM gives each thread its own stream, and the
+     * cuFFT call must follow the kernel that produces its input on that thread's stream, not on the
+     * stream of the thread that first ran the plan.
+     */
+    @Test
+    public void testForwardC2CFollowsKernelOnAnotherThread() throws Exception {
+        FloatArray input = new FloatArray(2 * N);
+        FloatArray output = new FloatArray(2 * N);
+        FloatArray value = new FloatArray(1);
+        value.set(0, 1.0f);
+
+        TaskGraph taskGraph = new TaskGraph("streamPerThread") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, value) //
+                .task("fill", LibraryStreamPerThread::slowFill, new KernelContext(), input, value, LibraryStreamPerThread.SPINS) //
+                .libraryTask("fft", CuFft::cufftForwardC2C, input, output, N, 1) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.withGridScheduler(LibraryStreamPerThread.gridScheduler("streamPerThread.fill")).execute();
+            for (int i = 0; i < 2 * N; i++) {
+                assertEquals("element " + i, i < 2 ? N * 1.0f : 0.0f, output.get(i), 1e-1f);
+            }
+
+            // The same plan from another thread, with a new value: a call that does not wait for
+            // the kernel on this thread's stream reads the first one.
+            value.set(0, 2.0f);
+            output.init(0.0f);
+            LibraryStreamPerThread.executeOnAnotherThread(plan);
+            for (int i = 0; i < 2 * N; i++) {
+                assertEquals("element " + i, i < 2 ? N * 2.0f : 0.0f, output.get(i), 1e-1f);
             }
         }
     }

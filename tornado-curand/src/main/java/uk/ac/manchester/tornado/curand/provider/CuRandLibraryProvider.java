@@ -37,10 +37,13 @@ public final class CuRandLibraryProvider implements TornadoLibraryProvider {
 
     private static final class CuRandContext implements LibraryContext {
         private final long generator;
+        /** The stream the generator is bound to. */
+        private long stream;
         private boolean seeded;
 
-        private CuRandContext(long generator) {
+        private CuRandContext(long generator, long stream) {
             this.generator = generator;
+            this.stream = stream;
         }
     }
 
@@ -88,7 +91,7 @@ public final class CuRandLibraryProvider implements TornadoLibraryProvider {
             throw new TornadoRuntimeException("[ERROR] curandCreateGenerator failed");
         }
         CuRandNativeLib.checkStatus(CuRandNativeLib.curandSetStream(generator, stream), "curandSetStream");
-        return new CuRandContext(generator);
+        return new CuRandContext(generator, stream);
     }
 
     @Override
@@ -98,6 +101,14 @@ public final class CuRandLibraryProvider implements TornadoLibraryProvider {
             throw new TornadoRuntimeException("[ERROR] Unknown cuRAND function: " + functionName);
         }
         CuRandContext context = (CuRandContext) invocation.getContext();
+        // The stream belongs to the thread that runs the plan, which need not be the one that
+        // created this context: follow it, or the call runs on another thread's stream, unordered
+        // with the kernels around it.
+        long stream = ((TornadoNativeStreamSupport) invocation.getDevice()).getNativeStream(invocation.getExecutionPlanId());
+        if (stream != context.stream) {
+            CuRandNativeLib.checkStatus(CuRandNativeLib.curandSetStream(context.generator, stream), "curandSetStream");
+            context.stream = stream;
+        }
         seedOnce(context, invocation);
         CuRandNativeLib.checkStatus(call.invoke(context.generator, invocation), functionName);
     }
