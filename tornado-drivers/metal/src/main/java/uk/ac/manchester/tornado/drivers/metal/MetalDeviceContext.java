@@ -43,6 +43,7 @@ import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalDeviceType;
 import uk.ac.manchester.tornado.drivers.metal.ffm.MetalAPI;
+import uk.ac.manchester.tornado.drivers.metal.ffm.MetalObjects;
 import uk.ac.manchester.tornado.drivers.metal.graal.MetalInstalledCode;
 import uk.ac.manchester.tornado.drivers.metal.graal.compiler.MetalCompilationResult;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalMemoryManager;
@@ -656,7 +657,11 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
 
     @Override
     public long getNativeStream(long executionPlanId) {
-        return getCommandQueue(executionPlanId).getCommandQueuePtr();
+        long queue = getCommandQueue(executionPlanId).getCommandQueuePtr();
+        // A library encodes its own command buffers on this queue (or reads buffers on the CPU), so
+        // the kernels batched before it are committed and finished first.
+        MetalObjects.drain(queue);
+        return queue;
     }
 
     @Override

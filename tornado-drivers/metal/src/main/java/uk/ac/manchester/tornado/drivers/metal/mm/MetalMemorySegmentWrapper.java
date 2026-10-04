@@ -39,6 +39,7 @@ import uk.ac.manchester.tornado.api.types.matrix.TornadoMatrixInterface;
 import uk.ac.manchester.tornado.api.types.volumes.TornadoVolumesInterface;
 import uk.ac.manchester.tornado.drivers.metal.MetalDeviceContext;
 import uk.ac.manchester.tornado.drivers.metal.ffm.MetalAPI;
+import uk.ac.manchester.tornado.drivers.metal.ffm.MetalObjects;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.exceptions.TornadoUnsupportedError;
@@ -97,6 +98,8 @@ public class MetalMemorySegmentWrapper implements XPUBuffer {
      */
     @Override
     public long libraryAddress() {
+        // A library may read this address on the CPU: batched kernels writing it must finish first.
+        MetalObjects.drainAll();
         return MetalAPI.bufferContents(toBuffer()) + libraryOffset();
     }
 

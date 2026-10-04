@@ -38,6 +38,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.drivers.metal.MetalDeviceContext;
 import uk.ac.manchester.tornado.drivers.metal.ffm.MetalAPI;
+import uk.ac.manchester.tornado.drivers.metal.ffm.MetalObjects;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
@@ -321,6 +322,8 @@ public abstract class MetalArrayWrapper<T> implements XPUBuffer {
     /** CPU address of the first element (shared storage, see {@link #libraryOffset()}). */
     @Override
     public long libraryAddress() {
+        // A library may read this address on the CPU: batched kernels writing it must finish first.
+        MetalObjects.drainAll();
         return MetalAPI.bufferContents(toBuffer()) + libraryOffset();
     }
 

@@ -41,6 +41,7 @@ import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
 import uk.ac.manchester.tornado.drivers.metal.MetalDeviceContext;
 import uk.ac.manchester.tornado.drivers.metal.MetalKernel;
 import uk.ac.manchester.tornado.drivers.metal.MetalProgram;
+import uk.ac.manchester.tornado.drivers.metal.ffm.MetalObjects;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalByteBuffer;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalKernelStackFrame;
 import uk.ac.manchester.tornado.drivers.metal.runtime.MetalTornadoDevice;
@@ -140,7 +141,7 @@ public class MetalInstalledCode extends InstalledCode implements TornadoInstalle
      * @param meta
      *     task metadata {@link TaskDataContext}
      */
-    private void setKernelArgs(final MetalKernelStackFrame kernelArgs, final XPUBuffer atomicSpace, TaskDataContext meta) {
+    private void setKernelArgs(final MetalKernelStackFrame kernelArgs, final XPUBuffer atomicSpace, TaskDataContext meta, boolean frameByValue) {
         int index = 0;
 
         // If native reflection is available, print/reflection info in debug mode
@@ -170,7 +171,16 @@ public class MetalInstalledCode extends InstalledCode implements TornadoInstalle
         // Metal requires setArgRef (setBuffer:) for device/constant buffer parameters,
         // unlike OpenCL where metalSetKernelArg handles both buffer refs and inline data.
         // kernel context buffer
-        kernel.setArgRef(index, kernelArgs.toBuffer());
+        if (frameByValue) {
+            // Batched dispatch: the frame is copied into the command buffer, so each launch keeps the
+            // grid sizes it was issued with, and the one frame buffer of the plan is not rewritten
+            // under launches still pending. Kernels only read it.
+            ByteBuffer frame = kernelArgs.buffer().duplicate();
+            frame.position(frame.capacity());
+            kernel.setArg(index, frame);
+        } else {
+            kernel.setArgRef(index, kernelArgs.toBuffer());
+        }
         index++;
 
         if (isSPIRVBinary) {
@@ -314,8 +324,9 @@ public class MetalInstalledCode extends InstalledCode implements TornadoInstalle
          * Only set the kernel arguments if they are either: - not set or - have changed
          */
         final int[] waitEvents;
-        setKernelArgs(kernelArgs, atomicSpace, meta);
-        internalEvents[0] = kernelArgs.enqueueWrite(executionPlanId, events);
+        boolean frameByValue = MetalObjects.isBatching();
+        setKernelArgs(kernelArgs, atomicSpace, meta, frameByValue);
+        internalEvents[0] = frameByValue ? -1 : kernelArgs.enqueueWrite(executionPlanId, events);
         waitEvents = internalEvents;
         long[] waitEventsLong = new long[waitEvents.length];
         for (int i = 0; i < waitEvents.length; i++) {
@@ -401,9 +412,12 @@ public class MetalInstalledCode extends InstalledCode implements TornadoInstalle
             logger.info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getMetalKernelID(), kernel.getName(), deviceContext.getDevice().getDeviceName());
         }
 
-        setKernelArgs(metalKernelStackFrame, atomicSpace, meta);
-        int kernelContextWriteEventId = metalKernelStackFrame.enqueueWrite(executionPlanId);
-        updateProfilerKernelContextWrite(executionPlanId, kernelContextWriteEventId, meta, metalKernelStackFrame);
+        boolean frameByValue = MetalObjects.isBatching();
+        setKernelArgs(metalKernelStackFrame, atomicSpace, meta, frameByValue);
+        if (!frameByValue) {
+            int kernelContextWriteEventId = metalKernelStackFrame.enqueueWrite(executionPlanId);
+            updateProfilerKernelContextWrite(executionPlanId, kernelContextWriteEventId, meta, metalKernelStackFrame);
+        }
 
         if (meta == null) {
             executeSingleThread(executionPlanId);

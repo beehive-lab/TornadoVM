@@ -32,11 +32,14 @@ import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 
 /**
@@ -128,19 +131,26 @@ public final class MetalObjects {
     /**
      * A host-side timing record. When {@link #commandBuffer} is non-zero this is a kernel event and
      * execution times are read back from the buffer's GPU timestamps; otherwise it is a CPU-side
-     * transfer whose times were taken on the host clock.
+     * transfer whose times were taken on the host clock. A batched dispatch has no command buffer of
+     * its own but names its {@link #queue}: waiting on it drains that queue.
      */
     private static final class TimingEvent {
         final long queuedNs;
         final long startNs;
         final long endNs;
         final long commandBuffer;
+        final long queue;
 
         TimingEvent(long queuedNs, long startNs, long endNs, long commandBuffer) {
+            this(queuedNs, startNs, endNs, commandBuffer, 0);
+        }
+
+        TimingEvent(long queuedNs, long startNs, long endNs, long commandBuffer, long queue) {
             this.queuedNs = queuedNs;
             this.startNs = startNs;
             this.endNs = endNs;
             this.commandBuffer = commandBuffer;
+            this.queue = queue;
         }
     }
 
@@ -272,6 +282,8 @@ public final class MetalObjects {
     }
 
     public static void releaseCommandQueue(long queue) {
+        drain(queue);
+        BATCHES.remove(queue);
         QueueEvent queueEvent = QUEUE_EVENTS.remove(queue);
         if (queueEvent != null && queueEvent.event != 0) {
             ObjCRuntime.release(queueEvent.event);
@@ -304,6 +316,7 @@ public final class MetalObjects {
     }
 
     public static void releaseMemObject(long buffer) {
+        drainFor(buffer);
         ObjCRuntime.release(buffer);
     }
 
@@ -452,6 +465,7 @@ public final class MetalObjects {
     }
 
     public static void releaseKernel(long kernel) {
+        drainAll();
         KernelState state = KERNELS.remove(kernel);
         if (state != null && state.pipeline != 0) {
             ObjCRuntime.release(state.pipeline);
@@ -525,8 +539,9 @@ public final class MetalObjects {
     // ------------------------------------------------------------------ dispatch
 
     /**
-     * Encodes and runs one compute dispatch synchronously, returning a timing event that holds the
-     * retained command buffer for its GPU timestamps.
+     * Encodes one compute dispatch. With batching on (the default, see {@link #BATCH}) it is appended
+     * to the queue's open command buffer and the returned event names the queue; otherwise it runs
+     * synchronously and the event holds the retained command buffer for its GPU timestamps.
      */
     public static long enqueueNDRangeKernel(long queue, long kernel, long[] globalWorkSize, long[] localWorkSize) {
         KernelState state = KERNELS.get(kernel);
@@ -555,55 +570,194 @@ public final class MetalObjects {
             lz = 1;
         }
 
+        if (batching()) {
+            QueueBatch batch = BATCHES.computeIfAbsent(queue, q -> new QueueBatch());
+            synchronized (batch) {
+                try (Arena arena = Arena.ofConfined(); ObjCRuntime.AutoreleasePool pool = new ObjCRuntime.AutoreleasePool()) {
+                    if (batch.commandBuffer == 0) {
+                        batch.commandBuffer = ObjCRuntime.retain(MetalAPI.commandBuffer(queue));
+                        batch.encoder = ObjCRuntime.retain(MetalAPI.computeCommandEncoder(batch.commandBuffer));
+                    }
+                    encodeDispatch(batch.encoder, state, arena, gx, gy, gz, lx, ly, lz);
+                    for (Arg arg : state.args) {
+                        if (arg != null && arg.kind == 0 && arg.buffer != 0) {
+                            batch.buffers.add(arg.buffer);
+                        }
+                    }
+                    if (++batch.dispatches >= BATCH_COMMIT_INTERVAL) {
+                        commitOpen(queue, batch);
+                    }
+                }
+            }
+            return registerEvent(new TimingEvent(queuedNs, queuedNs, System.nanoTime(), 0, queue));
+        }
+
+        // Synchronous: anything batched before (e.g. before the profiler was switched on) runs first.
+        drain(queue);
         long retainedCommandBuffer;
         try (Arena arena = Arena.ofConfined(); ObjCRuntime.AutoreleasePool pool = new ObjCRuntime.AutoreleasePool()) {
             long commandBuffer = MetalAPI.commandBuffer(queue);
             long encoder = MetalAPI.computeCommandEncoder(commandBuffer);
-            MetalAPI.setComputePipelineState(encoder, state.pipeline);
-
-            for (int i = 0; i < state.args.size(); i++) {
-                Arg arg = state.args.get(i);
-                if (arg == null) {
-                    continue;
-                }
-                switch (arg.kind) {
-                    case 0 -> {
-                        if (arg.buffer != 0) {
-                            MetalAPI.setBuffer(encoder, arg.buffer, 0, i);
-                        }
-                    }
-                    case 1 -> {
-                        if (arg.bytes != null && arg.size > 0) {
-                            MemorySegment segment = arena.allocate(arg.bytes.length);
-                            MemorySegment.copy(arg.bytes, 0, segment, FFMSupport.C_CHAR, 0, arg.bytes.length);
-                            MetalAPI.setBytes(encoder, segment, arg.size, i);
-                        }
-                    }
-                    case 2 -> MetalAPI.setThreadgroupMemoryLength(encoder, arg.size, i);
-                    default -> {
-                    }
-                }
-            }
-
-            // The three global sizes, bound past the user arguments, fill the _global_sizes parameter
-            // the generated MSL reads. setBytes copies them into the command buffer, which is cheaper
-            // than creating (and mapping for the GPU) a new buffer on every launch.
-            int sizesIndex = state.args.size();
-            MemorySegment sizes = arena.allocate(3 * Integer.BYTES);
-            sizes.set(C_INT, 0, (int) gx);
-            sizes.set(C_INT, 4, (int) gy);
-            sizes.set(C_INT, 8, (int) gz);
-            MetalAPI.setBytes(encoder, sizes, 3L * Integer.BYTES, sizesIndex);
-
-            MemorySegment grid = mtlSize(arena, gx, gy, gz);
-            MemorySegment group = mtlSize(arena, lx, ly, lz);
-            MetalAPI.dispatchThreads(encoder, grid, group);
+            encodeDispatch(encoder, state, arena, gx, gy, gz, lx, ly, lz);
             MetalAPI.endEncoding(encoder);
             commitAndWait(queue, commandBuffer);
             // Retain across the pool so GPUStartTime/GPUEndTime can be read when the profiler asks.
             retainedCommandBuffer = ObjCRuntime.retain(commandBuffer);
         }
         return registerEvent(new TimingEvent(queuedNs, 0, 0, retainedCommandBuffer));
+    }
+
+    /** Binds the kernel's recorded arguments and the global sizes, then encodes the dispatch. */
+    private static void encodeDispatch(long encoder, KernelState state, Arena arena, long gx, long gy, long gz, long lx, long ly, long lz) {
+        MetalAPI.setComputePipelineState(encoder, state.pipeline);
+
+        for (int i = 0; i < state.args.size(); i++) {
+            Arg arg = state.args.get(i);
+            if (arg == null) {
+                continue;
+            }
+            switch (arg.kind) {
+                case 0 -> {
+                    if (arg.buffer != 0) {
+                        MetalAPI.setBuffer(encoder, arg.buffer, 0, i);
+                    }
+                }
+                case 1 -> {
+                    if (arg.bytes != null && arg.size > 0) {
+                        MemorySegment segment = arena.allocate(arg.bytes.length);
+                        MemorySegment.copy(arg.bytes, 0, segment, FFMSupport.C_CHAR, 0, arg.bytes.length);
+                        MetalAPI.setBytes(encoder, segment, arg.size, i);
+                    }
+                }
+                case 2 -> MetalAPI.setThreadgroupMemoryLength(encoder, arg.size, i);
+                default -> {
+                }
+            }
+        }
+
+        // The three global sizes, bound past the user arguments, fill the _global_sizes parameter
+        // the generated MSL reads. setBytes copies them into the command buffer, which is cheaper
+        // than creating (and mapping for the GPU) a new buffer on every launch.
+        int sizesIndex = state.args.size();
+        MemorySegment sizes = arena.allocate(3 * Integer.BYTES);
+        sizes.set(C_INT, 0, (int) gx);
+        sizes.set(C_INT, 4, (int) gy);
+        sizes.set(C_INT, 8, (int) gz);
+        MetalAPI.setBytes(encoder, sizes, 3L * Integer.BYTES, sizesIndex);
+
+        MemorySegment grid = mtlSize(arena, gx, gy, gz);
+        MemorySegment group = mtlSize(arena, lx, ly, lz);
+        MetalAPI.dispatchThreads(encoder, grid, group);
+    }
+
+    // ------------------------------------------------------------------ batched dispatch
+
+    /**
+     * Whether kernel launches are batched: appended to one open command buffer per queue instead of
+     * each being committed and waited for on its own. A synchronous launch leaves the GPU idle while
+     * the CPU waits and encodes the next one, which costs the round trip on every kernel and keeps
+     * the GPU clock low. Dispatches in a batch share one serial compute encoder, so each runs after
+     * the previous one finished and sees its writes; command buffers on a queue run in commit order.
+     * The batch is drained (committed and waited for) before anything that touches device memory
+     * from outside it: host reads and writes, blits, event waits, {@link #finish}, a library task
+     * taking the queue or a buffer address, and releases. The profiler needs per-kernel GPU
+     * timestamps, so it keeps synchronous launches. {@code -Dtornado.metal.dispatch.batch=False}
+     * switches batching off.
+     */
+    private static final boolean BATCH = Boolean.parseBoolean(System.getProperty("tornado.metal.dispatch.batch", "True"));
+
+    /**
+     * Dispatches per command buffer before it is committed (without waiting), so the GPU starts on a
+     * long batch while the CPU encodes the rest of it. {@code -Dtornado.metal.dispatch.batchSize}.
+     */
+    private static final int BATCH_COMMIT_INTERVAL = Math.max(1, Integer.getInteger("tornado.metal.dispatch.batchSize", 16));
+
+    /** The open command buffer of a queue and the last one committed from it. */
+    private static final class QueueBatch {
+        /** Retained, open; 0 when nothing is being encoded. */
+        long commandBuffer;
+        /** Retained compute encoder of {@link #commandBuffer}. */
+        long encoder;
+        int dispatches;
+        /** Retained, committed and not yet waited for; 0 when none. */
+        long lastCommitted;
+        /** The shared-event value {@link #lastCommitted} signals, or 0 when it signals none. */
+        long lastValue;
+        /** Buffers bound by the dispatches not yet waited for: a host access to one has to drain. */
+        final Set<Long> buffers = new HashSet<>();
+    }
+
+    private static final Map<Long, QueueBatch> BATCHES = new ConcurrentHashMap<>();
+
+
+    private static boolean batching() {
+        return BATCH && !TornadoOptions.isProfilerEnabled();
+    }
+
+    /** Whether launches are batched now; the launch path then binds the kernel frame by value. */
+    public static boolean isBatching() {
+        return batching();
+    }
+
+    /** Ends and commits the open command buffer of {@code batch} without waiting for it. Holds the batch lock. */
+    private static void commitOpen(long queue, QueueBatch batch) {
+        if (batch.commandBuffer == 0) {
+            return;
+        }
+        MetalAPI.endEncoding(batch.encoder);
+        ObjCRuntime.release(batch.encoder);
+        long value = signalAndCommit(queue, batch.commandBuffer);
+        if (batch.lastCommitted != 0) {
+            ObjCRuntime.release(batch.lastCommitted);
+        }
+        batch.lastCommitted = batch.commandBuffer;
+        batch.lastValue = value;
+        batch.commandBuffer = 0;
+        batch.encoder = 0;
+        batch.dispatches = 0;
+    }
+
+    /** Commits whatever is batched on {@code queue} and returns once the GPU has finished all of it. */
+    public static void drain(long queue) {
+        QueueBatch batch = BATCHES.get(queue);
+        if (batch == null) {
+            return;
+        }
+        synchronized (batch) {
+            commitOpen(queue, batch);
+            if (batch.lastCommitted != 0) {
+                awaitCommitted(queue, batch.lastCommitted, batch.lastValue);
+                ObjCRuntime.release(batch.lastCommitted);
+                batch.lastCommitted = 0;
+                batch.lastValue = 0;
+            }
+            batch.buffers.clear();
+        }
+    }
+
+    /** {@link #drain} for every queue: for an access that may touch any buffer. */
+    public static void drainAll() {
+        for (Long queue : BATCHES.keySet()) {
+            drain(queue);
+        }
+    }
+
+    /**
+     * {@link #drain} for every queue with a pending dispatch bound to {@code buffer}: for a host
+     * read or write of it. A buffer no pending dispatch uses -- the next kernel's stack frame, an
+     * input of the next graph -- is accessed without waiting.
+     */
+    private static void drainFor(long buffer) {
+        for (Map.Entry<Long, QueueBatch> entry : BATCHES.entrySet()) {
+            QueueBatch batch = entry.getValue();
+            boolean pending;
+            synchronized (batch) {
+                pending = batch.buffers.contains(buffer);
+            }
+            if (pending) {
+                drain(entry.getKey());
+            }
+        }
     }
 
     /**
@@ -646,20 +800,36 @@ public final class MetalObjects {
 
     /** Commits {@code commandBuffer} on {@code queue} and returns once the GPU has finished its work. */
     private static void commitAndWait(long queue, long commandBuffer) {
+        awaitCommitted(queue, commandBuffer, signalAndCommit(queue, commandBuffer));
+    }
+
+    /**
+     * Commits {@code commandBuffer}, first encoding a signal of the queue's shared event when spin
+     * waiting is on. Returns the value it will signal, or 0 when it signals none.
+     */
+    private static long signalAndCommit(long queue, long commandBuffer) {
         QueueEvent queueEvent = SPIN_WAIT ? QUEUE_EVENTS.computeIfAbsent(queue, q -> new QueueEvent(MetalAPI.newSharedEvent(MetalAPI.queueDevice(q)))) : null;
         if (queueEvent == null || queueEvent.event == 0) {
             MetalAPI.commit(commandBuffer);
-            MetalAPI.waitUntilCompleted(commandBuffer);
-            return;
+            return 0;
         }
-        long value;
         // Take the value and commit under one lock, so that command buffers are committed in the order
         // of their values. Otherwise a thread sharing the queue could commit a higher value first, and a
         // waiter for a lower value would return before its own buffer had finished.
         synchronized (queueEvent) {
-            value = ++queueEvent.value;
+            long value = ++queueEvent.value;
             MetalAPI.encodeSignalEvent(commandBuffer, queueEvent.event, value);
             MetalAPI.commit(commandBuffer);
+            return value;
+        }
+    }
+
+    /** Returns once committed {@code commandBuffer}, which signals {@code value} (0: none), has finished. */
+    private static void awaitCommitted(long queue, long commandBuffer, long value) {
+        QueueEvent queueEvent = value == 0 ? null : QUEUE_EVENTS.get(queue);
+        if (queueEvent == null) {
+            MetalAPI.waitUntilCompleted(commandBuffer);
+            return;
         }
         long start = System.nanoTime();
         if (queueEvent.block) {
@@ -696,6 +866,7 @@ public final class MetalObjects {
 
     /** Host-to-device copy from a Java array into the shared buffer's CPU-visible memory. */
     public static long writeArray(long buffer, Object array, ValueLayout layout, int elementOffset, int elementCount, long offset, long bytes) {
+        drainFor(buffer);
         long queuedNs = System.nanoTime();
         long contents = MetalAPI.bufferContents(buffer);
         if (contents == 0) {
@@ -710,6 +881,7 @@ public final class MetalObjects {
 
     /** Device-to-host copy out of the shared buffer's CPU-visible memory into a Java array. */
     public static long readArray(long buffer, Object array, ValueLayout layout, int elementOffset, int elementCount, long offset, long bytes) {
+        drainFor(buffer);
         long queuedNs = System.nanoTime();
         long contents = MetalAPI.bufferContents(buffer);
         if (contents == 0) {
@@ -723,6 +895,7 @@ public final class MetalObjects {
     }
 
     public static long writeSegment(long buffer, long hostPointer, long hostOffset, long offset, long bytes) {
+        drainFor(buffer);
         long queuedNs = System.nanoTime();
         long contents = MetalAPI.bufferContents(buffer);
         if (contents == 0 || hostPointer == 0) {
@@ -737,6 +910,7 @@ public final class MetalObjects {
     }
 
     public static long readSegment(long buffer, long hostPointer, long hostOffset, long offset, long bytes) {
+        drainFor(buffer);
         long queuedNs = System.nanoTime();
         long contents = MetalAPI.bufferContents(buffer);
         if (contents == 0 || hostPointer == 0) {
@@ -760,6 +934,7 @@ public final class MetalObjects {
         if (queue == 0) {
             return;
         }
+        drain(queue);
         QueueEvent queueEvent = QUEUE_EVENTS.get(queue);
         if (queueEvent != null && workFinished(queueEvent)) {
             // Every command buffer on this queue signals the event when its work is done, and the
@@ -800,7 +975,9 @@ public final class MetalObjects {
             return;
         }
         TimingEvent state = EVENTS.get(event);
-        if (state != null && state.commandBuffer != 0) {
+        if (state != null && state.queue != 0) {
+            drain(state.queue);
+        } else if (state != null && state.commandBuffer != 0) {
             MetalAPI.waitUntilCompleted(state.commandBuffer);
         }
     }
@@ -827,6 +1004,9 @@ public final class MetalObjects {
         TimingEvent state = EVENTS.get(event);
         if (state == null || buffer.length < 8) {
             return;
+        }
+        if (state.queue != 0) {
+            drain(state.queue);
         }
         long time;
         if (state.commandBuffer != 0) {
@@ -879,6 +1059,7 @@ public final class MetalObjects {
         if (copySize == 0) {
             return destination;
         }
+        drain(queue);
         try (ObjCRuntime.AutoreleasePool pool = new ObjCRuntime.AutoreleasePool()) {
             long commandBuffer = MetalAPI.commandBuffer(queue);
             long blit = MetalAPI.blitCommandEncoder(commandBuffer);
