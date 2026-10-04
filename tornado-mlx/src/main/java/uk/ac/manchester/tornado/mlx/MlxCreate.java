@@ -25,7 +25,7 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 /**
  * MLX array construction (ranges, constants, identity and triangular matrices, windows, grids) and
- * matrix-structure operations (diag, diagonal, trace, tril, triu) (Tier 3) as TornadoVM library
+ * matrix-structure operations (diag, diagonal, trace, tril, triu) as TornadoVM library
  * tasks. Constructors write into {@code out}, whose type sets the dtype and whose length sets the
  * size where no size is given.
  */

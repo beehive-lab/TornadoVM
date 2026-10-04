@@ -30,7 +30,7 @@ Commit `c3a21345f` is the last one with both paths. The benchmarks that compare 
 
 ## What is supported
 
-The factories are in `uk.ac.manchester.tornado.mlx`: `Mlx` (Tier 1 LLM operations),
+The factories are in `uk.ac.manchester.tornado.mlx`: `Mlx` (the operations LLM inference uses),
 `MlxMath`, `MlxLogic`, `MlxReduce`, `MlxShape`, `MlxCreate`, `MlxIndex`, `MlxSort`, `MlxFft`, `MlxConv`,
 `MlxLinalg`, `MlxProducts` and `MlxRandom`. Each factory carries `@MlxOp` with the MLX operation it binds.
 

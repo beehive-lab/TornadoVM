@@ -25,7 +25,7 @@ import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 /**
- * MLX tensor products and special matrix products (Tier 3) as TornadoVM library tasks: einsum (as
+ * MLX tensor products and special matrix products as TornadoVM library tasks: einsum (as
  * a batched matmul), inner, outer and Kronecker products, tensordot, the segmented matmul and the
  * quantized-quantized matmul.
  */

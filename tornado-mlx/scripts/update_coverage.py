@@ -20,7 +20,7 @@ Builds tornado-mlx/coverage.json, the MLX operation coverage manifest.
 
 Inputs:
   * mlx-c-api.json            the MLX operation catalog, as named in mlx-c's headers
-  * coverage-overrides.json   hand-kept decisions: Tier 1 list, CPU-only ops, exclusions
+  * coverage-overrides.json   hand-kept decisions: LLM operation list, CPU-only ops, exclusions
   * sources, scanned:
       - bound:        Mlx factory methods annotated @MlxOp("mlx_...") in tornado-mlx
       - tested:       references to those factories (Mlx::name or Mlx.name(...)) in the MLX unit tests
@@ -67,16 +67,24 @@ DTYPES = {
     "CharArray": "uint16",
 }
 
-# Tier 2 per the plan: reductions, math, indexing/gather/scatter, sort, fft, conv, linalg.
-TIER2_PATTERNS = [
-    r"^mlx_(sum|mean|max|min|prod|all|any|var|std|logsumexp|cumsum|cumprod|cummax|cummin|logcumsumexp|median)(_|$)",
-    r"^mlx_(abs|sign|ceil|floor|round|log|log2|log10|log1p|expm1|power|remainder|floor_divide|divmod|reciprocal|clip|erfinv|logaddexp)$",
-    r"^mlx_(sin|cos|tan|arcsin|arccos|arctan|arctan2|sinh|cosh|arcsinh|arccosh|arctanh|degrees|radians)$",
-    r"^mlx_(gather|scatter|take|put_along_axis|slice|masked_scatter|where)",
-    r"^mlx_(sort|argsort|partition|argpartition|argmin)",
-    r"^mlx_fft_",
-    r"^mlx_conv",
-    r"^mlx_linalg_",
+# Operation categories, matched in order on the mlx-c name; the first match wins.
+CATEGORIES = [
+    ("Transforms", r"^mlx_(async_eval|checkpoint|custom_function|custom_vjp|eval|jvp|value_and_grad|vjp|stop_gradient|depends)$"),
+    ("CustomKernels", r"^mlx_fast_(cuda|metal)_kernel"),
+    ("NeuralNetwork", r"^mlx_fast_"),
+    ("Fft", r"^mlx_fft_"),
+    ("Random", r"^mlx_random_"),
+    ("Quantization", r"^mlx_(quantize|dequantize|quantized_matmul|gather_qmm|qqmm|to_fp8|from_fp8)$"),
+    ("Convolution", r"^mlx_conv"),
+    ("LinearAlgebra", r"^mlx_(linalg_\w+|matmul|addmm|einsum|inner|outer|kron|tensordot(_axis)?|block_masked_mm|segmented_mm|gather_mm|hadamard_transform)$"),
+    ("Scans", r"^mlx_(cumsum|cumprod|cummax|cummin|logcumsumexp)$"),
+    ("Sorting", r"^mlx_(arg)?(sort|partition)(_axis)?$|^mlx_topk"),
+    ("Reductions", r"^mlx_(sum|prod|max|min|mean|var|std|logsumexp|all|any|argmax|argmin|softmax)(_axis|_axes)?$|^mlx_median$"),
+    ("Indexing", r"^mlx_(take|gather|scatter|put_along_axis|masked_scatter|slice)"),
+    ("Creation", r"^mlx_(arange|linspace|eye|identity|tri|tril|triu|diag|diagonal|trace|full|full_like|zeros|zeros_like|ones|ones_like|bartlett|blackman|hamming|hanning|meshgrid)$"),
+    ("Logic", r"^mlx_(equal|not_equal|greater|greater_equal|less|less_equal|logical_\w+|bitwise_\w+|left_shift|right_shift|is\w+|allclose|array_equal)$"),
+    ("Shape", r"^mlx_(reshape|flatten|unflatten|squeeze\w*|expand_dims\w*|atleast_\w+|transpose\w*|swapaxes|moveaxis|broadcast_\w+|as_strided|contiguous|copy|astype|view|number_of_elements|concatenate\w*|stack\w*|split\w*|repeat\w*|tile|roll\w*|pad\w*)$"),
+    ("Arithmetic", r"^mlx_"),
 ]
 
 JIT_RE = re.compile(r"@JitBaseline\(\s*(?:value\s*=\s*)?(\{[^}]*\}|\"[^\"]*\")(?:\s*,\s*source\s*=\s*\"([^\"]*)\")?\s*\)\s*public\s+static\s+\S+\s+(\w+)\s*\(", re.S)
@@ -143,12 +151,8 @@ def scan_references(roots, methods):
     return used
 
 
-def tier_of(op, tier1):
-    if op in tier1:
-        return 1
-    if any(re.search(p, op) for p in TIER2_PATTERNS):
-        return 2
-    return 3
+def category_of(op):
+    return next(name for name, pattern in CATEGORIES if re.search(pattern, op))
 
 
 def exclusion_of(op, overrides):
@@ -171,7 +175,7 @@ def build():
     bound_ops = set().union(*methods.values()) if methods else set()
     unknown = sorted(bound_ops - known)
 
-    tier1 = set(overrides.get("tier1", []))
+    llm = set(overrides.get("llmOperations", []))
     cpu_only = set(overrides.get("cpuOnly", {}).get("ops", []))
     ops = []
     for o in api["operations"]:
@@ -179,7 +183,8 @@ def build():
         entry = {
             "name": name,
             "header": o["header"],
-            "tier": tier_of(name, tier1),
+            "category": category_of(name),
+            "llm": name in llm,
             "device": "cpu" if name in cpu_only else "gpu",
             "bound": name in bound_ops,
             "tested": name in tested,
@@ -211,12 +216,16 @@ def build():
         "benchmarked": sum(e["benchmarked"] for e in in_scope),
         "jitBaselines": sum(1 for e in in_scope if e.get("jitBaseline", {}).get("tested")),
         "remaining": sum(not e["bound"] for e in in_scope),
-        "byTier": {
-            str(t): {
-                "inScope": sum(1 for e in in_scope if e["tier"] == t),
-                "bound": sum(1 for e in in_scope if e["tier"] == t and e["bound"]),
+        "llm": {
+            "inScope": sum(1 for e in in_scope if e["llm"]),
+            "bound": sum(1 for e in in_scope if e["llm"] and e["bound"]),
+        },
+        "byCategory": {
+            name: {
+                "inScope": sum(1 for e in in_scope if e["category"] == name),
+                "bound": sum(1 for e in in_scope if e["category"] == name and e["bound"]),
             }
-            for t in (1, 2, 3)
+            for name, _ in CATEGORIES if any(e["category"] == name for e in in_scope)
         },
     }
     coverage = {
@@ -254,8 +263,8 @@ def main():
 
     coverage, problems, warnings = build()
     s = coverage["summary"]
-    line = "[mlx coverage] %d/%d in-scope operations bound, %d tested, %d with a tested JIT baseline, %d benchmarked; %d excluded (Tier 1: %d/%d bound)" % (
-        s["bound"], s["inScope"], s["tested"], s["jitBaselines"], s["benchmarked"], s["excluded"], s["byTier"]["1"]["bound"], s["byTier"]["1"]["inScope"])
+    line = "[mlx coverage] %d/%d in-scope operations bound, %d tested, %d with a tested JIT baseline, %d benchmarked; %d excluded (LLM operations: %d/%d bound)" % (
+        s["bound"], s["inScope"], s["tested"], s["jitBaselines"], s["benchmarked"], s["excluded"], s["llm"]["bound"], s["llm"]["inScope"])
     if args.check:
         current = open(COVERAGE_FILE).read() if os.path.exists(COVERAGE_FILE) else ""
         if current != render(coverage):

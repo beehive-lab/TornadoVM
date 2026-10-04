@@ -23,7 +23,7 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 
 /**
- * MLX linear algebra (Tier 2) as TornadoVM library tasks: cross products and vector and matrix
+ * MLX linear algebra as TornadoVM library tasks: cross products and vector and matrix
  * norms.
  */
 public final class MlxLinalg {

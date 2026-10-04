@@ -25,7 +25,7 @@ import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 /**
- * MLX element-wise math (Tier 2) as TornadoVM library tasks: trigonometric and hyperbolic
+ * MLX element-wise math as TornadoVM library tasks: trigonometric and hyperbolic
  * functions, logarithms, rounding, integer-style division, clipping and selection. All operands of
  * one call have the same length; the arguments and access rules follow {@link Mlx}.
  */

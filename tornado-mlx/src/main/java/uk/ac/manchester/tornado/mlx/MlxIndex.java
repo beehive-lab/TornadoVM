@@ -24,7 +24,7 @@ import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 /**
- * MLX indexing (Tier 2) as TornadoVM library tasks: slicing, slice updates and the gathered batched
+ * MLX indexing as TornadoVM library tasks: slicing, slice updates and the gathered batched
  * matmul. Indices are int32. Operations that modify an array write the modified copy to
  * {@code out} and leave {@code x} unchanged.
  */

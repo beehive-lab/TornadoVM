@@ -25,7 +25,7 @@ import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 /**
- * MLX reductions (Tier 2) as TornadoVM library tasks. Each comes in three forms: over the whole
+ * MLX reductions as TornadoVM library tasks. Each comes in three forms: over the whole
  * array ({@code sum}), over one axis ({@code sumAxis}, with the input viewed as
  * {@code [outer, len, inner]} and the middle axis reduced), and over two adjacent axes
  * ({@code sumAxes}, input viewed as {@code [outer, len1, len2, inner]}). The axis forms of the

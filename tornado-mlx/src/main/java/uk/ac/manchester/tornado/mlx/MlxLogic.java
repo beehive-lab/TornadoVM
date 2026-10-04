@@ -26,7 +26,7 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 /**
  * MLX comparisons, floating-point classification, logical and bitwise operations, and complex parts
- * (Tier 3) as TornadoVM library tasks. Boolean results are written as 0 or 1 into byte arrays;
+ * as TornadoVM library tasks. Boolean results are written as 0 or 1 into byte arrays;
  * complex arrays are float arrays of (real, imaginary) pairs.
  */
 public final class MlxLogic {

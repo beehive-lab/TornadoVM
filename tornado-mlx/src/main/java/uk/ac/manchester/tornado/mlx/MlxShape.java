@@ -24,7 +24,7 @@ import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 /**
- * MLX shape and layout operations (Tier 3) as TornadoVM library tasks: reshaping, squeezing and
+ * MLX shape and layout operations as TornadoVM library tasks: reshaping, squeezing and
  * expanding, axis permutations, broadcasting, strided views, type conversion and reinterpretation,
  * joining and splitting, repetition, rolling and padding. Results are written row-major into
  * {@code out}.

@@ -23,7 +23,7 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 
 /**
- * MLX convolutions (Tier 2) as TornadoVM library tasks, channels-last as in MLX. Stride, padding and
+ * MLX convolutions as TornadoVM library tasks, channels-last as in MLX. Stride, padding and
  * dilation apply equally to every spatial axis (MLX accepts them per axis; one value keeps the
  * argument lists within the library-task arity).
  */

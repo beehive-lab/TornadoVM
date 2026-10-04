@@ -24,7 +24,7 @@ import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 /**
- * MLX sorting and partitioning (Tier 2) as TornadoVM library tasks, over a whole array or along
+ * MLX sorting and partitioning as TornadoVM library tasks, over a whole array or along
  * the middle axis of an input viewed as {@code [outer, len, inner]}. The arg- forms write int32
  * indices.
  */

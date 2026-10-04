@@ -23,7 +23,7 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 
 /**
- * MLX FFTs (Tier 2) as TornadoVM library tasks. Complex arrays are float arrays of interleaved
+ * MLX FFTs as TornadoVM library tasks. Complex arrays are float arrays of interleaved
  * (real, imaginary) pairs, so a complex {@code [rows, len]} array holds {@code 2 * rows * len}
  * floats. 2D and 3D transforms run over the last two or three axes; {@code norm} is
  * {@link #BACKWARD}, {@link #ORTHO} or {@link #FORWARD}.

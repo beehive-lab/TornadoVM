@@ -25,7 +25,7 @@ import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 /**
- * MLX random sampling (Tier 3) as TornadoVM library tasks. Each call draws from an MLX key made
+ * MLX random sampling as TornadoVM library tasks. Each call draws from an MLX key made
  * from {@code seed}, so a given seed always gives the same values; the size of {@code out} sets
  * the number of samples.
  */
