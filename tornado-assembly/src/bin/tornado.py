@@ -107,7 +107,7 @@ __JAVA_BASE_OPTIONS_NO_JVMCI__ = ("-server -XX:+UnlockExperimentalVMOptions "
                                   "--add-exports java.base/jdk.internal.reflect=jdk.internal.vm.ci ")
 # We do not satisfy the Graal compiler assertions because we only support a subset of the Java specification.
 # This allows us to have the GraalIR in states which normally would be illegal.
-__GRAAL_ENABLE_ASSERTIONS__ = " -ea -da:org.graalvm.compiler... "
+__GRAAL_ENABLE_ASSERTIONS__ = " -ea -da:tornado.graal... "
 
 
 # ########################################################
