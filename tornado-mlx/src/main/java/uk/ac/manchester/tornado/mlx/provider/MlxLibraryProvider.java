@@ -88,7 +88,7 @@ public final class MlxLibraryProvider implements TornadoLibraryProvider {
             throw new TornadoRuntimeException("[ERROR] Unknown MLX function: " + functionName);
         }
         if (!MlxKernelRoutes.dispatch(functionName, invocation)) {
-            throw new TornadoRuntimeException("[ERROR] MLX " + functionName + ": no in-place MLX kernel takes these arguments " + describe(invocation));
+            throw new TornadoRuntimeException("[ERROR] MLX " + functionName + ": no TornadoVM/MLX kernel takes these arguments " + describe(invocation));
         }
     }
 
