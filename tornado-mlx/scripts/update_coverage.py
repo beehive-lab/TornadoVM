@@ -24,7 +24,6 @@ Inputs:
   * sources, scanned:
       - bound:        Mlx factory methods annotated @MlxOp("mlx_...") in tornado-mlx
       - tested:       references to those factories (Mlx::name or Mlx.name(...)) in the MLX unit tests
-      - benchmarked:  references to those factories in the MLX benchmarks
 
     python3 tornado-mlx/scripts/update_coverage.py            # rewrite coverage.json
     python3 tornado-mlx/scripts/update_coverage.py --check    # verify only (run by the Maven build)
@@ -48,9 +47,6 @@ COVERAGE_FILE = os.path.join(MODULE_DIR, "coverage.json")
 
 FACTORY_SOURCES = os.path.join(MODULE_DIR, "src/main/java/uk/ac/manchester/tornado/mlx")
 TEST_SOURCES = os.path.join(REPO_DIR, "tornado-unittests/src/main/java/uk/ac/manchester/tornado/unittests/mlx")
-BENCHMARK_SOURCES = [
-    os.path.join(REPO_DIR, "tornado-benchmarks/src/main/java"),
-]
 
 # TornadoVM array type -> MLX dtype name
 DTYPES = {
@@ -142,7 +138,6 @@ def build():
     overrides = load(OVERRIDES_FILE)
     methods, dtypes, where = scan_factories()
     tested = scan_references([TEST_SOURCES], methods)
-    benchmarked = scan_references(BENCHMARK_SOURCES, methods)
 
     known = {o["name"] for o in api["operations"]}
     bound_ops = set().union(*methods.values()) if methods else set()
@@ -161,7 +156,6 @@ def build():
             "device": "cpu" if name in cpu_only else "gpu",
             "bound": name in bound_ops,
             "tested": name in tested,
-            "benchmarked": name in benchmarked,
         }
         reason = exclusion_of(name, overrides)
         if reason:
@@ -178,7 +172,6 @@ def build():
         "inScope": len(in_scope),
         "bound": sum(e["bound"] for e in in_scope),
         "tested": sum(e["tested"] for e in in_scope),
-        "benchmarked": sum(e["benchmarked"] for e in in_scope),
         "remaining": sum(not e["bound"] for e in in_scope),
         "llm": {
             "inScope": sum(1 for e in in_scope if e["llm"]),
@@ -221,8 +214,8 @@ def main():
 
     coverage, problems, warnings = build()
     s = coverage["summary"]
-    line = "[mlx coverage] %d/%d in-scope operations bound, %d tested, %d benchmarked; %d excluded (LLM operations: %d/%d bound)" % (
-        s["bound"], s["inScope"], s["tested"], s["benchmarked"], s["excluded"], s["llm"]["bound"], s["llm"]["inScope"])
+    line = "[mlx coverage] %d/%d in-scope operations bound, %d tested; %d excluded (LLM operations: %d/%d bound)" % (
+        s["bound"], s["inScope"], s["tested"], s["excluded"], s["llm"]["bound"], s["llm"]["inScope"])
     if args.check:
         current = open(COVERAGE_FILE).read() if os.path.exists(COVERAGE_FILE) else ""
         if current != render(coverage):
