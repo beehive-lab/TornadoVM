@@ -88,12 +88,11 @@ public final class InProcessCompiler {
             List<String> options = new ArrayList<>();
             options.add("-classpath");
             options.add(classpath);
+            // Class-file version 66 (JDK 22): the newest the frozen Graal 23.1.0 class-file reader accepts.
             options.add("-source");
-            options.add("21");
+            options.add("22");
             options.add("-target");
-            options.add("21");
-            // TornadoVM's array types are compiled with JDK 21 preview features enabled.
-            options.add("--enable-preview");
+            options.add("22");
             options.add("-proc:none");
             // TornadoVM's code generator reads the LocalVariableTable, which javac only
             // emits with debug info. Without -g the sketch compilation NPEs.

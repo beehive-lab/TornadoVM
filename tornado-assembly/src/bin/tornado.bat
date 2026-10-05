@@ -39,18 +39,18 @@ REM Check JAVA_HOME
 if not defined JAVA_HOME (
     echo [ERROR] JAVA_HOME environment variable is not set
     echo.
-    echo TornadoVM requires JAVA_HOME to be set to a JDK 21 installation.
+    echo TornadoVM requires JAVA_HOME to be set to a JDK 22 (or newer) installation.
     echo.
     echo To set JAVA_HOME:
     echo   1. Right-click "This PC" ^> Properties ^> Advanced system settings
     echo   2. Click "Environment Variables"
-    echo   3. Add JAVA_HOME pointing to your JDK 21 installation
-    echo      Example: C:\Program Files\Java\jdk-21
+    echo   3. Add JAVA_HOME pointing to your JDK 22+ installation
+    echo      Example: C:\Program Files\Java\jdk-25
     echo   4. Add %%JAVA_HOME%%\bin to PATH
     echo.
-    echo To install JDK 21:
+    echo To install a JDK (25 is the current LTS):
     echo   - Download from: https://adoptium.net/
-    echo   - Or use SDKMAN on WSL: sdk install java 21.0.1-graal
+    echo   - Or use SDKMAN on WSL: sdk install java 25-tem
     echo.
     exit /b 1
 )

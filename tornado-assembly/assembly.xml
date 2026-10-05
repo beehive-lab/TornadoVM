@@ -133,7 +133,7 @@
         </fileSet>
         <fileSet>
             <directory>../graalJars</directory>
-            <!-- Bare-minimum Graal JARs for JDK 21. The compiler is shipped relocated as
+            <!-- Bare-minimum Graal JARs. The compiler is shipped relocated as
                  the vendored tornado.graal module (tornado-graal-*.jar) so it resolves
                  from the regular module-path; word/collections/truffle-compiler are its
                  transitive requires. truffle-api/polyglot/graal-sdk/compiler-management

@@ -109,7 +109,7 @@ Located at the repository root, this file contains:
 Maven configuration file that applies to all Maven builds (both `./mvnw` and `bin/compile`):
 - **Parallel builds**: `-T1.5C` (1.5 threads per CPU core)
 - **Colored output**: `-Dstyle.color=always` for better readability
-- **Default profiles**: JDK 21 + OpenCL backend (can be overridden)
+- **JDK profile**: none to pass; the `jdk22plus` profile activates on any JDK 22+
 - **Skip Javadoc**: `-Dmaven.javadoc.skip=true` for faster builds
 - **Fail fast**: `-Dfailfast=true` for quicker feedback during development
 - **Timestamps**: Shows build timestamps for performance tracking
@@ -139,7 +139,7 @@ Both approaches load these core TornadoVM modules:
 **Standard workflow (same as master branch):**
 ```bash
 make                           # Full clean build every time
-bin/compile --jdk jdk21 --backend opencl
+bin/compile --jdk jdk22plus --backend opencl
 ```
 
 ### Using Additional JVM Options

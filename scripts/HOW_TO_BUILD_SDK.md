@@ -3,12 +3,15 @@
 The script `scripts/build-release-sdks.py` automates building all TornadoVM SDK
 distributions for a given release version.
 
-Given a base version tag (e.g. `v4.0.0`), the script:
-1. Resolves the JDK-specific tags `v4.0.0-jdk21` and `v4.0.0-jdk25`.
-2. Checks out each tag into a temporary git worktree (the current branch is never touched).
-3. Builds all relevant SDK variants inside that worktree.
-4. Collects the resulting archives into the output directory.
-5. Removes the worktree when done.
+Given a release tag (e.g. `v4.0.0`), the script:
+1. Checks out that tag into a temporary git worktree (the current branch is never touched).
+2. Builds all relevant SDK variants inside that worktree with the `jdk22plus` profile.
+3. Collects the resulting archives into the output directory.
+4. Removes the worktree when done.
+
+One SDK serves every JDK from 22 up: it is compiled with `--release 22` and no
+preview features, so any JDK >= 22 produces an identical artifact. JDK 21 is no
+longer supported.
 
 ## Prerequisites
 
@@ -22,8 +25,11 @@ Given a base version tag (e.g. `v4.0.0`), the script:
   code when the CUDA SDK variant is built
 
 ### macOS and Linux — sdkman with Temurin JDKs
-The script resolves JDK paths automatically from sdkman.  Both JDK 21 and JDK 25
-must be installed as Temurin distributions before running the script.
+The script resolves JDK paths automatically from sdkman:
+
+- JDK 25 builds the SDK (any JDK >= 22 works; 25 is pinned for reproducibility).
+- JDK 21 is only read, never built with: the vendored jvmci module is extracted
+  from its runtime image.
 
 1. Install sdkman if not already present:
    ```bash
@@ -33,52 +39,36 @@ must be installed as Temurin distributions before running the script.
 
 2. Install the Temurin JDKs:
    ```bash
-   sdk install java 21.0.10-tem   # or whatever the latest 21.x patch is
    sdk install java 25.0.2-tem    # or whatever the latest 25.x patch is
+   sdk install java 21.0.10-tem   # jvmci source image only
    ```
 
    The script picks the newest installed patch version for each major
    automatically, so the exact identifiers above are examples only.
 
 ### Windows
-sdkman is not available on Windows.  You must supply the paths to both JDKs
-via command-line flags (see usage below).  Download Temurin JDK 21 and JDK 25
-from [Adoptium](https://adoptium.net) and note the installation paths.
-
----
-
-## Tag naming convention
-
-The script constructs the per-JDK tags from the base version you pass:
-
-| Argument | Tags checked out |
-|----------|-----------------|
-| `v4.0.0` | `v4.0.0-jdk21`, `v4.0.0-jdk25` |
-
-If a tag does not exist locally, the script fetches it from `origin`
-automatically.  If it still cannot be found, that JDK version is skipped
-with a warning and the script continues with the remaining tags.
+sdkman is not available on Windows. Supply both JDK paths via command-line
+flags (see usage below). Download Temurin JDK 25 and JDK 21 from
+[Adoptium](https://adoptium.net) and note the installation paths.
 
 ---
 
 ## What the script builds
 
-The build matrix depends on the detected platform:
+| Platform | Backends built | Archive label |
+|----------|----------------|---------------|
+| macOS    | `opencl` | `opencl` |
+| macOS    | `metal` | `metal` |
+| Linux    | `opencl` | `opencl` |
+| Linux    | `cuda` | `cuda` |
+| Linux    | `opencl,cuda` | `full` |
+| Windows  | `opencl` | `opencl` |
+| Windows  | `cuda` | `cuda` |
 
-| Platform | JDK tag | Backends built | Archive label |
-|----------|---------|----------------|---------------|
-| macOS    | jdk21, jdk25 | `opencl` | `opencl` |
-| macOS    | jdk21, jdk25 | `metal` | `metal` |
-| Linux    | jdk21, jdk25 | `opencl` | `opencl` |
-| Linux    | jdk21, jdk25 | `cuda` | `cuda` |
-| Linux    | jdk21, jdk25 | `opencl,cuda` | `full` |
-| Windows  | jdk21, jdk25 | `opencl` | `opencl` |
-| Windows  | jdk21, jdk25 | `cuda` | `cuda` |
-
-Each build calls `bin/compile --sdk` from the checked-out worktree, which
-compiles TornadoVM and produces `.tar.gz` and `.zip` archives in that
-worktree's `dist/` directory.  Archives are moved to the output directory
-after every successful build.
+Each build calls `make sdk-jdk22plus` (`nmake /f Makefile.mak sdk-jdk22plus` on
+Windows) from the checked-out worktree, which compiles TornadoVM and produces
+`.tar.gz` and `.zip` archives in that worktree's `dist/` directory. Archives are
+moved to the output directory after every successful build.
 
 ---
 
@@ -88,13 +78,11 @@ after every successful build.
 release-sdks/                          # configurable via --output-dir
 └── <version>/
     └── <platform>-<arch>/
-        ├── tornadovm-<version>-jdk21-opencl-<platform>-<arch>.tar.gz
-        ├── tornadovm-<version>-jdk21-opencl-<platform>-<arch>.zip
-        ├── tornadovm-<version>-jdk21-metal-<platform>-<arch>.tar.gz         # macOS
-        ├── tornadovm-<version>-jdk21-metal-<platform>-<arch>.zip            # macOS
-        ├── tornadovm-<version>-jdk25-opencl-<platform>-<arch>.tar.gz
+        ├── tornadovm-<version>-jdk22plus-opencl-<platform>-<arch>.tar.gz
+        ├── tornadovm-<version>-jdk22plus-opencl-<platform>-<arch>.zip
+        ├── tornadovm-<version>-jdk22plus-metal-<platform>-<arch>.tar.gz     # macOS
         ├── ...
-        └── tornadovm-<version>-jdk25-full-<platform>-<arch>.zip             # Linux/Windows
+        └── tornadovm-<version>-jdk22plus-full-<platform>-<arch>.zip         # Linux
 ```
 
 ---
@@ -119,30 +107,30 @@ To override the sdkman auto-detection and point to specific JDK installations:
 
 ```bash
 python3 scripts/build-release-sdks.py --version v4.0.0 \
-    --jdk21-home /path/to/jdk-21 \
-    --jdk25-home /path/to/jdk-25
+    --jdk22plus-home /path/to/jdk-25 \
+    --jvmci-source-jdk /path/to/jdk-21
 ```
 
 ### Windows
 
-Both `--jdk21-home` and `--jdk25-home` are required on Windows:
+Both `--jdk22plus-home` and `--jvmci-source-jdk` are required on Windows:
 
 ```bat
 python scripts\build-release-sdks.py --version v4.0.0 ^
-    --jdk21-home "C:\Program Files\Eclipse Adoptium\jdk-21.0.x.y-hotspot" ^
-    --jdk25-home "C:\Program Files\Eclipse Adoptium\jdk-25.0.x.y-hotspot"
+    --jdk22plus-home "C:\Program Files\Eclipse Adoptium\jdk-25.0.x.y-hotspot" ^
+    --jvmci-source-jdk "C:\Program Files\Eclipse Adoptium\jdk-21.0.x.y-hotspot"
 ```
 
 On restricted/managed Windows machines that block running unsigned executables,
-add `--skip-windows-executables`.  The build then never invokes PyInstaller
+add `--skip-windows-executables`. The build then never invokes PyInstaller
 (`pyinstaller.exe`), the `tornado.exe` wrappers, or the `zello_world` Level Zero
 probe; the produced SDK ships the `.py` launchers instead of the `.exe`
 wrappers, and the SDK validation skips the `tornado.exe` smoke checks.
 
 ```bat
 python scripts\build-release-sdks.py --version v4.0.0 ^
-    --jdk21-home "C:\jdks\jdk21" ^
-    --jdk25-home "C:\jdks\jdk25" ^
+    --jdk22plus-home "C:\jdks\jdk25" ^
+    --jvmci-source-jdk "C:\jdks\jdk21" ^
     --skip-windows-executables
 ```
 
@@ -151,27 +139,10 @@ python scripts\build-release-sdks.py --version v4.0.0 ^
 ## Running via GitHub Actions
 
 The `.github/workflows/build-release-sdks.yml` workflow runs this script on the
-self-hosted macOS, Linux, and Windows runners.  It is triggered either:
-
-- manually via **workflow_dispatch** (full control over the inputs below), or
-- automatically when both `2-Finalize TornadoVM Release [JDK21]` and `[JDK25]`
-  complete — it waits until both `v<version>-jdk21` and `v<version>-jdk25` draft
-  Releases exist, builds and uploads all archives, then un-drafts the two
-  Releases (which fires the SDKMAN publish workflows).
-
-| Input | Default | Description |
-|-------|---------|-------------|
-| `version` | `4.0.1` | Base release version, no `v` prefix or `-jdkXX` suffix |
-| `include_windows` | `true` | Run the Windows build job (requires the self-hosted Windows runner online) |
-| `skip_windows_executables` | `true` | On the Windows build, skip building/running the native `.exe` wrappers (see `--skip-windows-executables` above) |
-| `upload_to_release` | `true` | Upload built archives to the `v<version>-jdk21` / `-jdk25` GitHub Releases |
-
-The Windows build is included by default — both for manual dispatches and for
-auto-triggered runs after a finalize.  The runner's JDK paths are configured in
-the workflow (`JDK21_HOME` / `JDK25_HOME`); update them there if the Windows
-runner layout changes.  Because the final `publish-releases` job requires the
-Windows build to succeed (or be `skipped`), the self-hosted Windows runner must
-be online for an auto-triggered release to complete.
+self-hosted macOS, Linux, and Windows runners. It is dispatched by the
+finalize-release workflow, or manually via **workflow_dispatch**. The runners'
+JDK paths are configured in the workflow (`JDK22PLUS_HOME` /
+`JVMCI_SOURCE_JDK_HOME`); update them there if a runner layout changes.
 
 ---
 
@@ -179,10 +150,10 @@ be online for an auto-triggered release to complete.
 
 | Flag | Required | Default | Description |
 |------|----------|---------|-------------|
-| `--version VERSION` | Yes | — | Base release tag (e.g. `v4.0.0`); the script appends `-jdk21` / `-jdk25` |
+| `--version VERSION` | Yes | — | Release tag (e.g. `v4.0.0`) |
 | `--output-dir DIR` | No | `release-sdks/` | Root directory for collected SDK archives |
-| `--jdk21-home PATH` | Windows only | auto (sdkman) | Path to a JDK 21 installation |
-| `--jdk25-home PATH` | Windows only | auto (sdkman) | Path to a JDK 25 installation |
+| `--jdk22plus-home PATH` | Windows only | auto (sdkman, JDK 25) | JDK >= 22 used to build the SDKs |
+| `--jvmci-source-jdk PATH` | Windows only | auto (sdkman, JDK 21) | JDK 21 whose runtime image the vendored jvmci module is extracted from |
 | `--skip-windows-executables` | No | off | Windows only: don't build/run the native `.exe` wrappers (PyInstaller / `tornado.exe` / `zello_world`); ship the `.py` launchers instead |
 
 ---
@@ -195,7 +166,7 @@ be online for an auto-triggered release to complete.
 | `1` | One or more builds failed (partial output may exist) |
 
 When one build fails the script continues with the remaining builds so that as
-many archives as possible are produced.  Failed build labels are printed in the
+many archives as possible are produced. Failed build labels are printed in the
 summary at the end.
 
 ---
@@ -203,13 +174,11 @@ summary at the end.
 ## Notes
 
 - The script must be run from the **TornadoVM repository root** (where `bin/compile` lives).
-- Each tag is checked out into a **temporary git worktree** in the system temp
-  directory.  The current working branch is never modified.  Worktrees are
+- The tag is checked out into a **temporary git worktree** in the system temp
+  directory. The current working branch is never modified. The worktree is
   always removed on exit, even if a build fails.
 - Before every build the script clears `graalJars/` inside the worktree so that
-  `pull_graal_jars.py` always downloads the correct GraalVM JAR versions for the
-  JDK being built.  Stale JARs would otherwise be silently reused, causing
-  version mismatches between JDK 21 and JDK 25 builds.
+  `pull_graal_jars.py` always stages fresh GraalVM jars.
 - Each individual build (`bin/compile`) runs a Maven clean before compiling, so
   builds are fully independent of one another.
 - Archives are moved out of the worktree's `dist/` into the output directory

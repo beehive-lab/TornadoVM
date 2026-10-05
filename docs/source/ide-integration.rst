@@ -12,7 +12,7 @@ Change the IntelliJ maximum memory to 2 GB or more (follow `these instructions <
 
 For IntelliJ to pick up the required TornadoVM dependencies from the `pom.xml` file, go to **View > Tool Windows > Maven**, and select the following profiles:
 
-- **graal-jdk-21**
+- **jdk22plus** (activates automatically on JDK 22+)
 - **cuda-backend**
 - **opencl-backend**
 
@@ -144,12 +144,12 @@ Configuring the Project Structure
 
 a. In the **Project** tab:
 
-   - The *SDK* uses a valid Java version (e.g. OpenJDK 21, GraalVM JDK 21, etc.).
-   - The *Language level* is set to match the Java version (e.g. Java 21).
+   - The *SDK* uses a valid Java version (JDK 22 or newer, e.g. OpenJDK 25).
+   - The *Language level* is set to match the Java version (e.g. Java 22).
 
 b. In the **Modules** tab:
 
-   - Ensure that the *Language level* of every module matches the project level (e.g. Java 21).
+   - Ensure that the *Language level* of every module matches the project level (e.g. Java 22).
 
 Configuring IntelliJ for TornadoVM
 **********************************
@@ -251,8 +251,8 @@ The output will differ depending on the backends you've built. For example, if y
 
    .. code:: bash
 
-      <path-to-TornadoVM-directory>/etc/dependencies/TornadoVM-graal-jdk-21/graalvm-community-openjdk-21.0.1+12.1/bin/java
-      -server -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseCompressedClassPointers --enable-preview -Djava.library.path=<path-to-TornadoVM-directory>/bin/sdk/lib  --module-path .:<path-to-TornadoVM-directory>/bin/sdk/share/java/tornado
+      <path-to-jdk-25>/bin/java
+      -server -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseCompressedClassPointers -Djava.library.path=<path-to-TornadoVM-directory>/bin/sdk/lib  --module-path .:<path-to-TornadoVM-directory>/bin/sdk/share/java/tornado
       -Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph -Dtornado.load.runtime.implementation=uk.ac.manchester.tornado.runtime.TornadoCoreRuntime -Dtornado.load.tornado.implementation=uk.ac.manchester.tornado.runtime.common.Tornado
       -Dtornado.load.annotation.implementation=uk.ac.manchester.tornado.annotation.ASMClassVisitor -Dtornado.load.annotation.parallel=uk.ac.manchester.tornado.api.annotations.Parallel
       @<path-to-TornadoVM-directory>/bin/sdk/etc/exportLists/common-exports

@@ -121,37 +121,37 @@ check_java() {
     if [ -z "$JAVA_HOME" ]; then
         print_error "JAVA_HOME environment variable is not set"
         echo "" >&2
-        echo "TornadoVM requires JAVA_HOME to be set to a JDK 21 installation." >&2
+        echo "TornadoVM requires JAVA_HOME to be set to a JDK 22 (or newer) installation." >&2
         echo "" >&2
         echo "To set JAVA_HOME, add this to your ~/.bashrc or ~/.zshrc:" >&2
         echo "" >&2
-        echo -e "  ${GREEN}export JAVA_HOME=/path/to/jdk-21${NC}" >&2
+        echo -e "  ${GREEN}export JAVA_HOME=/path/to/jdk-25${NC}" >&2
         echo -e "  ${GREEN}export PATH=\$JAVA_HOME/bin:\$PATH${NC}" >&2
         echo "" >&2
-        echo "To install JDK 21:" >&2
+        echo "To install a JDK (25 is the current LTS):" >&2
         echo "" >&2
 
         case $DISTRO in
             ubuntu|debian)
                 echo -e "  ${GREEN}sudo apt update${NC}" >&2
-                echo -e "  ${GREEN}sudo apt install -y openjdk-21-jdk${NC}" >&2
+                echo -e "  ${GREEN}sudo apt install -y openjdk-25-jdk${NC}" >&2
                 echo "" >&2
                 echo "Or use SDKMAN (recommended):" >&2
                 echo -e "  ${GREEN}curl -s \"https://get.sdkman.io\" | bash${NC}" >&2
-                echo -e "  ${GREEN}sdk install java 21.0.1-graal${NC}" >&2
+                echo -e "  ${GREEN}sdk install java 25-tem${NC}" >&2
                 ;;
             fedora|rhel|centos|rocky|almalinux)
-                echo -e "  ${GREEN}sudo dnf install -y java-21-openjdk-devel${NC}" >&2
+                echo -e "  ${GREEN}sudo dnf install -y java-25-openjdk-devel${NC}" >&2
                 ;;
             arch|manjaro)
-                echo -e "  ${GREEN}sudo pacman -S jdk21-openjdk${NC}" >&2
+                echo -e "  ${GREEN}sudo pacman -S jdk-openjdk${NC}" >&2
                 ;;
             macos)
-                echo -e "  ${GREEN}brew install openjdk@21${NC}" >&2
+                echo -e "  ${GREEN}brew install openjdk@25${NC}" >&2
                 echo "" >&2
                 echo "Or use SDKMAN (recommended):" >&2
                 echo -e "  ${GREEN}curl -s \"https://get.sdkman.io\" | bash${NC}" >&2
-                echo -e "  ${GREEN}sdk install java 21.0.1-graal${NC}" >&2
+                echo -e "  ${GREEN}sdk install java 25-tem${NC}" >&2
                 ;;
             *)
                 echo "  Visit: https://adoptium.net/ or https://www.graalvm.org/" >&2

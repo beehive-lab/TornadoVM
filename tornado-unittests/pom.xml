@@ -107,7 +107,6 @@
                         <argument>-XX:+UnlockExperimentalVMOptions</argument>
                         <argument>-XX:+EnableJVMCI</argument>
                         <argument>-XX:-UseCompressedClassPointers</argument>
-                        <argument>--enable-preview</argument>
                         <argument>-Djava.library.path=${env.TORNADOVM_HOME}/lib</argument>
                         <argument>--module-path=.:${env.TORNADOVM_HOME}/share/java/tornado:${env.TORNADOVM_HOME}/share/java/graalJars</argument>
                         <argument>-Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph</argument>

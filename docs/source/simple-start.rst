@@ -11,13 +11,13 @@ TornadoVM includes a tool for launching applications from the command-line. ``to
 
 .. code-block:: bash
 
-   $ java @$TORNADOVM_HOME/tornado-argfile -cp $TORNADOVM_HOME/share/java/tornado/tornado-examples-5.0.0-jdk21.jar uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
+   $ java @$TORNADOVM_HOME/tornado-argfile -cp $TORNADOVM_HOME/share/java/tornado/tornado-examples-7.0.1.jar uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
 
 This is equivalent to:
 
 .. code-block:: bash
 
-   $ tornado -cp $TORNADOVM_HOME/share/java/tornado/tornado-examples-5.0.0-jdk21.jar uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
+   $ tornado -cp $TORNADOVM_HOME/share/java/tornado/tornado-examples-7.0.1.jar uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
 
 .. code-block:: bash
 

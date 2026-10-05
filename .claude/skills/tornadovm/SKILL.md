@@ -14,7 +14,7 @@ For profiling and optimisation work on the runtime, see the `tornadovm-perf-camp
 
 ## Build
 
-Requires **JDK 21+** (`JAVA_HOME` must point at a JDK 21 build). Source the env once per shell, then build with `make`:
+Requires **JDK 22+** (`JAVA_HOME` must point at a JDK 22 or newer build). Source the env once per shell, then build with `make`:
 
 ```bash
 source setvars.sh                 # exports JAVA_HOME, TORNADOVM_HOME; prepends $TORNADOVM_HOME/bin to PATH
@@ -24,12 +24,12 @@ make BACKEND=opencl,cuda          # comma-separated list; values in scope: openc
 Convenience targets: `make cuda` (= `--backend cuda`), `make metal` (= `metal,opencl`). Default `BACKEND` is `opencl`.
 
 - **Incremental build ≈ 3 min.** Only a clean rebuild (Graal-jar pull + full recompile) is long — don't assume every build is slow.
-- Under the hood `make` calls `bin/compile --jdk jdk21 --backend <list>`. Useful flags: `--rebuild` (rebuild deps), `--sdk`, `--mvn_single_threaded`.
-- The built SDK lands in `dist/tornadovm-<version>-jdk21-dev-<variant>-<os>-<arch>/...`; `TORNADOVM_HOME` and the `bin/tornado*` launchers point into it.
+- Under the hood `make` calls `bin/compile --jdk jdk22plus --backend <list>`. Useful flags: `--rebuild` (rebuild deps), `--sdk`, `--mvn_single_threaded`.
+- The built SDK lands in `dist/tornadovm-<version>-jdk22plus-dev-<variant>-<os>-<arch>/...`; `TORNADOVM_HOME` and the `bin/tornado*` launchers point into it.
 
 ### Build gotchas
 1. **Stale `graalJars/`** — switching between branch families that vendor Graal differently leaves incompatible jars in the git-ignored `graalJars/` dir. Symptom: the *first* module (`tornado-api`) fails with `error: cannot access module-info` (not a code or JDK error). Fix: `rm -rf graalJars` then rebuild — `bin/pull_graal_jars.py` re-fetches the correct set.
-2. **Stale `setvars.sh` `JAVA_HOME`** — an out-of-date `setvars.sh` can export the wrong JDK (e.g. JDK 27 → `invalid source release 21 with --enable-preview`). After sourcing, verify `java -version`; pin `JAVA_HOME` to a JDK 21 explicitly if it's wrong.
+2. **Stale `setvars.sh` `JAVA_HOME`** — an out-of-date `setvars.sh` can export the wrong JDK (e.g. an old JDK 21 one → `TornadoVM requires a JDK 22 or newer JAVA_HOME`). After sourcing, verify `java -version`; pin `JAVA_HOME` to a JDK 22+ explicitly if it's wrong.
 
 ## Test
 

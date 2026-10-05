@@ -21,57 +21,49 @@
 Build TornadoVM release SDKs for the current platform.
 
 Given a base version (e.g. v4.0.0), the script checks out that ONE release tag
-into a single temporary git worktree, builds the relevant SDKs for both JDK
-build profiles (jdk21, jdk22plus) from that same worktree (--jdk21-home /
---jdk22plus-home, same branch — there are no more per-JDK divergent
-branches/tags), collects the archives, and cleans up — without touching the
-current working branch.
+into a single temporary git worktree, builds the relevant SDKs from it,
+collects the archives, and cleans up — without touching the current working
+branch.
 
-jdk21 and jdk22plus are the only release-facing Maven profiles (see
-bin/compile's SDK_JDK_CONTRACT / pom.xml): jdk21 is --enable-preview and
-pinned to exactly JDK 21; jdk22plus floors at JDK 22, carries no preview
-features, and is built ONCE to run unmodified on every JDK from 22 upwards
-(22, 23, 24, 25, 26, 27, ...). There is no per-major-JDK build past 21 — do
-not add --jdk25-home/--jdk26-home/--jdk27-home back.
+jdk22plus is the only release-facing Maven profile (see bin/compile /
+pom.xml): it floors at JDK 22, carries no preview features, and is built ONCE
+to run unmodified on every JDK from 22 upwards (22, 23, 24, 25, 26, 27, ...).
+JDK 21 is no longer supported — do not add per-major-JDK builds back.
 
-The committed pom.xml version in the tag carries no JDK suffix (e.g. "4.0.0",
-not "4.0.0-jdk21"); each produced archive gets the correct profile token
-stamped into its filename post-build (see _set_jdk_in_name), since otherwise
-the two profiles' archives for a given backend would collide on the same
-filename.
+The committed pom.xml version in the tag carries no JDK suffix (e.g. "4.0.0");
+each produced archive gets the profile token stamped into its filename
+post-build (see _set_jdk_in_name).
 
-SDKs built per platform (jdk21 + jdk22plus profiles x backend, via sdkman
-Temurin or an explicit --jdk21-home/--jdk22plus-home override):
+SDKs built per platform (via sdkman Temurin or an explicit --jdk22plus-home):
   - macOS   : opencl, metal
   - Linux   : opencl, cuda, full
-  - Windows : opencl, cuda   (--jdk21-home/--jdk22plus-home required)
+  - Windows : opencl, cuda   (--jdk22plus-home and --jvmci-source-jdk required)
 
 "full" means opencl+cuda combined into a single archive.
 
-A profile whose JDK home can't be resolved (not installed via sdkman, or an
-invalid --jdkXX-home) is skipped with a warning rather than aborting the
-whole run.
+ANY JDK >= 22 produces a byte-identical artifact (pom.xml compiles it with
+`--release 22`, which pins the floor regardless of the build JDK), so which one
+you point --jdk22plus-home at doesn't affect correctness. JDK 25 is used by
+default via sdkman auto-detection purely to match the build JDK
+build-test-platform.yml already pins for reproducibility.
 
-For jdk22plus specifically, ANY JDK >= 22 produces a byte-identical artifact
-(pom.xml compiles it with `--release 22`, which pins the floor regardless of
-the build JDK), so which one you point --jdk22plus-home at doesn't affect
-correctness. JDK 25 is used by default via sdkman auto-detection purely to
-match the build JDK build-test-platform.yml already pins for reproducibility
-— pass an explicit --jdk22plus-home to build with a different JDK >= 22.
+The vendored jvmci module is still extracted from a JDK 21 runtime image
+(bin/build_jvmci_module.py). --jvmci-source-jdk points at that image; on
+macOS/Linux it defaults to the newest sdkman Temurin 21.
 
 Usage:
   python3 scripts/build-release-sdks.py --version v4.0.0
   python3 scripts/build-release-sdks.py --version v4.0.0 --output-dir /path/to/output
 
-  # Windows (JDK paths required up front for both profiles):
+  # Windows (JDK paths required up front):
   python scripts\\build-release-sdks.py --version v4.0.0 ^
-      --jdk21-home "C:\\Path\\To\\jdk-21" ^
+      --jvmci-source-jdk "C:\\Path\\To\\jdk-21" ^
       --jdk22plus-home "C:\\Path\\To\\jdk-25"
 
   # Restricted Windows machines that block running unsigned executables
   # (e.g. corporate-managed runners) — skip building/running the .exe wrappers:
   python scripts\\build-release-sdks.py --version v4.0.0 ^
-      --jdk21-home "C:\\Path\\To\\jdk-21" ^
+      --jvmci-source-jdk "C:\\Path\\To\\jdk-21" ^
       --jdk22plus-home "C:\\Path\\To\\jdk-25" ^
       --skip-windows-executables
 
@@ -160,7 +152,7 @@ def _find_sdkman_temurin_jdk(major_version, profile):
     ~/.sdkman/candidates/java/.  Returns the full path to the JDK home, or
     None (with a warning) if sdkman or that JDK isn't installed.
 
-    *profile* (e.g. 'jdk21', 'jdk22plus') is only used in messaging — the
+    *profile* (e.g. 'jdk22plus') is only used in messaging — the
     lookup itself is purely by major_version.
     """
     sdkman_java_dir = Path.home() / ".sdkman" / "candidates" / "java"
@@ -202,12 +194,11 @@ def resolve_jdk_home(profile, build_major, override):
 
     *build_major* is the JDK major version used to (a) auto-locate a JDK via
     sdkman on macOS/Linux and (b) name the JDK in Windows messaging. For
-    'jdk21' this is the exact required major (jdk21 is --enable-preview and
-    only loads on JDK 21). For 'jdk22plus' it is just the pinned, reproducible
-    build JDK (25) — any JDK >= 22 builds an equally valid jdk22plus SDK
-    (see module docstring), so pass --jdk22plus-home to use a different one.
+    'jdk22plus' it is just the pinned, reproducible build JDK (25) — any
+    JDK >= 22 builds an equally valid SDK (see module docstring), so pass
+    --jdk22plus-home to use a different one.
 
-    - If *override* is given (--jdk21-home / --jdk22plus-home), use it.
+    - If *override* is given (--jdk22plus-home / --jvmci-source-jdk), use it.
     - Otherwise on macOS/Linux look up sdkman for build_major.
     - On Windows an override is mandatory; skipped with instructions if missing.
     """
@@ -222,7 +213,8 @@ def resolve_jdk_home(profile, build_major, override):
     if detect_platform() == "windows":
         warn(
             f"On Windows you must supply the {profile} JDK path explicitly — skipping.\n"
-            f"  Add:  --{profile}-home \"C:\\\\Path\\\\To\\\\jdk-{build_major}\""
+            f"  Add:  --{profile}-home \"C:\\\\Path\\\\To\\\\jdk-{build_major}\"" if profile != "jvmci-source"
+            else f"  Add:  --jvmci-source-jdk \"C:\\\\Path\\\\To\\\\jdk-{build_major}\""
         )
         return None
 
@@ -253,15 +245,16 @@ BUILDS = {
     ],
 }
 
-# The two release-facing JDK build profiles (bin/compile's SDK_JDK_CONTRACT /
-# pom.xml). Order here is the build order. Value is the JDK major version used
-# to auto-locate a build JDK via sdkman and to name it in Windows messaging —
-# for jdk22plus this is just the pinned reproducible build JDK, not a
-# requirement: any JDK >= 22 produces an identical jdk22plus artifact.
+# The release-facing JDK build profile (bin/compile / pom.xml). Value is the JDK
+# major version used to auto-locate a build JDK via sdkman and to name it in
+# Windows messaging — just the pinned reproducible build JDK, not a requirement:
+# any JDK >= 22 produces an identical artifact.
 JDK_PROFILES = {
-    "jdk21": 21,
     "jdk22plus": 25,
 }
+
+# JDK whose runtime image bin/build_jvmci_module.py extracts the vendored jvmci from.
+JVMCI_SOURCE_JDK_MAJOR = 21
 
 
 # ---------------------------------------------------------------------------
@@ -647,24 +640,17 @@ def clean_graal_jars(worktree_path):
         info(f"Removed {removed} stale file(s) from graalJars/")
 
 
-def build_sdk(worktree_path, jdk_home, jdk_arg, backends, label, repo_root, jdk21_home=None):
+def build_sdk(worktree_path, jdk_home, jdk_arg, backends, label, repo_root, jvmci_source_jdk=None):
     """
     Build a single SDK variant inside *worktree_path*.
 
     On macOS and Linux:  make sdk-<jdk_arg> BACKEND=<backends>
     On Windows:          nmake /f Makefile.mak sdk-<jdk_arg> BACKEND=<backends>
 
-    The sdk-jdk21 / sdk-jdk22plus targets pin the Maven profile directly
-    rather than going through the generic `sdk` target's JDK-autodetection
-    (which on Unix parses JAVA_HOME's `java -version` and on Windows just
-    defaults to jdk21 with no autodetection at all — silently building jdk21
-    twice instead of ever reaching jdk22plus). Pinning the target explicitly
-    makes profile selection correct on both platforms and independent of
-    JAVA_HOME parsing.
+    The sdk-jdk22plus target pins the Maven profile directly.
 
-    *jdk21_home*, when known, is threaded through as JVMCI_SOURCE_JDK for any
-    profile other than jdk21 (see the JVMCI_SOURCE_JDK block below) —
-    irrelevant for jdk21 itself, which runs on the platform's own jvmci.
+    *jvmci_source_jdk*, when known, is threaded through as JVMCI_SOURCE_JDK
+    (see the block below).
     """
     clean_graal_jars(worktree_path)
 
@@ -677,25 +663,17 @@ def build_sdk(worktree_path, jdk_home, jdk_arg, backends, label, repo_root, jdk2
     jdk_bin = os.path.join(jdk_home, "bin")
     env["PATH"] = jdk_bin + os.pathsep + env.get("PATH", "")
 
-    # Every profile other than jdk21 vendors jdk.internal.vm.ci from a real
-    # JDK 21 runtime image (bin/build_jvmci_module.py, invoked from
-    # pull_graal_jars.py) — a step that is completely independent of which
-    # JDK JAVA_HOME points at above. That script reads JVMCI_SOURCE_JDK, and
-    # falls back to a hardcoded sdkman path
-    # (~/.sdkman/candidates/java/21.0.2-open) when it's unset. On Windows
-    # there is no sdkman, so that fallback never exists and the jdk22plus
-    # build fails deep inside the Maven reactor with "no runtime image at
-    # ...; set JVMCI_SOURCE_JDK to a JDK 21 home" — reproduced locally and
-    # confirmed as the actual root cause of the jdk22plus build failures,
-    # independent of backend (opencl and cuda both hit this identically,
-    # since it happens before any backend-specific compilation). Pointing it
-    # at the jdk21 home we already resolved (--jdk21-home / sdkman) fixes
-    # this on every platform - including macOS/Linux, where it also makes
-    # the vendoring robust to a locally installed JDK 21 whose exact version
-    # isn't 21.0.2, rather than only working by coincidence of matching the
-    # hardcoded fallback path.
-    if jdk_arg != "jdk21" and jdk21_home:
-        env["JVMCI_SOURCE_JDK"] = jdk21_home
+    # The build vendors jdk.internal.vm.ci from a real JDK 21 runtime image
+    # (bin/build_jvmci_module.py, invoked from pull_graal_jars.py) - a step
+    # that is independent of which JDK JAVA_HOME points at above. That script
+    # reads JVMCI_SOURCE_JDK and falls back to a hardcoded sdkman path
+    # (~/.sdkman/candidates/java/21.0.2-open) when it's unset. On Windows there
+    # is no sdkman, so the build fails deep inside the Maven reactor with "no
+    # runtime image at ...; set JVMCI_SOURCE_JDK to a JDK 21 home". Pointing it
+    # at the JDK 21 home resolved from --jvmci-source-jdk / sdkman fixes this on
+    # every platform.
+    if jvmci_source_jdk:
+        env["JVMCI_SOURCE_JDK"] = jvmci_source_jdk
 
     target = f"sdk-{jdk_arg}"
     if os.name == "nt":
@@ -1048,12 +1026,12 @@ def parse_args():
         ),
     )
     parser.add_argument(
-        "--jdk21-home",
+        "--jvmci-source-jdk",
         metavar="PATH",
         default=None,
         help=(
-            "Path to a JDK 21 home, used to build the jdk21 profile "
-            "(--enable-preview, pinned to exactly JDK 21).  "
+            "Path to a JDK 21 home whose runtime image the vendored jvmci module is "
+            "extracted from (nothing is built with it).  "
             "Required on Windows; overrides sdkman auto-detection on macOS/Linux."
         ),
     )
@@ -1152,7 +1130,6 @@ def main():
     # be resolved (not provisioned on this builder yet) is skipped with a
     # warning rather than aborting the whole run.
     profile_overrides = {
-        "jdk21": args.jdk21_home,
         "jdk22plus": args.jdk22plus_home,
     }
     validated = []
@@ -1184,9 +1161,8 @@ def main():
         if skip_win_exe:
             patch_worktree_skip_executables(worktree_path)
 
-        # jdk21_home feeds JVMCI_SOURCE_JDK for every other profile's build (see
-        # build_sdk) — None if --jdk21-home wasn't resolved, e.g. a jdk22plus-only run.
-        jdk21_home = dict(validated).get("jdk21")
+        # Feeds JVMCI_SOURCE_JDK (see build_sdk); None falls back to the script's default.
+        jvmci_source_jdk = resolve_jdk_home("jvmci-source", JVMCI_SOURCE_JDK_MAJOR, args.jvmci_source_jdk)
 
         for jdk_arg, jdk_home in validated:
             section(f"{jdk_arg}  (tag: {tag})")
@@ -1198,7 +1174,7 @@ def main():
                 else:
                     backend_label = backends
                 label = f"{tag}-{jdk_arg}-{backend_label}"
-                success = build_sdk(worktree_path, jdk_home, jdk_arg, backends, label, repo_root, jdk21_home=jdk21_home)
+                success = build_sdk(worktree_path, jdk_home, jdk_arg, backends, label, repo_root, jvmci_source_jdk=jvmci_source_jdk)
                 results.append((label, success))
 
                 if success:
@@ -1213,7 +1189,7 @@ def main():
     # ------------------------------------------------------------------
     # Validate every collected .zip archive
     # ------------------------------------------------------------------
-    # Map jdk_arg string (e.g. 'jdk21') → jdk_home for archive name lookup
+    # Map jdk_arg string (e.g. 'jdk22plus') → jdk_home for archive name lookup
     jdk_home_by_arg = dict(validated)
 
     section("Validating SDKs")

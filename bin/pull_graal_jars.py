@@ -168,29 +168,17 @@ def main(jdk=None):
 
     logger.info("Download complete.")
 
-    # Build and stage the vendored jvmci module for JDKs whose build patches or replaces
-    # jdk.internal.vm.ci (jdk25/26 patch-module it; jdk27 has no platform jvmci at all).
-    # build_jvmci_module stages graalJars/jvmci-<ver>.jar (shipped by the assembly to
-    # share/java/jvmci) and installs tornado.jvmci:jvmci to the local Maven repository.
+    # Build and stage the vendored jvmci module (jdk22-26 patch-module it; jdk27 has no
+    # platform jvmci at all). build_jvmci_module stages graalJars/jvmci-<ver>.jar (shipped by the
+    # assembly to share/java/jvmci) and installs tornado.jvmci:jvmci to the local Maven repository.
     #
     # This MUST run before the Graal-relocation step below: on jdk27 the platform has no
     # jdk.internal.vm.ci module at all, so build_graal_module's jdeps/javac calls can only
     # resolve it from this vendored jar (staged here) rather than via --add-modules against
     # the running JDK's own system modules.
-    if jdk is not None and jdk != "jdk21":
-        logger.info(f"Building/staging vendored {CYAN}jdk.internal.vm.ci{RESET} module for {jdk}...")
-        import build_jvmci_module
-        build_jvmci_module.build(jdk=jdk)
-    else:
-        # jdk21 runs on the platform's own jvmci, so the vendored module is neither used nor
-        # wanted. Drop any copy left behind by a previous build of another profile: the assembly
-        # ships whatever sits in graalJars/, so it would otherwise be packaged into this SDK --
-        # dead weight, and built for the wrong JDK.
-        import build_jvmci_module
-        stale = os.path.join(TARGET_DIR, f"{build_jvmci_module.ARTIFACT}-{build_jvmci_module.VERSION}.jar")
-        if os.path.exists(stale):
-            logger.info(f"Removing vendored {CYAN}jdk.internal.vm.ci{RESET} staged by an earlier build; {jdk} uses the platform module.")
-            os.remove(stale)
+    logger.info(f"Building/staging vendored {CYAN}jdk.internal.vm.ci{RESET} module...")
+    import build_jvmci_module
+    build_jvmci_module.build(jdk=jdk)
 
     # Relocate the Graal compiler off the jdk.* namespace into the vendored module
     # `tornado.graal` so it can live on the regular --module-path (no upgrade-module-path).
@@ -212,6 +200,6 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Download/stage the vendored Graal and jvmci jars.")
     parser.add_argument("--jdk", default=None,
-                        help="Target JDK profile (jdk21|jdk25|jdk26|jdk27); jdk25+ also builds the vendored jvmci module")
+                        help="Target JDK profile (jdk22plus)")
     args = parser.parse_args()
     main(jdk=args.jdk)

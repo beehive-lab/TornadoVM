@@ -28,7 +28,7 @@ You can be running a TornadoVM example on a GPU in three commands:
    $ tornado --devices
 
    # 3. Run an example
-   $ java @$TORNADOVM_HOME/tornado-argfile -cp $TORNADOVM_HOME/share/java/tornado/tornado-examples-5.0.0-jdk21.jar uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
+   $ java @$TORNADOVM_HOME/tornado-argfile -cp $TORNADOVM_HOME/share/java/tornado/tornado-examples-7.0.1.jar uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
 
 See :ref:`installation` for all install options (SDKMAN!, the official downloads page, Maven Central, or Docker images), or :ref:`build-from-source` if you want to build TornadoVM yourself.
 
@@ -37,9 +37,9 @@ List of compatible JDKs
 
 TornadoVM currently supports:
 
--  JDK 21 (e.g. OpenJDK 21, Red Hat Mandrel 21, Amazon Corretto 21, Azul Zulu JDK 21), via the ``jdk21`` build profile.
--  JDK 22 and newer, including JDK 27, via the single ``jdk22plus`` build profile. TornadoVM no longer depends on JVMCI, so this SDK is built once and runs on any JDK from 22 upwards rather than being tied to one release.
--  GraalVM (JDK 21), as an alternative JDK 21 distribution (the ``graal-jdk-21`` build profile).
+-  JDK 22 and newer, including JDK 27, via the single ``jdk22plus`` build profile (e.g. OpenJDK, Red Hat Mandrel, Amazon Corretto, Azul Zulu). TornadoVM no longer depends on JVMCI, so this SDK is built once and runs on any JDK from 22 upwards rather than being tied to one release.
+
+JDK 21 is no longer supported.
 
 Windows
 ~~~~~~~~~~
@@ -50,7 +50,7 @@ To run TornadoVM on **Windows 10/11 OS**, more information here: :ref:`installat
 ARM Mali GPUs and Linux
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To run TornadoVM on ARM Mali, install TornadoVM with GraalVM and JDK 21. More information here: :ref:`installation_mali`.
+To run TornadoVM on ARM Mali, install TornadoVM with JDK 22 or newer. More information here: :ref:`installation_mali`.
 
 Usage
 ^^^^^

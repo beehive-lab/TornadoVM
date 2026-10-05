@@ -58,7 +58,7 @@ The ``tornadovm-installer`` script downloads/builds ``OpenJDK``, ``CMake`` and `
      usage: tornadovm-installer [-h] [--jdk JDK] [--backend BACKEND] [--version] [--listJDKs] [--mvn_single_threaded] [--auto-deps]
 
      options:
-       --jdk JDK             Specify a JDK to install (e.g., 'jdk21', 'graal-jdk-21'). Use --listJDKs to see all options.
+       --jdk JDK             Specify a JDK to install (e.g., 'jdk25', 'graal-jdk-25'). Use --listJDKs to see all options.
        --backend BACKEND     Select the backend(s) to install: { opencl, cuda, metal }
        --listJDKs            List supported JDKs
        --mvn_single_threaded  Run Maven in single-threaded mode
@@ -70,7 +70,7 @@ To build with GraalVM instead of stock OpenJDK, pass a Graal JDK keyword:
 
 .. code-block:: bash
 
-   ./bin/tornadovm-installer --jdk graal-jdk-21 --backend opencl
+   ./bin/tornadovm-installer --jdk graal-jdk-25 --backend opencl
 
 Build with the Makefile
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -150,7 +150,7 @@ TornadoVM also builds inside WSL (Ubuntu). Install the NVIDIA CUDA Toolkit for W
 ARM Mali GPUs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Requires JDK 21 with GraalVM and an OpenCL 2.0+ driver for Mali (tested with the `Bifrost kernel driver <https://developer.arm.com/tools-and-software/graphics-and-gaming/mali-drivers/bifrost-kernel>`_, e.g. on Mali-G71). Note that the ``cl_khr_fp64`` extension (double-precision) is not available on Bifrost GPUs, so ``double``-typed unit tests are not expected to pass there.
+Requires JDK 22 or newer and an OpenCL 2.0+ driver for Mali (tested with the `Bifrost kernel driver <https://developer.arm.com/tools-and-software/graphics-and-gaming/mali-drivers/bifrost-kernel>`_, e.g. on Mali-G71). Note that the ``cl_khr_fp64`` extension (double-precision) is not available on Bifrost GPUs, so ``double``-typed unit tests are not expected to pass there.
 
 .. _installation_riscv:
 

@@ -49,19 +49,14 @@ RELOCATE_POM = os.path.join(SCRIPT_DIR, "graal-relocate", "pom.xml")
 DROPPED_PROVIDES_SERVICE = "jdk.vm.ci.services.JVMCIServiceLocator"
 ORPHAN_SERVICES_FILE = f"META-INF/services/{DROPPED_PROVIDES_SERVICE}"
 
-# Lowest JDK each profile's SDK has to run on. The module descriptor compiled below must be
+# Lowest JDK the SDK has to run on. The module descriptor compiled below must be
 # emitted at this release and no higher: a module-info carries the class-file version of the
 # JDK that compiled it, and the JVM reads descriptors under the ordinary backward-compatibility
 # rule, so one built by (say) JDK 27 is unreadable on anything older -- the SDK silently ends up
 # pinned to its own build host ("InvalidModuleDescriptorException: Unsupported major.minor
 # version 71.0"). Everything else in the jar is Graal 23.1.0's own bytecode, which is already
 # old enough to load anywhere.
-DEFAULT_RELEASE = 22
-JDK_FLOOR = {"jdk21": 21}
-
-
-def _release_for(jdk):
-    return JDK_FLOOR.get(jdk, DEFAULT_RELEASE)
+RELEASE = 22
 
 
 def _java_home():
@@ -224,7 +219,7 @@ def build(jdk=None):
         # (5) compile module-info against the relocated classes, inject, drop orphan service.
         # -source/-target pins the descriptor class-file version to the SDK floor so the jar stays
         # readable on every JDK the SDK supports, not just the one that happened to build it.
-        _run([_tool("javac"), "-source", str(_release_for(jdk)), "-target", str(_release_for(jdk)),
+        _run([_tool("javac"), "-source", str(RELEASE), "-target", str(RELEASE),
               "-Xlint:-options",
               "--module-path", deps, "--add-modules", "jdk.internal.vm.ci",
               "--patch-module", f"{MODULE_NAME}={staged}",

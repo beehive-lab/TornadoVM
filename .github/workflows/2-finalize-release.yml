@@ -112,21 +112,21 @@ jobs:
           # Append "How to use TornadoVM SDK" appendix.
           # Heredoc is quoted so backticks, $(pwd), %PATH% etc. stay literal;
           # @@VERSION@@ is substituted afterwards via sed. Archives are
-          # JDK-qualified (see build-release-sdks.py); jdk21/opencl is shown
-          # as the example — swap jdk21 for jdk25/jdk26/jdk27, and opencl for
-          # cuda/metal/full, for the other combinations on this Release.
+          # JDK-qualified (see build-release-sdks.py); jdk22plus/opencl is shown
+          # as the example — swap opencl for cuda/metal/full for the other
+          # combinations on this Release.
           cat >> /tmp/release_notes.md <<'EOF'
 
           ## How to use TornadoVM SDK
 
-          Select the archive matching your JDK (21, 25, 26, or 27) and target accelerator backend (opencl, cuda, metal, or full) from this Release's assets. Ensure `JAVA_HOME` points to a matching JDK installation before running. The example below uses jdk21 + opencl for Linux/macOS/Windows — swap `jdk21-opencl` for e.g. `jdk26-cuda` or `jdk27-metal` as needed.
+          Select the archive matching your target accelerator backend (opencl, cuda, metal, or full) from this Release's assets. Every archive runs on JDK 22 and newer; ensure `JAVA_HOME` points to a JDK 22+ installation before running. The example below uses opencl for Linux/macOS/Windows — swap `jdk22plus-opencl` for e.g. `jdk22plus-cuda` or `jdk22plus-metal` as needed.
 
           ### Linux Systems
 
           ```bash
-          wget https://github.com/beehive-lab/TornadoVM/releases/download/v@@VERSION@@/tornadovm-@@VERSION@@-jdk21-opencl-linux-amd64.zip
-          unzip tornadovm-@@VERSION@@-jdk21-opencl-linux-amd64.zip
-          export TORNADOVM_HOME="$(pwd)/tornadovm-@@VERSION@@-jdk21-opencl"
+          wget https://github.com/beehive-lab/TornadoVM/releases/download/v@@VERSION@@/tornadovm-@@VERSION@@-jdk22plus-opencl-linux-amd64.zip
+          unzip tornadovm-@@VERSION@@-jdk22plus-opencl-linux-amd64.zip
+          export TORNADOVM_HOME="$(pwd)/tornadovm-@@VERSION@@-jdk22plus-opencl"
           export PATH=$TORNADOVM_HOME/bin:$PATH
           tornado --devices
           tornado --version
@@ -135,9 +135,9 @@ jobs:
           ### macOS Systems
 
           ```bash
-          wget https://github.com/beehive-lab/TornadoVM/releases/download/v@@VERSION@@/tornadovm-@@VERSION@@-jdk21-opencl-mac-aarch64.zip
-          unzip tornadovm-@@VERSION@@-jdk21-opencl-mac-aarch64.zip
-          export TORNADOVM_HOME="$(pwd)/tornadovm-@@VERSION@@-jdk21-opencl"
+          wget https://github.com/beehive-lab/TornadoVM/releases/download/v@@VERSION@@/tornadovm-@@VERSION@@-jdk22plus-opencl-mac-aarch64.zip
+          unzip tornadovm-@@VERSION@@-jdk22plus-opencl-mac-aarch64.zip
+          export TORNADOVM_HOME="$(pwd)/tornadovm-@@VERSION@@-jdk22plus-opencl"
           export PATH=$TORNADOVM_HOME/bin:$PATH
           tornado --devices
           tornado --version
@@ -146,9 +146,9 @@ jobs:
           ### Windows (10+) Systems
 
           ```bash
-          curl -L -o tornadovm-@@VERSION@@-jdk21-opencl-windows-amd64.zip https://github.com/beehive-lab/TornadoVM/releases/download/v@@VERSION@@/tornadovm-@@VERSION@@-jdk21-opencl-windows-amd64.zip
-          tar -xf tornadovm-@@VERSION@@-jdk21-opencl-windows-amd64.zip
-          set TORNADOVM_HOME=%cd%\tornadovm-@@VERSION@@-jdk21-opencl
+          curl -L -o tornadovm-@@VERSION@@-jdk22plus-opencl-windows-amd64.zip https://github.com/beehive-lab/TornadoVM/releases/download/v@@VERSION@@/tornadovm-@@VERSION@@-jdk22plus-opencl-windows-amd64.zip
+          tar -xf tornadovm-@@VERSION@@-jdk22plus-opencl-windows-amd64.zip
+          set TORNADOVM_HOME=%cd%\tornadovm-@@VERSION@@-jdk22plus-opencl
           set PATH=%TORNADOVM_HOME%\bin;%PATH%
           tornado --devices
           tornado --version
@@ -215,7 +215,7 @@ jobs:
       contents: write
     timeout-minutes: 10
     env:
-      JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
+      JAVA_HOME: /opt/jenkins/jdks/jdk-25.0.2
       MAVEN_HOME: /opt/maven
 
     steps:
@@ -257,8 +257,8 @@ jobs:
           NEXT="${{ steps.next_version.outputs.next_version }}"
 
           # Restore the CI-friendly ${revision} scheme on develop: every pom back to
-          # <version>${revision}</version>, root <revision> = ${NEXT%-dev}-jdk21-dev and the
-          # jdk22plus profile override = ${NEXT%-dev}-jdk22plus-dev. `mvn versions:set` would
+          # <version>${revision}</version>, root <revision> and the jdk22plus profile override
+          # = ${NEXT%-dev}-jdk22plus-dev. `mvn versions:set` would
           # instead bake a hard-coded literal into every pom and every build would then stamp
           # the same JDK-less version regardless of the active profile.
           python3 scripts/set-maven-version.py dev ${NEXT}
@@ -301,7 +301,7 @@ jobs:
             echo "| Develop bumped | ✅ ${{ steps.next_version.outputs.next_version }} |" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "### Automatic next steps:" >> $GITHUB_STEP_SUMMARY
-            echo "1. build-release-sdks.yml builds jdk21+jdk25+jdk26+jdk27 SDKs and uploads them to this Release" >> $GITHUB_STEP_SUMMARY
-            echo "2. deploy-maven-central.yml deploys tornado-api/-runtime/-matrices, tornado-drivers-cuda (cuTile) and the CUDA library bindings (one deploy per JDK)" >> $GITHUB_STEP_SUMMARY
+            echo "1. build-release-sdks.yml builds the jdk22plus SDKs and uploads them to this Release" >> $GITHUB_STEP_SUMMARY
+            echo "2. deploy-maven-central.yml deploys tornado-api/-runtime/-matrices, tornado-drivers-cuda (cuTile) and the CUDA library bindings (one deploy, jdk22plus)" >> $GITHUB_STEP_SUMMARY
             echo "3. publish-archives-to-sdkman.yml publishes every SDK variant to SDKMAN" >> $GITHUB_STEP_SUMMARY
           fi

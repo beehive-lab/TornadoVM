@@ -17,12 +17,12 @@ If you just want to *use* TornadoVM, you do **not** need to build from source â€
   - Linux (recommended for development)
   - macOS
   - Windows 10+ (with appropriate tools)
-- **JDK 21** (or GraalVM based on JDK 21)
+- **JDK 22 or newer** (OpenJDK or GraalVM)
 - GCC/G++ >= 13.0
 - `git`
 - C toolchain / build tools (for native parts, depending on backend)
 
-Make sure `JAVA_HOME` points to your JDK/GraalVM 21 installation.
+Make sure `JAVA_HOME` points to your JDK 22+ installation.
 
 ### 1.2 SDK Portability Considerations
 
@@ -77,7 +77,7 @@ TornadoVM Installer Tool. It will install all software dependencies except the G
 
 options:
   -h, --help            show this help message and exit
-  --jdk JDK             Specify a JDK to install by its keyword (e.g., 'jdk21', 'graal-jdk-21'). Run with --listJDKs to view all available JDK keywords.
+  --jdk JDK             Specify a JDK to install by its keyword (e.g., 'jdk25', 'temurin-jdk-25'). Run with --listJDKs to view all available JDK keywords.
   --backend BACKEND     Select the backend to install: { opencl, cuda, metal }
   --version             Print version
   --listJDKs            List supported JDKs
@@ -97,11 +97,11 @@ options:
 Example of installation:
 
 ```bash
-# Install the OpenCL backend with OpenJDK 21
-$ ./bin/tornadovm-installer --jdk jdk21 --backend opencl
+# Install the OpenCL backend with OpenJDK 25
+$ ./bin/tornadovm-installer --jdk jdk25 --backend opencl
 
 # It is also possible to combine different backends:
-$ ./bin/tornadovm-installer --jdk jdk21 --backend opencl,cuda
+$ ./bin/tornadovm-installer --jdk jdk25 --backend opencl,cuda
 ```
 
 - On Windows, run:
@@ -116,7 +116,7 @@ TornadoVM Installer Tool. It will install all software dependencies except the G
 
 options:
   -h, --help            show this help message and exit
-  --jdk JDK             Specify a JDK to install by its keyword (e.g., 'jdk21', 'graal-jdk-21'). Run with --listJDKs to view all available JDK keywords.
+  --jdk JDK             Specify a JDK to install by its keyword (e.g., 'jdk25', 'temurin-jdk-25'). Run with --listJDKs to view all available JDK keywords.
   --backend BACKEND     Select the backend to install: { opencl, cuda, metal }
   --version             Print version
   --listJDKs            List supported JDKs
@@ -128,11 +128,11 @@ options:
 Example of installation:
 
 ```bash
-# Install the OpenCL backend with OpenJDK 21
-$ python bin\tornadovm-installer --jdk jdk21 --backend opencl
+# Install the OpenCL backend with OpenJDK 25
+$ python bin\tornadovm-installer --jdk jdk25 --backend opencl
 
 # It is also possible to combine different backends:
-$ python bin\tornadovm-installer --jdk jdk21 --backend opencl,cuda
+$ python bin\tornadovm-installer --jdk jdk25 --backend opencl,cuda
 ```
 
 More information are available in the [documentation page](https://tornadovm.readthedocs.io/en/latest/installation.html#b-manual-installation).

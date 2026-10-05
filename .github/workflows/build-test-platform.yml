@@ -40,8 +40,6 @@ env:
   # module descriptors are pinned to the floor), so this is pinned purely for reproducibility.
   JDK22PLUS_BUILD_JAVA_HOME_LINUX: /opt/jenkins/jdks/jdk-25.0.2
   JDK22PLUS_BUILD_JAVA_HOME_MACOS: /opt/jenkins/jdks/jdk-25.0.2.jdk/Contents/Home
-  JDK21_BUILD_JAVA_HOME_LINUX: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
-  JDK21_BUILD_JAVA_HOME_MACOS: /opt/jenkins/jdks/graalvm-community-openjdk-21.0.1+12.1/Contents/Home
   # A JDK 21 image is required to source the frozen jdk.vm.ci.* classes from, whatever the build JDK is.
   JVMCI_SOURCE_JDK_LINUX: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
   JVMCI_SOURCE_JDK_MACOS: /opt/jenkins/jdks/jdk-21.0.11+10/Contents/Home
@@ -74,16 +72,12 @@ jobs:
             echo "CMAKE_ROOT=/opt/jenkins/cmake-3.25.2-linux-x86_64" >> "$GITHUB_ENV"
             echo "MAVEN_HOME=/opt/maven" >> "$GITHUB_ENV"
             echo "JVMCI_SOURCE_JDK=$JVMCI_SOURCE_JDK_LINUX" >> "$GITHUB_ENV"
-            [ "${{ matrix.sdk }}" = "jdk21" ] \
-              && echo "JAVA_HOME=$JDK21_BUILD_JAVA_HOME_LINUX" >> "$GITHUB_ENV" \
-              || echo "JAVA_HOME=$JDK22PLUS_BUILD_JAVA_HOME_LINUX" >> "$GITHUB_ENV"
+            echo "JAVA_HOME=$JDK22PLUS_BUILD_JAVA_HOME_LINUX" >> "$GITHUB_ENV"
           else
             echo "CMAKE_ROOT=/opt/homebrew/bin/cmake" >> "$GITHUB_ENV"
             echo "MAVEN_HOME=/opt/homebrew/bin/mvn" >> "$GITHUB_ENV"
             echo "JVMCI_SOURCE_JDK=$JVMCI_SOURCE_JDK_MACOS" >> "$GITHUB_ENV"
-            [ "${{ matrix.sdk }}" = "jdk21" ] \
-              && echo "JAVA_HOME=$JDK21_BUILD_JAVA_HOME_MACOS" >> "$GITHUB_ENV" \
-              || echo "JAVA_HOME=$JDK22PLUS_BUILD_JAVA_HOME_MACOS" >> "$GITHUB_ENV"
+            echo "JAVA_HOME=$JDK22PLUS_BUILD_JAVA_HOME_MACOS" >> "$GITHUB_ENV"
           fi
 
       - name: Setup environment

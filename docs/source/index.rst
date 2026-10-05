@@ -6,7 +6,7 @@ TornadoVM
   :alt: TornadoVM logo
   :align: left
 
-TornadoVM is a GPU programming framework for Java (JDK 21+, including JDK 21 and JDK 25) that JIT-compiles Java bytecode at runtime to **NVIDIA CUDA C, OpenCL C, and Apple Metal (MSL)**.
+TornadoVM is a GPU programming framework for Java (JDK 22+, including JDK 25 and JDK 27) that JIT-compiles Java bytecode at runtime to **NVIDIA CUDA C, OpenCL C, and Apple Metal (MSL)**.
 It runs the same Java source on NVIDIA, AMD, Intel and Apple Silicon GPUs, integrated GPUs (Intel HD Graphics, Apple M1-M5, ARM Mali), and multi-core CPUs.
 TornadoVM is a plug-in to OpenJDK and other JDK distributions (GraalVM, Red Hat Mandrel, Amazon Corretto, Microsoft OpenJDK, SAP, Azul Zulu); it does not replace your JVM, it complements it.
 

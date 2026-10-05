@@ -7,7 +7,7 @@ name: 5 - Publish SDKMAN [auto]
 # _set_jdk_in_name rename fixup):
 #
 #   tornadovm-<version>-<jdk>-<backend_label>-<platform_dir>.zip
-#     e.g. tornadovm-4.0.1-jdk21-opencl-linux-amd64.zip
+#     e.g. tornadovm-4.0.1-jdk22plus-opencl-linux-amd64.zip
 #
 # and re-derived here as `tornadovm-<version>-<jdk>-<variant>.zip` (variant
 # already equals <backend_label>-<platform_dir>). A "Verify asset exists"
@@ -55,28 +55,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # ---- jdk21 ----
-          - jdk: jdk21
-            sdk_suffix: full
-            platform: LINUX_64
-            variant: full-linux-amd64
-          - jdk: jdk21
-            sdk_suffix: opencl
-            platform: LINUX_64
-            variant: opencl-linux-amd64
-          - jdk: jdk21
-            sdk_suffix: opencl
-            platform: MAC_ARM64
-            variant: opencl-mac-aarch64
-          - jdk: jdk21
-            sdk_suffix: metal
-            platform: MAC_ARM64
-            variant: metal-mac-aarch64
-          - jdk: jdk21
-            sdk_suffix: cuda
-            platform: LINUX_64
-            variant: cuda-linux-amd64
-
           # ---- jdk22plus (one SDK, covers every JDK from 22 up) ----
           - jdk: jdk22plus
             sdk_suffix: full
@@ -159,10 +137,10 @@ jobs:
     runs-on: [ self-hosted, Linux, x64 ]
     needs: publish-to-sdkman
 
-    # jdk21 + opencl remains the SDKMAN default, matching the pre-unification
-    # convention (this job has no matrix of its own — it runs once, after every
-    # publish-to-sdkman leg finishes, and always targets the jdk21-opencl
-    # coordinate directly below, independent of which matrix leg ran last).
+    # jdk22plus + opencl is the SDKMAN default (this job has no matrix of its
+    # own — it runs once, after every publish-to-sdkman leg finishes, and always
+    # targets the jdk22plus-opencl coordinate directly below, independent of
+    # which matrix leg ran last).
     if: >
       github.repository == 'beehive-lab/TornadoVM' &&
       (
@@ -180,7 +158,7 @@ jobs:
           set -euo pipefail
 
           VERSION="${TAG#v}"
-          DEFAULT_VERSION="${VERSION}-jdk21-opencl"
+          DEFAULT_VERSION="${VERSION}-jdk22plus-opencl"
 
           echo "default_version=${DEFAULT_VERSION}" >> "$GITHUB_OUTPUT"
 

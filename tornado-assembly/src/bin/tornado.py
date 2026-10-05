@@ -83,12 +83,7 @@ __CUTLASS_MODULE__ = "tornado.cutlass"
 # JAVA FLAGS
 # ########################################################
 __JAVA_BASE_OPTIONS__ = "-server -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI "
-# Only an SDK compiled with enable-preview needs it at run time (the jdk21 profiles: FFM was a
-# preview API before JDK 22). Appending it unconditionally would switch preview APIs on JVM-wide
-# for SDKs that contain no preview class files at all.
-__JAVA_PREVIEW_OPTION__ = "--enable-preview "
-# JDK 27+ removed JVMCI: -XX:+EnableJVMCI is an unrecognized (fatal) option and Panama is
-# final so --enable-preview is unnecessary. TornadoVM sources all metadata via the reflection
+# JDK 27+ removed JVMCI: -XX:+EnableJVMCI is an unrecognized (fatal) option. TornadoVM sources all metadata via the reflection
 # providers (the only path) against the vendored jdk.internal.vm.ci module.
 __JAVA_BASE_OPTIONS_NO_JVMCI__ = ("-server -XX:+UnlockExperimentalVMOptions "
                                   # The vendored jdk.vm.ci.services.Services gates on JVMCI_ENABLED,
@@ -416,7 +411,7 @@ class TornadoVMRunnerTool():
         # with the frozen JDK-21 jvmci classes so the runtime SPI matches the compiled code
         # (uniform vendoring; mirrors the compile-time --patch-module in the jdk25/jdk26 profiles).
         self.jvmci_patched = 22 <= self.java_version <= 26
-        self.sdk_jdk_floor, self.sdk_jdk_preview = self.readSDKJDKContract()
+        self.sdk_jdk_floor = self.readSDKJDKContract()
         self.checkCompatibilityWithTornadoVM()
         self.platform = sys.platform
         self.listOfBackends = self.getInstalledBackends(False)
@@ -478,28 +473,21 @@ class TornadoVMRunnerTool():
             sys.exit(0)
 
     def readSDKJDKContract(self):
-        """(floor, preview) for THIS SDK, as recorded by bin/compile in etc/tornado.jdk.
-
-        Which JDKs an SDK accepts is a property of how it was compiled, not of the launcher, so
-        it travels with the SDK rather than being hardcoded here.
-        """
+        """Lowest JDK THIS SDK runs on, as recorded by bin/compile in etc/tornado.jdk."""
+        floor = 22
         contract = os.path.join(self.sdk, "etc", "tornado.jdk")
         if os.path.isfile(contract):
-            floor, preview = 21, True
             try:
                 with open(contract, "r") as f:
                     for line in f.read().splitlines():
                         if line.startswith("tornado.jdk.floor="):
                             floor = int(line.split("=", 1)[1].strip())
-                        elif line.startswith("tornado.jdk.preview="):
-                            preview = line.split("=", 1)[1].strip().lower() == "true"
-                return floor, preview
             except (IOError, OSError, ValueError):
                 pass
+            return floor
 
-        # No contract to read. Do NOT just assume the oldest shape: a stale or mistyped
-        # TORNADOVM_HOME is far likelier than a genuinely old SDK, and guessing turns that into a
-        # confident "runs on JDK 21 only", which points at the SDK when the env var is at fault.
+        # No contract to read. A stale or mistyped TORNADOVM_HOME is far likelier than a
+        # genuinely old SDK, so point at the env var rather than guessing.
         jars = os.path.join(self.sdk, "share", "java", "tornado")
         if not os.path.isdir(jars):
             print("[ERROR] TORNADOVM_HOME does not look like a TornadoVM SDK:")
@@ -507,26 +495,12 @@ class TornadoVMRunnerTool():
             print("        (no share/java/tornado inside it). If you have just rebuilt, run:")
             print("            source setvars.sh")
             sys.exit(0)
-
-        # A real SDK that predates etc/tornado.jdk: infer from the artifact version it ships.
-        for name in sorted(os.listdir(jars)):
-            if name.startswith("tornado-api-"):
-                return (22, False) if "jdk22plus" in name else (21, True)
-        return 21, True
+        return floor
 
     def checkCompatibilityWithTornadoVM(self):
         # TornadoVM runs on arbitrary modern JDKs because Graal (tornado.graal) and, on JDK 27+,
-        # JVMCI (jdk.internal.vm.ci) are vendored as application modules. How far that reaches
-        # depends on the SDK: a preview-compiled one is pinned to a single release, everything
-        # else is good from its floor upwards.
-        if (self.sdk_jdk_preview):
-            if (self.java_version != self.sdk_jdk_floor):
-                print("This TornadoVM SDK was built for JDK " + str(self.sdk_jdk_floor)
-                      + " with preview features enabled, so it runs on JDK " + str(self.sdk_jdk_floor)
-                      + " only (found JDK " + str(self.java_version) + ").")
-                print("Use the jdk22plus SDK for JDK 22 and newer.")
-                sys.exit(0)
-        elif (self.java_version < self.sdk_jdk_floor):
+        # JVMCI (jdk.internal.vm.ci) are vendored as application modules.
+        if (self.java_version < self.sdk_jdk_floor):
             print("This TornadoVM SDK requires JDK " + str(self.sdk_jdk_floor)
                   + " or newer (found JDK " + str(self.java_version) + ").")
             sys.exit(0)
@@ -1057,8 +1031,8 @@ class TornadoVMRunnerTool():
             # jdk22-26 block below is emitted after it rather than before. Appending it after
             # --patch-module instead handed the caller's entries to the patch: on jdk22-26 the
             # caller's modules then never reached the module path at all (FindException for
-            # whatever it was adding, e.g. javafx.graphics), while jdk21 and jdk27+ were fine
-            # because on those the string still ended in the module path.
+            # whatever it was adding, e.g. javafx.graphics), while jdk27+ was fine because there
+            # the string still ended in the module path.
             if (args.module_path != None):
                 tornadoFlags = tornadoFlags + ":" + args.module_path
 
@@ -1289,8 +1263,6 @@ class TornadoVMRunnerTool():
             javaFlags = javaFlags + " " + __JAVA_BASE_OPTIONS_NO_JVMCI__
         else:
             javaFlags = javaFlags + " " + __JAVA_BASE_OPTIONS__
-            if (self.sdk_jdk_preview):
-                javaFlags = javaFlags + __JAVA_PREVIEW_OPTION__
 
         javaFlags = javaFlags + tornadoFlags + __TORNADOVM_PROVIDERS__ + " "
 
@@ -1311,8 +1283,8 @@ class TornadoVMRunnerTool():
         # jars on the assumption that tornado.graal is carried by --module-path -- it is not on any
         # other path, and dropping it fails at boot layer creation with
         # "FindException: Module tornado.graal not found, required by tornado.runtime".
-        # Verified end to end: jdk22plus SDK on JDK 25/26/27 and jdk21 SDK on JDK 21 all compile and
-        # execute kernels with graalJars reachable only from --upgrade-module-path.
+        # Verified end to end: the jdk22plus SDK on JDK 25/26/27 compiles and executes kernels with
+        # graalJars reachable only from --upgrade-module-path.
 
         common = self.sdk + __COMMON_EXPORTS__
         opencl = self.sdk + __OPENCL_EXPORTS__
@@ -1323,7 +1295,7 @@ class TornadoVMRunnerTool():
         # The backends and the library-task providers reach their native libraries through
         # java.lang.foreign rather than a JNI library of their own, and every one of those lookups
         # goes through tornado.runtime. Those are restricted methods, so without this the lookup
-        # fails outright (JDK 21) or warns on every run.
+        # warns on every run.
         javaFlags = javaFlags + __ENABLE_NATIVE_ACCESS__ + __FFM_MODULE__ + " "
         if ("opencl-backend" in self.listOfBackends):
             javaFlags = javaFlags + "@" + opencl + " "

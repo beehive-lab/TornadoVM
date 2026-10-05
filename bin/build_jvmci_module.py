@@ -50,12 +50,7 @@ GRAAL_JARS_DIR = os.path.join(REPO_ROOT, "graalJars")
 
 # Lowest JDK the SDK being built has to run on; the generated module-info is emitted at this
 # release so the jar stays readable on every supported JDK rather than only on the build host.
-DEFAULT_RELEASE = 22
-JDK_FLOOR = {"jdk21": 21}
-
-
-def _release_for(jdk):
-    return JDK_FLOOR.get(jdk, DEFAULT_RELEASE)
+RELEASE = 22
 
 
 JVMCI_PACKAGES = [
@@ -152,7 +147,7 @@ def build(jdk=None):
         # JDK 21 image (class-file 65) and load anywhere, but a module-info compiled by the build
         # JDK would carry that JDK's class-file version and make the jar unreadable on every older
         # JDK the SDK is supposed to support.
-        _run([_tool("javac"), "-source", str(_release_for(jdk)), "-target", str(_release_for(jdk)),
+        _run([_tool("javac"), "-source", str(RELEASE), "-target", str(RELEASE),
               "-Xlint:-options",
               "-d", classes, "--patch-module", f"{MODULE_NAME}={classes}",
               os.path.join(misrc, "module-info.java")])

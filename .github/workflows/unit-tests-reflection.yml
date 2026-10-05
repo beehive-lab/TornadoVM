@@ -1,4 +1,4 @@
-name: No-GPU Unit Tests — reflection + CUDA codegen [JDK 21, 22-27]
+name: No-GPU Unit Tests — reflection + CUDA codegen [JDK 22-27]
 
 # Pure-JVM unit tests for the reflection JVMCI layer (tornado-runtime/src/test). These need no GPU,
 # so they run on standard GitHub-hosted runners - the first no-GPU CI stage for TornadoVM. The full
@@ -9,10 +9,9 @@ name: No-GPU Unit Tests — reflection + CUDA codegen [JDK 21, 22-27]
 # unlike build-test.yml this workflow cannot reuse one artifact across JDKs. What it does instead is
 # the complementary half of the same claim: build-test.yml proves one ARTIFACT runs on every JDK,
 # and this proves the jdk22plus profile BUILDS on every JDK. The matrix axis is therefore the host
-# JDK, not the profile -- there is only one profile above 21 now.
+# JDK, not the profile -- there is only one profile.
 #
 # Each host still gives the reflection layer a different jdk.internal.vm.ci to sit on:
-#   JDK 21     native platform module, unmodified (the separate, preview-compiled jdk21 SDK)
 #   JDK 22-26  native module, patched at run time with the frozen graalJars/jvmci-21.0.2.jar
 #   JDK 27     JVMCI removed from the platform entirely; supplied as the vendored tornado.jvmci
 #              application module (bin/build_jvmci_module.py)
@@ -39,7 +38,7 @@ on:
   workflow_dispatch:
 
 # As in build-test.yml: one live run per branch, and a superseded pull request run is cancelled.
-# These are GitHub-hosted rather than self-hosted, so the cost is not a blocked queue, but seven
+# These are GitHub-hosted rather than self-hosted, so the cost is not a blocked queue, but six
 # ubuntu-latest jobs per push adds up and the result of a run against an overwritten commit is
 # read by nobody.
 concurrency:
@@ -54,10 +53,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # The preview-compiled SDK: JDK 21 only, and it needs no co-installed JDK because the
-          # platform still ships the jvmci shape it targets.
-          - profile: jdk21
-            setup_java_version: '21'
           # One profile, every host JDK from the floor up. Each also installs JDK 21 alongside the
           # host: build_jvmci_module.py (invoked by pull_graal_jars) needs a JDK 21 runtime image to
           # source the frozen jdk.vm.ci.* SPI from, whatever the build JDK is. Listing 21 first and
@@ -99,8 +94,7 @@ jobs:
       - name: Report the host JDK under test
         run: java -version
 
-      - name: Point JVMCI_SOURCE_JDK at the co-installed JDK 21 (jdk22plus only)
-        if: matrix.profile != 'jdk21'
+      - name: Point JVMCI_SOURCE_JDK at the co-installed JDK 21
         run: echo "JVMCI_SOURCE_JDK=$JAVA_HOME_21_X64" >> "$GITHUB_ENV"
 
       - name: Install native build dependencies
@@ -119,7 +113,7 @@ jobs:
         run: cat "$(ls -d dist/*/*/)etc/tornado.jdk"
 
       - name: Run reflection unit tests (${{ matrix.profile }})
-        run: make test-reflection JDK=${{ matrix.profile }}
+        run: make test-reflection
 
       - name: Run CUDA code generator unit tests (${{ matrix.profile }})
-        run: make test-cuda-codegen JDK=${{ matrix.profile }}
+        run: make test-cuda-codegen
