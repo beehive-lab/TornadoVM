@@ -9,10 +9,10 @@ produce data for an MLX operation, and consume its output, as if both were JIT-c
 ```java
 TaskGraph taskGraph = new TaskGraph("mlx")
     .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, weight, w)
-    .task("embed", MyClass::embed, x)                                   // JIT-compiled kernel
+    .task("embed", MyClass::embed, x)                                                // JIT-compiled kernel
     .libraryTask("norm", MlxNeuralNetwork::rmsNorm, x, weight, xn, rows, dim, 1e-5f) // MLX kernel
     .libraryTask("proj", MlxLinearAlgebra::matmul, xn, w, y, rows, dim, hidden)      // MLX kernel
-    .task("activate", MyClass::silu, y)                                 // JIT-compiled kernel
+    .task("activate", MyClass::silu, y)                                              // JIT-compiled kernel
     .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
 
 try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -90,7 +90,7 @@ These MLX operations have no TornadoVM/MLX route, so the module does not expose 
   pixels. A call no kernel covers fails rather than falling back:
 
   ```
-  [ERROR] MLX add: no TornadoVM/MLX kernel takes these arguments (IntArray[1027], IntArray[1027], IntArray[1027])
+  [ERROR] MLX mlx_add: no TornadoVM/MLX kernel takes these arguments (IntArray[1027], IntArray[1027], IntArray[1027])
   ```
 
 ## Usage
@@ -129,8 +129,8 @@ tornado-test --mlx                                                      # all ML
 tornado-test -V uk.ac.manchester.tornado.unittests.mlx.TestMlxLinearAlgebra
 ```
 
-Every bound operation has a test. [TornadoMLXBenchmarks](https://github.com/kotselidis/TornadoMLXBenchmarks) keeps the
-coverage manifest that checks it.
+Every bound operation has a test; the coverage manifest of
+[TornadoMLXBenchmarks](https://github.com/kotselidis/TornadoMLXBenchmarks) checks it.
 
 ## Benchmarks
 
