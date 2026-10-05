@@ -20,9 +20,14 @@ package uk.ac.manchester.tornado.unittests.arrays;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 
+import java.io.IOException;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
+import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 
 import org.junit.Test;
 
@@ -438,16 +443,23 @@ public class TestLongIndexArrays extends TornadoTestBase {
     }
 
     /**
-     * A shallow array over a segment that reports more than {@link Integer#MAX_VALUE} elements. Only the header is written, so the backing allocation stays small.
+     * A shallow array over a segment that reports more than {@link Integer#MAX_VALUE} elements. The segment maps a sparse file and only the header is written, so
+     * almost nothing is backed by memory or disk. Mapping a file avoids {@code MemorySegment.reinterpret}, a restricted method that JDK 21 rejects without
+     * {@code --enable-native-access} for this module.
      */
     @Test
-    public void testSizeBeyondIntRange() {
+    public void testSizeBeyondIntRange() throws IOException {
         long elements = (1L << 32) + 1;
-        MemorySegment segment = Arena.ofAuto().allocate(64).reinterpret(TornadoNativeArray.ARRAY_HEADER + elements * Short.BYTES);
-        HalfFloatArray array = HalfFloatArray.fromSegmentShallow(segment);
-        assertEquals(elements, array.getSizeLong());
-        assertEquals(elements, segment.get(ValueLayout.JAVA_LONG, 0));
-        assertThrows(IllegalStateException.class, array::getSize);
+        long byteSize = TornadoNativeArray.ARRAY_HEADER + elements * Short.BYTES;
+        Path file = Files.createTempFile("tornado-long-index", ".bin");
+        try (FileChannel channel = FileChannel.open(file, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.DELETE_ON_CLOSE);
+                Arena arena = Arena.ofConfined()) {
+            MemorySegment segment = channel.map(FileChannel.MapMode.READ_WRITE, 0, byteSize, arena);
+            HalfFloatArray array = HalfFloatArray.fromSegmentShallow(segment);
+            assertEquals(elements, array.getSizeLong());
+            assertEquals(elements, segment.get(ValueLayout.JAVA_LONG, 0));
+            assertThrows(IllegalStateException.class, array::getSize);
+        }
     }
 
     @Test
