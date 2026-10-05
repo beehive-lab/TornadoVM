@@ -22,7 +22,6 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Random;
 
-import org.apache.lucene.util.LongBitSet;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -35,7 +34,8 @@ import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
- * Test accelerating the Lucene library.
+ * Test a bit-set intersection count over an object that holds its words in a {@code long[]} field, the
+ * layout of Lucene's {@code LongBitSet}.
  *
  * How to test?
  *
@@ -44,6 +44,27 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * </code>
  */
 public class BitSetTests extends TornadoTestBase {
+
+    /**
+     * A fixed-size bit set backed by 64-bit words.
+     */
+    public static final class LongBitSet {
+        private final long[] bits;
+        private final long numBits;
+
+        public LongBitSet(long[] bits, long numBits) {
+            this.bits = bits;
+            this.numBits = numBits;
+        }
+
+        public long[] getBits() {
+            return bits;
+        }
+
+        public long length() {
+            return numBits;
+        }
+    }
 
     public static void intersectionCount(int numWords, LongBitSet a, LongBitSet b, LongArray result) {
         final long[] aBits = a.getBits();

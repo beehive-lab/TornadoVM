@@ -597,12 +597,6 @@
                 <artifactId>junit</artifactId>
                 <version>4.13.2</version>
             </dependency>
-            <dependency>
-                <groupId>org.apache.lucene</groupId>
-                <artifactId>lucene-core</artifactId>
-                <version>8.2.0</version>
-                <type>jar</type>
-            </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
