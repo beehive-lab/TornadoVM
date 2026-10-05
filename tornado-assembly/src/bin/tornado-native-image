@@ -44,11 +44,14 @@ run; a path that no trace exercised may be missing metadata and fail at run time
 """
 
 import argparse
+import glob
+import json
 import os
 import shlex
 import shutil
 import subprocess
 import sys
+import zipfile
 
 # Launcher flags that configure the JVM rather than the application; native-image rejects them.
 JVM_ONLY_PREFIXES = ("-server", "-XX:")
@@ -112,6 +115,35 @@ def application_flags(flags, extra_module_path, extra_modules):
     return out
 
 
+def serializable_lambda_hosts(entries):
+    """Classes that create serializable lambdas, found by the $deserializeLambda$ method javac adds to
+    them. TornadoVM resolves a lambda kernel through its writeReplace()/SerializedLambda, which a native
+    image provides only for lambdas registered for serialization, and the tracing agent cannot record
+    that (the lookup happens on the lambda's hidden class)."""
+    hosts = set()
+    for entry in entries:
+        if os.path.isdir(entry):
+            for dp, _, fs in os.walk(entry):
+                for f in fs:
+                    if f.endswith(".class"):
+                        path = os.path.join(dp, f)
+                        with open(path, "rb") as data:
+                            if b"$deserializeLambda$" in data.read():
+                                hosts.add(os.path.relpath(path, entry)[:-6].replace(os.sep, "."))
+        elif entry.endswith(".jar") and os.path.isfile(entry):
+            with zipfile.ZipFile(entry) as jar:
+                for name in jar.namelist():
+                    if name.endswith(".class") and not name.endswith("module-info.class") and b"$deserializeLambda$" in jar.read(name):
+                        hosts.add(name[:-6].replace("/", "."))
+    return sorted(hosts)
+
+
+def write_lambda_config(config_dir, hosts):
+    path = os.path.join(config_dir, "serialization-config.json")
+    with open(path, "w") as f:
+        json.dump({"types": [], "lambdaCapturingTypes": [{"name": h} for h in hosts]}, f, indent=2)
+
+
 def trace(java, flags, config_dir, launch, spec):
     tokens = shlex.split(spec)
     if "--" in tokens:
@@ -172,6 +204,22 @@ def main():
             fail("give at least one --trace run (or --no-trace with an existing --config-dir)")
         for spec in args.trace:
             trace(java, flags, config_dir, launch, spec)
+
+    # Lambda kernels: register their declaring classes for serialization (see serializable_lambda_hosts).
+    app_entries = []
+    if args.class_path:
+        app_entries += args.class_path.split(os.pathsep)
+    if args.module_path:
+        app_entries += args.module_path.split(os.pathsep)
+    if args.module:
+        module_jar = args.module.split("/")[0].replace(".", "-")
+        app_entries += glob.glob(os.path.join(tornado_home, "share", "java", "tornado", module_jar + "-*.jar"))
+    expanded = []
+    for entry in app_entries:
+        expanded += glob.glob(os.path.join(entry, "*.jar")) if os.path.isdir(entry) and not glob.glob(os.path.join(entry, "**", "*.class"), recursive=True) else [entry]
+    hosts = serializable_lambda_hosts(expanded)
+    write_lambda_config(config_dir, hosts)
+    print(f"[INFO] Registered {len(hosts)} classes with lambda kernels for serialization")
 
     command = [native_image] + flags + ["--no-fallback", f"-H:ConfigurationFileDirectories={config_dir}",
                                         "-o", args.output] + launch + native_image_extra

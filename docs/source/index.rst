@@ -51,6 +51,7 @@ Beyond JIT-compiling Java bytecode to each backend, TornadoVM's runtime provides
    multi-device
    benchmarking
    flags
+   native-image
 
 .. toctree::
    :caption: Core Programming & Unsupported Features
