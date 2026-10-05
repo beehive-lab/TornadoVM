@@ -25,8 +25,13 @@ the descriptor (exports, provides, uses) describes only what is left.
 
 The shaded jar carries the whole Graal 23.1.0 compiler (HotSpot JIT, Truffle, every ISA) plus the
 GraalVM word, collections and truffle-compiler APIs; TornadoVM drives only its own GPU sketch and
-lowering pipeline. The keep-list in ``bin/graal-compiler-keep.txt`` is the verified working set, in
-relocated names (``tornado/graal/...``):
+lowering pipeline. Only the parts TornadoVM cannot use are trimmed: classes in a ``hotspot``,
+``truffle``, ``amd64``, ``aarch64`` or ``riscv64`` package. Everything ISA-neutral (graph nodes,
+plugins, phases, LIR) is kept whole, because Graal's standard plugins can create any IR node from
+ordinary Java code and no trace covers them all.
+
+Inside the trimmed packages, the keep-list in ``bin/graal-compiler-keep.txt`` names the classes that
+are still used, in relocated names (``tornado/graal/...``):
 
   * every class loaded from tornado.graal across the TornadoVM unit-test suites
     (``-Xlog:class+load``), which also captures the reflective and ServiceLoader closure;
@@ -44,6 +49,7 @@ the loaded ``tornado.graal.*`` classes with the current list.
 
 import hashlib
 import os
+import re
 import shutil
 import struct
 import subprocess
@@ -53,6 +59,9 @@ import zipfile
 
 KEEP_LIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), "graal-compiler-keep.txt")
 SERVICES_DIR = "META-INF/services/"
+# Packages whose classes are kept only when the keep-list names them: Graal's HotSpot JIT, Truffle and
+# CPU ISA support. Everything else is kept whole.
+TRIMMABLE_PACKAGE = re.compile(r"/(hotspot|truffle|amd64|aarch64|riscv64)(/|$)")
 # Records the keep-list a jar was trimmed with, so a jar trimmed with another list is rebuilt.
 MARKER = "META-INF/tornado-graal-keep-list.sha256"
 
@@ -119,7 +128,7 @@ def minimize(jar_path):
         with zipfile.ZipFile(jar_path, "r") as zf:
             entries = [e for e in zf.namelist() if not e.endswith("/")]
             classes = {e for e in entries if e.endswith(".class") and e != "module-info.class"}
-            selected = keep & classes
+            selected = {c for c in classes if c in keep or not TRIMMABLE_PACKAGE.search(c.rsplit("/", 1)[0])}
 
             # Close over supertypes: a kept class cannot be loaded without its superclass and interfaces.
             work = list(selected)

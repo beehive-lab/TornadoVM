@@ -1097,6 +1097,7 @@ tornado/graal/compiler/lir/LIRInstruction$Use.class
 tornado/graal/compiler/lir/LIRInstruction.class
 tornado/graal/compiler/lir/LIRInstructionClass$LIRInstructionFieldsScanner.class
 tornado/graal/compiler/lir/LIRInstructionClass.class
+tornado/graal/compiler/lir/LIRInstructionVerifier.class
 tornado/graal/compiler/lir/LIRIntrospection$LIRFieldsScanner.class
 tornado/graal/compiler/lir/LIRIntrospection$OperandModeAnnotation.class
 tornado/graal/compiler/lir/LIRIntrospection$ValueFieldInfo.class
@@ -1137,6 +1138,7 @@ tornado/graal/compiler/lir/SwitchStrategy$SequentialStrategy.class
 tornado/graal/compiler/lir/SwitchStrategy$SwitchClosure.class
 tornado/graal/compiler/lir/SwitchStrategy.class
 tornado/graal/compiler/lir/ValueConsumer.class
+tornado/graal/compiler/lir/ValueProcedure.class
 tornado/graal/compiler/lir/Variable.class
 tornado/graal/compiler/lir/VirtualStackSlot.class
 tornado/graal/compiler/lir/aarch64/AArch64ByteSwap$ASIMDByteSwapOp.class
@@ -1515,7 +1517,9 @@ tornado/graal/compiler/nodes/calc/IntegerNormalizeCompareNode.class
 tornado/graal/compiler/nodes/calc/IntegerTestNode.class
 tornado/graal/compiler/nodes/calc/IsNullNode.class
 tornado/graal/compiler/nodes/calc/LeftShiftNode.class
+tornado/graal/compiler/nodes/calc/MaxNode.class
 tornado/graal/compiler/nodes/calc/MinMaxNode.class
+tornado/graal/compiler/nodes/calc/MinNode.class
 tornado/graal/compiler/nodes/calc/MulNode.class
 tornado/graal/compiler/nodes/calc/NarrowNode$1.class
 tornado/graal/compiler/nodes/calc/NarrowNode.class
@@ -2618,5 +2622,3 @@ tornado/graal/word/UnsignedWord.class
 tornado/graal/word/WordBase.class
 tornado/graal/word/WordFactory.class
 tornado/graal/word/impl/WordBoxFactory.class
-tornado/graal/compiler/lir/LIRInstructionVerifier.class
-tornado/graal/compiler/lir/ValueProcedure.class
