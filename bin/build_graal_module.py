@@ -14,7 +14,8 @@
 # package can clash with what a GraalVM JDK bundles.
 #
 # Recipe (all steps proven in isolation before automating):
-#   1. maven-shade relocate classes + META-INF/services (module-info.class excluded).
+#   1. maven-shade relocate classes + META-INF/services (module-info.class excluded), then trim
+#      the result to bin/graal-compiler-keep.txt (bin/minimize_graal_jar.py).
 #   2. jdeps --generate-module-info, against tornado-meta compiled from source, to rebuild
 #      requires/exports/provides from the relocated service files.
 #   3. Inject the `uses` clauses jdeps never emits (Graal calls ServiceLoader.load for
@@ -34,6 +35,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import zipfile
 
 VERSION = "23.1.0"
 MODULE_NAME = "tornado.graal"
@@ -138,25 +140,29 @@ def _install_file(jar, group, artifact):
          f"-Dversion={VERSION}", "-Dpackaging=jar"], cwd=_neutral_cwd())
 
 
-def _relocated_uses_clauses(compiler_jar):
-    """Extract `uses` from the original compiler descriptor, relocated to tornado.graal."""
+def _relocated_uses_clauses(compiler_jar, staged):
+    """Extract `uses` from the original compiler descriptor, relocated to tornado.graal, keeping only
+    the service types the trimmed jar still carries."""
     out = _capture([_tool("jar"), "--describe-module", "--file", compiler_jar])
+    with zipfile.ZipFile(staged) as zf:
+        present = set(zf.namelist())
     clauses = []
     for line in out.splitlines():
         line = line.strip()
         if line.startswith("uses "):
             svc = line[len("uses "):].strip()
             svc = svc.replace("org.graalvm.compiler", "tornado.graal.compiler")
-            clauses.append(f"    uses {svc};")
+            if svc.replace(".", "/") + ".class" in present:
+                clauses.append(f"    uses {svc};")
     return clauses
 
 
-def _build_module_info(generated_mi, compiler_jar):
+def _build_module_info(generated_mi, compiler_jar, staged):
     text = generated_mi.read_text() if hasattr(generated_mi, "read_text") else open(generated_mi).read()
     # (4) drop the JVMCIServiceLocator provides block (spans the `with ...;` list)
     text = re.sub(r"\n\s*provides\s+tornado\.meta\.services\.JVMCIServiceLocator\s+with[^;]*;", "", text)
     # (3) inject relocated `uses` clauses before the closing brace
-    uses = "\n".join(_relocated_uses_clauses(compiler_jar))
+    uses = "\n".join(_relocated_uses_clauses(compiler_jar, staged))
     idx = text.rstrip().rfind("}")
     text = text[:idx] + uses + "\n}\n"
     return text
@@ -185,6 +191,11 @@ def build(jdk=None):
         staged = os.path.join(work, ARTIFACT)
         shutil.copy(shaded, staged)
 
+        # (1b) trim to the classes TornadoVM uses, before the descriptor is generated from it.
+        import minimize_graal_jar
+        before, after = minimize_graal_jar.minimize(staged)
+        print(f"build_graal_module: kept {after} of {before} classes")
+
         deps = _module_path_deps(_compile_tornado_meta(work))
 
         # (2) jdeps generate module-info from the relocated services.
@@ -198,7 +209,7 @@ def build(jdk=None):
         mi_java = os.path.join(mi_root, MODULE_NAME, "module-info.java")
 
         # (3)+(4) inject uses, drop jvmci provides
-        mi_text = _build_module_info(mi_java, compiler_jar)
+        mi_text = _build_module_info(mi_java, compiler_jar, staged)
         with open(mi_java, "w") as f:
             f.write(mi_text)
 

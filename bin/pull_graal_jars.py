@@ -148,6 +148,13 @@ def unusable_relocated_jar_reason(jar_path):
     if "requires org.graalvm." in probe.stdout:
         return "depends on separate org.graalvm.* modules instead of carrying them"
 
+    import minimize_graal_jar
+    with zipfile.ZipFile(jar_path) as staged:
+        names = staged.namelist()
+        digest = staged.read(minimize_graal_jar.MARKER).decode().strip() if minimize_graal_jar.MARKER in names else None
+    if digest != minimize_graal_jar.keep_list_digest():
+        return "not trimmed with the current bin/graal-compiler-keep.txt"
+
     with zipfile.ZipFile(jar_path) as staged:
         unrelocated = sorted({os.path.dirname(name).replace("/", ".")
                               for name in staged.namelist()
