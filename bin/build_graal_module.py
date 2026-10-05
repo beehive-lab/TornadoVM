@@ -20,9 +20,8 @@
 #      requires/exports/provides from the relocated service files.
 #   3. Inject the `uses` clauses jdeps never emits (Graal calls ServiceLoader.load for
 #      them internally; without `uses` discovery returns empty).
-#   4. Drop `provides ...JVMCIServiceLocator` — its service type lives in the HotSpot-only
-#      jdk.vm.ci.services package, which tornado-meta does not carry, so the module would not
-#      resolve. Safe: it registers Graal as the HotSpot JIT, which TornadoVM never uses.
+#   4. Drop `provides ...JVMCIServiceLocator` — its service type is HotSpot-only JVMCI API that
+#      tornado-meta does not carry, so the module would not resolve. Safe: it registers Graal as the HotSpot JIT, which TornadoVM never uses.
 #   5. Compile + inject the module-info, drop the now-orphan services file.
 #   6. Emit graalJars/tornado-graal-<ver>.jar and install it to the local Maven repo as
 #      tornado.graal:tornado-graal:<ver> so the reactor can compile against it.

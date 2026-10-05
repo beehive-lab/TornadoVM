@@ -167,8 +167,8 @@ public class TornadoCUDAIntrinsicsReplacements extends BasePhase<TornadoHighTier
                     CUDAPrintf printfNode = graph.addOrUnique(new CUDAPrintf("\"\""));
                     graph.replaceFixed(invoke, printfNode);
                     break;
-                // KernelContext.allocate*LocalArray: normally intrinsified by an invocation plugin, but on the
-                // JVMCI-absent (reflection) path Graal's InvocationPlugins.lookupInvocation misses these
+                // KernelContext.allocate*LocalArray: normally intrinsified by an invocation plugin, but with
+                // reflection-based metadata Graal's InvocationPlugins.lookupInvocation misses these
                 // array-returning methods, so the invoke survives and its result reaches address lowering as an
                 // InvokeNode. Rewrite it here to a LocalArrayNode, exactly as the plugin would have.
                 case "Direct#KernelContext.allocateIntLocalArray":

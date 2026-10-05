@@ -432,7 +432,7 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
 
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
 
-        // Reflection-path recovery: HalfFloat.getHalfFloatValue()'s InvocationPlugin misses when JVMCI is absent, so
+        // Reflection-path recovery: HalfFloat.getHalfFloatValue()'s InvocationPlugin misses with reflection-based metadata, so
         // the call survives as a device-function invoke whose generated body dereferences the receiver as an object
         // pointer (this + 8, the halfFloatValue field offset) instead of returning the half bits - for a small half
         // value that reads ~address 0x8, faulting with an out-of-bounds global read (seen in the tensor-core kernels

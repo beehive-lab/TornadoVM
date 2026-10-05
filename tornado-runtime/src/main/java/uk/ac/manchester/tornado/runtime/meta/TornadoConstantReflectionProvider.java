@@ -62,9 +62,8 @@ public class TornadoConstantReflectionProvider implements ConstantReflectionProv
     }
 
     /**
-     * Access the host constant-reflection provider, or fail clearly on a JVMCI-absent JDK
-     * (JDK 27+) where there is no HotSpot backing provider. Reads still routed here have not
-     * yet been ported to the JDK-neutral (reflection) implementation.
+     * Fail clearly for a constant-reflection query that the reflection-based implementation does not
+     * support yet. There is no HotSpot provider to fall back to.
      */
     private static ConstantReflectionProvider backing() {
         String caller = Thread.currentThread().getStackTrace()[2].getMethodName();
@@ -199,7 +198,7 @@ public class TornadoConstantReflectionProvider implements ConstantReflectionProv
 
     @Override
     public ResolvedJavaType asJavaType(Constant constant) {
-        // JVMCI-absent path: inverse of asJavaClass - recover the ResolvedJavaType from a Class
+        // Inverse of asJavaClass: recover the ResolvedJavaType from a Class
         // object constant. Used by the same local/private-array sizing phase.
         if (constant instanceof JavaConstant javaConstant) {
             Object object = snippetReflection.asObject(Object.class, javaConstant);
@@ -210,7 +209,7 @@ public class TornadoConstantReflectionProvider implements ConstantReflectionProv
         return backing().asJavaType(constant);
     }
 
-    // Lazily created only on the JVMCI-absent path (asJavaType); avoids the Unsafe init on JDK <=26.
+    // Created on first use by asJavaType.
     private ReflectionUniverse reflectionUniverse;
 
     private ReflectionUniverse reflectionUniverse() {

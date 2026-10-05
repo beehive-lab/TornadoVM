@@ -16,8 +16,7 @@ name: No-GPU Unit Tests — reflection + CUDA codegen [JDK 21-27, GraalVM]
 # checks that by booting the SDK's module layer (java --dry-run) on its host JDK.
 #
 # The reflection layer sits on tornado-meta on every host, but each host JDK has its own
-# reflection, class-file and Unsafe behaviour (and 22-26 still ship a JVMCI module TornadoVM must
-# not touch), so a regression specific to one JDK would stay green forever if only one JDK ran.
+# reflection, class-file and Unsafe behaviour, so a regression specific to one JDK would stay green forever if only one JDK ran.
 #
 # The CUDA code-generator tests (tornado-drivers/cuda/src/test) ride along here rather than in
 # their own workflow. They build LIR by hand and run the code-generator passes over it, so they
@@ -34,7 +33,7 @@ name: No-GPU Unit Tests — reflection + CUDA codegen [JDK 21-27, GraalVM]
 
 on:
   push:
-    branches: [master, develop, jdk27-jvmci-removal]
+    branches: [master, develop]
   pull_request:
     types: [opened, synchronize, reopened]
   workflow_dispatch:

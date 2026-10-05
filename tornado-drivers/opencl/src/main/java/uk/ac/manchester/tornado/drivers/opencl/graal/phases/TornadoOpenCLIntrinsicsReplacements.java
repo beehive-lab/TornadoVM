@@ -144,7 +144,7 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
                     graph.replaceFixed(invoke, printfNode);
                     break;
                 // KernelContext.allocate*LocalArray: normally intrinsified by an invocation plugin
-                // (OCLGraphBuilderPlugins.localArraysPlugins), but on the JVMCI-absent (reflection) path Graal's
+                // (OCLGraphBuilderPlugins.localArraysPlugins), but with reflection-based metadata Graal's
                 // InvocationPlugins.lookupInvocation misses these array-returning methods, so the invoke survives
                 // and its int[]/float[]/... result reaches address lowering as an InvokeNode. Rewrite it here to a
                 // LocalArrayNode, exactly as the plugin would have. Only fires on graphs that already failed.

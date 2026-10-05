@@ -104,14 +104,8 @@ public class MetalArchitecture extends Architecture {
     }
 
     /*
-     * We use tornado.meta.amd64.AMD64.CPUFeature as a type parameter because the
-     * return type of Architecture::getFeatures in JVMCI of JDK 17 is Set<? extends
-     * CPUFeatureName>. The method Architecture::getFeatures does not exist in the
-     * JVMCI of JDK 11, but the method getFeatures is implemented for each backend
-     * returning EnumSet<AMD64.CPUFeature>. In order to implement our own CPUFeature
-     * enum for each architecture, we would have to keep two different versions of
-     * the source code. One in which CPUFeature extends CPUFeatureName for JDK 17
-     * and another in which it does not for JDK 11.
+     * Architecture::getFeatures returns CPU features, which GPUs do not have. AMD64.CPUFeature is
+     * only a placeholder type argument; the method is never called on a kernel backend.
      */
     public Set<tornado.meta.amd64.AMD64.CPUFeature> getFeatures() {
         TornadoInternalError.unimplemented();

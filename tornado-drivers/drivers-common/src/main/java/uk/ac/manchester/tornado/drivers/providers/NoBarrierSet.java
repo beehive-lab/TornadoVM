@@ -35,7 +35,7 @@ import tornado.graal.compiler.nodes.memory.FixedAccessNode;
  * No-op {@link BarrierSet} for the accelerator backends. TornadoVM generates GPU code with no managed
  * heap or garbage collector, so no GC read/write barriers are ever required. Every query returns
  * {@link BarrierType#NONE}. This replaces the previous {@code null} barrier set, which caused a
- * {@code NullPointerException} in {@code fieldWriteBarrierType} on the JVMCI-absent (JDK 27+) path where
+ * {@code NullPointerException} in {@code fieldWriteBarrierType} because
  * field stores route through the platform configuration provider's barrier set rather than a HotSpot one.
  */
 public class NoBarrierSet implements BarrierSet {

@@ -1087,8 +1087,8 @@ public class OCLGraphBuilderPlugins {
      * This bypasses the delegate chain {@code IntArray.get -> TornadoMemorySegment.getIntAtIndex ->
      * MemorySegment.getAtIndex}. On JDK 22+ the terminal Panama accessor {@code getAtIndex} became an
      * ABSTRACT interface method (it was a {@code default} method on JDK 21), so it has no bytecode. The
-     * TornadoVM sketcher analyses methods by parsing bytecode and recursing into callees; on the
-     * JVMCI-absent (reflection) path the {@code getIntAtIndex} intrinsic is only applied during the
+     * TornadoVM sketcher analyses methods by parsing bytecode and recursing into callees; with
+     * reflection-based metadata the {@code getIntAtIndex} intrinsic is only applied during the
      * real compile (not the sketch), so the sketcher would descend into the bodiless {@code getAtIndex}
      * and fail. Registering the intrinsic on the array accessor itself — which IS a direct call site —
      * emits the memory read/write up front, so the abstract Panama method is never reached. The emitted

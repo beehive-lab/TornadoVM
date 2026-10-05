@@ -979,7 +979,7 @@ public class MetalGraphBuilderPlugins {
 
     /**
      * Intrinsify the native-array {@code get(index)}/{@code set(index, value)} accessors directly on the array
-     * classes (IntArray, FloatArray, ...). On the JVMCI-free reflection path the sketcher cannot descend into
+     * classes (IntArray, FloatArray, ...). With reflection-based metadata the sketcher cannot descend into
      * {@code IntArray.get -> TornadoMemorySegment.getIntAtIndex -> MemorySegment.getAtIndex} (abstract/bodiless on
      * JDK 22+), so the accessor invoke survives and later crashes canonicalization (null receiver in
      * MethodCallTargetNode). Registering the accessor at the top level emits the same address/read/write the

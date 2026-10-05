@@ -598,7 +598,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         // Either the node has as input a LocalArray or has a node which will be lowered to a LocalArray.
         InvokeNode node = nd.inputs().filter(InvokeNode.class).first();
         boolean willLowerToLocalArrayNode = node != null && "Direct#NewArrayNode.newArray".equals(node.callTarget().targetName()) && gpuSnippet;
-        // On the JVMCI-absent path KernelContext.allocate*LocalArray is intrinsified to a LocalArrayNode, but
+        // KernelContext.allocate*LocalArray is intrinsified to a LocalArrayNode, but
         // that rewrite runs after this lowering, so the array input is still the allocate*LocalArray invoke
         // here. Match both the eventual LocalArrayNode and the surviving allocate*LocalArray invoke.
         boolean isAllocateLocalArrayInvoke = nd instanceof InvokeNode invoke && invoke.callTarget() != null && invoke.callTarget().targetName().contains("LocalArray");
