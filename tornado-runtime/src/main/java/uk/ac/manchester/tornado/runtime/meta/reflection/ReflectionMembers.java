@@ -18,7 +18,7 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.runtime.jvmci.reflection;
+package uk.ac.manchester.tornado.runtime.meta.reflection;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;

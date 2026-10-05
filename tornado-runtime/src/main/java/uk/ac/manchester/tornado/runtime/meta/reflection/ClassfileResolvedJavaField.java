@@ -18,7 +18,7 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.runtime.jvmci.reflection;
+package uk.ac.manchester.tornado.runtime.meta.reflection;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
@@ -26,7 +26,7 @@ import java.lang.reflect.Modifier;
 import tornado.meta.JavaType;
 import tornado.meta.ResolvedJavaField;
 import tornado.meta.ResolvedJavaType;
-import uk.ac.manchester.tornado.runtime.jvmci.reflection.ClassfileParser.FieldInfo;
+import uk.ac.manchester.tornado.runtime.meta.reflection.ClassfileParser.FieldInfo;
 
 /**
  * A {@link ResolvedJavaField} whose metadata comes from the classfile

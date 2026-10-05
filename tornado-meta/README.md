@@ -5,7 +5,7 @@ TornadoVM's metadata and code-description API: the interfaces and value types (`
 Graal 23.1.0 compiler in `tornado.graal` and the TornadoVM backends are written against.
 
 TornadoVM does not use the JVM Compiler Interface (JVMCI). It reads class metadata through reflection
-(`uk.ac.manchester.tornado.runtime.jvmci.reflection`) and implements these interfaces itself, so this module needs
+(`uk.ac.manchester.tornado.runtime.meta.reflection`) and implements these interfaces itself, so this module needs
 no JVM support: it is plain Java and runs on any JDK from 22 up.
 
 ## Provenance

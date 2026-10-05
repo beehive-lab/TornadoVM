@@ -35,8 +35,8 @@ import tornado.meta.JavaKind;
 import tornado.meta.ResolvedJavaField;
 import tornado.meta.ResolvedJavaMethod;
 import tornado.meta.ResolvedJavaType;
-import uk.ac.manchester.tornado.runtime.jvmci.TornadoObjectConstant;
-import uk.ac.manchester.tornado.runtime.jvmci.reflection.ReflectionResolvedJavaType;
+import uk.ac.manchester.tornado.runtime.meta.TornadoObjectConstant;
+import uk.ac.manchester.tornado.runtime.meta.reflection.ReflectionResolvedJavaType;
 
 public class TornadoSnippetReflectionProvider implements SnippetReflectionProvider {
 

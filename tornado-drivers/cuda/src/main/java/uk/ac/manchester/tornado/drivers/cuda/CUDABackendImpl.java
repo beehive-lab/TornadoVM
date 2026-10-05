@@ -43,7 +43,7 @@ import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceNotFound;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDADeviceType;
-import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAHotSpotBackendFactory;
+import uk.ac.manchester.tornado.drivers.cuda.graal.CUDABackendFactory;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDASuitesProvider;
 import uk.ac.manchester.tornado.drivers.cuda.graal.backend.CUDABackend;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorBackend;
@@ -209,7 +209,7 @@ public final class CUDABackendImpl implements TornadoAcceleratorBackend {
             final int deviceIndex) {
         final CUDATargetDevice device = context.devices().get(deviceIndex);
         logger.info("Creating backend for %s", device.getDeviceName());
-        return CUDAHotSpotBackendFactory.createJITCompiler(options, vmConfig, context, device);
+        return CUDABackendFactory.createJITCompiler(options, vmConfig, context, device);
     }
 
     private void installDevices(int platformIndex, TornadoPlatformInterface platform, final OptionValues options, TornadoVMConfigAccess vmConfig) {

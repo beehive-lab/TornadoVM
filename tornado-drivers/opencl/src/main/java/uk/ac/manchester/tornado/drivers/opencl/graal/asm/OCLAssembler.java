@@ -50,7 +50,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIROp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLNullary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLReturnSlot;
-import uk.ac.manchester.tornado.runtime.jvmci.TornadoObjectConstant;
+import uk.ac.manchester.tornado.runtime.meta.TornadoObjectConstant;
 
 public final class OCLAssembler extends Assembler {
 

@@ -12,7 +12,7 @@ up, including JDK 27 (which removed JVMCI) and GraalVM.
 |---|---|---|
 | `tornado.meta` (`tornado-meta/`) | The JVMCI API types, taken from OpenJDK 21.0.2 and renamed `jdk.vm.ci.*` -> `tornado.meta.*`. Plain interfaces and value classes; no native code, no HotSpot. See `tornado-meta/README.md`. | GPLv2 |
 | `tornado.graal` (`graalJars/tornado-graal-<ver>.jar`) | Graal 23.1.0 relocated off the GraalVM namespaces (`org.graalvm.compiler.*` -> `tornado.graal.compiler.*`), with `jdk.vm.ci.*` pointed at `tornado.meta.*` and the GraalVM SDK jars (word, collections, truffle-compiler) folded in. Built by `bin/build_graal_module.py` before the Maven reactor runs. | GPLv2 + CPE, UPL |
-| `tornado.runtime` reflection providers (`uk.ac.manchester.tornado.runtime.jvmci.reflection`) | Implement the `tornado.meta` interfaces from `java.lang.reflect`, the class-file bytes (`ClassfileParser`) and `Unsafe` (`TornadoVMConfigAccess`). `TornadoMetaAccessProvider` and `TornadoConstantReflectionProvider` hand them to Graal. | GPLv2 + CPE |
+| `tornado.runtime` reflection providers (`uk.ac.manchester.tornado.runtime.meta.reflection`) | Implement the `tornado.meta` interfaces from `java.lang.reflect`, the class-file bytes (`ClassfileParser`) and `Unsafe` (`TornadoVMConfigAccess`). `TornadoMetaAccessProvider` and `TornadoConstantReflectionProvider` hand them to Graal. | GPLv2 + CPE |
 
 Neither module shares a module or package name with anything a JDK ships, so the launcher needs no
 `-XX:+EnableJVMCI`, `--patch-module`, `--upgrade-module-path` or JVMCI `--add-exports`. Everything is on

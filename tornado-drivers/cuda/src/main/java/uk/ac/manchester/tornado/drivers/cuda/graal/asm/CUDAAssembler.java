@@ -50,7 +50,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIROp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDANullary;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAReturnSlot;
-import uk.ac.manchester.tornado.runtime.jvmci.TornadoObjectConstant;
+import uk.ac.manchester.tornado.runtime.meta.TornadoObjectConstant;
 
 public final class CUDAAssembler extends Assembler {
 

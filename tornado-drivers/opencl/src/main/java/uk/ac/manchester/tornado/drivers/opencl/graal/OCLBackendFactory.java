@@ -56,15 +56,15 @@ import uk.ac.manchester.tornado.drivers.providers.TornadoMetaAccessExtensionProv
 import uk.ac.manchester.tornado.drivers.providers.TornadoPlatformConfigurationProvider;
 import uk.ac.manchester.tornado.drivers.providers.TornadoWordTypes;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
-import uk.ac.manchester.tornado.runtime.jvmci.TornadoConstantReflectionProvider;
-import uk.ac.manchester.tornado.runtime.jvmci.TornadoMetaAccessProvider;
+import uk.ac.manchester.tornado.runtime.meta.TornadoConstantReflectionProvider;
+import uk.ac.manchester.tornado.runtime.meta.TornadoMetaAccessProvider;
 import uk.ac.manchester.tornado.runtime.graal.DummySnippetFactory;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoConstantFieldProvider;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoForeignCallsProvider;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoReplacements;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
 
-public class OCLHotSpotBackendFactory {
+public class OCLBackendFactory {
 
     private static final HotSpotStampProvider stampProvider = new HotSpotStampProvider();
     private static final TornadoSnippetReflectionProvider snippetReflection = new TornadoSnippetReflectionProvider();

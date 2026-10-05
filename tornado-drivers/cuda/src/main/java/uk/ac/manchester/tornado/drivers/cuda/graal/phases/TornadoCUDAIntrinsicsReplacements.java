@@ -90,7 +90,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDABarrierNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAPrintf;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
-import uk.ac.manchester.tornado.runtime.jvmci.TornadoObjectConstant;
+import uk.ac.manchester.tornado.runtime.meta.TornadoObjectConstant;
 
 public class TornadoCUDAIntrinsicsReplacements extends BasePhase<TornadoHighTierContext> {
 

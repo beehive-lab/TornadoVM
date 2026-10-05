@@ -27,17 +27,17 @@ sdk sdk-jdk22plus:
 checkstyle:
 	.\mvnw checkstyle:check
 
-# Pure-JVM (no-GPU) unit tests for the reflection JVMCI layer. The build skips surefire by
+# Pure-JVM (no-GPU) unit tests for the reflection metadata layer. The build skips surefire by
 # default, so force it on here. `clean` + `-am` rebuilds tornado-api and tornado-runtime together
 # in the same reactor so no stale class files leak into the test classpath.
 test-reflection:
 	.\mvnw -P$(JDK_PROFILE) -pl tornado-api,tornado-runtime -am clean test -DskipTests=false
 
-# Only the reflection JVMCI-layer suites (uk.ac.manchester.tornado.runtime.jvmci.reflection.*Test) —
+# Only the reflection metadata-layer suites (uk.ac.manchester.tornado.runtime.meta.reflection.*Test) —
 # the standalone metadata API, a subset of what test-reflection runs. Same clean+-am rationale as
 # test-reflection.
 test-reflection-only:
-	.\mvnw -P$(JDK_PROFILE) -pl tornado-api,tornado-runtime -am clean test -DskipTests=false -Dtest="uk.ac.manchester.tornado.runtime.jvmci.reflection.*Test"
+	.\mvnw -P$(JDK_PROFILE) -pl tornado-api,tornado-runtime -am clean test -DskipTests=false -Dtest="uk.ac.manchester.tornado.runtime.meta.reflection.*Test"
 
 clean:
 	.\mvnw -Popencl-backend,cuda-backend clean

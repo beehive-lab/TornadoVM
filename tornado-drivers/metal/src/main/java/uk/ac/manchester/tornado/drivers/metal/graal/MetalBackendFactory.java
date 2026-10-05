@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 2020-2022, APT Group, Department of Computer Science,
+ * This file is part of Tornado: A heterogeneous programming framework:
+ * https://github.com/beehive-lab/tornadovm
+ *
+ * Copyright (c) 2026, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
- * The University of Manchester. All rights reserved.
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.drivers.cuda.graal;
+package uk.ac.manchester.tornado.drivers.metal.graal;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
@@ -43,15 +43,15 @@ import tornado.graal.compiler.word.WordTypes;
 
 import tornado.meta.ConstantReflectionProvider;
 import tornado.meta.MetaAccessProvider;
-import uk.ac.manchester.tornado.drivers.cuda.CUDAContextInterface;
-import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContextInterface;
-import uk.ac.manchester.tornado.drivers.cuda.CUDATargetDescription;
-import uk.ac.manchester.tornado.drivers.cuda.CUDATargetDevice;
-import uk.ac.manchester.tornado.drivers.cuda.graal.backend.CUDABackend;
-import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDACompilerConfiguration;
-import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.plugins.CUDAGraphBuilderPlugins;
-import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAAddressLowering;
-import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
+import uk.ac.manchester.tornado.drivers.metal.MetalContextInterface;
+import uk.ac.manchester.tornado.drivers.metal.MetalDeviceContextInterface;
+import uk.ac.manchester.tornado.drivers.metal.MetalTargetDescription;
+import uk.ac.manchester.tornado.drivers.metal.MetalTargetDevice;
+import uk.ac.manchester.tornado.drivers.metal.graal.backend.MetalBackend;
+import uk.ac.manchester.tornado.drivers.metal.graal.compiler.MetalCompilerConfiguration;
+import uk.ac.manchester.tornado.drivers.metal.graal.compiler.plugins.MetalGraphBuilderPlugins;
+import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalAddressLowering;
+import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalKind;
 import uk.ac.manchester.tornado.drivers.providers.TornadoMetaAccessExtensionProvider;
 import uk.ac.manchester.tornado.drivers.providers.TornadoPlatformConfigurationProvider;
 import uk.ac.manchester.tornado.drivers.providers.TornadoWordTypes;
@@ -61,44 +61,44 @@ import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoConstantFieldProvi
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoForeignCallsProvider;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoReplacements;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
-import uk.ac.manchester.tornado.runtime.jvmci.TornadoConstantReflectionProvider;
-import uk.ac.manchester.tornado.runtime.jvmci.TornadoMetaAccessProvider;
+import uk.ac.manchester.tornado.runtime.meta.TornadoConstantReflectionProvider;
+import uk.ac.manchester.tornado.runtime.meta.TornadoMetaAccessProvider;
 
-public class CUDAHotSpotBackendFactory {
+public class MetalBackendFactory {
 
     private static final HotSpotStampProvider stampProvider = new HotSpotStampProvider();
     private static final TornadoSnippetReflectionProvider snippetReflection = new TornadoSnippetReflectionProvider();
     private static final TornadoForeignCallsProvider foreignCalls = new TornadoForeignCallsProvider();
     private static final TornadoConstantFieldProvider constantFieldProvider = new TornadoConstantFieldProvider();
-    private static final CUDACompilerConfiguration compilerConfiguration = new CUDACompilerConfiguration();
-    private static final CUDAAddressLowering addressLowering = new CUDAAddressLowering();
+    private static final MetalCompilerConfiguration compilerConfiguration = new MetalCompilerConfiguration();
+    private static final MetalAddressLowering addressLowering = new MetalAddressLowering();
 
-    public static CUDABackend createJITCompiler(OptionValues options, TornadoVMConfigAccess config, CUDAContextInterface tornadoContext, CUDATargetDevice device) {
+    public static MetalBackend createJITCompiler(OptionValues options, TornadoVMConfigAccess config, MetalContextInterface tornadoContext, MetalTargetDevice device) {
         MetaAccessProvider metaAccess = new TornadoMetaAccessProvider();
         ConstantReflectionProvider constantReflection = new TornadoConstantReflectionProvider(snippetReflection);
 
-        CUDAKind wordKind = switch (device.getWordSize()) {
-            case 4 -> CUDAKind.UINT;
-            case 8 -> CUDAKind.ULONG;
+        MetalKind wordKind = switch (device.getWordSize()) {
+            case 4 -> MetalKind.UINT;
+            case 8 -> MetalKind.ULONG;
             default -> {
                 shouldNotReachHere("unknown word size for device: word size is %d on %s", device.getWordSize(), device.getDeviceName());
-                yield CUDAKind.ILLEGAL;
+                yield MetalKind.ILLEGAL;
             }
         };
 
-        CUDAArchitecture arch = new CUDAArchitecture(wordKind, device.getByteOrder());
-        CUDATargetDescription target = new CUDATargetDescription(arch, device.isDeviceDoubleFPSupported(), device.getDeviceExtensions());
-        CUDACodeProvider codeCache = new CUDACodeProvider(target);
-        CUDADeviceContextInterface oclDeviceContextImpl = (CUDADeviceContextInterface) tornadoContext.createDeviceContext(device.getIndex());
+        MetalArchitecture arch = new MetalArchitecture(wordKind, device.getByteOrder());
+        MetalTargetDescription target = new MetalTargetDescription(arch, device.isDeviceDoubleFPSupported(), device.isDeviceFP16Supported(), device.isDeviceInt64AtomicsSupported());
+        MetalCodeProvider codeCache = new MetalCodeProvider(target);
+        MetalDeviceContextInterface metalDeviceContextImpl = (MetalDeviceContextInterface) tornadoContext.createDeviceContext(device.getIndex());
 
-        CUDAProviders providers;
-        CUDALoweringProvider lowerer;
-        CUDASuitesProvider suites;
+        MetalProviders providers;
+        MetalLoweringProvider lowerer;
+        MetalSuitesProvider suites;
         Plugins plugins;
 
         TornadoPlatformConfigurationProvider platformConfigurationProvider = new TornadoPlatformConfigurationProvider();
         MetaAccessExtensionProvider metaAccessExtensionProvider = new TornadoMetaAccessExtensionProvider();
-        lowerer = new CUDALoweringProvider(metaAccess, foreignCalls, platformConfigurationProvider, metaAccessExtensionProvider, constantReflection, config, target);
+        lowerer = new MetalLoweringProvider(metaAccess, foreignCalls, platformConfigurationProvider, metaAccessExtensionProvider, constantReflection, config, target);
         WordTypes wordTypes = new TornadoWordTypes(metaAccess, wordKind.asJavaKind());
 
         LoopsDataProvider lpd = new LoopsDataProviderImpl();
@@ -111,13 +111,13 @@ public class CUDAHotSpotBackendFactory {
 
         replacements.setGraphBuilderPlugins(plugins);
 
-        suites = new CUDASuitesProvider(options, oclDeviceContextImpl, plugins, metaAccess, compilerConfiguration, addressLowering);
+        suites = new MetalSuitesProvider(options, metalDeviceContextImpl, plugins, metaAccess, compilerConfiguration, addressLowering);
 
-        providers = new CUDAProviders(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, platformConfigurationProvider,
+        providers = new MetalProviders(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, platformConfigurationProvider,
                 metaAccessExtensionProvider, snippetReflection, wordTypes, p.getLoopsDataProvider(), suites);
 
         lowerer.initialize(options, new DummySnippetFactory(), providers);
-        return new CUDABackend(options, providers, target, codeCache, oclDeviceContextImpl);
+        return new MetalBackend(options, providers, target, codeCache, metalDeviceContextImpl);
     }
 
     protected static Plugins createGraphBuilderPlugins(MetaAccessProvider metaAccess, Replacements replacements, SnippetReflectionProvider snippetReflectionProvider,
@@ -125,8 +125,8 @@ public class CUDAHotSpotBackendFactory {
         InvocationPlugins invocationPlugins = new InvocationPlugins();
         Plugins plugins = new Plugins(invocationPlugins);
 
-        CUDAGraphBuilderPlugins.registerParameterPlugins(plugins);
-        CUDAGraphBuilderPlugins.registerNewInstancePlugins(plugins);
+        MetalGraphBuilderPlugins.registerParameterPlugins(plugins);
+        MetalGraphBuilderPlugins.registerNewInstancePlugins(plugins);
 
         StandardGraphBuilderPlugins.registerInvocationPlugins(snippetReflectionProvider, //
                 invocationPlugins, //
@@ -135,13 +135,13 @@ public class CUDAHotSpotBackendFactory {
                 false, //
                 false, //
                 loweringProvider);
-        CUDAGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins, metaAccess);
+        MetalGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins);
         return plugins;
     }
 
     @Override
     public String toString() {
-        return "CUDADriver";
+        return "Metal";
     }
 
 }

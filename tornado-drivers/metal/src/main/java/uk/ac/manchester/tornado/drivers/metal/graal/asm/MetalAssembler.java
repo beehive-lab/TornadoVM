@@ -54,7 +54,7 @@ import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalKind;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalLIROp;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalNullary;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalReturnSlot;
-import uk.ac.manchester.tornado.runtime.jvmci.TornadoObjectConstant;
+import uk.ac.manchester.tornado.runtime.meta.TornadoObjectConstant;
 
 public final class MetalAssembler extends Assembler {
     /**

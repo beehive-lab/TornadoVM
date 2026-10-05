@@ -55,7 +55,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoBackendNotFound;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.UpsMeterReader;
-import uk.ac.manchester.tornado.runtime.jvmci.TornadoMetaAccessProvider;
+import uk.ac.manchester.tornado.runtime.meta.TornadoMetaAccessProvider;
 import uk.ac.manchester.tornado.runtime.common.enums.TornadoBackends;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
 

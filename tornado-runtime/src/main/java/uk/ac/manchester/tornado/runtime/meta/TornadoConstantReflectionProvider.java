@@ -18,7 +18,7 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.runtime.jvmci;
+package uk.ac.manchester.tornado.runtime.meta;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
@@ -37,9 +37,9 @@ import tornado.meta.MetaAccessProvider;
 import tornado.meta.MethodHandleAccessProvider;
 import tornado.meta.ResolvedJavaField;
 import tornado.meta.ResolvedJavaType;
-import uk.ac.manchester.tornado.runtime.jvmci.reflection.ReflectionResolvedJavaField;
-import uk.ac.manchester.tornado.runtime.jvmci.reflection.ReflectionResolvedJavaType;
-import uk.ac.manchester.tornado.runtime.jvmci.reflection.ReflectionUniverse;
+import uk.ac.manchester.tornado.runtime.meta.reflection.ReflectionResolvedJavaField;
+import uk.ac.manchester.tornado.runtime.meta.reflection.ReflectionResolvedJavaType;
+import uk.ac.manchester.tornado.runtime.meta.reflection.ReflectionUniverse;
 
 /**
  * TornadoVM-owned {@link ConstantReflectionProvider}. It reads constant field values via

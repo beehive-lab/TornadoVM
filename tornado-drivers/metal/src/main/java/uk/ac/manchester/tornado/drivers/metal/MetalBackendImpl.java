@@ -41,7 +41,7 @@ import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceNotFound;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalDeviceType;
-import uk.ac.manchester.tornado.drivers.metal.graal.MetalHotSpotBackendFactory;
+import uk.ac.manchester.tornado.drivers.metal.graal.MetalBackendFactory;
 import uk.ac.manchester.tornado.drivers.metal.graal.MetalSuitesProvider;
 import uk.ac.manchester.tornado.drivers.metal.graal.backend.MetalBackend;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorBackend;
@@ -218,7 +218,7 @@ public final class MetalBackendImpl implements TornadoAcceleratorBackend {
             final int deviceIndex) {
         final MetalTargetDevice device = context.devices().get(deviceIndex);
         logger.info("Creating backend for %s", device.getDeviceName());
-        return MetalHotSpotBackendFactory.createJITCompiler(options, vmConfig, context, device);
+        return MetalBackendFactory.createJITCompiler(options, vmConfig, context, device);
     }
 
     private void installDevices(int platformIndex, TornadoPlatformInterface platform, final OptionValues options, TornadoVMConfigAccess vmConfig) {

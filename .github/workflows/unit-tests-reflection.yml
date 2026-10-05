@@ -1,6 +1,6 @@
 name: No-GPU Unit Tests — reflection + CUDA codegen [JDK 22-27, GraalVM]
 
-# Pure-JVM unit tests for the reflection JVMCI layer (tornado-runtime/src/test). These need no GPU,
+# Pure-JVM unit tests for the reflection metadata layer (tornado-runtime/src/test). These need no GPU,
 # so they run on standard GitHub-hosted runners - the first no-GPU CI stage for TornadoVM. The full
 # build is still required first so the modular dependencies (tornado-api, tornado.graal, ...) are on
 # the module path for the reflection tests; the tests themselves touch no device.

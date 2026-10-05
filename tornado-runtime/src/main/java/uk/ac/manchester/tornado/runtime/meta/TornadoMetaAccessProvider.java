@@ -18,7 +18,7 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.runtime.jvmci;
+package uk.ac.manchester.tornado.runtime.meta;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
@@ -36,7 +36,7 @@ import tornado.meta.ResolvedJavaType;
 import tornado.meta.Signature;
 import tornado.meta.SpeculationLog;
 import tornado.meta.SpeculationLog.Speculation;
-import uk.ac.manchester.tornado.runtime.jvmci.reflection.ReflectionUniverse;
+import uk.ac.manchester.tornado.runtime.meta.reflection.ReflectionUniverse;
 
 /**
  * TornadoVM-owned {@link MetaAccessProvider}. It is the seam through which

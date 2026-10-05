@@ -18,7 +18,7 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.runtime.jvmci.reflection;
+package uk.ac.manchester.tornado.runtime.meta.reflection;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -29,8 +29,8 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
-import uk.ac.manchester.tornado.runtime.jvmci.reflection.ClassfileParser.MethodCode;
-import uk.ac.manchester.tornado.runtime.jvmci.reflection.ClassfileParser.RawHandler;
+import uk.ac.manchester.tornado.runtime.meta.reflection.ClassfileParser.MethodCode;
+import uk.ac.manchester.tornado.runtime.meta.reflection.ClassfileParser.RawHandler;
 
 import tornado.meta.Constant;
 import tornado.meta.ConstantPool;
