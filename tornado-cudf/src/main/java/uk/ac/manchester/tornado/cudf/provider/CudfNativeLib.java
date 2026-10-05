@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
  * allocates or frees device memory -- TornadoVM owns every buffer involved, which is what lets a
  * cuDF task sit in the same task graph as a generated kernel and read what it wrote.
  */
-final class CudfNativeLib {
+public final class CudfNativeLib {
 
     /**
      * The shim, not cuDF itself.
@@ -64,6 +64,16 @@ final class CudfNativeLib {
     private static final MethodHandle REDUCE;
     private static final MethodHandle SELECTED_INDICES;
     private static final MethodHandle SORTED_ORDER_MULTI;
+    private static final MethodHandle READ_PARQUET;
+
+    private static final MethodHandle READ_PARQUET_STRINGS;
+
+    private static final MethodHandle CONTAINS_RE;
+
+    private static final MethodHandle PARQUET_METADATA;
+
+    private static final MethodHandle PARQUET_ROWGROUP_ROWS;
+
     private static final MethodHandle LAST_ERROR;
 
     static {
@@ -75,6 +85,11 @@ final class CudfNativeLib {
         MethodHandle reduce = null;
         MethodHandle selectedIndices = null;
         MethodHandle sortedOrderMulti = null;
+        MethodHandle readParquet = null;
+        MethodHandle readParquetStrings = null;
+        MethodHandle containsRe = null;
+        MethodHandle parquetMetadata = null;
+        MethodHandle parquetRowGroupRows = null;
         MethodHandle lastError = null;
         if (LIBTORNADO_CUDF != null) {
             // int (*)(void* stream, const int* keys, int n, int* outOrder)
@@ -92,6 +107,25 @@ final class CudfNativeLib {
             selectedIndices = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_INT, C_INT, C_LONG, C_LONG), "tornado_cudf_selected_indices");
             // int (*)(void* stream, const int* keys, int n, int keyColumns, int descendingMask, int* outOrder)
             sortedOrderMulti = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_INT, C_INT, C_INT, C_LONG), "tornado_cudf_sorted_order_multi");
+            // int (*)(void* stream, const char* path, int rgStart, int rgCount, int intColumn,
+            //         int doubleCount, const int* doubleColumns, int64_t rows,
+            //         void* outKeys, void* outValues)
+            readParquet = FFMSupport.downcall(LIBTORNADO_CUDF,
+                    FunctionDescriptor.of(C_INT, C_LONG, C_POINTER, C_INT, C_INT, C_INT, C_INT, C_POINTER, C_LONG, C_LONG, C_LONG, C_INT), "tornado_cudf_read_parquet");
+            // int (*)(void* stream, const char* path, int rgStart, int rgCount, int column,
+            //         int64_t rows, void* outOffsets, void* outChars, int64_t charsCapacity,
+            //         int64_t* outCharsBytes)
+            readParquetStrings = FFMSupport.downcall(LIBTORNADO_CUDF,
+                    FunctionDescriptor.of(C_INT, C_LONG, C_POINTER, C_INT, C_INT, C_INT, C_LONG, C_LONG, C_LONG, C_LONG, C_POINTER), "tornado_cudf_read_parquet_strings");
+            // int (*)(void* stream, int64_t rows, const void* offsets, const void* chars,
+            //         int64_t charsBytes, const char* pattern, void* outMask)
+            containsRe = FFMSupport.downcall(LIBTORNADO_CUDF,
+                    FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_POINTER, C_LONG), "tornado_cudf_contains_re");
+            // int (*)(const char* path, int64_t* outCounts) -- host pointers, not device ones:
+            // sizing has to happen before anything is allocated on the device.
+            parquetMetadata = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_POINTER, C_POINTER), "tornado_cudf_parquet_metadata");
+            // int (*)(const char* path, int32_t capacity, int64_t* outRows)
+            parquetRowGroupRows = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_POINTER, C_INT, C_POINTER), "tornado_cudf_parquet_rowgroup_rows");
             lastError = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_POINTER), "tornado_cudf_last_error");
         }
         SORTED_ORDER = sortedOrder;
@@ -102,6 +136,11 @@ final class CudfNativeLib {
         REDUCE = reduce;
         SELECTED_INDICES = selectedIndices;
         SORTED_ORDER_MULTI = sortedOrderMulti;
+        READ_PARQUET = readParquet;
+        READ_PARQUET_STRINGS = readParquetStrings;
+        CONTAINS_RE = containsRe;
+        PARQUET_METADATA = parquetMetadata;
+        PARQUET_ROWGROUP_ROWS = parquetRowGroupRows;
         LAST_ERROR = lastError;
     }
 
@@ -112,6 +151,116 @@ final class CudfNativeLib {
     static boolean isAvailable() {
         return LIBTORNADO_CUDF != null && SORTED_ORDER != null && GROUP_SUM != null && RUNNING_SUM != null && INNER_JOIN != null //
                 && GROUP_AGGREGATE != null && REDUCE != null && SELECTED_INDICES != null && SORTED_ORDER_MULTI != null;
+    }
+
+    /**
+     * Whether this shim also exports the Parquet reader.
+     *
+     * <p>Asked separately from {@link #isAvailable()}: a shim built before this existed serves the
+     * eight relational primitives perfectly well, and folding the reader into the general
+     * availability gate would take those away from anyone who has not rebuilt.
+     */
+    public static boolean isParquetAvailable() {
+        return READ_PARQUET != null && PARQUET_METADATA != null && PARQUET_ROWGROUP_ROWS != null;
+    }
+
+    /**
+     * Whether this shim also exports the string reader and the regex matcher.
+     *
+     * <p>Asked separately again, and for the reason {@link #isParquetAvailable()} gives: a shim
+     * built before these existed serves every numeric path perfectly well.
+     */
+    public static boolean isStringsAvailable() {
+        return READ_PARQUET_STRINGS != null && CONTAINS_RE != null;
+    }
+
+    /**
+     * Reads a STRING column into a TornadoVM offsets array and byte blob.
+     *
+     * @return the decoded byte count, which the caller cannot get from the footer
+     */
+    public static long readParquetStrings(long stream, String path, int rowGroupStart, int rowGroupCount, int column, long rows, long outOffsets, long outChars,
+            long charsCapacity) {
+        try (java.lang.foreign.Arena arena = java.lang.foreign.Arena.ofConfined()) {
+            java.lang.foreign.MemorySegment cPath = FFMSupport.allocateCString(arena, path);
+            java.lang.foreign.MemorySegment outBytes = FFMSupport.allocateArray(arena, C_LONG, 1);
+            int status = (int) READ_PARQUET_STRINGS.invokeExact(stream, cPath, rowGroupStart, rowGroupCount, column, rows, outOffsets, outChars, charsCapacity,
+                    outBytes);
+            checkStatus(status, "readParquetStrings");
+            return outBytes.getAtIndex(C_LONG, 0);
+        } catch (Throwable t) {
+            throw asRuntime(t, "readParquetStrings");
+        }
+    }
+
+    /** One regex over a strings column held in TornadoVM buffers; one byte of answer a row. */
+    public static int containsRe(long stream, long rows, long offsets, long chars, long charsBytes, String pattern, long outMask) {
+        try (java.lang.foreign.Arena arena = java.lang.foreign.Arena.ofConfined()) {
+            java.lang.foreign.MemorySegment cPattern = FFMSupport.allocateCString(arena, pattern);
+            return (int) CONTAINS_RE.invokeExact(stream, rows, offsets, chars, charsBytes, cPattern, outMask);
+        } catch (Throwable t) {
+            throw asRuntime(t, "containsRe");
+        }
+    }
+
+    /**
+     * Reads a row-group range onto the device.
+     *
+     * <p>The path and the column indices are <em>host</em> arguments, marshalled into a confined
+     * arena for the call: the reader has to open a file and resolve names before any device work
+     * happens. Only {@code outKeys} and {@code outValues} are device pointers, and they are
+     * buffers TornadoVM already owns.
+     */
+    public static int readParquet(long stream, String path, int rowGroupStart, int rowGroupCount, int intColumn, int[] doubleColumns, long rows, long outKeys,
+            long outValues, int valueWidth) {
+        try (java.lang.foreign.Arena arena = java.lang.foreign.Arena.ofConfined()) {
+            java.lang.foreign.MemorySegment cPath = FFMSupport.allocateCString(arena, path);
+            int count = doubleColumns == null ? 0 : doubleColumns.length;
+            java.lang.foreign.MemorySegment columns = FFMSupport.allocateArray(arena, C_INT, Math.max(count, 1));
+            for (int i = 0; i < count; i++) {
+                columns.setAtIndex(C_INT, i, doubleColumns[i]);
+            }
+            return (int) READ_PARQUET.invokeExact(stream, cPath, rowGroupStart, rowGroupCount, intColumn, count, columns, rows, outKeys, outValues, valueWidth);
+        } catch (Throwable t) {
+            throw asRuntime(t, "readParquet");
+        }
+    }
+
+    /** Total rows, row-group count and column count, read from the footer. */
+    public static long[] parquetMetadata(String path) {
+        try (java.lang.foreign.Arena arena = java.lang.foreign.Arena.ofConfined()) {
+            java.lang.foreign.MemorySegment cPath = FFMSupport.allocateCString(arena, path);
+            java.lang.foreign.MemorySegment out = FFMSupport.allocateArray(arena, C_LONG, 3);
+            int status = (int) PARQUET_METADATA.invokeExact(cPath, out);
+            checkStatus(status, "parquetMetadata");
+            return new long[] { out.getAtIndex(C_LONG, 0), out.getAtIndex(C_LONG, 1), out.getAtIndex(C_LONG, 2) };
+        } catch (Throwable t) {
+            throw asRuntime(t, "parquetMetadata");
+        }
+    }
+
+    /** The rows in each row group, so a split can be turned into a row-group range. */
+    public static long[] parquetRowGroupRows(String path, int rowGroups) {
+        try (java.lang.foreign.Arena arena = java.lang.foreign.Arena.ofConfined()) {
+            java.lang.foreign.MemorySegment cPath = FFMSupport.allocateCString(arena, path);
+            java.lang.foreign.MemorySegment out = FFMSupport.allocateArray(arena, C_LONG, rowGroups);
+            int status = (int) PARQUET_ROWGROUP_ROWS.invokeExact(cPath, rowGroups, out);
+            checkStatus(status, "parquetRowGroupRows");
+            long[] rows = new long[rowGroups];
+            for (int i = 0; i < rowGroups; i++) {
+                rows[i] = out.getAtIndex(C_LONG, i);
+            }
+            return rows;
+        } catch (Throwable t) {
+            throw asRuntime(t, "parquetRowGroupRows");
+        }
+    }
+
+    private static RuntimeException asRuntime(Throwable t, String what) {
+        if (t instanceof RuntimeException) {
+            return (RuntimeException) t;
+        }
+        return new TornadoRuntimeException("[ERROR] " + what + " failed: " + t);
     }
 
     static void load() {

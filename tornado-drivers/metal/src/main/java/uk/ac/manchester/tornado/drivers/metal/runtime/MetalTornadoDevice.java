@@ -622,11 +622,19 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
     @Override
     public int streamOut(long executionPlanId, Object object, long offset, DeviceBufferState state, int[] events) {
         TornadoInternalError.guarantee(state.hasObjectBuffer(), "invalid variable");
-        int event = state.getXPUBuffer().enqueueRead(executionPlanId, object, offset, events, events != null);
-        if (events != null) {
-            return event;
-        }
-        return -1;
+        final boolean returnEvent = returnCopyOutEvent(events);
+        int event = state.getXPUBuffer().enqueueRead(executionPlanId, object, offset, events, returnEvent);
+        return returnEvent ? event : -1;
+    }
+
+    /**
+     * A copy-out hands its event back when the caller tracks dependencies, and also when
+     * profiling: the interpreter can only record COPY_OUT_TIME for a read that returns an
+     * event to time. The wait list itself is still applied only when {@code events} is
+     * non-null, so the profiler does not change the ordering of the read.
+     */
+    private static boolean returnCopyOutEvent(int[] events) {
+        return events != null || TornadoOptions.isProfilerEnabled();
     }
 
     @Override

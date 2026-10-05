@@ -285,8 +285,13 @@ public class CUDACommandQueue extends CommandQueue {
      * Records the completion event for an operation opened with {@link #beginEvent} and returns the
      * handle carrying both. This event doubles as the operation's dependency handle, for
      * {@code cuStreamWaitEvent} and status queries, so it is always created.
+     *
+     * @param dispatchStart
+     *     {@code System.nanoTime()} taken just before the driver call that issued the operation; the
+     *     time since then is kept as the event's driver dispatch time when timing is on.
      */
-    private static long endEvent(long start, CUDAHandles.Queue queue) throws CUDAException {
+    private static long endEvent(long start, CUDAHandles.Queue queue, long dispatchStart) throws CUDAException {
+        long dispatchTime = timingEnabled ? System.nanoTime() - dispatchStart : 0;
         long end;
         try {
             end = createEvent(eventFlags(), "cuEventCreate(end)");
@@ -302,7 +307,7 @@ public class CUDACommandQueue extends CommandQueue {
             CUDADriverAPI.cuEventDestroy(end);
             throw new CUDAException(CUDADriverAPI.describe("cuEventRecord(end)", result));
         }
-        return CUDAHandles.register(new CUDAHandles.Event(end, start));
+        return CUDAHandles.register(new CUDAHandles.Event(end, start, dispatchTime));
     }
 
     private static void destroyEvent(long event) {
@@ -456,9 +461,10 @@ public class CUDACommandQueue extends CommandQueue {
             waitEvents(queue, events);
             long start = beginEvent(queue);
             queue.markPending();
+            long dispatchStart = System.nanoTime();
             int result = CUDADriverAPI.cuLaunchKernel(kernel.function, grid[0], grid[1], grid[2], block[0], block[1], block[2], 0, queue.stream(), kernelParameters(arena, kernel),
                     MemorySegment.NULL);
-            long launchEvent = endEvent(start, queue);
+            long launchEvent = endEvent(start, queue, dispatchStart);
             // A failed launch leaves the kernel's outputs untouched. Surfacing it makes the caller
             // bail out instead of returning stale buffers as a valid result.
             if (result != CUDADriverAPI.CUDA_SUCCESS) {
@@ -510,13 +516,14 @@ public class CUDACommandQueue extends CommandQueue {
             waitEvents(queue, events);
             long start = beginEvent(queue);
             queue.markPending();
+            long dispatchStart = System.nanoTime();
             int result = CUDADriverAPI.cuMemcpyHtoDAsync(devicePointer + deviceOffset, hostPointer + hostOffset, numBytes, queue.stream());
             // Record the completion event BEFORE draining, not after. Recording afterwards puts
             // fresh work on the stream and re-arms `pending`, so the flush that follows an
             // execution synchronises an otherwise idle stream. With this order the drain covers the
             // event record too and the stream is genuinely clear afterwards. The event still marks
             // the end of the copy either way -- it is recorded on the stream after it.
-            long event = endEvent(start, queue);
+            long event = endEvent(start, queue, dispatchStart);
             result = syncIfNeeded(queue, result, syncAfter);
             if (result != CUDADriverAPI.CUDA_SUCCESS) {
                 discardEvent(event);
@@ -537,13 +544,14 @@ public class CUDACommandQueue extends CommandQueue {
             waitEvents(queue, events);
             long start = beginEvent(queue);
             queue.markPending();
+            long dispatchStart = System.nanoTime();
             int result = CUDADriverAPI.cuMemcpyDtoHAsync(hostPointer + hostOffset, devicePointer + deviceOffset, numBytes, queue.stream());
             // Record the completion event BEFORE draining, not after. Recording afterwards puts
             // fresh work on the stream and re-arms `pending`, so the flush that follows an
             // execution synchronises an otherwise idle stream. With this order the drain covers the
             // event record too and the stream is genuinely clear afterwards. The event still marks
             // the end of the copy either way -- it is recorded on the stream after it.
-            long event = endEvent(start, queue);
+            long event = endEvent(start, queue, dispatchStart);
             result = syncIfNeeded(queue, result, syncAfter);
             if (result != CUDADriverAPI.CUDA_SUCCESS) {
                 discardEvent(event);

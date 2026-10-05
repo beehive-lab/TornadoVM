@@ -133,7 +133,7 @@ public class CUDABinary {
             }
 
             StringBuilder sb = new StringBuilder();
-            sb.append("make_").append(resultKind.getElementKind().toString()).append(length).append("(");
+            sb.append("make_").append(resultKind.getElementKind().getVectorElementName()).append(length).append("(");
             for (int i = 0; i < length; i++) {
                 if (i > 0) {
                     sb.append(", ");

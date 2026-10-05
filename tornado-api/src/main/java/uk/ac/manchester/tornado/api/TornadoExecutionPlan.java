@@ -38,6 +38,7 @@ import uk.ac.manchester.tornado.api.plan.types.WithCUDAGraph;
 import uk.ac.manchester.tornado.api.plan.types.WithCUDAPendingLaunchCount;
 import uk.ac.manchester.tornado.api.plan.types.WithClearProfiles;
 import uk.ac.manchester.tornado.api.plan.types.WithCompilerFlags;
+import uk.ac.manchester.tornado.api.plan.types.WithStrictFloatingPoint;
 import uk.ac.manchester.tornado.api.plan.types.WithConcurrentDevices;
 import uk.ac.manchester.tornado.api.plan.types.WithDefaultScheduler;
 import uk.ac.manchester.tornado.api.plan.types.WithDevice;
@@ -543,6 +544,31 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     public TornadoExecutionPlan withCompilerFlags(TornadoVMBackendType backend, String compilerFlags) {
         tornadoExecutor.withCompilerFlags(backend, compilerFlags);
         return new WithCompilerFlags(this, compilerFlags);
+    }
+
+    /**
+     * Requires this plan's kernels to round floating-point arithmetic the way the host does.
+     *
+     * <p>
+     * A device fuses {@code a * b + c} into one operation with a single rounding, which is more
+     * accurate than the host's two roundings and therefore a different answer. Use this when device
+     * and host results must agree. It disables both places the CUDA backend fuses -- the compiler
+     * phase and NVRTC's contraction -- since turning off either alone leaves the other.
+     *
+     * <p>
+     * Scoped to this plan, and can only make a task stricter, so it composes with
+     * {@code -Dtornado.enable.fma=false}.
+     *
+     * <p>
+     * Implemented for the CUDA backend. Elsewhere the call is accepted and has no effect, so check
+     * the backend before relying on it as a correctness guarantee.
+     *
+     * @since 7.0.2
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan withStrictFloatingPoint() {
+        tornadoExecutor.withStrictFloatingPoint();
+        return new WithStrictFloatingPoint(this);
     }
 
     /**

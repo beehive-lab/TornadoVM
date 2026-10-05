@@ -28,11 +28,23 @@ public interface TornadoDeviceContext {
 
     TornadoMemoryProvider getMemoryManager();
 
-    boolean wasReset();
+    /**
+     * Whether {@link #reset(long)} has torn this execution plan's device state down.
+     *
+     * <p>Scoped to the plan, not to the device. A device context is shared by every execution plan
+     * running on that device in this JVM, and {@link #reset(long)} has always been per-plan -- it
+     * cleans that plan's queues, its code cache and its event pool and leaves every other plan's
+     * alone. The flag it set did not follow it: it was one boolean on the device, so a plan being
+     * torn down marked the device as reset for everybody, and the next plan to start cleared the
+     * mark for everybody. Two plans on one device therefore interfered in both directions, and the
+     * symptom was a healthy warmed-up plan failing with "reset() was called after warmup()" because
+     * an unrelated plan had just been closed.
+     */
+    boolean wasReset(long executionPlanId);
 
     void reset(long executionPlanId);
 
-    void setResetToFalse();
+    void setResetToFalse(long executionPlanId);
 
     boolean isFP64Supported();
 

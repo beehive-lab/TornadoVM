@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.stream.IntStream;
 
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -53,15 +54,24 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  */
 public class PrebuiltTests extends TornadoTestBase {
     private static final String TORNADOVM_HOME = "TORNADOVM_HOME";
-    private static TornadoDevice defaultDevice;
-    private static TornadoVMBackendType backendType;
     private static boolean coops;
+    private TornadoDevice defaultDevice;
+    private TornadoVMBackendType backendType;
 
     @BeforeClass
     public static void init() {
-        backendType = TornadoRuntimeProvider.getTornadoRuntime().getBackendType(0);
-        defaultDevice = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getDevice(0);
         coops = TornadoNativeArray.ARRAY_HEADER == 16;
+    }
+
+    /**
+     * Resolves the device and backend after {@link TornadoTestBase#before()} has applied
+     * {@code tornado.unittests.device}, so the tests run on, and load kernels for, the selected
+     * backend rather than whichever backend happens to be first.
+     */
+    @Before
+    public void selectDevice() {
+        backendType = TornadoRuntimeProvider.getTornadoRuntime().getBackendType(0);
+        defaultDevice = TornadoRuntimeProvider.getTornadoRuntime().getDefaultDevice();
     }
 
     private String getPrebuiltKernelPath(String kernelName) {

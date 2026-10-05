@@ -500,6 +500,10 @@ public enum CUDAKind implements PlatformKind {
             return "long";
         } else if (this == CUDAKind.ATOMIC_ADD_FLOAT) {
             return "float";
+        } else if (this == CUDAKind.CHAR) {
+            // Java bytes are signed. Plain "char" is unsigned on AArch64 hosts, where
+            // NVRTC follows the host ABI, so every negative byte would read as 128..255.
+            return "signed char";
         } else if (this == CUDAKind.UCHAR) {
             return "unsigned char";
         } else if (this == CUDAKind.USHORT) {
@@ -555,7 +559,17 @@ public enum CUDAKind implements PlatformKind {
             throw new uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException(
                     "CUDA backend does not support vector width " + len + " (kind " + name() + "); only widths 2, 3 and 4 are supported.");
         }
-        return element.toString() + len;
+        return element.getVectorElementName() + len;
+    }
+
+    /**
+     * Returns the element part of CUDA's built-in vector type names and their
+     * {@code make_} constructors, e.g. {@code float} in {@code float4}. Differs from
+     * {@link #toString()} only for {@code CHAR}: the vector types are spelled
+     * {@code char2}/{@code char3}/{@code char4} and already hold signed char members.
+     */
+    public String getVectorElementName() {
+        return this == CHAR ? "char" : toString();
     }
 
     public String getTypePrefix() {

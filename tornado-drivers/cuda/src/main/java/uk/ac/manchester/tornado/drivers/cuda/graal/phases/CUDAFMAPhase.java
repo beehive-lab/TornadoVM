@@ -28,12 +28,13 @@ import tornado.graal.compiler.nodes.StructuredGraph;
 import tornado.graal.compiler.nodes.ValueNode;
 import tornado.graal.compiler.nodes.calc.AddNode;
 import tornado.graal.compiler.nodes.calc.MulNode;
-import tornado.graal.compiler.phases.Phase;
+import tornado.graal.compiler.phases.BasePhase;
 
 import tornado.meta.JavaKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAFMANode;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLowTierContext;
 
-public class CUDAFMAPhase extends Phase {
+public class CUDAFMAPhase extends BasePhase<TornadoLowTierContext> {
 
     /**
      * Instrinsics in CUDADriver:
@@ -66,7 +67,12 @@ public class CUDAFMAPhase extends Phase {
     }
 
     @Override
-    protected void run(StructuredGraph graph) {
+    protected void run(StructuredGraph graph, TornadoLowTierContext context) {
+        // Fusing rounds a*b+c once instead of twice: more accurate, but not what the host does.
+        // Checked per task rather than by omitting the phase, as the suite is built per backend.
+        if (context != null && context.getMeta() != null && context.getMeta().isStrictFloatingPoint()) {
+            return;
+        }
 
         graph.getNodes().filter(AddNode.class).forEach(addNode -> {
             MulNode mulNode = null;
