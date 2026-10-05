@@ -28,8 +28,8 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimp
 import tornado.graal.compiler.lir.LIRFrameState;
 import tornado.graal.compiler.lir.framemap.ReferenceMapBuilder;
 
-import jdk.vm.ci.code.ReferenceMap;
-import jdk.vm.ci.meta.Value;
+import tornado.meta.code.ReferenceMap;
+import tornado.meta.Value;
 
 public class MetalReferenceMapBuilder extends ReferenceMapBuilder {
 

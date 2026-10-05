@@ -31,7 +31,7 @@ import tornado.graal.compiler.phases.PhaseSuite;
 import tornado.graal.compiler.phases.common.AddressLoweringByNodePhase.AddressLowering;
 import tornado.graal.compiler.phases.tiers.HighTierContext;
 
-import jdk.vm.ci.meta.MetaAccessProvider;
+import tornado.meta.MetaAccessProvider;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.drivers.metal.graal.compiler.MetalCanonicalizer;
 import uk.ac.manchester.tornado.drivers.metal.graal.compiler.MetalCompilerConfiguration;

@@ -26,7 +26,7 @@ import tornado.graal.compiler.graph.NodeClass;
 import tornado.graal.compiler.nodeinfo.NodeInfo;
 import tornado.graal.compiler.nodes.ValueNode;
 
-import jdk.vm.ci.meta.JavaKind;
+import tornado.meta.JavaKind;
 
 @NodeInfo
 public class HalfFloatPlaceholder extends ValueNode {

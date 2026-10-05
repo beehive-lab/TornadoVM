@@ -29,7 +29,7 @@ import tornado.graal.compiler.lir.LIRInstruction.Def;
 import tornado.graal.compiler.lir.LIRInstruction.Use;
 import tornado.graal.compiler.nodes.DirectCallTargetNode;
 
-import jdk.vm.ci.meta.Value;
+import tornado.meta.Value;
 import uk.ac.manchester.tornado.drivers.metal.graal.MetalArchitecture;
 import uk.ac.manchester.tornado.drivers.metal.graal.MetalUtils;
 import uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssembler;

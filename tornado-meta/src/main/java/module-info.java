@@ -22,8 +22,12 @@
 /**
  * TornadoVM's metadata and code-description API, derived from the OpenJDK 21.0.2 JVMCI API. See
  * README.md for the provenance and the changes made.
+ *
+ * <p>
+ * Open, as the JDK's JVMCI packages were opened to Graal: Graal checks that its JVMCI module is open
+ * to the modules it serves and otherwise asks the (absent) JVMCI runtime to open it.
  */
-module tornado.meta {
+open module tornado.meta {
     exports tornado.meta;
     exports tornado.meta.code;
     exports tornado.meta.code.site;
@@ -31,4 +35,5 @@ module tornado.meta {
     exports tornado.meta.common;
     exports tornado.meta.amd64;
     exports tornado.meta.aarch64;
+    exports tornado.meta.services;
 }

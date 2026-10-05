@@ -28,7 +28,7 @@ import tornado.graal.compiler.nodeinfo.NodeInfo;
 import tornado.graal.compiler.nodes.ValueNode;
 import tornado.graal.compiler.nodes.java.LoadIndexedNode;
 
-import jdk.vm.ci.meta.JavaKind;
+import tornado.meta.JavaKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAStampFactory;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
 

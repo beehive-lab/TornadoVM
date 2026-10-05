@@ -42,7 +42,7 @@ import tornado.graal.compiler.nodes.loop.LoopEx;
 import tornado.graal.compiler.nodes.loop.LoopsData;
 import tornado.graal.compiler.phases.BasePhase;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;

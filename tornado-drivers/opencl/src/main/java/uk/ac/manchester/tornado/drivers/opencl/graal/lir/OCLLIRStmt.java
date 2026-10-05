@@ -21,14 +21,14 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 
-import jdk.vm.ci.meta.JavaKind;
+import tornado.meta.JavaKind;
 import tornado.graal.compiler.lir.LIRInstruction;
 import tornado.graal.compiler.lir.LIRInstructionClass;
 import tornado.graal.compiler.lir.Opcode;
 import tornado.graal.compiler.lir.asm.CompilationResultBuilder;
 
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.Value;
+import tornado.meta.AllocatableValue;
+import tornado.meta.Value;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryIntrinsic;

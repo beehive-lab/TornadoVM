@@ -75,7 +75,6 @@ jobs:
               # build-test-platform.yml), not a requirement.
               echo "JAVA_HOME=/opt/jenkins/jdks/jdk-25.0.2" >> "$GITHUB_ENV"
               echo "GRAAL_JARS=/opt/graalJarsNoJvmci" >> "$GITHUB_ENV"
-              echo "JVMCI_SOURCE_JDK=/opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3" >> "$GITHUB_ENV"
               ;;
           esac
 

@@ -46,8 +46,8 @@ import tornado.graal.compiler.options.OptionKey;
 import tornado.graal.compiler.options.OptionValues;
 import tornado.graal.compiler.printer.GraalDebugHandlersFactory;
 
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.meta.MetaAccessProvider;
+import tornado.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoRuntime;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;

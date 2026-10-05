@@ -7,7 +7,7 @@ open module tornado.runtime {
     requires org.objectweb.asm;
     requires org.graalvm.collections;
 
-    requires transitive jdk.internal.vm.ci;
+    requires transitive tornado.meta;
     requires transitive tornado.graal;
     requires transitive tornado.api;
     requires commons.math3;

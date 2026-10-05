@@ -24,7 +24,7 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-import jdk.vm.ci.meta.Signature;
+import tornado.meta.Signature;
 
 /**
  * Pure-JVM (no-GPU) tests for {@link DescriptorSignature}: parse a raw JVM method descriptor

@@ -23,9 +23,9 @@ package uk.ac.manchester.tornado.runtime.jvmci.reflection;
 import java.util.ArrayList;
 import java.util.List;
 
-import jdk.vm.ci.meta.JavaType;
-import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.meta.Signature;
+import tornado.meta.JavaType;
+import tornado.meta.ResolvedJavaType;
+import tornado.meta.Signature;
 
 /**
  * A {@link Signature} parsed directly from a JVM method descriptor string (e.g.

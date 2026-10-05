@@ -27,7 +27,7 @@ import tornado.graal.compiler.lir.LIRFrameState;
 import tornado.graal.compiler.lir.Variable;
 import tornado.graal.compiler.lir.gen.BarrierSetLIRGenerator;
 
-import jdk.vm.ci.meta.Value;
+import tornado.meta.Value;
 
 public class CUDABarrierSetLIRGenerator extends BarrierSetLIRGenerator {
     @Override

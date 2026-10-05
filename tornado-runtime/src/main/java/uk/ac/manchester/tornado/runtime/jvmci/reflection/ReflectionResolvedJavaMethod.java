@@ -32,20 +32,20 @@ import java.util.List;
 import uk.ac.manchester.tornado.runtime.jvmci.reflection.ClassfileParser.MethodCode;
 import uk.ac.manchester.tornado.runtime.jvmci.reflection.ClassfileParser.RawHandler;
 
-import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.ConstantPool;
-import jdk.vm.ci.meta.ExceptionHandler;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.JavaType;
-import jdk.vm.ci.meta.LineNumberTable;
-import jdk.vm.ci.meta.Local;
-import jdk.vm.ci.meta.LocalVariableTable;
-import jdk.vm.ci.meta.ProfilingInfo;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaMethod.Parameter;
-import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.meta.Signature;
-import jdk.vm.ci.meta.SpeculationLog;
+import tornado.meta.Constant;
+import tornado.meta.ConstantPool;
+import tornado.meta.ExceptionHandler;
+import tornado.meta.JavaKind;
+import tornado.meta.JavaType;
+import tornado.meta.LineNumberTable;
+import tornado.meta.Local;
+import tornado.meta.LocalVariableTable;
+import tornado.meta.ProfilingInfo;
+import tornado.meta.ResolvedJavaMethod;
+import tornado.meta.ResolvedJavaMethod.Parameter;
+import tornado.meta.ResolvedJavaType;
+import tornado.meta.Signature;
+import tornado.meta.SpeculationLog;
 
 /**
  * Reflection + ASM-backed {@link ResolvedJavaMethod}. Structural facts (name,

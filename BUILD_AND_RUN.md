@@ -67,7 +67,7 @@ java @tornado-argfile \
 ### How it works
 - `./mvnw clean install` builds all TornadoVM modules using Maven
 - The `tornado-argfile` contains all necessary JVM flags:
-  - JVM mode and memory settings (`-XX:+EnableJVMCI`, etc.)
+  - JVM mode settings (`-server`, etc.)
   - Native library paths (`-Djava.library.path=...`)
   - Module system configuration (`--module-path`, `--add-modules`, etc.)
   - Required exports and opens for Graal compiler access

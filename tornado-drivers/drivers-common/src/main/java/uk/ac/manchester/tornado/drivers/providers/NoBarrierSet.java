@@ -22,8 +22,8 @@ package uk.ac.manchester.tornado.drivers.providers;
 
 import org.graalvm.word.LocationIdentity;
 
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaField;
+import tornado.meta.JavaKind;
+import tornado.meta.ResolvedJavaField;
 import tornado.graal.compiler.core.common.memory.BarrierType;
 import tornado.graal.compiler.core.common.type.Stamp;
 import tornado.graal.compiler.nodes.ValueNode;

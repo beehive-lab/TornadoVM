@@ -39,9 +39,15 @@
         <resources>
             <!-- Ship the license inside the jar: this module is GPLv2 without the Classpath Exception. -->
             <resource>
+                <directory>${project.basedir}/..</directory>
+                <includes>
+                    <include>LICENSE_GPLv2</include>
+                </includes>
+                <targetPath>META-INF</targetPath>
+            </resource>
+            <resource>
                 <directory>${project.basedir}</directory>
                 <includes>
-                    <include>LICENSE</include>
                     <include>README.md</include>
                 </includes>
                 <targetPath>META-INF</targetPath>

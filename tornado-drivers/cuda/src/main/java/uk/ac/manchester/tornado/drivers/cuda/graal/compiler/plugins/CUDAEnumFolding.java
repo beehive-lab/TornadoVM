@@ -23,9 +23,9 @@
 
 package uk.ac.manchester.tornado.drivers.cuda.graal.compiler.plugins;
 
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.ResolvedJavaField;
-import jdk.vm.ci.meta.ResolvedJavaType;
+import tornado.meta.JavaConstant;
+import tornado.meta.ResolvedJavaField;
+import tornado.meta.ResolvedJavaType;
 import tornado.graal.compiler.nodes.ValueNode;
 import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import tornado.graal.compiler.nodes.java.LoadFieldNode;

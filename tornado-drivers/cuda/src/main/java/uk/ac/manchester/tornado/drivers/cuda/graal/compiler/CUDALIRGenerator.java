@@ -23,16 +23,16 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.graal.compiler;
 
-import jdk.vm.ci.code.Register;
-import jdk.vm.ci.code.StackSlot;
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.DeoptimizationAction;
-import jdk.vm.ci.meta.DeoptimizationReason;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.PlatformKind;
-import jdk.vm.ci.meta.Value;
-import jdk.vm.ci.meta.ValueKind;
+import tornado.meta.code.Register;
+import tornado.meta.code.StackSlot;
+import tornado.meta.AllocatableValue;
+import tornado.meta.DeoptimizationAction;
+import tornado.meta.DeoptimizationReason;
+import tornado.meta.JavaConstant;
+import tornado.meta.JavaKind;
+import tornado.meta.PlatformKind;
+import tornado.meta.Value;
+import tornado.meta.ValueKind;
 import tornado.graal.compiler.core.common.CompressEncoding;
 import tornado.graal.compiler.core.common.LIRKind;
 import tornado.graal.compiler.core.common.calc.Condition;

@@ -157,7 +157,7 @@ jobs:
           # compile at release 21 WITH enable-preview and javac refuses ("invalid source release 21
           # with --enable-preview"). That is a defect in those apps, not here, and it makes a 22 leg
           # permanently red until they are fixed. 25 and 27 keep the two shapes that matter on a
-          # pull request -- platform jvmci patched at run time, and jvmci absent entirely -- and the
+          # pull request -- a JDK that still ships JVMCI, and one without it -- and the
           # nightly sweep still covers 22-24 so the app fix shows up the moment it lands. Restore
           # "jdk22" as the low end once the sample apps handle it.
           jdk22plus_runtimes = ["jdk22", "jdk23", "jdk24", "jdk25", "jdk26", "jdk27"] if full \

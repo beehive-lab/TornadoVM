@@ -29,8 +29,8 @@ import java.lang.reflect.Field;
 
 import org.junit.Test;
 
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaField;
+import tornado.meta.JavaKind;
+import tornado.meta.ResolvedJavaField;
 
 /**
  * Pure-JVM (no-GPU) tests for {@link ReflectionResolvedJavaType}: descriptor naming, array/component,

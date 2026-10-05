@@ -27,13 +27,13 @@ import java.lang.reflect.Executable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import jdk.vm.ci.meta.ConstantPool;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaField;
-import jdk.vm.ci.meta.JavaMethod;
-import jdk.vm.ci.meta.JavaType;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.Signature;
+import tornado.meta.ConstantPool;
+import tornado.meta.JavaConstant;
+import tornado.meta.JavaField;
+import tornado.meta.JavaMethod;
+import tornado.meta.JavaType;
+import tornado.meta.ResolvedJavaMethod;
+import tornado.meta.Signature;
 import uk.ac.manchester.tornado.runtime.jvmci.TornadoObjectConstant;
 
 /**
@@ -222,15 +222,6 @@ final class ReflectionConstantPool implements ConstantPool {
             case CP_CLASS -> universe.lookupType(resolveClass(cpi));
             default -> throw ReflectionUniverse.todo("ConstantPool.lookupConstant(tag=" + tag[cpi] + ")");
         };
-    }
-
-    // Intentionally not annotated @Override: some JDK 21 JVMCI vendors (e.g. GraalVM 21.0.12+)
-    // added this overload to ConstantPool, others (e.g. Temurin 21.0.11) didn't. Without @Override
-    // this satisfies the interface where the method exists and is an inert extra method where it
-    // doesn't, so the same source compiles against either. This CP always resolves eagerly via
-    // reflection - there's no lazy/unresolved form - so the resolve flag has nothing to toggle.
-    public Object lookupConstant(int cpi, boolean resolve) {
-        return lookupConstant(cpi);
     }
 
     @Override

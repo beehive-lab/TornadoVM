@@ -32,7 +32,7 @@ import tornado.graal.compiler.nodes.calc.AddNode;
 import tornado.graal.compiler.nodes.calc.MulNode;
 import tornado.graal.compiler.phases.Phase;
 
-import jdk.vm.ci.meta.JavaKind;
+import tornado.meta.JavaKind;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalFMANode;
 
 public class MetalFMAPhase extends Phase {

@@ -15,8 +15,6 @@ jobs:
       max-parallel: 1
     env:
       JAVA_HOME: /opt/jenkins/jdks/jdk-25.0.2
-      # JDK 21 runtime image the vendored jvmci module is extracted from (nothing is built with it).
-      JVMCI_SOURCE_JDK: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
       MAVEN_HOME: /opt/maven
       CMAKE_ROOT: /opt/jenkins/cmake-3.25.2-linux-x86_64
       GRAAL_JARS: /opt/graalJarsNoJvmci

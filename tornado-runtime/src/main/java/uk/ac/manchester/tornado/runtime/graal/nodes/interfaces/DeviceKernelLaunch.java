@@ -24,7 +24,7 @@ package uk.ac.manchester.tornado.runtime.graal.nodes.interfaces;
 
 import tornado.graal.compiler.nodes.ValueNode;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.meta.ResolvedJavaMethod;
 
 /**
  * A kernel launch from device code (CUDA Dynamic Parallelism). The sketcher uses it to sketch the

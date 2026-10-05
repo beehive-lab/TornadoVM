@@ -149,14 +149,9 @@
                         <artifactId>maven-javadoc-plugin</artifactId>
                         <version>3.6.3</version>
                         <configuration>
-                            <!-- Use source, not the release flag. The release flag resolves modules
-                                 against ct.sym, which omits JDK-internal modules, so
-                                 `requires transitive jdk.internal.vm.ci` in
-                                 tornado-runtime/module-info.java fails with "module not found:
-                                 jdk.internal.vm.ci" (seen only on a GraalVM build JDK). failOnError
-                                 is false so the deploy still succeeds, but the published
-                                 tornado-runtime javadoc jar ends up empty. source links against the
-                                 real platform modules. -->
+                            <!-- Use source, not the release flag: the release flag resolves modules
+                                 against ct.sym, which omits the JDK-internal modules some javadoc
+                                 links reach. failOnError is false so the deploy still succeeds. -->
                             <source>22</source>
                             <skip>false</skip>
                             <failOnError>false</failOnError>
@@ -363,8 +358,6 @@
                  built once runs on 22, 23, 24, 25, 26, 27 and later. It activates on any JDK 22+
                  build, so naming it with -Pjdk22plus is optional.
 
-                 Two settings do that work together:
-
                  "release" rather than "source"+"target". source/target still links against the
                  build JDK's platform classes, so a build on a newer JDK can bind an API absent on
                  22 and fail at run time; the release flag uses the JDK 22 signatures and rejects it
@@ -372,31 +365,17 @@
                  ceiling imposed by frozen Graal 23.1.0, whose Classfile reader rejects class-file
                  versions newer than it knows.
 
-                 The vendored jvmci dependency, unconditionally. The release flag hides every
-                 JDK-internal module, so the platform jdk.internal.vm.ci is invisible to javac even
-                 on the JDKs that still ship it, and the vendored JDK-21 module on the module path
-                 supplies jdk.vm.ci.* on every build JDK alike. That is why no patch-module argument
-                 and no build-JDK-specific profile are needed here: the compile is now identical
-                 whether it runs on 22 or on 27. (At RUN time the platform module does still exist
-                 on 22-26, which is what bin/tornado patches; that is a separate concern.) -->
+                 Nothing here depends on the JDK's JVMCI: the compiler's metadata API is the
+                 tornado-meta module, so the compile is identical whether it runs on 22 or on 27. -->
             <id>jdk22plus</id>
             <activation>
                 <jdk>[22,)</jdk>
             </activation>
             <properties>
                 <revision>7.0.2-jdk22plus-dev</revision>
-                <!-- Runtime module access for the opt-in pure-JVM unit tests, which run under the
-                     BUILD JDK; specialised below when that JDK still ships the platform module. -->
+                <!-- Runtime module access for the opt-in pure-JVM unit tests. -->
                 <tornado.test.argLine>--add-modules=jdk.incubator.vector</tornado.test.argLine>
             </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>tornado.jvmci</groupId>
-                    <artifactId>jvmci</artifactId>
-                    <version>21.0.2</version>
-                    <scope>provided</scope>
-                </dependency>
-            </dependencies>
             <build>
                 <plugins>
                     <plugin>
@@ -404,10 +383,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <skipTests>${skipTests}</skipTests>
-                            <!-- Pure-JVM unit tests need JVMCI package access. Run on the classpath
-                                 (useModulePath=false) so surefire does not ASM-parse the vendored jvmci
-                                 jar's module-info; the argLine exports the jvmci packages to
-                                 ALL-UNNAMED. Skipped by default; run with:
+                            <!-- Pure-JVM unit tests run on the classpath. Skipped by default; run with:
                                  mvn -Pjdk22plus -pl tornado-runtime test -DskipTests=false -->
                             <useModulePath>false</useModulePath>
                             <argLine>${tornado.test.argLine}</argLine>
@@ -443,20 +419,6 @@
             </build>
         </profile>
 
-        <profile>
-            <!-- Selected by the BUILD JDK, never named by hand, and it affects only the opt-in
-                 surefire tests (skipped by default), which run on this same JDK. On 22-26 the
-                 platform still ships jdk.internal.vm.ci with interfaces drifted from the JDK-21
-                 shape, so overlay the frozen classes at run time. On 27+ there is nothing to patch.
-                 Declared after jdk22plus so its property wins. -->
-            <id>jvmci-test-args-from-platform</id>
-            <activation>
-                <jdk>[22,27)</jdk>
-            </activation>
-            <properties>
-                <tornado.test.argLine>--add-modules=jdk.incubator.vector --add-modules=jdk.internal.vm.ci --patch-module jdk.internal.vm.ci=${user.dir}/graalJars/jvmci-21.0.2.jar --add-exports jdk.internal.vm.ci/jdk.vm.ci.meta=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.code=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.common=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=ALL-UNNAMED</tornado.test.argLine>
-            </properties>
-        </profile>
     </profiles>
     <build>
         <finalName>${project.artifactId}-${project.version}-${buildNumber}</finalName>

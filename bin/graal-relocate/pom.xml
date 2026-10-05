@@ -19,7 +19,7 @@
     <packaging>jar</packaging>
 
     <properties>
-        <maven.compiler.release>21</maven.compiler.release>
+        <maven.compiler.release>22</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -76,6 +76,22 @@
                                  and org.graalvm.collections need no relocation: they ship as their own
                                  same-named modules, which a bundled platform copy simply shadows. -->
                             <relocations>
+                                <!-- The JVMCI API Graal is written against is TornadoVM's own tornado.meta
+                                     module (OpenJDK 21.0.2's jdk.vm.ci.meta/code/... renamed), so point
+                                     every jdk.vm.ci reference at it. jdk.vm.ci.meta becomes tornado.meta
+                                     itself; every other jdk.vm.ci package keeps its sub-name. The first
+                                     matching relocation wins, so the specific one goes first. References to
+                                     the HotSpot-only packages (jdk.vm.ci.hotspot, .runtime, .services) are
+                                     relocated too but have no target: they sit on Graal's HotSpot-JIT paths,
+                                     which TornadoVM never executes. -->
+                                <relocation>
+                                    <pattern>jdk.vm.ci.meta</pattern>
+                                    <shadedPattern>tornado.meta</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>jdk.vm.ci</pattern>
+                                    <shadedPattern>tornado.meta</shadedPattern>
+                                </relocation>
                                 <relocation>
                                     <pattern>org.graalvm.compiler</pattern>
                                     <shadedPattern>tornado.graal.compiler</shadedPattern>

@@ -35,9 +35,9 @@ import tornado.graal.compiler.nodes.spi.StampProvider;
 import tornado.graal.compiler.phases.util.Providers;
 import tornado.graal.compiler.word.WordTypes;
 
-import jdk.vm.ci.code.CodeCacheProvider;
-import jdk.vm.ci.meta.ConstantReflectionProvider;
-import jdk.vm.ci.meta.MetaAccessProvider;
+import tornado.meta.code.CodeCacheProvider;
+import tornado.meta.ConstantReflectionProvider;
+import tornado.meta.MetaAccessProvider;
 
 public class MetalProviders extends Providers {
 

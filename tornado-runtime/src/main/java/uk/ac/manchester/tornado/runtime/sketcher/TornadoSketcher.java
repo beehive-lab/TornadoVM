@@ -59,8 +59,8 @@ import tornado.graal.compiler.phases.common.DeadCodeEliminationPhase;
 import tornado.graal.compiler.phases.tiers.HighTierContext;
 import tornado.graal.compiler.phases.util.Providers;
 
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.meta.JavaKind;
+import tornado.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;

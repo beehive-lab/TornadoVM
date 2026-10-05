@@ -20,11 +20,11 @@
  */
 package uk.ac.manchester.tornado.runtime.jvmci.reflection;
 
-import jdk.vm.ci.meta.DeoptimizationReason;
-import jdk.vm.ci.meta.JavaMethodProfile;
-import jdk.vm.ci.meta.JavaTypeProfile;
-import jdk.vm.ci.meta.ProfilingInfo;
-import jdk.vm.ci.meta.TriState;
+import tornado.meta.DeoptimizationReason;
+import tornado.meta.JavaMethodProfile;
+import tornado.meta.JavaTypeProfile;
+import tornado.meta.ProfilingInfo;
+import tornado.meta.TriState;
 
 /**
  * An "unprofiled" {@link ProfilingInfo} - reports no runtime profile data. This

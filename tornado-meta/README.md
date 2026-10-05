@@ -27,10 +27,16 @@ Changes from the original sources, each recorded in a notice under the file's li
 - the `package-info.java` files are not included.
 
 The HotSpot-specific JVMCI packages (`jdk.vm.ci.hotspot*`, `jdk.vm.ci.runtime`, `jdk.vm.ci.services`)
-are not part of this module.
+are not part of this module. The one exception is `tornado.meta.services.Services`, a TornadoVM-written
+class (not OpenJDK code) with the three members Graal reads: `IS_IN_NATIVE_IMAGE`,
+`IS_BUILDING_NATIVE_IMAGE` and `getSavedProperties()`.
+
+The module is `open`, as the JDK's JVMCI packages were opened to Graal: Graal checks that its JVMCI
+module is open to the modules it serves, and would otherwise call into the JVMCI runtime.
 
 ## License
 
-GNU General Public License version 2 only, **without** the Classpath Exception (see `LICENSE`), as in
+GNU General Public License version 2 only, **without** the Classpath Exception (see
+[`LICENSE_GPLv2`](../LICENSE_GPLv2)), as in
 OpenJDK. One file, `tornado.meta.code.site.ImplicitExceptionDispatch`, carries the Classpath
 Exception in its own header.

@@ -26,13 +26,13 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shoul
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler.CUDAUnaryIntrinsic.RSQRT;
 
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.PlatformKind;
-import jdk.vm.ci.meta.PrimitiveConstant;
-import jdk.vm.ci.meta.Value;
-import jdk.vm.ci.meta.ValueKind;
+import tornado.meta.AllocatableValue;
+import tornado.meta.JavaConstant;
+import tornado.meta.JavaKind;
+import tornado.meta.PlatformKind;
+import tornado.meta.PrimitiveConstant;
+import tornado.meta.Value;
+import tornado.meta.ValueKind;
 import tornado.graal.compiler.core.common.LIRKind;
 import tornado.graal.compiler.core.common.calc.FloatConvert;
 import tornado.graal.compiler.core.common.memory.MemoryExtendKind;

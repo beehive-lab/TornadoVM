@@ -153,15 +153,11 @@ def generate_argfile(backends, output_dir=None):
     - ``@<export-list>`` references are INLINED. Java does not recursively expand a nested
       ``@argfile`` referenced from inside another argfile, so the export-list contents are copied
       in verbatim (this is why an earlier template that kept the ``@`` refs failed).
-    - Absolute ``$TORNADOVM_HOME`` paths (module-path entries incl. the reflection-path
-      ``share/java/jvmci`` module dir, native library path) are replaced with the
-      ``${TORNADOVM_HOME}`` placeholder for portability (expand via envsubst before use).
+    - Absolute ``$TORNADOVM_HOME`` paths (module-path entries, native library path) are replaced
+      with the ``${TORNADOVM_HOME}`` placeholder for portability (expand via envsubst before use).
 
-    Every other flag from ``--printJavaFlags`` is preserved verbatim - crucially the
-    ``--add-exports java.base/jdk.internal.*=jdk.internal.vm.ci`` and
-    ``-Djdk.internal.vm.ci.enabled=true`` flags the reflection (JVMCI-absent) path needs, and the
-    ``--module-path`` that already includes the jvmci module dir. The earlier version rebuilt the
-    argfile from cherry-picked categories and dropped both, producing an unusable file on JDK 27.
+    Every other flag from ``--printJavaFlags`` is preserved verbatim. An earlier version rebuilt
+    the argfile from cherry-picked categories and dropped some of them, producing an unusable file.
 
     Args:
         backends (str): Comma-separated backend list. Advisory only - the flags come from the

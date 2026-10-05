@@ -1,7 +1,7 @@
 import uk.ac.manchester.tornado.runtime.TornadoBackendProvider;
 
 module tornado.drivers.cuda {
-    requires transitive jdk.internal.vm.ci;
+    requires transitive tornado.meta;
     requires transitive tornado.graal;
     requires transitive org.graalvm.collections;
     requires transitive org.graalvm.word;

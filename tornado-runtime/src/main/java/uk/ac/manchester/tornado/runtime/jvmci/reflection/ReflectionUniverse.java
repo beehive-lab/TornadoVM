@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import sun.misc.Unsafe;
 
-import jdk.vm.ci.meta.JavaKind;
+import tornado.meta.JavaKind;
 
 /**
  * Registry + factory for the reflection/ASM/{@code Unsafe}-backed JVMCI

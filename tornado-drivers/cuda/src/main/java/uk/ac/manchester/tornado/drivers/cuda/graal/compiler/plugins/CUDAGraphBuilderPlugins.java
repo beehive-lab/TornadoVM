@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.graal.compiler.plugins;
 
-import jdk.vm.ci.meta.ResolvedJavaField;
+import tornado.meta.ResolvedJavaField;
 import tornado.graal.compiler.core.common.memory.BarrierType;
 import tornado.graal.compiler.core.common.memory.MemoryOrderMode;
 import tornado.graal.compiler.core.common.type.StampFactory;
@@ -53,12 +53,12 @@ import tornado.graal.compiler.nodes.memory.address.AddressNode;
 import tornado.graal.compiler.nodes.memory.address.OffsetAddressNode;
 import tornado.graal.compiler.nodes.util.GraphUtil;
 import tornado.graal.compiler.replacements.InlineDuringParsingPlugin;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.RawConstant;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
+import tornado.meta.JavaConstant;
+import tornado.meta.JavaKind;
+import tornado.meta.MetaAccessProvider;
+import tornado.meta.RawConstant;
+import tornado.meta.ResolvedJavaMethod;
+import tornado.meta.ResolvedJavaType;
 import org.graalvm.word.LocationIdentity;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.enums.MMAShape;

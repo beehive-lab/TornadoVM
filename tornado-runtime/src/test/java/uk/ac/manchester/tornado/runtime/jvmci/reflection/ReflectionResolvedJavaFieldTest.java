@@ -31,7 +31,7 @@ import java.lang.reflect.Modifier;
 
 import org.junit.Test;
 
-import jdk.vm.ci.meta.ResolvedJavaField;
+import tornado.meta.ResolvedJavaField;
 
 /**
  * Pure-JVM (no-GPU) tests for {@link ReflectionResolvedJavaField}: name/type/modifiers, the

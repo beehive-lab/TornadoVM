@@ -23,9 +23,9 @@ package uk.ac.manchester.tornado.runtime.jvmci.reflection;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
 
-import jdk.vm.ci.meta.JavaType;
-import jdk.vm.ci.meta.ResolvedJavaField;
-import jdk.vm.ci.meta.ResolvedJavaType;
+import tornado.meta.JavaType;
+import tornado.meta.ResolvedJavaField;
+import tornado.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.runtime.jvmci.reflection.ClassfileParser.FieldInfo;
 
 /**

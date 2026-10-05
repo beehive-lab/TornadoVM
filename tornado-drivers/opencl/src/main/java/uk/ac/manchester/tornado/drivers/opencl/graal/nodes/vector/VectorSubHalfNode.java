@@ -21,7 +21,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector;
 
-import jdk.vm.ci.meta.Value;
+import tornado.meta.Value;
 import tornado.graal.compiler.core.common.LIRKind;
 import tornado.graal.compiler.graph.NodeClass;
 import tornado.graal.compiler.lir.Variable;

@@ -22,9 +22,9 @@
 
 package uk.ac.manchester.tornado.drivers.cuda.graal;
 
-import jdk.vm.ci.meta.JavaType;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.Signature;
+import tornado.meta.JavaType;
+import tornado.meta.ResolvedJavaMethod;
+import tornado.meta.Signature;
 
 /**
  * Recognises tile kernels and holds the small amount of shared vocabulary the CUDA Tile path

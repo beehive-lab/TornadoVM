@@ -63,7 +63,7 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCL
 import tornado.graal.compiler.core.common.LIRKind;
 import tornado.graal.compiler.lir.Variable;
 
-import jdk.vm.ci.meta.Value;
+import tornado.meta.Value;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 

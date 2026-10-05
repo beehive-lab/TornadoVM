@@ -38,7 +38,7 @@ import tornado.graal.compiler.nodes.StructuredGraph.ScheduleResult;
 import tornado.graal.compiler.nodes.cfg.HIRBlock;
 import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 
-import jdk.vm.ci.code.TargetDescription;
+import tornado.meta.code.TargetDescription;
 
 public class MetalLIRGenerationPhase extends LIRPhase<MetalLIRGenerationPhase.LIRGenerationContext> {
 

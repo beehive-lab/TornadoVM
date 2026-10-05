@@ -71,12 +71,12 @@ import tornado.graal.compiler.phases.common.DeadCodeEliminationPhase;
 import tornado.graal.compiler.phases.tiers.HighTierContext;
 import tornado.graal.compiler.phases.util.Providers;
 
-import jdk.vm.ci.code.RegisterConfig;
-import jdk.vm.ci.meta.Assumptions;
-import jdk.vm.ci.meta.DefaultProfilingInfo;
-import jdk.vm.ci.meta.ProfilingInfo;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.TriState;
+import tornado.meta.code.RegisterConfig;
+import tornado.meta.Assumptions;
+import tornado.meta.DefaultProfilingInfo;
+import tornado.meta.ProfilingInfo;
+import tornado.meta.ResolvedJavaMethod;
+import tornado.meta.TriState;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.drivers.metal.MetalDeviceContext;
 import uk.ac.manchester.tornado.drivers.metal.MetalTargetDescription;

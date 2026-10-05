@@ -25,7 +25,7 @@ import java.lang.reflect.Field;
 
 import sun.misc.Unsafe;
 
-import jdk.vm.ci.meta.JavaKind;
+import tornado.meta.JavaKind;
 
 /**
  * JDK-neutral view of the HotSpot object/array memory layout needed to marshal

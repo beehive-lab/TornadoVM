@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.mm;
 
-import jdk.vm.ci.meta.JavaKind;
+import tornado.meta.JavaKind;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;

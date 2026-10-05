@@ -28,7 +28,7 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimp
 import tornado.graal.compiler.code.DataSection.Data;
 import tornado.graal.compiler.lir.asm.DataBuilder;
 
-import jdk.vm.ci.meta.Constant;
+import tornado.meta.Constant;
 
 public class MetalDataBuilder extends DataBuilder {
 

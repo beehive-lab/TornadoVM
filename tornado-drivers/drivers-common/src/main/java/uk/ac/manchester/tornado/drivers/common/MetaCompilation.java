@@ -41,7 +41,7 @@
  */
 package uk.ac.manchester.tornado.drivers.common;
 
-import jdk.vm.ci.code.InstalledCode;
+import tornado.meta.code.InstalledCode;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class MetaCompilation {

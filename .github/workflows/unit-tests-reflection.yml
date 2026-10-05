@@ -11,11 +11,9 @@ name: No-GPU Unit Tests — reflection + CUDA codegen [JDK 22-27]
 # and this proves the jdk22plus profile BUILDS on every JDK. The matrix axis is therefore the host
 # JDK, not the profile -- there is only one profile.
 #
-# Each host still gives the reflection layer a different jdk.internal.vm.ci to sit on:
-#   JDK 22-26  native module, patched at run time with the frozen graalJars/jvmci-21.0.2.jar
-#   JDK 27     JVMCI removed from the platform entirely; supplied as the vendored tornado.jvmci
-#              application module (bin/build_jvmci_module.py)
-# A regression specific to one of those shapes would stay green forever if only one JDK ran.
+# The reflection layer sits on tornado-meta on every host, but each host JDK has its own
+# reflection, class-file and Unsafe behaviour (and 22-26 still ship a JVMCI module TornadoVM must
+# not touch), so a regression specific to one JDK would stay green forever if only one JDK ran.
 #
 # The CUDA code-generator tests (tornado-drivers/cuda/src/test) ride along here rather than in
 # their own workflow. They build LIR by hand and run the code-generator passes over it, so they
@@ -53,35 +51,19 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # One profile, every host JDK from the floor up. Each also installs JDK 21 alongside the
-          # host: build_jvmci_module.py (invoked by pull_graal_jars) needs a JDK 21 runtime image to
-          # source the frozen jdk.vm.ci.* SPI from, whatever the build JDK is. Listing 21 first and
-          # the host last matters -- actions/setup-java points JAVA_HOME at the LAST JDK installed,
-          # and bin/compile checks JAVA_HOME against the profile's floor.
+          # One profile, every host JDK from the floor up.
           - profile: jdk22plus
-            setup_java_version: |
-              21
-              22
+            setup_java_version: '22'
           - profile: jdk22plus
-            setup_java_version: |
-              21
-              23
+            setup_java_version: '23'
           - profile: jdk22plus
-            setup_java_version: |
-              21
-              24
+            setup_java_version: '24'
           - profile: jdk22plus
-            setup_java_version: |
-              21
-              25
+            setup_java_version: '25'
           - profile: jdk22plus
-            setup_java_version: |
-              21
-              26
+            setup_java_version: '26'
           - profile: jdk22plus
-            setup_java_version: |
-              21
-              27-ea
+            setup_java_version: '27-ea'
     steps:
       - uses: actions/checkout@v4
 
@@ -93,9 +75,6 @@ jobs:
 
       - name: Report the host JDK under test
         run: java -version
-
-      - name: Point JVMCI_SOURCE_JDK at the co-installed JDK 21
-        run: echo "JVMCI_SOURCE_JDK=$JAVA_HOME_21_X64" >> "$GITHUB_ENV"
 
       - name: Install native build dependencies
         run: |

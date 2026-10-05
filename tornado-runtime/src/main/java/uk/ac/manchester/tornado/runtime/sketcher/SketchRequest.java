@@ -28,7 +28,7 @@ import tornado.graal.compiler.phases.util.Providers;
 
 import java.util.Set;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier;
 
 public class SketchRequest {

@@ -25,17 +25,17 @@ import java.lang.reflect.Field;
 
 import sun.misc.Unsafe;
 
-import jdk.vm.ci.meta.DeoptimizationAction;
-import jdk.vm.ci.meta.DeoptimizationReason;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.ResolvedJavaField;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.meta.Signature;
-import jdk.vm.ci.meta.SpeculationLog;
-import jdk.vm.ci.meta.SpeculationLog.Speculation;
+import tornado.meta.DeoptimizationAction;
+import tornado.meta.DeoptimizationReason;
+import tornado.meta.JavaConstant;
+import tornado.meta.JavaKind;
+import tornado.meta.MetaAccessProvider;
+import tornado.meta.ResolvedJavaField;
+import tornado.meta.ResolvedJavaMethod;
+import tornado.meta.ResolvedJavaType;
+import tornado.meta.Signature;
+import tornado.meta.SpeculationLog;
+import tornado.meta.SpeculationLog.Speculation;
 import uk.ac.manchester.tornado.runtime.jvmci.reflection.ReflectionUniverse;
 
 /**

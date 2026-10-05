@@ -37,7 +37,7 @@ import org.junit.Test;
 import tornado.graal.compiler.lir.LIRInstruction;
 import tornado.graal.compiler.lir.Variable;
 
-import jdk.vm.ci.meta.Value;
+import tornado.meta.Value;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDAGlobalLoadBatching;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PureRegisterComputation;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt.LoadStmt;

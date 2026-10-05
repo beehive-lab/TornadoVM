@@ -31,8 +31,8 @@ import java.lang.reflect.Method;
 
 import org.junit.Test;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.Signature;
+import tornado.meta.ResolvedJavaMethod;
+import tornado.meta.Signature;
 
 /**
  * Pure-JVM (no-GPU) tests for {@link ReflectionResolvedJavaMethod}: name/signature/modifiers, the

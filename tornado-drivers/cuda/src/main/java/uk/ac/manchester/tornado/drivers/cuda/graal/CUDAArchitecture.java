@@ -21,8 +21,8 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.graal;
 
-import static jdk.vm.ci.code.MemoryBarriers.LOAD_STORE;
-import static jdk.vm.ci.code.MemoryBarriers.STORE_STORE;
+import static tornado.meta.code.MemoryBarriers.LOAD_STORE;
+import static tornado.meta.code.MemoryBarriers.STORE_STORE;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssemblerConstants.ATOMICS_REGION_NAME;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssemblerConstants.CONSTANT_REGION_NAME;
@@ -34,10 +34,10 @@ import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssemblerConst
 import java.nio.ByteOrder;
 import java.util.Set;
 
-import jdk.vm.ci.code.Architecture;
-import jdk.vm.ci.code.Register.RegisterCategory;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.PlatformKind;
+import tornado.meta.code.Architecture;
+import tornado.meta.code.Register.RegisterCategory;
+import tornado.meta.JavaKind;
+import tornado.meta.PlatformKind;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.common.architecture.ArchitectureRegister;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
@@ -102,7 +102,7 @@ public class CUDAArchitecture extends Architecture {
     }
 
     /*
-     * We use jdk.vm.ci.amd64.AMD64.CPUFeature as a type parameter because the
+     * We use tornado.meta.amd64.AMD64.CPUFeature as a type parameter because the
      * return type of Architecture::getFeatures in JVMCI of JDK 17 is Set<? extends
      * CPUFeatureName>. The method Architecture::getFeatures does not exist in the
      * JVMCI of JDK 11, but the method getFeatures is implemented for each backend
@@ -111,7 +111,7 @@ public class CUDAArchitecture extends Architecture {
      * the source code. One in which CPUFeature extends CPUFeatureName for JDK 17
      * and another in which it does not for JDK 11.
      */
-    public Set<jdk.vm.ci.amd64.AMD64.CPUFeature> getFeatures() {
+    public Set<tornado.meta.amd64.AMD64.CPUFeature> getFeatures() {
         TornadoInternalError.unimplemented();
         return null;
     }

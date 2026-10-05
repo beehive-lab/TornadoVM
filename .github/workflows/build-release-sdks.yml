@@ -171,8 +171,6 @@ jobs:
       VERSION: ${{ needs.preflight.outputs.version }}
       VERSION_TAG: ${{ needs.preflight.outputs.version_tag }}
       DRAFT_RELEASE_TEST: ${{ needs.preflight.outputs.draft_release_test }}
-      # JDK 21 runtime image the vendored jvmci module is extracted from (nothing is built with it).
-      JVMCI_SOURCE_JDK_HOME: /opt/jenkins/jdks/jdk-21.0.11+10/Contents/Home
       # jdk22plus (bin/compile's JDK_FLOOR) floors at JDK 22 and is built once for every
       # JDK from 22 up — any JDK >= 22 here produces an identical artifact, so this is pinned to
       # 25 purely to match the build JDK build-test-platform.yml already uses, not a requirement.
@@ -217,7 +215,6 @@ jobs:
             --version "$VERSION_TAG" \
             --output-dir "$RELEASE_ARCHIVES_DIR" \
             --draft-release-test "$DRAFT_RELEASE_TEST" \
-            --jvmci-source-jdk "$JVMCI_SOURCE_JDK_HOME" \
             --jdk22plus-home "$JDK22PLUS_HOME"
 
       - name: List produced archives
@@ -257,8 +254,6 @@ jobs:
       VERSION: ${{ needs.preflight.outputs.version }}
       VERSION_TAG: ${{ needs.preflight.outputs.version_tag }}
       DRAFT_RELEASE_TEST: ${{ needs.preflight.outputs.draft_release_test }}
-      # JDK 21 runtime image the vendored jvmci module is extracted from (nothing is built with it).
-      JVMCI_SOURCE_JDK_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
       # jdk22plus (bin/compile's JDK_FLOOR) floors at JDK 22 and is built once for every
       # JDK from 22 up — any JDK >= 22 here produces an identical artifact, so this is pinned to
       # 25 purely to match the build JDK build-test-platform.yml already uses, not a requirement.
@@ -299,7 +294,6 @@ jobs:
             --version "$VERSION_TAG" \
             --output-dir "$RELEASE_ARCHIVES_DIR" \
             --draft-release-test "$DRAFT_RELEASE_TEST" \
-            --jvmci-source-jdk "$JVMCI_SOURCE_JDK_HOME" \
             --jdk22plus-home "$JDK22PLUS_HOME"
 
       - name: List produced archives
@@ -339,18 +333,10 @@ jobs:
       VERSION: ${{ needs.preflight.outputs.version }}
       VERSION_TAG: ${{ needs.preflight.outputs.version_tag }}
       DRAFT_RELEASE_TEST: ${{ needs.preflight.outputs.draft_release_test }}
-      # JDK 21 runtime image the vendored jvmci module is extracted from (nothing is built with it).
-      JVMCI_SOURCE_JDK_HOME: 'C:\jdks\jdk21'
       # jdk22plus (bin/compile's JDK_FLOOR) floors at JDK 22 and is built once for every
       # JDK from 22 up — any JDK >= 22 here produces an identical artifact, so this is pinned to
       # 25 purely to match the build JDK build-test-platform.yml already uses, not a requirement.
       JDK22PLUS_HOME: 'C:\jdks\jdk25'
-      # The build vendors jdk.internal.vm.ci from a real JDK 21 runtime
-      # image (bin/build_jvmci_module.py, via pull_graal_jars.py). That script reads
-      # JVMCI_SOURCE_JDK and otherwise falls back to a hardcoded ~/.sdkman path that does not
-      # exist on Windows, so the jdk22plus build fails with "no runtime image at ...; set
-      # JVMCI_SOURCE_JDK to a JDK 21 home". Point it at the JDK 21 already on this runner.
-      JVMCI_SOURCE_JDK: 'C:\jdks\jdk21'
       RELEASE_ARCHIVES_DIR: 'C:\release-archives'
       PLATFORM_DIR: windows-amd64
       VENV_PATH: '${{ github.workspace }}\venv-build-sdks'
@@ -410,7 +396,6 @@ jobs:
             --version %VERSION_TAG% ^
             --output-dir "%RELEASE_ARCHIVES_DIR%" ^
             --draft-release-test %DRAFT_RELEASE_TEST% ^
-            --jvmci-source-jdk "%JVMCI_SOURCE_JDK_HOME%" ^
             --jdk22plus-home "%JDK22PLUS_HOME%"
 
       - name: List produced archives

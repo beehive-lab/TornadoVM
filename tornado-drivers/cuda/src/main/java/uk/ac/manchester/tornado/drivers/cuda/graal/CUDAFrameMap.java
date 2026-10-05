@@ -25,9 +25,9 @@ import tornado.graal.compiler.core.common.LIRKind;
 import tornado.graal.compiler.core.common.NumUtil;
 import tornado.graal.compiler.lir.framemap.FrameMap;
 
-import jdk.vm.ci.code.CodeCacheProvider;
-import jdk.vm.ci.code.RegisterConfig;
-import jdk.vm.ci.code.StackSlot;
+import tornado.meta.code.CodeCacheProvider;
+import tornado.meta.code.RegisterConfig;
+import tornado.meta.code.StackSlot;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
 
 // @formatter:off

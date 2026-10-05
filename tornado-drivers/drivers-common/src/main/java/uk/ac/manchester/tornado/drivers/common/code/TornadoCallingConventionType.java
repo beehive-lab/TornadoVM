@@ -20,7 +20,7 @@
  */
 package uk.ac.manchester.tornado.drivers.common.code;
 
-import jdk.vm.ci.code.CallingConvention;
+import tornado.meta.code.CallingConvention;
 
 /**
  * Calling-convention kinds for kernel entry points and device-side calls. TornadoVM's register

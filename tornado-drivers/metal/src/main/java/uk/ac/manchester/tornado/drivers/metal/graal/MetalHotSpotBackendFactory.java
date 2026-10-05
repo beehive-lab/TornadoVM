@@ -41,8 +41,8 @@ import tornado.graal.compiler.replacements.StandardGraphBuilderPlugins;
 import tornado.graal.compiler.replacements.classfile.ClassfileBytecodeProvider;
 import tornado.graal.compiler.word.WordTypes;
 
-import jdk.vm.ci.meta.ConstantReflectionProvider;
-import jdk.vm.ci.meta.MetaAccessProvider;
+import tornado.meta.ConstantReflectionProvider;
+import tornado.meta.MetaAccessProvider;
 import uk.ac.manchester.tornado.drivers.metal.MetalContextInterface;
 import uk.ac.manchester.tornado.drivers.metal.MetalDeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.metal.MetalTargetDescription;

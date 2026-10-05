@@ -27,16 +27,16 @@ import java.lang.reflect.Modifier;
 
 import tornado.graal.compiler.api.replacements.SnippetReflectionProvider;
 
-import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.ConstantReflectionProvider;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.JavaType;
-import jdk.vm.ci.meta.MemoryAccessProvider;
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.MethodHandleAccessProvider;
-import jdk.vm.ci.meta.ResolvedJavaField;
-import jdk.vm.ci.meta.ResolvedJavaType;
+import tornado.meta.Constant;
+import tornado.meta.ConstantReflectionProvider;
+import tornado.meta.JavaConstant;
+import tornado.meta.JavaKind;
+import tornado.meta.JavaType;
+import tornado.meta.MemoryAccessProvider;
+import tornado.meta.MetaAccessProvider;
+import tornado.meta.MethodHandleAccessProvider;
+import tornado.meta.ResolvedJavaField;
+import tornado.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.runtime.jvmci.reflection.ReflectionResolvedJavaField;
 import uk.ac.manchester.tornado.runtime.jvmci.reflection.ReflectionResolvedJavaType;
 import uk.ac.manchester.tornado.runtime.jvmci.reflection.ReflectionUniverse;

@@ -129,7 +129,8 @@ def unusable_relocated_jar_reason(jar_path):
          major.minor version" while the boot layer is being created.
       2. The relocation must be complete. Any surviving org.graalvm.* package splits with
          a JDK-bundled jdk.internal.vm.compiler (GraalVM JDKs ship one) and kills the boot
-         layer with LayerInstantiationException.
+         layer with LayerInstantiationException; any surviving jdk.vm.ci.* reference needs
+         the JDK's JVMCI, which TornadoVM no longer uses.
 
     Returns a human-readable reason to rebuild, or None if the jar is good to reuse.
     """
@@ -138,11 +139,13 @@ def unusable_relocated_jar_reason(jar_path):
         return "JAVA_HOME is not set"
 
     probe = subprocess.run([os.path.join(java_home, "bin", "jar"), "--describe-module", "--file", jar_path],
-                           stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
+                           stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if probe.returncode != 0:
         # First stderr line carries the exception; the rest is a stack trace.
         detail = next((ln.strip() for ln in probe.stderr.splitlines() if ln.strip()), "unreadable module descriptor")
         return f"not readable by the build JDK ({detail})"
+    if "requires tornado.meta" not in probe.stdout:
+        return "built against the JDK's JVMCI rather than the tornado.meta module"
 
     with zipfile.ZipFile(jar_path) as staged:
         unrelocated = sorted({os.path.dirname(name).replace("/", ".")
@@ -168,17 +171,12 @@ def main(jdk=None):
 
     logger.info("Download complete.")
 
-    # Build and stage the vendored jvmci module (jdk22-26 patch-module it; jdk27 has no
-    # platform jvmci at all). build_jvmci_module stages graalJars/jvmci-<ver>.jar (shipped by the
-    # assembly to share/java/jvmci) and installs tornado.jvmci:jvmci to the local Maven repository.
-    #
-    # This MUST run before the Graal-relocation step below: on jdk27 the platform has no
-    # jdk.internal.vm.ci module at all, so build_graal_module's jdeps/javac calls can only
-    # resolve it from this vendored jar (staged here) rather than via --add-modules against
-    # the running JDK's own system modules.
-    logger.info(f"Building/staging vendored {CYAN}jdk.internal.vm.ci{RESET} module...")
-    import build_jvmci_module
-    build_jvmci_module.build(jdk=jdk)
+    # The vendored jvmci jar of earlier builds is gone: tornado-meta replaces it. Drop any copy
+    # left in graalJars/, since the assembly ships whatever sits there.
+    for name in os.listdir(TARGET_DIR):
+        if name.startswith("jvmci-") and name.endswith(".jar"):
+            logger.info(f"Removing the obsolete vendored jvmci jar {name}.")
+            os.remove(os.path.join(TARGET_DIR, name))
 
     # Relocate the Graal compiler off the jdk.* namespace into the vendored module
     # `tornado.graal` so it can live on the regular --module-path (no upgrade-module-path).
@@ -198,7 +196,7 @@ def main(jdk=None):
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="Download/stage the vendored Graal and jvmci jars.")
+    parser = argparse.ArgumentParser(description="Download/stage the vendored Graal jars.")
     parser.add_argument("--jdk", default=None,
                         help="Target JDK profile (jdk22plus)")
     args = parser.parse_args()

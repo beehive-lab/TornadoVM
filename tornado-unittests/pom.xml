@@ -105,7 +105,6 @@
                     <arguments>
                         <argument>-server</argument>
                         <argument>-XX:+UnlockExperimentalVMOptions</argument>
-                        <argument>-XX:+EnableJVMCI</argument>
                         <argument>-XX:-UseCompressedClassPointers</argument>
                         <argument>-Djava.library.path=${env.TORNADOVM_HOME}/lib</argument>
                         <argument>--module-path=.:${env.TORNADOVM_HOME}/share/java/tornado:${env.TORNADOVM_HOME}/share/java/graalJars</argument>

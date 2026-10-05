@@ -78,11 +78,11 @@ import tornado.graal.compiler.nodes.util.GraphUtil;
 import tornado.graal.compiler.replacements.InlineDuringParsingPlugin;
 import org.graalvm.word.LocationIdentity;
 
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.RawConstant;
-import jdk.vm.ci.meta.ResolvedJavaField;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.meta.JavaConstant;
+import tornado.meta.JavaKind;
+import tornado.meta.RawConstant;
+import tornado.meta.ResolvedJavaField;
+import tornado.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.DeviceKernel;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.enums.DeviceLaunchMode;
@@ -359,8 +359,8 @@ public class MetalGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
                 receiver.get(true);
-                jdk.vm.ci.meta.MetaAccessProvider metaAccess = b.getMetaAccess();
-                jdk.vm.ci.meta.ResolvedJavaType resolvedElementType = metaAccess.lookupJavaType(byte.class);
+                tornado.meta.MetaAccessProvider metaAccess = b.getMetaAccess();
+                tornado.meta.ResolvedJavaType resolvedElementType = metaAccess.lookupJavaType(byte.class);
                 LocalArrayNode localArrayNode = new LocalArrayNode(MetalArchitecture.localSpace, resolvedElementType, size);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;

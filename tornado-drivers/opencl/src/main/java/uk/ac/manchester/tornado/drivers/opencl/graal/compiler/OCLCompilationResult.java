@@ -27,7 +27,7 @@ import java.util.Set;
 
 import tornado.graal.compiler.code.CompilationResult;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 

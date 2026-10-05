@@ -22,9 +22,9 @@
 
 package uk.ac.manchester.tornado.drivers.cuda.graal.compiler.plugins;
 
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.meta.JavaConstant;
+import tornado.meta.JavaKind;
+import tornado.meta.ResolvedJavaMethod;
 import tornado.graal.compiler.nodes.PiNode;
 import tornado.graal.compiler.nodes.ValueNode;
 import tornado.graal.compiler.nodes.ValuePhiNode;

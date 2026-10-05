@@ -20,8 +20,8 @@
  */
 package uk.ac.manchester.tornado.runtime.jvmci;
 
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
+import tornado.meta.JavaConstant;
+import tornado.meta.JavaKind;
 
 /**
  * A JDK-neutral object {@link JavaConstant} backed by a plain Java reference,

@@ -54,9 +54,9 @@ import tornado.graal.compiler.nodes.cfg.ControlFlowGraph;
 import tornado.graal.compiler.nodes.cfg.HIRBlock;
 import tornado.graal.compiler.options.OptionValues;
 
-import jdk.vm.ci.code.Register;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.Value;
+import tornado.meta.code.Register;
+import tornado.meta.ResolvedJavaMethod;
+import tornado.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.metal.MetalDeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssembler;

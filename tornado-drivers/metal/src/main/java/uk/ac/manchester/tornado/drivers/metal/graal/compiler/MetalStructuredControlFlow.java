@@ -34,7 +34,7 @@ import tornado.graal.compiler.nodes.cfg.HIRBlock;
 import tornado.graal.compiler.nodes.extended.IntegerSwitchNode;
 import uk.ac.manchester.tornado.drivers.common.compiler.cfg.PostDominators;
 
-import jdk.vm.ci.meta.JavaConstant;
+import tornado.meta.JavaConstant;
 import uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssembler;
 import uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssemblerConstants;
 

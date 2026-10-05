@@ -21,8 +21,8 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.compiler;
 
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.ResolvedJavaField;
+import tornado.meta.JavaConstant;
+import tornado.meta.ResolvedJavaField;
 import tornado.graal.compiler.core.common.spi.ConstantFieldProvider;
 
 public class TornadoConstantFieldProvider implements ConstantFieldProvider {

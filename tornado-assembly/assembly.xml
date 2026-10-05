@@ -147,19 +147,6 @@
             </includes>
             <fileMode>0644</fileMode>
         </fileSet>
-        <fileSet>
-            <directory>../graalJars</directory>
-            <!-- Vendored jdk.internal.vm.ci (JDK-21 jvmci repackaged as a same-named
-                 application module by bin/build_jvmci_module.py). Shipped to a SEPARATE
-                 directory: the tornado launcher adds it to the module-path ONLY on JDK 27+
-                 where the platform no longer provides jdk.internal.vm.ci. On JDK <=26 a
-                 module of the same name would collide with the platform module. -->
-            <outputDirectory>share/java/jvmci</outputDirectory>
-            <includes>
-                <include>jvmci-*.jar</include>
-            </includes>
-            <fileMode>0644</fileMode>
-        </fileSet>
     </fileSets>
     <moduleSets>
         <moduleSet>
@@ -168,6 +155,7 @@
             <!-- Now, select which projects to include in this module-set. -->
             <includes>
                 <include>io.github.beehive-lab:tornado-api</include>
+                <include>io.github.beehive-lab:tornado-meta</include>
                 <include>io.github.beehive-lab:tornado-runtime</include>
                 <include>io.github.beehive-lab:tornado-annotation</include>
                 <include>io.github.beehive-lab:tornado-matrices</include>

@@ -25,11 +25,8 @@ longer supported.
   code when the CUDA SDK variant is built
 
 ### macOS and Linux — sdkman with Temurin JDKs
-The script resolves JDK paths automatically from sdkman:
-
-- JDK 25 builds the SDK (any JDK >= 22 works; 25 is pinned for reproducibility).
-- JDK 21 is only read, never built with: the vendored jvmci module is extracted
-  from its runtime image.
+The script resolves the build JDK automatically from sdkman: JDK 25 builds the
+SDK (any JDK >= 22 works; 25 is pinned for reproducibility).
 
 1. Install sdkman if not already present:
    ```bash
@@ -37,19 +34,18 @@ The script resolves JDK paths automatically from sdkman:
    source ~/.sdkman/bin/sdkman-init.sh
    ```
 
-2. Install the Temurin JDKs:
+2. Install the Temurin JDK:
    ```bash
    sdk install java 25.0.2-tem    # or whatever the latest 25.x patch is
-   sdk install java 21.0.10-tem   # jvmci source image only
    ```
 
-   The script picks the newest installed patch version for each major
-   automatically, so the exact identifiers above are examples only.
+   The script picks the newest installed patch version automatically, so the
+   exact identifier above is an example only.
 
 ### Windows
-sdkman is not available on Windows. Supply both JDK paths via command-line
-flags (see usage below). Download Temurin JDK 25 and JDK 21 from
-[Adoptium](https://adoptium.net) and note the installation paths.
+sdkman is not available on Windows. Supply the JDK path via a command-line
+flag (see usage below). Download Temurin JDK 25 from
+[Adoptium](https://adoptium.net) and note the installation path.
 
 ---
 
@@ -103,22 +99,20 @@ Optionally specify a different output directory:
 python3 scripts/build-release-sdks.py --version v4.0.0 --output-dir /tmp/tornadovm-release
 ```
 
-To override the sdkman auto-detection and point to specific JDK installations:
+To override the sdkman auto-detection and point to a specific JDK installation:
 
 ```bash
 python3 scripts/build-release-sdks.py --version v4.0.0 \
-    --jdk22plus-home /path/to/jdk-25 \
-    --jvmci-source-jdk /path/to/jdk-21
+    --jdk22plus-home /path/to/jdk-25
 ```
 
 ### Windows
 
-Both `--jdk22plus-home` and `--jvmci-source-jdk` are required on Windows:
+`--jdk22plus-home` is required on Windows:
 
 ```bat
 python scripts\build-release-sdks.py --version v4.0.0 ^
-    --jdk22plus-home "C:\Program Files\Eclipse Adoptium\jdk-25.0.x.y-hotspot" ^
-    --jvmci-source-jdk "C:\Program Files\Eclipse Adoptium\jdk-21.0.x.y-hotspot"
+    --jdk22plus-home "C:\Program Files\Eclipse Adoptium\jdk-25.0.x.y-hotspot"
 ```
 
 On restricted/managed Windows machines that block running unsigned executables,
@@ -130,7 +124,6 @@ wrappers, and the SDK validation skips the `tornado.exe` smoke checks.
 ```bat
 python scripts\build-release-sdks.py --version v4.0.0 ^
     --jdk22plus-home "C:\jdks\jdk25" ^
-    --jvmci-source-jdk "C:\jdks\jdk21" ^
     --skip-windows-executables
 ```
 
@@ -141,8 +134,8 @@ python scripts\build-release-sdks.py --version v4.0.0 ^
 The `.github/workflows/build-release-sdks.yml` workflow runs this script on the
 self-hosted macOS, Linux, and Windows runners. It is dispatched by the
 finalize-release workflow, or manually via **workflow_dispatch**. The runners'
-JDK paths are configured in the workflow (`JDK22PLUS_HOME` /
-`JVMCI_SOURCE_JDK_HOME`); update them there if a runner layout changes.
+JDK paths are configured in the workflow (`JDK22PLUS_HOME`); update them there if
+a runner layout changes.
 
 ---
 
@@ -153,7 +146,6 @@ JDK paths are configured in the workflow (`JDK22PLUS_HOME` /
 | `--version VERSION` | Yes | — | Release tag (e.g. `v4.0.0`) |
 | `--output-dir DIR` | No | `release-sdks/` | Root directory for collected SDK archives |
 | `--jdk22plus-home PATH` | Windows only | auto (sdkman, JDK 25) | JDK >= 22 used to build the SDKs |
-| `--jvmci-source-jdk PATH` | Windows only | auto (sdkman, JDK 21) | JDK 21 whose runtime image the vendored jvmci module is extracted from |
 | `--skip-windows-executables` | No | off | Windows only: don't build/run the native `.exe` wrappers (PyInstaller / `tornado.exe` / `zello_world`); ship the `.py` launchers instead |
 
 ---

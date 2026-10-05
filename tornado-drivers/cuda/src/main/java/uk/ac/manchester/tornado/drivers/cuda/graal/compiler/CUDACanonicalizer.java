@@ -27,8 +27,8 @@ import tornado.graal.compiler.graph.Node;
 import tornado.graal.compiler.nodes.spi.SimplifierTool;
 import tornado.graal.compiler.phases.common.CanonicalizerPhase;
 
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.meta.MetaAccessProvider;
+import tornado.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.vector.VectorElementOpNode;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 

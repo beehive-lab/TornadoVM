@@ -82,24 +82,9 @@ __CUTLASS_MODULE__ = "tornado.cutlass"
 # ########################################################
 # JAVA FLAGS
 # ########################################################
-__JAVA_BASE_OPTIONS__ = "-server -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI "
-# JDK 27+ removed JVMCI: -XX:+EnableJVMCI is an unrecognized (fatal) option. TornadoVM sources all metadata via the reflection
-# providers (the only path) against the vendored jdk.internal.vm.ci module.
-__JAVA_BASE_OPTIONS_NO_JVMCI__ = ("-server -XX:+UnlockExperimentalVMOptions "
-                                  # The vendored jdk.vm.ci.services.Services gates on JVMCI_ENABLED,
-                                  # read from VM.getSavedProperties().get("jdk.internal.vm.ci.enabled").
-                                  # HotSpot used to set this when +EnableJVMCI; that flag is gone on
-                                  # JDK 27, so we set the saved property directly (a command-line -D
-                                  # lands in the saved-property map) to satisfy checkJVMCIEnabled().
-                                  "-Djdk.internal.vm.ci.enabled=true "
-                                  # The platform jdk.internal.vm.ci module received these java.base
-                                  # internal packages as qualified exports; our vendored same-named
-                                  # application module must request them explicitly (Services /
-                                  # InitTimer / Unsafe use jdk.internal.misc etc.).
-                                  "--add-exports java.base/jdk.internal.misc=jdk.internal.vm.ci "
-                                  "--add-exports java.base/jdk.internal.vm=jdk.internal.vm.ci "
-                                  "--add-exports java.base/jdk.internal.vm.annotation=jdk.internal.vm.ci "
-                                  "--add-exports java.base/jdk.internal.reflect=jdk.internal.vm.ci ")
+# TornadoVM needs no JVMCI from the JDK: the compiler's metadata API is the tornado.meta module and
+# all class metadata comes from reflection, so the same flags work on every JDK from 22 up.
+__JAVA_BASE_OPTIONS__ = "-server -XX:+UnlockExperimentalVMOptions "
 # We do not satisfy the Graal compiler assertions because we only support a subset of the Java specification.
 # This allows us to have the GraalIR in states which normally would be illegal.
 __GRAAL_ENABLE_ASSERTIONS__ = " -ea -da:org.graalvm.compiler... "
@@ -401,16 +386,6 @@ class TornadoVMRunnerTool():
         self.cmd = os.path.join(self.java_home, "bin", "java")
 
         self.java_version, self.isGraalVM = self.getJavaVersion()
-        # JVMCI was removed from OpenJDK entirely in JDK 27 (openjdk/jdk#30834): no
-        # jdk.internal.vm.ci module and no -XX:+EnableJVMCI flag. On such JDKs TornadoVM
-        # supplies jdk.internal.vm.ci itself as a vendored application module and runs its
-        # compilation pipeline via the reflection provider path.
-        self.jvmci_absent = self.java_version >= 27
-        # JDK 22-26 still ship jdk.internal.vm.ci, but its interfaces have drifted from the
-        # JDK-21 shape the reflection providers are compiled against. Patch the platform module
-        # with the frozen JDK-21 jvmci classes so the runtime SPI matches the compiled code
-        # (uniform vendoring; mirrors the compile-time --patch-module in the jdk25/jdk26 profiles).
-        self.jvmci_patched = 22 <= self.java_version <= 26
         self.sdk_jdk_floor = self.readSDKJDKContract()
         self.checkCompatibilityWithTornadoVM()
         self.platform = sys.platform
@@ -498,8 +473,8 @@ class TornadoVMRunnerTool():
         return floor
 
     def checkCompatibilityWithTornadoVM(self):
-        # TornadoVM runs on arbitrary modern JDKs because Graal (tornado.graal) and, on JDK 27+,
-        # JVMCI (jdk.internal.vm.ci) are vendored as application modules.
+        # TornadoVM runs on arbitrary modern JDKs because Graal (tornado.graal) and its metadata API
+        # (tornado.meta) are vendored as application modules.
         if (self.java_version < self.sdk_jdk_floor):
             print("This TornadoVM SDK requires JDK " + str(self.sdk_jdk_floor)
                   + " or newer (found JDK " + str(self.java_version) + ").")
@@ -1018,32 +993,13 @@ class TornadoVMRunnerTool():
             tornadoFlags = tornadoFlags + " -Djava.ext.dirs=" + self.sdk + "/share/java/tornado "
         else:
             tornadoFlags = tornadoFlags + " --module-path ." + os.pathsep + self.sdk + "/share/java/tornado"
-            # On JDK 27+ the platform no longer ships jdk.internal.vm.ci; add the vendored
-            # same-named module. It must NOT be on the module-path on JDK <=26 (the platform
-            # module of the same name would cause a "two versions of module" resolution error).
-            if (self.jvmci_absent):
-                tornadoFlags = tornadoFlags + os.pathsep + self.sdk + "/share/java/jvmci"
             # The caller's --module-path EXTENDS the module path built above, so it has to be
             # appended while the flag string still ends in the module path itself -- i.e. before
             # any further flag is emitted. It also carries whatever extra JVM options the caller
             # packed into the same argument (the TornadoVM-Ray-Tracer launcher passes its whole
-            # JFLAGS this way), so nothing may be glued onto its tail either; that is why the
-            # jdk22-26 block below is emitted after it rather than before. Appending it after
-            # --patch-module instead handed the caller's entries to the patch: on jdk22-26 the
-            # caller's modules then never reached the module path at all (FindException for
-            # whatever it was adding, e.g. javafx.graphics), while jdk27+ was fine because there
-            # the string still ended in the module path.
+            # JFLAGS this way), so nothing may be glued onto its tail either.
             if (args.module_path != None):
                 tornadoFlags = tornadoFlags + ":" + args.module_path
-
-            # On JDK 22-26 the platform module stays on the module path (resolved via
-            # -XX:+EnableJVMCI); we overlay the frozen JDK-21 classes with --patch-module so the
-            # loaded jdk.vm.ci.* matches what the reflection providers were compiled against. The
-            # patched-in JDK-21 jdk.vm.ci.services.Services.checkJVMCIEnabled() reads the saved
-            # property jdk.internal.vm.ci.enabled, so set it explicitly (HotSpot's own +EnableJVMCI
-            # bookkeeping is not visible to the overlaid classes).
-            if (self.jvmci_patched):
-                tornadoFlags = tornadoFlags + " -Djdk.internal.vm.ci.enabled=true --patch-module jdk.internal.vm.ci=" + self.sdk + "/share/java/jvmci/jvmci-21.0.2.jar"
 
             # share/java/graalJars vendors GraalVM's foundational-API jars (word, collections,
             # truffle-compiler, ...) under their ORIGINAL org.graalvm.* module names - unlike
@@ -1142,14 +1098,9 @@ class TornadoVMRunnerTool():
         template_file = os.path.join(self.sdk, "tornado-argfile.template")
         output_file = os.path.join(self.sdk, "tornado-argfile")
 
-        # Rebuild the template against the JDK running RIGHT NOW rather than reusing the one the
-        # build left behind. The flags it holds are JDK-specific -- -XX:+EnableJVMCI and the jvmci
-        # --patch-module on 22-26, the vendored jvmci module-path entry on 27+ -- while the SDK
-        # itself is not: one jdk22plus SDK serves every JDK from 22 up. Expanding a template
-        # produced under the build JDK therefore hands a JDK-26-shaped command line to a JDK 27
-        # JVM, which rejects it outright ("Unrecognized VM option 'EnableJVMCI'"). Callers already
-        # expect this: kfusion's run.sh regenerates before every launch precisely so the flags
-        # match its JAVA_HOME.
+        # Rebuild the template from the flags the launcher uses RIGHT NOW rather than reusing the
+        # one the build left behind, so the argfile always matches this SDK and launcher. Callers
+        # rely on this: kfusion's run.sh regenerates before every launch.
         self.regenerateArgfileTemplate()
 
         if not os.path.exists(template_file):
@@ -1180,18 +1131,8 @@ class TornadoVMRunnerTool():
                         lines[i] = line.replace(':', ';')
                 expanded = '\n'.join(lines)
 
-            # Stamp the JDK this was generated for. An argfile is a static file, but the flags in
-            # it are NOT JDK-neutral: -XX:+EnableJVMCI is required on JDK <=26 and is a fatal
-            # unrecognized option on 27+, and the jvmci --patch-module applies only on 22-26. A
-            # jdk22plus SDK is explicitly built once and run on many JDKs, so an argfile carried
-            # over from another JDK fails with "Unrecognized VM option 'EnableJVMCI'". Java
-            # argfiles support # comments, so say so in the file itself -- whoever debugs that
-            # error will open this file first.
-            header = (
-                f"# Generated by 'tornado --generate-argfile' for JDK {self.java_version}.\n"
-                f"# JDK-SPECIFIC: re-run 'tornado --generate-argfile' after switching JDK.\n"
-                f"# (EnableJVMCI is required on JDK <=26 and fatal on 27+.)\n"
-            )
+            # Java argfiles support # comments: record where the file came from.
+            header = f"# Generated by 'tornado --generate-argfile' (JDK {self.java_version}).\n"
 
             # Write expanded argfile
             with open(output_file, 'w') as f:
@@ -1259,10 +1200,7 @@ class TornadoVMRunnerTool():
         if (args.enableAssertions):
             javaFlags = javaFlags + __GRAAL_ENABLE_ASSERTIONS__
 
-        if (self.jvmci_absent):
-            javaFlags = javaFlags + " " + __JAVA_BASE_OPTIONS_NO_JVMCI__
-        else:
-            javaFlags = javaFlags + " " + __JAVA_BASE_OPTIONS__
+        javaFlags = javaFlags + " " + __JAVA_BASE_OPTIONS__
 
         javaFlags = javaFlags + tornadoFlags + __TORNADOVM_PROVIDERS__ + " "
 

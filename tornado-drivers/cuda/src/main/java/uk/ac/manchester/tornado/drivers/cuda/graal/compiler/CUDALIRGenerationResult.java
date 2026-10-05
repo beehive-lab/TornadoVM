@@ -37,7 +37,7 @@ import tornado.graal.compiler.lir.Variable;
 import tornado.graal.compiler.lir.framemap.FrameMapBuilder;
 import tornado.graal.compiler.lir.gen.LIRGenerationResult;
 
-import jdk.vm.ci.code.CallingConvention;
+import tornado.meta.code.CallingConvention;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
 
 public class CUDALIRGenerationResult extends LIRGenerationResult {

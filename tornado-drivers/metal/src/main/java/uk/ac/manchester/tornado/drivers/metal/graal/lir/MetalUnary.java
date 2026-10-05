@@ -27,8 +27,8 @@ import tornado.graal.compiler.core.common.LIRKind;
 import tornado.graal.compiler.lir.LIRInstruction.Use;
 import tornado.graal.compiler.lir.Opcode;
 
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.Value;
+import tornado.meta.AllocatableValue;
+import tornado.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.metal.graal.MetalArchitecture;
 import uk.ac.manchester.tornado.drivers.metal.graal.MetalArchitecture.MetalMemoryBase;

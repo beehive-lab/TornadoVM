@@ -24,9 +24,9 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 
-import jdk.vm.ci.meta.JavaType;
-import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.meta.Signature;
+import tornado.meta.JavaType;
+import tornado.meta.ResolvedJavaType;
+import tornado.meta.Signature;
 
 /**
  * Reflection-backed {@link Signature}: parameter and return types derived from

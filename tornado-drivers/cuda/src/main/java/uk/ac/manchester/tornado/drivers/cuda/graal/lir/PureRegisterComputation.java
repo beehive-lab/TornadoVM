@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 
-import jdk.vm.ci.meta.Value;
+import tornado.meta.Value;
 
 /**
  * A LIR statement that computes one value from registers alone.

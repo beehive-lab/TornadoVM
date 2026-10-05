@@ -34,10 +34,10 @@ import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import tornado.graal.compiler.nodes.graphbuilderconf.NodePlugin;
 
-import jdk.vm.ci.meta.JavaKind;
+import tornado.meta.JavaKind;
 import tornado.graal.compiler.nodes.java.NewInstanceNode;
 import uk.ac.manchester.tornado.api.internal.annotations.HalfType;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.drivers.metal.graal.HalfFloatStamp;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalConvertHalfToFloat;
