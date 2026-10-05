@@ -120,3 +120,43 @@ jobs:
 
       - name: Run CUDA code generator unit tests (${{ matrix.profile }})
         run: make test-cuda-codegen
+
+  # A GraalVM native image of a TornadoVM application, built with bin/tornado-native-image and run on
+  # the runner's CPU through PoCL (a CPU OpenCL implementation), so the whole path -- tracing, the image
+  # build, and JIT-compiling and running a kernel inside the image -- is exercised without a GPU.
+  native-image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up GraalVM
+        uses: actions/setup-java@v4
+        with:
+          distribution: graalvm
+          java-version: '25'
+
+      - name: Install native build dependencies and PoCL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ocl-icd-opencl-dev opencl-headers python3-venv pocl-opencl-icd clinfo
+          clinfo -l
+
+      - name: Build TornadoVM (opencl)
+        run: |
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip tqdm psutil
+          make jdk22plus BACKEND=opencl
+
+      - name: Build and run a native image of VectorAddInt
+        run: |
+          SDK="$(ls -d $PWD/dist/*/*/)"; export TORNADOVM_HOME="${SDK%/}"
+          export PATH="$TORNADOVM_HOME/bin:$PATH"
+          tornado --devices
+          tornado-native-image -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt \
+            -o vectoradd --trace "-- 4096"
+          ls -l vectoradd
+          ./vectoradd 4096 | tee run.log
+          grep -q "Result is correct" run.log
+          ! grep -q "Result is wrong" run.log

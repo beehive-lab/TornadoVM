@@ -34,6 +34,10 @@ Example:
         --trace "-Ds0.t0.device=0:0 -- 1024" --trace "-Ds0.t0.device=1:0 -- 1024"
     ./vectoradd 1048576
 
+A class-path application is given with --class-path and --main-class instead of -m:
+    tornado-native-image --class-path app.jar --main-class org.example.Main --add-modules jdk.incubator.vector \
+        -o app --trace "-- --some-argument"
+
 Each --trace is one run of the application on the JVM: JVM options (such as the device to use) go
 before a "--", application arguments after it. Trace every backend and every kernel the image will
 run; a path that no trace exercised may be missing metadata and fail at run time.
@@ -70,7 +74,7 @@ def sdk_flags(tornado_home):
     return flags
 
 
-def application_flags(flags, extra_module_path):
+def application_flags(flags, extra_module_path, extra_modules):
     """Module flags for native-image and the tracing JVM: no JVM-only options, no "." module-path entry,
     and native access for every TornadoVM module (the backends call native code themselves)."""
     out = []
@@ -91,7 +95,7 @@ def application_flags(flags, extra_module_path):
             continue
         if flag == "--add-modules":
             modules = value.split(",")
-            out += [flag, value]
+            out += [flag, ",".join(modules + [m for m in extra_modules if m not in modules])]
             i += 2
             continue
         if flag.startswith("--enable-native-access"):
@@ -108,15 +112,15 @@ def application_flags(flags, extra_module_path):
     return out
 
 
-def trace(java, flags, config_dir, main, spec):
+def trace(java, flags, config_dir, launch, spec):
     tokens = shlex.split(spec)
     if "--" in tokens:
         split = tokens.index("--")
         jvm_options, app_args = tokens[:split], tokens[split + 1:]
     else:
         jvm_options, app_args = [], tokens
-    command = [java, f"-agentlib:native-image-agent=config-merge-dir={config_dir}"] + flags + jvm_options + ["-m", main] + app_args
-    print("[INFO] Tracing: " + " ".join(jvm_options + [main] + app_args))
+    command = [java, f"-agentlib:native-image-agent=config-merge-dir={config_dir}"] + flags + jvm_options + launch + app_args
+    print("[INFO] Tracing: " + " ".join(jvm_options + launch + app_args))
     result = subprocess.run(command)
     if result.returncode != 0:
         fail(f"the traced run exited with {result.returncode}; fix it on the JVM first")
@@ -125,7 +129,10 @@ def trace(java, flags, config_dir, main, spec):
 def main():
     parser = argparse.ArgumentParser(description="Build a GraalVM native image of a TornadoVM application.",
                                      epilog="Arguments after a lone -- are passed to native-image.")
-    parser.add_argument("-m", "--module", required=True, help="main module and class, <module>/<main-class>")
+    parser.add_argument("-m", "--module", default=None, help="main module and class, <module>/<main-class>")
+    parser.add_argument("-cp", "--class-path", default=None, help="class path of a class-path application")
+    parser.add_argument("--main-class", default=None, help="main class of a class-path application")
+    parser.add_argument("--add-modules", default="", help="extra modules to resolve, comma-separated (e.g. jdk.incubator.vector)")
     parser.add_argument("-o", "--output", required=True, help="path of the executable to create")
     parser.add_argument("-p", "--module-path", default=None, help="module path entries of the application")
     parser.add_argument("--trace", action="append", default=[],
@@ -139,6 +146,9 @@ def main():
         split = argv.index("--")
         argv, native_image_extra = argv[:split], argv[split + 1:]
     args = parser.parse_args(argv)
+    if bool(args.module) == bool(args.class_path and args.main_class):
+        fail("give either -m <module>/<main-class>, or --class-path and --main-class")
+    launch = ["-m", args.module] if args.module else ["-cp", args.class_path, args.main_class]
 
     tornado_home = os.environ.get("TORNADOVM_HOME")
     java_home = os.environ.get("JAVA_HOME")
@@ -154,16 +164,17 @@ def main():
 
     config_dir = os.path.abspath(args.config_dir or args.output + "-native-config")
     os.makedirs(config_dir, exist_ok=True)
-    flags = application_flags(sdk_flags(tornado_home), args.module_path)
+    extra_modules = [m for m in args.add_modules.split(",") if m]
+    flags = application_flags(sdk_flags(tornado_home), args.module_path, extra_modules)
 
     if not args.no_trace:
         if not args.trace:
             fail("give at least one --trace run (or --no-trace with an existing --config-dir)")
         for spec in args.trace:
-            trace(java, flags, config_dir, args.module, spec)
+            trace(java, flags, config_dir, launch, spec)
 
     command = [native_image] + flags + ["--no-fallback", f"-H:ConfigurationFileDirectories={config_dir}",
-                                        "-o", args.output, "-m", args.module] + native_image_extra
+                                        "-o", args.output] + launch + native_image_extra
     print("[INFO] Building " + args.output)
     result = subprocess.run(command)
     if result.returncode != 0:
