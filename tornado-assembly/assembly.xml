@@ -172,6 +172,15 @@
             <binaries>
                 <outputDirectory>share/java/tornado</outputDirectory>
                 <unpack>false</unpack>
+                <dependencySets>
+                    <dependencySet>
+                        <!-- The native libraries of the *-jni modules are unpacked into lib/ below;
+                             their -libs jars are not needed on the module path as well. -->
+                        <excludes>
+                            <exclude>*:*:jar:libs</exclude>
+                        </excludes>
+                    </dependencySet>
+                </dependencySets>
             </binaries>
         </moduleSet>
     </moduleSets>
