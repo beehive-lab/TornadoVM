@@ -4,24 +4,50 @@ all: build
 # nmake BACKENDS="<comma_separated_backend_list>"
 BACKEND = opencl
 
-# The only JDK profile. JDK 22 is the floor: one SDK serves every JDK from 22 up.
+# JDK profile for the targets below that do not name one { jdk21, jdk22plus }. jdk21 is an
+# enable-preview SDK pinned to exactly JDK 21; jdk22plus serves every JDK from 22.
+# nmake build JDK_PROFILE=jdk21
 JDK_PROFILE = jdk22plus
+
+build:
+	python bin\compile --jdk $(JDK_PROFILE) --backend $(BACKEND)
+
+jdk21:
+	python bin\compile --jdk jdk21 --backend $(BACKEND)
 
 # jdk25/jdk26/jdk27 are kept as aliases so existing scripts and muscle memory keep working;
 # they all produce the same artifact.
-build jdk22plus jdk25 jdk26 jdk27:
+jdk22plus jdk25 jdk26 jdk27:
 	python bin\compile --jdk jdk22plus --backend $(BACKEND)
 
-rebuild-deps rebuild-deps-jdk22plus rebuild-deps-jdk25 rebuild-deps-jdk26 rebuild-deps-jdk27:
+rebuild-deps:
+	python bin\compile --jdk $(JDK_PROFILE) --rebuild --backend $(BACKEND)
+
+rebuild-deps-jdk21:
+	python bin\compile --jdk jdk21 --rebuild --backend $(BACKEND)
+
+rebuild-deps-jdk22plus rebuild-deps-jdk25 rebuild-deps-jdk26 rebuild-deps-jdk27:
 	python bin\compile --jdk jdk22plus --rebuild --backend $(BACKEND)
 
-mvn-single-threaded mvn-single-threaded-jdk22plus:
+mvn-single-threaded:
+	python bin/compile --jdk $(JDK_PROFILE) --backend $(BACKEND) --mvn_single_threaded
+
+mvn-single-threaded-jdk21:
+	python bin/compile --jdk jdk21 --backend $(BACKEND) --mvn_single_threaded
+
+mvn-single-threaded-jdk22plus:
 	python bin/compile --jdk jdk22plus --backend $(BACKEND) --mvn_single_threaded
 
 cuda:
-	python bin\compile --jdk jdk22plus --backend cuda
+	python bin\compile --jdk $(JDK_PROFILE) --backend cuda
 
-sdk sdk-jdk22plus:
+sdk:
+	python bin\compile --jdk $(JDK_PROFILE) --sdk --backend $(BACKEND)
+
+sdk-jdk21:
+	python bin\compile --jdk jdk21 --sdk --backend $(BACKEND)
+
+sdk-jdk22plus:
 	python bin\compile --jdk jdk22plus --sdk --backend $(BACKEND)
 
 checkstyle:

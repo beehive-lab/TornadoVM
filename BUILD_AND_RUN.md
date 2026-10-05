@@ -108,7 +108,7 @@ Located at the repository root, this file contains:
 Maven configuration file that applies to all Maven builds (both `./mvnw` and `bin/compile`):
 - **Parallel builds**: `-T1.5C` (1.5 threads per CPU core)
 - **Colored output**: `-Dstyle.color=always` for better readability
-- **JDK profile**: none to pass; the `jdk22plus` profile activates on any JDK 22+
+- **JDK profile**: none to pass; `jdk21` activates on JDK 21 and `jdk22plus` on any JDK 22+
 - **Skip Javadoc**: `-Dmaven.javadoc.skip=true` for faster builds
 - **Fail fast**: `-Dfailfast=true` for quicker feedback during development
 - **Timestamps**: Shows build timestamps for performance tracking

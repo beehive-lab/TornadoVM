@@ -53,14 +53,15 @@ RELOCATE_POM = os.path.join(SCRIPT_DIR, "graal-relocate", "pom.xml")
 DROPPED_PROVIDES_SERVICE = "tornado.meta.services.JVMCIServiceLocator"
 ORPHAN_SERVICES_FILE = f"META-INF/services/{DROPPED_PROVIDES_SERVICE}"
 
-# Lowest JDK the SDK has to run on. The module descriptor compiled below must be
+# Lowest JDK any SDK has to run on (the jdk21 SDK), so one tornado.graal jar serves both the jdk21
+# and the jdk22plus SDK. The module descriptor compiled below must be
 # emitted at this release and no higher: a module-info carries the class-file version of the
 # JDK that compiled it, and the JVM reads descriptors under the ordinary backward-compatibility
 # rule, so one built by (say) JDK 27 is unreadable on anything older -- the SDK silently ends up
 # pinned to its own build host ("InvalidModuleDescriptorException: Unsupported major.minor
 # version 71.0"). Everything else in the jar is Graal 23.1.0's own bytecode, which is already
 # old enough to load anywhere.
-RELEASE = 22
+RELEASE = 21
 
 
 def _java_home():

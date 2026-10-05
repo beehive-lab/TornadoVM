@@ -2,7 +2,7 @@ name: 0 - Release Orchestrator [manual]
 
 # Single entry point that dispatches 1-prepare-release.yml. Once the release
 # PR it creates is reviewed and merged, the rest of the chain (finalize →
-# build the jdk22plus SDKs → deploy → publish) runs
+# build the jdk21+jdk22plus SDKs → deploy → publish) runs
 # automatically.
 
 on:
@@ -69,7 +69,7 @@ jobs:
               echo "Prepare workflow now running in test mode: no PR, no tag, no GitHub Release,"
               echo "no Maven Central/SDKMAN pushes. It will dispatch finalize (test) automatically, which"
               echo "dispatches build-release-sdks (test) automatically — the SDKs still get built for real"
-              echo "(jdk22plus), nothing gets uploaded or published."
+              echo "(jdk21 and jdk22plus), nothing gets uploaded or published."
             else
               echo "Prepare workflow now running. It will open a PR for review."
               echo "Merging the PR continues the chain automatically (finalize → build → deploy → publish)."

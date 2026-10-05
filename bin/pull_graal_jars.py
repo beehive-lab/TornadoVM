@@ -148,6 +148,12 @@ def unusable_relocated_jar_reason(jar_path):
     if "requires org.graalvm." in probe.stdout:
         return "depends on separate org.graalvm.* modules instead of carrying them"
 
+    import build_graal_module
+    with zipfile.ZipFile(jar_path) as staged:
+        descriptor = staged.read("module-info.class") if "module-info.class" in staged.namelist() else b""
+    if len(descriptor) < 8 or int.from_bytes(descriptor[6:8], "big") != build_graal_module.RELEASE + 44:
+        return f"module descriptor does not target Java {build_graal_module.RELEASE}, which both SDKs need"
+
     import minimize_graal_jar
     with zipfile.ZipFile(jar_path) as staged:
         names = staged.namelist()

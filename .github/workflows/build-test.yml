@@ -7,15 +7,18 @@ name: Build & Test
 # every leg rebuilt under the JDK it then tested on, so it only ever verified "built on N, runs
 # on N". Here the build jobs publish an SDK artifact and the test jobs consume it unchanged.
 #
-# One SDK exists: jdk22plus, compiled at release 22 with no preview. One artifact for 22, 23, 24,
-# 25, 26, 27 and later; the build JDK is an implementation detail and is pinned in
-# build-test-platform.yml. The SDK records its JDK floor in etc/tornado.jdk, and bin/tornado
-# enforces it.
+# Two SDKs exist, and they are not interchangeable:
+#   jdk21      compiled with enable-preview (FFM is a preview API on 21), which pins the class
+#              files to JDK 21 exactly. Tested on 21 only.
+#   jdk22plus  compiled at release 22 with no preview. One artifact for 22, 23, 24, 25, 26, 27
+#              and later; the build JDK is an implementation detail and is pinned in
+#              build-test-platform.yml.
+# Each SDK records its own contract in etc/tornado.jdk, and bin/tornado enforces it.
 
 # Scope per event (see the plan job, which computes all of it):
 #   pull request            Linux: floor and newest JDK, both backends, full device tests
-#                           macOS: BUILDS ONLY -- one runner cannot serve six jobs per run
-#                           sample apps: once per (platform, backend), on the newest JDK
+#                           macOS: BUILDS ONLY -- one runner cannot serve ten jobs per run
+#                           sample apps: once per (platform, backend, SDK), on each SDK's newest JDK
 #   push to develop         same subset: a merge is not a reason to occupy both machines for an
 #                           hour, and the nightly covers the rest a few hours later
 #   + ci-full-jdk-sweep     label on the PR -> every JDK, macOS tests, apps on every leg
@@ -47,7 +50,7 @@ on:
     - cron: "0 2 * * *"
 
 # One live run per branch. Without this every push to a pull request left its predecessor in the
-# queue, and the queue is the whole cost here: this workflow is 14 jobs on three self-hosted
+# queue, and the queue is the whole cost here: this workflow is 21 jobs on three self-hosted
 # runners that take one job at a time, so a superseded run does not just linger, it delays every
 # other pull request behind it. On 2026-09-18 the repository held 32 unfinished runs and 212
 # unfinished jobs, five of those runs being five different pushes to one branch; jobs sat queued
@@ -167,13 +170,18 @@ jobs:
           build = {"linux": [], "macos": []}
           test = {"linux": [], "macos": []}
           for platform, backend, runner in targets:
-              build[platform].append(dict(platform=platform, backend=backend,
-                                          runner=runner, sdk="jdk22plus"))
+              for sdk in ("jdk21", "jdk22plus"):
+                  build[platform].append(dict(platform=platform, backend=backend,
+                                              runner=runner, sdk=sdk))
               legs = []
+              # jdk21 SDK: preview-compiled, so JDK 21 and nothing else.
+              legs.append(dict(platform=platform, backend=backend, runner=runner,
+                               sdk="jdk21", jdk="jdk21", apps=True))
               for jdk in jdk22plus_runtimes:
                   legs.append(dict(platform=platform, backend=backend, runner=runner,
                                    sdk="jdk22plus", jdk=jdk, apps=full))
-              # The sample apps run on the newest runtime; a full sweep exercises every runtime.
+              # Test each distinct SDK artifact: jdk21 on its only supported runtime,
+              # jdk22plus on the newest runtime. A full sweep exercises every runtime.
               if not full:
                   legs[-1]["apps"] = True
               test[platform].extend(legs)
@@ -181,11 +189,11 @@ jobs:
           for platform in ("linux", "macos"):
               print(f"build_{platform}=" + json.dumps({"include": build[platform]}))
               print(f"test_{platform}=" + json.dumps({"include": test[platform]}))
-          # macOS has ONE runner for what is six jobs per run, and it is the binding constraint on
-          # the whole queue: two builds and four tests, strictly serialised, is a large share
+          # macOS has ONE runner for what is ten jobs per run, and it is the binding constraint on
+          # the whole queue: four builds and six tests, strictly serialised, is about fifty minutes
           # of that machine per run against an arrival rate several times higher. Its tests are
           # therefore reserved for the nightly sweep and for the ci-full-jdk-sweep label, and a
-          # pull request gets the two macOS BUILDS only -- which is what catches the things a
+          # pull request gets the four macOS BUILDS only -- which is what catches the things a
           # macOS-blind change breaks in practice: the Metal and OpenCL native compile, the
           # aarch64 toolchain, and the SDK assembly. Linux keeps its full test matrix on every
           # pull request, on two runners. Metal device coverage moves to full sweeps.

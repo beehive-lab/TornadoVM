@@ -5,7 +5,7 @@
 
 ## Write Java. Run on GPUs. Fast.
 
-TornadoVM is a GPU programming framework for Java that works with JDK 22+ (currently JDK 22-27). It JIT-compiles Java bytecode into **NVIDIA CUDA, OpenCL C, and Apple Metal (MSL)** at runtime, so your existing Java code runs on **NVIDIA GPUs (via CUDA)**, AMD, Intel, and Apple Silicon GPUs, integrated GPUs, and multi-core CPUs. 
+TornadoVM is a GPU programming framework for Java that works with JDK 21+ (currently JDK 21-27). It JIT-compiles Java bytecode into **NVIDIA CUDA, OpenCL C, and Apple Metal (MSL)** at runtime, so your existing Java code runs on **NVIDIA GPUs (via CUDA)**, AMD, Intel, and Apple Silicon GPUs, integrated GPUs, and multi-core CPUs. 
 
 On NVIDIA hardware it goes further: beyond generating CUDA, TornadoVM now calls straight into the **NVIDIA library ecosystem (cuBLAS, cuFFT, cuDNN, cuDF) and exposes Tensor Core `mma.sync` instructions from pure Java**. No CUDA C. No JNI bindings to maintain. No native toolchain in your application. In addition, it has support for Tile Programming [cuTile](https://developer.nvidia.com/cuda/tile) via its **TileContext API**.
 
@@ -193,7 +193,7 @@ TornadoVM is used to accelerate machine learning and deep learning, computer vis
 
 ### Prerequisites
 
-- min **JDK 22** — `JAVA_HOME` must point to it
+- min **JDK 21** — `JAVA_HOME` must point to it (JDK 21 uses the `jdk21` SDK; JDK 22 and newer use `jdk22plus`)
 - GCC/G++ ≥ 13, plus the driver for your target (OpenCL runtime, CUDA Toolkit, or macOS for Metal)
 - For the NVIDIA library tasks (cuBLAS / cuFFT / cuDNN): the **CUDA Toolkit** with the corresponding libraries; for cuDF, RAPIDS libcudf (see `tornado-cudf/README.md`); on systems with multiple toolkits, `/usr/local/cuda` (or `$CUDA_PATH`) is preferred
 
@@ -240,7 +240,7 @@ More examples — NBody, DFT, KMeans, matrix kernels, reductions: [tornado-examp
 
 ## 📦 Use TornadoVM in your project
 
-Maven Central coordinates carry the `-jdk22plus` suffix and work on every JDK from 22 up:
+Maven Central coordinates are per JDK line — pin `-jdk22plus` for JDK 22 and newer, or `-jdk21` for JDK 21:
 
 ```xml
 <dependencies>

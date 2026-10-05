@@ -8,7 +8,7 @@ This directory contains a pre-built TornadoVM SDK distribution. To use TornadoVM
 
 TornadoVM requires the following environment variables to be set:
 
-1. **`JAVA_HOME`**: Path to your Java installation (JDK 22 or later required)
+1. **`JAVA_HOME`**: Path to your Java installation (JDK 21 for the jdk21 SDK, JDK 22 or later for the jdk22plus SDK)
 2. **`TORNADOVM_HOME`**: Path to this SDK installation directory
 3. **`PATH`**: Must include `$TORNADOVM_HOME/bin` (or `%TORNADOVM_HOME%\bin` on Windows)
 
@@ -89,7 +89,7 @@ tornado-test --version
 
 If you encounter issues:
 
-1. Ensure `JAVA_HOME` points to a compatible JDK (JDK 22 or later)
+1. Ensure `JAVA_HOME` points to a compatible JDK (JDK 21 for the jdk21 SDK, JDK 22 or later for jdk22plus)
 2. Verify that all environment variables are correctly set in your current session
 3. Check that your GPU drivers are properly installed for your target backend (OpenCL or CUDA)
 4. Ensure `TORNADOVM_HOME` points to the root directory of this SDK

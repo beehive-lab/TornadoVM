@@ -25,19 +25,21 @@ into a single temporary git worktree, builds the relevant SDKs from it,
 collects the archives, and cleans up — without touching the current working
 branch.
 
-jdk22plus is the only release-facing Maven profile (see bin/compile /
-pom.xml): it floors at JDK 22, carries no preview features, and is built ONCE
-to run unmodified on every JDK from 22 upwards (22, 23, 24, 25, 26, 27, ...).
-JDK 21 is no longer supported — do not add per-major-JDK builds back.
+jdk21 and jdk22plus are the release-facing Maven profiles (see bin/compile /
+pom.xml): jdk21 is compiled with enable-preview (FFM is a preview API on 21)
+and pinned to exactly JDK 21; jdk22plus floors at JDK 22, carries no preview
+features, and is built ONCE to run unmodified on every JDK from 22 upwards
+(22, 23, 24, 25, 26, 27, ...). Do not add per-major-JDK builds past 21.
 
 The committed pom.xml version in the tag carries no JDK suffix (e.g. "4.0.0");
 each produced archive gets the profile token stamped into its filename
 post-build (see _set_jdk_in_name).
 
-SDKs built per platform (via sdkman Temurin or an explicit --jdk22plus-home):
+SDKs built per platform (jdk21 + jdk22plus profiles x backend, via sdkman
+Temurin or an explicit --jdk21-home / --jdk22plus-home):
   - macOS   : opencl, metal
   - Linux   : opencl, cuda, full
-  - Windows : opencl, cuda   (--jdk22plus-home required)
+  - Windows : opencl, cuda   (--jdk21-home and --jdk22plus-home required)
 
 "full" means opencl+cuda combined into a single archive.
 
@@ -53,11 +55,13 @@ Usage:
 
   # Windows (JDK paths required up front):
   python scripts\\build-release-sdks.py --version v4.0.0 ^
+      --jdk21-home "C:\\Path\\To\\jdk-21" ^
       --jdk22plus-home "C:\\Path\\To\\jdk-25"
 
   # Restricted Windows machines that block running unsigned executables
   # (e.g. corporate-managed runners) — skip building/running the .exe wrappers:
   python scripts\\build-release-sdks.py --version v4.0.0 ^
+      --jdk21-home "C:\\Path\\To\\jdk-21" ^
       --jdk22plus-home "C:\\Path\\To\\jdk-25" ^
       --skip-windows-executables
 
@@ -146,7 +150,7 @@ def _find_sdkman_temurin_jdk(major_version, profile):
     ~/.sdkman/candidates/java/.  Returns the full path to the JDK home, or
     None (with a warning) if sdkman or that JDK isn't installed.
 
-    *profile* (e.g. 'jdk22plus') is only used in messaging — the
+    *profile* (e.g. 'jdk21', 'jdk22plus') is only used in messaging — the
     lookup itself is purely by major_version.
     """
     sdkman_java_dir = Path.home() / ".sdkman" / "candidates" / "java"
@@ -188,11 +192,12 @@ def resolve_jdk_home(profile, build_major, override):
 
     *build_major* is the JDK major version used to (a) auto-locate a JDK via
     sdkman on macOS/Linux and (b) name the JDK in Windows messaging. For
-    'jdk22plus' it is just the pinned, reproducible build JDK (25) — any
-    JDK >= 22 builds an equally valid SDK (see module docstring), so pass
-    --jdk22plus-home to use a different one.
+    'jdk21' this is the exact required major (jdk21 is enable-preview and
+    only loads on JDK 21). For 'jdk22plus' it is just the pinned, reproducible
+    build JDK (25) — any JDK >= 22 builds an equally valid SDK (see module
+    docstring), so pass --jdk22plus-home to use a different one.
 
-    - If *override* is given (--jdk22plus-home), use it.
+    - If *override* is given (--jdk21-home / --jdk22plus-home), use it.
     - Otherwise on macOS/Linux look up sdkman for build_major.
     - On Windows an override is mandatory; skipped with instructions if missing.
     """
@@ -243,6 +248,7 @@ BUILDS = {
 # Windows messaging — just the pinned reproducible build JDK, not a requirement:
 # any JDK >= 22 produces an identical artifact.
 JDK_PROFILES = {
+    "jdk21": 21,
     "jdk22plus": 25,
 }
 
@@ -1002,6 +1008,16 @@ def parse_args():
         ),
     )
     parser.add_argument(
+        "--jdk21-home",
+        metavar="PATH",
+        default=None,
+        help=(
+            "Path to a JDK 21 home, used to build the jdk21 profile "
+            "(enable-preview, pinned to exactly JDK 21).  "
+            "Required on Windows; overrides sdkman auto-detection on macOS/Linux."
+        ),
+    )
+    parser.add_argument(
         "--jdk22plus-home",
         metavar="PATH",
         default=None,
@@ -1096,6 +1112,7 @@ def main():
     # be resolved (not provisioned on this builder yet) is skipped with a
     # warning rather than aborting the whole run.
     profile_overrides = {
+        "jdk21": args.jdk21_home,
         "jdk22plus": args.jdk22plus_home,
     }
     validated = []

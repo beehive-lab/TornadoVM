@@ -34,7 +34,17 @@ __WINDOWS__ = "windows"
 # rather than mapped to an all-None entry:
 #   - GraalVM CE has no JDK 26 build; its newest track ("25 Innovation") still bundles JDK 25.
 #   - Mandrel has no JDK 26 build; its newest track (25.0.x) still targets JDK 25.
-#   - Microsoft Build of OpenJDK ships LTS only (25, ...): no JDK 22/23/24/26 builds exist.
+#   - Microsoft Build of OpenJDK ships LTS only (21, 25, ...): no JDK 22/23/24/26 builds exist.
+__JDK21__        = "jdk21"
+__GRAALVM21__    = "graal-jdk-21"
+__MANDREL21__    = "mandrel-jdk-21"
+__CORRETTO21__   = "corretto-jdk-21"
+__MICROSOFT21__  = "microsoft-jdk-21"
+__ZULU21__       = "zulu-jdk-21"
+__TEMURIN21__    = "temurin-jdk-21"
+__SAPMACHINE21__ = "sapmachine-jdk-21"
+__LIBERICA21__   = "liberica-jdk-21"
+
 __JDK22__        = "jdk22"
 __GRAALVM22__    = "graal-jdk-22"
 __MANDREL22__    = "mandrel-jdk-22"
@@ -113,6 +123,133 @@ MAVEN = {
 
 ## JDK
 JDK = {
+    __JDK21__: {
+        __LINUX__: {
+            __X86_64__: "https://download.oracle.com/java/21/latest/jdk-21_linux-x64_bin.tar.gz",
+            __ARM__: "https://download.oracle.com/java/21/latest/jdk-21_linux-aarch64_bin.tar.gz",
+        },
+        __APPLE__: {
+            __X86_64__: "https://download.oracle.com/java/21/latest/jdk-21_macos-x64_bin.tar.gz",
+            __ARM__: "https://download.oracle.com/java/21/latest/jdk-21_macos-aarch64_bin.tar.gz",
+        },
+        __WINDOWS__: {
+            __X86_64__: "https://download.oracle.com/java/21/latest/jdk-21_windows-x64_bin.zip",
+            __ARM__: None,
+        },
+    },
+    __GRAALVM21__: {
+        __LINUX__: {
+            __X86_64__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-21.0.2/graalvm-community-jdk-21.0.2_linux-x64_bin.tar.gz",
+            __ARM__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-21.0.2/graalvm-community-jdk-21.0.2_linux-aarch64_bin.tar.gz",
+        },
+        __APPLE__: {
+            __X86_64__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-21.0.2/graalvm-community-jdk-21.0.2_macos-x64_bin.tar.gz",
+            __ARM__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-21.0.2/graalvm-community-jdk-21.0.2_macos-aarch64_bin.tar.gz",
+        },
+        __WINDOWS__: {
+            __X86_64__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-21.0.2/graalvm-community-jdk-21.0.2_windows-x64_bin.zip",
+            __ARM__: None,
+        },
+    },
+    __CORRETTO21__: {
+        __LINUX__: {
+            __X86_64__: "https://corretto.aws/downloads/latest/amazon-corretto-21-x64-linux-jdk.tar.gz",
+            __ARM__: "https://corretto.aws/downloads/latest/amazon-corretto-21-aarch64-linux-jdk.tar.gz",
+        },
+        __APPLE__: {
+            __X86_64__: "https://corretto.aws/downloads/latest/amazon-corretto-21-x64-macos-jdk.tar.gz",
+            __ARM__: "https://corretto.aws/downloads/latest/amazon-corretto-21-aarch64-macos-jdk.tar.gz",
+        },
+        __WINDOWS__: {
+            __X86_64__: "https://corretto.aws/downloads/latest/amazon-corretto-21-x64-windows-jdk.zip",
+            __ARM__: None,
+        },
+    },
+    __MANDREL21__: {
+        __LINUX__: {
+            __X86_64__: "https://github.com/graalvm/mandrel/releases/download/mandrel-23.1.12.0-Final/mandrel-java21-linux-amd64-23.1.12.0-Final.tar.gz",
+            __ARM__: "https://github.com/graalvm/mandrel/releases/download/mandrel-23.1.12.0-Final/mandrel-java21-linux-aarch64-23.1.12.0-Final.tar.gz",
+        },
+        __APPLE__: {
+            __X86_64__: None,
+            __ARM__: "https://github.com/graalvm/mandrel/releases/download/mandrel-23.1.12.0-Final/mandrel-java21-macos-aarch64-23.1.12.0-Final.tar.gz",
+        },
+        __WINDOWS__: {
+            __X86_64__: "https://github.com/graalvm/mandrel/releases/download/mandrel-23.1.12.0-Final/mandrel-java21-windows-amd64-23.1.12.0-Final.zip",
+            __ARM__: None,
+        },
+    },
+    __MICROSOFT21__: {
+        __LINUX__: {
+            __X86_64__: "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-linux-x64.tar.gz",
+            __ARM__: "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-linux-aarch64.tar.gz",
+        },
+        __APPLE__: {
+            __X86_64__: "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-macos-x64.tar.gz",
+            __ARM__: "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-macos-aarch64.tar.gz",
+        },
+        __WINDOWS__: {
+            __X86_64__: "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-windows-x64.zip",
+            __ARM__: "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-windows-aarch64.zip",
+        },
+    },
+    __ZULU21__: {
+        __LINUX__: {
+            __X86_64__: "https://cdn.azul.com/zulu/bin/zulu21.52.15-ca-jdk21.0.12-linux_x64.tar.gz",
+            __ARM__: "https://cdn.azul.com/zulu/bin/zulu21.52.15-ca-jdk21.0.12-linux_aarch64.tar.gz",
+        },
+        __APPLE__: {
+            __X86_64__: "https://cdn.azul.com/zulu/bin/zulu21.52.15-ca-jdk21.0.12-macosx_x64.tar.gz",
+            __ARM__: "https://cdn.azul.com/zulu/bin/zulu21.52.15-ca-jdk21.0.12-macosx_aarch64.tar.gz",
+        },
+        __WINDOWS__: {
+            __X86_64__: "https://cdn.azul.com/zulu/bin/zulu21.52.15-ca-jdk21.0.12-win_x64.zip",
+            __ARM__: None,
+        },
+    },
+    __TEMURIN21__: {
+        __LINUX__: {
+            __X86_64__: "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12%2B8/OpenJDK21U-jdk_x64_linux_hotspot_21.0.12_8.tar.gz",
+            __ARM__: "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12%2B8/OpenJDK21U-jdk_aarch64_linux_hotspot_21.0.12_8.tar.gz",
+        },
+        __APPLE__: {
+            __X86_64__: "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12%2B8/OpenJDK21U-jdk_x64_mac_hotspot_21.0.12_8.tar.gz",
+            __ARM__: "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12%2B8/OpenJDK21U-jdk_aarch64_mac_hotspot_21.0.12_8.tar.gz",
+        },
+        __WINDOWS__: {
+            __X86_64__: "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12%2B8/OpenJDK21U-jdk_x64_windows_hotspot_21.0.12_8.zip",
+            __ARM__: "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12%2B8/OpenJDK21U-jdk_aarch64_windows_hotspot_21.0.12_8.zip",
+        },
+    },
+    __SAPMACHINE21__: {
+        __LINUX__: {
+            __X86_64__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3/sapmachine-jdk-21.0.3_linux-x64_bin.tar.gz",
+            __ARM__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3/sapmachine-jdk-21.0.3_linux-aarch64_bin.tar.gz",
+        },
+        __APPLE__: {
+            __X86_64__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3/sapmachine-jdk-21.0.3_macos-x64_bin.tar.gz",
+            __ARM__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3/sapmachine-jdk-21.0.3_macos-aarch64_bin.tar.gz",
+        },
+        __WINDOWS__: {
+            __X86_64__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3/sapmachine-jdk-21.0.3_windows-x64_bin.zip",
+            __ARM__: None,
+        },
+    },
+
+    __LIBERICA21__ : {
+        __LINUX__: {
+            __X86_64__  : "https://download.bell-sw.com/java/21.0.5+11/bellsoft-jdk21.0.5+11-linux-amd64.tar.gz",
+            __ARM__     : "https://download.bell-sw.com/java/21.0.5+11/bellsoft-jdk21.0.5+11-linux-aarch64.tar.gz",
+       },
+        __APPLE__ : {
+            __X86_64__:  "https://download.bell-sw.com/java/21.0.5+11/bellsoft-jdk21.0.5+11-macos-amd64.tar.gz",
+            __ARM__   : "https://download.bell-sw.com/java/21.0.5+11/bellsoft-jdk21.0.5+11-macos-aarch64.tar.gz",
+       },
+       __WINDOWS__: {
+           __X86_64__: "https://download.bell-sw.com/java/21.0.5+11/bellsoft-jdk21.0.5+11-windows-amd64.zip",
+           __ARM__   : "https://download.bell-sw.com/java/21.0.5+11/bellsoft-jdk21.0.5+11-windows-aarch64.zip",
+      },
+    },
     ## JDK - versions 22-26
     __JDK22__: {  # 22 is EOL non-LTS: Oracle pins the final patch instead of a rolling "latest" alias
         __LINUX__: {

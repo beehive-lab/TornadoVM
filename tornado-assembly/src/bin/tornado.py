@@ -85,6 +85,9 @@ __CUTLASS_MODULE__ = "tornado.cutlass"
 # TornadoVM needs no JVMCI from the JDK: the compiler's metadata API is the tornado.meta module and
 # all class metadata comes from reflection, so the same flags work on every JDK from 22 up.
 __JAVA_BASE_OPTIONS__ = "-server -XX:+UnlockExperimentalVMOptions "
+# Only the jdk21 SDK needs it: FFM is a preview API on JDK 21, so that SDK is compiled with
+# enable-preview. Adding it unconditionally would switch preview APIs on for every other SDK.
+__JAVA_PREVIEW_OPTION__ = "--enable-preview "
 # We do not satisfy the Graal compiler assertions because we only support a subset of the Java specification.
 # This allows us to have the GraalIR in states which normally would be illegal.
 __GRAAL_ENABLE_ASSERTIONS__ = " -ea -da:tornado.graal... "
@@ -386,7 +389,7 @@ class TornadoVMRunnerTool():
         self.cmd = os.path.join(self.java_home, "bin", "java")
 
         self.java_version, self.isGraalVM = self.getJavaVersion()
-        self.sdk_jdk_floor = self.readSDKJDKContract()
+        self.sdk_jdk_floor, self.sdk_jdk_preview = self.readSDKJDKContract()
         self.checkCompatibilityWithTornadoVM()
         self.platform = sys.platform
         self.listOfBackends = self.getInstalledBackends(False)
@@ -448,8 +451,8 @@ class TornadoVMRunnerTool():
             sys.exit(0)
 
     def readSDKJDKContract(self):
-        """Lowest JDK THIS SDK runs on, as recorded by bin/compile in etc/tornado.jdk."""
-        floor = 22
+        """(floor, preview) for THIS SDK, as recorded by bin/compile in etc/tornado.jdk."""
+        floor, preview = 22, False
         contract = os.path.join(self.sdk, "etc", "tornado.jdk")
         if os.path.isfile(contract):
             try:
@@ -457,9 +460,11 @@ class TornadoVMRunnerTool():
                     for line in f.read().splitlines():
                         if line.startswith("tornado.jdk.floor="):
                             floor = int(line.split("=", 1)[1].strip())
+                        elif line.startswith("tornado.jdk.preview="):
+                            preview = line.split("=", 1)[1].strip().lower() == "true"
             except (IOError, OSError, ValueError):
                 pass
-            return floor
+            return floor, preview
 
         # No contract to read. A stale or mistyped TORNADOVM_HOME is far likelier than a
         # genuinely old SDK, so point at the env var rather than guessing.
@@ -470,14 +475,27 @@ class TornadoVMRunnerTool():
             print("        (no share/java/tornado inside it). If you have just rebuilt, run:")
             print("            source setvars.sh")
             sys.exit(0)
-        return floor
+        for name in sorted(os.listdir(jars)):
+            if name.startswith("tornado-api-") and "jdk21" in name:
+                return 21, True
+        return floor, preview
 
     def checkCompatibilityWithTornadoVM(self):
         # TornadoVM runs on arbitrary modern JDKs because Graal (tornado.graal) and its metadata API
-        # (tornado.meta) are vendored as application modules.
-        if (self.java_version < self.sdk_jdk_floor):
+        # (tornado.meta) are vendored as application modules. A preview-compiled SDK (jdk21) is
+        # pinned to its one release; every other SDK is good from its floor upwards.
+        if (self.sdk_jdk_preview):
+            if (self.java_version != self.sdk_jdk_floor):
+                print("This TornadoVM SDK was built for JDK " + str(self.sdk_jdk_floor)
+                      + " with preview features enabled, so it runs on JDK " + str(self.sdk_jdk_floor)
+                      + " only (found JDK " + str(self.java_version) + ").")
+                print("Use the jdk22plus SDK for JDK 22 and newer.")
+                sys.exit(0)
+        elif (self.java_version < self.sdk_jdk_floor):
             print("This TornadoVM SDK requires JDK " + str(self.sdk_jdk_floor)
                   + " or newer (found JDK " + str(self.java_version) + ").")
+            if (self.java_version == 21):
+                print("Use the jdk21 SDK for JDK 21.")
             sys.exit(0)
 
     def checkOpenCLDriversWindows(self):
@@ -1185,6 +1203,8 @@ class TornadoVMRunnerTool():
             javaFlags = javaFlags + __GRAAL_ENABLE_ASSERTIONS__
 
         javaFlags = javaFlags + " " + __JAVA_BASE_OPTIONS__
+        if (self.sdk_jdk_preview):
+            javaFlags = javaFlags + __JAVA_PREVIEW_OPTION__
 
         javaFlags = javaFlags + tornadoFlags + __TORNADOVM_PROVIDERS__ + " "
 

@@ -55,6 +55,28 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # ---- jdk21 (enable-preview SDK, JDK 21 only) ----
+          - jdk: jdk21
+            sdk_suffix: full
+            platform: LINUX_64
+            variant: full-linux-amd64
+          - jdk: jdk21
+            sdk_suffix: opencl
+            platform: LINUX_64
+            variant: opencl-linux-amd64
+          - jdk: jdk21
+            sdk_suffix: opencl
+            platform: MAC_ARM64
+            variant: opencl-mac-aarch64
+          - jdk: jdk21
+            sdk_suffix: metal
+            platform: MAC_ARM64
+            variant: metal-mac-aarch64
+          - jdk: jdk21
+            sdk_suffix: cuda
+            platform: LINUX_64
+            variant: cuda-linux-amd64
+
           # ---- jdk22plus (one SDK, covers every JDK from 22 up) ----
           - jdk: jdk22plus
             sdk_suffix: full

@@ -17,12 +17,12 @@ If you just want to *use* TornadoVM, you do **not** need to build from source â€
   - Linux (recommended for development)
   - macOS
   - Windows 10+ (with appropriate tools)
-- **JDK 22 or newer** (OpenJDK or GraalVM)
+- **JDK 21 or newer** (OpenJDK or GraalVM). JDK 21 builds the `jdk21` SDK (preview features, JDK 21 only); JDK 22+ builds the `jdk22plus` SDK
 - GCC/G++ >= 13.0
 - `git`
 - C toolchain / build tools (for native parts, depending on backend)
 
-Make sure `JAVA_HOME` points to your JDK 22+ installation.
+Make sure `JAVA_HOME` points to your JDK 21+ installation.
 
 ### 1.2 SDK Portability Considerations
 

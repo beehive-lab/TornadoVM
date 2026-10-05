@@ -121,7 +121,7 @@ check_java() {
     if [ -z "$JAVA_HOME" ]; then
         print_error "JAVA_HOME environment variable is not set"
         echo "" >&2
-        echo "TornadoVM requires JAVA_HOME to be set to a JDK 22 (or newer) installation." >&2
+        echo "TornadoVM requires JAVA_HOME to be set to a JDK 21 (or newer) installation." >&2
         echo "" >&2
         echo "To set JAVA_HOME, add this to your ~/.bashrc or ~/.zshrc:" >&2
         echo "" >&2

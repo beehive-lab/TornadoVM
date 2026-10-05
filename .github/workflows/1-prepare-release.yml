@@ -315,7 +315,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Next steps after PR merge:" >> $GITHUB_STEP_SUMMARY
           echo "1. Existing CI will run build & tests" >> $GITHUB_STEP_SUMMARY
-          echo "2. Finalize tags v${{ env.VERSION }}, creates the draft Release, and dispatches build-release-sdks + deploy-maven-central (jdk22plus) automatically" >> $GITHUB_STEP_SUMMARY
+          echo "2. Finalize tags v${{ env.VERSION }}, creates the draft Release, and dispatches build-release-sdks + deploy-maven-central (jdk21+jdk22plus) automatically" >> $GITHUB_STEP_SUMMARY
 
       - name: Commit and push
         if: ${{ inputs.draft_release_test == false }}
@@ -356,7 +356,7 @@ jobs:
 
             ### After merge
             1. CI runs automatically ✅
-            2. Finalize tags \`v${version}\`, creates the draft GitHub Release, and dispatches build-release-sdks + deploy-maven-central (jdk22plus) automatically
+            2. Finalize tags \`v${version}\`, creates the draft GitHub Release, and dispatches build-release-sdks + deploy-maven-central (jdk21+jdk22plus) automatically
             3. Merge master → develop
             4. Bump develop to \`${nextDev}\`
             `

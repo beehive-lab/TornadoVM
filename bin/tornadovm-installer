@@ -78,7 +78,7 @@ __JDK_VENDORS__ = [
     ("SAPMACHINE", "SapMachine"),
     ("LIBERICA", "BellSoft Liberica"),
 ]
-__JDK_VERSIONS__ = [22, 23, 24, 25, 26]
+__JDK_VERSIONS__ = [21, 22, 23, 24, 25, 26]
 
 def _build_supported_jdks() -> Tuple[List[str], List[str]]:
     """Builds the flat, numbered (keyword, description) lists shown in the JDK menu, by looking up
@@ -441,10 +441,11 @@ class BuildManager:
 
     def _resolve_make_target(self, jdk_keyword: Optional[str]) -> str:
         """Maps a JDK keyword - either a JAVA_HOME-detected profile like 'jdk25'/'graal-jdk-25',
-        or a vendor download keyword like 'temurin-jdk-25'/'corretto-jdk-22' - onto the one target
-        the Makefile/bin/compile understand: 'jdk22plus', which covers every JDK from 22 up,
-        GraalVM included."""
-        return "jdk22plus"
+        or a vendor download keyword like 'temurin-jdk-25'/'corretto-jdk-21' - onto the two targets
+        the Makefile/bin/compile understand: 'jdk21' (an enable-preview SDK for JDK 21) or
+        'jdk22plus', which covers every JDK from 22 up, GraalVM included."""
+        version_match = re.search(r'(\d+)$', jdk_keyword or "")
+        return "jdk21" if version_match and int(version_match.group(1)) == 21 else "jdk22plus"
 
     def _get_backend_option(self, backends: List[str]) -> str:
         """Get backend option string."""
@@ -524,7 +525,7 @@ class SystemValidator:
 
     def _match_jdk_version(self, output: str) -> Optional[str]:
         """Match `java -version` output to a supported JDK build profile. TornadoVM's floor is
-        JDK 22, not any specific feature version, so anything 22 or newer is accepted rather than
+        JDK 21, not any specific feature version, so anything 21 or newer is accepted rather than
         only the exact versions installer_config.py happens to have download URLs for - JAVA_HOME
         already points at a working JDK here, nothing needs to be downloaded."""
         version_match = re.search(r'version\s+"(\d+)', output)
@@ -532,7 +533,7 @@ class SystemValidator:
             return None
 
         major = int(version_match.group(1))
-        if major < 22:
+        if major < 21:
             return None
 
         return f"graal-jdk-{major}" if "graalvm" in output.lower() else f"jdk{major}"
@@ -638,7 +639,7 @@ def parseArguments():
     parser = argparse.ArgumentParser(description="TornadoVM Installer Tool.  It will install all software dependencies except the GPU drivers")
     parser.add_argument("--jdk", action="store", dest="jdk", default=None,
                         help=(
-                            "Specify a JDK to install by its keyword (e.g., 'jdk25', 'temurin-jdk-25'). "
+                            "Specify a JDK to install by its keyword (e.g., 'jdk21', 'temurin-jdk-25'). "
                             "Run with --listJDKs to view all available JDK keywords."
                         ))
     parser.add_argument("--backend", action="store", dest="backend", default=None, help="Select the backend to install: { opencl, cuda, metal }")

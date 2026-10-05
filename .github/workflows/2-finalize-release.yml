@@ -119,7 +119,7 @@ jobs:
 
           ## How to use TornadoVM SDK
 
-          Select the archive matching your target accelerator backend (opencl, cuda, metal, or full) from this Release's assets. Every archive runs on JDK 22 and newer; ensure `JAVA_HOME` points to a JDK 22+ installation before running. The example below uses opencl for Linux/macOS/Windows — swap `jdk22plus-opencl` for e.g. `jdk22plus-cuda` or `jdk22plus-metal` as needed.
+          Select the archive matching your JDK and target accelerator backend (opencl, cuda, metal, or full) from this Release's assets: `jdk22plus` archives run on JDK 22 and newer, `jdk21` archives on JDK 21 only. Ensure `JAVA_HOME` points to a matching JDK installation before running. The example below uses jdk22plus + opencl for Linux/macOS/Windows — swap `jdk22plus-opencl` for e.g. `jdk21-opencl` or `jdk22plus-cuda` as needed.
 
           ### Linux Systems
 
@@ -301,7 +301,7 @@ jobs:
             echo "| Develop bumped | ✅ ${{ steps.next_version.outputs.next_version }} |" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "### Automatic next steps:" >> $GITHUB_STEP_SUMMARY
-            echo "1. build-release-sdks.yml builds the jdk22plus SDKs and uploads them to this Release" >> $GITHUB_STEP_SUMMARY
-            echo "2. deploy-maven-central.yml deploys tornado-api/-runtime/-matrices, tornado-drivers-cuda (cuTile) and the CUDA library bindings (one deploy, jdk22plus)" >> $GITHUB_STEP_SUMMARY
+            echo "1. build-release-sdks.yml builds the jdk21 and jdk22plus SDKs and uploads them to this Release" >> $GITHUB_STEP_SUMMARY
+            echo "2. deploy-maven-central.yml deploys tornado-api/-runtime/-matrices, tornado-drivers-cuda (cuTile) and the CUDA library bindings (one deploy per JDK profile)" >> $GITHUB_STEP_SUMMARY
             echo "3. publish-archives-to-sdkman.yml publishes every SDK variant to SDKMAN" >> $GITHUB_STEP_SUMMARY
           fi

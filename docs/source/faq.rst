@@ -38,8 +38,7 @@ List of compatible JDKs
 TornadoVM currently supports:
 
 -  JDK 22 and newer, including JDK 27, via the single ``jdk22plus`` build profile (e.g. OpenJDK, GraalVM, Red Hat Mandrel, Amazon Corretto, Azul Zulu). TornadoVM does not use JVMCI: it ships the compiler's metadata API as its own ``tornado.meta`` module and reads class metadata through reflection, so this SDK is built once and runs on any JDK from 22 upwards rather than being tied to one release. A GraalVM JDK is just another JDK: TornadoVM brings its own relocated Graal and uses nothing GraalVM bundles.
-
-JDK 21 is no longer supported.
+-  JDK 21 via the ``jdk21`` build profile. FFM is a preview API on JDK 21, so this SDK is compiled with ``--enable-preview`` and runs on JDK 21 only.
 
 Windows
 ~~~~~~~~~~
@@ -50,7 +49,7 @@ To run TornadoVM on **Windows 10/11 OS**, more information here: :ref:`installat
 ARM Mali GPUs and Linux
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To run TornadoVM on ARM Mali, install TornadoVM with JDK 22 or newer. More information here: :ref:`installation_mali`.
+To run TornadoVM on ARM Mali, install TornadoVM with JDK 21 or newer. More information here: :ref:`installation_mali`.
 
 Usage
 ^^^^^

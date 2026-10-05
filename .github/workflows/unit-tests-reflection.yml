@@ -1,4 +1,4 @@
-name: No-GPU Unit Tests — reflection + CUDA codegen [JDK 22-27, GraalVM]
+name: No-GPU Unit Tests — reflection + CUDA codegen [JDK 21-27, GraalVM]
 
 # Pure-JVM unit tests for the reflection metadata layer (tornado-runtime/src/test). These need no GPU,
 # so they run on standard GitHub-hosted runners - the first no-GPU CI stage for TornadoVM. The full
@@ -55,7 +55,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # One profile, every host JDK from the floor up.
+          # The preview-compiled jdk21 SDK on JDK 21, then the jdk22plus profile on every JDK from 22.
+          - profile: jdk21
+            distribution: temurin
+            setup_java_version: '21'
           - profile: jdk22plus
             distribution: temurin
             setup_java_version: '22'

@@ -24,27 +24,53 @@ ifneq ($(UNSUPPORTED_BACKENDS),)
 $(error [ERROR] Unsupported backends specified in BACKEND: $(subst $(SPACE),$(COMMA)$(SPACE),$(UNSUPPORTED_BACKENDS)). Supported backends: $(subst $(SPACE),$(COMMA)$(SPACE),$(SUPPORTED_BACKENDS)))
 endif
 
-# The only JDK profile. JDK 22 is the floor: one SDK serves every JDK from 22 up.
-JDK_PROFILE = jdk22plus
+# JDK profile for the targets below that do not name one: jdk21 when JAVA_HOME is JDK 21 (an
+# enable-preview SDK pinned to exactly JDK 21), jdk22plus otherwise (one SDK for every JDK from 22).
+JDK_PROFILE ?= $(shell v=$$("$${JAVA_HOME:-/nonexistent}/bin/java" -version 2>&1 | sed -n 's/.*version "\([0-9][0-9]*\).*/\1/p' | head -1); \
+                       if [ "$$v" = "21" ]; then echo jdk21; else echo jdk22plus; fi)
+
+build:
+	bin/compile --jdk $(JDK_PROFILE) --backend $(BACKEND)
+
+jdk21:
+	bin/compile --jdk jdk21 --backend $(BACKEND)
 
 # jdk25/jdk26/jdk27 are kept as aliases so existing scripts and muscle memory keep working;
 # they all produce the same artifact.
-build jdk22plus jdk25 jdk26 jdk27:
+jdk22plus jdk25 jdk26 jdk27:
 	bin/compile --jdk jdk22plus --backend $(BACKEND)
 
-rebuild-deps rebuild-deps-jdk22plus rebuild-deps-jdk25 rebuild-deps-jdk26 rebuild-deps-jdk27:
+rebuild-deps:
+	bin/compile --jdk $(JDK_PROFILE) --rebuild --backend $(BACKEND)
+
+rebuild-deps-jdk21:
+	bin/compile --jdk jdk21 --rebuild --backend $(BACKEND)
+
+rebuild-deps-jdk22plus rebuild-deps-jdk25 rebuild-deps-jdk26 rebuild-deps-jdk27:
 	bin/compile --jdk jdk22plus --rebuild --backend $(BACKEND)
 
-mvn-single-threaded mvn-single-threaded-jdk22plus:
+mvn-single-threaded:
+	bin/compile --jdk $(JDK_PROFILE) --backend $(BACKEND) --mvn_single_threaded
+
+mvn-single-threaded-jdk21:
+	bin/compile --jdk jdk21 --backend $(BACKEND) --mvn_single_threaded
+
+mvn-single-threaded-jdk22plus:
 	bin/compile --jdk jdk22plus --backend $(BACKEND) --mvn_single_threaded
 
 metal:
-	bin/compile --jdk jdk22plus --backend metal,opencl
+	bin/compile --jdk $(JDK_PROFILE) --backend metal,opencl
 
 cuda:
-	bin/compile --jdk jdk22plus --backend cuda
+	bin/compile --jdk $(JDK_PROFILE) --backend cuda
 
-sdk sdk-jdk22plus:
+sdk:
+	bin/compile --jdk $(JDK_PROFILE) --sdk --backend $(BACKEND)
+
+sdk-jdk21:
+	bin/compile --jdk jdk21 --sdk --backend $(BACKEND)
+
+sdk-jdk22plus:
 	bin/compile --jdk jdk22plus --sdk --backend $(BACKEND)
 
 checkstyle:

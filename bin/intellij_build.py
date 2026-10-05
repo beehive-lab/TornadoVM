@@ -78,13 +78,13 @@ def parse_major_version(java_version_output):
 
 def get_java_profile():
     """
-    Check that JAVA_HOME is JDK 22 or newer and return the build profile.
+    Return the build profile for the JDK that JAVA_HOME points at.
 
-    One jdk22plus profile covers every JDK from 22 up, GraalVM included; JDK 21 is no
-    longer supported.
+    jdk21 is the enable-preview SDK for JDK 21; one jdk22plus profile covers every JDK
+    from 22 up, GraalVM included.
 
     Returns:
-        str: "jdk22plus".
+        str: "jdk21" or "jdk22plus".
     """
     java_home = os.environ.get("JAVA_HOME", "")
     if not java_home:
@@ -98,16 +98,16 @@ def get_java_profile():
               "assuming the jdk22plus profile.")
         return "jdk22plus"
 
-    if major < 22:
+    if major < 21:
         # `java -version` reports JDK 8 as "1.8.0_x", so quote the version line itself
         # rather than the parsed major, which would read as a bare "JDK 1".
         version_line = java_version_output.strip().splitlines()[0]
-        print("[ERROR] TornadoVM requires JDK 22 or newer, but JAVA_HOME is older:")
+        print("[ERROR] TornadoVM requires JDK 21 or newer, but JAVA_HOME is older:")
         print(f"  {java_home}")
         print(f"  {version_line}")
         sys.exit(1)
 
-    return "jdk22plus"
+    return "jdk21" if major == 21 else "jdk22plus"
 
 
 def compute_tornado_backend_variant(backends):

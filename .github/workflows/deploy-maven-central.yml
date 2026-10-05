@@ -14,11 +14,11 @@ name: 4 - Deploy Maven Central [auto]
 # tornado-drivers-common, and the CUDA library bindings tornado-cublas/-cudnn/
 # -cufft/-curand/-cusparse/-cudf/-cutlass/-cuvs. The bindings load the NVIDIA libraries
 # through java.lang.foreign at run time; the native *-jni shims some of them use
-# are built per platform and ship only in the SDK. Each module is deployed under
-# the X.Y.Z-jdk22plus Maven Central coordinate — jdk22plus is the only Maven
-# profile left (see bin/compile) and covers every JDK from 22 up — matching the
-# existing "pin a specific JDK line" convention — see the `jdk` matrix below.
-# The leg does an ephemeral `versions:set` (never committed)
+# are built per platform and ship only in the SDK. Each module is deployed once PER JDK PROFILE
+# under 2 distinct Maven Central coordinates (X.Y.Z-jdk21/-jdk22plus) — jdk21 is
+# the enable-preview build for JDK 21 and jdk22plus covers every JDK from 22 up
+# (see bin/compile) — see the `jdk` matrix below. Each leg does an ephemeral
+# `versions:set` (never committed)
 # right before `mvn deploy`, since the single release tag's committed pom.xml
 # version carries no JDK suffix at all.
 #
@@ -51,7 +51,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        jdk: [jdk22plus]
+        jdk: [jdk21, jdk22plus]
     env:
       MAVEN_HOME: /opt/maven
     steps:
@@ -68,6 +68,10 @@ jobs:
       - name: Resolve JDK environment
         run: |
           case "${{ matrix.jdk }}" in
+            jdk21)
+              echo "JAVA_HOME=/opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3" >> "$GITHUB_ENV"
+              echo "GRAAL_JARS=/opt/graalJarsNoJvmci" >> "$GITHUB_ENV"
+              ;;
             jdk22plus)
               # jdk22plus floors at JDK 22 and is deployed once for every JDK from 22 up — any
               # JDK >= 22 here builds an identical artifact (pom.xml's --release 22), so this is

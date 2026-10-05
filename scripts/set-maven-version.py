@@ -25,11 +25,12 @@ Modes
   dev  X.Y.Z-dev
       Every pom's <version> / <parent><version> becomes the literal ${revision}.
       Root pom <revision> (the default) and the jdk22plus profile override
-      become X.Y.Z-jdk22plus-dev. This is the state `develop` must always be in.
+      become X.Y.Z-jdk22plus-dev; the jdk21 profile override becomes
+      X.Y.Z-jdk21-dev. This is the state `develop` must always be in.
 
   release  X.Y.Z
       Every pom carries the plain literal X.Y.Z (no -jdkNN suffix, no
-      ${revision}). Both root <revision> values are set to X.Y.Z too, so a
+      ${revision}). All three root <revision> values are set to X.Y.Z too, so a
       profile-pinned release build still stamps the plain version.
       scripts/build-release-sdks.py renames each archive with its profile token
       and .github/workflows/deploy-maven-central.yml appends the -jdkNN Maven
@@ -108,19 +109,20 @@ def update_poms(new_body):
             print(f"  {pom.relative_to(REPO_ROOT)}: <version> -> {new_body}")
 
 
-def set_root_revisions(revision):
+def set_root_revisions(default_rev, jdk22plus_rev, jdk21_rev):
     root = REPO_ROOT / "pom.xml"
     text = root.read_text()
     revs = list(re.finditer(r"<revision>[^<]*</revision>", text))
-    if len(revs) != 2:
+    if len(revs) != 3:
         sys.exit(
-            f"pom.xml: expected exactly 2 <revision> elements "
-            f"(default, jdk22plus profile), found {len(revs)}"
+            f"pom.xml: expected exactly 3 <revision> elements "
+            f"(default, jdk22plus profile, jdk21 profile), found {len(revs)}"
         )
-    for m in reversed(revs):
-        text = text[: m.start()] + f"<revision>{revision}</revision>" + text[m.end():]
+    wanted = [default_rev, jdk22plus_rev, jdk21_rev]
+    for m, value in zip(reversed(revs), reversed(wanted)):
+        text = text[: m.start()] + f"<revision>{value}</revision>" + text[m.end():]
     root.write_text(text)
-    print(f"  pom.xml: <revision> = {revision}")
+    print(f"  pom.xml: <revision> = {default_rev} / {jdk22plus_rev} / {jdk21_rev}")
 
 
 def main():
@@ -136,13 +138,13 @@ def main():
             sys.exit(f"dev version must be X.Y.Z-dev, got: {version}")
         print(f"dev mode: {version}")
         update_poms("${revision}")
-        set_root_revisions(f"{base}-jdk22plus-dev")
+        set_root_revisions(f"{base}-jdk22plus-dev", f"{base}-jdk22plus-dev", f"{base}-jdk21-dev")
     else:
         if not re.fullmatch(r"\d+\.\d+\.\d+", version):
             sys.exit(f"release version must be X.Y.Z, got: {version}")
         print(f"release mode: {version}")
         update_poms(version)
-        set_root_revisions(version)
+        set_root_revisions(version, version, version)
 
     print("Done.")
 
