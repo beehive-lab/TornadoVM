@@ -31,7 +31,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.mlx.MlxScans;
+import uk.ac.manchester.tornado.mlx.Mlx;
 
 /**
  * Unit tests for the MLX scan library tasks: cumsum, cumprod, cummax, cummin and logcumsumexp along
@@ -98,53 +98,53 @@ public class TestMlxScans extends MlxTestBase {
 
     @Test
     public void testCumsum() throws TornadoExecutionPlanException {
-        scan(MlxScans::cumsum, OUTER, LEN, 1, false, true, 0, Double::sum, -1, 1, 1e-4, 2e-4);
+        scan(Mlx::cumsum, OUTER, LEN, 1, false, true, 0, Double::sum, -1, 1, 1e-4, 2e-4);
     }
 
     @Test
     public void testCumprod() throws TornadoExecutionPlanException {
-        scan(MlxScans::cumprod, OUTER, LEN, 1, false, true, 1, (a, b) -> a * b, 0.999f, 1.001f, 1e-4, 1e-6);
+        scan(Mlx::cumprod, OUTER, LEN, 1, false, true, 1, (a, b) -> a * b, 0.999f, 1.001f, 1e-4, 1e-6);
     }
 
     @Test
     public void testCummax() throws TornadoExecutionPlanException {
-        scan(MlxScans::cummax, OUTER, LEN, 1, false, true, Double.NEGATIVE_INFINITY, Math::max, -10, 10, 0, 0);
+        scan(Mlx::cummax, OUTER, LEN, 1, false, true, Double.NEGATIVE_INFINITY, Math::max, -10, 10, 0, 0);
     }
 
     @Test
     public void testCummin() throws TornadoExecutionPlanException {
-        scan(MlxScans::cummin, OUTER, LEN, 1, false, true, Double.POSITIVE_INFINITY, Math::min, -10, 10, 0, 0);
+        scan(Mlx::cummin, OUTER, LEN, 1, false, true, Double.POSITIVE_INFINITY, Math::min, -10, 10, 0, 0);
     }
 
     @Test
     public void testLogcumsumexp() throws TornadoExecutionPlanException {
-        scan(MlxScans::logcumsumexp, OUTER, LEN, 1, false, true, Double.NEGATIVE_INFINITY, TestMlxScans::logaddexp, -3, 3, 1e-5, 1e-5);
+        scan(Mlx::logcumsumexp, OUTER, LEN, 1, false, true, Double.NEGATIVE_INFINITY, TestMlxScans::logaddexp, -3, 3, 1e-5, 1e-5);
     }
 
     @Test
     public void testCumsumReverse() throws TornadoExecutionPlanException {
-        scan(MlxScans::cumsum, OUTER, LEN, 1, true, true, 0, Double::sum, -1, 1, 1e-4, 2e-4);
+        scan(Mlx::cumsum, OUTER, LEN, 1, true, true, 0, Double::sum, -1, 1, 1e-4, 2e-4);
     }
 
     @Test
     public void testCumsumExclusive() throws TornadoExecutionPlanException {
-        scan(MlxScans::cumsum, OUTER, LEN, 1, false, false, 0, Double::sum, -1, 1, 1e-4, 2e-4);
+        scan(Mlx::cumsum, OUTER, LEN, 1, false, false, 0, Double::sum, -1, 1, 1e-4, 2e-4);
     }
 
     @Test
     public void testCummaxReverseExclusive() throws TornadoExecutionPlanException {
-        scan(MlxScans::cummax, OUTER, LEN, 1, true, false, Double.NEGATIVE_INFINITY, Math::max, -10, 10, 0, 0);
+        scan(Mlx::cummax, OUTER, LEN, 1, true, false, Double.NEGATIVE_INFINITY, Math::max, -10, 10, 0, 0);
     }
 
     @Test
     public void testCumsumOneLongRow() throws TornadoExecutionPlanException {
-        scan(MlxScans::cumsum, 1, 5000, 1, false, true, 0, Double::sum, -1, 1, 1e-4, 2e-4);
+        scan(Mlx::cumsum, 1, 5000, 1, false, true, 0, Double::sum, -1, 1, 1e-4, 2e-4);
     }
 
     @Test
     public void testCumsumStrided() throws TornadoExecutionPlanException {
         // Scans, unlike reductions, also run along a middle axis with inner > 1.
-        scan(MlxScans::cumsum, 5, 40, 13, false, true, 0, Double::sum, -1, 1, 1e-4, 2e-4);
+        scan(Mlx::cumsum, 5, 40, 13, false, true, 0, Double::sum, -1, 1, 1e-4, 2e-4);
     }
 
     @Test
@@ -160,7 +160,7 @@ public class TestMlxScans extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("cumsum", MlxScans::cumsum, x, output, outer, len, 1, false, true) //
+                .libraryTask("cumsum", Mlx::cumsum, x, output, outer, len, 1, false, true) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -185,7 +185,7 @@ public class TestMlxScans extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("cummax", MlxScans::cummax, x, output, outer, len, 1, true, true) //
+                .libraryTask("cummax", Mlx::cummax, x, output, outer, len, 1, true, true) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {

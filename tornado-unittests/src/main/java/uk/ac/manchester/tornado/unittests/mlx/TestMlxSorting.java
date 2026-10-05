@@ -32,7 +32,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.mlx.MlxSorting;
+import uk.ac.manchester.tornado.mlx.Mlx;
 
 /**
  * Unit tests for the MLX sorting library tasks: sort, argsort, partition and argpartition, over a
@@ -107,7 +107,7 @@ public class TestMlxSorting extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("sort", MlxSorting::sort, x, output) //
+                .libraryTask("sort", Mlx::sort, x, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -125,7 +125,7 @@ public class TestMlxSorting extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("argsort", MlxSorting::argsort, x, output) //
+                .libraryTask("argsort", Mlx::argsort, x, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -144,7 +144,7 @@ public class TestMlxSorting extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("partition", MlxSorting::partition, x, output, kth) //
+                .libraryTask("partition", Mlx::partition, x, output, kth) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -163,7 +163,7 @@ public class TestMlxSorting extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("argpartition", MlxSorting::argpartition, x, output, kth) //
+                .libraryTask("argpartition", Mlx::argpartition, x, output, kth) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -181,7 +181,7 @@ public class TestMlxSorting extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("sort", MlxSorting::sortAxis, x, output, OUTER, LEN, 1) //
+                .libraryTask("sort", Mlx::sortAxis, x, output, OUTER, LEN, 1) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -202,7 +202,7 @@ public class TestMlxSorting extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("argsort", MlxSorting::argsortAxis, x, output, OUTER, LEN, 1) //
+                .libraryTask("argsort", Mlx::argsortAxis, x, output, OUTER, LEN, 1) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -223,7 +223,7 @@ public class TestMlxSorting extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("partition", MlxSorting::partitionAxis, x, output, OUTER, LEN, 1, kth) //
+                .libraryTask("partition", Mlx::partitionAxis, x, output, OUTER, LEN, 1, kth) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -245,7 +245,7 @@ public class TestMlxSorting extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("argpartition", MlxSorting::argpartitionAxis, x, output, OUTER, LEN, 1, kth) //
+                .libraryTask("argpartition", Mlx::argpartitionAxis, x, output, OUTER, LEN, 1, kth) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -266,7 +266,7 @@ public class TestMlxSorting extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("topk", MlxSorting::topk, x, output, k) //
+                .libraryTask("topk", Mlx::topk, x, output, k) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -288,7 +288,7 @@ public class TestMlxSorting extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("topk", MlxSorting::topkRows, x, output, rows, cols, k) //
+                .libraryTask("topk", Mlx::topkRows, x, output, rows, cols, k) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -312,7 +312,7 @@ public class TestMlxSorting extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("sort", MlxSorting::sort, x, output) //
+                .libraryTask("sort", Mlx::sort, x, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -333,7 +333,7 @@ public class TestMlxSorting extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("sort", MlxSorting::sortAxis, x, output, outer, len, inner) //
+                .libraryTask("sort", Mlx::sortAxis, x, output, outer, len, inner) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -356,7 +356,7 @@ public class TestMlxSorting extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("sort", MlxSorting::sort, x, output) //
+                .libraryTask("sort", Mlx::sort, x, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -381,7 +381,7 @@ public class TestMlxSorting extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("sort", MlxSorting::sort, x, output) //
+                .libraryTask("sort", Mlx::sort, x, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {

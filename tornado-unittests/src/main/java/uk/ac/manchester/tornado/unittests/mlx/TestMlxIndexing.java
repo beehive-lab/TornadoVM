@@ -31,7 +31,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.mlx.MlxIndexing;
+import uk.ac.manchester.tornado.mlx.Mlx;
 
 /**
  * Unit tests for the MLX indexing library tasks: strided 2D slices and slice updates (set, add,
@@ -108,7 +108,7 @@ public class TestMlxIndexing extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("slice", MlxIndexing::slice, x, output, ROWS, COLS, r0, r1, rowStep, c0, c1, colStep) //
+                .libraryTask("slice", Mlx::slice, x, output, ROWS, COLS, r0, r1, rowStep, c0, c1, colStep) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -124,17 +124,17 @@ public class TestMlxIndexing extends MlxTestBase {
 
     @Test
     public void testSliceUpdate() throws TornadoExecutionPlanException {
-        sliceUpdate(MlxIndexing::sliceUpdate, (old, u) -> u);
+        sliceUpdate(Mlx::sliceUpdate, (old, u) -> u);
     }
 
     @Test
     public void testSliceUpdateAdd() throws TornadoExecutionPlanException {
-        sliceUpdate(MlxIndexing::sliceUpdateAdd, Double::sum);
+        sliceUpdate(Mlx::sliceUpdateAdd, Double::sum);
     }
 
     @Test
     public void testSliceUpdateProd() throws TornadoExecutionPlanException {
-        sliceUpdate(MlxIndexing::sliceUpdateProd, (old, u) -> old * u);
+        sliceUpdate(Mlx::sliceUpdateProd, (old, u) -> old * u);
     }
 
     // ---------------------------------------------------------------- other types
@@ -153,7 +153,7 @@ public class TestMlxIndexing extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("slice", MlxIndexing::slice, x, output, ROWS, COLS, 0, ROWS, 4, 2, COLS, 5) //
+                .libraryTask("slice", Mlx::slice, x, output, ROWS, COLS, 0, ROWS, 4, 2, COLS, 5) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -177,7 +177,7 @@ public class TestMlxIndexing extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, update) //
-                .libraryTask("update", MlxIndexing::sliceUpdateAdd, x, update, output, ROWS, COLS, R0, C0, UPDATE_ROWS, UPDATE_COLS) //
+                .libraryTask("update", Mlx::sliceUpdateAdd, x, update, output, ROWS, COLS, R0, C0, UPDATE_ROWS, UPDATE_COLS) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {

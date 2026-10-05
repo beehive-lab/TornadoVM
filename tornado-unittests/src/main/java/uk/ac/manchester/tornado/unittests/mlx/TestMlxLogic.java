@@ -35,7 +35,7 @@ import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.mlx.MlxLogic;
+import uk.ac.manchester.tornado.mlx.Mlx;
 
 /**
  * Unit tests for the MLX logic library tasks: comparisons, value classification, bitwise and
@@ -173,82 +173,82 @@ public class TestMlxLogic extends MlxTestBase {
 
     @Test
     public void testEqual() throws TornadoExecutionPlanException {
-        comparison(MlxLogic::equal, (x, y) -> x == y);
+        comparison(Mlx::equal, (x, y) -> x == y);
     }
 
     @Test
     public void testNotEqual() throws TornadoExecutionPlanException {
-        comparison(MlxLogic::notEqual, (x, y) -> x != y);
+        comparison(Mlx::notEqual, (x, y) -> x != y);
     }
 
     @Test
     public void testGreater() throws TornadoExecutionPlanException {
-        comparison(MlxLogic::greater, (x, y) -> x > y);
+        comparison(Mlx::greater, (x, y) -> x > y);
     }
 
     @Test
     public void testGreaterEqual() throws TornadoExecutionPlanException {
-        comparison(MlxLogic::greaterEqual, (x, y) -> x >= y);
+        comparison(Mlx::greaterEqual, (x, y) -> x >= y);
     }
 
     @Test
     public void testLess() throws TornadoExecutionPlanException {
-        comparison(MlxLogic::less, (x, y) -> x < y);
+        comparison(Mlx::less, (x, y) -> x < y);
     }
 
     @Test
     public void testLessEqual() throws TornadoExecutionPlanException {
-        comparison(MlxLogic::lessEqual, (x, y) -> x <= y);
+        comparison(Mlx::lessEqual, (x, y) -> x <= y);
     }
 
     @Test
     public void testIsfinite() throws TornadoExecutionPlanException {
-        classification(MlxLogic::isfinite, x -> Float.isFinite(x));
+        classification(Mlx::isfinite, x -> Float.isFinite(x));
     }
 
     @Test
     public void testIsinf() throws TornadoExecutionPlanException {
-        classification(MlxLogic::isinf, x -> Float.isInfinite(x));
+        classification(Mlx::isinf, x -> Float.isInfinite(x));
     }
 
     @Test
     public void testIsnan() throws TornadoExecutionPlanException {
-        classification(MlxLogic::isnan, x -> Float.isNaN(x));
+        classification(Mlx::isnan, x -> Float.isNaN(x));
     }
 
     @Test
     public void testIsneginf() throws TornadoExecutionPlanException {
-        classification(MlxLogic::isneginf, x -> x == Float.NEGATIVE_INFINITY);
+        classification(Mlx::isneginf, x -> x == Float.NEGATIVE_INFINITY);
     }
 
     @Test
     public void testIsposinf() throws TornadoExecutionPlanException {
-        classification(MlxLogic::isposinf, x -> x == Float.POSITIVE_INFINITY);
+        classification(Mlx::isposinf, x -> x == Float.POSITIVE_INFINITY);
     }
 
     @Test
     public void testBitwiseAnd() throws TornadoExecutionPlanException {
-        bitwise(MlxLogic::bitwiseAnd, (x, y) -> x & y, false);
+        bitwise(Mlx::bitwiseAnd, (x, y) -> x & y, false);
     }
 
     @Test
     public void testBitwiseOr() throws TornadoExecutionPlanException {
-        bitwise(MlxLogic::bitwiseOr, (x, y) -> x | y, false);
+        bitwise(Mlx::bitwiseOr, (x, y) -> x | y, false);
     }
 
     @Test
     public void testBitwiseXor() throws TornadoExecutionPlanException {
-        bitwise(MlxLogic::bitwiseXor, (x, y) -> x ^ y, false);
+        bitwise(Mlx::bitwiseXor, (x, y) -> x ^ y, false);
     }
 
     @Test
     public void testLeftShift() throws TornadoExecutionPlanException {
-        bitwise(MlxLogic::leftShift, (x, y) -> x << y, true);
+        bitwise(Mlx::leftShift, (x, y) -> x << y, true);
     }
 
     @Test
     public void testRightShift() throws TornadoExecutionPlanException {
-        bitwise(MlxLogic::rightShift, (x, y) -> x >> y, true);
+        bitwise(Mlx::rightShift, (x, y) -> x >> y, true);
     }
 
     @Test
@@ -263,7 +263,7 @@ public class TestMlxLogic extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
-                .libraryTask("invert", MlxLogic::bitwiseInvert, a, output) //
+                .libraryTask("invert", Mlx::bitwiseInvert, a, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -285,7 +285,7 @@ public class TestMlxLogic extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
-                .libraryTask("and", MlxLogic::logicalAnd, a, b, output) //
+                .libraryTask("and", Mlx::logicalAnd, a, b, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -307,7 +307,7 @@ public class TestMlxLogic extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
-                .libraryTask("or", MlxLogic::logicalOr, a, b, output) //
+                .libraryTask("or", Mlx::logicalOr, a, b, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -327,7 +327,7 @@ public class TestMlxLogic extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
-                .libraryTask("not", MlxLogic::logicalNot, a, output) //
+                .libraryTask("not", Mlx::logicalNot, a, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -350,8 +350,8 @@ public class TestMlxLogic extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
-                .libraryTask("isclose", MlxLogic::isclose, a, b, output, 1e-3f, 1e-5f, false) //
-                .libraryTask("iscloseNan", MlxLogic::isclose, a, b, outputEqualNan, 1e-3f, 1e-5f, true) //
+                .libraryTask("isclose", Mlx::isclose, a, b, output, 1e-3f, 1e-5f, false) //
+                .libraryTask("iscloseNan", Mlx::isclose, a, b, outputEqualNan, 1e-3f, 1e-5f, true) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output, outputEqualNan);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -377,9 +377,9 @@ public class TestMlxLogic extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, same) //
-                .libraryTask("differs", MlxLogic::allclose, a, b, differs, 1e-3f, 1e-5f, true) //
-                .libraryTask("same", MlxLogic::allclose, same, b, sameNoNan, 1e-3f, 1e-5f, false) //
-                .libraryTask("sameNan", MlxLogic::allclose, same, b, sameEqualNan, 1e-3f, 1e-5f, true) //
+                .libraryTask("differs", Mlx::allclose, a, b, differs, 1e-3f, 1e-5f, true) //
+                .libraryTask("same", Mlx::allclose, same, b, sameNoNan, 1e-3f, 1e-5f, false) //
+                .libraryTask("sameNan", Mlx::allclose, same, b, sameEqualNan, 1e-3f, 1e-5f, true) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, differs, sameNoNan, sameEqualNan);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -409,9 +409,9 @@ public class TestMlxLogic extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, same) //
-                .libraryTask("differs", MlxLogic::arrayEqual, a, b, differs, true) //
-                .libraryTask("same", MlxLogic::arrayEqual, same, b, sameNoNan, false) //
-                .libraryTask("sameNan", MlxLogic::arrayEqual, same, b, sameEqualNan, true) //
+                .libraryTask("differs", Mlx::arrayEqual, a, b, differs, true) //
+                .libraryTask("same", Mlx::arrayEqual, same, b, sameNoNan, false) //
+                .libraryTask("sameNan", Mlx::arrayEqual, same, b, sameEqualNan, true) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, differs, sameNoNan, sameEqualNan);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -433,7 +433,7 @@ public class TestMlxLogic extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
-                .libraryTask("less", MlxLogic::less, a, b, output) //
+                .libraryTask("less", Mlx::less, a, b, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -462,8 +462,8 @@ public class TestMlxLogic extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
-                .libraryTask("equal", MlxLogic::equal, a, b, output) //
-                .libraryTask("arrayEqual", MlxLogic::arrayEqual, a, a, self, false) //
+                .libraryTask("equal", Mlx::equal, a, b, output) //
+                .libraryTask("arrayEqual", Mlx::arrayEqual, a, a, self, false) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output, self);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -490,7 +490,7 @@ public class TestMlxLogic extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
-                .libraryTask("less", MlxLogic::less, a, b, output) //
+                .libraryTask("less", Mlx::less, a, b, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {

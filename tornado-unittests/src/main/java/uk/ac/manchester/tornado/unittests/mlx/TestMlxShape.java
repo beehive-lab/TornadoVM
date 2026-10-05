@@ -30,7 +30,7 @@ import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.mlx.MlxShape;
+import uk.ac.manchester.tornado.mlx.Mlx;
 
 /**
  * Unit tests for the MLX shape and layout library tasks: reshaping, squeezing and expanding,
@@ -98,79 +98,79 @@ public class TestMlxShape extends MlxTestBase {
     @Test
     public void testReshape() throws TornadoExecutionPlanException {
         float[] xv = ramp(120);
-        check(xv, xv, (x, out) -> MlxShape.reshape(x, out, 12, 10));
+        check(xv, xv, (x, out) -> Mlx.reshape(x, out, 12, 10));
     }
 
     @Test
     public void testFlatten() throws TornadoExecutionPlanException {
         float[] xv = ramp(120);
-        check(xv, xv, (x, out) -> MlxShape.flatten(x, out, 4, 6, 5));
+        check(xv, xv, (x, out) -> Mlx.flatten(x, out, 4, 6, 5));
     }
 
     @Test
     public void testUnflatten() throws TornadoExecutionPlanException {
         float[] xv = ramp(120);
-        check(xv, xv, (x, out) -> MlxShape.unflatten(x, out, 8, 15));
+        check(xv, xv, (x, out) -> Mlx.unflatten(x, out, 8, 15));
     }
 
     @Test
     public void testSqueeze() throws TornadoExecutionPlanException {
         float[] xv = ramp(120);
-        check(xv, xv, (x, out) -> MlxShape.squeeze(x, out, 24, 5));
+        check(xv, xv, (x, out) -> Mlx.squeeze(x, out, 24, 5));
     }
 
     @Test
     public void testSqueezeAxis() throws TornadoExecutionPlanException {
         float[] xv = ramp(120);
-        check(xv, xv, (x, out) -> MlxShape.squeezeAxis(x, out, 24, 5));
+        check(xv, xv, (x, out) -> Mlx.squeezeAxis(x, out, 24, 5));
     }
 
     @Test
     public void testSqueezeAxes() throws TornadoExecutionPlanException {
         float[] xv = ramp(120);
-        check(xv, xv, (x, out) -> MlxShape.squeezeAxes(x, out, 24, 5));
+        check(xv, xv, (x, out) -> Mlx.squeezeAxes(x, out, 24, 5));
     }
 
     @Test
     public void testExpandDims() throws TornadoExecutionPlanException {
         float[] xv = ramp(120);
-        check(xv, xv, (x, out) -> MlxShape.expandDims(x, out, 24, 5));
+        check(xv, xv, (x, out) -> Mlx.expandDims(x, out, 24, 5));
     }
 
     @Test
     public void testExpandDimsAxes() throws TornadoExecutionPlanException {
         float[] xv = ramp(120);
-        check(xv, xv, (x, out) -> MlxShape.expandDimsAxes(x, out, 24, 5));
+        check(xv, xv, (x, out) -> Mlx.expandDimsAxes(x, out, 24, 5));
     }
 
     @Test
     public void testAtleast1d() throws TornadoExecutionPlanException {
         float[] xv = ramp(120);
-        check(xv, xv, MlxShape::atleast1d);
+        check(xv, xv, Mlx::atleast1d);
     }
 
     @Test
     public void testAtleast2d() throws TornadoExecutionPlanException {
         float[] xv = ramp(120);
-        check(xv, xv, MlxShape::atleast2d);
+        check(xv, xv, Mlx::atleast2d);
     }
 
     @Test
     public void testAtleast3d() throws TornadoExecutionPlanException {
         float[] xv = ramp(120);
-        check(xv, xv, MlxShape::atleast3d);
+        check(xv, xv, Mlx::atleast3d);
     }
 
     @Test
     public void testContiguous() throws TornadoExecutionPlanException {
         float[] xv = ramp(120);
-        check(xv, xv, MlxShape::contiguous);
+        check(xv, xv, Mlx::contiguous);
     }
 
     @Test
     public void testCopy() throws TornadoExecutionPlanException {
         float[] xv = ramp(120);
-        check(xv, xv, MlxShape::copy);
+        check(xv, xv, Mlx::copy);
     }
 
     // ---------------------------------------------------------------- permutations
@@ -178,19 +178,19 @@ public class TestMlxShape extends MlxTestBase {
     @Test
     public void testTransposeAxes() throws TornadoExecutionPlanException {
         float[] xv = ramp(120);
-        check(xv, permuteJava(xv, new int[] { 4, 5, 6 }, new int[] { 2, 0, 1 }), (x, out) -> MlxShape.transposeAxes(x, out, 4, 5, 6, 2, 0, 1));
+        check(xv, permuteJava(xv, new int[] { 4, 5, 6 }, new int[] { 2, 0, 1 }), (x, out) -> Mlx.transposeAxes(x, out, 4, 5, 6, 2, 0, 1));
     }
 
     @Test
     public void testSwapaxes() throws TornadoExecutionPlanException {
         float[] xv = ramp(120);
-        check(xv, permuteJava(xv, new int[] { 4, 5, 6 }, new int[] { 2, 1, 0 }), (x, out) -> MlxShape.swapaxes(x, out, 4, 5, 6, 0, 2));
+        check(xv, permuteJava(xv, new int[] { 4, 5, 6 }, new int[] { 2, 1, 0 }), (x, out) -> Mlx.swapaxes(x, out, 4, 5, 6, 0, 2));
     }
 
     @Test
     public void testMoveaxis() throws TornadoExecutionPlanException {
         float[] xv = ramp(120);
-        check(xv, permuteJava(xv, new int[] { 4, 5, 6 }, new int[] { 1, 2, 0 }), (x, out) -> MlxShape.moveaxis(x, out, 4, 5, 6, 0, 2));
+        check(xv, permuteJava(xv, new int[] { 4, 5, 6 }, new int[] { 1, 2, 0 }), (x, out) -> Mlx.moveaxis(x, out, 4, 5, 6, 0, 2));
     }
 
     // ---------------------------------------------------------------- broadcasts and strided views
@@ -203,7 +203,7 @@ public class TestMlxShape extends MlxTestBase {
         for (int t = 0; t < expected.length; t++) {
             expected[t] = row[t % COLS];
         }
-        check(row, expected, (x, out) -> MlxShape.broadcastTo(x, out, ROWS, COLS));
+        check(row, expected, (x, out) -> Mlx.broadcastTo(x, out, ROWS, COLS));
     }
 
     @Test
@@ -214,7 +214,7 @@ public class TestMlxShape extends MlxTestBase {
         for (int t = 0; t < expected.length; t++) {
             expected[t] = xv[3 + (t / 4) * 7 + (t % 4) * 2];
         }
-        check(xv, expected, (x, out) -> MlxShape.asStrided(x, out, 5, 4, 7, 2, 3));
+        check(xv, expected, (x, out) -> Mlx.asStrided(x, out, 5, 4, 7, 2, 3));
     }
 
     @Test
@@ -229,7 +229,7 @@ public class TestMlxShape extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, row, col) //
-                .libraryTask("broadcast", MlxShape::broadcastArrays, row, col, outRow, outCol, ROWS, COLS) //
+                .libraryTask("broadcast", Mlx::broadcastArrays, row, col, outRow, outCol, ROWS, COLS) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, outRow, outCol);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -254,8 +254,8 @@ public class TestMlxShape extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("half", MlxShape::astype, x, toHalf) //
-                .libraryTask("int", MlxShape::astype, x, toInt) //
+                .libraryTask("half", Mlx::astype, x, toHalf) //
+                .libraryTask("int", Mlx::astype, x, toInt) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, toHalf, toInt);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -280,8 +280,8 @@ public class TestMlxShape extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("bits", MlxShape::view, x, bits) //
-                .libraryTask("back", MlxShape::view, bits, back) //
+                .libraryTask("bits", Mlx::view, x, bits) //
+                .libraryTask("back", Mlx::view, bits, back) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, bits, back);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -301,7 +301,7 @@ public class TestMlxShape extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("count", MlxShape::numberOfElements, x, count, 3, 4, 5) //
+                .libraryTask("count", Mlx::numberOfElements, x, count, 3, 4, 5) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, count);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -324,7 +324,7 @@ public class TestMlxShape extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
-                .libraryTask("concatenate", MlxShape::concatenate, a, b, output) //
+                .libraryTask("concatenate", Mlx::concatenate, a, b, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -350,7 +350,7 @@ public class TestMlxShape extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
-                .libraryTask("concatenate", MlxShape::concatenateAxis, a, b, output, rows, colsA, colsB) //
+                .libraryTask("concatenate", Mlx::concatenateAxis, a, b, output, rows, colsA, colsB) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -374,7 +374,7 @@ public class TestMlxShape extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
-                .libraryTask("stack", MlxShape::stack, a, b, output) //
+                .libraryTask("stack", Mlx::stack, a, b, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -398,7 +398,7 @@ public class TestMlxShape extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
-                .libraryTask("stack", MlxShape::stackAxis, a, b, output) //
+                .libraryTask("stack", Mlx::stackAxis, a, b, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -421,9 +421,9 @@ public class TestMlxShape extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g").transferToDevice(DataTransferMode.EVERY_EXECUTION, x);
         if (halves) {
-            taskGraph.libraryTask("split", MlxShape::split, x, first, second, rows, cols);
+            taskGraph.libraryTask("split", Mlx::split, x, first, second, rows, cols);
         } else {
-            taskGraph.libraryTask("split", MlxShape::splitSections, x, first, second, rows, cols, index);
+            taskGraph.libraryTask("split", Mlx::splitSections, x, first, second, rows, cols, index);
         }
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, first, second);
 
@@ -458,7 +458,7 @@ public class TestMlxShape extends MlxTestBase {
         for (int t = 0; t < expected.length; t++) {
             expected[t] = xv[t / 3];
         }
-        check(xv, expected, (x, out) -> MlxShape.repeat(x, out, 3));
+        check(xv, expected, (x, out) -> Mlx.repeat(x, out, 3));
     }
 
     @Test
@@ -469,7 +469,7 @@ public class TestMlxShape extends MlxTestBase {
         for (int t = 0; t < expected.length; t++) {
             expected[t] = xv[(t / (2 * COLS)) * COLS + t % COLS];
         }
-        check(xv, expected, (x, out) -> MlxShape.repeatAxis(x, out, ROWS, COLS, 2));
+        check(xv, expected, (x, out) -> Mlx.repeatAxis(x, out, ROWS, COLS, 2));
     }
 
     @Test
@@ -480,7 +480,7 @@ public class TestMlxShape extends MlxTestBase {
         for (int t = 0; t < expected.length; t++) {
             expected[t] = xv[((t / (3 * COLS)) % ROWS) * COLS + (t % (3 * COLS)) % COLS];
         }
-        check(xv, expected, (x, out) -> MlxShape.tile(x, out, ROWS, COLS, 2, 3));
+        check(xv, expected, (x, out) -> Mlx.tile(x, out, ROWS, COLS, 2, 3));
     }
 
     @Test
@@ -491,7 +491,7 @@ public class TestMlxShape extends MlxTestBase {
         for (int t = 0; t < n; t++) {
             expected[t] = xv[Math.floorMod(t - 4, n)];
         }
-        check(xv, expected, (x, out) -> MlxShape.roll(x, out, 4));
+        check(xv, expected, (x, out) -> Mlx.roll(x, out, 4));
     }
 
     @Test
@@ -502,7 +502,7 @@ public class TestMlxShape extends MlxTestBase {
         for (int t = 0; t < xv.length; t++) {
             expected[t] = xv[(t / COLS) * COLS + Math.floorMod(t % COLS + 2, COLS)];
         }
-        check(xv, expected, (x, out) -> MlxShape.rollAxis(x, out, ROWS, COLS, -2));
+        check(xv, expected, (x, out) -> Mlx.rollAxis(x, out, ROWS, COLS, -2));
     }
 
     @Test
@@ -513,7 +513,7 @@ public class TestMlxShape extends MlxTestBase {
         for (int t = 0; t < xv.length; t++) {
             expected[t] = xv[Math.floorMod(t / COLS - 1, ROWS) * COLS + Math.floorMod(t % COLS - 3, COLS)];
         }
-        check(xv, expected, (x, out) -> MlxShape.rollAxes(x, out, ROWS, COLS, 1, 3));
+        check(xv, expected, (x, out) -> Mlx.rollAxes(x, out, ROWS, COLS, 1, 3));
     }
 
     @Test
@@ -528,7 +528,7 @@ public class TestMlxShape extends MlxTestBase {
             int c = t % outCols - 3;
             expected[t] = r >= 0 && r < ROWS && c >= 0 && c < COLS ? xv[r * COLS + c] : -9f;
         }
-        check(xv, expected, (x, out) -> MlxShape.pad(x, out, ROWS, COLS, 1, 2, 3, 0, -9f));
+        check(xv, expected, (x, out) -> Mlx.pad(x, out, ROWS, COLS, 1, 2, 3, 0, -9f));
     }
 
     @Test
@@ -542,7 +542,7 @@ public class TestMlxShape extends MlxTestBase {
             int c = t % outCols - width;
             expected[t] = r >= 0 && r < ROWS && c >= 0 && c < COLS ? xv[r * COLS + c] : 0.5f;
         }
-        check(xv, expected, (x, out) -> MlxShape.padSymmetric(x, out, ROWS, COLS, width, 0.5f));
+        check(xv, expected, (x, out) -> Mlx.padSymmetric(x, out, ROWS, COLS, width, 0.5f));
     }
 
     // ---------------------------------------------------------------- other types
@@ -560,7 +560,7 @@ public class TestMlxShape extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("transpose", MlxShape::transposeAxes, x, output, 1, rows, cols, 0, 2, 1) //
+                .libraryTask("transpose", Mlx::transposeAxes, x, output, 1, rows, cols, 0, 2, 1) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -583,7 +583,7 @@ public class TestMlxShape extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("astype", MlxShape::astype, x, output) //
+                .libraryTask("astype", Mlx::astype, x, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {

@@ -324,17 +324,18 @@ TornadoVM's buffers: no MLX array, no result allocation and no copy. 246 operati
 FFT, convolution, creation, shape, random). Arrays are row-major, as in TornadoVM, so no transposes
 are needed.
 
-| Factory class | Operations (examples) |
+All factories are static methods of `Mlx` (`Mlx::add`, `Mlx::rmsNorm`, ...), grouped by category:
+
+| Category | Operations (examples) |
 |---|---|
-| `MlxArithmetic` | `add`, `multiply`, `exp`, `log`, `tanh`, `sigmoid`, `clip`, `where`, `round`, `floorDivide` |
-| `MlxLogic` | comparisons, `isnan`, `isclose`, `allclose`, bitwise and logical operations |
-| `MlxReductions`, `MlxScans` | `sum`/`mean`/`max`/`var`/`logsumexp` (whole, axis, axes), `argmax`, `softmax`; `cumsum`, `logcumsumexp` |
-| `MlxSorting`, `MlxIndexing` | `sort`, `argsort`, `partition`, `topk`; `slice`, `sliceUpdate` |
-| `MlxLinearAlgebra` | `matmul`, `addmm`, `einsum`, `tensordot`, `kron`, `gatherMm`, `segmentedMm`, norms, cross |
-| `MlxQuantization` | `quantize`, `dequantize`, `quantizedMatmul`, `gatherQmm`, `qqmm` |
-| `MlxNeuralNetwork` | `rmsNorm`, `layerNorm`, `rope`, `scaledDotProductAttention` |
-| `MlxFft`, `MlxConvolution` | FFTs; 1D/2D and transposed convolutions |
-| `MlxCreation`, `MlxShape`, `MlxRandom` | `arange`, `eye`, `tril`; `reshape`, `transpose`, `concatenate`, `pad`; samplers |
+| Arithmetic, logic | `add`, `multiply`, `exp`, `log`, `tanh`, `sigmoid`, `clip`, `where`, `round`; comparisons, `isnan`, `isclose`, bitwise |
+| Reductions, scans | `sum`/`mean`/`max`/`var`/`logsumexp` (whole, axis, axes), `argmax`, `softmax`; `cumsum`, `logcumsumexp` |
+| Sorting, indexing | `sort`, `argsort`, `partition`, `topk`; `slice`, `sliceUpdate` |
+| Linear algebra | `matmul`, `addmm`, `einsum`, `tensordot`, `kron`, `gatherMm`, `segmentedMm`, norms, cross |
+| Quantization | `quantize`, `dequantize`, `quantizedMatmul`, `gatherQmm`, `qqmm` |
+| Neural network (`mlx.fast`) | `rmsNorm`, `layerNorm`, `rope`, `scaledDotProductAttention` |
+| FFT, convolution | FFTs; 1D/2D and transposed convolutions |
+| Creation, shape, random | `arange`, `eye`, `tril`; `reshape`, `transpose`, `concatenate`, `pad`; samplers |
 
 An argument form no kernel reproduces exactly (for example an axis reduction with `inner > 1`) fails
 with the operation's name and arguments rather than falling back. Operations without a TornadoVM/MLX
@@ -344,9 +345,9 @@ not exposed.
 ```java
 new TaskGraph("layer")
     .transferToDevice(DataTransferMode.FIRST_EXECUTION, x, weight, w)
-    .task("embed", MyKernels::embed, x)                                              // Java kernel
-    .libraryTask("norm", MlxNeuralNetwork::rmsNorm, x, weight, xn, rows, dim, 1e-5f) // MLX kernel, same buffers and queue
-    .libraryTask("proj", MlxLinearAlgebra::matmul, xn, w, y, rows, dim, hidden)
+    .task("embed", MyKernels::embed, x)                                   // Java kernel
+    .libraryTask("norm", Mlx::rmsNorm, x, weight, xn, rows, dim, 1e-5f)   // MLX kernel, same buffers and queue
+    .libraryTask("proj", Mlx::matmul, xn, w, y, rows, dim, hidden)
     .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
 ```
 

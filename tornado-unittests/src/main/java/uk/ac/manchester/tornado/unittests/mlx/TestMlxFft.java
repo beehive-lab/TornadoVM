@@ -25,7 +25,7 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
-import uk.ac.manchester.tornado.mlx.MlxFft;
+import uk.ac.manchester.tornado.mlx.Mlx;
 
 /**
  * Unit tests for the MLX FFT library tasks: complex and real FFTs and their inverses in one, two and
@@ -157,9 +157,9 @@ public class TestMlxFft extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g").transferToDevice(DataTransferMode.EVERY_EXECUTION, x);
         if (inverse) {
-            taskGraph.libraryTask("ifft", MlxFft::ifft, x, output, ROWS, len, len, norm);
+            taskGraph.libraryTask("ifft", Mlx::ifft, x, output, ROWS, len, len, norm);
         } else {
-            taskGraph.libraryTask("fft", MlxFft::fft, x, output, ROWS, len, len, norm);
+            taskGraph.libraryTask("fft", Mlx::fft, x, output, ROWS, len, len, norm);
         }
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
@@ -176,27 +176,27 @@ public class TestMlxFft extends MlxTestBase {
 
     @Test
     public void testFft() throws TornadoExecutionPlanException {
-        complex1d(false, N, MlxFft.BACKWARD, 1);
+        complex1d(false, N, Mlx.FFT_BACKWARD, 1);
     }
 
     @Test
     public void testIfft() throws TornadoExecutionPlanException {
-        complex1d(true, N, MlxFft.BACKWARD, 1.0 / N);
+        complex1d(true, N, Mlx.FFT_BACKWARD, 1.0 / N);
     }
 
     @Test
     public void testFftOrthoNorm() throws TornadoExecutionPlanException {
-        complex1d(false, N, MlxFft.ORTHO, 1.0 / Math.sqrt(N));
+        complex1d(false, N, Mlx.FFT_ORTHO, 1.0 / Math.sqrt(N));
     }
 
     @Test
     public void testFftForwardNorm() throws TornadoExecutionPlanException {
-        complex1d(false, N, MlxFft.FORWARD, 1.0 / N);
+        complex1d(false, N, Mlx.FFT_FORWARD, 1.0 / N);
     }
 
     @Test
     public void testFftNonPowerOfTwo() throws TornadoExecutionPlanException {
-        complex1d(false, 100, MlxFft.BACKWARD, 1);
+        complex1d(false, 100, Mlx.FFT_BACKWARD, 1);
     }
 
     @Test
@@ -208,7 +208,7 @@ public class TestMlxFft extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("rfft", MlxFft::rfft, x, output, ROWS, N, N, MlxFft.BACKWARD) //
+                .libraryTask("rfft", Mlx::rfft, x, output, ROWS, N, N, Mlx.FFT_BACKWARD) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -230,7 +230,7 @@ public class TestMlxFft extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, spectrum) //
-                .libraryTask("irfft", MlxFft::irfft, spectrum, output, ROWS, half, N, MlxFft.BACKWARD) //
+                .libraryTask("irfft", Mlx::irfft, spectrum, output, ROWS, half, N, Mlx.FFT_BACKWARD) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -250,7 +250,7 @@ public class TestMlxFft extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("fft2", MlxFft::fft2, x, output, BATCH, H, W, MlxFft.BACKWARD) //
+                .libraryTask("fft2", Mlx::fft2, x, output, BATCH, H, W, Mlx.FFT_BACKWARD) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -270,7 +270,7 @@ public class TestMlxFft extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("ifft2", MlxFft::ifft2, x, output, BATCH, H, W, MlxFft.BACKWARD) //
+                .libraryTask("ifft2", Mlx::ifft2, x, output, BATCH, H, W, Mlx.FFT_BACKWARD) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -291,7 +291,7 @@ public class TestMlxFft extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("rfft2", MlxFft::rfft2, x, output, BATCH, H, W, MlxFft.BACKWARD) //
+                .libraryTask("rfft2", Mlx::rfft2, x, output, BATCH, H, W, Mlx.FFT_BACKWARD) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -311,7 +311,7 @@ public class TestMlxFft extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, spectrum) //
-                .libraryTask("irfft2", MlxFft::irfft2, spectrum, output, BATCH, H, W, MlxFft.BACKWARD) //
+                .libraryTask("irfft2", Mlx::irfft2, spectrum, output, BATCH, H, W, Mlx.FFT_BACKWARD) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -332,7 +332,7 @@ public class TestMlxFft extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("fftn", MlxFft::fftn, x, output, 1, D, D, W, MlxFft.BACKWARD) //
+                .libraryTask("fftn", Mlx::fftn, x, output, 1, D, D, W, Mlx.FFT_BACKWARD) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -353,7 +353,7 @@ public class TestMlxFft extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("ifftn", MlxFft::ifftn, x, output, 1, D, D, W, MlxFft.BACKWARD) //
+                .libraryTask("ifftn", Mlx::ifftn, x, output, 1, D, D, W, Mlx.FFT_BACKWARD) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -374,7 +374,7 @@ public class TestMlxFft extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("rfftn", MlxFft::rfftn, x, output, 1, D, D, W, MlxFft.BACKWARD) //
+                .libraryTask("rfftn", Mlx::rfftn, x, output, 1, D, D, W, Mlx.FFT_BACKWARD) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -394,7 +394,7 @@ public class TestMlxFft extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, spectrum) //
-                .libraryTask("irfftn", MlxFft::irfftn, spectrum, output, 1, D, D, W, MlxFft.BACKWARD) //
+                .libraryTask("irfftn", Mlx::irfftn, spectrum, output, 1, D, D, W, Mlx.FFT_BACKWARD) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -415,7 +415,7 @@ public class TestMlxFft extends MlxTestBase {
 
             TaskGraph taskGraph = new TaskGraph("g") //
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                    .libraryTask("fftshift", MlxFft::fftshift, x, output, ROWS, len) //
+                    .libraryTask("fftshift", Mlx::fftshift, x, output, ROWS, len) //
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
             try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -441,7 +441,7 @@ public class TestMlxFft extends MlxTestBase {
 
             TaskGraph taskGraph = new TaskGraph("g") //
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                    .libraryTask("ifftshift", MlxFft::ifftshift, x, output, ROWS, len) //
+                    .libraryTask("ifftshift", Mlx::ifftshift, x, output, ROWS, len) //
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
             try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -465,7 +465,7 @@ public class TestMlxFft extends MlxTestBase {
 
             TaskGraph taskGraph = new TaskGraph("g") //
                     .transferToDevice(DataTransferMode.FIRST_EXECUTION, output) //
-                    .libraryTask("fftfreq", MlxFft::fftfreq, output, n, 0.5f) //
+                    .libraryTask("fftfreq", Mlx::fftfreq, output, n, 0.5f) //
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
             try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -487,7 +487,7 @@ public class TestMlxFft extends MlxTestBase {
 
             TaskGraph taskGraph = new TaskGraph("g") //
                     .transferToDevice(DataTransferMode.FIRST_EXECUTION, output) //
-                    .libraryTask("rfftfreq", MlxFft::rfftfreq, output, n, 0.5f) //
+                    .libraryTask("rfftfreq", Mlx::rfftfreq, output, n, 0.5f) //
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
             try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -511,7 +511,7 @@ public class TestMlxFft extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("fftshift", MlxFft::fftshift, x, output, rows, len) //
+                .libraryTask("fftshift", Mlx::fftshift, x, output, rows, len) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {

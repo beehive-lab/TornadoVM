@@ -31,7 +31,7 @@ import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.mlx.MlxQuantization;
+import uk.ac.manchester.tornado.mlx.Mlx;
 
 /**
  * Unit tests for the MLX quantization library tasks: affine group quantize and dequantize (2, 4 and
@@ -91,8 +91,8 @@ public class TestMlxQuantization extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, w) //
-                .libraryTask("quantize", MlxQuantization::quantize, w, wq, scales, biases, rows, cols, groupSize, bits) //
-                .libraryTask("dequantize", MlxQuantization::dequantize, wq, scales, biases, back, rows, cols, groupSize, bits) //
+                .libraryTask("quantize", Mlx::quantize, w, wq, scales, biases, rows, cols, groupSize, bits) //
+                .libraryTask("dequantize", Mlx::dequantize, wq, scales, biases, back, rows, cols, groupSize, bits) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, wq, scales, biases, back);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -147,8 +147,8 @@ public class TestMlxQuantization extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, w) //
-                .libraryTask("quantize", MlxQuantization::quantize, w, wq, scales, biases, n, k, groupSize, bits) //
-                .libraryTask("qmm", MlxQuantization::quantizedMatmul, x, wq, scales, biases, y, m, k, n, groupSize, bits) //
+                .libraryTask("quantize", Mlx::quantize, w, wq, scales, biases, n, k, groupSize, bits) //
+                .libraryTask("qmm", Mlx::quantizedMatmul, x, wq, scales, biases, y, m, k, n, groupSize, bits) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, wq, scales, biases, y);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -182,8 +182,8 @@ public class TestMlxQuantization extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, w, lhs, rhs) //
-                .libraryTask("quantize", MlxQuantization::quantize, w, wq, scales, biases, experts * n, k, groupSize, bits) //
-                .libraryTask("gatherQmm", MlxQuantization::gatherQmm, x, wq, scales, biases, lhs, rhs, y, batches, experts, m, k, n, groupSize, bits) //
+                .libraryTask("quantize", Mlx::quantize, w, wq, scales, biases, experts * n, k, groupSize, bits) //
+                .libraryTask("gatherQmm", Mlx::gatherQmm, x, wq, scales, biases, lhs, rhs, y, batches, experts, m, k, n, groupSize, bits) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, wq, scales, biases, y);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -216,8 +216,8 @@ public class TestMlxQuantization extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, w) //
-                .libraryTask("quantizeMx", MlxQuantization::quantizeMx, w, wq, scales, n, k, 0) //
-                .libraryTask("qqmm", MlxQuantization::qqmm, x, wq, scales, y, m, k, n, 0) //
+                .libraryTask("quantizeMx", Mlx::quantizeMx, w, wq, scales, n, k, 0) //
+                .libraryTask("qqmm", Mlx::qqmm, x, wq, scales, y, m, k, n, 0) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -261,8 +261,8 @@ public class TestMlxQuantization extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, w) //
-                .libraryTask("quantize", MlxQuantization::quantize, w, wq, scales, biases, n, k, groupSize, bits) //
-                .libraryTask("qmm", MlxQuantization::quantizedMatmul, x, wq, scales, biases, y, m, k, n, groupSize, bits) //
+                .libraryTask("quantize", Mlx::quantize, w, wq, scales, biases, n, k, groupSize, bits) //
+                .libraryTask("qmm", Mlx::quantizedMatmul, x, wq, scales, biases, y, m, k, n, groupSize, bits) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, wq, scales, biases, y);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {

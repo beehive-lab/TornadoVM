@@ -25,7 +25,7 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
-import uk.ac.manchester.tornado.mlx.MlxConvolution;
+import uk.ac.manchester.tornado.mlx.Mlx;
 
 /**
  * Unit tests for the MLX convolution library tasks: 1D and 2D convolutions, transposed convolutions
@@ -138,7 +138,7 @@ public class TestMlxConvolution extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, w) //
-                .libraryTask("conv1d", MlxConvolution::conv1d, x, w, output, n, len, cin, cout, k, 2, 2, 1, groups) //
+                .libraryTask("conv1d", Mlx::conv1d, x, w, output, n, len, cin, cout, k, 2, 2, 1, groups) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -165,7 +165,7 @@ public class TestMlxConvolution extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, weights) //
-                .libraryTask("conv2d", MlxConvolution::conv2d, x, weights, output, n, h, w, cin, cout, 3, 3, 1, 1, 2, 1) //
+                .libraryTask("conv2d", Mlx::conv2d, x, weights, output, n, h, w, cin, cout, 3, 3, 1, 1, 2, 1) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -195,7 +195,7 @@ public class TestMlxConvolution extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, w) //
-                .libraryTask("convTranspose1d", MlxConvolution::convTranspose1d, x, w, output, n, len, cin, cout, k, 1, padding, 1, 0, 1) //
+                .libraryTask("convTranspose1d", Mlx::convTranspose1d, x, w, output, n, len, cin, cout, k, 1, padding, 1, 0, 1) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -224,7 +224,7 @@ public class TestMlxConvolution extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, weights) //
-                .libraryTask("convTranspose2d", MlxConvolution::convTranspose2d, x, weights, output, n, h, w, channels, channels, 3, 3, stride, padding, 1, 0, 1) //
+                .libraryTask("convTranspose2d", Mlx::convTranspose2d, x, weights, output, n, h, w, channels, channels, 3, 3, stride, padding, 1, 0, 1) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -251,7 +251,7 @@ public class TestMlxConvolution extends MlxTestBase {
 
             TaskGraph taskGraph = new TaskGraph("g") //
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, weights) //
-                    .libraryTask("convGeneral2d", MlxConvolution::convGeneral2d, x, weights, output, 1, h, w, cin, cout, 3, 2, 1, 1, 2, 1, 2, 1, flip) //
+                    .libraryTask("convGeneral2d", Mlx::convGeneral2d, x, weights, output, 1, h, w, cin, cout, 3, 2, 1, 1, 2, 1, 2, 1, flip) //
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
             try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -275,7 +275,7 @@ public class TestMlxConvolution extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, weights) //
-                .libraryTask("conv2d", MlxConvolution::conv2d, x, weights, output, 1, h, w, cin, cout, 3, 3, 1, 1, 1, 1) //
+                .libraryTask("conv2d", Mlx::conv2d, x, weights, output, 1, h, w, cin, cout, 3, 3, 1, 1, 1, 1) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {

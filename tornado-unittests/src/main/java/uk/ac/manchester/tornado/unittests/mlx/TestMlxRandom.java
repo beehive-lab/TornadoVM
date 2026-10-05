@@ -29,7 +29,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.mlx.MlxRandom;
+import uk.ac.manchester.tornado.mlx.Mlx;
 
 /**
  * Unit tests for the MLX random-sampling library tasks: bits, uniform, normal, randint, bernoulli,
@@ -131,7 +131,7 @@ public class TestMlxRandom extends MlxTestBase {
         IntArray output = new IntArray(SIZE);
 
         TaskGraph taskGraph = new TaskGraph("g") //
-                .libraryTask("bits", MlxRandom::bits, output, SEED) //
+                .libraryTask("bits", Mlx::bits, output, SEED) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -152,7 +152,7 @@ public class TestMlxRandom extends MlxTestBase {
         FloatArray output = new FloatArray(SIZE);
 
         TaskGraph taskGraph = new TaskGraph("g") //
-                .libraryTask("uniform", MlxRandom::uniform, output, -2.0f, 3.0f, SEED) //
+                .libraryTask("uniform", Mlx::uniform, output, -2.0f, 3.0f, SEED) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -168,7 +168,7 @@ public class TestMlxRandom extends MlxTestBase {
         FloatArray output = new FloatArray(SIZE);
 
         TaskGraph taskGraph = new TaskGraph("g") //
-                .libraryTask("normal", MlxRandom::normal, output, 1.0f, 2.0f, SEED) //
+                .libraryTask("normal", Mlx::normal, output, 1.0f, 2.0f, SEED) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -191,7 +191,7 @@ public class TestMlxRandom extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, loc, scale) //
-                .libraryTask("normal", MlxRandom::normalBroadcast, loc, scale, output, SEED) //
+                .libraryTask("normal", Mlx::normalBroadcast, loc, scale, output, SEED) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -212,7 +212,7 @@ public class TestMlxRandom extends MlxTestBase {
         IntArray output = new IntArray(SIZE);
 
         TaskGraph taskGraph = new TaskGraph("g") //
-                .libraryTask("randint", MlxRandom::randint, output, -3, 5, SEED) //
+                .libraryTask("randint", Mlx::randint, output, -3, 5, SEED) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -241,7 +241,7 @@ public class TestMlxRandom extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, p) //
-                .libraryTask("bernoulli", MlxRandom::bernoulli, p, output, SEED) //
+                .libraryTask("bernoulli", Mlx::bernoulli, p, output, SEED) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -263,7 +263,7 @@ public class TestMlxRandom extends MlxTestBase {
         FloatArray output = new FloatArray(SIZE);
 
         TaskGraph taskGraph = new TaskGraph("g") //
-                .libraryTask("truncatedNormal", MlxRandom::truncatedNormal, output, -1.0f, 2.0f, SEED) //
+                .libraryTask("truncatedNormal", Mlx::truncatedNormal, output, -1.0f, 2.0f, SEED) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -283,7 +283,7 @@ public class TestMlxRandom extends MlxTestBase {
         FloatArray output = new FloatArray(SIZE);
 
         TaskGraph taskGraph = new TaskGraph("g") //
-                .libraryTask("gumbel", MlxRandom::gumbel, output, SEED) //
+                .libraryTask("gumbel", Mlx::gumbel, output, SEED) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -299,7 +299,7 @@ public class TestMlxRandom extends MlxTestBase {
         FloatArray output = new FloatArray(SIZE);
 
         TaskGraph taskGraph = new TaskGraph("g") //
-                .libraryTask("laplace", MlxRandom::laplace, output, 1.0f, 0.5f, SEED) //
+                .libraryTask("laplace", Mlx::laplace, output, 1.0f, 0.5f, SEED) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -318,7 +318,7 @@ public class TestMlxRandom extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, l) //
-                .libraryTask("categorical", MlxRandom::categorical, l, output, SIZE, CLASSES, SEED) //
+                .libraryTask("categorical", Mlx::categorical, l, output, SIZE, CLASSES, SEED) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -338,7 +338,7 @@ public class TestMlxRandom extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, l) //
-                .libraryTask("categorical", MlxRandom::categoricalSamples, l, output, rows, CLASSES, samples, SEED) //
+                .libraryTask("categorical", Mlx::categoricalSamples, l, output, rows, CLASSES, samples, SEED) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -358,7 +358,7 @@ public class TestMlxRandom extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, l) //
-                .libraryTask("categorical", MlxRandom::categoricalShape, l, output, rows, CLASSES, samples, SEED) //
+                .libraryTask("categorical", Mlx::categoricalShape, l, output, rows, CLASSES, samples, SEED) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -374,7 +374,7 @@ public class TestMlxRandom extends MlxTestBase {
         IntArray output = new IntArray(n);
 
         TaskGraph taskGraph = new TaskGraph("g") //
-                .libraryTask("permutation", MlxRandom::permutationArange, output, SEED) //
+                .libraryTask("permutation", Mlx::permutationArange, output, SEED) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -400,9 +400,9 @@ public class TestMlxRandom extends MlxTestBase {
         FloatArray c = new FloatArray(SIZE);
 
         TaskGraph taskGraph = new TaskGraph("g") //
-                .libraryTask("a", MlxRandom::uniform, a, 0.0f, 1.0f, 7) //
-                .libraryTask("b", MlxRandom::uniform, b, 0.0f, 1.0f, 7) //
-                .libraryTask("c", MlxRandom::uniform, c, 0.0f, 1.0f, 8) //
+                .libraryTask("a", Mlx::uniform, a, 0.0f, 1.0f, 7) //
+                .libraryTask("b", Mlx::uniform, b, 0.0f, 1.0f, 7) //
+                .libraryTask("c", Mlx::uniform, c, 0.0f, 1.0f, 8) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a, b, c);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {

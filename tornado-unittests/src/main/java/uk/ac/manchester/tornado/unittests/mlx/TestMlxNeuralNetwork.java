@@ -27,7 +27,7 @@ import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.mlx.MlxNeuralNetwork;
+import uk.ac.manchester.tornado.mlx.Mlx;
 
 /**
  * Unit tests for the MLX neural-network library tasks (mlx.fast): RMS norm, layer norm, RoPE with a
@@ -141,7 +141,7 @@ public class TestMlxNeuralNetwork extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("rope", MlxNeuralNetwork::rope, x, output, batch, heads, seqLen, headDim, dims, traditional, base, 1f, offset) //
+                .libraryTask("rope", Mlx::rope, x, output, batch, heads, seqLen, headDim, dims, traditional, base, 1f, offset) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -168,7 +168,7 @@ public class TestMlxNeuralNetwork extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, q, k, v) //
-                .libraryTask("sdpa", MlxNeuralNetwork::scaledDotProductAttention, q, k, v, output, batch, qHeads, kvHeads, qLen, kvLen, headDim, scale, causal) //
+                .libraryTask("sdpa", Mlx::scaledDotProductAttention, q, k, v, output, batch, qHeads, kvHeads, qLen, kvLen, headDim, scale, causal) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -190,7 +190,7 @@ public class TestMlxNeuralNetwork extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, weight) //
-                .libraryTask("rmsNorm", MlxNeuralNetwork::rmsNorm, x, weight, output, rows, dim, EPS) //
+                .libraryTask("rmsNorm", Mlx::rmsNorm, x, weight, output, rows, dim, EPS) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -214,7 +214,7 @@ public class TestMlxNeuralNetwork extends MlxTestBase {
 
             TaskGraph taskGraph = new TaskGraph("g") //
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, weight) //
-                    .libraryTask("rmsNorm", MlxNeuralNetwork::rmsNorm, x, weight, output, rows, dim, EPS) //
+                    .libraryTask("rmsNorm", Mlx::rmsNorm, x, weight, output, rows, dim, EPS) //
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
             try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -239,7 +239,7 @@ public class TestMlxNeuralNetwork extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, weight, bias) //
-                .libraryTask("layerNorm", MlxNeuralNetwork::layerNorm, x, weight, bias, output, rows, dim, EPS) //
+                .libraryTask("layerNorm", Mlx::layerNorm, x, weight, bias, output, rows, dim, EPS) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -298,7 +298,7 @@ public class TestMlxNeuralNetwork extends MlxTestBase {
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, x) //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, offset) //
-                .libraryTask("rope", MlxNeuralNetwork::ropeDynamic, x, offset, output, batch, heads, seqLen, headDim, dims, false, base, 1f) //
+                .libraryTask("rope", Mlx::ropeDynamic, x, offset, output, batch, heads, seqLen, headDim, dims, false, base, 1f) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -338,7 +338,7 @@ public class TestMlxNeuralNetwork extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, weight) //
-                .libraryTask("rmsNorm", MlxNeuralNetwork::rmsNorm, x, weight, output, rows, dim, EPS) //
+                .libraryTask("rmsNorm", Mlx::rmsNorm, x, weight, output, rows, dim, EPS) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -362,7 +362,7 @@ public class TestMlxNeuralNetwork extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .libraryTask("rope", MlxNeuralNetwork::rope, x, output, batch, heads, seqLen, headDim, dims, false, base, 1f, offset) //
+                .libraryTask("rope", Mlx::rope, x, output, batch, heads, seqLen, headDim, dims, false, base, 1f, offset) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
