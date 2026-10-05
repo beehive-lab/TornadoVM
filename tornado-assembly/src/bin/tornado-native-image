@@ -221,7 +221,10 @@ def main():
     write_lambda_config(config_dir, hosts)
     print(f"[INFO] Registered {len(hosts)} classes with lambda kernels for serialization")
 
-    command = [native_image] + flags + ["--no-fallback", f"-H:ConfigurationFileDirectories={config_dir}",
+    # Shared arenas (Arena.ofShared) back many TornadoVM applications' off-heap buffers; Native Image
+    # supports them only on request.
+    command = [native_image] + flags + ["--no-fallback", "-H:+UnlockExperimentalVMOptions", "-H:+SharedArenaSupport",
+                                        f"-H:ConfigurationFileDirectories={config_dir}",
                                         "-o", args.output] + launch + native_image_extra
     print("[INFO] Building " + args.output)
     result = subprocess.run(command)
