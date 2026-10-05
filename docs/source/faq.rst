@@ -37,7 +37,7 @@ List of compatible JDKs
 
 TornadoVM currently supports:
 
--  JDK 22 and newer, including JDK 27, via the single ``jdk22plus`` build profile (e.g. OpenJDK, Red Hat Mandrel, Amazon Corretto, Azul Zulu). TornadoVM no longer depends on JVMCI, so this SDK is built once and runs on any JDK from 22 upwards rather than being tied to one release.
+-  JDK 22 and newer, including JDK 27, via the single ``jdk22plus`` build profile (e.g. OpenJDK, GraalVM, Red Hat Mandrel, Amazon Corretto, Azul Zulu). TornadoVM does not use JVMCI: it ships the compiler's metadata API as its own ``tornado.meta`` module and reads class metadata through reflection, so this SDK is built once and runs on any JDK from 22 upwards rather than being tied to one release. A GraalVM JDK is just another JDK: TornadoVM brings its own relocated Graal and uses nothing GraalVM bundles.
 
 JDK 21 is no longer supported.
 
@@ -105,8 +105,8 @@ You can find more information here: `https://dl.acm.org/doi/10.1145/3313808.3313
 10. How does it interact with OpenJDK?
 --------------------------------------
 
-TornadoVM makes use of the Java Virtual Machine Common Interface (JVMCI) that is included from Java 9 to compile Java bytecode to OpenCL C, NVIDIA CUDA C, and Apple Metal at runtime.
-As a JVMCI implementation, TornadoVM uses Graal (it extends the Graal IR and includes new backends for each of these targets).
+TornadoVM runs as a library on a stock JVM and needs no special JVM support. It compiles Java bytecode to OpenCL C, NVIDIA CUDA C, and Apple Metal at runtime with its own copy of the Graal compiler (it extends the Graal IR and includes new backends for each of these targets).
+Class metadata comes from Java reflection and the class files, through the ``tornado.meta`` API that TornadoVM ships; it does not use the JVM Compiler Interface (JVMCI).
 
 11.  How do I know which parts of my application are suitable for acceleration?
 -------------------------------------------------------------------------------

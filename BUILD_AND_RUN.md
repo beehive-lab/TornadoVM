@@ -99,11 +99,10 @@ cat tornado-argfile
 ### tornado-argfile
 Located at the repository root, this file contains:
 - JVM server mode and experimental VM options
-- JVMCI enablement for Graal compiler
 - Native library paths for TornadoVM
 - Tornado runtime class implementations
-- Module path and upgrade paths
-- Extensive `--add-exports` and `--add-opens` declarations for Graal compiler internals
+- The module path
+- The `--add-opens` and `--enable-native-access` declarations TornadoVM needs
 
 ### .mvn/maven.config
 Maven configuration file that applies to all Maven builds (both `./mvnw` and `bin/compile`):

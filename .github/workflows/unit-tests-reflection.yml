@@ -1,4 +1,4 @@
-name: No-GPU Unit Tests — reflection + CUDA codegen [JDK 22-27]
+name: No-GPU Unit Tests — reflection + CUDA codegen [JDK 22-27, GraalVM]
 
 # Pure-JVM unit tests for the reflection JVMCI layer (tornado-runtime/src/test). These need no GPU,
 # so they run on standard GitHub-hosted runners - the first no-GPU CI stage for TornadoVM. The full
@@ -10,6 +10,10 @@ name: No-GPU Unit Tests — reflection + CUDA codegen [JDK 22-27]
 # the complementary half of the same claim: build-test.yml proves one ARTIFACT runs on every JDK,
 # and this proves the jdk22plus profile BUILDS on every JDK. The matrix axis is therefore the host
 # JDK, not the profile -- there is only one profile.
+#
+# A GraalVM leg rides along: a GraalVM JDK bundles its own Graal, JVMCI and org.graalvm.* modules,
+# and the SDK has to build and resolve its module graph next to them without a clash. Every leg
+# checks that by booting the SDK's module layer (java --dry-run) on its host JDK.
 #
 # The reflection layer sits on tornado-meta on every host, but each host JDK has its own
 # reflection, class-file and Unsafe behaviour (and 22-26 still ship a JVMCI module TornadoVM must
@@ -36,7 +40,7 @@ on:
   workflow_dispatch:
 
 # As in build-test.yml: one live run per branch, and a superseded pull request run is cancelled.
-# These are GitHub-hosted rather than self-hosted, so the cost is not a blocked queue, but six
+# These are GitHub-hosted rather than self-hosted, so the cost is not a blocked queue, but seven
 # ubuntu-latest jobs per push adds up and the result of a run against an overwritten commit is
 # read by nobody.
 concurrency:
@@ -53,24 +57,33 @@ jobs:
         include:
           # One profile, every host JDK from the floor up.
           - profile: jdk22plus
+            distribution: temurin
             setup_java_version: '22'
           - profile: jdk22plus
+            distribution: temurin
             setup_java_version: '23'
           - profile: jdk22plus
+            distribution: temurin
             setup_java_version: '24'
           - profile: jdk22plus
+            distribution: temurin
             setup_java_version: '25'
           - profile: jdk22plus
+            distribution: temurin
             setup_java_version: '26'
           - profile: jdk22plus
+            distribution: temurin
             setup_java_version: '27-ea'
+          - profile: jdk22plus
+            distribution: graalvm
+            setup_java_version: '25'
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
+          distribution: ${{ matrix.distribution }}
           java-version: ${{ matrix.setup_java_version }}
 
       - name: Report the host JDK under test
@@ -90,6 +103,15 @@ jobs:
 
       - name: Show the SDK's declared JDK contract
         run: cat "$(ls -d dist/*/*/)etc/tornado.jdk"
+
+      - name: Boot the SDK's module layer on this JDK
+        run: |
+          # Resolves every TornadoVM module, tornado.graal and tornado.meta against this JDK's own
+          # modules and loads the test runner's main class, without running it. A module or
+          # package clash with the JDK (e.g. a GraalVM JDK's bundled Graal) fails here.
+          SDK="$(ls -d $PWD/dist/*/*/)"; SDK="${SDK%/}"
+          java @"$SDK/tornado-argfile" --add-modules tornado.unittests --dry-run \
+            -m tornado.unittests/uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner
 
       - name: Run reflection unit tests (${{ matrix.profile }})
         run: make test-reflection
