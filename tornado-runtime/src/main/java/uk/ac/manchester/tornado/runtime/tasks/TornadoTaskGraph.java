@@ -41,6 +41,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -1361,7 +1362,38 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
     }
 
+    /**
+     * The access of every object this graph streams in or out, keyed by identity. A consumer graph
+     * looks up each object it consumes in its producer's lists on every execution, and a linear
+     * scan of those lists costs a plan with many shared buffers milliseconds per execution. Rebuilt
+     * when either list has changed size; the lists are unmodifiable once the graph is snapshotted.
+     */
+    private IdentityHashMap<Object, Access> objectAccessByIdentity;
+    private int objectAccessInputs = -1;
+    private int objectAccessOutputs = -1;
+
     private Access getObjectAccess(Object object) {
+        if (objectAccessByIdentity == null || objectAccessInputs != inputModesObjects.size() || objectAccessOutputs != outputModeObjects.size()) {
+            IdentityHashMap<Object, Access> map = new IdentityHashMap<>();
+            for (StreamingObject inputStreamObject : inputModesObjects) {
+                map.put(inputStreamObject.object, Access.READ_ONLY);
+            }
+            for (StreamingObject outputStreamObject : outputModeObjects) {
+                map.merge(outputStreamObject.object, Access.WRITE_ONLY, (previous, write) -> previous == Access.READ_ONLY ? Access.READ_WRITE : previous);
+            }
+            objectAccessByIdentity = map;
+            objectAccessInputs = inputModesObjects.size();
+            objectAccessOutputs = outputModeObjects.size();
+        }
+        Access access = objectAccessByIdentity.get(object);
+        if (access != null) {
+            return access;
+        }
+        return getObjectAccessByEquality(object);
+    }
+
+    /** The original lookup by {@code equals}, for an object that is not the same instance. */
+    private Access getObjectAccessByEquality(Object object) {
         boolean isRead = false;
         boolean isWrite = false;
         for (StreamingObject inputStreamObject : inputModesObjects) {
@@ -1385,7 +1417,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         } else {
             return Access.NONE;
         }
-
     }
 
     private void reuseDeviceBufferObject(Object object) {
