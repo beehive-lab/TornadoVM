@@ -1,0 +1,176 @@
+#!/usr/bin/env python3
+#
+# Copyright (c) 2026, APT Group, Department of Computer Science,
+# The University of Manchester.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+"""
+Build a GraalVM native image of a TornadoVM application.
+
+TornadoVM compiles kernels at run time from their bytecode, with its own copy of the Graal compiler.
+None of that needs JVMCI, so the whole runtime can be compiled ahead of time into one executable. The
+image needs reachability metadata for everything TornadoVM reaches reflectively (the kernels'
+classes and class files, Graal's services, the FFM downcalls of the backends); this script records
+it by running the application under GraalVM's tracing agent, once per --trace, and then calls
+native-image with the module flags of this SDK.
+
+Requirements: JAVA_HOME points at a GraalVM for JDK 22 or newer with native-image, and
+TORNADOVM_HOME at a jdk22plus TornadoVM SDK.
+
+Example:
+    tornado-native-image -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt -o vectoradd \\
+        --trace "-Ds0.t0.device=0:0 -- 1024" --trace "-Ds0.t0.device=1:0 -- 1024"
+    ./vectoradd 1048576
+
+Each --trace is one run of the application on the JVM: JVM options (such as the device to use) go
+before a "--", application arguments after it. Trace every backend and every kernel the image will
+run; a path that no trace exercised may be missing metadata and fail at run time.
+"""
+
+import argparse
+import os
+import shlex
+import shutil
+import subprocess
+import sys
+
+# Launcher flags that configure the JVM rather than the application; native-image rejects them.
+JVM_ONLY_PREFIXES = ("-server", "-XX:")
+# Properties with built-in defaults in TornadoVM; the image does not need them.
+DEFAULTED_PROPERTIES = ("-Dtornado.load.",)
+
+
+def fail(message):
+    print(f"[ERROR] {message}", file=sys.stderr)
+    sys.exit(1)
+
+
+def sdk_flags(tornado_home):
+    """The JVM flags of this SDK, from the argfile the tornado launcher generates."""
+    subprocess.run([os.path.join(tornado_home, "bin", "tornado"), "--generate-argfile"],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+    flags = []
+    with open(os.path.join(tornado_home, "tornado-argfile")) as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#"):
+                flags.extend(shlex.split(line))
+    return flags
+
+
+def application_flags(flags, extra_module_path):
+    """Module flags for native-image and the tracing JVM: no JVM-only options, no "." module-path entry,
+    and native access for every TornadoVM module (the backends call native code themselves)."""
+    out = []
+    modules = []
+    i = 0
+    while i < len(flags):
+        flag = flags[i]
+        value = flags[i + 1] if i + 1 < len(flags) else None
+        if flag.startswith(JVM_ONLY_PREFIXES) or flag.startswith(DEFAULTED_PROPERTIES):
+            i += 1
+            continue
+        if flag == "--module-path":
+            entries = [e for e in value.split(os.pathsep) if e not in (".", "")]
+            if extra_module_path:
+                entries.append(extra_module_path)
+            out += [flag, os.pathsep.join(entries)]
+            i += 2
+            continue
+        if flag == "--add-modules":
+            modules = value.split(",")
+            out += [flag, value]
+            i += 2
+            continue
+        if flag.startswith("--enable-native-access"):
+            i += 1
+            continue
+        if flag in ("--add-opens", "--add-exports"):
+            out += [flag, value]
+            i += 2
+            continue
+        out.append(flag)
+        i += 1
+    native = sorted({m for m in modules if m.startswith("tornado.")} | {"tornado.runtime"})
+    out.append("--enable-native-access=" + ",".join(native))
+    return out
+
+
+def trace(java, flags, config_dir, main, spec):
+    tokens = shlex.split(spec)
+    if "--" in tokens:
+        split = tokens.index("--")
+        jvm_options, app_args = tokens[:split], tokens[split + 1:]
+    else:
+        jvm_options, app_args = [], tokens
+    command = [java, f"-agentlib:native-image-agent=config-merge-dir={config_dir}"] + flags + jvm_options + ["-m", main] + app_args
+    print("[INFO] Tracing: " + " ".join(jvm_options + [main] + app_args))
+    result = subprocess.run(command)
+    if result.returncode != 0:
+        fail(f"the traced run exited with {result.returncode}; fix it on the JVM first")
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Build a GraalVM native image of a TornadoVM application.",
+                                     epilog="Arguments after a lone -- are passed to native-image.")
+    parser.add_argument("-m", "--module", required=True, help="main module and class, <module>/<main-class>")
+    parser.add_argument("-o", "--output", required=True, help="path of the executable to create")
+    parser.add_argument("-p", "--module-path", default=None, help="module path entries of the application")
+    parser.add_argument("--trace", action="append", default=[],
+                        help='one traced JVM run, as "[JVM options --] application arguments" (repeatable)')
+    parser.add_argument("--config-dir", default=None,
+                        help="reachability-metadata directory (default: <output>-native-config); existing metadata is kept and merged")
+    parser.add_argument("--no-trace", action="store_true", help="reuse the metadata in --config-dir without tracing")
+    argv = sys.argv[1:]
+    native_image_extra = []
+    if "--" in argv:
+        split = argv.index("--")
+        argv, native_image_extra = argv[:split], argv[split + 1:]
+    args = parser.parse_args(argv)
+
+    tornado_home = os.environ.get("TORNADOVM_HOME")
+    java_home = os.environ.get("JAVA_HOME")
+    if not tornado_home or not os.path.isdir(tornado_home):
+        fail("TORNADOVM_HOME is not set to a TornadoVM SDK")
+    if not java_home:
+        fail("JAVA_HOME is not set")
+    java = os.path.join(java_home, "bin", "java")
+    native_image = os.path.join(java_home, "bin", "native-image")
+    if not os.path.isfile(native_image) and not shutil.which("native-image"):
+        fail(f"no native-image in {java_home}: JAVA_HOME must point at a GraalVM")
+    native_image = native_image if os.path.isfile(native_image) else shutil.which("native-image")
+
+    config_dir = os.path.abspath(args.config_dir or args.output + "-native-config")
+    os.makedirs(config_dir, exist_ok=True)
+    flags = application_flags(sdk_flags(tornado_home), args.module_path)
+
+    if not args.no_trace:
+        if not args.trace:
+            fail("give at least one --trace run (or --no-trace with an existing --config-dir)")
+        for spec in args.trace:
+            trace(java, flags, config_dir, args.module, spec)
+
+    command = [native_image] + flags + ["--no-fallback", f"-H:ConfigurationFileDirectories={config_dir}",
+                                        "-o", args.output, "-m", args.module] + native_image_extra
+    print("[INFO] Building " + args.output)
+    result = subprocess.run(command)
+    if result.returncode != 0:
+        fail(f"native-image exited with {result.returncode}")
+    print(f"[INFO] Built {args.output}. Run it with the application's arguments. Add")
+    print(f"       -Djava.library.path={tornado_home}/lib if it uses TornadoVM's JNI-based library tasks.")
+
+
+if __name__ == "__main__":
+    main()
