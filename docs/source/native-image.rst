@@ -64,6 +64,12 @@ Limitations
 - **Host-side Java is not JIT-compiled.** Kernels run as before, but Java code on the host runs as
   ahead-of-time compiled code without run-time profiling. Host-heavy applications can be slower than on
   the JVM; Oracle GraalVM's profile-guided optimization (``--pgo``) narrows this gap.
+- **Shared arenas.** The CUDA and OpenCL backends allocate host memory from ``Arena.ofShared()`` and free it by
+  closing the arena, which Native Image supports only with ``-H:+SharedArenaSupport``. ``tornado-native-image``
+  passes that option. In GraalVM 25 an image cannot be built with it when application code uses the Vector
+  API (``jdk.incubator.vector``) on a ``MemorySegment``: ``native-image`` stops with ``GraalError: ... was not
+  inlined and could access a session``. Requiring the module is fine; only vector loads and stores on memory
+  segments trigger it.
 - **Oracle GraalVM 25 PGO and the OpenCL backend.** Building a PGO-instrumented image fails inside
   ``native-image`` on the upcall stub of the OpenCL context error callback (``GraalError: mismatched
   definition``). Build PGO images from a CUDA-only SDK until this is fixed in GraalVM.
