@@ -46,10 +46,6 @@ public class TornadoRuntimeProvider {
         return runtimeImpl.isProfilerEnabled();
     }
 
-    public static boolean isPowerMonitoringEnabled() {
-        return runtimeImpl.isPowerMonitoringEnabled();
-    }
-
     public static void setProperty(String key, String value) {
         tornadoImpl.setTornadoProperty(key, value);
     }
