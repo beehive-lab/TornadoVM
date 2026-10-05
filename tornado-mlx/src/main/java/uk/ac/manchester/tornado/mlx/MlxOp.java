@@ -25,8 +25,8 @@ import java.lang.annotation.Target;
 
 /**
  * Names the MLX operation(s) an {@link Mlx} factory method binds, e.g.
- * {@code @MlxOp("mlx_add")}. {@code tornado-mlx/scripts/update_coverage.py} reads these to build the
- * coverage manifest, and the build fails if a bound operation has no test.
+ * {@code @MlxOp("mlx_add")}. The coverage manifest of
+ * <a href="https://github.com/kotselidis/TornadoMLXBenchmarks">TornadoMLXBenchmarks</a> is built from these.
  */
 @Documented
 @Retention(RetentionPolicy.SOURCE)

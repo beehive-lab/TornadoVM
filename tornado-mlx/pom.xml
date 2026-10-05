@@ -30,34 +30,6 @@
             <version>${project.version}</version>
         </dependency>
     </dependencies>
-    <build>
-        <plugins>
-            <!-- Coverage gate: fails the build if an MLX operation is bound (@MlxOp) but not
-                 tested, or if coverage.json is stale. See scripts/update_coverage.py. -->
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>3.1.0</version>
-                <executions>
-                    <execution>
-                        <id>mlx-coverage-check</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <executable>python3</executable>
-                            <workingDirectory>${project.basedir}</workingDirectory>
-                            <arguments>
-                                <argument>scripts/update_coverage.py</argument>
-                                <argument>--check</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
     <developers>
         <developer>
             <id>beehive-lab</id>
