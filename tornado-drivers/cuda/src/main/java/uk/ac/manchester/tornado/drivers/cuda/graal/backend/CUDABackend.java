@@ -64,7 +64,6 @@ import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.CompilationRequest;
 import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.RegisterConfig;
-import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Local;
@@ -76,6 +75,7 @@ import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.drivers.common.code.CodeUtil;
+import uk.ac.manchester.tornado.drivers.common.code.TornadoCallingConventionType;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.common.utils.BackendDeopt;
 import uk.ac.manchester.tornado.drivers.cuda.CUDABackendImpl;
@@ -439,7 +439,7 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
     private void emitPrologue(CUDACompilationResultBuilder crb, CUDAAssembler asm, ResolvedJavaMethod method, LIR lir) {
 
         String methodName = crb.compilationResult.getName();
-        final CallingConvention incomingArguments = CodeUtil.getCallingConvention(codeCache, HotSpotCallingConventionType.JavaCallee, method);
+        final CallingConvention incomingArguments = CodeUtil.getCallingConvention(codeCache, TornadoCallingConventionType.JavaCallee, method);
 
         if (crb.isKernel()) {
             // cuda_fp16.h is injected once, after code emission, when the generated

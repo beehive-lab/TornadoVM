@@ -83,7 +83,6 @@ import tornado.graal.compiler.replacements.DefaultJavaLoweringProvider;
 import tornado.graal.compiler.replacements.SnippetCounter;
 import org.graalvm.word.LocationIdentity;
 
-import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
@@ -92,6 +91,7 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import uk.ac.manchester.tornado.drivers.common.code.TornadoCallingConventionType;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLDecompressedReadFieldNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
@@ -498,7 +498,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             }
 
             loweredCallTarget = graph.add(new TornadoDirectCallTargetNode(parameters.toArray(new ValueNode[parameters.size()]), returnStampPair, signature, callTarget.targetMethod(),
-                    HotSpotCallingConventionType.JavaCall, callTarget.invokeKind()));
+                    TornadoCallingConventionType.JavaCall, callTarget.invokeKind()));
 
             callTarget.replaceAndDelete(loweredCallTarget);
         }

@@ -63,9 +63,9 @@ import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.CompilationRequest;
 import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.RegisterConfig;
-import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.drivers.common.code.TornadoCallingConventionType;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalBinary;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalLIRStmt;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalNullary;
@@ -459,7 +459,7 @@ public class MetalBackend extends XPUBackend<MetalProviders> implements FrameMap
     private void emitPrologue(MetalCompilationResultBuilder crb, MetalAssembler asm, ResolvedJavaMethod method, LIR lir) {
 
         String methodName = crb.compilationResult.getName();
-        final CallingConvention incomingArguments = CodeUtil.getCallingConvention(codeCache, HotSpotCallingConventionType.JavaCallee, method);
+        final CallingConvention incomingArguments = CodeUtil.getCallingConvention(codeCache, TornadoCallingConventionType.JavaCallee, method);
 
         if (crb.isKernel()) {
             /*

@@ -23,7 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.metal.graal;
 
-import static jdk.vm.ci.common.InitTimer.timer;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
 import tornado.graal.compiler.api.replacements.SnippetReflectionProvider;
@@ -42,7 +41,6 @@ import tornado.graal.compiler.replacements.StandardGraphBuilderPlugins;
 import tornado.graal.compiler.replacements.classfile.ClassfileBytecodeProvider;
 import tornado.graal.compiler.word.WordTypes;
 
-import jdk.vm.ci.common.InitTimer;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import uk.ac.manchester.tornado.drivers.metal.MetalContextInterface;
@@ -98,32 +96,28 @@ public class MetalHotSpotBackendFactory {
         MetalSuitesProvider suites;
         Plugins plugins;
 
-        try (InitTimer t = timer("create providers")) {
-            TornadoPlatformConfigurationProvider platformConfigurationProvider = new TornadoPlatformConfigurationProvider();
-            MetaAccessExtensionProvider metaAccessExtensionProvider = new TornadoMetaAccessExtensionProvider();
-            lowerer = new MetalLoweringProvider(metaAccess, foreignCalls, platformConfigurationProvider, metaAccessExtensionProvider, constantReflection, config, target);
-            WordTypes wordTypes = new TornadoWordTypes(metaAccess, wordKind.asJavaKind());
+        TornadoPlatformConfigurationProvider platformConfigurationProvider = new TornadoPlatformConfigurationProvider();
+        MetaAccessExtensionProvider metaAccessExtensionProvider = new TornadoMetaAccessExtensionProvider();
+        lowerer = new MetalLoweringProvider(metaAccess, foreignCalls, platformConfigurationProvider, metaAccessExtensionProvider, constantReflection, config, target);
+        WordTypes wordTypes = new TornadoWordTypes(metaAccess, wordKind.asJavaKind());
 
-            LoopsDataProvider lpd = new LoopsDataProviderImpl();
-            Providers p = new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, lowerer.getReplacements(), stampProvider,
-                    platformConfigurationProvider, metaAccessExtensionProvider, snippetReflection, wordTypes, lpd);
-            ClassfileBytecodeProvider bytecodeProvider = new ClassfileBytecodeProvider(metaAccess, snippetReflection);
-            GraalDebugHandlersFactory graalDebugHandlersFactory = new GraalDebugHandlersFactory(snippetReflection);
-            TornadoReplacements replacements = new TornadoReplacements(graalDebugHandlersFactory, p, snippetReflection, bytecodeProvider, target);
-            plugins = createGraphBuilderPlugins(metaAccess, replacements, snippetReflection, lowerer);
+        LoopsDataProvider lpd = new LoopsDataProviderImpl();
+        Providers p = new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, lowerer.getReplacements(), stampProvider,
+                platformConfigurationProvider, metaAccessExtensionProvider, snippetReflection, wordTypes, lpd);
+        ClassfileBytecodeProvider bytecodeProvider = new ClassfileBytecodeProvider(metaAccess, snippetReflection);
+        GraalDebugHandlersFactory graalDebugHandlersFactory = new GraalDebugHandlersFactory(snippetReflection);
+        TornadoReplacements replacements = new TornadoReplacements(graalDebugHandlersFactory, p, snippetReflection, bytecodeProvider, target);
+        plugins = createGraphBuilderPlugins(metaAccess, replacements, snippetReflection, lowerer);
 
-            replacements.setGraphBuilderPlugins(plugins);
+        replacements.setGraphBuilderPlugins(plugins);
 
-            suites = new MetalSuitesProvider(options, metalDeviceContextImpl, plugins, metaAccess, compilerConfiguration, addressLowering);
+        suites = new MetalSuitesProvider(options, metalDeviceContextImpl, plugins, metaAccess, compilerConfiguration, addressLowering);
 
-            providers = new MetalProviders(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, platformConfigurationProvider,
-                    metaAccessExtensionProvider, snippetReflection, wordTypes, p.getLoopsDataProvider(), suites);
+        providers = new MetalProviders(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, platformConfigurationProvider,
+                metaAccessExtensionProvider, snippetReflection, wordTypes, p.getLoopsDataProvider(), suites);
 
-            lowerer.initialize(options, new DummySnippetFactory(), providers);
-        }
-        try (InitTimer rt = timer("instantiate backend")) {
-            return new MetalBackend(options, providers, target, codeCache, metalDeviceContextImpl);
-        }
+        lowerer.initialize(options, new DummySnippetFactory(), providers);
+        return new MetalBackend(options, providers, target, codeCache, metalDeviceContextImpl);
     }
 
     protected static Plugins createGraphBuilderPlugins(MetaAccessProvider metaAccess, Replacements replacements, SnippetReflectionProvider snippetReflectionProvider,
