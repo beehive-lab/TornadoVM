@@ -37,8 +37,8 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.mlx.Mlx;
+import uk.ac.manchester.tornado.mlx.MlxArithmetic;
 import uk.ac.manchester.tornado.mlx.MlxLogic;
-import uk.ac.manchester.tornado.mlx.MlxMath;
 
 /**
  * Unit tests for the MLX arithmetic library tasks: element-wise arithmetic, exponential,
@@ -134,219 +134,219 @@ public class TestMlxArithmetic extends MlxTestBase {
 
     @Test
     public void testAdd() throws TornadoExecutionPlanException {
-        binary(Mlx::add, (x, y) -> x + y, -10, 10, -10, 10, 1e-6, 1e-7);
+        binary(MlxArithmetic::add, (x, y) -> x + y, -10, 10, -10, 10, 1e-6, 1e-7);
     }
 
     @Test
     public void testSubtract() throws TornadoExecutionPlanException {
-        binary(Mlx::subtract, (x, y) -> x - y, -10, 10, -10, 10, 1e-6, 1e-7);
+        binary(MlxArithmetic::subtract, (x, y) -> x - y, -10, 10, -10, 10, 1e-6, 1e-7);
     }
 
     @Test
     public void testMultiply() throws TornadoExecutionPlanException {
-        binary(Mlx::multiply, (x, y) -> x * y, -10, 10, -10, 10, 1e-6, 1e-7);
+        binary(MlxArithmetic::multiply, (x, y) -> x * y, -10, 10, -10, 10, 1e-6, 1e-7);
     }
 
     @Test
     public void testDivide() throws TornadoExecutionPlanException {
-        binary(Mlx::divide, (x, y) -> x / y, -10, 10, 0.5f, 10, 1e-6, 1e-7);
+        binary(MlxArithmetic::divide, (x, y) -> x / y, -10, 10, 0.5f, 10, 1e-6, 1e-7);
     }
 
     @Test
     public void testMaximum() throws TornadoExecutionPlanException {
-        binary(Mlx::maximum, Math::max, -10, 10, -10, 10, 0, 0);
+        binary(MlxArithmetic::maximum, Math::max, -10, 10, -10, 10, 0, 0);
     }
 
     @Test
     public void testMinimum() throws TornadoExecutionPlanException {
-        binary(Mlx::minimum, Math::min, -10, 10, -10, 10, 0, 0);
+        binary(MlxArithmetic::minimum, Math::min, -10, 10, -10, 10, 0, 0);
     }
 
     @Test
     public void testNegative() throws TornadoExecutionPlanException {
-        unary(Mlx::negative, x -> -x, -10, 10, 0, 0);
+        unary(MlxArithmetic::negative, x -> -x, -10, 10, 0, 0);
     }
 
     @Test
     public void testSquare() throws TornadoExecutionPlanException {
-        unary(Mlx::square, x -> x * x, -10, 10, 1e-6, 1e-7);
+        unary(MlxArithmetic::square, x -> x * x, -10, 10, 1e-6, 1e-7);
     }
 
     @Test
     public void testSqrt() throws TornadoExecutionPlanException {
-        unary(Mlx::sqrt, Math::sqrt, 0, 100, 2e-6, 1e-6);
+        unary(MlxArithmetic::sqrt, Math::sqrt, 0, 100, 2e-6, 1e-6);
     }
 
     @Test
     public void testRsqrt() throws TornadoExecutionPlanException {
-        unary(Mlx::rsqrt, x -> 1.0 / Math.sqrt(x), 0.01f, 100, 2e-6, 1e-6);
+        unary(MlxArithmetic::rsqrt, x -> 1.0 / Math.sqrt(x), 0.01f, 100, 2e-6, 1e-6);
     }
 
     @Test
     public void testExp() throws TornadoExecutionPlanException {
-        unary(Mlx::exp, Math::exp, -8, 8, 2e-6, 1e-6);
+        unary(MlxArithmetic::exp, Math::exp, -8, 8, 2e-6, 1e-6);
     }
 
     @Test
     public void testTanh() throws TornadoExecutionPlanException {
-        unary(Mlx::tanh, Math::tanh, -5, 5, 2e-6, 1e-6);
+        unary(MlxArithmetic::tanh, Math::tanh, -5, 5, 2e-6, 1e-6);
     }
 
     @Test
     public void testErf() throws TornadoExecutionPlanException {
-        unary(Mlx::erf, TestMlxArithmetic::erf, -3, 3, 2e-6, 1e-6);
+        unary(MlxArithmetic::erf, TestMlxArithmetic::erf, -3, 3, 2e-6, 1e-6);
     }
 
     @Test
     public void testSigmoid() throws TornadoExecutionPlanException {
-        unary(Mlx::sigmoid, x -> 1.0 / (1.0 + Math.exp(-x)), -10, 10, 2e-6, 1e-6);
+        unary(MlxArithmetic::sigmoid, x -> 1.0 / (1.0 + Math.exp(-x)), -10, 10, 2e-6, 1e-6);
     }
 
     // ---------------------------------------------------------------- MlxMath
 
     @Test
     public void testAbs() throws TornadoExecutionPlanException {
-        unary(MlxMath::abs, Math::abs, -10, 10, 0, 0);
+        unary(MlxArithmetic::abs, Math::abs, -10, 10, 0, 0);
     }
 
     @Test
     public void testSign() throws TornadoExecutionPlanException {
-        unary(MlxMath::sign, Math::signum, -10, 10, 0, 0);
+        unary(MlxArithmetic::sign, Math::signum, -10, 10, 0, 0);
     }
 
     @Test
     public void testCeil() throws TornadoExecutionPlanException {
-        unary(MlxMath::ceil, Math::ceil, -10, 10, 0, 0);
+        unary(MlxArithmetic::ceil, Math::ceil, -10, 10, 0, 0);
     }
 
     @Test
     public void testFloor() throws TornadoExecutionPlanException {
-        unary(MlxMath::floor, Math::floor, -10, 10, 0, 0);
+        unary(MlxArithmetic::floor, Math::floor, -10, 10, 0, 0);
     }
 
     @Test
     public void testReciprocal() throws TornadoExecutionPlanException {
-        unary(MlxMath::reciprocal, x -> 1.0 / x, 0.5f, 10, 1e-6, 1e-7);
+        unary(MlxArithmetic::reciprocal, x -> 1.0 / x, 0.5f, 10, 1e-6, 1e-7);
     }
 
     @Test
     public void testExpm1() throws TornadoExecutionPlanException {
-        unary(MlxMath::expm1, Math::expm1, -5, 5, 3e-5, 1e-6);
+        unary(MlxArithmetic::expm1, Math::expm1, -5, 5, 3e-5, 1e-6);
     }
 
     @Test
     public void testLog() throws TornadoExecutionPlanException {
-        unary(MlxMath::log, Math::log, 0.01f, 10, 2e-6, 1e-6);
+        unary(MlxArithmetic::log, Math::log, 0.01f, 10, 2e-6, 1e-6);
     }
 
     @Test
     public void testLog1p() throws TornadoExecutionPlanException {
-        unary(MlxMath::log1p, Math::log1p, -0.9f, 10, 1e-5, 1e-6);
+        unary(MlxArithmetic::log1p, Math::log1p, -0.9f, 10, 1e-5, 1e-6);
     }
 
     @Test
     public void testLog2() throws TornadoExecutionPlanException {
-        unary(MlxMath::log2, x -> Math.log(x) / Math.log(2), 0.01f, 10, 2e-6, 1e-6);
+        unary(MlxArithmetic::log2, x -> Math.log(x) / Math.log(2), 0.01f, 10, 2e-6, 1e-6);
     }
 
     @Test
     public void testLog10() throws TornadoExecutionPlanException {
-        unary(MlxMath::log10, Math::log10, 0.01f, 10, 2e-6, 1e-6);
+        unary(MlxArithmetic::log10, Math::log10, 0.01f, 10, 2e-6, 1e-6);
     }
 
     @Test
     public void testSin() throws TornadoExecutionPlanException {
-        unary(MlxMath::sin, Math::sin, -10, 10, 2e-6, 1e-6);
+        unary(MlxArithmetic::sin, Math::sin, -10, 10, 2e-6, 1e-6);
     }
 
     @Test
     public void testCos() throws TornadoExecutionPlanException {
-        unary(MlxMath::cos, Math::cos, -10, 10, 2e-6, 1e-6);
+        unary(MlxArithmetic::cos, Math::cos, -10, 10, 2e-6, 1e-6);
     }
 
     @Test
     public void testTan() throws TornadoExecutionPlanException {
-        unary(MlxMath::tan, Math::tan, -1.5f, 1.5f, 1e-5, 1e-6);
+        unary(MlxArithmetic::tan, Math::tan, -1.5f, 1.5f, 1e-5, 1e-6);
     }
 
     @Test
     public void testArcsin() throws TornadoExecutionPlanException {
-        unary(MlxMath::arcsin, Math::asin, -1, 1, 2e-6, 1e-6);
+        unary(MlxArithmetic::arcsin, Math::asin, -1, 1, 2e-6, 1e-6);
     }
 
     @Test
     public void testArccos() throws TornadoExecutionPlanException {
-        unary(MlxMath::arccos, Math::acos, -1, 1, 2e-6, 1e-6);
+        unary(MlxArithmetic::arccos, Math::acos, -1, 1, 2e-6, 1e-6);
     }
 
     @Test
     public void testArctan() throws TornadoExecutionPlanException {
-        unary(MlxMath::arctan, Math::atan, -10, 10, 2e-6, 1e-6);
+        unary(MlxArithmetic::arctan, Math::atan, -10, 10, 2e-6, 1e-6);
     }
 
     @Test
     public void testSinh() throws TornadoExecutionPlanException {
-        unary(MlxMath::sinh, Math::sinh, -5, 5, 1e-5, 1e-6);
+        unary(MlxArithmetic::sinh, Math::sinh, -5, 5, 1e-5, 1e-6);
     }
 
     @Test
     public void testCosh() throws TornadoExecutionPlanException {
-        unary(MlxMath::cosh, Math::cosh, -5, 5, 2e-6, 1e-6);
+        unary(MlxArithmetic::cosh, Math::cosh, -5, 5, 2e-6, 1e-6);
     }
 
     @Test
     public void testArcsinh() throws TornadoExecutionPlanException {
-        unary(MlxMath::arcsinh, x -> Math.log(x + Math.sqrt(x * x + 1)), -10, 10, 1e-5, 1e-6);
+        unary(MlxArithmetic::arcsinh, x -> Math.log(x + Math.sqrt(x * x + 1)), -10, 10, 1e-5, 1e-6);
     }
 
     @Test
     public void testArccosh() throws TornadoExecutionPlanException {
-        unary(MlxMath::arccosh, x -> Math.log(x + Math.sqrt(x * x - 1)), 1, 10, 2e-6, 1e-6);
+        unary(MlxArithmetic::arccosh, x -> Math.log(x + Math.sqrt(x * x - 1)), 1, 10, 2e-6, 1e-6);
     }
 
     @Test
     public void testArctanh() throws TornadoExecutionPlanException {
-        unary(MlxMath::arctanh, x -> 0.5 * Math.log((1 + x) / (1 - x)), -0.99f, 0.99f, 1e-5, 1e-6);
+        unary(MlxArithmetic::arctanh, x -> 0.5 * Math.log((1 + x) / (1 - x)), -0.99f, 0.99f, 1e-5, 1e-6);
     }
 
     @Test
     public void testDegrees() throws TornadoExecutionPlanException {
-        unary(MlxMath::degrees, Math::toDegrees, -10, 10, 1e-6, 1e-6);
+        unary(MlxArithmetic::degrees, Math::toDegrees, -10, 10, 1e-6, 1e-6);
     }
 
     @Test
     public void testRadians() throws TornadoExecutionPlanException {
-        unary(MlxMath::radians, Math::toRadians, -10, 10, 1e-6, 1e-7);
+        unary(MlxArithmetic::radians, Math::toRadians, -10, 10, 1e-6, 1e-7);
     }
 
     @Test
     public void testErfinv() throws TornadoExecutionPlanException {
-        unary(MlxMath::erfinv, TestMlxArithmetic::erfinv, -0.99f, 0.99f, 1e-5, 1e-6);
+        unary(MlxArithmetic::erfinv, TestMlxArithmetic::erfinv, -0.99f, 0.99f, 1e-5, 1e-6);
     }
 
     @Test
     public void testArctan2() throws TornadoExecutionPlanException {
-        binary(MlxMath::arctan2, Math::atan2, -10, 10, -10, 10, 2e-6, 1e-6);
+        binary(MlxArithmetic::arctan2, Math::atan2, -10, 10, -10, 10, 2e-6, 1e-6);
     }
 
     @Test
     public void testPower() throws TornadoExecutionPlanException {
-        binary(MlxMath::power, Math::pow, 0.1f, 5, -3, 3, 1e-5, 1e-6);
+        binary(MlxArithmetic::power, Math::pow, 0.1f, 5, -3, 3, 1e-5, 1e-6);
     }
 
     @Test
     public void testLogaddexp() throws TornadoExecutionPlanException {
-        binary(MlxMath::logaddexp, TestMlxArithmetic::logaddexp, -10, 10, -10, 10, 2e-6, 1e-6);
+        binary(MlxArithmetic::logaddexp, TestMlxArithmetic::logaddexp, -10, 10, -10, 10, 2e-6, 1e-6);
     }
 
     @Test
     public void testRemainder() throws TornadoExecutionPlanException {
-        binary(MlxMath::remainder, (x, y) -> x - y * Math.floor(x / y), -10, 10, 0.5f, 10, 1e-5, 1e-5);
+        binary(MlxArithmetic::remainder, (x, y) -> x - y * Math.floor(x / y), -10, 10, 0.5f, 10, 1e-5, 1e-5);
     }
 
     @Test
     public void testFloorDivide() throws TornadoExecutionPlanException {
-        binary(MlxMath::floorDivide, (x, y) -> Math.floor(x / y), -10, 10, 0.5f, 10, 0, 0);
+        binary(MlxArithmetic::floorDivide, (x, y) -> Math.floor(x / y), -10, 10, 0.5f, 10, 0, 0);
     }
 
     @Test
@@ -360,7 +360,7 @@ public class TestMlxArithmetic extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
-                .libraryTask("divmod", MlxMath::divmod, a, b, quotient, remainder) //
+                .libraryTask("divmod", MlxArithmetic::divmod, a, b, quotient, remainder) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, quotient, remainder);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -384,8 +384,8 @@ public class TestMlxArithmetic extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
-                .libraryTask("round0", MlxMath::round, a, whole, 0) //
-                .libraryTask("round2", MlxMath::round, a, twoDecimals, 2) //
+                .libraryTask("round0", MlxArithmetic::round, a, whole, 0) //
+                .libraryTask("round2", MlxArithmetic::round, a, twoDecimals, 2) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, whole, twoDecimals);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -406,7 +406,7 @@ public class TestMlxArithmetic extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
-                .libraryTask("clip", MlxMath::clip, a, output, -2.5f, 4f) //
+                .libraryTask("clip", MlxArithmetic::clip, a, output, -2.5f, 4f) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -432,7 +432,7 @@ public class TestMlxArithmetic extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, condition, x, y) //
-                .libraryTask("where", MlxMath::where, condition, x, y, output) //
+                .libraryTask("where", MlxArithmetic::where, condition, x, y, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -461,7 +461,7 @@ public class TestMlxArithmetic extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
-                .libraryTask("nanToNum", MlxLogic::nanToNum, a, output, 0.5f, 1e30f, -1e30f) //
+                .libraryTask("nanToNum", MlxArithmetic::nanToNum, a, output, 0.5f, 1e30f, -1e30f) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -485,9 +485,9 @@ public class TestMlxArithmetic extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, z) //
-                .libraryTask("real", MlxLogic::real, z, real) //
-                .libraryTask("imag", MlxLogic::imag, z, imag) //
-                .libraryTask("conjugate", MlxLogic::conjugate, z, conjugate) //
+                .libraryTask("real", MlxArithmetic::real, z, real) //
+                .libraryTask("imag", MlxArithmetic::imag, z, imag) //
+                .libraryTask("conjugate", MlxArithmetic::conjugate, z, conjugate) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, real, imag, conjugate);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -512,7 +512,7 @@ public class TestMlxArithmetic extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
-                .libraryTask("add", Mlx::add, a, b, output) //
+                .libraryTask("add", MlxArithmetic::add, a, b, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -536,7 +536,7 @@ public class TestMlxArithmetic extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
-                .libraryTask("multiply", Mlx::multiply, a, b, output) //
+                .libraryTask("multiply", MlxArithmetic::multiply, a, b, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -559,7 +559,7 @@ public class TestMlxArithmetic extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
-                .libraryTask("exp", Mlx::exp, a, output) //
+                .libraryTask("exp", MlxArithmetic::exp, a, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -581,7 +581,7 @@ public class TestMlxArithmetic extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
-                .libraryTask("sin", MlxMath::sin, a, output) //
+                .libraryTask("sin", MlxArithmetic::sin, a, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -604,7 +604,7 @@ public class TestMlxArithmetic extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
-                .libraryTask("power", MlxMath::power, a, b, output) //
+                .libraryTask("power", MlxArithmetic::power, a, b, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -630,7 +630,7 @@ public class TestMlxArithmetic extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
-                .libraryTask("round", MlxMath::round, a, output, 0) //
+                .libraryTask("round", MlxArithmetic::round, a, output, 0) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -655,7 +655,7 @@ public class TestMlxArithmetic extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, condition, x, y) //
-                .libraryTask("where", MlxMath::where, condition, x, y, output) //
+                .libraryTask("where", MlxArithmetic::where, condition, x, y, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -679,7 +679,7 @@ public class TestMlxArithmetic extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
-                .libraryTask("clip", MlxMath::clip, a, output, -100, 250) //
+                .libraryTask("clip", MlxArithmetic::clip, a, output, -100, 250) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -706,8 +706,8 @@ public class TestMlxArithmetic extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
-                .libraryTask("floorDivide", MlxMath::floorDivide, a, b, floorDivide) //
-                .libraryTask("divmod", MlxMath::divmod, a, b, quotient, remainder) //
+                .libraryTask("floorDivide", MlxArithmetic::floorDivide, a, b, floorDivide) //
+                .libraryTask("divmod", MlxArithmetic::divmod, a, b, quotient, remainder) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, floorDivide, quotient, remainder);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -733,7 +733,7 @@ public class TestMlxArithmetic extends MlxTestBase {
 
             TaskGraph taskGraph = new TaskGraph("g") //
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
-                    .libraryTask("add", Mlx::add, a, b, output) //
+                    .libraryTask("add", MlxArithmetic::add, a, b, output) //
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
             try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {

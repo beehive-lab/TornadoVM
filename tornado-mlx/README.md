@@ -10,8 +10,8 @@ produce data for an MLX operation, and consume its output, as if both were JIT-c
 TaskGraph taskGraph = new TaskGraph("mlx")
     .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, weight, w)
     .task("embed", MyClass::embed, x)                                   // JIT-compiled kernel
-    .libraryTask("norm", Mlx::rmsNorm, x, weight, xn, rows, dim, 1e-5f) // MLX kernel
-    .libraryTask("proj", Mlx::matmul, xn, w, y, rows, dim, hidden)      // MLX kernel
+    .libraryTask("norm", MlxNeuralNetwork::rmsNorm, x, weight, xn, rows, dim, 1e-5f) // MLX kernel
+    .libraryTask("proj", MlxLinearAlgebra::matmul, xn, w, y, rows, dim, hidden)      // MLX kernel
     .task("activate", MyClass::silu, y)                                 // JIT-compiled kernel
     .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
 
@@ -43,25 +43,25 @@ registered as a `TornadoLibraryProvider` (`apple/mlx`) and found through `Servic
 ## Supported operations
 
 All factories are static methods used as the second argument of
-`taskGraph.libraryTask(id, factory, args...)`. Each carries `@MlxOp` with the MLX operation it binds.
-Operations are grouped by category, as in the coverage manifest of
-[TornadoMLXBenchmarks](https://github.com/kotselidis/TornadoMLXBenchmarks).
+`taskGraph.libraryTask(id, factory, args...)`, one class per category, as in the coverage manifest of
+[TornadoMLXBenchmarks](https://github.com/kotselidis/TornadoMLXBenchmarks). Each task's function name
+is the mlx-c name of the operation it runs (`mlx_add`, `mlx_sum_axis`, ...).
 
-| Category | Factory classes | Operations |
+| Category | Factory class | Operations |
 |---|---|---|
-| Arithmetic (51) | `Mlx`, `MlxMath`, `MlxLogic` | add, subtract, multiply, divide, maximum, minimum, negative, square, sqrt, rsqrt, exp, expm1, log, log1p, log2, log10, logaddexp, power, remainder, floor_divide, divmod, reciprocal, abs, sign, ceil, floor, round, clip, where, sin, cos, tan, arcsin, arccos, arctan, arctan2, sinh, cosh, tanh, arcsinh, arccosh, arctanh, degrees, radians, erf, erfinv, sigmoid, nan_to_num, real, imag, conjugate |
+| Arithmetic (51) | `MlxArithmetic` | add, subtract, multiply, divide, maximum, minimum, negative, square, sqrt, rsqrt, exp, expm1, log, log1p, log2, log10, logaddexp, power, remainder, floor_divide, divmod, reciprocal, abs, sign, ceil, floor, round, clip, where, sin, cos, tan, arcsin, arccos, arctan, arctan2, sinh, cosh, tanh, arcsinh, arccosh, arctanh, degrees, radians, erf, erfinv, sigmoid, nan_to_num, real, imag, conjugate |
 | Logic (23) | `MlxLogic` | equal, not_equal, greater, greater_equal, less, less_equal, isfinite, isinf, isnan, isneginf, isposinf, bitwise_and/or/xor/invert, left_shift, right_shift, logical_and/or/not, isclose, allclose, array_equal |
-| Reductions (37) | `Mlx`, `MlxReduce` | sum, prod, max, min, mean, var, std, logsumexp, all, any (whole, `_axis`, `_axes`), argmin, argmax, softmax |
-| Scans (5) | `MlxReduce` | cumsum, cumprod, cummax, cummin, logcumsumexp |
-| Sorting (10) | `Mlx`, `MlxSort` | sort, argsort, partition, argpartition (whole and `_axis`), topk |
-| Indexing (4) | `MlxIndex` | slice, slice_update, slice_update_add, slice_update_prod |
-| LinearAlgebra (14) | `Mlx`, `MlxProducts`, `MlxLinalg`, `MlxIndex` | matmul, addmm, einsum, tensordot, inner, outer, kron, segmented_mm, gather_mm, linalg_cross, linalg_norm, linalg_norm_l2, linalg_norm_matrix |
-| Quantization (5) | `Mlx`, `MlxProducts` | quantize, dequantize (affine and mxfp8), quantized_matmul, gather_qmm, qqmm |
-| NeuralNetwork (5) | `Mlx` | fast_rms_norm, fast_layer_norm, fast_rope, fast_rope_dynamic, fast_scaled_dot_product_attention |
+| Reductions (37) | `MlxReductions` | sum, prod, max, min, mean, var, std, logsumexp, all, any (whole, `_axis`, `_axes`), argmin, argmax, softmax |
+| Scans (5) | `MlxScans` | cumsum, cumprod, cummax, cummin, logcumsumexp |
+| Sorting (10) | `MlxSorting` | sort, argsort, partition, argpartition (whole and `_axis`), topk |
+| Indexing (4) | `MlxIndexing` | slice, slice_update, slice_update_add, slice_update_prod |
+| LinearAlgebra (14) | `MlxLinearAlgebra` | matmul, addmm, einsum, tensordot, inner, outer, kron, segmented_mm, gather_mm, linalg_cross, linalg_norm, linalg_norm_l2, linalg_norm_matrix |
+| Quantization (5) | `MlxQuantization` | quantize, dequantize (affine and mxfp8), quantized_matmul, gather_qmm, qqmm |
+| NeuralNetwork (5) | `MlxNeuralNetwork` | fast_rms_norm, fast_layer_norm, fast_rope, fast_rope_dynamic, fast_scaled_dot_product_attention |
 | Fft (16) | `MlxFft` | fft, ifft, rfft, irfft (1D, 2D, nD), fftshift, ifftshift, fftfreq, rfftfreq |
-| Convolution (5) | `MlxConv` | conv1d, conv2d, conv_general, conv_transpose1d, conv_transpose2d |
-| Creation (21) | `MlxCreate` | arange, linspace, eye, identity, tri, tril, triu, diag, diagonal, trace, full, zeros, ones (and `_like`), bartlett, blackman, hamming, hanning, meshgrid |
-| Shape (37) | `Mlx`, `MlxShape` | reshape, flatten, unflatten, squeeze, expand_dims, atleast_1d/2d/3d, transpose, swapaxes, moveaxis, broadcast_to, broadcast_arrays, as_strided, contiguous, copy, astype, view, number_of_elements, concatenate, stack, split, repeat, tile, roll, pad |
+| Convolution (5) | `MlxConvolution` | conv1d, conv2d, conv_general, conv_transpose1d, conv_transpose2d |
+| Creation (21) | `MlxCreation` | arange, linspace, eye, identity, tri, tril, triu, diag, diagonal, trace, full, zeros, ones (and `_like`), bartlett, blackman, hamming, hanning, meshgrid |
+| Shape (37) | `MlxShape` | reshape, flatten, unflatten, squeeze, expand_dims, atleast_1d/2d/3d, transpose, swapaxes, moveaxis, broadcast_to, broadcast_arrays, as_strided, contiguous, copy, astype, view, number_of_elements, concatenate, stack, split, repeat, tile, roll, pad |
 | Random (13) | `MlxRandom` | bits, uniform, normal, randint, bernoulli, truncated_normal, gumbel, laplace, categorical, permutation (of `arange`) |
 
 ### Not supported
@@ -158,13 +158,14 @@ fresh run gives lower absolute times, mostly for decode-sized cases.
 
 | Path | Contents |
 |---|---|
-| `src/main/java/.../mlx/` | Factory classes, `MlxOp` |
-| `src/main/java/.../mlx/provider/` | `MlxLibraryProvider` (the SPI provider), `MlxKernelRoutes` (operation-to-kernel mapping), `MlxMetalKernels` (Objective-C bridge to Metal), `MlxTypes` |
+| `src/main/java/.../mlx/` | `Mlx` (library name and task helpers) and one factory class per category |
+| `src/main/java/.../mlx/provider/` | `MlxLibraryProvider` (the SPI provider), `MlxKernelRoutes` (operation-to-kernel mapping), `MlxMetalKernels` (Objective-C bridge to Metal, MLX element types) |
 
 ## Adding an operation
 
-1. Add a factory that calls `Mlx.task(name, outputIndex, args...)` and annotate it with `@MlxOp`.
-2. Add a route for `name` in `MlxKernelRoutes`: it checks the arguments and encodes MLX's kernels
+1. Add a factory to the category's class that calls `Mlx.task("mlx_<op>", outputIndex, args...)`, with
+   the mlx-c name of the operation.
+2. Add a route for `mlx_<op>` in `MlxKernelRoutes`: it checks the arguments and encodes MLX's kernels
    into a `Program`, following MLX's own `ops.cpp` and launch code.
 3. Add a test to the category's class in `tornado-unittests/.../unittests/mlx`.
 

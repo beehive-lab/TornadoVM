@@ -326,23 +326,27 @@ are needed.
 
 | Factory class | Operations (examples) |
 |---|---|
-| `Mlx` | `add`, `matmul`, `addmm`, `softmax`, `argmax`, `topk`, `rmsNorm`, `layerNorm`, `rope`, `scaledDotProductAttention`, `quantize`, `quantizedMatmul`, `gatherQmm` |
-| `MlxMath`, `MlxLogic` | trigonometric, exponential, rounding, `clip`, `where`; comparisons, bitwise, `isnan`, `isclose` |
-| `MlxReduce`, `MlxSort` | `sum`/`mean`/`max`/`var`/`logsumexp` (whole, axis, axes), scans; `sort`, `argsort`, `partition` |
-| `MlxShape`, `MlxCreate`, `MlxIndex` | reshape, transpose, concatenate, pad; `arange`, `eye`, `tril`; `slice`, `sliceUpdate`, `gatherMm` |
-| `MlxFft`, `MlxConv`, `MlxLinalg`, `MlxProducts`, `MlxRandom` | FFTs; 1D/2D and transposed convolutions; norms, cross; einsum, tensordot, kron, `qqmm`; samplers |
+| `MlxArithmetic` | `add`, `multiply`, `exp`, `log`, `tanh`, `sigmoid`, `clip`, `where`, `round`, `floorDivide` |
+| `MlxLogic` | comparisons, `isnan`, `isclose`, `allclose`, bitwise and logical operations |
+| `MlxReductions`, `MlxScans` | `sum`/`mean`/`max`/`var`/`logsumexp` (whole, axis, axes), `argmax`, `softmax`; `cumsum`, `logcumsumexp` |
+| `MlxSorting`, `MlxIndexing` | `sort`, `argsort`, `partition`, `topk`; `slice`, `sliceUpdate` |
+| `MlxLinearAlgebra` | `matmul`, `addmm`, `einsum`, `tensordot`, `kron`, `gatherMm`, `segmentedMm`, norms, cross |
+| `MlxQuantization` | `quantize`, `dequantize`, `quantizedMatmul`, `gatherQmm`, `qqmm` |
+| `MlxNeuralNetwork` | `rmsNorm`, `layerNorm`, `rope`, `scaledDotProductAttention` |
+| `MlxFft`, `MlxConvolution` | FFTs; 1D/2D and transposed convolutions |
+| `MlxCreation`, `MlxShape`, `MlxRandom` | `arange`, `eye`, `tril`; `reshape`, `transpose`, `concatenate`, `pad`; samplers |
 
 An argument form no kernel reproduces exactly (for example an axis reduction with `inner > 1`) fails
-with the operation's name and arguments rather than falling back. Operations without an in-place
+with the operation's name and arguments rather than falling back. Operations without a TornadoVM/MLX
 route (linear-algebra decompositions, which MLX runs only on its CPU stream; gather/scatter; fp8) are
 not exposed.
 
 ```java
 new TaskGraph("layer")
     .transferToDevice(DataTransferMode.FIRST_EXECUTION, x, weight, w)
-    .task("embed", MyKernels::embed, x)                                   // Java kernel
-    .libraryTask("norm", Mlx::rmsNorm, x, weight, xn, rows, dim, 1e-5f)   // MLX kernel, same buffers and queue
-    .libraryTask("proj", Mlx::matmul, xn, w, y, rows, dim, hidden)
+    .task("embed", MyKernels::embed, x)                                              // Java kernel
+    .libraryTask("norm", MlxNeuralNetwork::rmsNorm, x, weight, xn, rows, dim, 1e-5f) // MLX kernel, same buffers and queue
+    .libraryTask("proj", MlxLinearAlgebra::matmul, xn, w, y, rows, dim, hidden)
     .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
 ```
 

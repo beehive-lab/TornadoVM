@@ -55,11 +55,6 @@ public final class MlxLibraryProvider implements TornadoLibraryProvider {
         return MlxKernelRoutes.dispatches();
     }
 
-    /** Whether {@code functionName} can run as an in-place MLX kernel (when its arguments allow). */
-    public static boolean hasInPlaceKernel(String functionName) {
-        return MlxKernelRoutes.hasRoute(functionName);
-    }
-
     @Override
     public String libraryName() {
         return Mlx.LIBRARY_NAME;

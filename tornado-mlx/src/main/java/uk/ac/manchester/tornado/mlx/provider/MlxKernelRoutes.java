@@ -20,11 +20,11 @@ package uk.ac.manchester.tornado.mlx.provider;
 import static java.util.Map.entry;
 import static uk.ac.manchester.tornado.mlx.provider.MlxMetalKernels.contiguousStrides;
 import static uk.ac.manchester.tornado.mlx.provider.MlxMetalKernels.scalarBytes;
-import static uk.ac.manchester.tornado.mlx.provider.MlxTypes.MLX_BOOL;
-import static uk.ac.manchester.tornado.mlx.provider.MlxTypes.MLX_COMPLEX64;
-import static uk.ac.manchester.tornado.mlx.provider.MlxTypes.MLX_FLOAT32;
-import static uk.ac.manchester.tornado.mlx.provider.MlxTypes.MLX_INT32;
-import static uk.ac.manchester.tornado.mlx.provider.MlxTypes.MLX_UINT8;
+import static uk.ac.manchester.tornado.mlx.provider.MlxMetalKernels.MLX_BOOL;
+import static uk.ac.manchester.tornado.mlx.provider.MlxMetalKernels.MLX_COMPLEX64;
+import static uk.ac.manchester.tornado.mlx.provider.MlxMetalKernels.MLX_FLOAT32;
+import static uk.ac.manchester.tornado.mlx.provider.MlxMetalKernels.MLX_INT32;
+import static uk.ac.manchester.tornado.mlx.provider.MlxMetalKernels.MLX_UINT8;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -76,7 +76,7 @@ final class MlxKernelRoutes {
         }
 
         int dtype(int i) {
-            return MlxTypes.dtypeOf(invocation.getArg(i));
+            return MlxMetalKernels.dtypeOf(invocation.getArg(i));
         }
 
         int size(int i) {
@@ -172,36 +172,36 @@ final class MlxKernelRoutes {
             entry("left_shift", "LeftShift"), entry("right_shift", "RightShift"));
 
     static {
-        UNARY.forEach((name, op) -> ROUTES.put(name, v -> {
+        UNARY.forEach((name, op) -> ROUTES.put("mlx_" + name, v -> {
             int t = v.sameType(FLOATS, 0, 1);
             return t < 0 || v.args() != 2 ? null : p -> p.unary(op, t, t, v.size(0), v.ref(0), v.ref(1));
         }));
-        BINARY.forEach((name, op) -> ROUTES.put(name, v -> {
+        BINARY.forEach((name, op) -> ROUTES.put("mlx_" + name, v -> {
             int t = v.sameType(FLOATS, 0, 1, 2);
             return t < 0 || v.args() != 3 ? null : p -> p.binary(op, t, v.size(0), v.ref(0), v.ref(1), v.ref(2));
         }));
-        COMPARISON.forEach((name, op) -> ROUTES.put(name, v -> {
+        COMPARISON.forEach((name, op) -> ROUTES.put("mlx_" + name, v -> {
             int t = v.sameType(NUMBERS, 0, 1);
             return t < 0 || v.args() != 3 || !v.is(2, MLX_UINT8, v.size(0)) ? null : p -> p.binary(op, t, v.size(0), v.ref(0), v.ref(1), v.ref(2));
         }));
-        BITWISE.forEach((name, op) -> ROUTES.put(name, v -> {
+        BITWISE.forEach((name, op) -> ROUTES.put("mlx_" + name, v -> {
             int t = v.sameType(INTEGERS, 0, 1, 2);
             return t < 0 || v.args() != 3 ? null : p -> p.binary(op, t, v.size(0), v.ref(0), v.ref(1), v.ref(2));
         }));
-        ROUTES.put("bitwise_invert", v -> {
+        ROUTES.put("mlx_bitwise_invert", v -> {
             int t = v.sameType(INTEGERS, 0, 1);
             return t < 0 ? null : p -> p.unary("BitwiseInvert", t, t, v.size(0), v.ref(0), v.ref(1));
         });
 
         // degrees/radians: multiply(a, array(180 / pi, dtype)); reciprocal: divide(array(1, dtype), a).
-        ROUTES.put("degrees", v -> scaled(v, 180.0 / Math.PI));
-        ROUTES.put("radians", v -> scaled(v, Math.PI / 180.0));
-        ROUTES.put("reciprocal", v -> {
+        ROUTES.put("mlx_degrees", v -> scaled(v, 180.0 / Math.PI));
+        ROUTES.put("mlx_radians", v -> scaled(v, Math.PI / 180.0));
+        ROUTES.put("mlx_reciprocal", v -> {
             int t = v.sameType(FLOATS, 0, 1);
             return t < 0 ? null : p -> p.binaryScalarLeft("Divide", t, v.size(0), 1.0, v.ref(0), v.ref(1));
         });
         // floor_divide: floor(divide(a, b)) for floating types; integer Divide otherwise.
-        ROUTES.put("floor_divide", v -> {
+        ROUTES.put("mlx_floor_divide", v -> {
             int t = v.sameType(NUMBERS, 0, 1, 2);
             if (t < 0) {
                 return null;
@@ -213,7 +213,7 @@ final class MlxKernelRoutes {
             } : p -> p.binary("Divide", t, n, v.ref(0), v.ref(1), v.ref(2));
         });
         // round(a, decimals): Round, or multiply by 10^d, Round, multiply by 1 / 10^d.
-        ROUTES.put("round", v -> {
+        ROUTES.put("mlx_round", v -> {
             int t = v.sameType(FLOATS, 0, 1);
             if (t < 0 || v.args() != 3) {
                 return null;
@@ -230,12 +230,12 @@ final class MlxKernelRoutes {
                 p.binaryScalarRight("Multiply", t, n, v.ref(1), 1 / scale, v.ref(1));
             };
         });
-        ROUTES.put("divmod", v -> {
+        ROUTES.put("mlx_divmod", v -> {
             int t = v.sameType(NUMBERS, 0, 1, 2, 3);
             return t < 0 ? null : p -> p.binaryTwo("DivMod", t, v.size(0), v.ref(0), v.ref(1), v.ref(2), v.ref(3));
         });
         // clip: minimum(maximum(a, lo), hi).
-        ROUTES.put("clip", v -> {
+        ROUTES.put("mlx_clip", v -> {
             int t = v.sameType(NUMBERS, 0, 1);
             if (t < 0 || v.args() != 4) {
                 return null;
@@ -249,7 +249,7 @@ final class MlxKernelRoutes {
             };
         });
         // where: Select over astype(condition, bool).
-        ROUTES.put("where", v -> {
+        ROUTES.put("mlx_where", v -> {
             int t = v.sameType(NUMBERS, 1, 2, 3);
             if (t < 0 || !v.isArray(0) || v.size(0) != v.size(1)) {
                 return null;
@@ -264,25 +264,25 @@ final class MlxKernelRoutes {
         });
 
         // Predicates on floating types, writing bools.
-        ROUTES.put("isnan", v -> predicate(v, (p, t, n) -> p.binary("NotEqual", t, n, v.ref(0), v.ref(0), v.ref(1))));
-        ROUTES.put("isposinf", v -> predicate(v, (p, t, n) -> p.binaryScalarRight("Equal", t, n, v.ref(0), INF, v.ref(1))));
-        ROUTES.put("isneginf", v -> predicate(v, (p, t, n) -> p.binaryScalarRight("Equal", t, n, v.ref(0), -INF, v.ref(1))));
+        ROUTES.put("mlx_isnan", v -> predicate(v, (p, t, n) -> p.binary("NotEqual", t, n, v.ref(0), v.ref(0), v.ref(1))));
+        ROUTES.put("mlx_isposinf", v -> predicate(v, (p, t, n) -> p.binaryScalarRight("Equal", t, n, v.ref(0), INF, v.ref(1))));
+        ROUTES.put("mlx_isneginf", v -> predicate(v, (p, t, n) -> p.binaryScalarRight("Equal", t, n, v.ref(0), -INF, v.ref(1))));
         // isinf: |a| == inf (equal to isposinf or isneginf). isfinite: |a| < inf (false for NaN and infinities).
-        ROUTES.put("isinf", v -> predicate(v, (p, t, n) -> {
+        ROUTES.put("mlx_isinf", v -> predicate(v, (p, t, n) -> {
             Ref magnitude = p.scratch((long) n * MlxMetalKernels.itemSize(t));
             p.unary("Abs", t, t, n, v.ref(0), magnitude);
             p.binaryScalarRight("Equal", t, n, magnitude, INF, v.ref(1));
         }));
-        ROUTES.put("isfinite", v -> predicate(v, (p, t, n) -> {
+        ROUTES.put("mlx_isfinite", v -> predicate(v, (p, t, n) -> {
             Ref magnitude = p.scratch((long) n * MlxMetalKernels.itemSize(t));
             p.unary("Abs", t, t, n, v.ref(0), magnitude);
             p.binaryScalarRight("Less", t, n, magnitude, INF, v.ref(1));
         }));
 
         // Logical operations on astype(x, bool).
-        ROUTES.put("logical_and", v -> logical(v, "LogicalAnd"));
-        ROUTES.put("logical_or", v -> logical(v, "LogicalOr"));
-        ROUTES.put("logical_not", v -> {
+        ROUTES.put("mlx_logical_and", v -> logical(v, "LogicalAnd"));
+        ROUTES.put("mlx_logical_or", v -> logical(v, "LogicalOr"));
+        ROUTES.put("mlx_logical_not", v -> {
             if (!v.isArray(0) || !v.is(1, MLX_UINT8, v.size(0)) || MlxMetalKernels.typeName(v.dtype(0)) == null) {
                 return null;
             }
@@ -296,7 +296,7 @@ final class MlxKernelRoutes {
         });
 
         // nan_to_num: three Selects of scalars over isnan, isposinf and isneginf masks.
-        ROUTES.put("nan_to_num", v -> {
+        ROUTES.put("mlx_nan_to_num", v -> {
             int t = v.sameType(FLOATS, 0, 1);
             if (t < 0 || v.args() != 5) {
                 return null;
@@ -316,12 +316,12 @@ final class MlxKernelRoutes {
             };
         });
 
-        ROUTES.put("isclose", MlxKernelRoutes::isclose);
+        ROUTES.put("mlx_isclose", MlxKernelRoutes::isclose);
 
         // Complex parts, with complex64 data held as interleaved float pairs.
-        ROUTES.put("real", v -> complexPart(v, "Real", false));
-        ROUTES.put("imag", v -> complexPart(v, "Imag", false));
-        ROUTES.put("conjugate", v -> complexPart(v, "Conjugate", true));
+        ROUTES.put("mlx_real", v -> complexPart(v, "Real", false));
+        ROUTES.put("mlx_imag", v -> complexPart(v, "Imag", false));
+        ROUTES.put("mlx_conjugate", v -> complexPart(v, "Conjugate", true));
 
         registerShapeRoutes();
         registerConstructionRoutes();
@@ -428,9 +428,9 @@ final class MlxKernelRoutes {
     private static void registerShapeRoutes() {
         for (String name : new String[] { "reshape", "flatten", "unflatten", "squeeze", "squeeze_axis", "squeeze_axes", "expand_dims", "expand_dims_axes", "atleast_1d",
                 "atleast_2d", "atleast_3d", "contiguous", "copy" }) {
-            ROUTES.put(name, MlxKernelRoutes::contiguousCopy);
+            ROUTES.put("mlx_" + name, MlxKernelRoutes::contiguousCopy);
         }
-        ROUTES.put("astype", v -> {
+        ROUTES.put("mlx_astype", v -> {
             if (!v.isArray(0) || !v.isArray(1) || v.size(0) != v.size(1) || !ANY.contains(v.dtype(0)) || !ANY.contains(v.dtype(1))) {
                 return null;
             }
@@ -439,7 +439,7 @@ final class MlxKernelRoutes {
             return p -> p.copy(from, to, v.size(0), v.ref(0), v.ref(1));
         });
         // view: the same bytes under another type.
-        ROUTES.put("view", v -> {
+        ROUTES.put("mlx_view", v -> {
             if (!v.isArray(0) || !v.isArray(1) || !ANY.contains(v.dtype(0)) || !ANY.contains(v.dtype(1))) {
                 return null;
             }
@@ -450,15 +450,15 @@ final class MlxKernelRoutes {
             return p -> p.copy(MLX_UINT8, MLX_UINT8, (int) bytes, v.ref(0), v.ref(1));
         });
         // number_of_elements(x[d0, d1, d2], axes (1, 2)) as int32.
-        ROUTES.put("number_of_elements", v -> {
+        ROUTES.put("mlx_number_of_elements", v -> {
             if (!v.is(1, MLX_INT32, 1) || v.args() < 5) {
                 return null;
             }
             long count = (long) v.intArg(3) * v.intArg(4);
             return p -> p.fill(MLX_INT32, 1, count, v.ref(1));
         });
-        ROUTES.put("transpose_axes", v -> v.args() < 8 ? null : permute3(v, dims3(v, 2), new int[] { axis3(v.intArg(5)), axis3(v.intArg(6)), axis3(v.intArg(7)) }));
-        ROUTES.put("swapaxes", v -> {
+        ROUTES.put("mlx_transpose_axes", v -> v.args() < 8 ? null : permute3(v, dims3(v, 2), new int[] { axis3(v.intArg(5)), axis3(v.intArg(6)), axis3(v.intArg(7)) }));
+        ROUTES.put("mlx_swapaxes", v -> {
             if (v.args() < 7) {
                 return null;
             }
@@ -472,7 +472,7 @@ final class MlxKernelRoutes {
             perm[b] = a;
             return permute3(v, dims3(v, 2), perm);
         });
-        ROUTES.put("moveaxis", v -> {
+        ROUTES.put("mlx_moveaxis", v -> {
             if (v.args() < 7) {
                 return null;
             }
@@ -487,7 +487,7 @@ final class MlxKernelRoutes {
             return permute3(v, dims3(v, 2), new int[] { order.get(0), order.get(1), order.get(2) });
         });
         // broadcast_to(x[L], (s0, s1)): L == s1 or L == 1.
-        ROUTES.put("broadcast_to", v -> {
+        ROUTES.put("mlx_broadcast_to", v -> {
             if (!v.isArray(0) || v.args() < 4) {
                 return null;
             }
@@ -500,7 +500,7 @@ final class MlxKernelRoutes {
             return view(v, 0, 1, new int[] { s0, s1 }, new long[] { 0, n == 1 ? 0 : 1 }, 0);
         });
         // broadcast_arrays(a[1, cols], b[rows, 1]) -> two [rows, cols] arrays.
-        ROUTES.put("broadcast_arrays", v -> {
+        ROUTES.put("mlx_broadcast_arrays", v -> {
             if (v.args() < 6) {
                 return null;
             }
@@ -516,7 +516,7 @@ final class MlxKernelRoutes {
                 second.encode(p);
             };
         });
-        ROUTES.put("as_strided", v -> {
+        ROUTES.put("mlx_as_strided", v -> {
             if (v.args() < 7 || !v.isArray(0)) {
                 return null;
             }
@@ -529,7 +529,7 @@ final class MlxKernelRoutes {
             }
             return view(v, 0, 1, shape, strides, offset);
         });
-        ROUTES.put("concatenate", v -> {
+        ROUTES.put("mlx_concatenate", v -> {
             int t = pairType(v, 0, 2);
             if (t < 0 || !v.isArray(1) || v.dtype(1) != t || v.size(0) + v.size(1) != v.size(2)) {
                 return null;
@@ -540,7 +540,7 @@ final class MlxKernelRoutes {
             };
         });
         // concatenate_axis(a[r, ca], b[r, cb]) along axis 1.
-        ROUTES.put("concatenate_axis", v -> {
+        ROUTES.put("mlx_concatenate_axis", v -> {
             int t = pairType(v, 0, 2);
             if (t < 0 || v.args() < 6 || !v.isArray(1) || v.dtype(1) != t) {
                 return null;
@@ -556,7 +556,7 @@ final class MlxKernelRoutes {
                 block(p, t, v.ref(1), cb, 0, v.ref(2), ca + cb, ca, r, cb);
             };
         });
-        ROUTES.put("stack", v -> {
+        ROUTES.put("mlx_stack", v -> {
             int t = pairType(v, 0, 2);
             if (t < 0 || !v.isArray(1) || v.dtype(1) != t || v.size(0) != v.size(1) || v.size(2) != 2 * v.size(0)) {
                 return null;
@@ -567,7 +567,7 @@ final class MlxKernelRoutes {
             };
         });
         // stack_axis(a[n], b[n], axis 1) -> [n, 2].
-        ROUTES.put("stack_axis", v -> {
+        ROUTES.put("mlx_stack_axis", v -> {
             int t = pairType(v, 0, 2);
             if (t < 0 || !v.isArray(1) || v.dtype(1) != t || v.size(0) != v.size(1) || v.size(2) != 2 * v.size(0)) {
                 return null;
@@ -579,12 +579,12 @@ final class MlxKernelRoutes {
             };
         });
         // split(x[r, c]) into two halves along axis 1; split_sections at column k.
-        ROUTES.put("split", v -> v.args() < 5 ? null : splitColumns(v, v.intArg(3), v.intArg(4), v.intArg(4) / 2));
-        ROUTES.put("split_sections", v -> v.args() < 6 ? null : splitColumns(v, v.intArg(3), v.intArg(4), v.intArg(5)));
+        ROUTES.put("mlx_split", v -> v.args() < 5 ? null : splitColumns(v, v.intArg(3), v.intArg(4), v.intArg(4) / 2));
+        ROUTES.put("mlx_split_sections", v -> v.args() < 6 ? null : splitColumns(v, v.intArg(3), v.intArg(4), v.intArg(5)));
         // repeat(x[n], reps): x read as [n, reps] with strides [1, 0].
-        ROUTES.put("repeat", v -> !v.isArray(0) || v.args() < 3 ? null : view(v, 0, 1, new int[] { v.size(0), v.intArg(2) }, new long[] { 1, 0 }, 0));
+        ROUTES.put("mlx_repeat", v -> !v.isArray(0) || v.args() < 3 ? null : view(v, 0, 1, new int[] { v.size(0), v.intArg(2) }, new long[] { 1, 0 }, 0));
         // repeat_axis(x[d0, d1], reps, axis 0): x read as [d0, reps, d1] with strides [d1, 0, 1].
-        ROUTES.put("repeat_axis", v -> {
+        ROUTES.put("mlx_repeat_axis", v -> {
             if (v.args() < 5) {
                 return null;
             }
@@ -593,7 +593,7 @@ final class MlxKernelRoutes {
             return view(v, 0, 1, new int[] { d0, v.intArg(4), d1 }, new long[] { d1, 0, 1 }, 0);
         });
         // tile(x[d0, d1], (r0, r1)): x read as [r0, d0, r1, d1] with strides [0, d1, 0, 1].
-        ROUTES.put("tile", v -> {
+        ROUTES.put("mlx_tile", v -> {
             if (v.args() < 6) {
                 return null;
             }
@@ -601,12 +601,12 @@ final class MlxKernelRoutes {
             int d1 = v.intArg(3);
             return view(v, 0, 1, new int[] { v.intArg(4), d0, v.intArg(5), d1 }, new long[] { 0, d1, 0, 1 }, 0);
         });
-        ROUTES.put("roll", v -> !v.isArray(0) || v.args() < 3 ? null : roll2(v, 1, v.size(0), 0, v.intArg(2)));
-        ROUTES.put("roll_axis", v -> v.args() < 5 ? null : roll2(v, v.intArg(2), v.intArg(3), 0, v.intArg(4)));
-        ROUTES.put("roll_axes", v -> v.args() < 6 ? null : roll2(v, v.intArg(2), v.intArg(3), v.intArg(4), v.intArg(5)));
+        ROUTES.put("mlx_roll", v -> !v.isArray(0) || v.args() < 3 ? null : roll2(v, 1, v.size(0), 0, v.intArg(2)));
+        ROUTES.put("mlx_roll_axis", v -> v.args() < 5 ? null : roll2(v, v.intArg(2), v.intArg(3), 0, v.intArg(4)));
+        ROUTES.put("mlx_roll_axes", v -> v.args() < 6 ? null : roll2(v, v.intArg(2), v.intArg(3), v.intArg(4), v.intArg(5)));
         // pad(x[r, c], low (b0, b1), high (a0, a1), value): fill, then copy x into the interior.
-        ROUTES.put("pad", v -> v.args() < 9 ? null : pad(v, v.intArg(2), v.intArg(3), v.intArg(4), v.intArg(5), v.intArg(6), v.intArg(7), v.floatArg(8)));
-        ROUTES.put("pad_symmetric", v -> v.args() < 6 ? null : pad(v, v.intArg(2), v.intArg(3), v.intArg(4), v.intArg(4), v.intArg(4), v.intArg(4), v.floatArg(5)));
+        ROUTES.put("mlx_pad", v -> v.args() < 9 ? null : pad(v, v.intArg(2), v.intArg(3), v.intArg(4), v.intArg(5), v.intArg(6), v.intArg(7), v.floatArg(8)));
+        ROUTES.put("mlx_pad_symmetric", v -> v.args() < 6 ? null : pad(v, v.intArg(2), v.intArg(3), v.intArg(4), v.intArg(4), v.intArg(4), v.intArg(4), v.floatArg(5)));
     }
 
     private static Encoder splitColumns(View v, int rows, int cols, int k) {
@@ -686,20 +686,20 @@ final class MlxKernelRoutes {
     }
 
     private static void registerConstructionRoutes() {
-        ROUTES.put("full", v -> {
+        ROUTES.put("mlx_full", v -> {
             int t = outType(v, 0, NUMBERS);
             return t < 0 || v.args() < 2 ? null : p -> p.fill(t, v.size(0), v.floatArg(1), v.ref(0));
         });
-        ROUTES.put("full_like", v -> {
+        ROUTES.put("mlx_full_like", v -> {
             int t = outType(v, 1, NUMBERS);
             return t < 0 || v.args() < 3 || !v.isArray(0) || v.size(0) != v.size(1) ? null : p -> p.fill(t, v.size(1), v.floatArg(2), v.ref(1));
         });
-        ROUTES.put("zeros", v -> fillRoute(v, 0, 0));
-        ROUTES.put("ones", v -> fillRoute(v, 0, 1));
-        ROUTES.put("zeros_like", v -> !v.isArray(0) || !v.isArray(1) || v.size(0) != v.size(1) ? null : fillRoute(v, 1, 0));
-        ROUTES.put("ones_like", v -> !v.isArray(0) || !v.isArray(1) || v.size(0) != v.size(1) ? null : fillRoute(v, 1, 1));
+        ROUTES.put("mlx_zeros", v -> fillRoute(v, 0, 0));
+        ROUTES.put("mlx_ones", v -> fillRoute(v, 0, 1));
+        ROUTES.put("mlx_zeros_like", v -> !v.isArray(0) || !v.isArray(1) || v.size(0) != v.size(1) ? null : fillRoute(v, 1, 0));
+        ROUTES.put("mlx_ones_like", v -> !v.isArray(0) || !v.isArray(1) || v.size(0) != v.size(1) ? null : fillRoute(v, 1, 1));
         // arange(start, stop, step): MLX's arange kernel when the element count matches.
-        ROUTES.put("arange", v -> {
+        ROUTES.put("mlx_arange", v -> {
             int t = outType(v, 0, NUMBERS);
             if (t < 0 || v.args() < 4) {
                 return null;
@@ -713,7 +713,7 @@ final class MlxKernelRoutes {
             return p -> p.arange(t, v.size(0), start, step, v.ref(0));
         });
         // linspace(start, stop, num): t = arange(0, num) / (num - 1); (1 - t) * start + t * stop in float32.
-        ROUTES.put("linspace", v -> {
+        ROUTES.put("mlx_linspace", v -> {
             if (outType(v, 0, FLOATS) < 0 || v.args() < 3) {
                 return null;
             }
@@ -741,21 +741,21 @@ final class MlxKernelRoutes {
                 }
             };
         });
-        ROUTES.put("eye", v -> {
+        ROUTES.put("mlx_eye", v -> {
             int t = outType(v, 0, NUMBERS);
             if (t < 0 || v.args() < 4 || v.size(0) != v.intArg(1) * v.intArg(2)) {
                 return null;
             }
             return p -> diagonalFill(p, t, v.ref(0), v.intArg(1), v.intArg(2), v.intArg(3), null, 0);
         });
-        ROUTES.put("identity", v -> {
+        ROUTES.put("mlx_identity", v -> {
             int t = outType(v, 0, NUMBERS);
             if (t < 0 || v.args() < 2 || v.size(0) != v.intArg(1) * v.intArg(1)) {
                 return null;
             }
             return p -> diagonalFill(p, t, v.ref(0), v.intArg(1), v.intArg(1), 0, null, 0);
         });
-        ROUTES.put("tri", v -> {
+        ROUTES.put("mlx_tri", v -> {
             int t = outType(v, 0, NUMBERS);
             if (t < 0 || v.args() < 4 || v.size(0) != v.intArg(1) * v.intArg(2)) {
                 return null;
@@ -770,10 +770,10 @@ final class MlxKernelRoutes {
             };
         });
         // tril: where(tri(r, c, k), x, 0); triu: where(tri(r, c, k - 1), 0, x).
-        ROUTES.put("tril", v -> triangle(v, true));
-        ROUTES.put("triu", v -> triangle(v, false));
+        ROUTES.put("mlx_tril", v -> triangle(v, true));
+        ROUTES.put("mlx_triu", v -> triangle(v, false));
         // diag(x[n], k): an (n + |k|)^2 zero matrix with x on its k-th diagonal.
-        ROUTES.put("diag", v -> {
+        ROUTES.put("mlx_diag", v -> {
             int t = pairType(v, 0, 1);
             if (t < 0 || v.args() < 3) {
                 return null;
@@ -783,7 +783,7 @@ final class MlxKernelRoutes {
             return v.size(1) != n * n ? null : p -> diagonalFill(p, t, v.ref(1), n, n, k, v.ref(0), 1);
         });
         // diagonal(x[r, c], k): x read along stride c + 1.
-        ROUTES.put("diagonal", v -> {
+        ROUTES.put("mlx_diagonal", v -> {
             if (v.args() < 5) {
                 return null;
             }
@@ -795,7 +795,7 @@ final class MlxKernelRoutes {
             return length == 0 || !v.isArray(0) || v.size(0) != r * c ? null : view(v, 0, 1, new int[] { length }, new long[] { c + 1L }, start);
         });
         // meshgrid(x[nx], y[ny]): "xy" gives [ny, nx] grids, "ij" gives [nx, ny].
-        ROUTES.put("meshgrid", v -> {
+        ROUTES.put("mlx_meshgrid", v -> {
             if (!v.isArray(0) || !v.isArray(1) || v.args() < 5) {
                 return null;
             }
@@ -811,18 +811,18 @@ final class MlxKernelRoutes {
             };
         });
         // Windows over n = arange(0, M) in float32, step by step as MLX's ops.cpp builds them.
-        ROUTES.put("hanning", v -> window(v, (p, m, n, out) -> {
+        ROUTES.put("mlx_hanning", v -> window(v, (p, m, n, out) -> {
             p.binaryScalarLeft("Multiply", MLX_FLOAT32, m, (float) (Math.PI / (m - 1)), n, out);
             p.unary("Sin", MLX_FLOAT32, MLX_FLOAT32, m, out, out);
             p.unary("Square", MLX_FLOAT32, MLX_FLOAT32, m, out, out);
         }));
-        ROUTES.put("hamming", v -> window(v, (p, m, n, out) -> {
+        ROUTES.put("mlx_hamming", v -> window(v, (p, m, n, out) -> {
             p.binaryScalarLeft("Multiply", MLX_FLOAT32, m, (float) ((2.0 * Math.PI) / (m - 1)), n, out);
             p.unary("Cos", MLX_FLOAT32, MLX_FLOAT32, m, out, out);
             p.binaryScalarLeft("Multiply", MLX_FLOAT32, m, 0.46f, out, out);
             p.binaryScalarLeft("Subtract", MLX_FLOAT32, m, 0.54f, out, out);
         }));
-        ROUTES.put("blackman", v -> window(v, (p, m, n, out) -> {
+        ROUTES.put("mlx_blackman", v -> window(v, (p, m, n, out) -> {
             Ref term2 = p.scratch(4L * m);
             p.binaryScalarLeft("Multiply", MLX_FLOAT32, m, (float) ((2.0 * Math.PI) / (m - 1)), n, out);
             p.unary("Cos", MLX_FLOAT32, MLX_FLOAT32, m, out, out);
@@ -832,7 +832,7 @@ final class MlxKernelRoutes {
             p.binaryScalarLeft("Subtract", MLX_FLOAT32, m, 0.34f, out, out);
             p.binary("Add", MLX_FLOAT32, m, out, term2, out);
         }));
-        ROUTES.put("bartlett", v -> window(v, (p, m, n, out) -> {
+        ROUTES.put("mlx_bartlett", v -> window(v, (p, m, n, out) -> {
             p.binaryScalarLeft("Multiply", MLX_FLOAT32, m, 2.0f / (m - 1), n, out);
             p.binaryScalarRight("Subtract", MLX_FLOAT32, m, out, 1.0f, out);
             p.unary("Abs", MLX_FLOAT32, MLX_FLOAT32, m, out, out);
@@ -940,10 +940,10 @@ final class MlxKernelRoutes {
     }
 
     private static void registerRowRoutes() {
-        ROUTES.put("softmax", v -> v.isArray(0) ? softmax(v, 1, v.size(0)) : null);
-        ROUTES.put("softmax_axis", v -> v.args() < 4 ? null : softmax(v, v.intArg(2), v.intArg(3)));
+        ROUTES.put("mlx_softmax", v -> v.isArray(0) ? softmax(v, 1, v.size(0)) : null);
+        ROUTES.put("mlx_softmax_axis", v -> v.args() < 4 ? null : softmax(v, v.intArg(2), v.intArg(3)));
         // rms_norm(x[rows, dim], w[dim], eps).
-        ROUTES.put("fast_rms_norm", v -> {
+        ROUTES.put("mlx_fast_rms_norm", v -> {
             int t = v.sameType(FLOATS, 0, 2);
             if (t < 0 || v.args() < 6 || !v.isArray(1) || v.dtype(1) != t) {
                 return null;
@@ -962,7 +962,7 @@ final class MlxKernelRoutes {
             };
         });
         // layer_norm(x[rows, dim], w[dim], b[dim], eps).
-        ROUTES.put("fast_layer_norm", v -> {
+        ROUTES.put("mlx_fast_layer_norm", v -> {
             int t = v.sameType(FLOATS, 0, 3);
             if (t < 0 || v.args() < 7 || !v.is(1, t, v.intArg(5)) || !v.is(2, t, v.intArg(5))) {
                 return null;
@@ -982,8 +982,8 @@ final class MlxKernelRoutes {
             };
         });
         // rope(x, out, B, H, T, D, dims, traditional, base, scale, offset); rope_dynamic(x, offset[1], out, B, H, T, D, dims, traditional, base, scale).
-        ROUTES.put("fast_rope", v -> rope(v, 0, 1, -1, 2));
-        ROUTES.put("fast_rope_dynamic", v -> rope(v, 0, 2, 1, 3));
+        ROUTES.put("mlx_fast_rope", v -> rope(v, 0, 1, -1, 2));
+        ROUTES.put("mlx_fast_rope_dynamic", v -> rope(v, 0, 2, 1, 3));
     }
 
     // ---------------------------------------------------------------- reductions
@@ -996,12 +996,12 @@ final class MlxKernelRoutes {
         boolean integer = INTEGERS.contains(in);
         if (op.equals("sum") || op.equals("prod")) {
             if (in == MLX_BOOL) {
-                return new int[] { MlxTypes.MLX_INT8, MLX_INT32 };
+                return new int[] { MlxMetalKernels.MLX_INT8, MLX_INT32 };
             }
             if (integer) {
                 return switch (in) {
-                    case MLX_UINT8, MlxTypes.MLX_UINT16, MlxTypes.MLX_UINT32 -> new int[] { in, MlxTypes.MLX_UINT32 };
-                    case MlxTypes.MLX_INT64 -> new int[] { in, in };
+                    case MLX_UINT8, MlxMetalKernels.MLX_UINT16, MlxMetalKernels.MLX_UINT32 -> new int[] { in, MlxMetalKernels.MLX_UINT32 };
+                    case MlxMetalKernels.MLX_INT64 -> new int[] { in, in };
                     default -> new int[] { in, MLX_INT32 };
                 };
             }
@@ -1013,9 +1013,9 @@ final class MlxKernelRoutes {
             }
             return switch (MlxMetalKernels.itemSize(in)) {
                 case 1 -> new int[] { MLX_BOOL, MLX_BOOL };
-                case 2 -> new int[] { MlxTypes.MLX_INT16, MLX_BOOL };
+                case 2 -> new int[] { MlxMetalKernels.MLX_INT16, MLX_BOOL };
                 case 4 -> new int[] { MLX_INT32, MLX_BOOL };
-                default -> new int[] { MlxTypes.MLX_INT64, MLX_BOOL };
+                default -> new int[] { MlxMetalKernels.MLX_INT64, MLX_BOOL };
             };
         }
         return new int[] { in, in };
@@ -1150,7 +1150,7 @@ final class MlxKernelRoutes {
     private static double castTo(int t, double value) {
         return switch (t) {
             case MLX_FLOAT32 -> (float) value;
-            case MlxTypes.MLX_FLOAT16 -> Float.float16ToFloat(Float.floatToFloat16((float) value));
+            case MlxMetalKernels.MLX_FLOAT16 -> Float.float16ToFloat(Float.floatToFloat16((float) value));
             default -> Float.intBitsToFloat((Float.floatToRawIntBits((float) value) + 0x7fff + ((Float.floatToRawIntBits((float) value) >>> 16) & 1)) & 0xffff0000);
         };
     }
@@ -1250,24 +1250,24 @@ final class MlxKernelRoutes {
     private static void registerReductionRoutes() {
         String[][] plain = { { "sum", "sum" }, { "prod", "prod" }, { "max", "max" }, { "min", "min" }, { "all", "and" }, { "any", "or" } };
         for (String[] r : plain) {
-            ROUTES.put(r[0], v -> plainReduce(v, r[1], "whole"));
-            ROUTES.put(r[0] + "_axis", v -> plainReduce(v, r[1], "axis"));
-            ROUTES.put(r[0] + "_axes", v -> plainReduce(v, r[1], "axes"));
+            ROUTES.put("mlx_" + r[0], v -> plainReduce(v, r[1], "whole"));
+            ROUTES.put("mlx_" + r[0] + "_axis", v -> plainReduce(v, r[1], "axis"));
+            ROUTES.put("mlx_" + r[0] + "_axes", v -> plainReduce(v, r[1], "axes"));
         }
-        ROUTES.put("mean", v -> mean(v, "whole"));
-        ROUTES.put("mean_axis", v -> mean(v, "axis"));
-        ROUTES.put("mean_axes", v -> mean(v, "axes"));
-        ROUTES.put("var", v -> variance(v, "whole", 2, false));
-        ROUTES.put("var_axis", v -> variance(v, "axis", 5, false));
-        ROUTES.put("var_axes", v -> variance(v, "axes", 6, false));
-        ROUTES.put("std", v -> variance(v, "whole", 2, true));
-        ROUTES.put("std_axis", v -> variance(v, "axis", 5, true));
-        ROUTES.put("std_axes", v -> variance(v, "axes", 6, true));
-        ROUTES.put("logsumexp", v -> logsumexp(v, "whole"));
-        ROUTES.put("argmin", v -> v.isArray(0) ? argReduce(v, "argmin", 1, v.size(0), 1) : null);
-        ROUTES.put("argmin_axis", v -> v.args() < 5 ? null : argReduce(v, "argmin", v.intArg(2), v.intArg(3), v.intArg(4)));
-        ROUTES.put("argmax", v -> v.isArray(0) ? argReduce(v, "argmax", 1, v.size(0), 1) : null);
-        ROUTES.put("argmax_axis", v -> v.args() < 4 ? null : argReduce(v, "argmax", v.intArg(2), v.intArg(3), 1));
+        ROUTES.put("mlx_mean", v -> mean(v, "whole"));
+        ROUTES.put("mlx_mean_axis", v -> mean(v, "axis"));
+        ROUTES.put("mlx_mean_axes", v -> mean(v, "axes"));
+        ROUTES.put("mlx_var", v -> variance(v, "whole", 2, false));
+        ROUTES.put("mlx_var_axis", v -> variance(v, "axis", 5, false));
+        ROUTES.put("mlx_var_axes", v -> variance(v, "axes", 6, false));
+        ROUTES.put("mlx_std", v -> variance(v, "whole", 2, true));
+        ROUTES.put("mlx_std_axis", v -> variance(v, "axis", 5, true));
+        ROUTES.put("mlx_std_axes", v -> variance(v, "axes", 6, true));
+        ROUTES.put("mlx_logsumexp", v -> logsumexp(v, "whole"));
+        ROUTES.put("mlx_argmin", v -> v.isArray(0) ? argReduce(v, "argmin", 1, v.size(0), 1) : null);
+        ROUTES.put("mlx_argmin_axis", v -> v.args() < 5 ? null : argReduce(v, "argmin", v.intArg(2), v.intArg(3), v.intArg(4)));
+        ROUTES.put("mlx_argmax", v -> v.isArray(0) ? argReduce(v, "argmax", 1, v.size(0), 1) : null);
+        ROUTES.put("mlx_argmax_axis", v -> v.args() < 4 ? null : argReduce(v, "argmax", v.intArg(2), v.intArg(3), 1));
     }
 
     // ---------------------------------------------------------------- slices and reduction composites
@@ -1391,12 +1391,12 @@ final class MlxKernelRoutes {
     }
 
     private static void registerCompositeRoutes() {
-        ROUTES.put("slice", MlxKernelRoutes::slice);
-        ROUTES.put("slice_update", v -> sliceUpdate(v, null));
-        ROUTES.put("slice_update_add", v -> sliceUpdate(v, "Add"));
-        ROUTES.put("slice_update_prod", v -> sliceUpdate(v, "Multiply"));
+        ROUTES.put("mlx_slice", MlxKernelRoutes::slice);
+        ROUTES.put("mlx_slice_update", v -> sliceUpdate(v, null));
+        ROUTES.put("mlx_slice_update_add", v -> sliceUpdate(v, "Add"));
+        ROUTES.put("mlx_slice_update_prod", v -> sliceUpdate(v, "Multiply"));
         // trace(x[r, c], k): sum(astype(diagonal(x, k), dtype)) as an all-reduce of the contiguous diagonal.
-        ROUTES.put("trace", v -> {
+        ROUTES.put("mlx_trace", v -> {
             if (v.args() < 5 || !v.isArray(0) || !v.isArray(1) || v.size(1) != 1 || !NUMBERS.contains(v.dtype(0)) || !NUMBERS.contains(v.dtype(1))) {
                 return null;
             }
@@ -1417,7 +1417,7 @@ final class MlxKernelRoutes {
             };
         });
         // allclose: all(isclose(...)) (float32, as isclose).
-        ROUTES.put("allclose", v -> {
+        ROUTES.put("mlx_allclose", v -> {
             if (v.args() < 6 || v.sameType(FLOAT32, 0, 1) < 0 || !v.is(2, MLX_UINT8, 1)) {
                 return null;
             }
@@ -1434,7 +1434,7 @@ final class MlxKernelRoutes {
             };
         });
         // array_equal: all(equal(a, b)), with NaNEqual when equal_nan is set on floating types.
-        ROUTES.put("array_equal", v -> {
+        ROUTES.put("mlx_array_equal", v -> {
             int t = v.sameType(NUMBERS, 0, 1);
             if (t < 0 || v.args() < 4 || !v.is(2, MLX_UINT8, 1)) {
                 return null;
@@ -1449,9 +1449,9 @@ final class MlxKernelRoutes {
                 p.copy(MLX_BOOL, MLX_BOOL, 1, result, v.ref(2));
             };
         });
-        ROUTES.put("softmax_axes", MlxKernelRoutes::softmaxLastTwo);
-        ROUTES.put("logsumexp_axis", v -> logsumexpComposite(v, "axis"));
-        ROUTES.put("logsumexp_axes", v -> logsumexpComposite(v, "axes"));
+        ROUTES.put("mlx_softmax_axes", MlxKernelRoutes::softmaxLastTwo);
+        ROUTES.put("mlx_logsumexp_axis", v -> logsumexpComposite(v, "axis"));
+        ROUTES.put("mlx_logsumexp_axes", v -> logsumexpComposite(v, "axes"));
     }
 
     // ---------------------------------------------------------------- matmul (GEMV and steel GEMM)
@@ -1677,16 +1677,16 @@ final class MlxKernelRoutes {
 
     private static void registerMatmulRoutes() {
         // matmul(a, b, out, m, k, n); matmul_transposed(a, w[n, k], out, m, k, n) = a @ w^T.
-        ROUTES.put("matmul", v -> v.args() < 6 ? null : matmulRoute(v, false));
-        ROUTES.put("matmul_transposed", v -> v.args() < 6 ? null : matmulRoute(v, true));
-        ROUTES.put("quantized_matmul", MlxKernelRoutes::quantizedMatmul);
-        ROUTES.put("gather_mm", MlxKernelRoutes::gatherMm);
-        ROUTES.put("gather_qmm", MlxKernelRoutes::gatherQmm);
-        ROUTES.put("quantize_mx", MlxKernelRoutes::quantizeMx);
-        ROUTES.put("qqmm", MlxKernelRoutes::qqmm);
-        ROUTES.put("segmented_mm", MlxKernelRoutes::segmentedMm);
+        ROUTES.put("mlx_matmul", v -> v.args() < 6 ? null : matmulRoute(v, false));
+        ROUTES.put("mlx_matmul_transposed", v -> v.args() < 6 ? null : matmulRoute(v, true));
+        ROUTES.put("mlx_quantized_matmul", MlxKernelRoutes::quantizedMatmul);
+        ROUTES.put("mlx_gather_mm", MlxKernelRoutes::gatherMm);
+        ROUTES.put("mlx_gather_qmm", MlxKernelRoutes::gatherQmm);
+        ROUTES.put("mlx_quantize_mx", MlxKernelRoutes::quantizeMx);
+        ROUTES.put("mlx_qqmm", MlxKernelRoutes::qqmm);
+        ROUTES.put("mlx_segmented_mm", MlxKernelRoutes::segmentedMm);
         // addmm(c, a, b, out, m, k, n, alpha, beta) = alpha * a @ b + beta * c.
-        ROUTES.put("addmm", v -> {
+        ROUTES.put("mlx_addmm", v -> {
             if (v.args() < 9) {
                 return null;
             }
@@ -1700,7 +1700,7 @@ final class MlxKernelRoutes {
             return matmulKernels(new Mm(t, 1, m, k, n, false, v.ref(1), v.ref(2), v.ref(3), v.ref(0), v.floatArg(7), v.floatArg(8)), v.architecture());
         });
         // einsum("bij,bjk->bik"): a batched matmul of contiguous [B, i, j] and [B, j, k].
-        ROUTES.put("einsum_bmm", v -> {
+        ROUTES.put("mlx_einsum_bmm", v -> {
             if (v.args() < 7) {
                 return null;
             }
@@ -1715,10 +1715,10 @@ final class MlxKernelRoutes {
             return matmulKernels(new Mm(t, batch, i, j, k, false, v.ref(0), v.ref(1), v.ref(2), null, 1.0f, 0.0f), v.architecture());
         });
         // tensordot(a[d0, d1, d2], b[d1, d2, d3], axes (1, 2) / (0, 1)) and tensordot_axis(a[m, k], b[k, n], 1): reshapes and a matmul.
-        ROUTES.put("tensordot", v -> v.args() < 7 ? null : matmul(v, 0, 1, 2, v.intArg(3), v.intArg(4) * v.intArg(5), v.intArg(6), false, v.architecture()));
-        ROUTES.put("tensordot_axis", v -> v.args() < 6 ? null : matmul(v, 0, 1, 2, v.intArg(3), v.intArg(4), v.intArg(5), false, v.architecture()));
+        ROUTES.put("mlx_tensordot", v -> v.args() < 7 ? null : matmul(v, 0, 1, 2, v.intArg(3), v.intArg(4) * v.intArg(5), v.intArg(6), false, v.architecture()));
+        ROUTES.put("mlx_tensordot_axis", v -> v.args() < 6 ? null : matmul(v, 0, 1, 2, v.intArg(3), v.intArg(4), v.intArg(5), false, v.architecture()));
         // outer(a[n], b[m]): a[:, None] * b[None, :].
-        ROUTES.put("outer", v -> {
+        ROUTES.put("mlx_outer", v -> {
             int t = floatType(v, 0, 1, 2);
             if (t < 0 || v.size(2) != v.size(0) * v.size(1)) {
                 return null;
@@ -1728,7 +1728,7 @@ final class MlxKernelRoutes {
             return p -> p.generalBinary("Multiply", t, new int[] { n, m }, new long[] { 1, 0 }, v.ref(0), new long[] { 0, 1 }, v.ref(1), v.ref(2));
         });
         // kron(a[r1, c1], b[r2, c2]): a[r1, 1, c1, 1] * b[1, r2, 1, c2], as [r1, r2, c1, c2].
-        ROUTES.put("kron", v -> {
+        ROUTES.put("mlx_kron", v -> {
             if (v.args() < 7) {
                 return null;
             }
@@ -1743,7 +1743,7 @@ final class MlxKernelRoutes {
             return p -> p.generalBinary("Multiply", t, new int[] { r1, r2, c1, c2 }, new long[] { c1, 0, 1, 0 }, v.ref(0), new long[] { 0, c2, 0, 1 }, v.ref(1), v.ref(2));
         });
         // inner(a[n], b[n]): tensordot over the last axis, a 1 x n by n x 1 matmul, i.e. MLX's dot_product.
-        ROUTES.put("inner", v -> {
+        ROUTES.put("mlx_inner", v -> {
             int t = floatType(v, 0, 1, 2);
             if (t < 0 || v.size(0) != v.size(1) || v.size(2) != 1 || v.architecture() == null) {
                 return null;
@@ -1760,9 +1760,9 @@ final class MlxKernelRoutes {
                 p.copy(MLX_FLOAT32, t, 1, total, v.ref(2));
             };
         });
-        ROUTES.put("fast_scaled_dot_product_attention", MlxKernelRoutes::attention);
-        ROUTES.put("quantize", v -> quantize(v, false));
-        ROUTES.put("dequantize", v -> quantize(v, true));
+        ROUTES.put("mlx_fast_scaled_dot_product_attention", MlxKernelRoutes::attention);
+        ROUTES.put("mlx_quantize", v -> quantize(v, false));
+        ROUTES.put("mlx_dequantize", v -> quantize(v, true));
     }
 
     /**
@@ -2083,8 +2083,8 @@ final class MlxKernelRoutes {
     private static String cType(int dtype) {
         return switch (dtype) {
             case MLX_FLOAT32 -> "float";
-            case MlxTypes.MLX_FLOAT16 -> "float16_t";
-            case MlxTypes.MLX_BFLOAT16 -> "bfloat16_t";
+            case MlxMetalKernels.MLX_FLOAT16 -> "float16_t";
+            case MlxMetalKernels.MLX_BFLOAT16 -> "bfloat16_t";
             default -> null;
         };
     }
@@ -2299,7 +2299,7 @@ final class MlxKernelRoutes {
     private static void registerScanRoutes() {
         String[][] scans = { { "cumsum", "sum" }, { "cumprod", "prod" }, { "cummax", "max" }, { "cummin", "min" }, { "logcumsumexp", "logaddexp" } };
         for (String[] sc : scans) {
-            ROUTES.put(sc[0], v -> scan(v, sc[1]));
+            ROUTES.put("mlx_" + sc[0], v -> scan(v, sc[1]));
         }
     }
 
@@ -2364,7 +2364,7 @@ final class MlxKernelRoutes {
                     .i32(7, (int) blocks).threadgroups(blocks, rows, 1, bn, 1, 1);
         }
         Ref sorted = argsort ? idxsOut : valsOut;
-        int sortedType = argsort ? MlxTypes.MLX_UINT32 : t;
+        int sortedType = argsort ? MlxMetalKernels.MLX_UINT32 : t;
         int[] shape = { (int) outer, (int) len, (int) inner };
         p.generalCopy(sortedType, sortedType, shape, new long[] { len * inner, 1, len }, sorted, null, out, null);
     }
@@ -2408,16 +2408,16 @@ final class MlxKernelRoutes {
     }
 
     private static void registerSortRoutes() {
-        ROUTES.put("sort", v -> sortRoute(v, false, false));
-        ROUTES.put("argsort", v -> sortRoute(v, true, false));
-        ROUTES.put("partition", v -> sortRoute(v, false, false));
-        ROUTES.put("argpartition", v -> sortRoute(v, true, false));
-        ROUTES.put("sort_axis", v -> v.args() < 5 ? null : sortRoute(v, false, true));
-        ROUTES.put("argsort_axis", v -> v.args() < 5 ? null : sortRoute(v, true, true));
-        ROUTES.put("partition_axis", v -> v.args() < 5 ? null : sortRoute(v, false, true));
-        ROUTES.put("argpartition_axis", v -> v.args() < 5 ? null : sortRoute(v, true, true));
-        ROUTES.put("topk", v -> v.args() < 3 ? null : topk(v, false));
-        ROUTES.put("topk_axis", v -> v.args() < 5 ? null : topk(v, true));
+        ROUTES.put("mlx_sort", v -> sortRoute(v, false, false));
+        ROUTES.put("mlx_argsort", v -> sortRoute(v, true, false));
+        ROUTES.put("mlx_partition", v -> sortRoute(v, false, false));
+        ROUTES.put("mlx_argpartition", v -> sortRoute(v, true, false));
+        ROUTES.put("mlx_sort_axis", v -> v.args() < 5 ? null : sortRoute(v, false, true));
+        ROUTES.put("mlx_argsort_axis", v -> v.args() < 5 ? null : sortRoute(v, true, true));
+        ROUTES.put("mlx_partition_axis", v -> v.args() < 5 ? null : sortRoute(v, false, true));
+        ROUTES.put("mlx_argpartition_axis", v -> v.args() < 5 ? null : sortRoute(v, true, true));
+        ROUTES.put("mlx_topk", v -> v.args() < 3 ? null : topk(v, false));
+        ROUTES.put("mlx_topk_axis", v -> v.args() < 5 ? null : topk(v, true));
     }
 
     // ---------------------------------------------------------------- random sampling
@@ -2445,7 +2445,7 @@ final class MlxKernelRoutes {
      */
     private static void uniform(Program p, int seed, int n, Ref low, Ref range, double lowValue, double rangeValue, Ref out, Ref scratch) {
         randomBits(p, seed, n, scratch);
-        p.copy(MlxTypes.MLX_UINT32, F32, n, scratch, out);
+        p.copy(MlxMetalKernels.MLX_UINT32, F32, n, scratch, out);
         p.binaryScalarRight("Divide", F32, n, out, 4294967295.0, out);
         p.binaryScalarRight("Minimum", F32, n, out, Math.nextDown(1.0f), out);
         if (range != null) {
@@ -2471,8 +2471,8 @@ final class MlxKernelRoutes {
     }
 
     private static void registerRandomRoutes() {
-        ROUTES.put("random_bits", v -> v.args() < 2 || !v.isArray(0) || v.dtype(0) != MLX_INT32 ? null : p -> randomBits(p, seedArg(v, 1), v.size(0), v.ref(0)));
-        ROUTES.put("random_uniform", v -> {
+        ROUTES.put("mlx_random_bits", v -> v.args() < 2 || !v.isArray(0) || v.dtype(0) != MLX_INT32 ? null : p -> randomBits(p, seedArg(v, 1), v.size(0), v.ref(0)));
+        ROUTES.put("mlx_random_uniform", v -> {
             if (v.args() < 4 || !v.isArray(0) || v.dtype(0) != F32) {
                 return null;
             }
@@ -2482,7 +2482,7 @@ final class MlxKernelRoutes {
             return p -> uniform(p, seedArg(v, 3), n, null, null, low, high - low, v.ref(0), p.scratch(4L * n));
         });
         // normal(loc, scale): sqrt(2) * erfinv(u) (times scale when it is not one), plus loc when it is not zero.
-        ROUTES.put("random_normal", v -> {
+        ROUTES.put("mlx_random_normal", v -> {
             if (v.args() < 4 || !v.isArray(0) || v.dtype(0) != F32) {
                 return null;
             }
@@ -2500,7 +2500,7 @@ final class MlxKernelRoutes {
             };
         });
         // normal with per-element loc and scale arrays.
-        ROUTES.put("random_normal_broadcast", v -> {
+        ROUTES.put("mlx_random_normal_broadcast", v -> {
             if (v.args() < 4 || floatType(v, 0, 1, 2) != F32 || v.size(0) != v.size(2) || v.size(1) != v.size(2)) {
                 return null;
             }
@@ -2515,7 +2515,7 @@ final class MlxKernelRoutes {
             };
         });
         // bernoulli(p): bits < p * nextafter(UINT32_MAX as float, max).
-        ROUTES.put("random_bernoulli", v -> {
+        ROUTES.put("mlx_random_bernoulli", v -> {
             if (v.args() < 3 || !v.isArray(0) || v.dtype(0) != F32 || !v.is(1, MLX_UINT8, v.size(0))) {
                 return null;
             }
@@ -2526,12 +2526,12 @@ final class MlxKernelRoutes {
                 Ref threshold = p.scratch(4L * n);
                 randomBits(p, seedArg(v, 2), n, bits);
                 p.binaryScalarRight("Multiply", F32, n, v.ref(0), upper, threshold);
-                p.copy(MlxTypes.MLX_UINT32, F32, n, bits, bits);
+                p.copy(MlxMetalKernels.MLX_UINT32, F32, n, bits, bits);
                 p.binary("Less", F32, n, bits, threshold, v.ref(1));
             };
         });
         // randint(low, high): floor of a float32 uniform, clipped to [low, high - 1].
-        ROUTES.put("random_randint", v -> {
+        ROUTES.put("mlx_random_randint", v -> {
             if (v.args() < 4 || !v.isArray(0) || v.dtype(0) != MLX_INT32) {
                 return null;
             }
@@ -2548,7 +2548,7 @@ final class MlxKernelRoutes {
             };
         });
         // truncated_normal(lower, upper): a uniform between erf(lower / sqrt2) and erf(upper / sqrt2), mapped back and clipped.
-        ROUTES.put("random_truncated_normal", v -> {
+        ROUTES.put("mlx_random_truncated_normal", v -> {
             if (v.args() < 4 || !v.isArray(0) || v.dtype(0) != F32) {
                 return null;
             }
@@ -2576,7 +2576,7 @@ final class MlxKernelRoutes {
             };
         });
         // gumbel: -log(-log(uniform(0, 1))).
-        ROUTES.put("random_gumbel", v -> {
+        ROUTES.put("mlx_random_gumbel", v -> {
             if (v.args() < 2 || !v.isArray(0) || v.dtype(0) != F32) {
                 return null;
             }
@@ -2584,7 +2584,7 @@ final class MlxKernelRoutes {
             return p -> gumbel(p, seedArg(v, 1), n, v.ref(0), p.scratch(4L * n));
         });
         // laplace(loc, scale): sign(u) * log1p(-|u|), scaled and shifted.
-        ROUTES.put("random_laplace", v -> {
+        ROUTES.put("mlx_random_laplace", v -> {
             if (v.args() < 4 || !v.isArray(0) || v.dtype(0) != F32) {
                 return null;
             }
@@ -2608,7 +2608,7 @@ final class MlxKernelRoutes {
             };
         });
         // permutation of arange(n): argsort of n random words.
-        ROUTES.put("random_permutation_arange", v -> {
+        ROUTES.put("mlx_random_permutation_arange", v -> {
             if (v.args() < 2 || !v.isArray(0) || v.dtype(0) != MLX_INT32) {
                 return null;
             }
@@ -2616,11 +2616,11 @@ final class MlxKernelRoutes {
             return p -> {
                 Ref bits = p.scratch(4L * n);
                 randomBits(p, seedArg(v, 1), n, bits);
-                mergeSort(p, MlxTypes.MLX_UINT32, 1, n, 1, bits, v.ref(0), true);
+                mergeSort(p, MlxMetalKernels.MLX_UINT32, 1, n, 1, bits, v.ref(0), true);
             };
         });
         // categorical: argmax of logits plus Gumbel noise (MLX's path when the logits have more than one row).
-        ROUTES.put("random_categorical", v -> {
+        ROUTES.put("mlx_random_categorical", v -> {
             if (v.args() < 5) {
                 return null;
             }
@@ -2628,13 +2628,13 @@ final class MlxKernelRoutes {
             int classes = v.intArg(3);
             return categorical(v, rows, classes, 1, v.intArg(4), false);
         });
-        ROUTES.put("random_categorical_num_samples", v -> {
+        ROUTES.put("mlx_random_categorical_num_samples", v -> {
             if (v.args() < 6) {
                 return null;
             }
             return categorical(v, v.intArg(2), v.intArg(3), v.intArg(4), v.intArg(5), false);
         });
-        ROUTES.put("random_categorical_shape", v -> {
+        ROUTES.put("mlx_random_categorical_shape", v -> {
             if (v.args() < 6) {
                 return null;
             }
@@ -2689,10 +2689,10 @@ final class MlxKernelRoutes {
 
     private static void registerSmallCompositeRoutes() {
         // fftshift / ifftshift along axis 1 of x[r, c]: roll by c / 2 or -(c / 2).
-        ROUTES.put("fft_fftshift", v -> v.args() < 4 ? null : roll2(v, v.intArg(2), v.intArg(3), 0, v.intArg(3) / 2));
-        ROUTES.put("fft_ifftshift", v -> v.args() < 4 ? null : roll2(v, v.intArg(2), v.intArg(3), 0, -(v.intArg(3) / 2)));
+        ROUTES.put("mlx_fft_fftshift", v -> v.args() < 4 ? null : roll2(v, v.intArg(2), v.intArg(3), 0, v.intArg(3) / 2));
+        ROUTES.put("mlx_fft_ifftshift", v -> v.args() < 4 ? null : roll2(v, v.intArg(2), v.intArg(3), 0, -(v.intArg(3) / 2)));
         // fftfreq(n, d): [arange(0, (n + 1) / 2), arange(-(n / 2), 0)] * float(1 / (n * d)).
-        ROUTES.put("fft_fftfreq", v -> {
+        ROUTES.put("mlx_fft_fftfreq", v -> {
             if (v.args() < 3 || !v.isArray(0) || v.dtype(0) != F32 || v.size(0) != v.intArg(1) || v.intArg(1) <= 0) {
                 return null;
             }
@@ -2707,7 +2707,7 @@ final class MlxKernelRoutes {
                 p.binaryScalarRight("Multiply", F32, n, v.ref(0), scale, v.ref(0));
             };
         });
-        ROUTES.put("fft_rfftfreq", v -> {
+        ROUTES.put("mlx_fft_rfftfreq", v -> {
             if (v.args() < 3 || !v.isArray(0) || v.dtype(0) != F32 || v.intArg(1) <= 0 || v.size(0) != v.intArg(1) / 2 + 1) {
                 return null;
             }
@@ -2719,7 +2719,7 @@ final class MlxKernelRoutes {
             };
         });
         // norm(x[r, c], ord) over the last axis.
-        ROUTES.put("linalg_norm", v -> {
+        ROUTES.put("mlx_linalg_norm", v -> {
             if (v.args() < 5 || !v.isArray(0) || v.dtype(0) != F32 || !v.is(1, F32, v.intArg(2))) {
                 return null;
             }
@@ -2756,14 +2756,14 @@ final class MlxKernelRoutes {
             };
         });
         // l2 norm over the last axis of x[r, c]; Frobenius norm of each matrix of x[b, r, c].
-        ROUTES.put("linalg_norm_l2", v -> {
+        ROUTES.put("mlx_linalg_norm_l2", v -> {
             if (v.args() < 4 || !v.isArray(0) || !FLOATS.contains(v.dtype(0)) || !v.is(1, v.dtype(0), v.intArg(2)) || (long) v.intArg(2) * v.intArg(3) != v.size(0)) {
                 return null;
             }
             int t = v.dtype(0);
             return p -> l2Rows(p, t, v.intArg(2), v.intArg(3), v.ref(0), v.ref(1), p.scratch((long) v.size(0) * MlxMetalKernels.itemSize(t)));
         });
-        ROUTES.put("linalg_norm_matrix", v -> {
+        ROUTES.put("mlx_linalg_norm_matrix", v -> {
             if (v.args() < 5 || !v.isArray(0) || !FLOATS.contains(v.dtype(0)) || !v.is(1, v.dtype(0), v.intArg(2))
                     || (long) v.intArg(2) * v.intArg(3) * v.intArg(4) != v.size(0)) {
                 return null;
@@ -2772,7 +2772,7 @@ final class MlxKernelRoutes {
             return p -> l2Rows(p, t, v.intArg(2), (long) v.intArg(3) * v.intArg(4), v.ref(0), v.ref(1), p.scratch((long) v.size(0) * MlxMetalKernels.itemSize(t)));
         });
         // cross(a[count, 3], b[count, 3]) along the last axis, component by component as MLX splits and concatenates.
-        ROUTES.put("linalg_cross", v -> {
+        ROUTES.put("mlx_linalg_cross", v -> {
             int t = floatType(v, 0, 1, 2);
             if (t < 0 || v.args() < 4 || v.size(0) != 3 * v.intArg(3) || v.size(1) != v.size(0) || v.size(2) != v.size(0)) {
                 return null;
@@ -3079,18 +3079,18 @@ final class MlxKernelRoutes {
     }
 
     private static void registerFftRoutes() {
-        ROUTES.put("fft_fft", v -> fft1d(v, false, false));
-        ROUTES.put("fft_ifft", v -> fft1d(v, true, false));
-        ROUTES.put("fft_rfft", v -> fft1d(v, false, true));
-        ROUTES.put("fft_irfft", v -> fft1d(v, true, true));
-        ROUTES.put("fft_fft2", v -> fftNd(v, 2, false, false));
-        ROUTES.put("fft_ifft2", v -> fftNd(v, 2, true, false));
-        ROUTES.put("fft_rfft2", v -> fftNd(v, 2, false, true));
-        ROUTES.put("fft_irfft2", v -> fftNd(v, 2, true, true));
-        ROUTES.put("fft_fftn", v -> fftNd(v, 3, false, false));
-        ROUTES.put("fft_ifftn", v -> fftNd(v, 3, true, false));
-        ROUTES.put("fft_rfftn", v -> fftNd(v, 3, false, true));
-        ROUTES.put("fft_irfftn", v -> fftNd(v, 3, true, true));
+        ROUTES.put("mlx_fft_fft", v -> fft1d(v, false, false));
+        ROUTES.put("mlx_fft_ifft", v -> fft1d(v, true, false));
+        ROUTES.put("mlx_fft_rfft", v -> fft1d(v, false, true));
+        ROUTES.put("mlx_fft_irfft", v -> fft1d(v, true, true));
+        ROUTES.put("mlx_fft_fft2", v -> fftNd(v, 2, false, false));
+        ROUTES.put("mlx_fft_ifft2", v -> fftNd(v, 2, true, false));
+        ROUTES.put("mlx_fft_rfft2", v -> fftNd(v, 2, false, true));
+        ROUTES.put("mlx_fft_irfft2", v -> fftNd(v, 2, true, true));
+        ROUTES.put("mlx_fft_fftn", v -> fftNd(v, 3, false, false));
+        ROUTES.put("mlx_fft_ifftn", v -> fftNd(v, 3, true, false));
+        ROUTES.put("mlx_fft_rfftn", v -> fftNd(v, 3, false, true));
+        ROUTES.put("mlx_fft_irfftn", v -> fftNd(v, 3, true, true));
     }
 
     // ---------------------------------------------------------------- convolutions
@@ -3278,7 +3278,7 @@ final class MlxKernelRoutes {
 
     private static void registerConvRoutes() {
         // conv1d(x[N, L, C], w[O, K, C/g], out, N, L, C, O, K, stride, pad, dil, groups).
-        ROUTES.put("conv1d", v -> {
+        ROUTES.put("mlx_conv1d", v -> {
             int t = floatType(v, 0, 1, 2);
             if (t < 0 || v.args() < 12) {
                 return null;
@@ -3313,7 +3313,7 @@ final class MlxKernelRoutes {
         });
         // conv_transpose1d(x, w, out, N, L, C, O, K, stride, pad, dil, output_pad, groups): a flipped convolution; MLX runs
         // stride 1 through the 1D-as-2D implicit GEMM path (larger strides dilate the input and take explicit GEMM).
-        ROUTES.put("conv_transpose1d", v -> {
+        ROUTES.put("mlx_conv_transpose1d", v -> {
             int t = floatType(v, 0, 1, 2);
             if (t < 0 || v.args() < 13 || v.intArg(8) != 1) {
                 return null;
@@ -3341,11 +3341,11 @@ final class MlxKernelRoutes {
         });
         // conv2d(x[N, H, W, C], w[O, KH, KW, C/g], out, N, H, W, C, O, KH, KW, stride, pad, dil, groups) and
         // conv_general(..., stride, pad_lo, pad_hi, kernel_dil, input_dil, groups, flip) in two dimensions.
-        ROUTES.put("conv2d", v -> v.args() < 14 ? null : conv2(v, v.intArg(10), v.intArg(11), v.intArg(11), v.intArg(12), 1, v.intArg(13), false));
-        ROUTES.put("conv_general", v -> v.args() < 17 ? null : conv2(v, v.intArg(10), v.intArg(11), v.intArg(12), v.intArg(13), v.intArg(14), v.intArg(15), v.boolArg(16)));
+        ROUTES.put("mlx_conv2d", v -> v.args() < 14 ? null : conv2(v, v.intArg(10), v.intArg(11), v.intArg(11), v.intArg(12), 1, v.intArg(13), false));
+        ROUTES.put("mlx_conv_general", v -> v.args() < 17 ? null : conv2(v, v.intArg(10), v.intArg(11), v.intArg(12), v.intArg(13), v.intArg(14), v.intArg(15), v.boolArg(16)));
         // conv_transpose2d(x, w, out, N, H, W, C, O, KH, KW, stride, pad, dil, output_pad, groups): MLX's conv_transpose_general,
         // a flipped convolution with unit stride, input dilation = stride and the padding it derives (square kernels).
-        ROUTES.put("conv_transpose2d", v -> {
+        ROUTES.put("mlx_conv_transpose2d", v -> {
             if (v.args() < 15 || v.intArg(8) != v.intArg(9)) {
                 return null;
             }

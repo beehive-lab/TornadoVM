@@ -32,7 +32,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.mlx.MlxCreate;
+import uk.ac.manchester.tornado.mlx.MlxCreation;
 
 /**
  * Unit tests for the MLX array-construction library tasks: ranges, constants, identity and
@@ -115,7 +115,7 @@ public class TestMlxCreation extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, output) //
-                .libraryTask("arange", MlxCreate::arange, output, -2.0f, -2.0f + 0.25f * n, 0.25f) //
+                .libraryTask("arange", MlxCreation::arange, output, -2.0f, -2.0f + 0.25f * n, 0.25f) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -136,7 +136,7 @@ public class TestMlxCreation extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, output) //
-                .libraryTask("linspace", MlxCreate::linspace, output, -1.0f, 3.0f) //
+                .libraryTask("linspace", MlxCreation::linspace, output, -1.0f, 3.0f) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -152,17 +152,17 @@ public class TestMlxCreation extends MlxTestBase {
 
     @Test
     public void testFull() throws TornadoExecutionPlanException {
-        constant(out -> MlxCreate.full(out, 2.5f), 2.5f);
+        constant(out -> MlxCreation.full(out, 2.5f), 2.5f);
     }
 
     @Test
     public void testZeros() throws TornadoExecutionPlanException {
-        constant(MlxCreate::zeros, 0f);
+        constant(MlxCreation::zeros, 0f);
     }
 
     @Test
     public void testOnes() throws TornadoExecutionPlanException {
-        constant(MlxCreate::ones, 1f);
+        constant(MlxCreation::ones, 1f);
     }
 
     @Test
@@ -174,9 +174,9 @@ public class TestMlxCreation extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, like) //
-                .libraryTask("fullLike", MlxCreate::fullLike, like, full, -1.5f) //
-                .libraryTask("zerosLike", MlxCreate::zerosLike, like, zeros) //
-                .libraryTask("onesLike", MlxCreate::onesLike, like, ones) //
+                .libraryTask("fullLike", MlxCreation::fullLike, like, full, -1.5f) //
+                .libraryTask("zerosLike", MlxCreation::zerosLike, like, zeros) //
+                .libraryTask("onesLike", MlxCreation::onesLike, like, ones) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, full, zeros, ones);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -201,7 +201,7 @@ public class TestMlxCreation extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, output) //
-                .libraryTask("eye", MlxCreate::eye, output, n, m, 3) //
+                .libraryTask("eye", MlxCreation::eye, output, n, m, 3) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -222,7 +222,7 @@ public class TestMlxCreation extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, output) //
-                .libraryTask("identity", MlxCreate::identity, output, n) //
+                .libraryTask("identity", MlxCreation::identity, output, n) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -245,7 +245,7 @@ public class TestMlxCreation extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, output) //
-                .libraryTask("tri", MlxCreate::tri, output, n, m, -2) //
+                .libraryTask("tri", MlxCreation::tri, output, n, m, -2) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -268,7 +268,7 @@ public class TestMlxCreation extends MlxTestBase {
 
             TaskGraph taskGraph = new TaskGraph("g") //
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
-                    .libraryTask("tril", MlxCreate::tril, a, output, ROWS, COLS, k) //
+                    .libraryTask("tril", MlxCreation::tril, a, output, ROWS, COLS, k) //
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
             try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -288,7 +288,7 @@ public class TestMlxCreation extends MlxTestBase {
 
             TaskGraph taskGraph = new TaskGraph("g") //
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
-                    .libraryTask("triu", MlxCreate::triu, a, output, ROWS, COLS, k) //
+                    .libraryTask("triu", MlxCreation::triu, a, output, ROWS, COLS, k) //
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
             try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -312,7 +312,7 @@ public class TestMlxCreation extends MlxTestBase {
 
             TaskGraph taskGraph = new TaskGraph("g") //
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, v) //
-                    .libraryTask("diag", MlxCreate::diag, v, output, k) //
+                    .libraryTask("diag", MlxCreation::diag, v, output, k) //
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
             try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -339,7 +339,7 @@ public class TestMlxCreation extends MlxTestBase {
 
             TaskGraph taskGraph = new TaskGraph("g") //
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
-                    .libraryTask("diagonal", MlxCreate::diagonal, a, output, ROWS, COLS, k) //
+                    .libraryTask("diagonal", MlxCreation::diagonal, a, output, ROWS, COLS, k) //
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
             try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -362,7 +362,7 @@ public class TestMlxCreation extends MlxTestBase {
 
             TaskGraph taskGraph = new TaskGraph("g") //
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
-                    .libraryTask("trace", MlxCreate::trace, a, output, ROWS, COLS, k) //
+                    .libraryTask("trace", MlxCreation::trace, a, output, ROWS, COLS, k) //
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
             try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -381,27 +381,27 @@ public class TestMlxCreation extends MlxTestBase {
 
     @Test
     public void testBartlett() throws TornadoExecutionPlanException {
-        window(MlxCreate::bartlett, WINDOW, i -> 1 - Math.abs(2 * x(i, WINDOW) - 1));
+        window(MlxCreation::bartlett, WINDOW, i -> 1 - Math.abs(2 * x(i, WINDOW) - 1));
     }
 
     @Test
     public void testBlackman() throws TornadoExecutionPlanException {
-        window(MlxCreate::blackman, WINDOW, i -> 0.42 - 0.5 * Math.cos(2 * Math.PI * x(i, WINDOW)) + 0.08 * Math.cos(4 * Math.PI * x(i, WINDOW)));
+        window(MlxCreation::blackman, WINDOW, i -> 0.42 - 0.5 * Math.cos(2 * Math.PI * x(i, WINDOW)) + 0.08 * Math.cos(4 * Math.PI * x(i, WINDOW)));
     }
 
     @Test
     public void testHamming() throws TornadoExecutionPlanException {
-        window(MlxCreate::hamming, WINDOW, i -> 0.54 - 0.46 * Math.cos(2 * Math.PI * x(i, WINDOW)));
+        window(MlxCreation::hamming, WINDOW, i -> 0.54 - 0.46 * Math.cos(2 * Math.PI * x(i, WINDOW)));
     }
 
     @Test
     public void testHanning() throws TornadoExecutionPlanException {
-        window(MlxCreate::hanning, WINDOW, i -> 0.5 - 0.5 * Math.cos(2 * Math.PI * x(i, WINDOW)));
+        window(MlxCreation::hanning, WINDOW, i -> 0.5 - 0.5 * Math.cos(2 * Math.PI * x(i, WINDOW)));
     }
 
     @Test
     public void testWindowOfLengthOneIsOne() throws TornadoExecutionPlanException {
-        window(MlxCreate::hanning, 1, i -> 1);
+        window(MlxCreation::hanning, 1, i -> 1);
     }
 
     @Test
@@ -418,7 +418,7 @@ public class TestMlxCreation extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, y) //
-                .libraryTask("meshgrid", MlxCreate::meshgrid, x, y, outX, outY, false) //
+                .libraryTask("meshgrid", MlxCreation::meshgrid, x, y, outX, outY, false) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, outX, outY);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -445,7 +445,7 @@ public class TestMlxCreation extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, y) //
-                .libraryTask("meshgrid", MlxCreate::meshgrid, x, y, outX, outY, true) //
+                .libraryTask("meshgrid", MlxCreation::meshgrid, x, y, outX, outY, true) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, outX, outY);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -467,7 +467,7 @@ public class TestMlxCreation extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, output) //
-                .libraryTask("arange", MlxCreate::arange, output, 5f, 5f + 3f * n, 3f) //
+                .libraryTask("arange", MlxCreation::arange, output, 5f, 5f + 3f * n, 3f) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -486,7 +486,7 @@ public class TestMlxCreation extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, output) //
-                .libraryTask("identity", MlxCreate::identity, output, n) //
+                .libraryTask("identity", MlxCreation::identity, output, n) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -507,7 +507,7 @@ public class TestMlxCreation extends MlxTestBase {
 
         TaskGraph taskGraph = new TaskGraph("g") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, output) //
-                .libraryTask("ones", MlxCreate::ones, output) //
+                .libraryTask("ones", MlxCreation::ones, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
