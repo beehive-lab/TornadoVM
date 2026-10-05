@@ -659,6 +659,7 @@
 
     </dependencies>
     <modules>
+        <module>tornado-meta</module>
         <module>tornado-runtime</module>
         <module>tornado-matrices</module>
         <module>tornado-drivers</module>
