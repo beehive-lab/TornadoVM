@@ -30,7 +30,12 @@ lowering pipeline. Only the parts TornadoVM cannot use are trimmed: classes in a
 plugins, phases, LIR) is kept whole, because Graal's standard plugins can create any IR node from
 ordinary Java code and no trace covers them all.
 
-Inside the trimmed packages, the keep-list in ``bin/graal-compiler-keep.txt`` names the classes that
+CPU-ISA packages (``amd64``, ``aarch64``, ``riscv64``) are removed whole, whatever the keep-list says:
+TornadoVM never generates CPU code, and the classes there are only reached through Graal's service
+providers for its HotSpot CPU backends, which are pruned with them. They stay only when a kept class
+extends one of them.
+
+Inside the other trimmed packages, the keep-list in ``bin/graal-compiler-keep.txt`` names the classes that
 are still used, in relocated names (``tornado/graal/...``):
 
   * every class loaded from tornado.graal across the TornadoVM unit-test suites
@@ -62,6 +67,8 @@ SERVICES_DIR = "META-INF/services/"
 # Packages whose classes are kept only when the keep-list names them: Graal's HotSpot JIT, Truffle and
 # CPU ISA support. Everything else is kept whole.
 TRIMMABLE_PACKAGE = re.compile(r"/(hotspot|truffle|amd64|aarch64|riscv64)(/|$)")
+# Packages removed whatever the keep-list says: Graal's CPU code generation.
+CPU_ISA_PACKAGE = re.compile(r"/(amd64|aarch64|riscv64)(/|$)")
 # Records the keep-list a jar was trimmed with, so a jar trimmed with another list is rebuilt.
 MARKER = "META-INF/tornado-graal-keep-list.sha256"
 
@@ -128,7 +135,9 @@ def minimize(jar_path):
         with zipfile.ZipFile(jar_path, "r") as zf:
             entries = [e for e in zf.namelist() if not e.endswith("/")]
             classes = {e for e in entries if e.endswith(".class") and e != "module-info.class"}
-            selected = {c for c in classes if c in keep or not TRIMMABLE_PACKAGE.search(c.rsplit("/", 1)[0])}
+            selected = {c for c in classes
+                        if not CPU_ISA_PACKAGE.search(c.rsplit("/", 1)[0])
+                        and (c in keep or not TRIMMABLE_PACKAGE.search(c.rsplit("/", 1)[0]))}
 
             # Close over supertypes: a kept class cannot be loaded without its superclass and interfaces.
             work = list(selected)
