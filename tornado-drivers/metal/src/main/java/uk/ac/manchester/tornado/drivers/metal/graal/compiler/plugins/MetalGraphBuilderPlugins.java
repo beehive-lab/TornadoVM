@@ -76,7 +76,7 @@ import tornado.graal.compiler.nodes.memory.address.AddressNode;
 import tornado.graal.compiler.nodes.memory.address.OffsetAddressNode;
 import tornado.graal.compiler.nodes.util.GraphUtil;
 import tornado.graal.compiler.replacements.InlineDuringParsingPlugin;
-import org.graalvm.word.LocationIdentity;
+import tornado.graal.word.LocationIdentity;
 
 import tornado.meta.JavaConstant;
 import tornado.meta.JavaKind;

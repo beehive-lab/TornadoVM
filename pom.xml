@@ -591,28 +591,12 @@
             <artifactId>log4j-core</artifactId>
             <version>2.25.4</version>
         </dependency>
-        <dependency>
-            <groupId>org.graalvm.sdk</groupId>
-            <artifactId>word</artifactId>
-            <version>${graalvm.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.graalvm.sdk</groupId>
-            <artifactId>collections</artifactId>
-            <version>${graalvm.version}</version>
-        </dependency>
-        <dependency>
-            <!-- Required transitively by the vendored tornado.graal module; formerly
-                 supplied via the upgrade-module-path graalJars mechanism. -->
-            <groupId>org.graalvm.truffle</groupId>
-            <artifactId>truffle-compiler</artifactId>
-            <version>${graalvm.version}</version>
-        </dependency>
 
         <dependency>
             <!-- Frozen Graal 23.1.0 relocated (org.graalvm.compiler.* to
-                 tornado.graal.compiler.*) into the vendored module tornado.graal by
-                 bin/build_graal_module.py, so it lives on the regular module-path. -->
+                 tornado.graal.compiler.*, with word/collections/truffle-compiler folded in)
+                 into the vendored module tornado.graal by bin/build_graal_module.py, so it
+                 lives on the regular module-path. -->
             <groupId>tornado.graal</groupId>
             <artifactId>tornado-graal</artifactId>
             <version>23.1.0</version>

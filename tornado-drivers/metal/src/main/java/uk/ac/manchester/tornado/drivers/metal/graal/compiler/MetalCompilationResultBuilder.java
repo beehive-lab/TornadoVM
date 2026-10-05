@@ -31,8 +31,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.graalvm.collections.EconomicMap;
-import org.graalvm.collections.Equivalence;
+import tornado.graal.collections.EconomicMap;
+import tornado.graal.collections.Equivalence;
 import tornado.graal.compiler.asm.Assembler;
 import tornado.graal.compiler.code.CompilationResult;
 import tornado.graal.compiler.core.common.spi.CodeGenProviders;

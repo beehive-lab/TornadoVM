@@ -36,7 +36,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.StreamSupport;
 
-import org.graalvm.collections.EconomicMap;
+import tornado.graal.collections.EconomicMap;
 import tornado.graal.compiler.core.common.GraalOptions;
 import tornado.graal.compiler.debug.DebugContext;
 import tornado.graal.compiler.hotspot.HotSpotGraalOptionValues;

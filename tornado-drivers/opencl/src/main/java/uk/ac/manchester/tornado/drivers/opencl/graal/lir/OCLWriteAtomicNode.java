@@ -44,7 +44,7 @@ import tornado.graal.compiler.nodes.memory.FixedAccessNode;
 import tornado.graal.compiler.nodes.memory.LIRLowerableAccess;
 import tornado.graal.compiler.nodes.memory.address.AddressNode;
 import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
-import org.graalvm.word.LocationIdentity;
+import tornado.graal.word.LocationIdentity;
 
 import tornado.meta.JavaKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStamp;

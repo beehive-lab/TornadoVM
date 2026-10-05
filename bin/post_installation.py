@@ -152,7 +152,7 @@ def update_backend_file(selected_backends_str):
 # the launcher must never see.
 GRAAL_JARS_SDK_LAYOUT = (
     # (SDK subdirectory under share/java, filename prefixes to copy there)
-    ("graalJars", ("tornado-graal-", "truffle-compiler-", "collections-", "word-")),
+    ("tornado", ("tornado-graal-",)),
 )
 
 
@@ -160,18 +160,11 @@ def copy_graal_jars():
     """
     Copy the vendored GraalVM JAR files to the Tornado SDK.
 
-    This function checks the Java version and, if the Java environment is not GraalVM, copies
-    the jars staged in 'graalJars' into the Tornado SDK's 'share/java/graalJars', filtered
-    exactly as the Maven assembly does.
+    Copies the relocated Graal jar staged in 'graalJars' into the Tornado SDK's
+    'share/java/tornado', filtered exactly as the Maven assembly does. tornado.graal shares no
+    module or package name with a GraalVM JDK, so this is the same on every JDK.
     """
     tornado_sdk_path = os.environ.get("TORNADOVM_HOME")
-    java_version_output = subprocess.check_output(
-        ["java", "-version"], stderr=subprocess.STDOUT, universal_newlines=True
-    )
-
-    if "GraalVM" in java_version_output:
-        return
-
     graal_jars_dir = os.path.join(os.getcwd(), "graalJars")
     for subdirectory, prefixes in GRAAL_JARS_SDK_LAYOUT:
         destination_dir = os.path.join(tornado_sdk_path, "share", "java", subdirectory)
@@ -444,7 +437,7 @@ def main():
     # Update backend file
     update_backend_file(selected_backends_str)
 
-    # Copy Graal JARs if not using GraalVM
+    # Copy the relocated Graal jar
     copy_graal_jars()
 
     # Generate setvars files

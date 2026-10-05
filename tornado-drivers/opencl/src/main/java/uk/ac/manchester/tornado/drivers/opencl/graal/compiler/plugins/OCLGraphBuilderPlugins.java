@@ -61,7 +61,7 @@ import tornado.meta.RawConstant;
 import tornado.meta.ResolvedJavaField;
 import tornado.meta.ResolvedJavaMethod;
 import tornado.meta.ResolvedJavaType;
-import org.graalvm.word.LocationIdentity;
+import tornado.graal.word.LocationIdentity;
 import uk.ac.manchester.tornado.api.DeviceKernel;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.enums.DeviceLaunchMode;

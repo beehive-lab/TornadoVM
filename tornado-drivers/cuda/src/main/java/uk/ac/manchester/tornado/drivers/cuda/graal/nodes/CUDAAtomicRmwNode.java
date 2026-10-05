@@ -33,7 +33,7 @@ import tornado.graal.compiler.nodes.ValueNode;
 import tornado.graal.compiler.nodes.memory.SingleMemoryKill;
 import tornado.graal.compiler.nodes.spi.LIRLowerable;
 import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
-import org.graalvm.word.LocationIdentity;
+import tornado.graal.word.LocationIdentity;
 
 import tornado.meta.JavaKind;
 import tornado.meta.Value;

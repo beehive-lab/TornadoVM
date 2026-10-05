@@ -18,7 +18,6 @@
 -XX:+UnlockExperimentalVMOptions
 -Djava.library.path=${TORNADOVM_HOME}/lib
 --module-path .:${TORNADOVM_HOME}/share/java/tornado
---upgrade-module-path ${TORNADOVM_HOME}/share/java/graalJars
 -Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph
 -Dtornado.load.runtime.implementation=uk.ac.manchester.tornado.runtime.TornadoCoreRuntime
 -Dtornado.load.tornado.implementation=uk.ac.manchester.tornado.runtime.common.Tornado
@@ -26,10 +25,6 @@
 -Dtornado.load.annotation.parallel=uk.ac.manchester.tornado.api.annotations.Parallel
 # --- inlined common-exports ---
 --add-opens java.base/java.lang=tornado.runtime
---add-exports org.graalvm.word/org.graalvm.word.impl=tornado.graal
---add-exports org.graalvm.truffle.compiler/com.oracle.truffle.compiler=tornado.graal
---add-exports org.graalvm.truffle.compiler/com.oracle.truffle.compiler.hotspot=tornado.graal
---add-exports org.graalvm.truffle.compiler/com.oracle.truffle.compiler.hotspot.libgraal=tornado.graal
 
 --enable-native-access=tornado.runtime
 # --- inlined opencl-exports ---

@@ -1,5 +1,1 @@
 --add-opens java.base/java.lang=tornado.runtime
---add-exports org.graalvm.word/org.graalvm.word.impl=tornado.graal
---add-exports org.graalvm.truffle.compiler/com.oracle.truffle.compiler=tornado.graal
---add-exports org.graalvm.truffle.compiler/com.oracle.truffle.compiler.hotspot=tornado.graal
---add-exports org.graalvm.truffle.compiler/com.oracle.truffle.compiler.hotspot.libgraal=tornado.graal

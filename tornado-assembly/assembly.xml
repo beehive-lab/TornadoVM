@@ -133,17 +133,12 @@
         </fileSet>
         <fileSet>
             <directory>../graalJars</directory>
-            <!-- Bare-minimum Graal JARs. The compiler is shipped relocated as
-                 the vendored tornado.graal module (tornado-graal-*.jar) so it resolves
-                 from the regular module-path; word/collections/truffle-compiler are its
-                 transitive requires. truffle-api/polyglot/graal-sdk/compiler-management
-                 are excluded. -->
-            <outputDirectory>share/java/graalJars</outputDirectory>
+            <!-- The Graal compiler, relocated with its word/collections/truffle-compiler
+                 dependencies into the self-contained tornado.graal module, ships next to the
+                 TornadoVM modules on the regular module-path. -->
+            <outputDirectory>share/java/tornado</outputDirectory>
             <includes>
                 <include>tornado-graal-*.jar</include>
-                <include>truffle-compiler-*.jar</include>
-                <include>collections-*.jar</include>
-                <include>word-*.jar</include>
             </includes>
             <fileMode>0644</fileMode>
         </fileSet>

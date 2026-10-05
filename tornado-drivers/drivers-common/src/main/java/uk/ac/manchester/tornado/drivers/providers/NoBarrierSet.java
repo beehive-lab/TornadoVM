@@ -20,7 +20,7 @@
  */
 package uk.ac.manchester.tornado.drivers.providers;
 
-import org.graalvm.word.LocationIdentity;
+import tornado.graal.word.LocationIdentity;
 
 import tornado.meta.JavaKind;
 import tornado.meta.ResolvedJavaField;

@@ -29,6 +29,23 @@
             <artifactId>compiler</artifactId>
             <version>23.1.0</version>
         </dependency>
+        <!-- Folded into tornado.graal as well, so the module has no org.graalvm.* module
+             dependencies a GraalVM JDK could shadow. -->
+        <dependency>
+            <groupId>org.graalvm.sdk</groupId>
+            <artifactId>word</artifactId>
+            <version>23.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.graalvm.sdk</groupId>
+            <artifactId>collections</artifactId>
+            <version>23.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.graalvm.truffle</groupId>
+            <artifactId>truffle-compiler</artifactId>
+            <version>23.1.0</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -64,17 +81,16 @@
                             <artifactSet>
                                 <includes>
                                     <include>org.graalvm.compiler:compiler</include>
+                                    <include>org.graalvm.sdk:word</include>
+                                    <include>org.graalvm.sdk:collections</include>
+                                    <include>org.graalvm.truffle:truffle-compiler</include>
                                 </includes>
                             </artifactSet>
-                            <!-- Every org.graalvm.* package the compiler jar carries must move off the
-                                 jdk.internal.vm.compiler namespace, not just org.graalvm.compiler. A JDK
-                                 that bundles Graal (GraalVM CE 21, which the macOS CI runners use) already
-                                 owns graphio/util/util.json in its built-in jdk.internal.vm.compiler module,
-                                 so leaving them here makes tornado.graal a split package and every launch
-                                 dies with "LayerInstantiationException: Package org.graalvm.graphio in both
-                                 module tornado.graal and module jdk.internal.vm.compiler". org.graalvm.word
-                                 and org.graalvm.collections need no relocation: they ship as their own
-                                 same-named modules, which a bundled platform copy simply shadows. -->
+                            <!-- Every org.graalvm.* package moves off the GraalVM namespaces, so tornado.graal
+                                 can never split a package with, or be shadowed by, a module a GraalVM JDK
+                                 bundles (jdk.internal.vm.compiler, org.graalvm.word, org.graalvm.collections,
+                                 org.graalvm.truffle.compiler). word, collections and truffle-compiler are
+                                 folded in rather than shipped as their own same-named modules. -->
                             <relocations>
                                 <!-- The JVMCI API Graal is written against is TornadoVM's own tornado.meta
                                      module (OpenJDK 21.0.2's jdk.vm.ci.meta/code/... renamed), so point
@@ -104,10 +120,22 @@
                                     <pattern>org.graalvm.util</pattern>
                                     <shadedPattern>tornado.graal.util</shadedPattern>
                                 </relocation>
+                                <relocation>
+                                    <pattern>org.graalvm.word</pattern>
+                                    <shadedPattern>tornado.graal.word</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.graalvm.collections</pattern>
+                                    <shadedPattern>tornado.graal.collections</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.oracle.truffle.compiler</pattern>
+                                    <shadedPattern>tornado.graal.truffle.compiler</shadedPattern>
+                                </relocation>
                             </relocations>
                             <filters>
                                 <filter>
-                                    <artifact>org.graalvm.compiler:compiler</artifact>
+                                    <artifact>*:*</artifact>
                                     <excludes>
                                         <!-- shade cannot rewrite module-info.class; regenerated + injected downstream -->
                                         <exclude>module-info.class</exclude>

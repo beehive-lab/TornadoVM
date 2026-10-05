@@ -80,7 +80,7 @@ import tornado.graal.compiler.options.OptionValues;
 import tornado.graal.compiler.phases.util.Providers;
 import tornado.graal.compiler.replacements.DefaultJavaLoweringProvider;
 import tornado.graal.compiler.replacements.SnippetCounter;
-import org.graalvm.word.LocationIdentity;
+import tornado.graal.word.LocationIdentity;
 
 import tornado.meta.ConstantReflectionProvider;
 import tornado.meta.JavaConstant;

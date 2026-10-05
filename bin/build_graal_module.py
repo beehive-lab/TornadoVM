@@ -9,7 +9,9 @@
 # `jdk.*` namespace (`org.graalvm.compiler.*` -> `tornado.graal.compiler.*`) so it becomes
 # a normal module resolvable from `--module-path`. The JVMCI API Graal is written against is
 # relocated as well (`jdk.vm.ci.*` -> `tornado.meta.*`), onto TornadoVM's own tornado-meta
-# module, so the result needs no JVMCI from the JDK.
+# module, so the result needs no JVMCI from the JDK. The GraalVM SDK jars Graal needs (word,
+# collections, truffle-compiler) are folded in under tornado.graal.*, so no module name or
+# package can clash with what a GraalVM JDK bundles.
 #
 # Recipe (all steps proven in isolation before automating):
 #   1. maven-shade relocate classes + META-INF/services (module-info.class excluded).
@@ -125,13 +127,9 @@ def _compile_tornado_meta(work):
 
 
 def _module_path_deps(tornado_meta):
-    deps = [
-        _dep_jar(f"word-{VERSION}.jar"),
-        _dep_jar(f"collections-{VERSION}.jar"),
-        _dep_jar(f"truffle-compiler-{VERSION}.jar"),
-        tornado_meta,
-    ]
-    return os.pathsep.join(deps)
+    # word, collections and truffle-compiler are folded into the shaded jar itself, so the only
+    # module it depends on outside the JDK is tornado.meta.
+    return tornado_meta
 
 
 def _install_file(jar, group, artifact):

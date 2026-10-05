@@ -87,7 +87,7 @@ __CUTLASS_MODULE__ = "tornado.cutlass"
 __JAVA_BASE_OPTIONS__ = "-server -XX:+UnlockExperimentalVMOptions "
 # We do not satisfy the Graal compiler assertions because we only support a subset of the Java specification.
 # This allows us to have the GraalIR in states which normally would be illegal.
-__GRAAL_ENABLE_ASSERTIONS__ = " -ea -da:org.graalvm.compiler... "
+__GRAAL_ENABLE_ASSERTIONS__ = " -ea -da:tornado.graal... "
 
 
 # ########################################################
@@ -1001,22 +1001,6 @@ class TornadoVMRunnerTool():
             if (args.module_path != None):
                 tornadoFlags = tornadoFlags + ":" + args.module_path
 
-            # share/java/graalJars vendors GraalVM's foundational-API jars (word, collections,
-            # truffle-compiler, ...) under their ORIGINAL org.graalvm.* module names - unlike
-            # tornado.graal's compiler internals, these are not relocated, because they are
-            # TornadoVM's only supported way to get them under a non-GraalVM JDK. That is exactly
-            # the problem under a GraalVM-branded JAVA_HOME: the platform already ships a module
-            # of the same name (e.g. org.graalvm.word, resolvable from jrt:/org.graalvm.word).
-            # JPMS resolves same-named system modules before ever consulting --module-path, so a
-            # plain --module-path entry here is silently ignored in favor of the platform's
-            # version - and if that version is missing a class TornadoVM needs (observed:
-            # org.graalvm.word.impl.WordBoxFactory, on GraalVM 22+), it fails with
-            # NoClassDefFoundError at first use instead of a build-time or startup error.
-            # --upgrade-module-path is the JPMS-sanctioned way to supply a replacement for a
-            # module that already exists in the boot layer; under a non-GraalVM JDK, where no
-            # module of these names exists at all, it behaves exactly like --module-path.
-            tornadoFlags = tornadoFlags + " --upgrade-module-path " + self.sdk + "/share/java/graalJars"
-
         tornadoFlags = tornadoFlags + " "
 
         return tornadoFlags
@@ -1203,26 +1187,6 @@ class TornadoVMRunnerTool():
         javaFlags = javaFlags + " " + __JAVA_BASE_OPTIONS__
 
         javaFlags = javaFlags + tornadoFlags + __TORNADOVM_PROVIDERS__ + " "
-
-        # share/java/graalJars goes on --upgrade-module-path as a WHOLE (see above), and that
-        # includes tornado-graal-<ver>.jar. The directory holds two kinds of module:
-        #
-        #   org.graalvm.word / .collections / .truffle.compiler   original names, not relocated
-        #   tornado.graal                                          TornadoVM's relocated compiler
-        #
-        # Only the first kind NEEDS the upgrade path: under a GraalVM-branded JAVA_HOME the platform
-        # ships modules of those names, and JPMS resolves a same-named system module before ever
-        # consulting --module-path, so a plain --module-path entry is silently ignored in favour of
-        # the platform's copy. tornado.graal has a unique name and would resolve from either path.
-        #
-        # It stays on the upgrade path anyway because the two are shipped in one directory and
-        # splitting them buys nothing: a module on --upgrade-module-path is added to the boot layer
-        # whether or not it shadows a platform module. Do NOT narrow this entry to the org.graalvm.*
-        # jars on the assumption that tornado.graal is carried by --module-path -- it is not on any
-        # other path, and dropping it fails at boot layer creation with
-        # "FindException: Module tornado.graal not found, required by tornado.runtime".
-        # Verified end to end: the jdk22plus SDK on JDK 25/26/27 compiles and executes kernels with
-        # graalJars reachable only from --upgrade-module-path.
 
         common = self.sdk + __COMMON_EXPORTS__
         opencl = self.sdk + __OPENCL_EXPORTS__

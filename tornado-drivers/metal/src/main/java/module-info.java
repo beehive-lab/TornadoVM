@@ -3,8 +3,6 @@ import uk.ac.manchester.tornado.runtime.TornadoBackendProvider;
 module tornado.drivers.metal {
     requires transitive tornado.meta;
     requires transitive tornado.graal;
-    requires transitive org.graalvm.collections;
-    requires transitive org.graalvm.word;
     requires transitive tornado.api;
     requires transitive tornado.runtime;
     requires tornado.drivers.common;

@@ -31,19 +31,18 @@ from urllib3.util.retry import Retry
 TARGET_DIR = "graalJars"
 VERSION = "23.1.0"
 BASE_URL = "https://repo1.maven.org/maven2/org/graalvm"
-# Bare minimum Graal modules TornadoVM needs to compile and run kernels.
-# The `jdk.internal.vm.compiler` module (compiler jar) transitively requires only
-# org.graalvm.word, org.graalvm.collections and org.graalvm.truffle.compiler; its
-# `uses` of Truffle runtime/polyglot services are optional (ServiceLoader) and never
-# exercised by TornadoVM's GPU pipeline. So truffle-api (16MB), polyglot (935KB),
-# graal-sdk (requires the absent org.graalvm.nativeimage) and compiler-management
-# are dead weight and are intentionally NOT downloaded/shipped.
+# Bare minimum Graal jar TornadoVM needs to compile and run kernels. The compiler's own
+# requirements (org.graalvm.word, org.graalvm.collections, org.graalvm.truffle.compiler) are
+# resolved from Maven by bin/graal-relocate and folded into the relocated tornado.graal module.
+# Its `uses` of Truffle runtime/polyglot services are optional (ServiceLoader) and never
+# exercised by TornadoVM's GPU pipeline, so truffle-api, polyglot, graal-sdk and
+# compiler-management are intentionally NOT downloaded/shipped.
 GRAAL_JARS = [
     f"compiler/compiler/{VERSION}/compiler-{VERSION}.jar",
-    f"truffle/truffle-compiler/{VERSION}/truffle-compiler-{VERSION}.jar",
-    f"sdk/collections/{VERSION}/collections-{VERSION}.jar",
-    f"sdk/word/{VERSION}/word-{VERSION}.jar",
 ]
+
+# Jars earlier builds staged next to tornado-graal; the assembly ships what sits in graalJars/.
+OBSOLETE_JAR_PREFIXES = ("jvmci-", "word-", "collections-", "truffle-compiler-")
 
 # Define ANSI escape codes for colors
 GREEN = "\033[92m"
@@ -146,11 +145,13 @@ def unusable_relocated_jar_reason(jar_path):
         return f"not readable by the build JDK ({detail})"
     if "requires tornado.meta" not in probe.stdout:
         return "built against the JDK's JVMCI rather than the tornado.meta module"
+    if "requires org.graalvm." in probe.stdout:
+        return "depends on separate org.graalvm.* modules instead of carrying them"
 
     with zipfile.ZipFile(jar_path) as staged:
         unrelocated = sorted({os.path.dirname(name).replace("/", ".")
                               for name in staged.namelist()
-                              if name.startswith("org/graalvm/") and name.endswith(".class")})
+                              if name.startswith(("org/graalvm/", "com/oracle/truffle/")) and name.endswith(".class")})
     if unrelocated:
         return f"still carries un-relocated packages ({', '.join(unrelocated[:3])}...)"
 
@@ -171,11 +172,11 @@ def main(jdk=None):
 
     logger.info("Download complete.")
 
-    # The vendored jvmci jar of earlier builds is gone: tornado-meta replaces it. Drop any copy
-    # left in graalJars/, since the assembly ships whatever sits there.
+    # Earlier builds staged the vendored jvmci jar (now tornado-meta) and the GraalVM SDK jars
+    # (now inside tornado-graal) here. Drop any left behind.
     for name in os.listdir(TARGET_DIR):
-        if name.startswith("jvmci-") and name.endswith(".jar"):
-            logger.info(f"Removing the obsolete vendored jvmci jar {name}.")
+        if name.startswith(OBSOLETE_JAR_PREFIXES) and name.endswith(".jar"):
+            logger.info(f"Removing the obsolete jar {name}.")
             os.remove(os.path.join(TARGET_DIR, name))
 
     # Relocate the Graal compiler off the jdk.* namespace into the vendored module

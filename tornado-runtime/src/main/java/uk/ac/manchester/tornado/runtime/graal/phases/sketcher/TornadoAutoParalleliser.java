@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import org.graalvm.collections.EconomicMap;
+import tornado.graal.collections.EconomicMap;
 import tornado.graal.compiler.graph.Node;
 import tornado.graal.compiler.nodes.ConstantNode;
 import tornado.graal.compiler.nodes.GraphState;

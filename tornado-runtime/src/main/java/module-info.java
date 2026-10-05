@@ -5,7 +5,6 @@ open module tornado.runtime {
     requires java.logging;
     requires jdk.unsupported;
     requires org.objectweb.asm;
-    requires org.graalvm.collections;
 
     requires transitive tornado.meta;
     requires transitive tornado.graal;
