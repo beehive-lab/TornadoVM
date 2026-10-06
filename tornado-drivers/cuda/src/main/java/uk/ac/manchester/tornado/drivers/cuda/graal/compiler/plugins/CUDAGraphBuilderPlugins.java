@@ -35,6 +35,7 @@ import tornado.graal.compiler.nodes.PiNode;
 import tornado.graal.compiler.nodes.ValueNode;
 import tornado.graal.compiler.nodes.calc.AddNode;
 import tornado.graal.compiler.nodes.calc.MulNode;
+import tornado.graal.compiler.nodes.calc.NarrowNode;
 import tornado.graal.compiler.nodes.calc.SignExtendNode;
 import tornado.graal.compiler.nodes.extended.BoxNode;
 import tornado.graal.compiler.nodes.extended.JavaReadNode;
@@ -1268,36 +1269,38 @@ public class CUDAGraphBuilderPlugins {
 
         for (JavaKind kind : JavaKind.values()) {
             if (kind != JavaKind.Object && kind != JavaKind.Void && kind != JavaKind.Illegal && kind != JavaKind.Boolean) {
-                r.register(new InvocationPlugin("get" + kind.name() + "AtIndex", Receiver.class, int.class, int.class) {
-                    @Override
-                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode baseIndex) {
-                        ValueNode receiverNode = receiver.get(true);  // Get receiver first (this adds null check)
-                        // Sign-extend int indices to long for 64-bit address arithmetic
-                        ValueNode longIndex = b.append(SignExtendNode.create(index, 64, NodeView.DEFAULT));
-                        ValueNode longBaseIndex = b.append(SignExtendNode.create(baseIndex, 64, NodeView.DEFAULT));
-                        AddNode absoluteIndexNode = b.append(new AddNode(longIndex, longBaseIndex));
-                        MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forLong(kind.getByteCount())));
-                        AddressNode addressNode = b.append(new OffsetAddressNode(receiverNode, mulNode));
-                        JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
-                        b.addPush(kind, readNode);
-                        return true;
-                    }
-                });
-                r.register(new InvocationPlugin("setAtIndex", Receiver.class, int.class, kind.toJavaClass(), int.class) {
-                    @Override
-                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value, ValueNode baseIndex) {
-                        ValueNode receiverNode = receiver.get(true);  // Get receiver first (this adds null check)
-                        // Sign-extend int indices to long for 64-bit address arithmetic
-                        ValueNode longIndex = b.append(SignExtendNode.create(index, 64, NodeView.DEFAULT));
-                        ValueNode longBaseIndex = b.append(SignExtendNode.create(baseIndex, 64, NodeView.DEFAULT));
-                        AddNode absoluteIndexNode = b.append(new AddNode(longIndex, longBaseIndex));
-                        MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forLong(kind.getByteCount())));
-                        AddressNode addressNode = b.append(new OffsetAddressNode(receiverNode, mulNode));
-                        JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
-                        b.add(writeNode);
-                        return true;
-                    }
-                });
+                for (Class<?> indexType : ARRAY_INDEX_TYPES) {
+                    r.register(new InvocationPlugin("get" + kind.name() + "AtIndex", Receiver.class, indexType, int.class) {
+                        @Override
+                        public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode baseIndex) {
+                            ValueNode receiverNode = receiver.get(true);  // Get receiver first (this adds null check)
+                            // Sign-extend int indices to long for 64-bit address arithmetic
+                            ValueNode longIndex = widenIndex(b, index);
+                            ValueNode longBaseIndex = b.append(SignExtendNode.create(baseIndex, 64, NodeView.DEFAULT));
+                            AddNode absoluteIndexNode = b.append(new AddNode(longIndex, longBaseIndex));
+                            MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forLong(kind.getByteCount())));
+                            AddressNode addressNode = b.append(new OffsetAddressNode(receiverNode, mulNode));
+                            JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
+                            b.addPush(kind, readNode);
+                            return true;
+                        }
+                    });
+                    r.register(new InvocationPlugin("setAtIndex", Receiver.class, indexType, kind.toJavaClass(), int.class) {
+                        @Override
+                        public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value, ValueNode baseIndex) {
+                            ValueNode receiverNode = receiver.get(true);  // Get receiver first (this adds null check)
+                            // Sign-extend int indices to long for 64-bit address arithmetic
+                            ValueNode longIndex = widenIndex(b, index);
+                            ValueNode longBaseIndex = b.append(SignExtendNode.create(baseIndex, 64, NodeView.DEFAULT));
+                            AddNode absoluteIndexNode = b.append(new AddNode(longIndex, longBaseIndex));
+                            MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forLong(kind.getByteCount())));
+                            AddressNode addressNode = b.append(new OffsetAddressNode(receiverNode, mulNode));
+                            JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
+                            b.add(writeNode);
+                            return true;
+                        }
+                    });
+                }
             }
         }
     }
@@ -1488,6 +1491,35 @@ public class CUDAGraphBuilderPlugins {
         registerNativeArrayGetSet(plugins, FP8Array.class, JavaKind.Byte);
         registerHalfFloatArrayGetSet(plugins);
         registerByteArrayHalfFloatAccess(plugins);
+        registerNativeArraySize(plugins, IntArray.class, FloatArray.class, DoubleArray.class, LongArray.class, ShortArray.class, ByteArray.class, Int8Array.class, CharArray.class,
+                HalfFloatArray.class, BFloat16Array.class, FP8Array.class);
+    }
+
+    /**
+     * Intrinsify {@code getSize()} of the native array types as the {@code numberOfElements} field narrowed to an {@code int}. On the host,
+     * {@code getSize()} throws when the array has more than {@link Integer#MAX_VALUE} elements; kernels cannot throw, so the field load is emitted
+     * directly and specialised to a constant like any other array size.
+     */
+    private static void registerNativeArraySize(InvocationPlugins plugins, Class<?>... arrayClasses) {
+        for (Class<?> arrayClass : arrayClasses) {
+            final Field numberOfElementsField;
+            try {
+                numberOfElementsField = arrayClass.getDeclaredField("numberOfElements");
+            } catch (NoSuchFieldException e) {
+                throw new TornadoRuntimeException("Native array type " + arrayClass.getName() + " is missing expected fields for intrinsification: " + e);
+            }
+            Registration r = new Registration(plugins, arrayClass);
+            r.register(new InvocationPlugin("getSize", Receiver.class) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                    ValueNode arrayNode = receiver.get(true);
+                    ResolvedJavaField numberOfElements = b.getMetaAccess().lookupJavaField(numberOfElementsField);
+                    ValueNode size = b.append(LoadFieldNode.create(b.getGraph().getAssumptions(), arrayNode, numberOfElements));
+                    b.push(JavaKind.Int, b.append(NarrowNode.create(size, 32, NodeView.DEFAULT)));
+                    return true;
+                }
+            });
+        }
     }
 
     /**
@@ -1508,24 +1540,26 @@ public class CUDAGraphBuilderPlugins {
             throw new TornadoRuntimeException("ByteArray is missing expected fields for intrinsification: " + e);
         }
         Registration r = new Registration(plugins, ByteArray.class);
-        r.register(new InvocationPlugin("getHalfFloat", Receiver.class, int.class) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode byteIndex) {
-                AddressNode addressNode = arrayElementAddress(b, receiver, byteIndex, JavaKind.Byte, segmentField, baseIndexField);
-                ReadHalfFloatNode readNode = b.append(new ReadHalfFloatNode(addressNode));
-                b.push(JavaKind.Object, readNode);
-                return true;
-            }
-        });
-        r.register(new InvocationPlugin("setHalfFloat", Receiver.class, int.class, HalfFloat.class) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode byteIndex, ValueNode value) {
-                AddressNode addressNode = arrayElementAddress(b, receiver, byteIndex, JavaKind.Byte, segmentField, baseIndexField);
-                WriteHalfFloatNode writeNode = new WriteHalfFloatNode(addressNode, value);
-                b.add(writeNode);
-                return true;
-            }
-        });
+        for (Class<?> indexType : ARRAY_INDEX_TYPES) {
+            r.register(new InvocationPlugin("getHalfFloat", Receiver.class, indexType) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode byteIndex) {
+                    AddressNode addressNode = arrayElementAddress(b, receiver, byteIndex, JavaKind.Byte, segmentField, baseIndexField);
+                    ReadHalfFloatNode readNode = b.append(new ReadHalfFloatNode(addressNode));
+                    b.push(JavaKind.Object, readNode);
+                    return true;
+                }
+            });
+            r.register(new InvocationPlugin("setHalfFloat", Receiver.class, indexType, HalfFloat.class) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode byteIndex, ValueNode value) {
+                    AddressNode addressNode = arrayElementAddress(b, receiver, byteIndex, JavaKind.Byte, segmentField, baseIndexField);
+                    WriteHalfFloatNode writeNode = new WriteHalfFloatNode(addressNode, value);
+                    b.add(writeNode);
+                    return true;
+                }
+            });
+        }
     }
 
     private static void registerHalfFloatArrayGetSet(InvocationPlugins plugins) {
@@ -1538,24 +1572,26 @@ public class CUDAGraphBuilderPlugins {
             throw new TornadoRuntimeException("HalfFloatArray is missing expected fields for intrinsification: " + e);
         }
         Registration r = new Registration(plugins, HalfFloatArray.class);
-        r.register(new InvocationPlugin("get", Receiver.class, int.class) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index) {
-                AddressNode addressNode = arrayElementAddress(b, receiver, index, JavaKind.Short, segmentField, baseIndexField);
-                ReadHalfFloatNode readNode = b.append(new ReadHalfFloatNode(addressNode));
-                b.push(JavaKind.Object, readNode);
-                return true;
-            }
-        });
-        r.register(new InvocationPlugin("set", Receiver.class, int.class, HalfFloat.class) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value) {
-                AddressNode addressNode = arrayElementAddress(b, receiver, index, JavaKind.Short, segmentField, baseIndexField);
-                WriteHalfFloatNode writeNode = new WriteHalfFloatNode(addressNode, value);
-                b.add(writeNode);
-                return true;
-            }
-        });
+        for (Class<?> indexType : ARRAY_INDEX_TYPES) {
+            r.register(new InvocationPlugin("get", Receiver.class, indexType) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index) {
+                    AddressNode addressNode = arrayElementAddress(b, receiver, index, JavaKind.Short, segmentField, baseIndexField);
+                    ReadHalfFloatNode readNode = b.append(new ReadHalfFloatNode(addressNode));
+                    b.push(JavaKind.Object, readNode);
+                    return true;
+                }
+            });
+            r.register(new InvocationPlugin("set", Receiver.class, indexType, HalfFloat.class) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value) {
+                    AddressNode addressNode = arrayElementAddress(b, receiver, index, JavaKind.Short, segmentField, baseIndexField);
+                    WriteHalfFloatNode writeNode = new WriteHalfFloatNode(addressNode, value);
+                    b.add(writeNode);
+                    return true;
+                }
+            });
+        }
     }
 
     private static void registerNativeArrayGetSet(InvocationPlugins plugins, Class<?> arrayClass, JavaKind kind) {
@@ -1568,24 +1604,42 @@ public class CUDAGraphBuilderPlugins {
             throw new TornadoRuntimeException("Native array type " + arrayClass.getName() + " is missing expected fields for intrinsification: " + e);
         }
         Registration r = new Registration(plugins, arrayClass);
-        r.register(new InvocationPlugin("get", Receiver.class, int.class) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index) {
-                AddressNode addressNode = arrayElementAddress(b, receiver, index, kind, segmentField, baseIndexField);
-                JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
-                b.addPush(kind, readNode);
-                return true;
-            }
-        });
-        r.register(new InvocationPlugin("set", Receiver.class, int.class, kind.toJavaClass()) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value) {
-                AddressNode addressNode = arrayElementAddress(b, receiver, index, kind, segmentField, baseIndexField);
-                JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
-                b.add(writeNode);
-                return true;
-            }
-        });
+        for (Class<?> indexType : ARRAY_INDEX_TYPES) {
+            r.register(new InvocationPlugin("get", Receiver.class, indexType) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index) {
+                    AddressNode addressNode = arrayElementAddress(b, receiver, index, kind, segmentField, baseIndexField);
+                    JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
+                    b.addPush(kind, readNode);
+                    return true;
+                }
+            });
+            r.register(new InvocationPlugin("set", Receiver.class, indexType, kind.toJavaClass()) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value) {
+                    AddressNode addressNode = arrayElementAddress(b, receiver, index, kind, segmentField, baseIndexField);
+                    JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
+                    b.add(writeNode);
+                    return true;
+                }
+            });
+        }
+    }
+
+    /**
+     * Index types of the native array accessors: the {@code int} originals and their {@code long} overloads, used for arrays with more than
+     * {@link Integer#MAX_VALUE} elements.
+     */
+    private static final Class<?>[] ARRAY_INDEX_TYPES = { int.class, long.class };
+
+    /**
+     * Widens an array index to 64 bits for the address arithmetic. A {@code long} index is used as it is.
+     */
+    private static ValueNode widenIndex(GraphBuilderContext b, ValueNode index) {
+        if (index.getStackKind() == JavaKind.Long) {
+            return index;
+        }
+        return b.append(SignExtendNode.create(index, 64, NodeView.DEFAULT));
     }
 
     /**
@@ -1598,7 +1652,7 @@ public class CUDAGraphBuilderPlugins {
         ResolvedJavaField baseIndex = b.getMetaAccess().lookupJavaField(baseIndexField);
         ValueNode segmentNode = b.append(LoadFieldNode.create(b.getGraph().getAssumptions(), arrayNode, segment));
         ValueNode baseIndexNode = b.append(LoadFieldNode.create(b.getGraph().getAssumptions(), arrayNode, baseIndex));
-        ValueNode longIndex = b.append(SignExtendNode.create(index, 64, NodeView.DEFAULT));
+        ValueNode longIndex = widenIndex(b, index);
         ValueNode longBaseIndex = b.append(SignExtendNode.create(baseIndexNode, 64, NodeView.DEFAULT));
         AddNode absoluteIndexNode = b.append(new AddNode(longIndex, longBaseIndex));
         MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forLong(kind.getByteCount())));

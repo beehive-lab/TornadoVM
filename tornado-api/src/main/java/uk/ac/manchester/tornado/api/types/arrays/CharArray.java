@@ -24,7 +24,7 @@ import java.lang.foreign.MemorySegment;
 import java.nio.CharBuffer;
 import java.util.Arrays;
 
-import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 /**
  * This class represents an array of characters stored in native memory. The char data is stored in a {@link MemorySegment}, which represents a contiguous region of off-heap memory. The class also
@@ -34,7 +34,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 public final class CharArray extends TornadoNativeArray {
     private static final int CHAR_BYTES = 2;
     private TornadoMemorySegment segment;
-    private int numberOfElements;
+    private long numberOfElements;
     private int arrayHeaderSize;
 
     private int baseIndex;
@@ -48,7 +48,18 @@ public final class CharArray extends TornadoNativeArray {
      *         The number of elements in the array.
      */
     public CharArray(int numberOfElements) {
-        this.numberOfElements = numberOfElements;
+        this((long) numberOfElements);
+    }
+
+    /**
+     * Constructs a new instance of the {@link CharArray} that will store a user-specified number of elements. The number of elements can exceed
+     * {@link Integer#MAX_VALUE}; access such arrays with the {@code long}-index accessors.
+     *
+     * @param numberOfElements
+     *         The number of elements in the array.
+     */
+    public CharArray(long numberOfElements) {
+        this.numberOfElements = checkNumElements(numberOfElements);
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / CHAR_BYTES;
         segmentByteSize = (long) numberOfElements * CHAR_BYTES + arrayHeaderSize;
@@ -67,13 +78,12 @@ public final class CharArray extends TornadoNativeArray {
 
         // Calculate number of elements from segment size
         long dataSize = existingSegment.byteSize() - arrayHeaderSize;
-        ensureMultipleOfElementSize(dataSize, CHAR_BYTES);
-        this.numberOfElements = (int) (dataSize / CHAR_BYTES);
+        this.numberOfElements = toNumElements(dataSize, CHAR_BYTES);
 
         // Set up the segment and initialize header
         this.segmentByteSize = existingSegment.byteSize();
         this.segment = new TornadoMemorySegment(existingSegment);
-        this.segment.getSegment().setAtIndex(JAVA_INT, 0, numberOfElements);
+        this.segment.getSegment().setAtIndex(JAVA_LONG, 0, numberOfElements);
     }
 
     /**
@@ -132,8 +142,7 @@ public final class CharArray extends TornadoNativeArray {
      */
     public static CharArray fromSegment(MemorySegment segment) {
         long byteSize = segment.byteSize();
-        int numElements = (int) (byteSize / CHAR_BYTES);
-        ensureMultipleOfElementSize(byteSize, CHAR_BYTES);
+        long numElements = toNumElements(byteSize, CHAR_BYTES);
         CharArray charArray = new CharArray(numElements);
         MemorySegment.copy(segment, 0, charArray.segment.getSegment(), (long) charArray.baseIndex * CHAR_BYTES, byteSize);
         return charArray;
@@ -186,7 +195,7 @@ public final class CharArray extends TornadoNativeArray {
      * @return A new {@link CharArray} instance containing all the elements of the input arrays, concatenated in the order they were provided.
      */
     public static CharArray concat(CharArray... arrays) {
-        int newSize = Arrays.stream(arrays).mapToInt(CharArray::getSize).sum();
+        long newSize = checkNumElements(Arrays.stream(arrays).mapToLong(CharArray::getSizeLong).sum());
         CharArray concatArray = new CharArray(newSize);
         long currentPositionBytes = 0;
         for (CharArray array : arrays) {
@@ -235,6 +244,18 @@ public final class CharArray extends TornadoNativeArray {
     }
 
     /**
+     * Sets the char value at a specified index of the {@link CharArray} instance.
+     *
+     * @param index
+     *         The index at which to set the char value.
+     * @param value
+     *         The char value to store at the specified index.
+     */
+    public void set(long index, char value) {
+        segment.setAtIndex(index, value, baseIndex);
+    }
+
+    /**
      * Gets the char value stored at the specified index of the {@link CharArray} instance.
      *
      * @param index
@@ -246,13 +267,24 @@ public final class CharArray extends TornadoNativeArray {
     }
 
     /**
+     * Gets the char value stored at the specified index of the {@link CharArray} instance.
+     *
+     * @param index
+     *         The index of which to retrieve the char value.
+     * @return
+     */
+    public char get(long index) {
+        return segment.getCharAtIndex(index, baseIndex);
+    }
+
+    /**
      * Initializes all the elements of the {@link CharArray} instance with a specified value.
      *
      * @param value
      *         The char value to initialize the {@link ByteArray} instance with.
      */
     public void init(char value) {
-        for (int i = 0; i < getSize(); i++) {
+        for (long i = 0; i < numberOfElements; i++) {
             segment.setAtIndex(i, value, baseIndex);
         }
     }
@@ -264,6 +296,11 @@ public final class CharArray extends TornadoNativeArray {
      */
     @Override
     public int getSize() {
+        return toIntSize(numberOfElements);
+    }
+
+    @Override
+    public long getSizeLong() {
         return numberOfElements;
     }
 
@@ -319,7 +356,14 @@ public final class CharArray extends TornadoNativeArray {
      *         if the specified slice is out of the bounds of the original array.
      */
     public CharArray slice(int offset, int length) {
-        if (offset < 0 || length < 0 || offset + length > getSize()) {
+        return slice((long) offset, (long) length);
+    }
+
+    /**
+     * Extracts a slice of elements using {@code long} bounds. See {@link #slice(int, int)}.
+     */
+    public CharArray slice(long offset, long length) {
+        if (offset < 0 || length < 0 || offset > numberOfElements - length) {
             throw new IllegalArgumentException("Slice out of bounds");
         }
 

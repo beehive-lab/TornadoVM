@@ -227,7 +227,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                     if (batchThreads <= 0) {
                         constant = lookupPrimField(graph, node, value, field.getName(), field.getJavaKind());
                     } else {
-                        constant = ConstantNode.forInt((int) batchThreads);
+                        constant = field.getJavaKind() == JavaKind.Long ? ConstantNode.forLong(batchThreads) : ConstantNode.forInt((int) batchThreads);
                     }
                 } else {
                     constant = lookupPrimField(graph, node, value, field.getName(), field.getJavaKind());

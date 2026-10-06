@@ -24,7 +24,7 @@ import java.lang.foreign.MemorySegment;
 import java.nio.FloatBuffer;
 import java.util.Arrays;
 
-import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 /**
  * This class represents an array of floats stored in native memory. The float data is stored in a {@link MemorySegment}, which represents a contiguous region of off-heap memory. The class also
@@ -35,7 +35,7 @@ public final class FloatArray extends TornadoNativeArray {
     private static final int FLOAT_BYTES = 4;
     private TornadoMemorySegment segment;
 
-    private int numberOfElements;
+    private long numberOfElements;
 
     private int arrayHeaderSize;
 
@@ -50,7 +50,18 @@ public final class FloatArray extends TornadoNativeArray {
      *         The number of elements in the array.
      */
     public FloatArray(int numberOfElements) {
-        this.numberOfElements = numberOfElements;
+        this((long) numberOfElements);
+    }
+
+    /**
+     * Constructs a new instance of the {@link FloatArray} that will store a user-specified number of elements. The number of elements can exceed
+     * {@link Integer#MAX_VALUE}; access such arrays with the {@code long}-index accessors.
+     *
+     * @param numberOfElements
+     *         The number of elements in the array.
+     */
+    public FloatArray(long numberOfElements) {
+        this.numberOfElements = checkNumElements(numberOfElements);
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / FLOAT_BYTES;
         segmentByteSize = (long) numberOfElements * FLOAT_BYTES + arrayHeaderSize;
@@ -69,13 +80,12 @@ public final class FloatArray extends TornadoNativeArray {
 
         // Calculate number of elements from segment size
         long dataSize = existingSegment.byteSize() - arrayHeaderSize;
-        ensureMultipleOfElementSize(dataSize, FLOAT_BYTES);
-        this.numberOfElements = (int) (dataSize / FLOAT_BYTES);
+        this.numberOfElements = toNumElements(dataSize, FLOAT_BYTES);
 
         // Set up the segment and initialize header
         this.segmentByteSize = existingSegment.byteSize();
         this.segment = new TornadoMemorySegment(existingSegment);
-        this.segment.getSegment().setAtIndex(JAVA_INT, 0, numberOfElements);
+        this.segment.getSegment().setAtIndex(JAVA_LONG, 0, numberOfElements);
     }
 
     /**
@@ -134,8 +144,7 @@ public final class FloatArray extends TornadoNativeArray {
      */
     public static FloatArray fromSegment(MemorySegment segment) {
         long byteSize = segment.byteSize();
-        int numElements = (int) (byteSize / FLOAT_BYTES);
-        ensureMultipleOfElementSize(byteSize, FLOAT_BYTES);
+        long numElements = toNumElements(byteSize, FLOAT_BYTES);
         FloatArray floatArray = new FloatArray(numElements);
         MemorySegment.copy(segment, 0, floatArray.segment.getSegment(), (long) floatArray.baseIndex * FLOAT_BYTES, byteSize);
         return floatArray;
@@ -188,7 +197,7 @@ public final class FloatArray extends TornadoNativeArray {
      * @return A new {@link FloatArray} instance containing all the elements of the input arrays, concatenated in the order they were provided.
      */
     public static FloatArray concat(FloatArray... arrays) {
-        int newSize = Arrays.stream(arrays).mapToInt(FloatArray::getSize).sum();
+        long newSize = checkNumElements(Arrays.stream(arrays).mapToLong(FloatArray::getSizeLong).sum());
         FloatArray concatArray = new FloatArray(newSize);
         long currentPositionBytes = 0;
         for (FloatArray array : arrays) {
@@ -224,6 +233,18 @@ public final class FloatArray extends TornadoNativeArray {
     }
 
     /**
+     * Sets the float value at a specified index of the {@link FloatArray} instance.
+     *
+     * @param index
+     *         The index at which to set the float value.
+     * @param value
+     *         The float value to store at the specified index.
+     */
+    public void set(long index, float value) {
+        segment.setAtIndex(index, value, baseIndex);
+    }
+
+    /**
      * Gets the float value stored at the specified index of the {@link FloatArray} instance.
      *
      * @param index
@@ -231,6 +252,17 @@ public final class FloatArray extends TornadoNativeArray {
      * @return
      */
     public float get(int index) {
+        return segment.getFloatAtIndex(index, baseIndex);
+    }
+
+    /**
+     * Gets the float value stored at the specified index of the {@link FloatArray} instance.
+     *
+     * @param index
+     *         The index of which to retrieve the float value.
+     * @return
+     */
+    public float get(long index) {
         return segment.getFloatAtIndex(index, baseIndex);
     }
 
@@ -254,7 +286,7 @@ public final class FloatArray extends TornadoNativeArray {
      *         The float value to initialize the {@link FloatArray} instance with.
      */
     public void init(float value) {
-        for (int i = 0; i < getSize(); i++) {
+        for (long i = 0; i < numberOfElements; i++) {
             segment.setAtIndex(i, value, baseIndex);
         }
     }
@@ -266,6 +298,11 @@ public final class FloatArray extends TornadoNativeArray {
      */
     @Override
     public int getSize() {
+        return toIntSize(numberOfElements);
+    }
+
+    @Override
+    public long getSizeLong() {
         return numberOfElements;
     }
 
@@ -321,7 +358,14 @@ public final class FloatArray extends TornadoNativeArray {
      *         if the specified slice is out of the bounds of the original array.
      */
     public FloatArray slice(int offset, int length) {
-        if (offset < 0 || length < 0 || offset + length > getSize()) {
+        return slice((long) offset, (long) length);
+    }
+
+    /**
+     * Extracts a slice of elements using {@code long} bounds. See {@link #slice(int, int)}.
+     */
+    public FloatArray slice(long offset, long length) {
+        if (offset < 0 || length < 0 || offset > numberOfElements - length) {
             throw new IllegalArgumentException("Slice out of bounds");
         }
 
