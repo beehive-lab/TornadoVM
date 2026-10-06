@@ -25,7 +25,6 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.compiler;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import tornado.graal.compiler.loop.phases.ConvertDeoptimizeToGuardPhase;
 import tornado.graal.compiler.loop.phases.LoopFullUnrollPhase;
-import tornado.graal.compiler.nodes.loop.DefaultLoopPolicies;
 import tornado.graal.compiler.nodes.loop.LoopPolicies;
 import tornado.graal.compiler.options.OptionValues;
 import tornado.graal.compiler.phases.common.CanonicalizerPhase;
@@ -109,7 +108,7 @@ public class CUDAHighTier extends TornadoHighTier {
 
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.EARLIEST));
 
-        LoopPolicies loopPolicies = new DefaultLoopPolicies();
+        LoopPolicies loopPolicies = new CUDATileLoopPolicies();
         appendPhase(new LoopFullUnrollPhase(canonicalizer, loopPolicies));
 
         appendPhase(canonicalizer);
