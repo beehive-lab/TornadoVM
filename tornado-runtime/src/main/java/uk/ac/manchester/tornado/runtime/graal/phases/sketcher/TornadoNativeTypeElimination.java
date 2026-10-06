@@ -229,11 +229,11 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
                 }
 
                 for (PiNode piNode : loadFieldSegment.inputs().filter(PiNode.class)) {
-                    for (OffsetAddressNode offsetAddressNode : loadFieldSegment.usages().filter(OffsetAddressNode.class)) {
+                    for (OffsetAddressNode offsetAddressNode : loadFieldSegment.usages().filter(OffsetAddressNode.class).snapshot()) {
                         offsetAddressNode.replaceFirstInput(loadFieldSegment, piNode);
                     }
 
-                    for (PiNode piNodeInner : loadFieldSegment.usages().filter(PiNode.class)) {
+                    for (PiNode piNodeInner : loadFieldSegment.usages().filter(PiNode.class).snapshot()) {
                         for (OffsetAddressNode offsetAddressNode : piNodeInner.usages().filter(OffsetAddressNode.class).snapshot()) {
                             offsetAddressNode.replaceFirstInput(piNodeInner, piNode);
                         }
