@@ -6,8 +6,8 @@ project = "TornadoVM"
 copyright = "2013-2025, APT Group, Department of Computer Science"
 author = "The University of Manchester"
 
-release = "v5.2.0-jdk21"
-version = "v5.2.0-jdk21"
+release = "v7.0.1"
+version = "v7.0.1"
 
 # -- General configuration
 

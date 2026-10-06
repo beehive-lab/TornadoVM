@@ -49,11 +49,11 @@ import tornado.graal.compiler.nodes.memory.address.OffsetAddressNode;
 import tornado.graal.compiler.nodes.util.GraphUtil;
 import tornado.graal.compiler.phases.BasePhase;
 
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.PrimitiveConstant;
-import jdk.vm.ci.meta.ResolvedJavaType;
+import tornado.meta.JavaConstant;
+import tornado.meta.JavaKind;
+import tornado.meta.MetaAccessProvider;
+import tornado.meta.PrimitiveConstant;
+import tornado.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.enums.MMAShape;
 import uk.ac.manchester.tornado.api.types.vectors.Half2;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAArchitecture;
@@ -90,7 +90,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDABarrierNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAPrintf;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
-import uk.ac.manchester.tornado.runtime.jvmci.TornadoObjectConstant;
+import uk.ac.manchester.tornado.runtime.meta.TornadoObjectConstant;
 
 public class TornadoCUDAIntrinsicsReplacements extends BasePhase<TornadoHighTierContext> {
 
@@ -167,8 +167,8 @@ public class TornadoCUDAIntrinsicsReplacements extends BasePhase<TornadoHighTier
                     CUDAPrintf printfNode = graph.addOrUnique(new CUDAPrintf("\"\""));
                     graph.replaceFixed(invoke, printfNode);
                     break;
-                // KernelContext.allocate*LocalArray: normally intrinsified by an invocation plugin, but on the
-                // JVMCI-absent (reflection) path Graal's InvocationPlugins.lookupInvocation misses these
+                // KernelContext.allocate*LocalArray: normally intrinsified by an invocation plugin, but with
+                // reflection-based metadata Graal's InvocationPlugins.lookupInvocation misses these
                 // array-returning methods, so the invoke survives and its result reaches address lowering as an
                 // InvokeNode. Rewrite it here to a LocalArrayNode, exactly as the plugin would have.
                 case "Direct#KernelContext.allocateIntLocalArray":

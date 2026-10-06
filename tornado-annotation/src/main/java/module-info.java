@@ -16,7 +16,7 @@
  *
  */
 module tornado.annotation {
-    requires transitive jdk.internal.vm.ci;
+    requires transitive tornado.meta;
     requires transitive org.objectweb.asm;
     requires transitive tornado.runtime;
 

@@ -29,7 +29,7 @@ import tornado.graal.compiler.nodes.StructuredGraph;
 import tornado.graal.compiler.nodes.java.AccessIndexedNode;
 import tornado.graal.compiler.phases.Phase;
 
-import jdk.vm.ci.meta.DeoptimizationReason;
+import tornado.meta.DeoptimizationReason;
 
 /**
  * After canonicalization, we might end up with a Guard of type Bounds Check

@@ -34,7 +34,7 @@ import tornado.graal.compiler.nodes.spi.CanonicalizerTool;
 import tornado.graal.compiler.nodes.spi.LIRLowerable;
 import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 
-import jdk.vm.ci.meta.Value;
+import tornado.meta.Value;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAStamp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAStampFactory;

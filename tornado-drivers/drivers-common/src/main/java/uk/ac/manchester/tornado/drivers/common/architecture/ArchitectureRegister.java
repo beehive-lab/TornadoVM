@@ -21,7 +21,7 @@
  */
 package uk.ac.manchester.tornado.drivers.common.architecture;
 
-import jdk.vm.ci.meta.PlatformKind;
+import tornado.meta.PlatformKind;
 
 /**
  * Base Class for holding a Register for each architecture in TornadoVM.

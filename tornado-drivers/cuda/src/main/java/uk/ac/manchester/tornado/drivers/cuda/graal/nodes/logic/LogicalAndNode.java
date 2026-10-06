@@ -30,8 +30,8 @@ import tornado.graal.compiler.lir.gen.LIRGeneratorTool;
 import tornado.graal.compiler.nodeinfo.NodeInfo;
 import tornado.graal.compiler.nodes.LogicNode;
 
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.Value;
+import tornado.meta.JavaKind;
+import tornado.meta.Value;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDABinary;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt.AssignStmt;
 import uk.ac.manchester.tornado.runtime.graal.nodes.logic.BinaryLogicalNode;

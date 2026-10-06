@@ -56,8 +56,8 @@ import tornado.graal.compiler.phases.BasePhase;
 import tornado.graal.compiler.phases.common.CanonicalizerPhase;
 import tornado.graal.compiler.phases.common.DeadCodeEliminationPhase;
 
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaField;
+import tornado.meta.JavaKind;
+import tornado.meta.ResolvedJavaField;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;

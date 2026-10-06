@@ -23,17 +23,17 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.phases;
 
 import static tornado.graal.compiler.graph.Graph.NodeEvent.NODE_ADDED;
 import static tornado.graal.compiler.graph.Graph.NodeEvent.ZERO_USAGES;
-import static org.graalvm.word.LocationIdentity.any;
-import static org.graalvm.word.LocationIdentity.init;
+import static tornado.graal.word.LocationIdentity.any;
+import static tornado.graal.word.LocationIdentity.init;
 
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 
-import org.graalvm.collections.EconomicMap;
-import org.graalvm.collections.EconomicSet;
-import org.graalvm.collections.Equivalence;
-import org.graalvm.collections.UnmodifiableMapCursor;
+import tornado.graal.collections.EconomicMap;
+import tornado.graal.collections.EconomicSet;
+import tornado.graal.collections.Equivalence;
+import tornado.graal.collections.UnmodifiableMapCursor;
 import tornado.graal.compiler.core.common.cfg.Loop;
 import tornado.graal.compiler.debug.DebugCloseable;
 import tornado.graal.compiler.debug.GraalError;
@@ -78,7 +78,7 @@ import tornado.graal.compiler.phases.common.FloatingReadPhase;
 import tornado.graal.compiler.phases.common.PostRunCanonicalizationPhase;
 import tornado.graal.compiler.phases.common.util.EconomicSetNodeEventListener;
 import tornado.graal.compiler.phases.graph.ReentrantNodeIterator;
-import org.graalvm.word.LocationIdentity;
+import tornado.graal.word.LocationIdentity;
 
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDABarrierNode;

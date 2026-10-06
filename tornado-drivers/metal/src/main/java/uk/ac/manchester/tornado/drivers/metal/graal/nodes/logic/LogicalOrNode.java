@@ -31,7 +31,7 @@ import tornado.graal.compiler.lir.gen.LIRGeneratorTool;
 import tornado.graal.compiler.nodeinfo.NodeInfo;
 import tornado.graal.compiler.nodes.LogicNode;
 
-import jdk.vm.ci.meta.Value;
+import tornado.meta.Value;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalBinary;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalLIRStmt.AssignStmt;
 import uk.ac.manchester.tornado.runtime.graal.nodes.logic.BinaryLogicalNode;

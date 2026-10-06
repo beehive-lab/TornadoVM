@@ -82,18 +82,18 @@ import tornado.graal.compiler.options.OptionValues;
 import tornado.graal.compiler.phases.util.Providers;
 import tornado.graal.compiler.replacements.DefaultJavaLoweringProvider;
 import tornado.graal.compiler.replacements.SnippetCounter;
-import org.graalvm.word.LocationIdentity;
+import tornado.graal.word.LocationIdentity;
 
-import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
-import jdk.vm.ci.meta.ConstantReflectionProvider;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.JavaType;
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.PrimitiveConstant;
-import jdk.vm.ci.meta.ResolvedJavaField;
-import jdk.vm.ci.meta.ResolvedJavaType;
+import tornado.meta.ConstantReflectionProvider;
+import tornado.meta.JavaConstant;
+import tornado.meta.JavaKind;
+import tornado.meta.JavaType;
+import tornado.meta.MetaAccessProvider;
+import tornado.meta.PrimitiveConstant;
+import tornado.meta.ResolvedJavaField;
+import tornado.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.drivers.common.code.TornadoCallingConventionType;
 import uk.ac.manchester.tornado.drivers.cuda.CUDATargetDescription;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDADecompressedReadFieldNode;
@@ -578,7 +578,7 @@ public class CUDALoweringProvider extends DefaultJavaLoweringProvider {
             }
 
             loweredCallTarget = graph.add(new TornadoDirectCallTargetNode(parameters.toArray(new ValueNode[parameters.size()]), returnStampPair, signature, callTarget.targetMethod(),
-                    HotSpotCallingConventionType.JavaCall, callTarget.invokeKind()));
+                    TornadoCallingConventionType.JavaCall, callTarget.invokeKind()));
 
             callTarget.replaceAndDelete(loweredCallTarget);
         }

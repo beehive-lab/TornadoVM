@@ -25,9 +25,9 @@ package uk.ac.manchester.tornado.drivers.common.utils;
 
 import tornado.graal.compiler.phases.util.Providers;
 
-import jdk.vm.ci.meta.DeoptimizationAction;
-import jdk.vm.ci.meta.DeoptimizationReason;
-import jdk.vm.ci.meta.JavaConstant;
+import tornado.meta.DeoptimizationAction;
+import tornado.meta.DeoptimizationReason;
+import tornado.meta.JavaConstant;
 
 public class BackendDeopt {
 

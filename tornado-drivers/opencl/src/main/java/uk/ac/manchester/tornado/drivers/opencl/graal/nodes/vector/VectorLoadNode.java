@@ -31,7 +31,7 @@ import tornado.graal.compiler.nodes.ValueNode;
 import tornado.graal.compiler.nodes.java.AccessIndexedNode;
 import tornado.graal.compiler.nodes.spi.CanonicalizerTool;
 
-import jdk.vm.ci.meta.JavaKind;
+import tornado.meta.JavaKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStamp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStampFactory;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;

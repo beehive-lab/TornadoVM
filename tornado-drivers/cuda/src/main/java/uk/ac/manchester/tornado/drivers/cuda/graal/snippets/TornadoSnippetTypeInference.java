@@ -24,7 +24,7 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.snippets;
 import tornado.graal.compiler.nodes.ValueNode;
 import tornado.graal.compiler.replacements.SnippetTemplate.SnippetInfo;
 
-import jdk.vm.ci.meta.JavaKind;
+import tornado.meta.JavaKind;
 
 /// FIXME: <Refactor> across 3 backends
 public interface TornadoSnippetTypeInference {

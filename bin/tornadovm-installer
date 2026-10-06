@@ -440,24 +440,12 @@ class BuildManager:
         return f"{prefix}{suffix}"
 
     def _resolve_make_target(self, jdk_keyword: Optional[str]) -> str:
-        """Maps a JDK keyword - either a JAVA_HOME-detected profile like 'jdk25'/'graal-jdk-21',
-        or a vendor download keyword like 'temurin-jdk-25'/'corretto-jdk-22' - onto one of the
-        three targets the Makefile/bin/compile actually understand: 'jdk21', 'graal-jdk-21', or
-        'jdk22plus' (one profile that covers every JDK from 22 up, GraalVM included - see the
-        Makefile's jdk22plus comment). Getting this wrong builds against one JVMCI shape and
-        links against another at runtime instead of failing at build time."""
-        if not jdk_keyword:
-            return "jdk21"
-
-        version_match = re.search(r'(\d+)$', jdk_keyword)
-        major = int(version_match.group(1)) if version_match else 21
-        is_graal = "graal" in jdk_keyword.lower()
-
-        if major == 21:
-            return "graal-jdk-21" if is_graal else "jdk21"
-        # graal-jdk-21 is the only profile that takes Graal from the JDK itself; every JDK 22+
-        # build - GraalVM included - vendors its own Graal jars via jdk22plus instead.
-        return "jdk22plus"
+        """Maps a JDK keyword - either a JAVA_HOME-detected profile like 'jdk25'/'graal-jdk-25',
+        or a vendor download keyword like 'temurin-jdk-25'/'corretto-jdk-21' - onto the two targets
+        the Makefile/bin/compile understand: 'jdk21' (an enable-preview SDK for JDK 21) or
+        'jdk22plus', which covers every JDK from 22 up, GraalVM included."""
+        version_match = re.search(r'(\d+)$', jdk_keyword or "")
+        return "jdk21" if version_match and int(version_match.group(1)) == 21 else "jdk22plus"
 
     def _get_backend_option(self, backends: List[str]) -> str:
         """Get backend option string."""
@@ -651,7 +639,7 @@ def parseArguments():
     parser = argparse.ArgumentParser(description="TornadoVM Installer Tool.  It will install all software dependencies except the GPU drivers")
     parser.add_argument("--jdk", action="store", dest="jdk", default=None,
                         help=(
-                            "Specify a JDK to install by its keyword (e.g., 'jdk21', 'graal-jdk-21'). "
+                            "Specify a JDK to install by its keyword (e.g., 'jdk21', 'temurin-jdk-25'). "
                             "Run with --listJDKs to view all available JDK keywords."
                         ))
     parser.add_argument("--backend", action="store", dest="backend", default=None, help="Select the backend to install: { opencl, cuda, metal }")

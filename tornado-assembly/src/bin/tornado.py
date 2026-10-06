@@ -82,29 +82,12 @@ __CUTLASS_MODULE__ = "tornado.cutlass"
 # ########################################################
 # JAVA FLAGS
 # ########################################################
-__JAVA_BASE_OPTIONS__ = "-server -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI "
-# Only an SDK compiled with enable-preview needs it at run time (the jdk21 profiles: FFM was a
-# preview API before JDK 22). Appending it unconditionally would switch preview APIs on JVM-wide
-# for SDKs that contain no preview class files at all.
+# TornadoVM needs no JVMCI from the JDK: the compiler's metadata API is the tornado.meta module and
+# all class metadata comes from reflection, so the same flags work on every JDK from 22 up.
+__JAVA_BASE_OPTIONS__ = "-server -XX:+UnlockExperimentalVMOptions "
+# Only the jdk21 SDK needs it: FFM is a preview API on JDK 21, so that SDK is compiled with
+# enable-preview. Adding it unconditionally would switch preview APIs on for every other SDK.
 __JAVA_PREVIEW_OPTION__ = "--enable-preview "
-# JDK 27+ removed JVMCI: -XX:+EnableJVMCI is an unrecognized (fatal) option and Panama is
-# final so --enable-preview is unnecessary. TornadoVM sources all metadata via the reflection
-# providers (the only path) against the vendored jdk.internal.vm.ci module.
-__JAVA_BASE_OPTIONS_NO_JVMCI__ = ("-server -XX:+UnlockExperimentalVMOptions "
-                                  # The vendored jdk.vm.ci.services.Services gates on JVMCI_ENABLED,
-                                  # read from VM.getSavedProperties().get("jdk.internal.vm.ci.enabled").
-                                  # HotSpot used to set this when +EnableJVMCI; that flag is gone on
-                                  # JDK 27, so we set the saved property directly (a command-line -D
-                                  # lands in the saved-property map) to satisfy checkJVMCIEnabled().
-                                  "-Djdk.internal.vm.ci.enabled=true "
-                                  # The platform jdk.internal.vm.ci module received these java.base
-                                  # internal packages as qualified exports; our vendored same-named
-                                  # application module must request them explicitly (Services /
-                                  # InitTimer / Unsafe use jdk.internal.misc etc.).
-                                  "--add-exports java.base/jdk.internal.misc=jdk.internal.vm.ci "
-                                  "--add-exports java.base/jdk.internal.vm=jdk.internal.vm.ci "
-                                  "--add-exports java.base/jdk.internal.vm.annotation=jdk.internal.vm.ci "
-                                  "--add-exports java.base/jdk.internal.reflect=jdk.internal.vm.ci ")
 # We do not satisfy the Graal compiler assertions because we only support a subset of the Java specification.
 # This allows us to have the GraalIR in states which normally would be illegal.
 __GRAAL_ENABLE_ASSERTIONS__ = " -ea -da:tornado.graal... "
@@ -406,16 +389,6 @@ class TornadoVMRunnerTool():
         self.cmd = os.path.join(self.java_home, "bin", "java")
 
         self.java_version, self.isGraalVM = self.getJavaVersion()
-        # JVMCI was removed from OpenJDK entirely in JDK 27 (openjdk/jdk#30834): no
-        # jdk.internal.vm.ci module and no -XX:+EnableJVMCI flag. On such JDKs TornadoVM
-        # supplies jdk.internal.vm.ci itself as a vendored application module and runs its
-        # compilation pipeline via the reflection provider path.
-        self.jvmci_absent = self.java_version >= 27
-        # JDK 22-26 still ship jdk.internal.vm.ci, but its interfaces have drifted from the
-        # JDK-21 shape the reflection providers are compiled against. Patch the platform module
-        # with the frozen JDK-21 jvmci classes so the runtime SPI matches the compiled code
-        # (uniform vendoring; mirrors the compile-time --patch-module in the jdk25/jdk26 profiles).
-        self.jvmci_patched = 22 <= self.java_version <= 26
         self.sdk_jdk_floor, self.sdk_jdk_preview = self.readSDKJDKContract()
         self.checkCompatibilityWithTornadoVM()
         self.platform = sys.platform
@@ -478,14 +451,10 @@ class TornadoVMRunnerTool():
             sys.exit(0)
 
     def readSDKJDKContract(self):
-        """(floor, preview) for THIS SDK, as recorded by bin/compile in etc/tornado.jdk.
-
-        Which JDKs an SDK accepts is a property of how it was compiled, not of the launcher, so
-        it travels with the SDK rather than being hardcoded here.
-        """
+        """(floor, preview) for THIS SDK, as recorded by bin/compile in etc/tornado.jdk."""
+        floor, preview = 22, False
         contract = os.path.join(self.sdk, "etc", "tornado.jdk")
         if os.path.isfile(contract):
-            floor, preview = 21, True
             try:
                 with open(contract, "r") as f:
                     for line in f.read().splitlines():
@@ -493,13 +462,12 @@ class TornadoVMRunnerTool():
                             floor = int(line.split("=", 1)[1].strip())
                         elif line.startswith("tornado.jdk.preview="):
                             preview = line.split("=", 1)[1].strip().lower() == "true"
-                return floor, preview
             except (IOError, OSError, ValueError):
                 pass
+            return floor, preview
 
-        # No contract to read. Do NOT just assume the oldest shape: a stale or mistyped
-        # TORNADOVM_HOME is far likelier than a genuinely old SDK, and guessing turns that into a
-        # confident "runs on JDK 21 only", which points at the SDK when the env var is at fault.
+        # No contract to read. A stale or mistyped TORNADOVM_HOME is far likelier than a
+        # genuinely old SDK, so point at the env var rather than guessing.
         jars = os.path.join(self.sdk, "share", "java", "tornado")
         if not os.path.isdir(jars):
             print("[ERROR] TORNADOVM_HOME does not look like a TornadoVM SDK:")
@@ -507,18 +475,15 @@ class TornadoVMRunnerTool():
             print("        (no share/java/tornado inside it). If you have just rebuilt, run:")
             print("            source setvars.sh")
             sys.exit(0)
-
-        # A real SDK that predates etc/tornado.jdk: infer from the artifact version it ships.
         for name in sorted(os.listdir(jars)):
-            if name.startswith("tornado-api-"):
-                return (22, False) if "jdk22plus" in name else (21, True)
-        return 21, True
+            if name.startswith("tornado-api-") and "jdk21" in name:
+                return 21, True
+        return floor, preview
 
     def checkCompatibilityWithTornadoVM(self):
-        # TornadoVM runs on arbitrary modern JDKs because Graal (tornado.graal) and, on JDK 27+,
-        # JVMCI (jdk.internal.vm.ci) are vendored as application modules. How far that reaches
-        # depends on the SDK: a preview-compiled one is pinned to a single release, everything
-        # else is good from its floor upwards.
+        # TornadoVM runs on arbitrary modern JDKs because Graal (tornado.graal) and its metadata API
+        # (tornado.meta) are vendored as application modules. A preview-compiled SDK (jdk21) is
+        # pinned to its one release; every other SDK is good from its floor upwards.
         if (self.sdk_jdk_preview):
             if (self.java_version != self.sdk_jdk_floor):
                 print("This TornadoVM SDK was built for JDK " + str(self.sdk_jdk_floor)
@@ -529,6 +494,8 @@ class TornadoVMRunnerTool():
         elif (self.java_version < self.sdk_jdk_floor):
             print("This TornadoVM SDK requires JDK " + str(self.sdk_jdk_floor)
                   + " or newer (found JDK " + str(self.java_version) + ").")
+            if (self.java_version == 21):
+                print("Use the jdk21 SDK for JDK 21.")
             sys.exit(0)
 
     def checkOpenCLDriversWindows(self):
@@ -1044,48 +1011,13 @@ class TornadoVMRunnerTool():
             tornadoFlags = tornadoFlags + " -Djava.ext.dirs=" + self.sdk + "/share/java/tornado "
         else:
             tornadoFlags = tornadoFlags + " --module-path ." + os.pathsep + self.sdk + "/share/java/tornado"
-            # On JDK 27+ the platform no longer ships jdk.internal.vm.ci; add the vendored
-            # same-named module. It must NOT be on the module-path on JDK <=26 (the platform
-            # module of the same name would cause a "two versions of module" resolution error).
-            if (self.jvmci_absent):
-                tornadoFlags = tornadoFlags + os.pathsep + self.sdk + "/share/java/jvmci"
             # The caller's --module-path EXTENDS the module path built above, so it has to be
             # appended while the flag string still ends in the module path itself -- i.e. before
             # any further flag is emitted. It also carries whatever extra JVM options the caller
             # packed into the same argument (the TornadoVM-Ray-Tracer launcher passes its whole
-            # JFLAGS this way), so nothing may be glued onto its tail either; that is why the
-            # jdk22-26 block below is emitted after it rather than before. Appending it after
-            # --patch-module instead handed the caller's entries to the patch: on jdk22-26 the
-            # caller's modules then never reached the module path at all (FindException for
-            # whatever it was adding, e.g. javafx.graphics), while jdk21 and jdk27+ were fine
-            # because on those the string still ended in the module path.
+            # JFLAGS this way), so nothing may be glued onto its tail either.
             if (args.module_path != None):
                 tornadoFlags = tornadoFlags + ":" + args.module_path
-
-            # On JDK 22-26 the platform module stays on the module path (resolved via
-            # -XX:+EnableJVMCI); we overlay the frozen JDK-21 classes with --patch-module so the
-            # loaded jdk.vm.ci.* matches what the reflection providers were compiled against. The
-            # patched-in JDK-21 jdk.vm.ci.services.Services.checkJVMCIEnabled() reads the saved
-            # property jdk.internal.vm.ci.enabled, so set it explicitly (HotSpot's own +EnableJVMCI
-            # bookkeeping is not visible to the overlaid classes).
-            if (self.jvmci_patched):
-                tornadoFlags = tornadoFlags + " -Djdk.internal.vm.ci.enabled=true --patch-module jdk.internal.vm.ci=" + self.sdk + "/share/java/jvmci/jvmci-21.0.2.jar"
-
-            # share/java/graalJars vendors GraalVM's foundational-API jars (word, collections,
-            # truffle-compiler, ...) under their ORIGINAL org.graalvm.* module names - unlike
-            # tornado.graal's compiler internals, these are not relocated, because they are
-            # TornadoVM's only supported way to get them under a non-GraalVM JDK. That is exactly
-            # the problem under a GraalVM-branded JAVA_HOME: the platform already ships a module
-            # of the same name (e.g. org.graalvm.word, resolvable from jrt:/org.graalvm.word).
-            # JPMS resolves same-named system modules before ever consulting --module-path, so a
-            # plain --module-path entry here is silently ignored in favor of the platform's
-            # version - and if that version is missing a class TornadoVM needs (observed:
-            # org.graalvm.word.impl.WordBoxFactory, on GraalVM 22+), it fails with
-            # NoClassDefFoundError at first use instead of a build-time or startup error.
-            # --upgrade-module-path is the JPMS-sanctioned way to supply a replacement for a
-            # module that already exists in the boot layer; under a non-GraalVM JDK, where no
-            # module of these names exists at all, it behaves exactly like --module-path.
-            tornadoFlags = tornadoFlags + " --upgrade-module-path " + self.sdk + "/share/java/graalJars"
 
         tornadoFlags = tornadoFlags + " "
 
@@ -1168,14 +1100,9 @@ class TornadoVMRunnerTool():
         template_file = os.path.join(self.sdk, "tornado-argfile.template")
         output_file = os.path.join(self.sdk, "tornado-argfile")
 
-        # Rebuild the template against the JDK running RIGHT NOW rather than reusing the one the
-        # build left behind. The flags it holds are JDK-specific -- -XX:+EnableJVMCI and the jvmci
-        # --patch-module on 22-26, the vendored jvmci module-path entry on 27+ -- while the SDK
-        # itself is not: one jdk22plus SDK serves every JDK from 22 up. Expanding a template
-        # produced under the build JDK therefore hands a JDK-26-shaped command line to a JDK 27
-        # JVM, which rejects it outright ("Unrecognized VM option 'EnableJVMCI'"). Callers already
-        # expect this: kfusion's run.sh regenerates before every launch precisely so the flags
-        # match its JAVA_HOME.
+        # Rebuild the template from the flags the launcher uses RIGHT NOW rather than reusing the
+        # one the build left behind, so the argfile always matches this SDK and launcher. Callers
+        # rely on this: kfusion's run.sh regenerates before every launch.
         self.regenerateArgfileTemplate()
 
         if not os.path.exists(template_file):
@@ -1206,18 +1133,8 @@ class TornadoVMRunnerTool():
                         lines[i] = line.replace(':', ';')
                 expanded = '\n'.join(lines)
 
-            # Stamp the JDK this was generated for. An argfile is a static file, but the flags in
-            # it are NOT JDK-neutral: -XX:+EnableJVMCI is required on JDK <=26 and is a fatal
-            # unrecognized option on 27+, and the jvmci --patch-module applies only on 22-26. A
-            # jdk22plus SDK is explicitly built once and run on many JDKs, so an argfile carried
-            # over from another JDK fails with "Unrecognized VM option 'EnableJVMCI'". Java
-            # argfiles support # comments, so say so in the file itself -- whoever debugs that
-            # error will open this file first.
-            header = (
-                f"# Generated by 'tornado --generate-argfile' for JDK {self.java_version}.\n"
-                f"# JDK-SPECIFIC: re-run 'tornado --generate-argfile' after switching JDK.\n"
-                f"# (EnableJVMCI is required on JDK <=26 and fatal on 27+.)\n"
-            )
+            # Java argfiles support # comments: record where the file came from.
+            header = f"# Generated by 'tornado --generate-argfile' (JDK {self.java_version}).\n"
 
             # Write expanded argfile
             with open(output_file, 'w') as f:
@@ -1285,34 +1202,11 @@ class TornadoVMRunnerTool():
         if (args.enableAssertions):
             javaFlags = javaFlags + __GRAAL_ENABLE_ASSERTIONS__
 
-        if (self.jvmci_absent):
-            javaFlags = javaFlags + " " + __JAVA_BASE_OPTIONS_NO_JVMCI__
-        else:
-            javaFlags = javaFlags + " " + __JAVA_BASE_OPTIONS__
-            if (self.sdk_jdk_preview):
-                javaFlags = javaFlags + __JAVA_PREVIEW_OPTION__
+        javaFlags = javaFlags + " " + __JAVA_BASE_OPTIONS__
+        if (self.sdk_jdk_preview):
+            javaFlags = javaFlags + __JAVA_PREVIEW_OPTION__
 
         javaFlags = javaFlags + tornadoFlags + __TORNADOVM_PROVIDERS__ + " "
-
-        # share/java/graalJars goes on --upgrade-module-path as a WHOLE (see above), and that
-        # includes tornado-graal-<ver>.jar. The directory holds two kinds of module:
-        #
-        #   org.graalvm.word / .collections / .truffle.compiler   original names, not relocated
-        #   tornado.graal                                          TornadoVM's relocated compiler
-        #
-        # Only the first kind NEEDS the upgrade path: under a GraalVM-branded JAVA_HOME the platform
-        # ships modules of those names, and JPMS resolves a same-named system module before ever
-        # consulting --module-path, so a plain --module-path entry is silently ignored in favour of
-        # the platform's copy. tornado.graal has a unique name and would resolve from either path.
-        #
-        # It stays on the upgrade path anyway because the two are shipped in one directory and
-        # splitting them buys nothing: a module on --upgrade-module-path is added to the boot layer
-        # whether or not it shadows a platform module. Do NOT narrow this entry to the org.graalvm.*
-        # jars on the assumption that tornado.graal is carried by --module-path -- it is not on any
-        # other path, and dropping it fails at boot layer creation with
-        # "FindException: Module tornado.graal not found, required by tornado.runtime".
-        # Verified end to end: jdk22plus SDK on JDK 25/26/27 and jdk21 SDK on JDK 21 all compile and
-        # execute kernels with graalJars reachable only from --upgrade-module-path.
 
         common = self.sdk + __COMMON_EXPORTS__
         opencl = self.sdk + __OPENCL_EXPORTS__
@@ -1323,7 +1217,7 @@ class TornadoVMRunnerTool():
         # The backends and the library-task providers reach their native libraries through
         # java.lang.foreign rather than a JNI library of their own, and every one of those lookups
         # goes through tornado.runtime. Those are restricted methods, so without this the lookup
-        # fails outright (JDK 21) or warns on every run.
+        # warns on every run.
         javaFlags = javaFlags + __ENABLE_NATIVE_ACCESS__ + __FFM_MODULE__ + " "
         if ("opencl-backend" in self.listOfBackends):
             javaFlags = javaFlags + "@" + opencl + " "

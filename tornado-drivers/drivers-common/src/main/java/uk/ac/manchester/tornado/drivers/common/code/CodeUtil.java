@@ -21,19 +21,19 @@
  */
 package uk.ac.manchester.tornado.drivers.common.code;
 
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.JavaType;
-import jdk.vm.ci.meta.Local;
-import jdk.vm.ci.meta.ResolvedJavaField;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.Signature;
+import tornado.meta.JavaKind;
+import tornado.meta.JavaType;
+import tornado.meta.Local;
+import tornado.meta.ResolvedJavaField;
+import tornado.meta.ResolvedJavaMethod;
+import tornado.meta.Signature;
 import tornado.graal.compiler.core.common.LIRKind;
 import tornado.graal.compiler.lir.Variable;
 
-import jdk.vm.ci.code.CallingConvention;
-import jdk.vm.ci.code.CallingConvention.Type;
-import jdk.vm.ci.code.CodeCacheProvider;
-import jdk.vm.ci.code.TargetDescription;
+import tornado.meta.code.CallingConvention;
+import tornado.meta.code.CallingConvention.Type;
+import tornado.meta.code.CodeCacheProvider;
+import tornado.meta.code.TargetDescription;
 import tornado.graal.compiler.nodes.ValueNode;
 import tornado.graal.compiler.nodes.java.LoadFieldNode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;

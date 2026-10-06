@@ -30,7 +30,7 @@ import tornado.graal.compiler.nodes.ValueNode;
 import tornado.graal.compiler.nodes.java.AccessIndexedNode;
 import tornado.graal.compiler.nodes.spi.Lowerable;
 
-import jdk.vm.ci.meta.JavaKind;
+import tornado.meta.JavaKind;
 
 @NodeInfo(shortName = "Atomic Add")
 public class AtomicAddNode extends AccessIndexedNode implements Lowerable {

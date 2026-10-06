@@ -22,7 +22,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
-import jdk.vm.ci.meta.MetaAccessProvider;
+import tornado.meta.MetaAccessProvider;
 import tornado.graal.compiler.loop.phases.ConvertDeoptimizeToGuardPhase;
 import tornado.graal.compiler.loop.phases.LoopFullUnrollPhase;
 import tornado.graal.compiler.nodes.loop.DefaultLoopPolicies;

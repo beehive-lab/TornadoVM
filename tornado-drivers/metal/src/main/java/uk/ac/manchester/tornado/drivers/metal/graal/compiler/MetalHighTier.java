@@ -42,7 +42,7 @@ import tornado.graal.compiler.phases.common.inlining.InliningPhase;
 import tornado.graal.compiler.phases.schedule.SchedulePhase;
 import tornado.graal.compiler.virtual.phases.ea.PartialEscapePhase;
 
-import jdk.vm.ci.meta.MetaAccessProvider;
+import tornado.meta.MetaAccessProvider;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.analysis.TornadoShapeAnalysis;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.guards.ExceptionSuppression;

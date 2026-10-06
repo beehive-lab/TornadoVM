@@ -23,7 +23,7 @@ package uk.ac.manchester.tornado.drivers.opencl.graal;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.meta.ResolvedJavaMethod;
 
 public final class OCLUtils {
 

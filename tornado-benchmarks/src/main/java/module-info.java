@@ -16,7 +16,6 @@
  *
  */
 open module tornado.benchmarks {
-    requires org.apache.commons.lang3;
     requires java.logging;
     requires jmh.core;
 

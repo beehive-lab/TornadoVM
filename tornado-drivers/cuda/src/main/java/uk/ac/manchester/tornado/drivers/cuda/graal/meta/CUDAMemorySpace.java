@@ -23,7 +23,7 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.meta;
 
 import tornado.graal.compiler.core.common.LIRKind;
 
-import jdk.vm.ci.meta.Value;
+import tornado.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAArchitecture;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssemblerConstants;

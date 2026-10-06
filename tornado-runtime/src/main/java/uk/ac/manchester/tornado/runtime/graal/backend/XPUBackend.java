@@ -33,8 +33,8 @@ import tornado.graal.compiler.nodes.StructuredGraph;
 import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 import tornado.graal.compiler.phases.util.Providers;
 
-import jdk.vm.ci.code.RegisterConfig;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.meta.code.RegisterConfig;
+import tornado.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;

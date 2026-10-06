@@ -39,6 +39,7 @@
                 <include>*.py</include>
                 <include>tornado</include>
                 <include>tornado-test</include>
+                <include>tornado-native-image</include>
                 <include>tornado-benchmarks.py</include>
                 <include>misc/*.py</include>
             </includes>
@@ -133,30 +134,12 @@
         </fileSet>
         <fileSet>
             <directory>../graalJars</directory>
-            <!-- Bare-minimum Graal JARs for JDK 21. The compiler is shipped relocated as
-                 the vendored tornado.graal module (tornado-graal-*.jar) so it resolves
-                 from the regular module-path; word/collections/truffle-compiler are its
-                 transitive requires. truffle-api/polyglot/graal-sdk/compiler-management
-                 are excluded. -->
-            <outputDirectory>share/java/graalJars</outputDirectory>
+            <!-- The Graal compiler, relocated with its word/collections/truffle-compiler
+                 dependencies into the self-contained tornado.graal module, ships next to the
+                 TornadoVM modules on the regular module-path. -->
+            <outputDirectory>share/java/tornado</outputDirectory>
             <includes>
                 <include>tornado-graal-*.jar</include>
-                <include>truffle-compiler-*.jar</include>
-                <include>collections-*.jar</include>
-                <include>word-*.jar</include>
-            </includes>
-            <fileMode>0644</fileMode>
-        </fileSet>
-        <fileSet>
-            <directory>../graalJars</directory>
-            <!-- Vendored jdk.internal.vm.ci (JDK-21 jvmci repackaged as a same-named
-                 application module by bin/build_jvmci_module.py). Shipped to a SEPARATE
-                 directory: the tornado launcher adds it to the module-path ONLY on JDK 27+
-                 where the platform no longer provides jdk.internal.vm.ci. On JDK <=26 a
-                 module of the same name would collide with the platform module. -->
-            <outputDirectory>share/java/jvmci</outputDirectory>
-            <includes>
-                <include>jvmci-*.jar</include>
             </includes>
             <fileMode>0644</fileMode>
         </fileSet>
@@ -168,6 +151,7 @@
             <!-- Now, select which projects to include in this module-set. -->
             <includes>
                 <include>io.github.beehive-lab:tornado-api</include>
+                <include>io.github.beehive-lab:tornado-meta</include>
                 <include>io.github.beehive-lab:tornado-runtime</include>
                 <include>io.github.beehive-lab:tornado-annotation</include>
                 <include>io.github.beehive-lab:tornado-matrices</include>
@@ -189,6 +173,15 @@
             <binaries>
                 <outputDirectory>share/java/tornado</outputDirectory>
                 <unpack>false</unpack>
+                <dependencySets>
+                    <dependencySet>
+                        <!-- The native libraries of the *-jni modules are unpacked into lib/ below;
+                             their -libs jars are not needed on the module path as well. -->
+                        <excludes>
+                            <exclude>*:*:jar:libs</exclude>
+                        </excludes>
+                    </dependencySet>
+                </dependencySets>
             </binaries>
         </moduleSet>
     </moduleSets>

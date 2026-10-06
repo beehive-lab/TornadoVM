@@ -35,7 +35,7 @@ import tornado.graal.compiler.replacements.SnippetTemplate.Arguments;
 import tornado.graal.compiler.replacements.SnippetTemplate.SnippetInfo;
 import tornado.graal.compiler.replacements.Snippets;
 
-import jdk.vm.ci.meta.JavaKind;
+import tornado.meta.JavaKind;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.drivers.metal.builtins.MetalIntrinsics;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalFPBinaryIntrinsicNode;

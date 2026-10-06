@@ -26,7 +26,7 @@ import tornado.graal.compiler.phases.PhaseSuite;
 import tornado.graal.compiler.phases.tiers.HighTierContext;
 import tornado.graal.compiler.phases.util.Providers;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.runtime.common.BatchCompilationConfig;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;

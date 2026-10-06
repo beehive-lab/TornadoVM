@@ -34,8 +34,8 @@ import tornado.graal.compiler.nodes.FixedNode;
 import tornado.graal.compiler.nodes.spi.LIRLowerable;
 import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 
-import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.meta.Value;
+import tornado.meta.ResolvedJavaType;
+import tornado.meta.Value;
 import uk.ac.manchester.tornado.drivers.metal.graal.MetalArchitecture.MetalMemoryBase;
 import uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssembler.MetalBinaryTemplate;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalBinary;

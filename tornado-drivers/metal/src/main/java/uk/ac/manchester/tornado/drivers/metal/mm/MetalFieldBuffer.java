@@ -37,7 +37,7 @@ import java.util.List;
 
 import sun.misc.Unsafe;
 
-import jdk.vm.ci.meta.JavaKind;
+import tornado.meta.JavaKind;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
@@ -210,7 +210,7 @@ public class MetalFieldBuffer implements XPUBuffer {
         return (int) UNSAFE.objectFieldOffset(field);
     }
 
-    /** All non-static instance fields (optionally across the superclass chain), matching JVMCI's getInstanceFields. */
+    /** All non-static instance fields (optionally across the superclass chain), in the order ResolvedJavaType.getInstanceFields reports them. */
     private static Field[] gatherInstanceFields(Class<?> clazz, boolean includeSuperClasses) {
         List<Field> list = new ArrayList<>();
         for (Class<?> c = clazz; c != null; c = includeSuperClasses ? c.getSuperclass() : null) {

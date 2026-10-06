@@ -23,8 +23,8 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 
 import tornado.graal.compiler.core.common.LIRKind;
 
-import jdk.vm.ci.meta.PlatformKind;
-import jdk.vm.ci.meta.Value;
+import tornado.meta.PlatformKind;
+import tornado.meta.Value;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDACompilationResultBuilder;
 

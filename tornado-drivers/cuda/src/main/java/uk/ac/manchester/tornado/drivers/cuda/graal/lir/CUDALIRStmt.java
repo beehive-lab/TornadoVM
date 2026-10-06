@@ -21,7 +21,7 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 
-import jdk.vm.ci.meta.JavaKind;
+import tornado.meta.JavaKind;
 import tornado.graal.compiler.core.common.LIRKind;
 import tornado.graal.compiler.lir.ConstantValue;
 import tornado.graal.compiler.lir.LIRInstruction;
@@ -29,10 +29,10 @@ import tornado.graal.compiler.lir.LIRInstructionClass;
 import tornado.graal.compiler.lir.Opcode;
 import tornado.graal.compiler.lir.asm.CompilationResultBuilder;
 
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.PlatformKind;
-import jdk.vm.ci.meta.Value;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.meta.AllocatableValue;
+import tornado.meta.PlatformKind;
+import tornado.meta.Value;
+import tornado.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.enums.DeviceLaunchMode;
 import uk.ac.manchester.tornado.api.enums.MMAShape;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAArchitecture;

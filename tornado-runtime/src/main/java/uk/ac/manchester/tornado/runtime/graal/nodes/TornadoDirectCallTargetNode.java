@@ -21,9 +21,9 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.nodes;
 
-import jdk.vm.ci.code.CallingConvention.Type;
-import jdk.vm.ci.meta.JavaType;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.meta.code.CallingConvention.Type;
+import tornado.meta.JavaType;
+import tornado.meta.ResolvedJavaMethod;
 import tornado.graal.compiler.core.common.type.StampPair;
 import tornado.graal.compiler.graph.NodeClass;
 import tornado.graal.compiler.nodeinfo.NodeInfo;

@@ -21,8 +21,8 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal;
 
-import static jdk.vm.ci.code.MemoryBarriers.LOAD_STORE;
-import static jdk.vm.ci.code.MemoryBarriers.STORE_STORE;
+import static tornado.meta.code.MemoryBarriers.LOAD_STORE;
+import static tornado.meta.code.MemoryBarriers.STORE_STORE;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.ATOMICS_REGION_NAME;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.CONSTANT_REGION_NAME;
@@ -34,10 +34,10 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerCons
 import java.nio.ByteOrder;
 import java.util.Set;
 
-import jdk.vm.ci.code.Architecture;
-import jdk.vm.ci.code.Register.RegisterCategory;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.PlatformKind;
+import tornado.meta.code.Architecture;
+import tornado.meta.code.Register.RegisterCategory;
+import tornado.meta.JavaKind;
+import tornado.meta.PlatformKind;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.common.architecture.ArchitectureRegister;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
@@ -102,16 +102,10 @@ public class OCLArchitecture extends Architecture {
     }
 
     /*
-     * We use jdk.vm.ci.amd64.AMD64.CPUFeature as a type parameter because the
-     * return type of Architecture::getFeatures in JVMCI of JDK 17 is Set<? extends
-     * CPUFeatureName>. The method Architecture::getFeatures does not exist in the
-     * JVMCI of JDK 11, but the method getFeatures is implemented for each backend
-     * returning EnumSet<AMD64.CPUFeature>. In order to implement our own CPUFeature
-     * enum for each architecture, we would have to keep two different versions of
-     * the source code. One in which CPUFeature extends CPUFeatureName for JDK 17
-     * and another in which it does not for JDK 11.
+     * Architecture::getFeatures returns CPU features, which GPUs do not have. AMD64.CPUFeature is
+     * only a placeholder type argument; the method is never called on a kernel backend.
      */
-    public Set<jdk.vm.ci.amd64.AMD64.CPUFeature> getFeatures() {
+    public Set<tornado.meta.amd64.AMD64.CPUFeature> getFeatures() {
         TornadoInternalError.unimplemented();
         return null;
     }

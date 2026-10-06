@@ -37,7 +37,7 @@ import tornado.graal.compiler.nodes.spi.Lowerable;
 import tornado.graal.compiler.nodes.spi.Virtualizable;
 import tornado.graal.compiler.nodes.spi.VirtualizerTool;
 
-import jdk.vm.ci.meta.JavaKind;
+import tornado.meta.JavaKind;
 
 @NodeInfo(nameTemplate = "AtomicIndexedStore")
 public final class StoreAtomicIndexedNode extends AccessIndexedNode implements StateSplit, Lowerable, Virtualizable {

@@ -39,8 +39,8 @@ import tornado.graal.compiler.nodes.spi.ArithmeticLIRLowerable;
 import tornado.graal.compiler.nodes.spi.CanonicalizerTool;
 import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.Value;
+import tornado.meta.JavaKind;
+import tornado.meta.Value;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAArithmeticTool;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDABuiltinTool;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt.AssignStmt;

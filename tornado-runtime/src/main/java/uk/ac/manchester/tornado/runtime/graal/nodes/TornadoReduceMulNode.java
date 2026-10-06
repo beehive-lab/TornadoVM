@@ -33,7 +33,7 @@ import tornado.graal.compiler.nodes.calc.MulNode;
 import tornado.graal.compiler.nodes.spi.CanonicalizerTool;
 import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 
-import jdk.vm.ci.meta.Value;
+import tornado.meta.Value;
 
 @NodeInfo(shortName = "REDUCE(*)", cycles = CYCLES_2)
 public class TornadoReduceMulNode extends MulNode {

@@ -38,11 +38,11 @@ import tornado.graal.compiler.asm.Label;
 import tornado.graal.compiler.lir.ConstantValue;
 import tornado.graal.compiler.lir.Variable;
 
-import jdk.vm.ci.code.Register;
-import jdk.vm.ci.code.TargetDescription;
-import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.Value;
+import tornado.meta.code.Register;
+import tornado.meta.code.TargetDescription;
+import tornado.meta.Constant;
+import tornado.meta.JavaConstant;
+import tornado.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.cuda.CUDATargetDescription;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDACompilationResultBuilder;
@@ -50,7 +50,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIROp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDANullary;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAReturnSlot;
-import uk.ac.manchester.tornado.runtime.jvmci.TornadoObjectConstant;
+import uk.ac.manchester.tornado.runtime.meta.TornadoObjectConstant;
 
 public final class CUDAAssembler extends Assembler {
 

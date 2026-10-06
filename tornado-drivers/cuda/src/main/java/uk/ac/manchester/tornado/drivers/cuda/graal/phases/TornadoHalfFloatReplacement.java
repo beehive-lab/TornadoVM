@@ -21,9 +21,9 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.graal.phases;
 
-import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.RawConstant;
+import tornado.meta.Constant;
+import tornado.meta.JavaKind;
+import tornado.meta.RawConstant;
 import tornado.graal.compiler.core.common.type.ObjectStamp;
 import tornado.graal.compiler.core.common.type.Stamp;
 import tornado.graal.compiler.core.common.type.StampFactory;
@@ -432,7 +432,7 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
 
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
 
-        // Reflection-path recovery: HalfFloat.getHalfFloatValue()'s InvocationPlugin misses when JVMCI is absent, so
+        // Reflection-path recovery: HalfFloat.getHalfFloatValue()'s InvocationPlugin misses with reflection-based metadata, so
         // the call survives as a device-function invoke whose generated body dereferences the receiver as an object
         // pointer (this + 8, the halfFloatValue field offset) instead of returning the half bits - for a small half
         // value that reads ~address 0x8, faulting with an out-of-bounds global read (seen in the tensor-core kernels

@@ -27,9 +27,9 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shoul
 
 import tornado.graal.compiler.core.common.LIRKind;
 
-import jdk.vm.ci.code.Architecture;
-import jdk.vm.ci.code.TargetDescription;
-import jdk.vm.ci.meta.JavaKind;
+import tornado.meta.code.Architecture;
+import tornado.meta.code.TargetDescription;
+import tornado.meta.JavaKind;
 import uk.ac.manchester.tornado.drivers.metal.graal.MetalArchitecture;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalKind;
 

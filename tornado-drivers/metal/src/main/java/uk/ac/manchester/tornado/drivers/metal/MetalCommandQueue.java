@@ -30,7 +30,7 @@ import static uk.ac.manchester.tornado.drivers.metal.enums.MetalCommandQueueInfo
 import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 
-import jdk.vm.ci.meta.JavaKind;
+import tornado.meta.JavaKind;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;

@@ -31,7 +31,7 @@ import tornado.graal.compiler.nodes.calc.SubNode;
 import tornado.graal.compiler.nodes.spi.CanonicalizerTool;
 import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 
-import jdk.vm.ci.meta.Value;
+import tornado.meta.Value;
 
 @NodeInfo(shortName = "REDUCE(-)")
 public class TornadoReduceSubNode extends SubNode {

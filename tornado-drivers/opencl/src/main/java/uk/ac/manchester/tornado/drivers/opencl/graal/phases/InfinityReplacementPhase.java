@@ -20,7 +20,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
-import jdk.vm.ci.meta.JavaConstant;
+import tornado.meta.JavaConstant;
 import tornado.graal.compiler.nodes.GraphState;
 import tornado.graal.compiler.nodes.StructuredGraph;
 import tornado.graal.compiler.phases.Phase;

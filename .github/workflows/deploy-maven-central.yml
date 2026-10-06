@@ -14,12 +14,11 @@ name: 4 - Deploy Maven Central [auto]
 # tornado-drivers-common, and the CUDA library bindings tornado-cublas/-cudnn/
 # -cufft/-curand/-cusparse/-cudf/-cutlass/-cuvs. The bindings load the NVIDIA libraries
 # through java.lang.foreign at run time; the native *-jni shims some of them use
-# are built per platform and ship only in the SDK. Each module is still deployed once PER JDK PROFILE
-# under 2 distinct Maven Central coordinates (X.Y.Z-jdk21/-jdk22plus) — the
-# jdk21 and jdk22plus Maven profiles are the only ones left (see bin/compile's
-# SDK_JDK_CONTRACT); jdk22plus covers every JDK from 22 up in one coordinate —
-# matching the existing "pin a specific JDK line" convention — see the `jdk`
-# matrix below. Each leg does an ephemeral `versions:set` (never committed)
+# are built per platform and ship only in the SDK. Each module is deployed once PER JDK PROFILE
+# under 2 distinct Maven Central coordinates (X.Y.Z-jdk21/-jdk22plus) — jdk21 is
+# the enable-preview build for JDK 21 and jdk22plus covers every JDK from 22 up
+# (see bin/compile) — see the `jdk` matrix below. Each leg does an ephemeral
+# `versions:set` (never committed)
 # right before `mvn deploy`, since the single release tag's committed pom.xml
 # version carries no JDK suffix at all.
 #
@@ -80,7 +79,6 @@ jobs:
               # build-test-platform.yml), not a requirement.
               echo "JAVA_HOME=/opt/jenkins/jdks/jdk-25.0.2" >> "$GITHUB_ENV"
               echo "GRAAL_JARS=/opt/graalJarsNoJvmci" >> "$GITHUB_ENV"
-              echo "JVMCI_SOURCE_JDK=/opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3" >> "$GITHUB_ENV"
               ;;
           esac
 
@@ -92,14 +90,11 @@ jobs:
       - name: Stage and build the vendored Graal module for this profile
         run: |
           mkdir -p graalJars && cp $GRAAL_JARS/* graalJars/
-          # tornado.graal's module-info is compiled per-profile (--release 21 for jdk21,
-          # --release 22 for jdk22plus) but both profiles publish it under the same Maven
-          # coordinate tornado.graal:tornado-graal:23.1.0. On this shared self-hosted runner
-          # the local repo / staged jar can be left over from the other leg, and a module-info
-          # newer than the build JDK fails with "Unsupported major.minor version" -> the
-          # reactor then reports "module not found: tornado.graal". Drop the staged jar and let
-          # pull_graal_jars rebuild + reinstall it for THIS profile (it already validates the
-          # descriptor is readable by the build JDK and rebuilds if not).
+          # The staged jar on this shared self-hosted runner can be left over from another
+          # build, and a module-info newer than the build JDK fails with "Unsupported
+          # major.minor version" -> the reactor then reports "module not found: tornado.graal".
+          # Drop the staged jar and let pull_graal_jars rebuild + reinstall it (it already
+          # validates the descriptor is readable by the build JDK and rebuilds if not).
           rm -f graalJars/tornado-graal-*.jar
           python3 bin/pull_graal_jars.py --jdk ${{ matrix.jdk }}
 

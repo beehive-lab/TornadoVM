@@ -81,17 +81,17 @@ import tornado.graal.compiler.options.OptionValues;
 import tornado.graal.compiler.phases.util.Providers;
 import tornado.graal.compiler.replacements.DefaultJavaLoweringProvider;
 import tornado.graal.compiler.replacements.SnippetCounter;
-import org.graalvm.word.LocationIdentity;
+import tornado.graal.word.LocationIdentity;
 
-import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
-import jdk.vm.ci.meta.ConstantReflectionProvider;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.JavaType;
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.PrimitiveConstant;
-import jdk.vm.ci.meta.ResolvedJavaField;
-import jdk.vm.ci.meta.ResolvedJavaType;
+import tornado.meta.ConstantReflectionProvider;
+import tornado.meta.JavaConstant;
+import tornado.meta.JavaKind;
+import tornado.meta.JavaType;
+import tornado.meta.MetaAccessProvider;
+import tornado.meta.PrimitiveConstant;
+import tornado.meta.ResolvedJavaField;
+import tornado.meta.ResolvedJavaType;
+import uk.ac.manchester.tornado.drivers.common.code.TornadoCallingConventionType;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLDecompressedReadFieldNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
@@ -498,7 +498,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             }
 
             loweredCallTarget = graph.add(new TornadoDirectCallTargetNode(parameters.toArray(new ValueNode[parameters.size()]), returnStampPair, signature, callTarget.targetMethod(),
-                    HotSpotCallingConventionType.JavaCall, callTarget.invokeKind()));
+                    TornadoCallingConventionType.JavaCall, callTarget.invokeKind()));
 
             callTarget.replaceAndDelete(loweredCallTarget);
         }
@@ -598,7 +598,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         // Either the node has as input a LocalArray or has a node which will be lowered to a LocalArray.
         InvokeNode node = nd.inputs().filter(InvokeNode.class).first();
         boolean willLowerToLocalArrayNode = node != null && "Direct#NewArrayNode.newArray".equals(node.callTarget().targetName()) && gpuSnippet;
-        // On the JVMCI-absent path KernelContext.allocate*LocalArray is intrinsified to a LocalArrayNode, but
+        // KernelContext.allocate*LocalArray is intrinsified to a LocalArrayNode, but
         // that rewrite runs after this lowering, so the array input is still the allocate*LocalArray invoke
         // here. Match both the eventual LocalArrayNode and the surviving allocate*LocalArray invoke.
         boolean isAllocateLocalArrayInvoke = nd instanceof InvokeNode invoke && invoke.callTarget() != null && invoke.callTarget().targetName().contains("LocalArray");

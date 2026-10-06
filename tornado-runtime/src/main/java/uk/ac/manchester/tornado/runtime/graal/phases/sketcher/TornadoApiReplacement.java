@@ -42,7 +42,7 @@ import tornado.graal.compiler.nodes.loop.LoopEx;
 import tornado.graal.compiler.nodes.loop.LoopsData;
 import tornado.graal.compiler.phases.BasePhase;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
@@ -76,10 +76,7 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
 
     static {
         try {
-            String tornadoAnnotationImplementation = System.getProperty("tornado.load.annotation.implementation");
-            if (tornadoAnnotationImplementation == null) {
-                throw new RuntimeException("[ERROR] Tornado Annotation Implementation class not specified. Did you remember to add @tornado-argfile?");
-            }
+            String tornadoAnnotationImplementation = System.getProperty("tornado.load.annotation.implementation", "uk.ac.manchester.tornado.annotation.ASMClassVisitor");
             Class<?> klass = Class.forName(tornadoAnnotationImplementation);
             Constructor<?> constructor = klass.getConstructor();
             asmClassVisitorProvider = (ASMClassVisitorProvider) constructor.newInstance();

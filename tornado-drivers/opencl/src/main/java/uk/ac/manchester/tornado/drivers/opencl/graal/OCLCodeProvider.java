@@ -25,13 +25,13 @@ package uk.ac.manchester.tornado.drivers.opencl.graal;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
-import jdk.vm.ci.code.CodeCacheProvider;
-import jdk.vm.ci.code.CompiledCode;
-import jdk.vm.ci.code.InstalledCode;
-import jdk.vm.ci.code.RegisterConfig;
-import jdk.vm.ci.code.TargetDescription;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.SpeculationLog;
+import tornado.meta.code.CodeCacheProvider;
+import tornado.meta.code.CompiledCode;
+import tornado.meta.code.InstalledCode;
+import tornado.meta.code.RegisterConfig;
+import tornado.meta.code.TargetDescription;
+import tornado.meta.ResolvedJavaMethod;
+import tornado.meta.SpeculationLog;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 

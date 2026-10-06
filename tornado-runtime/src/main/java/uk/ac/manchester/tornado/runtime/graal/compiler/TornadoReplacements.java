@@ -33,8 +33,8 @@ import tornado.graal.compiler.phases.util.Providers;
 import tornado.graal.compiler.printer.GraalDebugHandlersFactory;
 import tornado.graal.compiler.replacements.ReplacementsImpl;
 
-import jdk.vm.ci.code.TargetDescription;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.meta.code.TargetDescription;
+import tornado.meta.ResolvedJavaMethod;
 
 public class TornadoReplacements extends ReplacementsImpl {
 

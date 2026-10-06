@@ -31,8 +31,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.graalvm.collections.EconomicMap;
-import org.graalvm.collections.Equivalence;
+import tornado.graal.collections.EconomicMap;
+import tornado.graal.collections.Equivalence;
 import tornado.graal.compiler.asm.Assembler;
 import tornado.graal.compiler.code.CompilationResult;
 import tornado.graal.compiler.core.common.spi.CodeGenProviders;
@@ -54,9 +54,9 @@ import tornado.graal.compiler.nodes.cfg.ControlFlowGraph;
 import tornado.graal.compiler.nodes.cfg.HIRBlock;
 import tornado.graal.compiler.options.OptionValues;
 
-import jdk.vm.ci.code.Register;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.Value;
+import tornado.meta.code.Register;
+import tornado.meta.ResolvedJavaMethod;
+import tornado.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;

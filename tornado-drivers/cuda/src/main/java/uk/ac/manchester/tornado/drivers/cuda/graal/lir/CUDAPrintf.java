@@ -27,7 +27,7 @@ import tornado.graal.compiler.core.common.LIRKind;
 import tornado.graal.compiler.lir.ConstantValue;
 import tornado.graal.compiler.lir.Opcode;
 
-import jdk.vm.ci.meta.Value;
+import tornado.meta.Value;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDACompilationResultBuilder;
 

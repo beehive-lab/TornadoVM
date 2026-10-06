@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.metal.graal.phases;
 
-import jdk.vm.ci.meta.ResolvedJavaType;
+import tornado.meta.ResolvedJavaType;
 import tornado.graal.compiler.graph.Node;
 import tornado.graal.compiler.nodes.GraphState;
 import tornado.graal.compiler.nodes.StructuredGraph;

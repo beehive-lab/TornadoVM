@@ -187,7 +187,6 @@ final class CuVSNativeLib {
     private static MemorySegment tensor(Arena arena, long pointer, int deviceType, int deviceId, byte code, int bits, long rows, long cols) {
         MemorySegment t = arena.allocate(DL_MANAGED_TENSOR);
         int ndim = cols == 0 ? 1 : 2;
-        // FFMSupport keeps this portable: on JDK 21 Arena.allocate(C_LONG, n) allocates ONE long of value n
         MemorySegment shape = FFMSupport.allocateLongArray(arena, ndim == 2 ? new long[] { rows, cols } : new long[] { rows });
         t.set(C_POINTER, offset("data"), MemorySegment.ofAddress(pointer));
         t.set(C_INT, offset("device_type"), deviceType);
