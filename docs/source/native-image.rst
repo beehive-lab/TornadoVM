@@ -13,7 +13,9 @@ Requirements
 ------------
 
 - A GraalVM for JDK 22 or newer, with ``native-image`` (GraalVM Community or Oracle GraalVM).
-  ``JAVA_HOME`` must point at it.
+  ``JAVA_HOME`` must point at it. Use GraalVM 25.1 or newer (a GraalVM 25 Innovation release) when the
+  image contains ``jdk.incubator.vector``; see *Shared arenas* below. Profile-guided optimization
+  (``--pgo``) needs Oracle GraalVM.
 - A ``jdk22plus`` TornadoVM SDK. ``TORNADOVM_HOME`` must point at it.
 - The usual native toolchain for ``native-image`` (on Linux: ``gcc``, ``zlib`` headers).
 
@@ -27,13 +29,14 @@ module flags:
 
 .. code-block:: bash
 
-   export JAVA_HOME=/path/to/graalvm-jdk-25
+   export JAVA_HOME=/path/to/graalvm-25.1-or-newer
    export TORNADOVM_HOME=/path/to/tornadovm-sdk
    export PATH=$TORNADOVM_HOME/bin:$PATH
 
    tornado-native-image -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt -o vectoradd \
        --trace "-Ds0.t0.device=0:0 -- 1024" \
-       --trace "-Ds0.t0.device=1:0 -- 1024"
+       --trace "-Ds0.t0.device=1:0 -- 1024" \
+       -- -H:-VectorAPISupport
 
    ./vectoradd 1048576
 
@@ -61,13 +64,18 @@ Limitations
 - **Trace every path the image will run.** Metadata is recorded only for what the traces executed: every
   backend and device, and every kernel. A kernel or feature that no trace exercised can fail at run time
   with a missing-metadata error; add a trace that runs it.
-- **Host-side Java is not JIT-compiled.** Kernels run as before, but Java code on the host runs as
-  ahead-of-time compiled code without run-time profiling. Host-heavy applications can be slower than on
-  the JVM; Oracle GraalVM's profile-guided optimization (``--pgo``) narrows this gap.
-- **Shared arenas.** The CUDA and OpenCL backends allocate host memory from ``Arena.ofShared()`` and free it by
-  closing the arena, which Native Image supports only with ``-H:+SharedArenaSupport``. ``tornado-native-image``
-  passes that option. In GraalVM 25 an image cannot be built with it when application code uses the Vector
-  API (``jdk.incubator.vector``) on a ``MemorySegment``: ``native-image`` stops with ``GraalError: ... was not
+- **Host-side Java is not JIT-compiled.** Kernels run as before, but Java code on the - **Shared arenas and the Vector API.** The CUDA and OpenCL backends allocate host memory from
+  ``Arena.ofShared()`` and free it by closing the arena, which Native Image supports only with
+  ``-H:+SharedArenaSupport``; ``tornado-native-image`` passes that option. GraalVM does not support it together
+  with Vector API support:
+
+  - GraalVM 25.1 and newer refuse the combination. Add ``-- -H:-VectorAPISupport`` whenever the image contains
+    ``jdk.incubator.vector`` (``tornado.examples`` requires it). The Vector API still works without SIMD
+    intrinsics, but a vector load or store on a shared-arena ``MemorySegment`` throws at run time.
+  - GraalVM 25.0.x builds images that only require the module, but stops with ``GraalError: ... could access a
+    session`` when application code uses the Vector API on a ``MemorySegment``
+    (`oracle/graal#13321 <https://github.com/oracle/graal/issues/13321>`__).
+MemorySegment``: ``native-image`` stops with ``GraalError: ... was not
   inlined and could access a session``. Requiring the module is fine; only vector loads and stores on memory
   segments trigger it.
 - **Oracle GraalVM 25 PGO and the OpenCL backend.** Building a PGO-instrumented image fails inside
