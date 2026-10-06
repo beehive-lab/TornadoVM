@@ -85,7 +85,16 @@ class TornadoExecutor {
     }
 
     void execute(ExecutorFrame executionPackage) {
-        immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.execute(executionPackage));
+        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
+            immutableTaskGraph.execute(executionPackage);
+            // The next graph's consumeFromDevice without a producer name imports from the graph
+            // executed last, so record it after every graph, not once after the whole plan:
+            // otherwise each graph of a multi-graph plan reads fresh buffers instead of the
+            // previous graph's results.
+            if (immutableTaskGraphList.size() > 1) {
+                immutableTaskGraphList.forEach(other -> other.setLastExecutedTaskGraph(immutableTaskGraph));
+            }
+        }
     }
 
     boolean withGridScheduler(GridScheduler gridScheduler) {
@@ -455,9 +464,9 @@ class TornadoExecutor {
     private void runForWarmUp(ExecutorFrame executorFrame) {
         immutableTaskGraphList.forEach(immutableTaskGraph -> {
             immutableTaskGraph.execute(executorFrame);
-            // Update state for all task-graphs within the execution plan
-            ImmutableTaskGraph last = immutableTaskGraphList.getLast();
-            immutableTaskGraphList.forEach(itg -> itg.setLastExecutedTaskGraph(last));
+            // Update state for all task-graphs within the execution plan: the graph that just ran
+            // is the one the next graph imports its consumed buffers from.
+            immutableTaskGraphList.forEach(itg -> itg.setLastExecutedTaskGraph(immutableTaskGraph));
         });
     }
 
