@@ -31,7 +31,7 @@ import tornado.graal.compiler.nodes.ValueNode;
 import tornado.graal.compiler.nodes.spi.LIRLowerable;
 import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 
-import jdk.vm.ci.meta.JavaKind;
+import tornado.meta.JavaKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDALIRStmt;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAUnary;

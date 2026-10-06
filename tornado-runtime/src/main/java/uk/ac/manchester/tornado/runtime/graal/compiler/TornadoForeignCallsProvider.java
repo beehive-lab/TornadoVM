@@ -31,7 +31,7 @@ import tornado.graal.compiler.core.common.spi.ForeignCallLinkage;
 import tornado.graal.compiler.core.common.spi.ForeignCallSignature;
 import tornado.graal.compiler.core.common.spi.ForeignCallsProvider;
 
-import jdk.vm.ci.meta.JavaKind;
+import tornado.meta.JavaKind;
 
 public class TornadoForeignCallsProvider implements ForeignCallsProvider {
 

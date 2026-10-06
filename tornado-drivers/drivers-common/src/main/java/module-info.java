@@ -1,5 +1,5 @@
 open module tornado.drivers.common {
-    requires transitive jdk.internal.vm.ci;
+    requires transitive tornado.meta;
     requires transitive tornado.graal;
     requires transitive tornado.runtime;
     

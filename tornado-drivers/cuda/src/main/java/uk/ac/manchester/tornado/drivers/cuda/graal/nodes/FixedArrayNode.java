@@ -32,8 +32,8 @@ import tornado.graal.compiler.nodes.FixedNode;
 import tornado.graal.compiler.nodes.spi.LIRLowerable;
 import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 
-import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.meta.Value;
+import tornado.meta.ResolvedJavaType;
+import tornado.meta.Value;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAArchitecture.CUDAMemoryBase;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler.CUDABinaryTemplate;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDABinary;

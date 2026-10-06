@@ -26,9 +26,9 @@ package uk.ac.manchester.tornado.drivers.metal.graal;
 import tornado.graal.compiler.lir.framemap.FrameMap;
 import tornado.graal.compiler.lir.framemap.FrameMapBuilderImpl;
 
-import jdk.vm.ci.code.CodeCacheProvider;
-import jdk.vm.ci.code.RegisterConfig;
-import jdk.vm.ci.code.StackSlot;
+import tornado.meta.code.CodeCacheProvider;
+import tornado.meta.code.RegisterConfig;
+import tornado.meta.code.StackSlot;
 
 public class MetalFrameMapBuilder extends FrameMapBuilderImpl {
 

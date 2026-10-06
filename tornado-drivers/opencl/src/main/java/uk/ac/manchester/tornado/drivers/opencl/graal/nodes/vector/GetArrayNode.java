@@ -32,7 +32,7 @@ import tornado.graal.compiler.nodes.calc.FloatingNode;
 import tornado.graal.compiler.nodes.spi.LIRLowerable;
 import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 
-import jdk.vm.ci.meta.JavaKind;
+import tornado.meta.JavaKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStampFactory;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;

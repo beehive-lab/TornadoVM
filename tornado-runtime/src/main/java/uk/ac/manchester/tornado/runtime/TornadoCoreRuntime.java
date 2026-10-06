@@ -36,7 +36,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.StreamSupport;
 
-import org.graalvm.collections.EconomicMap;
+import tornado.graal.collections.EconomicMap;
 import tornado.graal.compiler.core.common.GraalOptions;
 import tornado.graal.compiler.debug.DebugContext;
 import tornado.graal.compiler.hotspot.HotSpotGraalOptionValues;
@@ -46,15 +46,15 @@ import tornado.graal.compiler.options.OptionKey;
 import tornado.graal.compiler.options.OptionValues;
 import tornado.graal.compiler.printer.GraalDebugHandlersFactory;
 
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.meta.MetaAccessProvider;
+import tornado.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoRuntime;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBackendNotFound;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
-import uk.ac.manchester.tornado.runtime.jvmci.TornadoMetaAccessProvider;
+import uk.ac.manchester.tornado.runtime.meta.TornadoMetaAccessProvider;
 import uk.ac.manchester.tornado.runtime.common.enums.TornadoBackends;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
 

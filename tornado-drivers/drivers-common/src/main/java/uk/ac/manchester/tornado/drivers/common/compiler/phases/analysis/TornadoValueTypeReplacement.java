@@ -35,7 +35,7 @@ import tornado.graal.compiler.nodes.java.NewInstanceNode;
 import tornado.graal.compiler.nodes.java.StoreFieldNode;
 import tornado.graal.compiler.phases.BasePhase;
 
-import jdk.vm.ci.meta.ResolvedJavaField;
+import tornado.meta.ResolvedJavaField;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 

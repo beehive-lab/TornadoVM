@@ -20,10 +20,10 @@
  */
 package uk.ac.manchester.tornado.drivers.providers;
 
-import org.graalvm.word.LocationIdentity;
+import tornado.graal.word.LocationIdentity;
 
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaField;
+import tornado.meta.JavaKind;
+import tornado.meta.ResolvedJavaField;
 import tornado.graal.compiler.core.common.memory.BarrierType;
 import tornado.graal.compiler.core.common.type.Stamp;
 import tornado.graal.compiler.nodes.ValueNode;
@@ -35,7 +35,7 @@ import tornado.graal.compiler.nodes.memory.FixedAccessNode;
  * No-op {@link BarrierSet} for the accelerator backends. TornadoVM generates GPU code with no managed
  * heap or garbage collector, so no GC read/write barriers are ever required. Every query returns
  * {@link BarrierType#NONE}. This replaces the previous {@code null} barrier set, which caused a
- * {@code NullPointerException} in {@code fieldWriteBarrierType} on the JVMCI-absent (JDK 27+) path where
+ * {@code NullPointerException} in {@code fieldWriteBarrierType} because
  * field stores route through the platform configuration provider's barrier set rather than a HotSpot one.
  */
 public class NoBarrierSet implements BarrierSet {

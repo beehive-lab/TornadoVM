@@ -1,8 +1,1 @@
 --add-opens java.base/java.lang=tornado.drivers.opencl
---add-exports jdk.internal.vm.ci/jdk.vm.ci.common=tornado.drivers.opencl
---add-exports jdk.internal.vm.ci/jdk.vm.ci.amd64=tornado.drivers.opencl
---add-exports jdk.internal.vm.ci/jdk.vm.ci.meta=tornado.drivers.opencl
---add-exports jdk.internal.vm.ci/jdk.vm.ci.code=tornado.drivers.opencl
---add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=tornado.drivers.opencl
---add-opens jdk.internal.vm.ci/jdk.vm.ci.hotspot=tornado.drivers.opencl
---add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot=tornado.drivers.opencl

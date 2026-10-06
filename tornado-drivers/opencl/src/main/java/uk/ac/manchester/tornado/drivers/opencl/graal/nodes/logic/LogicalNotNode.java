@@ -29,7 +29,7 @@ import tornado.graal.compiler.lir.gen.LIRGeneratorTool;
 import tornado.graal.compiler.nodeinfo.NodeInfo;
 import tornado.graal.compiler.nodes.LogicNode;
 
-import jdk.vm.ci.meta.Value;
+import tornado.meta.Value;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 import uk.ac.manchester.tornado.runtime.graal.nodes.logic.UnaryLogicalNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;

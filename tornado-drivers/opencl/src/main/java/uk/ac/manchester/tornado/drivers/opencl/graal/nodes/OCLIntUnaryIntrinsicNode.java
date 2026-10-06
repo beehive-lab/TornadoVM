@@ -36,8 +36,8 @@ import tornado.graal.compiler.nodes.spi.ArithmeticLIRLowerable;
 import tornado.graal.compiler.nodes.spi.CanonicalizerTool;
 import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.Value;
+import tornado.meta.JavaKind;
+import tornado.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLArithmeticTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBuiltinTool;

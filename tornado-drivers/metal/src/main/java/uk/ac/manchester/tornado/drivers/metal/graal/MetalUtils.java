@@ -25,7 +25,7 @@ package uk.ac.manchester.tornado.drivers.metal.graal;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.meta.ResolvedJavaMethod;
 
 public final class MetalUtils {
 

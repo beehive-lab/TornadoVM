@@ -18,6 +18,7 @@
 #
 
 import os
+import re
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
@@ -68,15 +69,23 @@ def compute_tornado_backend_variant(backend_profiles):
     return "-".join(backend_list_sorted)
 
 
+def jdk_profile_for(java_home):
+    """jdk21 for a JDK 21 home (the enable-preview SDK), jdk22plus otherwise."""
+    try:
+        out = subprocess.run([os.path.join(java_home, "bin", "java"), "-version"],
+                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True).stdout
+        match = re.search(r'version "(\d+)', out)
+        return "jdk21" if match and int(match.group(1)) == 21 else "jdk22plus"
+    except OSError:
+        return "jdk22plus"
+
+
 def define_and_get_internal_maven_content(xml_templates_directory, project_directory, java_home, backend_profiles):
     maven_directory = os.path.join(project_directory, "etc", "dependencies", "apache-maven-3.9.3")
     xml_internal_maven_build_content_directory = os.path.join(xml_templates_directory, "maven_template.xml")
     xml_internal_maven_build_content = read_template(xml_internal_maven_build_content_directory)
 
-    if "graal" in java_home:
-        java_profile = "graal-jdk-21"
-    else:
-        java_profile = "jdk21"
+    java_profile = jdk_profile_for(java_home)
 
     xml_backend_profiles = generate_backend_profiles_as_xml_entries(backend_profiles)
 

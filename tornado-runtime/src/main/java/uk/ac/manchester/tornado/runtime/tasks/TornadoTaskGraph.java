@@ -53,7 +53,7 @@ import java.util.regex.Pattern;
 import tornado.graal.compiler.graph.Graph;
 import tornado.graal.compiler.phases.util.Providers;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.tile.TileContext;

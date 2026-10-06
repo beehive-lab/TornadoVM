@@ -34,7 +34,7 @@ import tornado.graal.compiler.nodes.calc.FloatingNode;
 import tornado.graal.compiler.nodes.spi.LIRLowerable;
 import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 
-import jdk.vm.ci.meta.Value;
+import tornado.meta.Value;
 import uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssembler.MetalBinaryOp;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalBinary;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalKind;

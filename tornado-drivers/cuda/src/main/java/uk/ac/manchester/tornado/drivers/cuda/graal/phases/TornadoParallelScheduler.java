@@ -37,7 +37,7 @@ import tornado.graal.compiler.nodes.calc.MulNode;
 import tornado.graal.compiler.nodes.calc.SubNode;
 import tornado.graal.compiler.phases.BasePhase;
 
-import jdk.vm.ci.meta.JavaKind;
+import tornado.meta.JavaKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GlobalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAIntBinaryIntrinsicNode;

@@ -27,8 +27,8 @@ import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
 
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.meta.JavaKind;
+import tornado.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.types.utils.FloatOps;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.AtomicAddNode;
 

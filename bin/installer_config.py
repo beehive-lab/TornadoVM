@@ -26,6 +26,15 @@ __LINUX__   = "linux"
 __APPLE__   = "darwin"
 __WINDOWS__ = "windows"
 
+
+# JDK 22-26. JDK 27 isn't GA yet (due 2026-09-15): its builds are weekly-rotating early access
+# until then, so a pinned URL here would go stale almost immediately - add it once it GAs.
+#
+# Not every vendor ships every feature version, so some keys below are intentionally absent
+# rather than mapped to an all-None entry:
+#   - GraalVM CE has no JDK 26 build; its newest track ("25 Innovation") still bundles JDK 25.
+#   - Mandrel has no JDK 26 build; its newest track (25.0.x) still targets JDK 25.
+#   - Microsoft Build of OpenJDK ships LTS only (21, 25, ...): no JDK 22/23/24/26 builds exist.
 __JDK21__        = "jdk21"
 __GRAALVM21__    = "graal-jdk-21"
 __MANDREL21__    = "mandrel-jdk-21"
@@ -36,14 +45,6 @@ __TEMURIN21__    = "temurin-jdk-21"
 __SAPMACHINE21__ = "sapmachine-jdk-21"
 __LIBERICA21__   = "liberica-jdk-21"
 
-# JDK 22-26. JDK 27 isn't GA yet (due 2026-09-15): its builds are weekly-rotating early access
-# until then, so a pinned URL here would go stale almost immediately - add it once it GAs.
-#
-# Not every vendor ships every feature version, so some keys below are intentionally absent
-# rather than mapped to an all-None entry:
-#   - GraalVM CE has no JDK 26 build; its newest track ("25 Innovation") still bundles JDK 25.
-#   - Mandrel has no JDK 26 build; its newest track (25.0.x) still targets JDK 25.
-#   - Microsoft Build of OpenJDK ships LTS only (21, 25, ...): no JDK 22/23/24/26 builds exist.
 __JDK22__        = "jdk22"
 __GRAALVM22__    = "graal-jdk-22"
 __MANDREL22__    = "mandrel-jdk-22"
@@ -292,7 +293,7 @@ JDK = {
             __ARM__: None,
         },
     },
-    __JDK25__: {  # 25 is LTS and still in support: rolling "latest" alias, like 21 above
+    __JDK25__: {  # 25 is LTS and still in support: rolling "latest" alias
         __LINUX__: {
             __X86_64__: "https://download.oracle.com/java/25/latest/jdk-25_linux-x64_bin.tar.gz",
             __ARM__: "https://download.oracle.com/java/25/latest/jdk-25_linux-aarch64_bin.tar.gz",

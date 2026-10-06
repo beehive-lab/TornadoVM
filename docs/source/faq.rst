@@ -28,7 +28,7 @@ You can be running a TornadoVM example on a GPU in three commands:
    $ tornado --devices
 
    # 3. Run an example
-   $ java @$TORNADOVM_HOME/tornado-argfile -cp $TORNADOVM_HOME/share/java/tornado/tornado-examples-5.0.0-jdk21.jar uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
+   $ java @$TORNADOVM_HOME/tornado-argfile -cp $TORNADOVM_HOME/share/java/tornado/tornado-examples-7.0.1.jar uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
 
 See :ref:`installation` for all install options (SDKMAN!, the official downloads page, Maven Central, or Docker images), or :ref:`build-from-source` if you want to build TornadoVM yourself.
 
@@ -37,9 +37,8 @@ List of compatible JDKs
 
 TornadoVM currently supports:
 
--  JDK 21 (e.g. OpenJDK 21, Red Hat Mandrel 21, Amazon Corretto 21, Azul Zulu JDK 21), via the ``jdk21`` build profile.
--  JDK 22 and newer, including JDK 27, via the single ``jdk22plus`` build profile. TornadoVM no longer depends on JVMCI, so this SDK is built once and runs on any JDK from 22 upwards rather than being tied to one release.
--  GraalVM (JDK 21), as an alternative JDK 21 distribution (the ``graal-jdk-21`` build profile).
+-  JDK 22 and newer, including JDK 27, via the single ``jdk22plus`` build profile (e.g. OpenJDK, GraalVM, Red Hat Mandrel, Amazon Corretto, Azul Zulu). TornadoVM does not use JVMCI: it ships the compiler's metadata API as its own ``tornado.meta`` module and reads class metadata through reflection, so this SDK is built once and runs on any JDK from 22 upwards rather than being tied to one release. A GraalVM JDK is just another JDK: TornadoVM brings its own relocated Graal and uses nothing GraalVM bundles.
+-  JDK 21 via the ``jdk21`` build profile. FFM is a preview API on JDK 21, so this SDK is compiled with ``--enable-preview`` and runs on JDK 21 only.
 
 Windows
 ~~~~~~~~~~
@@ -50,7 +49,7 @@ To run TornadoVM on **Windows 10/11 OS**, more information here: :ref:`installat
 ARM Mali GPUs and Linux
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To run TornadoVM on ARM Mali, install TornadoVM with GraalVM and JDK 21. More information here: :ref:`installation_mali`.
+To run TornadoVM on ARM Mali, install TornadoVM with JDK 21 or newer. More information here: :ref:`installation_mali`.
 
 Usage
 ^^^^^
@@ -105,8 +104,8 @@ You can find more information here: `https://dl.acm.org/doi/10.1145/3313808.3313
 10. How does it interact with OpenJDK?
 --------------------------------------
 
-TornadoVM makes use of the Java Virtual Machine Common Interface (JVMCI) that is included from Java 9 to compile Java bytecode to OpenCL C, NVIDIA CUDA C, and Apple Metal at runtime.
-As a JVMCI implementation, TornadoVM uses Graal (it extends the Graal IR and includes new backends for each of these targets).
+TornadoVM runs as a library on a stock JVM and needs no special JVM support. It compiles Java bytecode to OpenCL C, NVIDIA CUDA C, and Apple Metal at runtime with its own copy of the Graal compiler (it extends the Graal IR and includes new backends for each of these targets).
+Class metadata comes from Java reflection and the class files, through the ``tornado.meta`` API that TornadoVM ships; it does not use the JVM Compiler Interface (JVMCI).
 
 11.  How do I know which parts of my application are suitable for acceleration?
 -------------------------------------------------------------------------------

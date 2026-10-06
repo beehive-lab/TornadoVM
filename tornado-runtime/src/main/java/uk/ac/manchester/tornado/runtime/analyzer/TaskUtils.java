@@ -90,12 +90,11 @@ public class TaskUtils {
     }
 
     /**
-     * JDK-neutral kernel-entry resolution for JVMCI-absent JDKs (27+). The compute Task
+     * JDK-neutral kernel-entry resolution. The compute Task
      * interfaces are {@link java.io.Serializable}, so the compiler emits a {@code writeReplace()}
      * on each task lambda that yields a {@link SerializedLambda} describing the implementation
      * method (its declaring class, name and JVM signature). We resolve that directly to a
-     * {@link Method} via core reflection, avoiding both the hidden lambda-proxy bytecode and the
-     * removed HotSpot JVMCI reflection helpers.
+     * {@link Method} via core reflection, without reading the hidden lambda-proxy bytecode.
      */
     private static Method resolveViaSerializedLambda(Object task) {
         Method writeReplace;
@@ -123,7 +122,7 @@ public class TaskUtils {
             implementation.setAccessible(true);
             return implementation;
         } catch (ReflectiveOperationException e) {
-            throw new TornadoInternalError("Unable to resolve kernel entry via SerializedLambda on the JVMCI-absent path: " + e);
+            throw new TornadoInternalError("Unable to resolve kernel entry via SerializedLambda: " + e);
         }
     }
 

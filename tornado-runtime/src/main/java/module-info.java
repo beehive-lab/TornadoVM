@@ -5,12 +5,10 @@ open module tornado.runtime {
     requires java.logging;
     requires jdk.unsupported;
     requires org.objectweb.asm;
-    requires org.graalvm.collections;
 
-    requires transitive jdk.internal.vm.ci;
+    requires transitive tornado.meta;
     requires transitive tornado.graal;
     requires transitive tornado.api;
-    requires commons.math3;
     requires java.management;
 
     exports uk.ac.manchester.tornado.runtime;
@@ -39,7 +37,7 @@ open module tornado.runtime {
     exports uk.ac.manchester.tornado.runtime.utils;
     exports uk.ac.manchester.tornado.runtime.graal.phases.sketcher;
     exports uk.ac.manchester.tornado.runtime.graal.nodes.interfaces;
-    exports uk.ac.manchester.tornado.runtime.jvmci;
+    exports uk.ac.manchester.tornado.runtime.meta;
 
     uses TornadoBackendProvider;
     uses TornadoLibraryProvider;

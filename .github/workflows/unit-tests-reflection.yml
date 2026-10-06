@@ -1,6 +1,6 @@
-name: No-GPU Unit Tests — reflection + CUDA codegen [JDK 21, 22-27]
+name: No-GPU Unit Tests — reflection + CUDA codegen [JDK 21-27, GraalVM]
 
-# Pure-JVM unit tests for the reflection JVMCI layer (tornado-runtime/src/test). These need no GPU,
+# Pure-JVM unit tests for the reflection metadata layer (tornado-runtime/src/test). These need no GPU,
 # so they run on standard GitHub-hosted runners - the first no-GPU CI stage for TornadoVM. The full
 # build is still required first so the modular dependencies (tornado-api, tornado.graal, ...) are on
 # the module path for the reflection tests; the tests themselves touch no device.
@@ -9,14 +9,14 @@ name: No-GPU Unit Tests — reflection + CUDA codegen [JDK 21, 22-27]
 # unlike build-test.yml this workflow cannot reuse one artifact across JDKs. What it does instead is
 # the complementary half of the same claim: build-test.yml proves one ARTIFACT runs on every JDK,
 # and this proves the jdk22plus profile BUILDS on every JDK. The matrix axis is therefore the host
-# JDK, not the profile -- there is only one profile above 21 now.
+# JDK, not the profile -- there is only one profile.
 #
-# Each host still gives the reflection layer a different jdk.internal.vm.ci to sit on:
-#   JDK 21     native platform module, unmodified (the separate, preview-compiled jdk21 SDK)
-#   JDK 22-26  native module, patched at run time with the frozen graalJars/jvmci-21.0.2.jar
-#   JDK 27     JVMCI removed from the platform entirely; supplied as the vendored tornado.jvmci
-#              application module (bin/build_jvmci_module.py)
-# A regression specific to one of those shapes would stay green forever if only one JDK ran.
+# A GraalVM leg rides along: a GraalVM JDK bundles its own Graal, JVMCI and org.graalvm.* modules,
+# and the SDK has to build and resolve its module graph next to them without a clash. Every leg
+# checks that by booting the SDK's module layer (java --dry-run) on its host JDK.
+#
+# The reflection layer sits on tornado-meta on every host, but each host JDK has its own
+# reflection, class-file and Unsafe behaviour, so a regression specific to one JDK would stay green forever if only one JDK ran.
 #
 # The CUDA code-generator tests (tornado-drivers/cuda/src/test) ride along here rather than in
 # their own workflow. They build LIR by hand and run the code-generator passes over it, so they
@@ -33,7 +33,7 @@ name: No-GPU Unit Tests — reflection + CUDA codegen [JDK 21, 22-27]
 
 on:
   push:
-    branches: [master, develop, jdk27-jvmci-removal]
+    branches: [master, develop]
   pull_request:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
@@ -54,54 +54,42 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # The preview-compiled SDK: JDK 21 only, and it needs no co-installed JDK because the
-          # platform still ships the jvmci shape it targets.
+          # The preview-compiled jdk21 SDK on JDK 21, then the jdk22plus profile on every JDK from 22.
           - profile: jdk21
+            distribution: temurin
             setup_java_version: '21'
-          # One profile, every host JDK from the floor up. Each also installs JDK 21 alongside the
-          # host: build_jvmci_module.py (invoked by pull_graal_jars) needs a JDK 21 runtime image to
-          # source the frozen jdk.vm.ci.* SPI from, whatever the build JDK is. Listing 21 first and
-          # the host last matters -- actions/setup-java points JAVA_HOME at the LAST JDK installed,
-          # and bin/compile checks JAVA_HOME against the profile's floor.
           - profile: jdk22plus
-            setup_java_version: |
-              21
-              22
+            distribution: temurin
+            setup_java_version: '22'
           - profile: jdk22plus
-            setup_java_version: |
-              21
-              23
+            distribution: temurin
+            setup_java_version: '23'
           - profile: jdk22plus
-            setup_java_version: |
-              21
-              24
+            distribution: temurin
+            setup_java_version: '24'
           - profile: jdk22plus
-            setup_java_version: |
-              21
-              25
+            distribution: temurin
+            setup_java_version: '25'
           - profile: jdk22plus
-            setup_java_version: |
-              21
-              26
+            distribution: temurin
+            setup_java_version: '26'
           - profile: jdk22plus
-            setup_java_version: |
-              21
-              27-ea
+            distribution: temurin
+            setup_java_version: '27-ea'
+          - profile: jdk22plus
+            distribution: graalvm
+            setup_java_version: '25'
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
+          distribution: ${{ matrix.distribution }}
           java-version: ${{ matrix.setup_java_version }}
 
       - name: Report the host JDK under test
         run: java -version
-
-      - name: Point JVMCI_SOURCE_JDK at the co-installed JDK 21 (jdk22plus only)
-        if: matrix.profile != 'jdk21'
-        run: echo "JVMCI_SOURCE_JDK=$JAVA_HOME_21_X64" >> "$GITHUB_ENV"
 
       - name: Install native build dependencies
         run: |
@@ -118,8 +106,17 @@ jobs:
       - name: Show the SDK's declared JDK contract
         run: cat "$(ls -d dist/*/*/)etc/tornado.jdk"
 
+      - name: Boot the SDK's module layer on this JDK
+        run: |
+          # Resolves every TornadoVM module, tornado.graal and tornado.meta against this JDK's own
+          # modules and loads the test runner's main class, without running it. A module or
+          # package clash with the JDK (e.g. a GraalVM JDK's bundled Graal) fails here.
+          SDK="$(ls -d $PWD/dist/*/*/)"; SDK="${SDK%/}"
+          java @"$SDK/tornado-argfile" --add-modules tornado.unittests --dry-run \
+            -m tornado.unittests/uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner
+
       - name: Run reflection unit tests (${{ matrix.profile }})
-        run: make test-reflection JDK=${{ matrix.profile }}
+        run: make test-reflection
 
       - name: Run CUDA code generator unit tests (${{ matrix.profile }})
-        run: make test-cuda-codegen JDK=${{ matrix.profile }}
+        run: make test-cuda-codegen

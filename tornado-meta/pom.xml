@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <artifactId>tornado</artifactId>
+        <groupId>io.github.beehive-lab</groupId>
+        <version>${revision}</version>
+    </parent>
+    <description>TornadoVM metadata API: the code-description interfaces the TornadoVM compiler is written against, derived from the OpenJDK 21.0.2 JVMCI API</description>
+    <groupId>io.github.beehive-lab</groupId>
+    <artifactId>tornado-meta</artifactId>
+    <version>${revision}</version>
+    <name>tornado-meta</name>
+    <url>https://tornadovm.org</url>
+    <properties>
+        <!-- Verbatim OpenJDK sources: keep them byte-close to upstream rather than reformat them. -->
+        <checkstyle.skip>true</checkstyle.skip>
+    </properties>
+    <licenses>
+        <license>
+            <name>GNU General Public License, version 2</name>
+            <url>https://www.gnu.org/licenses/old-licenses/gpl-2.0.html</url>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <id>beehive-lab</id>
+            <name>Beehive Lab</name>
+            <email>info@tornadovm.org</email>
+        </developer>
+    </developers>
+    <scm>
+        <connection>scm:git:https://github.com/beehive-lab/tornadovm.git</connection>
+        <developerConnection>scm:git:https://github.com/beehive-lab/tornadovm.git</developerConnection>
+        <url>https://github.com/beehive-lab/tornadovm</url>
+    </scm>
+    <build>
+        <resources>
+            <!-- Ship the license inside the jar: this module is GPLv2 without the Classpath Exception. -->
+            <resource>
+                <directory>${project.basedir}/..</directory>
+                <includes>
+                    <include>LICENSE_GPLv2</include>
+                </includes>
+                <targetPath>META-INF</targetPath>
+            </resource>
+            <resource>
+                <directory>${project.basedir}</directory>
+                <includes>
+                    <include>README.md</include>
+                </includes>
+                <targetPath>META-INF</targetPath>
+            </resource>
+        </resources>
+    </build>
+</project>

@@ -7,19 +7,21 @@
 # because that name is a built-in JDK module that shadows anything on the regular
 # `--module-path`. To drop `--upgrade-module-path` we relocate the compiler off the
 # `jdk.*` namespace (`org.graalvm.compiler.*` -> `tornado.graal.compiler.*`) so it becomes
-# a normal module resolvable from `--module-path`.
+# a normal module resolvable from `--module-path`. The JVMCI API Graal is written against is
+# relocated as well (`jdk.vm.ci.*` -> `tornado.meta.*`), onto TornadoVM's own tornado-meta
+# module, so the result needs no JVMCI from the JDK. The GraalVM SDK jars Graal needs (word,
+# collections, truffle-compiler) are folded in under tornado.graal.*, so no module name or
+# package can clash with what a GraalVM JDK bundles.
 #
 # Recipe (all steps proven in isolation before automating):
-#   1. maven-shade relocate classes + META-INF/services (module-info.class excluded).
-#   2. jdeps --generate-module-info to rebuild requires/exports/provides from the
-#      relocated service files.
+#   1. maven-shade relocate classes + META-INF/services (module-info.class excluded), then trim
+#      the result to bin/graal-compiler-keep.txt (bin/minimize_graal_jar.py).
+#   2. jdeps --generate-module-info, against tornado-meta compiled from source, to rebuild
+#      requires/exports/provides from the relocated service files.
 #   3. Inject the `uses` clauses jdeps never emits (Graal calls ServiceLoader.load for
 #      them internally; without `uses` discovery returns empty).
-#   4. Drop `provides jdk.vm.ci.services.JVMCIServiceLocator` — it makes the renamed
-#      module unresolvable (its service package is qualified-exported by jvmci only to
-#      `jdk.internal.vm.compiler` by name, and --add-exports cannot satisfy the
-#      resolution-time provides check). Safe: it registers Graal as the HotSpot JIT,
-#      which TornadoVM never uses (+EnableJVMCI without +UseJVMCICompiler).
+#   4. Drop `provides ...JVMCIServiceLocator` — its service type is HotSpot-only JVMCI API that
+#      tornado-meta does not carry, so the module would not resolve. Safe: it registers Graal as the HotSpot JIT, which TornadoVM never uses.
 #   5. Compile + inject the module-info, drop the now-orphan services file.
 #   6. Emit graalJars/tornado-graal-<ver>.jar and install it to the local Maven repo as
 #      tornado.graal:tornado-graal:<ver> so the reactor can compile against it.
@@ -32,6 +34,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import zipfile
 
 VERSION = "23.1.0"
 MODULE_NAME = "tornado.graal"
@@ -46,22 +49,18 @@ RELOCATE_POM = os.path.join(SCRIPT_DIR, "graal-relocate", "pom.xml")
 # jdeps regenerates `provides` from META-INF/services but never emits `uses`; without a
 # `uses` clause a modular ServiceLoader.load returns nothing. Derived from the original
 # jdk.internal.vm.compiler descriptor and relocated below.
-DROPPED_PROVIDES_SERVICE = "jdk.vm.ci.services.JVMCIServiceLocator"
+DROPPED_PROVIDES_SERVICE = "tornado.meta.services.JVMCIServiceLocator"
 ORPHAN_SERVICES_FILE = f"META-INF/services/{DROPPED_PROVIDES_SERVICE}"
 
-# Lowest JDK each profile's SDK has to run on. The module descriptor compiled below must be
+# Lowest JDK any SDK has to run on (the jdk21 SDK), so one tornado.graal jar serves both the jdk21
+# and the jdk22plus SDK. The module descriptor compiled below must be
 # emitted at this release and no higher: a module-info carries the class-file version of the
 # JDK that compiled it, and the JVM reads descriptors under the ordinary backward-compatibility
 # rule, so one built by (say) JDK 27 is unreadable on anything older -- the SDK silently ends up
 # pinned to its own build host ("InvalidModuleDescriptorException: Unsupported major.minor
 # version 71.0"). Everything else in the jar is Graal 23.1.0's own bytecode, which is already
 # old enough to load anywhere.
-DEFAULT_RELEASE = 22
-JDK_FLOOR = {"jdk21": 21}
-
-
-def _release_for(jdk):
-    return JDK_FLOOR.get(jdk, DEFAULT_RELEASE)
+RELEASE = 21
 
 
 def _java_home():
@@ -114,35 +113,25 @@ def _dep_jar(*rel):
     return p
 
 
-def _build_jdk_has_jvmci():
-    """Whether the JDK running this build still ships the jdk.internal.vm.ci platform module.
+def _compile_tornado_meta(work):
+    """Compile the tornado-meta module from source, for jdeps/javac to resolve tornado.meta.
 
-    Asked of the build JDK rather than derived from the target profile: which JDKs the SDK
-    RUNS on is a property of the artifact, while where jdeps/javac find jdk.vm.ci.* while
-    producing it is a property of the machine doing the building. Those are independent once
-    a profile targets a floor (jdk22plus) instead of one exact release, and conflating them
-    means a build host newer than the target cannot resolve the module at all.
+    This runs before the Maven reactor, so the module's jar does not exist yet; the sources are
+    small enough that compiling them here takes a couple of seconds.
     """
-    out = _capture([_tool("java"), "--list-modules"])
-    return any(line.startswith("jdk.internal.vm.ci@") for line in out.splitlines())
+    src = os.path.join(REPO_ROOT, "tornado-meta", "src", "main", "java")
+    files = [os.path.join(dp, f) for dp, _, fs in os.walk(src) for f in fs if f.endswith(".java")]
+    if not files:
+        sys.exit(f"build_graal_module: no tornado-meta sources under {src}")
+    out = os.path.join(work, "tornado-meta")
+    _run([_tool("javac"), "--release", str(RELEASE), "-nowarn", "-d", out] + files)
+    return out
 
 
-def _module_path_deps(jdk=None):
-    deps = [
-        _dep_jar(f"word-{VERSION}.jar"),
-        _dep_jar(f"collections-{VERSION}.jar"),
-        _dep_jar(f"truffle-compiler-{VERSION}.jar"),
-    ]
-    if not _build_jdk_has_jvmci():
-        # JDK 27 dropped jdk.internal.vm.ci from the platform entirely, so the jdeps/javac calls
-        # below cannot resolve it via --add-modules against the system modules. pull_graal_jars.py
-        # stages the vendored replacement (built by build_jvmci_module) before calling us,
-        # precisely so it is available here. On a build JDK that still ships the platform module
-        # it is deliberately left off the module path -- a same-named module there is shadowed by
-        # the system one anyway, and listing both is just noise.
-        import build_jvmci_module
-        deps.append(_dep_jar(f"{build_jvmci_module.ARTIFACT}-{build_jvmci_module.VERSION}.jar"))
-    return os.pathsep.join(deps)
+def _module_path_deps(tornado_meta):
+    # word, collections and truffle-compiler are folded into the shaded jar itself, so the only
+    # module it depends on outside the JDK is tornado.meta.
+    return tornado_meta
 
 
 def _install_file(jar, group, artifact):
@@ -151,25 +140,29 @@ def _install_file(jar, group, artifact):
          f"-Dversion={VERSION}", "-Dpackaging=jar"], cwd=_neutral_cwd())
 
 
-def _relocated_uses_clauses(compiler_jar):
-    """Extract `uses` from the original compiler descriptor, relocated to tornado.graal."""
+def _relocated_uses_clauses(compiler_jar, staged):
+    """Extract `uses` from the original compiler descriptor, relocated to tornado.graal, keeping only
+    the service types the trimmed jar still carries."""
     out = _capture([_tool("jar"), "--describe-module", "--file", compiler_jar])
+    with zipfile.ZipFile(staged) as zf:
+        present = set(zf.namelist())
     clauses = []
     for line in out.splitlines():
         line = line.strip()
         if line.startswith("uses "):
             svc = line[len("uses "):].strip()
             svc = svc.replace("org.graalvm.compiler", "tornado.graal.compiler")
-            clauses.append(f"    uses {svc};")
+            if svc.replace(".", "/") + ".class" in present:
+                clauses.append(f"    uses {svc};")
     return clauses
 
 
-def _build_module_info(generated_mi, compiler_jar):
+def _build_module_info(generated_mi, compiler_jar, staged):
     text = generated_mi.read_text() if hasattr(generated_mi, "read_text") else open(generated_mi).read()
     # (4) drop the JVMCIServiceLocator provides block (spans the `with ...;` list)
-    text = re.sub(r"\n\s*provides\s+jdk\.vm\.ci\.services\.JVMCIServiceLocator\s+with[^;]*;", "", text)
+    text = re.sub(r"\n\s*provides\s+tornado\.meta\.services\.JVMCIServiceLocator\s+with[^;]*;", "", text)
     # (3) inject relocated `uses` clauses before the closing brace
-    uses = "\n".join(_relocated_uses_clauses(compiler_jar))
+    uses = "\n".join(_relocated_uses_clauses(compiler_jar, staged))
     idx = text.rstrip().rfind("}")
     text = text[:idx] + uses + "\n}\n"
     return text
@@ -198,35 +191,34 @@ def build(jdk=None):
         staged = os.path.join(work, ARTIFACT)
         shutil.copy(shaded, staged)
 
-        deps = _module_path_deps(jdk)
+        # (1b) trim to the classes TornadoVM uses, before the descriptor is generated from it.
+        import minimize_graal_jar
+        before, after = minimize_graal_jar.minimize(staged)
+        print(f"build_graal_module: kept {after} of {before} classes")
+
+        deps = _module_path_deps(_compile_tornado_meta(work))
 
         # (2) jdeps generate module-info from the relocated services.
-        # --ignore-missing-deps is required from jdk25 on: those JDKs still ship a platform
-        # jdk.internal.vm.ci, but it is a LATER jvmci than the JDK-21 SPI Graal 23.1.0 was
-        # compiled against (jdk.vm.ci.code.RegisterArray, jdk.vm.ci.common.NativeImageReinitialize
-        # and jdk.vm.ci.hotspot.HotSpotJVMCICompilerFactory are all gone), so jdeps reports the
-        # dangling references as missing deps and exits 1. Those types sit exclusively on Graal's
-        # HotSpot-JIT paths, which TornadoVM never enters, and ignoring them changes nothing about
-        # the descriptor: the module-info generated here on jdk25 is byte-identical to the jdk21
-        # one, and the flag is a no-op on jdk21/jdk27 (jdk27 resolves the vendored JDK-21 jvmci
-        # staged on the module path above, so nothing is missing there in the first place).
+        # --ignore-missing-deps: Graal's HotSpot-JIT paths still reference the HotSpot-only
+        # JVMCI packages (relocated under tornado.meta but not part of it). TornadoVM never
+        # enters those paths, and the references do not change the descriptor.
         mi_root = os.path.join(work, "modout")
         os.makedirs(mi_root, exist_ok=True)
         _run([_tool("jdeps"), "--ignore-missing-deps", "--generate-module-info", mi_root,
-              "--module-path", deps, "--add-modules", "jdk.internal.vm.ci", staged])
+              "--module-path", deps, "--add-modules", "tornado.meta", staged])
         mi_java = os.path.join(mi_root, MODULE_NAME, "module-info.java")
 
         # (3)+(4) inject uses, drop jvmci provides
-        mi_text = _build_module_info(mi_java, compiler_jar)
+        mi_text = _build_module_info(mi_java, compiler_jar, staged)
         with open(mi_java, "w") as f:
             f.write(mi_text)
 
         # (5) compile module-info against the relocated classes, inject, drop orphan service.
         # -source/-target pins the descriptor class-file version to the SDK floor so the jar stays
         # readable on every JDK the SDK supports, not just the one that happened to build it.
-        _run([_tool("javac"), "-source", str(_release_for(jdk)), "-target", str(_release_for(jdk)),
+        _run([_tool("javac"), "-source", str(RELEASE), "-target", str(RELEASE),
               "-Xlint:-options",
-              "--module-path", deps, "--add-modules", "jdk.internal.vm.ci",
+              "--module-path", deps, "--add-modules", "tornado.meta",
               "--patch-module", f"{MODULE_NAME}={staged}",
               "-d", os.path.join(mi_root, MODULE_NAME), mi_java])
         _run([_tool("jar"), "uf", staged,

@@ -29,7 +29,7 @@ import tornado.graal.compiler.lir.LIRInstruction.Def;
 import tornado.graal.compiler.lir.LIRInstruction.Use;
 import tornado.graal.compiler.nodes.DirectCallTargetNode;
 
-import jdk.vm.ci.meta.Value;
+import tornado.meta.Value;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAArchitecture;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAUtils;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.CUDAAssembler;

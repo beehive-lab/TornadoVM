@@ -25,16 +25,16 @@ package uk.ac.manchester.tornado.drivers.metal.graal;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
-import jdk.vm.ci.code.CallingConvention;
-import jdk.vm.ci.code.CallingConvention.Type;
-import jdk.vm.ci.code.Register;
-import jdk.vm.ci.code.RegisterArray;
-import jdk.vm.ci.code.RegisterAttributes;
-import jdk.vm.ci.code.RegisterConfig;
-import jdk.vm.ci.code.ValueKindFactory;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.JavaType;
-import jdk.vm.ci.meta.PlatformKind;
+import tornado.meta.code.CallingConvention;
+import tornado.meta.code.CallingConvention.Type;
+import tornado.meta.code.Register;
+import tornado.meta.code.RegisterArray;
+import tornado.meta.code.RegisterAttributes;
+import tornado.meta.code.RegisterConfig;
+import tornado.meta.code.ValueKindFactory;
+import tornado.meta.JavaKind;
+import tornado.meta.JavaType;
+import tornado.meta.PlatformKind;
 
 public class MetalRegisterConfig implements RegisterConfig {
 

@@ -28,8 +28,8 @@ import tornado.graal.compiler.lir.LIRInstructionClass;
 import tornado.graal.compiler.lir.Opcode;
 import tornado.graal.compiler.lir.asm.CompilationResultBuilder;
 
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.Value;
+import tornado.meta.AllocatableValue;
+import tornado.meta.Value;
 import uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssembler;
 import uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssembler.MetalBinaryIntrinsic;
 import uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssembler.MetalTernaryIntrinsic;

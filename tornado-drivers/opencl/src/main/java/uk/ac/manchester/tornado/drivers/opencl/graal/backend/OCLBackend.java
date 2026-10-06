@@ -59,21 +59,21 @@ import tornado.graal.compiler.options.OptionValues;
 import tornado.graal.compiler.phases.tiers.SuitesProvider;
 import tornado.graal.compiler.phases.util.Providers;
 
-import jdk.vm.ci.code.CallingConvention;
-import jdk.vm.ci.code.CompilationRequest;
-import jdk.vm.ci.code.CompiledCode;
-import jdk.vm.ci.code.RegisterConfig;
-import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.Local;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
+import tornado.meta.code.CallingConvention;
+import tornado.meta.code.CompilationRequest;
+import tornado.meta.code.CompiledCode;
+import tornado.meta.code.RegisterConfig;
+import tornado.meta.AllocatableValue;
+import tornado.meta.JavaKind;
+import tornado.meta.Local;
+import tornado.meta.ResolvedJavaMethod;
+import tornado.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.drivers.common.code.CodeUtil;
+import uk.ac.manchester.tornado.drivers.common.code.TornadoCallingConventionType;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.common.utils.BackendDeopt;
 import uk.ac.manchester.tornado.drivers.opencl.OCLBackendImpl;
@@ -292,7 +292,7 @@ public class OCLBackend extends XPUBackend<OCLProviders> implements FrameMap.Ref
     private void emitPrologue(OCLCompilationResultBuilder crb, OCLAssembler asm, ResolvedJavaMethod method, LIR lir) {
 
         String methodName = crb.compilationResult.getName();
-        final CallingConvention incomingArguments = CodeUtil.getCallingConvention(codeCache, HotSpotCallingConventionType.JavaCallee, method);
+        final CallingConvention incomingArguments = CodeUtil.getCallingConvention(codeCache, TornadoCallingConventionType.JavaCallee, method);
 
         if (crb.isKernel()) {
             /*

@@ -25,7 +25,7 @@ try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot()))
 - NVIDIA GPU + driver
 - CUDA toolkit with cuBLAS (headers and `libcublas`); on systems with multiple
   toolkits, `/usr/local/cuda` (or `$CUDA_PATH`) is preferred
-- JDK 21
+- JDK 22 or newer
 
 ## Build
 

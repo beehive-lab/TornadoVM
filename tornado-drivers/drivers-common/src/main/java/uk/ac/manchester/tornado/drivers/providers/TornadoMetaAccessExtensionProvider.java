@@ -24,10 +24,10 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimp
 
 import tornado.graal.compiler.core.common.spi.MetaAccessExtensionProvider;
 
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.JavaType;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
+import tornado.meta.JavaKind;
+import tornado.meta.JavaType;
+import tornado.meta.ResolvedJavaMethod;
+import tornado.meta.ResolvedJavaType;
 
 public class TornadoMetaAccessExtensionProvider implements MetaAccessExtensionProvider {
 

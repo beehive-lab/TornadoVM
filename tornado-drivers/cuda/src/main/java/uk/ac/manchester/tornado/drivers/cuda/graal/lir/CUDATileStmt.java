@@ -22,7 +22,7 @@
 
 package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 
-import jdk.vm.ci.meta.Value;
+import tornado.meta.Value;
 import tornado.graal.compiler.lir.LIRInstruction;
 import tornado.graal.compiler.lir.LIRInstructionClass;
 import tornado.graal.compiler.lir.asm.CompilationResultBuilder;

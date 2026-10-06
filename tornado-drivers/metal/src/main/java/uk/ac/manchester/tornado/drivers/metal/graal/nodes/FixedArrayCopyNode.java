@@ -23,9 +23,9 @@
  */
 package uk.ac.manchester.tornado.drivers.metal.graal.nodes;
 
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.meta.Value;
+import tornado.meta.JavaKind;
+import tornado.meta.ResolvedJavaType;
+import tornado.meta.Value;
 import tornado.graal.compiler.core.common.LIRKind;
 import tornado.graal.compiler.core.common.type.StampFactory;
 import tornado.graal.compiler.graph.NodeClass;

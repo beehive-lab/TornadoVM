@@ -29,7 +29,7 @@ import tornado.graal.compiler.nodes.ValueNode;
 import tornado.graal.compiler.nodes.memory.address.AddressNode;
 import tornado.graal.compiler.nodes.spi.Lowerable;
 
-import jdk.vm.ci.meta.JavaKind;
+import tornado.meta.JavaKind;
 
 @NodeInfo(nameTemplate = "AtomicWrite")
 public class WriteAtomicNode extends FixedWithNextNode implements StateSplit, Lowerable {

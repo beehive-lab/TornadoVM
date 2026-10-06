@@ -32,7 +32,7 @@ import tornado.graal.compiler.options.OptionValues;
 import tornado.graal.compiler.phases.common.AddressLoweringByNodePhase;
 import tornado.graal.compiler.phases.common.CanonicalizerPhase;
 
-import jdk.vm.ci.meta.MetaAccessProvider;
+import tornado.meta.MetaAccessProvider;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoAllocationStage;
 

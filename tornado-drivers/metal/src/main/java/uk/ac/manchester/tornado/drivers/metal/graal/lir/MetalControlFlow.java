@@ -39,9 +39,9 @@ import tornado.graal.compiler.lir.LIRInstructionClass;
 import tornado.graal.compiler.lir.LabelRef;
 import tornado.graal.compiler.lir.StandardOp.BlockEndOp;
 
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.Value;
+import tornado.meta.AllocatableValue;
+import tornado.meta.Constant;
+import tornado.meta.Value;
 import uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssembler;
 import uk.ac.manchester.tornado.drivers.metal.graal.compiler.MetalCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalLIRStmt.AbstractInstruction;

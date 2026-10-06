@@ -28,7 +28,7 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.ASMClassVisitorProvider;
 import uk.ac.manchester.tornado.runtime.common.ParallelAnnotationProvider;

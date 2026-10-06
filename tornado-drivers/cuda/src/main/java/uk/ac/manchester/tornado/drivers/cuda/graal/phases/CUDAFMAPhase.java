@@ -30,7 +30,7 @@ import tornado.graal.compiler.nodes.calc.AddNode;
 import tornado.graal.compiler.nodes.calc.MulNode;
 import tornado.graal.compiler.phases.BasePhase;
 
-import jdk.vm.ci.meta.JavaKind;
+import tornado.meta.JavaKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAFMANode;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLowTierContext;
 

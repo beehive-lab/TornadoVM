@@ -26,7 +26,7 @@ import tornado.graal.compiler.nodeinfo.NodeInfo;
 import tornado.graal.compiler.nodes.FixedWithNextNode;
 import tornado.graal.compiler.nodes.ValueNode;
 
-import jdk.vm.ci.meta.ResolvedJavaType;
+import tornado.meta.ResolvedJavaType;
 
 @NodeInfo(nameTemplate = "TornadoPrivateMemoryNode")
 public class PanamaPrivateMemoryNode extends FixedWithNextNode {

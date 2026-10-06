@@ -30,7 +30,7 @@ import tornado.graal.compiler.nodes.FrameState;
 import tornado.graal.compiler.nodes.ValueNode;
 import tornado.graal.compiler.nodes.java.AbstractNewArrayNode;
 
-import jdk.vm.ci.meta.ResolvedJavaType;
+import tornado.meta.ResolvedJavaType;
 
 @NodeInfo
 public class NewArrayNonVirtualizableNode extends AbstractNewArrayNode {

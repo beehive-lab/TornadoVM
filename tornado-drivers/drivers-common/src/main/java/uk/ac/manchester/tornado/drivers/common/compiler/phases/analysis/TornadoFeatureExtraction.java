@@ -60,7 +60,7 @@ import tornado.graal.compiler.nodes.memory.WriteNode;
 import tornado.graal.compiler.nodes.memory.address.AddressNode;
 import tornado.graal.compiler.phases.Phase;
 
-import jdk.vm.ci.meta.JavaKind;
+import tornado.meta.JavaKind;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkCastNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkFloatingPointIntrinsicsNode;

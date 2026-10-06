@@ -28,9 +28,9 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimp
 import tornado.graal.compiler.lir.LIRInstruction;
 import tornado.graal.compiler.lir.gen.MoveFactory;
 
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.Value;
+import tornado.meta.AllocatableValue;
+import tornado.meta.Constant;
+import tornado.meta.Value;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 
 public class OCLMoveFactory extends MoveFactory {

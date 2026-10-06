@@ -27,10 +27,10 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guara
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.PlatformKind;
-import jdk.vm.ci.meta.ResolvedJavaType;
+import tornado.meta.JavaConstant;
+import tornado.meta.JavaKind;
+import tornado.meta.PlatformKind;
+import tornado.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.types.collections.VectorDouble16;
 import uk.ac.manchester.tornado.api.types.collections.VectorDouble2;

@@ -22,8 +22,8 @@ package uk.ac.manchester.tornado.drivers.providers;
 
 import tornado.graal.compiler.word.WordTypes;
 
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.MetaAccessProvider;
+import tornado.meta.JavaKind;
+import tornado.meta.MetaAccessProvider;
 
 public class TornadoWordTypes extends WordTypes {
 

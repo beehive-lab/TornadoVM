@@ -193,7 +193,7 @@ TornadoVM is used to accelerate machine learning and deep learning, computer vis
 
 ### Prerequisites
 
-- min **JDK 21** — `JAVA_HOME` must point to it
+- min **JDK 21** — `JAVA_HOME` must point to it (JDK 21 uses the `jdk21` SDK; JDK 22 and newer use `jdk22plus`)
 - GCC/G++ ≥ 13, plus the driver for your target (OpenCL runtime, CUDA Toolkit, or macOS for Metal)
 - For the NVIDIA library tasks (cuBLAS / cuFFT / cuDNN): the **CUDA Toolkit** with the corresponding libraries; for cuDF, RAPIDS libcudf (see `tornado-cudf/README.md`); on systems with multiple toolkits, `/usr/local/cuda` (or `$CUDA_PATH`) is preferred
 
@@ -203,7 +203,7 @@ TornadoVM is used to accelerate machine learning and deep learning, computer vis
 sdk install tornadovm
 ```
 
-Pick a backend-specific build if you prefer a smaller install. Candidate versions are per-JDK (swap `jdk21` below for `jdk22plus` to install a build for that JDK line):
+Pick a backend-specific build if you prefer a smaller install:
 
 | Backend | SDKMAN! version | Targets |
 |---|---|---|
@@ -240,19 +240,19 @@ More examples — NBody, DFT, KMeans, matrix kernels, reductions: [tornado-examp
 
 ## 📦 Use TornadoVM in your project
 
-Maven Central coordinates are per-JDK — pin the `-jdk21` / `-jdk22plus` version matching the JDK you build with:
+Maven Central coordinates are per JDK line — pin `-jdk22plus` for JDK 22 and newer, or `-jdk21` for JDK 21:
 
 ```xml
 <dependencies>
   <dependency>
     <groupId>io.github.beehive-lab</groupId>
     <artifactId>tornado-api</artifactId>
-    <version>7.1.0-jdk21</version>
+    <version>7.1.0-jdk22plus</version>
   </dependency>
   <dependency>
     <groupId>io.github.beehive-lab</groupId>
     <artifactId>tornado-runtime</artifactId>
-    <version>7.1.0-jdk21</version>
+    <version>7.1.0-jdk22plus</version>
   </dependency>
 </dependencies>
 ```
@@ -334,6 +334,7 @@ Link the **Tornado-API** (Apache 2.0) into your application.
 |---|---|
 | Tornado-API, Tornado-Assembly, Tornado-scripts, Tornado-Annotation, Tornado-Unittests, Tornado-Benchmarks, Tornado-Examples, Tornado-Matrices, Tornado-Drivers-OpenCL-Headers | [Apache 2.0](LICENSE_APACHE2) |
 | Tornado-Runtime, Tornado-Drivers | [GPLv2 with Classpath Exception](LICENSE_GPLv2CE) |
+| Tornado-Meta (derived from the OpenJDK JVMCI API) | [GPLv2](LICENSE_GPLv2) |
 
 ## Acknowledgments
 

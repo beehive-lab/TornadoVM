@@ -35,7 +35,7 @@ import tornado.graal.compiler.nodes.extended.NullCheckNode;
 import tornado.graal.compiler.nodes.util.GraphUtil;
 import tornado.graal.compiler.phases.BasePhase;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 

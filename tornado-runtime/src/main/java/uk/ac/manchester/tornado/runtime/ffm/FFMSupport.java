@@ -40,8 +40,8 @@ import java.nio.file.Path;
  * hand-written JNI libraries each backend used to ship.
  *
  * <p>
- * The source of this class has to compile twice: once under {@code -source 21 --enable-preview},
- * where FFM is a preview API, and once under {@code --release 22}, where it is final. Only the
+ * The source of this class compiles twice: once under {@code --release 21 --enable-preview}, where
+ * FFM is a preview API, and once under {@code --release 22}, where it is final. Only the
  * intersection of the two API surfaces may be used here, which rules out the methods that were
  * renamed in 22 ({@code allocateUtf8String} became {@code allocateFrom}, {@code getUtf8String}
  * became {@code getString}, {@code allocateArray} became an {@code allocate} overload). The

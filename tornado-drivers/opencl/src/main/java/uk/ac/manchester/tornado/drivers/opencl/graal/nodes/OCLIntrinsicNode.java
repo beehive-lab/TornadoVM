@@ -42,7 +42,7 @@ import tornado.graal.compiler.nodes.spi.ArithmeticLIRLowerable;
 import tornado.graal.compiler.nodes.spi.CanonicalizerTool;
 import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 
-import jdk.vm.ci.meta.Value;
+import tornado.meta.Value;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStampFactory;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLArithmeticTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBuiltinTool;

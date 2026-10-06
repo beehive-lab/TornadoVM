@@ -31,7 +31,7 @@ import tornado.graal.compiler.nodes.ValueNode;
 import tornado.graal.compiler.nodes.java.AccessIndexedNode;
 import tornado.graal.compiler.nodes.spi.CanonicalizerTool;
 
-import jdk.vm.ci.meta.JavaKind;
+import tornado.meta.JavaKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAStamp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAStampFactory;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;

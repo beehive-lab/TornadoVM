@@ -29,11 +29,11 @@ import tornado.graal.compiler.core.common.spi.LIRKindTool;
 import tornado.graal.compiler.core.common.type.ObjectStamp;
 import tornado.graal.compiler.core.common.type.Stamp;
 
-import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.MemoryAccessProvider;
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.ResolvedJavaType;
+import tornado.meta.Constant;
+import tornado.meta.JavaKind;
+import tornado.meta.MemoryAccessProvider;
+import tornado.meta.MetaAccessProvider;
+import tornado.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
 
 public class CUDAStamp extends ObjectStamp {

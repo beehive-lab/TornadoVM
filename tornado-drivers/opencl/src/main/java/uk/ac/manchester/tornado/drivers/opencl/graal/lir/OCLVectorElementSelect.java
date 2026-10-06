@@ -26,7 +26,7 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 import tornado.graal.compiler.core.common.LIRKind;
 import tornado.graal.compiler.lir.Opcode;
 
-import jdk.vm.ci.meta.Value;
+import tornado.meta.Value;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 

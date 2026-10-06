@@ -7,9 +7,8 @@ Why this exists
 ---------------
 `mvn versions:set -DnewVersion=X` rewrites <version>${revision}</version> (and
 every <parent><version>) to a hard-coded literal in all 22 reactor poms. Once
-that happens the jdk21 / jdk22plus profile <revision> overrides in the root pom
-are dead, and every build stamps the same JDK-less version regardless of the
-active profile.
+that happens the <revision> values in the root pom are dead, and every build
+stamps the same JDK-less version.
 
 That is exactly what shipped right after the 6.0.0 release: the release
 automation ran `versions:set`, the follow-up dev bump ran it again, and develop
@@ -25,9 +24,9 @@ Modes
 -----
   dev  X.Y.Z-dev
       Every pom's <version> / <parent><version> becomes the literal ${revision}.
-      Root pom <revision> (the default, = jdk21) and the jdk21 profile override
-      become  X.Y.Z-jdk21-dev ; the jdk22plus profile override becomes
-      X.Y.Z-jdk22plus-dev. This is the state `develop` must always be in.
+      Root pom <revision> (the default) and the jdk22plus profile override
+      become X.Y.Z-jdk22plus-dev; the jdk21 profile override becomes
+      X.Y.Z-jdk21-dev. This is the state `develop` must always be in.
 
   release  X.Y.Z
       Every pom carries the plain literal X.Y.Z (no -jdkNN suffix, no
@@ -110,20 +109,20 @@ def update_poms(new_body):
             print(f"  {pom.relative_to(REPO_ROOT)}: <version> -> {new_body}")
 
 
-def set_root_revisions(default_rev, jdk21_rev, jdk22plus_rev):
+def set_root_revisions(default_rev, jdk22plus_rev, jdk21_rev):
     root = REPO_ROOT / "pom.xml"
     text = root.read_text()
     revs = list(re.finditer(r"<revision>[^<]*</revision>", text))
     if len(revs) != 3:
         sys.exit(
             f"pom.xml: expected exactly 3 <revision> elements "
-            f"(default, jdk21 profile, jdk22plus profile), found {len(revs)}"
+            f"(default, jdk22plus profile, jdk21 profile), found {len(revs)}"
         )
-    wanted = [default_rev, jdk21_rev, jdk22plus_rev]
+    wanted = [default_rev, jdk22plus_rev, jdk21_rev]
     for m, value in zip(reversed(revs), reversed(wanted)):
         text = text[: m.start()] + f"<revision>{value}</revision>" + text[m.end():]
     root.write_text(text)
-    print(f"  pom.xml: <revision> = {default_rev} / {jdk21_rev} / {jdk22plus_rev}")
+    print(f"  pom.xml: <revision> = {default_rev} / {jdk22plus_rev} / {jdk21_rev}")
 
 
 def main():
@@ -139,11 +138,7 @@ def main():
             sys.exit(f"dev version must be X.Y.Z-dev, got: {version}")
         print(f"dev mode: {version}")
         update_poms("${revision}")
-        set_root_revisions(
-            default_rev=f"{base}-jdk21-dev",
-            jdk21_rev=f"{base}-jdk21-dev",
-            jdk22plus_rev=f"{base}-jdk22plus-dev",
-        )
+        set_root_revisions(f"{base}-jdk22plus-dev", f"{base}-jdk22plus-dev", f"{base}-jdk21-dev")
     else:
         if not re.fullmatch(r"\d+\.\d+\.\d+", version):
             sys.exit(f"release version must be X.Y.Z, got: {version}")

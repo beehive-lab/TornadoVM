@@ -23,13 +23,13 @@
  */
 package uk.ac.manchester.tornado.drivers.metal.graal.lir;
 
-import jdk.vm.ci.meta.Value;
+import tornado.meta.Value;
 
 import tornado.graal.compiler.core.common.LIRKind;
 import tornado.graal.compiler.lir.LIRInstruction.Use;
 import tornado.graal.compiler.lir.Opcode;
 
-import jdk.vm.ci.meta.Value;
+import tornado.meta.Value;
 import uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssembler;
 import uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssembler.MetalOp;
 import uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssembler.MetalOp3;

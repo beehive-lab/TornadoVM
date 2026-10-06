@@ -27,7 +27,7 @@ import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRunt
 
 import java.lang.reflect.Method;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAInstalledCode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAProviders;

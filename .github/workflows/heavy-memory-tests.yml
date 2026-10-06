@@ -14,7 +14,7 @@ jobs:
       fail-fast: false
       max-parallel: 1
     env:
-      JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
+      JAVA_HOME: /opt/jenkins/jdks/jdk-25.0.2
       MAVEN_HOME: /opt/maven
       CMAKE_ROOT: /opt/jenkins/cmake-3.25.2-linux-x86_64
       GRAAL_JARS: /opt/graalJarsNoJvmci
@@ -36,11 +36,11 @@ jobs:
           python3 -m venv $VENV_PATH
           source $VENV_PATH/bin/activate
           pip install --upgrade pip tqdm psutil   # Combined
-      - name: Build TornadoVM (jdk21)
+      - name: Build TornadoVM (jdk22plus)
         run: |
           mkdir -p graalJars && cp $GRAAL_JARS/* graalJars/
           java -version
-          make jdk21 BACKEND=cuda,opencl
+          make jdk22plus BACKEND=cuda,opencl
       - name: Run full unit tests
         working-directory: ${{ env.TORNADO_ROOT }}
         run: |

@@ -23,9 +23,9 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.graal.compiler.plugins;
 
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
+import tornado.meta.JavaKind;
+import tornado.meta.ResolvedJavaMethod;
+import tornado.meta.ResolvedJavaType;
 import tornado.graal.compiler.core.common.type.ObjectStamp;
 import tornado.graal.compiler.core.common.type.StampFactory;
 import tornado.graal.compiler.core.common.type.StampPair;

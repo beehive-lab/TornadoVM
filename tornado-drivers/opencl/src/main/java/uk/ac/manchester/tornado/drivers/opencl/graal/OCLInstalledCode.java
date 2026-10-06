@@ -28,8 +28,8 @@ import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEBUG;
 
 import java.nio.ByteBuffer;
 
-import jdk.vm.ci.code.InstalledCode;
-import jdk.vm.ci.code.InvalidInstalledCodeException;
+import tornado.meta.code.InstalledCode;
+import tornado.meta.code.InvalidInstalledCodeException;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;

@@ -54,14 +54,14 @@ import tornado.graal.compiler.nodes.memory.address.AddressNode;
 import tornado.graal.compiler.nodes.memory.address.OffsetAddressNode;
 import tornado.graal.compiler.nodes.util.GraphUtil;
 import tornado.graal.compiler.replacements.InlineDuringParsingPlugin;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.RawConstant;
-import jdk.vm.ci.meta.ResolvedJavaField;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
-import org.graalvm.word.LocationIdentity;
+import tornado.meta.JavaConstant;
+import tornado.meta.JavaKind;
+import tornado.meta.MetaAccessProvider;
+import tornado.meta.RawConstant;
+import tornado.meta.ResolvedJavaField;
+import tornado.meta.ResolvedJavaMethod;
+import tornado.meta.ResolvedJavaType;
+import tornado.graal.word.LocationIdentity;
 import uk.ac.manchester.tornado.api.DeviceKernel;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.enums.DeviceLaunchMode;
@@ -1087,8 +1087,8 @@ public class OCLGraphBuilderPlugins {
      * This bypasses the delegate chain {@code IntArray.get -> TornadoMemorySegment.getIntAtIndex ->
      * MemorySegment.getAtIndex}. On JDK 22+ the terminal Panama accessor {@code getAtIndex} became an
      * ABSTRACT interface method (it was a {@code default} method on JDK 21), so it has no bytecode. The
-     * TornadoVM sketcher analyses methods by parsing bytecode and recursing into callees; on the
-     * JVMCI-absent (reflection) path the {@code getIntAtIndex} intrinsic is only applied during the
+     * TornadoVM sketcher analyses methods by parsing bytecode and recursing into callees; with
+     * reflection-based metadata the {@code getIntAtIndex} intrinsic is only applied during the
      * real compile (not the sketch), so the sketcher would descend into the bodiless {@code getAtIndex}
      * and fail. Registering the intrinsic on the array accessor itself — which IS a direct call site —
      * emits the memory read/write up front, so the abstract Panama method is never reached. The emitted

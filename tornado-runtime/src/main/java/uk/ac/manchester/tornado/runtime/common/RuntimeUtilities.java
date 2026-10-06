@@ -45,9 +45,9 @@ import tornado.graal.compiler.nodes.loop.BasicInductionVariable;
 import tornado.graal.compiler.nodes.loop.LoopEx;
 import tornado.graal.compiler.nodes.loop.LoopsData;
 
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.Signature;
+import tornado.meta.JavaKind;
+import tornado.meta.ResolvedJavaMethod;
+import tornado.meta.Signature;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;

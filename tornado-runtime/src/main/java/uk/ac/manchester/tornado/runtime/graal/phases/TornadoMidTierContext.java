@@ -26,8 +26,8 @@ import tornado.graal.compiler.phases.tiers.MidTierContext;
 import tornado.graal.compiler.phases.tiers.TargetProvider;
 import tornado.graal.compiler.phases.util.Providers;
 
-import jdk.vm.ci.meta.ProfilingInfo;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.meta.ProfilingInfo;
+import tornado.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class TornadoMidTierContext extends MidTierContext {

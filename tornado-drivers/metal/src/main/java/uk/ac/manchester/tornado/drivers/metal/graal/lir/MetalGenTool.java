@@ -31,11 +31,11 @@ import tornado.graal.compiler.lir.Variable;
 import tornado.graal.compiler.nodes.NodeView;
 import tornado.graal.compiler.nodes.ParameterNode;
 
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.Local;
-import jdk.vm.ci.meta.PrimitiveConstant;
-import jdk.vm.ci.meta.Value;
+import tornado.meta.AllocatableValue;
+import tornado.meta.JavaKind;
+import tornado.meta.Local;
+import tornado.meta.PrimitiveConstant;
+import tornado.meta.Value;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.metal.MetalTargetDescription;
 import uk.ac.manchester.tornado.drivers.metal.graal.MetalArchitecture;

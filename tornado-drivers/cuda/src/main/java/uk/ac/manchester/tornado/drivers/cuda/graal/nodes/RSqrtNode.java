@@ -30,7 +30,7 @@ import tornado.graal.compiler.nodes.calc.FloatingNode;
 import tornado.graal.compiler.nodes.spi.ArithmeticLIRLowerable;
 import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 
-import jdk.vm.ci.meta.Value;
+import tornado.meta.Value;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAArithmeticTool;
 import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkFloatingPointIntrinsicsNode;
 

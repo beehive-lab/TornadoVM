@@ -33,7 +33,7 @@ import tornado.graal.compiler.nodes.memory.address.AddressNode;
 import tornado.graal.compiler.nodes.spi.LIRLowerable;
 import tornado.graal.compiler.nodes.spi.NodeLIRBuilderTool;
 
-import jdk.vm.ci.meta.Value;
+import tornado.meta.Value;
 import uk.ac.manchester.tornado.drivers.metal.graal.MetalArchitecture.MetalMemoryBase;
 import uk.ac.manchester.tornado.drivers.metal.graal.MetalStamp;
 import uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssemblerConstants;

@@ -76,13 +76,13 @@ import tornado.graal.compiler.nodes.memory.address.AddressNode;
 import tornado.graal.compiler.nodes.memory.address.OffsetAddressNode;
 import tornado.graal.compiler.nodes.util.GraphUtil;
 import tornado.graal.compiler.replacements.InlineDuringParsingPlugin;
-import org.graalvm.word.LocationIdentity;
+import tornado.graal.word.LocationIdentity;
 
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.RawConstant;
-import jdk.vm.ci.meta.ResolvedJavaField;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.meta.JavaConstant;
+import tornado.meta.JavaKind;
+import tornado.meta.RawConstant;
+import tornado.meta.ResolvedJavaField;
+import tornado.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.DeviceKernel;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.enums.DeviceLaunchMode;
@@ -359,8 +359,8 @@ public class MetalGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
                 receiver.get(true);
-                jdk.vm.ci.meta.MetaAccessProvider metaAccess = b.getMetaAccess();
-                jdk.vm.ci.meta.ResolvedJavaType resolvedElementType = metaAccess.lookupJavaType(byte.class);
+                tornado.meta.MetaAccessProvider metaAccess = b.getMetaAccess();
+                tornado.meta.ResolvedJavaType resolvedElementType = metaAccess.lookupJavaType(byte.class);
                 LocalArrayNode localArrayNode = new LocalArrayNode(MetalArchitecture.localSpace, resolvedElementType, size);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
@@ -979,7 +979,7 @@ public class MetalGraphBuilderPlugins {
 
     /**
      * Intrinsify the native-array {@code get(index)}/{@code set(index, value)} accessors directly on the array
-     * classes (IntArray, FloatArray, ...). On the JVMCI-free reflection path the sketcher cannot descend into
+     * classes (IntArray, FloatArray, ...). With reflection-based metadata the sketcher cannot descend into
      * {@code IntArray.get -> TornadoMemorySegment.getIntAtIndex -> MemorySegment.getAtIndex} (abstract/bodiless on
      * JDK 22+), so the accessor invoke survives and later crashes canonicalization (null receiver in
      * MethodCallTargetNode). Registering the accessor at the top level emits the same address/read/write the

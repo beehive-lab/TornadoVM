@@ -29,7 +29,7 @@ import java.util.Set;
 
 import tornado.graal.compiler.code.CompilationResult;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.drivers.metal.graal.backend.MetalBackend;
 import uk.ac.manchester.tornado.drivers.metal.graal.backend.MetalPreamble;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;

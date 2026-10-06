@@ -21,9 +21,9 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
-import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.RawConstant;
+import tornado.meta.Constant;
+import tornado.meta.JavaKind;
+import tornado.meta.RawConstant;
 import tornado.graal.compiler.core.common.type.StampFactory;
 import tornado.graal.compiler.graph.Node;
 import tornado.graal.compiler.nodes.ConstantNode;

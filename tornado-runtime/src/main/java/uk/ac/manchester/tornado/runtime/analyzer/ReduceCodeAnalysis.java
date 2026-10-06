@@ -340,7 +340,7 @@ public class ReduceCodeAnalysis {
         for (Node node : parameterNode.usages()) {
             if (node instanceof MethodCallTargetNode methodCallTargetNode) {
                 Node aux = methodCallTargetNode.usages().first();
-                // On the JVMCI-absent (reflection) high-level graph, TornadoVM native-array accessors are
+                // On the reflection-built high-level graph, TornadoVM native-array accessors are
                 // InvokeWithExceptionNode (with an exception edge), not InvokeNode; both implement Invoke.
                 if (!(aux instanceof Invoke panamaStoreNode)) {
                     continue;

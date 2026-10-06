@@ -21,7 +21,7 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.graal.nodes;
 
-import jdk.vm.ci.meta.Value;
+import tornado.meta.Value;
 import tornado.graal.compiler.core.common.LIRKind;
 import tornado.graal.compiler.core.common.type.Stamp;
 import tornado.graal.compiler.graph.NodeClass;
