@@ -462,6 +462,9 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     'uk.ac.manchester.tornado.unittests.api.TestDevices#test05',
     'uk.ac.manchester.tornado.unittests.api.TestDevices#test06',
 
+    ## Needs two GPUs of one backend; the CI machines have one.
+    "uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices#testKernelContextTasksOnTwoDevices",
+
     ## Intermittent CUDA-backend reduction race (observed on Blackwell / sm_120): the
     ## multi-kernel reduction pipeline occasionally reads the reduction result back as 0.0.
     ## Not toolkit-related (reproduces on CUDA 13 with native sm_120) and not a shared-memory

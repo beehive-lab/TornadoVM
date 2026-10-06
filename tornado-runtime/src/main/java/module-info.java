@@ -9,7 +9,6 @@ open module tornado.runtime {
     requires transitive tornado.meta;
     requires transitive tornado.graal;
     requires transitive tornado.api;
-    requires snmp4j;
     requires java.management;
 
     exports uk.ac.manchester.tornado.runtime;
