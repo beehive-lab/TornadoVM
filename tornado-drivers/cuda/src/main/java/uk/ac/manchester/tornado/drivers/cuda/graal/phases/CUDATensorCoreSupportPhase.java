@@ -41,6 +41,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadANode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadBInt8Node;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadBNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadBSwizzledNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadGlobalNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAStoreBSwizzledNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAStoreNode;
 
@@ -84,6 +85,7 @@ public class CUDATensorCoreSupportPhase extends Phase {
             // this same phase rather than a separate one.
             if (n instanceof CUDAMMALoadANode || n instanceof CUDAMMALoadBNode
                     || n instanceof CUDAMMALoadBSwizzledNode
+                    || n instanceof CUDAMMALoadGlobalNode
                     || n instanceof CUDAMMAStoreNode
                     || n instanceof CUDAMMAStoreBSwizzledNode
                     || n instanceof CUDAMMALoadAInt8Node

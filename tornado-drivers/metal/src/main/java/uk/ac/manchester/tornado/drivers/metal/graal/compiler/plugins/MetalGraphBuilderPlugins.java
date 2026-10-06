@@ -568,6 +568,28 @@ public class MetalGraphBuilderPlugins {
             }
         });
 
+        // --- mmaLoadA(HalfFloatArray, int row, int col, int ld) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadA",
+                InvocationPlugin.Receiver.class, HalfFloatArray.class, int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode array, ValueNode row, ValueNode col, ValueNode ld) {
+                unimplemented("MMA instructions only supported for the CUDA backend.");
+                return false;
+            }
+        });
+
+        // --- mmaLoadB(HalfFloatArray, int row, int col, int ld) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadB",
+                InvocationPlugin.Receiver.class, HalfFloatArray.class, int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode array, ValueNode row, ValueNode col, ValueNode ld) {
+                unimplemented("MMA instructions only supported for the CUDA backend.");
+                return false;
+            }
+        });
+
         // --- mmaLoadBSwizzled(HalfFloat[] bTile, int wmmaK) -> HalfFloat[] ---
         r.register(new InvocationPlugin("mmaLoadBSwizzled",
                 InvocationPlugin.Receiver.class, HalfFloat[].class, int.class) {

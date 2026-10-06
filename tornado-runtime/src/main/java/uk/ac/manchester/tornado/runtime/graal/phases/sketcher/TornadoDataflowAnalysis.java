@@ -260,6 +260,11 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 // output array parameter is marked written and gets allocated + copied device-to-host (otherwise the
                 // device buffer is never created and the kernel store faults with CUDA_ERROR_ILLEGAL_ADDRESS).
                 isWritten = true;
+            } else if (currentNode instanceof MethodCallTargetNode callTarget && isSurvivingMMAGlobalLoad(callTarget)) {
+                // Reflection-path only: ctx.mmaLoadA/mmaLoadB(HalfFloatArray, ...) misses its plugin, so the call
+                // survives through sketch-time dataflow. It reads its array argument (the shared-memory overloads take
+                // a local tile, never a parameter), so mark the parameter read for it to be copied host-to-device.
+                isRead = true;
             } else if (currentNode instanceof MethodCallTargetNode callTarget && isSurvivingAtomicAdd(callTarget)) {
                 // Reflection-path only: ctx.atomicAdd misses its plugin, so the call survives through sketch-time
                 // dataflow. It atomically read-modify-writes its array argument, so mark the parameter read AND
@@ -302,6 +307,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
     private static final String KERNEL_CONTEXT_CLASS = "uk.ac.manchester.tornado.api.KernelContext";
     private static final Set<String> MMA_STORE_METHODS = Set.of("mmaStore", "mmaStoreInt", "mmaStoreBSwizzled");
     private static final Set<String> ATOMIC_ADD_METHODS = Set.of("atomicAdd");
+    private static final Set<String> MMA_GLOBAL_LOAD_METHODS = Set.of("mmaLoadA", "mmaLoadB");
 
     /**
      * Pure matcher (unit-testable without a Graal graph): true when {@code declaringClassJavaName} is
@@ -328,6 +334,14 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
      */
     private static boolean isSurvivingMMAStore(MethodCallTargetNode callTarget) {
         return matchesKernelContextCall(callTarget, MMA_STORE_METHODS);
+    }
+
+    /**
+     * True when the call target is a surviving tensor-core fragment load ({@code ctx.mmaLoadA} / {@code mmaLoadB}). Only
+     * the global-memory overload can take a kernel parameter, which it reads.
+     */
+    private static boolean isSurvivingMMAGlobalLoad(MethodCallTargetNode callTarget) {
+        return matchesKernelContextCall(callTarget, MMA_GLOBAL_LOAD_METHODS);
     }
 
     /**
