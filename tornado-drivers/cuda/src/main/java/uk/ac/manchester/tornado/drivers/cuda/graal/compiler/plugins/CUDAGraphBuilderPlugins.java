@@ -98,6 +98,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadANode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadBInt8Node;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadBNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadBSwizzledNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadGlobalNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAStoreBSwizzledNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAStoreNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAShuffleDownNode;
@@ -588,6 +589,18 @@ public class CUDAGraphBuilderPlugins {
         });
     }
 
+    private static void registerMMALoadGlobal(Registration r, String name, boolean isB) {
+        r.register(new InvocationPlugin(name, InvocationPlugin.Receiver.class, HalfFloatArray.class, int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode row, ValueNode col, ValueNode ld) {
+                receiver.get(true);
+                // Panama native array data begins after PANAMA_OBJECT_HEADER_SIZE (16) bytes.
+                b.addPush(JavaKind.Object, new CUDAMMALoadGlobalNode(array, row, col, ld, isB, (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE));
+                return true;
+            }
+        });
+    }
+
     private static void registerMMAPlugins(Registration r) {
         // --- mmaFragment(float v) -> float[] ---
         r.register(new InvocationPlugin("mmaFragment",
@@ -826,6 +839,10 @@ public class CUDAGraphBuilderPlugins {
                 return true;
             }
         });
+
+        // --- mmaLoadA/mmaLoadB(HalfFloatArray, int row, int col, int ld) -> HalfFloat[] : global-memory fragments ---
+        registerMMALoadGlobal(r, "mmaLoadA", false);
+        registerMMALoadGlobal(r, "mmaLoadB", true);
 
         // --- mmaLoadAInt8(int[], int, int) -> byte[] : byte-offset form ---
         r.register(new InvocationPlugin("mmaLoadAInt8",

@@ -263,6 +263,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationMMAFP8"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationMMACpAsync"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationMMABF16"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMMAGlobalFragmentLoad"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestSimdgroupMatrix"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestSimdgroupTiledMatrix"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestSimdgroupMatrixPrimitives"),
