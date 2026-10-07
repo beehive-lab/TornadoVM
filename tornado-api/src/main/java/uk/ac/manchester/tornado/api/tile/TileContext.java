@@ -269,6 +269,10 @@ public class TileContext {
         return new TensorView(array, DType.F64, new int[] { extent0, extent1, extent2 });
     }
 
+    public TensorView view(ByteArray array, int extent0, int extent1, int extent2) {
+        return new TensorView(array, DType.S8, new int[] { extent0, extent1, extent2 });
+    }
+
     /**
      * A rank-2 view with a row pitch and a starting offset, rather than a contiguous one.
      *

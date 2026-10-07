@@ -161,6 +161,8 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTests"),
     TestEntry("uk.ac.manchester.tornado.unittests.prebuilt.TestPrebuiltTaskOrdering"),
     TestEntry("uk.ac.manchester.tornado.unittests.tile.TestTileElementwise"),
+    TestEntry(testName="uk.ac.manchester.tornado.unittests.tile.TestTileViewOverloads",
+              testParameters=["-ea:tornado.graal.compiler.nodes.graphbuilderconf...", "-ea:tornado.graal.compiler.debug..."]),
     TestEntry("uk.ac.manchester.tornado.unittests.tile.TestTileMatmul"),
     TestEntry("uk.ac.manchester.tornado.unittests.tile.TestTileChaining"),
     TestEntry("uk.ac.manchester.tornado.unittests.tile.TestTileRowKernels"),

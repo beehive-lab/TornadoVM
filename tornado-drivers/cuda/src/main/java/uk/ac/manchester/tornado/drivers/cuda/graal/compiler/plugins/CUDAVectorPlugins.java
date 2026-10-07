@@ -326,6 +326,15 @@ public final class CUDAVectorPlugins {
 
     }
 
+    private static boolean declaresMethod(Class<?> type, String name, Class<?>... parameters) {
+        try {
+            type.getMethod(name, parameters);
+            return true;
+        } catch (NoSuchMethodException e) {
+            return false;
+        }
+    }
+
     private static void registerVectorPlugins(final Plugins ps, final InvocationPlugins plugins, final CUDAKind vectorKind, final Class<?> storageType, final Class<?> elementType) {
 
         final Class<?> declaringClass = vectorKind.getJavaClass();
@@ -368,23 +377,32 @@ public final class CUDAVectorPlugins {
             }
         });
 
-        r.register(new InvocationPlugin("set", Receiver.class, int.class, elementType) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId, ValueNode value) {
-                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(true), laneId, value);
-                b.add(b.append(store));
-                return true;
-            }
-        });
+        if (declaresMethod(vectorKind.getJavaClass(), "set", int.class, elementType)) {
+            r.register(new InvocationPlugin("set", Receiver.class, int.class, elementType) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId, ValueNode value) {
+                    final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(true), laneId, value);
+                    b.add(b.append(store));
+                    return true;
+                }
+            });
+        }
 
-        r.register(new InvocationPlugin("set", Receiver.class, int.class, storageType) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId, ValueNode value) {
-                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(true), laneId, value);
-                b.add(b.append(store));
-                return true;
-            }
-        });
+        // set(int, storage) exists only where the lane type is stored as an object -- the half
+        // vectors, whose lanes are HalfFloat -- and set(int, element) only where it is not. A
+        // plugin for a method that does not exist stops the backend from starting when assertions
+        // are on (Graal checks that every registration resolves), so each is registered only on
+        // the classes that declare it.
+        if (declaresMethod(vectorKind.getJavaClass(), "set", int.class, storageType)) {
+            r.register(new InvocationPlugin("set", Receiver.class, int.class, storageType) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId, ValueNode value) {
+                    final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(true), laneId, value);
+                    b.add(b.append(store));
+                    return true;
+                }
+            });
+        }
 
         r.register(new InvocationPlugin("add", declaringClass, declaringClass) {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode input1, ValueNode input2) {
