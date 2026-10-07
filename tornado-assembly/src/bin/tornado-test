@@ -184,6 +184,8 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.cublas.TestCuBlasLt"),
     TestEntry("uk.ac.manchester.tornado.unittests.cuvs.TestCuVS"),
     TestEntry("uk.ac.manchester.tornado.unittests.cufft.TestCuFft"),
+    TestEntry("uk.ac.manchester.tornado.unittests.nccl.TestNccl"),
+    TestEntry("uk.ac.manchester.tornado.unittests.nccl.TestNcclMultiProcess"),
     TestEntry("uk.ac.manchester.tornado.unittests.cudnn.TestCuDnn"),
     TestEntry("uk.ac.manchester.tornado.unittests.nvtx.TestNvtx"),
     TestEntry("uk.ac.manchester.tornado.unittests.cusparse.TestCusparse"),
@@ -231,6 +233,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestOnDemandCopyIn"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestCopyInPipelines"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestCudaGraphPlanTeardown"),
+    TestEntry("uk.ac.manchester.tornado.unittests.runtime.TestFailedCudaGraphCapture"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestPinnedTransfers"),
     TestEntry("uk.ac.manchester.tornado.unittests.executor.TestExecutor"),
     TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGrid"),
@@ -333,11 +336,13 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices"),
     TestEntry("uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends"),
+    TestEntry("uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentCudaGraphCapture"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestDevices"),
     TestEntry("uk.ac.manchester.tornado.unittests.compiler.TestCompilerFlagsAPI"),
     TestEntry("uk.ac.manchester.tornado.unittests.compiler.TestSwitchLowering"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestMemorySegmentsAsType"),
     TestEntry("uk.ac.manchester.tornado.unittests.runtime.TestRuntimeAPI"),
+    TestEntry("uk.ac.manchester.tornado.unittests.runtime.TestNativeContextPerDevice"),
     TestEntry("uk.ac.manchester.tornado.unittests.pointers.TestCopyDevicePointers"),
     TestEntry("uk.ac.manchester.tornado.unittests.memory.MemoryConsumptionTest"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestByteArrayTypedAccess"),
@@ -459,6 +464,17 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 
     'uk.ac.manchester.tornado.unittests.pointers.TestCopyDevicePointers#testCopyDevicePointersMatrix',
 
+    ## NCCL tests that need two GPUs; the CI machines have one.
+    "uk.ac.manchester.tornado.unittests.nccl.TestNccl#testPipelineSendThenRecv",
+    "uk.ac.manchester.tornado.unittests.nccl.TestNccl#testPipelineWithCudaGraph",
+    "uk.ac.manchester.tornado.unittests.nccl.TestNccl#testRankFailureAbortsCommunicator",
+    "uk.ac.manchester.tornado.unittests.nccl.TestNccl#testRankFailureAbortsCommunicatorWithCudaGraph",
+    "uk.ac.manchester.tornado.unittests.nccl.TestNccl#testUnmatchedSendTimesOut",
+    "uk.ac.manchester.tornado.unittests.nccl.TestNccl#testUnmatchedSendTimesOutWithCudaGraph",
+    "uk.ac.manchester.tornado.unittests.nccl.TestNccl#testTwoRanksOnTwoGpus",
+    "uk.ac.manchester.tornado.unittests.nccl.TestNcclMultiProcess#testTwoProcesses",
+    "uk.ac.manchester.tornado.unittests.nccl.TestNccl#testMultiGraphPlanWithCudaGraphReleasesCommunicator",
+
     ## Test Devices: provided filters depend on the actual hardware installed.
     ## The fact that these tests fail, does not mean the API is wrong.
     'uk.ac.manchester.tornado.unittests.api.TestDevices#test04',
@@ -475,6 +491,9 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     ## failure disappears under the sanitizer's slowdown). Only a full inter-kernel stream
     ## synchronize resolves it. Tracked separately for the CUDA backend.
     "uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles#testMultipleReductions",
+
+    ## Need two GPUs; the CI machines have one.
+    "uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentCudaGraphCapture#testPlansCaptureOnSeveralThreadsAtOnce",
 
 ]
 
