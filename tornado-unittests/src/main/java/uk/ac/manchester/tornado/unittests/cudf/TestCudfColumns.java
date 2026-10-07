@@ -222,6 +222,55 @@ public class TestCudfColumns extends TornadoTestBase {
         }
     }
 
+    /** Several files in one read: their rows concatenated in order, validity included. */
+    @Test
+    public void testReadParquetColumnsSeveralFiles() throws TornadoExecutionPlanException {
+        int stride = 3 * ROWS;
+        LongArray longs = new LongArray(2 * stride);
+        ByteArray valid = new ByteArray(2 * stride);
+        String three = fixture + "\n" + fixture + "\n" + fixture;
+
+        TaskGraph graph = new TaskGraph("cudf") //
+                .libraryTask("read", Cudf::readParquetColumns, new StringBuilder(three), 0, 0, new int[] { ID, OPT }, new CudfType[] { CudfType.INT64, CudfType.INT64 },
+                        new long[] { 3 * ROWS }, stride, new IntArray(1), longs, new DoubleArray(1), valid, true) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, longs, valid);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+        for (int copy = 0; copy < 3; copy++) {
+            for (int i = 0; i < ROWS; i++) {
+                int row = copy * ROWS + i;
+                assertEquals("id, copy " + copy + " row " + i, id(i), longs.get(row));
+                assertEquals("opt validity, copy " + copy + " row " + i, optIsNull(i) ? 0 : 1, valid.get(stride + row));
+                if (!optIsNull(i)) {
+                    assertEquals("opt, copy " + copy + " row " + i, -7L * i, longs.get(stride + row));
+                }
+            }
+        }
+    }
+
+    /** An empty holder and no rows: a no-op that leaves the buffers alone, then a real read from the same plan. */
+    @Test
+    public void testReadParquetColumnsEmptyHolderReadsNothing() throws TornadoExecutionPlanException {
+        LongArray longs = new LongArray(ROWS);
+        StringBuilder path = new StringBuilder();
+        long[] rows = { 0 };
+        TaskGraph graph = new TaskGraph("cudf") //
+                .libraryTask("read", Cudf::readParquetColumns, path, 0, 0, new int[] { ID }, new CudfType[] { CudfType.INT64 }, rows, ROWS, new IntArray(1), longs,
+                        new DoubleArray(1), new ByteArray(1), false) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, longs);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+            path.append(fixture);
+            rows[0] = ROWS;
+            plan.execute();
+        }
+        for (int i = 0; i < ROWS; i++) {
+            assertEquals("row " + i, id(i), longs.get(i));
+        }
+    }
+
     /** A column with nulls, read without asking for validity, is refused rather than read as dense. */
     @Test
     public void testReadParquetColumnsRefusesNullsWithoutValidity() {

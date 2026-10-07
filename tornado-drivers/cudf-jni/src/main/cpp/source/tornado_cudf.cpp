@@ -932,6 +932,11 @@ int tornado_cudf_read_parquet_columns(void* stream, const char* path, int32_t ro
         int32_t nullable) {
     ensure_pool();
     try {
+        // Nothing to read is a read of nothing: a plan whose graph always holds a read can then
+        // skip it for the executions that have no file for it, which a graph cannot otherwise do.
+        if (rows == 0 && (path == nullptr || path[0] == '\0')) {
+            return 0;
+        }
         if (path == nullptr || columns == nullptr || kinds == nullptr || column_count <= 0) {
             g_last_error = "readParquetColumns: null path or empty column list";
             return 5;
@@ -941,8 +946,35 @@ int tornado_cudf_read_parquet_columns(void* stream, const char* path, int32_t ro
             return 5;
         }
 
-        auto source = cudf::io::source_info{std::string(path)};
-        auto metadata = cudf::io::read_parquet_metadata(source);
+        // Several files, one a line, are read as one table: their rows concatenated in order.
+        // One call over many small files is what keeps the device busy -- a read of one 1M-row
+        // file is latency, not bandwidth -- and their schemas have to agree, which the column
+        // names resolved from the first file then check.
+        std::vector<std::string> paths;
+        {
+            std::string all(path);
+            size_t begin = 0;
+            while (begin <= all.size()) {
+                size_t end = all.find('\n', begin);
+                if (end == std::string::npos) {
+                    end = all.size();
+                }
+                if (end > begin) {
+                    paths.push_back(all.substr(begin, end - begin));
+                }
+                begin = end + 1;
+            }
+        }
+        if (paths.empty()) {
+            g_last_error = "readParquetColumns: no path";
+            return 5;
+        }
+        if (paths.size() > 1 && row_group_count > 0) {
+            g_last_error = "readParquetColumns: a row-group range applies to one file, not to " + std::to_string(paths.size());
+            return 5;
+        }
+        auto metadata = cudf::io::read_parquet_metadata(cudf::io::source_info{paths.front()});
+        auto source = cudf::io::source_info{paths};
         const auto& root = metadata.schema().root();
         const int32_t schema_columns = static_cast<int32_t>(root.num_children());
 

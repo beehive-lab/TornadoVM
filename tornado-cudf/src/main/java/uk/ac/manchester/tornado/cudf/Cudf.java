@@ -397,6 +397,13 @@ public final class Cudf {
      * 0 for a null -- at {@code c * stride} for the c-th requested column, and the payload under a
      * null is unspecified. Without it a null is refused, as {@link #readParquet} refuses one.
      *
+     * <p>The holder may name several files, one a line; they are read in one call as one table,
+     * their rows concatenated in order, and must share a schema. One call over several small files
+     * keeps the device far busier than one call each: a read of a single 1M-row file is mostly
+     * latency. A row-group range applies only to a single file. An empty holder with a row count of
+     * 0 reads nothing and succeeds, so a plan can keep a read in its graph for the executions that
+     * have no file for it.
+     *
      * <p>An array for a type the read does not use still has to be an array; a one-element one
      * does. Columns are refused, not cast, when the file's type is not the one requested.
      *
