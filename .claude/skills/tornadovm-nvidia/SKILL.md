@@ -53,7 +53,7 @@ TaskGraph graph = new TaskGraph("g")
 | cuSPARSE | `tornado-cusparse` | `nvidia/cusparse` | CSR SpMV / SpMM (FP32) |
 | cuTENSOR | `tornado-cutensor` | (see module) | FP32 tensor contractions (einsum) |
 | CUTLASS | `tornado-cutlass` | `nvidia/cutlass` | FP32/FP16 GEMM + fused epilogues (NVRTC track) |
-| NCCL | `tornado-nccl` | standalone `TornadoNccl` API | multi-GPU collectives |
+| NCCL | `tornado-nccl` | `nvidia/nccl` | multi-GPU collectives, send/recv, groups, multi-process (see the `tornadovm-nccl` skill) |
 
 **Key patterns:**
 - **CUDA graphs:** library tasks are graph-capturable. Providers that allocate device workspace (cuFFT/cuDNN/cuSPARSE plans, cuBLAS handles) do it in the SPI `prepare(descriptor, context)` pre-compile hook (idempotent) *before* capture — never allocate mid-capture. Wrap with `withCUDAGraph`.

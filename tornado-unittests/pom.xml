@@ -26,6 +26,12 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>tornado-runtime</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>tornado-cublas</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
@@ -39,6 +45,11 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>tornado-cufft</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>tornado-nccl</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>

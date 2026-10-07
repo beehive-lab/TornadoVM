@@ -17,7 +17,7 @@ call (and vice-versa) with **no extra copies and no manual memory management**.
 
 1. [Quick start](#1-quick-start)
 2. [Core concepts](#2-core-concepts)
-3. [Provider catalog](#3-provider-catalog) — cuBLAS · cuBLASLt · cuFFT · cuDNN · CUTLASS · cuSPARSE · cuVS
+3. [Provider catalog](#3-provider-catalog) — cuBLAS · cuBLASLt · cuFFT · cuDNN · CUTLASS · cuSPARSE · cuVS · NCCL
 4. [Composition patterns](#4-composition-patterns)
 5. [CUDA Graphs](#5-cuda-graphs)
 6. [Execution-plan controls](#6-execution-plan-controls)
@@ -118,6 +118,7 @@ Each provider registers a unique id, matched by the factory:
 | `nvidia/cusparse` | `tornado-cusparse` |
 | `nvidia/cutlass` | `tornado-cutlass` |
 | `nvidia/cuvs` | `tornado-cuvs` |
+| `nvidia/nccl` | `tornado-nccl` |
 
 ---
 
@@ -312,6 +313,117 @@ new TaskGraph("knn")
     .transferToHost(DataTransferMode.EVERY_EXECUTION, ids, distances);
 ```
 
+### 3.8 NCCL — multi-GPU collectives and point-to-point (`nvidia/nccl`)
+
+Collectives and point-to-point transfers across GPUs, in one process or several, with [NCCL](https://github.com/NVIDIA/nccl). An
+`NcclCommunicator` has one rank per CUDA device; each rank runs its own execution plan on its own
+device, and the collective is a library task in every rank's task graph. NCCL reads and writes the
+TornadoVM buffers directly, on the plan's stream, so the data stays on the GPUs between the kernels
+around it. The design and the full API are described in
+[`tornado-nccl/ARCHITECTURE.md`](tornado-nccl/ARCHITECTURE.md).
+
+| Factory | Operation |
+|---|---|
+| `allReduce(comm, send, recv, op)` | `recv = op(send of every rank)` on every rank |
+| `allReduceInPlace(comm, buffer, op)` | the same, in place |
+| `broadcast(comm, buffer, root)` | `buffer` of rank `root` to every rank, in place |
+| `reduce(comm, send, recv, op, root)` | `recv = op(send of every rank)` on rank `root` only |
+| `allGather(comm, send, recv)` | `send` of every rank, concatenated in rank order (`recv` is `size()` times larger) |
+| `reduceScatter(comm, send, recv, op)` | reduce, then rank `r` keeps block `r` (`send` is `size()` times larger) |
+| `send(comm, buffer, peer)` | send `buffer` to rank `peer`, which adds a matching `recv` |
+| `recv(comm, buffer, peer)` | receive `buffer` from rank `peer`, which adds a matching `send` |
+| `sendRecv(comm, send, toPeer, recv, fromPeer)` | send and receive in one step, as one NCCL group |
+
+`op` is an `NcclRedOp` (`SUM`, `PROD`, `MAX`, `MIN`, `AVG`). Element types: `FloatArray`,
+`DoubleArray`, `HalfFloatArray`, `BFloat16Array`, `IntArray`, `LongArray`, `Int8Array`, `ByteArray`.
+
+A collective completes only when every rank has enqueued it, so the plans of the ranks must execute
+**together**. `NcclPlanGroup` runs each plan on a thread of its own (always the same one) and waits for
+all of them:
+
+```java
+TornadoDevice[] gpus = { TornadoExecutionPlan.getDevice(0, 0), TornadoExecutionPlan.getDevice(0, 1) };
+try (NcclCommunicator comm = NcclCommunicator.create(gpus)) {
+    TornadoExecutionPlan[] plans = new TornadoExecutionPlan[gpus.length];
+    for (int r = 0; r < gpus.length; r++) {
+        TaskGraph graph = new TaskGraph("rank" + r)
+            .task("grad", MyKernels::gradient, new KernelContext(), weights[r], grads[r])   // Java kernel
+            .libraryTask("sum", Nccl::allReduceInPlace, comm, grads[r], NcclRedOp.AVG)     // NCCL, same buffer and stream
+            .task("step", MyKernels::update, new KernelContext(), weights[r], grads[r])     // Java kernel
+            .transferToHost(DataTransferMode.UNDER_DEMAND, weights[r]);
+        WorkerGrid worker = new WorkerGrid1D(n);
+        worker.setLocalWork(256, 1, 1);
+        GridScheduler grid = new GridScheduler("rank" + r + ".grad", worker);
+        grid.addWorkerGrid("rank" + r + ".step", worker);
+        plans[r] = new TornadoExecutionPlan(graph.snapshot());
+        plans[r].withDevice(gpus[r]).withGridScheduler(grid);
+    }
+    try (NcclPlanGroup ranks = new NcclPlanGroup(plans)) {
+        for (int step = 0; step < steps; step++) {
+            ranks.execute();
+        }
+    }
+}
+```
+
+**Groups:** `Nccl.group(NcclGroup)` issues several operations of one communicator together, as one
+NCCL group, in a single task: exchanges with several peers (an all-to-all, a halo exchange in more
+than one direction, which would deadlock as separate tasks) and several collectives fused into one
+launch.
+
+```java
+NcclGroup halo = NcclGroup.on(comm)
+        .send(toLeft, left).recv(fromLeft, left)
+        .send(toRight, right).recv(fromRight, right);
+graph.libraryTask("halo", Nccl::group, halo);
+```
+
+A group holds any of the operations above; a buffer may appear only once in it. Kernels go before or
+after the group task, never inside it, so they stay ordered with the NCCL operations.
+
+`send` and `recv` suit a one-way pipeline (stage `r` sends to stage `r + 1`). When a rank both sends
+and receives in the same step (a ring shift, a halo exchange), use `sendRecv`: issued as separate
+tasks, two ranks that each send to the other first would both wait in their send forever.
+
+Executing the plans one after the other on one thread hangs at the first collective.
+
+**When a rank fails:** the other ranks would wait for it inside NCCL forever. `NcclPlanGroup` aborts
+the communicators its ranks have used (`NcclCommunicator.abort()`), which makes the waiting ranks
+return, and `execute()` throws the failure of the rank that failed first. An aborted communicator
+cannot be used again: create a new communicator and new plans; NCCL keeps working in the process.
+A step can also hang with no rank failing (a `send` that no rank receives, collectives posted in a
+different order on each rank). `ranks.withStepTimeout(Duration.ofSeconds(30))` bounds every step:
+when it runs out, the group aborts the communicators in the same way and `execute()` throws, naming
+the ranks that were still running. `ranks.execute((rank, plan) -> ...)` runs a step in which each rank
+runs part of its plan, such as one of several programs that share the device's buffers.
+
+**Several processes:** a communicator can span processes (and machines). One process creates an
+`NcclUniqueId` and the application hands it to the others (socket, MPI, shared file, environment
+variable; `toBase64()`/`fromBase64()` help). Each process then creates its own ranks with
+`NcclCommunicator.create(id, worldSize, firstRank, localGpus...)`, which blocks until all ranks have
+joined, and runs an `NcclPlanGroup` over the plans of its local ranks. `size()` is the world size, so
+peers and shapes are checked against the whole job. The process that created the id must keep
+running until every rank has joined: NCCL's bootstrap listener lives in it.
+
+```java
+// rank 0
+NcclUniqueId id = NcclUniqueId.create();
+publish(id.toBase64());                                         // however the job reaches its processes
+NcclCommunicator comm = NcclCommunicator.create(id, worldSize, 0, gpu);
+// every other process
+NcclCommunicator comm = NcclCommunicator.create(NcclUniqueId.fromBase64(received), worldSize, myRank, gpu);
+```
+
+**CUDA graphs:** NCCL tasks are captured like any other library task. Call `withCUDAGraph()` on every
+rank's plan: the first `NcclPlanGroup.execute()` captures each rank's graph (kernels, transfers and
+NCCL calls) and runs it, and later steps replay it. NCCL sets up its connections inside the capture
+on its own, so no warm-up is needed. Close the plans before the communicator: a captured graph
+refers to it.
+
+`BenchmarkNcclAllReduce` and `BenchmarkNcclSendRecv` compare a step with an NCCL all-reduce or ring
+exchange against handing the buffers on through the host (`-Dtornado.nccl.benchmark.cudaGraph=true`
+runs every plan as a CUDA graph).
+
 > **cuTENSOR** (`nvidia/cutensor`, tensor contractions / einsum) is implemented
 > on branch `hybrid-cutensor` but is **not part of this build**.
 
@@ -481,6 +593,7 @@ CUDA backend is present:
 | CUTLASS | header-only, **CUDA 12+** | fetched by CMake `FetchContent` (v3.5.1); no install |
 | cuSPARSE | in the CUDA toolkit | nothing |
 | cuVS | `libcuvs_c` (cuVS 26.08) | `pip install libcuvs-cu12` (or conda `libcuvs`), then add its `lib64` to `LD_LIBRARY_PATH` |
+| NCCL | `libnccl.so.2` (NCCL 2.x) | `apt install libnccl2` or `pip install nvidia-nccl-cu13` (then add its `nvidia/nccl/lib` to `LD_LIBRARY_PATH`) |
 
 The CUTLASS kernel arch defaults to
 `sm_80` SASS + `compute_80` PTX (runs on all Ampere/Ada, JITs for Hopper);
