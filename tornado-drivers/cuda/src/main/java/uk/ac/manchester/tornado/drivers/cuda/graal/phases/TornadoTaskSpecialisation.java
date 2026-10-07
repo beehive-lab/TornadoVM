@@ -63,6 +63,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.analysis.TornadoValueTypeReplacement;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.loops.TornadoLoopUnroller;
+import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDATileLoopPolicies;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAKernelContextAccessNode;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
@@ -86,7 +87,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         this.canonicalizer = canonicalizer;
         this.valueTypeReplacement = new TornadoValueTypeReplacement();
         this.deadCodeElimination = new DeadCodeEliminationPhase();
-        this.loopUnroll = new TornadoLoopUnroller(canonicalizer);
+        this.loopUnroll = new TornadoLoopUnroller(canonicalizer, CUDATileLoopPolicies::isTileOperation);
     }
 
     private static boolean hasPanamaArraySizeNode(StructuredGraph graph) {
@@ -226,7 +227,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                     if (batchThreads <= 0) {
                         constant = lookupPrimField(graph, node, value, field.getName(), field.getJavaKind());
                     } else {
-                        constant = ConstantNode.forInt((int) batchThreads);
+                        constant = field.getJavaKind() == JavaKind.Long ? ConstantNode.forLong(batchThreads) : ConstantNode.forInt((int) batchThreads);
                     }
                 } else {
                     constant = lookupPrimField(graph, node, value, field.getName(), field.getJavaKind());

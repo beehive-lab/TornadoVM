@@ -253,6 +253,73 @@ public class TestTileMatmul extends TornadoTestBase {
         }
     }
 
+    private static final int LONG_K_TILE_M = 128;
+
+    private static final int LONG_K_TILE_N = 128;
+
+    private static final int LONG_K_TILE_K = 32;
+
+    /**
+     * Same GEMM with 128x128x32 tiles, used with a long k-loop. Once the task is specialised the
+     * loop has a constant trip count; it must stay a loop for the tile compiler to pipeline.
+     */
+    public static void matmulLongK(TileContext tc, HalfFloatArray a, HalfFloatArray b, FloatArray c, int m, int n, int k) {
+        PartitionView av = tc.partition(tc.view(a, m, k), LONG_K_TILE_M, LONG_K_TILE_K);
+        PartitionView bv = tc.partition(tc.view(b, k, n), LONG_K_TILE_K, LONG_K_TILE_N);
+        PartitionView cv = tc.partition(tc.view(c, m, n), LONG_K_TILE_M, LONG_K_TILE_N);
+
+        Tile acc = tc.zeros(DType.F32, LONG_K_TILE_M, LONG_K_TILE_N);
+        for (int step = 0; step < k / LONG_K_TILE_K; step++) {
+            acc = tc.mma(av.load(tc.bidX(), step), bv.load(step, tc.bidY()), acc);
+        }
+        cv.store(acc, tc.bidX(), tc.bidY());
+    }
+
+    /**
+     * A 64-step k-loop (k = 2048, 128x128x32 tiles). When Graal fully unrolled tile k-loops, this
+     * kernel became 64 straight-line load/load/mma steps and the CUDA Tile compiler did not finish
+     * within its 120 s timeout. Loops with tile operations are now kept rolled.
+     */
+    @Test
+    public void testGemmLongKLoop() throws TornadoExecutionPlanException {
+        final int m = 128;
+        final int n = 128;
+        final int k = 2048;
+        HalfFloatArray a = new HalfFloatArray(m * k);
+        HalfFloatArray b = new HalfFloatArray(k * n);
+        FloatArray c = new FloatArray(m * n);
+        java.util.Random random = new java.util.Random(23);
+        for (int i = 0; i < m * k; i++) {
+            a.set(i, new HalfFloat(random.nextFloat() - 0.5f));
+        }
+        for (int i = 0; i < k * n; i++) {
+            b.set(i, new HalfFloat(random.nextFloat() - 0.5f));
+        }
+
+        TaskGraph graph = new TaskGraph("tileLongK") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .task("gemm", TestTileMatmul::matmulLongK, new TileContext(), a, b, c, m, n, k) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        WorkerGrid2D worker = new WorkerGrid2D(m / LONG_K_TILE_M, n / LONG_K_TILE_N);
+        worker.setLocalWork(1, 1, 1);
+        GridScheduler grid = new GridScheduler("tileLongK.gemm", worker);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            executeOrReportUnsupported(plan, grid);
+        }
+
+        for (int row = 0; row < m; row++) {
+            for (int column = 0; column < n; column++) {
+                float expected = 0.0f;
+                for (int inner = 0; inner < k; inner++) {
+                    expected += a.get(row * k + inner).getFloat32() * b.get(inner * n + column).getFloat32();
+                }
+                assertEquals(expected, c.get(row * n + column), 0.05f);
+            }
+        }
+    }
+
     @Test
     public void testGemmRectangular() throws TornadoExecutionPlanException {
         runGemm(128, 64, 96);

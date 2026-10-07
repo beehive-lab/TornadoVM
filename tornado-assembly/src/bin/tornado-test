@@ -136,6 +136,7 @@ __TEST_THE_WORLD__ = [
     ## TornadoVM standard test-suite
     TestEntry("uk.ac.manchester.tornado.unittests.TestHello"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestArrays"),
+    TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestLongIndexArrays"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestBasicOperations"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestFP8"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestBFloat16"),
@@ -263,6 +264,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationMMAFP8"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationMMACpAsync"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationMMABF16"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMMAGlobalFragmentLoad"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestSimdgroupMatrix"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestSimdgroupTiledMatrix"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestSimdgroupMatrixPrimitives"),
@@ -462,6 +464,9 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     'uk.ac.manchester.tornado.unittests.api.TestDevices#test05',
     'uk.ac.manchester.tornado.unittests.api.TestDevices#test06',
 
+    ## Needs two GPUs of one backend; the CI machines have one.
+    "uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices#testKernelContextTasksOnTwoDevices",
+
     ## Intermittent CUDA-backend reduction race (observed on Blackwell / sm_120): the
     ## multi-kernel reduction pipeline occasionally reads the reduction result back as 0.0.
     ## Not toolkit-related (reproduces on CUDA 13 with native sm_120) and not a shared-memory
@@ -513,7 +518,7 @@ else:
 
 ENABLE_ASSERTIONS = "-ea "
 
-__VERSION__ = "7.1.0"
+__VERSION__ = "7.2.0"
 
 try:
     javaHome = os.environ["JAVA_HOME"]

@@ -25,7 +25,7 @@ import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 /**
  * This class represents an array of bytes stored in native memory. The byte data is stored in a {@link MemorySegment}, which represents a contiguous region of off-heap memory. The class also
@@ -35,7 +35,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 public final class ByteArray extends TornadoNativeArray {
     private static final int BYTE_BYTES = 1;
     private TornadoMemorySegment segment;
-    private int numberOfElements;
+    private long numberOfElements;
     private int arrayHeaderSize;
 
     private int baseIndex;
@@ -49,7 +49,18 @@ public final class ByteArray extends TornadoNativeArray {
      *         The number of elements in the array.
      */
     public ByteArray(int numberOfElements) {
-        this.numberOfElements = numberOfElements;
+        this((long) numberOfElements);
+    }
+
+    /**
+     * Constructs a new instance of the {@link ByteArray} that will store a user-specified number of elements. The number of elements can exceed
+     * {@link Integer#MAX_VALUE}; access such arrays with the {@code long}-index accessors.
+     *
+     * @param numberOfElements
+     *         The number of elements in the array.
+     */
+    public ByteArray(long numberOfElements) {
+        this.numberOfElements = checkNumElements(numberOfElements);
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / BYTE_BYTES;
         segmentByteSize = (long) numberOfElements * BYTE_BYTES + arrayHeaderSize;
@@ -68,13 +79,12 @@ public final class ByteArray extends TornadoNativeArray {
 
         // Calculate number of elements from segment size
         long dataSize = existingSegment.byteSize() - arrayHeaderSize;
-        ensureMultipleOfElementSize(dataSize, BYTE_BYTES);
-        this.numberOfElements = (int) (dataSize / BYTE_BYTES);
+        this.numberOfElements = toNumElements(dataSize, BYTE_BYTES);
 
         // Set up the segment and initialize header
         this.segmentByteSize = existingSegment.byteSize();
         this.segment = new TornadoMemorySegment(existingSegment);
-        this.segment.getSegment().setAtIndex(JAVA_INT, 0, numberOfElements);
+        this.segment.getSegment().setAtIndex(JAVA_LONG, 0, numberOfElements);
     }
 
     /**
@@ -133,8 +143,7 @@ public final class ByteArray extends TornadoNativeArray {
      */
     public static ByteArray fromSegment(MemorySegment segment) {
         long byteSize = segment.byteSize();
-        int numElements = (int) (byteSize / BYTE_BYTES);
-        ensureMultipleOfElementSize(byteSize, BYTE_BYTES);
+        long numElements = toNumElements(byteSize, BYTE_BYTES);
         ByteArray byteArray = new ByteArray(numElements);
         MemorySegment.copy(segment, 0, byteArray.segment.getSegment(), (long) byteArray.baseIndex * BYTE_BYTES, byteSize);
         return byteArray;
@@ -187,7 +196,7 @@ public final class ByteArray extends TornadoNativeArray {
      * @return A new {@link ByteArray} instance containing all the elements of the input arrays, concatenated in the order they were provided.
      */
     public static ByteArray concat(ByteArray... arrays) {
-        int newSize = Arrays.stream(arrays).mapToInt(ByteArray::getSize).sum();
+        long newSize = checkNumElements(Arrays.stream(arrays).mapToLong(ByteArray::getSizeLong).sum());
         ByteArray concatArray = new ByteArray(newSize);
         long currentPositionBytes = 0;
         for (ByteArray array : arrays) {
@@ -223,6 +232,18 @@ public final class ByteArray extends TornadoNativeArray {
     }
 
     /**
+     * Sets the byte value at a specified index of the {@link ByteArray} instance.
+     *
+     * @param index
+     *         The index at which to set the byte value.
+     * @param value
+     *         The byte value to store at the specified index.
+     */
+    public void set(long index, byte value) {
+        segment.setAtIndex(index, value, baseIndex);
+    }
+
+    /**
      * Sets the half-float value at the specified byte index within the {@link ByteArray} instance.
      *
      * The specified {@code byteIndex} must be aligned to a 2-byte boundary; if it is not, an {@link IllegalArgumentException} will be thrown. The method internally calculates the appropriate short
@@ -246,6 +267,17 @@ public final class ByteArray extends TornadoNativeArray {
     }
 
     /**
+     * Sets the half-float value at a {@code long} byte index. See {@link #setHalfFloat(int, HalfFloat)}.
+     */
+    public void setHalfFloat(long byteIndex, HalfFloat value) {
+        if (byteIndex % 2 != 0) {
+            throw new IllegalArgumentException("Half-float must be aligned to 2-byte boundary");
+        }
+        long shortIndex = (arrayHeaderSize + byteIndex) / 2;
+        segment.setAtIndex(shortIndex, value.getHalfFloatValue(), 0);
+    }
+
+    /**
      * Gets the byte value stored at the specified index of the {@link ByteArray} instance.
      *
      * @param index
@@ -253,6 +285,17 @@ public final class ByteArray extends TornadoNativeArray {
      * @return en element byte of the off-heap array
      */
     public byte get(int index) {
+        return segment.getByteAtIndex(index, baseIndex);
+    }
+
+    /**
+     * Gets the byte value stored at the specified index of the {@link ByteArray} instance.
+     *
+     * @param index
+     *         The index of which to retrieve the byte value.
+     * @return en element byte of the off-heap array
+     */
+    public byte get(long index) {
         return segment.getByteAtIndex(index, baseIndex);
     }
 
@@ -280,6 +323,20 @@ public final class ByteArray extends TornadoNativeArray {
     }
 
     /**
+     * Gets the half-float value at a {@code long} byte index. See {@link #getHalfFloat(int)}.
+     */
+    public HalfFloat getHalfFloat(long byteIndex) {
+        if (byteIndex % 2 != 0) {
+            throw new IllegalArgumentException("Half-float must be aligned to 2-byte boundary");
+        }
+        // Convert byte index to short index for the segment
+        // arrayHeaderSize (8 bytes) + byteIndex, then divide by 2 for short indexing
+        long shortIndex = (arrayHeaderSize + byteIndex) / 2;
+        short halfFloatValue = segment.getShortAtIndex(shortIndex, 0); //Todo: might have issues
+        return new HalfFloat(halfFloatValue);
+    }
+
+    /**
      * Sets all the values of the {@link ByteArray} instance to zero.
      */
     @Override
@@ -299,7 +356,7 @@ public final class ByteArray extends TornadoNativeArray {
      *         The byte value to initialize the {@link ByteArray} instance with.
      */
     public void init(byte value) {
-        for (int i = 0; i < getSize(); i++) {
+        for (long i = 0; i < numberOfElements; i++) {
             segment.setAtIndex(i, value, baseIndex);
         }
     }
@@ -310,6 +367,11 @@ public final class ByteArray extends TornadoNativeArray {
      */
     @Override
     public int getSize() {
+        return toIntSize(numberOfElements);
+    }
+
+    @Override
+    public long getSizeLong() {
         return numberOfElements;
     }
 
@@ -365,7 +427,14 @@ public final class ByteArray extends TornadoNativeArray {
      *         if the specified slice is out of the bounds of the original array.
      */
     public ByteArray slice(int offset, int length) {
-        if (offset < 0 || length < 0 || offset + length > getSize()) {
+        return slice((long) offset, (long) length);
+    }
+
+    /**
+     * Extracts a slice of elements using {@code long} bounds. See {@link #slice(int, int)}.
+     */
+    public ByteArray slice(long offset, long length) {
+        if (offset < 0 || length < 0 || offset > numberOfElements - length) {
             throw new IllegalArgumentException("Slice out of bounds");
         }
 
