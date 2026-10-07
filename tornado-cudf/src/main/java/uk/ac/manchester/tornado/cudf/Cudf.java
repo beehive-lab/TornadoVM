@@ -25,7 +25,9 @@ import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.cudf.enums.CudfAggregation;
+import uk.ac.manchester.tornado.cudf.enums.CudfType;
 import uk.ac.manchester.tornado.cudf.provider.CudfNativeLib;
 
 /**
@@ -374,6 +376,83 @@ public final class Cudf {
                 .withFunction("containsRe") //
                 .withParameters(new Object[] { rows, offsets, chars, charsBytes, pattern, outMask }) //
                 .withAccess(access);
+    }
+
+    /**
+     * Reads columns of mixed physical types from a Parquet file, with their validity if asked.
+     *
+     * <p>{@link #readParquet} takes one INT32 key and FP64 values, all non-null, which is the shape
+     * of a group-by rather than of a table. A lakehouse table keys rows on 64-bit ids, stores dates
+     * and timestamps as integers and declares most columns optional, and a reader that refuses all
+     * three cannot read it. This one reads any mix of {@link CudfType}s: the k-th requested column
+     * of a type lands at element {@code k * stride} of that type's array.
+     *
+     * <p>{@code stride} is the capacity the arrays were sized for, not this read's row count, so
+     * one set of arrays serves every file a plan reads. The row count travels in
+     * {@code rowsHolder[0]}, read when the task runs, for the reason the path travels in a
+     * {@link StringBuilder}: a value captured when the graph is built cannot change between
+     * executions. A read of more rows than {@code stride} is refused.
+     *
+     * <p>With {@code nullable}, {@code outValid} receives one byte a row a column -- 1 for a value,
+     * 0 for a null -- at {@code c * stride} for the c-th requested column, and the payload under a
+     * null is unspecified. Without it a null is refused, as {@link #readParquet} refuses one.
+     *
+     * <p>An array for a type the read does not use still has to be an array; a one-element one
+     * does. Columns are refused, not cast, when the file's type is not the one requested.
+     *
+     * @param columns schema indices of the columns to read, in the order the outputs are packed
+     * @param types the type each column is read as
+     * @param rowsHolder {@code rowsHolder[0]} is the number of rows the range holds
+     */
+    public static LibraryTaskDescriptor readParquetColumns(StringBuilder pathHolder, int rowGroupStart, int rowGroupCount, int[] columns, CudfType[] types, long[] rowsHolder,
+            int stride, IntArray outInt32, LongArray outInt64, DoubleArray outFloat64, ByteArray outValid, boolean nullable) {
+        if (columns.length != types.length) {
+            throw new IllegalArgumentException("readParquetColumns: " + columns.length + " columns but " + types.length + " types");
+        }
+        int[] kinds = Arrays.stream(types).mapToInt(CudfType::code).toArray();
+        Access[] access = new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY,
+                Access.WRITE_ONLY, Access.WRITE_ONLY, Access.WRITE_ONLY, Access.WRITE_ONLY, Access.READ_ONLY };
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("readParquetColumns") //
+                .withParameters(new Object[] { pathHolder, rowGroupStart, rowGroupCount, columns, kinds, rowsHolder, (long) stride, outInt32, outInt64, outFloat64, outValid,
+                        nullable }) //
+                .withAccess(access);
+    }
+
+    /**
+     * For each key, whether it occurs in a set: one byte a key, 1 when it does.
+     *
+     * <p>The half of a semi- or anti-join that yields a mask rather than index pairs. A lakehouse
+     * equality delete is exactly this -- a row is gone when its key is in the delete set -- and a
+     * mask is what the rest of a filter combines with, where {@link #innerJoin}'s pairs would first
+     * have to be scattered back into one. cuDF hashes the set and probes it with the keys.
+     *
+     * <p>{@code sizes[0]} is the number of keys and {@code sizes[1]} the number of set entries, both
+     * read when the task runs, so one plan probes a different set every execution. An empty set
+     * answers 0 for every key.
+     */
+    public static LibraryTaskDescriptor containedIn(int[] sizes, IntArray keys, IntArray set, ByteArray outMask) {
+        return containedIn(sizes, keys, set, outMask, CudfType.INT32);
+    }
+
+    /** {@link #containedIn(int[], IntArray, IntArray, ByteArray)} over 64-bit keys. */
+    public static LibraryTaskDescriptor containedIn(int[] sizes, LongArray keys, LongArray set, ByteArray outMask) {
+        return containedIn(sizes, keys, set, outMask, CudfType.INT64);
+    }
+
+    private static LibraryTaskDescriptor containedIn(int[] sizes, Object keys, Object set, ByteArray outMask, CudfType type) {
+        Access[] access = new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY, Access.READ_ONLY };
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("containedIn") //
+                .withParameters(new Object[] { sizes, keys, set, outMask, type.code() }) //
+                .withAccess(access);
+    }
+
+    /** Whether the shim on this machine exports {@link #readParquetColumns} and {@link #containedIn}. */
+    public static boolean isColumnsAvailable() {
+        return CudfNativeLib.isColumnsAvailable();
     }
 
     public static long[] parquetMetadata(String path) {

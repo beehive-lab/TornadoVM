@@ -74,6 +74,10 @@ public final class CudfNativeLib {
 
     private static final MethodHandle PARQUET_ROWGROUP_ROWS;
 
+    private static final MethodHandle READ_PARQUET_COLUMNS;
+
+    private static final MethodHandle CONTAINS;
+
     private static final MethodHandle LAST_ERROR;
 
     static {
@@ -90,6 +94,8 @@ public final class CudfNativeLib {
         MethodHandle containsRe = null;
         MethodHandle parquetMetadata = null;
         MethodHandle parquetRowGroupRows = null;
+        MethodHandle readParquetColumns = null;
+        MethodHandle contains = null;
         MethodHandle lastError = null;
         if (LIBTORNADO_CUDF != null) {
             // int (*)(void* stream, const int* keys, int n, int* outOrder)
@@ -126,6 +132,13 @@ public final class CudfNativeLib {
             parquetMetadata = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_POINTER, C_POINTER), "tornado_cudf_parquet_metadata");
             // int (*)(const char* path, int32_t capacity, int64_t* outRows)
             parquetRowGroupRows = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_POINTER, C_INT, C_POINTER), "tornado_cudf_parquet_rowgroup_rows");
+            // int (*)(void* stream, const char* path, int rgStart, int rgCount, int columnCount,
+            //         const int* columns, const int* kinds, int64_t rows, int64_t stride,
+            //         void* outInt32, void* outInt64, void* outFp64, void* outValid, int nullable)
+            readParquetColumns = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_LONG, C_POINTER, C_INT, C_INT, C_INT, C_POINTER, C_POINTER, C_LONG,
+                    C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_INT), "tornado_cudf_read_parquet_columns");
+            // int (*)(void* stream, int kind, const void* set, int m, const void* keys, int n, void* outMask)
+            contains = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_LONG, C_INT, C_LONG, C_INT, C_LONG), "tornado_cudf_contains");
             lastError = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_POINTER), "tornado_cudf_last_error");
         }
         SORTED_ORDER = sortedOrder;
@@ -141,6 +154,8 @@ public final class CudfNativeLib {
         CONTAINS_RE = containsRe;
         PARQUET_METADATA = parquetMetadata;
         PARQUET_ROWGROUP_ROWS = parquetRowGroupRows;
+        READ_PARQUET_COLUMNS = readParquetColumns;
+        CONTAINS = contains;
         LAST_ERROR = lastError;
     }
 
@@ -223,6 +238,41 @@ public final class CudfNativeLib {
             return (int) READ_PARQUET.invokeExact(stream, cPath, rowGroupStart, rowGroupCount, intColumn, count, columns, rows, outKeys, outValues, valueWidth);
         } catch (Throwable t) {
             throw asRuntime(t, "readParquet");
+        }
+    }
+
+    /** Whether the shim exports the typed, nullable Parquet reader and set membership. */
+    public static boolean isColumnsAvailable() {
+        return READ_PARQUET_COLUMNS != null && CONTAINS != null;
+    }
+
+    /** Typed columns of a Parquet file into three device buffers, with validity if asked. */
+    public static int readParquetColumns(long stream, String path, int rowGroupStart, int rowGroupCount, int[] columns, int[] kinds, long rows, long stride, long outInt32,
+            long outInt64, long outFp64, long outValid, boolean nullable) {
+        if (columns == null || kinds == null || columns.length != kinds.length) {
+            throw new TornadoRuntimeException("[ERROR] readParquetColumns: columns and kinds must be the same length");
+        }
+        try (java.lang.foreign.Arena arena = java.lang.foreign.Arena.ofConfined()) {
+            java.lang.foreign.MemorySegment cPath = FFMSupport.allocateCString(arena, path);
+            java.lang.foreign.MemorySegment cColumns = FFMSupport.allocateArray(arena, C_INT, Math.max(columns.length, 1));
+            java.lang.foreign.MemorySegment cKinds = FFMSupport.allocateArray(arena, C_INT, Math.max(kinds.length, 1));
+            for (int i = 0; i < columns.length; i++) {
+                cColumns.setAtIndex(C_INT, i, columns[i]);
+                cKinds.setAtIndex(C_INT, i, kinds[i]);
+            }
+            return (int) READ_PARQUET_COLUMNS.invokeExact(stream, cPath, rowGroupStart, rowGroupCount, columns.length, cColumns, cKinds, rows, stride, outInt32, outInt64,
+                    outFp64, outValid, nullable ? 1 : 0);
+        } catch (Throwable t) {
+            throw asRuntime(t, "readParquetColumns");
+        }
+    }
+
+    /** One byte a key: whether it occurs in the set. */
+    public static int contains(long stream, int kind, long set, int m, long keys, int n, long outMask) {
+        try {
+            return (int) CONTAINS.invokeExact(stream, kind, set, m, keys, n, outMask);
+        } catch (Throwable t) {
+            throw asRuntime(t, "containedIn");
         }
     }
 
