@@ -31,19 +31,28 @@ import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task4;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
- * Regression tests distilled from tornado-fuzz generative findings on the CUDA
- * backend. Each test is the auto-shrunk minimal integer expression that diverged
+ * Regression tests distilled from tornado-fuzz generative findings, which ran
+ * against the CUDA backend. Each test is the auto-shrunk minimal integer expression that diverged
  * from Java semantics (or crashed the compiler), with a tiny hand-picked input
  * that triggers it. Every kernel is a plain {@link KernelContext} elementwise
  * expression; the expected values are the exact Java result.
  *
  * <p>These assert the correct (Java) semantics, so they FAIL / ERROR while the
- * underlying CUDA code-generator bug is open. When a bug is fixed, its test turns
- * green and becomes a permanent guard against regression. Findings referenced by
- * their fuzz seed under phase-2 generation.
+ * underlying code-generator bug is open. When a bug is fixed, its test turns green
+ * and becomes a permanent guard against regression. Findings referenced by their
+ * fuzz seed under phase-2 generation.
+ *
+ * <p>The four integer-overflow findings were labelled as CUDA bugs because that is
+ * the backend the fuzzer ran against, but every one of them reproduced identically
+ * on OpenCL: Java's wrapping arithmetic was emitted as plain signed C arithmetic,
+ * whose overflow is undefined. They are fixed in all backends and now run as
+ * ordinary regression tests. The remaining {@code @Ignore} is a compiler crash in a
+ * shared Graal phase, which is a separate defect.
  *
  * <p>Run: {@code tornado-test -V uk.ac.manchester.tornado.unittests.fuzz.TestCudaCodegenRegressions}
  * (add {@code --jvm="-Dtornado.cuda.priority=100"} on a multi-backend build).
@@ -87,35 +96,35 @@ public class TestCudaCodegenRegressions extends TornadoTestBase {
     // ---- tests ----
 
     @Test
-    @Ignore("Open CUDA backend bug (tornado-fuzz seed 529/232): `a << 31` yields 0 instead of a<<31; shift count 31 mishandled.")
     public void testShiftBy31() throws Exception {
         int[] in = { 0, 1, 2, 3, -1, -2, Integer.MAX_VALUE, Integer.MIN_VALUE };
         run(TestCudaCodegenRegressions::shiftBy31, in, in, (a, b, i) -> a << 31);
     }
 
     @Test
-    @Ignore("Open CUDA backend bug (tornado-fuzz seed 629): `Integer.MIN_VALUE * b` yields 0 instead of the wrapped product.")
     public void testIntMinMul() throws Exception {
         int[] in = { 0, 1, 2, 3, -1, -2, 7, Integer.MAX_VALUE };
         run(TestCudaCodegenRegressions::intMinMul, in, in, (a, b, i) -> Integer.MIN_VALUE * b);
     }
 
     @Test
-    @Ignore("Open CUDA backend bug (tornado-fuzz seed 221): `-(a & Integer.MIN_VALUE)` yields 0 instead of INT_MIN when the sign bit is set.")
     public void testSignBitNegate() throws Exception {
         int[] in = { 0, 1, -1, -2, Integer.MAX_VALUE, Integer.MIN_VALUE, 12345, -12345 };
         run(TestCudaCodegenRegressions::signBitNegate, in, in, (a, b, i) -> -(a & Integer.MIN_VALUE));
     }
 
     @Test
-    @Ignore("Open CUDA backend bug (tornado-fuzz seed 167): `(a*a) >> 20` emitted as a logical shift, dropping the sign (returns +2048 where Java gives -2048).")
     public void testSignedShiftProduct() throws Exception {
         int[] in = { 0, 100000, 46341, -46341, 65536, 3, -3, 1 << 20 };
         run(TestCudaCodegenRegressions::signedShiftProduct, in, in, (a, b, i) -> (a * a) >> 20);
     }
 
     @Test
-    @Ignore("Open CUDA backend crash (tornado-fuzz seed 189): `(INT_MIN / (b|1)) / (i|1)` throws GraalError 'unhandled node in reassociation with constants' during code generation.")
+    @Ignore("Not a backend bug and not CUDA-specific: Graal's ReassociationPhase throws "
+            + "'unhandled node in reassociation with constants: div_node' on this division chain, on CUDA and "
+            + "OpenCL alike (tornado-fuzz seed 189). The phase comes from the vendored Graal jar, so it cannot be "
+            + "fixed from this repository; -Dgraal.ReassociateExpressions=false compiles the kernel and produces "
+            + "the correct result, which pins the phase as the cause.")
     public void testIntMinDivChain() throws Exception {
         int[] in = { 1, 2, 3, 4, 5, 6, 7, 8 };
         run(TestCudaCodegenRegressions::intMinDivChain, in, in, (a, b, i) -> (Integer.MIN_VALUE / (b | 1)) / (i | 1));
@@ -163,5 +172,85 @@ public class TestCudaCodegenRegressions extends TornadoTestBase {
             arr.set(i, data[i]);
         }
         return arr;
+    }
+
+    public static void wrapIntBoundaries(IntArray a, IntArray b, IntArray out) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            int x = a.get(i);
+            int y = b.get(i);
+            out.set(i * 5, x + y);
+            out.set(i * 5 + 1, x - y);
+            out.set(i * 5 + 2, x * y);
+            out.set(i * 5 + 3, -x);
+            out.set(i * 5 + 4, x << y);
+        }
+    }
+
+    @Test
+    public void testIntWrapAndShiftBoundaries() throws Exception {
+        int[] edges = { Integer.MIN_VALUE, Integer.MAX_VALUE, -1, 0, 1, 31, 32, 33, -33, 46341, 65536 };
+        int n = edges.length * edges.length;
+        IntArray a = new IntArray(n);
+        IntArray b = new IntArray(n);
+        IntArray out = new IntArray(n * 5);
+        for (int i = 0; i < n; i++) {
+            a.set(i, edges[i / edges.length]);
+            b.set(i, edges[i % edges.length]);
+        }
+        TaskGraph graph = new TaskGraph("wrapInt")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
+                .task("t", TestCudaCodegenRegressions::wrapIntBoundaries, a, b, out)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+        for (int i = 0; i < n; i++) {
+            int x = a.get(i);
+            int y = b.get(i);
+            int[] expected = { x + y, x - y, x * y, -x, x << y };
+            for (int op = 0; op < expected.length; op++) {
+                assertEquals("input " + i + " operation " + op, expected[op], out.get(i * 5 + op));
+            }
+        }
+    }
+
+    public static void wrapLongBoundaries(LongArray a, LongArray b, LongArray out) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            long x = a.get(i);
+            long y = b.get(i);
+            out.set(i * 5, x + y);
+            out.set(i * 5 + 1, x - y);
+            out.set(i * 5 + 2, x * y);
+            out.set(i * 5 + 3, -x);
+            out.set(i * 5 + 4, x << y);
+        }
+    }
+
+    @Test
+    public void testLongWrapAndShiftBoundaries() throws Exception {
+        long[] edges = { Long.MIN_VALUE, Long.MAX_VALUE, -1, 0, 1, 63, 64, 65, -65, 3037000500L, 1L << 32 };
+        int n = edges.length * edges.length;
+        LongArray a = new LongArray(n);
+        LongArray b = new LongArray(n);
+        LongArray out = new LongArray(n * 5);
+        for (int i = 0; i < n; i++) {
+            a.set(i, edges[i / edges.length]);
+            b.set(i, edges[i % edges.length]);
+        }
+        TaskGraph graph = new TaskGraph("wrapLong")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
+                .task("t", TestCudaCodegenRegressions::wrapLongBoundaries, a, b, out)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+        for (int i = 0; i < n; i++) {
+            long x = a.get(i);
+            long y = b.get(i);
+            long[] expected = { x + y, x - y, x * y, -x, x << y };
+            for (int op = 0; op < expected.length; op++) {
+                assertEquals("input " + i + " operation " + op, expected[op], out.get(i * 5 + op));
+            }
+        }
     }
 }

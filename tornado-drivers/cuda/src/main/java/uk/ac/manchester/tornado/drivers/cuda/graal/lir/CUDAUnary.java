@@ -69,7 +69,29 @@ public class CUDAUnary {
 
         @Override
         public void emit(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            if (negatesSignedInteger()) {
+                // Java's unary minus wraps, so negating INT_MIN gives INT_MIN back. In C that is
+                // undefined, and the device compiler acts on it: Graal canonicalises `a << 31` to
+                // `-(a << 31)` - the same value under wrap-around - and the emitted `-i` folded the
+                // whole expression to zero. Negating through the unsigned kind is defined, and the
+                // narrowing back is the two's-complement reinterpretation every target implements.
+                CUDAKind kind = getCUDAPlatformKind();
+                String unsigned = (kind == CUDAKind.INT ? CUDAKind.UINT : CUDAKind.ULONG).toString();
+                asm.emit("(" + kind + ") (-(" + unsigned + ") ");
+                asm.emitValueOrOp(crb, value);
+                asm.emit(")");
+                return;
+            }
             opcode.emit(crb, value);
+        }
+
+        /** True for {@code -x} on a signed {@code int} or {@code long}. */
+        private boolean negatesSignedInteger() {
+            if (opcode != CUDAAssembler.CUDAUnaryOp.NEGATE) {
+                return false;
+            }
+            CUDAKind kind = getCUDAPlatformKind();
+            return kind == CUDAKind.INT || kind == CUDAKind.LONG;
         }
 
         @Override
