@@ -271,6 +271,37 @@ public class TestCudfColumns extends TornadoTestBase {
         }
     }
 
+    /**
+     * A path holder that grows between executions of one plan. The holder is read on the host, and
+     * a library task's text arguments are passed by reference rather than serialised to the
+     * device, so growing it -- which reallocates its array -- has to be harmless.
+     */
+    @Test
+    public void testPathHolderGrowsBetweenExecutions() throws TornadoExecutionPlanException {
+        int copies = 20;
+        int stride = copies * ROWS;
+        LongArray longs = new LongArray(stride);
+        StringBuilder path = new StringBuilder(fixture.toString());
+        long[] rows = { ROWS };
+        TaskGraph graph = new TaskGraph("cudf") //
+                .libraryTask("read", Cudf::readParquetColumns, path, 0, 0, new int[] { ID }, new CudfType[] { CudfType.INT64 }, rows, stride, new IntArray(1), longs,
+                        new DoubleArray(1), new ByteArray(1), false) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, longs);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+            for (int c = 1; c < copies; c++) {
+                path.append('\n').append(fixture);
+            }
+            rows[0] = (long) copies * ROWS;
+            plan.execute();
+        }
+        for (int c = 0; c < copies; c++) {
+            for (int i = 0; i < ROWS; i++) {
+                assertEquals("copy " + c + " row " + i, id(i), longs.get(c * ROWS + i));
+            }
+        }
+    }
+
     /** A column with nulls, read without asking for validity, is refused rather than read as dense. */
     @Test
     public void testReadParquetColumnsRefusesNullsWithoutValidity() {
