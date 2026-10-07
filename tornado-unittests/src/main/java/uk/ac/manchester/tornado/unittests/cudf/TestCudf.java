@@ -31,6 +31,7 @@ import java.util.Random;
 import org.junit.Before;
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -43,6 +44,7 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.cudf.Cudf;
 import uk.ac.manchester.tornado.cudf.enums.CudfAggregation;
 import uk.ac.manchester.tornado.cudf.provider.CudfLibraryProvider;
+import uk.ac.manchester.tornado.unittests.common.LibraryStreamPerThread;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
 
@@ -981,5 +983,41 @@ public class TestCudf extends TornadoTestBase {
             chain.append(current.getMessage()).append(' ');
         }
         return chain.toString();
+    }
+
+    /**
+     * The same plan run from a second thread: TornadoVM gives each thread its own stream, and the
+     * cuDF call must follow the kernel that produces its input on that thread's stream, not on the
+     * stream of the thread that first ran the plan.
+     */
+    @Test
+    public void testRunningSumFollowsKernelOnAnotherThread() throws Exception {
+        final int n = 4096;
+        DoubleArray values = new DoubleArray(n);
+        DoubleArray out = new DoubleArray(n);
+        DoubleArray value = new DoubleArray(1);
+        value.set(0, 1.0);
+
+        TaskGraph graph = new TaskGraph("streamPerThread") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, values) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, value) //
+                .task("fill", LibraryStreamPerThread::slowFillDouble, new KernelContext(), values, value, LibraryStreamPerThread.SPINS) //
+                .libraryTask("scan", Cudf::runningSum, n, values, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.withGridScheduler(LibraryStreamPerThread.gridScheduler("streamPerThread.fill")).execute();
+            for (int i = 0; i < n; i++) {
+                assertEquals("element " + i, i + 1.0, out.get(i), 1e-6 * (i + 1));
+            }
+            // The same plan from another thread, with a new value: a call that does not wait for
+            // the kernel on this thread's stream reads the first one.
+            value.set(0, 2.0);
+            out.init(0.0);
+            LibraryStreamPerThread.executeOnAnotherThread(plan);
+            for (int i = 0; i < n; i++) {
+                assertEquals("element " + i, 2.0 * (i + 1), out.get(i), 1e-6 * (i + 1));
+            }
+        }
     }
 }

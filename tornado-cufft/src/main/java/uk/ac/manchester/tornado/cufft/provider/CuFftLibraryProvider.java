@@ -71,7 +71,8 @@ public final class CuFftLibraryProvider implements TornadoLibraryProvider {
             "cufftInverse2dC2C", new FftCall(PlanKind.C2C_2D, CUFFT_INVERSE));
 
     private static final class CuFftContext implements LibraryContext {
-        private final long stream;
+        /** The stream every cached plan is bound to. */
+        private long stream;
         private final Map<String, Long> planCache = new HashMap<>();
 
         private CuFftContext(long stream) {
@@ -127,6 +128,16 @@ public final class CuFftLibraryProvider implements TornadoLibraryProvider {
             throw new TornadoRuntimeException("[ERROR] cuFFT function not supported: " + functionName);
         }
         CuFftContext context = (CuFftContext) invocation.getContext();
+        // The stream belongs to the thread that runs the plan, which need not be the one that
+        // created this context: follow it, or the call runs on another thread's stream, unordered
+        // with the kernels that produce its inputs.
+        long stream = ((TornadoNativeStreamSupport) invocation.getDevice()).getNativeStream(invocation.getExecutionPlanId());
+        if (stream != context.stream) {
+            for (Long cached : context.planCache.values()) {
+                CuFftNativeLib.checkResult(CuFftNativeLib.cufftSetStream(cached, stream), "cufftSetStream");
+            }
+            context.stream = stream;
+        }
         long plan = getOrCreatePlan(context, call.kind(), (int) invocation.getArg(2), (int) invocation.getArg(3));
         long dIn = invocation.getDevicePointer(0);
         long dOut = invocation.getDevicePointer(1);
