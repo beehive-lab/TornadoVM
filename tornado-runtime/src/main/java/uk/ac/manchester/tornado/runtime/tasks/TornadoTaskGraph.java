@@ -886,8 +886,15 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         int i = 0;
 
         for (final Object arg : args) {
-            index = executionContext.insertVariable(arg, accesses[i]);
-            if (arg.getClass().isPrimitive() || RuntimeUtilities.isBoxedPrimitiveClass(arg.getClass())) {
+            // A library task's text argument -- a path or a pattern, often a mutable holder such as
+            // a StringBuilder so one plan can name a different file every execution -- is read by
+            // the provider on the host and never by the device. It is passed like a constant, by
+            // reference to the Java object, instead of being serialised into a device buffer:
+            // that serialisation is sized when first done, so a holder that later grows overflows
+            // it, and it cannot represent the holder's byte[] at all.
+            final boolean hostOnly = task instanceof LibraryTask && arg instanceof CharSequence;
+            index = hostOnly ? executionContext.insertConstant(arg) : executionContext.insertVariable(arg, accesses[i]);
+            if (hostOnly || arg.getClass().isPrimitive() || RuntimeUtilities.isBoxedPrimitiveClass(arg.getClass())) {
                 hlBuffer.put(TornadoGraphBitcodes.LOAD_PRIM.index());
             } else {
                 hlBuffer.put(TornadoGraphBitcodes.LOAD_REF.index());

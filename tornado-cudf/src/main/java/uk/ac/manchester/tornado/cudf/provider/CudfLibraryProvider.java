@@ -93,6 +93,16 @@ public final class CudfLibraryProvider implements TornadoLibraryProvider {
             }
             case "containsRe" -> CudfNativeLib.containsRe(stream, (Long) invocation.getArg(0), invocation.getDevicePointer(1), invocation.getDevicePointer(2),
                     (Long) invocation.getArg(3), pathOf(invocation.getArg(4)), invocation.getDevicePointer(5));
+            case "readParquetColumns" -> CudfNativeLib.readParquetColumns(stream, pathOf(invocation.getArg(0)), (Integer) invocation.getArg(1), (Integer) invocation.getArg(2),
+                    (int[]) invocation.getArg(3), (int[]) invocation.getArg(4), ((long[]) invocation.getArg(5))[0], (Long) invocation.getArg(6), invocation.getDevicePointer(7),
+                    invocation.getDevicePointer(8), invocation.getDevicePointer(9), invocation.getDevicePointer(10), (Boolean) invocation.getArg(11));
+            case "containedIn" -> {
+                // The sizes travel in a host holder for the reason the path does: they are read
+                // when the task runs, so one plan can probe a different set for every file.
+                int[] sizes = (int[]) invocation.getArg(0);
+                yield CudfNativeLib.contains(stream, (Integer) invocation.getArg(4), invocation.getDevicePointer(2), sizes[1], invocation.getDevicePointer(1), sizes[0],
+                        invocation.getDevicePointer(3));
+            }
             case "sortedOrder" -> CudfNativeLib.sortedOrder(stream, invocation.getDevicePointer(1), (Integer) invocation.getArg(0), invocation.getDevicePointer(2));
             case "groupSum" -> CudfNativeLib.groupSum(stream, invocation.getDevicePointer(1), invocation.getDevicePointer(2), (Integer) invocation.getArg(0), invocation.getDevicePointer(3),
                     invocation.getDevicePointer(4), invocation.getDevicePointer(5));
