@@ -2103,6 +2103,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         // for example, when executing reductions in which the input size is not
         // power of two.
         meta.setNumThreads(taskPackage.getNumThreadsToRun());
+        meta.setReductionPaddedThreads(taskPackage.getReductionPaddedThreads());
 
         try {
             if (taskPackage.isMethodTask()) {

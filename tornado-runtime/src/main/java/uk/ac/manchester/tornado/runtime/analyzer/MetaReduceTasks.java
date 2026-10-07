@@ -37,13 +37,19 @@ public class MetaReduceTasks {
 
     private HashMap<Integer, ArrayList<Integer>> reduceList;
     private HashMap<Integer, Integer> reduceSize;
+    private HashMap<Integer, Integer> loopStart;
+    private HashMap<Integer, Boolean> paddable;
     private StructuredGraph graph;
 
-    MetaReduceTasks(int taskIndex, StructuredGraph graph, ArrayList<Integer> reduceIndexes, int inputSize) {
+    MetaReduceTasks(int taskIndex, StructuredGraph graph, ArrayList<Integer> reduceIndexes, int inputSize, int loopStart, boolean paddable) {
         reduceList = new HashMap<>();
         reduceSize = new HashMap<>();
+        this.loopStart = new HashMap<>();
+        this.paddable = new HashMap<>();
         reduceList.put(taskIndex, reduceIndexes);
         reduceSize.put(taskIndex, inputSize);
+        this.loopStart.put(taskIndex, loopStart);
+        this.paddable.put(taskIndex, paddable);
         this.graph = graph;
     }
 
@@ -51,8 +57,27 @@ public class MetaReduceTasks {
         return reduceList.get(taskID);
     }
 
+    /**
+     * Upper bound of the reduction loop (the loop runs up to, not including, this index).
+     */
     public int getInputSize(int taskIndex) {
         return reduceSize.get(taskIndex);
+    }
+
+    /**
+     * First index of the reduction loop; 0 unless it is a known positive constant.
+     */
+    public int getLoopStart(int taskIndex) {
+        return loopStart.get(taskIndex);
+    }
+
+    /**
+     * Whether the reduction can be launched on a padded, power-of-two grid: the compiler then places
+     * the work-group reduction after the loop, and threads past the loop bound contribute the
+     * neutral element.
+     */
+    public boolean isPaddable(int taskIndex) {
+        return paddable.get(taskIndex);
     }
 
     public StructuredGraph getGraph() {

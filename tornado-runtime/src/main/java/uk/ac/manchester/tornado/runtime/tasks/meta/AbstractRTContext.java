@@ -88,6 +88,7 @@ public abstract class AbstractRTContext implements TaskContextInterface {
     private final int openclGpuBlock2DY;
 
     private long numThreads;
+    private int reductionPaddedThreads;
 
     private final boolean isMetalThreadgroupSizeDefined;
     private final int metalThreadsPerThreadgroupX;
@@ -340,6 +341,19 @@ public abstract class AbstractRTContext implements TaskContextInterface {
     @Override
     public void setNumThreads(long threads) {
         this.numThreads = threads;
+    }
+
+    /**
+     * Power-of-two number of threads on which a reduction task is launched, with the work-group
+     * reduction placed after the loop so that threads without an iteration contribute the neutral
+     * element (see {@code TornadoReductionAccumulation}). 0 when the task is not launched this way.
+     */
+    public int getReductionPaddedThreads() {
+        return reductionPaddedThreads;
+    }
+
+    public void setReductionPaddedThreads(int threads) {
+        this.reductionPaddedThreads = threads;
     }
 
     public void attachProfiler(TornadoProfiler profiler) {

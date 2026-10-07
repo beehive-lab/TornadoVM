@@ -61,6 +61,11 @@ public class WriteAtomicNode extends FixedWithNextNode implements StateSplit, Lo
         return null;
     }
 
+    /** The address this node writes: the reduction variable's location. */
+    public AddressNode getAddress() {
+        return address;
+    }
+
     public JavaKind getElementKind() {
         return kind;
     }

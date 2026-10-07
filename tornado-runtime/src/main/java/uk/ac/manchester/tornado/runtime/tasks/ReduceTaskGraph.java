@@ -241,6 +241,15 @@ class ReduceTaskGraph {
         };
     }
 
+    private static int nextPowerOfTwo(int value) {
+        return value <= 1 ? 1 : Integer.highestOneBit(value - 1) << 1;
+    }
+
+    private static boolean isGpuOrAccelerator(int backendIndex, int deviceIndex) {
+        TornadoDeviceType deviceType = TornadoCoreRuntime.getTornadoRuntime().getBackend(backendIndex).getDevice(deviceIndex).getDeviceType();
+        return deviceType == TornadoDeviceType.GPU || deviceType == TornadoDeviceType.ACCELERATOR;
+    }
+
     private boolean isPowerOfTwo(final long number) {
         return ((number & (number - 1)) == 0);
     }
@@ -398,11 +407,17 @@ class ReduceTaskGraph {
                     }
 
                     inputSize = metaReduceTasks.getInputSize(taskNumber);
+                    final int iterations = inputSize - metaReduceTasks.getLoopStart(taskNumber);
 
-                    // Analyse Input Size - if not power of 2 -> split host and device executions
-                    boolean isInputPowerOfTwo = isPowerOfTwo(inputSize);
                     Object hostHybridModeArray = null;
-                    if (!isInputPowerOfTwo) {
+                    if (metaReduceTasks.isPaddable(taskNumber) && iterations > 0 && isGpuOrAccelerator(backendToRun, deviceToRun)) {
+                        // Launch on the next power of two: the compiler places the work-group reduction
+                        // after the loop (TornadoReductionAccumulation), so threads past the loop bound
+                        // contribute the neutral element, and no part of the reduction runs on the host.
+                        inputSize = nextPowerOfTwo(iterations);
+                        taskPackage.setReductionPaddedThreads(inputSize);
+                    } else if (!isPowerOfTwo(inputSize)) {
+                        // Analyse Input Size - if not power of 2 -> split host and device executions
                         int exp = (int) (Math.log(inputSize) / Math.log(2));
                         double closestPowerOf2 = Math.pow(2, exp);
                         int elementsReductionLeftOver = (int) (inputSize - closestPowerOf2);

@@ -51,6 +51,7 @@ public class TaskPackage {
     private final int taskType;
     private final Object[] taskParameters;
     private long numThreadsToRun;
+    private int reductionPaddedThreads;
 
     private boolean isPrebuiltTask;
 
@@ -371,6 +372,19 @@ public class TaskPackage {
 
     public void setNumThreadsToRun(long numThreads) {
         this.numThreadsToRun = numThreads;
+    }
+
+    /**
+     * Number of threads, a power of two, on which the runtime launches this reduction task when
+     * the compiler moves the work-group reduction after the loop, so that threads without an
+     * iteration contribute the neutral element. 0 when the task is not launched this way.
+     */
+    public int getReductionPaddedThreads() {
+        return reductionPaddedThreads;
+    }
+
+    public void setReductionPaddedThreads(int reductionPaddedThreads) {
+        this.reductionPaddedThreads = reductionPaddedThreads;
     }
 
     /**
