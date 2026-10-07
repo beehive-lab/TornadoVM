@@ -320,6 +320,99 @@ public class TestTileMatmul extends TornadoTestBase {
         }
     }
 
+    private static final int UNROLL_TILE_MN = 128;
+
+    private static final int UNROLL_TILE_K = 64;
+
+    /**
+     * GEMM with 128x128x64 tiles: the one shape whose k-loop the CUDA backend unrolls by default,
+     * on compute capability 8.x.
+     */
+    public static void matmulUnrollShape(TileContext tc, HalfFloatArray a, HalfFloatArray b, FloatArray c, int m, int n, int k) {
+        PartitionView av = tc.partition(tc.view(a, m, k), UNROLL_TILE_MN, UNROLL_TILE_K);
+        PartitionView bv = tc.partition(tc.view(b, k, n), UNROLL_TILE_K, UNROLL_TILE_MN);
+        PartitionView cv = tc.partition(tc.view(c, m, n), UNROLL_TILE_MN, UNROLL_TILE_MN);
+
+        Tile acc = tc.zeros(DType.F32, UNROLL_TILE_MN, UNROLL_TILE_MN);
+        for (int step = 0; step < k / UNROLL_TILE_K; step++) {
+            acc = tc.mma(av.load(tc.bidX(), step), bv.load(step, tc.bidY()), acc);
+        }
+        cv.store(acc, tc.bidX(), tc.bidY());
+    }
+
+    private void runGemmUnrollShape(String unrollKLoop, String graphName) throws TornadoExecutionPlanException {
+        final int m = 256;
+        final int n = 256;
+        final int k = 512;
+        HalfFloatArray a = new HalfFloatArray(m * k);
+        HalfFloatArray b = new HalfFloatArray(k * n);
+        FloatArray c = new FloatArray(m * n);
+        java.util.Random random = new java.util.Random(29);
+        for (int i = 0; i < m * k; i++) {
+            a.set(i, new HalfFloat(random.nextFloat() - 0.5f));
+        }
+        for (int i = 0; i < k * n; i++) {
+            b.set(i, new HalfFloat(random.nextFloat() - 0.5f));
+        }
+
+        TaskGraph graph = new TaskGraph(graphName) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .task("gemm", TestTileMatmul::matmulUnrollShape, new TileContext(), a, b, c, m, n, k) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        WorkerGrid2D worker = new WorkerGrid2D(m / UNROLL_TILE_MN, n / UNROLL_TILE_MN);
+        worker.setLocalWork(1, 1, 1);
+        GridScheduler grid = new GridScheduler(graphName + ".gemm", worker);
+
+        final String property = "tornado.cuda.tile.unrollKLoop";
+        String previous = System.getProperty(property);
+        System.setProperty(property, unrollKLoop);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            executeOrReportUnsupported(plan, grid);
+        } finally {
+            if (previous == null) {
+                System.clearProperty(property);
+            } else {
+                System.setProperty(property, previous);
+            }
+        }
+
+        for (int row = 0; row < m; row++) {
+            for (int column = 0; column < n; column++) {
+                float expected = 0.0f;
+                for (int inner = 0; inner < k; inner++) {
+                    expected += a.get(row * k + inner).getFloat32() * b.get(inner * n + column).getFloat32();
+                }
+                assertEquals(expected, c.get(row * n + column), 0.05f);
+            }
+        }
+    }
+
+    /**
+     * {@code -Dtornado.cuda.tile.unrollKLoop=true} forces the straight-line k-loop on every
+     * architecture; the result must not change.
+     */
+    @Test
+    public void testGemmKLoopUnrolled() throws TornadoExecutionPlanException {
+        runGemmUnrollShape("true", "tileUnrollTrue");
+    }
+
+    /**
+     * {@code -Dtornado.cuda.tile.unrollKLoop=false} keeps the k-loop rolled on every architecture.
+     */
+    @Test
+    public void testGemmKLoopRolled() throws TornadoExecutionPlanException {
+        runGemmUnrollShape("false", "tileUnrollFalse");
+    }
+
+    /**
+     * The default per-architecture choice.
+     */
+    @Test
+    public void testGemmKLoopAuto() throws TornadoExecutionPlanException {
+        runGemmUnrollShape("auto", "tileUnrollAuto");
+    }
+
     @Test
     public void testGemmRectangular() throws TornadoExecutionPlanException {
         runGemm(128, 64, 96);
