@@ -175,9 +175,15 @@ public class CUDAContext implements CUDAContextInterface {
     /**
      * Zero-initialises a device buffer. {@code cuMemAlloc} returns uninitialised device memory and
      * TornadoVM reuses pooled device buffers across executions, so a write-only output the kernel
-     * never writes (an early-returning kernel, say) would otherwise read back stale data. This is
-     * the synchronous variant, so the zeroing is complete before the buffer is used by a subsequent
-     * host-to-device copy or kernel launch.
+     * never writes (an early-returning kernel, say) would otherwise read back stale data.
+     *
+     * <p>{@code cuMemsetD8} on device memory is asynchronous with respect to the host, and it runs
+     * on the legacy default stream, which TornadoVM's streams -- created
+     * {@code CU_STREAM_NON_BLOCKING} -- are not ordered against. Without waiting for it, the
+     * zeroing can land after the plan's own stream has written the buffer (a library call or a
+     * kernel issued right after allocation), wiping what it wrote. So the legacy stream is
+     * synchronised here: the zeroing is complete before the buffer is handed out. This is on the
+     * allocation path only, not per execution.
      */
     int memSetZero(long contextId, long devicePointer, long bytes) {
         CUDAHandles.Context context = CUDAHandles.resolve(contextId, CUDAHandles.Context.class);
@@ -185,7 +191,11 @@ public class CUDAContext implements CUDAContextInterface {
             return CUDA_ERROR_INVALID_VALUE;
         }
         CUDADriverAPI.cuCtxSetCurrent(context.context());
-        return CUDADriverAPI.cuMemsetD8(devicePointer, (byte) 0, bytes);
+        int status = CUDADriverAPI.cuMemsetD8(devicePointer, (byte) 0, bytes);
+        if (status != 0) {
+            return status;
+        }
+        return CUDADriverAPI.cuStreamSynchronize(0L);
     }
 
     /** CUDA has no sub-buffer concept; the parent buffer stands in for one. */
