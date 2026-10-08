@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+import uk.ac.manchester.tornado.drivers.metal.exceptions.MetalException;
 import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 
 /**
@@ -394,8 +395,15 @@ public final class MetalObjects {
 
     // ------------------------------------------------------------------ kernels
 
-    /** Creates a compute pipeline for {@code name} and captures its argument reflection. */
-    public static long createKernel(long program, String name) {
+    /**
+     * Creates a compute pipeline for {@code name} and captures its argument reflection.
+     *
+     * @throws MetalException
+     *     if the library has no function of that name or Metal refuses to build its pipeline, for
+     *     example because the kernel needs more threadgroup memory than the device has. The message
+     *     carries Metal's own reason.
+     */
+    public static long createKernel(long program, String name) throws MetalException {
         ProgramState state = PROGRAMS.get(program);
         if (state == null || state.library() == 0 || name == null) {
             return 0;
@@ -405,7 +413,7 @@ public final class MetalObjects {
             long function = MetalAPI.newFunctionWithName(state.library(), nameString);
             ObjCRuntime.release(nameString);
             if (function == 0) {
-                return 0;
+                throw new MetalException("Metal library has no function named " + name);
             }
             long device = state.device() != 0 ? state.device() : MetalAPI.createSystemDefaultDevice();
             MemorySegment reflectionSlot = FFMSupport.allocatePointer(arena);
@@ -413,7 +421,9 @@ public final class MetalObjects {
             long pipeline = MetalAPI.newComputePipelineStateWithFunctionReflection(device, function, MetalAPI.MTL_PIPELINE_OPTION_ARGUMENT_INFO, reflectionSlot, errorSlot);
             ObjCRuntime.release(function);
             if (pipeline == 0) {
-                return 0;
+                long error = errorSlot.get(C_POINTER, 0).address();
+                String reason = error == 0 ? "no reason given" : MetalAPI.errorDescription(error);
+                throw new MetalException("Unable to create the Metal compute pipeline for " + name + ": " + reason);
             }
             String[] argInfo = readArgumentInfo(reflectionSlot.get(C_POINTER, 0).address());
             long key = KERNEL_IDS.incrementAndGet();
