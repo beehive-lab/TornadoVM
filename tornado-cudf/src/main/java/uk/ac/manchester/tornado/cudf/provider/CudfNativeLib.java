@@ -78,6 +78,8 @@ public final class CudfNativeLib {
 
     private static final MethodHandle CONTAINS;
 
+    private static final MethodHandle WRITE_PARQUET_COLUMNS;
+
     private static final MethodHandle LAST_ERROR;
 
     static {
@@ -96,6 +98,7 @@ public final class CudfNativeLib {
         MethodHandle parquetRowGroupRows = null;
         MethodHandle readParquetColumns = null;
         MethodHandle contains = null;
+        MethodHandle writeParquetColumns = null;
         MethodHandle lastError = null;
         if (LIBTORNADO_CUDF != null) {
             // int (*)(void* stream, const int* keys, int n, int* outOrder)
@@ -139,6 +142,13 @@ public final class CudfNativeLib {
                     C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_INT), "tornado_cudf_read_parquet_columns");
             // int (*)(void* stream, int kind, const void* set, int m, const void* keys, int n, void* outMask)
             contains = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_LONG, C_INT, C_LONG, C_INT, C_LONG), "tornado_cudf_contains");
+            // int (*)(void* stream, const char* path, int columnCount, const char* names,
+            //         const int* fieldIds, const int* types, const int* optional, int64_t rows,
+            //         const void* deviceRows, int64_t stride, const void* inInt32,
+            //         const void* inInt64, const void* inFp64, const void* inValid,
+            //         int compression, int rowGroupRows)
+            writeParquetColumns = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_LONG, C_POINTER, C_INT, C_POINTER, C_POINTER, C_POINTER,
+                    C_POINTER, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_INT, C_INT), "tornado_cudf_write_parquet_columns");
             lastError = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_POINTER), "tornado_cudf_last_error");
         }
         SORTED_ORDER = sortedOrder;
@@ -156,6 +166,7 @@ public final class CudfNativeLib {
         PARQUET_ROWGROUP_ROWS = parquetRowGroupRows;
         READ_PARQUET_COLUMNS = readParquetColumns;
         CONTAINS = contains;
+        WRITE_PARQUET_COLUMNS = writeParquetColumns;
         LAST_ERROR = lastError;
     }
 
@@ -273,6 +284,36 @@ public final class CudfNativeLib {
             return (int) CONTAINS.invokeExact(stream, kind, set, m, keys, n, outMask);
         } catch (Throwable t) {
             throw asRuntime(t, "containedIn");
+        }
+    }
+
+    /** Whether the shim exports the Parquet writer. */
+    public static boolean isWriterAvailable() {
+        return WRITE_PARQUET_COLUMNS != null;
+    }
+
+    /** Device buffers to a Parquet file; see {@code Cudf.writeParquetColumns}. */
+    public static int writeParquetColumns(long stream, String path, String names, int[] fieldIds, int[] types, int[] optional, long rows, long deviceRows, long stride,
+            long inInt32, long inInt64, long inFp64, long inValid, int compression, int rowGroupRows) {
+        if (fieldIds.length != types.length || types.length != optional.length) {
+            throw new TornadoRuntimeException("[ERROR] writeParquetColumns: field ids, types and optional flags must be the same length");
+        }
+        try (java.lang.foreign.Arena arena = java.lang.foreign.Arena.ofConfined()) {
+            java.lang.foreign.MemorySegment cPath = FFMSupport.allocateCString(arena, path);
+            java.lang.foreign.MemorySegment cNames = FFMSupport.allocateCString(arena, names);
+            int n = types.length;
+            java.lang.foreign.MemorySegment cIds = FFMSupport.allocateArray(arena, C_INT, Math.max(n, 1));
+            java.lang.foreign.MemorySegment cTypes = FFMSupport.allocateArray(arena, C_INT, Math.max(n, 1));
+            java.lang.foreign.MemorySegment cOptional = FFMSupport.allocateArray(arena, C_INT, Math.max(n, 1));
+            for (int i = 0; i < n; i++) {
+                cIds.setAtIndex(C_INT, i, fieldIds[i]);
+                cTypes.setAtIndex(C_INT, i, types[i]);
+                cOptional.setAtIndex(C_INT, i, optional[i]);
+            }
+            return (int) WRITE_PARQUET_COLUMNS.invokeExact(stream, cPath, n, cNames, cIds, cTypes, cOptional, rows, deviceRows, stride, inInt32, inInt64, inFp64, inValid,
+                    compression, rowGroupRows);
+        } catch (Throwable t) {
+            throw asRuntime(t, "writeParquetColumns");
         }
     }
 

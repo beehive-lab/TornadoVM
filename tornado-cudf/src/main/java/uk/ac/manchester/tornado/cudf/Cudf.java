@@ -28,6 +28,7 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.cudf.enums.CudfAggregation;
 import uk.ac.manchester.tornado.cudf.enums.CudfType;
+import uk.ac.manchester.tornado.cudf.enums.ParquetColumnType;
 import uk.ac.manchester.tornado.cudf.provider.CudfNativeLib;
 
 /**
@@ -455,6 +456,52 @@ public final class Cudf {
                 .withFunction("containedIn") //
                 .withParameters(new Object[] { sizes, keys, set, outMask, type.code() }) //
                 .withAccess(access);
+    }
+
+    /**
+     * Writes columns from TornadoVM's typed device buffers to a Parquet file, without copying them
+     * to the host: libcudf encodes and compresses on the device.
+     *
+     * <p>The buffers are laid out as {@link #readParquetColumns} lays them out: the k-th column of a
+     * buffer type at element {@code k * stride}, validity bytes (1 for a value) at {@code c * stride}
+     * for the c-th column. Each column has a {@link ParquetColumnType}, a Parquet field id (-1 for
+     * none) -- which is what a table format such as Iceberg resolves columns by when it reads the
+     * file back -- and an optional flag: an optional column is written nullable, with its validity
+     * bytes as the null mask, a required one as required. Footer statistics are written per row
+     * group.
+     *
+     * <p>The row count is {@code rowsHolder[0]}, read when the task runs, or, when that is negative,
+     * the value in {@code deviceRows[0]}: the count {@link #selectedIndices} wrote on the device, so
+     * that a compaction can write its survivors in the same plan that found them.
+     *
+     * @param names column names, one a line
+     * @param compression 0 none, 1 Snappy, 2 ZSTD
+     * @param rowGroupRows rows a row group, or 0 for libcudf's default
+     */
+    public static LibraryTaskDescriptor writeParquetColumns(StringBuilder pathHolder, String names, int[] fieldIds, ParquetColumnType[] types, boolean[] optional,
+            long[] rowsHolder, IntArray deviceRows, int stride, IntArray inInt32, LongArray inInt64, DoubleArray inFloat64, ByteArray inValid, int compression,
+            int rowGroupRows) {
+        if (fieldIds.length != types.length || types.length != optional.length) {
+            throw new IllegalArgumentException("writeParquetColumns: field ids, types and optional flags must be the same length");
+        }
+        int[] codes = Arrays.stream(types).mapToInt(ParquetColumnType::code).toArray();
+        int[] nullable = new int[optional.length];
+        for (int i = 0; i < optional.length; i++) {
+            nullable[i] = optional[i] ? 1 : 0;
+        }
+        Access[] access = new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY,
+                Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY };
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("writeParquetColumns") //
+                .withParameters(new Object[] { pathHolder, names, fieldIds, codes, nullable, rowsHolder, deviceRows, (long) stride, inInt32, inInt64, inFloat64, inValid,
+                        compression, rowGroupRows }) //
+                .withAccess(access);
+    }
+
+    /** Whether the shim on this machine exports {@link #writeParquetColumns}. */
+    public static boolean isWriterAvailable() {
+        return CudfNativeLib.isWriterAvailable();
     }
 
     /** Whether the shim on this machine exports {@link #readParquetColumns} and {@link #containedIn}. */

@@ -103,6 +103,10 @@ public final class CudfLibraryProvider implements TornadoLibraryProvider {
                 yield CudfNativeLib.contains(stream, (Integer) invocation.getArg(4), invocation.getDevicePointer(2), sizes[1], invocation.getDevicePointer(1), sizes[0],
                         invocation.getDevicePointer(3));
             }
+            case "writeParquetColumns" -> CudfNativeLib.writeParquetColumns(stream, pathOf(invocation.getArg(0)), pathOf(invocation.getArg(1)), (int[]) invocation.getArg(2),
+                    (int[]) invocation.getArg(3), (int[]) invocation.getArg(4), ((long[]) invocation.getArg(5))[0], invocation.getDevicePointer(6), (Long) invocation.getArg(7),
+                    invocation.getDevicePointer(8), invocation.getDevicePointer(9), invocation.getDevicePointer(10), invocation.getDevicePointer(11), (Integer) invocation.getArg(12),
+                    (Integer) invocation.getArg(13));
             case "sortedOrder" -> CudfNativeLib.sortedOrder(stream, invocation.getDevicePointer(1), (Integer) invocation.getArg(0), invocation.getDevicePointer(2));
             case "groupSum" -> CudfNativeLib.groupSum(stream, invocation.getDevicePointer(1), invocation.getDevicePointer(2), (Integer) invocation.getArg(0), invocation.getDevicePointer(3),
                     invocation.getDevicePointer(4), invocation.getDevicePointer(5));
