@@ -504,6 +504,104 @@ public final class Cudf {
         return CudfNativeLib.isWriterAvailable();
     }
 
+    /**
+     * Sorts keys ascending into {@code out}: the values, not a permutation ({@link #sortedOrder}
+     * returns that).
+     *
+     * <p>A set sorted once can be binary-searched by every key of every batch after it, from a
+     * generated kernel, where {@link #containedIn} builds its hash table again on each call. The
+     * count is {@code size[0]}, read when the task runs; 0 sorts nothing, so a plan can keep the
+     * sort in its graph for the executions whose set has not changed.
+     */
+    public static LibraryTaskDescriptor sortKeys(int[] size, IntArray keys, IntArray out) {
+        return sortKeys(size, keys, out, CudfType.INT32);
+    }
+
+    /** {@link #sortKeys(int[], IntArray, IntArray)} over 64-bit keys. */
+    public static LibraryTaskDescriptor sortKeys(int[] size, LongArray keys, LongArray out) {
+        return sortKeys(size, keys, out, CudfType.INT64);
+    }
+
+    private static LibraryTaskDescriptor sortKeys(int[] size, Object keys, Object out, CudfType type) {
+        Access[] access = new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY, Access.READ_ONLY };
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("sortKeys") //
+                .withParameters(new Object[] { size, keys, out, type.code() }) //
+                .withAccess(access);
+    }
+
+    /**
+     * The stable ascending order of rows keyed by several INT64 columns, compared lexicographically:
+     * {@code outOrder[i]} is the row that sorts i-th. Column c of the keys starts at element {@code
+     * c * stride}. The row count is {@code size[0]} and the column count {@code size[1]}, read when
+     * the task runs, so one plan sorts batches of any size up to {@code stride}.
+     *
+     * <p>Wide keys -- a Z-order value of several 64-bit words, say, which a generated kernel can
+     * compute -- sort here without a host round trip; the order then drives a gather.
+     */
+    public static LibraryTaskDescriptor sortedOrderLongs(int[] size, LongArray keys, int stride, IntArray outOrder) {
+        Access[] access = new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY };
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("sortedOrderLongs") //
+                .withParameters(new Object[] { size, keys, stride, outOrder }) //
+                .withAccess(access);
+    }
+
+    /**
+     * Reads STRING columns of one or more Parquet files -- paths one a line, their rows concatenated
+     * -- into a cuDF-layout offsets array and byte blob per column, which generated kernels then
+     * read: column c's {@code rows + 1} offsets start at {@code c * (stride + 1)}, its bytes at
+     * {@code c * charsStride}, and its validity bytes at {@code (validBase + c) * stride} of {@code
+     * outValid}, so they can sit beside the validity {@link #readParquetColumns} writes.
+     *
+     * <p>The row count is {@code rowsHolder[0]} and the path the holder's contents, both read when
+     * the task runs. A column whose bytes exceed {@code charsStride} is refused, not truncated.
+     */
+    public static LibraryTaskDescriptor readParquetStringColumns(StringBuilder pathHolder, int[] columns, long[] rowsHolder, int stride, IntArray outOffsets,
+            ByteArray outChars, long charsStride, ByteArray outValid, int validBase) {
+        Access[] access = new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY, Access.WRITE_ONLY, Access.READ_ONLY,
+                Access.WRITE_ONLY, Access.READ_ONLY };
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("readParquetStringColumns") //
+                .withParameters(new Object[] { pathHolder, columns, rowsHolder, (long) stride, outOffsets, outChars, charsStride, outValid, validBase }) //
+                .withAccess(access);
+    }
+
+    /**
+     * {@link #groupAggregate} over several INT64 key columns: the first {@code size[0]} rows, grouped
+     * by {@code size[1]} key columns, aggregating {@code size[2]} FP64 value columns, all at {@code
+     * stride}. Writes the groups' keys and aggregates at the same stride and the group count to
+     * {@code outGroups[0]}. Strings packed into INT64 by a kernel group here exactly.
+     */
+    public static LibraryTaskDescriptor groupAggregateLongs(int[] size, int aggregation, LongArray keys, DoubleArray values, int stride, LongArray outKeys,
+            DoubleArray outResults, IntArray outGroups) {
+        Access[] access = new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY, Access.WRITE_ONLY,
+                Access.WRITE_ONLY };
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("groupAggregateLongs") //
+                .withParameters(new Object[] { size, aggregation, keys, values, stride, outKeys, outResults, outGroups }) //
+                .withAccess(access);
+    }
+
+    /** Whether the shim exports {@link #readParquetStringColumns} and {@link #groupAggregateLongs}. */
+    public static boolean isStringColumnsAvailable() {
+        return CudfNativeLib.isStringColumnsAvailable();
+    }
+
+    /** Whether the shim on this machine exports {@link #sortedOrderLongs}. */
+    public static boolean isSortedOrderLongsAvailable() {
+        return CudfNativeLib.isSortedOrderLongsAvailable();
+    }
+
+    /** Whether the shim on this machine exports {@link #sortKeys}. */
+    public static boolean isSortKeysAvailable() {
+        return CudfNativeLib.isSortKeysAvailable();
+    }
+
     /** Whether the shim on this machine exports {@link #readParquetColumns} and {@link #containedIn}. */
     public static boolean isColumnsAvailable() {
         return CudfNativeLib.isColumnsAvailable();

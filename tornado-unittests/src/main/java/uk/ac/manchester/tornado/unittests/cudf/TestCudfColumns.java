@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.unittests.cudf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -88,7 +89,7 @@ public class TestCudfColumns extends TornadoTestBase {
 
     @Before
     public void cudfMustBeAvailable() throws IOException {
-        if (!CudfLibraryProvider.isAvailable() || !Cudf.isColumnsAvailable() || !Cudf.isWriterAvailable()) {
+        if (!CudfLibraryProvider.isAvailable() || !Cudf.isColumnsAvailable() || !Cudf.isWriterAvailable() || !Cudf.isSortKeysAvailable()) {
             throw new TornadoVMCUDANotSupported("the cuDF shim (libtornado-cudf.so) with readParquetColumns is not built on this host");
         }
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
@@ -411,6 +412,201 @@ public class TestCudfColumns extends TornadoTestBase {
         for (int j = 0; j < kept; j++) {
             assertEquals("id " + j, 3L * j, backIds.get(j));
             assertEquals("value " + j, 0.75 * j, backValues.get(j), 0.0);
+        }
+    }
+
+    /** Binary search of a sorted set: the probe a sorted set allows, as a kernel. */
+    public static void probeSorted(LongArray sorted, IntArray size, LongArray keys, ByteArray found) {
+        for (@Parallel int i = 0; i < keys.getSize(); i++) {
+            long key = keys.get(i);
+            int low = 0;
+            int high = size.get(0) - 1;
+            byte hit = 0;
+            while (low <= high) {
+                int mid = (low + high) >>> 1;
+                long value = sorted.get(mid);
+                if (value < key) {
+                    low = mid + 1;
+                } else if (value > key) {
+                    high = mid - 1;
+                } else {
+                    hit = 1;
+                    low = high + 1;
+                }
+            }
+            found.set(i, hit);
+        }
+    }
+
+    /**
+     * The set is sorted on the device once, then probed by a generated binary search on every
+     * execution; the second execution sorts nothing (size 0) and still probes the sorted copy.
+     */
+    @Test
+    public void testSortKeysThenBinarySearch() throws TornadoExecutionPlanException {
+        Random random = new Random(11);
+        int m = 100_000;
+        int n = 200_000;
+        LongArray set = new LongArray(m);
+        Set<Long> host = new HashSet<>();
+        for (int j = 0; j < m; j++) {
+            long value = random.nextLong() >> 20;
+            set.set(j, value);
+            host.add(value);
+        }
+        LongArray keys = new LongArray(n);
+        for (int i = 0; i < n; i++) {
+            keys.set(i, i % 2 == 0 ? set.get(random.nextInt(m)) : random.nextLong() >> 20);
+        }
+        LongArray sorted = new LongArray(m);
+        IntArray probeSize = IntArray.fromElements(m);
+        int[] sortSize = { m };
+        ByteArray found = new ByteArray(n);
+
+        TaskGraph graph = new TaskGraph("cudf") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, set, keys, probeSize) //
+                .libraryTask("sort", Cudf::sortKeys, sortSize, set, sorted) //
+                .task("probe", TestCudfColumns::probeSorted, sorted, probeSize, keys, found) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, found, sorted);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+            for (int j = 1; j < m; j++) {
+                assertTrue("ascending at " + j, sorted.get(j - 1) <= sorted.get(j));
+            }
+            sortSize[0] = 0; // the set has not changed: probe the copy already sorted
+            plan.execute();
+        }
+        for (int i = 0; i < n; i++) {
+            assertEquals("key " + i, host.contains(keys.get(i)) ? 1 : 0, found.get(i));
+        }
+    }
+
+    /**
+     * Rows keyed by two INT64 words sort lexicographically and stably; the row count, below the
+     * stride, changes between two executions of one plan.
+     */
+    @Test
+    public void testSortedOrderLongsTwoWords() throws TornadoExecutionPlanException {
+        assumeTrue(Cudf.isSortedOrderLongsAvailable());
+        Random random = new Random(5);
+        int stride = 100_000;
+        LongArray keys = new LongArray(2L * stride);
+        for (int i = 0; i < stride; i++) {
+            keys.set(i, random.nextInt(50) - 25); // many ties in the first word
+            keys.set(stride + i, random.nextLong());
+        }
+        IntArray order = new IntArray(stride);
+        int[] size = { 80_000, 2 };
+        TaskGraph graph = new TaskGraph("cudf") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, keys) //
+                .libraryTask("order", Cudf::sortedOrderLongs, size, keys, stride, order) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, order);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            for (int n : new int[] { 80_000, 30_000 }) {
+                size[0] = n;
+                plan.execute();
+                Integer[] expected = new Integer[n];
+                for (int i = 0; i < n; i++) {
+                    expected[i] = i;
+                }
+                java.util.Arrays.sort(expected, java.util.Comparator.<Integer> comparingLong(i -> keys.get(i)).thenComparingLong(i -> keys.get(stride + i)));
+                for (int i = 0; i < n; i++) {
+                    assertEquals("row " + i + " of " + n, (int) expected[i], order.get(i));
+                }
+            }
+        }
+    }
+
+    /**
+     * STRING columns of two files read as one batch: the fixture {@code strings.parquet} (pyarrow,
+     * ten rows) has {@code flag} ("RAN" repeated, required) and {@code name} (UTF-8, null when
+     * {@code i % 4 == 1}). Offsets, bytes and validity come back as cuDF lays them out, the
+     * validity after a base the caller picks.
+     */
+    @Test
+    public void testReadParquetStringColumnsTwoFiles() throws TornadoExecutionPlanException, IOException {
+        assumeTrue(Cudf.isStringColumnsAvailable());
+        Path strings = Files.createTempFile("tornado-cudf-strings", ".parquet");
+        strings.toFile().deleteOnExit();
+        try (InputStream in = TestCudfColumns.class.getResourceAsStream("strings.parquet")) {
+            Files.copy(in, strings, StandardCopyOption.REPLACE_EXISTING);
+        }
+        String[] names = { "é0", null, "2", "xyz3", "Ωmega4", null, "ab6", "7", "xyz8", null };
+        int rows = 20;
+        int stride = 24;
+        long charsStride = 256;
+        IntArray offsets = new IntArray(2 * (stride + 1));
+        ByteArray chars = new ByteArray(2 * charsStride);
+        ByteArray valid = new ByteArray(3L * stride);
+        TaskGraph graph = new TaskGraph("cudf") //
+                .libraryTask("strings", Cudf::readParquetStringColumns, new StringBuilder(strings + "\n" + strings), new int[] { 0, 1 }, new long[] { rows }, stride, offsets,
+                        chars, charsStride, valid, 1) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, offsets, chars, valid);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+        for (int i = 0; i < rows; i++) {
+            int r = i % 10;
+            String flag = new String(slice(chars, 0, offsets.get(i), offsets.get(i + 1)), java.nio.charset.StandardCharsets.UTF_8);
+            assertEquals("flag " + i, String.valueOf("RANRANRANR".charAt(r)), flag);
+            assertEquals("flag valid " + i, 1, valid.get(stride + i));
+            boolean present = names[r] != null;
+            assertEquals("name valid " + i, present ? 1 : 0, valid.get(2 * stride + i));
+            if (present) {
+                int from = offsets.get(stride + 1 + i);
+                int to = offsets.get(stride + 1 + i + 1);
+                assertEquals("name " + i, names[r], new String(slice(chars, charsStride, from, to), java.nio.charset.StandardCharsets.UTF_8));
+            }
+        }
+    }
+
+    private static byte[] slice(ByteArray chars, long base, int from, int to) {
+        byte[] bytes = new byte[to - from];
+        for (int b = from; b < to; b++) {
+            bytes[b - from] = chars.get((int) (base + b));
+        }
+        return bytes;
+    }
+
+    /** Group-by on two INT64 key columns: sums and counts per (a, b) pair match the host's. */
+    @Test
+    public void testGroupAggregateLongsTwoKeys() throws TornadoExecutionPlanException {
+        assumeTrue(Cudf.isStringColumnsAvailable());
+        Random random = new Random(9);
+        int stride = 50_000;
+        int n = 40_000;
+        LongArray keys = new LongArray(2L * stride);
+        DoubleArray values = new DoubleArray(2L * stride);
+        java.util.Map<String, double[]> expected = new java.util.HashMap<>();
+        for (int i = 0; i < n; i++) {
+            long a = random.nextInt(5) - 2;
+            long b = random.nextBoolean() ? Long.MIN_VALUE : random.nextInt(7) * 1_000_000_007L;
+            double v = random.nextInt(1000);
+            keys.set(i, a);
+            keys.set(stride + i, b);
+            values.set(i, v);
+            values.set(stride + i, 1.0);
+            double[] sums = expected.computeIfAbsent(a + "/" + b, ignored -> new double[2]);
+            sums[0] += v;
+            sums[1] += 1.0;
+        }
+        LongArray outKeys = new LongArray(2L * stride);
+        DoubleArray outSums = new DoubleArray(2L * stride);
+        IntArray groups = new IntArray(1);
+        TaskGraph graph = new TaskGraph("cudf") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, keys, values) //
+                .libraryTask("group", Cudf::groupAggregateLongs, new int[] { n, 2, 2 }, uk.ac.manchester.tornado.cudf.enums.CudfAggregation.SUM.code(), keys, values, stride,
+                        outKeys, outSums, groups) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outKeys, outSums, groups);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+        assertEquals(expected.size(), groups.get(0));
+        for (int g = 0; g < groups.get(0); g++) {
+            double[] sums = expected.get(outKeys.get(g) + "/" + outKeys.get(stride + g));
+            assertTrue("group " + g, sums != null);
+            assertEquals(sums[0], outSums.get(g), 0.0);
+            assertEquals(sums[1], outSums.get(stride + g), 0.0);
         }
     }
 
