@@ -309,6 +309,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.fails.NonConstantStrideFail"),
     TestEntry("uk.ac.manchester.tornado.unittests.fails.FloatAtomicFail"),
     TestEntry("uk.ac.manchester.tornado.unittests.fails.BitOpsUnsupportedFail"),
+    TestEntry("uk.ac.manchester.tornado.unittests.fails.LocalMemoryFail"),
     TestEntry("uk.ac.manchester.tornado.unittests.parameters.ParameterTests"),
     TestEntry("uk.ac.manchester.tornado.unittests.codegen.CodeGenTest"),
     TestEntry("uk.ac.manchester.tornado.unittests.codegen.TestDeepInliningChain"),
