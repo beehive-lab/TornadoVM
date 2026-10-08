@@ -45,6 +45,7 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.cudf.Cudf;
 import uk.ac.manchester.tornado.cudf.enums.CudfType;
+import uk.ac.manchester.tornado.cudf.enums.ParquetColumnType;
 import uk.ac.manchester.tornado.cudf.provider.CudfLibraryProvider;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
@@ -87,7 +88,7 @@ public class TestCudfColumns extends TornadoTestBase {
 
     @Before
     public void cudfMustBeAvailable() throws IOException {
-        if (!CudfLibraryProvider.isAvailable() || !Cudf.isColumnsAvailable()) {
+        if (!CudfLibraryProvider.isAvailable() || !Cudf.isColumnsAvailable() || !Cudf.isWriterAvailable()) {
             throw new TornadoVMCUDANotSupported("the cuDF shim (libtornado-cudf.so) with readParquetColumns is not built on this host");
         }
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
@@ -299,6 +300,117 @@ public class TestCudfColumns extends TornadoTestBase {
             for (int i = 0; i < ROWS; i++) {
                 assertEquals("copy " + c + " row " + i, id(i), longs.get(c * ROWS + i));
             }
+        }
+    }
+
+    /** Keeps every third row: the predicate half of a compaction, as a kernel. */
+    public static void everyThird(LongArray ids, ByteArray keep) {
+        for (@Parallel int i = 0; i < keep.getSize(); i++) {
+            keep.set(i, (byte) (ids.get(i) % 3 == 0 ? 1 : 0));
+        }
+    }
+
+    /** Moves the kept rows of two columns to the front. */
+    public static void gatherKept(IntArray positions, IntArray count, LongArray ids, DoubleArray values, LongArray outIds, DoubleArray outValues) {
+        for (@Parallel int j = 0; j < positions.getSize(); j++) {
+            if (j < count.get(0)) {
+                outIds.set(j, ids.get(positions.get(j)));
+                outValues.set(j, values.get(positions.get(j)));
+            }
+        }
+    }
+
+    /**
+     * Every type the writer takes, required and optional, written from device buffers and read back:
+     * values, nulls and types survive the round trip.
+     */
+    @Test
+    public void testWriteParquetColumnsRoundTrip() throws TornadoExecutionPlanException, IOException {
+        Path out = Files.createTempFile("tornado-cudf-written", ".parquet");
+        out.toFile().deleteOnExit();
+        int[] columns = { ID, K, V, D, TS, OPT };
+        CudfType[] types = { CudfType.INT64, CudfType.INT32, CudfType.FLOAT64, CudfType.INT32, CudfType.INT64, CudfType.INT64 };
+        IntArray ints = new IntArray(2 * ROWS);
+        LongArray longs = new LongArray(3 * ROWS);
+        DoubleArray doubles = new DoubleArray(ROWS);
+        ByteArray valid = new ByteArray(columns.length * ROWS);
+        IntArray back = new IntArray(2 * ROWS);
+        LongArray backLongs = new LongArray(3 * ROWS);
+        DoubleArray backDoubles = new DoubleArray(ROWS);
+        ByteArray backValid = new ByteArray(columns.length * ROWS);
+        String names = "id\nk\nv\nd\nts\nopt";
+        ParquetColumnType[] written = { ParquetColumnType.INT64, ParquetColumnType.INT32, ParquetColumnType.FLOAT64, ParquetColumnType.DATE,
+                ParquetColumnType.TIMESTAMP_MICROS, ParquetColumnType.INT64 };
+
+        TaskGraph graph = new TaskGraph("cudf") //
+                .libraryTask("read", Cudf::readParquetColumns, new StringBuilder(fixture.toString()), 0, 0, columns, types, new long[] { ROWS }, ROWS, ints, longs, doubles,
+                        valid, true) //
+                .libraryTask("write", Cudf::writeParquetColumns, new StringBuilder(out.toString()), names, new int[] { 1, 2, 3, 4, 5, 6 }, written,
+                        new boolean[] { false, false, false, true, false, true }, new long[] { ROWS }, new IntArray(1), ROWS, ints, longs, doubles, valid, 2, 0) //
+                .libraryTask("reread", Cudf::readParquetColumns, new StringBuilder(out.toString()), 0, 0, new int[] { 0, 1, 2, 3, 4, 5 }, types, new long[] { ROWS }, ROWS,
+                        back, backLongs, backDoubles, backValid, true) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, back, backLongs, backDoubles, backValid);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+        for (int i = 0; i < ROWS; i++) {
+            assertEquals("id " + i, id(i), backLongs.get(i));
+            assertEquals("k " + i, i % 3, back.get(i));
+            assertEquals("v " + i, 0.5 * i, backDoubles.get(i), 0.0);
+            assertEquals("ts " + i, 1_767_225_600_000_000L + 1_000_001L * i, backLongs.get(ROWS + i));
+            assertEquals("d validity " + i, dIsNull(i) ? 0 : 1, backValid.get(3 * ROWS + i));
+            if (!dIsNull(i)) {
+                assertEquals("d " + i, 20454 + i, back.get(ROWS + i));
+            }
+            assertEquals("opt validity " + i, optIsNull(i) ? 0 : 1, backValid.get(5 * ROWS + i));
+            if (!optIsNull(i)) {
+                assertEquals("opt " + i, -7L * i, backLongs.get(2 * ROWS + i));
+            }
+        }
+    }
+
+    /**
+     * A compaction in one plan: a kernel decides what survives, cuDF compacts, a kernel gathers, and
+     * the writer takes the survivor count from the device counter selectedIndices wrote.
+     */
+    @Test
+    public void testWriteParquetColumnsCountFromDevice() throws TornadoExecutionPlanException, IOException {
+        int n = 30_000;
+        Path out = Files.createTempFile("tornado-cudf-compacted", ".parquet");
+        out.toFile().deleteOnExit();
+        LongArray ids = new LongArray(n);
+        DoubleArray values = new DoubleArray(n);
+        for (int i = 0; i < n; i++) {
+            ids.set(i, i);
+            values.set(i, i * 0.25);
+        }
+        ByteArray keep = new ByteArray(n);
+        IntArray positions = new IntArray(n);
+        IntArray count = new IntArray(1);
+        LongArray outIds = new LongArray(n);
+        DoubleArray outValues = new DoubleArray(n);
+        int kept = n / 3;
+        LongArray backIds = new LongArray(kept);
+        DoubleArray backValues = new DoubleArray(kept);
+
+        TaskGraph graph = new TaskGraph("cudf") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, ids, values) //
+                .task("keep", TestCudfColumns::everyThird, ids, keep) //
+                .libraryTask("compact", Cudf::selectedIndices, n, n, keep, positions, count) //
+                .task("gather", TestCudfColumns::gatherKept, positions, count, ids, values, outIds, outValues) //
+                .libraryTask("write", Cudf::writeParquetColumns, new StringBuilder(out.toString()), "id\nvalue", new int[] { 1, 2 },
+                        new ParquetColumnType[] { ParquetColumnType.INT64, ParquetColumnType.FLOAT64 }, new boolean[] { false, false }, new long[] { -1 }, count, n,
+                        new IntArray(1), outIds, outValues, new ByteArray(1), 1, 0) //
+                .libraryTask("reread", Cudf::readParquetColumns, new StringBuilder(out.toString()), 0, 0, new int[] { 0, 1 },
+                        new CudfType[] { CudfType.INT64, CudfType.FLOAT64 }, new long[] { kept }, kept, new IntArray(1), backIds, backValues, new ByteArray(1), false) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, count, backIds, backValues);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+        assertEquals("survivors", kept, count.get(0));
+        for (int j = 0; j < kept; j++) {
+            assertEquals("id " + j, 3L * j, backIds.get(j));
+            assertEquals("value " + j, 0.75 * j, backValues.get(j), 0.0);
         }
     }
 
