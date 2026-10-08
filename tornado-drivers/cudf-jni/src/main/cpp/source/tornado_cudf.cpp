@@ -985,8 +985,8 @@ int tornado_cudf_read_parquet_columns(void* stream, const char* path, int32_t ro
                 g_last_error = "readParquetColumns: column " + std::to_string(columns[c]) + " is beyond the file's " + std::to_string(schema_columns) + " columns";
                 return 6;
             }
-            if (kinds[c] < 0 || kinds[c] > 2) {
-                g_last_error = "readParquetColumns: kind " + std::to_string(kinds[c]) + " is not 0 (INT32), 1 (INT64) or 2 (FP64)";
+            if (kinds[c] < 0 || kinds[c] > 3) {
+                g_last_error = "readParquetColumns: kind " + std::to_string(kinds[c]) + " is not 0 (INT32), 1 (INT64), 2 (FP64) or 3 (FP32 into FP64)";
                 return 5;
             }
             names.push_back(root.child(columns[c]).name());
@@ -1016,7 +1016,9 @@ int tornado_cudf_read_parquet_columns(void* stream, const char* path, int32_t ro
         for (int32_t c = 0; c < column_count; c++) {
             const auto col = table.column(c);
             const auto id = col.type().id();
-            const int32_t kind = kinds[c];
+            // Kind 3 is a FLOAT32 column widened, exactly, into the FP64 buffer: it shares that buffer's slots.
+            const int32_t kind = kinds[c] == 3 ? 2 : kinds[c];
+            const bool widen_float = kinds[c] == 3;
             bool accepted = false;
             switch (kind) {
                 case 0:
@@ -1027,7 +1029,7 @@ int tornado_cudf_read_parquet_columns(void* stream, const char* path, int32_t ro
                             || id == cudf::type_id::TIMESTAMP_MICROSECONDS || id == cudf::type_id::TIMESTAMP_NANOSECONDS;
                     break;
                 default:
-                    accepted = id == cudf::type_id::FLOAT64;
+                    accepted = widen_float ? id == cudf::type_id::FLOAT32 : id == cudf::type_id::FLOAT64;
                     break;
             }
             if (!accepted) {
@@ -1045,7 +1047,13 @@ int tornado_cudf_read_parquet_columns(void* stream, const char* path, int32_t ro
             }
             if (rows > 0) {
                 char* dst = static_cast<char*>(base[kind]) + static_cast<size_t>(slot[kind]) * static_cast<size_t>(stride) * width[kind];
-                cudaError_t rc = copy_out(dst, col.head<char>() + static_cast<size_t>(col.offset()) * width[kind], static_cast<size_t>(rows) * width[kind], raw);
+                std::unique_ptr<cudf::column> widened;
+                cudf::column_view source = col;
+                if (widen_float) {
+                    widened = cudf::cast(col, cudf::data_type{cudf::type_id::FLOAT64}, view);
+                    source = widened->view();
+                }
+                cudaError_t rc = copy_out(dst, source.head<char>() + static_cast<size_t>(source.offset()) * width[kind], static_cast<size_t>(rows) * width[kind], raw);
                 if (rc != cudaSuccess) {
                     g_last_error = std::string("readParquetColumns copy-out: ") + cudaGetErrorString(rc);
                     return 3;

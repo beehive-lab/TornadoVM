@@ -37,7 +37,13 @@ public enum CudfType {
     INT64(1),
 
     /** FP64, into a {@code DoubleArray}. */
-    FLOAT64(2);
+    FLOAT64(2),
+
+    /**
+     * FP32, widened exactly to FP64 into a {@code DoubleArray}: it takes a slot of the FP64 buffer,
+     * so a reader keeps one floating-point buffer for both widths.
+     */
+    FLOAT32(3);
 
     private final int code;
 
