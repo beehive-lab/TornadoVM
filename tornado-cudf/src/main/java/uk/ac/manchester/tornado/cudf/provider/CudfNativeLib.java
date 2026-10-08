@@ -82,6 +82,8 @@ public final class CudfNativeLib {
 
     private static final MethodHandle SORT_KEYS;
     private static final MethodHandle SORTED_ORDER_LONGS;
+    private static final MethodHandle READ_PARQUET_STRING_COLUMNS;
+    private static final MethodHandle GROUP_AGGREGATE_LONGS;
 
     private static final MethodHandle LAST_ERROR;
 
@@ -104,6 +106,8 @@ public final class CudfNativeLib {
         MethodHandle writeParquetColumns = null;
         MethodHandle sortKeys = null;
         MethodHandle sortedOrderLongs = null;
+        MethodHandle readParquetStringColumns = null;
+        MethodHandle groupAggregateLongs = null;
         MethodHandle lastError = null;
         if (LIBTORNADO_CUDF != null) {
             // int (*)(void* stream, const int* keys, int n, int* outOrder)
@@ -158,6 +162,14 @@ public final class CudfNativeLib {
             sortKeys = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_LONG, C_INT, C_LONG), "tornado_cudf_sort_keys");
             // int (*)(void* stream, const void* keys, int n, int keyColumns, long stride, void* outOrder)
             sortedOrderLongs = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_INT, C_INT, C_LONG, C_LONG), "tornado_cudf_sorted_order_longs");
+            // int (*)(void* stream, const char* path, int columnCount, const int* columns, int64 rows, int64 stride,
+            //         void* outOffsets, void* outChars, int64 charsStride, void* outValid, int validBase)
+            readParquetStringColumns = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_LONG, C_POINTER, C_INT, C_POINTER, C_LONG, C_LONG, C_LONG,
+                    C_LONG, C_LONG, C_LONG, C_INT), "tornado_cudf_read_parquet_string_columns");
+            // int (*)(void* stream, int n, int keyColumns, int valueColumns, int agg, const void* keys, const void* values,
+            //         int64 stride, void* outKeys, void* outResults, void* outGroups)
+            groupAggregateLongs = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_INT, C_INT, C_INT, C_LONG, C_LONG, C_LONG, C_LONG,
+                    C_LONG, C_LONG), "tornado_cudf_group_aggregate_longs");
             lastError = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_POINTER), "tornado_cudf_last_error");
         }
         SORTED_ORDER = sortedOrder;
@@ -178,6 +190,8 @@ public final class CudfNativeLib {
         WRITE_PARQUET_COLUMNS = writeParquetColumns;
         SORT_KEYS = sortKeys;
         SORTED_ORDER_LONGS = sortedOrderLongs;
+        READ_PARQUET_STRING_COLUMNS = readParquetStringColumns;
+        GROUP_AGGREGATE_LONGS = groupAggregateLongs;
         LAST_ERROR = lastError;
     }
 
@@ -325,6 +339,36 @@ public final class CudfNativeLib {
                     compression, rowGroupRows);
         } catch (Throwable t) {
             throw asRuntime(t, "writeParquetColumns");
+        }
+    }
+
+    /** Whether the shim exports the string-column read and the INT64-keyed group-by. */
+    public static boolean isStringColumnsAvailable() {
+        return READ_PARQUET_STRING_COLUMNS != null && GROUP_AGGREGATE_LONGS != null;
+    }
+
+    /** STRING columns of one or more files into offsets and bytes; see {@code Cudf.readParquetStringColumns}. */
+    public static int readParquetStringColumns(long stream, String path, int[] columns, long rows, long stride, long outOffsets, long outChars, long charsStride,
+            long outValid, int validBase) {
+        try (java.lang.foreign.Arena arena = java.lang.foreign.Arena.ofConfined()) {
+            java.lang.foreign.MemorySegment cPath = FFMSupport.allocateCString(arena, path);
+            java.lang.foreign.MemorySegment cColumns = FFMSupport.allocateArray(arena, C_INT, Math.max(columns.length, 1));
+            for (int i = 0; i < columns.length; i++) {
+                cColumns.setAtIndex(C_INT, i, columns[i]);
+            }
+            return (int) READ_PARQUET_STRING_COLUMNS.invokeExact(stream, cPath, columns.length, cColumns, rows, stride, outOffsets, outChars, charsStride, outValid, validBase);
+        } catch (Throwable t) {
+            throw asRuntime(t, "readParquetStringColumns");
+        }
+    }
+
+    /** Group-by over INT64 key columns; see {@code Cudf.groupAggregateLongs}. */
+    public static int groupAggregateLongs(long stream, int n, int keyColumns, int valueColumns, int aggregation, long keys, long values, int stride, long outKeys,
+            long outResults, long outGroups) {
+        try {
+            return (int) GROUP_AGGREGATE_LONGS.invokeExact(stream, n, keyColumns, valueColumns, aggregation, keys, values, (long) stride, outKeys, outResults, outGroups);
+        } catch (Throwable t) {
+            throw asRuntime(t, "groupAggregateLongs");
         }
     }
 

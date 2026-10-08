@@ -549,6 +549,49 @@ public final class Cudf {
                 .withAccess(access);
     }
 
+    /**
+     * Reads STRING columns of one or more Parquet files -- paths one a line, their rows concatenated
+     * -- into a cuDF-layout offsets array and byte blob per column, which generated kernels then
+     * read: column c's {@code rows + 1} offsets start at {@code c * (stride + 1)}, its bytes at
+     * {@code c * charsStride}, and its validity bytes at {@code (validBase + c) * stride} of {@code
+     * outValid}, so they can sit beside the validity {@link #readParquetColumns} writes.
+     *
+     * <p>The row count is {@code rowsHolder[0]} and the path the holder's contents, both read when
+     * the task runs. A column whose bytes exceed {@code charsStride} is refused, not truncated.
+     */
+    public static LibraryTaskDescriptor readParquetStringColumns(StringBuilder pathHolder, int[] columns, long[] rowsHolder, int stride, IntArray outOffsets,
+            ByteArray outChars, long charsStride, ByteArray outValid, int validBase) {
+        Access[] access = new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY, Access.WRITE_ONLY, Access.READ_ONLY,
+                Access.WRITE_ONLY, Access.READ_ONLY };
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("readParquetStringColumns") //
+                .withParameters(new Object[] { pathHolder, columns, rowsHolder, (long) stride, outOffsets, outChars, charsStride, outValid, validBase }) //
+                .withAccess(access);
+    }
+
+    /**
+     * {@link #groupAggregate} over several INT64 key columns: the first {@code size[0]} rows, grouped
+     * by {@code size[1]} key columns, aggregating {@code size[2]} FP64 value columns, all at {@code
+     * stride}. Writes the groups' keys and aggregates at the same stride and the group count to
+     * {@code outGroups[0]}. Strings packed into INT64 by a kernel group here exactly.
+     */
+    public static LibraryTaskDescriptor groupAggregateLongs(int[] size, int aggregation, LongArray keys, DoubleArray values, int stride, LongArray outKeys,
+            DoubleArray outResults, IntArray outGroups) {
+        Access[] access = new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY, Access.WRITE_ONLY,
+                Access.WRITE_ONLY };
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("groupAggregateLongs") //
+                .withParameters(new Object[] { size, aggregation, keys, values, stride, outKeys, outResults, outGroups }) //
+                .withAccess(access);
+    }
+
+    /** Whether the shim exports {@link #readParquetStringColumns} and {@link #groupAggregateLongs}. */
+    public static boolean isStringColumnsAvailable() {
+        return CudfNativeLib.isStringColumnsAvailable();
+    }
+
     /** Whether the shim on this machine exports {@link #sortedOrderLongs}. */
     public static boolean isSortedOrderLongsAvailable() {
         return CudfNativeLib.isSortedOrderLongsAvailable();

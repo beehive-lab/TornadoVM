@@ -1347,4 +1347,177 @@ int tornado_cudf_sorted_order_longs(void* stream, const void* keys, int32_t n, i
     }
 }
 
+/**
+ * Reads STRING columns of one or more Parquet files (paths one a line, rows concatenated) into
+ * TornadoVM buffers, as a cuDF strings column lays them out: column c's rows + 1 INT32 offsets at
+ * out_offsets + c * (stride + 1), its bytes at out_chars + c * chars_stride, and one validity byte
+ * a row at out_valid + (valid_base + c) * stride. A column whose bytes exceed chars_stride is
+ * refused, not truncated. Nothing to read (rows 0, empty path) is a no-op.
+ */
+int tornado_cudf_read_parquet_string_columns(void* stream, const char* path, int32_t column_count, const int32_t* columns, int64_t rows, int64_t stride,
+        void* out_offsets, void* out_chars, int64_t chars_stride, void* out_valid, int32_t valid_base) {
+    ensure_pool();
+    try {
+        if (rows == 0 && (path == nullptr || path[0] == '\0')) {
+            return 0;
+        }
+        if (path == nullptr || columns == nullptr || column_count <= 0 || out_offsets == nullptr || out_chars == nullptr) {
+            g_last_error = "readParquetStringColumns: null path, buffer or empty column list";
+            return 5;
+        }
+        if (rows < 0 || rows > stride) {
+            g_last_error = "readParquetStringColumns: " + std::to_string(rows) + " rows do not fit a stride of " + std::to_string(stride);
+            return 5;
+        }
+        std::vector<std::string> paths;
+        {
+            std::string all(path);
+            size_t begin = 0;
+            while (begin <= all.size()) {
+                size_t end = all.find('\n', begin);
+                if (end == std::string::npos) {
+                    end = all.size();
+                }
+                if (end > begin) {
+                    paths.push_back(all.substr(begin, end - begin));
+                }
+                begin = end + 1;
+            }
+        }
+        auto metadata = cudf::io::read_parquet_metadata(cudf::io::source_info{paths.front()});
+        const auto& root = metadata.schema().root();
+        const int32_t schema_columns = static_cast<int32_t>(root.num_children());
+        std::vector<std::string> names;
+        for (int32_t c = 0; c < column_count; c++) {
+            if (columns[c] < 0 || columns[c] >= schema_columns) {
+                g_last_error = "readParquetStringColumns: column " + std::to_string(columns[c]) + " is beyond the file's " + std::to_string(schema_columns) + " columns";
+                return 6;
+            }
+            names.push_back(root.child(columns[c]).name());
+        }
+        auto options = cudf::io::parquet_reader_options::builder(cudf::io::source_info{paths}).columns(names).build();
+        auto view = rmm::cuda_stream_view{static_cast<cudaStream_t>(stream)};
+        auto result = cudf::io::read_parquet(options, view);
+        const auto table = result.tbl->view();
+        if (static_cast<int64_t>(table.num_rows()) != rows) {
+            g_last_error = "readParquetStringColumns: files gave " + std::to_string(table.num_rows()) + " rows where the caller asked for " + std::to_string(rows);
+            return 7;
+        }
+        cudaStream_t raw = static_cast<cudaStream_t>(stream);
+        for (int32_t c = 0; c < column_count; c++) {
+            const auto col = table.column(c);
+            if (col.type().id() != cudf::type_id::STRING) {
+                g_last_error = "readParquetStringColumns: column " + names[c] + " is not a STRING column";
+                return 8;
+            }
+            cudf::strings_column_view scv(col);
+            const int64_t bytes = rows == 0 ? 0 : scv.chars_size(view);
+            if (bytes > chars_stride) {
+                g_last_error = "readParquetStringColumns: column " + names[c] + " decodes to " + std::to_string(bytes) + " bytes, beyond the " + std::to_string(chars_stride)
+                        + " a column was sized for";
+                return 6;
+            }
+            if (rows == 0) {
+                continue;
+            }
+            const auto offsets = scv.offsets();
+            if (offsets.type().id() != cudf::type_id::INT32) {
+                g_last_error = "readParquetStringColumns: the offsets of " + names[c] + " are not INT32";
+                return 8;
+            }
+            int32_t* dst_offsets = static_cast<int32_t*>(out_offsets) + static_cast<size_t>(c) * static_cast<size_t>(stride + 1);
+            cudaError_t rc = copy_out(dst_offsets, offsets.data<int32_t>() + col.offset(), static_cast<size_t>(rows + 1) * sizeof(int32_t), raw);
+            if (rc == cudaSuccess && bytes > 0) {
+                rc = copy_out(static_cast<char*>(out_chars) + static_cast<size_t>(c) * static_cast<size_t>(chars_stride), scv.chars_begin(view), static_cast<size_t>(bytes), raw);
+            }
+            if (rc == cudaSuccess && out_valid != nullptr) {
+                char* valid = static_cast<char*>(out_valid) + static_cast<size_t>(valid_base + c) * static_cast<size_t>(stride);
+                if (col.null_count() == 0) {
+                    rc = cudaMemsetAsync(valid, 1, static_cast<size_t>(rows), raw);
+                } else {
+                    auto flags = cudf::is_valid(col, view);
+                    rc = copy_out(valid, flags->view().data<int8_t>(), static_cast<size_t>(rows), raw);
+                }
+            } else if (rc == cudaSuccess && col.null_count() != 0) {
+                g_last_error = "readParquetStringColumns: column " + names[c] + " contains nulls and no validity buffer was given";
+                return 9;
+            }
+            if (rc != cudaSuccess) {
+                g_last_error = std::string("readParquetStringColumns copy-out: ") + cudaGetErrorString(rc);
+                return 3;
+            }
+        }
+        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+    } catch (const std::exception& e) {
+        return fail("readParquetStringColumns", e);
+    } catch (...) {
+        return fail("readParquetStringColumns");
+    }
+}
+
+/**
+ * Group-by over key_columns INT64 key columns and value_columns FP64 value columns, all at stride,
+ * of the first n rows. Writes each group's keys (key column c at out_keys + c * stride), its
+ * aggregates (value column c at out_results + c * stride, FP64) and the group count to
+ * out_groups[0]. n <= 0 writes zero groups.
+ */
+int tornado_cudf_group_aggregate_longs(void* stream, int32_t n, int32_t key_columns, int32_t value_columns, int32_t agg, const void* keys, const void* values,
+        int64_t stride, void* out_keys, void* out_results, void* out_groups) {
+    ensure_pool();
+    try {
+        cudaStream_t raw = static_cast<cudaStream_t>(stream);
+        if (key_columns < 1 || value_columns < 1 || n > stride || groupby_agg_for(agg) == nullptr) {
+            g_last_error = "groupAggregateLongs: needs key and value columns, n within the stride and a known aggregation";
+            return 6;
+        }
+        int32_t groups = 0;
+        if (n > 0) {
+            auto view = rmm::cuda_stream_view{raw};
+            const int64_t* key_base = static_cast<const int64_t*>(keys);
+            const double* value_base = static_cast<const double*>(values);
+            std::vector<cudf::column_view> key_cols;
+            for (int32_t c = 0; c < key_columns; c++) {
+                key_cols.emplace_back(cudf::data_type{cudf::type_id::INT64}, n, key_base + c * stride, nullptr, 0);
+            }
+            std::vector<cudf::groupby::aggregation_request> requests;
+            for (int32_t c = 0; c < value_columns; c++) {
+                cudf::groupby::aggregation_request request;
+                request.values = cudf::column_view(cudf::data_type{cudf::type_id::FLOAT64}, n, value_base + c * stride, nullptr, 0);
+                request.aggregations.push_back(groupby_agg_for(agg));
+                requests.push_back(std::move(request));
+            }
+            cudf::groupby::groupby grouper(cudf::table_view{key_cols}, cudf::null_policy::EXCLUDE, cudf::sorted::NO);
+            auto [group_keys, results] = grouper.aggregate(requests, view);
+            groups = group_keys->num_rows();
+            cudaError_t rc = cudaSuccess;
+            for (int32_t c = 0; c < key_columns && rc == cudaSuccess; c++) {
+                rc = copy_out(static_cast<int64_t*>(out_keys) + c * stride, group_keys->view().column(c).data<int64_t>(), static_cast<size_t>(groups) * sizeof(int64_t), raw);
+            }
+            for (int32_t c = 0; c < value_columns && rc == cudaSuccess; c++) {
+                auto column = results[c].results[0]->view();
+                std::unique_ptr<cudf::column> promoted;
+                if (column.type().id() != cudf::type_id::FLOAT64) {
+                    promoted = cudf::cast(column, cudf::data_type{cudf::type_id::FLOAT64}, view);
+                    column = promoted->view();
+                }
+                rc = copy_out(static_cast<double*>(out_results) + c * stride, column.data<double>(), static_cast<size_t>(groups) * sizeof(double), raw);
+            }
+            if (rc != cudaSuccess) {
+                g_last_error = std::string("groupAggregateLongs copy-out: ") + cudaGetErrorString(rc);
+                return 3;
+            }
+        }
+        cudaError_t rc = cudaMemcpyAsync(out_groups, &groups, sizeof(int32_t), cudaMemcpyHostToDevice, raw);
+        if (rc != cudaSuccess) {
+            g_last_error = std::string("groupAggregateLongs copy-out: ") + cudaGetErrorString(rc);
+            return 3;
+        }
+        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+    } catch (const std::exception& e) {
+        return fail("groupAggregateLongs", e);
+    } catch (...) {
+        return fail("groupAggregateLongs");
+    }
+}
+
 }  // extern "C"

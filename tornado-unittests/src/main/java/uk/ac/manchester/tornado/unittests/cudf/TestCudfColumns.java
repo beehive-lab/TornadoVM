@@ -517,6 +517,99 @@ public class TestCudfColumns extends TornadoTestBase {
         }
     }
 
+    /**
+     * STRING columns of two files read as one batch: the fixture {@code strings.parquet} (pyarrow,
+     * ten rows) has {@code flag} ("RAN" repeated, required) and {@code name} (UTF-8, null when
+     * {@code i % 4 == 1}). Offsets, bytes and validity come back as cuDF lays them out, the
+     * validity after a base the caller picks.
+     */
+    @Test
+    public void testReadParquetStringColumnsTwoFiles() throws TornadoExecutionPlanException, IOException {
+        assumeTrue(Cudf.isStringColumnsAvailable());
+        Path strings = Files.createTempFile("tornado-cudf-strings", ".parquet");
+        strings.toFile().deleteOnExit();
+        try (InputStream in = TestCudfColumns.class.getResourceAsStream("strings.parquet")) {
+            Files.copy(in, strings, StandardCopyOption.REPLACE_EXISTING);
+        }
+        String[] names = { "é0", null, "2", "xyz3", "Ωmega4", null, "ab6", "7", "xyz8", null };
+        int rows = 20;
+        int stride = 24;
+        long charsStride = 256;
+        IntArray offsets = new IntArray(2 * (stride + 1));
+        ByteArray chars = new ByteArray(2 * charsStride);
+        ByteArray valid = new ByteArray(3L * stride);
+        TaskGraph graph = new TaskGraph("cudf") //
+                .libraryTask("strings", Cudf::readParquetStringColumns, new StringBuilder(strings + "\n" + strings), new int[] { 0, 1 }, new long[] { rows }, stride, offsets,
+                        chars, charsStride, valid, 1) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, offsets, chars, valid);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+        for (int i = 0; i < rows; i++) {
+            int r = i % 10;
+            String flag = new String(slice(chars, 0, offsets.get(i), offsets.get(i + 1)), java.nio.charset.StandardCharsets.UTF_8);
+            assertEquals("flag " + i, String.valueOf("RANRANRANR".charAt(r)), flag);
+            assertEquals("flag valid " + i, 1, valid.get(stride + i));
+            boolean present = names[r] != null;
+            assertEquals("name valid " + i, present ? 1 : 0, valid.get(2 * stride + i));
+            if (present) {
+                int from = offsets.get(stride + 1 + i);
+                int to = offsets.get(stride + 1 + i + 1);
+                assertEquals("name " + i, names[r], new String(slice(chars, charsStride, from, to), java.nio.charset.StandardCharsets.UTF_8));
+            }
+        }
+    }
+
+    private static byte[] slice(ByteArray chars, long base, int from, int to) {
+        byte[] bytes = new byte[to - from];
+        for (int b = from; b < to; b++) {
+            bytes[b - from] = chars.get((int) (base + b));
+        }
+        return bytes;
+    }
+
+    /** Group-by on two INT64 key columns: sums and counts per (a, b) pair match the host's. */
+    @Test
+    public void testGroupAggregateLongsTwoKeys() throws TornadoExecutionPlanException {
+        assumeTrue(Cudf.isStringColumnsAvailable());
+        Random random = new Random(9);
+        int stride = 50_000;
+        int n = 40_000;
+        LongArray keys = new LongArray(2L * stride);
+        DoubleArray values = new DoubleArray(2L * stride);
+        java.util.Map<String, double[]> expected = new java.util.HashMap<>();
+        for (int i = 0; i < n; i++) {
+            long a = random.nextInt(5) - 2;
+            long b = random.nextBoolean() ? Long.MIN_VALUE : random.nextInt(7) * 1_000_000_007L;
+            double v = random.nextInt(1000);
+            keys.set(i, a);
+            keys.set(stride + i, b);
+            values.set(i, v);
+            values.set(stride + i, 1.0);
+            double[] sums = expected.computeIfAbsent(a + "/" + b, ignored -> new double[2]);
+            sums[0] += v;
+            sums[1] += 1.0;
+        }
+        LongArray outKeys = new LongArray(2L * stride);
+        DoubleArray outSums = new DoubleArray(2L * stride);
+        IntArray groups = new IntArray(1);
+        TaskGraph graph = new TaskGraph("cudf") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, keys, values) //
+                .libraryTask("group", Cudf::groupAggregateLongs, new int[] { n, 2, 2 }, uk.ac.manchester.tornado.cudf.enums.CudfAggregation.SUM.code(), keys, values, stride,
+                        outKeys, outSums, groups) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outKeys, outSums, groups);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+        assertEquals(expected.size(), groups.get(0));
+        for (int g = 0; g < groups.get(0); g++) {
+            double[] sums = expected.get(outKeys.get(g) + "/" + outKeys.get(stride + g));
+            assertTrue("group " + g, sums != null);
+            assertEquals(sums[0], outSums.get(g), 0.0);
+            assertEquals(sums[1], outSums.get(stride + g), 0.0);
+        }
+    }
+
     /** A column with nulls, read without asking for validity, is refused rather than read as dense. */
     @Test
     public void testReadParquetColumnsRefusesNullsWithoutValidity() {
