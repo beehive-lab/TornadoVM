@@ -25,7 +25,10 @@ import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.cudf.enums.CudfAggregation;
+import uk.ac.manchester.tornado.cudf.enums.CudfType;
+import uk.ac.manchester.tornado.cudf.enums.ParquetColumnType;
 import uk.ac.manchester.tornado.cudf.provider.CudfNativeLib;
 
 /**
@@ -374,6 +377,234 @@ public final class Cudf {
                 .withFunction("containsRe") //
                 .withParameters(new Object[] { rows, offsets, chars, charsBytes, pattern, outMask }) //
                 .withAccess(access);
+    }
+
+    /**
+     * Reads columns of mixed physical types from a Parquet file, with their validity if asked.
+     *
+     * <p>{@link #readParquet} takes one INT32 key and FP64 values, all non-null, which is the shape
+     * of a group-by rather than of a table. A lakehouse table keys rows on 64-bit ids, stores dates
+     * and timestamps as integers and declares most columns optional, and a reader that refuses all
+     * three cannot read it. This one reads any mix of {@link CudfType}s: the k-th requested column
+     * of a type lands at element {@code k * stride} of that type's array.
+     *
+     * <p>{@code stride} is the capacity the arrays were sized for, not this read's row count, so
+     * one set of arrays serves every file a plan reads. The row count travels in
+     * {@code rowsHolder[0]}, read when the task runs, for the reason the path travels in a
+     * {@link StringBuilder}: a value captured when the graph is built cannot change between
+     * executions. A read of more rows than {@code stride} is refused.
+     *
+     * <p>With {@code nullable}, {@code outValid} receives one byte a row a column -- 1 for a value,
+     * 0 for a null -- at {@code c * stride} for the c-th requested column, and the payload under a
+     * null is unspecified. Without it a null is refused, as {@link #readParquet} refuses one.
+     *
+     * <p>The holder may name several files, one a line; they are read in one call as one table,
+     * their rows concatenated in order, and must share a schema. One call over several small files
+     * keeps the device far busier than one call each: a read of a single 1M-row file is mostly
+     * latency. A row-group range applies only to a single file. An empty holder with a row count of
+     * 0 reads nothing and succeeds, so a plan can keep a read in its graph for the executions that
+     * have no file for it.
+     *
+     * <p>An array for a type the read does not use still has to be an array; a one-element one
+     * does. Columns are refused, not cast, when the file's type is not the one requested.
+     *
+     * @param columns schema indices of the columns to read, in the order the outputs are packed
+     * @param types the type each column is read as
+     * @param rowsHolder {@code rowsHolder[0]} is the number of rows the range holds
+     */
+    public static LibraryTaskDescriptor readParquetColumns(StringBuilder pathHolder, int rowGroupStart, int rowGroupCount, int[] columns, CudfType[] types, long[] rowsHolder,
+            int stride, IntArray outInt32, LongArray outInt64, DoubleArray outFloat64, ByteArray outValid, boolean nullable) {
+        if (columns.length != types.length) {
+            throw new IllegalArgumentException("readParquetColumns: " + columns.length + " columns but " + types.length + " types");
+        }
+        int[] kinds = Arrays.stream(types).mapToInt(CudfType::code).toArray();
+        Access[] access = new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY,
+                Access.WRITE_ONLY, Access.WRITE_ONLY, Access.WRITE_ONLY, Access.WRITE_ONLY, Access.READ_ONLY };
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("readParquetColumns") //
+                .withParameters(new Object[] { pathHolder, rowGroupStart, rowGroupCount, columns, kinds, rowsHolder, (long) stride, outInt32, outInt64, outFloat64, outValid,
+                        nullable }) //
+                .withAccess(access);
+    }
+
+    /**
+     * For each key, whether it occurs in a set: one byte a key, 1 when it does.
+     *
+     * <p>The half of a semi- or anti-join that yields a mask rather than index pairs. A lakehouse
+     * equality delete is exactly this -- a row is gone when its key is in the delete set -- and a
+     * mask is what the rest of a filter combines with, where {@link #innerJoin}'s pairs would first
+     * have to be scattered back into one. cuDF hashes the set and probes it with the keys.
+     *
+     * <p>{@code sizes[0]} is the number of keys and {@code sizes[1]} the number of set entries, both
+     * read when the task runs, so one plan probes a different set every execution. An empty set
+     * answers 0 for every key.
+     */
+    public static LibraryTaskDescriptor containedIn(int[] sizes, IntArray keys, IntArray set, ByteArray outMask) {
+        return containedIn(sizes, keys, set, outMask, CudfType.INT32);
+    }
+
+    /** {@link #containedIn(int[], IntArray, IntArray, ByteArray)} over 64-bit keys. */
+    public static LibraryTaskDescriptor containedIn(int[] sizes, LongArray keys, LongArray set, ByteArray outMask) {
+        return containedIn(sizes, keys, set, outMask, CudfType.INT64);
+    }
+
+    private static LibraryTaskDescriptor containedIn(int[] sizes, Object keys, Object set, ByteArray outMask, CudfType type) {
+        Access[] access = new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY, Access.READ_ONLY };
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("containedIn") //
+                .withParameters(new Object[] { sizes, keys, set, outMask, type.code() }) //
+                .withAccess(access);
+    }
+
+    /**
+     * Writes columns from TornadoVM's typed device buffers to a Parquet file, without copying them
+     * to the host: libcudf encodes and compresses on the device.
+     *
+     * <p>The buffers are laid out as {@link #readParquetColumns} lays them out: the k-th column of a
+     * buffer type at element {@code k * stride}, validity bytes (1 for a value) at {@code c * stride}
+     * for the c-th column. Each column has a {@link ParquetColumnType}, a Parquet field id (-1 for
+     * none) -- which is what a table format such as Iceberg resolves columns by when it reads the
+     * file back -- and an optional flag: an optional column is written nullable, with its validity
+     * bytes as the null mask, a required one as required. Footer statistics are written per row
+     * group.
+     *
+     * <p>The row count is {@code rowsHolder[0]}, read when the task runs, or, when that is negative,
+     * the value in {@code deviceRows[0]}: the count {@link #selectedIndices} wrote on the device, so
+     * that a compaction can write its survivors in the same plan that found them.
+     *
+     * @param names column names, one a line
+     * @param compression 0 none, 1 Snappy, 2 ZSTD
+     * @param rowGroupRows rows a row group, or 0 for libcudf's default
+     */
+    public static LibraryTaskDescriptor writeParquetColumns(StringBuilder pathHolder, String names, int[] fieldIds, ParquetColumnType[] types, boolean[] optional,
+            long[] rowsHolder, IntArray deviceRows, int stride, IntArray inInt32, LongArray inInt64, DoubleArray inFloat64, ByteArray inValid, int compression,
+            int rowGroupRows) {
+        if (fieldIds.length != types.length || types.length != optional.length) {
+            throw new IllegalArgumentException("writeParquetColumns: field ids, types and optional flags must be the same length");
+        }
+        int[] codes = Arrays.stream(types).mapToInt(ParquetColumnType::code).toArray();
+        int[] nullable = new int[optional.length];
+        for (int i = 0; i < optional.length; i++) {
+            nullable[i] = optional[i] ? 1 : 0;
+        }
+        Access[] access = new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY,
+                Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY };
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("writeParquetColumns") //
+                .withParameters(new Object[] { pathHolder, names, fieldIds, codes, nullable, rowsHolder, deviceRows, (long) stride, inInt32, inInt64, inFloat64, inValid,
+                        compression, rowGroupRows }) //
+                .withAccess(access);
+    }
+
+    /** Whether the shim on this machine exports {@link #writeParquetColumns}. */
+    public static boolean isWriterAvailable() {
+        return CudfNativeLib.isWriterAvailable();
+    }
+
+    /**
+     * Sorts keys ascending into {@code out}: the values, not a permutation ({@link #sortedOrder}
+     * returns that).
+     *
+     * <p>A set sorted once can be binary-searched by every key of every batch after it, from a
+     * generated kernel, where {@link #containedIn} builds its hash table again on each call. The
+     * count is {@code size[0]}, read when the task runs; 0 sorts nothing, so a plan can keep the
+     * sort in its graph for the executions whose set has not changed.
+     */
+    public static LibraryTaskDescriptor sortKeys(int[] size, IntArray keys, IntArray out) {
+        return sortKeys(size, keys, out, CudfType.INT32);
+    }
+
+    /** {@link #sortKeys(int[], IntArray, IntArray)} over 64-bit keys. */
+    public static LibraryTaskDescriptor sortKeys(int[] size, LongArray keys, LongArray out) {
+        return sortKeys(size, keys, out, CudfType.INT64);
+    }
+
+    private static LibraryTaskDescriptor sortKeys(int[] size, Object keys, Object out, CudfType type) {
+        Access[] access = new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY, Access.READ_ONLY };
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("sortKeys") //
+                .withParameters(new Object[] { size, keys, out, type.code() }) //
+                .withAccess(access);
+    }
+
+    /**
+     * The stable ascending order of rows keyed by several INT64 columns, compared lexicographically:
+     * {@code outOrder[i]} is the row that sorts i-th. Column c of the keys starts at element {@code
+     * c * stride}. The row count is {@code size[0]} and the column count {@code size[1]}, read when
+     * the task runs, so one plan sorts batches of any size up to {@code stride}.
+     *
+     * <p>Wide keys -- a Z-order value of several 64-bit words, say, which a generated kernel can
+     * compute -- sort here without a host round trip; the order then drives a gather.
+     */
+    public static LibraryTaskDescriptor sortedOrderLongs(int[] size, LongArray keys, int stride, IntArray outOrder) {
+        Access[] access = new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY };
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("sortedOrderLongs") //
+                .withParameters(new Object[] { size, keys, stride, outOrder }) //
+                .withAccess(access);
+    }
+
+    /**
+     * Reads STRING columns of one or more Parquet files -- paths one a line, their rows concatenated
+     * -- into a cuDF-layout offsets array and byte blob per column, which generated kernels then
+     * read: column c's {@code rows + 1} offsets start at {@code c * (stride + 1)}, its bytes at
+     * {@code c * charsStride}, and its validity bytes at {@code (validBase + c) * stride} of {@code
+     * outValid}, so they can sit beside the validity {@link #readParquetColumns} writes.
+     *
+     * <p>The row count is {@code rowsHolder[0]} and the path the holder's contents, both read when
+     * the task runs. A column whose bytes exceed {@code charsStride} is refused, not truncated.
+     */
+    public static LibraryTaskDescriptor readParquetStringColumns(StringBuilder pathHolder, int[] columns, long[] rowsHolder, int stride, IntArray outOffsets,
+            ByteArray outChars, long charsStride, ByteArray outValid, int validBase) {
+        Access[] access = new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY, Access.WRITE_ONLY, Access.READ_ONLY,
+                Access.WRITE_ONLY, Access.READ_ONLY };
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("readParquetStringColumns") //
+                .withParameters(new Object[] { pathHolder, columns, rowsHolder, (long) stride, outOffsets, outChars, charsStride, outValid, validBase }) //
+                .withAccess(access);
+    }
+
+    /**
+     * {@link #groupAggregate} over several INT64 key columns: the first {@code size[0]} rows, grouped
+     * by {@code size[1]} key columns, aggregating {@code size[2]} FP64 value columns, all at {@code
+     * stride}. Writes the groups' keys and aggregates at the same stride and the group count to
+     * {@code outGroups[0]}. Strings packed into INT64 by a kernel group here exactly.
+     */
+    public static LibraryTaskDescriptor groupAggregateLongs(int[] size, int aggregation, LongArray keys, DoubleArray values, int stride, LongArray outKeys,
+            DoubleArray outResults, IntArray outGroups) {
+        Access[] access = new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY, Access.WRITE_ONLY,
+                Access.WRITE_ONLY };
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("groupAggregateLongs") //
+                .withParameters(new Object[] { size, aggregation, keys, values, stride, outKeys, outResults, outGroups }) //
+                .withAccess(access);
+    }
+
+    /** Whether the shim exports {@link #readParquetStringColumns} and {@link #groupAggregateLongs}. */
+    public static boolean isStringColumnsAvailable() {
+        return CudfNativeLib.isStringColumnsAvailable();
+    }
+
+    /** Whether the shim on this machine exports {@link #sortedOrderLongs}. */
+    public static boolean isSortedOrderLongsAvailable() {
+        return CudfNativeLib.isSortedOrderLongsAvailable();
+    }
+
+    /** Whether the shim on this machine exports {@link #sortKeys}. */
+    public static boolean isSortKeysAvailable() {
+        return CudfNativeLib.isSortKeysAvailable();
+    }
+
+    /** Whether the shim on this machine exports {@link #readParquetColumns} and {@link #containedIn}. */
+    public static boolean isColumnsAvailable() {
+        return CudfNativeLib.isColumnsAvailable();
     }
 
     public static long[] parquetMetadata(String path) {

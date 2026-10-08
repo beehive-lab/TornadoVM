@@ -29,6 +29,8 @@ import static tornado.graal.compiler.nodes.loop.DefaultLoopPolicies.Options.Exac
 import static tornado.graal.compiler.nodes.loop.DefaultLoopPolicies.Options.FullUnrollMaxNodes;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 
+import java.util.function.Predicate;
+
 import tornado.graal.compiler.graph.Node;
 import tornado.graal.compiler.loop.phases.LoopTransformations;
 import tornado.graal.compiler.nodes.IfNode;
@@ -49,12 +51,23 @@ public class TornadoLoopUnroller extends BasePhase<CoreProviders> {
 
     private final CanonicalizerPhase canonicalizer;
 
+    /**
+     * Loops matching this predicate are never fully unrolled (for example CUDA Tile loops, which
+     * the tile compiler pipelines itself on most architectures).
+     */
+    private final Predicate<LoopEx> keepRolled;
+
     public TornadoLoopUnroller(CanonicalizerPhase canonicalizer) {
-        this.canonicalizer = canonicalizer;
+        this(canonicalizer, loop -> false);
     }
 
-    private static boolean shouldFullUnroll(OptionValues options, LoopEx loop) {
-        if (!loop.isCounted() || !loop.counted().isConstantMaxTripCount()) {
+    public TornadoLoopUnroller(CanonicalizerPhase canonicalizer, Predicate<LoopEx> keepRolled) {
+        this.canonicalizer = canonicalizer;
+        this.keepRolled = keepRolled;
+    }
+
+    private boolean shouldFullUnroll(OptionValues options, LoopEx loop) {
+        if (!loop.isCounted() || !loop.counted().isConstantMaxTripCount() || keepRolled.test(loop)) {
             return false;
         }
         CountedLoopInfo counted = loop.counted();

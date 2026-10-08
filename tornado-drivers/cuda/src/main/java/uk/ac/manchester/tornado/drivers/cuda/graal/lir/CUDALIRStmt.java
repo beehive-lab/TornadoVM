@@ -2387,6 +2387,80 @@ public class CUDALIRStmt {
         }
     }
 
+    /**
+     * Loads an m16n8k16 f16 A or B fragment straight from a row-major global half matrix.
+     *
+     * <p>Lane {@code L} owns row {@code L / 4} and the column pair {@code (L % 4) * 2} of each
+     * 8x8 quarter of the tile, which is one aligned 32-bit load. For A that pair is already
+     * the register mma.sync expects. B has to arrive column-major (k pairs), so each 8x8 half
+     * is loaded along n and transposed across the warp with {@code movmatrix}.
+     */
+    @Opcode("MMA_LOAD_GLOBAL")
+    public static class MMALoadGlobalStmt extends AbstractInstruction {
+        public static final LIRInstructionClass<MMALoadGlobalStmt> TYPE = LIRInstructionClass.create(MMALoadGlobalStmt.class);
+
+        @Def protected Value result;
+        @Use protected Value array;
+        @Use protected Value row;
+        @Use protected Value col;
+        @Use protected Value ld;
+        private final boolean isB;
+        private final int headerBytes;
+
+        public MMALoadGlobalStmt(Value result, Value array, Value row, Value col, Value ld, boolean isB, int headerBytes) {
+            super(TYPE);
+            this.result = result;
+            this.array = array;
+            this.row = row;
+            this.col = col;
+            this.ld = ld;
+            this.isB = isB;
+            this.headerBytes = headerBytes;
+        }
+
+        private static void line(CUDAAssembler asm, String s) {
+            asm.indent();
+            asm.emit(s);
+            asm.delimiter();
+            asm.eol();
+        }
+
+        @Override
+        public void emitCode(CUDACompilationResultBuilder crb, CUDAAssembler asm) {
+            String frag = asm.getStringValue(crb, result);
+            String arr = asm.getStringValue(crb, array);
+            String r = asm.getStringValue(crb, row);
+            String c = asm.getStringValue(crb, col);
+            String stride = asm.getStringValue(crb, ld);
+
+            line(asm, "unsigned " + frag + "[" + (isB ? 2 : 4) + "]");
+            asm.indent();
+            asm.emit("{");
+            asm.eol();
+            asm.pushIndent();
+            line(asm, "unsigned __lane = threadIdx.x & 31u");
+            line(asm, "int __ld = " + stride);
+            // &m[(row + L/4) * ld + col + (L%4)*2], past the array header.
+            line(asm, "const unsigned short *__p = (const unsigned short *) ((const char *) " + arr + " + " + headerBytes + "u) + ((" + r
+                    + ") + (int) (__lane >> 2)) * __ld + (" + c + ") + (int) ((__lane & 3u) << 1)");
+            if (isB) {
+                line(asm, "unsigned __x0 = *((const unsigned *) __p)");
+                line(asm, "unsigned __x1 = *((const unsigned *) (__p + 8 * __ld))");
+                line(asm, "asm volatile(\"movmatrix.sync.aligned.m8n8.trans.b16 %0, %1;\" : \"=r\"(" + frag + "[0]) : \"r\"(__x0))");
+                line(asm, "asm volatile(\"movmatrix.sync.aligned.m8n8.trans.b16 %0, %1;\" : \"=r\"(" + frag + "[1]) : \"r\"(__x1))");
+            } else {
+                line(asm, frag + "[0] = *((const unsigned *) __p)");
+                line(asm, frag + "[1] = *((const unsigned *) (__p + 8 * __ld))");
+                line(asm, frag + "[2] = *((const unsigned *) (__p + 8))");
+                line(asm, frag + "[3] = *((const unsigned *) (__p + 8 * __ld + 8))");
+            }
+            asm.popIndent();
+            asm.indent();
+            asm.emit("}");
+            asm.eol();
+        }
+    }
+
     @Opcode("MMA_COMPUTE")
     public static class MMAComputeStmt extends AbstractInstruction {
 

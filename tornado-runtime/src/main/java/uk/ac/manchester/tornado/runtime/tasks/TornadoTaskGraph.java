@@ -886,8 +886,15 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         int i = 0;
 
         for (final Object arg : args) {
-            index = executionContext.insertVariable(arg, accesses[i]);
-            if (arg.getClass().isPrimitive() || RuntimeUtilities.isBoxedPrimitiveClass(arg.getClass())) {
+            // A library task's text argument -- a path or a pattern, often a mutable holder such as
+            // a StringBuilder so one plan can name a different file every execution -- is read by
+            // the provider on the host and never by the device. It is passed like a constant, by
+            // reference to the Java object, instead of being serialised into a device buffer:
+            // that serialisation is sized when first done, so a holder that later grows overflows
+            // it, and it cannot represent the holder's byte[] at all.
+            final boolean hostOnly = task instanceof LibraryTask && arg instanceof CharSequence;
+            index = hostOnly ? executionContext.insertConstant(arg) : executionContext.insertVariable(arg, accesses[i]);
+            if (hostOnly || arg.getClass().isPrimitive() || RuntimeUtilities.isBoxedPrimitiveClass(arg.getClass())) {
                 hlBuffer.put(TornadoGraphBitcodes.LOAD_PRIM.index());
             } else {
                 hlBuffer.put(TornadoGraphBitcodes.LOAD_REF.index());
@@ -1464,7 +1471,27 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         vm.destroyExecutionGraphs();
         LibraryRegistry.destroyContexts(executionPlanId);
         freeIOObjects();
+        freeIntermediateObjects();
         meta().getXPUDevice().getDeviceContext().reset(executionPlanId);
+    }
+
+    /**
+     * Releases the device buffers of the objects the tasks use that were never declared to cross
+     * to or from the host: an intermediate one task writes and another reads, on the device only.
+     * {@link #freeIOObjects()} only knows the declared ones, so these used to stay allocated -- in
+     * device memory and against {@code tornado.device.memory} -- after the plan was closed.
+     * Objects shared with another graph through {@code persistOnDevice}/{@code consumeFromDevice}
+     * are declared, and so are left to that mechanism.
+     */
+    private void freeIntermediateObjects() {
+        List<Object> persisted = executionContext.getPersistedObjects();
+        for (Object object : new ArrayList<>(executionContext.getObjects())) {
+            if (object == null || argumentsLookUp.contains(object) || persisted.contains(object)) {
+                continue;
+            }
+            Access access = executionContext.getObjectsAccesses().getOrDefault(object, Access.READ_WRITE);
+            freeDeviceMemoryObject(object, access);
+        }
     }
 
     private void freeDeviceMemoryObject(Object object, Access access) {

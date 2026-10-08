@@ -83,23 +83,6 @@ public class TornadoSketcher {
     private static final TimerKey Sketcher = DebugContext.timer("Sketcher");
     private static final OptimisticOptimizations optimisticOpts = OptimisticOptimizations.ALL;
     private static TornadoLogger logger = new TornadoLogger();
-    public static Access[] methodAccesses;
-
-    private static boolean cacheContainsSketch(ResolvedJavaMethod method, int driverIndex, int deviceIndex) {
-        List<TornadoSketcherCacheEntry> entries = cache.get(method);
-        if (entries == null) {
-            return false;
-        }
-
-        synchronized (entries) {
-            for (TornadoSketcherCacheEntry entry : entries) {
-                if (entry.matchesDriverAndDevice(driverIndex, deviceIndex)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
 
     public static Sketch lookup(ResolvedJavaMethod resolvedMethod, int driverIndex, int deviceIndex) {
         Sketch sketch = null;
@@ -136,12 +119,18 @@ public class TornadoSketcher {
     }
 
     static void buildSketch(SketchRequest request) {
-        if (cacheContainsSketch(request.resolvedMethod, request.driverIndex, request.deviceIndex)) {
-            return;
-        }
         List<TornadoSketcherCacheEntry> sketches = cache.computeIfAbsent(request.resolvedMethod, k -> Collections.synchronizedList(new ArrayList<>(TornadoVMBackendType.values().length)));
-        Future<Sketch> result = getTornadoExecutor().submit(new TornadoSketcherCallable(request));
-        sketches.add(new TornadoSketcherCacheEntry(request.driverIndex, request.deviceIndex, result));
+        // Check and add under one lock: two plans built on two threads can ask for the same
+        // method's sketch at once, and only one of them should build it.
+        synchronized (sketches) {
+            for (TornadoSketcherCacheEntry entry : sketches) {
+                if (entry.matchesDriverAndDevice(request.driverIndex, request.deviceIndex)) {
+                    return;
+                }
+            }
+            Future<Sketch> result = getTornadoExecutor().submit(new TornadoSketcherCallable(request));
+            sketches.add(new TornadoSketcherCacheEntry(request.driverIndex, request.deviceIndex, result));
+        }
     }
 
     @SuppressWarnings("checkstyle:LineLength")
@@ -234,9 +223,9 @@ public class TornadoSketcher {
                 mergeAccesses(highTierAccesses, invoke.callTarget(), sketch.getArgumentsAccess());
             });
 
-            methodAccesses = highTierAccesses;
-
-            return new Sketch(graph.copy(TornadoCoreRuntime.getDebugContext()), methodAccesses, highTierContext.getBatchWriteThreadIndex());
+            // The accesses go straight into this method's sketch. Sketches of different methods are
+            // built concurrently on the sketcher pool, so nothing here may pass through a shared field.
+            return new Sketch(graph.copy(TornadoCoreRuntime.getDebugContext()), highTierAccesses, highTierContext.getBatchWriteThreadIndex());
 
         } catch (Throwable e) {
             logger.fatal("unable to build sketch for method: %s (%s)", resolvedMethod.getName(), e.getMessage());

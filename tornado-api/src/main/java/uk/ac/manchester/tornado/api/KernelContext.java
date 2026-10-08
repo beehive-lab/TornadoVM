@@ -848,6 +848,62 @@ public class KernelContext implements ExecutionContext {
     }
 
     /**
+     * Loads the m16n8k16 A fragment straight from a row-major matrix in global memory,
+     * without staging the tile through shared memory.
+     *
+     * <p>The fragment covers the 16x16 sub-matrix whose top-left element is
+     * {@code a[row * ld + col]}. Each lane reads its own four pairs of adjacent half
+     * values as 32-bit loads, in the fixed PTX m16n8k16 A layout: for lane {@code L},
+     * register {@code i} holds row {@code L / 4 + 8 * (i % 2)}, columns
+     * {@code (L % 4) * 2 + 8 * (i / 2)} and the next one. No barrier is needed, so a
+     * warp can load, multiply and store its own tile without synchronising with the
+     * rest of the work-group.
+     *
+     * <p>The call is warp-collective. {@code col} and {@code ld} must be even, so that each
+     * half pair is 4-byte aligned.
+     *
+     * PTX equivalent: ld.global.b32 ra0..ra3 (one per lane and register)
+     *
+     * @param a   the row-major source matrix
+     * @param row the first row of the 16x16 sub-matrix
+     * @param col the first column of the 16x16 sub-matrix (the first k index)
+     * @param ld  the number of elements between two consecutive rows of {@code a}
+     * @return the lane's A fragment, to pass to {@link #mma(HalfFloat[], HalfFloat[], float[], MMAShape)}
+     */
+    public HalfFloat[] mmaLoadA(HalfFloatArray a, int row, int col, int ld) {
+        // CPU fallback: return an 8-element fragment.
+        // On GPU this is replaced by a CUDAMMALoadGlobalNode by the plugin.
+        return new HalfFloat[8];
+    }
+
+    /**
+     * Loads the m16n8k16 B fragment straight from a row-major matrix in global memory,
+     * without staging the tile through shared memory.
+     *
+     * <p>The fragment covers the 16x8 (k x n) sub-matrix whose top-left element is
+     * {@code b[row * ld + col]}. mma.sync takes B column-major, so each lane reads a pair
+     * of adjacent half values along n with a 32-bit load and the warp transposes the two
+     * 8x8 halves in registers ({@code movmatrix}). For lane {@code L}, register {@code i}
+     * then holds column {@code L / 4}, rows {@code (L % 4) * 2 + 8 * i} and the next one.
+     *
+     * <p>The call is warp-collective. {@code col} and {@code ld} must be even, so that each
+     * half pair is 4-byte aligned.
+     *
+     * PTX equivalent: ld.global.b32 + movmatrix.sync.aligned.m8n8.trans.b16 (x2 per lane)
+     *
+     * @param b   the row-major source matrix
+     * @param row the first row of the 16x8 sub-matrix (the first k index)
+     * @param col the first column of the 16x8 sub-matrix
+     * @param ld  the number of elements between two consecutive rows of {@code b}
+     * @return the lane's B fragment, to pass to {@link #mma(HalfFloat[], HalfFloat[], float[], MMAShape)}
+     */
+    public HalfFloat[] mmaLoadB(HalfFloatArray b, int row, int col, int ld) {
+        // CPU fallback: return a 4-element fragment.
+        // On GPU this is replaced by a CUDAMMALoadGlobalNode by the plugin.
+        return new HalfFloat[4];
+    }
+
+    /**
      * Loads the B fragment for mma.sync from a swizzled shared-memory tile
      * populated using {@link #swizzleStoreFp16Stride32(HalfFloat[], int, int, int, HalfFloat)}.
      *

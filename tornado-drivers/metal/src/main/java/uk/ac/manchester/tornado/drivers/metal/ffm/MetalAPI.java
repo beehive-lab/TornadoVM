@@ -138,6 +138,11 @@ public final class MetalAPI {
         return ObjCRuntime.send(device, "recommendedMaxWorkingSetSize");
     }
 
+    /** {@code -[MTLDevice maxBufferLength]}, the largest buffer the device can allocate. */
+    public static long deviceMaxBufferLength(long device) {
+        return ObjCRuntime.send(device, "maxBufferLength");
+    }
+
     /** {@code -[MTLDevice maxThreadgroupMemoryLength]}, the threadgroup (local) memory budget. */
     public static long deviceMaxThreadgroupMemoryLength(long device) {
         return ObjCRuntime.send(device, "maxThreadgroupMemoryLength");

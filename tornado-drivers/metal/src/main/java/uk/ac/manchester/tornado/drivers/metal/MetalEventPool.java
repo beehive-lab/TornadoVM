@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -83,14 +84,12 @@ public class MetalEventPool {
         guarantee(!retain.get(currentEvent), "overwriting retained event");
 
         /*
-         * Metal can produce an out of resources error which results in an invalid
-         * event (-1). If this happens, then we log a fatal exception and gracefully
-         * exit.
+         * An invalid event (-1) means the command was never issued: a kernel without a compute
+         * pipeline, an out-of-resources error, or a missing queue. Fail the operation with that
+         * description instead of terminating the JVM without a word.
          */
         if (oclEventId == -1) {
-            logger.fatal("invalid event: event=0x%x, description=%s\n", oclEventId, descriptorId.getNameDescription());
-            logger.fatal("terminating application as system integrity has been compromised.");
-            System.exit(-1);
+            throw new TornadoRuntimeException(String.format("[Metal] %s was not issued: the driver returned an invalid event", descriptorId.getNameDescription()));
         }
 
         if (events[currentEvent] > 0 && !retain.get(currentEvent)) {

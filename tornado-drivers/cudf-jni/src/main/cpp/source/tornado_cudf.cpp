@@ -45,6 +45,7 @@
 #include <cudf/filling.hpp>
 #include <cudf/join/join.hpp>
 #include <cudf/reduction.hpp>
+#include <cudf/search.hpp>
 #include <cudf/sorting.hpp>
 #include <cudf/stream_compaction.hpp>
 #include <cudf/table/table.hpp>
@@ -54,6 +55,7 @@
 #include <cudf/strings/regex/regex_program.hpp>
 #include <cudf/strings/strings_column_view.hpp>
 #include <cudf/unary.hpp>
+#include <cudf/transform.hpp>
 
 #include <rmm/cuda_stream_view.hpp>
 #include <rmm/mr/cuda_memory_resource.hpp>
@@ -902,6 +904,627 @@ int tornado_cudf_contains_re(void* stream, int64_t rows, const void* offsets, co
         return fail("containsRe", e);
     } catch (...) {
         return fail("containsRe");
+    }
+}
+
+/**
+ * Reads columns of several physical types from a Parquet file, with their validity if asked.
+ *
+ * tornado_cudf_read_parquet takes one INT32 key and FP64 values, all non-null, which is a group-by's
+ * shape and not a table's. A lakehouse table keys rows on 64-bit ids, stores dates and timestamps as
+ * 32- and 64-bit integers, and declares most columns optional. This entry point reads any mix of
+ * those into three typed buffers, one a physical type, each packed with a stride of `stride` --
+ * the k-th requested column of a kind starts at element k * stride of that kind's buffer.
+ *
+ * The stride is the caller's capacity rather than this read's row count, so that one set of
+ * buffers sized for the largest file serves every file: `rows` is what this read must produce and
+ * may be anything up to `stride`.
+ *
+ * Kinds, which cross the ABI and so are fixed: 0 is a 32-bit integer (INT32, or TIMESTAMP_DAYS,
+ * which is how Parquet DATE arrives), 1 is a 64-bit integer (INT64, or any TIMESTAMP with a 64-bit
+ * representation), 2 is FP64. A column of another type is refused rather than cast.
+ *
+ * With `nullable` set, out_valid receives one byte a row a column -- 1 for a value, 0 for a null --
+ * at stride `stride` in request order; the payload under a null is whatever the decoder left there.
+ * With it clear, a null is refused, which is the contract the other entry points have.
+ */
+int tornado_cudf_read_parquet_columns(void* stream, const char* path, int32_t row_group_start, int32_t row_group_count, int32_t column_count,
+        const int32_t* columns, const int32_t* kinds, int64_t rows, int64_t stride, void* out_int32, void* out_int64, void* out_fp64, void* out_valid,
+        int32_t nullable) {
+    ensure_pool();
+    try {
+        // Nothing to read is a read of nothing: a plan whose graph always holds a read can then
+        // skip it for the executions that have no file for it, which a graph cannot otherwise do.
+        if (rows == 0 && (path == nullptr || path[0] == '\0')) {
+            return 0;
+        }
+        if (path == nullptr || columns == nullptr || kinds == nullptr || column_count <= 0) {
+            g_last_error = "readParquetColumns: null path or empty column list";
+            return 5;
+        }
+        if (rows < 0 || rows > stride) {
+            g_last_error = "readParquetColumns: " + std::to_string(rows) + " rows do not fit a stride of " + std::to_string(stride);
+            return 5;
+        }
+
+        // Several files, one a line, are read as one table: their rows concatenated in order.
+        // One call over many small files is what keeps the device busy -- a read of one 1M-row
+        // file is latency, not bandwidth -- and their schemas have to agree, which the column
+        // names resolved from the first file then check.
+        std::vector<std::string> paths;
+        {
+            std::string all(path);
+            size_t begin = 0;
+            while (begin <= all.size()) {
+                size_t end = all.find('\n', begin);
+                if (end == std::string::npos) {
+                    end = all.size();
+                }
+                if (end > begin) {
+                    paths.push_back(all.substr(begin, end - begin));
+                }
+                begin = end + 1;
+            }
+        }
+        if (paths.empty()) {
+            g_last_error = "readParquetColumns: no path";
+            return 5;
+        }
+        if (paths.size() > 1 && row_group_count > 0) {
+            g_last_error = "readParquetColumns: a row-group range applies to one file, not to " + std::to_string(paths.size());
+            return 5;
+        }
+        auto metadata = cudf::io::read_parquet_metadata(cudf::io::source_info{paths.front()});
+        auto source = cudf::io::source_info{paths};
+        const auto& root = metadata.schema().root();
+        const int32_t schema_columns = static_cast<int32_t>(root.num_children());
+
+        std::vector<std::string> names;
+        for (int32_t c = 0; c < column_count; c++) {
+            if (columns[c] < 0 || columns[c] >= schema_columns) {
+                g_last_error = "readParquetColumns: column " + std::to_string(columns[c]) + " is beyond the file's " + std::to_string(schema_columns) + " columns";
+                return 6;
+            }
+            if (kinds[c] < 0 || kinds[c] > 3) {
+                g_last_error = "readParquetColumns: kind " + std::to_string(kinds[c]) + " is not 0 (INT32), 1 (INT64), 2 (FP64) or 3 (FP32 into FP64)";
+                return 5;
+            }
+            names.push_back(root.child(columns[c]).name());
+        }
+
+        auto options = cudf::io::parquet_reader_options::builder(source).columns(names).build();
+        if (row_group_count > 0) {
+            std::vector<cudf::size_type> groups;
+            for (int32_t g = 0; g < row_group_count; g++) {
+                groups.push_back(static_cast<cudf::size_type>(row_group_start + g));
+            }
+            options.set_row_groups({groups});
+        }
+
+        auto view = rmm::cuda_stream_view{static_cast<cudaStream_t>(stream)};
+        auto result = cudf::io::read_parquet(options, view);
+        const auto table = result.tbl->view();
+        if (static_cast<int64_t>(table.num_rows()) != rows) {
+            g_last_error = "readParquetColumns: file gave " + std::to_string(table.num_rows()) + " rows where the caller asked for " + std::to_string(rows);
+            return 7;
+        }
+
+        cudaStream_t raw = static_cast<cudaStream_t>(stream);
+        int64_t slot[3] = {0, 0, 0};
+        void* base[3] = {out_int32, out_int64, out_fp64};
+        const size_t width[3] = {sizeof(int32_t), sizeof(int64_t), sizeof(double)};
+        for (int32_t c = 0; c < column_count; c++) {
+            const auto col = table.column(c);
+            const auto id = col.type().id();
+            // Kind 3 is a FLOAT32 column widened, exactly, into the FP64 buffer: it shares that buffer's slots.
+            const int32_t kind = kinds[c] == 3 ? 2 : kinds[c];
+            const bool widen_float = kinds[c] == 3;
+            bool accepted = false;
+            switch (kind) {
+                case 0:
+                    accepted = id == cudf::type_id::INT32 || id == cudf::type_id::TIMESTAMP_DAYS;
+                    break;
+                case 1:
+                    accepted = id == cudf::type_id::INT64 || id == cudf::type_id::TIMESTAMP_SECONDS || id == cudf::type_id::TIMESTAMP_MILLISECONDS
+                            || id == cudf::type_id::TIMESTAMP_MICROSECONDS || id == cudf::type_id::TIMESTAMP_NANOSECONDS;
+                    break;
+                default:
+                    accepted = widen_float ? id == cudf::type_id::FLOAT32 : id == cudf::type_id::FLOAT64;
+                    break;
+            }
+            if (!accepted) {
+                g_last_error = "readParquetColumns: column " + std::to_string(columns[c]) + " (" + names[c] + ") has cuDF type id " + std::to_string(static_cast<int32_t>(id))
+                        + ", which is not kind " + std::to_string(kind) + "; this reader does not cast";
+                return 8;
+            }
+            if (col.null_count() != 0 && nullable == 0) {
+                g_last_error = "readParquetColumns: column " + std::to_string(columns[c]) + " (" + names[c] + ") contains nulls and validity was not requested";
+                return 9;
+            }
+            if (base[kind] == nullptr) {
+                g_last_error = "readParquetColumns: a column of kind " + std::to_string(kind) + " was requested with no buffer for that kind";
+                return 5;
+            }
+            if (rows > 0) {
+                char* dst = static_cast<char*>(base[kind]) + static_cast<size_t>(slot[kind]) * static_cast<size_t>(stride) * width[kind];
+                std::unique_ptr<cudf::column> widened;
+                cudf::column_view source = col;
+                if (widen_float) {
+                    widened = cudf::cast(col, cudf::data_type{cudf::type_id::FLOAT64}, view);
+                    source = widened->view();
+                }
+                cudaError_t rc = copy_out(dst, source.head<char>() + static_cast<size_t>(source.offset()) * width[kind], static_cast<size_t>(rows) * width[kind], raw);
+                if (rc != cudaSuccess) {
+                    g_last_error = std::string("readParquetColumns copy-out: ") + cudaGetErrorString(rc);
+                    return 3;
+                }
+            }
+            slot[kind]++;
+
+            if (nullable != 0 && rows > 0) {
+                if (out_valid == nullptr) {
+                    g_last_error = "readParquetColumns: validity was requested with no buffer for it";
+                    return 5;
+                }
+                char* valid = static_cast<char*>(out_valid) + static_cast<size_t>(c) * static_cast<size_t>(stride);
+                cudaError_t rc;
+                if (col.null_count() == 0) {
+                    rc = cudaMemsetAsync(valid, 1, static_cast<size_t>(rows), raw);
+                } else {
+                    // is_valid turns the packed null mask into one BOOL8 a row, which is what a
+                    // generated kernel can read without bit arithmetic on someone else's layout.
+                    auto flags = cudf::is_valid(col, view);
+                    rc = copy_out(valid, flags->view().data<int8_t>(), static_cast<size_t>(rows), raw);
+                }
+                if (rc != cudaSuccess) {
+                    g_last_error = std::string("readParquetColumns validity copy-out: ") + cudaGetErrorString(rc);
+                    return 3;
+                }
+            }
+        }
+        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+    } catch (const std::exception& e) {
+        return fail("readParquetColumns", e);
+    } catch (...) {
+        return fail("readParquetColumns");
+    }
+}
+
+/**
+ * Set membership: for each of n keys, whether it occurs among m set entries, as one BOOL8 a row.
+ *
+ * The half of an anti-join or semi-join that produces a mask rather than index pairs. An
+ * equality delete is exactly this -- a row is deleted when its key is in the delete set -- and a
+ * mask is what the rest of a filter combines with, where inner_join's pairs would have to be
+ * scattered back into one first. cuDF builds a hash table over the set and probes it with the keys.
+ *
+ * kind 0 is INT32 keys, 1 is INT64. m may be 0, which answers false for every row without a probe.
+ */
+int tornado_cudf_contains(void* stream, int32_t kind, const void* set, int32_t m, const void* keys, int32_t n, void* out_mask) {
+    ensure_pool();
+    try {
+        if (keys == nullptr || out_mask == nullptr || (m > 0 && set == nullptr)) {
+            g_last_error = "containedIn: null buffer";
+            return 5;
+        }
+        if (kind != 0 && kind != 1) {
+            g_last_error = "containedIn: kind " + std::to_string(kind) + " is not 0 (INT32) or 1 (INT64)";
+            return 5;
+        }
+        cudaStream_t raw = static_cast<cudaStream_t>(stream);
+        if (n <= 0) {
+            return 0;
+        }
+        if (m <= 0) {
+            cudaError_t rc = cudaMemsetAsync(out_mask, 0, static_cast<size_t>(n), raw);
+            if (rc != cudaSuccess) {
+                g_last_error = std::string("containedIn memset: ") + cudaGetErrorString(rc);
+                return 3;
+            }
+            return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+        }
+        auto view = rmm::cuda_stream_view{raw};
+        const auto id = kind == 0 ? cudf::type_id::INT32 : cudf::type_id::INT64;
+        cudf::column_view haystack(cudf::data_type{id}, m, set, nullptr, 0);
+        cudf::column_view needles(cudf::data_type{id}, n, keys, nullptr, 0);
+        auto found = cudf::contains(haystack, needles, view);
+        if (found->type().id() != cudf::type_id::BOOL8) {
+            g_last_error = "containedIn: contains did not return BOOL8";
+            return 8;
+        }
+        cudaError_t rc = copy_out(out_mask, found->view().data<int8_t>(), static_cast<size_t>(n), raw);
+        if (rc != cudaSuccess) {
+            g_last_error = std::string("containedIn copy-out: ") + cudaGetErrorString(rc);
+            return 3;
+        }
+        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+    } catch (const std::exception& e) {
+        return fail("containedIn", e);
+    } catch (...) {
+        return fail("containedIn");
+    }
+}
+
+/**
+ * Writes columns held in TornadoVM's typed device buffers to a Parquet file, from the device.
+ *
+ * The inverse of tornado_cudf_read_parquet_columns, with the same buffer layout: the k-th column of
+ * a physical kind is at element k * stride of that kind's buffer, and validity bytes (1 = value) are
+ * at c * stride for the c-th column. Nothing is copied to the host first; libcudf encodes and
+ * compresses on the device and writes the file.
+ *
+ * types, one a column, fix both the buffer and the Parquet type, and cross the ABI:
+ *   0 INT32, 1 INT64, 2 FP64, 3 DATE (days, from the INT32 buffer), 4 TIMESTAMP in microseconds
+ *   (from the INT64 buffer).
+ * field_ids, one a column, are written as Parquet field ids (-1 for none): a table format that
+ * resolves columns by id -- Iceberg -- reads the file back by them. optional, one a column, makes
+ * the column nullable, with its validity bytes as the null mask; a required column is written as
+ * required and its validity bytes are not read.
+ *
+ * The row count is rows, or, when rows is negative, the INT32 at device_rows: the count a compaction
+ * on the device (tornado_cudf_selected_indices) produced, which the host does not know when the
+ * plan runs. compression: 0 none, 1 Snappy, 2 ZSTD. row_group_rows <= 0 keeps libcudf's default.
+ * Column names are one a line in names. Footer statistics are written per row group.
+ */
+int tornado_cudf_write_parquet_columns(void* stream, const char* path, int32_t column_count, const char* names, const int32_t* field_ids,
+        const int32_t* types, const int32_t* optional, int64_t rows, const void* device_rows, int64_t stride, const void* in_int32, const void* in_int64,
+        const void* in_fp64, const void* in_valid, int32_t compression, int32_t row_group_rows) {
+    ensure_pool();
+    try {
+        if (path == nullptr || names == nullptr || field_ids == nullptr || types == nullptr || optional == nullptr || column_count <= 0) {
+            g_last_error = "writeParquetColumns: null argument or no columns";
+            return 5;
+        }
+        cudaStream_t raw = static_cast<cudaStream_t>(stream);
+        auto view = rmm::cuda_stream_view{raw};
+        if (rows < 0) {
+            if (device_rows == nullptr) {
+                g_last_error = "writeParquetColumns: no row count";
+                return 5;
+            }
+            int32_t count = 0;
+            cudaError_t rc = cudaMemcpyAsync(&count, device_rows, sizeof(int32_t), cudaMemcpyDeviceToHost, raw);
+            if (rc != cudaSuccess || cudaStreamSynchronize(raw) != cudaSuccess) {
+                g_last_error = "writeParquetColumns: cannot read the row count from the device";
+                return 3;
+            }
+            rows = count;
+        }
+        if (rows > stride) {
+            g_last_error = "writeParquetColumns: " + std::to_string(rows) + " rows do not fit a stride of " + std::to_string(stride);
+            return 5;
+        }
+
+        std::vector<std::string> column_names;
+        {
+            std::string all(names);
+            size_t begin = 0;
+            while (begin <= all.size()) {
+                size_t end = all.find('\n', begin);
+                if (end == std::string::npos) {
+                    end = all.size();
+                }
+                column_names.push_back(all.substr(begin, end - begin));
+                begin = end + 1;
+            }
+        }
+        if (static_cast<int32_t>(column_names.size()) != column_count) {
+            g_last_error = "writeParquetColumns: " + std::to_string(column_names.size()) + " names for " + std::to_string(column_count) + " columns";
+            return 5;
+        }
+
+        int64_t slot[3] = {0, 0, 0};
+        const char* base[3] = {static_cast<const char*>(in_int32), static_cast<const char*>(in_int64), static_cast<const char*>(in_fp64)};
+        const size_t width[3] = {sizeof(int32_t), sizeof(int64_t), sizeof(double)};
+        std::vector<cudf::column_view> views;
+        std::vector<std::unique_ptr<rmm::device_buffer>> masks;  // owned here until the write returns
+        for (int32_t c = 0; c < column_count; c++) {
+            int32_t kind;
+            cudf::type_id id;
+            switch (types[c]) {
+                case 0: kind = 0; id = cudf::type_id::INT32; break;
+                case 1: kind = 1; id = cudf::type_id::INT64; break;
+                case 2: kind = 2; id = cudf::type_id::FLOAT64; break;
+                case 3: kind = 0; id = cudf::type_id::TIMESTAMP_DAYS; break;
+                case 4: kind = 1; id = cudf::type_id::TIMESTAMP_MICROSECONDS; break;
+                default:
+                    g_last_error = "writeParquetColumns: unknown type " + std::to_string(types[c]);
+                    return 5;
+            }
+            if (base[kind] == nullptr) {
+                g_last_error = "writeParquetColumns: a column needs a buffer that was not given";
+                return 5;
+            }
+            const void* data = base[kind] + static_cast<size_t>(slot[kind]) * static_cast<size_t>(stride) * width[kind];
+            slot[kind]++;
+            const cudf::bitmask_type* mask = nullptr;
+            cudf::size_type nulls = 0;
+            if (optional[c] != 0 && rows > 0) {
+                if (in_valid == nullptr) {
+                    g_last_error = "writeParquetColumns: an optional column with no validity buffer";
+                    return 5;
+                }
+                cudf::column_view flags(cudf::data_type{cudf::type_id::BOOL8}, static_cast<cudf::size_type>(rows),
+                        static_cast<const char*>(in_valid) + static_cast<size_t>(c) * static_cast<size_t>(stride), nullptr, 0);
+                auto [buffer, null_count] = cudf::bools_to_mask(flags, view);
+                nulls = null_count;
+                mask = static_cast<const cudf::bitmask_type*>(buffer->data());
+                masks.push_back(std::move(buffer));
+            }
+            views.emplace_back(cudf::data_type{id}, static_cast<cudf::size_type>(rows), data, mask, nulls);
+        }
+
+        cudf::table_view table{views};
+        cudf::io::table_input_metadata metadata(table);
+        for (int32_t c = 0; c < column_count; c++) {
+            metadata.column_metadata[c].set_name(column_names[c]).set_nullability(optional[c] != 0);
+            if (field_ids[c] >= 0) {
+                metadata.column_metadata[c].set_parquet_field_id(field_ids[c]);
+            }
+        }
+        auto builder = cudf::io::parquet_writer_options::builder(cudf::io::sink_info{std::string(path)}, table)
+                .metadata(std::move(metadata))
+                .stats_level(cudf::io::statistics_freq::STATISTICS_ROWGROUP)
+                .compression(compression == 2 ? cudf::io::compression_type::ZSTD
+                        : compression == 1 ? cudf::io::compression_type::SNAPPY : cudf::io::compression_type::NONE);
+        auto options = builder.build();
+        if (row_group_rows > 0) {
+            options.set_row_group_size_rows(row_group_rows);
+        }
+        cudf::io::write_parquet(options, view);
+        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+    } catch (const std::exception& e) {
+        return fail("writeParquetColumns", e);
+    } catch (...) {
+        return fail("writeParquetColumns");
+    }
+}
+
+/**
+ * Sorts n keys ascending into a buffer the caller owns: the values, not a permutation.
+ *
+ * What a sorted probe needs: a set sorted once can be searched by every row of every batch that
+ * follows, where a hash probe (tornado_cudf_contains) builds its table again on each call. kind 0
+ * is INT32, 1 is INT64. n <= 0 sorts nothing and succeeds, so a plan can keep the sort in its graph
+ * for the executions whose set has not changed.
+ */
+int tornado_cudf_sort_keys(void* stream, int32_t kind, const void* keys, int32_t n, void* out) {
+    ensure_pool();
+    try {
+        if (n <= 0) {
+            return 0;
+        }
+        if (keys == nullptr || out == nullptr || (kind != 0 && kind != 1)) {
+            g_last_error = "sortKeys: null buffer or a kind other than 0 (INT32) or 1 (INT64)";
+            return 5;
+        }
+        cudaStream_t raw = static_cast<cudaStream_t>(stream);
+        auto view = rmm::cuda_stream_view{raw};
+        const auto id = kind == 0 ? cudf::type_id::INT32 : cudf::type_id::INT64;
+        const size_t width = kind == 0 ? sizeof(int32_t) : sizeof(int64_t);
+        cudf::column_view column(cudf::data_type{id}, n, keys, nullptr, 0);
+        auto sorted = cudf::sort(cudf::table_view{{column}}, {cudf::order::ASCENDING}, {cudf::null_order::AFTER}, view);
+        cudaError_t rc = copy_out(out, sorted->view().column(0).head<char>(), static_cast<size_t>(n) * width, raw);
+        if (rc != cudaSuccess) {
+            g_last_error = std::string("sortKeys copy-out: ") + cudaGetErrorString(rc);
+            return 3;
+        }
+        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+    } catch (const std::exception& e) {
+        return fail("sortKeys", e);
+    } catch (...) {
+        return fail("sortKeys");
+    }
+}
+
+/**
+ * The stable ascending order of n rows keyed by key_columns INT64 columns, compared
+ * lexicographically; column c starts at element c * stride of keys. Writes n INT32 row indices to
+ * out_order. n <= 0 is a no-op.
+ */
+int tornado_cudf_sorted_order_longs(void* stream, const void* keys, int32_t n, int32_t key_columns, int64_t stride, void* out_order) {
+    ensure_pool();
+    try {
+        if (n <= 0) {
+            return 0;
+        }
+        if (keys == nullptr || out_order == nullptr || key_columns < 1 || key_columns > 64 || stride < n) {
+            g_last_error = "sortedOrderLongs: null buffer, 1 to 64 key columns, or a stride below the row count";
+            return 5;
+        }
+        cudaStream_t raw = static_cast<cudaStream_t>(stream);
+        auto view = rmm::cuda_stream_view{raw};
+        std::vector<cudf::column_view> columns;
+        std::vector<cudf::order> orders(key_columns, cudf::order::ASCENDING);
+        std::vector<cudf::null_order> nulls(key_columns, cudf::null_order::AFTER);
+        const int64_t* base = static_cast<const int64_t*>(keys);
+        for (int32_t c = 0; c < key_columns; c++) {
+            columns.emplace_back(cudf::data_type{cudf::type_id::INT64}, n, base + c * stride, nullptr, 0);
+        }
+        auto order = cudf::stable_sorted_order(cudf::table_view{columns}, orders, nulls, view);
+        cudaError_t rc = copy_out(out_order, order->view().data<int32_t>(), static_cast<size_t>(n) * sizeof(int32_t), raw);
+        if (rc != cudaSuccess) {
+            g_last_error = std::string("sortedOrderLongs copy-out: ") + cudaGetErrorString(rc);
+            return 3;
+        }
+        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+    } catch (const std::exception& e) {
+        return fail("sortedOrderLongs", e);
+    } catch (...) {
+        return fail("sortedOrderLongs");
+    }
+}
+
+/**
+ * Reads STRING columns of one or more Parquet files (paths one a line, rows concatenated) into
+ * TornadoVM buffers, as a cuDF strings column lays them out: column c's rows + 1 INT32 offsets at
+ * out_offsets + c * (stride + 1), its bytes at out_chars + c * chars_stride, and one validity byte
+ * a row at out_valid + (valid_base + c) * stride. A column whose bytes exceed chars_stride is
+ * refused, not truncated. Nothing to read (rows 0, empty path) is a no-op.
+ */
+int tornado_cudf_read_parquet_string_columns(void* stream, const char* path, int32_t column_count, const int32_t* columns, int64_t rows, int64_t stride,
+        void* out_offsets, void* out_chars, int64_t chars_stride, void* out_valid, int32_t valid_base) {
+    ensure_pool();
+    try {
+        if (rows == 0 && (path == nullptr || path[0] == '\0')) {
+            return 0;
+        }
+        if (path == nullptr || columns == nullptr || column_count <= 0 || out_offsets == nullptr || out_chars == nullptr) {
+            g_last_error = "readParquetStringColumns: null path, buffer or empty column list";
+            return 5;
+        }
+        if (rows < 0 || rows > stride) {
+            g_last_error = "readParquetStringColumns: " + std::to_string(rows) + " rows do not fit a stride of " + std::to_string(stride);
+            return 5;
+        }
+        std::vector<std::string> paths;
+        {
+            std::string all(path);
+            size_t begin = 0;
+            while (begin <= all.size()) {
+                size_t end = all.find('\n', begin);
+                if (end == std::string::npos) {
+                    end = all.size();
+                }
+                if (end > begin) {
+                    paths.push_back(all.substr(begin, end - begin));
+                }
+                begin = end + 1;
+            }
+        }
+        auto metadata = cudf::io::read_parquet_metadata(cudf::io::source_info{paths.front()});
+        const auto& root = metadata.schema().root();
+        const int32_t schema_columns = static_cast<int32_t>(root.num_children());
+        std::vector<std::string> names;
+        for (int32_t c = 0; c < column_count; c++) {
+            if (columns[c] < 0 || columns[c] >= schema_columns) {
+                g_last_error = "readParquetStringColumns: column " + std::to_string(columns[c]) + " is beyond the file's " + std::to_string(schema_columns) + " columns";
+                return 6;
+            }
+            names.push_back(root.child(columns[c]).name());
+        }
+        auto options = cudf::io::parquet_reader_options::builder(cudf::io::source_info{paths}).columns(names).build();
+        auto view = rmm::cuda_stream_view{static_cast<cudaStream_t>(stream)};
+        auto result = cudf::io::read_parquet(options, view);
+        const auto table = result.tbl->view();
+        if (static_cast<int64_t>(table.num_rows()) != rows) {
+            g_last_error = "readParquetStringColumns: files gave " + std::to_string(table.num_rows()) + " rows where the caller asked for " + std::to_string(rows);
+            return 7;
+        }
+        cudaStream_t raw = static_cast<cudaStream_t>(stream);
+        for (int32_t c = 0; c < column_count; c++) {
+            const auto col = table.column(c);
+            if (col.type().id() != cudf::type_id::STRING) {
+                g_last_error = "readParquetStringColumns: column " + names[c] + " is not a STRING column";
+                return 8;
+            }
+            cudf::strings_column_view scv(col);
+            const int64_t bytes = rows == 0 ? 0 : scv.chars_size(view);
+            if (bytes > chars_stride) {
+                g_last_error = "readParquetStringColumns: column " + names[c] + " decodes to " + std::to_string(bytes) + " bytes, beyond the " + std::to_string(chars_stride)
+                        + " a column was sized for";
+                return 6;
+            }
+            if (rows == 0) {
+                continue;
+            }
+            const auto offsets = scv.offsets();
+            if (offsets.type().id() != cudf::type_id::INT32) {
+                g_last_error = "readParquetStringColumns: the offsets of " + names[c] + " are not INT32";
+                return 8;
+            }
+            int32_t* dst_offsets = static_cast<int32_t*>(out_offsets) + static_cast<size_t>(c) * static_cast<size_t>(stride + 1);
+            cudaError_t rc = copy_out(dst_offsets, offsets.data<int32_t>() + col.offset(), static_cast<size_t>(rows + 1) * sizeof(int32_t), raw);
+            if (rc == cudaSuccess && bytes > 0) {
+                rc = copy_out(static_cast<char*>(out_chars) + static_cast<size_t>(c) * static_cast<size_t>(chars_stride), scv.chars_begin(view), static_cast<size_t>(bytes), raw);
+            }
+            if (rc == cudaSuccess && out_valid != nullptr) {
+                char* valid = static_cast<char*>(out_valid) + static_cast<size_t>(valid_base + c) * static_cast<size_t>(stride);
+                if (col.null_count() == 0) {
+                    rc = cudaMemsetAsync(valid, 1, static_cast<size_t>(rows), raw);
+                } else {
+                    auto flags = cudf::is_valid(col, view);
+                    rc = copy_out(valid, flags->view().data<int8_t>(), static_cast<size_t>(rows), raw);
+                }
+            } else if (rc == cudaSuccess && col.null_count() != 0) {
+                g_last_error = "readParquetStringColumns: column " + names[c] + " contains nulls and no validity buffer was given";
+                return 9;
+            }
+            if (rc != cudaSuccess) {
+                g_last_error = std::string("readParquetStringColumns copy-out: ") + cudaGetErrorString(rc);
+                return 3;
+            }
+        }
+        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+    } catch (const std::exception& e) {
+        return fail("readParquetStringColumns", e);
+    } catch (...) {
+        return fail("readParquetStringColumns");
+    }
+}
+
+/**
+ * Group-by over key_columns INT64 key columns and value_columns FP64 value columns, all at stride,
+ * of the first n rows. Writes each group's keys (key column c at out_keys + c * stride), its
+ * aggregates (value column c at out_results + c * stride, FP64) and the group count to
+ * out_groups[0]. n <= 0 writes zero groups.
+ */
+int tornado_cudf_group_aggregate_longs(void* stream, int32_t n, int32_t key_columns, int32_t value_columns, int32_t agg, const void* keys, const void* values,
+        int64_t stride, void* out_keys, void* out_results, void* out_groups) {
+    ensure_pool();
+    try {
+        cudaStream_t raw = static_cast<cudaStream_t>(stream);
+        if (key_columns < 1 || value_columns < 1 || n > stride || groupby_agg_for(agg) == nullptr) {
+            g_last_error = "groupAggregateLongs: needs key and value columns, n within the stride and a known aggregation";
+            return 6;
+        }
+        int32_t groups = 0;
+        if (n > 0) {
+            auto view = rmm::cuda_stream_view{raw};
+            const int64_t* key_base = static_cast<const int64_t*>(keys);
+            const double* value_base = static_cast<const double*>(values);
+            std::vector<cudf::column_view> key_cols;
+            for (int32_t c = 0; c < key_columns; c++) {
+                key_cols.emplace_back(cudf::data_type{cudf::type_id::INT64}, n, key_base + c * stride, nullptr, 0);
+            }
+            std::vector<cudf::groupby::aggregation_request> requests;
+            for (int32_t c = 0; c < value_columns; c++) {
+                cudf::groupby::aggregation_request request;
+                request.values = cudf::column_view(cudf::data_type{cudf::type_id::FLOAT64}, n, value_base + c * stride, nullptr, 0);
+                request.aggregations.push_back(groupby_agg_for(agg));
+                requests.push_back(std::move(request));
+            }
+            cudf::groupby::groupby grouper(cudf::table_view{key_cols}, cudf::null_policy::EXCLUDE, cudf::sorted::NO);
+            auto [group_keys, results] = grouper.aggregate(requests, view);
+            groups = group_keys->num_rows();
+            cudaError_t rc = cudaSuccess;
+            for (int32_t c = 0; c < key_columns && rc == cudaSuccess; c++) {
+                rc = copy_out(static_cast<int64_t*>(out_keys) + c * stride, group_keys->view().column(c).data<int64_t>(), static_cast<size_t>(groups) * sizeof(int64_t), raw);
+            }
+            for (int32_t c = 0; c < value_columns && rc == cudaSuccess; c++) {
+                auto column = results[c].results[0]->view();
+                std::unique_ptr<cudf::column> promoted;
+                if (column.type().id() != cudf::type_id::FLOAT64) {
+                    promoted = cudf::cast(column, cudf::data_type{cudf::type_id::FLOAT64}, view);
+                    column = promoted->view();
+                }
+                rc = copy_out(static_cast<double*>(out_results) + c * stride, column.data<double>(), static_cast<size_t>(groups) * sizeof(double), raw);
+            }
+            if (rc != cudaSuccess) {
+                g_last_error = std::string("groupAggregateLongs copy-out: ") + cudaGetErrorString(rc);
+                return 3;
+            }
+        }
+        cudaError_t rc = cudaMemcpyAsync(out_groups, &groups, sizeof(int32_t), cudaMemcpyHostToDevice, raw);
+        if (rc != cudaSuccess) {
+            g_last_error = std::string("groupAggregateLongs copy-out: ") + cudaGetErrorString(rc);
+            return 3;
+        }
+        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+    } catch (const std::exception& e) {
+        return fail("groupAggregateLongs", e);
+    } catch (...) {
+        return fail("groupAggregateLongs");
     }
 }
 
