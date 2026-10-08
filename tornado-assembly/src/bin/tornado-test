@@ -365,6 +365,7 @@ __TEST_THE_WORLD__ = [
                   "-Dtornado.features.dump.dir=" + os.environ["TORNADOVM_HOME"] + "/virtualFeaturesOut.out"]),
 
     ## Tests for Multi-Thread and Memory
+    TestEntry(testName="uk.ac.manchester.tornado.unittests.multithreaded.TestConcurrentSketches"),
     TestEntry(testName="uk.ac.manchester.tornado.unittests.multithreaded.TestMultiThreadedExecutionPlans",
               testParameters=["-Dtornado.device.memory=4GB"]),
 
