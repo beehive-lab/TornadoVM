@@ -88,7 +88,7 @@ public class TestCudfColumns extends TornadoTestBase {
 
     @Before
     public void cudfMustBeAvailable() throws IOException {
-        if (!CudfLibraryProvider.isAvailable() || !Cudf.isColumnsAvailable() || !Cudf.isWriterAvailable()) {
+        if (!CudfLibraryProvider.isAvailable() || !Cudf.isColumnsAvailable() || !Cudf.isWriterAvailable() || !Cudf.isSortKeysAvailable()) {
             throw new TornadoVMCUDANotSupported("the cuDF shim (libtornado-cudf.so) with readParquetColumns is not built on this host");
         }
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
@@ -411,6 +411,72 @@ public class TestCudfColumns extends TornadoTestBase {
         for (int j = 0; j < kept; j++) {
             assertEquals("id " + j, 3L * j, backIds.get(j));
             assertEquals("value " + j, 0.75 * j, backValues.get(j), 0.0);
+        }
+    }
+
+    /** Binary search of a sorted set: the probe a sorted set allows, as a kernel. */
+    public static void probeSorted(LongArray sorted, IntArray size, LongArray keys, ByteArray found) {
+        for (@Parallel int i = 0; i < keys.getSize(); i++) {
+            long key = keys.get(i);
+            int low = 0;
+            int high = size.get(0) - 1;
+            byte hit = 0;
+            while (low <= high) {
+                int mid = (low + high) >>> 1;
+                long value = sorted.get(mid);
+                if (value < key) {
+                    low = mid + 1;
+                } else if (value > key) {
+                    high = mid - 1;
+                } else {
+                    hit = 1;
+                    low = high + 1;
+                }
+            }
+            found.set(i, hit);
+        }
+    }
+
+    /**
+     * The set is sorted on the device once, then probed by a generated binary search on every
+     * execution; the second execution sorts nothing (size 0) and still probes the sorted copy.
+     */
+    @Test
+    public void testSortKeysThenBinarySearch() throws TornadoExecutionPlanException {
+        Random random = new Random(11);
+        int m = 100_000;
+        int n = 200_000;
+        LongArray set = new LongArray(m);
+        Set<Long> host = new HashSet<>();
+        for (int j = 0; j < m; j++) {
+            long value = random.nextLong() >> 20;
+            set.set(j, value);
+            host.add(value);
+        }
+        LongArray keys = new LongArray(n);
+        for (int i = 0; i < n; i++) {
+            keys.set(i, i % 2 == 0 ? set.get(random.nextInt(m)) : random.nextLong() >> 20);
+        }
+        LongArray sorted = new LongArray(m);
+        IntArray probeSize = IntArray.fromElements(m);
+        int[] sortSize = { m };
+        ByteArray found = new ByteArray(n);
+
+        TaskGraph graph = new TaskGraph("cudf") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, set, keys, probeSize) //
+                .libraryTask("sort", Cudf::sortKeys, sortSize, set, sorted) //
+                .task("probe", TestCudfColumns::probeSorted, sorted, probeSize, keys, found) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, found, sorted);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+            for (int j = 1; j < m; j++) {
+                assertTrue("ascending at " + j, sorted.get(j - 1) <= sorted.get(j));
+            }
+            sortSize[0] = 0; // the set has not changed: probe the copy already sorted
+            plan.execute();
+        }
+        for (int i = 0; i < n; i++) {
+            assertEquals("key " + i, host.contains(keys.get(i)) ? 1 : 0, found.get(i));
         }
     }
 

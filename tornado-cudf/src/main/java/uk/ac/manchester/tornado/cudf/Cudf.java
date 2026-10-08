@@ -504,6 +504,38 @@ public final class Cudf {
         return CudfNativeLib.isWriterAvailable();
     }
 
+    /**
+     * Sorts keys ascending into {@code out}: the values, not a permutation ({@link #sortedOrder}
+     * returns that).
+     *
+     * <p>A set sorted once can be binary-searched by every key of every batch after it, from a
+     * generated kernel, where {@link #containedIn} builds its hash table again on each call. The
+     * count is {@code size[0]}, read when the task runs; 0 sorts nothing, so a plan can keep the
+     * sort in its graph for the executions whose set has not changed.
+     */
+    public static LibraryTaskDescriptor sortKeys(int[] size, IntArray keys, IntArray out) {
+        return sortKeys(size, keys, out, CudfType.INT32);
+    }
+
+    /** {@link #sortKeys(int[], IntArray, IntArray)} over 64-bit keys. */
+    public static LibraryTaskDescriptor sortKeys(int[] size, LongArray keys, LongArray out) {
+        return sortKeys(size, keys, out, CudfType.INT64);
+    }
+
+    private static LibraryTaskDescriptor sortKeys(int[] size, Object keys, Object out, CudfType type) {
+        Access[] access = new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY, Access.READ_ONLY };
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("sortKeys") //
+                .withParameters(new Object[] { size, keys, out, type.code() }) //
+                .withAccess(access);
+    }
+
+    /** Whether the shim on this machine exports {@link #sortKeys}. */
+    public static boolean isSortKeysAvailable() {
+        return CudfNativeLib.isSortKeysAvailable();
+    }
+
     /** Whether the shim on this machine exports {@link #readParquetColumns} and {@link #containedIn}. */
     public static boolean isColumnsAvailable() {
         return CudfNativeLib.isColumnsAvailable();

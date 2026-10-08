@@ -1272,4 +1272,41 @@ int tornado_cudf_write_parquet_columns(void* stream, const char* path, int32_t c
     }
 }
 
+/**
+ * Sorts n keys ascending into a buffer the caller owns: the values, not a permutation.
+ *
+ * What a sorted probe needs: a set sorted once can be searched by every row of every batch that
+ * follows, where a hash probe (tornado_cudf_contains) builds its table again on each call. kind 0
+ * is INT32, 1 is INT64. n <= 0 sorts nothing and succeeds, so a plan can keep the sort in its graph
+ * for the executions whose set has not changed.
+ */
+int tornado_cudf_sort_keys(void* stream, int32_t kind, const void* keys, int32_t n, void* out) {
+    ensure_pool();
+    try {
+        if (n <= 0) {
+            return 0;
+        }
+        if (keys == nullptr || out == nullptr || (kind != 0 && kind != 1)) {
+            g_last_error = "sortKeys: null buffer or a kind other than 0 (INT32) or 1 (INT64)";
+            return 5;
+        }
+        cudaStream_t raw = static_cast<cudaStream_t>(stream);
+        auto view = rmm::cuda_stream_view{raw};
+        const auto id = kind == 0 ? cudf::type_id::INT32 : cudf::type_id::INT64;
+        const size_t width = kind == 0 ? sizeof(int32_t) : sizeof(int64_t);
+        cudf::column_view column(cudf::data_type{id}, n, keys, nullptr, 0);
+        auto sorted = cudf::sort(cudf::table_view{{column}}, {cudf::order::ASCENDING}, {cudf::null_order::AFTER}, view);
+        cudaError_t rc = copy_out(out, sorted->view().column(0).head<char>(), static_cast<size_t>(n) * width, raw);
+        if (rc != cudaSuccess) {
+            g_last_error = std::string("sortKeys copy-out: ") + cudaGetErrorString(rc);
+            return 3;
+        }
+        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+    } catch (const std::exception& e) {
+        return fail("sortKeys", e);
+    } catch (...) {
+        return fail("sortKeys");
+    }
+}
+
 }  // extern "C"

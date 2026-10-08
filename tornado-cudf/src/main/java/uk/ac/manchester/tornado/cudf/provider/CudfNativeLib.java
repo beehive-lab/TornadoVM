@@ -80,6 +80,8 @@ public final class CudfNativeLib {
 
     private static final MethodHandle WRITE_PARQUET_COLUMNS;
 
+    private static final MethodHandle SORT_KEYS;
+
     private static final MethodHandle LAST_ERROR;
 
     static {
@@ -99,6 +101,7 @@ public final class CudfNativeLib {
         MethodHandle readParquetColumns = null;
         MethodHandle contains = null;
         MethodHandle writeParquetColumns = null;
+        MethodHandle sortKeys = null;
         MethodHandle lastError = null;
         if (LIBTORNADO_CUDF != null) {
             // int (*)(void* stream, const int* keys, int n, int* outOrder)
@@ -149,6 +152,8 @@ public final class CudfNativeLib {
             //         int compression, int rowGroupRows)
             writeParquetColumns = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_LONG, C_POINTER, C_INT, C_POINTER, C_POINTER, C_POINTER,
                     C_POINTER, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_INT, C_INT), "tornado_cudf_write_parquet_columns");
+            // int (*)(void* stream, int kind, const void* keys, int n, void* out)
+            sortKeys = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_LONG, C_INT, C_LONG), "tornado_cudf_sort_keys");
             lastError = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_POINTER), "tornado_cudf_last_error");
         }
         SORTED_ORDER = sortedOrder;
@@ -167,6 +172,7 @@ public final class CudfNativeLib {
         READ_PARQUET_COLUMNS = readParquetColumns;
         CONTAINS = contains;
         WRITE_PARQUET_COLUMNS = writeParquetColumns;
+        SORT_KEYS = sortKeys;
         LAST_ERROR = lastError;
     }
 
@@ -314,6 +320,20 @@ public final class CudfNativeLib {
                     compression, rowGroupRows);
         } catch (Throwable t) {
             throw asRuntime(t, "writeParquetColumns");
+        }
+    }
+
+    /** Whether the shim exports the key sort. */
+    public static boolean isSortKeysAvailable() {
+        return SORT_KEYS != null;
+    }
+
+    /** n keys sorted ascending into out; see {@code Cudf.sortKeys}. */
+    public static int sortKeys(long stream, int kind, long keys, int n, long out) {
+        try {
+            return (int) SORT_KEYS.invokeExact(stream, kind, keys, n, out);
+        } catch (Throwable t) {
+            throw asRuntime(t, "sortKeys");
         }
     }
 

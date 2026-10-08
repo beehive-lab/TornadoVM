@@ -83,6 +83,7 @@ while the per-row work around them is exactly what TornadoVM compiles well.
 | `containedIn` | `contains` | `k IN (set)` / anti-join -- one byte a key, INT32 or INT64 |
 | `readParquetColumns` | `io::read_parquet` | a table scan -- INT32/DATE, INT64/TIMESTAMP and FP64 columns, with validity bytes when asked |
 | `writeParquetColumns` | `io::write_parquet` | the inverse: device buffers to a Parquet file, with field ids, null masks and statistics; the row count can come from a device counter |
+| `sortKeys` | `sort` | a set sorted once, for a generated binary-search probe that every batch reuses |
 
 `sortedOrder` and `groupSum` are the narrow cases of `sortedOrderMulti` and `groupAggregate`; they
 stay because they are what most callers want to read.
