@@ -38,6 +38,7 @@ import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
 
 /**
  * The {@link TileContext#view} overloads and the compiler plugins that lower them have to agree.
@@ -52,11 +53,16 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * {@code view(ByteArray, int, int, int)}, then for vector {@code set} overloads.
  *
  * <p>
- * How to run (tornado-test enables exactly that check, and none of Graal's other assertions, which
- * TornadoVM keeps off on purpose):
+ * How to run. tornado-test enables exactly that check: assertions in {@code graphbuilderconf}, where
+ * the registrations are checked, and in the one class the check consults
+ * ({@code tornado.graal.compiler.debug.Assertions}), and none of Graal's other assertions, which
+ * TornadoVM keeps off on purpose. It does so on JDK 21 only: the check resolves methods through
+ * JVMCI, which on the jdk22plus profile is JVMCI 21 patched into a newer JDK, where it cannot run.
+ * There the backend-start test reports itself unsupported and the reflection test still runs.
  *
  * <code>
- * tornado-test -V -J"-ea:tornado.graal.compiler.nodes.graphbuilderconf..." uk.ac.manchester.tornado.unittests.tile.TestTileViewOverloads
+ * tornado-test -V -J"-ea:tornado.graal.compiler.nodes.graphbuilderconf... -ea:tornado.graal.compiler.debug.Assertions"
+ *   uk.ac.manchester.tornado.unittests.tile.TestTileViewOverloads
  * </code>
  */
 public class TestTileViewOverloads extends TornadoTestBase {
@@ -68,6 +74,16 @@ public class TestTileViewOverloads extends TornadoTestBase {
     public static void copy(IntArray input, IntArray output) {
         for (@Parallel int i = 0; i < input.getSize(); i++) {
             output.set(i, input.get(i) + 1);
+        }
+    }
+
+    /** Whether assertions are on where Graal checks its plugin registrations. */
+    private static boolean pluginChecksEnabled() {
+        try {
+            return Class.forName("tornado.graal.compiler.nodes.graphbuilderconf.InvocationPlugins").desiredAssertionStatus()
+                    && Class.forName("tornado.graal.compiler.debug.Assertions").desiredAssertionStatus();
+        } catch (ClassNotFoundException e) {
+            return false;
         }
     }
 
@@ -96,6 +112,11 @@ public class TestTileViewOverloads extends TornadoTestBase {
      */
     @Test
     public void testBackendStartsWithAssertionsEnabled() throws TornadoExecutionPlanException {
+        if (!pluginChecksEnabled()) {
+            // tornado-test enables the check on JDK 21 only: on the jdk22plus profile it resolves
+            // methods through a JVMCI that cannot run there.
+            throw new TornadoVMCUDANotSupported("Graal's plugin registration checks are not enabled in this JVM");
+        }
         IntArray input = IntArray.fromElements(1, 2, 3, 4);
         IntArray output = new IntArray(4);
         TaskGraph graph = new TaskGraph("s0") //
