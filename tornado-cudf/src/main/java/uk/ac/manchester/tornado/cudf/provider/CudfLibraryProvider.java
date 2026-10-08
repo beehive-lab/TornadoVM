@@ -109,6 +109,10 @@ public final class CudfLibraryProvider implements TornadoLibraryProvider {
                     (Integer) invocation.getArg(13));
             case "sortKeys" -> CudfNativeLib.sortKeys(stream, (Integer) invocation.getArg(3), invocation.getDevicePointer(1), ((int[]) invocation.getArg(0))[0],
                     invocation.getDevicePointer(2));
+            case "sortedOrderLongs" -> {
+                int[] size = (int[]) invocation.getArg(0);
+                yield CudfNativeLib.sortedOrderLongs(stream, invocation.getDevicePointer(1), size[0], size[1], (Integer) invocation.getArg(2), invocation.getDevicePointer(3));
+            }
             case "sortedOrder" -> CudfNativeLib.sortedOrder(stream, invocation.getDevicePointer(1), (Integer) invocation.getArg(0), invocation.getDevicePointer(2));
             case "groupSum" -> CudfNativeLib.groupSum(stream, invocation.getDevicePointer(1), invocation.getDevicePointer(2), (Integer) invocation.getArg(0), invocation.getDevicePointer(3),
                     invocation.getDevicePointer(4), invocation.getDevicePointer(5));

@@ -531,6 +531,29 @@ public final class Cudf {
                 .withAccess(access);
     }
 
+    /**
+     * The stable ascending order of rows keyed by several INT64 columns, compared lexicographically:
+     * {@code outOrder[i]} is the row that sorts i-th. Column c of the keys starts at element {@code
+     * c * stride}. The row count is {@code size[0]} and the column count {@code size[1]}, read when
+     * the task runs, so one plan sorts batches of any size up to {@code stride}.
+     *
+     * <p>Wide keys -- a Z-order value of several 64-bit words, say, which a generated kernel can
+     * compute -- sort here without a host round trip; the order then drives a gather.
+     */
+    public static LibraryTaskDescriptor sortedOrderLongs(int[] size, LongArray keys, int stride, IntArray outOrder) {
+        Access[] access = new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY };
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("sortedOrderLongs") //
+                .withParameters(new Object[] { size, keys, stride, outOrder }) //
+                .withAccess(access);
+    }
+
+    /** Whether the shim on this machine exports {@link #sortedOrderLongs}. */
+    public static boolean isSortedOrderLongsAvailable() {
+        return CudfNativeLib.isSortedOrderLongsAvailable();
+    }
+
     /** Whether the shim on this machine exports {@link #sortKeys}. */
     public static boolean isSortKeysAvailable() {
         return CudfNativeLib.isSortKeysAvailable();

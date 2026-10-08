@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.unittests.cudf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -477,6 +478,42 @@ public class TestCudfColumns extends TornadoTestBase {
         }
         for (int i = 0; i < n; i++) {
             assertEquals("key " + i, host.contains(keys.get(i)) ? 1 : 0, found.get(i));
+        }
+    }
+
+    /**
+     * Rows keyed by two INT64 words sort lexicographically and stably; the row count, below the
+     * stride, changes between two executions of one plan.
+     */
+    @Test
+    public void testSortedOrderLongsTwoWords() throws TornadoExecutionPlanException {
+        assumeTrue(Cudf.isSortedOrderLongsAvailable());
+        Random random = new Random(5);
+        int stride = 100_000;
+        LongArray keys = new LongArray(2L * stride);
+        for (int i = 0; i < stride; i++) {
+            keys.set(i, random.nextInt(50) - 25); // many ties in the first word
+            keys.set(stride + i, random.nextLong());
+        }
+        IntArray order = new IntArray(stride);
+        int[] size = { 80_000, 2 };
+        TaskGraph graph = new TaskGraph("cudf") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, keys) //
+                .libraryTask("order", Cudf::sortedOrderLongs, size, keys, stride, order) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, order);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            for (int n : new int[] { 80_000, 30_000 }) {
+                size[0] = n;
+                plan.execute();
+                Integer[] expected = new Integer[n];
+                for (int i = 0; i < n; i++) {
+                    expected[i] = i;
+                }
+                java.util.Arrays.sort(expected, java.util.Comparator.<Integer> comparingLong(i -> keys.get(i)).thenComparingLong(i -> keys.get(stride + i)));
+                for (int i = 0; i < n; i++) {
+                    assertEquals("row " + i + " of " + n, (int) expected[i], order.get(i));
+                }
+            }
         }
     }
 

@@ -1309,4 +1309,42 @@ int tornado_cudf_sort_keys(void* stream, int32_t kind, const void* keys, int32_t
     }
 }
 
+/**
+ * The stable ascending order of n rows keyed by key_columns INT64 columns, compared
+ * lexicographically; column c starts at element c * stride of keys. Writes n INT32 row indices to
+ * out_order. n <= 0 is a no-op.
+ */
+int tornado_cudf_sorted_order_longs(void* stream, const void* keys, int32_t n, int32_t key_columns, int64_t stride, void* out_order) {
+    ensure_pool();
+    try {
+        if (n <= 0) {
+            return 0;
+        }
+        if (keys == nullptr || out_order == nullptr || key_columns < 1 || key_columns > 64 || stride < n) {
+            g_last_error = "sortedOrderLongs: null buffer, 1 to 64 key columns, or a stride below the row count";
+            return 5;
+        }
+        cudaStream_t raw = static_cast<cudaStream_t>(stream);
+        auto view = rmm::cuda_stream_view{raw};
+        std::vector<cudf::column_view> columns;
+        std::vector<cudf::order> orders(key_columns, cudf::order::ASCENDING);
+        std::vector<cudf::null_order> nulls(key_columns, cudf::null_order::AFTER);
+        const int64_t* base = static_cast<const int64_t*>(keys);
+        for (int32_t c = 0; c < key_columns; c++) {
+            columns.emplace_back(cudf::data_type{cudf::type_id::INT64}, n, base + c * stride, nullptr, 0);
+        }
+        auto order = cudf::stable_sorted_order(cudf::table_view{columns}, orders, nulls, view);
+        cudaError_t rc = copy_out(out_order, order->view().data<int32_t>(), static_cast<size_t>(n) * sizeof(int32_t), raw);
+        if (rc != cudaSuccess) {
+            g_last_error = std::string("sortedOrderLongs copy-out: ") + cudaGetErrorString(rc);
+            return 3;
+        }
+        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+    } catch (const std::exception& e) {
+        return fail("sortedOrderLongs", e);
+    } catch (...) {
+        return fail("sortedOrderLongs");
+    }
+}
+
 }  // extern "C"

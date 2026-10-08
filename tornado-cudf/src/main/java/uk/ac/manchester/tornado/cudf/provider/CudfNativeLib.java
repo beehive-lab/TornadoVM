@@ -81,6 +81,7 @@ public final class CudfNativeLib {
     private static final MethodHandle WRITE_PARQUET_COLUMNS;
 
     private static final MethodHandle SORT_KEYS;
+    private static final MethodHandle SORTED_ORDER_LONGS;
 
     private static final MethodHandle LAST_ERROR;
 
@@ -102,6 +103,7 @@ public final class CudfNativeLib {
         MethodHandle contains = null;
         MethodHandle writeParquetColumns = null;
         MethodHandle sortKeys = null;
+        MethodHandle sortedOrderLongs = null;
         MethodHandle lastError = null;
         if (LIBTORNADO_CUDF != null) {
             // int (*)(void* stream, const int* keys, int n, int* outOrder)
@@ -154,6 +156,8 @@ public final class CudfNativeLib {
                     C_POINTER, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_INT, C_INT), "tornado_cudf_write_parquet_columns");
             // int (*)(void* stream, int kind, const void* keys, int n, void* out)
             sortKeys = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_LONG, C_INT, C_LONG), "tornado_cudf_sort_keys");
+            // int (*)(void* stream, const void* keys, int n, int keyColumns, long stride, void* outOrder)
+            sortedOrderLongs = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_INT, C_INT, C_LONG, C_LONG), "tornado_cudf_sorted_order_longs");
             lastError = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_POINTER), "tornado_cudf_last_error");
         }
         SORTED_ORDER = sortedOrder;
@@ -173,6 +177,7 @@ public final class CudfNativeLib {
         CONTAINS = contains;
         WRITE_PARQUET_COLUMNS = writeParquetColumns;
         SORT_KEYS = sortKeys;
+        SORTED_ORDER_LONGS = sortedOrderLongs;
         LAST_ERROR = lastError;
     }
 
@@ -320,6 +325,20 @@ public final class CudfNativeLib {
                     compression, rowGroupRows);
         } catch (Throwable t) {
             throw asRuntime(t, "writeParquetColumns");
+        }
+    }
+
+    /** Whether the shim exports the wide-key sort order. */
+    public static boolean isSortedOrderLongsAvailable() {
+        return SORTED_ORDER_LONGS != null;
+    }
+
+    /** The order of n rows by keyColumns INT64 columns at stride; see {@code Cudf.sortedOrderLongs}. */
+    public static int sortedOrderLongs(long stream, long keys, int n, int keyColumns, int stride, long outOrder) {
+        try {
+            return (int) SORTED_ORDER_LONGS.invokeExact(stream, keys, n, keyColumns, (long) stride, outOrder);
+        } catch (Throwable t) {
+            throw asRuntime(t, "sortedOrderLongs");
         }
     }
 
