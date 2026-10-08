@@ -191,11 +191,28 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.cudf.TestCudfColumns"),
     TestEntry("uk.ac.manchester.tornado.unittests.cutlass.TestCutlass"),
     TestEntry("uk.ac.manchester.tornado.unittests.curand.TestCuRand"),
+    TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlx"),
+    TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxArithmetic"),
+    TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxLogic"),
+    TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxReductions"),
+    TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxScans"),
+    TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxSorting"),
+    TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxIndexing"),
+    TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxLinearAlgebra"),
+    TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxQuantization"),
+    TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxNeuralNetwork"),
+    TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxFft"),
+    TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxConvolution"),
+    TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxCreation"),
+    TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxShape"),
+    TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxRandom"),
     TestEntry("uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestSingleTaskSingleDevice"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksSingleDevice"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestLargeTaskGraphs"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestLibraryTaskArity"),
+    TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestLibraryProviderSelection"),
+    TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestLibraryNativeBuffers"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestManyArgumentTasks"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestAliasedTaskArguments"),
     TestEntry("uk.ac.manchester.tornado.unittests.temporary.values.TestTemporaryValues"),
@@ -806,6 +823,8 @@ def runTestTheWorld(options, args):
     for t in __TEST_THE_WORLD__:
         if args.quickPass and t.testName in __TORNADO_QUICK_PASS_SKIP_TESTS__:
             continue
+        if args.mlx and ".unittests.mlx." not in t.testName:
+            continue
         command = options
         if t.testParameters:
             for testParam in t.testParameters:
@@ -898,6 +917,8 @@ def parseArguments():
                         help="Visualize output in live mode (no wait)")
     parser.add_argument('--quickPass', "-qp", action="store_true", dest="quickPass", default=False,
                         help="Quick pass without stress memory and output for logs in a file.")
+    parser.add_argument('--mlx', action="store_true", dest="mlx", default=False,
+                        help="Run only the Apple MLX library-task tests (Metal backend with MLX installed)")
     parser.add_argument('--device', dest="device", default=None, help="Set an specific device. E.g `s0.t0.device=0:1`")
     parser.add_argument('--printExec', dest="printExecution", action="store_true", default=False,
                         help="Print OpenCL Kernel Execution Time")

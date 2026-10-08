@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.cudf.provider;
 
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.cudf.Cudf;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
@@ -65,7 +66,8 @@ public final class CudfLibraryProvider implements TornadoLibraryProvider {
 
     @Override
     public boolean canHandle(TornadoXPUDevice device) {
-        return device instanceof TornadoNativeStreamSupport && CudfNativeLib.isAvailable();
+        // CUDA devices only: the Metal backend also implements TornadoNativeStreamSupport
+        return device.getTornadoVMBackend() == TornadoVMBackendType.CUDA && device instanceof TornadoNativeStreamSupport && CudfNativeLib.isAvailable();
     }
 
     @Override

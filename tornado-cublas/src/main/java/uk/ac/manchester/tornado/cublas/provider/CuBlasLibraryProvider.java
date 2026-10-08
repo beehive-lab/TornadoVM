@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.cublas.provider;
 import java.util.Map;
 
 import uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.cublas.CuBlas;
 import uk.ac.manchester.tornado.cublas.CuBlasOptions;
@@ -104,8 +105,8 @@ public final class CuBlasLibraryProvider implements TornadoLibraryProvider {
 
     @Override
     public boolean canHandle(TornadoXPUDevice device) {
-        // Only the CUDA backend exposes its native stream for library interop
-        return device instanceof TornadoNativeStreamSupport;
+        // CUDA devices only: the Metal backend also implements TornadoNativeStreamSupport
+        return device.getTornadoVMBackend() == TornadoVMBackendType.CUDA && device instanceof TornadoNativeStreamSupport;
     }
 
     @Override

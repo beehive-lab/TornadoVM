@@ -13,6 +13,7 @@ package uk.ac.manchester.tornado.curand.provider;
 import java.util.Map;
 
 import uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.curand.CuRand;
 import uk.ac.manchester.tornado.curand.enums.CuRandRngType;
@@ -75,8 +76,8 @@ public final class CuRandLibraryProvider implements TornadoLibraryProvider {
 
     @Override
     public boolean canHandle(TornadoXPUDevice device) {
-        // Only the CUDA backend exposes its native stream for library interop
-        return device instanceof TornadoNativeStreamSupport;
+        // CUDA devices only: the Metal backend also implements TornadoNativeStreamSupport
+        return device.getTornadoVMBackend() == TornadoVMBackendType.CUDA && device instanceof TornadoNativeStreamSupport;
     }
 
     @Override

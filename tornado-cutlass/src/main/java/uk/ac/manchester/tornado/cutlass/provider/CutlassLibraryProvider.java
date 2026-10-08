@@ -18,6 +18,7 @@
 package uk.ac.manchester.tornado.cutlass.provider;
 
 import uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.cutlass.Cutlass;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
@@ -72,7 +73,8 @@ public final class CutlassLibraryProvider implements TornadoLibraryProvider {
 
     @Override
     public boolean canHandle(TornadoXPUDevice device) {
-        return device instanceof TornadoNativeStreamSupport;
+        // CUDA devices only: the Metal backend also implements TornadoNativeStreamSupport
+        return device.getTornadoVMBackend() == TornadoVMBackendType.CUDA && device instanceof TornadoNativeStreamSupport;
     }
 
     @Override

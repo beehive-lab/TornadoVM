@@ -510,7 +510,9 @@ public class MetalNodeLIRBuilder extends NodeLIRBuilder {
             append(new MetalControlFlow.LinkedConditionalBranchOp(condition));
         } else {
             Value operand = operand(x.condition());
-            Variable newVariable = getGen().newVariable(operand.getValueKind());
+            // A condition folded to a constant (e.g. once scalar arguments are specialised) has no
+            // Metal kind; hold it in a bool.
+            Variable newVariable = operand.getPlatformKind() instanceof MetalKind ? getGen().newVariable(operand.getValueKind()) : getGen().newVariable(LIRKind.value(MetalKind.BOOL));
             append(new AssignStmt(newVariable, operand));
             append(new MetalControlFlow.ConditionalBranchOp(newVariable));
         }

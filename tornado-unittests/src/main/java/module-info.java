@@ -1,6 +1,7 @@
 open module tornado.unittests {
     requires transitive junit;
     requires transitive tornado.api;
+    requires tornado.runtime;
     requires tornado.cublas;
     requires tornado.curand;
     requires tornado.cufft;
@@ -9,6 +10,7 @@ open module tornado.unittests {
     requires tornado.cudf;
     requires tornado.cutlass;
     requires tornado.cuvs;
+    requires tornado.mlx;
     requires lucene.core;
     requires java.desktop;
     requires jdk.incubator.vector;
@@ -30,6 +32,7 @@ open module tornado.unittests {
     exports uk.ac.manchester.tornado.unittests.cudf;
     exports uk.ac.manchester.tornado.unittests.cutlass;
     exports uk.ac.manchester.tornado.unittests.cuvs;
+    exports uk.ac.manchester.tornado.unittests.mlx;
     exports uk.ac.manchester.tornado.unittests.fields;
     exports uk.ac.manchester.tornado.unittests.flatmap;
     exports uk.ac.manchester.tornado.unittests.fuzz;
@@ -55,4 +58,7 @@ open module tornado.unittests {
     exports uk.ac.manchester.tornado.unittests.vectortypes;
     exports uk.ac.manchester.tornado.unittests.virtualization;
     exports uk.ac.manchester.tornado.unittests.memory.leak;
+
+    provides uk.ac.manchester.tornado.runtime.library.spi.TornadoLibraryProvider with //
+            uk.ac.manchester.tornado.unittests.tasks.TestLibraryNativeBuffers.NativeBufferTestProvider;
 }

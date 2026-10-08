@@ -377,4 +377,14 @@ public class MetalVectorWrapper implements XPUBuffer {
     public int getSizeOfType() {
         throw new TornadoRuntimeException("[ERROR] not implemented");
     }
+
+    @Override
+    public long libraryAddress() {
+        throw new TornadoRuntimeException("[ERROR] A vector-type object is not supported as a library-task argument on the Metal backend");
+    }
+
+    @Override
+    public long libraryOffset() {
+        throw new TornadoRuntimeException("[ERROR] A vector-type object is not supported as a library-task argument on the Metal backend");
+    }
 }

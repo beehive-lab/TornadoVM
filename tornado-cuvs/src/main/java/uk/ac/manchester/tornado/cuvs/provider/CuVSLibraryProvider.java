@@ -21,6 +21,7 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.util.Map;
 
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.cuvs.CuVS;
 import uk.ac.manchester.tornado.cuvs.CuVSAllNeighborsOptions;
@@ -86,8 +87,8 @@ public final class CuVSLibraryProvider implements TornadoLibraryProvider {
 
     @Override
     public boolean canHandle(TornadoXPUDevice device) {
-        // Only the CUDA backend exposes its native stream for library interop
-        return device instanceof TornadoNativeStreamSupport;
+        // CUDA devices only: the Metal backend also implements TornadoNativeStreamSupport
+        return device.getTornadoVMBackend() == TornadoVMBackendType.CUDA && device instanceof TornadoNativeStreamSupport;
     }
 
     @Override

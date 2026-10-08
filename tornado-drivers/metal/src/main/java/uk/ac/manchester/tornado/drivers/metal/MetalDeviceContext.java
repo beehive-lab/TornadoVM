@@ -42,6 +42,8 @@ import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalDeviceType;
+import uk.ac.manchester.tornado.drivers.metal.ffm.MetalAPI;
+import uk.ac.manchester.tornado.drivers.metal.ffm.MetalObjects;
 import uk.ac.manchester.tornado.drivers.metal.graal.MetalInstalledCode;
 import uk.ac.manchester.tornado.drivers.metal.graal.compiler.MetalCompilationResult;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalMemoryManager;
@@ -649,5 +651,22 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
     public long mapOnDeviceMemoryRegion(long executionPlanId, long destDevicePtr, long srcDevicePtr, long offset, int sizeOfType, long sizeSource, long sizeDest) {
         MetalCommandQueue commandQueue = getCommandQueue(executionPlanId);
         return commandQueue.mapOnDeviceMemoryRegion(commandQueue.getCommandQueuePtr(), destDevicePtr, srcDevicePtr, offset, sizeOfType, sizeSource, sizeDest);
+    }
+
+    /* ---- Native interop (external libraries, e.g. Apple MLX) ---- */
+
+    @Override
+    public long getNativeStream(long executionPlanId) {
+        long queue = getCommandQueue(executionPlanId).getCommandQueuePtr();
+        // A library encodes its own command buffers on this queue (or reads buffers on the CPU), so
+        // the kernels batched before it are committed and finished first.
+        MetalObjects.drain(queue);
+        return queue;
+    }
+
+    @Override
+    public long getNativeContext(long executionPlanId) {
+        // Taken from the queue itself so the two handles always belong together.
+        return MetalAPI.queueDevice(getNativeStream(executionPlanId));
     }
 }
