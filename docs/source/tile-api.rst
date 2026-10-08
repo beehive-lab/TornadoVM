@@ -470,6 +470,41 @@ One caveat, verified against 13.3.73: **hint keys are not validated**. An invent
 absurd value both compile silently and do nothing, so a hint that appears to have no effect may
 simply not exist.
 
+The ``occupancy`` hint only acts on a straight-line k-loop; on a rolled loop the hinted and plain
+kernels compile identically (see the next section).
+
+K-loop unrolling
+****************
+
+After task specialisation the k-loop of a tile GEMM has a constant trip count, so it can be either
+kept as a loop or fully unrolled into straight-line ``load/load/mma`` steps. Which form is faster
+depends on the architecture and the tile shape. Measured with FP16 GEMMs at ``n = 1024`` to
+``4096``:
+
+.. list-table::
+   :header-rows: 1
+
+   * - GPU
+     - 128x128x64 tiles
+     - Smaller tiles (32x32x32, 64x64x64, 128x128x32)
+   * - A10 (sm_86), RTX 4090 (sm_89)
+     - straight-line 1.5x to 2.4x faster
+     - rolled 1.7x to 6.5x faster
+   * - RTX 5070 Ti (sm_120)
+     - rolled 2.4x to 5.1x faster
+     - rolled 2.5x to 15x faster; some straight-line builds exceed the 120 s compile timeout
+
+By default the CUDA backend unrolls the k-loop only for 128x128x64 tiles on compute capability
+8.x, and keeps it rolled everywhere else. ``-Dtornado.cuda.tile.unrollKLoop`` overrides that
+choice:
+
+* ``auto`` (default): the per-architecture choice above.
+* ``true``: unroll every tile k-loop that fits the unroll budget.
+* ``false``: keep every tile k-loop rolled.
+
+The property is read when a task is compiled, so it can be set for one compilation only, the
+same way as ``tornado.cuda.tile.hints``.
+
 Rank
 ****
 
