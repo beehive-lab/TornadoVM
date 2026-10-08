@@ -69,6 +69,7 @@ public class CUDAGenericGPUScheduler extends CUDAKernelScheduler {
                 break;
             case 1:
                 localWork[0] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[0], meta.getGlobalWork()[0]);
+                padIrregularGrid(meta.getGlobalWork(), localWork);
                 break;
             default:
                 break;
@@ -116,4 +117,23 @@ public class CUDAGenericGPUScheduler extends CUDAKernelScheduler {
         }
         return intermediates;
     }
+
+    /** Threads per block when the loop bound has no usable divisor; also the reductions' group size. */
+    private static final int IRREGULAR_BLOCK_SIZE = 256;
+
+    /**
+     * The block size above divides the global size exactly. A bound with no divisor of at least a
+     * warp -- a prime row count, say -- would get blocks of a few threads or one, leaving most
+     * lanes of every warp idle (a 1-D kernel over 7,987,813 elements ran 28x slower than over
+     * 8,000,256). Such a launch uses full blocks instead and rounds the grid up: every
+     * {@code @Parallel} loop keeps its own bound check, so the extra threads do nothing, and the
+     * reductions' partial results are sized for groups of this size already.
+     */
+    private static void padIrregularGrid(long[] globalWork, long[] localWork) {
+        if (localWork[0] < WARP_SIZE && globalWork[0] > IRREGULAR_BLOCK_SIZE) {
+            localWork[0] = IRREGULAR_BLOCK_SIZE;
+            globalWork[0] = (globalWork[0] + IRREGULAR_BLOCK_SIZE - 1) / IRREGULAR_BLOCK_SIZE * IRREGULAR_BLOCK_SIZE;
+        }
+    }
+
 }
