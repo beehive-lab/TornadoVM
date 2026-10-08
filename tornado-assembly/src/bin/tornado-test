@@ -368,6 +368,8 @@ __TEST_THE_WORLD__ = [
     TestEntry(testName="uk.ac.manchester.tornado.unittests.multithreaded.TestMultiThreadedExecutionPlans",
               testParameters=["-Dtornado.device.memory=4GB"]),
 
+    TestEntry(testName="uk.ac.manchester.tornado.unittests.memory.TestReclaimReleasedBuffers",
+              testParameters=["-Dtornado.device.memory=1GB"]),
     TestEntry(testName="uk.ac.manchester.tornado.unittests.memory.TestStressDeviceMemory",
               testParameters=[
                   "-Dtornado.device.memory=4GB",
