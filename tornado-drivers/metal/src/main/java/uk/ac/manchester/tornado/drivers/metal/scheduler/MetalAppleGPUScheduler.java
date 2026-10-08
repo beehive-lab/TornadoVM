@@ -44,6 +44,12 @@ public class MetalAppleGPUScheduler extends MetalKernelScheduler {
      */
     public static final int SIMD_GROUP_SIZE = 32;
 
+    /** Threads per threadgroup when the loop bound has no usable divisor; also the reductions' group size. */
+    private static final int IRREGULAR_GROUP_SIZE = 256;
+
+    /** Threadgroup width of a padded dimension in a 2-D or 3-D launch: a 16x16 tile is 256 threads. */
+    private static final int IRREGULAR_TILE = 16;
+
     private final long[] maxWorkItemSizes;
 
     public MetalAppleGPUScheduler(final MetalDeviceContext context) {
@@ -59,7 +65,9 @@ public class MetalAppleGPUScheduler extends MetalKernelScheduler {
      * {@code @Reduce} infrastructure pre-sizes the reduction output array based on the
      * domain cardinality. Rounding up would change the workgroup count and corrupt those
      * arrays. SIMD alignment is achieved instead by {@link #calculateLocalWork}, which
-     * selects a threadgroup size that is a multiple of {@code SIMD_GROUP_SIZE}.
+     * selects a threadgroup size that is a multiple of {@code SIMD_GROUP_SIZE}. The exceptions are
+     * bounds with no usable divisor, which {@link #padIrregularGrid} and {@link #padIrregularTile}
+     * round up.
      */
     @Override
     public void calculateGlobalWork(final TaskDataContext meta, long batchThreads) {
@@ -85,13 +93,16 @@ public class MetalAppleGPUScheduler extends MetalKernelScheduler {
                 localWork[2] = 1;
                 localWork[1] = calculateGroupSize(effectiveMaxPerDim(meta)[1], meta.getGlobalWork()[1]);
                 localWork[0] = calculateGroupSize(effectiveMaxPerDim(meta)[0], meta.getGlobalWork()[0]);
+                padIrregularTile(meta.getGlobalWork(), localWork, 2);
                 break;
             case 2:
                 localWork[1] = calculateGroupSize(effectiveMaxPerDim(meta)[1], meta.getGlobalWork()[1]);
                 localWork[0] = calculateGroupSize(effectiveMaxPerDim(meta)[0], meta.getGlobalWork()[0]);
+                padIrregularTile(meta.getGlobalWork(), localWork, 2);
                 break;
             case 1:
                 localWork[0] = calculateGroupSize(maxWorkItemSizes[0], meta.getGlobalWork()[0]);
+                padIrregularGrid(meta.getGlobalWork(), localWork);
                 break;
             default:
                 break;
@@ -166,5 +177,36 @@ public class MetalAppleGPUScheduler extends MetalKernelScheduler {
             caps[i] = (long) Math.sqrt(maxWorkItemSizes[i]);
         }
         return caps;
+    }
+
+    /**
+     * The threadgroup size above divides the global size exactly. A bound with no divisor of at
+     * least a SIMD group -- a prime element count, say -- would get threadgroups of a few threads
+     * or one, leaving most lanes of every SIMD group idle. Such a launch uses full threadgroups
+     * instead and rounds the grid up: every {@code @Parallel} loop keeps its own bound check, so
+     * the extra threads do nothing, and the reductions' partial results are sized for groups of
+     * this size already.
+     */
+    private static void padIrregularGrid(long[] globalWork, long[] localWork) {
+        if (localWork[0] < SIMD_GROUP_SIZE && globalWork[0] > IRREGULAR_GROUP_SIZE) {
+            localWork[0] = IRREGULAR_GROUP_SIZE;
+            globalWork[0] = (globalWork[0] + IRREGULAR_GROUP_SIZE - 1) / IRREGULAR_GROUP_SIZE * IRREGULAR_GROUP_SIZE;
+        }
+    }
+
+    /**
+     * The 2-D and 3-D form of {@link #padIrregularGrid}: each of the first {@code dims} dimensions
+     * is capped at {@code sqrt(maxWorkItemSize)}, so a bound with no divisor of at least a tile
+     * width -- a prime image width, say -- would get a threadgroup a few threads wide, or one
+     * thread. Such a dimension uses a full tile width instead and rounds its grid up; every
+     * {@code @Parallel} loop keeps its own bound check, so the extra threads do nothing.
+     */
+    private static void padIrregularTile(long[] globalWork, long[] localWork, int dims) {
+        for (int i = 0; i < dims; i++) {
+            if (localWork[i] < IRREGULAR_TILE && globalWork[i] > IRREGULAR_TILE) {
+                localWork[i] = IRREGULAR_TILE;
+                globalWork[i] = (globalWork[i] + IRREGULAR_TILE - 1) / IRREGULAR_TILE * IRREGULAR_TILE;
+            }
+        }
     }
 }
