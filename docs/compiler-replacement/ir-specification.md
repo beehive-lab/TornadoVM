@@ -1,7 +1,61 @@
-# TC IR specification — DRAFT for review at gates C2/C3
+# TC IR specification
 
-Status: **draft**, not frozen. Choices marked ⚑ are design decisions to be confirmed at C3,
-where three hand-built kernels prove them end to end on the RTX 4090.
+Status: **accepted for implementation** (user, 2026-10-09). Choices marked ⚑ are still validated
+by the C3 design test (three hand-built kernels end to end on the RTX 4090); a C3 finding that
+contradicts one is brought back for review before it changes.
+
+## 0. What it resembles, and why
+
+In one line: **MLIR `cf`/`scf`/`arith` with LLVM-style types, plus Java-semantics ops and
+TornadoVM intrinsics.** Only concepts are shared; the IR, its names and its implementation are TC's
+own (see [provenance.md](provenance.md)).
+
+| Feature | Taken from (concept) | TC difference |
+|---|---|---|
+| Block arguments instead of phi nodes | MLIR `cf`, Cranelift CLIF, Swift SIL | — |
+| Structured regions (`if`/`for`/`while`) for emission | MLIR `scf` | TC-S also folds single-use values into expression trees |
+| Types `i1…i64`, `f16 bf16 f32 f64`, vectors | LLVM IR | adds pre-ABI `array<T>` and frontend-only `obj<…>` |
+| Opaque pointers with address spaces | LLVM (NVPTX numbering) | — |
+| `icmp`/`fcmp` predicates, `select`, `sext`/`zext`/`trunc`, `bitcast` | LLVM IR | — |
+| Dialect-like op families | MLIR (`arith`, `math`, `memref`, `gpu`) | one flat namespace with families, not pluggable dialects |
+| Typed SSA, flat op list per block, text form + parser, strict verifier | Cranelift CLIF | — |
+| High-level Java array/field ops, host-API → intrinsic mapping | ILGPU | — |
+| **Java semantics in the ops** (`f2i.sat`, masked shifts, Java `div`/`rem`, NaN/−0.0 in `min`/`max`) | none (LLVM leaves these undefined or poison) | TC-specific |
+| **TornadoVM intrinsics as first-class ops** with per-dialect spellings | none | TC-specific |
+
+Deliberately **not** like Graal: no Sea of Nodes or floating nodes, no frame states or
+deoptimisation, no guards, no stamps. Every op lives in a block, in order.
+
+### Benefits
+
+Compared with today's Graal path:
+1. **Readable and debuggable:** ordered text dumps that diff cleanly per pass; hand-written IR
+   tests without Java or a GPU; no IGV.
+2. **Correct Java numerics by construction:** the issue #1149 class (`>>>`, `(long)float`,
+   NaN `min`/`max`) is encoded in op semantics, not left to each emitter.
+3. **One core instead of three backend copies:** a backend is `TargetCaps` + dialect printer +
+   registry rows (today 120–226 Graal-coupled classes per backend).
+4. **Fewer bug sources:** no phis (SSA destruction = edge copies), no floating-node scheduling,
+   no guards; at least six Graal phases exist only to remove guards, deopt state and proxies
+   ([phase-migration-matrix.md](phase-migration-matrix.md) §C).
+5. **Newer bytecode:** TC's own class-file reader lifts the `--release 22` cap.
+6. **Smaller, faster start-up (to be measured at C7):** no ~4.6k-class Graal jar or its module
+   flags; better fit for Leyden.
+
+Compared with adopting MLIR or LLVM directly:
+1. **Pure Java:** no JNI, FFM or C++ toolchain; JDK 21+ and Leyden friendly.
+2. **Interop nearly free:** the shape maps mechanically to `.ll`/`.mlir` text, so `opt`/`mlir-opt`
+   (second verifier), Alive2 (pass proofs), `-O3` (optimisation oracle) and future SPIR-V/AMD paths
+   work through external tools.
+3. **Keeps Java/TornadoVM meaning longer:** `array<T>`, `@Parallel`, reductions and
+   `KernelContext` stay visible until Tornado lowering, which keeps parallelisation and `Access[]`
+   analysis simple.
+4. **Readable emitted C:** `scf`-shaped TC-S with expression folding produces
+   `c[i] = a[i] + b[i];` rather than one temporary per value — better for cuda-gdb/`tcd` and `ncu`.
+
+Costs: TC must implement its own optimiser for the parity subset — see
+[optimizations.md](optimizations.md) — and C7 measures whether any performance gap remains after
+NVRTC/OpenCL compilers optimise the emitted C.
 
 TC has two IRs:
 
@@ -134,7 +188,7 @@ expr    := var | const | unary | binary | select | convert | load | intrinsic-ca
   otherwise `SWhile` or a labelled `SLoop` with `SBreak`.
 - Every statement keeps its `loc`, so emitters can print `// VectorAdd.java:21` or `#line`.
 
-## 3. Open questions for C2/C3 review
+## 3. Resolved by the drafts, re-checked at C3
 
 1. Keep `array<T>` as a first-class pre-ABI type (readable IR, simple frontend) versus lowering to
    pointers in the frontend. Draft: keep, lower in `tc-tornado`.

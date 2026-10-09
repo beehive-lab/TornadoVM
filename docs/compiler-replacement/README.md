@@ -19,3 +19,5 @@ Graal stays the reference implementation and fallback until gate C8.
 | [existing-work.md](existing-work.md) | Prior work and reuse decisions |
 | [provenance.md](provenance.md) | Clean-room policy, algorithm sources, novel decisions |
 | [toolchain.md](toolchain.md) | Optional LLVM/MLIR/Alive2 tools (external processes only) |
+| [ir-specification.md](ir-specification.md) | TC-SSA and TC-S (accepted) |
+| [optimizations.md](optimizations.md) | Optimisations and kernel transformations TC must deliver, with gates and status |
