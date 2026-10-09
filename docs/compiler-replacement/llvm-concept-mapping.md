@@ -1,4 +1,4 @@
-# LLVM / MLIR concept mapping
+# LLVM / MLIR / ILGPU concept mapping
 
 LLVM and MLIR are sources of **design ideas** for TC, not dependencies. The table maps each concept
 to the TornadoVM problem it addresses and to its place in TC. TC never links any LLVM/MLIR library
@@ -36,6 +36,20 @@ declared, **P2** later optimisation or research. Priorities are revisited at gat
 | Polyhedral (Polly) / loop tiling | Possible performance gains for stencils and matrix multiply | Research item after parity | — | P2 |
 | MLIR dialect lowering chains (`gpu` → `nvvm`/`rocdl`/`spirv`) | AMD and SPIR-V targets are absent | Offline experiment through `tc-interop` `.mlir` export (Phase 9), external tools only | `tc-interop` | P2 |
 | LLVM NVPTX backend (`llc`) | NVRTC compile latency | Offline experiment via external `llc`; compared against NVRTC at C9 | `tc-interop` | P2 |
+
+## ILGPU concepts
+
+ILGPU (.NET IL → own SSA IR → PTX / OpenCL C) is the closest existing analogue to TC. As with LLVM,
+only concepts are taken; no code, structure or names (see [provenance.md](provenance.md)).
+
+| ILGPU concept | TornadoVM problem or opportunity | TC adaptation | Module | Priority |
+|---|---|---|---|---|
+| Stack-machine bytecode → typed SSA by abstract interpretation of the operand stack and locals | Graal's bytecode parser is the deepest Graal coupling | Frontend walks the CFG with a typed abstract stack/locals state and builds SSA on the fly (with Braun et al. for merges) | `tc-frontend` | P0 |
+| Remapping host API calls to device intrinsics | `KernelContext`, `TornadoMath`, vector types, atomics are matched by Graal plugins per backend | One intrinsic-binding table: Java method signature → TC intrinsic op, resolved in the frontend | `tc-frontend`, `tc-tornado` | P0 |
+| Backend hooks over a shared core | Three near-copies of node lowering | Backends provide `TargetCaps` + dialect printer only; legality and lowering are shared | `tc-codegen` | P0 |
+| SSA → OpenCL C emission without a structured intermediate | Matches TC's path B (direct emission) | `DirectEmitter` for reducible kernels, sharing the op registry and verifier with path A | `tc-codegen` | P0 |
+| Kernel cache keyed by method + specialisation + target | Recompilation; future Leyden reuse | Same key design as the LLVM caching row | `tc-runtime` | P1 |
+| Specialisation on constant arguments | Some kernels benefit from compile-time sizes | Research item after parity (TornadoVM already has some constant specialisation) | — | P2 |
 
 ## Concepts deliberately not adopted
 

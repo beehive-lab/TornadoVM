@@ -12,6 +12,9 @@ Sea-of-Nodes `Simple` and any other compiler.
    as a black box (behaviour, `--printKernel` output) through the differential harness.
 4. TornadoVM-authored code (same project, same licence) may be read as behavioural reference:
    kernel ABI, intrinsic names, regression cases. TC re-implements, it does not port.
+   **Exception:** TornadoVM files that carry an Oracle copyright line (391 files in runtime,
+   drivers-common, CUDA and OpenCL) or say they modify a Graal class (for example
+   `TornadoFloatingReadReplacement`) are treated like Graal: black-box behaviour only.
 5. Intrinsic and builtin tables are derived from the vendor specifications
    (CUDA C++ Programming Guide, OpenCL C 3.0, Metal Shading Language Specification).
 6. TC adds no new third-party dependency without review.
