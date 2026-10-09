@@ -24,6 +24,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import uk.ac.manchester.tornado.tc.ir.Opcode;
+import uk.ac.manchester.tornado.tc.ir.Opcode.ConvertOp;
 import uk.ac.manchester.tornado.tc.ir.Type;
 
 /**
@@ -55,8 +57,12 @@ final class Bindings {
     record ArraySet() implements Binding {
     }
 
-    /** {@code getSize()} on a TornadoVM native array. */
-    record ArraySize() implements Binding {
+    /** {@code getSize()} ({@code i32}) or {@code getSizeLong()} ({@code i64}) on a TornadoVM native array. */
+    record ArraySize(Type type) implements Binding {
+    }
+
+    /** A value conversion, such as the raw bit casts of {@code Float.floatToRawIntBits}. */
+    record Convert(ConvertOp op, Type result) implements Binding {
     }
 
     /** A {@code KernelContext.allocate*LocalArray(n)}: shared memory of the element type. */
@@ -67,11 +73,29 @@ final class Bindings {
     record Identity() implements Binding {
     }
 
+    /**
+     * Constructor of a value class: {@code new C; dup; args; invokespecial C.<init>} becomes the value
+     * {@code convert(op, arg)} of type {@code result} (after narrowing the int stack value to {@code from}).
+     */
+    record ValueInit(Type from, ConvertOp op, Type result) implements Binding {
+    }
+
+    /** {@code HalfFloat.getHalfFloatValue()}: the raw 16 bits, sign-extended like a Java short. */
+    record HalfBits() implements Binding {
+    }
+
+    /** {@code HalfFloat.add/sub/mult/div}: computed in single precision, rounded once to half (as Java does). */
+    record HalfArith(Opcode.BinaryOp op) implements Binding {
+    }
+
+    /** Value classes: objects of these classes are their single scalar field. */
+    static final String HALF_FLOAT = "uk/ac/manchester/tornado/api/types/HalfFloat";
+
     private static final Map<String, Binding> FIELDS = new HashMap<>();
     private static final Map<String, Binding> METHODS = new HashMap<>();
     private static final Map<String, Type> NATIVE_ARRAYS = Map.of(
             "FloatArray", Type.F32, "IntArray", Type.I32, "DoubleArray", Type.F64, "LongArray", Type.I64,
-            "ShortArray", Type.I16, "ByteArray", Type.I8, "CharArray", Type.I16, "HalfFloatArray", Type.F16);
+            "ShortArray", Type.I16, "ByteArray", Type.I8, "Int8Array", Type.I8, "CharArray", Type.I16, "HalfFloatArray", Type.F16);
 
     static {
         var dims = new String[] { "x", "y", "z" };
@@ -91,12 +115,29 @@ final class Bindings {
         METHODS.put(KERNEL_CONTEXT + ".allocateDoubleLocalArray(I)[D", new SharedArray(Type.F64));
         METHODS.put(KERNEL_CONTEXT + ".allocateLongLocalArray(I)[J", new SharedArray(Type.I64));
         METHODS.put("java/lang/Integer.intValue()I", new Identity());
+        METHODS.put(HALF_FLOAT + ".<init>(F)V", new ValueInit(Type.F32, ConvertOp.FTRUNC, Type.F16));
+        METHODS.put(HALF_FLOAT + ".<init>(S)V", new ValueInit(Type.I16, ConvertOp.BITCAST, Type.F16));
+        METHODS.put(HALF_FLOAT + ".getFloat32()F", new Convert(ConvertOp.FEXT, Type.F32));
+        METHODS.put(HALF_FLOAT + ".getHalfFloatValue()S", new HalfBits());
+        var half = "(L" + HALF_FLOAT + ";L" + HALF_FLOAT + ";)L" + HALF_FLOAT + ";";
+        METHODS.put(HALF_FLOAT + ".add" + half, new HalfArith(Opcode.BinaryOp.FADD));
+        METHODS.put(HALF_FLOAT + ".sub" + half, new HalfArith(Opcode.BinaryOp.FSUB));
+        METHODS.put(HALF_FLOAT + ".mult" + half, new HalfArith(Opcode.BinaryOp.FMUL));
+        METHODS.put(HALF_FLOAT + ".div" + half, new HalfArith(Opcode.BinaryOp.FDIV));
+        // Raw bit casts are native methods (no bytecode): bitcast keeps every bit, NaN payloads included.
+        METHODS.put("java/lang/Float.floatToRawIntBits(F)I", new Convert(ConvertOp.BITCAST, Type.I32));
+        METHODS.put("java/lang/Float.intBitsToFloat(I)F", new Convert(ConvertOp.BITCAST, Type.F32));
+        METHODS.put("java/lang/Double.doubleToRawLongBits(D)J", new Convert(ConvertOp.BITCAST, Type.I64));
+        METHODS.put("java/lang/Double.longBitsToDouble(J)D", new Convert(ConvertOp.BITCAST, Type.F64));
         for (var name : NATIVE_ARRAYS.keySet()) {
             var owner = ARRAYS + name;
             var t = descriptorOf(NATIVE_ARRAYS.get(name), name);
-            METHODS.put(owner + ".get(I)" + t, new ArrayGet());
-            METHODS.put(owner + ".set(I" + t + ")V", new ArraySet());
-            METHODS.put(owner + ".getSize()I", new ArraySize());
+            for (var index : new String[] { "I", "J" }) {
+                METHODS.put(owner + ".get(" + index + ")" + t, new ArrayGet());
+                METHODS.put(owner + ".set(" + index + t + ")V", new ArraySet());
+            }
+            METHODS.put(owner + ".getSize()I", new ArraySize(Type.I32));
+            METHODS.put(owner + ".getSizeLong()J", new ArraySize(Type.I64));
         }
         for (var fn : new String[] { "sqrt", "exp", "log", "sin", "cos", "tan", "tanh", "abs", "floor", "ceil" }) {
             METHODS.put(TORNADO_MATH + "." + fn + "(F)F", new Intrinsic("math." + fn, Type.F32));
@@ -143,6 +184,9 @@ final class Bindings {
             case '[' -> new Type.ArrayType(elementType(descriptor.substring(1)));
             case 'L' -> {
                 var cls = descriptor.substring(1, descriptor.length() - 1);
+                if (cls.equals(HALF_FLOAT)) {
+                    yield Type.F16;
+                }
                 if (cls.startsWith(ARRAYS) && NATIVE_ARRAYS.containsKey(cls.substring(ARRAYS.length()))) {
                     yield new Type.ArrayType(NATIVE_ARRAYS.get(cls.substring(ARRAYS.length())));
                 }

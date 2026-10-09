@@ -118,7 +118,7 @@ public final class AbiLowering {
     private void lowerLength(Inst inst) {
         var b = new IrBuilder(inst.block().orElseThrow()).before(inst).at(inst.loc());
         var count = b.load(inst.operand(0), Type.I64);
-        var length = b.convert(ConvertOp.TRUNC, count, Type.I32);
+        var length = inst.type().equals(Type.I64) ? count : b.convert(ConvertOp.TRUNC, count, Type.I32);
         length.setName(!inst.name().isEmpty() && !inst.name().chars().allMatch(Character::isDigit) ? inst.name() : inst.operand(0).name() + "_len");
         inst.replaceAllUsesWith(length);
         inst.erase();

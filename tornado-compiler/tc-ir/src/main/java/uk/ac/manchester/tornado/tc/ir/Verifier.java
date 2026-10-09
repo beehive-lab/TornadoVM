@@ -259,7 +259,7 @@ public final class Verifier {
                 if (count(inst, 1)) {
                     operandIs(inst, 0, ops.get(0).type() instanceof ArrayType, "an array");
                 }
-                resultIs(inst, result.equals(Type.I32), "i32");
+                resultIs(inst, result.equals(Type.I32) || result.equals(Type.I64), "i32 or i64");
             }
             case Opcode.FieldLoad _f -> {
                 if (count(inst, 1)) {

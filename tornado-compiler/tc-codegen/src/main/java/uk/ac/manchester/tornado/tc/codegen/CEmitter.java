@@ -508,11 +508,14 @@ public final class CEmitter {
                 yield new R(fn + "(" + v.text + ")", ATOM);
             }
             case BITCAST -> {
+                usesHalf |= from.equals(Type.F16) || to.equals(Type.F16);
                 var fn = switch (from.text() + "->" + to.text()) {
                     case "f32->i32" -> "__float_as_int";
                     case "i32->f32" -> "__int_as_float";
                     case "f64->i64" -> "__double_as_longlong";
                     case "i64->f64" -> "__longlong_as_double";
+                    case "f16->i16" -> "__half_as_short";
+                    case "i16->f16" -> "__short_as_half";
                     default -> throw new EmitException("TC-E4001", "bitcast " + from.text() + " to " + to.text() + " is not supported on CUDA yet");
                 };
                 yield new R(fn + "(" + v.text + ")", ATOM);

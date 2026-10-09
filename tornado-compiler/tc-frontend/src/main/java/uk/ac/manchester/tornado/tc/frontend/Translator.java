@@ -694,7 +694,10 @@ final class Translator {
                     conditionalBranch(block, b.icmp(intPredicate(op - IF_ICMPEQ), lhs, rhs), insn);
                 } else if (op >= I2L && op <= I2S) {
                     convert(op, insn.bci());
-                } else if (op >= IRETURN && op <= DRETURN) {
+                } else if (op == NEW && classFile.constants().className(insn.index()).equals(Bindings.HALF_FLOAT)) {
+                    // Placeholder until the constructor call gives the value (see Bindings.ValueInit).
+                    push(new Inst(new Opcode.Intrinsic("tc.uninitialised"), Type.F16));
+                } else if (op >= IRETURN && op <= DRETURN || op == ARETURN && stack.peek() != null && stack.peek().type().equals(Type.F16)) {
                     b.ret(pop());
                 } else {
                     throw error("TC-E1002", "bytecode '" + Bytecode.name(op) + "' is not supported in kernels", insn.bci());
@@ -887,7 +890,26 @@ final class Translator {
                 var value = args.get(2);
                 builder.arrayStore(args.get(0), args.get(1), element.equals(value.type()) ? value : builder.convert(ConvertOp.TRUNC, value, element));
             }
-            case ArraySize s -> push(builder.arrayLength(args.get(0)));
+            case ArraySize(var type) -> push(builder.arrayLength(args.get(0), type));
+            case Bindings.Convert(var op, var result) -> push(builder.convert(op, args.get(args.size() - 1), result));
+            case Bindings.ValueInit(var from, var op, var result) -> {
+                // args.get(0) is the placeholder pushed by `new`: every copy of it (from `dup`) becomes the value.
+                var arg = args.get(1);
+                var narrowed = arg.type().equals(from) ? arg : builder.convert(ConvertOp.TRUNC, arg, from);
+                var value = builder.convert(op, narrowed, result);
+                var placeholder = args.get(0);
+                var rebuilt = new ArrayDeque<Value>();
+                for (var v : stack) {
+                    rebuilt.addLast(v == placeholder ? value : v);
+                }
+                stack = rebuilt;
+            }
+            case Bindings.HalfBits h -> push(builder.convert(ConvertOp.SEXT, builder.convert(ConvertOp.BITCAST, args.get(0), Type.I16), Type.I32));
+            case Bindings.HalfArith(var op) -> {
+                var a = builder.convert(ConvertOp.FEXT, args.get(0), Type.F32);
+                var c = builder.convert(ConvertOp.FEXT, args.get(1), Type.F32);
+                push(builder.convert(ConvertOp.FTRUNC, builder.binary(op, a, c), Type.F16));
+            }
             case SharedArray(var element) -> push(builder.alloca(AddressSpace.SHARED, element, constantLength(args.get(1), insn.bci())));
             case Identity i -> push(args.get(0));
         }

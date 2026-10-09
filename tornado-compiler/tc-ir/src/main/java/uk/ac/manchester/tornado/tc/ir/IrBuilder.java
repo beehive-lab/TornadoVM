@@ -122,7 +122,12 @@ public final class IrBuilder {
     }
 
     public Inst arrayLength(Value array) {
-        return insert(new Inst(new Opcode.ArrayLength(), Type.I32), List.of(array));
+        return arrayLength(array, Type.I32);
+    }
+
+    /** The element count as {@code i32} ({@code getSize()}, {@code arraylength}) or {@code i64} ({@code getSizeLong()}). */
+    public Inst arrayLength(Value array, Type type) {
+        return insert(new Inst(new Opcode.ArrayLength(), type), List.of(array));
     }
 
     public Inst fieldLoad(Value object, String field, Type type) {
