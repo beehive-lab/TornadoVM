@@ -84,6 +84,7 @@ import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoMemorySegment;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Float;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Half;
 import uk.ac.manchester.tornado.api.utils.QuantizationUtils;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
@@ -581,6 +582,45 @@ public class OCLGraphBuilderPlugins {
         r.register(new InvocationPlugin("simdgroupMatrixStore", Receiver.class, Matrix8x8Float.class, FloatArray.class, int.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode matrix, ValueNode array, ValueNode base, ValueNode stride) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        r.register(new InvocationPlugin("simdgroupMatrixStore", Receiver.class, Matrix8x8Float.class, float[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode matrix, ValueNode array, ValueNode base, ValueNode stride) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        registerUnsupportedSimdgroupMatrixLoad(r, message, "simdgroupMatrixLoad", HalfFloatArray.class);
+        registerUnsupportedSimdgroupMatrixLoad(r, message, "simdgroupMatrixLoad", HalfFloat[].class);
+        registerUnsupportedSimdgroupMatrixLoad(r, message, "simdgroupMatrixLoadTransposed", FloatArray.class);
+        registerUnsupportedSimdgroupMatrixLoad(r, message, "simdgroupMatrixLoadTransposed", float[].class);
+        registerUnsupportedSimdgroupMatrixLoad(r, message, "simdgroupMatrixLoadTransposed", HalfFloatArray.class);
+        registerUnsupportedSimdgroupMatrixLoad(r, message, "simdgroupMatrixLoadTransposed", HalfFloat[].class);
+        registerUnsupportedSimdgroupMatrixMma(r, message, Matrix8x8Half.class, Matrix8x8Half.class);
+        registerUnsupportedSimdgroupMatrixMma(r, message, Matrix8x8Float.class, Matrix8x8Half.class);
+        registerUnsupportedSimdgroupMatrixMma(r, message, Matrix8x8Half.class, Matrix8x8Float.class);
+    }
+
+    private static void registerUnsupportedSimdgroupMatrixLoad(Registration r, String message, String name, Class<?> arrayType) {
+        r.register(new InvocationPlugin(name, Receiver.class, arrayType, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode base, ValueNode stride) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+    }
+
+    private static void registerUnsupportedSimdgroupMatrixMma(Registration r, String message, Class<?> aType, Class<?> bType) {
+        r.register(new InvocationPlugin("simdgroupMatrixMultiplyAccumulate", Receiver.class, aType, bType, Matrix8x8Float.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode bMat, ValueNode c) {
                 receiver.get(true);
                 unimplemented(message);
                 return false;

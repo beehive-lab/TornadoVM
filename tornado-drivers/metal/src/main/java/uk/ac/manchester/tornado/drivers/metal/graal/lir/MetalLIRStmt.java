@@ -1527,6 +1527,9 @@ public class MetalLIRStmt {
     /** FloatArray header in float elements (TornadoNativeArray.ARRAY_HEADER = 16 bytes). */
     private static final int SIMDGROUP_FLOAT_HEADER = 4;
 
+    /** HalfFloatArray header in half elements (16 bytes). */
+    private static final int SIMDGROUP_HALF_HEADER = 8;
+
     /** {@code <result> = make_filled_simdgroup_matrix<float,8,8>(0.0f);} */
     @Opcode("SIMDGROUP_MATRIX_ZERO")
     public static class SimdgroupMatrixZeroStmt extends AbstractInstruction {
@@ -1550,7 +1553,10 @@ public class MetalLIRStmt {
         }
     }
 
-    /** {@code simdgroup_load(<result>, (const device float*)((device float*)<array> + 4 + <base>), (ulong)<stride>);} */
+    /**
+     * {@code simdgroup_load(<result>, (const device T*)((device T*)<array> + header + <base>), (ulong)<stride>[, ulong2(0, 0), true]);}
+     * with {@code T} = {@code float} or {@code half}; a threadgroup source has no header.
+     */
     @Opcode("SIMDGROUP_MATRIX_LOAD")
     public static class SimdgroupMatrixLoadStmt extends AbstractInstruction {
 
@@ -1565,14 +1571,18 @@ public class MetalLIRStmt {
         @Use
         protected Value stride;
         private final boolean local;
+        private final boolean half;
+        private final boolean transpose;
 
-        public SimdgroupMatrixLoadStmt(AllocatableValue result, Value array, Value base, Value stride, boolean local) {
+        public SimdgroupMatrixLoadStmt(AllocatableValue result, Value array, Value base, Value stride, boolean local, boolean half, boolean transpose) {
             super(TYPE);
             this.result = result;
             this.array = array;
             this.base = base;
             this.stride = stride;
             this.local = local;
+            this.half = half;
+            this.transpose = transpose;
         }
 
         @Override
@@ -1581,22 +1591,12 @@ public class MetalLIRStmt {
             asm.emit("simdgroup_load(");
             asm.emitValue(crb, result);
             asm.emit(", ");
-            if (local) {
-                // Threadgroup array: no header, no device cast; the array decays to a pointer.
-                asm.emit("(const threadgroup float*)(");
-                asm.emitValue(crb, array);
-                asm.emit(" + ");
-                asm.emitValue(crb, base);
-                asm.emit(")");
-            } else {
-                asm.emit("(const device float*)((device float*)");
-                asm.emitValue(crb, array);
-                asm.emit(" + " + SIMDGROUP_FLOAT_HEADER + " + ");
-                asm.emitValue(crb, base);
-                asm.emit(")");
-            }
+            emitSimdgroupMatrixPointer(crb, asm, array, base, local, half, true);
             asm.emit(", (ulong)");
             asm.emitValue(crb, stride);
+            if (transpose) {
+                asm.emit(", ulong2(0, 0), true");
+            }
             asm.emit(");");
             asm.eol();
         }
@@ -1641,7 +1641,10 @@ public class MetalLIRStmt {
         }
     }
 
-    /** {@code simdgroup_store(<m>, (device float*)((device float*)<array> + 4 + <base>), (ulong)<stride>);} */
+    /**
+     * {@code simdgroup_store(<m>, (device float*)((device float*)<array> + 4 + <base>), (ulong)<stride>);}
+     * or to a threadgroup {@code float} array.
+     */
     @Opcode("SIMDGROUP_MATRIX_STORE")
     public static class SimdgroupMatrixStoreStmt extends AbstractInstruction {
 
@@ -1655,13 +1658,15 @@ public class MetalLIRStmt {
         protected Value base;
         @Use
         protected Value stride;
+        private final boolean local;
 
-        public SimdgroupMatrixStoreStmt(Value m, Value array, Value base, Value stride) {
+        public SimdgroupMatrixStoreStmt(Value m, Value array, Value base, Value stride, boolean local) {
             super(TYPE);
             this.m = m;
             this.array = array;
             this.base = base;
             this.stride = stride;
+            this.local = local;
         }
 
         @Override
@@ -1669,14 +1674,34 @@ public class MetalLIRStmt {
             asm.indent();
             asm.emit("simdgroup_store(");
             asm.emitValue(crb, m);
-            asm.emit(", (device float*)((device float*)");
-            asm.emitValue(crb, array);
-            asm.emit(" + " + SIMDGROUP_FLOAT_HEADER + " + ");
-            asm.emitValue(crb, base);
-            asm.emit("), (ulong)");
+            asm.emit(", ");
+            emitSimdgroupMatrixPointer(crb, asm, array, base, local, false, false);
+            asm.emit(", (ulong)");
             asm.emitValue(crb, stride);
             asm.emit(");");
             asm.eol();
         }
+    }
+
+    /**
+     * Emits the address of element {@code base} of a device array (skipping the
+     * {@code TornadoNativeArray} header) or of a threadgroup array (no header; the
+     * array decays to a pointer).
+     */
+    private static void emitSimdgroupMatrixPointer(MetalCompilationResultBuilder crb, MetalAssembler asm, Value array, Value base, boolean local, boolean half, boolean isConst) {
+        String element = half ? "half" : "float";
+        String qualifier = isConst ? "const " : "";
+        if (local) {
+            asm.emit("(" + qualifier + "threadgroup " + element + "*)(");
+            asm.emitValue(crb, array);
+        } else {
+            int header = half ? SIMDGROUP_HALF_HEADER : SIMDGROUP_FLOAT_HEADER;
+            asm.emit("(" + qualifier + "device " + element + "*)((device " + element + "*)");
+            asm.emitValue(crb, array);
+            asm.emit(" + " + header);
+        }
+        asm.emit(" + ");
+        asm.emitValue(crb, base);
+        asm.emit(")");
     }
 }
