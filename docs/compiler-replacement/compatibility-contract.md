@@ -31,6 +31,7 @@ OpenCL: same four regions with `__global`, `__constant`, `__local`, `__global` q
 | `Access[]` | per parameter READ / WRITE / READ_WRITE / NONE, computed after inlining and API replacement, OR-merged across callees and device-launched kernels (launch cycles force READ_WRITE); primitives NONE | C4c (TC = Graal for every unittest task) |
 | Parallel domain | dimensions, ranges, strides as `TornadoShapeAnalysis` reports them | C5b |
 | Specialisation | kernels may depend on argument values (folded boxed primitives, array lengths); recompilation follows `task.shouldCompile()`; TC includes the values in its cache key | C5b |
+| `@Parallel` dimensions | on GPUs the innermost `@Parallel` loop is dimension 0 (x), then y, z outward (TornadoVM loop interchange, `tornado.loop.interchange=True`); grid-stride form | C5b |
 | Batch offset | batched runs add `batchNumber × batchSize` to index values written as data | C6 |
 
 ## 3. Numeric semantics

@@ -44,6 +44,7 @@ import uk.ac.manchester.tornado.tc.ir.IrParser;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
 import uk.ac.manchester.tornado.tc.runtime.TcCompiler;
 import uk.ac.manchester.tornado.tc.runtime.TcOptions;
+import uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation;
 
 /**
  * Gate C3 design test: three kernels written in TC-SSA are compiled by TC alone (verify, ABI
@@ -56,7 +57,8 @@ import uk.ac.manchester.tornado.tc.runtime.TcOptions;
 public final class DesignTest {
 
     private static final int N = 1 << 20;
-    private static final java.util.Map<String, String> JAVA_METHODS = java.util.Map.of("vector-add", "add", "branchy", "compute", "block-reduce", "blockSum");
+    private static final java.util.Map<String, String> JAVA_METHODS = java.util.Map.of("vector-add", "C3Kernels.add", "branchy", "C3Kernels.compute", "block-reduce", "C3Kernels.blockSum",
+            "parallel-add", "ParallelKernels.vectorAdd", "parallel-matrix", "ParallelKernels.matrixAdd");
     private static final int BLOCK = 256;
 
     private record Compiled(String entry, Path file, long nanos) {
@@ -97,7 +99,13 @@ public final class DesignTest {
         test.vectorAdd();
         test.branchy();
         test.blockReduce();
-        System.out.println(test.failures == 0 ? "RESULT: PASS (3/3 kernels)" : "RESULT: FAIL (" + test.failures + " kernel(s))");
+        int total = 3;
+        if (fromJava) {
+            test.parallelAdd();
+            test.parallelMatrix();
+            total = 5;
+        }
+        System.out.println(test.failures == 0 ? "RESULT: PASS (" + total + "/" + total + " kernels)" : "RESULT: FAIL (" + test.failures + " of " + total + " kernels)");
         System.exit(test.failures == 0 ? 0 : 1);
     }
 
@@ -107,9 +115,16 @@ public final class DesignTest {
      * otherwise from the hand-written TC-SSA resource.
      */
     private Compiled compile(String name) {
+        return compile(name, List.of());
+    }
+
+    /** {@code args}: the actual task arguments, used for value specialisation (array lengths, scalars). */
+    private Compiled compile(String name, List<Object> args) {
+        var facts = args.stream().map(a -> a instanceof FloatArray f ? new ValueSpecialisation.Fact.Length(f.getSize()) : ValueSpecialisation.Fact.of(a)).toList();
         var options = TcOptions.fromSystemProperties().withReport(true, out);
         var c = fromJava
-                ? TcCompiler.compileJava(Frontend.BytecodeSource.classLoader(DesignTest.class.getClassLoader()), C3Kernels.class.getName(), JAVA_METHODS.get(name), TargetCaps.CUDA_SM89, options)
+                ? TcCompiler.compileJava(Frontend.BytecodeSource.classLoader(DesignTest.class.getClassLoader()), C3Kernels.class.getPackageName() + "." + JAVA_METHODS.get(name).split("\\.")[0],
+                        JAVA_METHODS.get(name).split("\\.")[1], TargetCaps.CUDA_SM89, options, facts)
                 : TcCompiler.compile(IrParser.parseFunction(resource("/c3/" + name + ".tcir")), TargetCaps.CUDA_SM89, options);
         write(name + ".report.html", HtmlReport.render(c));
         if (!c.succeeded()) {
@@ -133,12 +148,16 @@ public final class DesignTest {
     }
 
     private void run(String name, Compiled kernel, int globalSize, AccessorParameters accessors, Object[] inputs, Object[] outputs, Runnable check) {
+        var grid = new WorkerGrid1D(globalSize);
+        grid.setLocalWork(BLOCK, 1, 1);
+        run(name, kernel, grid, accessors, inputs, outputs, check);
+    }
+
+    private void run(String name, Compiled kernel, uk.ac.manchester.tornado.api.WorkerGrid grid, AccessorParameters accessors, Object[] inputs, Object[] outputs, Runnable check) {
         var graph = new TaskGraph(name) //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, inputs) //
                 .prebuiltTask("t0", kernel.entry(), kernel.file().toAbsolutePath().toString(), accessors) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, outputs);
-        var grid = new WorkerGrid1D(globalSize);
-        grid.setLocalWork(BLOCK, 1, 1);
         var scheduler = new GridScheduler(name + ".t0", grid);
         long start = System.nanoTime();
         try (var plan = new TornadoExecutionPlan(graph.snapshot())) {
@@ -202,6 +221,38 @@ public final class DesignTest {
                 throw new AssertionError("group " + g + ": expected " + expected + " got " + out.get(g));
             }
         }));
+    }
+
+    /** {@code @Parallel} 1D: grid-stride over dimension x with half as many threads as elements. */
+    private void parallelAdd() {
+        var a = new FloatArray(N);
+        var b = new FloatArray(N);
+        var c = new FloatArray(N);
+        var kernel = compile("parallel-add", List.of(a, b, c));
+        for (int i = 0; i < N; i++) {
+            a.set(i, i);
+            b.set(i, 2 * i);
+        }
+        var acc = accessors(List.of(a, b, c), List.of(Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY));
+        run("padd", kernel, N / 2, acc, new Object[] { a, b }, new Object[] { c }, () -> check(N, i -> expect(c.get(i), a.get(i) + b.get(i), i)));
+    }
+
+    /** {@code @Parallel} 2D with scalar arguments: the inner loop (cols) is x, the outer (rows) is y. */
+    private void parallelMatrix() {
+        int rows = 512;
+        int cols = 1024;
+        var a = new FloatArray(rows * cols);
+        var b = new FloatArray(rows * cols);
+        var c = new FloatArray(rows * cols);
+        var kernel = compile("parallel-matrix", List.of(a, b, c, rows, cols));
+        for (int i = 0; i < rows * cols; i++) {
+            a.set(i, i % 97);
+            b.set(i, 0.5f * (i % 13));
+        }
+        var acc = accessors(List.of(a, b, c, rows, cols), List.of(Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY, Access.NONE, Access.NONE));
+        var grid = new uk.ac.manchester.tornado.api.WorkerGrid2D(cols, rows);
+        grid.setLocalWork(32, 8, 1);
+        run("pmatrix", kernel, grid, acc, new Object[] { a, b }, new Object[] { c }, () -> check(rows * cols, i -> expect(c.get(i), a.get(i) + b.get(i), i)));
     }
 
     // ---------------------------------------------------------------- helpers

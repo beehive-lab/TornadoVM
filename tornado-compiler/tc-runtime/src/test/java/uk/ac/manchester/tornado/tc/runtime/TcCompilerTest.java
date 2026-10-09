@@ -49,7 +49,7 @@ public class TcCompilerTest {
         var c = TcCompiler.compile(IrParser.parseFunction(KERNEL), TargetCaps.CUDA_SM89, TcOptions.DEFAULTS);
         assertTrue(c.diagnostics().toString(), c.succeeded());
         assertEquals("K_scale", c.entryName());
-        assertEquals("input,verify.pre-abi,abi,verify.post-abi,structure,emit", String.join(",", c.stages().stream().map(TcCompiler.Stage::name).toList()));
+        assertEquals("input,verify.pre-abi,parallel,abi,verify.post-abi,structure,emit", String.join(",", c.stages().stream().map(TcCompiler.Stage::name).toList()));
         assertTrue(c.source(), c.source().contains("extern \"C\" __global__ void K_scale("));
     }
 
@@ -68,7 +68,7 @@ public class TcCompilerTest {
         var options = new TcOptions(java.util.Set.of("abi", "emit"), dir, true, java.util.Optional.empty(), false);
         TcCompiler.compile(IrParser.parseFunction(KERNEL), TargetCaps.CUDA_SM89, options);
         try (var files = Files.list(dir)) {
-            assertEquals(java.util.List.of("K_scale.03-abi.tcir", "K_scale.06-emit.cu"), files.map(p -> p.getFileName().toString()).sorted().toList());
+            assertEquals(java.util.List.of("K_scale.04-abi.tcir", "K_scale.07-emit.cu"), files.map(p -> p.getFileName().toString()).sorted().toList());
         }
     }
 }

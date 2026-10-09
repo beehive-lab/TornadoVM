@@ -44,7 +44,9 @@ import uk.ac.manchester.tornado.tc.frontend.Bindings.SharedArray;
 import uk.ac.manchester.tornado.tc.frontend.classfile.Bytecode;
 import uk.ac.manchester.tornado.tc.frontend.classfile.Bytecode.Insn;
 import uk.ac.manchester.tornado.tc.frontend.classfile.ClassFile;
+import uk.ac.manchester.tornado.tc.frontend.classfile.TypeAnnotations;
 import uk.ac.manchester.tornado.tc.ir.AddressSpace;
+import uk.ac.manchester.tornado.tc.ir.Attribute;
 import uk.ac.manchester.tornado.tc.ir.Block;
 import uk.ac.manchester.tornado.tc.ir.BlockArg;
 import uk.ac.manchester.tornado.tc.ir.Diagnostic;
@@ -87,6 +89,8 @@ final class Translator {
         }
     }
 
+    private static final String PARALLEL = "Luk/ac/manchester/tornado/api/annotations/Parallel;";
+
     private final ClassFile classFile;
     private final ClassFile.Method method;
     private final ClassFile.Code code;
@@ -108,6 +112,7 @@ final class Translator {
     private final Map<Block, Integer> entryDepth = new IdentityHashMap<>();
     private final Map<Block, List<Type>> entryStackTypes = new IdentityHashMap<>();
 
+    private final Map<BlockArg, String> argumentKeys = new IdentityHashMap<>();
     private IrBuilder builder;
     private Deque<Value> stack;
 
@@ -167,6 +172,7 @@ final class Translator {
         }
         removeUnreachable();
         removeTrivialArguments();
+        markParallelLoops();
         return function;
     }
 
@@ -312,6 +318,7 @@ final class Translator {
         if (!sealed.contains(block)) {
             var known = type instanceof Type.ObjectType o && o.className().equals("?") ? probeType(key, block, Collections.newSetFromMap(new IdentityHashMap<>())) : null;
             var arg = block.addArg(known != null ? known : type, name);
+            argumentKeys.put(arg, key);
             incomplete.computeIfAbsent(block, _k -> new LinkedHashMap<>()).put(key, arg);
             value = arg;
         } else if (blockPreds.size() == 1) {
@@ -320,6 +327,7 @@ final class Translator {
             throw error("TC-E1006", "read of local " + key + " before it is assigned", insns.get(startIndex.getOrDefault(block, 0)).bci());
         } else {
             var arg = block.addArg(type, name);
+            argumentKeys.put(arg, key);
             writeVariable(key, block, arg);
             addArgumentOperands(key, block, arg);
             value = arg;
@@ -472,6 +480,34 @@ final class Translator {
                     inst.dropReferences();
                 }
                 function.removeBlock(block);
+            }
+        }
+    }
+
+    /**
+     * Tags loop headers whose block argument carries a local annotated {@code @Parallel}:
+     * {@code parallel(iv=k)} names the argument; {@code tc-tornado} lowers the loop.
+     */
+    private void markParallelLoops() {
+        var parallel = TypeAnnotations.locals(code.typeAnnotations(), classFile.constants()).stream().filter(a -> a.descriptor().equals(PARALLEL)).toList();
+        if (parallel.isEmpty()) {
+            return;
+        }
+        for (var entry : blockAt.entrySet()) {
+            var header = entry.getValue();
+            if (!function.blocks().contains(header)) {
+                continue;
+            }
+            int bci = entry.getKey();
+            for (int k = 0; k < header.args().size(); k++) {
+                var key = argumentKeys.get(header.args().get(k));
+                if (key == null || !key.startsWith("L")) {
+                    continue;
+                }
+                int slot = Integer.parseInt(key.substring(1, key.length() - 1));
+                if (parallel.stream().anyMatch(a -> a.slot() == slot && a.covers(bci))) {
+                    header.addAttribute(new Attribute("parallel", "iv=" + k));
+                }
             }
         }
     }

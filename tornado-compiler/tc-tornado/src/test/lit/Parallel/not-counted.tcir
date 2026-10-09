@@ -1,0 +1,17 @@
+; A @Parallel index that does not advance by a loop-invariant step is rejected, never miscompiled.
+; RUN: not tc-tornado --parallel %s 2>&1 | FileCheck %s
+; CHECK: error TC-E3201: the @Parallel index must advance as i = i + step
+kernel @doubling(%n: i32) -> void {
+^entry:
+  %one = const 1 : i32
+  br ^head(%one)
+^head(%i: i32) [parallel(iv=0)]:
+  %more = icmp.slt %i, %n : i1
+  cond_br %more, ^body, ^exit
+^body:
+  %two = const 2 : i32
+  %next = mul %i, %two : i32
+  br ^head(%next)
+^exit:
+  ret
+}

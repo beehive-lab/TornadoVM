@@ -39,6 +39,8 @@ import uk.ac.manchester.tornado.tc.lower.S;
 import uk.ac.manchester.tornado.tc.lower.SPrinter;
 import uk.ac.manchester.tornado.tc.lower.Structurizer;
 import uk.ac.manchester.tornado.tc.tornado.AbiLowering;
+import uk.ac.manchester.tornado.tc.tornado.ParallelLoopLowering;
+import uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation;
 
 /**
  * Drives one TC compilation from TC-SSA to target source and records every stage: its text form,
@@ -73,6 +75,7 @@ public final class TcCompiler {
     private final Function function;
     private final TargetCaps target;
     private final TcOptions options;
+    private List<ValueSpecialisation.Fact> facts = List.of();
     private final List<Stage> stages = new ArrayList<>();
 
     private TcCompiler(Function function, TargetCaps target, TcOptions options) {
@@ -91,6 +94,15 @@ public final class TcCompiler {
      * {@code bytecode} and {@code frontend}) followed by the pipeline of {@link #compile}.
      */
     public static Compilation compileJava(Frontend.BytecodeSource source, String className, String methodName, TargetCaps target, TcOptions options) {
+        return compileJava(source, className, methodName, target, options, List.of());
+    }
+
+    /**
+     * As {@link #compileJava(Frontend.BytecodeSource, String, String, TargetCaps, TcOptions)}, specialised
+     * for the given facts about the actual task arguments (one per Java parameter; see
+     * {@link ValueSpecialisation}). The result is only valid for those facts.
+     */
+    public static Compilation compileJava(Frontend.BytecodeSource source, String className, String methodName, TargetCaps target, TcOptions options, List<ValueSpecialisation.Fact> facts) {
         long start = System.nanoTime();
         var translated = Frontend.translate(source, className, methodName, null);
         long frontendNanos = System.nanoTime() - start;
@@ -100,6 +112,7 @@ public final class TcCompiler {
             return new Compilation(name, target, false, "", "", List.of(bytecode), translated.diagnostics(), frontendNanos);
         }
         var compiler = new TcCompiler(translated.function().get(), target, options);
+        compiler.facts = List.copyOf(facts);
         compiler.stages.add(bytecode);
         var c = compiler.run();
         var stages = new ArrayList<>(c.stages());
@@ -120,6 +133,15 @@ public final class TcCompiler {
             stage("input", Kind.IR, () -> {
             }, () -> IrPrinter.print(function));
             check("verify.pre-abi", Verifier.Stage.PRE_ABI);
+            if (!facts.isEmpty()) {
+                stage("specialise", Kind.IR, () -> ValueSpecialisation.run(function, facts), () -> IrPrinter.print(function));
+            }
+            stage("parallel", Kind.IR, () -> {
+                var problems = ParallelLoopLowering.run(function);
+                if (!problems.isEmpty()) {
+                    throw new Failed(problems);
+                }
+            }, () -> IrPrinter.print(function));
             stage("abi", Kind.IR, () -> {
                 var problems = AbiLowering.run(function, target);
                 if (!problems.isEmpty()) {
