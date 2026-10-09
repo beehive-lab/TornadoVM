@@ -58,16 +58,27 @@ public final class Lit {
     }
 
     /** Outcome of one test file; {@code log} records every command and, on failure, why. */
-    public record Outcome(boolean passed, String log) {
+    public record Outcome(boolean passed, boolean unsupported, String log) {
+        Outcome(boolean passed, String log) {
+            this(passed, false, log);
+        }
     }
 
     private static final Pattern RUN_LINE = Pattern.compile("^\\s*(?:;|//|#)\\s*RUN:\\s?(.*)$");
+    private static final Pattern REQUIRES_LINE = Pattern.compile("^\\s*(?:;|//|#)\\s*REQUIRES:\\s*(.*)$");
 
     private final Map<String, Tool> tools = new HashMap<>();
+    private final java.util.Set<String> features;
 
     public Lit(Map<String, Tool> tools) {
+        this(tools, java.util.Set.of());
+    }
+
+    /** {@code features}: names a test can demand with {@code REQUIRES:} (for example {@code nvcc}). */
+    public Lit(Map<String, Tool> tools, java.util.Set<String> features) {
         this.tools.putAll(tools);
         this.tools.put("FileCheck", Lit::fileCheck);
+        this.features = java.util.Set.copyOf(features);
     }
 
     /**
@@ -97,6 +108,20 @@ public final class Lit {
         }
         if (commands.isEmpty()) {
             return new Outcome(false, testFile + ": no RUN lines found");
+        }
+        try {
+            for (var line : Files.readAllLines(testFile)) {
+                var m = REQUIRES_LINE.matcher(line);
+                if (m.matches()) {
+                    for (var feature : m.group(1).split(",")) {
+                        if (!features.contains(feature.strip())) {
+                            return new Outcome(true, true, "UNSUPPORTED: requires " + feature.strip());
+                        }
+                    }
+                }
+            }
+        } catch (IOException e) {
+            return new Outcome(false, "cannot read " + testFile + ": " + e.getMessage());
         }
         Path temp;
         try {
