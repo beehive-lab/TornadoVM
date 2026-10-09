@@ -31,6 +31,7 @@ import uk.ac.manchester.tornado.tc.ir.Inst;
 import uk.ac.manchester.tornado.tc.ir.IrBuilder;
 import uk.ac.manchester.tornado.tc.ir.Opcode;
 import uk.ac.manchester.tornado.tc.ir.Type;
+import uk.ac.manchester.tornado.tc.ir.Value;
 
 /**
  * Local and shared arrays whose length is not a constant in the bytecode, such as
@@ -55,6 +56,38 @@ public final class LocalArrays {
     /** Whether {@code inst} is a pending allocation. */
     public static boolean isPending(Inst inst) {
         return inst.opcode() instanceof Opcode.Intrinsic(var name) && name.startsWith(PREFIX);
+    }
+
+    /** {@code arraylength} of a local array reached through a block argument, until SSA construction finishes. */
+    static final String LENGTH = "tornado.local_array.length";
+
+    /**
+     * Replaces each pending {@code arraylength} by the allocation's constant count, once trivial block
+     * arguments are gone; returns TC-E1004 where the array is not a single allocation.
+     */
+    static List<Diagnostic> resolveLengths(Function function) {
+        var problems = new ArrayList<Diagnostic>();
+        for (var block : function.blocks()) {
+            for (var inst : List.copyOf(block.insts())) {
+                if (!(inst.opcode() instanceof Opcode.Intrinsic(var name)) || !name.equals(LENGTH)) {
+                    continue;
+                }
+                var array = inst.operand(0);
+                Optional<Value> length = Optional.empty();
+                if (array instanceof Inst a && a.opcode() instanceof Opcode.Alloca(var space, var element, var count)) {
+                    length = Optional.of(new IrBuilder(block).before(inst).at(inst.loc()).constInt(Type.I32, count));
+                } else if (array instanceof Inst a && isPending(a)) {
+                    length = Optional.of(a.operand(0));
+                }
+                if (length.isPresent()) {
+                    inst.replaceAllUsesWith(length.get());
+                    inst.erase();
+                } else {
+                    problems.add(new Diagnostic("TC-E1004", "the length of a local array is only known where it is allocated (the array here may come from several allocations)", "", inst.loc()));
+                }
+            }
+        }
+        return problems;
     }
 
     /** Whether {@code function} has a pending allocation (the stage runs only then). */

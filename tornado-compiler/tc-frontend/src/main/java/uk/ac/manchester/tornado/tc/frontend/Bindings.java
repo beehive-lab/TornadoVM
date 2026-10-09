@@ -88,14 +88,27 @@ final class Bindings {
     record HalfArith(Opcode.BinaryOp op) implements Binding {
     }
 
+    /** {@code ByteArray.getHalfFloat(byteIndex)} / {@code setHalfFloat}: a typed view of a byte array at a byte index. */
+    record ByteView(Type type, boolean store) implements Binding {
+    }
+
     /** Value classes: objects of these classes are their single scalar field. */
     static final String HALF_FLOAT = "uk/ac/manchester/tornado/api/types/HalfFloat";
 
     private static final Map<String, Binding> FIELDS = new HashMap<>();
     private static final Map<String, Binding> METHODS = new HashMap<>();
-    private static final Map<String, Type> NATIVE_ARRAYS = Map.of(
-            "FloatArray", Type.F32, "IntArray", Type.I32, "DoubleArray", Type.F64, "LongArray", Type.I64,
-            "ShortArray", Type.I16, "ByteArray", Type.I8, "Int8Array", Type.I8, "CharArray", Type.I16, "HalfFloatArray", Type.F16);
+    private static final Map<String, Type> NATIVE_ARRAYS = Map.ofEntries(
+            Map.entry("FloatArray", Type.F32),
+            Map.entry("IntArray", Type.I32),
+            Map.entry("DoubleArray", Type.F64),
+            Map.entry("LongArray", Type.I64),
+            Map.entry("ShortArray", Type.I16),
+            Map.entry("ByteArray", Type.I8),
+            Map.entry("Int8Array", Type.I8),
+            Map.entry("FP8Array", Type.I8),
+            Map.entry("BFloat16Array", Type.I16),
+            Map.entry("CharArray", Type.I16),
+            Map.entry("HalfFloatArray", Type.F16));
 
     static {
         var dims = new String[] { "x", "y", "z" };
@@ -117,6 +130,10 @@ final class Bindings {
         METHODS.put(KERNEL_CONTEXT + ".allocateByteLocalArray(I)[B", new SharedArray(Type.I8));
         METHODS.put(KERNEL_CONTEXT + ".allocateHalfFloatLocalArray(I)[L" + HALF_FLOAT + ";", new SharedArray(Type.F16));
         METHODS.put("java/lang/Integer.intValue()I", new Identity());
+        for (var index : new String[] { "I", "J" }) {
+            METHODS.put(ARRAYS + "ByteArray.getHalfFloat(" + index + ")L" + HALF_FLOAT + ";", new ByteView(Type.F16, false));
+            METHODS.put(ARRAYS + "ByteArray.setHalfFloat(" + index + "L" + HALF_FLOAT + ";)V", new ByteView(Type.F16, true));
+        }
         METHODS.put(HALF_FLOAT + ".<init>(F)V", new ValueInit(Type.F32, ConvertOp.FTRUNC, Type.F16));
         METHODS.put(HALF_FLOAT + ".<init>(S)V", new ValueInit(Type.I16, ConvertOp.BITCAST, Type.F16));
         METHODS.put(HALF_FLOAT + ".getFloat32()F", new Convert(ConvertOp.FEXT, Type.F32));

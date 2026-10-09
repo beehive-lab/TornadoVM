@@ -58,6 +58,9 @@ public final class AbiLowering {
     private final TargetCaps target;
     private final List<Diagnostic> diagnostics = new ArrayList<>();
 
+    /** Element type of each array parameter, recorded before parameters become pointers. */
+    private final java.util.Map<Value, Type> elements = new java.util.IdentityHashMap<>();
+
     private AbiLowering(TargetCaps target) {
         this.target = target;
     }
@@ -74,7 +77,10 @@ public final class AbiLowering {
         printer.printFunction(function);
         for (var param : List.copyOf(function.params())) {
             switch (param.type()) {
-                case ArrayType a -> param.setType(new Type.PointerType(AddressSpace.GLOBAL));
+                case ArrayType(var element) -> {
+                    elements.put(param, element);
+                    param.setType(new Type.PointerType(AddressSpace.GLOBAL));
+                }
                 // The ABI drops KernelContext: its uses were replaced by intrinsics in the frontend.
                 case Type.ObjectType o when o.className().equals("KernelContext") && !param.hasUses() -> function.entry().removeArg(param);
                 case Type.ObjectType o -> diagnostics.add(new Diagnostic("TC-E3101", "object parameters are not lowered yet: " + o.text(), "%" + printer.name(param), uk.ac.manchester.tornado.tc.ir.Loc.UNKNOWN));
@@ -98,19 +104,18 @@ public final class AbiLowering {
     }
 
     private void lowerLoad(Inst inst) {
-        var element = inst.type();
         var b = new IrBuilder(inst.block().orElseThrow()).before(inst).at(inst.loc());
-        var address = elementAddress(b, inst.operand(0), inst.operand(1), element);
-        var load = b.load(address, element);
+        // A byte array read as another type (ByteArray.getHalfFloat) is indexed in bytes.
+        var address = elementAddress(b, inst.operand(0), inst.operand(1), elements.getOrDefault(inst.operand(0), inst.type()));
+        var load = b.load(address, inst.type());
         load.setName(inst.name());
         inst.replaceAllUsesWith(load);
         inst.erase();
     }
 
     private void lowerStore(Inst inst) {
-        var element = inst.operand(2).type();
         var b = new IrBuilder(inst.block().orElseThrow()).before(inst).at(inst.loc());
-        var address = elementAddress(b, inst.operand(0), inst.operand(1), element);
+        var address = elementAddress(b, inst.operand(0), inst.operand(1), elements.getOrDefault(inst.operand(0), inst.operand(2).type()));
         b.store(address, inst.operand(2));
         inst.erase();
     }

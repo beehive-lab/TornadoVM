@@ -237,7 +237,8 @@ public final class Verifier {
             case Opcode.ArrayLoad _l -> {
                 if (count(inst, 2)) {
                     if (ops.get(0).type() instanceof ArrayType(var element)) {
-                        resultIs(inst, result.equals(element), "the array element type " + element.text());
+                        // A byte array may be read as any type at a byte index (ByteArray.getHalfFloat).
+                        resultIs(inst, result.equals(element) || element.equals(Type.I8), "the array element type " + element.text());
                     } else {
                         operandIs(inst, 0, false, "an array");
                     }
@@ -247,7 +248,7 @@ public final class Verifier {
             case Opcode.ArrayStore _s -> {
                 if (count(inst, 3)) {
                     if (ops.get(0).type() instanceof ArrayType(var element)) {
-                        operandIs(inst, 2, ops.get(2).type().equals(element), "the array element type " + element.text());
+                        operandIs(inst, 2, ops.get(2).type().equals(element) || element.equals(Type.I8), "the array element type " + element.text());
                     } else {
                         operandIs(inst, 0, false, "an array");
                     }

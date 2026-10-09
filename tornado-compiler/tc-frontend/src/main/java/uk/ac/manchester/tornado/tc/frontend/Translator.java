@@ -189,6 +189,10 @@ final class Translator {
         }
         removeUnreachable();
         removeTrivialArguments();
+        var problems = LocalArrays.resolveLengths(function);
+        if (!problems.isEmpty()) {
+            throw new FrontendError(problems.get(0));
+        }
         markParallelLoops();
         return function;
     }
@@ -653,7 +657,8 @@ final class Translator {
                 } else if (array instanceof Inst inst && LocalArrays.isPending(inst)) {
                     push(inst.operand(0));
                 } else if (array.type() instanceof Type.PointerType) {
-                    throw error("TC-E1004", "the length of a local array is only known where it is allocated", insn.bci());
+                    // Possibly a block argument SSA construction has not removed yet: resolved after it.
+                    push(b.intrinsic(LocalArrays.LENGTH, Type.I32, List.of(array)));
                 } else {
                     push(b.arrayLength(array));
                 }
@@ -911,6 +916,13 @@ final class Translator {
                     rebuilt.addLast(v == placeholder ? value : v);
                 }
                 stack = rebuilt;
+            }
+            case Bindings.ByteView(var type, var store) -> {
+                if (store) {
+                    builder.arrayStore(args.get(0), args.get(1), args.get(2));
+                } else {
+                    push(builder.arrayLoad(args.get(0), args.get(1), type));
+                }
             }
             case Bindings.HalfBits h -> push(builder.convert(ConvertOp.SEXT, builder.convert(ConvertOp.BITCAST, args.get(0), Type.I16), Type.I32));
             case Bindings.HalfArith(var op) -> {

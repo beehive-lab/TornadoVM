@@ -114,7 +114,12 @@ public final class IrBuilder {
 
     public Inst arrayLoad(Value array, Value index) {
         var element = array.type() instanceof Type.ArrayType(var e) ? e : Type.VOID;
-        return insert(new Inst(new Opcode.ArrayLoad(), element), List.of(array, index));
+        return arrayLoad(array, index, element);
+    }
+
+    /** A load of {@code type} from an array; a type other than the element type views a byte array at a byte index. */
+    public Inst arrayLoad(Value array, Value index, Type type) {
+        return insert(new Inst(new Opcode.ArrayLoad(), type), List.of(array, index));
     }
 
     public Inst arrayStore(Value array, Value index, Value value) {
