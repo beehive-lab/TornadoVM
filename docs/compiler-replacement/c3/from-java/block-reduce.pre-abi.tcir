@@ -1,0 +1,67 @@
+kernel @C3Kernels.blockSum(%ctx: obj<KernelContext>, %in: array<f32>, %out: array<f32>) -> void {
+^entry:
+  br ^bci0
+^bci0:
+  %gid = tornado.thread_id.global.x() : i32  loc("C3Kernels.java":54, bci=1)
+  %lid = tornado.thread_id.local.x() : i32  loc("C3Kernels.java":55, bci=9)
+  %grp = tornado.group_id.x() : i32  loc("C3Kernels.java":56, bci=18)
+  %lsz = tornado.group_size.local.x() : i32  loc("C3Kernels.java":57, bci=27)
+  %0 = const 256 : i32  loc("C3Kernels.java":58, bci=36)
+  %scratch = alloca.shared f32[256] : ptr<shared>  loc("C3Kernels.java":58, bci=39)
+  %1 = array.load %in[%gid] : f32  loc("C3Kernels.java":59, bci=50)
+  %2 = sext %lid : i64  loc("C3Kernels.java":59, bci=53)
+  %3 = const 4 : i64  loc("C3Kernels.java":59, bci=53)
+  %4 = mul %2, %3 : i64  loc("C3Kernels.java":59, bci=53)
+  %5 = ptr.offset %scratch, %4 : ptr<shared>  loc("C3Kernels.java":59, bci=53)
+  store %5, %1  loc("C3Kernels.java":59, bci=53)
+  tornado.barrier.local()  loc("C3Kernels.java":60, bci=55)
+  %6 = const 2 : i32  loc("C3Kernels.java":61, bci=60)
+  %s = div %lsz, %6 : i32  loc("C3Kernels.java":61, bci=61)
+  br ^bci64(%s)  loc("C3Kernels.java":61, bci=62)
+^bci64(%s.1: i32):
+  %7 = const 0 : i32  loc("C3Kernels.java":61, bci=66)
+  %8 = icmp.sle %s.1, %7 : i1  loc("C3Kernels.java":61, bci=66)
+  cond_br %8, ^bci105, ^bci69  loc("C3Kernels.java":61, bci=66)
+^bci69:
+  %9 = icmp.sge %lid, %s.1 : i1  loc("C3Kernels.java":62, bci=73)
+  cond_br %9, ^bci92, ^bci76  loc("C3Kernels.java":62, bci=73)
+^bci76:
+  %10 = sext %lid : i64  loc("C3Kernels.java":63, bci=81)
+  %11 = const 4 : i64  loc("C3Kernels.java":63, bci=81)
+  %12 = mul %10, %11 : i64  loc("C3Kernels.java":63, bci=81)
+  %13 = ptr.offset %scratch, %12 : ptr<shared>  loc("C3Kernels.java":63, bci=81)
+  %14 = load %13 : f32  loc("C3Kernels.java":63, bci=81)
+  %15 = add %lid, %s.1 : i32  loc("C3Kernels.java":63, bci=88)
+  %16 = sext %15 : i64  loc("C3Kernels.java":63, bci=89)
+  %17 = const 4 : i64  loc("C3Kernels.java":63, bci=89)
+  %18 = mul %16, %17 : i64  loc("C3Kernels.java":63, bci=89)
+  %19 = ptr.offset %scratch, %18 : ptr<shared>  loc("C3Kernels.java":63, bci=89)
+  %20 = load %19 : f32  loc("C3Kernels.java":63, bci=89)
+  %21 = fadd %14, %20 : f32  loc("C3Kernels.java":63, bci=90)
+  %22 = sext %lid : i64  loc("C3Kernels.java":63, bci=91)
+  %23 = const 4 : i64  loc("C3Kernels.java":63, bci=91)
+  %24 = mul %22, %23 : i64  loc("C3Kernels.java":63, bci=91)
+  %25 = ptr.offset %scratch, %24 : ptr<shared>  loc("C3Kernels.java":63, bci=91)
+  store %25, %21  loc("C3Kernels.java":63, bci=91)
+  br ^bci92  loc("C3Kernels.java":63, bci=91)
+^bci92:
+  tornado.barrier.local()  loc("C3Kernels.java":65, bci=93)
+  %26 = const 2 : i32  loc("C3Kernels.java":61, bci=98)
+  %s.2 = div %s.1, %26 : i32  loc("C3Kernels.java":61, bci=99)
+  br ^bci64(%s.2)  loc("C3Kernels.java":61, bci=102)
+^bci105:
+  %27 = const 0 : i32  loc("C3Kernels.java":67, bci=107)
+  %28 = icmp.ne %lid, %27 : i1  loc("C3Kernels.java":67, bci=107)
+  cond_br %28, ^bci120, ^bci110  loc("C3Kernels.java":67, bci=107)
+^bci110:
+  %29 = const 0 : i32  loc("C3Kernels.java":68, bci=115)
+  %30 = sext %29 : i64  loc("C3Kernels.java":68, bci=116)
+  %31 = const 4 : i64  loc("C3Kernels.java":68, bci=116)
+  %32 = mul %30, %31 : i64  loc("C3Kernels.java":68, bci=116)
+  %33 = ptr.offset %scratch, %32 : ptr<shared>  loc("C3Kernels.java":68, bci=116)
+  %34 = load %33 : f32  loc("C3Kernels.java":68, bci=116)
+  array.store %out[%grp], %34  loc("C3Kernels.java":68, bci=117)
+  br ^bci120  loc("C3Kernels.java":68, bci=117)
+^bci120:
+  ret  loc("C3Kernels.java":70, bci=120)
+}

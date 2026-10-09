@@ -1,0 +1,40 @@
+kernel @C3Kernels.compute(%in: ptr<global>, %out: ptr<global>) -> void {
+^entry:
+  br ^bci0
+^bci0:
+  %i = tornado.thread_id.global.x() : i32  loc("C3Kernels.java":40, bci=1)
+  %0 = load %in : i64  loc("C3Kernels.java":41, bci=10)
+  %1 = trunc %0 : i32  loc("C3Kernels.java":41, bci=10)
+  %2 = icmp.sge %i, %1 : i1  loc("C3Kernels.java":41, bci=13)
+  cond_br %2, ^bci54, ^bci16  loc("C3Kernels.java":41, bci=13)
+^bci16:
+  %3 = sext %i : i64  loc("C3Kernels.java":42, bci=18)
+  %4 = const 4 : i64  loc("C3Kernels.java":42, bci=18)
+  %5 = mul %3, %4 : i64  loc("C3Kernels.java":42, bci=18)
+  %6 = const 16 : i64  loc("C3Kernels.java":42, bci=18)
+  %7 = add %5, %6 : i64  loc("C3Kernels.java":42, bci=18)
+  %8 = ptr.offset %in, %7 : ptr<global>  loc("C3Kernels.java":42, bci=18)
+  %x = load %8 : f32  loc("C3Kernels.java":42, bci=18)
+  %9 = const 0.0 : f32  loc("C3Kernels.java":44, bci=25)
+  %10 = fcmp.ule %x, %9 : i1  loc("C3Kernels.java":44, bci=26)
+  cond_br %10, ^bci42, ^bci30  loc("C3Kernels.java":44, bci=26)
+^bci30:
+  %11 = math.sqrt(%x) : f32  loc("C3Kernels.java":45, bci=32)
+  %12 = const 2.0 : f32  loc("C3Kernels.java":45, bci=35)
+  %v = fmul %11, %12 : f32  loc("C3Kernels.java":45, bci=36)
+  br ^bci47(%v)  loc("C3Kernels.java":45, bci=39)
+^bci42:
+  %v.1 = fneg %x : f32  loc("C3Kernels.java":47, bci=44)
+  br ^bci47(%v.1)  loc("C3Kernels.java":47, bci=45)
+^bci47(%v.2: f32):
+  %13 = sext %i : i64  loc("C3Kernels.java":49, bci=51)
+  %14 = const 4 : i64  loc("C3Kernels.java":49, bci=51)
+  %15 = mul %13, %14 : i64  loc("C3Kernels.java":49, bci=51)
+  %16 = const 16 : i64  loc("C3Kernels.java":49, bci=51)
+  %17 = add %15, %16 : i64  loc("C3Kernels.java":49, bci=51)
+  %18 = ptr.offset %out, %17 : ptr<global>  loc("C3Kernels.java":49, bci=51)
+  store %18, %v.2  loc("C3Kernels.java":49, bci=51)
+  br ^bci54  loc("C3Kernels.java":49, bci=51)
+^bci54:
+  ret  loc("C3Kernels.java":51, bci=54)
+}

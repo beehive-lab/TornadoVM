@@ -1,0 +1,21 @@
+kernel C3Kernels.compute(ptr<global> in, ptr<global> out) -> void {
+  i32 i;
+  i64 v0;
+  f32 x;
+  f32 v11;
+  f32 v_2;
+  i = tornado.thread_id.global.x();
+  v0 = load<i64>(in);
+  if ((i sge trunc<i32>(v0))) {
+  } else {
+    x = load<f32>(ptr.offset(in, ((sext<i64>(i) * 4) + 16)));
+    if ((x ule 0.0)) {
+      v_2 = fneg(x);
+    } else {
+      v11 = math.sqrt(x);
+      v_2 = (v11 * 2.0);
+    }
+    store(ptr.offset(out, ((sext<i64>(i) * 4) + 16)), v_2);
+  }
+  return;
+}

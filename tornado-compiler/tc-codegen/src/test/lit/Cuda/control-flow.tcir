@@ -12,23 +12,21 @@
 ; CHECK-NEXT:    int r;
 ; CHECK-NEXT:    i = 0;
 ; CHECK-NEXT:    for (;;) {
-; CHECK-NEXT:      if (i < n) {
-; CHECK-NEXT:        j = 0;
-; CHECK-NEXT:        while (j < n) {
-; CHECK-NEXT:          idx = i * n + j;
-; CHECK-NEXT:          v = *((int *) (grid + (long long) idx * 4LL));
-; CHECK-NEXT:          if (v == key) {
-; CHECK-NEXT:            r = idx;
-; CHECK-NEXT:            goto L_done;
-; CHECK-NEXT:          } else {
-; CHECK-NEXT:            j = j + 1;
-; CHECK-NEXT:          }
-; CHECK-NEXT:        }
-; CHECK-NEXT:        i = i + 1;
-; CHECK-NEXT:      } else {
+; CHECK-NEXT:      if (i >= n) {
 ; CHECK-NEXT:        r = -1;
 ; CHECK-NEXT:        break;
 ; CHECK-NEXT:      }
+; CHECK-NEXT:      j = 0;
+; CHECK-NEXT:      while (j < n) {
+; CHECK-NEXT:        idx = i * n + j;
+; CHECK-NEXT:        v = *((int *) (grid + (long long) idx * 4LL));
+; CHECK-NEXT:        if (v == key) {
+; CHECK-NEXT:          r = idx;
+; CHECK-NEXT:          goto L_done;
+; CHECK-NEXT:        }
+; CHECK-NEXT:        j = j + 1;
+; CHECK-NEXT:      }
+; CHECK-NEXT:      i = i + 1;
 ; CHECK-NEXT:    }
 ; CHECK-NEXT:    L_done: ;
 ; CHECK-NEXT:    return r;

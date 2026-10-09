@@ -54,4 +54,5 @@ Recorded as they are made, with the gate at which they were reviewed.
 | N3 | Mutable instructions + immutable sealed-record op kinds, exhaustive `switch` dispatch | in-place rewriting with use lists; compiler-checked completeness of passes | accepted 2026-10-09, C3 |
 | N4 | Java semantics over Graal-path behaviour where they differ | correctness; deviations recorded as accepted differences | accepted 2026-10-09 |
 | N5 | Structuring refinement: children of a loop header outside its natural loop are placed after the loop | loop exits become a plain `break` instead of exit code nested in the loop body | C5a |
+| N7 | Own class-file reader in `tc-frontend` (JVMS ch. 4) instead of reusing the runtime's reflection `ClassfileParser` | the module rules forbid `tc-frontend` depending on `tornado-runtime`, and that parser only extracts the Code attribute | C4a |
 | N6 | Out-of-SSA folding: constants, allocation addresses and pure single-use values in the same block become expression trees; all other values get one variable | readable C (`c[i] = x + y;`) without changing evaluation order of memory operations | C5b |

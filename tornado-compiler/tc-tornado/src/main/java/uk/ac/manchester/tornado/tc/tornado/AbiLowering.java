@@ -48,6 +48,7 @@ import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
  * <li>{@code array.load %a[%i]} becomes {@code load(ptr.offset(%a, sext(%i) * sizeof(T) + header))}.</li>
  * <li>{@code array.store} likewise becomes a {@code store}.</li>
  * <li>{@code array.length %a} becomes {@code trunc(load i64 %a)}.</li>
+ * <li>An unused {@code KernelContext} parameter is removed from the signature.</li>
  * </ul>
  *
  * <p>Error codes: {@code TC-E3101} construct not yet supported by ABI lowering.</p>
@@ -71,9 +72,11 @@ public final class AbiLowering {
     private void lower(Function function) {
         var printer = new IrPrinter(false);
         printer.printFunction(function);
-        for (var param : function.params()) {
+        for (var param : List.copyOf(function.params())) {
             switch (param.type()) {
                 case ArrayType a -> param.setType(new Type.PointerType(AddressSpace.GLOBAL));
+                // The ABI drops KernelContext: its uses were replaced by intrinsics in the frontend.
+                case Type.ObjectType o when o.className().equals("KernelContext") && !param.hasUses() -> function.entry().removeArg(param);
                 case Type.ObjectType o -> diagnostics.add(new Diagnostic("TC-E3101", "object parameters are not lowered yet: " + o.text(), "%" + printer.name(param), uk.ac.manchester.tornado.tc.ir.Loc.UNKNOWN));
                 default -> {
                 }

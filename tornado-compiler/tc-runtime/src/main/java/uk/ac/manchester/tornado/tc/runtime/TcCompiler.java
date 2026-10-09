@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import uk.ac.manchester.tornado.tc.codegen.CEmitter;
+import uk.ac.manchester.tornado.tc.frontend.Frontend;
 import uk.ac.manchester.tornado.tc.ir.Diagnostic;
 import uk.ac.manchester.tornado.tc.ir.Function;
 import uk.ac.manchester.tornado.tc.ir.IrPrinter;
@@ -49,7 +50,7 @@ public final class TcCompiler {
 
     /** Kind of text a stage produced, which decides how it is displayed. */
     public enum Kind {
-        IR, STRUCTURED, SOURCE, NONE
+        BYTECODE, IR, STRUCTURED, SOURCE, NONE
     }
 
     /** One pipeline stage: its output text (empty unless dumped or reported), duration and size. */
@@ -83,6 +84,28 @@ public final class TcCompiler {
     /** Compiles {@code function} (pre-ABI TC-SSA); the function is lowered in place. */
     public static Compilation compile(Function function, TargetCaps target, TcOptions options) {
         return new TcCompiler(function, target, options).run();
+    }
+
+    /**
+     * Compiles a Java kernel method from its class bytes: the frontend (shown as the stages
+     * {@code bytecode} and {@code frontend}) followed by the pipeline of {@link #compile}.
+     */
+    public static Compilation compileJava(Frontend.BytecodeSource source, String className, String methodName, TargetCaps target, TcOptions options) {
+        long start = System.nanoTime();
+        var translated = Frontend.translate(source, className, methodName, null);
+        long frontendNanos = System.nanoTime() - start;
+        var bytecode = new Stage("bytecode", Kind.BYTECODE, options.htmlReport() || options.dumps("bytecode") ? translated.bytecode() : "", 0, 0);
+        if (translated.function().isEmpty()) {
+            var name = className.substring(className.lastIndexOf('.') + 1) + "." + methodName;
+            return new Compilation(name, target, false, "", "", List.of(bytecode), translated.diagnostics(), frontendNanos);
+        }
+        var compiler = new TcCompiler(translated.function().get(), target, options);
+        compiler.stages.add(bytecode);
+        var c = compiler.run();
+        var stages = new ArrayList<>(c.stages());
+        var size = stages.size() > 1 ? stages.get(1).size() : 0;
+        stages.add(1, new Stage("frontend", Kind.NONE, "", frontendNanos, size));
+        return new Compilation(c.function(), c.target(), c.succeeded(), c.source(), c.entryName(), List.copyOf(stages), c.diagnostics(), c.nanos() + frontendNanos);
     }
 
     private Compilation run() {
@@ -184,7 +207,7 @@ public final class TcCompiler {
             case IR -> "tcir";
             case STRUCTURED -> "tcs";
             case SOURCE -> target.dialect() == TargetCaps.Dialect.CUDA ? "cu" : "c";
-            case NONE -> "txt";
+            case BYTECODE, NONE -> "txt";
         };
         try {
             var dir = Files.createDirectories(options.dumpDir());

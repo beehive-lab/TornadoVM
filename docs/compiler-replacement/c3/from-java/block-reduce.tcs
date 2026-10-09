@@ -1,0 +1,46 @@
+kernel C3Kernels.blockSum(ptr<global> in, ptr<global> out) -> void {
+  shared f32 scratch[256];
+  i32 gid;
+  i32 lid;
+  i32 grp;
+  i32 lsz;
+  f32 v7;
+  i32 s;
+  i32 s_1;
+  f32 v20;
+  f32 v26;
+  i32 s_2;
+  f32 v40;
+  gid = tornado.thread_id.global.x();
+  lid = tornado.thread_id.local.x();
+  grp = tornado.group_id.x();
+  lsz = tornado.group_size.local.x();
+  v7 = load<f32>(ptr.offset(in, ((sext<i64>(gid) * 4) + 16)));
+  store(ptr.offset(&scratch, (sext<i64>(lid) * 4)), v7);
+  tornado.barrier.local();
+  s = (lsz / 2);
+  s_1 = s;
+  block L_bci105 {
+    loop L_bci64 {
+      if ((s_1 sle 0)) {
+        break L_bci105;
+      } else {
+        if ((lid sge s_1)) {
+        } else {
+          v20 = load<f32>(ptr.offset(&scratch, (sext<i64>(lid) * 4)));
+          v26 = load<f32>(ptr.offset(&scratch, (sext<i64>((lid + s_1)) * 4)));
+          store(ptr.offset(&scratch, (sext<i64>(lid) * 4)), (v20 + v26));
+        }
+        tornado.barrier.local();
+        s_2 = (s_1 / 2);
+        s_1 = s_2;
+      }
+    }
+  }
+  if ((lid ne 0)) {
+  } else {
+    v40 = load<f32>(ptr.offset(&scratch, (sext<i64>(0) * 4)));
+    store(ptr.offset(out, ((sext<i64>(grp) * 4) + 16)), v40);
+  }
+  return;
+}

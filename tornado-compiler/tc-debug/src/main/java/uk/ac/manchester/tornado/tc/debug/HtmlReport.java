@@ -124,6 +124,7 @@ public final class HtmlReport {
 
     private static String label(Kind kind) {
         return switch (kind) {
+            case BYTECODE -> "Java bytecode";
             case IR -> "TC-SSA";
             case STRUCTURED -> "TC-S (structured, non-SSA)";
             case SOURCE -> "target source";

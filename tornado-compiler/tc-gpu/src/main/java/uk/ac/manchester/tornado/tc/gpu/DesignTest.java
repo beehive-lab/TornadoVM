@@ -38,6 +38,8 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.tc.debug.HtmlReport;
+import uk.ac.manchester.tornado.tc.frontend.Frontend;
+import uk.ac.manchester.tornado.tc.gpu.kernels.C3Kernels;
 import uk.ac.manchester.tornado.tc.ir.IrParser;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
 import uk.ac.manchester.tornado.tc.runtime.TcCompiler;
@@ -54,6 +56,7 @@ import uk.ac.manchester.tornado.tc.runtime.TcOptions;
 public final class DesignTest {
 
     private static final int N = 1 << 20;
+    private static final java.util.Map<String, String> JAVA_METHODS = java.util.Map.of("vector-add", "add", "branchy", "compute", "block-reduce", "blockSum");
     private static final int BLOCK = 256;
 
     private record Compiled(String entry, Path file, long nanos) {
@@ -62,20 +65,25 @@ public final class DesignTest {
     private final TornadoDevice device;
     private final boolean quiet;
     private final Path out;
+    private final boolean fromJava;
     private int failures;
 
-    private DesignTest(TornadoDevice device, boolean quiet, Path out) {
+    private DesignTest(TornadoDevice device, boolean quiet, Path out, boolean fromJava) {
         this.device = device;
         this.quiet = quiet;
         this.out = out;
+        this.fromJava = fromJava;
     }
 
     public static void main(String[] args) throws IOException {
         var backend = 1;
         var index = 0;
         var quiet = false;
+        var fromJava = false;
         for (var arg : args) {
-            if (arg.equals("--quiet")) {
+            if (arg.equals("--java")) {
+                fromJava = true;
+            } else if (arg.equals("--quiet")) {
                 quiet = true;
             } else if (arg.contains(":")) {
                 backend = Integer.parseInt(arg.substring(0, arg.indexOf(':')));
@@ -84,25 +92,33 @@ public final class DesignTest {
         }
         var device = TornadoExecutionPlan.getDevice(backend, index);
         var out = Files.createDirectories(Path.of(System.getProperty("tc.dumpDir", "tc-c3-out")));
-        var test = new DesignTest(device, quiet, out);
-        System.out.println("C3 design test on " + device.getPhysicalDevice().getDeviceName() + " (" + backend + ":" + index + "), dumps in " + out.toAbsolutePath());
+        var test = new DesignTest(device, quiet, out, fromJava);
+        System.out.println((fromJava ? "Java -> TC" : "TC-SSA -> TC") + " design test on " + device.getPhysicalDevice().getDeviceName() + " (" + backend + ":" + index + "), dumps in " + out.toAbsolutePath());
         test.vectorAdd();
         test.branchy();
         test.blockReduce();
-        System.out.println(test.failures == 0 ? "C3 RESULT: PASS (3/3 kernels)" : "C3 RESULT: FAIL (" + test.failures + " kernel(s))");
+        System.out.println(test.failures == 0 ? "RESULT: PASS (3/3 kernels)" : "RESULT: FAIL (" + test.failures + " kernel(s))");
         System.exit(test.failures == 0 ? 0 : 1);
     }
 
-    /** TC pipeline through {@link TcCompiler}; every stage is dumped and an HTML report is written. */
+    /**
+     * TC pipeline through {@link TcCompiler}; every stage is dumped and an HTML report is written. With
+     * {@code --java} the kernel comes from {@link C3Kernels}'s class file through the TC frontend;
+     * otherwise from the hand-written TC-SSA resource.
+     */
     private Compiled compile(String name) {
-        var function = IrParser.parseFunction(resource("/c3/" + name + ".tcir"));
-        var c = TcCompiler.compile(function, TargetCaps.CUDA_SM89, TcOptions.fromSystemProperties().withReport(true, out));
+        var options = TcOptions.fromSystemProperties().withReport(true, out);
+        var c = fromJava
+                ? TcCompiler.compileJava(Frontend.BytecodeSource.classLoader(DesignTest.class.getClassLoader()), C3Kernels.class.getName(), JAVA_METHODS.get(name), TargetCaps.CUDA_SM89, options)
+                : TcCompiler.compile(IrParser.parseFunction(resource("/c3/" + name + ".tcir")), TargetCaps.CUDA_SM89, options);
         write(name + ".report.html", HtmlReport.render(c));
         if (!c.succeeded()) {
             throw new IllegalStateException(name + ": " + c.diagnostics());
         }
         for (var stage : c.stages()) {
             switch (stage.name()) {
+                case "bytecode" -> write(name + ".bytecode.txt", stage.text());
+                case "input" -> write(name + ".pre-abi.tcir", stage.text());
                 case "abi" -> write(name + ".post-abi.tcir", stage.text());
                 case "structure" -> write(name + ".tcs", stage.text());
                 default -> {

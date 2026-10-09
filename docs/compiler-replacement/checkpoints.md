@@ -8,7 +8,7 @@ Each gate is go/no-go. Evidence and the profiling decision review are recorded p
 | C1 baseline reproducible | CUDA passed; OpenCL rerun pending | 2026-10-09 | CUDA run 1 = run 2 (1671 tests, 7 deterministic pre-existing failures); perf + jitLLM baseline in [baseline-performance.md](baseline-performance.md); OpenCL run 2 cut short by a `tornado-test` bug |
 | C2 ⚑ dependency + phase matrix | pending | | |
 | C3 ⚑ end-to-end design test | **passed, approved by the user 2026-10-09**: design test 3/3 on GPU; `TcCompiler` with `-Dtornado.tc.dump/dumpDir/verify/only/report`, JFR events `tc.Compilation`/`tc.Stage`, HTML report per compilation ([c3/*.report.html](c3/)) | 2026-10-09 | 3/3 kernels (grid-stride vector add, if/else diamond with block-argument merge and `sqrt`, KernelContext shared-memory tree reduction) compiled by TC only and run on the RTX 4090 via the prebuilt-task path, results equal to Java references; TC compile 4–21 ms per kernel; outputs in [c3/](c3/) |
-| C4a/b/c frontend, passes, Access[] | pending | | |
+| C4a/b/c frontend, passes, Access[] | **C4a in progress** | 2026-10-09 | `tc-frontend`: JVMS class-file reader, bytecode decoder, Braun SSA translator, API bindings; 11 Java test kernels translate to verified TC-SSA (lit goldens); the 3 C3 kernels run **from Java** on the RTX 4090 (3/3 PASS, see [examples.md](examples.md)); round-trip of all `tornado-unittests` kernels pending |
 | C5a/b ⚑ structurizer, vertical slice | pending | | |
 | C6 differential parity | pending | | |
 | C7 performance + stability | pending | | |

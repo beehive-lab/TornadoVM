@@ -1,0 +1,32 @@
+// uk.ac.manchester.tornado.tc.gpu.kernels.C3Kernels.add(Luk/ac/manchester/tornado/api/KernelContext;Luk/ac/manchester/tornado/api/types/arrays/FloatArray;Luk/ac/manchester/tornado/api/types/arrays/FloatArray;Luk/ac/manchester/tornado/api/types/arrays/FloatArray;)V
+// max_stack=5 max_locals=5
+  // line 34
+     0: aload_0         
+     1: getfield        KernelContext.globalIdx Ljava/lang/Integer;
+     4: invokevirtual   Integer.intValue ()I
+     7: istore          4
+     9: iload           4
+    11: aload_1         
+    12: invokevirtual   FloatArray.getSize ()I
+    15: if_icmpge       52
+  // line 35
+    18: aload_3         
+    19: iload           4
+    21: aload_1         
+    22: iload           4
+    24: invokevirtual   FloatArray.get (I)F
+    27: aload_2         
+    28: iload           4
+    30: invokevirtual   FloatArray.get (I)F
+    33: fadd            
+    34: invokevirtual   FloatArray.set (IF)V
+  // line 34
+    37: iload           4
+    39: aload_0         
+    40: getfield        KernelContext.globalGroupSizeX Ljava/lang/Integer;
+    43: invokevirtual   Integer.intValue ()I
+    46: iadd            
+    47: istore          4
+    49: goto            9
+  // line 37
+    52: return          

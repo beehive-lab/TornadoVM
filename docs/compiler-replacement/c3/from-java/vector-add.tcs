@@ -1,0 +1,25 @@
+kernel C3Kernels.add(ptr<global> a, ptr<global> b, ptr<global> c) -> void {
+  i32 i;
+  i32 i_1;
+  i64 v0;
+  f32 v9;
+  f32 v16;
+  i32 v24;
+  i = tornado.thread_id.global.x();
+  i_1 = i;
+  block L_bci52 {
+    loop L_bci9 {
+      v0 = load<i64>(a);
+      if ((i_1 sge trunc<i32>(v0))) {
+        break L_bci52;
+      } else {
+        v9 = load<f32>(ptr.offset(a, ((sext<i64>(i_1) * 4) + 16)));
+        v16 = load<f32>(ptr.offset(b, ((sext<i64>(i_1) * 4) + 16)));
+        store(ptr.offset(c, ((sext<i64>(i_1) * 4) + 16)), (v9 + v16));
+        v24 = tornado.global_size.x();
+        i_1 = (i_1 + v24);
+      }
+    }
+  }
+  return;
+}

@@ -231,10 +231,27 @@ public final class CEmitter {
         if (t.isEmpty() && e.isEmpty()) {
             return;
         }
+        if (!e.isEmpty() && prefersComplement(c)) {
+            // javac branches on the inverse test; print the direct comparison with the arms swapped.
+            ifStatement(complement(c).orElseThrow(), e, t, fallthrough, depth);
+            return;
+        }
         if (t.isEmpty()) {
-            line(depth, "if (" + negate(expr(c)) + ") {");
+            line(depth, "if (" + negate(c) + ") {");
             statements(e, fallthrough, depth + 1);
             line(depth, "}");
+            return;
+        }
+        if (!e.isEmpty() && endsInJump(t)) {
+            // No `else` after a branch that always leaves: the other arm follows at the same level.
+            line(depth, "if (" + expr(c).text + ") {");
+            statements(t, fallthrough, depth + 1);
+            line(depth, "}");
+            statements(e, fallthrough, depth);
+            return;
+        }
+        if (!e.isEmpty() && endsInJump(e) && !endsInJump(t) && complement(c).isPresent()) {
+            ifStatement(complement(c).orElseThrow(), e, t, fallthrough, depth);
             return;
         }
         line(depth, "if (" + expr(c).text + ") {");
@@ -253,7 +270,7 @@ public final class CEmitter {
             line(depth, "while (" + expr(c).text + ") {");
             statements(t, Set.of(), depth + 1);
         } else if (body.size() == 1 && body.get(0) instanceof S.If(var c, var t, var e) && isPlainBreak(t)) {
-            line(depth, "while (" + negate(expr(c)) + ") {");
+            line(depth, "while (" + negate(c) + ") {");
             statements(e, Set.of(), depth + 1);
         } else {
             line(depth, "for (;;) {");
@@ -261,6 +278,16 @@ public final class CEmitter {
         }
         line(depth, "}");
         frames.pop();
+    }
+
+    private static boolean endsInJump(List<S.Stmt> body) {
+        return !body.isEmpty() && switch (body.get(body.size() - 1)) {
+            case S.Break b -> true;
+            case S.Continue c -> true;
+            case S.Return r -> true;
+            case S.Unreachable u -> true;
+            default -> false;
+        };
     }
 
     private boolean isPlainBreak(List<S.Stmt> body) {
@@ -544,8 +571,58 @@ public final class CEmitter {
         return r.prec >= min ? r.text : "(" + r.text + ")";
     }
 
-    private static String negate(R r) {
-        return "!" + wrap(r, UNARY);
+    /** The negation of a condition: the complement predicate for comparisons, otherwise {@code !(…)}. */
+    private String negate(S.Expr condition) {
+        return complement(condition).map(c -> expr(c).text).orElseGet(() -> "!" + wrap(expr(condition), UNARY));
+    }
+
+    /**
+     * The exact logical complement of a comparison: integer predicates invert directly; a floating-point
+     * predicate's complement swaps ordered and unordered ({@code !(x OGT y) == x ULE y}), so NaN
+     * behaviour is preserved.
+     */
+    private static java.util.Optional<S.Expr> complement(S.Expr condition) {
+        if (!(condition instanceof S.Op(var inst, var ops))) {
+            return java.util.Optional.empty();
+        }
+        Opcode complemented = switch (inst.opcode()) {
+            case Opcode.ICmp(var p) -> new Opcode.ICmp(switch (p) {
+                case EQ -> IntPredicate.NE;
+                case NE -> IntPredicate.EQ;
+                case SLT -> IntPredicate.SGE;
+                case SGE -> IntPredicate.SLT;
+                case SGT -> IntPredicate.SLE;
+                case SLE -> IntPredicate.SGT;
+                case ULT -> IntPredicate.UGE;
+                case UGE -> IntPredicate.ULT;
+                case UGT -> IntPredicate.ULE;
+                case ULE -> IntPredicate.UGT;
+            });
+            case Opcode.FCmp(var p) -> new Opcode.FCmp(switch (p) {
+                case OEQ -> FloatPredicate.UNE;
+                case UNE -> FloatPredicate.OEQ;
+                case OGT -> FloatPredicate.ULE;
+                case ULE -> FloatPredicate.OGT;
+                case OGE -> FloatPredicate.ULT;
+                case ULT -> FloatPredicate.OGE;
+                case OLT -> FloatPredicate.UGE;
+                case UGE -> FloatPredicate.OLT;
+                case OLE -> FloatPredicate.UGT;
+                case UGT -> FloatPredicate.OLE;
+                case ONE -> FloatPredicate.UEQ;
+                case UEQ -> FloatPredicate.ONE;
+                case ORD -> FloatPredicate.UNO;
+                case UNO -> FloatPredicate.ORD;
+            });
+            default -> null;
+        };
+        return complemented == null ? java.util.Optional.empty() : java.util.Optional.of(new S.Op(new Inst(complemented, Type.I1), ops));
+    }
+
+    /** Unordered float tests print as {@code !(…)}; their ordered complement reads as plain C. */
+    private static boolean prefersComplement(S.Expr condition) {
+        return condition instanceof S.Op(var inst, var ops) && inst.opcode() instanceof Opcode.FCmp(var p)
+                && (p == FloatPredicate.ULT || p == FloatPredicate.ULE || p == FloatPredicate.UGT || p == FloatPredicate.UGE || p == FloatPredicate.UEQ);
     }
 
     // ---------------------------------------------------------------- types and names
