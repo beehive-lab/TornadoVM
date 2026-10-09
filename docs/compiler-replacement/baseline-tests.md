@@ -32,4 +32,15 @@ must not be blamed for them, and a TC pass on them is reported separately.
 | `compute.TransformerKernelsTest#testReductionOneBlockWithLayer` | FAIL | FAIL | pass | wrong value |
 | `api.TestDevices#test06` | FAIL | FAIL | FAIL | `No value present` |
 
-Determinism (run 2) is checked at gate C1; this table is updated with the run-2 diff.
+## Run 2 (2026-10-09): determinism
+
+| Device | Result vs run 1 |
+|---|---|
+| CUDA RTX 4090 | **identical**: 1671 tests, same 1524 passes, same 7 failures |
+| OpenCL RTX 4090 | same results for every test that ran; the run stopped early (see below) |
+
+OpenCL run 2 stopped at `memory.leak.TestMemoryLeak#test_no_cached_hot_loop`: the JVM exceeded the
+test's 4096 MB monitor limit (4472 MB; it passed in run 1), and `tornado-test`'s kill path then
+crashed with `NameError: name 'args' is not defined` (`tornado-test:711`), ending the whole run. Two
+pre-existing upstream findings: a memory-sensitive leak test and a runner bug. OpenCL run 2 is
+repeated after the phase trace. Per-test results: [baseline/tests-run2.json](baseline/tests-run2.json).

@@ -48,6 +48,8 @@ the relaxation in the kernel's remarks).
 | Integer `/`, `%` | truncating toward zero; `MIN_VALUE / -1 = MIN_VALUE` | to test |
 | `float` arithmetic | IEEE single, no implicit double promotion | to test |
 
+**Decision (user, 2026-10-09, at C3):** integer `+ - *` stay plain C operators, as on the Graal path; the numeric suite gets a test that detects NVRTC exploiting signed-overflow UB, and TC switches to wrap-safe forms if it ever fires.
+
 **Decision (user, 2026-10-09):** where the Graal path deviates from Java semantics, TC implements
 Java semantics. The parity matrix records both behaviours and lists the deviation as an accepted
 difference, never as a TC regression.

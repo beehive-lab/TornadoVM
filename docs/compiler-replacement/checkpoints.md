@@ -5,9 +5,9 @@ Each gate is go/no-go. Evidence and the profiling decision review are recorded p
 | Gate | Status | Date | Evidence |
 |---|---|---|---|
 | C0 repo + builds + devices | **passed** | 2026-10-09 | private repo (`gh repo view` → PRIVATE); `make BACKEND=opencl,cuda` on JDK 21.0.2 and `make jdk25 BACKEND=opencl,cuda` on JDK 25.0.2: BUILD SUCCESS; `tornado --devices` (both): 0:0 OpenCL RTX 4090, 0:1 OpenCL UHD 770, 1:0 CUDA RTX 4090 |
-| C1 baseline reproducible | pending | | |
+| C1 baseline reproducible | CUDA passed; OpenCL rerun pending | 2026-10-09 | CUDA run 1 = run 2 (1671 tests, 7 deterministic pre-existing failures); perf + jitLLM baseline in [baseline-performance.md](baseline-performance.md); OpenCL run 2 cut short by a `tornado-test` bug |
 | C2 ⚑ dependency + phase matrix | pending | | |
-| C3 ⚑ end-to-end design test | **passed** (user review pending): design test 3/3 on GPU; `TcCompiler` with `-Dtornado.tc.dump/dumpDir/verify/only/report`, JFR events `tc.Compilation`/`tc.Stage`, HTML report per compilation ([c3/*.report.html](c3/)) | 2026-10-09 | 3/3 kernels (grid-stride vector add, if/else diamond with block-argument merge and `sqrt`, KernelContext shared-memory tree reduction) compiled by TC only and run on the RTX 4090 via the prebuilt-task path, results equal to Java references; TC compile 4–21 ms per kernel; outputs in [c3/](c3/) |
+| C3 ⚑ end-to-end design test | **passed, approved by the user 2026-10-09**: design test 3/3 on GPU; `TcCompiler` with `-Dtornado.tc.dump/dumpDir/verify/only/report`, JFR events `tc.Compilation`/`tc.Stage`, HTML report per compilation ([c3/*.report.html](c3/)) | 2026-10-09 | 3/3 kernels (grid-stride vector add, if/else diamond with block-argument merge and `sqrt`, KernelContext shared-memory tree reduction) compiled by TC only and run on the RTX 4090 via the prebuilt-task path, results equal to Java references; TC compile 4–21 ms per kernel; outputs in [c3/](c3/) |
 | C4a/b/c frontend, passes, Access[] | pending | | |
 | C5a/b ⚑ structurizer, vertical slice | pending | | |
 | C6 differential parity | pending | | |
