@@ -610,6 +610,40 @@ public class TestCudfColumns extends TornadoTestBase {
         }
     }
 
+    /**
+     * FLOAT32 columns read as {@code CudfType.FLOAT32} land widened in the FP64 buffer, value for
+     * value as Java widens a float, nulls included: the fixture {@code floats.parquet} (pyarrow) has a
+     * required {@code f} with extremes, signed zeros and -1/3, and {@code g = 2f}, null when
+     * {@code i % 3 == 1}.
+     */
+    @Test
+    public void testReadParquetColumnsFloat32Widened() throws TornadoExecutionPlanException, IOException {
+        Path floats = Files.createTempFile("tornado-cudf-floats", ".parquet");
+        floats.toFile().deleteOnExit();
+        try (InputStream in = TestCudfColumns.class.getResourceAsStream("floats.parquet")) {
+            Files.copy(in, floats, StandardCopyOption.REPLACE_EXISTING);
+        }
+        float[] f = { 1.5f, -2.25f, 3.4028235e38f, 1.17549435e-38f, 0.0f, -0.0f, 16777217.0f, (float) (-1.0 / 3), 1e-3f, 42.0f };
+        int rows = f.length;
+        DoubleArray doubles = new DoubleArray(2L * rows);
+        ByteArray valid = new ByteArray(2L * rows);
+        TaskGraph graph = new TaskGraph("cudf") //
+                .libraryTask("read", Cudf::readParquetColumns, new StringBuilder(floats.toString()), 0, 0, new int[] { 0, 1 },
+                        new CudfType[] { CudfType.FLOAT32, CudfType.FLOAT32 }, new long[] { rows }, rows, new IntArray(1), new LongArray(1), doubles, valid, true) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, doubles, valid);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+        for (int i = 0; i < rows; i++) {
+            assertEquals("f " + i, Double.doubleToRawLongBits(f[i]), Double.doubleToRawLongBits(doubles.get(i)));
+            boolean present = i % 3 != 1;
+            assertEquals("g valid " + i, present ? 1 : 0, valid.get(rows + i));
+            if (present) {
+                assertEquals("g " + i, Double.doubleToRawLongBits((double) (f[i] * 2)), Double.doubleToRawLongBits(doubles.get(rows + i)));
+            }
+        }
+    }
+
     /** A column with nulls, read without asking for validity, is refused rather than read as dense. */
     @Test
     public void testReadParquetColumnsRefusesNullsWithoutValidity() {
