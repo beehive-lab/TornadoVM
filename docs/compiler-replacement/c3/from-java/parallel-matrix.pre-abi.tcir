@@ -1,0 +1,36 @@
+kernel @ParallelKernels.matrixAdd(%a: array<f32>, %b: array<f32>, %c: array<f32>, %rows: i32, %cols: i32) -> void {
+^entry:
+  br ^bci0
+^bci0:
+  %i = const 0 : i32  loc("ParallelKernels.java":39, bci=0)
+  br ^bci3(%i)  loc("ParallelKernels.java":39, bci=1)
+^bci3(%i.1: i32) [parallel(iv=0)]:
+  %0 = icmp.sge %i.1, %rows : i1  loc("ParallelKernels.java":39, bci=6)
+  cond_br %0, ^bci68, ^bci9  loc("ParallelKernels.java":39, bci=6)
+^bci9:
+  %j = const 0 : i32  loc("ParallelKernels.java":40, bci=9)
+  br ^bci12(%j)  loc("ParallelKernels.java":40, bci=10)
+^bci12(%j.1: i32) [parallel(iv=0)]:
+  %1 = icmp.sge %j.1, %cols : i1  loc("ParallelKernels.java":40, bci=16)
+  cond_br %1, ^bci62, ^bci19  loc("ParallelKernels.java":40, bci=16)
+^bci19:
+  %2 = mul %i.1, %cols : i32  loc("ParallelKernels.java":41, bci=24)
+  %3 = add %2, %j.1 : i32  loc("ParallelKernels.java":41, bci=27)
+  %4 = mul %i.1, %cols : i32  loc("ParallelKernels.java":41, bci=33)
+  %5 = add %4, %j.1 : i32  loc("ParallelKernels.java":41, bci=36)
+  %6 = array.load %a[%5] : f32  loc("ParallelKernels.java":41, bci=37)
+  %7 = mul %i.1, %cols : i32  loc("ParallelKernels.java":41, bci=45)
+  %8 = add %7, %j.1 : i32  loc("ParallelKernels.java":41, bci=48)
+  %9 = array.load %b[%8] : f32  loc("ParallelKernels.java":41, bci=49)
+  %10 = fadd %6, %9 : f32  loc("ParallelKernels.java":41, bci=52)
+  array.store %c[%3], %10  loc("ParallelKernels.java":41, bci=53)
+  %11 = const 1 : i32  loc("ParallelKernels.java":40, bci=56)
+  %j.2 = add %j.1, %11 : i32  loc("ParallelKernels.java":40, bci=56)
+  br ^bci12(%j.2)  loc("ParallelKernels.java":40, bci=59)
+^bci62:
+  %12 = const 1 : i32  loc("ParallelKernels.java":39, bci=62)
+  %i.2 = add %i.1, %12 : i32  loc("ParallelKernels.java":39, bci=62)
+  br ^bci3(%i.2)  loc("ParallelKernels.java":39, bci=65)
+^bci68:
+  ret  loc("ParallelKernels.java":44, bci=68)
+}

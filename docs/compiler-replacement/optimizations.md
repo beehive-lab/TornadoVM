@@ -18,15 +18,15 @@ comparison (kernel time, `ncu`) vs Graal baseline, **V** verifier after the pass
 | # | Optimisation | Replaces on the Graal path | Pri | Gate | Verify | Status |
 |---|---|---|---|---|---|---|
 | O1 | **Inline-all** for kernel-reachable methods, recursion check, size-cap diagnostic | `InliningPhase` + `TornadoFull/PartialInliningPolicy` | P0 | C5b | G V D | todo |
-| O2 | **Constant folding** with Java semantics (int overflow, `div`/`rem`, shifts masked, `f2i.sat`, NaN) | `CanonicalizerPhase` (folding) | P0 | C4b | G A V | todo |
-| O3 | **Algebraic simplification** (identities, strength reduction `x*2^k→x<<k`, double negation, compare canonical forms) | `CanonicalizerPhase` (simplification) | P0 | C4b | G A V | todo |
-| O4 | **Branch folding / CFG simplification** (constant conditions, empty blocks, block merging, jump threading of trivial blocks) | `CanonicalizerPhase` (control flow) | P0 | C4b | G V | todo |
-| O5 | **Dead-code elimination** (ops and blocks; unused allocations incl. value types) | `DeadCodeEliminationPhase`, `TornadoValueTypeCleanup` | P0 | C4b | G V | todo |
-| O6 | **Global value numbering / CSE** (dominator-based, pure ops; loads only with memory-effect proof) | implicit Graal GVN | P0 | C4b | G V P | todo |
+| O2 | **Constant folding** with Java semantics (int overflow, `div`/`rem`, shifts masked, `f2i.sat`, NaN) | `CanonicalizerPhase` (folding) | P0 | C4b | G A V | done (C4b pending Alive2): `Canonicalizer`, lit `Canonicalize/java-folding.tcir` |
+| O3 | **Algebraic simplification** (identities, strength reduction `x*2^k→x<<k`, double negation, compare canonical forms) | `CanonicalizerPhase` (simplification) | P0 | C4b | G A V | wip: exact integer and float identities, `ptr+0`; strength reduction todo |
+| O4 | **Branch folding / CFG simplification** (constant conditions, empty blocks, block merging, jump threading of trivial blocks) | `CanonicalizerPhase` (control flow) | P0 | C4b | G V | wip: constant branches, straight-line merging, unreachable blocks (`CfgSimplify`) |
+| O5 | **Dead-code elimination** (ops and blocks; unused allocations incl. value types) | `DeadCodeEliminationPhase`, `TornadoValueTypeCleanup` | P0 | C4b | G V | done: `DeadCodeElimination` incl. dead block arguments |
+| O6 | **Global value numbering / CSE** (dominator-based, pure ops; loads only with memory-effect proof) | implicit Graal GVN | P0 | C4b | G V P | done: dominator-scoped `GlobalValueNumbering` with commutative operands |
 | O7 | **Conditional elimination** (conditions implied by dominating branches) | `IterativeConditionalEliminationPhase` | P0 | C5b | G V | todo |
 | O8 | **Loop analysis**: loop forest (Havlak), induction variables, counted-loop and trip-count facts (affine subset) | `LoopsData`, `CountedLoopInfo` | P0 | C4b | G | todo |
 | O9 | **Full loop unroll** of small constant-trip loops; Tornado policy (skip nested control flow, tile-aware: keep tile loops rolled except K-loop on sm_80+) | `LoopFullUnrollPhase`, `TornadoLoopUnroller`, `CUDATileLoopPolicies` | P0 | C6 | G D P | todo |
-| O10 | **Load forwarding + loop-invariant code motion** over explicit memory effects (never hoist private-memory reads out of parallel loops) | `FloatingReadPhase` (Tornado's modified copy), `SchedulePhase` placement | P0 | C6 | G D P | todo |
+| O10 | **Load forwarding + loop-invariant code motion** over explicit memory effects (never hoist private-memory reads out of parallel loops) | `FloatingReadPhase` (Tornado's modified copy), `SchedulePhase` placement | P0 | C6 | G D P | wip: pure LICM (`LoopInvariantCodeMotion`); load forwarding needs memory effects |
 | O11 | **FMA contraction** `a*b+c → fma` for f32/f64 when `tornado.enable.fma` (default on) | `CUDAFMAPhase` (+ OCL/Metal copies) | P0 | C5b | G D P | todo |
 | O12 | **rsqrt peephole** `1/sqrt(x) → rsqrt(x)` when `tornado.enable.mathOptimizations` (default on) | `InverseSquareRootPhase` | P0 | C5b | G D | todo |
 | O13 | **Integer reassociation** for address arithmetic only (never floating point) | `ReassociationPhase` | P1 | C7 | G A P | todo |

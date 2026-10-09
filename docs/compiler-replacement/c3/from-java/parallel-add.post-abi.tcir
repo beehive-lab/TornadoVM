@@ -1,0 +1,37 @@
+kernel @ParallelKernels.vectorAdd(%a: ptr<global>, %b: ptr<global>, %c: ptr<global>) -> void {
+^entry:
+  %0 = tornado.thread_id.global.x() : i32  loc("ParallelKernels.java":33, bci=1)
+  %1 = tornado.global_size.x() : i32  loc("ParallelKernels.java":33, bci=29)
+  br ^bci2(%0)  loc("ParallelKernels.java":33, bci=1)
+^bci2(%i: i32) [parallel(iv=0), grid(dim=0)]:
+  %2 = const 1048576 : i32  loc("ParallelKernels.java":33, bci=4)
+  %3 = icmp.sge %i, %2 : i1  loc("ParallelKernels.java":33, bci=7)
+  cond_br %3, ^bci32, ^bci10  loc("ParallelKernels.java":33, bci=7)
+^bci10:
+  %4 = sext %i : i64  loc("ParallelKernels.java":34, bci=14)
+  %5 = const 4 : i64  loc("ParallelKernels.java":34, bci=14)
+  %6 = mul %4, %5 : i64  loc("ParallelKernels.java":34, bci=14)
+  %7 = const 16 : i64  loc("ParallelKernels.java":34, bci=14)
+  %8 = add %6, %7 : i64  loc("ParallelKernels.java":34, bci=14)
+  %9 = ptr.offset %a, %8 : ptr<global>  loc("ParallelKernels.java":34, bci=14)
+  %10 = load %9 : f32  loc("ParallelKernels.java":34, bci=14)
+  %11 = sext %i : i64  loc("ParallelKernels.java":34, bci=19)
+  %12 = const 4 : i64  loc("ParallelKernels.java":34, bci=19)
+  %13 = mul %11, %12 : i64  loc("ParallelKernels.java":34, bci=19)
+  %14 = const 16 : i64  loc("ParallelKernels.java":34, bci=19)
+  %15 = add %13, %14 : i64  loc("ParallelKernels.java":34, bci=19)
+  %16 = ptr.offset %b, %15 : ptr<global>  loc("ParallelKernels.java":34, bci=19)
+  %17 = load %16 : f32  loc("ParallelKernels.java":34, bci=19)
+  %18 = fadd %10, %17 : f32  loc("ParallelKernels.java":34, bci=22)
+  %19 = sext %i : i64  loc("ParallelKernels.java":34, bci=23)
+  %20 = const 4 : i64  loc("ParallelKernels.java":34, bci=23)
+  %21 = mul %19, %20 : i64  loc("ParallelKernels.java":34, bci=23)
+  %22 = const 16 : i64  loc("ParallelKernels.java":34, bci=23)
+  %23 = add %21, %22 : i64  loc("ParallelKernels.java":34, bci=23)
+  %24 = ptr.offset %c, %23 : ptr<global>  loc("ParallelKernels.java":34, bci=23)
+  store %24, %18  loc("ParallelKernels.java":34, bci=23)
+  %i.1 = add %i, %1 : i32  loc("ParallelKernels.java":33, bci=29)
+  br ^bci2(%i.1)  loc("ParallelKernels.java":33, bci=29)
+^bci32:
+  ret  loc("ParallelKernels.java":36, bci=32)
+}

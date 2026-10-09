@@ -1,0 +1,50 @@
+kernel @ParallelKernels.matrixAdd(%a: ptr<global>, %b: ptr<global>, %c: ptr<global>, %rows: i32, %cols: i32) -> void {
+^entry:
+  %rows.1 = const 512 : i32
+  %cols.1 = const 1024 : i32
+  %0 = tornado.thread_id.global.y() : i32  loc("ParallelKernels.java":39, bci=1)
+  %1 = tornado.thread_id.global.x() : i32  loc("ParallelKernels.java":40, bci=10)
+  %2 = tornado.global_size.x() : i32  loc("ParallelKernels.java":40, bci=59)
+  %3 = tornado.global_size.y() : i32  loc("ParallelKernels.java":39, bci=65)
+  br ^bci3(%0)  loc("ParallelKernels.java":39, bci=1)
+^bci3(%i: i32) [parallel(iv=0), grid(dim=1)]:
+  %4 = icmp.sge %i, %rows.1 : i1  loc("ParallelKernels.java":39, bci=6)
+  cond_br %4, ^bci68, ^bci9  loc("ParallelKernels.java":39, bci=6)
+^bci9:
+  %5 = mul %i, %cols.1 : i32  loc("ParallelKernels.java":41, bci=24)
+  br ^bci12(%1)  loc("ParallelKernels.java":40, bci=10)
+^bci12(%j: i32) [parallel(iv=0), grid(dim=0)]:
+  %6 = icmp.sge %j, %cols.1 : i1  loc("ParallelKernels.java":40, bci=16)
+  cond_br %6, ^bci62, ^bci19  loc("ParallelKernels.java":40, bci=16)
+^bci19:
+  %7 = add %5, %j : i32  loc("ParallelKernels.java":41, bci=27)
+  %8 = sext %7 : i64  loc("ParallelKernels.java":41, bci=37)
+  %9 = const 4 : i64  loc("ParallelKernels.java":41, bci=37)
+  %10 = mul %8, %9 : i64  loc("ParallelKernels.java":41, bci=37)
+  %11 = const 16 : i64  loc("ParallelKernels.java":41, bci=37)
+  %12 = add %10, %11 : i64  loc("ParallelKernels.java":41, bci=37)
+  %13 = ptr.offset %a, %12 : ptr<global>  loc("ParallelKernels.java":41, bci=37)
+  %14 = load %13 : f32  loc("ParallelKernels.java":41, bci=37)
+  %15 = sext %7 : i64  loc("ParallelKernels.java":41, bci=49)
+  %16 = const 4 : i64  loc("ParallelKernels.java":41, bci=49)
+  %17 = mul %15, %16 : i64  loc("ParallelKernels.java":41, bci=49)
+  %18 = const 16 : i64  loc("ParallelKernels.java":41, bci=49)
+  %19 = add %17, %18 : i64  loc("ParallelKernels.java":41, bci=49)
+  %20 = ptr.offset %b, %19 : ptr<global>  loc("ParallelKernels.java":41, bci=49)
+  %21 = load %20 : f32  loc("ParallelKernels.java":41, bci=49)
+  %22 = fadd %14, %21 : f32  loc("ParallelKernels.java":41, bci=52)
+  %23 = sext %7 : i64  loc("ParallelKernels.java":41, bci=53)
+  %24 = const 4 : i64  loc("ParallelKernels.java":41, bci=53)
+  %25 = mul %23, %24 : i64  loc("ParallelKernels.java":41, bci=53)
+  %26 = const 16 : i64  loc("ParallelKernels.java":41, bci=53)
+  %27 = add %25, %26 : i64  loc("ParallelKernels.java":41, bci=53)
+  %28 = ptr.offset %c, %27 : ptr<global>  loc("ParallelKernels.java":41, bci=53)
+  store %28, %22  loc("ParallelKernels.java":41, bci=53)
+  %j.1 = add %j, %2 : i32  loc("ParallelKernels.java":40, bci=59)
+  br ^bci12(%j.1)  loc("ParallelKernels.java":40, bci=59)
+^bci62:
+  %i.1 = add %i, %3 : i32  loc("ParallelKernels.java":39, bci=65)
+  br ^bci3(%i.1)  loc("ParallelKernels.java":39, bci=65)
+^bci68:
+  ret  loc("ParallelKernels.java":44, bci=68)
+}

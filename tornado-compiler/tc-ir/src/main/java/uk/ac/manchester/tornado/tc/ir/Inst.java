@@ -201,6 +201,23 @@ public final class Inst extends Value {
         }
     }
 
+    /** Moves this instruction, with its operands, to just before {@code anchor} (possibly in another block). */
+    public void moveBefore(Inst anchor) {
+        var target = anchor.block().orElseThrow(() -> new IllegalArgumentException("anchor is not in a block"));
+        if (block != null) {
+            block.remove(this);
+        }
+        target.insertBefore(this, anchor);
+    }
+
+    /** Moves this instruction to the end of {@code target}. */
+    public void moveToEnd(Block target) {
+        if (block != null) {
+            block.remove(this);
+        }
+        target.append(this);
+    }
+
     /** Releases every operand and successor-argument reference held by this instruction. */
     public void dropReferences() {
         setOperands(List.of());

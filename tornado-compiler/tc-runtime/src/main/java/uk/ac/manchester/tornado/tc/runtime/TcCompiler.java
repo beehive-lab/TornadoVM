@@ -35,6 +35,7 @@ import uk.ac.manchester.tornado.tc.ir.IrPrinter;
 import uk.ac.manchester.tornado.tc.ir.Loc;
 import uk.ac.manchester.tornado.tc.ir.Verifier;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
+import uk.ac.manchester.tornado.tc.opt.PassManager;
 import uk.ac.manchester.tornado.tc.lower.S;
 import uk.ac.manchester.tornado.tc.lower.SPrinter;
 import uk.ac.manchester.tornado.tc.lower.Structurizer;
@@ -142,6 +143,7 @@ public final class TcCompiler {
                     throw new Failed(problems);
                 }
             }, () -> IrPrinter.print(function));
+            stage("optimize", Kind.IR, () -> PassManager.standard(Verifier.Stage.PRE_ABI).verifyEach(options.verifyEach()).run(function), () -> IrPrinter.print(function));
             stage("abi", Kind.IR, () -> {
                 var problems = AbiLowering.run(function, target);
                 if (!problems.isEmpty()) {
@@ -151,6 +153,7 @@ public final class TcCompiler {
             if (options.verifyEach()) {
                 check("verify.post-abi", Verifier.Stage.POST_ABI);
             }
+            stage("optimize.post-abi", Kind.IR, () -> PassManager.standard(Verifier.Stage.POST_ABI).verifyEach(options.verifyEach()).run(function), () -> IrPrinter.print(function));
             var structured = new S.Kernel[1];
             stage("structure", Kind.STRUCTURED, () -> {
                 try {

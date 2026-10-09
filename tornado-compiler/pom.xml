@@ -23,6 +23,7 @@
         <module>tc-check</module>
         <module>tc-ir</module>
         <module>tc-frontend</module>
+        <module>tc-opt</module>
         <module>tc-lower</module>
         <module>tc-codegen</module>
         <module>tc-tornado</module>

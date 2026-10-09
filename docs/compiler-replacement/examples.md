@@ -16,20 +16,22 @@ and `tornado --printKernel -cp . C3Kernels` ([c3/java/C3Kernels.java](c3/java/C3
 
 | Kernel | CUDA lines (TC) | CUDA lines (Graal) |
 |---|---:|---:|
-| Grid-stride vector addition (`add`) | 23 | 33 |
+| Grid-stride vector addition (`add`) | 22 | 33 |
 | If/else with `sqrt` (`compute`) | 21 | 45 |
-| KernelContext shared-memory tree reduction (`blockSum`) | 39 | 73 |
+| KernelContext shared-memory tree reduction (`blockSum`) | 37 | 73 |
 
 What the comparison shows, and what TC still owes (all in [optimizations.md](optimizations.md)):
 
 - **Readability:** TC names values after Java locals, keeps Java line numbers, prints `while`
   loops, guard clauses and direct comparisons; values with no Java name (`v9`, `v24`) are javac
   stack temporaries. Graal prints `arg1`, `f_10` and `// BLOCK n` labels.
-- **No optimiser yet (`tc-opt`, O2–O10):** constants are not folded (`(long long) 0 * 4LL`), the
-  address `i * 4 + 16` is recomputed per access (O6 GVN), and the loop re-reads `a.getSize()` and
-  `ctx.globalGroupSizeX` every iteration (O10 loop-invariant code motion). NVRTC cleans most of this
-  up in machine code, but the source should not need it.
-- **Value specialisation (T1):** Graal folds `a.getSize()` to `1048576`; TC reads the array header.
+- **Optimiser (`tc-opt`, O2–O6, O10):** constants fold with Java semantics, the address
+  `i * 4 + 16` is computed once and shared by all accesses (GVN), and loop-invariant values (array
+  length, grid size, `i * cols`) move out of the loop (LICM). The Graal path recomputes the grid
+  size inside the loop.
+- **Value specialisation (T1):** with the actual task arguments TC folds `getSize()` and scalar
+  arguments like Graal (see the `@Parallel` kernels in `c3/from-java/parallel-*.cu`); the C3 kernels
+  above are compiled without arguments, so they read the length from the array header once, before the loop.
 - **Same ABI:** four leading regions, byte pointers, 16-byte array header, KernelContext dropped.
 
 
@@ -109,40 +111,38 @@ kernel @C3Kernels.add(%ctx: obj<KernelContext>, %a: array<f32>, %b: array<f32>, 
 ```llvm
 kernel @C3Kernels.add(%a: ptr<global>, %b: ptr<global>, %c: ptr<global>) -> void {
 ^entry:
-  br ^bci0
-^bci0:
   %i = tornado.thread_id.global.x() : i32  loc("C3Kernels.java":34, bci=1)
-  br ^bci9(%i)  loc("C3Kernels.java":34, bci=7)
-^bci9(%i.1: i32):
   %0 = load %a : i64  loc("C3Kernels.java":34, bci=12)
   %1 = trunc %0 : i32  loc("C3Kernels.java":34, bci=12)
-  %2 = icmp.sge %i.1, %1 : i1  loc("C3Kernels.java":34, bci=15)
-  cond_br %2, ^bci52, ^bci18  loc("C3Kernels.java":34, bci=15)
+  %2 = tornado.global_size.x() : i32  loc("C3Kernels.java":34, bci=40)
+  br ^bci9(%i)  loc("C3Kernels.java":34, bci=7)
+^bci9(%i.1: i32):
+  %3 = icmp.sge %i.1, %1 : i1  loc("C3Kernels.java":34, bci=15)
+  cond_br %3, ^bci52, ^bci18  loc("C3Kernels.java":34, bci=15)
 ^bci18:
-  %3 = sext %i.1 : i64  loc("C3Kernels.java":35, bci=24)
-  %4 = const 4 : i64  loc("C3Kernels.java":35, bci=24)
-  %5 = mul %3, %4 : i64  loc("C3Kernels.java":35, bci=24)
-  %6 = const 16 : i64  loc("C3Kernels.java":35, bci=24)
-  %7 = add %5, %6 : i64  loc("C3Kernels.java":35, bci=24)
-  %8 = ptr.offset %a, %7 : ptr<global>  loc("C3Kernels.java":35, bci=24)
-  %9 = load %8 : f32  loc("C3Kernels.java":35, bci=24)
-  %10 = sext %i.1 : i64  loc("C3Kernels.java":35, bci=30)
-  %11 = const 4 : i64  loc("C3Kernels.java":35, bci=30)
-  %12 = mul %10, %11 : i64  loc("C3Kernels.java":35, bci=30)
-  %13 = const 16 : i64  loc("C3Kernels.java":35, bci=30)
-  %14 = add %12, %13 : i64  loc("C3Kernels.java":35, bci=30)
-  %15 = ptr.offset %b, %14 : ptr<global>  loc("C3Kernels.java":35, bci=30)
-  %16 = load %15 : f32  loc("C3Kernels.java":35, bci=30)
-  %17 = fadd %9, %16 : f32  loc("C3Kernels.java":35, bci=33)
-  %18 = sext %i.1 : i64  loc("C3Kernels.java":35, bci=34)
-  %19 = const 4 : i64  loc("C3Kernels.java":35, bci=34)
-  %20 = mul %18, %19 : i64  loc("C3Kernels.java":35, bci=34)
-  %21 = const 16 : i64  loc("C3Kernels.java":35, bci=34)
-  %22 = add %20, %21 : i64  loc("C3Kernels.java":35, bci=34)
-  %23 = ptr.offset %c, %22 : ptr<global>  loc("C3Kernels.java":35, bci=34)
-  store %23, %17  loc("C3Kernels.java":35, bci=34)
-  %24 = tornado.global_size.x() : i32  loc("C3Kernels.java":34, bci=40)
-  %i.2 = add %i.1, %24 : i32  loc("C3Kernels.java":34, bci=46)
+  %4 = sext %i.1 : i64  loc("C3Kernels.java":35, bci=24)
+  %5 = const 4 : i64  loc("C3Kernels.java":35, bci=24)
+  %6 = mul %4, %5 : i64  loc("C3Kernels.java":35, bci=24)
+  %7 = const 16 : i64  loc("C3Kernels.java":35, bci=24)
+  %8 = add %6, %7 : i64  loc("C3Kernels.java":35, bci=24)
+  %9 = ptr.offset %a, %8 : ptr<global>  loc("C3Kernels.java":35, bci=24)
+  %10 = load %9 : f32  loc("C3Kernels.java":35, bci=24)
+  %11 = sext %i.1 : i64  loc("C3Kernels.java":35, bci=30)
+  %12 = const 4 : i64  loc("C3Kernels.java":35, bci=30)
+  %13 = mul %11, %12 : i64  loc("C3Kernels.java":35, bci=30)
+  %14 = const 16 : i64  loc("C3Kernels.java":35, bci=30)
+  %15 = add %13, %14 : i64  loc("C3Kernels.java":35, bci=30)
+  %16 = ptr.offset %b, %15 : ptr<global>  loc("C3Kernels.java":35, bci=30)
+  %17 = load %16 : f32  loc("C3Kernels.java":35, bci=30)
+  %18 = fadd %10, %17 : f32  loc("C3Kernels.java":35, bci=33)
+  %19 = sext %i.1 : i64  loc("C3Kernels.java":35, bci=34)
+  %20 = const 4 : i64  loc("C3Kernels.java":35, bci=34)
+  %21 = mul %19, %20 : i64  loc("C3Kernels.java":35, bci=34)
+  %22 = const 16 : i64  loc("C3Kernels.java":35, bci=34)
+  %23 = add %21, %22 : i64  loc("C3Kernels.java":35, bci=34)
+  %24 = ptr.offset %c, %23 : ptr<global>  loc("C3Kernels.java":35, bci=34)
+  store %24, %18  loc("C3Kernels.java":35, bci=34)
+  %i.2 = add %i.1, %2 : i32  loc("C3Kernels.java":34, bci=46)
   br ^bci9(%i.2)  loc("C3Kernels.java":34, bci=49)
 ^bci52:
   ret  loc("C3Kernels.java":37, bci=52)
@@ -152,25 +152,27 @@ kernel @C3Kernels.add(%a: ptr<global>, %b: ptr<global>, %c: ptr<global>) -> void
 ### TC-S (structured)
 ```c
 kernel C3Kernels.add(ptr<global> a, ptr<global> b, ptr<global> c) -> void {
-  i32 i;
-  i32 i_1;
   i64 v0;
-  f32 v9;
-  f32 v16;
-  i32 v24;
-  i = tornado.thread_id.global.x();
-  i_1 = i;
+  i32 v1;
+  i32 v2;
+  i32 i_1;
+  i64 v8;
+  f32 v10;
+  f32 v12;
+  v0 = load<i64>(a);
+  v1 = trunc<i32>(v0);
+  v2 = tornado.global_size.x();
+  i_1 = tornado.thread_id.global.x();
   block L_bci52 {
     loop L_bci9 {
-      v0 = load<i64>(a);
-      if ((i_1 sge trunc<i32>(v0))) {
+      if ((i_1 sge v1)) {
         break L_bci52;
       } else {
-        v9 = load<f32>(ptr.offset(a, ((sext<i64>(i_1) * 4) + 16)));
-        v16 = load<f32>(ptr.offset(b, ((sext<i64>(i_1) * 4) + 16)));
-        store(ptr.offset(c, ((sext<i64>(i_1) * 4) + 16)), (v9 + v16));
-        v24 = tornado.global_size.x();
-        i_1 = (i_1 + v24);
+        v8 = ((sext<i64>(i_1) * 4) + 16);
+        v10 = load<f32>(ptr.offset(a, v8));
+        v12 = load<f32>(ptr.offset(b, v8));
+        store(ptr.offset(c, v8), (v10 + v12));
+        i_1 = (i_1 + v2);
       }
     }
   }
@@ -182,24 +184,23 @@ kernel C3Kernels.add(ptr<global> a, ptr<global> b, ptr<global> c) -> void {
 ```cuda
 extern "C" __global__ void C3Kernels_add(long long *_kernel_context, unsigned char *_constant_region, unsigned char *_local_region, int *_atomics, unsigned char *a, unsigned char *b, unsigned char *c)
 {
-  int i;
-  int i_1;
   long long v0;
-  float v9;
-  float v16;
-  int v24;
-  i = (int) (blockIdx.x * blockDim.x + threadIdx.x);  // C3Kernels.java:34
-  i_1 = i;
-  for (;;) {
-    v0 = *((long long *) a);  // C3Kernels.java:34
-    if (i_1 >= (int) v0) {
-      break;
-    }
-    v9 = *((float *) (a + ((long long) i_1 * 4LL + 16LL)));  // C3Kernels.java:35
-    v16 = *((float *) (b + ((long long) i_1 * 4LL + 16LL)));  // C3Kernels.java:35
-    *((float *) (c + ((long long) i_1 * 4LL + 16LL))) = v9 + v16;  // C3Kernels.java:35
-    v24 = (int) (gridDim.x * blockDim.x);  // C3Kernels.java:34
-    i_1 = i_1 + v24;
+  int v1;
+  int v2;
+  int i_1;
+  long long v8;
+  float v10;
+  float v12;
+  v0 = *((long long *) a);  // C3Kernels.java:34
+  v1 = (int) v0;  // C3Kernels.java:34
+  v2 = (int) (gridDim.x * blockDim.x);  // C3Kernels.java:34
+  i_1 = (int) (blockIdx.x * blockDim.x + threadIdx.x);
+  while (i_1 < v1) {
+    v8 = (long long) i_1 * 4LL + 16LL;  // C3Kernels.java:35
+    v10 = *((float *) (a + v8));  // C3Kernels.java:35
+    v12 = *((float *) (b + v8));  // C3Kernels.java:35
+    *((float *) (c + v8)) = v10 + v12;  // C3Kernels.java:35
+    i_1 = i_1 + v2;
   }
   return;
 }
@@ -341,8 +342,6 @@ kernel @C3Kernels.compute(%ctx: obj<KernelContext>, %in: array<f32>, %out: array
 ```llvm
 kernel @C3Kernels.compute(%in: ptr<global>, %out: ptr<global>) -> void {
 ^entry:
-  br ^bci0
-^bci0:
   %i = tornado.thread_id.global.x() : i32  loc("C3Kernels.java":40, bci=1)
   %0 = load %in : i64  loc("C3Kernels.java":41, bci=10)
   %1 = trunc %0 : i32  loc("C3Kernels.java":41, bci=10)
@@ -386,21 +385,21 @@ kernel @C3Kernels.compute(%in: ptr<global>, %out: ptr<global>) -> void {
 kernel C3Kernels.compute(ptr<global> in, ptr<global> out) -> void {
   i32 i;
   i64 v0;
+  i64 v7;
   f32 x;
-  f32 v11;
   f32 v_2;
   i = tornado.thread_id.global.x();
   v0 = load<i64>(in);
   if ((i sge trunc<i32>(v0))) {
   } else {
-    x = load<f32>(ptr.offset(in, ((sext<i64>(i) * 4) + 16)));
+    v7 = ((sext<i64>(i) * 4) + 16);
+    x = load<f32>(ptr.offset(in, v7));
     if ((x ule 0.0)) {
       v_2 = fneg(x);
     } else {
-      v11 = math.sqrt(x);
-      v_2 = (v11 * 2.0);
+      v_2 = (math.sqrt(x) * 2.0);
     }
-    store(ptr.offset(out, ((sext<i64>(i) * 4) + 16)), v_2);
+    store(ptr.offset(out, v7), v_2);
   }
   return;
 }
@@ -412,20 +411,20 @@ extern "C" __global__ void C3Kernels_compute(long long *_kernel_context, unsigne
 {
   int i;
   long long v0;
+  long long v7;
   float x;
-  float v11;
   float v_2;
   i = (int) (blockIdx.x * blockDim.x + threadIdx.x);  // C3Kernels.java:40
   v0 = *((long long *) in);  // C3Kernels.java:41
   if (i < (int) v0) {
-    x = *((float *) (in + ((long long) i * 4LL + 16LL)));  // C3Kernels.java:42
+    v7 = (long long) i * 4LL + 16LL;  // C3Kernels.java:42
+    x = *((float *) (in + v7));  // C3Kernels.java:42
     if (x > 0.0f) {
-      v11 = sqrtf(x);  // C3Kernels.java:45
-      v_2 = v11 * 2.0f;
+      v_2 = sqrtf(x) * 2.0f;
     } else {
       v_2 = -x;
     }
-    *((float *) (out + ((long long) i * 4LL + 16LL))) = v_2;  // C3Kernels.java:49
+    *((float *) (out + v7)) = v_2;  // C3Kernels.java:49
   }
   return;
 }
@@ -665,79 +664,60 @@ kernel @C3Kernels.blockSum(%ctx: obj<KernelContext>, %in: array<f32>, %out: arra
 ```llvm
 kernel @C3Kernels.blockSum(%in: ptr<global>, %out: ptr<global>) -> void {
 ^entry:
-  br ^bci0
-^bci0:
   %gid = tornado.thread_id.global.x() : i32  loc("C3Kernels.java":54, bci=1)
   %lid = tornado.thread_id.local.x() : i32  loc("C3Kernels.java":55, bci=9)
   %grp = tornado.group_id.x() : i32  loc("C3Kernels.java":56, bci=18)
   %lsz = tornado.group_size.local.x() : i32  loc("C3Kernels.java":57, bci=27)
-  %0 = const 256 : i32  loc("C3Kernels.java":58, bci=36)
   %scratch = alloca.shared f32[256] : ptr<shared>  loc("C3Kernels.java":58, bci=39)
-  %1 = sext %gid : i64  loc("C3Kernels.java":59, bci=50)
-  %2 = const 4 : i64  loc("C3Kernels.java":59, bci=50)
-  %3 = mul %1, %2 : i64  loc("C3Kernels.java":59, bci=50)
-  %4 = const 16 : i64  loc("C3Kernels.java":59, bci=50)
-  %5 = add %3, %4 : i64  loc("C3Kernels.java":59, bci=50)
-  %6 = ptr.offset %in, %5 : ptr<global>  loc("C3Kernels.java":59, bci=50)
-  %7 = load %6 : f32  loc("C3Kernels.java":59, bci=50)
-  %8 = sext %lid : i64  loc("C3Kernels.java":59, bci=53)
-  %9 = const 4 : i64  loc("C3Kernels.java":59, bci=53)
-  %10 = mul %8, %9 : i64  loc("C3Kernels.java":59, bci=53)
-  %11 = ptr.offset %scratch, %10 : ptr<shared>  loc("C3Kernels.java":59, bci=53)
-  store %11, %7  loc("C3Kernels.java":59, bci=53)
+  %0 = sext %gid : i64  loc("C3Kernels.java":59, bci=50)
+  %1 = const 4 : i64  loc("C3Kernels.java":59, bci=50)
+  %2 = mul %0, %1 : i64  loc("C3Kernels.java":59, bci=50)
+  %3 = const 16 : i64  loc("C3Kernels.java":59, bci=50)
+  %4 = add %2, %3 : i64  loc("C3Kernels.java":59, bci=50)
+  %5 = ptr.offset %in, %4 : ptr<global>  loc("C3Kernels.java":59, bci=50)
+  %6 = load %5 : f32  loc("C3Kernels.java":59, bci=50)
+  %7 = sext %lid : i64  loc("C3Kernels.java":59, bci=53)
+  %8 = const 4 : i64  loc("C3Kernels.java":59, bci=53)
+  %9 = mul %7, %8 : i64  loc("C3Kernels.java":59, bci=53)
+  %10 = ptr.offset %scratch, %9 : ptr<shared>  loc("C3Kernels.java":59, bci=53)
+  store %10, %6  loc("C3Kernels.java":59, bci=53)
   tornado.barrier.local()  loc("C3Kernels.java":60, bci=55)
-  %12 = const 2 : i32  loc("C3Kernels.java":61, bci=60)
-  %s = div %lsz, %12 : i32  loc("C3Kernels.java":61, bci=61)
+  %11 = const 2 : i32  loc("C3Kernels.java":61, bci=60)
+  %s = div %lsz, %11 : i32  loc("C3Kernels.java":61, bci=61)
   br ^bci64(%s)  loc("C3Kernels.java":61, bci=62)
 ^bci64(%s.1: i32):
-  %13 = const 0 : i32  loc("C3Kernels.java":61, bci=66)
-  %14 = icmp.sle %s.1, %13 : i1  loc("C3Kernels.java":61, bci=66)
-  cond_br %14, ^bci105, ^bci69  loc("C3Kernels.java":61, bci=66)
+  %12 = const 0 : i32  loc("C3Kernels.java":61, bci=66)
+  %13 = icmp.sle %s.1, %12 : i1  loc("C3Kernels.java":61, bci=66)
+  cond_br %13, ^bci105, ^bci69  loc("C3Kernels.java":61, bci=66)
 ^bci69:
-  %15 = icmp.sge %lid, %s.1 : i1  loc("C3Kernels.java":62, bci=73)
-  cond_br %15, ^bci92, ^bci76  loc("C3Kernels.java":62, bci=73)
+  %14 = icmp.sge %lid, %s.1 : i1  loc("C3Kernels.java":62, bci=73)
+  cond_br %14, ^bci92, ^bci76  loc("C3Kernels.java":62, bci=73)
 ^bci76:
-  %16 = sext %lid : i64  loc("C3Kernels.java":63, bci=81)
-  %17 = const 4 : i64  loc("C3Kernels.java":63, bci=81)
-  %18 = mul %16, %17 : i64  loc("C3Kernels.java":63, bci=81)
-  %19 = ptr.offset %scratch, %18 : ptr<shared>  loc("C3Kernels.java":63, bci=81)
-  %20 = load %19 : f32  loc("C3Kernels.java":63, bci=81)
-  %21 = add %lid, %s.1 : i32  loc("C3Kernels.java":63, bci=88)
-  %22 = sext %21 : i64  loc("C3Kernels.java":63, bci=89)
-  %23 = const 4 : i64  loc("C3Kernels.java":63, bci=89)
-  %24 = mul %22, %23 : i64  loc("C3Kernels.java":63, bci=89)
-  %25 = ptr.offset %scratch, %24 : ptr<shared>  loc("C3Kernels.java":63, bci=89)
-  %26 = load %25 : f32  loc("C3Kernels.java":63, bci=89)
-  %27 = fadd %20, %26 : f32  loc("C3Kernels.java":63, bci=90)
-  %28 = sext %lid : i64  loc("C3Kernels.java":63, bci=91)
-  %29 = const 4 : i64  loc("C3Kernels.java":63, bci=91)
-  %30 = mul %28, %29 : i64  loc("C3Kernels.java":63, bci=91)
-  %31 = ptr.offset %scratch, %30 : ptr<shared>  loc("C3Kernels.java":63, bci=91)
-  store %31, %27  loc("C3Kernels.java":63, bci=91)
+  %15 = load %10 : f32  loc("C3Kernels.java":63, bci=81)
+  %16 = add %lid, %s.1 : i32  loc("C3Kernels.java":63, bci=88)
+  %17 = sext %16 : i64  loc("C3Kernels.java":63, bci=89)
+  %18 = mul %17, %8 : i64  loc("C3Kernels.java":63, bci=89)
+  %19 = ptr.offset %scratch, %18 : ptr<shared>  loc("C3Kernels.java":63, bci=89)
+  %20 = load %19 : f32  loc("C3Kernels.java":63, bci=89)
+  %21 = fadd %15, %20 : f32  loc("C3Kernels.java":63, bci=90)
+  store %10, %21  loc("C3Kernels.java":63, bci=91)
   br ^bci92  loc("C3Kernels.java":63, bci=91)
 ^bci92:
   tornado.barrier.local()  loc("C3Kernels.java":65, bci=93)
-  %32 = const 2 : i32  loc("C3Kernels.java":61, bci=98)
-  %s.2 = div %s.1, %32 : i32  loc("C3Kernels.java":61, bci=99)
+  %s.2 = div %s.1, %11 : i32  loc("C3Kernels.java":61, bci=99)
   br ^bci64(%s.2)  loc("C3Kernels.java":61, bci=102)
 ^bci105:
-  %33 = const 0 : i32  loc("C3Kernels.java":67, bci=107)
-  %34 = icmp.ne %lid, %33 : i1  loc("C3Kernels.java":67, bci=107)
-  cond_br %34, ^bci120, ^bci110  loc("C3Kernels.java":67, bci=107)
+  %22 = icmp.ne %lid, %12 : i1  loc("C3Kernels.java":67, bci=107)
+  cond_br %22, ^bci120, ^bci110  loc("C3Kernels.java":67, bci=107)
 ^bci110:
-  %35 = const 0 : i32  loc("C3Kernels.java":68, bci=115)
-  %36 = sext %35 : i64  loc("C3Kernels.java":68, bci=116)
-  %37 = const 4 : i64  loc("C3Kernels.java":68, bci=116)
-  %38 = mul %36, %37 : i64  loc("C3Kernels.java":68, bci=116)
-  %39 = ptr.offset %scratch, %38 : ptr<shared>  loc("C3Kernels.java":68, bci=116)
-  %40 = load %39 : f32  loc("C3Kernels.java":68, bci=116)
-  %41 = sext %grp : i64  loc("C3Kernels.java":68, bci=117)
-  %42 = const 4 : i64  loc("C3Kernels.java":68, bci=117)
-  %43 = mul %41, %42 : i64  loc("C3Kernels.java":68, bci=117)
-  %44 = const 16 : i64  loc("C3Kernels.java":68, bci=117)
-  %45 = add %43, %44 : i64  loc("C3Kernels.java":68, bci=117)
-  %46 = ptr.offset %out, %45 : ptr<global>  loc("C3Kernels.java":68, bci=117)
-  store %46, %40  loc("C3Kernels.java":68, bci=117)
+  %23 = load %scratch : f32  loc("C3Kernels.java":68, bci=116)
+  %24 = sext %grp : i64  loc("C3Kernels.java":68, bci=117)
+  %25 = const 4 : i64  loc("C3Kernels.java":68, bci=117)
+  %26 = mul %24, %25 : i64  loc("C3Kernels.java":68, bci=117)
+  %27 = const 16 : i64  loc("C3Kernels.java":68, bci=117)
+  %28 = add %26, %27 : i64  loc("C3Kernels.java":68, bci=117)
+  %29 = ptr.offset %out, %28 : ptr<global>  loc("C3Kernels.java":68, bci=117)
+  store %29, %23  loc("C3Kernels.java":68, bci=117)
   br ^bci120  loc("C3Kernels.java":68, bci=117)
 ^bci120:
   ret  loc("C3Kernels.java":70, bci=120)
@@ -748,25 +728,23 @@ kernel @C3Kernels.blockSum(%in: ptr<global>, %out: ptr<global>) -> void {
 ```c
 kernel C3Kernels.blockSum(ptr<global> in, ptr<global> out) -> void {
   shared f32 scratch[256];
-  i32 gid;
   i32 lid;
   i32 grp;
-  i32 lsz;
-  f32 v7;
+  f32 v6;
+  ptr<shared> v9;
   i32 s;
   i32 s_1;
-  f32 v20;
-  f32 v26;
+  f32 v14;
+  f32 v19;
   i32 s_2;
-  f32 v40;
-  gid = tornado.thread_id.global.x();
+  f32 v22;
   lid = tornado.thread_id.local.x();
   grp = tornado.group_id.x();
-  lsz = tornado.group_size.local.x();
-  v7 = load<f32>(ptr.offset(in, ((sext<i64>(gid) * 4) + 16)));
-  store(ptr.offset(&scratch, (sext<i64>(lid) * 4)), v7);
+  v6 = load<f32>(ptr.offset(in, ((sext<i64>(tornado.thread_id.global.x()) * 4) + 16)));
+  v9 = ptr.offset(&scratch, (sext<i64>(lid) * 4));
+  store(v9, v6);
   tornado.barrier.local();
-  s = (lsz / 2);
+  s = (tornado.group_size.local.x() / 2);
   s_1 = s;
   block L_bci105 {
     loop L_bci64 {
@@ -775,9 +753,9 @@ kernel C3Kernels.blockSum(ptr<global> in, ptr<global> out) -> void {
       } else {
         if ((lid sge s_1)) {
         } else {
-          v20 = load<f32>(ptr.offset(&scratch, (sext<i64>(lid) * 4)));
-          v26 = load<f32>(ptr.offset(&scratch, (sext<i64>((lid + s_1)) * 4)));
-          store(ptr.offset(&scratch, (sext<i64>(lid) * 4)), (v20 + v26));
+          v14 = load<f32>(v9);
+          v19 = load<f32>(ptr.offset(&scratch, (sext<i64>((lid + s_1)) * 4)));
+          store(v9, (v14 + v19));
         }
         tornado.barrier.local();
         s_2 = (s_1 / 2);
@@ -787,8 +765,8 @@ kernel C3Kernels.blockSum(ptr<global> in, ptr<global> out) -> void {
   }
   if ((lid ne 0)) {
   } else {
-    v40 = load<f32>(ptr.offset(&scratch, (sext<i64>(0) * 4)));
-    store(ptr.offset(out, ((sext<i64>(grp) * 4) + 16)), v40);
+    v22 = load<f32>(&scratch);
+    store(ptr.offset(out, ((sext<i64>(grp) * 4) + 16)), v22);
   }
   return;
 }
@@ -799,39 +777,37 @@ kernel C3Kernels.blockSum(ptr<global> in, ptr<global> out) -> void {
 extern "C" __global__ void C3Kernels_blockSum(long long *_kernel_context, unsigned char *_constant_region, unsigned char *_local_region, int *_atomics, unsigned char *in, unsigned char *out)
 {
   __shared__ float scratch[256];
-  int gid;
   int lid;
   int grp;
-  int lsz;
-  float v7;
+  float v6;
+  unsigned char *v9;
   int s;
   int s_1;
-  float v20;
-  float v26;
+  float v14;
+  float v19;
   int s_2;
-  float v40;
-  gid = (int) (blockIdx.x * blockDim.x + threadIdx.x);  // C3Kernels.java:54
+  float v22;
   lid = (int) threadIdx.x;  // C3Kernels.java:55
   grp = (int) blockIdx.x;  // C3Kernels.java:56
-  lsz = (int) blockDim.x;  // C3Kernels.java:57
-  v7 = *((float *) (in + ((long long) gid * 4LL + 16LL)));  // C3Kernels.java:59
-  *((float *) ((unsigned char *) scratch + (long long) lid * 4LL)) = v7;  // C3Kernels.java:59
+  v6 = *((float *) (in + ((long long) (int) (blockIdx.x * blockDim.x + threadIdx.x) * 4LL + 16LL)));  // C3Kernels.java:59
+  v9 = (unsigned char *) scratch + (long long) lid * 4LL;  // C3Kernels.java:59
+  *((float *) v9) = v6;  // C3Kernels.java:59
   __syncthreads();  // C3Kernels.java:60
-  s = lsz / 2;  // C3Kernels.java:61
+  s = (int) blockDim.x / 2;  // C3Kernels.java:61
   s_1 = s;
   while (s_1 > 0) {
     if (lid < s_1) {
-      v20 = *((float *) ((unsigned char *) scratch + (long long) lid * 4LL));  // C3Kernels.java:63
-      v26 = *((float *) ((unsigned char *) scratch + (long long) (lid + s_1) * 4LL));  // C3Kernels.java:63
-      *((float *) ((unsigned char *) scratch + (long long) lid * 4LL)) = v20 + v26;  // C3Kernels.java:63
+      v14 = *((float *) v9);  // C3Kernels.java:63
+      v19 = *((float *) ((unsigned char *) scratch + (long long) (lid + s_1) * 4LL));  // C3Kernels.java:63
+      *((float *) v9) = v14 + v19;  // C3Kernels.java:63
     }
     __syncthreads();  // C3Kernels.java:65
     s_2 = s_1 / 2;  // C3Kernels.java:61
     s_1 = s_2;
   }
   if (lid == 0) {
-    v40 = *((float *) ((unsigned char *) scratch + (long long) 0 * 4LL));  // C3Kernels.java:68
-    *((float *) (out + ((long long) grp * 4LL + 16LL))) = v40;  // C3Kernels.java:68
+    v22 = *((float *) (unsigned char *) scratch);  // C3Kernels.java:68
+    *((float *) (out + ((long long) grp * 4LL + 16LL))) = v22;  // C3Kernels.java:68
   }
   return;
 }

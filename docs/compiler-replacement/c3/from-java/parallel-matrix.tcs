@@ -1,0 +1,40 @@
+kernel ParallelKernels.matrixAdd(ptr<global> a, ptr<global> b, ptr<global> c, i32 rows, i32 cols) -> void {
+  i32 v1;
+  i32 v2;
+  i32 v3;
+  i32 i;
+  i32 v5;
+  i32 j;
+  i64 v12;
+  f32 v14;
+  f32 v16;
+  v1 = tornado.thread_id.global.x();
+  v2 = tornado.global_size.x();
+  v3 = tornado.global_size.y();
+  i = tornado.thread_id.global.y();
+  block L_bci68 {
+    loop L_bci3 {
+      if ((i sge 512)) {
+        break L_bci68;
+      } else {
+        v5 = (i * 1024);
+        j = v1;
+        block L_bci62 {
+          loop L_bci12 {
+            if ((j sge 1024)) {
+              break L_bci62;
+            } else {
+              v12 = ((sext<i64>((v5 + j)) * 4) + 16);
+              v14 = load<f32>(ptr.offset(a, v12));
+              v16 = load<f32>(ptr.offset(b, v12));
+              store(ptr.offset(c, v12), (v14 + v16));
+              j = (j + v2);
+            }
+          }
+        }
+        i = (i + v3);
+      }
+    }
+  }
+  return;
+}

@@ -308,6 +308,16 @@ public sealed interface Opcode {
         public String mnemonic() {
             return name;
         }
+
+        /**
+         * Thread and work-group indices and sizes are fixed for a launch, and math functions depend
+         * only on their operands; barriers, atomics and printing are not pure.
+         */
+        @Override
+        public boolean isPure() {
+            return name.startsWith("tornado.thread_id.") || name.startsWith("tornado.group_id.") || name.startsWith("tornado.group_size.") || name.startsWith("tornado.global_size.")
+                    || name.startsWith("tornado.group_count.") || name.startsWith("math.");
+        }
     }
 
     // ---------------------------------------------------------------- terminators

@@ -7,16 +7,14 @@
 ; CHECK-NEXT:  {
 ; CHECK-NEXT:    long long v0;
 ; CHECK-NEXT:    int n;
-; CHECK-NEXT:    int i0;
 ; CHECK-NEXT:    int s;
 ; CHECK-NEXT:    int i;
 ; CHECK-NEXT:    float x;
 ; CHECK-NEXT:    float y;
 ; CHECK-NEXT:    v0 = *((long long *) a);  // VectorAdd.java:20
 ; CHECK-NEXT:    n = (int) v0;  // VectorAdd.java:20
-; CHECK-NEXT:    i0 = (int) (blockIdx.x * blockDim.x + threadIdx.x);
 ; CHECK-NEXT:    s = (int) (gridDim.x * blockDim.x);
-; CHECK-NEXT:    i = i0;
+; CHECK-NEXT:    i = (int) (blockIdx.x * blockDim.x + threadIdx.x);
 ; CHECK-NEXT:    while (i < n) {
 ; CHECK-NEXT:      x = *((float *) (a + ((long long) i * 4LL + 16LL)));  // VectorAdd.java:21
 ; CHECK-NEXT:      y = *((float *) (b + ((long long) i * 4LL + 16LL)));  // VectorAdd.java:21

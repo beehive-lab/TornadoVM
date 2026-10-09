@@ -1,0 +1,23 @@
+kernel ParallelKernels.vectorAdd(ptr<global> a, ptr<global> b, ptr<global> c) -> void {
+  i32 v1;
+  i32 i;
+  i64 v8;
+  f32 v10;
+  f32 v12;
+  v1 = tornado.global_size.x();
+  i = tornado.thread_id.global.x();
+  block L_bci32 {
+    loop L_bci2 {
+      if ((i sge 1048576)) {
+        break L_bci32;
+      } else {
+        v8 = ((sext<i64>(i) * 4) + 16);
+        v10 = load<f32>(ptr.offset(a, v8));
+        v12 = load<f32>(ptr.offset(b, v8));
+        store(ptr.offset(c, v8), (v10 + v12));
+        i = (i + v1);
+      }
+    }
+  }
+  return;
+}

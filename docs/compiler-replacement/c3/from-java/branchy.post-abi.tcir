@@ -1,7 +1,5 @@
 kernel @C3Kernels.compute(%in: ptr<global>, %out: ptr<global>) -> void {
 ^entry:
-  br ^bci0
-^bci0:
   %i = tornado.thread_id.global.x() : i32  loc("C3Kernels.java":40, bci=1)
   %0 = load %in : i64  loc("C3Kernels.java":41, bci=10)
   %1 = trunc %0 : i32  loc("C3Kernels.java":41, bci=10)

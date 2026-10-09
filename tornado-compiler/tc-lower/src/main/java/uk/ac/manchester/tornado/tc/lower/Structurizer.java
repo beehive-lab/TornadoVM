@@ -356,6 +356,10 @@ public final class Structurizer {
             return false;
         }
         var user = inst.users().get(0);
+        // C spells these float comparisons with each operand twice: fold only variables into them.
+        if (user.opcode() instanceof Opcode.FCmp(var p) && (p == Opcode.FloatPredicate.ONE || p == Opcode.FloatPredicate.UEQ || p == Opcode.FloatPredicate.ORD || p == Opcode.FloatPredicate.UNO)) {
+            return false;
+        }
         return user.block().isPresent() && user.block().equals(inst.block());
     }
 

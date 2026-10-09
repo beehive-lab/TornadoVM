@@ -3,6 +3,7 @@
  */
 module tornado.tc.runtime {
     requires transitive tornado.tc.frontend;
+    requires transitive tornado.tc.opt;
     requires transitive tornado.tc.codegen;
     requires transitive tornado.tc.tornado;
     requires jdk.jfr;
