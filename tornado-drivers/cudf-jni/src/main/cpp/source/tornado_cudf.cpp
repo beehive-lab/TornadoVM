@@ -151,10 +151,18 @@ void ensure_pool() {
             }
         }
         // CUDA's own stream-ordered pool, via cudaMallocAsync. A pool_memory_resource would do
-        // the same and needs an initial and a maximum size chosen up front; this one grows and
-        // returns memory on its own, which matters because TornadoVM allocates from the same card
-        // and a fixed reservation would have to be tuned against it.
-        static rmm::mr::cuda_async_memory_resource async_mr;
+        // the same and needs an initial and a maximum size chosen up front; this one grows, and
+        // gives memory back above its release threshold at each synchronization, which matters
+        // because TornadoVM allocates from the same card and a fixed reservation would have to be
+        // tuned against it. The threshold must be set: RMM's default is UINT64_MAX, which keeps
+        // the pool at its high-water mark for good -- one large read or write would then hold that
+        // memory away from TornadoVM's buffers for the rest of the process.
+        // TORNADO_CUDF_POOL_RELEASE_MB (default 1024) is what the pool keeps between calls.
+        std::size_t release_mb = 1024;
+        if (const char* env = std::getenv("TORNADO_CUDF_POOL_RELEASE_MB")) {
+            release_mb = std::strtoul(env, nullptr, 10);
+        }
+        static rmm::mr::cuda_async_memory_resource async_mr{std::nullopt, release_mb << 20};
         rmm::mr::set_current_device_resource(async_mr);
     } catch (...) {
         // A pool is an optimisation; the default resource still works without it.
