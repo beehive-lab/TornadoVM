@@ -116,7 +116,15 @@ public final class Canonicalizer implements Pass {
                 }
                 yield ops.get(1) == ops.get(2) ? Optional.of(ops.get(1)) : Optional.empty();
             }
-            case Opcode.Convert(var op) -> constant(ops.get(0)).flatMap(c -> convert(op, ops.get(0).type(), type, c)).map(v -> make(inst, type, v));
+            case Opcode.Convert(var op) -> {
+                var folded = constant(ops.get(0)).flatMap(c -> convert(op, ops.get(0).type(), type, c)).map(v -> make(inst, type, v));
+                // trunc(sext x) and trunc(zext x) back to x's own type are x: the extension only added high bits.
+                if (folded.isEmpty() && op == ConvertOp.TRUNC && ops.get(0) instanceof Inst ext && ext.opcode() instanceof Opcode.Convert(var inner)
+                        && (inner == ConvertOp.SEXT || inner == ConvertOp.ZEXT) && ext.operand(0).type().equals(type)) {
+                    yield Optional.of(ext.operand(0));
+                }
+                yield folded;
+            }
             case Opcode.PointerOffset p -> constant(ops.get(1)).filter(c -> c.longValue() == 0).map(c -> ops.get(0));
             default -> Optional.empty();
         };

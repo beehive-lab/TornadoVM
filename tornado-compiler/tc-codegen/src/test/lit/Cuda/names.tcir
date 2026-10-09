@@ -1,0 +1,20 @@
+; Variable names never hide the functions and built-ins the kernel calls: a value named `log` (from
+; TornadoMath.log2's local, or a Java local) used next to log() becomes `log_1`; so do keywords.
+; RUN: tc-emit --no-line-comments %s | FileCheck %s
+; RUN: tc-emit %s | nvcc-ptx
+
+; CHECK-LABEL: __device__ static double log2_of(double x, int int_1)
+; CHECK:         log_1 = log(2.0);
+; CHECK-NEXT:    lx = log(x);
+; CHECK-NEXT:    q = lx / log_1;
+; CHECK-NEXT:    w = (double) int_1;
+device @log2_of(%x: f64, %int: i32) -> f64 {
+^entry:
+  %two = const 2.0 : f64
+  %log = math.log(%two) : f64
+  %lx = math.log(%x) : f64
+  %q = fdiv %lx, %log : f64
+  %w = i2f %int : f64
+  %r = fadd %q, %w : f64
+  ret %r
+}

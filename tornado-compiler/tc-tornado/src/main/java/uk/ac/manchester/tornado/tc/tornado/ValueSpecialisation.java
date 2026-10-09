@@ -65,6 +65,10 @@ public final class ValueSpecialisation {
                 case Double d -> new Scalar(d);
                 case Short s -> new Scalar(s.intValue());
                 case Byte b -> new Scalar(b.intValue());
+                case Character c -> new Scalar((int) c.charValue());
+                case Boolean b -> new Scalar(b ? 1 : 0);
+                // Java arrays: like native arrays, the device copy of the header is not initialised.
+                case Object o when o.getClass().isArray() -> new Length(java.lang.reflect.Array.getLength(o));
                 default -> new Unknown();
             };
         }
@@ -82,8 +86,9 @@ public final class ValueSpecialisation {
             switch (facts.get(i)) {
                 case Fact.Length(var elements) when param.type() instanceof Type.ArrayType -> {
                     for (var user : List.copyOf(param.users())) {
-                        if (user.opcode() instanceof Opcode.ArrayLength) {
-                            var constant = new IrBuilder(user.block().orElseThrow()).before(user).at(user.loc()).constInt(Type.I32, elements);
+                        // getSize() is i32 and throws beyond Integer.MAX_VALUE in Java: only getSizeLong() folds then.
+                        if (user.opcode() instanceof Opcode.ArrayLength && (user.type().equals(Type.I64) || elements <= Integer.MAX_VALUE)) {
+                            var constant = new IrBuilder(user.block().orElseThrow()).before(user).at(user.loc()).constInt(user.type(), elements);
                             constant.setName(user.name());
                             user.replaceAllUsesWith(constant);
                             user.erase();

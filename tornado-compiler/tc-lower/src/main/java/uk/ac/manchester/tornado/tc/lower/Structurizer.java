@@ -82,7 +82,31 @@ public final class Structurizer {
     private final Map<Block, Integer> forwardInEdges = new IdentityHashMap<>();
     private final Map<Block, Set<Block>> loops = new IdentityHashMap<>();
     private final Map<Value, S.Var> vars = new IdentityHashMap<>();
-    private final Set<String> usedNames = new HashSet<>();
+    private final Set<String> usedNames = new HashSet<>(RESERVED);
+
+    /**
+     * Names a variable must not take: C/C++/CUDA/OpenCL keywords and built-ins, and the functions the
+     * emitters call (a variable `log` would hide `log()` in the same scope). Clashing names get `_1`.
+     */
+    static final Set<String> RESERVED;
+
+    static {
+        var math = List.of("abs", "acos", "acosh", "asin", "asinh", "atan", "atan2", "atanh", "cbrt", "ceil", "cos", "cosh", "cospi", "erf", "exp", "exp2", "exp10", "expm1",
+                "fabs", "fdim", "floor", "fma", "fmax", "fmin", "fmod", "hypot", "ldexp", "lgamma", "log", "log10", "log1p", "log2", "max", "min", "pow", "remainder", "rint",
+                "round", "rsqrt", "signbit", "sin", "sincos", "sinh", "sinpi", "sqrt", "tan", "tanh", "tgamma", "trunc", "llabs", "llmax", "llmin", "clamp", "mad", "native_sqrt");
+        var names = new HashSet<String>();
+        for (var m : math) {
+            names.add(m);
+            names.add(m + "f");
+        }
+        names.addAll(List.of("auto", "bool", "break", "case", "char", "class", "const", "constexpr", "continue", "default", "delete", "do", "double", "else", "enum", "extern",
+                "float", "for", "goto", "half", "if", "inline", "int", "long", "namespace", "new", "operator", "private", "public", "register", "restrict", "return", "short",
+                "signed", "sizeof", "static", "struct", "switch", "template", "this", "typedef", "typename", "union", "unsigned", "virtual", "void", "volatile", "while",
+                "true", "false", "nullptr", "NULL", "kernel", "global", "local", "constant", "threadIdx", "blockIdx", "blockDim", "gridDim", "warpSize", "dim3",
+                "__syncthreads", "barrier", "get_global_id", "get_local_id", "get_group_id", "get_global_size", "get_local_size", "printf", "assert", "java_fmax", "java_fmaxf",
+                "java_fmin", "java_fminf"));
+        RESERVED = Set.copyOf(names);
+    }
     private final List<S.Var> locals = new ArrayList<>();
     private final Map<Value, BlockArg> coalesced = new IdentityHashMap<>();
     private final List<S.Alloca> allocas = new ArrayList<>();

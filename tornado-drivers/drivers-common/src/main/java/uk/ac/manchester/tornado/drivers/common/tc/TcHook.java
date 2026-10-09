@@ -79,7 +79,7 @@ public final class TcHook {
     public static Optional<Kernel> compile(Method method, Object[] arguments, TargetCaps target) {
         var facts = new ArrayList<ValueSpecialisation.Fact>();
         for (var argument : arguments) {
-            facts.add(argument instanceof TornadoNativeArray array ? new ValueSpecialisation.Fact.Length(array.getSize()) : ValueSpecialisation.Fact.of(argument));
+            facts.add(argument instanceof TornadoNativeArray array ? new ValueSpecialisation.Fact.Length(array.getSizeLong()) : ValueSpecialisation.Fact.of(argument));
         }
         var owner = method.getDeclaringClass();
         var loader = owner.getClassLoader() != null ? owner.getClassLoader() : ClassLoader.getSystemClassLoader();
