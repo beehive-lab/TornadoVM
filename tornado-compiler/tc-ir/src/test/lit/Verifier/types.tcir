@@ -1,0 +1,26 @@
+; Operand, result, conversion and return types follow the op signatures.
+; RUN: tc-ir --verify-diagnostics %s
+
+device @types(%i: i32, %l: i64, %f: f32, %a: array<f32>, %c: i1) -> f32 {
+^entry:
+  %bad_add = add %i, %l : i32 ; expected-error {{TC-E2107: operand types differ: i32 and i64}}
+  %int_on_float = add %f, %f : f32 ; expected-error {{TC-E2108: result of 'add' must be integer}}
+  %float_on_int = fadd %i, %i : i32 ; expected-error {{TC-E2108: result of 'fadd' must be floating point}}
+  %cmp = icmp.eq %i, %i : i32 ; expected-error {{TC-E2108: result of 'icmp.eq' must be i1}}
+  %narrow = sext %l : i32 ; expected-error {{TC-E2107: 'sext' cannot convert i64 to i32}}
+  %wide = trunc %i : i64 ; expected-error {{TC-E2107: 'trunc' cannot convert i32 to i64}}
+  %cast = bitcast %i : f32
+  %badcast = bitcast %l : f32 ; expected-error {{TC-E2107: 'bitcast' cannot convert i64 to f32}}
+  %elem = array.load %a[%i] : i32 ; expected-error {{TC-E2108: result of 'array.load' must be the array element type f32}}
+  %idx = array.load %a[%f] : f32 ; expected-error {{TC-E2107: operand 1 must be an i32 or i64 index}}
+  %sel = select %i, %f, %f : f32 ; expected-error {{TC-E2107: operand 0 must be i1}}
+  ret %i ; expected-error {{TC-E2109: 'ret' value has type i32, @types returns f32}}
+}
+
+device @void_value() -> void {
+^entry:
+  %p = alloca.private i32[4] : ptr<private>
+  %one = const 1 : i32
+  store %p, %one
+  ret
+}

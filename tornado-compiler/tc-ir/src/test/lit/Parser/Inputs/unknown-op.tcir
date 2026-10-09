@@ -1,0 +1,5 @@
+device @f(%x: i32) -> void {
+^entry:
+  %y = frobnicate %x : i32
+  ret
+}

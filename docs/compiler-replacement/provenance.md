@@ -39,6 +39,8 @@ Sea-of-Nodes `Simple` and any other compiler.
 | Value numbering | C. Click. *Global Code Motion / Global Value Numbering.* PLDI 1995 (concept) |
 | Loop nesting | P. Havlak. *Nesting of Reducible and Irreducible Loops.* TOPLAS 1997 |
 | Class-file format | *The Java Virtual Machine Specification*, chapter 4 |
+| Test tools (`tc-check`) | LLVM's public *FileCheck* and *lit* command guides, MLIR's `-verify-diagnostics` documentation (behaviour only) |
+| IR shape (concepts) | MLIR `cf`/`scf`/`arith` documentation; LLVM Language Reference (types, predicates); Cranelift IR documentation (block parameters, flat typed SSA, verifier, file tests) |
 
 ## Novel design decisions
 

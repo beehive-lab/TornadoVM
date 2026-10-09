@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.github.beehive-lab</groupId>
+        <artifactId>tornado</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <!-- TC: the Graal-free TornadoVM compiler (docs/compiler-replacement). Its modules are pure Java and
+         headless, so their unit tests run on every build, unlike the GPU test suites. -->
+    <artifactId>tornado-compiler</artifactId>
+    <name>tornado-compiler</name>
+    <packaging>pom</packaging>
+
+    <properties>
+        <skipTests>false</skipTests>
+    </properties>
+
+    <modules>
+        <module>tc-check</module>
+        <module>tc-ir</module>
+    </modules>
+</project>

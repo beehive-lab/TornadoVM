@@ -1,0 +1,29 @@
+; Constants keep Java values exactly: integer extremes, NaN, infinities, negative zero, and floats
+; printed with the shortest text that parses back to the same float.
+; RUN: tc-ir %s | FileCheck %s
+; RUN: tc-ir %s | tc-ir - | FileCheck %s
+
+; CHECK: %min = const -9223372036854775808 : i64
+; CHECK: %m1 = const -1 : i32
+; CHECK: %t = const 1 : i1
+; CHECK: %nan = const nan : f32
+; CHECK: %inf = const inf : f64
+; CHECK: %ninf = const -inf : f32
+; CHECK: %nz = const -0.0 : f32
+; CHECK: %third = const 0.33333334 : f32
+; CHECK: %big = const 1.0E300 : f64
+; CHECK: %h = const 0.5 : f16
+device @constants() -> void {
+^entry:
+  %min = const -9223372036854775808 : i64
+  %m1 = const -1 : i32
+  %t = const 1 : i1
+  %nan = const nan : f32
+  %inf = const inf : f64
+  %ninf = const -inf : f32
+  %nz = const -0.0 : f32
+  %third = const 0.33333334 : f32
+  %big = const 1e300 : f64
+  %h = const 0.5 : f16
+  ret
+}

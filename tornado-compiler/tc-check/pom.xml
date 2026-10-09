@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.github.beehive-lab</groupId>
+        <artifactId>tornado-compiler</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <!-- LLVM-style test infrastructure for TC: a FileCheck implementation and a lit-like runner for
+         text test files with RUN/CHECK lines. Test-scope dependency of every TC module. -->
+    <artifactId>tc-check</artifactId>
+    <name>tc-check</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
+    </dependencies>
+</project>

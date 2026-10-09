@@ -1,0 +1,27 @@
+; Dominator tree (Cooper-Harvey-Kennedy) on a diamond nested in a loop, plus an unreachable block.
+; RUN: tc-ir --dom %s | FileCheck %s
+
+; CHECK-LABEL: dominators @f
+; CHECK-NEXT:    ^entry: idom -
+; CHECK-NEXT:    ^head: idom ^entry
+; CHECK-NEXT:    ^left: idom ^head
+; CHECK-NEXT:    ^right: idom ^left
+; CHECK-NEXT:    ^latch: idom ^left
+; CHECK-NEXT:    ^exit: idom ^head
+; CHECK-NEXT:    ^dead: unreachable
+device @f(%c: i1, %d: i1) -> void {
+^entry:
+  br ^head
+^head:
+  cond_br %c, ^left, ^exit
+^left:
+  cond_br %d, ^latch, ^right
+^right:
+  br ^latch
+^latch:
+  br ^head
+^exit:
+  ret
+^dead:
+  br ^exit
+}

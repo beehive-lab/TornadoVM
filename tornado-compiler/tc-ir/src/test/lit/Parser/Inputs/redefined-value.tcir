@@ -1,0 +1,6 @@
+device @f() -> void {
+^entry:
+  %x = const 1 : i32
+  %x = const 2 : i32
+  ret
+}

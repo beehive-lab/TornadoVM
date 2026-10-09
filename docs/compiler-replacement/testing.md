@@ -1,0 +1,54 @@
+# Testing TC (LLVM-style)
+
+TC modules follow LLVM's testing layout: **file tests** driven by `RUN:` lines and FileCheck (like
+`llvm/test`, run by lit), plus **API unit tests** in JUnit (like `llvm/unittests`). Everything is
+headless and runs on every Maven build of `tornado-compiler` (`skipTests=false` for TC modules only).
+
+## Layout per module
+
+```
+tc-<module>/src/test/
+  java/…/LitTest.java          # JUnit driver: runs every file below lit/
+  java/…/*Test.java            # API unit tests
+  java/…/SourceRulesTest.java  # clean-room guard (no Graal/JVMCI/ASM imports, licence headers)
+  lit/<Area>/*.tcir            # file tests, one behaviour per file
+  lit/<Area>/Inputs/           # auxiliary inputs, never run as tests
+```
+
+## Writing a file test
+
+```
+; What the test shows, in one sentence.
+; RUN: tc-ir %s | FileCheck %s
+; RUN: not tc-ir %S/Inputs/bad.tcir 2>&1 | FileCheck %s --check-prefix=ERR
+; RUN: tc-ir --verify-diagnostics %s
+
+; CHECK-LABEL: kernel @k(
+; CHECK-NEXT:  ^entry:
+; ERR: error TC-E2002: undefined value %y
+  %x = add %a, %b : i32 ; expected-error {{TC-E2107: operand types differ}}
+```
+
+- **RUN lines** (`tc-check/Lit`): `%s` test file, `%S` its directory, `%t` temp file, `|` pipes with
+  pipefail, `not` inverts the exit status, `2>&1` merges stderr, `\` continues a line.
+- **FileCheck** (`tc-check/FileCheck`): `CHECK`, `-NEXT`, `-SAME`, `-NOT`, `-DAG`, `-LABEL`, `-EMPTY`;
+  `{{regex}}`, `[[VAR:regex]]`/`[[VAR]]`; `--check-prefix(es)`; whitespace runs match any whitespace.
+- **Verifier diagnostics** (MLIR style, `--verify-diagnostics`): `; expected-error {{text}}` on the
+  offending line, `@+N`/`@-N` for another line, `@*` for diagnostics without a line (blocks,
+  functions). Every produced diagnostic must be expected and vice versa.
+
+## Tools available to RUN lines
+
+| Tool | Module | Does |
+|---|---|---|
+| `tc-ir` | tc-ir | parse + print (round-trip), `--verify [--stage=post-abi]`, `--verify-diagnostics`, `--dom`, `--no-loc` |
+| `FileCheck` | tc-check | built in |
+
+Later modules register their own tools (`tc-opt` with `--pass=…`, `tc-lower`, `tc-emit --target=cuda`).
+
+## Running
+
+```
+./mvnw -o -Pjdk21 -pl tornado-compiler,tornado-compiler/tc-check,tornado-compiler/tc-ir install
+./mvnw -o -Pjdk21 -pl tornado-compiler/tc-ir test -Dtest='LitTest#run[Verifier/types.tcir]'
+```

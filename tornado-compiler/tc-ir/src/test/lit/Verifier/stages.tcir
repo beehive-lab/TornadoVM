@@ -1,0 +1,21 @@
+; After ABI lowering no Java-level types or operations may remain; address-space rules always apply.
+; RUN: tc-ir --verify-diagnostics --stage=post-abi %s
+
+; expected-error@* {{TC-E2112: Java-level type array<f32> after ABI lowering}}
+kernel @still_java(%a: array<f32>, %i: i32) -> void {
+^entry:
+  %x = array.load %a[%i] : f32 ; expected-error {{TC-E2112: Java-level array access after ABI lowering}}
+  ret
+}
+
+device @shared_in_device() -> void {
+^entry:
+  %s = alloca.shared f32[64] : ptr<shared> ; expected-error {{TC-E2113: shared memory can only be allocated in a kernel}}
+  ret
+}
+
+kernel @constant_store(%c: ptr<constant>, %v: f32) -> void {
+^entry:
+  store %c, %v ; expected-error {{TC-E2114: store through a pointer to constant memory}}
+  ret
+}

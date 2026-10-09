@@ -142,22 +142,36 @@ Diagnostics use stable codes: `TC-E1xxx` frontend, `E2xxx` IR/verifier, `E3xxx` 
 and structuring, `E4xxx` target capability, `E9xxx` internal. Each message names the op, prints
 it in context, and gives the Java source line.
 
-### 1.6 Text form example
+### 1.6 Text form
+
+Implemented by `IrPrinter` / `IrParser` (`tornado-compiler/tc-ir`); the lit tests under
+`tc-ir/src/test/lit` are the normative examples.
+
+- One instruction per line; `;` starts a comment.
+- `%name = op operands : type [attributes]  loc("File.java":line, bci=n)`; instructions without a
+  result have no `%name =` and no type.
+- Intrinsics always take parentheses: `tornado.barrier.local()`, `%r = math.sqrt(%x) : f32`.
+- Attributes are `[name, name(args)]` after the type (instructions) or after the block header.
+- Field names are quoted: `field.load %o, "count" : i32`.
+- `alloca.<space> T[N] : ptr<space>`; `switch %v [k: ^b, …] default ^d`.
+- The entry block's arguments are the function parameters and are not repeated on `^entry`.
+
+Example:
 
 ```
 kernel @VectorAdd.add(%a: array<f32>, %b: array<f32>, %c: array<f32>) {
 ^entry:
   %n = array.length %c : i32                                   loc("VectorAdd.java":20)
-  %i0 = tornado.thread_id.global.x : i32
-  %s = tornado.global_size.x : i32
+  %i0 = tornado.thread_id.global.x() : i32
+  %s = tornado.global_size.x() : i32
   br ^head(%i0)
-^head(%i: i32):                                                parallel(dim=0)
+^head(%i: i32) [parallel(dim=0)]:
   %more = icmp.slt %i, %n : i1                                 loc("VectorAdd.java":20)
   cond_br %more, ^body, ^exit
 ^body:
   %x = array.load %a[%i] : f32                                 loc("VectorAdd.java":21, bci=14)
   %y = array.load %b[%i] : f32
-  %z = fadd %x, %y : f32
+  %z = fadd %x, %y : f32 [contract]
   array.store %c[%i], %z
   %next = add %i, %s : i32
   br ^head(%next)
