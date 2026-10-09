@@ -25,4 +25,5 @@ module tornado.tc.ir {
     exports uk.ac.manchester.tornado.tc.ir;
     exports uk.ac.manchester.tornado.tc.ir.analysis;
     exports uk.ac.manchester.tornado.tc.ir.tools;
+    exports uk.ac.manchester.tornado.tc.ir.target;
 }
