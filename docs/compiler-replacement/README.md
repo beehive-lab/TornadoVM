@@ -14,6 +14,7 @@ Graal stays the reference implementation and fallback until gate C8.
 | Document | Content |
 |---|---|
 | [examples.md](examples.md) | **End-to-end examples: Java → TC IR → TC-S → CUDA, next to Graal's CUDA** |
+| [phase-trace.md](phase-trace.md) | Measured: which Graal/TornadoVM phases and node classes the CUDA suite actually runs |
 | [plan.md](plan.md) | Approved execution plan, phases 0–10 and gates C0–C10 |
 | [checkpoints.md](checkpoints.md) | Gate results, evidence, profiling decision reviews |
 | [repository-inventory.md](repository-inventory.md) | Repositories, revisions, configurations |
