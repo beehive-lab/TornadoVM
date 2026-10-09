@@ -46,3 +46,7 @@ Recorded as they are made, with the gate at which they were reviewed.
 
 | # | Decision | Rationale | Gate |
 |---|---|---|---|
+| N1 | Block-argument SSA with Java-semantics ops and TornadoVM intrinsics as first-class ops | readable, exportable to MLIR/LLVM text, no phi/guard machinery | accepted 2026-10-09, C3 |
+| N2 | Two-level types: Java-level `array<T>`/`field.*` until Tornado ABI lowering, then `ptr<as>` | keeps parallel/`Access[]` analysis simple; verifier enforces the switch | accepted 2026-10-09, C3 |
+| N3 | Mutable instructions + immutable sealed-record op kinds, exhaustive `switch` dispatch | in-place rewriting with use lists; compiler-checked completeness of passes | accepted 2026-10-09, C3 |
+| N4 | Java semantics over Graal-path behaviour where they differ | correctness; deviations recorded as accepted differences | accepted 2026-10-09 |

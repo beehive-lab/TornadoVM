@@ -1,4 +1,6 @@
-# Backend contracts — DRAFT for review at gates C2/C3
+# Backend contracts
+
+Status: **accepted** (user, 2026-10-09).
 
 A TC backend is **data plus a printer**, not a compiler tier. Everything that can be shared —
 legality checks, lowering, structuring, expression folding — lives in the core.

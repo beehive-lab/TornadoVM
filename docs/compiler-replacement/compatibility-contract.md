@@ -1,4 +1,6 @@
-# Compatibility contract — DRAFT for review at gates C2/C3
+# Compatibility contract
+
+Status: **accepted** (user, 2026-10-09).
 
 What TC must reproduce so that the TornadoVM runtime, drivers and user code cannot tell which
 compiler produced a kernel. Derived from black-box behaviour and TornadoVM-authored code
@@ -46,8 +48,9 @@ the relaxation in the kernel's remarks).
 | Integer `/`, `%` | truncating toward zero; `MIN_VALUE / -1 = MIN_VALUE` | to test |
 | `float` arithmetic | IEEE single, no implicit double promotion | to test |
 
-Where the Graal path deviates from Java semantics, the parity matrix records both behaviours; TC
-implements Java semantics and the deviation is listed as an accepted difference.
+**Decision (user, 2026-10-09):** where the Graal path deviates from Java semantics, TC implements
+Java semantics. The parity matrix records both behaviours and lists the deviation as an accepted
+difference, never as a TC regression.
 
 ## 4. Diagnostics
 

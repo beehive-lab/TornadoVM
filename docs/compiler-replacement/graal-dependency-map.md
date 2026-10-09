@@ -171,7 +171,7 @@ Two coupling caveats that are not API leaks:
 | `api` (`SnippetReflectionProvider`, `@Fold`, `@Snippet`) | **CAN REMOVE** | snippet infrastructure; `@Fold` on intrinsic stubs is replaced by the registry |
 | `bytecode` (`ClassfileBytecodeProvider`) | **CAN REMOVE** | TC reads class bytes through its own `BytecodeSource` |
 | Build tooling (`build_graal_module.py`, relocation POM, pull script Graal part, assembly graal fileSet, export-list Graal lines, `tornado.py` Graal flags) | **CAN REMOVE** at C8 | listed in plan Phase 8 |
-| `minimize_graal_jar.py` + keep-list | **CAN REMOVE now** | not wired into any build or CI path |
+| `minimize_graal_jar.py` + keep-list | **REMOVED** (2026-10-09, user approved) | not wired into any build or CI path; the 2457-class keep-list (a measured working set of Graal classes) remains readable at `git show 8299f79ff:bin/graal-compiler-keep.txt` |
 
 ## 6. Notes for the clean-room policy
 - 391 Java files in runtime/drivers-common/cuda/opencl carry an "Oracle and/or its affiliates" copyright line next to the APT one (runtime 58, drivers-common 22, cuda 177, opencl 134, metal 0). Most of these look like copied boilerplate: even `CU/CUDATileCompiler.java`, a 2025 nvcc driver with no Graal content, has it. So the line is not evidence of derivation. But some classes are explicitly modified Graal phases, e.g. `CU/graal/phases/TornadoFloatingReadReplacement.java`, whose Javadoc says it modifies Graal's `FloatingReadPhase`. **Rule for TC authors:** treat such files like Graal (black-box behaviour only), and read only TornadoVM-original logic (Tornado-specific phases, ABI, intrinsic names) as a behavioural reference.

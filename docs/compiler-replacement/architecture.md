@@ -1,4 +1,6 @@
-# TC architecture — DRAFT for review at gates C2/C3
+# TC architecture
+
+Status: **accepted** (user, 2026-10-09); validated by the C3 design test.
 
 Companion documents: [ir-specification.md](ir-specification.md),
 [backend-contracts.md](backend-contracts.md), [compatibility-contract.md](compatibility-contract.md).
@@ -87,7 +89,7 @@ optimisation remarks; stable `TC-E` diagnostics with Java source lines; `tc` CLI
 (`explain|dump|emit|diff`); JFR events (`TcCompilation`, `TcPass`, `TcFrontend`, `TcEmit`,
 `TcCacheHit`).
 
-## 6. Decisions to confirm at C3 (⚑)
+## 6. Decisions (approved 2026-10-09, validated at C3)
 
 1. Block-argument SSA + `scf`-shaped TC-S (see IR spec).
 2. `array<T>` kept until `tc-tornado` ABI lowering.
@@ -95,3 +97,6 @@ optimisation remarks; stable `TC-E` diagnostics with Java source lines; `tc` CLI
 4. Path B limited to reducible kernels and reusing TC-S expression folding.
 5. Value specialisation reproduced as a `tc-tornado` pass driven by actual arguments, with the
    specialisation values in the cache key.
+6. IR implementation shape: instructions are mutable objects (cheap in-place rewriting, use lists);
+   each op's kind is an immutable record from a sealed hierarchy, dispatched with exhaustive
+   pattern `switch`es.

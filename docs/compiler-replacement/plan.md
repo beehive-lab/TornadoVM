@@ -187,11 +187,11 @@ Each checkpoint is a go/no-go gate with a concrete test. It must pass, with resu
 - **C6-final:** full suite parity on CUDA and OpenCL; jitLLM bench passes with identical token output under TC.
 
 **Phase 7: Performance and stability**
-- **C7:** compile latency (TC vs Graal) and kernel time are within thresholds derived from the C1 variability (proposed: kernel time ≤ max(2·CV, 3%) regression, to be confirmed at C2). There must be no nondeterminism over 20 repeated full-suite runs, and the cache invalidation tests must pass.
+- **C7:** compile latency (TC vs Graal) and kernel time are within thresholds derived from the C1 variability (approved 2026-10-09: TC kernel time regression ≤ max(2·CV, 3%) per workload, CV from C1). There must be no nondeterminism over 20 repeated full-suite runs, and the cache invalidation tests must pass.
 
 **Phase 8: Graal removal**
 - Make TC the default and keep Graal selectable for one cycle.
-- Then delete the `graal/` packages and `bin/build_graal_module.py`, `minimize_graal_jar.py` and `graal-compiler-keep.txt`, and the Graal pom dependencies, the export lines and the `tornado.py` flags.
+- Then delete the `graal/` packages and `bin/build_graal_module.py` (`minimize_graal_jar.py` and its keep-list were already removed in Phase 2), and the Graal pom dependencies, the export lines and the `tornado.py` flags.
 - JVMCI removal is assessed separately (it builds on PR #894/#1192).
 - **C8:** a clean build from an empty `~/.m2` cache has no `tornado.graal` artifact (`mvn dependency:tree`, `jdeps`); the full suite and jitLLM pass on JDK 21 and JDK 25+ with `--release` raised above 22.
 
