@@ -59,8 +59,8 @@ that nothing the Graal path does is lost.
 
 | # | Optimisation | Replaces | Pri | Gate | Verify | Status |
 |---|---|---|---|---|---|---|
-| Q1 | **Copy coalescing in out-of-SSA** (avoid redundant edge copies; parallel-copy sequencing with minimal temporaries) | Graal LIR moves | P0 | C5a | G | todo |
-| Q2 | **Expression folding** of pure single-use values into C expression trees | — (TC-specific readability) | P0 | C5b | G | todo |
+| Q1 | **Copy coalescing in out-of-SSA** (avoid redundant edge copies; parallel-copy sequencing with minimal temporaries) | Graal LIR moves | P0 | C5a | G | wip: sequencing with one temporary per cycle done (`tc-lower/…/Structure/copies.tcir`); coalescing of non-interfering variables todo |
+| Q2 | **Expression folding** of pure single-use values into C expression trees | — (TC-specific readability) | P0 | C5b | G | done (C5b pending): constants, allocas, pure single-use same-block values |
 | Q3 | **Counted-loop recovery** to `for(init; cond; step)` | `TornadoLoopCanonicalization` + structured emitter | P0 | C5a | G | todo |
 | Q4 | **Global-load batching**: issue independent global loads of a block together (memory-level parallelism) | `CUDAGlobalLoadBatching` | P0 | C7 | G P | todo |
 | Q5 | **Infinity / NaN / special-constant spelling** per dialect | `InfinityReplacementPhase` | P0 | C5b | G | todo |

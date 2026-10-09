@@ -36,6 +36,7 @@ Sea-of-Nodes `Simple` and any other compiler.
 | Dominators | K. Cooper, T. Harvey, K. Kennedy. *A Simple, Fast Dominance Algorithm.* 2001 |
 | SSA destruction | B. Boissinot et al. *Revisiting Out-of-SSA Translation for Correctness, Code Quality, and Efficiency.* CGO 2009; V. Sreedhar et al. *Translating Out of Static Single Assignment Form.* SAS 1999 |
 | Structured control flow | N. Ramsey. *Beyond Relooper: Recursive Translation of Unstructured Control Flow to Structured Control Flow.* ICFP 2022 |
+| Parallel copies (out of SSA) | L. Rideau, B. Serpette, X. Leroy. *Tilting at Windmills with Coq: Formal Verification of a Compilation Algorithm for Parallel Moves.* JAR 2008 (sequencing with one temporary per cycle) |
 | Value numbering | C. Click. *Global Code Motion / Global Value Numbering.* PLDI 1995 (concept) |
 | Loop nesting | P. Havlak. *Nesting of Reducible and Irreducible Loops.* TOPLAS 1997 |
 | Class-file format | *The Java Virtual Machine Specification*, chapter 4 |
@@ -52,3 +53,5 @@ Recorded as they are made, with the gate at which they were reviewed.
 | N2 | Two-level types: Java-level `array<T>`/`field.*` until Tornado ABI lowering, then `ptr<as>` | keeps parallel/`Access[]` analysis simple; verifier enforces the switch | accepted 2026-10-09, C3 |
 | N3 | Mutable instructions + immutable sealed-record op kinds, exhaustive `switch` dispatch | in-place rewriting with use lists; compiler-checked completeness of passes | accepted 2026-10-09, C3 |
 | N4 | Java semantics over Graal-path behaviour where they differ | correctness; deviations recorded as accepted differences | accepted 2026-10-09 |
+| N5 | Structuring refinement: children of a loop header outside its natural loop are placed after the loop | loop exits become a plain `break` instead of exit code nested in the loop body | C5a |
+| N6 | Out-of-SSA folding: constants, allocation addresses and pure single-use values in the same block become expression trees; all other values get one variable | readable C (`c[i] = x + y;`) without changing evaluation order of memory operations | C5b |

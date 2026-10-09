@@ -65,6 +65,15 @@ public final class IrTool {
     private IrTool() {
     }
 
+    /** Command-line entry point; reads standard input when the file is {@code -} or absent. */
+    public static void main(String[] args) throws java.io.IOException {
+        var stdin = new String(System.in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+        var result = run(java.util.List.of(args), stdin);
+        System.out.print(result.stdout());
+        System.err.print(result.stderr());
+        System.exit(result.exitCode());
+    }
+
     public static Result run(List<String> args, String stdin) {
         boolean verify = false;
         boolean verifyDiagnostics = false;

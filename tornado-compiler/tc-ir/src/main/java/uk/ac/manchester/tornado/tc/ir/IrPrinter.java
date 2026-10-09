@@ -166,7 +166,8 @@ public final class IrPrinter {
         }
     }
 
-    static String floatText(double value, Type type) {
+    /** The text form of a floating-point constant of {@code type} (nan, inf, -0.0, shortest digits). */
+    public static String floatText(double value, Type type) {
         if (Double.isNaN(value)) {
             return "nan";
         }

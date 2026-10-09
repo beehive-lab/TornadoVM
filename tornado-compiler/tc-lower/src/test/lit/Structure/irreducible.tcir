@@ -1,0 +1,12 @@
+; Irreducible control flow (a loop entered at two points) is rejected, never miscompiled.
+; RUN: not tc-lower %s 2>&1 | FileCheck %s
+; CHECK: error TC-E3001: irreducible control flow in @irreducible: edge ^b -> ^a re-enters a loop without passing its header
+
+device @irreducible(%c: i1) -> void {
+^entry:
+  cond_br %c, ^a, ^b
+^a:
+  br ^b
+^b:
+  br ^a
+}

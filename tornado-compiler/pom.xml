@@ -22,5 +22,6 @@
     <modules>
         <module>tc-check</module>
         <module>tc-ir</module>
+        <module>tc-lower</module>
     </modules>
 </project>
