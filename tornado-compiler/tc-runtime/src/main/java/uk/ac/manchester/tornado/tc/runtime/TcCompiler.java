@@ -41,6 +41,7 @@ import uk.ac.manchester.tornado.tc.lower.S;
 import uk.ac.manchester.tornado.tc.lower.SPrinter;
 import uk.ac.manchester.tornado.tc.lower.Structurizer;
 import uk.ac.manchester.tornado.tc.tornado.AbiLowering;
+import uk.ac.manchester.tornado.tc.frontend.LocalArrays;
 import uk.ac.manchester.tornado.tc.tornado.ParallelLoopLowering;
 import uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation;
 
@@ -161,6 +162,14 @@ public final class TcCompiler {
                 }
             }, () -> IrPrinter.print(function));
             stage("optimize", Kind.IR, () -> PassManager.standard(Verifier.Stage.PRE_ABI).verifyEach(options.verifyEach()).run(function), () -> IrPrinter.print(function));
+            if (LocalArrays.hasPending(function)) {
+                stage("local-arrays", Kind.IR, () -> {
+                    var problems = LocalArrays.run(function);
+                    if (!problems.isEmpty()) {
+                        throw new Failed(problems);
+                    }
+                }, () -> IrPrinter.print(function));
+            }
             stage("abi", Kind.IR, () -> {
                 var problems = AbiLowering.run(function, target);
                 if (!problems.isEmpty()) {

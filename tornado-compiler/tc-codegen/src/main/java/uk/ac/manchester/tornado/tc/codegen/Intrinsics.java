@@ -78,6 +78,11 @@ public final class Intrinsics {
         unaryMath("math.abs", "fabsf", "fabs");
         unaryMath("math.floor", "floorf", "floor");
         unaryMath("math.ceil", "ceilf", "ceil");
+        for (var fn : new String[] { "atan", "asin", "acos", "sinh", "cosh", "asinh", "acosh", "atanh", "cbrt", "log10" }) {
+            unaryMath("math." + fn, fn + "f", fn);
+        }
+        cudaTyped("math.atan2", "f32", "atan2f($0, $1)");
+        cudaTyped("math.atan2", "f64", "atan2($0, $1)");
         cudaTyped("math.pow", "f32", "powf($0, $1)");
         cudaTyped("math.pow", "f64", "pow($0, $1)");
         cudaTyped("math.fma", "f32", "fmaf($0, $1, $2)");

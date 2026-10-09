@@ -114,6 +114,8 @@ final class Bindings {
         METHODS.put(KERNEL_CONTEXT + ".allocateIntLocalArray(I)[I", new SharedArray(Type.I32));
         METHODS.put(KERNEL_CONTEXT + ".allocateDoubleLocalArray(I)[D", new SharedArray(Type.F64));
         METHODS.put(KERNEL_CONTEXT + ".allocateLongLocalArray(I)[J", new SharedArray(Type.I64));
+        METHODS.put(KERNEL_CONTEXT + ".allocateByteLocalArray(I)[B", new SharedArray(Type.I8));
+        METHODS.put(KERNEL_CONTEXT + ".allocateHalfFloatLocalArray(I)[L" + HALF_FLOAT + ";", new SharedArray(Type.F16));
         METHODS.put("java/lang/Integer.intValue()I", new Identity());
         METHODS.put(HALF_FLOAT + ".<init>(F)V", new ValueInit(Type.F32, ConvertOp.FTRUNC, Type.F16));
         METHODS.put(HALF_FLOAT + ".<init>(S)V", new ValueInit(Type.I16, ConvertOp.BITCAST, Type.F16));
@@ -139,7 +141,10 @@ final class Bindings {
             METHODS.put(owner + ".getSize()I", new ArraySize(Type.I32));
             METHODS.put(owner + ".getSizeLong()J", new ArraySize(Type.I64));
         }
-        for (var fn : new String[] { "sqrt", "exp", "log", "sin", "cos", "tan", "tanh", "abs", "floor", "ceil" }) {
+        // Inverse and hyperbolic functions bind directly too: their JDK bytecode (FdLibm) reads static
+        // tables kernels cannot access; the device library is within the same ulp bounds Graal accepts.
+        for (var fn : new String[] { "sqrt", "exp", "log", "sin", "cos", "tan", "tanh", "abs", "floor", "ceil",
+                "atan", "asin", "acos", "sinh", "cosh", "asinh", "acosh", "atanh", "cbrt", "log10" }) {
             METHODS.put(TORNADO_MATH + "." + fn + "(F)F", new Intrinsic("math." + fn, Type.F32));
             METHODS.put(TORNADO_MATH + "." + fn + "(D)D", new Intrinsic("math." + fn, Type.F64));
             METHODS.put(JAVA_MATH + "." + fn + "(D)D", new Intrinsic("math." + fn, Type.F64));
@@ -157,6 +162,9 @@ final class Bindings {
             METHODS.put(TORNADO_MATH + "." + fn + "(II)I", new Intrinsic("math." + fn, Type.I32));
         }
         METHODS.put(JAVA_MATH + ".pow(DD)D", new Intrinsic("math.pow", Type.F64));
+        METHODS.put(JAVA_MATH + ".atan2(DD)D", new Intrinsic("math.atan2", Type.F64));
+        METHODS.put(TORNADO_MATH + ".atan2(DD)D", new Intrinsic("math.atan2", Type.F64));
+        METHODS.put(TORNADO_MATH + ".atan2(FF)F", new Intrinsic("math.atan2", Type.F32));
         METHODS.put(TORNADO_MATH + ".pow(FF)F", new Intrinsic("math.pow", Type.F32));
         METHODS.put(JAVA_MATH + ".fma(FFF)F", new Intrinsic("math.fma", Type.F32));
         METHODS.put(JAVA_MATH + ".fma(DDD)D", new Intrinsic("math.fma", Type.F64));

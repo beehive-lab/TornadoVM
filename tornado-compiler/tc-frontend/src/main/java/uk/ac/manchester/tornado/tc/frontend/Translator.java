@@ -31,6 +31,7 @@ import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -643,12 +644,14 @@ final class Translator {
                     case 10 -> Type.I32;
                     default -> Type.I64;
                 };
-                push(b.alloca(AddressSpace.PRIVATE, element, constantLength(length, insn.bci())));
+                push(localArray(AddressSpace.PRIVATE, element, length));
             }
             case ARRAYLENGTH -> {
                 var array = pop();
                 if (array instanceof Inst inst && inst.opcode() instanceof Opcode.Alloca(var space, var element, var count)) {
                     push(b.constInt(Type.I32, count));
+                } else if (array instanceof Inst inst && LocalArrays.isPending(inst)) {
+                    push(inst.operand(0));
                 } else if (array.type() instanceof Type.PointerType) {
                     throw error("TC-E1004", "the length of a local array is only known where it is allocated", insn.bci());
                 } else {
@@ -746,7 +749,7 @@ final class Translator {
             case 3 -> Type.F64;
             case 5 -> Type.I8;
             case 6, 7 -> Type.I16;
-            default -> throw error("TC-E1002", "arrays of references are not supported in kernels", bci);
+            default -> halfElements(array).orElseThrow(() -> error("TC-E1002", "arrays of references are not supported in kernels", bci));
         };
         Value loaded = array.type() instanceof Type.PointerType ? pointerLoad(array, index, element) : builder.arrayLoad(array, index);
         push(switch (kind) {
@@ -763,7 +766,7 @@ final class Translator {
         var element = switch (kind) {
             case 5 -> Type.I8;
             case 6, 7 -> Type.I16;
-            case 4 -> throw error("TC-E1002", "arrays of references are not supported in kernels", bci);
+            case 4 -> halfElements(array).orElseThrow(() -> error("TC-E1002", "arrays of references are not supported in kernels", bci));
             default -> value.type();
         };
         var stored = element.equals(value.type()) ? value : builder.convert(ConvertOp.TRUNC, value, element);
@@ -772,6 +775,11 @@ final class Translator {
         } else {
             builder.arrayStore(array, index, stored);
         }
+    }
+
+    /** A local {@code HalfFloat[]} holds f16 values (HalfFloat is a value type): the only reference array kernels use. */
+    private static Optional<Type> halfElements(Value array) {
+        return array instanceof Inst inst && LocalArrays.element(inst).filter(Type.F16::equals).isPresent() ? Optional.of(Type.F16) : Optional.empty();
     }
 
     /** Local (shared or private) arrays are pointers without a header: element i is at i * size. */
@@ -910,16 +918,21 @@ final class Translator {
                 var c = builder.convert(ConvertOp.FEXT, args.get(1), Type.F32);
                 push(builder.convert(ConvertOp.FTRUNC, builder.binary(op, a, c), Type.F16));
             }
-            case SharedArray(var element) -> push(builder.alloca(AddressSpace.SHARED, element, constantLength(args.get(1), insn.bci())));
+            case SharedArray(var element) -> push(localArray(AddressSpace.SHARED, element, args.get(1)));
             case Identity i -> push(args.get(0));
         }
     }
 
-    private int constantLength(Value length, int bci) {
+    /**
+     * A local or shared array. A constant length gives the allocation now; any other length (a scalar
+     * argument, say) gives a pending allocation that value specialisation may make constant
+     * ({@link LocalArrays} materialises it, or reports TC-E1004).
+     */
+    private Value localArray(AddressSpace space, Type element, Value length) {
         if (length instanceof Inst inst && inst.opcode() instanceof Opcode.ConstInt(var v)) {
-            return (int) v;
+            return builder.alloca(space, element, (int) v);
         }
-        throw error("TC-E1004", "local and shared arrays need a compile-time constant length", bci);
+        return builder.intrinsic(LocalArrays.pendingName(space, element), new Type.PointerType(space), List.of(length));
     }
 
     // ---------------------------------------------------------------- helpers
