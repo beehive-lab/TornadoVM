@@ -36,7 +36,6 @@ import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
-import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
 import uk.ac.manchester.tornado.drivers.metal.MetalDeviceContext;
 import uk.ac.manchester.tornado.drivers.metal.MetalKernel;
@@ -64,7 +63,6 @@ public class MetalInstalledCode extends InstalledCode implements TornadoInstalle
     private final MetalDeviceContext deviceContext;
     private final MetalKernel kernel;
     private final MetalKernelScheduler scheduler;
-    private final int[] internalEvents = new int[1];
     private final long[] singleThreadGlobalWorkSize = new long[] { 1 };
     private final long[] singleThreadLocalWorkSize = new long[] { 1 };
     private final boolean isSPIRVBinary;
@@ -316,15 +314,15 @@ public class MetalInstalledCode extends InstalledCode implements TornadoInstalle
         /*
          * Only set the kernel arguments if they are either: - not set or - have changed
          */
-        final int[] waitEvents;
+        // The stack frame is bound by value in setKernelArgs, so it is not written to the device.
         setKernelArgs(kernelArgs, atomicSpace, meta);
-        internalEvents[0] = kernelArgs.enqueueWrite(executionPlanId, events);
-        waitEvents = internalEvents;
-        long[] waitEventsLong = new long[waitEvents.length];
-        for (int i = 0; i < waitEvents.length; i++) {
-            waitEventsLong[i] = waitEvents[i];
+        long[] waitEventsLong = null;
+        if (events != null) {
+            waitEventsLong = new long[events.length];
+            for (int i = 0; i < events.length; i++) {
+                waitEventsLong[i] = events[i];
+            }
         }
-        updateProfilerKernelContextWrite(executionPlanId, internalEvents[0], meta, kernelArgs);
 
         int task;
         if (meta == null) {
@@ -404,30 +402,13 @@ public class MetalInstalledCode extends InstalledCode implements TornadoInstalle
             logger.info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getMetalKernelID(), kernel.getName(), deviceContext.getDevice().getDeviceName());
         }
 
+        // The stack frame is bound by value in setKernelArgs, so it is not written to the device.
         setKernelArgs(metalKernelStackFrame, atomicSpace, meta);
-        int kernelContextWriteEventId = metalKernelStackFrame.enqueueWrite(executionPlanId);
-        updateProfilerKernelContextWrite(executionPlanId, kernelContextWriteEventId, meta, metalKernelStackFrame);
 
         if (meta == null) {
             executeSingleThread(executionPlanId);
         } else {
             launchKernel(executionPlanId, metalKernelStackFrame, meta, batchThreads);
-        }
-    }
-
-    private void updateProfilerKernelContextWrite(long executionPlanId, int kernelContextWriteEventId, TaskDataContext meta, MetalKernelStackFrame callWrapper) {
-        if (TornadoOptions.isProfilerEnabled()) {
-            TornadoProfiler profiler = meta.getProfiler();
-            Event event = deviceContext.resolveEvent(executionPlanId, kernelContextWriteEventId);
-            event.waitForEvents(executionPlanId);
-            long copyInTimer = meta.getProfiler().getTimer(ProfilerType.COPY_IN_TIME);
-            copyInTimer += event.getElapsedTime();
-            profiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
-            profiler.addValueToMetric(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES, meta.getId(), callWrapper.getSize());
-
-            long dispatchValue = profiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
-            dispatchValue += event.getDriverDispatchTime();
-            profiler.setTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME, dispatchValue);
         }
     }
 
