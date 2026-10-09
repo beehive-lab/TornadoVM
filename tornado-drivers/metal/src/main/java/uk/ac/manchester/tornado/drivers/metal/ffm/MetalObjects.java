@@ -568,6 +568,11 @@ public final class MetalObjects {
      */
     private static final int BATCH_SIZE = Math.max(1, Integer.getInteger("tornado.metal.dispatch.batchSize", 2));
 
+    /** Whether kernels are batched into shared command buffers rather than waited for one by one. */
+    public static boolean batchesDispatches() {
+        return BATCH;
+    }
+
     /** An open command buffer and its compute encoder, both retained until the buffer is committed. */
     private static final class Batch {
         final long commandBuffer;
