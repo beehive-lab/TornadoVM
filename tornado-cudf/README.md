@@ -53,6 +53,23 @@ compile.
 The SDK assembly unpacks `libtornado-cudf.so` into its own `lib/`, so nothing needs to go on
 `LD_LIBRARY_PATH` except libcudf itself.
 
+## With a release SDK
+
+The Linux `cuda` and `full` release SDKs ship `libtornado-cudf.so` in `lib/`, built against
+libcudf 26.08. Releases up to 7.2.0 did not: their build skipped it when libcudf was missing.
+libcudf itself is not bundled. It is about 1 GB, built for one CUDA major version, and its C++ ABI
+changes with every RAPIDS release. So install the matching release at run time, the way
+`tornado-cuvs` takes `libcuvs_c`, and put its library directories on `LD_LIBRARY_PATH`:
+
+```bash
+python3 -m pip install --extra-index-url https://pypi.nvidia.com "libcudf-cu12==26.8.*"
+SITE=$(python3 -c 'import libcudf, os; print(os.path.dirname(os.path.dirname(libcudf.__file__)))')
+export LD_LIBRARY_PATH=$(find "$SITE" -name '*.so*' -path '*lib*' -printf '%h\n' | sort -u | paste -sd:):$LD_LIBRARY_PATH
+```
+
+To check, run `ldd $TORNADOVM_HOME/lib/libtornado-cudf.so | grep 'not found'`; it should print
+nothing.
+
 ## Using it
 
 ```java
