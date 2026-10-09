@@ -602,6 +602,11 @@ public class CUDAGraphBuilderPlugins {
                 int headerBytes = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
                 b.add(new CUDACpAsyncCopyNode(dstTile, dstIndex, srcArray, srcIndex,
                         elementKind.getByteCount(), headerBytes, 16));
+                return true;
+            }
+        });
+    }
+
     private static void registerMMALoadGlobal(Registration r, String name, boolean isB) {
         r.register(new InvocationPlugin(name, InvocationPlugin.Receiver.class, HalfFloatArray.class, int.class, int.class, int.class) {
             @Override
