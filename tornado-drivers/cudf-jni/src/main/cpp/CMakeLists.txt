@@ -19,6 +19,17 @@ if(CMAKE_HOST_WIN32)
     return()
 endif()
 
+# Without libcudf the build skips this library with a warning, so most machines build fine. A
+# release build sets TORNADO_CUDF_REQUIRED=1, so a missing libcudf fails it instead of shipping
+# SDKs without libtornado-cudf.so.
+macro(tornado_cudf_skip reason)
+    if(NOT "$ENV{TORNADO_CUDF_REQUIRED}" STREQUAL "" AND NOT "$ENV{TORNADO_CUDF_REQUIRED}" STREQUAL "0")
+        message(FATAL_ERROR "TornadoVM cuDF: ${reason} (TORNADO_CUDF_REQUIRED is set, so this fails the build.)")
+    endif()
+    message(WARNING "TornadoVM cuDF: ${reason}")
+    return()
+endmacro()
+
 # libcudf is a binary distribution, so it is found rather than fetched -- the
 # cutlass-jni and cudnn-jni builds fetch CUTLASS and cudnn-frontend by pinned tag
 # because those are header-only repositories. RMM and CCCL are header-only and
@@ -48,8 +59,7 @@ find_library(CUDF_LIB cudf
 )
 
 if(NOT CUDF_INCLUDE_DIR OR NOT CUDF_LIB)
-    message(WARNING "TornadoVM cuDF: no RAPIDS libcudf found (looked for cudf/table/table_view.hpp and libcudf under $ENV{CUDF_HOME}, $ENV{CONDA_PREFIX} and /usr/local). Skipping the tornado-cudf native library (cuDF tasks will report UNSUPPORTED at runtime). Set CUDF_HOME to enable it.")
-    return()
+    tornado_cudf_skip("no RAPIDS libcudf found (looked for cudf/table/table_view.hpp and libcudf under $ENV{CUDF_HOME}, $ENV{CONDA_PREFIX} and /usr/local). Skipping the tornado-cudf native library (cuDF tasks will report UNSUPPORTED at runtime). Set CUDF_HOME to enable it.")
 endif()
 
 # librmm ships as its own wheel, so its headers are not always under the same
@@ -63,8 +73,7 @@ find_path(RMM_INCLUDE_DIR rmm/cuda_stream_view.hpp
 )
 
 if(NOT RMM_INCLUDE_DIR)
-    message(WARNING "TornadoVM cuDF: libcudf was found at ${CUDF_LIB} but RMM's headers were not (looked for rmm/cuda_stream_view.hpp). Skipping the tornado-cudf native library. Set RMM_HOME to the librmm prefix.")
-    return()
+    tornado_cudf_skip("libcudf was found at ${CUDF_LIB} but RMM's headers were not (looked for rmm/cuda_stream_view.hpp). Skipping the tornado-cudf native library. Set RMM_HOME to the librmm prefix.")
 endif()
 
 # cuda_runtime.h and libcudart, for the stream copies. Prefer $CUDA_PATH and
@@ -90,8 +99,7 @@ find_library(CUDART_LIB cudart
 )
 
 if(NOT CUDART_INCLUDE_DIR OR NOT CUDART_LIB)
-    message(WARNING "TornadoVM cuDF: libcudf was found but the CUDA runtime was not (looked for cuda_runtime.h and libcudart). Skipping the tornado-cudf native library.")
-    return()
+    tornado_cudf_skip("libcudf was found but the CUDA runtime was not (looked for cuda_runtime.h and libcudart). Skipping the tornado-cudf native library.")
 endif()
 
 # include/rapids carries the CCCL this libcudf was built against. The copy in

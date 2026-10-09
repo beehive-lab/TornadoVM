@@ -291,6 +291,29 @@ jobs:
           # Make the venv interpreter the default for subsequent steps
           echo "$VENV_PATH/bin" >> "$GITHUB_PATH"
 
+      - name: Fetch libcudf for the cuDF shim
+        # libcudf has no C API, so the cuda and full SDKs carry libtornado-cudf.so, a small C++ shim
+        # built against libcudf's headers. RAPIDS ships headers and library in its pip wheels. With
+        # TORNADO_CUDF_REQUIRED set, a missing libcudf fails the build instead of shipping SDKs
+        # without the shim (7.1.0 and 7.2.0 shipped an empty tornado-drivers-cudf-jni-libs.jar).
+        env:
+          CUDF_VERSION: "26.8.*"
+        run: |
+          CUDF_DIR="$RUNNER_TEMP/libcudf"
+          rm -rf "$CUDF_DIR"
+          mkdir -p "$CUDF_DIR/wheels"
+          python3 -m pip download --quiet --timeout 120 --retries 10 --only-binary=:all: --python-version 3.12 \
+            --platform manylinux_2_28_x86_64 --platform manylinux_2_27_x86_64 \
+            --platform manylinux_2_17_x86_64 --platform manylinux2014_x86_64 \
+            --extra-index-url https://pypi.nvidia.com -d "$CUDF_DIR/wheels" "libcudf-cu12==$CUDF_VERSION"
+          for wheel in "$CUDF_DIR"/wheels/*.whl; do
+            python3 -m zipfile -e "$wheel" "$CUDF_DIR"
+          done
+          rm -rf "$CUDF_DIR/wheels"
+          echo "CUDF_HOME=$CUDF_DIR/libcudf" >> "$GITHUB_ENV"
+          echo "RMM_HOME=$CUDF_DIR/librmm" >> "$GITHUB_ENV"
+          echo "TORNADO_CUDF_REQUIRED=1" >> "$GITHUB_ENV"
+
       - name: Build SDKs
         run: |
           python3 scripts/build-release-sdks.py \
@@ -299,6 +322,17 @@ jobs:
             --draft-release-test "$DRAFT_RELEASE_TEST" \
             --jdk21-home "$JDK21_HOME" \
             --jdk22plus-home "$JDK22PLUS_HOME"
+
+      - name: Check the CUDA SDKs carry the cuDF shim
+        run: |
+          missing=0
+          while IFS= read -r archive; do
+            if ! tar -tzf "$archive" | grep -q '/lib/libtornado-cudf\.so$'; then
+              echo "::error::$archive has no lib/libtornado-cudf.so"
+              missing=1
+            fi
+          done < <(find "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR" -name '*.tar.gz' \( -name '*cuda*' -o -name '*full*' \))
+          exit $missing
 
       - name: List produced archives
         run: ls -lh "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR/"
