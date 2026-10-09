@@ -548,6 +548,8 @@ public class CUDAGraphBuilderPlugins {
         registerCpAsyncCopy(r, HalfFloatArray.class, JavaKind.Short);
         registerCpAsyncCopy(r, FP8Array.class, JavaKind.Byte);
         registerCpAsyncCopy(r, ByteArray.class, JavaKind.Byte);
+        registerCpAsyncCopy16(r, HalfFloatArray.class, JavaKind.Short);
+        registerCpAsyncCopy16(r, ByteArray.class, JavaKind.Byte);
 
         r.register(new InvocationPlugin("asyncCopyCommit", InvocationPlugin.Receiver.class) {
             @Override
@@ -585,6 +587,21 @@ public class CUDAGraphBuilderPlugins {
                 int headerBytes = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
                 b.add(new CUDACpAsyncCopyNode(dstTile, dstIndex, srcArray, srcIndex,
                         elementKind.getByteCount(), headerBytes));
+                return true;
+            }
+        });
+    }
+
+    private static void registerCpAsyncCopy16(Registration r, Class<?> arrayClass, JavaKind elementKind) {
+        r.register(new InvocationPlugin("asyncCopyToLocal16",
+                InvocationPlugin.Receiver.class, int[].class, int.class, arrayClass, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver,
+                                 ValueNode dstTile, ValueNode dstIndex, ValueNode srcArray, ValueNode srcIndex) {
+                receiver.get(true);
+                int headerBytes = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
+                b.add(new CUDACpAsyncCopyNode(dstTile, dstIndex, srcArray, srcIndex,
+                        elementKind.getByteCount(), headerBytes, 16));
                 return true;
             }
         });

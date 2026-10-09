@@ -1153,6 +1153,32 @@ public class KernelContext implements ExecutionContext {
     }
 
     /**
+     * Asynchronous 16-byte global-to-shared copy of eight adjacent FP16 elements into the four
+     * packed b32 tile slots {@code dstTile[dstIndex .. dstIndex + 3]} (CUDA {@code cp.async.cg}).
+     * {@code dstIndex} must be a multiple of four and the source 16-byte aligned: {@code srcIndex}
+     * a multiple of eight. Same synchronization contract as
+     * {@link #asyncCopyToLocal(int[], int, HalfFloatArray, int)}; one copy instead of four moves
+     * the same bytes in a quarter of the instructions and memory requests.
+     */
+    public void asyncCopyToLocal16(int[] dstTile, int dstIndex, HalfFloatArray src, int srcIndex) {
+        for (int i = 0; i < 4; i++) {
+            asyncCopyToLocal(dstTile, dstIndex + i, src, srcIndex + 2 * i);
+        }
+    }
+
+    /**
+     * Asynchronous 16-byte global-to-shared copy of sixteen adjacent bytes into the four packed
+     * b32 tile slots {@code dstTile[dstIndex .. dstIndex + 3]} (CUDA {@code cp.async.cg}).
+     * {@code dstIndex} must be a multiple of four and the source 16-byte aligned: {@code srcIndex}
+     * a multiple of sixteen. See {@link #asyncCopyToLocal16(int[], int, HalfFloatArray, int)}.
+     */
+    public void asyncCopyToLocal16(int[] dstTile, int dstIndex, ByteArray src, int srcIndex) {
+        for (int i = 0; i < 4; i++) {
+            asyncCopyToLocal(dstTile, dstIndex + i, src, srcIndex + 4 * i);
+        }
+    }
+
+    /**
      * Commits the cp.async copies issued since the last commit as one group
      * (CUDA {@code cp.async.commit_group}). No-op on other backends, where
      * {@link #asyncCopyToLocal(int[], int, HalfFloatArray, int)} copies synchronously.

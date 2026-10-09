@@ -2682,7 +2682,8 @@ public class CUDALIRStmt {
     }
 
     /**
-     * Emits a 4-byte {@code cp.async.ca.shared.global} copy (Ampere+, sm_80): one
+     * Emits a 4-byte {@code cp.async.ca.shared.global} copy (Ampere+, sm_80), or a 16-byte
+     * {@code cp.async.cg.shared.global} one filling four consecutive slots: one
      * packed b32 slot moves from a global Tornado array straight into a shared-memory
      * int tile without a register round-trip. The source address is
      * {@code srcArray + headerBytes + srcIndex * srcElemBytes}; the destination is
@@ -2701,9 +2702,15 @@ public class CUDALIRStmt {
         @Use protected Value srcIndex;
         private final int srcElemBytes;
         private final int headerBytes;
+        private final int copyBytes;
 
         public CpAsyncCopyStmt(Value dstTile, Value dstIndex, Value srcArray, Value srcIndex,
                                int srcElemBytes, int headerBytes) {
+            this(dstTile, dstIndex, srcArray, srcIndex, srcElemBytes, headerBytes, 4);
+        }
+
+        public CpAsyncCopyStmt(Value dstTile, Value dstIndex, Value srcArray, Value srcIndex,
+                               int srcElemBytes, int headerBytes, int copyBytes) {
             super(TYPE);
             this.dstTile = dstTile;
             this.dstIndex = dstIndex;
@@ -2711,6 +2718,7 @@ public class CUDALIRStmt {
             this.srcIndex = srcIndex;
             this.srcElemBytes = srcElemBytes;
             this.headerBytes = headerBytes;
+            this.copyBytes = copyBytes;
         }
 
         @Override
@@ -2737,9 +2745,11 @@ public class CUDALIRStmt {
             asm.delimiter();
             asm.eol();
 
-            // cp.async 4-byte copy from the global element address (past the array header).
+            // cp.async copy from the global element address (past the array header): 4 bytes through
+            // L1 (.ca), or 16 bytes straight to shared memory (.cg, the only cache mode 16-byte
+            // copies allow).
             asm.indent();
-            asm.emit("asm volatile(\"cp.async.ca.shared.global [%0], [%1], 4;\" :: \"r\"(__smem), "
+            asm.emit("asm volatile(\"cp.async." + (copyBytes == 16 ? "cg" : "ca") + ".shared.global [%0], [%1], " + copyBytes + ";\" :: \"r\"(__smem), "
                     + "\"l\"((const char *) " + src + " + " + headerBytes + "u + ((long long) " + sIdx + ") * "
                     + srcElemBytes + "))");
             asm.delimiter();
